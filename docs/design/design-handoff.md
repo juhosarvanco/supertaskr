@@ -27,6 +27,32 @@ repo — feature columns F-01…F-05, seven task cards, teal filling in
 top-down. That image is the launch post (T-006 acceptance criterion:
 "screenshot-ready"). Design for that moment first.
 
+### 1.1 How nputer works — the 60-second domain primer
+
+Everything the app shows is a plain markdown file in the project's
+repo; the app is a read-mostly lens (it may later write one field or
+append one turn, never more). The vocabulary used throughout:
+
+- A **task** is one file: frontmatter (id, feature, priority, size
+  S/M/L, status, who builds/verifies) + acceptance criteria + notes +
+  **verdicts**. Tasks flow planned → building → verifying →
+  (rejected →) done through the pipeline.
+- The **pipeline**: a disposable AI session per role — an **executor**
+  builds exactly one task in an isolated branch; an adversarial
+  **verifier** attacks the result and writes a dated verdict
+  (APPROVED / REJECTED with repro); an **integrator** merges and
+  updates the docs. Sessions die; the files remember.
+- The **architect/planner** is the only role that creates real tasks.
+  Everyone else files **suggestions** — ghost cards, ideas that are
+  not yet commitments until the architect promotes them.
+- **Review provenance** is first-class: every done task records
+  whether its check was independent (different model), same-model
+  (different session), or self-verified — and the UI must never let
+  those look alike.
+- The **human is the gate**: approves risky dispatches, answers
+  escalations, can kill any session safely (files are the brain —
+  killing loses nothing; the UI should make that feel true).
+
 ## 2. Non-negotiables (constraints the design must fit)
 
 1. **Everything lands as design tokens.** The app's CSS mechanism is
@@ -101,24 +127,100 @@ blank); default state = the app opened on its own repo.
 
 ### 3.3 Future panes (set the direction; don't pixel-perfect)
 
-- **In-app interview** (the demo moment, highest design stakes later):
-  split view — planner chat left (one question at a time, streaming),
-  the board **materializing live** on the right as answers land.
-- **Architecture map**: rendered component graph, nodes colored by
-  build status (progress heatmap); click → component details, linked
-  decisions, tasks.
-- **Rooms**: file-backed threads rendered as chat — role/model/session
-  attribution per turn, @mentions, "@human pauses the thread" state,
-  resolved rooms collapse to a **Resolution card** (question /
-  decision / why); the pane doubles as a browsable decision log.
-- **Sessions**: registry list — model, tasks built, turn count,
-  **sediment warning** past a turn threshold, kill switch (killing is
-  safe by design — the UI should make that feel true).
-- **Dispatch controls** (on expanded cards, later): builder/verifier
-  selectors (model → fresh | registered sessions with history),
-  dispatch button, locked-while-building state.
-- Secondary views: pipeline kanban filter; dependency graph with
-  critical path.
+Each pane below gets: the idea (why it exists), how it works, and
+what the design should make you feel. Direction-level mocks only.
+
+**In-app interview** — the demo moment; highest design stakes in the
+product (ADR-008 concentrates the design budget here).
+- *Idea:* "the interview is the product." A facilitation craft,
+  encoded: one question at a time, never a wall of questions, and it
+  **challenges weak answers** ("you said fast — compared to what,
+  measured how?") instead of transcribing them. Seven stages: problem
+  & person → success → non-goals → constraints → stack → riskiest
+  assumption → first slice. This is where a vague idea becomes a
+  dispatchable plan.
+- *How it works:* split view. Left: planner chat, streaming, one
+  focused question visible at a time (history above, quieter).
+  Right: the project **materializing live** — the north-star summary
+  appearing, backbone columns growing one by one, then at
+  decomposition the cards raining into the board. Every banked answer
+  visibly becomes an artifact. A variant flow ("adopt existing
+  repo") asks only about `[?]` uncertainty markers mined from the
+  code.
+- *Feel:* calm, focused, almost ceremonial — the user is being
+  interviewed by a sharp cofounder, not filling a form. The right
+  pane is the reward and the magic ("idea → board in 30 minutes" is
+  the product's timed metric). Challenge moments should read as
+  respectful pushback, visually distinct from ordinary questions.
+- *Key states:* question asked · answer being challenged · answer
+  banked (→ artifact appears right) · stage progress (1–7) · the
+  decomposition crescendo · interview complete (board ready, first
+  dispatch proposed).
+
+**Architecture map**
+- *Idea:* not documentation — a **progress heatmap of the build**.
+  The system map (components + dependencies, from ARCHITECTURE.md)
+  colored by build status derived from merged tasks; you literally
+  watch the architecture fill in as the board completes. Later,
+  drift detection lights components whose reality contradicts the
+  map amber.
+- *How it works:* rendered graph (nodes + dependency edges) plus the
+  component table beneath; click a component → responsibility,
+  linked decision records, every task that touched it.
+- *Feel:* a blueprint coming to life. Same status-color family as
+  the board (one semantic system project-wide); a mostly-gray map on
+  day one should feel like promise, not emptiness.
+- *Key states:* planned / building / built / verified per node ·
+  a node with a rejected task · (later) drift-amber.
+
+**Rooms**
+- *Idea:* where ambiguity goes instead of into silent guesses — the
+  anti-hallucination organ. Three types: **consultation** (a working
+  session hits ambiguity and asks), **debate** (structured
+  disagreement for real decisions: positions written independently
+  BEFORE either side sees the other, one participant assigned to
+  argue against — countering AI agreeableness), **project** (the
+  standing broadcast room). Rooms produce clarifications and
+  decisions, never code.
+- *How it works:* each room is a markdown file; turns append,
+  nothing edits. @role mentions trigger that role's next turn;
+  **@human pauses the thread for the human**, who types like any
+  other participant. Bounded rounds; stalemates escalate. When a
+  room concludes, a **Resolution card** (question / decision / why /
+  what changed) is inserted at top and the room collapses to it —
+  readers read the Resolution and stop; the turns below are archive.
+- *Feel:* chat-shaped but weightier — a hearing room, not a group
+  chat. Attribution is prominent (role + model + session per turn);
+  debate positions should read as formal statements; the Resolution
+  card is the hero object. The resolved-rooms view doubles as the
+  project's browsable decision log.
+- *Key states:* open · awaiting @human (needs-attention — this is a
+  primary notification surface) · debate reveal moment · resolved
+  (collapsed to Resolution) · escalated · closed-no-decision.
+
+**Sessions**
+- *Idea:* the workforce registry. Disposable AI sessions are the
+  workers; this pane shows who exists, what each built, and how much
+  conversational **sediment** each carries (turn count; past a
+  threshold a staleness warning appears — long-lived sessions drift).
+  The kill switch is safe **by design** — files are the brain, so
+  killing a session loses nothing; the UI's job is to make that
+  calm truth visible.
+- *How it works:* list from a runtime registry — agent, model, turns,
+  tasks built, roles held, status; selectable in dispatch as
+  "fresh" vs a named session with history.
+- *Feel:* quiet operational control — a crew manifest, not a
+  dashboard of dials. Killing a session should feel undramatic.
+- *Key states:* live / idle / dead · sediment warning · session
+  currently holding a task.
+
+**Dispatch controls** (on expanded cards, later): builder/verifier
+selectors (model → fresh | registered sessions with history +
+sediment hints), estimated review-provenance preview ("this will be a
+same-model check"), dispatch button, fields locked while building.
+
+Secondary views: pipeline kanban filter; dependency graph with
+critical path.
 
 ### 3.4 Planned features beyond the panes — stress-test the language, don't design the screens
 
