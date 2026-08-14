@@ -120,6 +120,54 @@ blank); default state = the app opened on its own repo.
 - Secondary views: pipeline kanban filter; dependency graph with
   critical path.
 
+### 3.4 Planned features beyond the panes — stress-test the language, don't design the screens
+
+These exist in the roadmap/parked plans (docs/future.md, ADR-008, the
+market steal list). Deliver NO mocks for them — but the token system
+and component language you deliver should not break when they arrive:
+
+- **Welcome / "New project" entry** (the app's actual front door:
+  welcome → board or → interview; plus an "adopt existing repo"
+  archaeology variant driven by `[?]` uncertainty markers).
+- **Drag as the write path**: cards will become draggable (reorder =
+  priority write; dragging below the slice line = scope-cutting made
+  physical; locked while building). Cards should look grabbable
+  without being noisy.
+- **Verdict + diff review surface**: reading a rejection with its
+  repro, and reviewing a diff, deserve the same design quality as the
+  board ("review is the product surface").
+- **Cost telemetry on cards** (v0.2): a cost figure next to the model
+  badge, milestone budget burn on the board, estimated cost before
+  dispatch — the card face must absorb one more number gracefully.
+- **Pocket cockpit** (v0.2): a mobile digest (pending approvals,
+  escalations, rejections; approve/reject from the phone). The
+  language must degrade to narrow viewports without redesign.
+- **Calibration scorecards** (v0.2): per-model track record shown in
+  builder/verifier selectors.
+- **Time machine** (v0.3): a replay scrubber across board /
+  architecture / rooms states — chrome should leave it somewhere to
+  live.
+- **Handoff score** (v0.3): one project-health score with drill-down
+  (criteria without tests, stale docs …).
+- **Dry run** (v0.3): milestone simulation — critical path, cost
+  forecast. **N-version** (v0.3): side-by-side comparison of 2–3
+  parallel builds of the same task.
+- **Truth maintenance** (horizon): contradicted premises light every
+  downstream decision **amber** — the palette needs a warning
+  semantic that is NOT the same amber as "building/verifying".
+- **Explainer** (horizon): an "explain this to me" affordance
+  recurring on every verdict, resolution, and ADR — a small atom that
+  needs a consistent, unobtrusive home on dense surfaces.
+- Synthetic-user reports arriving as suggestion ghosts; a seed
+  library at project creation; a generated proof-of-process dossier
+  (document styling, not app chrome).
+
+Concrete stress tests to apply before delivering: (1) card face +
+cost number + calibration hint — still calm? (2) warning-amber vs
+building-amber — distinguishable at a glance in both schemes?
+(3) board at 375px width — does the language survive? (4) one more
+persistent chrome element (scrubber) — where would it go?
+
 ## 4. Component inventory (all states)
 
 ### 4.1 Task card anatomy
