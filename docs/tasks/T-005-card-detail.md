@@ -232,3 +232,126 @@ whenever set, so a merging task's review IS visible in the panel while
 its card badge stays done-only (consistent with both rules).
 
 ## Verdicts
+
+2026-08-15 — claude-fable-5 @fresh (verifier, same-model as builder):
+REJECTED — one interaction failure on criterion 1's own wording
+("blocked_by (with blocking cards linked)"): under a real, OS-level
+(trusted) click, a resolved blocker link CLOSES the panel instead of
+re-targeting it. Everything else verified green — both other
+criteria, the security sweep, the parallel boundary — so the fix
+round is one handler plus a regression story.
+
+Failure (TaskDetailPanel.tsx, outside-click handler vs blocker
+re-target): clicking a resolved blocker chip fires onOpen(target) and
+React 18 flushes that discrete update in a microtask. For a TRUSTED
+click the browser performs microtask checkpoints between listener
+invocations (the JS stack empties between them), so the flush lands
+between React's root listener and the panel's document-level click
+listener: the re-render replaces the blocked-by list (different li
+keys — a target task's blockers never match the source's at the same
+index), the clicked button is detached, and when the event reaches
+document the handler sees a disconnected target →
+panelRef.contains(target) false → closest('[data-card-trigger]')
+null → onClose(). For a SYNTHETIC element.click() the entire
+propagation completes synchronously before any microtask, the
+document listener still sees the button connected inside the panel,
+and the re-target works — which is why the builder's probe (and any
+jsdom/unit test) passes while a real mouse fails.
+
+Repro (real input): in app/, `npm run dev -- --port 8098 --host
+127.0.0.1` (CLI flags — no vite.config.ts edit needed), open in a
+browser, apply via window.__nputerDocsHarness a model where T-A has
+blocked_by: [T-B] (any resolvable id); mouse-click T-A's card, then
+mouse-click the T-B chip under "blocked by".
+Expected (criterion 1 + the builder's own notes): panel re-targets
+to T-B and stays open. Actual: panel closes.
+Observed live (Chromium pane, viewport 1280x720): trusted click at
+page (936, 361.6), inside the chip rect 921–971 × 351–373 and
+elementFromPoint = blocker-link → [data-testid=task-detail-panel]
+absent at the settled read; zero console/window errors; no-reload
+marker intact. Headless confirmation of every link in the chain:
+(1) synthetic chip.click() re-targets and stays open, same node —
+reproduces the builder's record; (2) when click() returns the chip
+is STILL connected (the document listener already ran, hence no
+close); (3) after the flush the clicked chip is detached
+(isConnected false) — under trusted dispatch that flush runs before
+the document listener; (4) breadth: the detachment equally occurs on
+ul→ul re-targets (different li keys), so effectively EVERY real
+blocker-link click closes the panel.
+
+Fix direction (any one): ignore disconnected targets in the
+outside-click handler (a detached target cannot be a genuine outside
+click — `if (!target.isConnected) return;`); or close on pointerdown
+(fires before click's state update); or test a captured
+composedPath() against the panel instead of live contains().
+Regression coverage for this class needs real-input E2E — no
+synthetic test can pin it (filed as T-005-s4, non-blocking).
+
+Verified green, independently (fresh installs, ADR-011 order):
+lib/parser npm ci + vitest 78/78 + tsc clean + build clean; app npm
+ci + npm run build exit 0 + npm test 58/58; src-tauri cargo test
+7/7. Parallel boundary audited file-by-file: ZERO diff in App.tsx,
+app/package.json, every lockfile, app/src-tauri/**, tokens.css,
+index.css, lib/parser/** — the diff is exactly board components +
+lib selector + tests + T-005 docs; zero new dependencies (ADR-010
+trivially intact). Criterion 1 content probed with my own hostile
+fixtures (script / img-onerror / iframe-srcdoc / javascript:-href as
+section text, a 5000-char unbroken line, RTL overrides, ANSI, CJK/
+emoji, hostile HTML title via live edit): acceptance criteria and
+verdicts render STRICT-equal to the parser's raw section strings in
+a PRE (max-h 320px, overflow auto, the long line scrolls), with zero
+element injection (0 script/img/iframe nodes inside the panel, no
+onerror fired, no innerHTML anywhere in the diff). Stamps raw,
+em-dash for unset, touches chips, source-file footer all correct;
+Implementation notes correctly not rendered (criteria-literal,
+T-005-s2 stands). ADR-009 live: blocked_by [__proto__, constructor]
+render as inert unresolved chips — the Map lookup holds; the pinned
+unit test re-ran green. Criterion 2 with the panel held open across
+nine harness snapshots (seq 1–9): in-place update of title/status
+chip/verdicts/stamps in the SAME DOM node with the board card
+updating alongside; delete → calm "no longer present" naming the
+ref → restore recovers, same node; broken file → last-good content +
+"1 parse error" badge (showingLastGood true), heals clean; the panel
+outlives an emptied board (board-empty line + missing state) and
+recovers — one continuous panel node through the entire sequence.
+Criterion 3: a bodyless task renders (empty)/none markers ×4 and —
+stamps with zero errors; the ghost opens by file ref with the dashed
+suggested chip, suggested_by line, and NO stamps block; a
+merging+review task shows its review stamp in-panel while its board
+card stays done-only (matches the builder's T-004-s2 note).
+Interactions (synthetic — see caveat): Esc via a bubbled
+KeyboardEvent through the app's document listener closes with focus
+restored to the opener; open parks focus on the panel; inside-click
+keeps it open; outside-click closes; card→card switch re-targets the
+same node (card triggers survive the re-render, so the trusted-click
+race does NOT hit that path — corroborated by the real card clicks
+observed before the moratorium below); close button restores focus
+to the FIRST opener as documented; dark-mode toggle re-resolves
+panel tokens (--status-done-bg oklch 0.94→0.28 pair observed). Note
+in passing: the theme toggle itself counts as an outside click and
+closes the panel (spec-consistent; filed T-005-s3). Security sweep:
+no innerHTML/dangerouslySetInnerHTML/eval/new Function/
+document.write in the diff; pure-lens holds (no writes, no invoke,
+handlers are view-state setters only); no arbitrary Tailwind values
+in touched files; CSP/capabilities untouched (src-tauri diff empty).
+
+Environment caveat (recorded per the T-001-s3 precedent): mid-
+verification the human ordered all screen control stopped, so
+real-key Esc/Enter/Space and further real-mouse passes are
+unverified-by-real-input in this run. The pane's key injection
+delivers no page events anyway — builder's flag confirmed: a
+capture-phase listener saw zero keydown for injected Escape and "a".
+Card triggers are native type=button BUTTONs, so Enter/Space →
+click activation is UA-guaranteed; Esc was exercised through the
+app's actual handler via a bubbled synthetic event. The REJECTED
+finding was observed with a real trusted click BEFORE the moratorium
+and disambiguated headlessly afterward.
+
+Builder's two self-flags, judged: (1) key-injection blindness —
+accurate, an environment limitation, not a defect. (2) async-render
+read timing — accurate (a synchronous DOM read right after harness
+apply() returns the previous frame; settled reads are correct) —
+standard React scheduling, not a defect. Neither is REJECTED-level.
+The trusted-vs-synthetic CLICK divergence behind this rejection is
+the same event-timing family as flag 2, but the criterion-1
+blocker-link pass was recorded from synthetic dispatch only.
