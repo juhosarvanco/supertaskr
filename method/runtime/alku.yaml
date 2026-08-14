@@ -1,0 +1,22 @@
+# .nputer/nputer.yaml — role defaults and thresholds
+# Task-file fields override these per task.
+
+roles:
+  planner: claude
+  builder: codex
+  verifier: claude          # resolver default: independent of builder
+  integrator: claude
+  janitor: ollama:qwen3-coder   # doc upkeep, commit messages
+
+session_policy:
+  default: fresh            # fresh unless a task names model@Sx
+  warn_after_turns: 30      # sediment marker in the selector past this
+
+rooms:
+  max_rounds: 3             # then escalate to @human
+  debate: independent_first # positions written before reveal
+
+ceremony:
+  S: [executor]
+  M: [executor, verifier, integrator]
+  L: [plan, executor, verifier, integrator]
