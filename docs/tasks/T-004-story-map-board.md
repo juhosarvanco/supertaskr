@@ -339,3 +339,79 @@ None — no non-blocking discovery rose above notes-level; the
 observations worth keeping are recorded in the flags above.
 
 ## Verdicts
+
+2026-08-14 — claude-fable-5 @fresh (verifier, same-model as builder): APPROVED
+
+Suites reproduced from `npm ci` installs, ADR-011 order: lib/parser
+78/78 + `tsc --noEmit` + build clean; app `npm run build` exit 0 +
+`npm test` **41/41**; src-tauri `cargo test` **7/7**. Boundary holds:
+diff touches app/** + this file only; lockfiles, lib/parser, src-tauri,
+capabilities and CSP have ZERO diff (ADR-010 baseline verbatim).
+
+Plan-compliance audit, clause by clause: PASS with no deviations found.
+All ten "smallest choice" decisions audited — each fills a genuine plan
+silence and none contradicts plan text. Notably the interleaved-
+milestone partition is the only reading under which the plan's order
+rule and single-boundary line rule can both hold (probed with m1 block
+{p5,p6} above a later block {p1,p2,p3} — held); review-badge-on-done-
+only is plan-literal ("on done cards the verification badge from
+review:") — the criterion sets no timing, the plan does, so it governs;
+consequence filed as T-004-s2, not a failure.
+
+Probed beyond the executor's transcripts (own 15-case scratch suite fed
+through the real parser, removed after the run; own browser trees via
+the DEV harness; own on-disk repo via the real binary):
+- SHUFFLED ROADMAP backbone (F-02, F-03, F-01, F-04): column order
+  follows ROADMAP order in unit AND DOM — the executor's fixtures never
+  distinguished ROADMAP order from id order; verified independently.
+- Unknown-feature parked and unknown-feature suggestions route to
+  unmapped (executor only pinned the feature-less variants); duplicate
+  task ids render as two file-keyed cards; unmapped column slices too.
+- Every status live in one tree: computed bgs match the six token pairs
+  (light AND dark after `.dark` toggle); pulse on exactly
+  {verifying, merging}, empirically animating (currentTime
+  24382→25165ms across ~700ms, opacity 0.863→0.575); ghost
+  border-style dashed; "2 parked" per column; reduced-motion fallback
+  is structural — the ONLY `animate-status-pulse` rule in dev-served
+  and built CSS lives inside `@media (prefers-reduced-motion:
+  no-preference)`, nothing else animates.
+- Live update: T-201/T-202 flipped planned→verifying→done+review via
+  harness seqs — SAME DOM node (JS-property tag survived every flip),
+  slot 0 kept, model badge precedence flipped fable→codex when built_by
+  took over at done, review badge appeared; stale seq re-apply inert
+  (echo ledger [1..9] exactly once each); empty-files payload swapped
+  to "no features found" and restore brought all 5 columns back;
+  no-reload window marker intact throughout. Real binary cwd-launched
+  at a scratch git repo: boot logs + seq=1 echo (4 tasks/2 features/0
+  issues); on-disk status flip write→appliedAtMs **422ms**; a 3-write
+  burst 80ms apart collapsed to exactly ONE new seq (debounce held,
+  final content won).
+- Hostile content: titles with `<img onerror>`/`<script>`, a hostile
+  HTML task ID (ids are format-unvalidated until T-002-s3), RTL
+  override, ANSI escapes, 10k-char title — all inert: zero img/script
+  nodes in the board, no handlers fired, text rendered verbatim as
+  React text nodes. The unbroken 10k title bleeds glyphs across
+  neighboring columns without breaking column/page structure —
+  non-blocking, filed as T-004-s1.
+- Executor's flags evaluated: hidden-tab animation throttling is real
+  (hit it myself — rAF stalls while the pane is hidden; pulse verified
+  with the window visible); data-* hooks are read-only annotations of
+  already-rendered data, fine; review-on-merging suppression judged
+  plan-compliant (above).
+
+Security sweep: PASS. Zero new dependencies (both lockfiles
+diff-empty); ADR-009 clean — the one file-keyed collection
+(feature-id → column) is a `Map`, `STATUS_CLASSES` is keyed by the
+project-authored StatusToken union and unreachable by file strings
+(invalid `status:` hard-fails the parser identity gate and never
+becomes a TaskRecord — probed); no
+innerHTML/dangerouslySetInnerHTML/eval/fetch/WebSocket/storage
+anywhere in the diff; `__nputerDocsHarness` absent from MY OWN prod
+build (0 grep hits in dist assets); pure-lens holds — board components
+carry no event handlers, no invoke, no writes of any kind. Two initial
+probe failures were verifier fixture bugs (JS default-param trap;
+non-`T-*` filenames are not task files), not code faults.
+
+Suggestions filed (non-blocking): T-004-s1 (contain pathological
+title overflow), T-004-s2 (consider showing the verification badge on
+merging cards).
