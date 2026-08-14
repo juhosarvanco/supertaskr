@@ -134,3 +134,93 @@ Executor claude-fable-5, 2026-08-14, branch `t001-app-shell`.
   .app cwd is `/` so an explicit override wants deciding then).
 
 ## Verdicts
+
+2026-08-14 — claude-fable-5 @fresh (verifier, same-model as builder):
+REJECTED — on the mandatory security sweep (2 findings below), not the
+acceptance criteria: all four criteria reproduced under this verifier's
+own independent probes (macOS half; **Linux half NOT verified — no Linux
+machine available to this verifier either; it remains required before
+"done"**, see suggestion T-001-s3).
+
+Independent run (clean `npm ci`, 430 pkgs, then `npm run build` exit 0;
+macOS 15/Darwin 25.6, node 22.22.0, rustc 1.95.0):
+
+- C1 window (macOS): `cd app && npm run tauri dev` → vite ready :1420,
+  cargo run; verified myself: `pgrep -fl target/debug/nputer` (pid),
+  `lsappinfo` front app + WebKit helper processes, and CGWindowList
+  showing an on-screen layer-0 window 800×600 owner=nputer. Rendered
+  DOM/computed styles checked against the same vite bundle: h1 "nputer",
+  body bg/fg = token oklch values, h1 30px = --text-3xl-size, theme
+  toggle flips html.dark and token values both ways; zero console
+  errors. On-screen rendering + dark-mode token flip: confirmed by
+  @human directly, 2026-08-14 (relayed by orchestrator; @human entry to
+  be appended to the task file — this verifier did not observe the
+  screen itself).
+- C2 tokens: built-CSS audit — every color literal sits inside the
+  :root/.dark token-definition blocks (rest: `#0000` transparent,
+  inert `@supports` probes, `@property` initial values); every
+  font-size/family declaration is a token var or preflight-relative
+  (1em/75%/80%); preflight html/code fonts resolve through
+  --default-*-font-family: var(--font-*-stack) tokens. Enforcement
+  probe: `bg-red-500`, `text-4xl`, `font-serif` added to App.tsx
+  produce NO CSS (control `bg-accent` does). Non-blocking residuals,
+  recorded: Tailwind preflight form normalization (20px/4px on
+  select-optgroup/::file-selector-button — elements the app never
+  renders) and fixed-px non-themeable micro-utilities in stock shadcn
+  button (underline-offset-4→4px, translate-y-px→1px, ring-3→3px,
+  radius caps min(--radius-md,10|12px)) — outside the criterion's
+  colors/spacing/type scales. Known gap, not a criterion failure
+  (shipped source is clean): Tailwind v4 arbitrary values bypass the
+  namespace disable — probe `p-[13px]` compiled to `padding:13px`;
+  no config can block these → suggestion T-001-s2 (lint guard).
+- C3 startup log: this verifier's run printed
+  `[nputer] project folder: /Users/ujju/Projects/nputer-t001` — correct
+  (the repo/worktree the app lives in; .git-file walk-up works).
+  Fallback probed: binary run from /private/tmp (no repo above) logs
+  `/private/tmp`, window still created, no panic.
+- C4 failure path (own probe, `let verifierProbe: = 1;` in App.tsx):
+  `npm run build` → exit 2, `error TS1110` with file:line printed;
+  `npm run tauri build` → exit 1, `Error beforeBuildCommand \`npm run
+  build\` failed with exit code 2`, aborts before bundling (no
+  artifact); dev mode: module request → HTTP 500 with error page,
+  `vite-error-overlay` present in the live window with message +
+  file:line, error printed to terminal — not a silent white window.
+  Probe reverted; clean build exit 0 re-confirmed.
+
+Security findings (both cheap; everything else already reproduces, so
+re-verify after the fix is fast):
+
+1. No Content-Security-Policy. `app/src-tauri/tauri.conf.json` ships
+   `"security": { "csp": null }` and no CSP reaches the built page
+   (`grep -c csp app/dist/index.html` → 0). Tauri's security model
+   expects a restrictive CSP on bundled apps; this webview is the
+   surface T-003/T-004/T-007 will fill with content read from
+   arbitrary repos, no hardening task exists on the roadmap, and this
+   diff owns the file. Expected: e.g. `"csp": "default-src 'self';
+   style-src 'self' 'unsafe-inline'"` (bundled app only — Tauri
+   injects its own script nonces; dev server unaffected) or a recorded
+   decision why null is acceptable. Actual: null, unexamined in the
+   Implementation notes.
+2. Unused IPC surface granted to the webview. `tauri-plugin-opener` is
+   initialized (lib.rs) and `opener:default` granted
+   (capabilities/default.json) while nothing calls it. That set =
+   allow-open-url + allow-default-urls (open any http/https/mailto/tel
+   in default apps) + allow-reveal-item-in-dir (reveal any path in
+   Finder) — free primitives for any future webview compromise. The
+   notes justify keeping it as "open files later", but that need maps
+   to `allow-open-path`, not this set. Expected: drop the plugin +
+   permission until the task that needs it adds the narrow permission.
+
+Sweep items that PASS, for the record: no custom IPC commands (template
+`greet` removed — verified by grep); `core:default` is Tauri's curated
+introspection-only set; npm lockfile 100% registry.npmjs.org with zero
+install-script packages; Cargo.lock 100% crates.io (471 crates); no
+secrets in the diff; no remote content (built JS contains only W3C
+namespace strings + react.dev error-URL prefix; no eval/new Function;
+withGlobalTauri off); diff boundary clean — app/**, this task file, and
+T-001-s1 only; no root package.json (ARCHITECTURE code layout); method/
+untouched; C-05 scope only, no board features smuggled in.
+
+Re-verify after fix: `cd app && npm ci && npm run build`, `npm run
+tauri dev` window + startup-log check, confirm CSP present in built
+`dist/index.html`, confirm capabilities carry no unused permissions.
