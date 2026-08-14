@@ -1,5 +1,6 @@
 import type { BoardColumn } from "@/lib/board-model";
 import { UNMAPPED_KEY } from "@/lib/board-model";
+import type { TaskRef } from "@/lib/task-detail";
 import { TaskCard } from "./TaskCard";
 import { GhostCard } from "./GhostCard";
 import { ParkedRow } from "./ParkedRow";
@@ -9,13 +10,16 @@ import { SliceLine } from "./SliceLine";
  * One board column (T-004): dark header (F-ID + name), real cards in
  * display order with the milestone slice line at the block boundary,
  * ghosts below all real cards, parked collapsed at the very bottom.
+ * T-005: cards forward clicks up as detail-panel opens.
  */
 export function FeatureColumn({
   column,
   labelSlice,
+  onOpen,
 }: {
   column: BoardColumn;
   labelSlice: boolean;
+  onOpen: (ref: TaskRef) => void;
 }) {
   const above = column.cards.slice(0, column.sliceIndex);
   const below = column.cards.slice(column.sliceIndex);
@@ -37,14 +41,14 @@ export function FeatureColumn({
       </header>
       <ul className="flex flex-col gap-2">
         {above.map((card) => (
-          <TaskCard key={card.key} card={card} />
+          <TaskCard key={card.key} card={card} onOpen={onOpen} />
         ))}
         <SliceLine labeled={labelSlice} />
         {below.map((card) => (
-          <TaskCard key={card.key} card={card} />
+          <TaskCard key={card.key} card={card} onOpen={onOpen} />
         ))}
         {column.ghosts.map((card) => (
-          <GhostCard key={card.key} card={card} />
+          <GhostCard key={card.key} card={card} onOpen={onOpen} />
         ))}
       </ul>
       <ParkedRow count={column.parkedCount} />

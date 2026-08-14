@@ -1,0 +1,277 @@
+import { describe, expect, it } from "vitest";
+import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
+import { cardRef, refLabel, selectTaskDetail, type TaskRef } from "../src/lib/task-detail";
+
+// Pure-selector tests for the card detail panel (T-005). Fixtures run
+// through the real parser (parseProjectFromFiles) so these pin the
+// file -> panel behavior the acceptance criteria describe: derivation of
+// every panel field, live update by task id, visibly-empty sections, and
+// the deleted-task case.
+
+const ROADMAP = [
+  "# R",
+  "",
+  "## Backbone",
+  "- F-01: Method — the convention",
+  "- F-02: App — shell and board",
+  "",
+].join("\n");
+
+type Field = [key: string, value: string | number];
+
+/** Task-file source from frontmatter fields + an optional body. */
+const src = (fields: Field[], body = ""): string =>
+  `---\n${fields.map(([k, v]) => `${k}: ${v}`).join("\n")}\n---\n${body}`;
+
+/** Standard renderable task; `extras` override defaults BY KEY (YAML
+ * rejects duplicate keys, so naive appending would poison the fixture). */
+const task = (id: string, extras: Field[] = [], body = ""): string => {
+  const fields = new Map<string, string | number>([
+    ["id", id],
+    ["title", `${id} title`],
+    ["feature", "F-01"],
+    ["milestone", 1],
+    ["priority", 1],
+    ["size", "M"],
+    ["status", "planned"],
+  ]);
+  for (const [key, value] of extras) fields.set(key, value);
+  return src([...fields.entries()], body);
+};
+
+const project = (files: Array<[path: string, content: string]>): ProjectParseResult =>
+  parseProjectFromFiles(files.map(([path, content]) => ({ path, content })));
+
+const withRoadmap = (files: Array<[string, string]>): ProjectParseResult =>
+  project([["docs/ROADMAP.md", ROADMAP], ...files]);
+
+const path = (id: string): string => `docs/tasks/${id}.md`;
+
+const byId = (id: string): TaskRef => ({ kind: "id", id });
+
+const VERDICTS = [
+  "2026-08-14 — claude-fable-5 @fresh (verifier): REJECTED",
+  "",
+  "    indented preformatted detail — 78/78, `code`, <img onerror=x>",
+  "",
+  "2026-08-14 — retry: APPROVED",
+].join("\n");
+
+const FULL_BODY = [
+  "",
+  "## Acceptance criteria",
+  "- WHEN a card is clicked THE system SHALL open a detail panel.",
+  "- WHILE open THE panel SHALL live-update.",
+  "",
+  "## Implementation notes",
+  "builder notes (not a panel section)",
+  "",
+  "## Verdicts",
+  VERDICTS,
+  "",
+].join("\n");
+
+describe("selectTaskDetail — derivation", () => {
+  const model = withRoadmap([
+    [
+      path("T-010"),
+      task(
+        "T-010",
+        [
+          ["status", "done"],
+          ["blocked_by", "[T-011, T-099]"],
+          ["touches", "[app-board, lib-parser]"],
+          ["built_by", '"codex/gpt-5.2 @S3"'],
+          ["verified_by", '"claude-fable-5 @fresh"'],
+          ["review", "same-model"],
+        ],
+        FULL_BODY,
+      ),
+    ],
+    [path("T-011"), task("T-011", [["status", "building"]])],
+  ]);
+
+  it("derives id, title, status visual, and size", () => {
+    const detail = selectTaskDetail(model, byId("T-010"));
+    expect(detail).toBeDefined();
+    expect(detail?.id).toBe("T-010");
+    expect(detail?.title).toBe("T-010 title");
+    expect(detail?.status).toBe("done");
+    expect(detail?.visual).toEqual({ token: "done", pulse: false });
+    expect(detail?.size).toBe("M");
+    expect(detail?.suggested).toBe(false);
+    expect(detail?.file).toBe(path("T-010"));
+  });
+
+  it("passes the acceptance-criteria section through raw", () => {
+    const detail = selectTaskDetail(model, byId("T-010"));
+    expect(detail?.acceptanceCriteria).toBe(
+      [
+        "- WHEN a card is clicked THE system SHALL open a detail panel.",
+        "- WHILE open THE panel SHALL live-update.",
+      ].join("\n"),
+    );
+  });
+
+  it("passes the verdicts section through VERBATIM (markup, indentation and all)", () => {
+    const detail = selectTaskDetail(model, byId("T-010"));
+    expect(detail?.verdicts).toBe(VERDICTS);
+  });
+
+  it("resolves blocked_by entries against the model: link data when present, unresolved when not", () => {
+    const detail = selectTaskDetail(model, byId("T-010"));
+    expect(detail?.blockedBy).toEqual([
+      {
+        id: "T-011",
+        resolved: true,
+        title: "T-011 title",
+        status: "building",
+        visual: { token: "building", pulse: false },
+      },
+      { id: "T-099", resolved: false },
+    ]);
+  });
+
+  it("carries touches and the built_by / verified_by / review stamps raw", () => {
+    const detail = selectTaskDetail(model, byId("T-010"));
+    expect(detail?.touches).toEqual(["app-board", "lib-parser"]);
+    expect(detail?.builtBy).toBe("codex/gpt-5.2 @S3");
+    expect(detail?.verifiedBy).toBe("claude-fable-5 @fresh");
+    expect(detail?.review).toBe("same-model");
+  });
+
+  it("blocker links let the panel walk a chain (each blocker is itself selectable)", () => {
+    const detail = selectTaskDetail(model, byId("T-010"));
+    const blocker = detail?.blockedBy[0];
+    expect(blocker?.resolved).toBe(true);
+    const next = selectTaskDetail(model, byId(blocker?.id ?? ""));
+    expect(next?.id).toBe("T-011");
+    expect(next?.title).toBe("T-011 title");
+  });
+});
+
+describe("selectTaskDetail — live update by id (criterion 2)", () => {
+  it("the same ref derives fresh content from a changed model", () => {
+    const before = withRoadmap([
+      [path("T-010"), task("T-010", [["status", "building"]], "\n## Verdicts\n")],
+    ]);
+    const after = withRoadmap([
+      [
+        path("T-010"),
+        task(
+          "T-010",
+          [
+            ["status", "done"],
+            ["review", "independent"],
+            ["verified_by", '"claude-fable-5 @fresh"'],
+          ],
+          "\n## Verdicts\nAPPROVED — suites green.\n",
+        ),
+      ],
+    ]);
+    const ref = byId("T-010");
+    expect(selectTaskDetail(before, ref)?.status).toBe("building");
+    expect(selectTaskDetail(before, ref)?.verdicts).toBeUndefined();
+    expect(selectTaskDetail(after, ref)?.status).toBe("done");
+    expect(selectTaskDetail(after, ref)?.verdicts).toBe("APPROVED — suites green.");
+    expect(selectTaskDetail(after, ref)?.review).toBe("independent");
+  });
+
+  it("an id ref follows the task across a file rename", () => {
+    const renamed = withRoadmap([[path("T-010-new-name"), task("T-010")]]);
+    const detail = selectTaskDetail(renamed, byId("T-010"));
+    expect(detail?.id).toBe("T-010");
+    expect(detail?.file).toBe(path("T-010-new-name"));
+  });
+
+  it("duplicate ids: the first task in model order wins, deterministically (parser sorts by path and flags the duplicate)", () => {
+    const model = withRoadmap([
+      [path("T-010"), task("T-010")],
+      [path("T-010-copy"), task("T-010", [["status", "done"]])],
+    ]);
+    // Parser processes task files in sorted path order; '-' < '.', so
+    // T-010-copy.md is first regardless of input order.
+    expect(model.tasks[0]?.file).toBe(path("T-010-copy"));
+    const detail = selectTaskDetail(model, byId("T-010"));
+    expect(detail?.file).toBe(path("T-010-copy"));
+    expect(detail?.status).toBe("done");
+  });
+});
+
+describe("selectTaskDetail — empty sections (criterion 3)", () => {
+  it("a body with no section headings yields visibly-empty fields, not an error", () => {
+    const model = withRoadmap([[path("T-010"), task("T-010")]]);
+    const detail = selectTaskDetail(model, byId("T-010"));
+    expect(detail).toBeDefined();
+    expect(detail?.acceptanceCriteria).toBeUndefined();
+    expect(detail?.verdicts).toBeUndefined();
+    expect(detail?.blockedBy).toEqual([]);
+    expect(detail?.touches).toEqual([]);
+    expect(detail?.builtBy).toBeUndefined();
+    expect(detail?.verifiedBy).toBeUndefined();
+    expect(detail?.review).toBeUndefined();
+  });
+
+  it("a heading with no content under it is empty too (not an empty-string section)", () => {
+    const model = withRoadmap([
+      [path("T-010"), task("T-010", [], "\n## Acceptance criteria\n\n## Verdicts\n\n")],
+    ]);
+    const detail = selectTaskDetail(model, byId("T-010"));
+    expect(detail?.acceptanceCriteria).toBeUndefined();
+    expect(detail?.verdicts).toBeUndefined();
+  });
+});
+
+describe("selectTaskDetail — deleted / missing tasks", () => {
+  it("returns undefined when the id is not in the model (deleted while open)", () => {
+    const before = withRoadmap([[path("T-010"), task("T-010")]]);
+    const after = withRoadmap([]);
+    const ref = byId("T-010");
+    expect(selectTaskDetail(before, ref)).toBeDefined();
+    expect(selectTaskDetail(after, ref)).toBeUndefined();
+  });
+
+  it("returns undefined for a file ref whose file is gone", () => {
+    const model = withRoadmap([[path("T-010"), task("T-010")]]);
+    expect(selectTaskDetail(model, { kind: "file", file: path("T-999") })).toBeUndefined();
+  });
+
+  it("ADR-009: a blocked_by entry named __proto__ or constructor never resolves via inheritance", () => {
+    const model = withRoadmap([
+      [path("T-010"), task("T-010", [["blocked_by", "[__proto__, constructor]"]])],
+    ]);
+    const detail = selectTaskDetail(model, byId("T-010"));
+    expect(detail?.blockedBy).toEqual([
+      { id: "__proto__", resolved: false },
+      { id: "constructor", resolved: false },
+    ]);
+  });
+});
+
+describe("selectTaskDetail — suggestions (minimal ghost variant)", () => {
+  const suggestion = src([
+    ["title", "A ghost of an idea"],
+    ["status", "suggested"],
+    ["suggested_by", '"executor claude-fable-5 @T-004"'],
+  ]);
+
+  it("an id-less suggestion opens by file ref and carries suggested_by", () => {
+    const model = withRoadmap([[path("T-004-s9-ghost"), suggestion]]);
+    const ref = cardRef({ id: undefined, file: path("T-004-s9-ghost") });
+    expect(ref).toEqual({ kind: "file", file: path("T-004-s9-ghost") });
+    const detail = selectTaskDetail(model, ref);
+    expect(detail?.suggested).toBe(true);
+    expect(detail?.title).toBe("A ghost of an idea");
+    expect(detail?.suggestedBy).toBe("executor claude-fable-5 @T-004");
+    expect(detail?.id).toBeUndefined();
+  });
+
+  it("cardRef prefers the id when the card has one", () => {
+    expect(cardRef({ id: "T-010", file: path("T-010") })).toEqual({ kind: "id", id: "T-010" });
+  });
+
+  it("refLabel names refs for the no-longer-present state", () => {
+    expect(refLabel(byId("T-010"))).toBe("T-010");
+    expect(refLabel({ kind: "file", file: path("x") })).toBe(path("x"));
+  });
+});
