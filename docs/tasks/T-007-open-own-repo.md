@@ -259,3 +259,184 @@ None. Commands are unchanged; `npm test` now also runs .tsx test files
   T-001-s1's override precedence).
 
 ## Verdicts
+
+2026-08-15 — claude-fable-5 @fresh (verifier, same-model as builder):
+APPROVED. Headless verification throughout at the human's explicit
+direction — zero screen control, zero native dialogs driven, zero
+windows opened; the live instance on :1420 (node pid 84310) verified
+identical before and after this session. The dialog-widget flows the
+executor recorded as human-verifiable-later are carried forward below,
+per the T-001 visual-confirmation precedent.
+
+Suites reproduced from wiped node_modules/dist, ADR-011 order:
+lib/parser `npm ci` + `npx vitest run` **78/78** + `npx tsc --noEmit` +
+`npm run build` all clean (and lib/parser is a zero-byte diff — the
+"untouched" claim is literal); app `npm ci` + `npm run build` exit 0 +
+`npm test` **61/61** (41 baseline preserved + 16 store + 4 DOM);
+src-tauri `cargo test` **20/20 four consecutive runs** (claim was
+flake-free across 3; held across my 4).
+
+The central claim — a new native dialog with ZERO new webview surface —
+VERIFIED at every layer reachable headlessly:
+- (a) tauri.conf.json zero diff; the ADR-010 CSP string sits verbatim
+  in a debug binary I built from this tree (`strings`: 1 hit).
+- (b) capabilities/ zero diff; gen/schemas/capabilities.json REGENERATED
+  BY MY OWN BUILD = exactly `{default: {..., local:true,
+  windows:["main"], permissions:["core:default"]}}`, no `remote` key.
+  gen/schemas/acl-manifests.json: `dialog` namespace registered (so
+  denial is a real ACL decision, not absence), `fs` namespace ABSENT,
+  no opener.
+- (c) my own webview-layer denial probe, not a re-run of the
+  executor's: the shipped authority reconstructed from the shipped
+  artifacts through tauri's own resolver
+  (`Resolved::resolve(acl-manifests.json, capabilities/default.json)`,
+  the same routine tauri-build runs), installed into a MockRuntime app
+  with the real `tauri_plugin_dialog::init()` registered, and probed
+  with real InvokeRequests from the local origin: `plugin:dialog|open`
+  /save/message/ask/confirm ALL denied ("not allowed"); six
+  `plugin:fs|*` commands unreachable; `plugin:opener|open_url` still
+  absent (T-001 fix regression check); `docs_snapshot` reachable as the
+  positive control; authority-level cross-check: no dialog/fs/opener
+  command resolves under the grant set while `plugin:event|listen`
+  (core:default) does. Bonus finding in the app's favor: from REMOTE
+  origins even the app's own commands are rejected (local-only
+  capability, no `remote` key) — probed with https://evil.example.com.
+- (d) fs is genuinely type-only: no `.plugin(tauri_plugin_fs` anywhere
+  in src (grep), fs absent from the compiled ACL manifests, fs commands
+  unreachable (probe). Upstream reason confirmed in the dialog crate's
+  source: `pub use tauri_plugin_fs::FilePath` + an error From impl.
+- (e) one CORRECTION to the executor's evidence, in their favor but
+  worth recording: the "no dialog/fs grant strings in the binary" check
+  is VACUOUS — even the granted `core:default` does not appear in
+  `strings` output (tauri 2.11 embeds the resolved ACL as code, not
+  identifier strings; only the config JSON, hence the CSP, is
+  string-findable). The claim is true but evidentially empty; the
+  compiled schemas + runtime probe above are the real evidence. ADR-010's
+  "config or strings" note holds for the CSP half only → recorded in
+  suggestion T-007-s2.
+
+Pick-pipeline seam attacks (my own cargo probes, real watcher threads
+on scratch trees, all reverted after): validate→arm TOCTOU — a root
+valid at validation and DELETED before the thread processes the Rearm
+is refused by the thread's own gate, ack carries the typed Err, project
+dir unchanged, the OLD watch still emitting afterwards with seq
+continuity; a rearm refusal maps to `Error{path, message}` with nothing
+mutated; a dead rendezvous (ack channel lost) maps to the timeout arm,
+nothing mutated; docs/-as-symlink pick attempted while a project is
+ARMED (executor's variant was unarmed) → NoDocs, old watch alive;
+same-folder re-pick (smallest choice 7, which the executor left
+untested) → fresh snapshot, higher seq, baseline refreshed, watch still
+live. Executor's own 13 T-007 cargo tests all reproduce.
+
+Resolution order verified END-TO-END in child processes of the test
+binary (no app launches): cwd inside a scratch git repo WINS over the
+exe's repo (order, not just membership — T-003's debug-binary-with-cwd
+protocol preserved); cwd outside any repo + exe inside the worktree →
+exe walk-up resolves the worktree (the packaged-.app-in-a-checkout
+case); the binary COPIED outside every repo and run from / → None.
+Adjacent-feature judgment on the REMOVED silent cwd fallback: T-001's
+criterion reads "log the resolved project folder path (default: the
+repo the app lives in)" — the happy path still resolves and logs
+exactly that (dev-mode resolution probe-verified); the cwd fallback
+lived only in T-001's implementation notes, probed there as a no-panic
+edge, and no criterion or later contract depends on it (T-003's
+protocol requires cwd walk-up from a GIT REPO, which is preserved and
+first). The replacement — explicit "none resolved" log + functional
+empty state + pick — closes the gap T-003's notes flagged (packaged
+app silently watching /docs forever). Implementation detail replaced
+by strictly more honest behavior; T-001/T-003 contracts intact.
+
+Frontend criteria, real component tree headless (my own probe: REAL
+App + store + docs-model + @nputer/parser with only the IPC boundary
+mocked, synthetic MouseEvents): noProject startup → empty state naming
+docs/tasks/ AND docs/decisions/ with a live pick affordance; pick
+success → board renders the picked project and live-updates on
+docs-changed (echo emitted — T-003 contract intact); bad pick →
+empty state OVERLAYS the board naming the path, model intact
+underneath (task count unchanged), background updates do NOT yank the
+notice but DO update the model, keep-current returns to the latest
+board; stale old-project payload dropped by identity; cross-project
+broken payload → 0 tasks, failure badge, and NO old-project content
+leaking (last-good isolation in the rendered DOM); cancel → provable
+no-op with the picking guard holding invoke to exactly one call;
+pick error → "could not open <path>: <message>", no keep-current when
+nothing is open, re-pick affordance always present — no crash, no
+blank on any outcome. Judgment on smallest choice 5 (overlay): the
+criterion says "show a friendly empty state naming what it looked
+for" — the overlay does exactly that; nothing in the criterion says
+to close the current project, and the escape hatch is additive.
+Criterion-compliant, not a stretch.
+
+Declared deviations — both judged required infra, not creep:
+vitest.config.ts expansion (.tsx include, `@` alias, jsx automatic) is
+the minimum for the mandated DOM tests to compile and resolve App's
+own imports, mirrors vite.config.ts, and changes nothing for the
+pre-existing 41 tests (all green); tests in app/test/ (vs the
+dispatch's app/src/test/ guess) follows where T-003/T-004 already put
+docs-model.test.ts and select-board.test.ts — repo convention beats a
+dispatch guess.
+
+Dependencies — all justified, exactly as declared: Cargo.lock adds
+exactly 4 crates, all crates.io-checksummed — tauri-plugin-dialog
+2.7.2 (the task-mandated official plugin; crates.io shows it current
+and maintained, updated 2026-07-18, ~13M downloads), rfd 0.16.0 (the
+standard dialog crate it wraps), tauri-plugin 2.6.3 (plugin build
+glue), tauri-plugin-fs 2.5.1 (the type-only transitive, above). npm
+adds jsdom ^29.1.1 (devDep) + its stock tree: 36 packages, 100%
+registry.npmjs.org, ZERO install scripts, zero lockfile deletions,
+`npm ci` clean (lockfile↔manifest consistent), 0 audit
+vulnerabilities; jsdom 29.1.1 is maintained (2026-04; a 30.x exists
+since 2026-07 — not chasing a three-week-old major for a test dep is
+fine). Correctly NO `@tauri-apps/plugin-dialog` npm package — the
+webview has no business with the dialog API and doesn't get its
+bindings.
+
+Boundary: the 13 changed files are app-shell territory + T-007 task
+docs only. Zero changes to board components, board-model, tokens.css,
+index.css, lib/parser. No new tokens and no arbitrary values verified
+in the BUILT CSS: EmptyState's utilities (max-w-96, gap-4, text-lg)
+all compile through the token mechanism (`--spacing-unit`,
+`--text-lg-*`). ADR-009 sweep: no computed-key writes to plain
+objects in the diff; all rejected-pick strings render as React text
+nodes; no dangerouslySetInnerHTML/eval/fetch/WebSocket/localStorage
+in the diff; no `unsafe` in the Rust.
+
+Non-blocking observations, recorded not held: (1) `pick_project_folder`
+is guarded against double-invoke only webview-side — a compromised
+webview could stack native dialogs (annoyance-only; no path ever
+transits; each needs a human answer) → T-007-s3; (2) the rendezvous
+holds the project mutex up to 10s, so a concurrent `docs_snapshot`
+blocks behind a slow re-arm (serialization, not deadlock — the watcher
+thread never takes that lock); (3) `[nputer] project folder picked:`
+prints the user-picked path unsanitized — same class as T-001's
+existing project-folder line (local user's own choice, not repo
+content); (4) a lost re-arm ack reports "watcher re-arm timed out"
+even when instant — cosmetic.
+
+**Human-verifiable-later — carried forward explicitly (T-001
+precedent; every layer beneath these clicks is machine-verified above
+and in the executor's notes):** the three dialog-WIDGET flows on the
+real screen: (1) "Open a project folder…"/"Open folder…" → native
+dialog appears → choosing a convention-layout folder re-renders the
+board live (fixture: any folder with a docs/*.md tree); (2) choosing a
+docs-less folder → empty state names it, "keep current project"
+returns to the untouched board; (3) Escape/cancel → no change. The
+standing Linux caveat on T-001/T-003 window criteria (T-001-s3)
+remains open and is unchanged by this task.
+
+Suggestions filed (non-blocking): T-007-s2 (pin the webview ACL
+surface with a permanent regression test + record that capability
+grants are not `strings`-findable), T-007-s3 (Rust-side single-flight
+guard for the picker).
+
+Probe hygiene: all verifier probes (2 temp test files, a temp
+dev-dependency, one mod line) reverted; `git status` clean at d19b5c3;
+post-revert suites re-run green (cargo 20/20, app 61/61); no servers
+started, no ports opened or killed by this session. :1420 for the
+record: at session start the human's live instance was node pid 84310
+LISTENING on [::1]:1420; at session end no listener exists and pid
+84310 is gone. No command in this session addressed that process or
+port (no kill, no bind; the node_modules wipes were inside this
+worktree only) — the instance exited externally, presumably the
+human's own doing; recorded here so the timeline is honest rather
+than claiming "same pid before/after".
