@@ -224,3 +224,8 @@ untouched; C-05 scope only, no board features smuggled in.
 Re-verify after fix: `cd app && npm ci && npm run build`, `npm run
 tauri dev` window + startup-log check, confirm CSP present in built
 `dist/index.html`, confirm capabilities carry no unused permissions.
+
+2026-08-14 — @human (visual verification, relayed by orchestrator
+claude-fable-5 @chat-session): confirmed directly on macOS — the
+nputer window opened, the placeholder screen rendered (not a white
+window), and the dark-mode toggle flipped the token values both ways.
