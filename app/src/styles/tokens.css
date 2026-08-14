@@ -1,0 +1,120 @@
+/*
+ * nputer design tokens — the single source of visual truth (T-001).
+ *
+ * Every color, spacing, and type value the frontend renders resolves to a
+ * CSS custom property defined in THIS file. The Tailwind theme mapping in
+ * src/index.css disables Tailwind's default palette/type/spacing namespaces
+ * and re-derives them from these tokens, so a utility class with no token
+ * behind it simply does not exist.
+ *
+ * All values are PLACEHOLDERS (shadcn neutral). T-006 (design language)
+ * replaces the values — never the mechanism.
+ */
+
+:root {
+  /* ---- color ------------------------------------------------------- */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  /* fixed poles referenced by stock shadcn variants */
+  --static-white: #ffffff;
+  --static-black: #000000;
+
+  /* ---- spacing ----------------------------------------------------- */
+  /* Base unit behind EVERY Tailwind spacing/size utility (p-*, m-*,
+     gap-*, w-*, h-*, size-*, …): utility value = n × this unit. */
+  --spacing-unit: 0.25rem;
+
+  /* ---- radius ------------------------------------------------------ */
+  --radius: 0.625rem;
+
+  /* ---- type -------------------------------------------------------- */
+  --font-sans-stack: system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono-stack: ui-monospace, "SF Mono", SFMono-Regular, Menlo,
+    Consolas, "Liberation Mono", monospace;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --text-xs-size: 0.75rem;
+  --text-xs-line: 1rem;
+  --text-sm-size: 0.875rem;
+  --text-sm-line: 1.25rem;
+  --text-base-size: 1rem;
+  --text-base-line: 1.5rem;
+  --text-lg-size: 1.125rem;
+  --text-lg-line: 1.75rem;
+  --text-xl-size: 1.25rem;
+  --text-xl-line: 1.75rem;
+  --text-2xl-size: 1.5rem;
+  --text-2xl-line: 2rem;
+  --text-3xl-size: 1.875rem;
+  --text-3xl-line: 2.25rem;
+}
+
+/* Dark scheme: same tokens, different values. Toggled by putting the
+   `dark` class on <html> (see @custom-variant in src/index.css). */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
