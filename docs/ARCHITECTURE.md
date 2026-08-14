@@ -19,7 +19,7 @@ graph TD
 | C-02 | CLI | Plumbing + power/CI path (ADR-008): genesis, dispatch; shells out to agent CLIs | C-01, C-06 | planned |
 | C-03 | Runtime | nputer.yaml role defaults; sessions.json registry | C-02 | planned |
 | C-04 | Daemon | Sidecar: watcher, websocket, @mention → headless turns | C-02, C-03 | planned |
-| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06 | building (shell + watcher + board done T-001/T-003/T-004; detail/design/picker pending T-005–T-007) |
+| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06 | building (shell + watcher + board + picker done T-001/T-003/T-004/T-007; detail verifying T-005; design pending T-006) |
 | C-06 | lib-parser | Pure library: docs/tasks/ + ROADMAP backbone → typed model (T-002); browser-safe pure exports (T-003) | C-01 | verified |
 
 Task `touches:` slugs map here: `app-shell` = C-05 shell/window/watcher
@@ -40,6 +40,8 @@ plumbing · `app-board` = C-05 board pane · `lib-parser` = C-06.
   docs/ stays the brain.
 
 ## Related decisions
-decisions/001–011. 007 (stack) and 008 (app-first) shape the map
+decisions/001–012. 007 (stack) and 008 (app-first) shape the map
 above; 008 supersedes the original dashboard-last build order; 011
-fixes the app → parser wiring (file: dep, no root workspace yet).
+fixes the app → parser wiring (file: dep, no root workspace yet);
+012 keeps native OS surfaces Rust-side (webview grant set stays
+empty).

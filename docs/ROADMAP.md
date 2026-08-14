@@ -27,9 +27,8 @@ Goal: open the nputer app and watch nputer being built on its own
 board — read-only story map of this repo, rendered beautifully;
 the method run by hand underneath (the coherence experiment starts
 at T-001). Deliberately feels too small. Tasks: T-001…T-007.
-Progress: T-001–T-004 done (2026-08-14; T-003/T-004 first-pass
-approved); remaining: T-005/T-006/T-007 — T-006 awaits external
-design input (docs/design/design-handoff.md).
+Progress: T-001–T-004 + T-007 done; T-005 re-verifying; T-006
+awaits external design input (docs/design/design-handoff.md).
 
 ## Parked
 The staged future lives in docs/future.md (two expert-room batches:

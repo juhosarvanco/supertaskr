@@ -5,14 +5,14 @@ feature: F-02
 milestone: 1
 priority: 7
 size: M  # architect resize at dispatch, S→M: picker adds dialog IPC surface (ADR-010) — verifier required
-status: verifying
+status: done
 blocked_by: [T-003, T-004]
 touches: [app-shell]
 builder: claude-fable-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-fable-5
+built_by: "claude-fable-5 @fresh"
+verified_by: "claude-fable-5 @fresh"
+review: same-model
 ---
 
 ## Acceptance criteria

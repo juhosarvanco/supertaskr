@@ -31,6 +31,13 @@
 - Tauri v2 applies the CSP (app/src-tauri/tauri.conf.json) at serve
   time — it never appears in dist/index.html (that was v1 behavior);
   don't "fix" its absence there.
+- Tauri capability grants compile to code, not strings — `strings`
+  on a binary proves NOTHING about ACL grants (vacuously "clean"
+  even for granted permissions; only config JSON, e.g. the CSP, is
+  string-findable). Prove the webview surface with regenerated
+  gen/schemas/capabilities.json plus a runtime ACL probe (T-007
+  verdict correction; T-007-s2 proposes pinning this as a test —
+  see ADR-012 for why the grant set stays empty).
 - UI work adds tokens to app/src/styles/tokens.css, never Tailwind
   defaults or arbitrary values — unmapped utilities are deliberately
   dead, and arbitrary values (`p-[13px]`) bypass enforcement (see
