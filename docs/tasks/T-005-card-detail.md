@@ -5,14 +5,14 @@ feature: F-02
 milestone: 1
 priority: 5
 size: M
-status: verifying
+status: done
 blocked_by: [T-004]
 touches: [app-board]
 builder: claude-fable-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-fable-5
+built_by: "claude-fable-5 @fresh ×2 (build + rejection-fix sessions)"
+verified_by: "claude-fable-5 @fresh (2 passes)"
+review: same-model
 ---
 
 ## Acceptance criteria

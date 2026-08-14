@@ -42,3 +42,13 @@
   defaults or arbitrary values — unmapped utilities are deliberately
   dead, and arbitrary values (`p-[13px]`) bypass enforcement (see
   suggestion T-001-s2).
+- Outside-click/dismissal listeners must decide on pointerdown, never
+  click — under trusted input the browser runs microtask checkpoints
+  between listeners, so React's discrete-update flush lands
+  mid-propagation and detaches the clicked node; a click-time
+  listener then reads inside as outside and misdismisses (cost T-005
+  a rejection). Synthetic clicks propagate synchronously and CANNOT
+  reproduce it — no unit/jsdom probe will warn you. Reuse
+  attachPanelDismissal (app/src/components/board/panel-dismissal.ts);
+  its test pins the trusted event order headlessly (real-input E2E
+  lane proposed as T-005-s4).
