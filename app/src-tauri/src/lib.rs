@@ -1,52 +1,153 @@
 mod docs_watch;
 
 use std::env;
-use std::path::PathBuf;
-use tauri::{Listener, Manager};
+use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicU64;
+use std::sync::Arc;
+use tauri::{Emitter, Listener, Manager};
+use tauri_plugin_dialog::DialogExt;
 
-use docs_watch::{DocsSnapshot, WatchState};
+use docs_watch::{PickOutcome, ProjectStatus, WatchState};
 
-/// Resolve the project folder this nputer instance operates on.
-///
-/// Default (T-001): the repository the app lives in — found by walking up
-/// from the process working directory to the first directory containing a
-/// `.git` entry (file or directory, so git worktrees count). Falls back to
-/// the working directory itself when no repository is found.
-fn resolve_project_dir() -> PathBuf {
-    let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    let mut dir = cwd.clone();
+/// Walk up from `start` to the first directory containing a `.git` entry
+/// (file or directory, so git worktrees count).
+fn git_walk_up(start: &Path) -> Option<PathBuf> {
+    let mut dir = start.to_path_buf();
     loop {
         if dir.join(".git").exists() {
-            return dir;
+            return Some(dir);
         }
-        match dir.parent() {
-            Some(parent) => dir = parent.to_path_buf(),
-            None => return cwd,
+        if !dir.pop() {
+            return None;
         }
     }
 }
 
-/// T-003: the frontend's one pull — the current docs tree as a snapshot.
-/// Narrow by construction (ADR-010): no arguments, reads only
+/// Resolve the project folder this nputer instance opens at launch.
+///
+/// T-007 resolution order (recorded in docs/tasks/T-007-open-own-repo.md):
+/// 1. `.git` walk-up from the process working directory — T-001's rule,
+///    what `npm run tauri dev` and cwd-launched binaries hit, and the
+///    explicit-intent signal (launching from inside a repo means "open
+///    this repo").
+/// 2. `.git` walk-up from the canonicalized executable path — a packaged
+///    .app launched from Finder has cwd `/`, but when the bundle lives
+///    inside a repo checkout this still finds "the repo the app lives in".
+/// 3. None — no repo found anywhere: the frontend lands on the friendly
+///    empty state with the folder picker (T-007), instead of T-001's
+///    silent fallback to cwd (which for a packaged app meant watching the
+///    nonexistent `/docs` forever).
+fn resolve_project_dir() -> Option<PathBuf> {
+    if let Ok(cwd) = env::current_dir() {
+        if let Some(root) = git_walk_up(&cwd) {
+            return Some(canonical_or(root));
+        }
+    }
+    if let Ok(exe) = env::current_exe() {
+        if let Ok(exe) = exe.canonicalize() {
+            if let Some(dir) = exe.parent() {
+                if let Some(root) = git_walk_up(dir) {
+                    return Some(canonical_or(root));
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Canonicalize when possible (display + containment anchor); fall back to
+/// the resolved path if the fs refuses (it exists — we just found .git).
+fn canonical_or(path: PathBuf) -> PathBuf {
+    path.canonicalize().unwrap_or(path)
+}
+
+/// T-003/T-007: the frontend's one pull at startup — which project is open
+/// and, when one is, the current docs tree as a snapshot. Narrow by
+/// construction (ADR-010): no arguments, reads only
 /// `<resolved project>/docs`, symlinks skipped, canonical-prefix contained
 /// (see docs_watch::collect_docs_files). Subsequent updates arrive as
 /// `docs-changed` events pushed by the watcher; both share one seq counter.
 #[tauri::command]
-fn docs_snapshot(state: tauri::State<'_, WatchState>) -> DocsSnapshot {
-    docs_watch::snapshot_now(&state)
+fn docs_snapshot(state: tauri::State<'_, WatchState>) -> ProjectStatus {
+    docs_watch::project_status(&state)
+}
+
+/// T-007: the folder picker. The webview NEVER supplies a path — invoking
+/// this zero-argument command opens the native folder dialog in Rust; the
+/// chosen directory is validated (canonicalized; must contain a plain,
+/// non-symlink docs/ — T-003's rules), the watcher is re-armed on it, and
+/// a typed outcome comes back. Cancelling, picking a docs-less folder, or
+/// a re-arm failure all leave the previously open project untouched.
+#[tauri::command]
+async fn pick_project_folder(app: tauri::AppHandle) -> PickOutcome {
+    // Native dialog: the plugin dispatches to the main thread itself and
+    // calls back from a helper thread; a bounded channel bridges it back
+    // into this async command.
+    let (tx, mut rx) = tauri::async_runtime::channel::<Option<tauri_plugin_dialog::FilePath>>(1);
+    app.dialog()
+        .file()
+        .set_title("Open an nputer project folder")
+        .pick_folder(move |picked| {
+            let _ = tx.blocking_send(picked);
+        });
+    let picked = rx.recv().await.flatten();
+
+    let Some(file_path) = picked else {
+        return PickOutcome::Cancelled; // dialog dismissed (or dropped)
+    };
+    let path = match file_path.into_path() {
+        Ok(path) => path,
+        Err(err) => {
+            return PickOutcome::Error {
+                path: String::new(),
+                message: format!("dialog returned an unusable selection: {err}"),
+            }
+        }
+    };
+
+    // Validation + re-arm + snapshot are blocking fs work; keep them off
+    // the async runtime's core threads.
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<WatchState>();
+        docs_watch::apply_picked_folder(&state, &path)
+    })
+    .await
+    .unwrap_or_else(|err| PickOutcome::Error {
+        path: String::new(),
+        message: format!("picker task failed: {err}"),
+    })
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // T-001 acceptance: log the resolved project folder on startup.
+            // T-007: resolution may legitimately find nothing — say so
+            // instead of pretending cwd is a project.
             let project_dir = resolve_project_dir();
-            println!("[nputer] project folder: {}", project_dir.display());
+            match &project_dir {
+                Some(dir) => println!("[nputer] project folder: {}", dir.display()),
+                None => println!(
+                    "[nputer] project folder: none resolved (no .git from cwd or executable) - pick a folder to open a project"
+                ),
+            }
 
-            // T-003: watcher state + docs watcher thread.
-            app.manage(WatchState::new(project_dir));
-            docs_watch::spawn_watcher(app.handle().clone());
+            // T-003/T-007: shared seq counter + re-armable watcher thread.
+            let seq = Arc::new(AtomicU64::new(0));
+            let emit_handle = app.handle().clone();
+            let ctl = docs_watch::spawn_watcher_thread(
+                seq.clone(),
+                project_dir.clone(),
+                move |snapshot| {
+                    if let Err(err) = emit_handle.emit("docs-changed", snapshot) {
+                        eprintln!("[nputer] watch: emit failed: {err}");
+                    }
+                },
+            );
+            app.manage(WatchState::new(project_dir, seq, ctl));
 
             // T-003: the frontend echoes each applied snapshot as a
             // `model-updated` event; logging it (sanitized — the payload
@@ -69,7 +170,47 @@ pub fn run() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![docs_snapshot])
+        .invoke_handler(tauri::generate_handler![docs_snapshot, pick_project_folder])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn git_walk_up_finds_the_first_repo_root_from_a_nested_dir() {
+        let base = env::temp_dir().join(format!(
+            "nputer-t007-walkup-{}-{}",
+            std::process::id(),
+            docs_watch::now_ms()
+        ));
+        let repo = base.join("repo");
+        let nested = repo.join("app/src-tauri");
+        fs::create_dir_all(&nested).expect("mkdirs");
+        // A .git FILE, as git worktrees create — must count as a repo.
+        fs::write(repo.join(".git"), "gitdir: elsewhere").expect("git file");
+
+        assert_eq!(git_walk_up(&nested), Some(repo.clone()));
+        assert_eq!(git_walk_up(&repo), Some(repo.clone()));
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn git_walk_up_returns_none_without_a_repo() {
+        let base = env::temp_dir().join(format!(
+            "nputer-t007-norepo-{}-{}",
+            std::process::id(),
+            docs_watch::now_ms()
+        ));
+        let nested = base.join("plain/folder");
+        fs::create_dir_all(&nested).expect("mkdirs");
+        // Walking up from a repo-less temp tree must not invent a root.
+        // (If the machine's temp dir itself sits inside a repo this would
+        // find it — system temp dirs do not.)
+        assert_eq!(git_walk_up(&nested), None);
+        let _ = fs::remove_dir_all(&base);
+    }
 }
