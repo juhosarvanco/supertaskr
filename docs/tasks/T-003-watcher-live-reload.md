@@ -249,3 +249,105 @@ to any git repo containing a docs/ tree, watch stdout, edit files.
   appears or is replaced; ties into T-001-s1's packaged-app cwd gap.
 
 ## Verdicts
+
+2026-08-14 — claude-fable-5 @fresh (verifier, same-model as builder): APPROVED
+
+Suites reproduced from wiped node_modules/dist: lib/parser `npm ci` +
+`npx vitest run` **78/78** (67 pre-existing + 11 new) + `npx tsc
+--noEmit` + `npm run build` all clean; app `npm ci` + `npm run build`
+exit 0, `npm test` **13/13**; src-tauri `cargo test` **7/7**. The
+fresh-clone ordering claim verified by doing it wrong first: app build
+WITHOUT parser dist fails exactly as flagged (TS2307 on
+`@nputer/parser/pure`) — CONVENTIONS needs the parser-before-app note
+the executor drafted.
+
+Criterion probes (my own, debug binary cwd-launched against a scratch
+git repo; timing = write syscall → `appliedAtMs` in the echo; mechanism
+verified: store commits state, then echoes — echo-vs-Rust-receive
+deltas were 1–2ms):
+- **≤1s**: 36-file tree max 283ms (first-after-boot 735ms). Scaled:
+  500 files max 344ms, 1200 max 384ms, 2000 files (the cap) max 442ms
+  — file COUNT never threatens the budget. The boundary is total
+  BYTES: ~19MB of .md under docs/ → 845ms, ~29MB → 1062–1085ms, the
+  only >1s breach observed. That needs ≥ ~25MB of markdown (this
+  repo's docs/: ~0.25MB); degradation is graceful (latency only, no
+  crash, no loss), so filed as T-003-s2 rather than rejecting.
+- **Debounce/burst**: my own shapes — 12 atomic-rename saves (tmp +
+  rename) 15ms apart; create+modify+delete inside ONE 250ms window;
+  20 writes straddling windows over 2.4s; rename A→B→A inside a
+  window and across windows; mass-create of 464/700/800 files; mass-
+  delete of ~2000. Full session ledger: 67 `docs-changed` pushes,
+  every seq echoed exactly once (zero duplicates, zero missing,
+  strictly increasing), 35 identical-content batches suppressed,
+  process alive throughout, final model = disk truth every time.
+- **Badge/last-good**: broken YAML, missing frontmatter, empty file,
+  broken roadmap → record count unchanged, last-good rendered,
+  failure flagged, zero issue-leak; edits to OTHER files apply while
+  one stays broken; fix clears; deleting a never-good file clears.
+  DOM half (served bundle, dev harness): badge chip `1 parse error`
+  with parser-message tooltip, details strip "(showing last valid
+  state)", intact task rows beneath (screenshot); stale seq → no
+  render, no echo; a task title carrying `<img onerror>`/`<script>`
+  renders as inert text — no element created, no execution. Harness
+  confirmed absent from the production bundle (grep of dist assets: 0
+  hits; `model-updated` echo present). Edge recorded, not a failure:
+  content that turns non-UTF-8 or >1MiB is skipped by the Rust
+  collector, so its record silently leaves the model like a deletion
+  — no badge (T-003-s3).
+
+Security sweep — PASS:
+- IPC surface: exactly one command, `docs_snapshot`, zero caller
+  arguments (State injection only), single `generate_handler` entry.
+  The Tauri v2 no-ACL claim verified in artifacts:
+  `gen/schemas/acl-manifests.json` holds core namespaces only;
+  `capabilities.json` is exactly `{default: ["core:default"],
+  local:true, windows:["main"]}` with NO `remote` key → IPC reachable
+  only from the app's own local webview, which under `script-src
+  'self'` runs only bundled code; the command returns nothing the
+  webview doesn't already receive via events.
+- ADR-010 zero-diff confirmed beyond config: the CSP string sits
+  verbatim in the compiled binary (`strings`), zero opener/shell/fs
+  permission traces.
+- Containment attacked live: file symlink AND dir symlink inside
+  docs/ pointing at outside task-shaped content never entered the
+  model; docs/ itself replaced by a symlink → collector refuses
+  ("not a plain directory") and ships an empty tree even though
+  notify arms on it — the defense correctly lives at the read layer.
+  Residual, accepted: a hardlink inside docs/ would ship (git cannot
+  produce hardlinks from a hostile clone — no repo-borne vector);
+  the symlink_metadata→read TOCTOU window needs local write access
+  that already implies model control.
+- Echo path: `sanitize_for_log` escapes all `is_control` chars (ESC
+  and 8-bit CSI included) and truncates at 800 chars; it is the only
+  place untrusted content reaches stdout, and no other log line
+  carries file content. Note: Unicode bidi format chars (U+202E) are
+  not control chars and pass through — cosmetic log reordering at
+  worst.
+- Pure lens holds: no fs writes/exec/network/`unsafe` outside
+  cfg(test) in the new Rust; no
+  localStorage/fetch/WebSocket/dangerouslySetInnerHTML in app src;
+  the model lives only in the store.
+- ADR-009: every file-keyed collection in the diff is a Map/Set
+  (files.ts, docs-model.ts) or Vec+sort (Rust); hostile
+  `__proto__`/`constructor` paths pinned inert by tests in both
+  packages.
+- Dependencies: notify-debouncer-mini 0.7 + notify 8.2 tree
+  (fsevent/inotify/kqueue/windows backends, rustix, tempfile) — the
+  standard maintained fs-watch stack, checksummed from crates.io;
+  npm adds are vitest 3.2.7's stock tree (34 packages, zero install
+  scripts) plus the `@nputer/parser` file: link recorded `link:true`.
+
+Boundary: diff touches only app/**, lib/parser/**, docs/tasks/T-003-*.
+Parser root entry is additive-only — all pre-existing exports intact
+("unchanged for node consumers" is accurate in effect, though the new
+pure functions are exported from the root barrel too, not "./pure
+only"). The browser bundle empirically never resolves node:fs (the
+served bundle parsed my payloads in a plain browser). Adjacent T-001
+behavior intact: canonical `npm run tauri dev` boots with both
+`[nputer]` startup lines, the watcher line, and a clean seq=1 echo
+(14 tasks · 5 features · 0 issues) against this worktree.
+
+Suggestions filed (non-blocking): T-003-s2 (snapshot cost scales with
+total tree bytes — measured knee, plus silent membership truncation
+past the 2000-file cap), T-003-s3 (surface collector-skipped files so
+silent drops become badges).
