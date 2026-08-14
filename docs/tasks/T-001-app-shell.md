@@ -303,3 +303,66 @@ tauri dev` window + startup-log check, confirm CSP present in built
 claude-fable-5 @chat-session): confirmed directly on macOS — the
 nputer window opened, the placeholder screen rendered (not a white
 window), and the dark-mode toggle flipped the token values both ways.
+
+2026-08-14 — claude-fable-5 @fresh (verifier, same-model as builder and
+as the fix executor; re-verification of fix commit 1960f85):
+APPROVED — both security findings closed, acceptance-criteria behavior
+demonstrably unchanged. **Linux half of criterion 1 remains unverified
+(macOS-only environment again); still required before "done" — see
+T-001-s3.** The shipped `connect-src ipc: http://ipc.localhost` is
+Tauri's documented allowance for the fetch-based IPC Linux/Windows use,
+so the CSP is not expected to break that path, but expectation is not
+verification.
+
+Fix scope confirmed minimal: `git diff e012571..1960f85` touches only
+tauri.conf.json, capabilities/default.json, lib.rs (one plugin line),
+Cargo.toml/lock, package.json/lock, and additive task-file notes; the
+interleaved 1dd24e1 is the orchestrator's @human entry, docs-only; zero
+deletions in this file; no criteria edits; no frontend source changes.
+
+Finding 1 (CSP) — closed, on this verifier's own evidence:
+- Config ships `default-src 'self'; script-src 'self'; style-src
+  'self'; connect-src ipc: http://ipc.localhost` — stricter than the
+  verdict's example (no 'unsafe-inline').
+- Correction adopted from the fix notes, verified: Tauri v2 applies CSP
+  at serve time, so `dist/index.html` on disk legitimately carries none;
+  my first verdict's "confirm CSP in built dist/index.html" re-check
+  step was v1 thinking. Presence verified instead in the artifact: I
+  rebuilt the package myself from the fixed source (`npm run tauri
+  build` exit 0) and `strings` on MY .app binary finds the exact policy
+  once.
+- Enforcement + compatibility verified by my own A/B, independent of
+  the fixer's: the byte-identical dist served with the exact policy as
+  a response header — app fully styled (body bg oklch(1 0 0), h1 30px,
+  token font), dark toggle flips both ways, zero violations from app
+  code; my three injected probes all blocked and logged via
+  securitypolicyviolation: `style-src-elem <- inline` (injected
+  <style> had no computed effect), `connect-src` (external fetch
+  rejected), `img-src` (external img blocked through default-src
+  fallback). Packaged app run (my rebuild): boots, both `[nputer]`
+  lines, on-screen layer-0 800×600 window, WebKit helpers, killed
+  clean.
+- The fixer's inability to build a csp:null control binary (permission
+  classifier, correctly) is noted and non-blocking: policy-in-binary
+  (strings) + policy-enforces-and-renders (my A/B on the identical
+  bundle) + the fixer's packaged listener probe (zero disallowed
+  requests) + dev/packaged boots compose a sufficient closure.
+
+Finding 2 (opener) — closed, verified at every layer: grep across
+app/src, src-tauri/src, capabilities, Cargo.toml, package.json → zero
+hits; regenerated gen/schemas/capabilities.json = `["core:default"]`
+only; ACL manifests contain no opener namespace; Cargo.lock 471→429
+crates with the zbus/`open` transitive tree gone; `npm ci` installs 429
+packages with no @tauri-apps/plugin-opener; `strings` on the rebuilt
+binary: the single "opener" hit is the literal HTTP header name
+`Cross-Origin-Opener-Policy` inside Tauri's stack — benign. No
+replacement permission added, per the verdict.
+
+Criteria unchanged, re-spot-checked: frontend bundle byte-identical —
+`npm ci && npm run build` reproduces the same content-hashed assets
+this verifier built pre-fix (index-BaSMbl2y.css / index-C_YqnOcf.js);
+`npm run tauri dev` → vite ready, both startup lines,
+`[nputer] project folder: /Users/ujju/Projects/nputer-t001` correct,
+on-screen layer-0 800×600 window (CGWindowList), killed clean. C4 path
+untouched by this diff (no build-script/frontend changes). Suggestions
+T-001-s2/s3 remain open for architect triage; not blockers.
