@@ -206,3 +206,50 @@ Suggestions filed, non-blocking: T-002-s2-preserve-raw-body (a
 suggestion file's context paragraph is dropped from the model),
 T-002-s3-validate-task-id-format (`id: banana` parses clean; empty
 backbone names silent).
+
+2026-08-14 — claude-fable-5 @fresh (verifier, same-model as builder;
+re-verification of fix commit 830d959): APPROVED.
+
+- Original failure re-run against the rebuilt dist: the first
+  verdict's repro now prints `0 [ '__proto__' ] undefined` — the key
+  lands as an own ENUMERABLE data property with the verbatim value
+  (own descriptor checked), nothing inherited (`'phantom_flag' in
+  extra` is false), visible to Object.entries and JSON.stringify,
+  `{...extra}` spread keeps it as own data, global Object.prototype
+  clean.
+- Second fix (splitSections KEYS) verified INCLUDING that the
+  pre-fix bug existed: built the pre-fix tree (0a515ae) in a
+  throwaway git worktree — the old code turned `## __proto__` /
+  `## constructor` body headings into garbage section keys
+  `'[object Object]'` and `'function Object() { [native code] }'`
+  on the public parseTaskFile surface (both keys — one more than
+  the fix notes claim). The fixed code ignores them like any
+  unknown heading (also probed: hasOwnProperty/toString/valueOf
+  and mixed-case variants); only known headings survive, issues 0.
+- Sweep completeness confirmed by independent grep of src: the only
+  untrusted computed-key write is the fixed `extra[key]`
+  (null-prototype); `sections[current]` is constrained to three
+  literal keys via the null-prototype KEYS map; `data[field]` reads
+  use literal field names; id registries are real Maps
+  (project.ts, roadmap.ts); nothing in src or tests assumes
+  inherited methods on extra/sections. New angle probed: a hostile
+  `__proto__:` frontmatter mapping cannot phantom-inject known
+  fields either — yaml@2.9.0 stores it as an own key, so
+  `data.status` stays undefined (result: missing-field
+  status/title, no task) — identity is not spoofable.
+- Test-file review: my `it.fails` probe was flipped to a positive
+  test and extended (own descriptor + value, enumerability, `in`
+  chain-walk, enumeration/JSON visibility) — strictly stronger, not
+  weakened; companion `prototype:` probe and a hostile-heading
+  regression test added. Commands (lib/parser/): npx vitest run →
+  67/67 · npx tsc --noEmit → clean · npm run build → clean ·
+  importing dist parses the live tree with 0 issues (10 tasks =
+  7 + 3 suggestions, features F-01…F-05).
+- Scope held: 830d959 touches only src/task.ts, the two test
+  files, and this file's Implementation notes; acceptance criteria
+  and the 2026-08-14 REJECTED verdict untouched; no shared docs;
+  fix authored by a fresh executor session per the lifecycle rule.
+
+Note for the integrator: builder and verifier are both
+claude-fable-5 (separate sessions) — on done, stamp
+`review: same-model`, not independent.
