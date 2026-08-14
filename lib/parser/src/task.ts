@@ -49,11 +49,15 @@ function isNonEmptyString(value: unknown): value is string {
  * section's content. A heading that never appears yields no key.
  */
 export function splitSections(body: string): TaskSections {
-  const KEYS: Record<string, keyof TaskSections> = {
+  // Null prototype: headings are untrusted lookup keys, and on a plain {}
+  // `KEYS['__proto__']` / `KEYS['constructor']` return inherited values
+  // (truthy!), turning those headings into garbage section keys instead of
+  // being ignored (same injection family as the extra fix below).
+  const KEYS: Record<string, keyof TaskSections> = Object.assign(Object.create(null), {
     'acceptance criteria': 'acceptanceCriteria',
     'implementation notes': 'implementationNotes',
     verdicts: 'verdicts',
-  };
+  });
   const sections: TaskSections = {};
   const lines = body.split(/\r?\n/);
   let current: keyof TaskSections | undefined;
@@ -268,8 +272,12 @@ export function parseTaskFile(content: string, file: string): TaskParseResult {
     }
   }
 
-  // -- unknown keys: preserved, never silently deleted.
-  const extra: Record<string, unknown> = {};
+  // -- unknown keys: preserved, never silently deleted. Null prototype so
+  //    hostile key names (`__proto__`, `constructor`, …) land as own data
+  //    properties instead of hitting Object.prototype's inherited setter —
+  //    a plain {} silently dropped `__proto__:` and replaced extra's
+  //    prototype with attacker data (REJECTED verdict, 2026-08-14).
+  const extra: Record<string, unknown> = Object.create(null);
   for (const [key, value] of Object.entries(data)) {
     if (!KNOWN_FIELDS.has(key)) extra[key] = value;
   }

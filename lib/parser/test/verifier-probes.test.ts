@@ -15,11 +15,10 @@ import {
  * claude-fable-5 @fresh. Adversarial cases beyond the executor's suite:
  * boundary inputs, YAML abuse, hostile keys, fs-layer failures.
  *
- * One probe is marked `it.fails`: it asserts the CORRECT behavior for a
- * bug found during verification (see the REJECTED verdict in
- * docs/tasks/T-002-task-parser.md). When the bug is fixed the marker
- * makes the suite fail with "expected test to fail" — remove `.fails`
- * at that point to lock the fix in.
+ * The `__proto__` probe below originally carried an `it.fails` marker for
+ * the bug behind the 2026-08-14 REJECTED verdict (see docs/tasks/
+ * T-002-task-parser.md). The fix pass (fresh executor, same day) removed
+ * the marker and extended the probe to lock in the fixed behavior.
  */
 
 const F = 'docs/tasks/T-000-probe.md';
@@ -139,17 +138,36 @@ describe('verifier probes — hostile frontmatter keys', () => {
     expect(Object.prototype.hasOwnProperty.call(r.task?.extra ?? {}, 'constructor')).toBe(true);
   });
 
-  // BUG (REJECTED verdict, 2026-08-14): `extra[key] = value` on a plain
-  // object mutates extra's prototype for key '__proto__' — the field is
-  // silently dropped (archaeology-rule violation) and extra INHERITS
-  // attacker-chosen properties. Remove `.fails` once fixed.
-  it.fails('a bare `__proto__:` key is preserved or flagged, never inherited', () => {
+  it('a bare `prototype:` key is preserved as an own key of extra', () => {
+    const r = parseTaskFile(full().replace('---\n\nbody', 'prototype: kept\n---\n\nbody'), F);
+    expect(r.issues).toEqual([]);
+    expect(Object.prototype.hasOwnProperty.call(r.task?.extra ?? {}, 'prototype')).toBe(true);
+    expect((r.task?.extra as Record<string, unknown>).prototype).toBe('kept');
+  });
+
+  // Was `it.fails` for the 2026-08-14 REJECTED verdict: `extra[key] = value`
+  // on a plain object mutated extra's prototype for key '__proto__' — the
+  // field silently dropped (archaeology-rule violation), attacker properties
+  // inherited. Fixed: extra is built with a null prototype, so the key lands
+  // as own enumerable data. Flipped + extended by the fix pass, 2026-08-14.
+  it('a bare `__proto__:` key is preserved as own data, never inherited', () => {
     const r = parseTaskFile(hostile, F);
-    const extra = r.task?.extra ?? {};
-    const preservedOrFlagged =
-      Object.prototype.hasOwnProperty.call(extra, '__proto__') || r.issues.length > 0;
-    expect(preservedOrFlagged).toBe(true);
-    expect((extra as Record<string, unknown>).phantom_flag).toBeUndefined();
+    const extra = (r.task?.extra ?? {}) as Record<string, unknown>;
+
+    // preserved verbatim as an OWN enumerable data property, no issue needed
+    expect(r.issues).toEqual([]);
+    const desc = Object.getOwnPropertyDescriptor(extra, '__proto__');
+    expect(desc?.value).toEqual({ phantom_flag: 'pwned' });
+    expect(desc?.enumerable).toBe(true);
+
+    // prototype unpolluted: the payload is data under the key, not inherited
+    // state — nothing on extra's prototype chain carries attacker properties
+    expect(extra.phantom_flag).toBeUndefined();
+    expect('phantom_flag' in extra).toBe(false);
+
+    // visible to ordinary consumers: enumeration and JSON both show the key
+    expect(Object.entries(extra)).toEqual([['__proto__', { phantom_flag: 'pwned' }]]);
+    expect(JSON.stringify(extra)).toBe('{"__proto__":{"phantom_flag":"pwned"}}');
   });
 });
 

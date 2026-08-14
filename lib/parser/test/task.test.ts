@@ -127,6 +127,35 @@ ignored entirely
     expect(task?.sections.verdicts).toBe('2026-08-14 — APPROVED');
   });
 
+  it('treats `## __proto__` and `## constructor` headings as unknown, ignored', () => {
+    // Fix-pass regression test (2026-08-14): on a plain-object heading map
+    // these lookups returned INHERITED values (Object.prototype / the Object
+    // constructor), minting garbage section keys like '[object Object]'.
+    const hostile = `---
+id: T-021
+title: Hostile headings
+feature: F-01
+milestone: 1
+priority: 1
+size: S
+status: planned
+---
+
+## __proto__
+leaked
+
+## constructor
+leaked
+
+## Verdicts
+clean
+`;
+    const { task, issues } = parseTaskFile(hostile, FILE);
+    expect(issues).toEqual([]);
+    expect(Object.keys(task?.sections ?? {})).toEqual(['verdicts']);
+    expect(task?.sections.verdicts).toBe('clean');
+  });
+
   it('preserves unknown frontmatter keys in extra instead of dropping them', () => {
     const withExtra = VALID.replace('review:', 'review:\nfuture_field: kept');
     const { task, issues } = parseTaskFile(withExtra, FILE);

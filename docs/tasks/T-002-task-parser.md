@@ -102,6 +102,35 @@ npm run build (emits dist/, gitignored).
 Suggestion filed: docs/tasks/T-002-s1-cross-reference-checks.md
 (model-level referential integrity — out of T-002 scope).
 
+Fix pass after 2026-08-14 rejection — fresh executor claude-fable-5,
+same day, scope = the verdict's one security finding only. What
+changed (src/task.ts): `extra` is now built with Object.create(null),
+so hostile frontmatter keys (`__proto__`, and by the same mechanism
+`constructor`/`prototype`) land as own enumerable data properties
+instead of hitting Object.prototype's inherited `__proto__` setter.
+The verdict's repro now prints `0 [ '__proto__' ] undefined` — key
+preserved verbatim as data, zero issues (per the types.ts contract no
+issue is required for unknown keys), nothing inherited, visible to
+Object.entries/JSON.stringify; global Object.prototype stays clean.
+Sweeping src for the same pattern found one sibling in the same file:
+splitSections' heading map was a plain object literal, so a
+`## __proto__` (or `## constructor`) body heading read an inherited
+truthy value and minted a garbage section key ('[object Object]');
+the map is null-prototype now and those headings are ignored like any
+other unknown heading, per its doc comment. All other computed-key
+sites hold ids in Maps (project.ts, roadmap.ts) or write fixed
+literal keys — no further instances. Tests: the verifier's `it.fails`
+probe flipped to a normal test and extended (own enumerable property,
+value verbatim, no inherited state, enumeration/JSON visibility);
+added a `prototype:` companion probe beside the verifier's
+`constructor:` one, and a hostile-heading regression test in
+task.test.ts. Verified (in lib/parser/): npx vitest run → 6 files,
+67/67 green (previous 65 + the 2 new); npx tsc --noEmit → clean;
+npm run build → clean; importing dist parses the live repo tree with
+0 issues (T-001…T-007 + 3 suggestions, F-01…F-05). Nothing outside
+src/task.ts and the two test files touched; status stays verifying
+for re-verification.
+
 ## Verdicts
 
 2026-08-14 — claude-fable-5 @fresh (verifier, same-model as builder):
