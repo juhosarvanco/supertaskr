@@ -1,10 +1,11 @@
 /**
- * @nputer/parser — C-06 lib-parser.
+ * @nputer/parser/pure — the browser-safe entry (T-003).
  *
- * Pure library: docs/tasks/ + ROADMAP backbone -> typed model.
- * String-level parsers (parseTaskFile, parseRoadmap, parseModelSession)
- * are side-effect free; parseProject/parseTaskDirectory add a thin
- * read-only filesystem layer. Nothing here writes anything, ever.
+ * Everything the package exports EXCEPT the node:fs layer (project.ts).
+ * The app's webview imports from here: the root entry re-exports
+ * parseProject/parseTaskDirectory, whose `node:fs` import cannot resolve in
+ * a browser bundle. Keep this barrel free of any module that touches
+ * node builtins.
  */
 
 export {
@@ -35,10 +36,3 @@ export {
   type FileEntry,
   type ParseProjectFromFilesOptions,
 } from './files.js';
-export {
-  parseTaskDirectory,
-  parseRoadmapFile,
-  parseProject,
-  type TaskDirectoryResult,
-  type ParseProjectOptions,
-} from './project.js';
