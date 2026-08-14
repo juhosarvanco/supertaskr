@@ -25,7 +25,6 @@ fn resolve_project_dir() -> PathBuf {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             // T-001 acceptance: log the resolved project folder on startup.
             let project_dir = resolve_project_dir();

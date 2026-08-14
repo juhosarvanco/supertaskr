@@ -133,6 +133,80 @@ Executor claude-fable-5, 2026-08-14, branch `t001-app-shell`.
   to Tauri state + `get_project_dir` command (T-003 needs it; packaged
   .app cwd is `/` so an explicit override wants deciding then).
 
+### Fix pass after 2026-08-14 rejection — fresh executor claude-fable-5
+
+2026-08-14. Scope: the verdict's two security findings only; no
+acceptance-criteria behavior touched (frontend bundle byte-identical,
+same asset hashes).
+
+**Finding 1 — CSP.** `tauri.conf.json` now ships
+`"csp": "default-src 'self'; script-src 'self'; style-src 'self';
+connect-src ipc: http://ipc.localhost"`. Rationale:
+- Stricter than the verdict's example — NO `'unsafe-inline'` for
+  styles. Empirically unneeded: built CSS is one linked file (zero
+  `url()`/`data:` refs), built JS has no eval/new Function and never
+  injects `<style>` on the app's paths (React writes styles via CSSOM,
+  which CSP does not gate); full interaction test under the policy
+  produced zero violations (below).
+- `connect-src ipc: http://ipc.localhost` is Tauri's documented
+  baseline for its fetch-based IPC on Linux/Windows (macOS uses
+  postMessage instead). Included so the Linux half of criterion 1 —
+  which no session so far could test (see T-001-s3) — is not knowingly
+  broken; it admits only the IPC pseudo-origins, no network.
+- `script-src`/`style-src` are spelled out so Tauri's nonce/hash
+  appending extends them instead of creating bare directives that
+  would shadow `default-src 'self'` and block the app's own assets.
+- Recorded for future verifiers: Tauri v2 applies the CSP at serve
+  time (custom-protocol response header + runtime HTML manipulation),
+  NOT by rewriting `dist/index.html` on disk as v1 did — so
+  `grep csp app/dist/index.html` stays 0 by design. The policy lives
+  in the config embedded in the binary
+  (`strings <built binary> | grep "default-src"` → 1 hit) and its
+  enforcement was proven at runtime (below).
+
+**Finding 2 — opener removed, no replacement.**
+`.plugin(tauri_plugin_opener::init())` dropped from lib.rs;
+`opener:default` dropped from capabilities/default.json (now
+`core:default` only); `cargo remove tauri-plugin-opener` (Cargo.lock
+471→429 crates — the zbus/D-Bus + `open` transitive tree left with
+it); `npm uninstall @tauri-apps/plugin-opener` (package.json +
+lockfile). Per the verdict, no `allow-open-path` added now — the task
+that needs file-opening adds the narrow grant.
+
+**Verification (macOS 15/Darwin 25.6, node 22.22.0, rustc 1.95.0):**
+- `cd app && npm install` exit 0; `npm run build` exit 0.
+- `npm run tauri build` exit 0 → .app + dmg. Compiled artifacts:
+  embedded capabilities = `["core:default"]`, compiled ACL manifest
+  zero opener entries.
+- Packaged .app inner binary run: both `[nputer]` startup lines,
+  CGWindowList on-screen layer-0 800×600 window; killed clean.
+- CSP enforcement A/B (probe reverted before commit): a temporary
+  `<img src="http://127.0.0.1:8099/…">` in index.html. (a) Packaged
+  probe build with the CSP: zero requests reached the local listener
+  in 8 s while the app ran. (b) The identical built HTML served to a
+  browser WITHOUT the policy: GET arrived (probe mechanism valid).
+  (c) Served WITH the exact policy as a response header (mirroring
+  Tauri's delivery): console logged `Loading the image … violates …
+  "default-src 'self'"` and blocked it. So the policy string blocks
+  exactly what it should, and the packaged binary enforces it.
+  (A planned in-app `csp: null` control build was denied by the
+  session's permission classifier — reverting the CSP even temporarily
+  looked like undoing the fix — so the browser A/B on the identical
+  artifact serves as the positive control.)
+- App under the strict policy (browser, exact bundle + header):
+  placeholder renders styled, body/h1 = token oklch values + 30px,
+  theme toggle flips html.dark and token values both ways, zero
+  CSP violations from the app's own code across load + interaction.
+- `npm run tauri dev`: vite ready 239 ms, debug rebuild, both
+  `[nputer]` lines, window "main" created, window-server-registered
+  ("nputer" ASN via lsappinfo); CGWindowList showed the 800×600
+  window object with expected bounds but `onscreen: false` — the
+  active Space was a fullscreen app during this headless check; dev
+  serves from vite where CSP does not apply, and the bundle is
+  byte-identical, so render risk from this diff is nil. Killed clean.
+- `grep -ri opener app/src app/src-tauri/src app/src-tauri/capabilities
+  app/src-tauri/Cargo.toml app/package.json` → zero hits.
+
 ## Verdicts
 
 2026-08-14 — claude-fable-5 @fresh (verifier, same-model as builder):
