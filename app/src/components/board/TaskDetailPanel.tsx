@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import type { ProjectParseResult } from "@nputer/parser/pure";
 import { cn } from "@/lib/utils";
 import { refLabel, selectTaskDetail, type TaskRef } from "@/lib/task-detail";
+import { attachPanelDismissal } from "./panel-dismissal";
 import { STATUS_CLASSES } from "./TaskCard";
 import { SizeBadge } from "./badges/SizeBadge";
 import { ReviewBadge } from "./badges/ReviewBadge";
@@ -11,8 +12,9 @@ import { ReviewBadge } from "./badges/ReviewBadge";
  * the board, derived per render from the live DocsModel via the pure
  * selectTaskDetail — so T-003's push updates an open panel in place, and
  * a deleted task degrades to a calm "no longer present" state instead of
- * erroring. Esc or a click outside (that is not another card) closes it;
- * clicking a resolvable blocker re-targets the panel to that task.
+ * erroring. Esc or a pointer press outside (that is not another card)
+ * closes it; clicking a resolvable blocker re-targets the panel to that
+ * task.
  *
  * Pure-lens note: the open/closed ref is ephemeral VIEW state (like a
  * scroll position), never project state — nothing here writes files.
@@ -31,27 +33,12 @@ export function TaskDetailPanel({
   const detail = useMemo(() => selectTaskDetail(model, taskRef), [model, taskRef]);
   const panelRef = useRef<HTMLElement>(null);
 
-  // Esc closes; a click outside the panel closes unless it lands on a
-  // card trigger (that click's own handler opens/switches the panel —
-  // closing here too would race it shut).
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    const onClick = (event: MouseEvent) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      if (panelRef.current?.contains(target)) return;
-      if (target.closest("[data-card-trigger]") !== null) return;
-      onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("click", onClick);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("click", onClick);
-    };
-  }, [onClose]);
+  // Esc closes; a pointer press outside the panel closes unless it
+  // lands on a card trigger. Dismissal keys off POINTERDOWN, not click —
+  // a trusted click's React flush detaches the clicked blocker chip
+  // mid-propagation, so click-time containment checks misfire (the
+  // 2026-08-15 rejection). Mechanism and rationale: attachPanelDismissal.
+  useEffect(() => attachPanelDismissal(document, () => panelRef.current, onClose), [onClose]);
 
   // Focus the panel when it opens and whenever it re-targets (blocker
   // click); restore focus to the original opener on close.

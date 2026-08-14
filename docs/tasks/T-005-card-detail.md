@@ -231,6 +231,89 @@ implemented per dispatch — the panel shows review from frontmatter
 whenever set, so a merging task's review IS visible in the panel while
 its card badge stays done-only (consistent with both rules).
 
+### Fix pass after 2026-08-15 rejection — fresh executor claude-fable-5
+
+2026-08-15, same branch/worktree, headless throughout (no screen
+control, per the human's order). Scope: exactly the rejected
+interaction — the panel's dismissal logic — plus its regression
+test. Diff: TaskDetailPanel.tsx (effect now delegates), NEW
+app/src/components/board/panel-dismissal.ts (the wiring, extracted),
+NEW app/test/panel-dismissal.test.ts (6 tests; app suite 58 → 64),
+this file. Nothing else.
+
+**Chosen direction: (b) — dismiss on `pointerdown`, not `click`.**
+Of the verdict's three options, (b) is the only one that makes the
+race structurally impossible instead of compensating for it: the
+inside/outside/[data-card-trigger] decision runs BEFORE any
+activation handler and therefore before any React flush, so it always
+reads the still-intact tree — for every in-panel interactive element,
+current and future, whatever its activation unmounts or re-parents
+(the T-005-s3 family: whichever element a later architect call
+exempts, the exemption machinery now reads pre-activation DOM; s3
+itself is NOT implemented — the theme toggle is a genuine outside
+press and still dismisses, spec-consistent). Against (a)
+`!target.isConnected`: it patches the symptom — the decision still
+runs post-mutation, misfires if the target survives but its ancestry
+changes, and silently swallows genuine outside clicks on
+self-unmounting controls. Against (c) captured `composedPath()`:
+snapshot-correct for containment but still a late decision, and it
+keeps press-inside-release-outside dismissal (selecting verdict text
+in the `<pre>` and releasing outside closed the panel; with (b) it no
+longer does). (b) is the pattern production dismissal layers use
+(Radix DismissableLayer, React Aria useInteractOutside), and it
+covers keyboard activation for free: Enter/Space on a focused chip
+fires a trusted click with the SAME mid-propagation flush — the click
+path had that same latent bug — but no pointer event at all, so it
+can no longer spuriously dismiss. Deliberate semantics that come with
+(b): dismissal happens at press; any-button press outside dismisses
+(native transient-surface convention); a scrollbar drag on the board
+(outside) dismisses — the panel's own scrollbar is inside and exempt.
+
+**Mechanism encoded headlessly** (the app suite is deliberately
+node-env — vitest.config.ts — and no DOM emulator is a dependency;
+zero new deps): the wiring moved verbatim into exported
+`attachPanelDismissal(doc, panel, onClose)` beside the panel, the
+effect body shrank to one line, and the test drives the real function
+with minimal fakes implementing exactly what it reads (instanceof
+Element, contains, closest, parent links, isConnected), delivering
+events in the verdict's TRUSTED order: pointerdown with the chip
+attached → onOpen re-target → the flush (the chip's li unmounted, a
+different-key list swapped in, `chip.isConnected === false` asserted
+— the verdict's step 3) → the click delivered to the document-level
+wiring with the DETACHED target. Assertions: onClose never fired
+(Board unmounts the panel exactly on onClose, so this IS "stays
+open") and the re-target stands. Companions: the keyboard-activation
+variant (trusted click, no pointer events), outside press dismisses
+exactly once across the press+click pair, card-trigger subtree
+exempt, Escape/other-keys, detach removes all wiring.
+
+**Failing → passing proof** (same test file both runs): the
+extraction was first made with the ORIGINAL `click` listener —
+character-identical logic to the rejected code (only
+`panelRef.current` became `panel()`) — and `npx vitest run` failed
+exactly the two mechanism tests, "trusted blocker-chip click…" and
+"keyboard activation…", both `AssertionError: expected 1 to be +0`
+at `expect(t.closeCount()).toBe(0)`: Tests 2 failed | 62 passed
+(64), tsc clean (behavior, not types — the wiring closed on the
+detached target, reproducing the rejection). Then the fix — `click`
+→ `pointerdown`, the whole diff of stage two — and the suite went
+64/64. The trusted-timing mechanism is now pinned in-suite; the
+verdict's T-005-s4 (real-input E2E for this class) stands as filed.
+
+**Suites** (fresh installs, ADR-011 order, this pass, same machine
+as above): lib/parser `npm ci` + vitest **78/78** + `npx tsc
+--noEmit` clean + `npm run build` clean; app `npm ci` + `npm run
+build` exit 0 + `npm test` **64/64** (58 baseline + 6 new);
+src-tauri `cargo test` **7/7** (Rust untouched). Boundary re-audited:
+zero diff in App.tsx, package.json, every lockfile, src-tauri/**,
+tokens.css, index.css, lib/parser/**; zero new dependencies; no
+ports opened, no dev server run, the human's 1420 instance untouched.
+
+End-to-end confirmation under real input is human-verifiable
+post-merge: one real mouse click on a resolved blocker link in the
+live app should re-target the panel, not close it (the @human
+precedent). No real input was attempted in this pass.
+
 ## Verdicts
 
 2026-08-15 — claude-fable-5 @fresh (verifier, same-model as builder):
