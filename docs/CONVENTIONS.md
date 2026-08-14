@@ -1,9 +1,11 @@
 # Conventions
 
 ## Build & test
-[?] No code yet. To be written with the first C-02 task; until then
-the "suite" is the cold-start test (method/README.md) run on this
-folder.
+- lib/parser (C-06), run from lib/parser/: `npm ci` ·
+  `npx vitest run` (suite) · `npx tsc --noEmit` (types) ·
+  `npm run build` (emits dist/, gitignored). The suite's smoke test
+  parses this repo's live docs/ tree and requires zero issues.
+- app/ (C-05) commands land here when T-001 integrates.
 
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
