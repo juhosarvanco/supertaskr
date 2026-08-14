@@ -103,3 +103,77 @@ Suggestion filed: docs/tasks/T-002-s1-cross-reference-checks.md
 (model-level referential integrity — out of T-002 scope).
 
 ## Verdicts
+
+2026-08-14 — claude-fable-5 @fresh (verifier, same-model as builder):
+REJECTED — one security-sweep finding (REJECTED-level per
+method/roles/verifier.md); the four acceptance criteria otherwise
+verified green. The fix is one line plus a test.
+
+Failure (security, src/task.ts:274): a crafted `__proto__:`
+frontmatter key is neither preserved nor flagged — it mutates the
+record instead. `extra[key] = value` on a plain object hits the
+inherited `__proto__` setter, so the value becomes the PROTOTYPE of
+`task.extra` rather than data. Repro, in lib/parser/ after
+npm install && npm run build:
+
+    node --input-type=module -e "
+    import { parseTaskFile } from './dist/index.js';
+    const r = parseTaskFile(['---','id: T-666','title: H',
+      'feature: F-01','milestone: 1','priority: 1','size: S',
+      'status: planned','__proto__:','  phantom_flag: pwned','---'
+      ].join('\n'), 'x.md');
+    console.log(r.issues.length, Object.keys(r.task.extra),
+      r.task.extra.phantom_flag);"
+
+Expected: `__proto__` kept as an own key of extra (types.ts contract:
+"preserved verbatim … never silently deleted") OR an invalid-field
+issue. Actual: `0 [] pwned` — zero issues, the field silently
+vanishes, and extra now INHERITS attacker-chosen properties
+(`extra.phantom_flag === 'pwned'`, `'phantom_flag' in extra` is true)
+that Object.entries/JSON.stringify do not show — spoofable state for
+any downstream `extra.<flag>` check. Contained: global
+Object.prototype is NOT polluted (verified), and a bare
+`constructor:` key IS preserved correctly; only `__proto__` breaks.
+Fix direction: build `extra` with Object.create(null), or assign via
+Object.defineProperty, or reject `__proto__` keys as invalid-field.
+A probe asserting the correct behavior is committed at
+test/verifier-probes.test.ts under an `it.fails` marker — the suite
+stays green now and flips when the bug is fixed (remove the marker
+then).
+
+Verified green, independently (commands run in lib/parser/):
+npm install → 0 vulnerabilities · npx vitest run → 65/65 (executor's
+38 + 27 fresh verifier probes) · npx tsc --noEmit → clean ·
+npm run build → clean; importing dist parses the live repo with
+0 issues: tasks T-001…T-007 + 1 suggestion, features F-01…F-05.
+- Criteria attacked beyond the executor's fixtures: boundary inputs
+  (empty/whitespace file, unclosed frontmatter, close at EOF without
+  newline, CRLF end-to-end, UTF-8 BOM); YAML abuse (duplicate keys,
+  tab indent, 2^30 alias bomb → structured yaml-error in ~2 ms,
+  unquoted `007` id); 13 field-abuse shapes (all produce
+  field-scoped issues; the record is still returned when identity
+  holds); suggested/parked requiredness incl. parked-without-id;
+  model@session edges (`codex @ S3`, `@S3`, lone `@`, case-sensitive
+  `@Fresh` → resume); roadmap edges (em dash at wrap start,
+  en dash/hyphen not separators, first-em-dash split, triple
+  duplicate → two issues, heading case/suffix, no trailing newline);
+  fs layer (EISDIR, ELOOP symlink loop, EACCES → io-error and
+  continue; three-way duplicate id → two issues naming the first
+  file).
+- Security sweep otherwise clean: yaml@2.9.0 `parse()` with default
+  core schema (dates stay strings, unknown tags degrade to plain
+  values, duplicate keys throw, maxAliasCount caps alias bombs); src
+  is read-only (readdirSync/readFileSync only — no writes, exec,
+  network, env access, or eval); runtime dependency tree is exactly
+  yaml@2.9.0 with zero transitive deps; the only lockfile packages
+  with install scripts are dev-side esbuild/fsevents (standard);
+  every resolved URL is registry.npmjs.org; no secrets in the diff.
+- Boundaries hold: the diff touches only lib/parser/ and
+  docs/tasks/T-002-*; acceptance criteria unmodified by the
+  executor; no root workspace; pure library per C-06/ARCHITECTURE
+  (no CLI, no writes); adjacent T-001 territory untouched.
+
+Suggestions filed, non-blocking: T-002-s2-preserve-raw-body (a
+suggestion file's context paragraph is dropped from the model),
+T-002-s3-validate-task-id-format (`id: banana` parses clean; empty
+backbone names silent).
