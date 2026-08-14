@@ -92,6 +92,33 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+
+    /* status colors (T-004): board card colors, one pair per status.
+       Values live in tokens.css; this mapping only creates the
+       token-backed utilities (bg-status-*, text-status-*-foreground). */
+    --color-status-planned: var(--status-planned-bg);
+    --color-status-planned-foreground: var(--status-planned-fg);
+    --color-status-building: var(--status-building-bg);
+    --color-status-building-foreground: var(--status-building-fg);
+    --color-status-verifying: var(--status-verifying-bg);
+    --color-status-verifying-foreground: var(--status-verifying-fg);
+    --color-status-rejected: var(--status-rejected-bg);
+    --color-status-rejected-foreground: var(--status-rejected-fg);
+    --color-status-done: var(--status-done-bg);
+    --color-status-done-foreground: var(--status-done-fg);
+    --color-status-merging: var(--status-merging-bg);
+    --color-status-merging-foreground: var(--status-merging-fg);
+
+    /* status pulse (T-004): opacity oscillation for verifying/merging
+       cards. Duration/depth VALUES live in tokens.css. Applied as
+       `motion-safe:animate-status-pulse`, so prefers-reduced-motion
+       users get the static fallback (color only, no motion). */
+    --animate-status-pulse: status-pulse var(--pulse-duration) ease-in-out infinite;
+    @keyframes status-pulse {
+      50% {
+        opacity: var(--pulse-opacity-dip);
+      }
+    }
 }
 
 @layer base {

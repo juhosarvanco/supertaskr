@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
+import { Board } from "@/components/board/Board";
 import { Button } from "@/components/ui/button";
 import {
   getDocsModelState,
@@ -7,9 +8,10 @@ import {
   subscribeDocsModel,
 } from "@/lib/watcher-store";
 
-// T-003 shell: a live, read-only lens over the project's docs/ tree.
-// Layout stays deliberately plain — T-004 brings the story map, T-006 the
-// design language. Everything styles itself via tokens.css utilities.
+// A live, read-only lens over the project's docs/ tree: T-003's watcher
+// feeds the store; T-004's story map board renders it (home pane). T-006
+// brings the design language. Everything styles itself via tokens.css
+// utilities.
 
 /** Non-blocking parse-error badge (criterion 3). Renders only while at
  * least one changed file fails to parse; the model below keeps showing
@@ -92,23 +94,7 @@ function App() {
             </ul>
           )}
 
-          <ul className="flex flex-col gap-1" data-testid="task-list">
-            {model.tasks.map((task) => (
-              <li
-                key={task.file}
-                data-task-id={task.id ?? ""}
-                className="flex items-baseline gap-2 rounded-md border border-border px-3 py-2"
-              >
-                <span className="font-mono text-xs text-muted-foreground">
-                  {task.id ?? "s"}
-                </span>
-                <span className="text-sm">{task.title}</span>
-                <span className="ml-auto font-mono text-xs text-muted-foreground">
-                  {task.status}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <Board model={model} />
         </>
       )}
     </main>

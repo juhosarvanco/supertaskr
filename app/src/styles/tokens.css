@@ -81,6 +81,31 @@
   --text-2xl-line: 2rem;
   --text-3xl-size: 1.875rem;
   --text-3xl-line: 2.25rem;
+
+  /* ---- status colors (T-004, story map board) ---------------------- */
+  /* One bg+fg pair per card-rendering task status. Placeholder values
+     (restrained neutrals + amber/red/teal); T-006 edits VALUES only.
+     verifying/building and merging/done start with identical values —
+     the pulse (below) is what distinguishes them until T-006 diverges
+     the palettes. */
+  --status-planned-bg: oklch(0.97 0 0);
+  --status-planned-fg: oklch(0.44 0 0);
+  --status-building-bg: oklch(0.95 0.055 90);
+  --status-building-fg: oklch(0.5 0.12 70);
+  --status-verifying-bg: oklch(0.95 0.055 90);
+  --status-verifying-fg: oklch(0.5 0.12 70);
+  --status-rejected-bg: oklch(0.95 0.035 25);
+  --status-rejected-fg: oklch(0.5 0.19 27);
+  --status-done-bg: oklch(0.94 0.045 185);
+  --status-done-fg: oklch(0.45 0.09 190);
+  --status-merging-bg: oklch(0.94 0.045 185);
+  --status-merging-fg: oklch(0.45 0.09 190);
+
+  /* ---- status pulse (T-004) ---------------------------------------- */
+  /* Values for the verifying/merging pulse; the keyframe + utility live
+     in the mechanism layer (src/index.css). */
+  --pulse-duration: 2s;
+  --pulse-opacity-dip: 0.55;
 }
 
 /* Dark scheme: same tokens, different values. Toggled by putting the
@@ -117,4 +142,18 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* status colors (T-004): same tokens, dark values */
+  --status-planned-bg: oklch(0.25 0 0);
+  --status-planned-fg: oklch(0.75 0 0);
+  --status-building-bg: oklch(0.28 0.05 85);
+  --status-building-fg: oklch(0.82 0.11 85);
+  --status-verifying-bg: oklch(0.28 0.05 85);
+  --status-verifying-fg: oklch(0.82 0.11 85);
+  --status-rejected-bg: oklch(0.27 0.055 25);
+  --status-rejected-fg: oklch(0.78 0.13 25);
+  --status-done-bg: oklch(0.28 0.045 185);
+  --status-done-fg: oklch(0.8 0.1 185);
+  --status-merging-bg: oklch(0.28 0.045 185);
+  --status-merging-fg: oklch(0.8 0.1 185);
 }
