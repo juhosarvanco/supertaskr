@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "test": "vitest run",
     "tauri": "tauri"
   },
   "dependencies": {
+    "@nputer/parser": "file:../lib/parser",
     "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/api": "^2",
     "class-variance-authority": "^0.7.1",
@@ -29,6 +31,7 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
     "typescript": "~5.8.3",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "vitest": "^3.2.0"
   }
 }

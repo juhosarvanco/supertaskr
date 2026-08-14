@@ -36,5 +36,12 @@ export default defineConfig(async () => ({
       // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
     },
+    fs: {
+      // @nputer/parser is a file: dependency symlinked to ../lib/parser
+      // (T-003 wiring); vite resolves through the symlink to the real path,
+      // which sits outside this package, so allow it explicitly alongside
+      // the app itself (setting fs.allow replaces the default allow list).
+      allow: [path.resolve(__dirname), path.resolve(__dirname, "../lib/parser")],
+    },
   },
 }));
