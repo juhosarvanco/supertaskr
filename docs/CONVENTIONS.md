@@ -1,15 +1,23 @@
 # Conventions
 
 ## Build & test
+- Fresh-clone ORDER (T-003, ADR-011): lib/parser FIRST — `npm ci` +
+  `npm run build` from lib/parser/ — then set up app/. The app
+  depends on `@nputer/parser` via `file:../lib/parser`: its build
+  needs the parser's dist/ (fails with a clear TS2307 if missing),
+  and the symlink resolves the parser's deps via the parser's own
+  node_modules, so its `npm ci` must have run.
 - lib/parser (C-06), run from lib/parser/: `npm ci` ·
   `npx vitest run` (suite) · `npx tsc --noEmit` (types) ·
   `npm run build` (emits dist/, gitignored). The suite's smoke test
   parses this repo's live docs/ tree and requires zero issues.
 - app/ (C-05), run from app/: `npm install` (setup) ·
   `npm run build` (typecheck + frontend build — the fast gate) ·
+  `npm test` (vitest — model-store unit tests, T-003) ·
   `npm run tauri dev` (run the desktop app) · `npm run tauri build`
-  (package). No unit tests in app/ yet; `npm run build` is its suite
-  until a later task adds one.
+  (package).
+- app/src-tauri (C-05 Rust half), run from app/src-tauri/:
+  `cargo test` (watcher/collector unit tests, T-003).
 
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing

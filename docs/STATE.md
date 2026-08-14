@@ -1,38 +1,41 @@
 # State
 
-Updated: 2026-08-14 by T-001 integrator, claude-fable-5 @fresh
+Updated: 2026-08-14 by T-003 integrator, claude-fable-5 @fresh
 
 ## Just completed
-Milestone 1's first slice is DONE: T-001 (app shell, app/, C-05) and
-T-002 (task-file parser, lib/parser, C-06) are both merged to main,
-each through the full pipeline — built, REJECTED once on the mandatory
-security sweep by a same-model verifier, fixed by a fresh executor,
-re-verified APPROVED. T-001's rejection: null CSP + unused opener IPC
-surface → now ships strict CSP `default-src 'self'; script-src 'self';
-style-src 'self'; connect-src ipc: http://ipc.localhost` with the
-opener plugin fully removed (baseline recorded as ADR-010). T-002's:
-prototype injection → null-prototype maps (ADR-009). Full suite green
-on merged main: parser 67/67 + tsc + build, app build exit 0
-(byte-identical bundle), tauri dev boots with both `[nputer]` lines.
+T-003 (docs watcher + live reload; app-shell + lib-parser) is DONE
+and merged — the FIRST task approved on its first verification pass
+(no rejection). What ships: a Rust debounced watcher (250ms,
+notify-debouncer-mini) over `<project>/docs` emits ONE full-tree
+snapshot per surviving batch; the webview parses it via
+@nputer/parser's browser-safe pure exports (`./pure`,
+parseProjectFromFiles) and keeps per-file last-good state with a
+non-blocking parse-error badge. The ≤1s change→model criterion holds
+to ~2000 files / ~19MB of markdown (verifier-probed; the only breach
+observed at ~29MB — suggestion T-003-s2). Zero new capabilities and
+zero CSP diff (ADR-010 held). Wiring: app now depends on the parser
+via `file:../lib/parser` (ADR-011) — on a fresh clone, build the
+parser BEFORE the app. Full suite green on merged main: parser 78/78
++ tsc + build; app build exit 0 + tests 13/13; cargo 7/7; tauri dev
+boots with both `[nputer]` lines and a clean seq=1 echo.
 
 ## In progress / broken right now
-Nothing in flight; nothing broken. Both worktrees removed, branches
+Nothing in flight; nothing broken. T-003 worktree removed, branch
 kept.
 
 ## Next up (1–3)
-1. Human decision: dispatch T-003 (watcher, M — unblocked)? And start
-   the T-004 planning pass? T-004 (story map, L) is also unblocked but
-   size L: per the method it needs a planning pass and explicit human
-   approval before dispatch. T-003 dispatch also awaits the human's go
-   — the standing instruction covered only T-001/T-002.
-2. Architect triage of six open suggestions: T-001-s1 project-dir
-   command, T-001-s2 token lint guard, T-001-s3 Linux CI, T-002-s1
-   cross-reference checks, T-002-s2 preserve raw body, T-002-s3
-   id-format validation.
+1. @human decision: dispatch T-004 (story map board, size L) — the
+   ONLY dispatchable card. Its blockers T-001/T-002/T-003 are all
+   done and its planning pass is complete (commit e3fd541, spec in
+   the task file); per the method's size-L rule it awaits explicit
+   @human approval before dispatch. T-005/T-006 are blocked by
+   T-004; T-007 by T-003+T-004.
+2. Architect triage of NINE open suggestions: T-001-s1/s2/s3,
+   T-002-s1/s2/s3, T-003-s1/s2/s3.
 3. Domain (.dev/.fi/.com) + trademark sweep for "nputer".
 
-Known caveat carried forward: the Linux half of T-001's window
-criterion remains machine-unverified (see T-001-s3).
+Known caveat carried forward: the Linux halves of T-001's and
+T-003's window criteria remain machine-unverified (see T-001-s3).
 
 ## Open questions
 None.
