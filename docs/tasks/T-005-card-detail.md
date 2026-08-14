@@ -438,3 +438,92 @@ standard React scheduling, not a defect. Neither is REJECTED-level.
 The trusted-vs-synthetic CLICK divergence behind this rejection is
 the same event-timing family as flag 2, but the criterion-1
 blocker-link pass was recorded from synthetic dispatch only.
+
+2026-08-15 — claude-fable-5 @fresh (verifier, same-model as builder),
+re-verification of the fix pass (61f9f2f, fresh executor): APPROVED.
+
+Extraction fidelity: CONFIRMED. attachPanelDismissal's decision body
+is line-for-line the rejected onClick logic (same three guards, same
+order) modulo two non-behavioral edits — `panelRef.current?.` became
+the `panel()?.` thunk (same live read) and the parameter annotation
+widened MouseEvent → Event (only .target is read). Independently
+re-derived stage 1: sed-swapping ONLY the two event-name strings
+("pointerdown" → "click") in the SHIPPED module and running the
+SHIPPED test file against it fails exactly the two mechanism tests
+with exactly the claimed assertion (`expected 1 to be +0` at
+closeCount) — 2 failed | 4 passed — so the entire behavioral diff
+between rejected and shipped wiring is the click → pointerdown swap,
+as claimed. (Probe copies lived transiently in app/test/, deleted;
+tree clean.)
+
+Mechanism-test fidelity: FAITHFUL to the rejection's ground truth.
+The trusted ordering is forced step-for-step as observed live on
+2026-08-15: pointerdown delivered with the chip attached → onOpen
+re-target → the flush simulated at the microtask-checkpoint position
+(chip's li unmounted, different-key list in, `chip.isConnected ===
+false` asserted — the same assertion the verdict's step 3 made in the
+real browser) → the click delivered to the document-level wiring with
+the DETACHED target retained, which models the real dispatch's
+retained propagation path (exactly what the rejected run's document
+listener received). ListenerDoc delivers to document-level listeners
+only — all the wiring has. "onClose never fired == panel stays open"
+holds because Board unmounts the panel precisely on onClose. The
+keyboard-activation companion pins a REAL latent variant the rejected
+code shared (Enter/Space fires a trusted click with the same flush
+and no pointer event) that the first verification had not separately
+named — a genuine catch, consistent with the mechanism.
+
+Fix soundness: the pointerdown decision runs before any activation
+handler and therefore before any React flush, so the
+inside/outside/exemption test always reads the pre-activation tree —
+the race is structurally impossible, not compensated for. Chosen
+direction (b) of the verdict's three; the notes' argument against (a)
+and (c) is sound.
+
+Suites, fresh installs, ADR-011 order, re-run: lib/parser 78/78 +
+tsc clean + build clean; app build exit 0 + npm test 64/64 (58 + 6);
+src-tauri cargo 7/7. Boundary re-audited file-by-file over
+d8dc86d..61f9f2f: exactly TaskDetailPanel.tsx + panel-dismissal.ts +
+panel-dismissal.test.ts + this file; zero diff in App.tsx,
+package.json, every lockfile, src-tauri/**, tokens.css, index.css,
+lib/parser/**; zero new dependencies; the 2026-08-15 REJECTED entry
+above is byte-untouched (docs diff is pure addition). Security
+posture unchanged: the new module adds listeners and a detach only —
+no sinks, no writes, no keyed collections.
+
+New-semantics probes, headless on the built dev bundle (fixtures via
+the harness; synthetic press = PointerEvent pointerdown + click):
+blocker press+click re-targets the same panel node (chip detaching
+after, as before — now harmless: no click-time dismissal listener
+exists); press-inside-release-outside (pointerdown on panel text,
+click landing on the header) keeps the panel open — the text-
+selection improvement the notes claim; a press inside a card
+trigger's subtree never closes and its click switches; a genuine
+outside press closes AT PRESS exactly once, the paired click inert;
+post-unmount presses and Escapes are inert with zero errors
+(cleanup verified behaviorally, and pinned by the detach test);
+Escape closes with focus restored to the opener; live in-place
+update (same DOM node) and hostile-verdict strict verbatim (zero
+injected elements, long line scrolls) re-confirmed unregressed.
+Disclosed semantic deltas judged acceptable within the builder's
+dismissal-mechanics space (the design of record specifies none):
+dismissal at press time; any-button press outside closes (probed:
+button 2 closes — native transient-surface convention); a drag on
+the board's scrollbar now dismisses while the panel's own does not.
+T-005-s3 (header/app-chrome exemption) remains the architect's call
+and is unaffected; T-005-s4 (real-input E2E lane) stands.
+
+Human-verifiable under real input, post-merge (screen-control
+moratorium unchanged; no real input attempted this pass): one real
+mouse click on a resolved blocker link re-targets the panel instead
+of closing it; real-key Esc and Enter/Space activation.
+
+Environment note for the record: the human's port-1420 instance
+(node PID 84310) was alive at this re-verification's baseline check
+and was found gone mid-pass, before this verifier's probe server
+started. No command of this run binds 1420, signals foreign PIDs, or
+leaves the t005 worktree/scratchpad (round-1 kill was PID 98665, own
+probe server, with 1420 verified alive afterwards; this pass killed
+only own PID 9141). Cause unknown from this seat — flagged to the
+orchestrator for triage; deliberately NOT restarted (binding 1420 is
+out of bounds).
