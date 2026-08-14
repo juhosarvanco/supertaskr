@@ -5,10 +5,10 @@ feature: F-02
 milestone: 1
 priority: 4
 size: L
-status: planned
+status: building
 blocked_by: [T-001, T-002, T-003]
 touches: [app-board, app-shell]
-builder:
+builder: claude-fable-5
 verifier:
 built_by:
 verified_by:
