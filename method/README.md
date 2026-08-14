@@ -20,10 +20,6 @@ resumes from disk. Any model that can read files can participate.
 
 Each layer works without the ones above it.
 
-Companion files: VISION.md (strategy + magic principles), DASHBOARD.md
-(layer-4 design of record), NAMING.md (name candidates), FUTURE.md
-(staged roadmap), COMPETITORS.md (market map + steal list).
-
 ## The succession guarantee
 
 Any role — including the main architect — can be handed to a different

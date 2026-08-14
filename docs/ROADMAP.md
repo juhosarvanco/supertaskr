@@ -17,9 +17,10 @@ Goal: interview completed, milestone 1 decomposed into exact tasks.
 - [x] Convention v0.1.3 (EARS, touches, security sweep, succession,
       suggestions, room resolutions)
 - [x] Market map + steal list (docs/research/competitors.md)
-- [ ] Interview: Q1 first user (rooms/first-user.md) → Q2–Q7
-- [ ] Name decision (rooms/naming.md) + availability sweep
-- [ ] Decomposition pass → docs/tasks/ populated
+- [x] Interview complete, Q1–Q7 (rooms/first-user.md; NORTH_STAR)
+- [x] Name decided: nputer (rooms/naming.md; npm/PyPI free)
+- [ ] Domain + trademark sweep for "nputer"
+- [x] Decomposition pass → docs/tasks/ T-001…T-007
 
 ### Milestone 1 — the mirror (scoped 2026-08-14, interview Q7)
 Goal: open the nputer app and watch nputer being built on its own
