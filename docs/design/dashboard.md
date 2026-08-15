@@ -32,9 +32,13 @@ keeps beauty from becoming a second source of truth.
   render as GHOSTS (dashed) at column bottom; parked row collapsed
   under each feature.
 - Card badges: size tier, model (codex · M), verification badge —
-  independent check, `self-verified`, and `same-model review` render
-  DIFFERENTLY; a green check from the author's own session is never
-  visually identical to independent eyes.
+  TWO marks per ADR-016 (2026-08-15, supersedes the original
+  three-way rule here): solid disc + check = checked by another
+  session (independent or same-model), half disc = self-verified.
+  The invariant that survives: a mark from the author's own session
+  is never visually identical to another session's check. The
+  independent/same-model distinction stays first-class in data and
+  text (panel, labels), not in the mark.
 - Expanded card: acceptance criteria, blockers, builder/verifier
   selectors (model → fresh | registered sessions with task history,
   turn count, sediment marker past warn_after_turns), dispatch
