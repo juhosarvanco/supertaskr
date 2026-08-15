@@ -361,3 +361,69 @@ Suggestion filed (not part of the verdict): T-019-s3 (blocked_by
 self-references and cycles resolve silently — out of T-019's stated
 scope, worth a deliberate rule before dispatch logic consumes the
 graph).
+
+2026-08-16 — claude-fable-5 @fresh (verifier, same-model as builder),
+re-verification of the fix pass (910eb9b, fresh executor): APPROVED.
+
+The hole is closed by the verdict's first shape, and closed correctly.
+The rejected repro, verbatim, now yields exactly one
+`dangling-reference` (field `feature`, id F-01) attributed to the TASK
+file, record and reference preserved; the same tree fires identically
+through parseProject (probed deep-equal on the newly-loud path,
+danglers + id-mismatch included).
+
+Spoof-proofing ATTACKED and held (8 hostile probes, all green):
+- an unreadable TASK file's io-error next to a clean empty backbone
+  does NOT suppress the dangler (both issues present, disk layer);
+- component-layer issues next to a clean empty backbone do not
+  suppress it either (pure layer — both danglers fire);
+- the roadmap's OWN failures keep the skip: unreadable ROADMAP →
+  exactly one io-error across three featured tasks; empty-string
+  ROADMAP → roadmap-error only; missing roadmap + four featured tasks
+  → exactly one io-error (the pinned pre-T-019 behavior, untouched);
+- partial backbone + malformed bullet: flag true but INERT (features
+  exist) — roadmap-error + the dangler, pre-fix parity;
+- options hardening: truthy-but-not-`true` junk cannot activate the
+  skip (strict `=== true`), a JSON.parse `__proto__`-smuggled flag
+  stays loud (own-property, not prototype), and the legitimate flag
+  silences ONLY the feature check.
+The distillation reads the roadmap layer's own sublist in both
+assemblers (verified in source: `roadmapResult.issues` /
+`roadmap.issues`, kinds io-error|roadmap-error only; the pure
+missing-roadmap branch hardcodes true beside the io-error it just
+pushed) — never the merged list.
+
+Failing→passing RE-DERIVED, not trusted: old src (2d260fb) under the
+new test file → exactly 3 failed / 16 passed, and the three failures
+are precisely the regression pins (the verbatim repro, the standalone
+loud-default, the disk-layer parity); restored src → 19/19. The three
+already-loud skip states are pinned as tests now (missing / no-heading
+/ malformed-bullets), and honestly-empty stays honestly silent (zero
+tasks, and a feature-less suggestion — both zero-issue).
+
+App-side ruling verified: parseRoadmap byte-identical to main
+(git diff empty), zero app/src changes in the fix commit, docs-model
+untouched — a clean empty backbone still never hard-fails into
+last-good; the signal is project-level soft issues only. The one
+changed app fixture (select-board "tasks without any backbone") is
+STRENGTHENED, not loosened: every pre-fix board assertion kept
+verbatim, plus a dated exact-one-dangler pin with task-file
+attribution; swept app/test for other clean-empty-backbone fixtures —
+select-board:493 is the only one, matching the executor's
+enumeration.
+
+Standalone default verified loud (no options → the hand-built
+zero-feature model fires); flag inert whenever features exist;
+`ValidateProjectOptions` exported from both entries.
+
+Suites fresh (ADR-011): lib/parser npm ci · 159/159 (19 in
+validate.test.ts) · tsc clean · build clean; app npm install · build
+clean · 381/381 (same count — fixture extended in place). Boundary
+held: validate/project/files/index/pure + validate.test.ts +
+select-board.test.ts + this file; zero src-tauri/app-src/dep/token
+diff; T-019-s1/s2/s3 untouched. Live trees through the FIXED parser:
+branch docs 45 tasks / 6 features / 0 issues; main's CURRENT docs at
+cd560f9 (newer than the notes' b2d4660 — T-018 merge included) 52
+tasks / 6 features / 0 issues, independent audit zero violations on
+both. No new findings; no new suggestions beyond the three already
+filed. Probes reverted; tree clean.
