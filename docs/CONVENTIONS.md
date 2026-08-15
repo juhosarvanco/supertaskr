@@ -24,7 +24,7 @@
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   nputer-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.4) and noted here.
+  method/ formats are version-bumped (currently v0.1.5) and noted here.
 - [?] marks an unresolved claim (archaeology convention) — resolve or
   room it; never silently delete.
 - This project was planned in a long chat session before the folder
@@ -53,6 +53,17 @@
   board's parse-error badge) — move the file, don't "fix" the parser;
   the flat-glob exclusion and the loud trap are both pinned in
   lib/parser/test/rejected-exclusion.test.ts.
+- The genesis kit is ratified in method/roles/planner.md +
+  method/interview/plan-interview.md (v0.1.5, T-023): interview output
+  is INCREMENTALLY BANKED — the stage → artifact table in
+  plan-interview.md is normative and gets transcribed by programs
+  (T-024 stage inference, T-025 kit packaging); changing it is a
+  method version bump, and code reading it must be kept in sync.
+  "pushing back:" is a rendering hint, never load-bearing; the
+  transcript is not record. docs-templates/ are scaffolded VERBATIM —
+  examples live inside HTML comments; a bare example row (e.g. a
+  `- F-01:` bullet) would parse as real content on a fresh board, so
+  don't add one.
 - Outside-click/dismissal listeners must decide on pointerdown, never
   click — under trusted input the browser runs microtask checkpoints
   between listeners, so React's discrete-update flush lands
