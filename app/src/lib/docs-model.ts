@@ -33,14 +33,35 @@ export interface DocsFilePayload {
   content: string;
 }
 
+/** Why the collector left a file out of the snapshot (T-018; mirror of
+ * Rust's `SkipReason` in docs_watch.rs). Symlinks are deliberately never
+ * reported (ADR-010 refusals are not telemetry). */
+export type SkipReason = "oversize" | "nonUtf8" | "tooDeep" | "fileCap" | "unreadable";
+
+/** One collector skip: a file (or, for tooDeep/unreadable, a directory)
+ * that exists on disk but could not ride the snapshot. */
+export interface SkippedFilePayload {
+  path: string;
+  reason: SkipReason;
+}
+
 /** Full-tree snapshot pushed by Rust (initial `docs_snapshot` invoke and
- * every debounced `docs-changed` event use the same shape). */
+ * every debounced `docs-changed` event use the same shape). The T-018
+ * fields are optional so pre-T-018 payload fixtures (and the dev
+ * harness) stay valid: absent means "nothing skipped, nothing
+ * truncated" — exactly what an older Rust side would have meant. */
 export interface DocsSnapshotPayload {
   /** Monotonic ordering stamp from the Rust side; stale payloads are dropped. */
   seq: number;
   projectDir: string;
   generatedAtMs: number;
   files: DocsFilePayload[];
+  /** Collector skips, sorted by path, clipped at the Rust report cap. */
+  skipped?: SkippedFilePayload[];
+  /** Honest skip count even when `skipped` is clipped. */
+  skippedTotal?: number;
+  /** The 2000-file cap clipped this snapshot. */
+  truncated?: boolean;
 }
 
 /** A model-input file whose CURRENT content fails to parse. */
@@ -50,6 +71,39 @@ export interface ParseFailure {
   issues: ParseIssue[];
   /** True when the model still renders this file's last good parse. */
   showingLastGood: boolean;
+}
+
+/** A collector skip as the frontend holds it (T-018): the payload entry
+ * plus whether the model still renders the path's last good parse.
+ * Deliberately NOT folded into `failures` — `ParseIssue` is the parser's
+ * closed union and a collector skip is not a parse issue; both feed the
+ * same chip family in the UI instead. */
+export interface SkippedEntry {
+  path: string;
+  reason: SkipReason;
+  /** True when a model input's last good content still renders (the
+   * "skipped must not read as a deletion" guarantee). */
+  showingLastGood: boolean;
+}
+
+/** Human-readable phrase for a skip reason (chip tooltip + details
+ * strip). Falls back to the raw reason string so an unknown value from a
+ * newer Rust side degrades honestly instead of erasing information. */
+export function skipReasonPhrase(reason: string): string {
+  switch (reason) {
+    case "oversize":
+      return "over 1 MiB";
+    case "nonUtf8":
+      return "not UTF-8";
+    case "tooDeep":
+      return "nested too deep";
+    case "fileCap":
+      return "over the file cap";
+    case "unreadable":
+      return "unreadable";
+    default:
+      return reason;
+  }
 }
 
 export interface DocsModelState {
@@ -66,6 +120,17 @@ export interface DocsModelState {
   /** Model-input files whose current on-disk content fails to parse;
    * non-empty drives the parse-error badge. */
   failures: ParseFailure[];
+  /** Collector skips from the applied snapshot (T-018); non-empty
+   * drives the skipped-files chip beside the parse-error badge. */
+  skipped: SkippedEntry[];
+  /** Honest skip count even when the reported list was clipped. */
+  skippedTotal: number;
+  /** The applied snapshot was clipped by the 2000-file cap (T-018);
+   * drives the quiet truncation note in the chip strip. */
+  truncated: boolean;
+  /** How many files rode the applied snapshot (what "showing first N
+   * files" can honestly claim when truncated). */
+  fileCount: number;
   /**
    * Raw graph.json bytes as delivered, or undefined when the snapshot
    * carries none (index not run / over the collector cap). DELIBERATELY
@@ -86,6 +151,10 @@ export function emptyState(): DocsModelState {
     lastGood: new Map(),
     model: { tasks: [], features: [], issues: [] },
     failures: [],
+    skipped: [],
+    skippedTotal: 0,
+    truncated: false,
+    fileCount: 0,
   };
 }
 
@@ -167,6 +236,24 @@ export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload
     }
   }
 
+  // Collector skips (T-018): the file EXISTS but could not ride the
+  // snapshot — the opposite of a deletion, and it must not read as one.
+  // A skipped model input with a last good parse keeps rendering it
+  // (the parse-failure machinery's guarantee, extended to skips); the
+  // graph deliberately gets no such fallback (T-012 plan §4 — corrupt or
+  // missing graph degrades to the index-not-run family, Re-index heals).
+  const skipped: SkippedEntry[] = [];
+  for (const { path, reason } of payload.skipped ?? []) {
+    present.add(path); // exists on disk: exempt from the deletion sweep
+    const good = isModelInput(path) ? lastGood.get(path) : undefined;
+    if (good !== undefined) {
+      effective.set(path, good);
+      skipped.push({ path, reason, showingLastGood: true });
+    } else {
+      skipped.push({ path, reason, showingLastGood: false });
+    }
+  }
+
   // Deleted files: forget them; their records leave the model. Deletion is
   // not a parse failure — the file is gone, the model follows the files.
   for (const path of lastGood.keys()) {
@@ -180,6 +267,10 @@ export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload
     lastGood,
     model: parseProjectFromFiles(effective),
     failures,
+    skipped,
+    skippedTotal: payload.skippedTotal ?? skipped.length,
+    truncated: payload.truncated ?? false,
+    fileCount: payload.files.length,
   };
   if (graphContent !== undefined) next.graphContent = graphContent;
   return next;

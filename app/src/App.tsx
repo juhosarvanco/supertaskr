@@ -3,6 +3,7 @@ import { MapView } from "@/architecture/MapView";
 import { Board } from "@/components/board/Board";
 import { PaneRail, type PaneId } from "@/components/shell/PaneRail";
 import { Button } from "@/components/ui/button";
+import { skipReasonPhrase } from "@/lib/docs-model";
 import {
   getShellState,
   isTauriRuntime,
@@ -40,6 +41,39 @@ function ParseErrorBadge({ failures }: { failures: ReturnType<typeof getShellSta
       className="flex items-center gap-1.75 rounded-md border border-status-rejected-border bg-status-rejected px-2.5 py-1.25 font-mono text-xs text-destructive"
     >
       {failures.length} parse error{failures.length === 1 ? "" : "s"}
+      {lastValid && <span className="text-status-rejected-foreground">· last valid state</span>}
+    </span>
+  );
+}
+
+/** T-018 sibling of the parse-error chip, same family: files the
+ * collector could not ship (oversize, non-UTF-8, too deep, over the file
+ * cap, unreadable). A skipped record keeps rendering its last valid
+ * state below — never a phantom deletion — and the chip says so. The
+ * count is the snapshot's honest total: when the Rust report clips at
+ * its cap, the number still tells the truth and the tooltip lists what
+ * was reported. */
+function SkippedFilesBadge({
+  skipped,
+  skippedTotal,
+}: {
+  skipped: ReturnType<typeof getShellState>["docs"]["skipped"];
+  skippedTotal: number;
+}) {
+  if (skipped.length === 0) return null;
+  const count = Math.max(skipped.length, skippedTotal);
+  const detail = skipped
+    .map((s) => `${s.path}: skipped — ${skipReasonPhrase(s.reason)}`)
+    .concat(count > skipped.length ? [`…and ${count - skipped.length} more`] : [])
+    .join("\n");
+  const lastValid = skipped.some((s) => s.showingLastGood);
+  return (
+    <span
+      data-testid="skipped-files-badge"
+      title={detail}
+      className="flex items-center gap-1.75 rounded-md border border-status-rejected-border bg-status-rejected px-2.5 py-1.25 font-mono text-xs text-destructive"
+    >
+      {count} skipped file{count === 1 ? "" : "s"}
       {lastValid && <span className="text-status-rejected-foreground">· last valid state</span>}
     </span>
   );
@@ -127,7 +161,7 @@ function App() {
   // deterministic, remount is free).
   const [pane, setPane] = useState<PaneId>("board");
 
-  const { model, failures, seq } = shell.docs;
+  const { model, failures, skipped, truncated, fileCount, seq } = shell.docs;
   const screen = selectScreen(shell);
   const milestone = milestoneLine(model);
 
@@ -140,6 +174,8 @@ function App() {
       data-seq={seq}
       data-task-count={model.tasks.length}
       data-failure-count={failures.length}
+      data-skipped-count={skipped.length}
+      data-truncated={truncated ? "true" : "false"}
     >
       {/* The rail renders only when a project is open; front door /
           loading / browser screens stay full-bleed. */}
@@ -160,6 +196,18 @@ function App() {
             walks closest()), so controls added here inherit the
             exemption; blank header space still closes the panel. */}
         <div className="flex items-center gap-2.25" data-panel-exempt>
+          {/* T-018 quiet truncation note — the map's "symbols truncated"
+              pattern in the shell's chip strip: muted, factual, never a
+              chip. fileCount is what actually rode the snapshot. */}
+          {truncated && (
+            <span
+              data-testid="docs-truncation-note"
+              className="font-mono text-xs text-muted-foreground"
+            >
+              docs truncated · showing first {fileCount} files
+            </span>
+          )}
+          <SkippedFilesBadge skipped={skipped} skippedTotal={shell.docs.skippedTotal} />
           <ParseErrorBadge failures={failures} />
           {screen.screen === "board" && isTauriRuntime() && (
             <Button
@@ -215,7 +263,7 @@ function App() {
             )}
           </div>
 
-          {failures.length > 0 && (
+          {(failures.length > 0 || skipped.length > 0) && (
             <ul
               data-testid="parse-error-details"
               className="mx-6 mb-3.5 flex flex-col gap-1 rounded-lg border border-status-rejected-border bg-status-rejected p-3 text-xs"
@@ -224,6 +272,15 @@ function App() {
                 <li key={f.path} className="font-mono text-status-rejected-foreground">
                   {f.issues[0]?.message ?? `${f.path}: unparsable`}
                   {f.showingLastGood ? " (showing last valid state)" : ""}
+                </li>
+              ))}
+              {/* T-018: collector skips ride the same strip — a file the
+                  watcher cannot read is a fact about the board, not a
+                  silent disappearance. */}
+              {skipped.map((s) => (
+                <li key={`skip:${s.path}`} className="font-mono text-status-rejected-foreground">
+                  {s.path}: skipped — {skipReasonPhrase(s.reason)}
+                  {s.showingLastGood ? " (showing last valid state)" : ""}
                 </li>
               ))}
             </ul>

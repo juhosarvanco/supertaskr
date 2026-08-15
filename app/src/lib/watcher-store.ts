@@ -38,6 +38,11 @@ export interface ModelUpdateEcho {
   issueCount: number;
   taskIds: string[];
   parseFailures: string[];
+  /** T-018: collector skips applied with this snapshot (honest total,
+   * not the clipped list) and whether the file cap truncated it — the
+   * round trip's evidence that the frontend SAW the blind spots. */
+  skippedTotal: number;
+  truncated: boolean;
 }
 
 /** Mirror of Rust's `ProjectStatus` (src-tauri/src/docs_watch.rs). */
@@ -247,6 +252,8 @@ function buildEcho(next: DocsModelState): ModelUpdateEcho {
     issueCount: next.model.issues.length,
     taskIds: next.model.tasks.map((t) => t.id ?? "(suggested)"),
     parseFailures: next.failures.map((f) => f.path),
+    skippedTotal: next.skippedTotal,
+    truncated: next.truncated,
   };
 }
 

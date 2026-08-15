@@ -4,7 +4,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use notify_debouncer_mini::{new_debouncer, notify::RecursiveMode, DebounceEventResult, Debouncer};
+use notify_debouncer_mini::{
+    new_debouncer, notify::RecursiveMode, DebounceEventResult, DebouncedEvent, Debouncer,
+};
 use serde::Serialize;
 
 /// Docs watcher + snapshot pipeline (T-003), re-armable per project (T-007).
@@ -28,6 +30,17 @@ use serde::Serialize;
 /// the commands take no path arguments, symlinks are never followed, and
 /// every file's canonical path must remain under the canonical project dir
 /// or it is dropped.
+///
+/// T-018 makes the watcher truthful about its own blind spots:
+/// - a non-recursive ROOT SENTINEL watch re-arms the docs watch when
+///   `docs/` appears late or is replaced wholesale (the stale-handle
+///   death T-003-s1 documented) — the missing trigger for the existing
+///   re-arm machinery, not a new mechanism;
+/// - the collector reports what it SKIPPED (path + reason) and whether
+///   the file cap TRUNCATED the tree, so a skipped record never reads as
+///   a deletion in the frontend;
+/// - both are additive: every sentinel/telemetry failure path degrades to
+///   exactly the pre-T-018 behavior (pinned by tests below).
 
 /// Debounce window for editor save bursts (criterion 2). One debounced
 /// batch -> at most one snapshot emit; well inside the 1s budget of
@@ -39,6 +52,10 @@ const DOCS_DIR: &str = "docs";
 const MAX_FILE_BYTES: u64 = 1_048_576; // 1 MiB per file
 const MAX_FILES: usize = 2_000;
 const MAX_DEPTH: usize = 16;
+/// The skip REPORT is itself capped (T-018): a pathological repo must not
+/// win back through telemetry the payload the caps took away. The
+/// snapshot's `skipped_total` stays the honest count when the list clips.
+const MAX_SKIPPED_REPORTED: usize = 200;
 /// Frontend echo payloads are logged; cap what one line can carry.
 const MAX_ECHO_LOG_CHARS: usize = 800;
 /// How long the picker command waits for the watcher thread to re-arm.
@@ -51,6 +68,52 @@ pub struct DocsFile {
     pub content: String,
 }
 
+/// Why the collector left a file out of the snapshot (T-018, absorbing
+/// T-003-s3). Only files that WOULD have been collected are ever
+/// reported: a `.txt` was never in the set, and symlinks stay silent BY
+/// DECISION — they are ADR-010 security refusals, not telemetry gaps,
+/// and listing them would hand a hostile repo a path-disclosure channel
+/// (the "arguably stay silent" question T-003-s3 left open, settled
+/// here as: silent).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SkipReason {
+    /// File is over `MAX_FILE_BYTES` (1 MiB).
+    Oversize,
+    /// File content is not valid UTF-8.
+    NonUtf8,
+    /// Directory (reported once, for the dir) nested past `MAX_DEPTH`.
+    TooDeep,
+    /// Eligible file past the `MAX_FILES` cap (see `truncated`).
+    FileCap,
+    /// Read failed for a reason other than not-found (e.g. permissions).
+    /// A file that vanished mid-read is a deletion, not a skip.
+    Unreadable,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkippedFile {
+    pub path: String,
+    pub reason: SkipReason,
+}
+
+/// Everything one collection pass learned (T-018). This whole value —
+/// not just `files` — is the emit-suppression baseline: a change in skip
+/// state alone (a file crossing the 1 MiB line, say) must emit, or the
+/// frontend keeps rendering stale truth about what it cannot see.
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct CollectOutcome {
+    pub files: Vec<DocsFile>,
+    /// Skips, sorted by path, clipped at `MAX_SKIPPED_REPORTED`.
+    pub skipped: Vec<SkippedFile>,
+    /// True skip count even when `skipped` is clipped.
+    pub skipped_total: usize,
+    /// The `MAX_FILES` cap clipped collection (some eligible files are
+    /// not in `files`).
+    pub truncated: bool,
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DocsSnapshot {
@@ -58,6 +121,12 @@ pub struct DocsSnapshot {
     pub project_dir: String,
     pub generated_at_ms: u64,
     pub files: Vec<DocsFile>,
+    /// T-018: what the collector could not ship, path + reason (clipped
+    /// at `MAX_SKIPPED_REPORTED`; `skipped_total` is the honest count).
+    pub skipped: Vec<SkippedFile>,
+    pub skipped_total: usize,
+    /// T-018: the 2000-file cap clipped this snapshot.
+    pub truncated: bool,
 }
 
 /// What the frontend's startup pull (`docs_snapshot` command) reports
@@ -198,15 +267,26 @@ pub fn is_collected_docs_path(rel: &str) -> bool {
 }
 
 /// Collect every snapshot-eligible file under `<project_dir>/docs`,
-/// recursively (see `is_collected_docs_path` for the set).
+/// recursively (see `is_collected_docs_path` for the set), reporting
+/// what was skipped and whether the file cap truncated the tree (T-018).
 ///
 /// Containment (ADR-010): symlinks — file or directory — are skipped
-/// outright, and each file's canonical path must stay under the canonical
-/// project dir; anything else is dropped. Non-UTF-8 and oversized files
-/// are skipped. Results are sorted by path, so snapshots are deterministic
-/// and byte-comparable (the emit-suppression check relies on this).
-pub fn collect_docs_files(project_dir: &Path) -> Vec<DocsFile> {
-    let mut out: Vec<DocsFile> = Vec::new();
+/// outright AND silently (a security refusal is not telemetry), and each
+/// file's canonical path must stay under the canonical project dir;
+/// anything else is dropped. Non-UTF-8, oversized, unreadable files and
+/// too-deep directories are skipped WITH a report entry. Files and skips
+/// are sorted by path, so outcomes are deterministic and comparable (the
+/// emit-suppression check relies on this).
+///
+/// Two phases: the walk classifies and gathers ELIGIBLE paths; then the
+/// sorted list is capped and read. Cap membership is therefore the first
+/// `MAX_FILES` readable paths in path order — deterministic — instead of
+/// traversal-order luck (T-003-s2's silent nondeterminism: two collects
+/// of the same over-cap tree used to be able to disagree about WHICH
+/// files rode, which the equality-based suppression would then emit as
+/// phantom churn).
+pub fn collect_docs_tree(project_dir: &Path) -> CollectOutcome {
+    let mut out = CollectOutcome::default();
     let Ok(canon_project) = project_dir.canonicalize() else {
         return out;
     };
@@ -219,13 +299,35 @@ pub fn collect_docs_files(project_dir: &Path) -> Vec<DocsFile> {
         return out;
     }
 
+    // Phase 1: walk. Gather eligible files; record structural skips.
+    // Eligibility (containment + classification) is decided BEFORE any
+    // skip verdict, so only files that WOULD have been collected are ever
+    // reported — a 2 MiB .txt was never a record and stays silent.
+    let mut eligible: Vec<(String, PathBuf, u64)> = Vec::new();
+    let mut skips: Vec<SkippedFile> = Vec::new();
     let mut stack: Vec<(PathBuf, usize)> = vec![(docs_root, 0)];
     while let Some((dir, depth)) = stack.pop() {
+        // Paths on the stack are built from the canonical docs root and
+        // never through a symlink, so `dir` is canonical already.
         if depth > MAX_DEPTH {
+            // One entry for the whole subtree, not one per buried file.
+            if let Some(rel) = relative_posix(&dir, &canon_project) {
+                skips.push(SkippedFile { path: rel, reason: SkipReason::TooDeep });
+            }
             continue;
         }
-        let Ok(entries) = fs::read_dir(&dir) else {
-            continue;
+        let entries = match fs::read_dir(&dir) {
+            Ok(entries) => entries,
+            Err(err) => {
+                // A vanished dir is a deletion; anything else (e.g.
+                // permissions) silently dropped a whole subtree pre-T-018.
+                if err.kind() != std::io::ErrorKind::NotFound {
+                    if let Some(rel) = relative_posix(&dir, &canon_project) {
+                        skips.push(SkippedFile { path: rel, reason: SkipReason::Unreadable });
+                    }
+                }
+                continue;
+            }
         };
         for entry in entries.flatten() {
             let path = entry.path();
@@ -233,7 +335,7 @@ pub fn collect_docs_files(project_dir: &Path) -> Vec<DocsFile> {
                 continue;
             };
             if meta.file_type().is_symlink() {
-                continue; // never follow links out of the tree
+                continue; // never follow links out of the tree; never report them
             }
             if meta.is_dir() {
                 stack.push((path, depth + 1));
@@ -241,12 +343,6 @@ pub fn collect_docs_files(project_dir: &Path) -> Vec<DocsFile> {
             }
             if !meta.is_file() {
                 continue;
-            }
-            if meta.len() > MAX_FILE_BYTES {
-                continue; // oversized: skipped like any other (T-003-s3 owns visibility)
-            }
-            if out.len() >= MAX_FILES {
-                break;
             }
             // Belt to the symlink-skip's suspenders: canonical prefix
             // check, and the collected-set predicate runs on the
@@ -264,24 +360,67 @@ pub fn collect_docs_files(project_dir: &Path) -> Vec<DocsFile> {
             if !is_collected_docs_path(&rel) {
                 continue;
             }
-            let Ok(content) = fs::read_to_string(&canon) else {
-                continue; // non-UTF-8 or vanished mid-read
-            };
-            out.push(DocsFile { path: rel, content });
+            eligible.push((rel, canon, meta.len()));
         }
     }
-    out.sort_by(|a, b| a.path.cmp(&b.path));
+
+    // Phase 2: sort, cap, read. The cap counts files actually shipped
+    // (as before: oversized/unreadable files never consumed a slot).
+    eligible.sort_by(|a, b| a.0.cmp(&b.0));
+    for (rel, canon, len) in eligible {
+        if len > MAX_FILE_BYTES {
+            skips.push(SkippedFile { path: rel, reason: SkipReason::Oversize });
+            continue;
+        }
+        if out.files.len() >= MAX_FILES {
+            out.truncated = true;
+            skips.push(SkippedFile { path: rel, reason: SkipReason::FileCap });
+            continue;
+        }
+        match fs::read_to_string(&canon) {
+            Ok(content) => out.files.push(DocsFile { path: rel, content }),
+            Err(err) if err.kind() == std::io::ErrorKind::InvalidData => {
+                skips.push(SkippedFile { path: rel, reason: SkipReason::NonUtf8 });
+            }
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+                // Vanished mid-read: a deletion in progress, not a skip.
+            }
+            Err(_) => skips.push(SkippedFile { path: rel, reason: SkipReason::Unreadable }),
+        }
+    }
+    // `files` is already path-sorted (read in sorted order); sort the
+    // skips too so outcomes compare deterministically.
+    skips.sort_by(|a, b| a.path.cmp(&b.path));
+    out.skipped_total = skips.len();
+    skips.truncate(MAX_SKIPPED_REPORTED);
+    out.skipped = skips;
     out
 }
 
-/// Build one snapshot of `root`'s docs tree stamped with `seq`.
-fn build_snapshot(root: &Path, seq: u64) -> DocsSnapshot {
+/// T-003-shaped view of `collect_docs_tree` (files only) — kept so the
+/// pre-T-018 tests read identically (production paths all want the
+/// skips, so only tests still call this).
+#[cfg(test)]
+pub fn collect_docs_files(project_dir: &Path) -> Vec<DocsFile> {
+    collect_docs_tree(project_dir).files
+}
+
+/// Stamp one collection outcome as a snapshot of `root`'s docs tree.
+fn snapshot_from(root: &Path, seq: u64, outcome: CollectOutcome) -> DocsSnapshot {
     DocsSnapshot {
         seq,
         project_dir: root.display().to_string(),
         generated_at_ms: now_ms(),
-        files: collect_docs_files(root),
+        files: outcome.files,
+        skipped: outcome.skipped,
+        skipped_total: outcome.skipped_total,
+        truncated: outcome.truncated,
     }
+}
+
+/// Build one snapshot of `root`'s docs tree stamped with `seq`.
+fn build_snapshot(root: &Path, seq: u64) -> DocsSnapshot {
+    snapshot_from(root, seq, collect_docs_tree(root))
 }
 
 /// The `docs_snapshot` command's answer (T-007 shape): what project is
@@ -408,9 +547,191 @@ pub fn spawn_watcher_thread(
 
 /// Everything the control thread mutates when (re)arming.
 struct WatchTarget {
+    /// The open project root — the sentinel's scope. Set even when the
+    /// docs watch could not arm (docsless at startup), so a later
+    /// `docs/` appearance re-arms (T-018).
     root: Option<PathBuf>,
+    /// The currently ARMED recursive docs watch (None = unarmed).
     docs: Option<PathBuf>,
-    last_files: Vec<DocsFile>,
+    /// (dev, ino) of the armed docs dir on unix — how a wholesale
+    /// replacement (same path, new directory) is detected. None when
+    /// unknown (non-unix, or metadata raced) — detection degrades to
+    /// best-effort, never to an error.
+    docs_id: Option<(u64, u64)>,
+    /// The armed non-recursive root sentinel watch (T-018). Purely a
+    /// wake-up channel: its events carry no meaning of their own beyond
+    /// "a batch arrived — run the stat checks".
+    sentinel: Option<PathBuf>,
+    /// Emit-suppression baseline: the WHOLE outcome, skips included.
+    last: CollectOutcome,
+}
+
+/// Directory identity for replacement detection: (dev, ino) on unix.
+#[cfg(unix)]
+fn dir_identity(path: &Path) -> Option<(u64, u64)> {
+    use std::os::unix::fs::MetadataExt;
+    fs::symlink_metadata(path).ok().map(|meta| (meta.dev(), meta.ino()))
+}
+
+/// Non-unix: identity unknown — replacement detection is best-effort
+/// (appears/vanishes still handled via the armed-state + stat checks).
+#[cfg(not(unix))]
+fn dir_identity(_path: &Path) -> Option<(u64, u64)> {
+    None
+}
+
+/// Arm (or move) the root sentinel — the non-recursive watch on the
+/// project root whose only job is making a debounced batch ARRIVE when
+/// the `docs` entry appears, vanishes, or is replaced. Best-effort by
+/// contract (T-018 additive-only criterion): every failure path logs and
+/// leaves the docs watch exactly as it was.
+fn arm_sentinel<T: notify_debouncer_mini::notify::Watcher>(
+    debouncer: &mut Debouncer<T>,
+    target: &mut WatchTarget,
+    root: &Path,
+) {
+    if target.sentinel.as_deref() == Some(root) {
+        return; // already armed there
+    }
+    match debouncer.watcher().watch(root, RecursiveMode::NonRecursive) {
+        Ok(()) => {
+            if let Some(old) = target.sentinel.take() {
+                if let Err(err) = debouncer.watcher().unwatch(&old) {
+                    eprintln!("[nputer] watch: sentinel unwatch {} failed: {err}", old.display());
+                }
+            }
+            target.sentinel = Some(root.to_path_buf());
+            println!(
+                "[nputer] watch: root sentinel on {} (docs/ create/replace re-arms the watch)",
+                root.display()
+            );
+        }
+        Err(err) => {
+            // Watching continues exactly as pre-T-018; only the
+            // self-healing is lost, and we say so.
+            eprintln!(
+                "[nputer] watch: root sentinel failed on {}: {err} - a replaced docs/ will need a manual re-pick",
+                root.display()
+            );
+            if let Some(old) = target.sentinel.take() {
+                let _ = debouncer.watcher().unwatch(&old); // stale scope
+            }
+        }
+    }
+}
+
+/// Reconcile the armed docs watch with what is on disk (T-018, the
+/// sentinel's re-arm trigger). Stat-based on purpose: event paths differ
+/// across notify backends, but "does `<root>/docs` exist, and is it the
+/// directory we armed?" does not. Every failure path degrades to "watch
+/// as before, retry on the next batch" — never an error, never a panic.
+fn ensure_docs_watch<T: notify_debouncer_mini::notify::Watcher>(
+    debouncer: &mut Debouncer<T>,
+    target: &mut WatchTarget,
+    root: &Path,
+) {
+    let docs = root.join(DOCS_DIR);
+    let present = has_plain_docs_dir(root);
+    match (target.docs.is_some(), present) {
+        // docs/ appeared under a root we could not arm before: arm it.
+        (false, true) => match debouncer.watcher().watch(&docs, RecursiveMode::Recursive) {
+            Ok(()) => {
+                target.docs = Some(docs.clone());
+                target.docs_id = dir_identity(&docs);
+                println!("[nputer] watch: docs/ appeared - watching {}", docs.display());
+            }
+            Err(err) => eprintln!(
+                "[nputer] watch: docs/ appeared but watch failed: {err} (will retry on the next event)"
+            ),
+        },
+        // Armed and present: re-arm only when the directory is provably
+        // a DIFFERENT one (wholesale replacement — the old handle keeps
+        // watching the moved-away inode and would go silent).
+        (true, true) => {
+            let replaced = match (dir_identity(&docs), target.docs_id) {
+                (Some(now), Some(armed)) => now != armed,
+                (Some(_), None) => true, // identity unknown at arm time: rebind to be safe
+                (None, _) => false,      // cannot tell (non-unix): keep the handle
+            };
+            if replaced {
+                if let Some(old) = target.docs.take() {
+                    let _ = debouncer.watcher().unwatch(&old); // handle may already be dead
+                }
+                target.docs_id = None;
+                match debouncer.watcher().watch(&docs, RecursiveMode::Recursive) {
+                    Ok(()) => {
+                        target.docs = Some(docs.clone());
+                        target.docs_id = dir_identity(&docs);
+                        println!(
+                            "[nputer] watch: docs/ was replaced - re-armed on {}",
+                            docs.display()
+                        );
+                    }
+                    Err(err) => eprintln!(
+                        "[nputer] watch: docs/ replaced but re-arm failed: {err} (will retry on the next event)"
+                    ),
+                }
+            }
+        }
+        // Armed but gone (deleted, or replaced by something we refuse):
+        // drop the stale handle so a later appearance re-arms. The
+        // collect below then ships the empty tree — deletion semantics
+        // unchanged, recovery now armed.
+        (true, false) => {
+            if let Some(old) = target.docs.take() {
+                let _ = debouncer.watcher().unwatch(&old);
+            }
+            target.docs_id = None;
+            println!(
+                "[nputer] watch: docs/ gone from {} - sentinel waits for it to return",
+                root.display()
+            );
+        }
+        (false, false) => {}
+    }
+}
+
+/// Handle one debounced fs batch: run the sentinel's re-arm check, then
+/// collect, diff against the baseline, and emit. Factored out of
+/// `run_watcher` so tests can drive it with arbitrary target states
+/// (e.g. a failed sentinel) and synthetic batches.
+fn handle_fs_batch<T: notify_debouncer_mini::notify::Watcher>(
+    debouncer: &mut Debouncer<T>,
+    target: &mut WatchTarget,
+    seq: &AtomicU64,
+    events: &[DebouncedEvent],
+    sink: &impl Fn(&DocsSnapshot),
+) {
+    if events.is_empty() {
+        return;
+    }
+    let Some(root) = target.root.clone() else {
+        return; // stale events with no project armed
+    };
+    // T-018 sentinel check BEFORE collecting, so this same batch ships
+    // the re-armed tree's truth. Infallible by construction.
+    ensure_docs_watch(debouncer, target, &root);
+    let seq = next_seq(seq);
+    let outcome = collect_docs_tree(&root);
+    if outcome == target.last {
+        println!(
+            "[nputer] watch: {} fs event(s) coalesced, content unchanged - suppressed",
+            events.len()
+        );
+        return;
+    }
+    target.last = outcome.clone();
+    let snapshot = snapshot_from(&root, seq, outcome);
+    println!(
+        "[nputer] docs-changed: seq={} files={} skipped={} truncated={} fs_events={} at_ms={}",
+        snapshot.seq,
+        snapshot.files.len(),
+        snapshot.skipped_total,
+        snapshot.truncated,
+        events.len(),
+        snapshot.generated_at_ms
+    );
+    sink(&snapshot);
 }
 
 fn run_watcher(
@@ -433,13 +754,24 @@ fn run_watcher(
     let mut target = WatchTarget {
         root: None,
         docs: None,
-        last_files: Vec::new(),
+        docs_id: None,
+        sentinel: None,
+        last: CollectOutcome::default(),
     };
 
     match initial_root {
         Some(root) => {
-            if let Err(msg) = rearm(&mut debouncer, &mut target, root) {
-                println!("[nputer] watch: {msg} - watcher idle until a project folder is picked");
+            if let Err(msg) = rearm(&mut debouncer, &mut target, root.clone()) {
+                println!(
+                    "[nputer] watch: {msg} - watcher idle until docs/ appears or a project folder is picked"
+                );
+                // T-018 (T-003-s1 case 1): the resolved project may grow a
+                // docs/ LATER — scope the sentinel to the root so its
+                // appearance re-arms us. Startup only: a failed PICK must
+                // never move the sentinel off the previously open project
+                // (rearm leaves everything untouched on failure).
+                target.root = Some(root.clone());
+                arm_sentinel(&mut debouncer, &mut target, &root);
             }
         }
         None => {
@@ -450,36 +782,7 @@ fn run_watcher(
     for msg in rx {
         match msg {
             WatchCtl::Fs(Ok(events)) => {
-                if events.is_empty() {
-                    continue;
-                }
-                let Some(root) = target.root.clone() else {
-                    continue; // stale events with no project armed
-                };
-                let seq = next_seq(&seq);
-                let files = collect_docs_files(&root);
-                if files == target.last_files {
-                    println!(
-                        "[nputer] watch: {} fs event(s) coalesced, content unchanged - suppressed",
-                        events.len()
-                    );
-                    continue;
-                }
-                target.last_files = files.clone();
-                let snapshot = DocsSnapshot {
-                    seq,
-                    project_dir: root.display().to_string(),
-                    generated_at_ms: now_ms(),
-                    files,
-                };
-                println!(
-                    "[nputer] docs-changed: seq={} files={} fs_events={} at_ms={}",
-                    snapshot.seq,
-                    snapshot.files.len(),
-                    events.len(),
-                    snapshot.generated_at_ms
-                );
-                sink(&snapshot);
+                handle_fs_batch(&mut debouncer, &mut target, &seq, &events, &sink);
             }
             WatchCtl::Fs(Err(err)) => eprintln!("[nputer] watch: watcher error: {err}"),
             WatchCtl::Rearm { root, ack } => {
@@ -494,7 +797,9 @@ fn run_watcher(
 /// (Re)arm the watch on `<new_root>/docs`. Arms the NEW watch before
 /// dropping the old one, so a failure at any step leaves the previous
 /// project's watch fully intact. Resets the emit baseline to the new
-/// tree's current content on success.
+/// tree's current content on success. T-018: a successful (re)arm also
+/// arms the root sentinel — best-effort, AFTER the docs watch, so its
+/// failure can never fail the re-arm or disturb an armed watch.
 fn rearm<T: notify_debouncer_mini::notify::Watcher>(
     debouncer: &mut Debouncer<T>,
     target: &mut WatchTarget,
@@ -511,8 +816,16 @@ fn rearm<T: notify_debouncer_mini::notify::Watcher>(
     let new_docs = new_root.join(DOCS_DIR);
 
     if target.docs.as_ref() == Some(&new_docs) {
-        // Same folder re-picked: keep the watch, refresh the baseline.
-        target.last_files = collect_docs_files(&new_root);
+        // Same folder re-picked: keep the watch — unless the directory
+        // was replaced behind the same path, in which case the manual
+        // re-pick is exactly the recovery the user reached for: heal the
+        // handle (T-018; pre-T-018 this branch kept a stale handle).
+        ensure_docs_watch(debouncer, target, &new_root);
+        if target.docs.is_none() {
+            return Err(format!("cannot watch {}", new_docs.display()));
+        }
+        target.last = collect_docs_tree(&new_root);
+        arm_sentinel(debouncer, target, &new_root);
         return Ok(());
     }
 
@@ -532,9 +845,11 @@ fn rearm<T: notify_debouncer_mini::notify::Watcher>(
             );
         }
     }
-    target.last_files = collect_docs_files(&new_root);
+    target.last = collect_docs_tree(&new_root);
     target.docs = Some(new_docs.clone());
-    target.root = Some(new_root);
+    target.docs_id = dir_identity(&new_docs);
+    target.root = Some(new_root.clone());
+    arm_sentinel(debouncer, target, &new_root);
     println!(
         "[nputer] watch: watching {} (debounce {}ms)",
         new_docs.display(),
@@ -1002,5 +1317,390 @@ mod tests {
         let emit = recv_emit(&emits);
         assert!(emit.seq > picked.seq);
         assert_eq!(emit.files.len(), 2);
+    }
+
+    // ---- T-018: the collector reports skips + truncation ---------------
+
+    fn skip_of(outcome: &CollectOutcome, path: &str) -> Option<SkipReason> {
+        outcome
+            .skipped
+            .iter()
+            .find(|s| s.path == path)
+            .map(|s| s.reason)
+    }
+
+    #[test]
+    fn skips_carry_paths_and_reasons_for_oversize_and_non_utf8() {
+        let t = TempTree::new("skip-report");
+        t.write("docs/ok.md", "fine");
+        t.write("docs/architecture/graph.json", "{}");
+        let big = "x".repeat((MAX_FILE_BYTES + 1) as usize);
+        t.write("docs/big.md", &big);
+        t.write("docs/architecture/huge.json", &big);
+        fs::write(t.root().join("docs/binary.md"), [0xFFu8, 0xFE, 0x00, 0x9C]).expect("bin");
+
+        let outcome = collect_docs_tree(t.root());
+        let paths: Vec<&str> = outcome.files.iter().map(|f| f.path.as_str()).collect();
+        // Skips never subtract readable files (additive-only).
+        assert_eq!(paths, vec!["docs/architecture/graph.json", "docs/ok.md"]);
+        assert_eq!(skip_of(&outcome, "docs/big.md"), Some(SkipReason::Oversize));
+        assert_eq!(
+            skip_of(&outcome, "docs/architecture/huge.json"),
+            Some(SkipReason::Oversize)
+        );
+        assert_eq!(skip_of(&outcome, "docs/binary.md"), Some(SkipReason::NonUtf8));
+        assert_eq!(outcome.skipped_total, 3);
+        assert!(!outcome.truncated); // skips alone never claim truncation
+        // Sorted by path — outcomes are comparable.
+        let mut sorted = outcome.skipped.clone();
+        sorted.sort_by(|a, b| a.path.cmp(&b.path));
+        assert_eq!(outcome.skipped, sorted);
+    }
+
+    #[test]
+    fn skips_report_only_would_be_collected_files() {
+        let t = TempTree::new("skip-eligible");
+        t.write("docs/ok.md", "fine");
+        let big = "x".repeat((MAX_FILE_BYTES + 1) as usize);
+        // Oversized files OUTSIDE the collected set: never reported.
+        t.write("docs/notes.txt", &big);
+        t.write("docs/tasks/data.json", &big); // .json outside architecture/
+        let outcome = collect_docs_tree(t.root());
+        assert_eq!(outcome.skipped, vec![]);
+        assert_eq!(outcome.skipped_total, 0);
+        assert_eq!(outcome.files.len(), 1);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn symlinks_stay_silent_in_the_skip_report() {
+        // The T-003-s3 question settled: a symlink is an ADR-010 security
+        // refusal, not a telemetry gap — reporting it would hand a
+        // hostile repo a path-disclosure channel.
+        use std::os::unix::fs::symlink;
+        let t = TempTree::new("skip-symlink");
+        t.write("docs/real.md", "real");
+        let outside = TempTree::new("skip-symlink-outside");
+        outside.write("secret.md", "secret");
+        symlink(outside.root().join("secret.md"), t.root().join("docs/link.md"))
+            .expect("symlink");
+        let outcome = collect_docs_tree(t.root());
+        assert_eq!(outcome.skipped, vec![]);
+        assert_eq!(outcome.skipped_total, 0);
+        assert_eq!(outcome.files.len(), 1);
+    }
+
+    #[test]
+    fn too_deep_directory_is_reported_once_for_the_dir() {
+        let t = TempTree::new("skip-depth");
+        t.write("docs/top.md", "top");
+        // MAX_DEPTH child dirs under docs/ stay collectable; one more is
+        // past the cap and reported as a directory skip.
+        let mut inside = String::from("docs");
+        for i in 0..MAX_DEPTH {
+            inside.push_str(&format!("/d{i}"));
+        }
+        t.write(&format!("{inside}/deepest-ok.md"), "still in");
+        let beyond = format!("{inside}/d-too-far");
+        fs::create_dir_all(t.root().join(&beyond)).expect("mk deep");
+        t.write(&format!("{beyond}/lost.md"), "past the cap");
+
+        let outcome = collect_docs_tree(t.root());
+        assert!(outcome.files.iter().any(|f| f.path.ends_with("deepest-ok.md")));
+        assert!(outcome.files.iter().all(|f| !f.path.ends_with("lost.md")));
+        assert_eq!(skip_of(&outcome, &beyond), Some(SkipReason::TooDeep));
+        // Once, for the dir — not per buried file.
+        assert_eq!(outcome.skipped.len(), 1);
+        assert_eq!(outcome.skipped_total, 1);
+    }
+
+    #[test]
+    fn file_cap_truncates_deterministically_flags_and_counts() {
+        let t = TempTree::new("skip-cap");
+        // MAX_FILES readable files plus a clipped-report worth of overflow:
+        // enough to exercise cap membership, the flag, the report clip,
+        // and the honest total in one (deliberately large) tree.
+        let overflow = MAX_SKIPPED_REPORTED + 7;
+        for i in 0..(MAX_FILES + overflow) {
+            t.write(&format!("docs/tasks/f-{i:05}.md"), "x");
+        }
+        let outcome = collect_docs_tree(t.root());
+        assert_eq!(outcome.files.len(), MAX_FILES);
+        assert!(outcome.truncated);
+        // Deterministic membership: the first MAX_FILES paths in sorted
+        // order ride; the alphabetical tail is skipped as FileCap.
+        assert_eq!(outcome.files[0].path, "docs/tasks/f-00000.md");
+        assert_eq!(
+            outcome.files.last().map(|f| f.path.as_str()),
+            Some(format!("docs/tasks/f-{:05}.md", MAX_FILES - 1).as_str())
+        );
+        assert!(outcome
+            .skipped
+            .iter()
+            .all(|s| s.reason == SkipReason::FileCap));
+        assert_eq!(
+            outcome.skipped.first().map(|s| s.path.as_str()),
+            Some(format!("docs/tasks/f-{:05}.md", MAX_FILES).as_str())
+        );
+        // The report clips; the total stays honest.
+        assert_eq!(outcome.skipped.len(), MAX_SKIPPED_REPORTED);
+        assert_eq!(outcome.skipped_total, overflow);
+        // Same tree, same outcome — collect twice and compare whole.
+        assert_eq!(outcome, collect_docs_tree(t.root()));
+        // The T-003-shaped view still exists and matches.
+        assert_eq!(collect_docs_files(t.root()), outcome.files);
+    }
+
+    #[test]
+    fn outcome_equality_is_the_suppression_baseline_including_skips() {
+        let t = TempTree::new("skip-equality");
+        t.write("docs/a.md", "a");
+        let first = collect_docs_tree(t.root());
+        assert_eq!(first, collect_docs_tree(t.root()));
+        // A NEW oversized file changes no collected file, but the outcome
+        // must differ — otherwise the frontend never learns of the skip.
+        let big = "x".repeat((MAX_FILE_BYTES + 1) as usize);
+        t.write("docs/b.md", &big);
+        let second = collect_docs_tree(t.root());
+        assert_eq!(first.files, second.files);
+        assert_ne!(first, second);
+    }
+
+    // ---- T-018: skips ride the live snapshot ---------------------------
+
+    #[test]
+    fn a_file_crossing_the_size_line_emits_with_a_skip_not_a_silent_deletion() {
+        let t = TempTree::new("live-skip");
+        t.write("docs/a.md", "a stays");
+        t.write("docs/b.md", "b starts small");
+        let (state, emits) = live_state(None);
+        assert!(matches!(
+            apply_picked_folder(&state, t.root()),
+            PickOutcome::Picked { .. }
+        ));
+
+        // b grows past the cap: files lose it, the skip report says why.
+        let big = "y".repeat((MAX_FILE_BYTES + 1) as usize);
+        t.write("docs/b.md", &big);
+        let emit = recv_emit(&emits);
+        assert_eq!(
+            emit.files.iter().map(|f| f.path.as_str()).collect::<Vec<_>>(),
+            vec!["docs/a.md"]
+        );
+        assert_eq!(
+            emit.skipped,
+            vec![SkippedFile { path: "docs/b.md".into(), reason: SkipReason::Oversize }]
+        );
+        assert_eq!(emit.skipped_total, 1);
+        assert!(!emit.truncated);
+
+        // b shrinks back: collected again, skip report clears.
+        t.write("docs/b.md", "b is back");
+        let back = recv_emit(&emits);
+        assert!(back.files.iter().any(|f| f.content == "b is back"));
+        assert_eq!(back.skipped, vec![]);
+        assert_eq!(back.skipped_total, 0);
+    }
+
+    // ---- T-018: root sentinel — docs/ appears, is replaced, returns ----
+
+    /// Wait out at least one debounce round so racy arm windows settle.
+    fn settle() {
+        std::thread::sleep(DEBOUNCE * 4);
+    }
+
+    #[test]
+    fn docs_created_after_a_docsless_startup_arms_and_emits() {
+        // T-003-s1 case 1: launch resolves a repo with no docs/ at all.
+        let t = TempTree::new("sentinel-late");
+        fs::remove_dir_all(t.root().join("docs")).expect("rm docs");
+        let (_state, emits) = live_state(Some(t.root().to_path_buf()));
+        settle(); // let the startup (failed) arm + sentinel arm land
+
+        // docs/ appears with content. The sentinel's batch re-arms the
+        // docs watch and this same batch ships the tree.
+        t.write("docs/tasks/T-400-late.md", "born late v1");
+        let emit = loop {
+            let emit = recv_emit(&emits);
+            if emit.files.iter().any(|f| f.content.contains("born late")) {
+                break emit;
+            }
+        };
+        assert_eq!(emit.files[0].path, "docs/tasks/T-400-late.md");
+
+        // And the re-armed watch is LIVE: an in-place edit emits too.
+        t.write("docs/tasks/T-400-late.md", "born late v2");
+        loop {
+            let emit = recv_emit(&emits);
+            if emit.files.iter().any(|f| f.content == "born late v2") {
+                break;
+            }
+        }
+    }
+
+    #[test]
+    fn docs_replaced_wholesale_rearms_and_sees_in_place_edits() {
+        // T-003-s1 case 2, the stale-handle death: notify keeps watching
+        // the moved-away inode, so pre-T-018 in-place edits inside the
+        // REPLACEMENT tree never produced events again.
+        let t = TempTree::new("sentinel-replace");
+        t.write("docs/tasks/T-401-a.md", "original tree");
+        let (state, emits) = live_state(None);
+        assert!(matches!(
+            apply_picked_folder(&state, t.root()),
+            PickOutcome::Picked { .. }
+        ));
+
+        // Build the replacement OUTSIDE docs/, then swap wholesale.
+        t.write("docs-next/tasks/T-401-a.md", "replacement tree");
+        fs::rename(t.root().join("docs"), t.root().join("docs-old")).expect("mv away");
+        fs::rename(t.root().join("docs-next"), t.root().join("docs")).expect("mv in");
+
+        // The swap itself emits the replacement's content...
+        loop {
+            let emit = recv_emit(&emits);
+            if emit.files.iter().any(|f| f.content == "replacement tree") {
+                break;
+            }
+        }
+        // ...and — the criterion — the watch is genuinely re-armed: an
+        // in-place edit inside the NEW tree still produces an emit.
+        settle();
+        t.write("docs/tasks/T-401-a.md", "edited in place after swap");
+        loop {
+            let emit = recv_emit(&emits);
+            if emit
+                .files
+                .iter()
+                .any(|f| f.content == "edited in place after swap")
+            {
+                break;
+            }
+        }
+    }
+
+    #[test]
+    fn docs_deleted_emits_empty_then_recreated_emits_again() {
+        let t = TempTree::new("sentinel-return");
+        t.write("docs/tasks/T-402-r.md", "here v1");
+        let (state, emits) = live_state(None);
+        assert!(matches!(
+            apply_picked_folder(&state, t.root()),
+            PickOutcome::Picked { .. }
+        ));
+
+        // Deletion semantics unchanged: the empty tree ships.
+        fs::remove_dir_all(t.root().join("docs")).expect("rm docs");
+        loop {
+            let emit = recv_emit(&emits);
+            if emit.files.is_empty() {
+                break;
+            }
+        }
+        // Recovery armed: recreating docs/ re-arms and emits — no
+        // restart, no re-pick (pre-T-018 this silence was permanent).
+        settle();
+        t.write("docs/tasks/T-402-r.md", "here again");
+        let emit = loop {
+            let emit = recv_emit(&emits);
+            if emit.files.iter().any(|f| f.content == "here again") {
+                break emit;
+            }
+        };
+        assert_eq!(emit.files.len(), 1);
+
+        // And the fresh watch is live for ordinary edits.
+        t.write("docs/tasks/T-402-r.md", "here again v2");
+        loop {
+            let emit = recv_emit(&emits);
+            if emit.files.iter().any(|f| f.content == "here again v2") {
+                break;
+            }
+        }
+    }
+
+    // ---- T-018: additive-only — telemetry is never a failure mode ------
+
+    #[test]
+    fn a_dead_sentinel_leaves_the_existing_watch_fully_working() {
+        use notify_debouncer_mini::DebouncedEventKind;
+        // Drive the batch handler directly with a target whose sentinel
+        // arm FAILED (sentinel: None) — collection, suppression, and
+        // emits must behave exactly as pre-T-018.
+        let t = TempTree::new("sentinel-dead");
+        t.write("docs/a.md", "v1");
+        let mut debouncer =
+            new_debouncer(DEBOUNCE, |_res: DebounceEventResult| {}).expect("debouncer");
+        let mut target = WatchTarget {
+            root: None,
+            docs: None,
+            docs_id: None,
+            sentinel: None,
+            last: CollectOutcome::default(),
+        };
+        rearm(&mut debouncer, &mut target, t.root().to_path_buf()).expect("arm");
+        // Simulate the sentinel having failed to arm.
+        if let Some(s) = target.sentinel.take() {
+            let _ = debouncer.watcher().unwatch(&s);
+        }
+
+        let seq = AtomicU64::new(0);
+        let (tx, rx) = mpsc::channel::<DocsSnapshot>();
+        let sink = move |snap: &DocsSnapshot| {
+            let _ = tx.send(snap.clone());
+        };
+        let batch = vec![DebouncedEvent::new(
+            t.root().join("docs/a.md"),
+            DebouncedEventKind::Any,
+        )];
+
+        // Unchanged content: suppressed, exactly as before.
+        handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
+        assert!(rx.try_recv().is_err());
+
+        // Changed content: emits, skips empty, no truncation claimed.
+        t.write("docs/a.md", "v2");
+        handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
+        let emit = rx.recv_timeout(Duration::from_secs(5)).expect("emit");
+        assert!(emit.files.iter().any(|f| f.content == "v2"));
+        assert_eq!(emit.skipped, vec![]);
+        assert!(!emit.truncated);
+    }
+
+    #[test]
+    fn a_vanished_root_never_panics_the_batch_handler() {
+        use notify_debouncer_mini::DebouncedEventKind;
+        let t = TempTree::new("root-gone");
+        t.write("docs/a.md", "v1");
+        let mut debouncer =
+            new_debouncer(DEBOUNCE, |_res: DebounceEventResult| {}).expect("debouncer");
+        let mut target = WatchTarget {
+            root: None,
+            docs: None,
+            docs_id: None,
+            sentinel: None,
+            last: CollectOutcome::default(),
+        };
+        rearm(&mut debouncer, &mut target, t.root().to_path_buf()).expect("arm");
+
+        let seq = AtomicU64::new(0);
+        let (tx, rx) = mpsc::channel::<DocsSnapshot>();
+        let sink = move |snap: &DocsSnapshot| {
+            let _ = tx.send(snap.clone());
+        };
+        let batch = vec![DebouncedEvent::new(
+            t.root().join("docs/a.md"),
+            DebouncedEventKind::Any,
+        )];
+
+        // The whole project vanishes: the sentinel check and collect both
+        // degrade — an empty tree emits (deletion semantics), no panic.
+        fs::remove_dir_all(t.root()).expect("rm root");
+        handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
+        let emit = rx.recv_timeout(Duration::from_secs(5)).expect("empty emit");
+        assert!(emit.files.is_empty());
+        // A second batch on the same dead root: suppressed, still alive.
+        handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
+        assert!(rx.try_recv().is_err());
     }
 }
