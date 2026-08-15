@@ -5,10 +5,10 @@ feature: F-02
 milestone: 4
 priority: 10
 size: M
-status: planned
+status: building
 blocked_by: [T-008]
 touches: [lib-parser, app-board]
-builder:
+builder: claude-fable-5
 verifier:
 built_by:
 verified_by:
