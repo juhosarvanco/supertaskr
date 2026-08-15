@@ -160,8 +160,11 @@ describe("the nputer repo on its own map", () => {
     // 59 → 75 at the T-012 merge regen (T-009-s1): the map's own nine
     // sources and seven test suites joined the committed graph.
     // 75 → 76 at the T-018 merge regen: the watcher-truth suite joined.
+    // 76 → 78 at the T-019 merge regen (2026-08-16): validate.ts and
+    // validate.test.ts joined C-06 — see architecture-dogfood's dated
+    // reconciliation for the full delta enumeration.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 76 files",
+      "committed graph · 78 files",
     );
   });
 });

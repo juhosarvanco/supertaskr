@@ -1074,8 +1074,8 @@
       "id": "f:app/src/components/board/TaskDetailPanel.tsx",
       "path": "app/src/components/board/TaskDetailPanel.tsx",
       "lang": "ts",
-      "hash": "blake3:8838e0e33aef40aa5caebae4002305e9d889c7317891d681bc0eadb98ab8c1a5",
-      "loc": 425,
+      "hash": "blake3:09f187283b2e580185451d37aa147ad658096f741c5b389ac3c11034f8f75a1b",
+      "loc": 444,
       "symbols": [
         {
           "id": "s:app/src/components/board/TaskDetailPanel.tsx#Empty",
@@ -1083,8 +1083,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            408,
-            414
+            427,
+            433
           ]
         },
         {
@@ -1093,8 +1093,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            302,
-            308
+            321,
+            327
           ]
         },
         {
@@ -1103,8 +1103,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            317,
-            345
+            336,
+            364
           ]
         },
         {
@@ -1113,8 +1113,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            380,
-            404
+            399,
+            423
           ]
         },
         {
@@ -1123,8 +1123,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            416,
-            425
+            435,
+            444
           ]
         },
         {
@@ -1134,7 +1134,7 @@
           "exported": true,
           "range": [
             42,
-            299
+            318
           ]
         },
         {
@@ -1143,8 +1143,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            348,
-            378
+            367,
+            397
           ]
         }
       ]
@@ -2272,8 +2272,8 @@
       "id": "f:app/src/lib/task-detail.ts",
       "path": "app/src/lib/task-detail.ts",
       "lang": "ts",
-      "hash": "blake3:846c91dbc6cac08fe35a25b3589e37a6d335c47e7a4c27ed52165a365389ee1c",
-      "loc": 199,
+      "hash": "blake3:5bb1af8850307d93b948c80ab160ddef0696109f998f328a08e6cb274651ba58",
+      "loc": 204,
       "symbols": [
         {
           "id": "s:app/src/lib/task-detail.ts#BlockerLink",
@@ -2291,8 +2291,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            106,
-            111
+            110,
+            115
           ]
         },
         {
@@ -2302,7 +2302,7 @@
           "exported": true,
           "range": [
             63,
-            95
+            99
           ]
         },
         {
@@ -2331,8 +2331,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            118,
-            142
+            122,
+            146
           ]
         },
         {
@@ -2341,8 +2341,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            144,
-            149
+            148,
+            153
           ]
         },
         {
@@ -2361,8 +2361,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            99,
-            101
+            103,
+            105
           ]
         },
         {
@@ -2371,8 +2371,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            157,
-            199
+            161,
+            204
           ]
         }
       ]
@@ -2853,8 +2853,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:e3dd65a44e089ff4fe0728b8eb40a515a6f9a796344c4c976ce90d6e0a0cc13e",
-      "loc": 332,
+      "hash": "blake3:e8a0f318a5562bb9ea8a1658207bc499d876633640b74a794f28c1d5e4c2d62c",
+      "loc": 353,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -2862,8 +2862,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            125,
-            125
+            146,
+            146
           ]
         },
         {
@@ -2872,8 +2872,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            124,
-            124
+            145,
+            145
           ]
         },
         {
@@ -2882,8 +2882,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            90,
-            90
+            111,
+            111
           ]
         },
         {
@@ -2892,8 +2892,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            96,
-            111
+            117,
+            132
           ]
         },
         {
@@ -2902,8 +2902,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            113,
-            122
+            134,
+            143
           ]
         },
         {
@@ -2912,8 +2912,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            92,
-            94
+            113,
+            115
           ]
         }
       ]
@@ -3018,8 +3018,8 @@
       "id": "f:app/test/board-truth.test.tsx",
       "path": "app/test/board-truth.test.tsx",
       "lang": "ts",
-      "hash": "blake3:367692c9454799a856fd52304168e9ecdf121016b59c07de00d3f3dc7a9c8f7b",
-      "loc": 339,
+      "hash": "blake3:ff0d40ad6b39a818c38ef4bf874289bf3c9fccd978d3017cb56ee3537798b33f",
+      "loc": 394,
       "symbols": [
         {
           "id": "s:app/test/board-truth.test.tsx#FILES",
@@ -3028,7 +3028,7 @@
           "exported": false,
           "range": [
             67,
-            110
+            115
           ]
         },
         {
@@ -3097,8 +3097,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            114,
-            114
+            119,
+            119
           ]
         },
         {
@@ -3107,8 +3107,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            148,
-            154
+            153,
+            159
           ]
         },
         {
@@ -3117,8 +3117,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            112,
-            112
+            117,
+            117
           ]
         },
         {
@@ -3127,8 +3127,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            144,
-            144
+            149,
+            149
           ]
         },
         {
@@ -3137,8 +3137,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            135,
-            140
+            140,
+            145
           ]
         },
         {
@@ -3147,8 +3147,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            142,
-            142
+            147,
+            147
           ]
         },
         {
@@ -3157,8 +3157,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            128,
-            130
+            133,
+            135
           ]
         },
         {
@@ -3167,8 +3167,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            115,
-            115
+            120,
+            120
           ]
         },
         {
@@ -3284,8 +3284,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:9c58e3e718f8e63bd813ddd7b5b8ffb6a3507529aa02e0f4eb405c02a63e1882",
-      "loc": 167,
+      "hash": "blake3:436cfc648d013acebe1bc192d050c51ac1255fc3ae6c730bb9988932e6594459",
+      "loc": 170,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -3793,8 +3793,8 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:aba9e7fd350a1107c1a5d8e160f5f97896ffe98244cba6829c30dfb066fc3e24",
-      "loc": 502,
+      "hash": "blake3:692c0f148fb0aba8ab3bb4d1d9ff2b4ac960183f5c5d9d0f93fce04bd6855652",
+      "loc": 514,
       "symbols": [
         {
           "id": "s:app/test/select-board.test.ts#Field",
@@ -3872,8 +3872,8 @@
       "id": "f:app/test/select-task-detail.test.ts",
       "path": "app/test/select-task-detail.test.ts",
       "lang": "ts",
-      "hash": "blake3:7cb9509febdcb6bddcffe4afd519645e6a7bf4cc2730cad2fb2c11fb74ea9ae5",
-      "loc": 287,
+      "hash": "blake3:20bc31d51f78c34bfe09b3bddd4663d6028e567bbe24a4efe67fed3e1bb15a48",
+      "loc": 326,
       "symbols": [
         {
           "id": "s:app/test/select-task-detail.test.ts#FULL_BODY",
@@ -4305,8 +4305,8 @@
       "id": "f:lib/parser/src/files.ts",
       "path": "lib/parser/src/files.ts",
       "lang": "ts",
-      "hash": "blake3:52e9901f45d20905bc9d95b1fd9115600293f64bc95504eb5c94dd6819860f38",
-      "loc": 173,
+      "hash": "blake3:29394f42630c4193c3cc88ad6172ca152a4086fdc7e8f753d4c387b18dd07c14",
+      "loc": 200,
       "symbols": [
         {
           "id": "s:lib/parser/src/files.ts#FileEntry",
@@ -4314,8 +4314,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            30,
-            33
+            31,
+            34
           ]
         },
         {
@@ -4324,8 +4324,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            75,
-            79
+            76,
+            80
           ]
         },
         {
@@ -4334,8 +4334,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            35,
-            43
+            36,
+            44
           ]
         },
         {
@@ -4344,8 +4344,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            65,
-            73
+            66,
+            74
           ]
         },
         {
@@ -4354,8 +4354,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            57,
-            62
+            58,
+            63
           ]
         },
         {
@@ -4364,8 +4364,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            90,
-            100
+            91,
+            101
           ]
         },
         {
@@ -4374,8 +4374,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            111,
-            173
+            117,
+            200
           ]
         },
         {
@@ -4384,8 +4384,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            46,
-            54
+            47,
+            55
           ]
         }
       ]
@@ -4433,8 +4433,8 @@
       "id": "f:lib/parser/src/index.ts",
       "path": "lib/parser/src/index.ts",
       "lang": "ts",
-      "hash": "blake3:3971ceb09e69aa9c7ba6a9a97fe99d4f65a6fb0919fc4fe96f584888b19cbdb3",
-      "loc": 54,
+      "hash": "blake3:514f535a23d947c85732b4e455b1bf5aadc79674a268b8e66db727fd0a434bd4",
+      "loc": 55,
       "symbols": []
     },
     {
@@ -4460,8 +4460,8 @@
       "id": "f:lib/parser/src/project.ts",
       "path": "lib/parser/src/project.ts",
       "lang": "ts",
-      "hash": "blake3:af6f76da888630a586d0eee66b24a12b038bf23ce2e7f47569ffff974879dbca",
-      "loc": 196,
+      "hash": "blake3:d1dda2b078fd24679bfaa002820c624fa006be7af9945670e3b37f00ff6746da",
+      "loc": 214,
       "symbols": [
         {
           "id": "s:lib/parser/src/project.ts#ParseProjectOptions",
@@ -4469,8 +4469,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            161,
-            168
+            162,
+            169
           ]
         },
         {
@@ -4479,8 +4479,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            20,
-            23
+            21,
+            24
           ]
         },
         {
@@ -4489,8 +4489,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            103,
-            139
+            104,
+            140
           ]
         },
         {
@@ -4499,8 +4499,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            179,
-            196
+            186,
+            214
           ]
         },
         {
@@ -4509,8 +4509,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            142,
-            159
+            143,
+            160
           ]
         },
         {
@@ -4519,8 +4519,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            33,
-            92
+            34,
+            93
           ]
         }
       ]
@@ -4529,8 +4529,8 @@
       "id": "f:lib/parser/src/pure.ts",
       "path": "lib/parser/src/pure.ts",
       "lang": "ts",
-      "hash": "blake3:9dde68e8cb65ee2b9cf956c74d503865733108fac296104db8eeee4e8e016b97",
-      "loc": 47,
+      "hash": "blake3:bc03b9f9dd1e4ade854e7f6884e8dd8b6efaee735aa5f8f88bf95ea284dce7d7",
+      "loc": 48,
       "symbols": []
     },
     {
@@ -4556,8 +4556,8 @@
       "id": "f:lib/parser/src/task.ts",
       "path": "lib/parser/src/task.ts",
       "lang": "ts",
-      "hash": "blake3:ce430bad0022823fdfeb49d98a0fb36f48f7b7c85490fb54a057c262d422af50",
-      "loc": 314,
+      "hash": "blake3:b790dbdbdeadaa5123209d13e19f833a2a622a11dd8d89fb989bd518ecbd20b6",
+      "loc": 330,
       "symbols": [
         {
           "id": "s:lib/parser/src/task.ts#KNOWN_FIELDS",
@@ -4595,8 +4595,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            103,
-            314
+            112,
+            330
           ]
         },
         {
@@ -4605,8 +4605,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            51,
-            87
+            54,
+            96
           ]
         }
       ]
@@ -4615,8 +4615,8 @@
       "id": "f:lib/parser/src/types.ts",
       "path": "lib/parser/src/types.ts",
       "lang": "ts",
-      "hash": "blake3:bcce029df75643a421fce7f978dcbef2b14dcb95b509e24e5a557c2a42ea4d55",
-      "loc": 269,
+      "hash": "blake3:3e37229a07daeb304be950ae15f07f6e45310a5db1c4b654d76cfb19b3cc9f53",
+      "loc": 287,
       "symbols": [
         {
           "id": "s:lib/parser/src/types.ts#COMPONENT_STATUSES",
@@ -4624,8 +4624,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            116,
-            124
+            124,
+            132
           ]
         },
         {
@@ -4634,8 +4634,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            245,
-            248
+            263,
+            266
           ]
         },
         {
@@ -4644,8 +4644,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            135,
-            169
+            143,
+            177
           ]
         },
         {
@@ -4654,8 +4654,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            251,
-            254
+            269,
+            272
           ]
         },
         {
@@ -4664,8 +4664,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            126,
-            126
+            134,
+            134
           ]
         },
         {
@@ -4674,8 +4674,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            172,
-            183
+            180,
+            191
           ]
         },
         {
@@ -4694,8 +4694,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            189,
-            226
+            197,
+            244
           ]
         },
         {
@@ -4704,8 +4704,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            258,
-            269
+            276,
+            287
           ]
         },
         {
@@ -4734,8 +4734,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            237,
-            240
+            255,
+            258
           ]
         },
         {
@@ -4774,8 +4774,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            231,
-            234
+            249,
+            252
           ]
         },
         {
@@ -4784,8 +4784,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            74,
-            109
+            82,
+            117
           ]
         },
         {
@@ -4795,7 +4795,7 @@
           "exported": true,
           "range": [
             56,
-            63
+            71
           ]
         },
         {
@@ -4816,6 +4816,45 @@
           "range": [
             20,
             20
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/src/validate.ts",
+      "path": "lib/parser/src/validate.ts",
+      "lang": "ts",
+      "hash": "blake3:b2c9126824959c74a427412103b73b680d86cfc61808c662de80c5b189dd76f9",
+      "loc": 136,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/validate.ts#ValidateProjectOptions",
+          "name": "ValidateProjectOptions",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            51,
+            64
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/validate.ts#filenameId",
+          "name": "filenameId",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            132,
+            136
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/validate.ts#validateProject",
+          "name": "validateProject",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            66,
+            120
           ]
         }
       ]
@@ -4883,8 +4922,8 @@
       "id": "f:lib/parser/test/files.test.ts",
       "path": "lib/parser/test/files.test.ts",
       "lang": "ts",
-      "hash": "blake3:2040777ecde343d118c6aa9bb2a41bec32b39b821ce860fbdd6066b25c758cbe",
-      "loc": 171,
+      "hash": "blake3:08223f3e1223bf3ee9e4025e56cb1abc29feec600e35e23934c38dcc5f014a8a",
+      "loc": 175,
       "symbols": [
         {
           "id": "s:lib/parser/test/files.test.ts#fixture",
@@ -4920,8 +4959,8 @@
       "id": "f:lib/parser/test/project.test.ts",
       "path": "lib/parser/test/project.test.ts",
       "lang": "ts",
-      "hash": "blake3:4911fa0cc63e8aaa583e604c2361e4a6e6a189a737f7f61bbf8520781ea5a0fc",
-      "loc": 107,
+      "hash": "blake3:619e569e706a59399f024787cfebf570f2cecb5e626a0f801619c7f5b006c369",
+      "loc": 115,
       "symbols": [
         {
           "id": "s:lib/parser/test/project.test.ts#fixture",
@@ -5026,8 +5065,8 @@
       "id": "f:lib/parser/test/task.test.ts",
       "path": "lib/parser/test/task.test.ts",
       "lang": "ts",
-      "hash": "blake3:65f2119031d0cf4020ff5a9661b04a33a6e0418752a46305a10c7e9df694f224",
-      "loc": 308,
+      "hash": "blake3:b38e099d5dc1b8f2157f0aaaff51e180724ccc588e2494135cde6a3da734d76e",
+      "loc": 406,
       "symbols": [
         {
           "id": "s:lib/parser/test/task.test.ts#FILE",
@@ -5052,11 +5091,70 @@
       ]
     },
     {
+      "id": "f:lib/parser/test/validate.test.ts",
+      "path": "lib/parser/test/validate.test.ts",
+      "lang": "ts",
+      "hash": "blake3:a8532a71fded0872d9d58892af5284335dc3c8109d1a75d39a423c614dd0547d",
+      "loc": 392,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/validate.test.ts#Field",
+          "name": "Field",
+          "kind": "type",
+          "exported": false,
+          "range": [
+            21,
+            21
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/validate.test.ts#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            19,
+            19
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/validate.test.ts#kinds",
+          "name": "kinds",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            40,
+            40
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/validate.test.ts#src",
+          "name": "src",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            23,
+            24
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/validate.test.ts#task",
+          "name": "task",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            26,
+            38
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:lib/parser/test/verifier-probes.test.ts",
       "path": "lib/parser/test/verifier-probes.test.ts",
       "lang": "ts",
-      "hash": "blake3:15f54a040519be32fc5d7a8b39080f114ddbd5f5e31eb21ab4b09ea1bf4738e8",
-      "loc": 277,
+      "hash": "blake3:862f81879d5bd54052884eb52712459cb532b8f85c99a912151477c32af57e27",
+      "loc": 290,
       "symbols": [
         {
           "id": "s:lib/parser/test/verifier-probes.test.ts#F",
@@ -7012,6 +7110,14 @@
       ]
     },
     {
+      "from": "f:lib/parser/src/files.ts",
+      "to": "f:lib/parser/src/validate.ts",
+      "kind": "import",
+      "symbols": [
+        "validateProject"
+      ]
+    },
+    {
       "from": "f:lib/parser/src/frontmatter.ts",
       "to": "f:lib/parser/src/types.ts",
       "kind": "import",
@@ -7133,6 +7239,16 @@
       "reexport": true
     },
     {
+      "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/validate.ts",
+      "kind": "import",
+      "symbols": [
+        "ValidateProjectOptions",
+        "validateProject"
+      ],
+      "reexport": true
+    },
+    {
       "from": "f:lib/parser/src/model-session.ts",
       "to": "f:lib/parser/src/types.ts",
       "kind": "import",
@@ -7174,6 +7290,14 @@
         "ProjectParseResult",
         "RoadmapParseResult",
         "TaskRecord"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/project.ts",
+      "to": "f:lib/parser/src/validate.ts",
+      "kind": "import",
+      "symbols": [
+        "validateProject"
       ]
     },
     {
@@ -7286,6 +7410,16 @@
       "reexport": true
     },
     {
+      "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/validate.ts",
+      "kind": "import",
+      "symbols": [
+        "ValidateProjectOptions",
+        "validateProject"
+      ],
+      "reexport": true
+    },
+    {
       "from": "f:lib/parser/src/roadmap.ts",
       "to": "f:lib/parser/src/types.ts",
       "kind": "import",
@@ -7327,6 +7461,15 @@
         "TaskSections",
         "TaskSize",
         "TaskStatus"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/validate.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "ParseIssue",
+        "ProjectParseResult"
       ]
     },
     {
@@ -7580,6 +7723,63 @@
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/validate.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "ParseIssue",
+        "parseProject",
+        "parseProjectFromFiles",
+        "validateProject"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/validate.test.ts",
+      "to": "f:lib/parser/src/pure.ts",
+      "kind": "import",
+      "symbols": [
+        "validateProject"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/validate.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "mkdirSync",
+        "mkdtempSync",
+        "rmSync",
+        "writeFileSync"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/validate.test.ts",
+      "to": "p:node:os",
+      "kind": "import",
+      "symbols": [
+        "tmpdir"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/validate.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/validate.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterAll",
         "describe",
         "expect",
         "it"
@@ -10360,6 +10560,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+      "to": "s:lib/parser/src/validate.ts#validateProject",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/files.ts#toFileMap",
       "to": "s:lib/parser/src/files.ts#FileEntry",
       "kind": "type_ref",
@@ -10447,6 +10653,12 @@
       "from": "s:lib/parser/src/project.ts#parseProject",
       "to": "s:lib/parser/src/types.ts#ProjectParseResult",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseProject",
+      "to": "s:lib/parser/src/validate.ts#validateProject",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -10696,8 +10908,50 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/validate.ts#validateProject",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/validate.ts#validateProject",
+      "to": "s:lib/parser/src/types.ts#ProjectParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/validate.ts#validateProject",
+      "to": "s:lib/parser/src/validate.ts#ValidateProjectOptions",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/validate.ts#validateProject",
+      "to": "s:lib/parser/src/validate.ts#filenameId",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/test/files.test.ts#loadFixture",
       "to": "s:lib/parser/test/files.test.ts#fixture",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/validate.test.ts#src",
+      "to": "s:lib/parser/test/validate.test.ts#Field",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/validate.test.ts#task",
+      "to": "s:lib/parser/test/validate.test.ts#Field",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/validate.test.ts#task",
+      "to": "s:lib/parser/test/validate.test.ts#src",
       "kind": "call",
       "confidence": "resolved"
     }
@@ -10710,8 +10964,8 @@
     }
   ],
   "stats": {
-    "files": 76,
-    "symbols": 441,
-    "edges": 770
+    "files": 78,
+    "symbols": 449,
+    "edges": 790
   }
 }

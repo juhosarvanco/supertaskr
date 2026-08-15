@@ -86,6 +86,27 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 // under the app/test umbrella, and App.tsx itself now imports
 // skipReasonPhrase for the skip chip (the first src-side C-05→C-10
 // edge). Changed, never loosened.
+//
+// RECONCILED AT THE T-019 MERGE (2026-08-16, integrator — sixth
+// exercise of the T-009-s1 practice): the regenerated 78-file graph
+// (76→78: validate.ts joins C-06's src AND validate.test.ts its test
+// tree — the branch's own forecast said one file; the indexer's
+// lib/parser/test/** coverage makes it two). Deltas, verified against
+// the enumerated edge diff of the regen (+20 edges, 0 removed;
+// symbols 441→449, +8/0) and an independent re-derivation before this
+// edit: mapping C-06 19→21; D2 STAYS EMPTY; findings byte-unchanged —
+// every new edge is C-06-internal (both assemblers gain a call edge
+// into validateProject; the new test imports index/pure) or
+// package-bound (node:fs/os/path, vitest), so no cross-component file
+// edge moved: all four D1s, the three D3s, and the whole 23-row
+// relation table hold exactly (same 12/4/7 tally, every observedCount
+// unchanged — the three parser-importing app suites T-019 touched
+// were already in the C-05→C-06 D1 list). Hash/loc drift on the
+// fifteen pre-existing files T-019 modified (six parser src, four
+// parser tests, TaskDetailPanel/task-detail, three app suites), plus
+// this fixture pair's own reconciliation edits — picked up because
+// the final regen runs after these lines land (the ceaa949 ordering
+// lesson, sixth hold). Changed, never loosened.
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
@@ -150,15 +171,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 76 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(76);
+  it("all 78 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(78);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
     for (const id of derived.fileComponent.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
     expect([...counts.entries()].sort()).toEqual([
       ["C-05", 31],
-      ["C-06", 19],
+      ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
       ["C-10", 2],

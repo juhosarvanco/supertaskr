@@ -5,14 +5,14 @@ feature: F-02
 milestone: 4
 priority: 10
 size: M
-status: verifying
+status: done
 blocked_by: [T-008]
 touches: [lib-parser, app-board]
 builder: claude-fable-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-fable-5
+built_by: "claude-fable-5 @fresh (first pass + fix pass, fresh executor)"
+verified_by: "claude-fable-5 @fresh"
+review: same-model
 ---
 
 Absorbs: T-002-s1, T-002-s2, T-002-s3. Triage 2026-08-15. Kept
