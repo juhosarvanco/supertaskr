@@ -1,6 +1,11 @@
 mod docs_watch;
 mod index_cmd;
 
+/// T-021: the pinned webview ACL surface (test-only module — the pin
+/// itself is a cargo test; see src/acl_pin.rs for why it exists).
+#[cfg(test)]
+mod acl_pin;
+
 use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicU64;

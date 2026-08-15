@@ -40,3 +40,11 @@ tauri-plugin-dialog = "2"
 # at the Rust level) — exactly the seam T-009's plan reserved. Path dep,
 # zero new external packages.
 nputer-index = { path = "crates/nputer-index" }
+
+[dev-dependencies]
+# T-021: the ACL-surface pin (src/acl_pin.rs) drives real InvokeRequests
+# through a MockRuntime app — tauri's own `test` half. `test` is an empty
+# feature ([features] test = [] upstream): zero new crates, zero
+# Cargo.lock diff. Same version spec as the main dependency above; cargo
+# unifies them, so this line only flips the feature for test builds.
+tauri = { version = "2", features = ["test"] }
