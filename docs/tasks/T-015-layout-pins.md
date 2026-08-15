@@ -19,8 +19,9 @@ review:
 - WHEN a node is dragged THE position SHALL persist to
   docs/architecture/layout.json (debounced single-file write — the
   map's only write path, per ADR-014) and survive re-index and app
-  restart; unpinned nodes SHALL auto-lay-out around pins (ELK FIXED
-  constraints).
+  restart; unpinned nodes SHALL auto-lay-out around pins (layout
+  rule 5: slot assignment skips pinned nodes; the computed slot
+  stays ghosted).
 - IF layout.json is malformed THEN THE map SHALL ignore it, surface
   the existing parse-error chip, and fall back to auto layout — no
   crash, no partial pinning.

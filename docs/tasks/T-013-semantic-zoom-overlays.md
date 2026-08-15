@@ -19,13 +19,17 @@ review:
 - WHEN a component is expanded THE node SHALL become a container
   showing its files grouped by directory with intra-component edges
   and stub edges to collapsed neighbors, without moving unexpanded
-  siblings more than necessary (ELK interactive hints; spatial
-  stability per plan §6.4).
+  siblings more than necessary (the T1 rule of T-012's seven-rule
+  layout: the container grows down within its own column and pushes
+  only that column; siblings do not move).
 - WHEN a file is selected THE panel SHALL list its symbols and their
   resolved edges (T2 in-panel; no canvas symbols in v1).
-- THE overlays status · provenance · drift · churn SHALL be
-  toggleable with the legend following the active overlay; churn
-  derives from shelling out to git (ADR-013/§0.0-6) and IF the
+- THE churn overlay SHALL join the overlay control T-012 ships
+  (status · provenance · drift), rendered per the design's
+  map-behavior screen (3px bottom bar, width = share of the busiest
+  component, raw count at the mark slot, hottest one step darker,
+  declared-only shows —, never amber), with the legend following;
+  churn derives from shelling out to git (ADR-013/§0.0-6) and IF the
   project is not a git repo THEN the churn overlay SHALL be disabled,
   not broken.
 - IF an expanded component's files exceed the render budget THEN the
