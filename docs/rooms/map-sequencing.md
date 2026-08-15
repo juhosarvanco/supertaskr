@@ -1,9 +1,33 @@
 ---
 type: consultation
 task:
-status: open
+status: resolved
 max_rounds: 3
 ---
+
+## Resolution
+- **Question** — what runs as milestone 2: the architecture map
+  (F-06) or the in-app interview (F-03)?
+- **Decision** — the map VERTICAL SLICE only: T-008 → T-009 → T-011 →
+  T-012 (the screenshot on nputer's own repo) is milestone 2; F-03
+  (in-app genesis) is milestone 3; T-010/T-013/T-014/T-015 re-enter
+  after F-03 (milestone 4). Chosen by @human, 2026-08-15. Milestone-
+  order rule holds: nothing in 2 dispatches before T-006 closes
+  milestone 1.
+- **Why** — the slice buys the second hero surface and immediate
+  drift-dogfooding on this repo at a bounded delay to the interview,
+  while the expensive remainder (Rust language support, CLI binary,
+  semantic zoom, pins) defers to where NORTH_STAR's interview-first
+  logic governs. Rejected: (a) full map first — delays the product's
+  core (the interview IS the product; the middle of the workflow is
+  absorbable, per competitors.md) for features the screenshot doesn't
+  need; (b) interview first — spends none of the fresh, fully-specced
+  map plans, loses the launch post's second image, and the slice's
+  cost is small enough that the trade is favorable.
+- **Changed** — docs/ROADMAP.md (milestone 2 fixed to the slice,
+  milestone 3 = F-03, deferred F-06 remainder noted);
+  docs/tasks/T-010/T-013/T-014/T-015 frontmatter milestone 2 → 4;
+  docs/STATE.md next-up and open questions.
 
 ## @planner (claude-fable-5 @chat-session) — 2026-08-15
 
@@ -39,3 +63,7 @@ Options:
 
 T-006 (design language) closes milestone 1 regardless and is
 unaffected — it proceeds when the token sheet returns. @human
+
+## @human — 2026-08-15
+
+Map slice first (option c).

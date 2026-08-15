@@ -33,12 +33,15 @@ at T-001). Deliberately feels too small. Tasks: T-001…T-007.
 Progress: T-001–T-005 + T-007 done (2026-08-15); T-006 last,
 awaiting external design input.
 
-### Milestone 2 — PROPOSED, pending rooms/map-sequencing.md
-Candidate contents: F-06 (T-008…T-015; vertical slice T-008 → T-009 →
-T-011 → T-012 produces the map screenshot on this repo) OR F-03
-(in-app interview) — the human decides which runs first and what
-visibly moves down. All eight F-06 tasks sit below the slice line
-until then.
+### Milestone 2 — the map slice (decided 2026-08-15, rooms/map-sequencing.md)
+Goal: the architecture map's vertical slice on nputer's own repo —
+component files + TS indexer + derivation + T0 map view (T-008 →
+T-009 → T-011 → T-012). Starts only after T-006 closes milestone 1.
+
+### Milestone 3 — in-app genesis (F-03)
+Goal: the planning interview as split view; decomposed at its own
+/plan review. The F-06 remainder (T-010, T-013, T-014, T-015 —
+milestone 4) re-enters after it.
 
 ## Parked
 The staged future lives in docs/future.md (two expert-room batches:

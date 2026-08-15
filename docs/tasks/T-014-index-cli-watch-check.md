@@ -2,7 +2,7 @@
 id: T-014
 title: nputer-index binary — watch + check modes
 feature: F-06
-milestone: 2
+milestone: 4
 priority: 7
 size: M
 status: planned

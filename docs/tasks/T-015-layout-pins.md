@@ -2,7 +2,7 @@
 id: T-015
 title: Layout pins (drag → layout.json)
 feature: F-06
-milestone: 2
+milestone: 4
 priority: 8
 size: S
 status: planned

@@ -2,7 +2,7 @@
 id: T-013
 title: Semantic zoom T1/T2 + overlays
 feature: F-06
-milestone: 2
+milestone: 4
 priority: 6
 size: M
 status: planned

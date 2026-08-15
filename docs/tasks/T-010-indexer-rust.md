@@ -2,7 +2,7 @@
 id: T-010
 title: Indexer — Rust language support
 feature: F-06
-milestone: 2
+milestone: 4
 priority: 3
 size: M
 status: planned
