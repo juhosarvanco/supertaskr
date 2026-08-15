@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [app-shell]
 builder: claude-fable-5
-verifier:
+verifier: claude-fable-5
 built_by: "claude-fable-5 @fresh"
-verified_by:
-review:
+verified_by: "claude-fable-5 @fresh"
+review: same-model
 ---
 
 Absorbs: T-007-s2, T-007-s3. Triage 2026-08-15. Must land before
@@ -290,3 +290,143 @@ tauri-utils, so the ACL types cost no dependency line either.
   the full real handler set on MockRuntime.
 
 ## Verdicts
+
+2026-08-16 — claude-fable-5 @fresh (verifier, same-model as builder):
+APPROVED.
+
+Suites re-derived (macOS/Darwin 25.6, ADR-011 order): src-tauri bare
+`cargo test` **129 passed + 2 ignored, three consecutive identical
+runs**; `cargo build` exit 0; app `npm run build` exit 0 + `npm test`
+**392/392**; lib/parser ZERO-byte diff vs 7e28f30 (the untouched claim
+is literal) + `npx vitest run` **132/132**. The three new docs_watch
+concurrency tests ran 6 further consecutive times, all green in <10ms —
+the hold/assert/release rendezvous is deterministic as claimed; every
+timeout in them bounds a failure mode only, never the pass path.
+
+Criteria 1+3 (the pin + the alarm), attacked:
+- Alarm demo REPRODUCED end-to-end: `dialog:allow-open` added to the
+  committed capabilities/default.json, bare `cargo test` — tauri-build
+  regenerated gen/schemas from the mutated source and FOUR independent
+  tests failed: the pin panicked with exactly
+  `+ granted now, not pinned: plugin:dialog|open @local windows=[main]
+  webviews=[]` (removal side "(none)"), the source pin caught the
+  permissions drift, the authority cross-check caught it resolving, and
+  the runtime probe caught `plugin:dialog|open` suddenly PASSING the
+  ACL — failing on missing args INSIDE the real plugin, which
+  simultaneously proves the probe drives the genuine invoke pipeline
+  and empties the stale-copy worry (the pin reads the current tree's
+  compiled truth, demonstrably). Reverted, green.
+- The REMOVAL direction exercised by me, not taken from the notes:
+  shrinking permissions to `core:event:default` printed the 88 `-`
+  lines and the 4-grant re-pin list. Both diff directions live.
+- EVASION attempts, each caught four-ways: a SECOND capability file
+  (capabilities/extra.json granting dialog:allow-open) → file-listing
+  pin + grant diff + runtime probe + authority check all fired; a
+  `remote` key on default.json → source pin plus per-grant
+  `@remote:https://evil.example.com` context lines in the diff (the
+  rendering encodes execution context, so remote movement is
+  enumerated grant-by-grant). Reasoned the rest: inline tauri.conf.json
+  capabilities land in the same compiled artifact the pin reads;
+  window/webview scoping is pinned per-grant AND at source;
+  denied_commands / scopes / has_app_acl pinned; a NEW plugin
+  registration without grants moves nothing reachable (the registered-
+  but-ungranted dialog plugin is the standing proof of that wall) and
+  with grants is caught; fs/opener registration specifically pinned
+  ABSENT by namespace.
+- The Wry-monomorphism construction argument RULED SOUND — and upgraded
+  from argument to evidence: my own probe invoked the UNREGISTERED
+  `pick_project_folder`, `index_repo`, and a made-up name from the
+  LOCAL origin — all three died at handler lookup ("Command X not
+  found"), never at the ACL; the shipped remote-origin probes deny the
+  SAME names before handler lookup. Together: the ACL decides app
+  commands by name-class + origin, identically, before any handler
+  exists. `docs_snapshot` as the sole EXECUTING local control plus the
+  pinned `has_app_acl == false` covers criterion 1's "app commands
+  allowed" honestly; T-021-s2 remains the right upgrade path.
+
+Criterion 2 (single-flight + narrowed window), attacked:
+- RAII paths enumerated from the code: Busy (never claims), cancelled,
+  into_path error, ctl-send error, rearm Err, Timeout, Disconnected,
+  commit — all release via Drop on return; the command future dropped
+  mid-dialog releases (the guard is a plain local until it moves into
+  spawn_blocking); the PANIC path — the one no shipped test drives —
+  probed by me: catch_unwind over a panicking holder, latch free
+  after. No leak path found; no panic="abort" profile anywhere → s3
+  filed to make the panic path a permanent test.
+- `{"kind":"busy"}` wire shape pinned Rust-side; the +7 in
+  watcher-store.ts are exactly the union member + an explicit
+  no-change case; ZERO new invoke calls in app/src; 392/392 holds.
+- THE TOCTOU RULING: the narrowing does NOT reopen validate→arm.
+  Re-derived from the code, not the notes: (a) the project mutex never
+  excluded filesystem mutation — external writers take no process
+  lock, and the watcher thread provably CANNOT take this one (it never
+  receives WatchState; only the seq Arc, the ctl receiver, and the
+  sink); (b) the T-003 rule family runs at three layers, all still in
+  place — pick-time `has_plain_docs_dir`, the thread's OWN
+  `has_plain_docs_dir` gate at arm time inside `rearm()`, and
+  read-time refusal of symlinked docs/ + per-file canonical
+  containment in `collect_docs_tree`; a symlink swap or folder
+  replacement between validate and arm is refused by the thread's gate
+  (typed Err, nothing committed — the T-007 verifier's own attack,
+  machinery unchanged), and one between ack and snapshot collapses to
+  an empty/contained read, never a leak; (c) T-018's arm-time identity
+  re-derivation (`dir_identity` in `ensure_docs_watch`) is untouched;
+  (d) pick-vs-pick serialization strictly STRENGTHENED: mutex-at-apply
+  became a consumed guard claimed before the dialog opens, private
+  constructor — no unguarded pipeline can compile; (e) commit ordering
+  ack→commit→seq is identical to pre-T-021 (diffed against 7e28f30).
+  MUTATION TEST reproduced: restoring the broad lock fails
+  `a_parked_rearm_blocks_neither...` with exactly "docs_snapshot must
+  answer while a re-arm is parked (pre-T-021 it blocked here):
+  Timeout" — the regression test detects the regression. Reverted.
+- The pre-existing status/pick seq race: confirmed pre-existing IN
+  KIND by walking the OLD lock ordering (a status that cloned the old
+  dir and released before the pick's lock acquisition could always
+  take a later seq than the pick's); confirmed unreachable from the
+  shipped store (`docs_snapshot` invoked exactly once, at init, behind
+  the `started` latch — read, not assumed). Narrowing shrinks reader
+  DELAY only. Stays a note, correctly.
+
+Residual-notes fidelity, judged against the actual T-007 verdict text:
+observation (1) → this task's single-flight guard (absorbed s3);
+(2) — "the rendezvous holds the project mutex up to 10s" — implemented
+as named (commit-only window; the parked-rearm test is its proof);
+(4) — "a lost re-arm ack reports 'timed out' even when instant" —
+implemented (Disconnected arm, typed message, tested); (3) — the
+unsanitized picked-path println — the T-007 verifier classed it with
+T-001's project-folder line and named NO action; skipping it is
+faithful, not evasive. Fidelity: exact.
+
+Security sweep: capabilities/, tauri.conf.json, Cargo.lock all
+ZERO-byte diff vs 7e28f30 — the task's whole point holds at the byte
+level. acl_pin.rs (628 lines) reaches no production build: single
+`#[cfg(test)] mod` reference, `cargo build` clean, and the feature
+graph proves the dev-dep's `test` feature stays out of the normal
+resolve (`cargo tree -e normal`: tauri WITHOUT `test`; dev edges add
+it; upstream `test = []` is empty; workspace `resolver = "2"`
+explicit; Cargo.lock unchanged is the corroborating byte-level
+signal). The not-exact-pinning justification is correct cargo
+semantics (unification would silently exact-pin the main dep too).
+Diff hygiene: no process spawns, no network, no port 1420, no
+`unsafe`, no secrets, no bypass flags; headless throughout
+(MockRuntime end to end — even my granted-dialog mutation died at
+argument parsing, no dialog reachable).
+
+Non-blocking observations: (1) `PickInFlight` is not bound to the
+WatchState instance that issued it — a guard from one state would
+"serialize" another; unreachable in production (single managed state),
+misuse requires constructing two states — note, not a defect.
+(2) frontmatter `status:` still said `building` at verification start —
+the T-018 builder pattern sets `verifying` at finish and this builder
+did not; left untouched per house pattern (neither the T-018 nor T-011
+verifier commit moves status), integrator reconciles.
+
+Probe hygiene: every mutation and probe reverted (capabilities/ ×3,
+extra.json removed, two verifier probe tests in acl_pin.rs, the
+docs_watch broad-lock mutation); `git status` clean before this
+commit; suites re-run green after each revert. No servers, no ports
+bound or contacted, no screen control, no real model calls.
+
+Suggestions filed: T-021-s3 (pin the panic-path latch release as a
+permanent test — today it is structural via Drop; a refactor to manual
+latch stores would lose it silently).
