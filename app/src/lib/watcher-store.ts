@@ -54,6 +54,7 @@ export type ProjectStatusPayload =
 /** Mirror of Rust's `PickOutcome` (src-tauri/src/docs_watch.rs). */
 export type PickOutcomePayload =
   | { kind: "cancelled" }
+  | { kind: "busy" }
   | { kind: "noDocs"; path: string }
   | { kind: "error"; path: string; message: string }
   | { kind: "picked"; snapshot: DocsSnapshotPayload };
@@ -327,6 +328,12 @@ export async function pickProjectFolder(): Promise<void> {
     switch (outcome.kind) {
       case "cancelled":
         break; // no change, criterion b's cancel path
+      case "busy":
+        // T-021: Rust's single-flight guard refused a concurrent pick.
+        // This store's own `picking` gate makes that near-unreachable
+        // from here; the Rust latch is the real gate (it also covers
+        // other webview contexts). Nothing changed — nothing to show.
+        break;
       case "noDocs":
         setShell({ rejectedPick: { path: outcome.path, message: null } });
         break;

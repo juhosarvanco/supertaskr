@@ -1,6 +1,11 @@
 mod docs_watch;
 mod index_cmd;
 
+/// T-021: the pinned webview ACL surface (test-only module — the pin
+/// itself is a cargo test; see src/acl_pin.rs for why it exists).
+#[cfg(test)]
+mod acl_pin;
+
 use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicU64;
@@ -80,8 +85,20 @@ fn docs_snapshot(state: tauri::State<'_, WatchState>) -> ProjectStatus {
 /// non-symlink docs/ — T-003's rules), the watcher is re-armed on it, and
 /// a typed outcome comes back. Cancelling, picking a docs-less folder, or
 /// a re-arm failure all leave the previously open project untouched.
+///
+/// T-021 single-flight (absorbs T-007-s3): the `PickInFlight` guard is
+/// claimed BEFORE the dialog opens, so concurrent invocations — a
+/// double-click race, or a compromised webview trying to stack native
+/// dialogs — get the typed `Busy` outcome and no dialog at all. The
+/// guard travels through the whole pipeline (dialog -> validate ->
+/// re-arm -> commit) and its Drop releases the latch on every path,
+/// including a panicked blocking task.
 #[tauri::command]
 async fn pick_project_folder(app: tauri::AppHandle) -> PickOutcome {
+    let Some(flight) = app.state::<WatchState>().begin_pick() else {
+        return PickOutcome::Busy; // a pick is already in flight
+    };
+
     // Native dialog: the plugin dispatches to the main thread itself and
     // calls back from a helper thread; a bounded channel bridges it back
     // into this async command.
@@ -95,7 +112,7 @@ async fn pick_project_folder(app: tauri::AppHandle) -> PickOutcome {
     let picked = rx.recv().await.flatten();
 
     let Some(file_path) = picked else {
-        return PickOutcome::Cancelled; // dialog dismissed (or dropped)
+        return PickOutcome::Cancelled; // dialog dismissed (or dropped); guard drops here
     };
     let path = match file_path.into_path() {
         Ok(path) => path,
@@ -108,11 +125,12 @@ async fn pick_project_folder(app: tauri::AppHandle) -> PickOutcome {
     };
 
     // Validation + re-arm + snapshot are blocking fs work; keep them off
-    // the async runtime's core threads.
+    // the async runtime's core threads. The flight guard moves into the
+    // task so the latch is held until apply returns (or panics).
     let handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let state = handle.state::<WatchState>();
-        docs_watch::apply_picked_folder(&state, &path)
+        docs_watch::apply_picked_folder(&state, &path, flight)
     })
     .await
     .unwrap_or_else(|err| PickOutcome::Error {
