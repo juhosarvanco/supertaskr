@@ -53,6 +53,8 @@ own rules — must carry a mechanism for discovering it is wrong.
   a graph; contradicted premises light every downstream decision amber
   on the dashboard. Plus continuous architecture-drift detection
   (code-as-is vs ARCHITECTURE.md-as-claimed, discrepancies → suggestions).
+  *(The architecture-drift slice was pulled forward into F-06 v1 —
+  ADR-013, 2026-08-15; the premise graph and the rest stay here.)*
 - **Production feedback** — incidents trace to task/model/session via
   provenance stamps; errors auto-convert to regression tests and
   IF/THEN EARS lines; the verifier checklist grows from what actually

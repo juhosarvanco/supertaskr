@@ -1,56 +1,55 @@
 # State
 
-Updated: 2026-08-15 by T-005 integrator, claude-fable-5 @fresh
+Updated: 2026-08-15 by architect (map promotion), claude-fable-5
+@chat-session
 
 ## Just completed
-T-005 (card detail, M) is DONE and merged — the full pipeline with
-one rejection. Click a card → live read-only detail panel: criteria,
-blockers as re-targeting links, touches, verdicts verbatim, stamps;
-in-place live updates, calm deleted/missing states. The rejection:
-under a REAL trusted click, React's discrete-update flush runs
-mid-propagation and detaches the clicked blocker chip before the
-document-level click listener sees it, so the panel closed instead of
-re-targeting — invisible to synthetic input (synthetic clicks
-propagate synchronously; the builder's probes and any unit test pass
-over it). Fixed structurally, not compensated: the dismissal decision
-moved to pointerdown (pre-flush, always reads the intact tree;
-extracted to app/src/components/board/panel-dismissal.ts) and the
-trusted event order is regression-pinned (failing→passing proof on
-the old vs. new wiring). Re-verification APPROVED by the eyewitness
-verifier — the one who observed the original trusted-click failure
-live — including an independent re-derivation of the failing test.
-This merge was also the FIRST combined run of the parallel-built
-T-005 + T-007: full suite green (parser 78/78, app 84/84, cargo
-20/20, boot echo 25 tasks / 5 features / 0 issues).
+F-06 (architecture map) PROMOTED into the record. Juho delivered two
+map documents (technical plan + design handoff, prepared externally);
+architect review found them strong with one architectural
+contradiction and three record collisions — all fixed at promotion:
+- Docs received as-is (baseline commit), moved to
+  docs/design/map-technical-plan.md + map-design-handoff.md; the
+  plan carries a §0.0 revision list (derivation → TypeScript, real
+  repo paths, slug-based touches, delivery via the docs pipeline
+  under the 1 MiB cap, volatile fields omitted, churn via git
+  shell-out, C-registry rules, CLI stays Node shelling to the
+  nputer-index binary).
+- ADR-013 (intent+reality v1; drift slice pulled forward from
+  Horizon), ADR-014 (committed deterministic graph files), ADR-015
+  (indexer Rust / parsing+derivation TS — the contradiction fix).
+- Tasks T-008…T-015 decomposed (feature F-06, milestone 2 proposed,
+  below the slice line; T-009 and T-012 are L → planning pass before
+  dispatch). New component C-07 (nputer-index) and slugs app-map /
+  crate-index in ARCHITECTURE.md.
+- SEQUENCING OPEN: rooms/map-sequencing.md — map vs interview (F-03)
+  for milestone 2; @human decides what visibly moves down.
 
-Milestone 1: SIX of seven done (T-001–T-005, T-007).
+Milestone 1 unchanged: SIX of seven done; T-006 awaits the external
+design token sheet (docs/design/design-handoff.md v3).
 
 ## In progress / broken right now
 Nothing building, nothing broken. Board free.
 
 ## Next up (1–3)
-1. T-006 (design language, M) — the sole remaining milestone-1 card,
-   awaiting the external design token sheet
-   (docs/design/design-handoff.md v3, with Claude Design); dispatches
-   on design's return with @human word.
+1. @human: resolve rooms/map-sequencing.md (milestone 2 = map,
+   interview, or map-slice) · return the T-006 token sheet · run the
+   real-input checklist below.
 2. Architect triage of the EIGHTEEN open suggestions:
    T-001-s1/s2/s3, T-002-s1/s2/s3, T-003-s1/s2/s3, T-004-s1/s2,
    T-005-s1/s2/s3/s4, T-007-s1/s2/s3.
 3. Domain (.dev/.fi/.com) + trademark sweep for "nputer".
 
-For the @human (visual-confirmation precedent, T-001/T-007) — the
-consolidated real-input checklist:
-1. Three picker dialog flows on the real screen: convention-layout
-   folder → board re-renders and live-updates; docs-less folder →
-   empty state names it, "keep current project" returns to the board;
-   Escape/cancel → no change.
+For the @human — the consolidated real-input checklist (visual-
+confirmation precedent, T-001/T-007):
+1. Three picker dialog flows on the real screen (valid pick → live
+   board · docs-less pick → named empty state, keep-current works ·
+   cancel → no change).
 2. One real mouse click on a resolved blocker link in the detail
-   panel → re-targets, does NOT close — NOW LIVE on main (the T-005
-   rejection's exact repro).
-3. Real-key Escape / Enter / Space on the panel (machine key
-   injection cannot reach the page — T-005 builder/verifier flags).
-4. Linux run (T-001-s3): the Linux halves of T-001/T-003 window
-   criteria remain machine-unverified.
+   panel → re-targets, does NOT close (the T-005 rejection's repro).
+3. Real-key Escape / Enter / Space on the panel.
+4. Linux run (T-001-s3): Linux halves of T-001/T-003 still
+   machine-unverified.
 
 ## Open questions
-None.
+rooms/map-sequencing.md — milestone 2 ordering (map vs interview).

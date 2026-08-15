@@ -15,6 +15,65 @@ Decisions already made (do not reopen):
   regenerated deterministically, diffable, readable by agents. The app is a
   lens over those files, same as the board is a lens over task files.
 
+## 0.0 Promotion revisions (architect claude-fable-5, 2026-08-15)
+
+This document was reviewed and promoted into the record; the three
+decisions above are now ADR-013 (intent+reality v1, languages) and
+ADR-014 (committed deterministic graph files). The following revisions
+were applied at promotion — where a section below conflicts with this
+list, this list wins:
+
+1. **Derivation and all frontmatter parsing move to TypeScript
+   (ADR-015).** The original §5.5 put `load_architecture` and the
+   derived model on the Rust side; that contradicts the built pattern
+   (T-003: Rust is a contained file shipper, parsing lives where TS
+   runs) and would fork the convention's one hardened frontmatter
+   parser (@nputer/parser, ADR-009). The indexer stays Rust and emits
+   `graph.json` ONLY; component files are parsed by @nputer/parser
+   (new ComponentRecord module, T-008); the intent⨝reality⨝tasks
+   join is pure TS in the app (T-011). §5.5 is revised accordingly.
+2. **Delivery rides the existing docs pipeline.** Component files
+   (`docs/architecture/components/*.md`) are inside the watched docs/
+   tree already; the T-003 collector gains `.json` under
+   `docs/architecture/` for `graph.json`. The collector's 1 MiB/file
+   cap governs the indexer's size budget (§3.2): the symbol budget is
+   sized so `graph.json` stays under the cap; exceeding it is a
+   defined degraded state, never a silent drop.
+3. **Repo paths corrected to the real layout** (ADR-011): the crate
+   is `app/src-tauri/crates/nputer-index` (a Cargo workspace is
+   introduced inside app/src-tauri — the Rust sibling of ADR-011's
+   decision, recorded there); frontend map code is `app/src/…`;
+   there is no `src/routes/**`. The pane switcher the map needs in
+   the shell is app-shell territory and is declared in T-012's
+   touches.
+4. **`touches` uses the repo's slug vocabulary, not globs** (§4.3
+   revised): component→task intersection goes through the
+   ARCHITECTURE.md slug mapping (components declare `touch_slugs`),
+   with the optional `component:` task field as the future fine-
+   grained path. Task status comes from frontmatter `status:` (the
+   pipeline maintains it) — verdict-text parsing is not required.
+5. **Volatile fields are omitted from the committed graph** (§3.1
+   alternative chosen): no `commit`, no `index_ms` in `graph.json`;
+   stats live in the CLI/report output only.
+6. **Churn shells out to `git`** (no `git2` dependency — smaller
+   surface, ADR-003 spirit).
+7. **Source watching extends the containment story explicitly**:
+   walking code paths inherits T-003's symlink/canonicalization rules
+   and the `ignore` crate's gitignore handling; watch scope beyond
+   docs/ is part of T-009's containment criteria, not hand-waved.
+8. **The C-id registry is re-chartered by T-008's dogfood files**:
+   component files use the SAME C-namespace as ARCHITECTURE.md —
+   existing ids keep their meaning (C-01…C-07); finer-grained app
+   components get new ids. The design handoff's hero-mock names stay
+   indicative.
+9. **The task list in §8 is superseded** by the promoted task files
+   docs/tasks/T-008…T-015 (feature F-06, decomposed through the full
+   rules); §8 remains as drafting record.
+10. **Sequencing is NOT decided here.** Where F-06 sits relative to
+   F-03 (in-app interview) and what visibly moves down is open in
+   rooms/map-sequencing.md — ADR-013 records the scope decision, the
+   room records the ordering one.
+
 ---
 
 ## 0. Why this pane exists (the one-paragraph brief)
@@ -181,10 +240,10 @@ the map to work; `call`/`type_ref` feed T2 and the drift rules only when
 Ids are content-free (path + name), so they survive re-indexing and diffs read
 as "edge added/removed", never as churn.
 
-`stats.index_ms` and `commit` are the only non-content fields; put them last
-and keep them stable-formatted so diffs stay one-line when nothing else moved.
-(Alternative if noise bothers: omit both from the committed file. Decide in
-the first PR; either is fine.)
+`stats.index_ms` and `commit`: **omitted from the committed file**
+(decided at promotion, §0.0 item 5) — the committed payload is pure
+content, so an unchanged tree diffs to zero lines. Timings and the
+indexed commit go in the CLI report / in-app note only.
 
 ### 3.2 Size discipline
 
@@ -223,12 +282,15 @@ Edges to/from `unmapped` are always `undeclared`.
 
 ### 4.3 Status per component (when `status: auto`)
 
-Task set = tasks whose `touches` globs intersect the component's matched
-files (or, if `touches` is empty, tasks whose feature maps to this component
-via an optional `component:` field on the task — support both). Rollup, first
+*(Revised at promotion — see §0.0 item 4.)* Task set = tasks whose
+`touches` slugs intersect the component's declared `touch_slugs`
+(slug→component mapping per ARCHITECTURE.md; this repo's tasks use
+slugs, not path globs), plus tasks carrying an explicit `component:`
+field naming this id. Task status is read from frontmatter `status:`
+— the pipeline maintains it; no verdict-text parsing. Rollup, first
 rule that fires wins:
 
-1. any task `rejected` (latest verdict REJECTED, not superseded) → `rejected`
+1. any task `rejected` → `rejected`
 2. any task `verifying` → `verifying`
 3. any task `building` → `building`
 4. any task `merging` → `merging`
@@ -271,8 +333,13 @@ overlay is disabled, not broken.
 
 ## 5. Indexer: `nputer-index` (Rust)
 
-Location: `src-tauri/crates/nputer-index` (workspace member), used by (a) a
-Tauri command, (b) the CLI subcommand `nputer index [--watch] [--check]`.
+Location: `app/src-tauri/crates/nputer-index` (workspace member; the
+workspace is introduced inside app/src-tauri at T-009 — the Rust
+sibling of ADR-011). No tauri dependency in the crate (ADR-015). Used
+by (a) a thin Tauri command in the app, (b) its own small binary
+(`nputer-index`), which the future Node CLI (C-02, ADR-007) shells
+out to per ADR-003 — `nputer index` is Node wrapping this binary,
+not a Rust CLI.
 
 ### 5.1 Pipeline
 
@@ -337,9 +404,15 @@ pub fn write_graph(graph: &Graph, path: &Path) -> Result<bool>; // returns true 
 pub fn diff(a: &Graph, b: &Graph) -> GraphDiff;                 // for --check and later time machine
 ```
 
-Tauri commands: `index_repo(root) -> IndexReport`, `load_architecture(root) ->
-ArchitectureModel` (components + graph + derived + layout in one payload,
-computed on the Rust side so the frontend stays a renderer).
+Tauri command: `index_repo() -> IndexReport` (zero-argument, roots at
+the resolved project dir — ADR-010/012 pattern; the webview never
+supplies a path). There is NO `load_architecture` command — *(revised
+at promotion, §0.0 item 1)*: component files and `graph.json` reach
+the frontend through the existing docs snapshot pipeline, and the
+derived model (mapping, relations, rollups, drift) is computed in
+pure TypeScript (T-011), where the one hardened frontmatter parser
+lives. The frontend is still a renderer over pure functions; the
+functions are TS, not Rust.
 
 ---
 
@@ -433,7 +506,7 @@ Keep output plain and stable; sessions will grep it.
 
 ---
 
-## 8. Task decomposition (for the architect to promote; ids are placeholders)
+## 8. Task decomposition — SUPERSEDED at promotion by docs/tasks/T-008…T-015 (F-06); kept as drafting record
 
 Format follows nputer's task convention: frontmatter (id, feature, priority,
 size, status, builds/verifies) + EARS acceptance criteria + `touches`. Feature:
