@@ -74,3 +74,12 @@
   attachPanelDismissal (app/src/components/board/panel-dismissal.ts);
   its test pins the trusted event order headlessly (real-input E2E
   lane proposed as T-005-s4).
+- INTERIM integrator rule (T-009-s1, ratified at the 2026-08-16
+  triage; retires when T-014's `nputer index --check` becomes the
+  gate): at any merge whose diff touches `*.ts/*.tsx/*.js/*.jsx`
+  outside docs/, regenerate the committed graph —
+  `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test
+  self_graph -- --ignored` — then re-run
+  `cargo test -p nputer-index --test self_graph -- --ignored` to
+  confirm byte-identity, and commit docs/architecture/graph.json
+  with the merge.

@@ -1,6 +1,7 @@
 ---
+id: T-018-s1
 title: Windows cannot detect a replaced docs/ (dir identity is unix-only)
-status: suggested
+status: parked
 suggested_by: executor claude-fable-5 @T-018
 ---
 
@@ -25,3 +26,10 @@ re-watching whenever the debounced batch contains an event whose path
 equals the docs dir itself, and extend the three sentinel live tests to
 the platform. The additive-only pins already cover the failure shape
 (unknown identity keeps the handle; nothing errors).
+
+Triage 2026-08-16 (architect): PARKED — no Windows lane exists
+(macOS dev + the pending Linux CI activation); building
+ReadDirectoryChangesW-adjacent identity blind would be untested code.
+The sketch (volume serial + file index via GetFileInformationByHandle,
+or re-watch when a batch names the docs dir itself) waits for a
+Windows lane; the additive-only pins already cover the degraded shape.

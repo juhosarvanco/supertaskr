@@ -1,6 +1,7 @@
 ---
+id: T-011-s3
 title: T-016 is done with an empty review stamp — C-06's provenance rolls up as unreviewed
-status: suggested
+status: rejected
 suggested_by: executor claude-fable-5 @T-011
 ---
 
@@ -20,3 +21,9 @@ floor, or run a late verification), or (b) accept that doc-only tasks
 can be done-unreviewed and let the map say so. If (b) becomes common, a
 convention note in method/tasks/TASK-FORMAT.md would keep the no-mark
 state from reading as an accident.
+
+Triage 2026-08-16 (architect): REJECTED — resolved via arm (a):
+T-016 stamped review: self-verified with a dated verdict note (the
+honest floor; its notes record executor-run per-criterion
+verification). Arm (b)'s TASK-FORMAT convention note not taken:
+doc-only done-unreviewed stays rare enough to decide case-by-case.

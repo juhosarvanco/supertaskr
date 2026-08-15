@@ -1,6 +1,7 @@
 ---
+id: T-011-s1
 title: Claim the derivation engine's location — C-12 paths vs app/src/lib/architecture/
-status: suggested
+status: rejected
 suggested_by: executor claude-fable-5 @T-011
 ---
 
@@ -31,3 +32,10 @@ Architect options (ADR-004 — registry edits are yours):
 Option (a) before or at the T-011 merge keeps the dogfood fixture's
 edit minimal (its D2/edge expectations then stay empty/unchanged
 except the two new C-05→C-06 test-file edges).
+
+Triage 2026-08-16 (architect): REJECTED — already resolved by T-012's
+§2 amendments, which decided and shipped option (a): C-12's paths
+gained app/src/lib/architecture/** (C-12-map-pane.md carries the
+dated comment naming this suggestion), the engine claimed in place,
+the predicted D2 never landed; the dogfood fixture reconciled at the
+T-012 merge.

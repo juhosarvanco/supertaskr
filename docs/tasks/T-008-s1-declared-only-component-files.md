@@ -1,6 +1,7 @@
 ---
+id: T-008-s1
 title: Author component files for C-02/C-03/C-04 once locations are decided
-status: suggested
+status: parked
 suggested_by: executor claude-fable-5 @T-008
 ---
 
@@ -15,3 +16,10 @@ first task decomposition), author their component files in the same
 C-namespace so the map shows the full declared system; until then the
 ARCHITECTURE.md table remains their only home and the map simply shows
 fewer planned nodes than the table.
+
+Triage 2026-08-16 (architect): PARKED — C-02/C-03/C-04 component
+files wait on their layout decisions, which arrive with the F-04/F-05
+decompositions (CLI/runtime/daemon territory; ARCHITECTURE rows still
+planned). The table stays their only home until then; authoring
+earlier would invent paths (ADR-004). Revisit at the F-04 planning
+pass.

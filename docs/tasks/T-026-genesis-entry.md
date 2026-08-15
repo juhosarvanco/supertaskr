@@ -22,6 +22,8 @@ folder` screen ("Start an interview" beside "Open a folder…", ⌘N ·
 ⌘O; the "No plan in <folder>" card with "Start an interview here" —
 the Adopt button is deliberately ABSENT in v1, fenced to
 archaeology). Serialize with T-025 on app-shell at dispatch.
+Absorbs: T-018-s4 (triage 2026-08-16) — the docs-appeared staleness
+fix lands here: same screen, same sentinel, same cargo flow.
 
 ## Acceptance criteria
 - THE front door SHALL render the design's two-button affordance
@@ -40,6 +42,12 @@ archaeology). Serialize with T-025 on app-shell at dispatch.
 - WHEN docs/ later appears under the genesis project THE existing
   pipeline SHALL light up with no re-pick (T-018's sentinel,
   exercised end-to-end in a cargo test from this task's flow).
+- WHEN docs/ appears EMPTY under the open project THE watcher SHALL
+  emit exactly once on the (unarmed → armed) transition even though
+  the tree equals the empty baseline, so the front door replaces the
+  stale "no docs/ found" claim with the empty board (the invitation
+  rendered live); the suppression invariant holds for every other
+  batch (T-018-s4).
 - IF the picked folder already contains a plan (docs/ROADMAP.md or
   any docs/tasks/*.md) THEN genesis SHALL NOT be offered for it —
   the flow routes to opening it as a normal project (no overwrite

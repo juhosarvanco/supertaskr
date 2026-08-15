@@ -12,7 +12,7 @@ builder: claude-fable-5
 verifier:
 built_by: claude-fable-5 @fresh
 verified_by:
-review:
+review: self-verified
 ---
 
 Absorbs: T-006-s5. Triage 2026-08-15: dispatch FIRST among hardening
@@ -94,3 +94,10 @@ npm run build clean. App suites not run: lib/parser src/ untouched
 (test-only), so the app's @nputer/parser dependency is byte-identical.
 
 ## Verdicts
+
+2026-08-16 — late stamp at triage (T-011-s3): review set to
+self-verified, the honest floor — the implementation notes record
+executor-run per-criterion verification and no verifier existed at
+S-tier. C-06's provenance rollup stops reading unreviewed. Docs-only:
+the dogfood suite deliberately asserts no provenance values (checked
+at triage).

@@ -15,6 +15,11 @@ verified_by:
 review:
 ---
 
+Absorbs: T-009-s1 (ratified as the interim integrator rule in
+docs/CONVENTIONS.md at the 2026-08-16 triage; when --check lands and
+T-020's CI lane adopts it as a step, REMOVE that CONVENTIONS line in
+this task's docs sweep — the check replaces the ritual).
+
 ## Acceptance criteria
 - THE crate SHALL ship a small `nputer-index` binary (the future Node
   CLI shells out to it — ADR-015/ADR-003; this task builds no Node

@@ -98,24 +98,31 @@ Nothing broken.
    created by triage do NOT dispatch without the human. Unchanged
    method rule: a second REJECTED on any task parks that lane for
    the human. @human judgments are never self-answered.
-4. Next architect triage, the full suggestion backlog: T-008-s1/s2/s3,
-   T-009-s1 (ratify as standing rule or keep interim until T-014),
-   T-009-s2, T-009-s3, T-011-s1 (**RESOLVED** by T-012's option-a
-   amendment — mark it so), T-011-s2/s3/s4/s5/s6, T-012-s1/s2/s3/s4,
-   T-017-s1/s2/s3, T-018-s1 (Windows replace identity), T-018-s2
-   (dir-level skips sweep buried records), T-018-s3 (ABSORBED into
-   T-020 at its dispatch — file removed, triage encoding),
-   T-018-s4 (empty-docs front-door staleness), T-019-s1 (card-level
-   soft-issue surfacing), T-019-s2 (filename convention rule),
-   T-019-s3 (blocked_by self-references and cycles), and new
-   T-023-s1 (parseRoadmap is HTML-comment-blind — verifier-confirmed
-   real by probe; lib-parser lane) and T-023-s2 (dry-run fixture
-   fidelity — T-024's fixture should be harvested from the executor's
-   still-alive session scratch tree, which is SESSION-LIVED and
-   disappears when the orchestrator session ends; the verifier's
-   notes-reconstruction is the proven fallback). Milestone-4 queue
-   re-enters after F-03: T-010, T-013, T-014, T-015 + hardening
-   T-020 (HOLD, item 3), T-021/T-022 (item 3).
+4. Suggestion-backlog triage APPLIED (2026-08-16, architect; proposal
+   drafted read-only by claude-fable-5 @fresh): 27 open suggestions
+   dispositioned, none skipped. Six new milestone-4 tasks — T-030
+   (parser strictness; absorbs T-008-s3, T-011-s4 warn-half,
+   T-019-s2, T-019-s3, T-023-s1 — land before T-027, lib-parser lane
+   free now), T-031 (board completeness; absorbs T-017-s1/s2/s3,
+   T-019-s1 — launch-screenshot surface), T-032 (map-slice
+   hardening; absorbs T-009-s2, T-011-s4 doc-half, T-011-s5,
+   T-011-s6, T-012-s2/s3/s4), T-033 (zero-drift registry pass;
+   absorbs T-008-s2, T-011-s2 — the plan-§10 launch gate's registry
+   half), T-034 (map tasks lens; promotes T-012-s1), T-035
+   (skip-sweep prefix exemption; promotes T-018-s2). Folds: T-009-s1
+   ratified as the CONVENTIONS interim regen rule with retirement
+   folded into T-014; T-018-s4 into T-026 (criterion added before
+   its dispatch); T-023-s2 into T-024 (Absorbs line + file removal
+   at its merge — the worktree owns the task file until then).
+   Parked in place: T-008-s1 (awaits F-04/F-05 layout decisions),
+   T-018-s1 (awaits a Windows lane); T-003-s2 stays parked as
+   already encoded. Resolved to rejected/: T-011-s1 (T-012 option a
+   shipped it), T-011-s3 (T-016 stamped self-verified — C-06's
+   rollup carries a mark again). Stale entries cleared: T-009-s3 and
+   T-018-s3 were already absorbed into T-020 (files removed at its
+   planning/dispatch). NEW tasks do not dispatch without the human
+   (item 3's grant). Milestone-4 queue after F-03: T-010, T-013,
+   T-014, T-015, T-030…T-035, + T-020/T-021 in flight and T-022.
 
 ## Open questions
 None.
