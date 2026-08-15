@@ -15,7 +15,7 @@ graph TD
 ## Components
 | ID | Component | Responsibility | Depends on | Status |
 |----|-----------|----------------|------------|--------|
-| C-01 | method/ | The convention: templates, formats, roles, interviews | — | built (v0.1.3) |
+| C-01 | method/ | The convention: templates, formats, roles, interviews | — | built (v0.1.4) |
 | C-02 | CLI | Plumbing + power/CI path (ADR-008): genesis, dispatch; shells out to agent CLIs | C-01, C-06 | planned |
 | C-03 | Runtime | nputer.yaml role defaults; sessions.json registry | C-02 | planned |
 | C-04 | Daemon | Sidecar: watcher, websocket, @mention → headless turns | C-02, C-03 | planned |
