@@ -1,0 +1,9 @@
+{
+  "name": "mixed-root",
+  "private": true,
+  "dependencies": {
+    "@local/lib": "file:./libpkg",
+    "outside-dep": "file:../outside-target",
+    "regular": "^1.0.0"
+  }
+}

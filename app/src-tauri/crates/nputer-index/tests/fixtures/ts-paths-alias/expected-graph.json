@@ -1,0 +1,216 @@
+{
+  "schema": 1,
+  "root": ".",
+  "languages": [
+    "ts"
+  ],
+  "files": [
+    {
+      "id": "f:nested/deep.ts",
+      "path": "nested/deep.ts",
+      "lang": "ts",
+      "hash": "blake3:4899925d13e292563968f4d1fb1998c1f48e0227218ced5271b8097f32dee4b5",
+      "loc": 3,
+      "symbols": [
+        {
+          "id": "s:nested/deep.ts#deepUse",
+          "name": "deepUse",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:nested/local/thing.ts",
+      "path": "nested/local/thing.ts",
+      "lang": "ts",
+      "hash": "blake3:3f5db49e2181ac35fbfa62bf90d8b05541cec362fb7eb18cc6a873f87f1a6420",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:nested/local/thing.ts#localThing",
+          "name": "localThing",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/alpha.ts",
+      "path": "src/alpha.ts",
+      "lang": "ts",
+      "hash": "blake3:9ef9b8e0ab3470c99a10b04a7642b174099e0179fb78f7c74d1a1f81d951c930",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:src/alpha.ts#alpha",
+          "name": "alpha",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/app.ts",
+      "path": "src/app.ts",
+      "lang": "ts",
+      "hash": "blake3:6aed030ff9018ccfc8e0a9c1542fce27e8450d72f8d1f92f249c608aa76f23d9",
+      "loc": 9,
+      "symbols": [
+        {
+          "id": "s:src/app.ts#useAll",
+          "name": "useAll",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            7,
+            9
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/bridge.ts",
+      "path": "src/bridge.ts",
+      "lang": "ts",
+      "hash": "blake3:f74ea618eda76ad69a98b41a8d61dc94163b0cc1854edc518df4c5fca41e8260",
+      "loc": 5,
+      "symbols": [
+        {
+          "id": "s:src/bridge.ts#bridged",
+          "name": "bridged",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            3,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/config.ts",
+      "path": "src/config.ts",
+      "lang": "ts",
+      "hash": "blake3:58575cf4c8258e92d554f0b6f66b84d423aa074355c0bd17e335ec30e0c64ce4",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:src/config.ts#conf",
+          "name": "conf",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/multi/thing.ts",
+      "path": "src/multi/thing.ts",
+      "lang": "ts",
+      "hash": "blake3:8b92dcd7c60f8a263b73c2595d36a36ab0ba48c95036b408a54523eb87d676be",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:src/multi/thing.ts#t",
+          "name": "t",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/node-style.ts",
+      "path": "src/node-style.ts",
+      "lang": "ts",
+      "hash": "blake3:02a0dd4d59cb48a5022d4b378c934aa236a767901cb661c0eb320f5ea56a1581",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:src/node-style.ts#n",
+          "name": "n",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    }
+  ],
+  "packages": [],
+  "edges": [
+    {
+      "from": "f:nested/deep.ts",
+      "to": "f:nested/local/thing.ts",
+      "kind": "import",
+      "symbols": [
+        "localThing"
+      ]
+    },
+    {
+      "from": "f:src/app.ts",
+      "to": "f:src/alpha.ts",
+      "kind": "import",
+      "symbols": [
+        "alpha"
+      ]
+    },
+    {
+      "from": "f:src/app.ts",
+      "to": "f:src/config.ts",
+      "kind": "import",
+      "symbols": [
+        "conf"
+      ]
+    },
+    {
+      "from": "f:src/app.ts",
+      "to": "f:src/multi/thing.ts",
+      "kind": "import",
+      "symbols": [
+        "t"
+      ]
+    },
+    {
+      "from": "f:src/bridge.ts",
+      "to": "f:src/node-style.ts",
+      "kind": "import",
+      "symbols": [
+        "n"
+      ]
+    }
+  ],
+  "unresolved": [
+    {
+      "from": "f:src/app.ts",
+      "specifier": "@/nope",
+      "reason": "not_found"
+    }
+  ],
+  "stats": {
+    "files": 8,
+    "symbols": 8,
+    "edges": 5
+  }
+}
