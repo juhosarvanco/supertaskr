@@ -56,7 +56,7 @@ docs/
 
 ## The lifecycle
 
-1. `/plan` interview → docs generated → decomposition stage turns the backbone into exact task files (interview/decomposition.md)
+1. `/plan` interview → docs banked incrementally as it runs (roles/planner.md, interview/plan-interview.md) → decomposition stage turns the backbone into exact task files (interview/decomposition.md)
 2. Orchestrator (fresh session, any time) picks the highest-priority unblocked task
 3. Executor (fresh or named session) builds it in a git worktree
 4. Verifier (independent by default) red-teams the diff, writes a verdict
