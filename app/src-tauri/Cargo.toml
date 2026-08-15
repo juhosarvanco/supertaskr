@@ -36,3 +36,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 notify-debouncer-mini = "0.7.0"
 tauri-plugin-dialog = "2"
+# T-012: the app's first dependency edge on the indexer crate (C-05→C-07
+# at the Rust level) — exactly the seam T-009's plan reserved. Path dep,
+# zero new external packages.
+nputer-index = { path = "crates/nputer-index" }

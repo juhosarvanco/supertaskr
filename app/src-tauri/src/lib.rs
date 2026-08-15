@@ -1,4 +1,5 @@
 mod docs_watch;
+mod index_cmd;
 
 use std::env;
 use std::path::{Path, PathBuf};
@@ -8,6 +9,7 @@ use tauri::{Emitter, Listener, Manager};
 use tauri_plugin_dialog::DialogExt;
 
 use docs_watch::{PickOutcome, ProjectStatus, WatchState};
+use index_cmd::IndexOutcome;
 
 /// Walk up from `start` to the first directory containing a `.git` entry
 /// (file or directory, so git worktrees count).
@@ -119,6 +121,39 @@ async fn pick_project_folder(app: tauri::AppHandle) -> PickOutcome {
     })
 }
 
+/// T-012: run the indexer over the open project and write the committed
+/// graph (ADR-013/014/015). Zero-argument by construction (ADR-010/012
+/// pattern): the webview names no path — the project root comes from
+/// WatchState, the cache dir from the app's own cache path — and only
+/// counts and timestamps come back. Delivery of the new graph rides the
+/// docs watcher (the write lands inside watched docs/), so this command
+/// returns the volatile stats and the snapshot arrives on its own; an
+/// unchanged tree produces no write and no snapshot at all (the T-009
+/// loop-termination brake, pinned live in index_cmd tests).
+#[tauri::command]
+async fn index_repo(app: tauri::AppHandle) -> IndexOutcome {
+    // Cache location is the app's business, never the webview's; the
+    // crate treats None as "no cache" (full parse) — degradation, not
+    // failure.
+    let cache_dir = app
+        .path()
+        .app_cache_dir()
+        .ok()
+        .map(|dir| dir.join("index-cache"));
+
+    // Indexing is blocking fs + parse work; keep it off the async
+    // runtime's core threads (the T-007 spawn_blocking pattern).
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<WatchState>();
+        index_cmd::run_index(&state, cache_dir)
+    })
+    .await
+    .unwrap_or_else(|err| IndexOutcome::Error {
+        message: format!("index task failed: {err}"),
+    })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -170,7 +205,11 @@ pub fn run() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![docs_snapshot, pick_project_folder])
+        .invoke_handler(tauri::generate_handler![
+            docs_snapshot,
+            pick_project_folder,
+            index_repo
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

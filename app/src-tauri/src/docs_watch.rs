@@ -179,7 +179,26 @@ pub fn has_plain_docs_dir(root: &Path) -> bool {
     }
 }
 
-/// Collect every regular `.md` file under `<project_dir>/docs`, recursively.
+/// Which files ride the docs snapshot: every `.md` under docs/ (T-003),
+/// plus `.json` whose project-relative path sits under
+/// `docs/architecture/` (T-012, ADR-014 — the committed graph rides the
+/// existing pipeline; subdirectories included, so T-015's layout.json
+/// rides free later). The predicate runs on the POST-CANONICALIZE
+/// relative POSIX path: containment first, classification second — no
+/// symlink or traversal trick can reclassify a path into the set.
+pub fn is_collected_docs_path(rel: &str) -> bool {
+    if !rel.starts_with("docs/") {
+        return false;
+    }
+    match Path::new(rel).extension().and_then(|e| e.to_str()) {
+        Some("md") => true,
+        Some("json") => rel.starts_with("docs/architecture/"),
+        _ => false,
+    }
+}
+
+/// Collect every snapshot-eligible file under `<project_dir>/docs`,
+/// recursively (see `is_collected_docs_path` for the set).
 ///
 /// Containment (ADR-010): symlinks — file or directory — are skipped
 /// outright, and each file's canonical path must stay under the canonical
@@ -223,27 +242,30 @@ pub fn collect_docs_files(project_dir: &Path) -> Vec<DocsFile> {
             if !meta.is_file() {
                 continue;
             }
-            if path.extension().and_then(|e| e.to_str()) != Some("md") {
-                continue;
-            }
             if meta.len() > MAX_FILE_BYTES {
-                continue;
+                continue; // oversized: skipped like any other (T-003-s3 owns visibility)
             }
             if out.len() >= MAX_FILES {
                 break;
             }
-            // Belt to the symlink-skip's suspenders: canonical prefix check.
+            // Belt to the symlink-skip's suspenders: canonical prefix
+            // check, and the collected-set predicate runs on the
+            // canonical RELATIVE path (containment first, classification
+            // second — T-012).
             let Ok(canon) = path.canonicalize() else {
                 continue;
             };
             if !canon.starts_with(&canon_project) {
                 continue;
             }
-            let Ok(content) = fs::read_to_string(&canon) else {
-                continue; // non-UTF-8 or vanished mid-read
-            };
             let Some(rel) = relative_posix(&canon, &canon_project) else {
                 continue;
+            };
+            if !is_collected_docs_path(&rel) {
+                continue;
+            }
+            let Ok(content) = fs::read_to_string(&canon) else {
+                continue; // non-UTF-8 or vanished mid-read
             };
             out.push(DocsFile { path: rel, content });
         }
@@ -598,6 +620,79 @@ mod tests {
             ]
         );
         assert_eq!(files[0].content, "roadmap");
+    }
+
+    // ---- T-012: the collector's .json rule (ADR-014 delivery) ----------
+
+    #[test]
+    fn is_collected_docs_path_accepts_md_anywhere_and_json_only_under_architecture() {
+        // .md anywhere under docs/ (unchanged T-003 behavior).
+        assert!(is_collected_docs_path("docs/ROADMAP.md"));
+        assert!(is_collected_docs_path("docs/tasks/T-001-a.md"));
+        // .json only under docs/architecture/, subdirectories included
+        // (T-015's layout.json rides free later).
+        assert!(is_collected_docs_path("docs/architecture/graph.json"));
+        assert!(is_collected_docs_path("docs/architecture/deep/layout.json"));
+        assert!(!is_collected_docs_path("docs/foo.json"));
+        assert!(!is_collected_docs_path("docs/tasks/data.json"));
+        // Prefix trickery: "docs/architecture.json" is NOT under the dir.
+        assert!(!is_collected_docs_path("docs/architecture.json"));
+        // Other extensions stay out; nothing outside docs/ ever enters.
+        assert!(!is_collected_docs_path("docs/architecture/notes.txt"));
+        assert!(!is_collected_docs_path("src/architecture/graph.json"));
+        assert!(!is_collected_docs_path("architecture/graph.json"));
+    }
+
+    #[test]
+    fn collects_architecture_json_alongside_md() {
+        let t = TempTree::new("json-collect");
+        t.write("docs/ROADMAP.md", "roadmap");
+        t.write("docs/architecture/graph.json", "{\"schema\":1}");
+        t.write("docs/architecture/sub/layout.json", "{}");
+        t.write("docs/tasks/data.json", "excluded - json outside architecture");
+        t.write("docs/architecture/readme.txt", "excluded - not md/json");
+
+        let files = collect_docs_files(t.root());
+        let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
+        assert_eq!(
+            paths,
+            vec![
+                "docs/ROADMAP.md",
+                "docs/architecture/graph.json",
+                "docs/architecture/sub/layout.json",
+            ]
+        );
+        assert_eq!(files[1].content, "{\"schema\":1}");
+    }
+
+    #[test]
+    fn oversized_architecture_json_is_skipped_like_oversized_md() {
+        let t = TempTree::new("json-big");
+        t.write("docs/architecture/graph.json", "{}");
+        let big = "x".repeat((MAX_FILE_BYTES + 1) as usize);
+        t.write("docs/architecture/huge.json", &big);
+        let paths: Vec<String> = collect_docs_files(t.root()).into_iter().map(|f| f.path).collect();
+        assert_eq!(paths, vec!["docs/architecture/graph.json"]);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn symlinked_architecture_json_is_never_followed() {
+        use std::os::unix::fs::symlink;
+        let t = TempTree::new("json-symlink");
+        t.write("docs/architecture/real.json", "{}");
+        let outside = TempTree::new("json-symlink-outside");
+        outside.write("secret.json", "{\"secret\":true}");
+        symlink(
+            outside.root().join("secret.json"),
+            t.root().join("docs/architecture/link.json"),
+        )
+        .expect("file symlink");
+
+        let files = collect_docs_files(t.root());
+        let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
+        assert_eq!(paths, vec!["docs/architecture/real.json"]);
+        assert!(files.iter().all(|f| !f.content.contains("secret")));
     }
 
     #[test]

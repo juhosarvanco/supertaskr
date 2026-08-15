@@ -140,6 +140,8 @@ describe("selectScreen + messages (T-007 empty states)", () => {
     resolvedDir: null,
     rejectedPick: null,
     picking: false,
+    indexing: false,
+    indexOutcome: null,
     docs: emptyState(),
     ...patch,
   });

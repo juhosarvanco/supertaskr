@@ -11,14 +11,16 @@ paths:                    # the shell/umbrella only — panes and plumbing own t
   - app/src/main.tsx
   - app/src/index.css
   - app/src/vite-env.d.ts
+  - app/src/components/shell/**
   - app/src/components/ui/**
   - app/src/lib/utils.ts
+  - app/src/lib/verdicts.ts
   - app/src-tauri/src/lib.rs
   - app/src-tauri/src/main.rs
   - app/src-tauri/build.rs
   - app/src-tauri/tauri.conf.json
   - app/src-tauri/capabilities/**
-depends_on: [C-01, C-08, C-10, C-11]
+depends_on: [C-01, C-08, C-10, C-11, C-12]
 decisions: [ADR-007, ADR-008, ADR-010, ADR-012]
 status: auto
 touch_slugs: [app-shell]

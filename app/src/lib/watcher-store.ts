@@ -53,6 +53,25 @@ export type PickOutcomePayload =
   | { kind: "error"; path: string; message: string }
   | { kind: "picked"; snapshot: DocsSnapshotPayload };
 
+/** Mirror of Rust's `IndexOutcome` (src-tauri/src/index_cmd.rs) —
+ * T-012's zero-argument index_repo command. Volatile stats live here,
+ * in session state, never in the committed graph (ADR-014). */
+export type IndexOutcomePayload =
+  | { kind: "noProject" }
+  | { kind: "noDocs"; projectDir: string }
+  | {
+      kind: "indexed";
+      changed: boolean;
+      files: number;
+      symbols: number;
+      edges: number;
+      truncated: boolean;
+      graphBytes: number;
+      durationMs: number;
+      indexedAtMs: number;
+    }
+  | { kind: "error"; message: string };
+
 /**
  * Where the shell is, project-wise:
  * - "loading": Tauri runtime, startup status not yet answered
@@ -78,6 +97,12 @@ export interface ShellState {
   rejectedPick: RejectedPick | null;
   /** Native folder dialog currently open. */
   picking: boolean;
+  /** index_repo in flight (T-012; single-flight like `picking`). */
+  indexing: boolean;
+  /** Last index_repo outcome THIS SESSION (drives the map header hint —
+   * rendered from this state, never from the committed file; null until
+   * an in-session index runs). Session-ephemeral by design. */
+  indexOutcome: IndexOutcomePayload | null;
   /** T-003 docs model of the open project. */
   docs: DocsModelState;
 }
@@ -187,6 +212,8 @@ let shell: ShellState = {
   resolvedDir: null,
   rejectedPick: null,
   picking: false,
+  indexing: false,
+  indexOutcome: null,
   docs: emptyState(),
 };
 const listeners = new Set<() => void>();
@@ -314,4 +341,28 @@ export async function pickProjectFolder(): Promise<void> {
 /** Dismiss a rejected pick and return to whatever was open before. */
 export function keepCurrentProject(): void {
   if (shell.rejectedPick !== null) setShell({ rejectedPick: null });
+}
+
+/**
+ * Run the indexer over the open project (T-012). Zero arguments cross
+ * the IPC boundary; Rust owns root resolution, containment, and the
+ * atomic graph write. Single-flight (the `picking` pattern) — a raced
+ * double-run would be benign anyway (byte-determinism + atomic writes,
+ * T-009's concurrent-writers note), but the button should not stack
+ * runs. The refreshed graph arrives on its own as a `docs-changed`
+ * snapshot; an unchanged tree produces no snapshot at all (the pinned
+ * loop-termination brake), which is why the outcome — not the file —
+ * feeds the header hint.
+ */
+export async function runIndexRepo(): Promise<void> {
+  if (!isTauri || shell.indexing) return;
+  setShell({ indexing: true });
+  try {
+    const outcome = await invoke<IndexOutcomePayload>("index_repo");
+    setShell({ indexOutcome: outcome });
+  } catch (err) {
+    setShell({ indexOutcome: { kind: "error", message: String(err) } });
+  } finally {
+    setShell({ indexing: false });
+  }
 }
