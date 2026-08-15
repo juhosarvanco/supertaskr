@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:f1ad5f0afc7d61bee0094f7efdb2fd4a15ef799edb982f407c14ff425e04fb9b",
-      "loc": 219,
+      "hash": "blake3:6172a0499f93f796575580816f342b9891390eda3f7e2442f4c73b01cd18b812",
+      "loc": 226,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -19,7 +19,7 @@
           "exported": true,
           "range": [
             113,
-            217
+            224
           ]
         },
         {
@@ -87,8 +87,8 @@
       "id": "f:app/src/components/board/FeatureColumn.tsx",
       "path": "app/src/components/board/FeatureColumn.tsx",
       "lang": "ts",
-      "hash": "blake3:03874ff43f92ea3f8715212ded047472a671d6cdda32929770c70048d2c113f5",
-      "loc": 70,
+      "hash": "blake3:e0542d613b809bb3635d82e304782008bfc0865c506b39993bbc66e604ce449f",
+      "loc": 71,
       "symbols": [
         {
           "id": "s:app/src/components/board/FeatureColumn.tsx#FeatureColumn",
@@ -96,8 +96,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            21,
-            70
+            22,
+            71
           ]
         }
       ]
@@ -106,8 +106,8 @@
       "id": "f:app/src/components/board/GhostCard.tsx",
       "path": "app/src/components/board/GhostCard.tsx",
       "lang": "ts",
-      "hash": "blake3:e70e075bb9864edc4a1c62f827d70dc2c8f4b88dbf13bd81b24a94a1794847c3",
-      "loc": 35,
+      "hash": "blake3:f6b27d7079a53633dad3fe1aa1b8a76a615e47c99f3f5d349129f53d61c72ddd",
+      "loc": 39,
       "symbols": [
         {
           "id": "s:app/src/components/board/GhostCard.tsx#GhostCard",
@@ -115,8 +115,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            10,
-            35
+            12,
+            39
           ]
         }
       ]
@@ -125,8 +125,8 @@
       "id": "f:app/src/components/board/ParkedRow.tsx",
       "path": "app/src/components/board/ParkedRow.tsx",
       "lang": "ts",
-      "hash": "blake3:2b83c19ce68de0166d276e034c7f23c8ac87e98cc54e5045a4dd45f3516cae97",
-      "loc": 18,
+      "hash": "blake3:0956c20b3f0176f7d958ca5420b5de124cbe13c552849349c819a49f811ca59c",
+      "loc": 70,
       "symbols": [
         {
           "id": "s:app/src/components/board/ParkedRow.tsx#ParkedRow",
@@ -134,8 +134,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            5,
-            18
+            19,
+            70
           ]
         }
       ]
@@ -163,8 +163,8 @@
       "id": "f:app/src/components/board/TaskCard.tsx",
       "path": "app/src/components/board/TaskCard.tsx",
       "lang": "ts",
-      "hash": "blake3:46a20d9f7df4b6ecddceccc6ad085a90c3c3fb92fff5d477de8aae85bcfe9307",
-      "loc": 212,
+      "hash": "blake3:4e21c8095b6040751b1ab1903343f1ad74f5eed3985ded428757396fcafbd787",
+      "loc": 228,
       "symbols": [
         {
           "id": "s:app/src/components/board/TaskCard.tsx#CHIP_BORDER_CLASSES",
@@ -232,8 +232,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            91,
-            212
+            102,
+            228
           ]
         }
       ]
@@ -242,8 +242,8 @@
       "id": "f:app/src/components/board/TaskDetailPanel.tsx",
       "path": "app/src/components/board/TaskDetailPanel.tsx",
       "lang": "ts",
-      "hash": "blake3:3cd04f833f6e0ddfbdbbbd304855c1d6f1b5ba869ff7903b5cc67d37be6ab6ea",
-      "loc": 370,
+      "hash": "blake3:8838e0e33aef40aa5caebae4002305e9d889c7317891d681bc0eadb98ab8c1a5",
+      "loc": 425,
       "symbols": [
         {
           "id": "s:app/src/components/board/TaskDetailPanel.tsx#Empty",
@@ -251,8 +251,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            353,
-            359
+            408,
+            414
           ]
         },
         {
@@ -261,8 +261,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            284,
-            290
+            302,
+            308
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskDetailPanel.tsx#NotesDisclosure",
+          "name": "NotesDisclosure",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            317,
+            345
           ]
         },
         {
@@ -271,8 +281,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            325,
-            349
+            380,
+            404
           ]
         },
         {
@@ -281,8 +291,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            361,
-            370
+            416,
+            425
           ]
         },
         {
@@ -291,8 +301,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            35,
-            281
+            42,
+            299
           ]
         },
         {
@@ -301,8 +311,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            293,
-            323
+            348,
+            378
           ]
         }
       ]
@@ -368,8 +378,8 @@
       "id": "f:app/src/components/board/panel-dismissal.ts",
       "path": "app/src/components/board/panel-dismissal.ts",
       "lang": "ts",
-      "hash": "blake3:3601470a54d87de1c6c220b34e2ab8af8d1c79605ae71aeabd4d94d6fb352d8a",
-      "loc": 50,
+      "hash": "blake3:479329c8ccd19c6789aee8d1b5f96410f06d678e85aff136f685cea81d976b54",
+      "loc": 56,
       "symbols": [
         {
           "id": "s:app/src/components/board/panel-dismissal.ts#DismissalDoc",
@@ -387,8 +397,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            29,
-            50
+            34,
+            56
           ]
         }
       ]
@@ -426,8 +436,8 @@
       "id": "f:app/src/lib/board-model.ts",
       "path": "app/src/lib/board-model.ts",
       "lang": "ts",
-      "hash": "blake3:88e81857b9509ca606e68bc0b74aa1b5a432f103c61f533a80e7b2d05da621bc",
-      "loc": 291,
+      "hash": "blake3:c617def670c6f9cb1e4034576e305b9268dc922bb50c074c5ccede59a8a2d784",
+      "loc": 305,
       "symbols": [
         {
           "id": "s:app/src/lib/board-model.ts#BoardCard",
@@ -435,8 +445,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            102,
-            120
+            103,
+            127
           ]
         },
         {
@@ -445,8 +455,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            122,
-            140
+            129,
+            152
           ]
         },
         {
@@ -455,8 +465,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            142,
-            148
+            154,
+            160
           ]
         },
         {
@@ -465,8 +475,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            93,
-            98
+            94,
+            99
           ]
         },
         {
@@ -475,8 +485,8 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            198,
-            206
+            213,
+            221
           ]
         },
         {
@@ -485,8 +495,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            27,
-            33
+            28,
+            34
           ]
         },
         {
@@ -495,8 +505,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            35,
-            40
+            36,
+            41
           ]
         },
         {
@@ -505,8 +515,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            209,
-            209
+            224,
+            224
           ]
         },
         {
@@ -515,8 +525,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            192,
-            196
+            207,
+            211
           ]
         },
         {
@@ -525,8 +535,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            182,
-            189
+            197,
+            204
           ]
         },
         {
@@ -535,8 +545,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            179,
-            179
+            194,
+            194
           ]
         },
         {
@@ -545,8 +555,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            150,
-            150
+            162,
+            162
           ]
         },
         {
@@ -555,8 +565,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            152,
-            158
+            164,
+            170
           ]
         },
         {
@@ -565,8 +575,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            227,
-            291
+            243,
+            305
           ]
         },
         {
@@ -575,8 +585,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            77,
-            90
+            78,
+            91
           ]
         },
         {
@@ -585,8 +595,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            49,
-            67
+            50,
+            68
           ]
         },
         {
@@ -595,8 +605,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            160,
-            176
+            172,
+            191
           ]
         }
       ]
@@ -694,8 +704,8 @@
       "id": "f:app/src/lib/task-detail.ts",
       "path": "app/src/lib/task-detail.ts",
       "lang": "ts",
-      "hash": "blake3:ba900c76379930c4956e9e54fb78f975e9d76d5fe6bce1b2c1aef5aba545b89d",
-      "loc": 236,
+      "hash": "blake3:846c91dbc6cac08fe35a25b3589e37a6d335c47e7a4c27ed52165a365389ee1c",
+      "loc": 199,
       "symbols": [
         {
           "id": "s:app/src/lib/task-detail.ts#BlockerLink",
@@ -713,8 +723,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            101,
-            106
+            106,
+            111
           ]
         },
         {
@@ -724,7 +734,7 @@
           "exported": true,
           "range": [
             63,
-            90
+            95
           ]
         },
         {
@@ -735,26 +745,6 @@
           "range": [
             31,
             31
-          ]
-        },
-        {
-          "id": "s:app/src/lib/task-detail.ts#VERDICT_DATE",
-          "name": "VERDICT_DATE",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            147,
-            147
-          ]
-        },
-        {
-          "id": "s:app/src/lib/task-detail.ts#VerdictEntry",
-          "name": "VerdictEntry",
-          "kind": "interface",
-          "exported": true,
-          "range": [
-            140,
-            145
           ]
         },
         {
@@ -773,8 +763,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            113,
-            137
+            118,
+            142
           ]
         },
         {
@@ -783,8 +773,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            182,
-            187
+            144,
+            149
           ]
         },
         {
@@ -803,8 +793,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            94,
-            96
+            99,
+            101
           ]
         },
         {
@@ -813,18 +803,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            195,
-            236
-          ]
-        },
-        {
-          "id": "s:app/src/lib/task-detail.ts#verdictEntries",
-          "name": "verdictEntries",
-          "kind": "function",
-          "exported": true,
-          "range": [
             157,
-            180
+            199
           ]
         }
       ]
@@ -844,6 +824,55 @@
           "range": [
             4,
             6
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/lib/verdicts.ts",
+      "path": "app/src/lib/verdicts.ts",
+      "lang": "ts",
+      "hash": "blake3:d5ea98dee7b2fce2debe8d605380a18c9a4f550fa819dc3b2e3ffe78c0c013da",
+      "loc": 74,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/verdicts.ts#VERDICT_DATE",
+          "name": "VERDICT_DATE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            22,
+            22
+          ]
+        },
+        {
+          "id": "s:app/src/lib/verdicts.ts#VerdictEntry",
+          "name": "VerdictEntry",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            15,
+            20
+          ]
+        },
+        {
+          "id": "s:app/src/lib/verdicts.ts#rejectedVerdictCount",
+          "name": "rejectedVerdictCount",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            71,
+            74
+          ]
+        },
+        {
+          "id": "s:app/src/lib/verdicts.ts#verdictEntries",
+          "name": "verdictEntries",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            37,
+            63
           ]
         }
       ]
@@ -1134,11 +1163,190 @@
       "symbols": []
     },
     {
+      "id": "f:app/test/board-truth.test.tsx",
+      "path": "app/test/board-truth.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:367692c9454799a856fd52304168e9ecdf121016b59c07de00d3f3dc7a9c8f7b",
+      "loc": 339,
+      "symbols": [
+        {
+          "id": "s:app/test/board-truth.test.tsx#FILES",
+          "name": "FILES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            67,
+            110
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#Field",
+          "name": "Field",
+          "kind": "type",
+          "exported": false,
+          "range": [
+            47,
+            47
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#NOTES",
+          "name": "NOTES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            44,
+            44
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#NOTES_BODY",
+          "name": "NOTES_BODY",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            45,
+            45
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#PATHOLOGICAL",
+          "name": "PATHOLOGICAL",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            23,
+            23
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            25,
+            31
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#TWICE_REJECTED",
+          "name": "TWICE_REJECTED",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            33,
+            42
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            114,
+            114
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#leafSpan",
+          "name": "leafSpan",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            148,
+            154
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#model",
+          "name": "model",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            112,
+            112
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#panel",
+          "name": "panel",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            144,
+            144
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#press",
+          "name": "press",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            135,
+            140
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#q",
+          "name": "q",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            142,
+            142
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#render",
+          "name": "render",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            128,
+            130
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            115,
+            115
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#src",
+          "name": "src",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            49,
+            50
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#task",
+          "name": "task",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            52,
+            64
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/detail-presentation.test.ts",
       "path": "app/test/detail-presentation.test.ts",
       "lang": "ts",
-      "hash": "blake3:e3f6bbf15ad0c5360b4baa2f0e271db3ef33b3e4a77771f2aa4f77f6dfdc5e6b",
-      "loc": 69,
+      "hash": "blake3:2503f378d626978b89fa9dd894c4117b77d2b2da026826acd4d60ef19845a8ee",
+      "loc": 131,
       "symbols": []
     },
     {
@@ -1214,8 +1422,8 @@
       "id": "f:app/test/panel-dismissal.test.ts",
       "path": "app/test/panel-dismissal.test.ts",
       "lang": "ts",
-      "hash": "blake3:9fe8b0946852b2c1aef4220a1de2e08a766dd46ebb27f33980354f386b65c503",
-      "loc": 235,
+      "hash": "blake3:969079eff3bb654f3739d515a6d55e805488332c038be876834b41cafa6c2879",
+      "loc": 278,
       "symbols": [
         {
           "id": "s:app/test/panel-dismissal.test.ts#FakeElement",
@@ -1243,8 +1451,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            147,
-            159
+            168,
+            180
           ]
         },
         {
@@ -1253,8 +1461,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            132,
-            144
+            137,
+            165
           ]
         }
       ]
@@ -1361,8 +1569,8 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:0656a9b996b859e33dd14c559894242d604dd068af47cd672ae4b4bd724fd10d",
-      "loc": 422,
+      "hash": "blake3:aba9e7fd350a1107c1a5d8e160f5f97896ffe98244cba6829c30dfb066fc3e24",
+      "loc": 502,
       "symbols": [
         {
           "id": "s:app/test/select-board.test.ts#Field",
@@ -1440,8 +1648,8 @@
       "id": "f:app/test/select-task-detail.test.ts",
       "path": "app/test/select-task-detail.test.ts",
       "lang": "ts",
-      "hash": "blake3:941c6f4b5f8812ff6384fc15dcd3a6f487f75f6b91ed9a5fad327f66c190dfd3",
-      "loc": 277,
+      "hash": "blake3:7cb9509febdcb6bddcffe4afd519645e6a7bf4cc2730cad2fb2c11fb74ea9ae5",
+      "loc": 287,
       "symbols": [
         {
           "id": "s:app/test/select-task-detail.test.ts#FULL_BODY",
@@ -2795,6 +3003,31 @@
       ]
     },
     {
+      "from": "f:app/src/components/board/ParkedRow.tsx",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "BoardCard"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/ParkedRow.tsx",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "TaskRef",
+        "cardRef"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/ParkedRow.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "useState"
+      ]
+    },
+    {
       "from": "f:app/src/components/board/TaskCard.tsx",
       "to": "f:app/src/components/board/badges/ModelBadge.tsx",
       "kind": "import",
@@ -2875,11 +3108,9 @@
       "kind": "import",
       "symbols": [
         "TaskRef",
-        "VerdictEntry",
         "criterionLines",
         "refLabel",
-        "selectTaskDetail",
-        "verdictEntries"
+        "selectTaskDetail"
       ]
     },
     {
@@ -2888,6 +3119,15 @@
       "kind": "import",
       "symbols": [
         "cn"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "to": "f:app/src/lib/verdicts.ts",
+      "kind": "import",
+      "symbols": [
+        "VerdictEntry",
+        "verdictEntries"
       ]
     },
     {
@@ -2906,7 +3146,8 @@
         "ReactNode",
         "useEffect",
         "useMemo",
-        "useRef"
+        "useRef",
+        "useState"
       ]
     },
     {
@@ -2980,6 +3221,14 @@
       "kind": "import",
       "symbols": [
         "*"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/board-model.ts",
+      "to": "f:app/src/lib/verdicts.ts",
+      "kind": "import",
+      "symbols": [
+        "rejectedVerdictCount"
       ]
     },
     {
@@ -3092,11 +3341,73 @@
       ]
     },
     {
+      "from": "f:app/test/board-truth.test.tsx",
+      "to": "f:app/src/App.tsx",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/test/board-truth.test.tsx",
+      "to": "f:app/src/components/board/Board.tsx",
+      "kind": "import",
+      "symbols": [
+        "Board"
+      ]
+    },
+    {
+      "from": "f:app/test/board-truth.test.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/board-truth.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/board-truth.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/board-truth.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
       "from": "f:app/test/detail-presentation.test.ts",
       "to": "f:app/src/lib/task-detail.ts",
       "kind": "import",
       "symbols": [
-        "criterionLines",
+        "criterionLines"
+      ]
+    },
+    {
+      "from": "f:app/test/detail-presentation.test.ts",
+      "to": "f:app/src/lib/verdicts.ts",
+      "kind": "import",
+      "symbols": [
+        "rejectedVerdictCount",
         "verdictEntries"
       ]
     },
@@ -4129,6 +4440,24 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/components/board/ParkedRow.tsx#ParkedRow",
+      "to": "s:app/src/lib/board-model.ts#BoardCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/ParkedRow.tsx#ParkedRow",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/ParkedRow.tsx#ParkedRow",
+      "to": "s:app/src/lib/task-detail.ts#cardRef",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/components/board/TaskCard.tsx#CHIP_BORDER_CLASSES",
       "to": "s:app/src/lib/board-model.ts#StatusToken",
       "kind": "type_ref",
@@ -4220,26 +4549,26 @@
     },
     {
       "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
-      "to": "s:app/src/lib/task-detail.ts#verdictEntries",
+      "to": "s:app/src/lib/utils.ts#cn",
       "kind": "call",
       "confidence": "resolved"
     },
     {
       "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+      "to": "s:app/src/lib/verdicts.ts#verdictEntries",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#VerdictBlock",
       "to": "s:app/src/lib/utils.ts#cn",
       "kind": "call",
       "confidence": "resolved"
     },
     {
       "from": "s:app/src/components/board/TaskDetailPanel.tsx#VerdictBlock",
-      "to": "s:app/src/lib/task-detail.ts#VerdictEntry",
+      "to": "s:app/src/lib/verdicts.ts#VerdictEntry",
       "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/components/board/TaskDetailPanel.tsx#VerdictBlock",
-      "to": "s:app/src/lib/utils.ts#cn",
-      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -4405,6 +4734,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/board-model.ts#toCard",
+      "to": "s:app/src/lib/verdicts.ts#rejectedVerdictCount",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/docs-model.ts#DocsModelState",
       "to": "s:app/src/lib/docs-model.ts#ParseFailure",
       "kind": "type_ref",
@@ -4531,8 +4866,14 @@
       "confidence": "resolved"
     },
     {
-      "from": "s:app/src/lib/task-detail.ts#verdictEntries",
-      "to": "s:app/src/lib/task-detail.ts#VerdictEntry",
+      "from": "s:app/src/lib/verdicts.ts#rejectedVerdictCount",
+      "to": "s:app/src/lib/verdicts.ts#verdictEntries",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/verdicts.ts#verdictEntries",
+      "to": "s:app/src/lib/verdicts.ts#VerdictEntry",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -4743,6 +5084,42 @@
     {
       "from": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
       "to": "s:app/src/lib/watcher-store.ts#applyProjectStatus",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-truth.test.tsx#FILES",
+      "to": "s:app/test/board-truth.test.tsx#src",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-truth.test.tsx#FILES",
+      "to": "s:app/test/board-truth.test.tsx#task",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-truth.test.tsx#panel",
+      "to": "s:app/test/board-truth.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-truth.test.tsx#src",
+      "to": "s:app/test/board-truth.test.tsx#Field",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-truth.test.tsx#task",
+      "to": "s:app/test/board-truth.test.tsx#Field",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-truth.test.tsx#task",
+      "to": "s:app/test/board-truth.test.tsx#src",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -5481,8 +5858,8 @@
     }
   ],
   "stats": {
-    "files": 49,
-    "symbols": 211,
-    "edges": 384
+    "files": 51,
+    "symbols": 230,
+    "edges": 407
   }
 }

@@ -5,12 +5,12 @@ feature: F-02
 milestone: 4
 priority: 8
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-board, app-shell]
 builder: claude-fable-5
 verifier: claude-fable-5
-built_by:
+built_by: "claude-fable-5 @fresh"
 verified_by: "claude-fable-5 @fresh"
 review: same-model
 ---
