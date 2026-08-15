@@ -216,3 +216,160 @@ built first per CONVENTIONS order)
   (replaced-docs detection degrades to pre-T-018 keep-the-watch there).
 
 ## Verdicts
+
+2026-08-16 — claude-fable-5 @fresh (verifier, same-model as builder):
+APPROVED, with one evidence CORRECTION recorded below — the record must
+carry the correction, not the original claim.
+
+Suites fresh (macOS 15/Darwin 25.6, node 22, ADR-011 order, npm ci):
+lib/parser **132/132** + tsc + build clean (zero-byte diff — untouched
+is literal); app npm ci + `npm run build` exit 0, `npm test`
+**392/392** (one miscount in the notes: the DOM file holds 5 tests, not
+6 — totals still right: 10 reducer + 2 store + 5 DOM = 17 new);
+src-tauri bare `cargo test` **121 passed + 2 ignored, three consecutive
+runs**. The ignored self-graph check is red on-branch EXACTLY as
+forecast: I regenerated (then restored) and diffed — the delta is one
+new file (app/test/watcher-truth.test.tsx) plus hash/loc drift on the
+five modified TS files, nothing else; integrator regenerates at merge
+(T-009-s1).
+
+Criterion 1 attacked with 13 probes of my own (all green, three runs,
+then reverted):
+- docsless start → bare `mkdir docs` emits NOTHING (residual 2
+  confirmed exactly: empty tree == empty baseline); the FIRST file
+  lights the pipeline with no re-pick, and the frontend leaves the
+  noDocs screen on that emit (`applyDocsPayload` sets phase "open").
+- `rm -rf docs` + cp -r replacement (delete-then-copy, new inodes):
+  re-arms; in-place edits after the swap emit.
+- THREE back-to-back wholesale rename swaps with no settling: converges
+  to the final tree, watch live after.
+- A→away→back (the SAME inode returns) inside one window: the
+  keep-the-handle identity arm is taken (zero "was replaced" logs under
+  --nocapture) and the watch stays live — the identity check
+  discriminates in BOTH directions, no spurious rebinds.
+- docs/ replaced by a symlink to an outside tree: refused as vanish
+  (empty emit), outside content NEVER ships in any emit, and a real dir
+  returning re-arms and emits — ADR-010 posture through the full cycle.
+- root deleted wholesale mid-run: no panic; the picker recovers onto a
+  fresh root (residual 3 as recorded).
+- reconcile seam: docs_id unknown at arm (raced stat) → the
+  rebind-to-be-safe arm fires with NO phantom emit, identity learned,
+  truth continues; dead sentinel + replaced docs → ANY arriving batch
+  heals (the sentinel is provably only a wake-up; the healing is
+  sentinel-independent); a project switch moves the sentinel — the old
+  root's docs writes, root-level churn, and docs/ deletion all stay
+  silent after, the new root is live.
+
+**CORRECTION — the one claim that fails reproduction.** The notes call
+the replaced-wholesale cargo test "the regression proof: on pre-T-018
+main the in-place edit after a docs/ swap produces no event and the
+test times out." Not on the platform the notes name. I grafted the
+branch's three live sentinel tests verbatim onto the merge-base
+(ff09f33) collector in a detached worktree: **replaced-wholesale PASSES
+pre-T-018 and deleted-then-recreated PASSES pre-T-018 — six consecutive
+runs each** — because notify's macOS FSEvents backend watches PATHS, so
+the old handle keeps delivering for whatever lives at `<root>/docs`.
+The one genuinely discriminating live regression on macOS is
+**docs-created-after-a-docsless-startup: times out pre-T-018, six of
+six** (that half of the claim is solid, and it is the half T-003-s1
+case 1 recorded). The stale-handle death the replace half targets is
+real by mechanism on inotify (watches follow inodes; see also
+T-018-s1's Windows note), the reconcile is the right fix, and it
+demonstrably FIRES here ("docs/ was replaced - re-armed" logs during
+the branch's own test; docs_id tracks the new directory at my seam
+probe) — but the macOS timeout evidence as written did not happen.
+Filed T-018-s3 to pin the replace regression on the Linux lane where it
+can actually kill.
+
+Criteria 2+3 attacked (Rust + DOM):
+- hostile tree with ALL five skip classes at once (2030 over-cap files
+  + oversize + non-UTF-8 + 17-deep nest + chmod-000 dir): 21
+  consecutive collects identical; counts exact (34 = 30 fileCap + 4);
+  skips path-sorted; oversize/non-UTF-8 never consume cap slots; the
+  shipped set is the first 2000 readable paths in path order.
+- concurrent-writer hammer during collection over an over-cap tree
+  (writes + deletes racing the walk): no panic, cap respected, settles
+  to equal outcomes once quiet — T-003-s2's nondeterminism stays fixed
+  under attack.
+- the silent cap edge, live: ADDING file #2001 (sorts last — the
+  shipped files list does not change at all) EMITS with truncated=true
+  and a fileCap skip; removing it emits the all-clear. Skip state alone
+  moves the suppression baseline, both directions.
+- unreadable subtree, live: chmod 000 → one dir-level skip entry rides
+  the next emit and the buried file leaves `files`; chmod back → clean
+  emit restores it. Residual found here (T-018-s2, non-blocking): a
+  dir-level skip cannot exempt the RECORDS under it — they sweep as
+  deletions while the chip shows the dir skip. Not a criterion breach:
+  the criterion's enumerated classes (>1 MiB, non-UTF-8, depth/
+  file-cap) are per-file or recordless-dir skips, and for every one of
+  them no-phantom-deletion holds — probed at DOM level with a skip and
+  a genuine deletion in ONE payload (skipped card renders last-good,
+  deleted card leaves, counts honest).
+- clip honesty at DOM level: 200 reported entries + skippedTotal 4000 →
+  the chip counts 4000, the tooltip lists all 200 and "…and 3800 more",
+  and the truncation note claims exactly `fileCount` — the number that
+  rode.
+- old-collector equivalence: the cfg(test) `collect_docs_files` wrapper
+  runs every pre-T-018 collector test verbatim against the two-phase
+  implementation (green inside the 121).
+
+Criterion 4: both additive-only pins reproduce; my seam probes widen
+them (unknown-identity rebind, sentinel-independent healing); the 375
+baseline tests pass untouched.
+
+Security sweep — PASS: zero new IPC commands/capabilities/CSP diff
+(lib.rs's diff is one doc-comment line; config diffs empty); zero
+dependency changes (both lockfiles zero-diff); the new snapshot fields
+are counts, a closed enum, and path-sorted PROJECT-RELATIVE paths — no
+content beyond what `files` already carries, camelCase serde matching
+the TS union; skip paths and reasons render as React text nodes only —
+zero dangerouslySetInnerHTML/innerHTML/eval in the code diff (the one
+grep hit is the notes describing this very grep); ADR-009 holds
+(present/effective/lastGood are Set/Map; hostile `__proto__`/
+`constructor` skip paths pinned inert); the docs-changed stdout line
+adds two integers, no new content channel; symlinks stay out of the
+report and out of the payload (probed: no entry, no outside bytes,
+ever).
+
+Judgment rulings (the three the task leaves open):
+1. **Symlink silence: SOUND.** The criterion never enumerates symlinks;
+   they are ADR-010 refusals with T-003/T-007 precedent, and my probes
+   confirm the posture end-to-end. For the record, the notes'
+   "path-disclosure channel" rationale is thin — the path in question
+   is the symlink's own location inside a repo the user opened — but
+   refusals-are-not-telemetry stands on its own.
+2. **Chip copy + placement: CONSISTENT.** SkippedFilesBadge's className
+   is byte-identical to ParseErrorBadge's, same "· last valid state"
+   suffix mechanics, same details strip; the truncation note is the
+   map note's quiet pattern (muted mono, factual, never a chip — cf.
+   MapView's "symbols truncated for N files") sized for the shell
+   strip, inside the panel-exempt header group.
+3. **Empty-mkdir-emits-nothing: DEFENSIBLE, criterion-literal.** The
+   watcher re-arms (probed); nothing emits because nothing differs from
+   the baseline — the invariant the pipeline leans on — and "an empty
+   folder is an invitation" is real design language (EmptyState). Cost:
+   the noDocs screen's "no docs/ found" stays up while an empty docs/
+   exists — filed as T-018-s4, not held.
+
+Boundary: exactly the claimed files (stat reproduced); zero diff on
+board components, app/src/architecture/**, lib/parser/**, tokens/
+styles, capabilities/CSP, dependencies, docs/architecture/**. The
+snapshot shape change is additive-optional in fact, not just intent:
+pre-T-018 payloads pinned byte-equivalent by the branch's reducer test,
+the map store reads graphContent only (full suite green), and my DOM
+probes drove both payload shapes through the real App.
+
+Probe hygiene: all probes reverted (13 Rust probes via git checkout,
+the temporary TS probe file deleted, the merge-base worktree removed,
+the regenerated graph.json restored to the committed bytes); one
+self-inflicted hiccup disclosed: sharing CARGO_TARGET_DIR with the
+merge-base worktree rebuilt nputer-index's test binaries with the
+worktree's baked-in manifest dir, which failed 7 golden tests AFTER the
+worktree was removed — `cargo clean -p` and rebuild restored 121+2,
+three consecutive runs, before this verdict. Working tree clean; no
+servers started, no ports bound; :1420 never touched.
+
+Suggestions filed (non-blocking): T-018-s2 (dir-level skips sweep
+buried records — prefix-exempt them), T-018-s3 (pin the replace
+regression on the Linux lane; macOS evidence corrected), T-018-s4
+(empty-docs front-door staleness).
