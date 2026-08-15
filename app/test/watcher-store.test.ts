@@ -59,6 +59,23 @@ describe("resetDocsForProjectSwitch", () => {
     expect(reset.failures).toEqual([]);
     expect(reset.projectDir).toBe("");
   });
+
+  it("clears T-018 skip/truncation state too — no cross-project ghosts", () => {
+    const a = reduceDocs(emptyState(), {
+      ...payload(1, "/projects/a", projectAFiles()),
+      skipped: [{ path: "docs/tasks/T-901-alpha.md", reason: "oversize" }],
+      skippedTotal: 5,
+      truncated: true,
+    });
+    expect(a.skipped.length).toBe(1);
+    expect(a.truncated).toBe(true);
+
+    const reset = resetDocsForProjectSwitch(a);
+    expect(reset.skipped).toEqual([]);
+    expect(reset.skippedTotal).toBe(0);
+    expect(reset.truncated).toBe(false);
+    expect(reset.fileCount).toBe(0);
+  });
 });
 
 describe("reduceDocs — same project", () => {
@@ -83,6 +100,17 @@ describe("reduceDocs — same project", () => {
     const s1 = openProjectA();
     expect(reduceDocs(s1, payload(1, "/projects/a", []))).toBe(s1);
     expect(reduceDocs(s1, payload(0, "/projects/a", []))).toBe(s1);
+  });
+
+  it("T-018: a skipped record survives the payload it is missing from", () => {
+    const s1 = openProjectA();
+    const s2 = reduceDocs(s1, {
+      ...payload(2, "/projects/a", projectAFiles().slice(0, 1)),
+      skipped: [{ path: "docs/tasks/T-901-alpha.md", reason: "oversize" }],
+    });
+    // The record still renders from last-good; the skip is surfaced.
+    expect(s2.model.tasks.map((t) => t.id)).toEqual(["T-901"]);
+    expect(s2.skipped.map((s) => s.showingLastGood)).toEqual([true]);
   });
 });
 
