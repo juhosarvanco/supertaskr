@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:101ba084256fdd2f4a97570d3ca69699221ce2500fa7dad1cda183a64d64846e",
-      "loc": 254,
+      "hash": "blake3:abe054f1a0113aff2eca4e1bde1686937aed4e8af6080bdc6253cd8d603c91ef",
+      "loc": 311,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -18,8 +18,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            117,
-            252
+            151,
+            309
           ]
         },
         {
@@ -28,8 +28,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            55,
-            104
+            89,
+            138
           ]
         },
         {
@@ -38,8 +38,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            29,
-            46
+            30,
+            47
+          ]
+        },
+        {
+          "id": "s:app/src/App.tsx#SkippedFilesBadge",
+          "name": "SkippedFilesBadge",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            56,
+            80
           ]
         },
         {
@@ -48,8 +58,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            108,
-            115
+            142,
+            149
           ]
         }
       ]
@@ -2113,8 +2123,8 @@
       "id": "f:app/src/lib/docs-model.ts",
       "path": "app/src/lib/docs-model.ts",
       "lang": "ts",
-      "hash": "blake3:b6f1f0b4c227e7dc37e6476d7f17f00a4df68bdde1cae04cbb475ebf2573e3ab",
-      "loc": 186,
+      "hash": "blake3:47222ff2b1d0c36e7f66cba47b92290cc11870d8564d1989290a81a0848d881c",
+      "loc": 277,
       "symbols": [
         {
           "id": "s:app/src/lib/docs-model.ts#DocsFilePayload",
@@ -2132,8 +2142,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            55,
-            79
+            109,
+            144
           ]
         },
         {
@@ -2142,8 +2152,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            38,
-            44
+            53,
+            65
           ]
         },
         {
@@ -2162,8 +2172,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            47,
-            53
+            68,
+            74
           ]
         },
         {
@@ -2177,13 +2187,43 @@
           ]
         },
         {
+          "id": "s:app/src/lib/docs-model.ts#SkipReason",
+          "name": "SkipReason",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            39,
+            39
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#SkippedEntry",
+          "name": "SkippedEntry",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            81,
+            87
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#SkippedFilePayload",
+          "name": "SkippedFilePayload",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            43,
+            46
+          ]
+        },
+        {
           "id": "s:app/src/lib/docs-model.ts#applySnapshot",
           "name": "applySnapshot",
           "kind": "function",
           "exported": true,
           "range": [
-            136,
-            186
+            205,
+            277
           ]
         },
         {
@@ -2192,8 +2232,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            81,
-            90
+            146,
+            159
           ]
         },
         {
@@ -2202,8 +2242,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            107,
-            121
+            176,
+            190
           ]
         },
         {
@@ -2212,8 +2252,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            126,
-            128
+            195,
+            197
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#skipReasonPhrase",
+          "name": "skipReasonPhrase",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            92,
+            107
           ]
         }
       ]
@@ -2399,8 +2449,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:99426a9b7b98973efc1793d085d2387bc26e2e5f758804c9efdd8b60829eb290",
-      "loc": 368,
+      "hash": "blake3:4eae1771112d10f4766e4e895908a6577ebc0a8f80b995e4a1de372cc2a49ca3",
+      "loc": 375,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -2408,8 +2458,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            143,
-            144
+            148,
+            149
           ]
         },
         {
@@ -2418,8 +2468,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            59,
-            73
+            64,
+            78
           ]
         },
         {
@@ -2429,7 +2479,7 @@
           "exported": true,
           "range": [
             32,
-            41
+            46
           ]
         },
         {
@@ -2438,8 +2488,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            50,
-            54
+            55,
+            59
           ]
         },
         {
@@ -2448,8 +2498,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            44,
-            47
+            49,
+            52
           ]
         },
         {
@@ -2458,8 +2508,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            87,
-            90
+            92,
+            95
           ]
         },
         {
@@ -2468,8 +2518,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            153,
-            157
+            158,
+            162
           ]
         },
         {
@@ -2478,8 +2528,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            83,
-            83
+            88,
+            88
           ]
         },
         {
@@ -2488,8 +2538,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            92,
-            108
+            97,
+            113
           ]
         },
         {
@@ -2498,8 +2548,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            253,
-            268
+            260,
+            275
           ]
         },
         {
@@ -2508,8 +2558,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            270,
-            282
+            277,
+            289
           ]
         },
         {
@@ -2518,8 +2568,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            240,
-            251
+            245,
+            258
           ]
         },
         {
@@ -2528,8 +2578,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            227,
-            229
+            232,
+            234
           ]
         },
         {
@@ -2538,8 +2588,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            208,
-            208
+            213,
+            213
           ]
         },
         {
@@ -2548,8 +2598,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            231,
-            233
+            236,
+            238
           ]
         },
         {
@@ -2558,8 +2608,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            342,
-            344
+            349,
+            351
           ]
         },
         {
@@ -2568,8 +2618,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            219,
-            219
+            224,
+            224
           ]
         },
         {
@@ -2578,8 +2628,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            147,
-            149
+            152,
+            154
           ]
         },
         {
@@ -2588,8 +2638,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            315,
-            339
+            322,
+            346
           ]
         },
         {
@@ -2598,8 +2648,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            130,
-            140
+            135,
+            145
           ]
         },
         {
@@ -2608,8 +2658,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            120,
-            122
+            125,
+            127
           ]
         },
         {
@@ -2618,8 +2668,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            357,
-            368
+            364,
+            375
           ]
         },
         {
@@ -2628,8 +2678,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            159,
-            191
+            164,
+            196
           ]
         },
         {
@@ -2638,8 +2688,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            235,
-            238
+            240,
+            243
           ]
         },
         {
@@ -2648,8 +2698,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            210,
-            218
+            215,
+            223
           ]
         },
         {
@@ -2658,8 +2708,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            289,
-            307
+            296,
+            314
           ]
         },
         {
@@ -2668,8 +2718,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            220,
-            220
+            225,
+            225
           ]
         },
         {
@@ -2678,8 +2728,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            222,
-            225
+            227,
+            230
           ]
         }
       ]
@@ -2803,8 +2853,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:ba0205dea64b5f0090c3166ea5629014aaea19538085ce0239a3ac17362ef6f0",
-      "loc": 316,
+      "hash": "blake3:e3dd65a44e089ff4fe0728b8eb40a515a6f9a796344c4c976ce90d6e0a0cc13e",
+      "loc": 332,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -2812,8 +2862,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            109,
-            109
+            125,
+            125
           ]
         },
         {
@@ -2822,8 +2872,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            108,
-            108
+            124,
+            124
           ]
         },
         {
@@ -2832,8 +2882,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            74,
-            74
+            90,
+            90
           ]
         },
         {
@@ -2842,8 +2892,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            80,
-            95
+            96,
+            111
           ]
         },
         {
@@ -2852,8 +2902,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            97,
-            106
+            113,
+            122
           ]
         },
         {
@@ -2862,8 +2912,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            76,
-            78
+            92,
+            94
           ]
         }
       ]
@@ -3155,8 +3205,8 @@
       "id": "f:app/test/docs-model.test.ts",
       "path": "app/test/docs-model.test.ts",
       "lang": "ts",
-      "hash": "blake3:ca0af41dba9cbef16037ba9dffbf562b6f980c4343aa468694287a0e57918d70",
-      "loc": 192,
+      "hash": "blake3:142e00fedc3a3517a232f25bd3e59f48adee0fed3a6baf024fb05242ebf941f4",
+      "loc": 324,
       "symbols": [
         {
           "id": "s:app/test/docs-model.test.ts#BROKEN_TASK",
@@ -3164,8 +3214,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            18,
-            18
+            20,
+            20
           ]
         },
         {
@@ -3174,8 +3224,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            17,
-            17
+            19,
+            19
           ]
         },
         {
@@ -3184,8 +3234,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            33,
-            34
+            35,
+            36
+          ]
+        },
+        {
+          "id": "s:app/test/docs-model.test.ts#applyWith",
+          "name": "applyWith",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            198,
+            203
           ]
         },
         {
@@ -3194,8 +3254,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            27,
-            31
+            29,
+            33
           ]
         },
         {
@@ -3204,8 +3264,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            20,
-            25
+            22,
+            27
           ]
         },
         {
@@ -3214,8 +3274,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            15,
-            16
+            17,
+            18
           ]
         }
       ]
@@ -3224,8 +3284,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:228427cbf9dcd2d23545823b42f0b9482f54528abd889efab708fdb611fa9702",
-      "loc": 166,
+      "hash": "blake3:9c58e3e718f8e63bd813ddd7b5b8ffb6a3507529aa02e0f4eb405c02a63e1882",
+      "loc": 167,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -3921,8 +3981,8 @@
       "id": "f:app/test/watcher-store.test.ts",
       "path": "app/test/watcher-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:14927c9afe0599a066aaeb2e0ca94a3fa059bcb10a5c28725c8ca1c5456b883b",
-      "loc": 214,
+      "hash": "blake3:09916a11f7186d7f850694fa54f9db3a7f19db1331d4fadc1f78abc5255bb2a2",
+      "loc": 242,
       "symbols": [
         {
           "id": "s:app/test/watcher-store.test.ts#BROKEN_ROADMAP",
@@ -3992,6 +4052,115 @@
           "range": [
             23,
             24
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/watcher-truth.test.tsx",
+      "path": "app/test/watcher-truth.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:e62b5124670a8aa17e784bb65e7071393e2886abc222435655a5d86ea11cda1c",
+      "loc": 190,
+      "symbols": [
+        {
+          "id": "s:app/test/watcher-truth.test.tsx#BASE_FILES",
+          "name": "BASE_FILES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            65,
+            68
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-truth.test.tsx#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            59,
+            63
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-truth.test.tsx#TASK",
+          "name": "TASK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            50,
+            57
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-truth.test.tsx#apply",
+          "name": "apply",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            81,
+            85
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-truth.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            22,
+            22
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-truth.test.tsx#mountAndApply",
+          "name": "mountAndApply",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            70,
+            79
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-truth.test.tsx#nextSeq",
+          "name": "nextSeq",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            40,
+            40
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-truth.test.tsx#payload",
+          "name": "payload",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            42,
+            48
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-truth.test.tsx#q",
+          "name": "q",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            87,
+            88
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-truth.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            23,
+            23
           ]
         }
       ]
@@ -5042,6 +5211,14 @@
       "kind": "import",
       "symbols": [
         "Button"
+      ]
+    },
+    {
+      "from": "f:app/src/App.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "skipReasonPhrase"
       ]
     },
     {
@@ -6164,8 +6341,10 @@
         "DocsFilePayload",
         "DocsModelState",
         "DocsSnapshotPayload",
+        "SkippedFilePayload",
         "applySnapshot",
-        "emptyState"
+        "emptyState",
+        "skipReasonPhrase"
       ]
     },
     {
@@ -6678,6 +6857,51 @@
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/watcher-truth.test.tsx",
+      "to": "f:app/src/App.tsx",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/test/watcher-truth.test.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsSnapshotPayload"
+      ]
+    },
+    {
+      "from": "f:app/test/watcher-truth.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/watcher-truth.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/watcher-truth.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
         "describe",
         "expect",
         "it"
@@ -7425,6 +7649,12 @@
     },
     {
       "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/lib/docs-model.ts#skipReasonPhrase",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
       "to": "s:app/src/lib/watcher-store.ts#isTauriRuntime",
       "kind": "call",
       "confidence": "resolved"
@@ -7450,6 +7680,12 @@
     {
       "from": "s:app/src/App.tsx#App",
       "to": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#SkippedFilesBadge",
+      "to": "s:app/src/lib/docs-model.ts#skipReasonPhrase",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -9080,8 +9316,32 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "to": "s:app/src/lib/docs-model.ts#SkippedEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
       "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "to": "s:app/src/lib/docs-model.ts#SkippedFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#SkippedEntry",
+      "to": "s:app/src/lib/docs-model.ts#SkipReason",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#SkippedFilePayload",
+      "to": "s:app/src/lib/docs-model.ts#SkipReason",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -9100,6 +9360,12 @@
     {
       "from": "s:app/src/lib/docs-model.ts#applySnapshot",
       "to": "s:app/src/lib/docs-model.ts#ParseFailure",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "to": "s:app/src/lib/docs-model.ts#SkippedEntry",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -9596,6 +9862,36 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/docs-model.test.ts#applyWith",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#applyWith",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#applyWith",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#applyWith",
+      "to": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#applyWith",
+      "to": "s:app/test/docs-model.test.ts#payload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/docs-model.test.ts#baseFiles",
       "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
       "kind": "type_ref",
@@ -9857,6 +10153,24 @@
       "from": "s:app/test/watcher-store.test.ts#projectAFiles",
       "to": "s:app/test/watcher-store.test.ts#task",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-truth.test.tsx#apply",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-truth.test.tsx#mountAndApply",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-truth.test.tsx#payload",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -10396,8 +10710,8 @@
     }
   ],
   "stats": {
-    "files": 75,
-    "symbols": 425,
-    "edges": 749
+    "files": 76,
+    "symbols": 441,
+    "edges": 770
   }
 }

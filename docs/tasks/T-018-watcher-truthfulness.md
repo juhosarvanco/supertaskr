@@ -5,14 +5,14 @@ feature: F-02
 milestone: 4
 priority: 9
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-shell]
 builder: claude-fable-5
-verifier:
+verifier: claude-fable-5
 built_by: "claude-fable-5 @fresh"
-verified_by:
-review:
+verified_by: "claude-fable-5 @fresh"
+review: same-model
 ---
 
 Absorbs: T-003-s1 (residual), T-003-s3, and T-003-s2's reporting

@@ -1,70 +1,63 @@
 # State
 
-Updated: 2026-08-15 by integrator (T-012 merge — MILESTONE 2
-COMPLETE), claude-fable-5 @fresh
+Updated: 2026-08-16 by integrator (T-018 merge), claude-fable-5 @fresh
 
 ## Just completed
-T-012 (map view T0 + detail panel + pane switcher, L, app-map +
-app-shell) done and merged, APPROVED first-pass (same-model). THE
-MILESTONE 2 CLOSER: the map slice's four cards — T-008 (component
-files) → T-009 (TS indexer) → T-011 (derivation engine) → T-012 (map
-view) — are all through the full pipeline, and the architecture map
-now exists: the seven-rule deterministic layout (pure TS, zero new
-dependencies — elkjs rejected by amendment), sixteen node states on
-measured tokens, edges styled by relation, the overlay segmented
-control (status · provenance · drift; churn waits for T-013), ADR-016
-two-mark provenance on nodes, the drift ring as a stroke that never
-moves the box, the T-005-pattern component panel with task re-target,
-search, the turn-to-teal delight, and honest degraded modes. The shell
-gained the 72px rail (board | map), and the delivery path landed:
-collector accepts .json under docs/architecture/, zero-argument
-`index_repo` (spawn_blocking seam in index_cmd.rs) with live
-loop-termination pinned — one write → one snapshot; unchanged tree →
-nothing. Merge was zero-conflict at merge-base 7ca2ec1; pre-regen
-suites were the forecast exactly (lib/parser 132/132 + tsc + build;
-app build + 375/375; cargo 109 + 2 ignored). The §2 registry
-amendments (C-12 claims its engine in place — T-011-s1 resolved as
-option a at dispatch; C-05 claims shell/** + verdicts.ts) drained D2
-to empty BEFORE the map's own code was even indexed.
+T-018 (watcher never silently lies or dies, M, app-shell) done and
+merged, APPROVED first-pass (same-model) — with the verifier's
+evidence CORRECTION on the record, because the record carries the
+correction, not the original claim: the notes' "replaced-wholesale
+times out pre-T-018" was falsified on macOS (FSEvents watches paths,
+so pre-T-018 main already survives a docs/ swap — six of six grafted
+runs); the macOS-provable regression is DOCSLESS-STARTUP (docs/
+created after a docsless start is dead pre-T-018, six of six), which
+is exactly T-003-s1's case 1. The stale-handle replace death stays
+real by mechanism on inotify (watches follow inodes) and the reconcile
+demonstrably fires here — its regression proof pins on the Linux lane
+as T-018-s3. What shipped, all verifier-reproduced (13 sentinel
+probes live+seam, a hostile five-class skip tree, DOM-level clip
+honesty at 4000 skips, suites three consecutive runs): the STAT-based
+root sentinel (armed non-recursive on the project root; (dev,ino)
+identity; appears / replaced / vanishes all re-arm or disarm honestly,
+including the same-folder re-pick that used to keep a stale handle);
+skip surfacing (CollectOutcome → snapshot `skipped`/`skippedTotal`/
+`truncated`, five reasons, report capped at 200 path-sorted entries
+while skippedTotal stays the honest count; a skipped record renders
+last-good — never a phantom deletion; symlinks stay silent BY DECISION
+as ADR-010 refusals, ruled sound); the deterministic two-phase file
+cap (first 2000 readable paths in path order — T-003-s2's recorded
+nondeterminism closed) with the quiet `docs truncated · showing first
+N files` note; and additive-only telemetry pinned by cargo tests
+(dead sentinel / vanished root leave the watch exactly pre-T-018;
+whole-outcome equality including skips is the suppression baseline).
+Absorbs T-003-s1 (residual), T-003-s3 (settled), T-003-s2's reporting
+half. Zero IPC/ACL/CSP/dependency diff. Merge was zero-conflict at
+merge-base ff09f33 (main's advance was docs-only: T-020 plan, F-03
+promotion, T-023 dispatch); suites on merged main were the forecast
+exactly: lib/parser 132/132 + tsc + build; app build + 392/392
+(375 + 17 new); bare cargo 121 + 2 ignored. Suggestions T-018-s1
+(builder) and T-018-s2/s3/s4 (verifier) are on the board.
 
-THE MAP'S LAUNCH DATA (dogfood findings on merged main, post-regen
-graph 75 files / 425 symbols / 749 edges, 272,762 bytes):
-- **D1 undeclared_dependency ×4**: C-05→C-06 (8 file edges — eight
-  app/test/** suites import @nputer/parser under the umbrella; three
-  are the map's own new tests), C-05→C-09 (3 — tests exercise the
-  detail panel), C-08→C-05 (4 — the T-008-s2 `cn`/verdicts family),
-  C-09→C-05 (2 — same family, other half).
-- **D2 unmapped_files: NONE** — zero unclaimed territory; the amended
-  registry claimed everything the branch added.
-- **D3 declared_only ×3**: C-01 + C-11 (structurally non-code —
-  T-011-s2's amber-forever question), C-07 (no TS matches a Rust
-  crate; self-clears at T-010).
-- **No D4, no D5.** Relation table: same 23 rows, tally now
-  **12 confirmed / 4 undeclared / 7 planned** — indexing the map's own
-  code flipped C-12→C-05 (4: utils + button), C-12→C-09 (4:
-  panel-dismissal, task-detail, TaskDetailPanel) and C-12→C-10 (1:
-  watcher-store) from planned to CONFIRMED, and grew C-12→C-06 1→4,
-  C-05→C-12 6→20, C-05→C-10 5→8. C-12→C-07 and C-12→C-11 honestly
-  stay planned (no TS import can confirm a Rust crate or token file).
-Both dogfood fixtures reconciled at integration with every delta
-enumerated (dated addenda in architecture-dogfood.test.ts and the
-map hero's 59→75 hint) — changed, never loosened.
-
-STANDING INTEGRATOR PRACTICE (T-009-s1, fourth exercise, keep until
-T-014's `--check` lands): any merge touching *.ts/tsx/js/jsx outside
-docs/ makes the committed graph.json stale — regenerate with
-`NPUTER_UPDATE_GOLDEN=1 cargo test --release -p nputer-index --test
-self_graph -- --ignored`, confirm byte-determinism, commit with the
-checkpoint. Done here: 59→75 files, 308→425 symbols, 535→749 edges,
-regenerate-twice byte-identical (sha256 6dfeafd8…), ignored self-check
-green, full app suite green after reconciliation. The ceaa949 ordering
-lesson held its fourth test: fixture edits BEFORE the final regen (the
-fixtures' own loc lives in the graph), and this time TWO fixtures
-moved — the derivation dogfood AND the map hero's committed-graph
-hint; both are now part of the practice's checklist.
+STANDING INTEGRATOR PRACTICE (T-009-s1, fifth exercise, keep until
+T-014's `--check` lands): regenerated the committed graph.json —
+75→76 files, 425→441 symbols, 749→770 edges (+21 edges, 0 removed;
+280,703 bytes), regenerate-twice byte-identical (sha256 da078dd9…),
+ignored self-check green, full app suite green after reconciliation.
+Both dogfood fixtures moved again, every delta enumerated in dated
+addenda: derivation dogfood — mapping C-05 30→31 (watcher-truth
+joins the app/test umbrella), D2 STAYS EMPTY, findings byte-unchanged
+(no new families — the new suite imports no parser), relation table
+same 23 rows and same 12 confirmed / 4 undeclared / 7 planned tally
+with only C-05→C-10 growing 8→10 (the truth suite consumes
+docs-model, and App.tsx now imports skipReasonPhrase directly — the
+first src-side C-05→C-10 edge, still the declared direction); map
+hero hint 75→76. The ceaa949 ordering lesson held its fifth test:
+fixture edits BEFORE the final regen.
 
 ## In progress / broken right now
-Nothing in flight. Nothing broken.
+T-023 (genesis kit, M, method lane) building in its worktree —
+milestone 3 is open. T-019 (parser/model hygiene, M, lib-parser +
+app-board) fix pass building in its worktree. Nothing broken.
 
 ## Next up (1–4)
 1. @human, consolidated: the at-a-glance amber judgment (T-012
@@ -74,22 +67,24 @@ Nothing in flight. Nothing broken.
    pending screenshot predates the rail — light + dark now include
    it) · the standing real-input checklist (picker flows,
    blocker-link click, real-key Esc/Enter/Space) · a Linux run.
-2. MILESTONE 3 DECOMPOSED (T-023…T-029, ADR-017): T-023 (genesis
-   kit, method lane) dispatchable IMMEDIATELY; T-026 unblocks at
-   T-018's merge; T-025/T-027 are L (planning passes at dispatch);
-   T-021 recommended into the app-shell lane before T-025 (the ACL
-   pin). First slice: T-023+T-024+T-026 — hand-driven genesis
-   rendered live.
-3. Next architect triage, the full suggestion backlog: T-008-s1/s2/s3,
+2. MILESTONE 3 (T-023…T-029, ADR-017), first slice T-023+T-024+T-026
+   — hand-driven genesis rendered live: T-023 building; **T-026
+   (genesis entry, M, app-shell) is now UNBLOCKED by this merge** —
+   the first slice's third card; T-025/T-027 are L (planning passes
+   at dispatch).
+3. THE FREED APP-SHELL LANE: T-021 (shell IPC hardening, M) is now
+   dispatchable — the F-03 plan recommends it lands before T-025;
+   T-022 (front-door persistence) queues behind it.
+4. Next architect triage, the full suggestion backlog: T-008-s1/s2/s3,
    T-009-s1 (ratify as standing rule or keep interim until T-014),
    T-009-s2, T-009-s3, T-011-s1 (**RESOLVED** by T-012's option-a
-   amendment — mark it so), T-011-s2/s3/s4/s5/s6, T-012-s1 (map tasks
-   lens) /s2 (touch-then-reindex third leg) /s3 (collector cap
-   single-source) /s4 (layoutKey separator hygiene), T-017-s1/s2/s3.
-4. Milestone-4 queue re-enters after F-03: T-010 (Rust lang), T-013
-   (semantic zoom + churn), T-014 (CLI/--watch/--check), T-015 (pins)
-   + hardening T-018–T-022 — with T-018/T-021/T-022 now dispatchable
-   fillers (app-shell is free again).
+   amendment — mark it so), T-011-s2/s3/s4/s5/s6, T-012-s1/s2/s3/s4,
+   T-017-s1/s2/s3, and new T-018-s1 (Windows replace identity),
+   T-018-s2 (dir-level skips sweep buried records), T-018-s3 (pin the
+   replace regression on the Linux lane — feeds T-020), T-018-s4
+   (empty-docs front-door staleness). Milestone-4 queue re-enters
+   after F-03: T-010, T-013, T-014, T-015 + hardening T-019 (fix in
+   flight), T-020 (planned, L), T-021/T-022 (item 3).
 
 ## Open questions
 None.

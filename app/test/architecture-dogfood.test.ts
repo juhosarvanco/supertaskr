@@ -70,6 +70,22 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 // C-05→C-10 5→8 (three new tests consume docs-model). C-12→C-07 and
 // C-12→C-11 honestly remain planned: no TS import can confirm a Rust
 // crate or a token file. Changed, never loosened.
+//
+// RECONCILED AT THE T-018 MERGE (2026-08-16, integrator — fifth
+// exercise of the T-009-s1 practice): the regenerated 76-file graph
+// (75→76: the watcher-truth DOM suite joins under the app/test/**
+// umbrella; hash/loc drift on the five files T-018 modified —
+// App.tsx, docs-model.ts, watcher-store.ts and their two test
+// suites). Deltas, verified against the enumerated edge diff of the
+// regen (+21 edges, 0 removed) before this edit: mapping C-05 30→31;
+// D2 STAYS EMPTY; findings byte-unchanged — the new suite imports no
+// @nputer/parser, so all four D1s and the three D3s hold exactly (no
+// new finding families). Relation table: same 23 rows, same 12/4/7
+// tally — only C-05→C-10 grows 8→10, both new file edges in the
+// DECLARED direction: watcher-truth.test.tsx consumes docs-model
+// under the app/test umbrella, and App.tsx itself now imports
+// skipReasonPhrase for the skip chip (the first src-side C-05→C-10
+// edge). Changed, never loosened.
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
@@ -134,14 +150,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 75 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(75);
+  it("all 76 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(76);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
     for (const id of derived.fileComponent.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
     expect([...counts.entries()].sort()).toEqual([
-      ["C-05", 30],
+      ["C-05", 31],
       ["C-06", 19],
       ["C-08", 10],
       ["C-09", 3],
@@ -232,7 +248,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["C-05", "C-06", "undeclared", 8],
       ["C-05", "C-08", "confirmed", 4],
       ["C-05", "C-09", "undeclared", 3],
-      ["C-05", "C-10", "confirmed", 8],
+      ["C-05", "C-10", "confirmed", 10],
       ["C-05", "C-11", "planned", 0],
       ["C-05", "C-12", "confirmed", 20],
       ["C-06", "C-01", "planned", 0],
