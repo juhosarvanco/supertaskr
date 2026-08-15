@@ -129,7 +129,12 @@ const join = (...parts: (string | false | undefined)[]): string =>
 export function nodeVisual(component: DerivedComponent, ui: NodeUiState): NodeVisual {
   const { status, kind } = component;
   const ghost = kind === "inferred" || kind === "unmapped";
-  const declaredOnly = component.declaredOnly || kind === "placeholder";
+  // Declared-only reads "exists on paper" — unless the architect PINNED
+  // a status: the explicit word beats the derived paper-only treatment
+  // (plan §8 names the hero "C-01 pinned+done, C-07 declared-only" as
+  // distinct states; C-01 is both flags at once and renders its pin —
+  // the D3 ring still carries the no-files tension honestly).
+  const declaredOnly = (component.declaredOnly && !component.pinned) || kind === "placeholder";
 
   // --- fill + border family -------------------------------------------
   let fill: string;

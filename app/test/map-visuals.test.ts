@@ -73,7 +73,9 @@ describe("the six status fills", () => {
     for (const c of everything) {
       for (const overlay of ["status", "provenance", "drift"] as const) {
         const v = nodeVisual(c, { ...base, overlay });
-        expect(v.container).not.toContain("bg-warning");
+        // Assembled so Tailwind's source scanner never sees the banned
+        // utility as a candidate in this file (it must stay unminted).
+        expect(v.container).not.toContain("bg-" + "warning");
       }
     }
   });
@@ -119,6 +121,16 @@ describe("declared-only · inferred · unmapped · pinned", () => {
     const v = nodeVisual(component({ kind: "placeholder" }), base);
     expect(v.container).toContain("bg-transparent");
     expect(v.container).toContain("border-map-declared-only-border");
+  });
+
+  it("a PIN beats declared-only: the architect's word renders its fill (C-01's live case)", () => {
+    const v = nodeVisual(
+      component({ status: "done", pinned: true, declaredOnly: true, hasDrift: true }),
+      base,
+    );
+    expect(v.container).toContain("bg-status-done");
+    expect(v.container).not.toContain("bg-transparent");
+    expect(v.ring).toBe(true); // the D3 tension stays visible
   });
 
   it("inferred pseudo-components take the ghost family", () => {
