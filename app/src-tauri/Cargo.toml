@@ -7,6 +7,19 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# T-009: the Rust sibling of ADR-011 — the tauri app stays the root
+# package; nputer-index (C-07) joins as a workspace member. With both in
+# default-members, bare `cargo test` from app/src-tauri runs both suites.
+[workspace]
+members = ["crates/nputer-index"]
+default-members = [".", "crates/nputer-index"]
+resolver = "2"
+
+# Shared by both crates; centralized to prevent version skew (T-009 plan §1).
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
@@ -19,8 +32,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { workspace = true }
+serde_json = { workspace = true }
 notify-debouncer-mini = "0.7.0"
 tauri-plugin-dialog = "2"
-

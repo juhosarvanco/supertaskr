@@ -1,0 +1,14 @@
+{
+  /* JSONC on purpose: the live app tsconfig carries comments too */
+  "compilerOptions": {
+    // line comment + trailing commas below
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "cfg": ["./src/config.ts"],
+      "cf*": ["./src/wrongplace/*"],
+      "m*": ["./src/wrongplace/*"],
+      "multi/*": ["./missing/*", "./src/multi/*"],
+    },
+  },
+}

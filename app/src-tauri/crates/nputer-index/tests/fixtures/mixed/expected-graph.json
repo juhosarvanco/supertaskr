@@ -1,0 +1,214 @@
+{
+  "schema": 1,
+  "root": ".",
+  "languages": [
+    "js",
+    "ts"
+  ],
+  "files": [
+    {
+      "id": "f:.hidden/real.ts",
+      "path": ".hidden/real.ts",
+      "lang": "ts",
+      "hash": "blake3:569e07caec6b299df175a0a554488a427a3686b051221232f42b907cf06c9602",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:.hidden/real.ts#hiddenButReal",
+          "name": "hiddenButReal",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app.ts",
+      "path": "app.ts",
+      "lang": "ts",
+      "hash": "blake3:f6535f00977937a6bb6ca234674f491fad65a2afdaeeb38714c0f920c37073a2",
+      "loc": 5,
+      "symbols": [
+        {
+          "id": "s:app.ts#appReady",
+          "name": "appReady",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            5,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:libpkg/src/thing.ts",
+      "path": "libpkg/src/thing.ts",
+      "lang": "ts",
+      "hash": "blake3:0ea3586ebae19e20c85d0d1e1b819d10fdca6da28874757c7be4beb497ddcf32",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:libpkg/src/thing.ts#th",
+          "name": "th",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:script.js",
+      "path": "script.js",
+      "lang": "js",
+      "hash": "blake3:d2094f4034c2318562d4cd2cd28cca090ffaa9e664db686678b7dd8f3107475d",
+      "loc": 6,
+      "symbols": [
+        {
+          "id": "s:script.js#boot",
+          "name": "boot",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            4,
+            6
+          ]
+        },
+        {
+          "id": "s:script.js#view",
+          "name": "view",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            2,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:view.tsx",
+      "path": "view.tsx",
+      "lang": "ts",
+      "hash": "blake3:9d6d988699d57cea967bbef77cecb74b15e7c092f2a832c47626b9939e8a7b57",
+      "loc": 3,
+      "symbols": [
+        {
+          "id": "s:view.tsx#View",
+          "name": "View",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:widget.jsx",
+      "path": "widget.jsx",
+      "lang": "js",
+      "hash": "blake3:f25f4aabd5fc09d251e2d4857dea5fad30f8efdff3d6d34fb307511195790f41",
+      "loc": 3,
+      "symbols": [
+        {
+          "id": "s:widget.jsx#W",
+          "name": "W",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            3,
+            3
+          ]
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "id": "p:@local/lib",
+      "name": "@local/lib",
+      "ecosystem": "npm",
+      "path": "libpkg"
+    },
+    {
+      "id": "p:outside-dep",
+      "name": "outside-dep",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:regular",
+      "name": "regular",
+      "ecosystem": "npm"
+    }
+  ],
+  "edges": [
+    {
+      "from": "f:app.ts",
+      "to": "p:@local/lib",
+      "kind": "import",
+      "symbols": [
+        "th"
+      ]
+    },
+    {
+      "from": "f:app.ts",
+      "to": "p:outside-dep",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app.ts",
+      "to": "p:regular",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:script.js",
+      "to": "f:app.ts",
+      "kind": "import",
+      "symbols": [
+        "appReady"
+      ]
+    },
+    {
+      "from": "f:script.js",
+      "to": "f:view.tsx",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:view.tsx",
+      "to": "f:app.ts",
+      "kind": "import",
+      "symbols": [
+        "appReady"
+      ]
+    }
+  ],
+  "unresolved": [
+    {
+      "from": "f:widget.jsx",
+      "specifier": "./esmodule.mjs",
+      "reason": "not_found"
+    }
+  ],
+  "stats": {
+    "files": 6,
+    "symbols": 7,
+    "edges": 6
+  }
+}

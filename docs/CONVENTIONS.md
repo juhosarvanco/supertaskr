@@ -16,8 +16,10 @@
   `npm test` (vitest — model-store unit tests, T-003) ·
   `npm run tauri dev` (run the desktop app) · `npm run tauri build`
   (package).
-- app/src-tauri (C-05 Rust half), run from app/src-tauri/:
-  `cargo test` (watcher/collector unit tests, T-003).
+- app/src-tauri (C-05 Rust half + the C-07 workspace), run from
+  app/src-tauri/: `cargo test` (watcher/collector unit tests, T-003;
+  + nputer-index crate suite, T-009 — bare `cargo test` runs both
+  workspace crates via default-members).
 
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing

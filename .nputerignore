@@ -1,0 +1,5 @@
+# nputer-index walk excludes (gitignore syntax, T-009 plan §3).
+# docs/ is the brain, not the codebase; fixture trees are deliberately
+# broken indexer inputs, not map content.
+docs/
+app/src-tauri/crates/nputer-index/tests/fixtures/

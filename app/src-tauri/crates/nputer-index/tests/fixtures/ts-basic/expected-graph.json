@@ -1,0 +1,605 @@
+{
+  "schema": 1,
+  "root": ".",
+  "languages": [
+    "js",
+    "ts"
+  ],
+  "files": [
+    {
+      "id": "f:src/components/index.ts",
+      "path": "src/components/index.ts",
+      "lang": "ts",
+      "hash": "blake3:a52d24bede75eb2d143f1b25b450cd06f7566b95e827520b5934d3e8275039dc",
+      "loc": 3,
+      "symbols": [
+        {
+          "id": "s:src/components/index.ts#componentCount",
+          "name": "componentCount",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/legacy.js",
+      "path": "src/legacy.js",
+      "lang": "js",
+      "hash": "blake3:d0c5a131bd33f9003c245e9844a03516e0c553ab17efb5252de0086fd53e1908",
+      "loc": 7,
+      "symbols": [
+        {
+          "id": "s:src/legacy.js#dyn",
+          "name": "dyn",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            2,
+            2
+          ]
+        },
+        {
+          "id": "s:src/legacy.js#legacy",
+          "name": "legacy",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            5,
+            7
+          ]
+        },
+        {
+          "id": "s:src/legacy.js#util",
+          "name": "util",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/main.ts",
+      "path": "src/main.ts",
+      "lang": "ts",
+      "hash": "blake3:6622a92baeb0b1d2d0e6182738a4e7ea908924d23b18b60450f0d1c000b8dbd7",
+      "loc": 17,
+      "symbols": [
+        {
+          "id": "s:src/main.ts#boot",
+          "name": "boot",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            15,
+            17
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/merge.ts",
+      "path": "src/merge.ts",
+      "lang": "ts",
+      "hash": "blake3:41c98b39ff7923c2eb46888cfd59c4e7dc2884bf938e582e620bd8bc35543c6c",
+      "loc": 7,
+      "symbols": [
+        {
+          "id": "s:src/merge.ts#Config",
+          "name": "Config",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            1,
+            4
+          ]
+        },
+        {
+          "id": "s:src/merge.ts#fromConfig",
+          "name": "fromConfig",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            5,
+            7
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/modern.mts",
+      "path": "src/modern.mts",
+      "lang": "ts",
+      "hash": "blake3:0d8a7a0ef4888961adb3d5d980eac224704a29719663a9ace4a6935131a93681",
+      "loc": 5,
+      "symbols": [
+        {
+          "id": "s:src/modern.mts#viaMjs",
+          "name": "viaMjs",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            3,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/old-helper.cts",
+      "path": "src/old-helper.cts",
+      "lang": "ts",
+      "hash": "blake3:562e31a83fb54fc5110f9990eb8a608d69e05f9d070a49b6fc1f2e6724c58f50",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:src/old-helper.cts#fromCts",
+          "name": "fromCts",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/old.cts",
+      "path": "src/old.cts",
+      "lang": "ts",
+      "hash": "blake3:485edb02c7f309ca726cb24d54c10d65137026c63afd8d1314ff63ea750aad4a",
+      "loc": 3,
+      "symbols": [
+        {
+          "id": "s:src/old.cts#helper",
+          "name": "helper",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            1,
+            1
+          ]
+        },
+        {
+          "id": "s:src/old.cts#oldStyle",
+          "name": "oldStyle",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/only-types.d.ts",
+      "path": "src/only-types.d.ts",
+      "lang": "ts",
+      "hash": "blake3:ddbc4253f9abb483bb040791862d1d578304882ff7f37fd4b96c6eec8f362b88",
+      "loc": 4,
+      "symbols": [
+        {
+          "id": "s:src/only-types.d.ts#Shape",
+          "name": "Shape",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            1,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/plain.jsx",
+      "path": "src/plain.jsx",
+      "lang": "js",
+      "hash": "blake3:19f30b8006a2e0109b515c053db06ce734b9dc4cd02e2e3f7e2f9394778a283a",
+      "loc": 3,
+      "symbols": [
+        {
+          "id": "s:src/plain.jsx#Plain",
+          "name": "Plain",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/util.d.ts",
+      "path": "src/util.d.ts",
+      "lang": "ts",
+      "hash": "blake3:f4bb803e3355344978d581041cb1684ea9754a7f9ca23e07236236ee7cf51c02",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:src/util.d.ts#helper",
+          "name": "helper",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/util.ts",
+      "path": "src/util.ts",
+      "lang": "ts",
+      "hash": "blake3:93323a754b6f58e3ede19f3d0bc3c3c1b41301a5bff40d2b9fc34eea88bf3d6e",
+      "loc": 23,
+      "symbols": [
+        {
+          "id": "s:src/util.ts#Mode",
+          "name": "Mode",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            16,
+            19
+          ]
+        },
+        {
+          "id": "s:src/util.ts#Pair",
+          "name": "Pair",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            20,
+            20
+          ]
+        },
+        {
+          "id": "s:src/util.ts#Thing",
+          "name": "Thing",
+          "kind": "class",
+          "exported": true,
+          "range": [
+            10,
+            12
+          ]
+        },
+        {
+          "id": "s:src/util.ts#counter",
+          "name": "counter",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            21,
+            21
+          ]
+        },
+        {
+          "id": "s:src/util.ts#helper",
+          "name": "helper",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            4,
+            6
+          ]
+        },
+        {
+          "id": "s:src/util.ts#legacyVar",
+          "name": "legacyVar",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            22,
+            22
+          ]
+        },
+        {
+          "id": "s:src/util.ts#main",
+          "name": "main",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            1,
+            3
+          ]
+        },
+        {
+          "id": "s:src/util.ts#make",
+          "name": "make",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            13,
+            15
+          ]
+        },
+        {
+          "id": "s:src/util.ts#other",
+          "name": "other",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            7,
+            9
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:src/widget.tsx",
+      "path": "src/widget.tsx",
+      "lang": "ts",
+      "hash": "blake3:91d78aaa7903b03ad59171bdd1fb91d9168fc57eee58c525b41799226a15aa6c",
+      "loc": 5,
+      "symbols": [
+        {
+          "id": "s:src/widget.tsx#Widget",
+          "name": "Widget",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            3,
+            5
+          ]
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "id": "p:@scope/pkg",
+      "name": "@scope/pkg",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:node:fs",
+      "name": "node:fs",
+      "ecosystem": "node"
+    },
+    {
+      "id": "p:react",
+      "name": "react",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:react-dom",
+      "name": "react-dom",
+      "ecosystem": "npm"
+    }
+  ],
+  "edges": [
+    {
+      "from": "f:src/components/index.ts",
+      "to": "f:src/modern.mts",
+      "kind": "import",
+      "symbols": [
+        "viaMjs"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:src/components/index.ts",
+      "to": "f:src/util.ts",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:src/legacy.js",
+      "to": "f:src/util.ts",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:src/legacy.js",
+      "to": "f:src/widget.tsx",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:src/main.ts",
+      "to": "f:src/components/index.ts",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:src/main.ts",
+      "to": "f:src/merge.ts",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:src/main.ts",
+      "to": "f:src/only-types.d.ts",
+      "kind": "import",
+      "symbols": [
+        "Shape"
+      ]
+    },
+    {
+      "from": "f:src/main.ts",
+      "to": "f:src/util.ts",
+      "kind": "import",
+      "symbols": [
+        "default",
+        "helper",
+        "other"
+      ]
+    },
+    {
+      "from": "f:src/main.ts",
+      "to": "f:src/widget.tsx",
+      "kind": "import",
+      "symbols": [
+        "Widget"
+      ]
+    },
+    {
+      "from": "f:src/main.ts",
+      "to": "p:@scope/pkg",
+      "kind": "import",
+      "symbols": [
+        "x"
+      ]
+    },
+    {
+      "from": "f:src/main.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync"
+      ]
+    },
+    {
+      "from": "f:src/main.ts",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:src/main.ts",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:src/modern.mts",
+      "to": "f:src/merge.ts",
+      "kind": "import",
+      "symbols": [
+        "fromConfig"
+      ]
+    },
+    {
+      "from": "f:src/old.cts",
+      "to": "f:src/old-helper.cts",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:src/plain.jsx",
+      "to": "f:src/widget.tsx",
+      "kind": "import",
+      "symbols": [
+        "Widget"
+      ]
+    },
+    {
+      "from": "f:src/widget.tsx",
+      "to": "f:src/merge.ts",
+      "kind": "import",
+      "symbols": [
+        "Config"
+      ]
+    },
+    {
+      "from": "s:src/main.ts#boot",
+      "to": "s:src/only-types.d.ts#Shape",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:src/main.ts#boot",
+      "to": "s:src/util.ts#helper",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:src/main.ts#boot",
+      "to": "s:src/util.ts#other",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:src/merge.ts#fromConfig",
+      "to": "s:src/merge.ts#Config",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:src/modern.mts#viaMjs",
+      "to": "s:src/merge.ts#fromConfig",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:src/util.ts#main",
+      "to": "s:src/util.ts#helper",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:src/util.ts#make",
+      "to": "s:src/util.ts#Thing",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:src/util.ts#make",
+      "to": "s:src/util.ts#Thing",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:src/util.ts#other",
+      "to": "s:src/util.ts#helper",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:src/widget.tsx#Widget",
+      "to": "s:src/merge.ts#Config",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    }
+  ],
+  "unresolved": [
+    {
+      "from": "f:src/main.ts",
+      "specifier": "../../escape",
+      "reason": "outside_root"
+    },
+    {
+      "from": "f:src/main.ts",
+      "specifier": "./missing",
+      "reason": "not_found"
+    },
+    {
+      "from": "f:src/main.ts",
+      "specifier": "./styles.css",
+      "reason": "asset"
+    }
+  ],
+  "stats": {
+    "files": 12,
+    "symbols": 24,
+    "edges": 27
+  }
+}

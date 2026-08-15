@@ -5,14 +5,14 @@ feature: F-06
 milestone: 2
 priority: 2
 size: L
-status: building
+status: verifying
 blocked_by: []
 touches: [crate-index, app-shell]
 builder: claude-fable-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-fable-5
+built_by: "claude-fable-5 @t009-executor"
+verified_by: "claude-fable-5 @fresh"
+review: same-model
 ---
 
 Size L: planning pass COMPLETE (below; architect-approved 2026-08-15).
@@ -238,4 +238,347 @@ Dispatch with explicit @human word (size L, per current STATE next-up). Runs dis
 
 ## Implementation notes
 
+Executor claude-fable-5, 2026-08-15, branch `t009-indexer-ts` (worktree
+/Users/ujju/Projects/nputer-t009). Built to the plan above as binding
+spec; two infra-watchdog stalls mid-build produced orchestrator WIP
+checkpoint 332bd18 — resumed with no loss, later commits stack on it.
+Machine for every number below: macOS (Darwin 25.6.0), rustc/cargo
+1.95.0, node 22.22.0, npm 11.12.1.
+
+### What was built
+- **Workspace (plan §1)**: app/src-tauri/Cargo.toml gains `[workspace]`
+  (members crates/nputer-index, `default-members = [".",
+  "crates/nputer-index"]`, resolver 2) and `[workspace.dependencies]`
+  for serde/serde_json; the app's own serde entries switched to
+  `{ workspace = true }` (features preserved). App stays the root
+  package; bare `cargo test` runs BOTH crates. Cargo.lock grew by the
+  new subtrees only.
+- **Crate (plan §2)**: app/src-tauri/crates/nputer-index with the exact
+  module layout (lib/graph/walk/hash/cache/parse/extract{mod,ts}/
+  resolve{mod,ts,tsconfig}/emit/error + cfg(test) testutil). Public
+  API: `Lang`, `IndexOptions` (root/cache_dir/languages/
+  max_graph_bytes, `..Default`), `index()`, `stable_json()`,
+  `write_graph()`, `GRAPH_REL_PATH`, `IndexError` + schema types
+  (Serialize AND Deserialize, per plan). Plan-recorded deviations hold:
+  no `diff()` (T-014), `max_graph_bytes` replaces `symbol_budget`, no
+  `heuristic_calls` flag. No `[[bin]]`, `publish = false`, zero tauri
+  anywhere in `cargo tree -p nputer-index`.
+- **Walk + containment (§3)**: ignore::WalkBuilder configured exactly —
+  follow_links(false) + own symlink_metadata skip + canonicalize/
+  prefix-check per file; hidden(false); git_ignore(true),
+  require_git(false); git_global/git_exclude/parents/ignore all OFF;
+  `.nputerignore` via add_custom_ignore_filename; `.git`/`node_modules`
+  hard-skipped by filter_entry; allowlist ts/tsx/mts/cts/js/jsx (no
+  .rs, no .mjs/.cjs); collect-then-sort; root canonicalized first,
+  RootInvalid on non-dir.
+- **Hash + cache (§4)**: blake3 `"blake3:"+64hex` over raw bytes;
+  cache at `<cache_dir>/<blake3(canon root)[..16]>.json`,
+  `{cache_schema, indexer_version, files}` with whole-cache discard on
+  either mismatch, per-file hash-match reuse, current-walk-only
+  rewrite (dead entries drop), atomic temp+rename, all failures
+  silent. Resolution always re-runs.
+- **Parse + extract (§5)**: exact `=` pins — tree-sitter 0.26.12,
+  tree-sitter-typescript 0.23.2, tree-sitter-javascript 0.25.0, ignore
+  0.4.33, blake3 1.8.6, jsonc-parser 0.33.1 (serde feature; REQUIRED —
+  app/tsconfig.json carries comments) — trio compiled together
+  first-try (the stop-and-consult gate never fired). Hand-rolled
+  cursor traversal, no .scm; one extractor for all four dialects
+  (grammar per dialect: TS/TSX/JS). Module-level symbols incl.
+  declaration merging (exported=any, range=[min,max], kind=earliest,
+  same-row tie kind-asc — unit-pinned); imports (static, export-from
+  incl. `export *`/`export * as`, string-literal require + dynamic
+  import with binding-aware names); call/type_ref candidates with
+  enclosing-symbol attribution (span binary search), decorator
+  subtrees never descended.
+- **Resolve (§6)**: pure against the walked set (fs reads only for
+  tsconfig/package.json discovery, symlink-refusing + root-contained);
+  query-strip -> unsupported gate -> asset gate (closed 21-ext list)
+  -> relative (lexical normalize, escape => outside_root) -> nearest
+  tsconfig paths (exact-beats-star, longest-prefix, target array
+  order, baseUrl-or-tsconfig-dir rooting) -> plain baseUrl -> bare
+  package (scoped/subpath/node: rules) with the §6.6 file:-dep
+  package-node-with-path decision. Closed unresolved taxonomy;
+  candidate gating exactly rule (a)/(b) with `confidence: "resolved"`
+  only.
+- **Emit (§7)**: serde struct-declaration-order keys (= schema §3.1
+  order), 2-space pretty + trailing LF, sorted arrays everywhere,
+  optional fields omitted; budget: greedy largest-symbol-block drop
+  (tie path-asc, exact per-entry serialized cost, loop-until-fit),
+  dependent call/type_ref-edge drop (split s: ids on LAST `#`),
+  truncated_symbols/truncated_files stats, floor emits over-budget
+  flagged with files/edges never dropped; write_graph byte-compare
+  no-op-on-equal + atomic rename (creates parent dirs).
+- **Dogfood deliverables**: root `.nputerignore` (docs/ + the fixture
+  tree — see choice 1); committed docs/architecture/graph.json —
+  **122,853 bytes**, 46 files, 184 symbols, 335 edges (132 import /
+  76 call / 127 type_ref), languages ["ts"], 17 packages incl.
+  `p:@nputer/parser` with `path: "lib/parser"` (the T-011 join seam),
+  and exactly ONE unresolved entry (`./index.css`, asset) — the
+  healthy-repo no-false-alarms goal holds. Generated via
+  `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test self_graph
+  -- --ignored`; CONVENTIONS cargo-test line updated (the one-line
+  edit, done directly since the plan's expected diff surface includes
+  it).
+
+### Smallest reasonable choices at genuine silences (the record)
+1. `.nputerignore` carries a second line,
+   `app/src-tauri/crates/nputer-index/tests/fixtures/` — the plan
+   predates the fixtures' existence on disk; its ~46-file estimate and
+   the no-false-alarms goal decide it (fixtures are deliberately-broken
+   indexer inputs — ts-basic alone would put not_found/outside_root
+   noise on the map). Same purpose as the docs/ line: config, not code.
+2. `languages` = distinct langs of EMITTED files (content-derived, not
+   the options list) — implied by the plan's false-"rust" rationale in
+   §3; an enabled language with zero files does not appear.
+3. Identifier-named `namespace X {}` extracts as kind `const` (closed
+   §3.1 vocabulary; value-side container — same rationale as let/var),
+   which is what makes the plan's "namespace merging" merge. Namespace
+   INNARDS are not module-scope and don't extract. Not-extracted list
+   gains two TS-specific forms beyond the plan's list (zero repo
+   occurrences, documented in extract/ts.rs): string-named ambient
+   modules (`declare module "x"`) and `import x = require("y")`.
+4. Destructured module-level bindings (object/array patterns, defaults,
+   rest) DO extract as `const` symbols — they are module-scope
+   bindings and the plan's not-extracted list doesn't exempt them.
+   Range for declarator-derived symbols = the variable_declarator node.
+5. require()/dynamic-import() edge `symbols`: identifier binding ->
+   ["*"], shallow object-pattern -> property source names (`{ra, rb:
+   rn}` -> ["ra","rb"], which also feed call gating), expression
+   position -> no symbols field. (The plan names conventions only for
+   static-import forms.)
+6. `export * from` and `export * as ns from` carry source name "*"
+   (mirrors namespace import).
+7. Unresolved.specifier is recorded AS WRITTEN (raw, query suffix
+   included); entries dedupe as a (from, specifier, reason) set.
+8. Asset-extension matching is ASCII-case-insensitive against the
+   closed lowercase list.
+9. Malformed bare specifiers (empty name, broken scope like `@/x`) ->
+   `not_found`, never a false package node. This is also what
+   reconciles §6's paths-all-miss fall-through with §8's "@-alias miss
+   => not_found" fixture: `@/nope` falls through to bare and `@/` is
+   not a legal npm name. (A well-formed bare shape like `multi/nope`
+   after an alias miss WOULD become a package node — TS fall-through
+   semantics, golden-pinned via the exact/star cases that hit.)
+10. tsconfig hardening: absolute (`/…`) or root-escaping baseUrl ->
+    ignored; paths sorted by pattern text before matching (immune to
+    serde_json map-order feature unification from the app's dep tree);
+    star ties -> longest suffix, then pattern asc; multi-star patterns
+    skipped; paths targets that normalize outside root -> plain miss
+    (fall through). A parse-VALID tsconfig without compilerOptions
+    still stops the nearest-search (it IS the nearest); only
+    JSONC-parse FAILURE is "absent -> continue up". Micro-edge noted:
+    jsonc-parser deserializes whitespace-only text as null, so an
+    empty file counts as valid-empty, not absent.
+11. package.json discovery mirrors tsconfig (nearest, memoized,
+    continue-up on strict-JSON parse failure); dep priority
+    dependencies > devDependencies > optionalDependencies >
+    peerDependencies; `file:`/`link:` with an ABSOLUTE target gets no
+    `path` (not repo-relative by construction).
+12. CacheEntry = {hash, loc, extract} — loc added beside the plan's
+    {hash, extract} sketch so warm hits skip UTF-8 decode entirely.
+13. stats.symbols/stats.edges describe the EMITTED payload (recomputed
+    after truncation); truncated_files counts only arrays the budget
+    emptied (a naturally-empty file never counts). At the floor with
+    nothing left to truncate, truncated_symbols: true is still set —
+    the criterion's "over-budget visible in stats, never silent".
+14. UTF-8 BOM: stripped for parse/loc only; the hash stays over raw
+    bytes. The 4 MiB per-file cap is checked via metadata BEFORE read.
+15. `stable_json()` returns String per the plan's API and uses an
+    expect on the structurally-unreachable serde failure;
+    write_graph's path keeps the Result plumbing
+    (IndexError::Serialize) so no consumer ever panics on IO.
+16. Perf harness method: cold trials run against the real repo
+    read-only (no cache); incremental trials run on a full copy
+    (skipping .git/node_modules/target/dist) so the harness never
+    mutates the repo. Ceilings 1500/150 ms (3x) assert; criterion
+    numbers are the release measurements below.
+
+### Verification per criterion (command -> outcome)
+Machine as above; all commands from app/src-tauri unless noted.
+1. **Emits graph.json per plan §3** — `cargo test -p nputer-index`
+   golden suite: ts-basic / ts-paths-alias / mixed goldens byte-match
+   (goldens reviewed line-by-line: symbols with exported+range,
+   declaration merging, .d.ts sibling preference and .d.ts-only,
+   js->ts / jsx->tsx / mjs->mts / cjs->cts substitution, dir index,
+   reexport flag + subsumption on dedupe, package nodes
+   scoped/subpath/node:, file:-dep path in-root and absent
+   out-of-root, hidden-dir walk, gitignore/nputerignore/node_modules
+   exclusions, .rs non-collection, .mjs unresolved honesty,
+   alias-aware call/type_ref gating incl. no-edge for unbound names).
+   Committed dogfood graph inspected: schema-order keys, no volatile
+   fields (no commit/index_ms/timestamps/absolute paths), root ".".
+2. **Byte-identical across two runs** — golden suite's
+   fixtures_index_identically_twice + cold_and_warm_cache_yield_
+   identical_bytes + different_materialization_paths_yield_identical_
+   bytes (relocation independence) + incremental_reindex_after_an_
+   edit_matches_a_fresh_index: 7/7. Default-suite live self-check
+   (index THIS repo twice in-memory): PASS. Committed graph.json:
+   `cargo test -p nputer-index --test self_graph -- --ignored` ->
+   self_graph_is_current PASS (regenerates byte-identical).
+3. **tsconfig baseUrl/paths honored, nearest-up** — ts-paths-alias
+   golden (exact-beats-star, longest-prefix, multi-target
+   first-miss-second-hit, paths-without-baseUrl rooting at the
+   tsconfig dir, nested-nearest wins, plain-baseUrl lookup, JSONC
+   comments + trailing commas) + 6 tsconfig unit tests + 14-test
+   resolution table: all green.
+4. **Unresolved recorded with reason, never drop/fail** — closed
+   taxonomy pinned in goldens (asset / not_found / outside_root) and
+   units (unsupported); hostile-file test (non-UTF-8, >4 MiB,
+   syntax-error, BOM): skip/degrade with stats.skipped counts, run
+   completes, 0 panics anywhere in the suite.
+5. **Perf + budget** — release harness `cargo test --release -p
+   nputer-index --test perf -- --ignored --nocapture`:
+   **cold 40 / 21 / 19 / 17 / 17 ms (max 40 ms; criterion < 500)** ·
+   **incremental single-file 3 / 2 / 3 / 3 / 3 ms (max 3 ms;
+   criterion < 50)**. Graph size **122,853 B** vs max_graph_bytes
+   1_000_000 vs collector cap 1_048_576 — 8.5x headroom. Budget
+   mechanics unit-pinned: greedy largest-first + path-asc tie,
+   deterministic truncation, dependent-edge drop with no dangling s:
+   ids, import edges/files never dropped, floor flagged.
+6. **.gitignore + containment** — walk units (both ignore sources
+   without a git repo, nputerignore precedence over a gitignore
+   negation, unconditional .git/node_modules skip, hidden dirs
+   walked, symlink file+dir never followed) + containment integration
+   (outside-tree file/dir/nested-dir symlinks absent AND secret
+   content absent from the serialized payload; symlinked root anchors
+   to canonical path; escape specifiers -> outside_root with zero
+   edges) + mixed golden. **Machine-local-source probe**: ran the
+   golden test binary under a fake HOME/XDG/GIT_CONFIG_GLOBAL whose
+   global excludesFile ignores *.ts/tsx/js/jsx/mts/cts -> all 7
+   golden tests still pass byte-identically (globals provably cannot
+   influence output).
+
+Suite totals: bare `cargo test` from app/src-tauri = **100 passed**
+(app crate 20 — watcher suite untouched by the workspace change —
++ nputer-index 68 lib + 3 containment + 7 golden + 2 self-graph),
+2 deliberately `#[ignore]`d (perf harness; self-graph byte-check).
+Hermeticity: suite run twice sequentially, then again with an
+unrelated app/src TS file temporarily modified — green all three
+times, working tree clean after every run (no golden rewrites, no
+graph writes). `cargo tree -p nputer-index`: zero tauri (the only
+grep hit is the crate's own filesystem path). Parser/app untouched:
+lib/parser `npm ci` + `npx vitest run` **78/78** + `npx tsc
+--noEmit` clean + `npm run build` clean; app `npm ci` + `npm run
+build` clean + `npm test` **94/94**. Diff surface vs branch point
+185d26c is exactly the plan §10 list: app/src-tauri/Cargo.toml,
+Cargo.lock, crates/nputer-index/**, docs/architecture/graph.json,
+.nputerignore, docs/CONVENTIONS.md, this task file (+ T-009-s1) —
+zero diff in app/src-tauri/src/, tauri.conf.json, capabilities/,
+app/src/**, lib/parser/**, npm lockfiles.
+
+### Flags for the verifier
+- Dependency review surface (plan §10 item 1): four direct crates +
+  transitives (`cc`, `tree-sitter-language`, regex/globset under
+  ignore) at the exact pins; grammar build scripts compile vendored C;
+  Cargo.lock checksums are crates.io's. `cargo tree -p nputer-index`
+  reproduces the no-tauri claim mechanically.
+- The committed graph.json is CURRENT for this branch's tree. Any
+  TS-touching change (including a T-008 merge landing before this one)
+  makes it stale — regenerate at integration with the
+  NPUTER_UPDATE_GOLDEN command above and re-run the ignored check;
+  T-009-s1 proposes pinning that as the interim merge convention.
+- Windows/casing and tsconfig `extends` remain the plan's recorded
+  silences (no CI lane / not followed); nothing new opened.
+- The self-check's enclosing-candidate noise cases (generic type
+  params, shadowed locals) are name-based by design (§5 "minimally
+  scoped"); gating keeps them off the graph unless a same-named
+  module-level symbol exists.
+
+### Suggestions filed
+- `T-009-s1-graph-regen-at-merge.md` — interim integrator convention:
+  regenerate the committed graph at TS-touching merges until T-014's
+  `--check` gate exists.
+
 ## Verdicts
+
+2026-08-15 — claude-fable-5 @fresh (verifier, same-model as builder): APPROVED
+
+Suites, fresh: bare `cargo test` from app/src-tauri **100 passed**
+(app 20 + index 68 lib + 3 containment + 7 golden + 2 self-graph),
+2 `#[ignore]`d by design — run twice, then again with an unrelated
+app/src TS file edited: green all three times, tree clean after every
+run. lib/parser `npm ci` + vitest **78/78** + tsc + build clean; app
+`npm ci` + build clean + **94/94**. Diff surface vs 185d26c is exactly
+the plan §10 list — zero diff in app/src-tauri/src/, tauri.conf.json,
+capabilities/, app/src/**, lib/parser/**, npm locks.
+
+Dependencies (the task's biggest surface): six direct crates at the
+exact `=` pins in both manifests; all 16 new Cargo.lock packages'
+checksums MATCH crates.io (none yanked); no existing package changed
+version — the lock's single minus-line is the sha2 dependency string
+gaining "cpufeatures 0.2.17" as blake3's 0.3.0 joins beside it.
+`cargo tree -p nputer-index`: zero tauri. Transitive additions
+enumerated and judged: tree-sitter-language (23-line ABI shim; build.rs
+prints wasm metadata only), streaming-iterator, globset + bstr
+(ignore's glob engine), crossbeam-deque/epoch (ignore's parallel-walk
+API, unused single-threaded), arrayref/arrayvec/constant_time_eq/
+cpufeatures (blake3 SIMD micro-deps). Vendored build scripts READ at
+these versions: both grammar crates are pure `cc` compiles of vendored
+parser.c/scanner.c; tree-sitter core compiles vendored lib.c
+(wasm/bindgen paths feature-gated OFF here); blake3 selects vendored
+C/asm SIMD — no fetch, no exec beyond the C compiler, no writes
+outside OUT_DIR anywhere. jsonc-parser and ignore ship no build.rs.
+
+Determinism, reproduced not trusted: `NPUTER_UPDATE_GOLDEN=1`
+regeneration of all three goldens AND docs/architecture/graph.json
+from the clean tree left `git status` empty (byte-identical); the
+ignored `self_graph_is_current` passes; an independently compiled
+release probe binary (own target dir) reproduces the committed
+**122,853-byte** graph byte-for-byte; cold×2, cold-vs-warm, cache
+deleted mid-sequence, cache corrupted — all byte-identical; a hostile
+HOME/XDG_CONFIG_HOME/GIT_CONFIG_GLOBAL whose global excludesFile
+ignores *.ts/tsx/js/jsx/mts/cts changes nothing (probe byte-identical
+to the committed graph; golden test binary 7/7 under the same env).
+Committed payload: no volatile fields, no absolute paths, POSIX
+separators throughout, root ".".
+
+Containment, attacked live (16/16 fresh probes beyond the suite):
+file/dir/nested-dir symlinks and link→link→outside chains walk
+nothing, and a planted secret marker never appears in the serialized
+payload; symlink cycles and FIFOs (as a .ts file AND as
+tsconfig.json/package.json where the resolver looks) complete without
+hangs or reads; `../` escape specifiers → `outside_root` with zero
+edges; a symlinked package.json is refused (no `path` minted from it);
+.gitignore/.nputerignore negations cannot resurrect node_modules;
+tsconfig `paths` targeting outside the root leak nothing and fall
+through honestly. Code audit: filesystem access in resolve/ is exactly
+`read_contained` (symlink-refuse → canonicalize → prefix-check) for
+the two config filenames; candidate matching queries only the walked
+set.
+
+Extraction/resolution vs real TS semantics: 26/26 own scratch-repo
+probes — exact-beats-star, longest-prefix, multi-target array order,
+nearest-tsconfig with dir-rooted paths (no baseUrl), declaration
+merging (interface + const + namespace; overload collapse),
+`export * from` chains with reexport flags, `.js`→`.ts` /
+`.jsx`→`.tsx` NodeNext substitution, scoped-subpath / `node:` /
+bare-subpath package identity, literal-vs-non-literal dynamic import,
+query-strip → asset, `.d.ts` sibling preference both directions,
+`/index` resolution, candidate gating (undeclared imported name emits
+no edge; `confidence: "resolved"` on call/type_ref only). Dogfood: 6
+committed edges spot-verified against source, including
+`p:@nputer/parser` carrying `path: "lib/parser"` from
+app/package.json's `file:../lib/parser`.
+
+Budget honesty, forced: truncation sets truncated_symbols +
+truncated_files, drops zero files/import-edges/unresolved entries,
+leaves zero dangling `s:` ids, recomputes stats to the emitted
+payload, and is deterministic; the floor emits the flagged over-budget
+graph with all files intact. 122,853 B vs the 1,000,000 budget vs the
+1,048,576 collector cap confirmed.
+
+Perf, re-measured on a release build: cold **[40, 15, 15, 15, 15] ms**
+(max 40 vs the < 500 ms criterion); incremental single-file
+**[3, 2, 2, 2, 2] ms** (max 3 vs < 50 ms); the ignored 3× harness
+passes.
+
+All 16 recorded smallest choices audited against the binding plan:
+each fills a genuine silence consistently with the plan's own
+rationale (several reproduced directly by the probes above); none
+contradicts it. The CONVENTIONS edit changes only the cargo-test
+description line and states something verified true here. T-009-s1's
+framing is accurate — its regeneration command is the exact mechanism
+this verification used.
+
+Non-failure ideas filed as T-009-s2 (URL-scheme specifier gate) and
+T-009-s3 (advisory audit lane for the pinned tree).
