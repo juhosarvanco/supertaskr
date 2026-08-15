@@ -5,17 +5,18 @@ feature: F-02
 milestone: 4
 priority: 11
 size: L
-status: planned
+status: building
 blocked_by: []
 touches: [.github/, tools/e2e/, .nputerignore]
-builder:
+builder: claude-fable-5
 verifier:
 built_by:
 verified_by:
 review:
 ---
 
-Absorbs: T-001-s2, T-001-s3, T-005-s4, T-009-s3. Triage 2026-08-15:
+Absorbs: T-001-s2, T-001-s3, T-005-s4, T-009-s3, T-018-s3 (folded at
+dispatch 2026-08-16, human-approved). Triage 2026-08-15:
 one lane, shared infrastructure — separately each would rebuild half
 the other. Size L: planning pass COMPLETE (below; architect-approved
 2026-08-16). Best landed before T-012's interaction-heavy
@@ -155,6 +156,8 @@ Absorbed (frontmatter note above; new criterion in §1). Cheap, and it completes
 ### 7. The xvfb tauri boot — the dormant Linux half, plus a script with live mechanics
 
 `tools/e2e/scripts/tauri-boot-check.mjs` — plain node: bind-probe port 1420 first (bind, not connect — zero packets at anything listening; busy → abort loudly "port 1420 in use — the human's live app? boot check must not contend"); spawn `npm run tauri dev` (cwd app/), scan merged stdout/stderr for BOTH startup lines (`[nputer] project folder:` and `[nputer] window "main" created`), then kill the process tree and exit 0; overall timeout (default 20 min — debug cargo dominates cold) and a no-output watchdog, each failing loudly with what was and wasn't seen. In the workflow: `xvfb-run -a node tools/e2e/scripts/tauri-boot-check.mjs`, env `WEBKIT_DISABLE_DMABUF_RENDERER: "1"` (known webkit2gtk-in-headless-CI rendering workaround, commented; the check asserts startup lines, not pixels), placed LAST so the cargo cache from the test step warms the build. Why it cannot be verified now: it needs webkit2gtk + Xvfb — Linux — and no Linux machine or remote exists (§1); this is the carried-dormant half, said plainly in the task's "done". What IS verified now (§9): the script's own mechanics on macOS — a real run detecting both lines and killing clean (T-001 precedent: a briefly-opened window is not screen control), plus the timeout path forced with a 1-second limit. The workflow job itself: `runs-on: ubuntu-24.04` (pinned, not -latest); apt set per Tauri v2 Linux prerequisites (libwebkit2gtk-4.1-dev, build-essential, libxdo-dev, libssl-dev, libayatana-appindicator3-dev, librsvg2-dev, xvfb); node 22 via SHA-pinned actions/setup-node with npm cache over the three lockfiles; rust = the runner's preinstalled stable (a `rustc --version` record step; no third-party toolchain action); actions/cache (SHA-pinned) for ~/.cargo + app/src-tauri/target keyed on Cargo.lock, and ~/.cache/ms-playwright keyed on tools/e2e/package-lock.json; steps in order: token lint → parser (npm ci · vitest · tsc · build) → app (npm ci · build · test) → cargo test → cargo audit → e2e (npm ci · `npx playwright install --with-deps chromium` · playwright test) → xvfb boot. `on: push (main) + pull_request + workflow_dispatch`; concurrency group per-ref cancel-in-progress; `timeout-minutes: 45`. Every `uses:` pinned by full commit SHA current at build time, recorded in notes (the parity test enforces the shape).
+
+**Fold (2026-08-16, T-018-s3 — human-approved at dispatch):** the ubuntu cargo-test step is the first backend where T-018's replaced-wholesale and deleted-recreated sentinel live tests can actually DISCRIMINATE — inotify watches inodes, so a stale handle really dies there; macOS FSEvents watches paths and was accidentally resilient all along (the T-018 verdict correction). No new lane work: the cargo step already runs the full suite. The fold is the designation plus its consequence — the "watch the first CI run" launch item (§1 tier 3, drafted-for-integrator STATE text) explicitly includes confirming those three sentinel live tests on ubuntu: green there closes the replace-half regression evidence T-018 carries as mechanism-only; red there is a real reconcile gap macOS could never show, filed immediately. docs/tasks/T-018-s3 is absorbed (file removed at this dispatch commit, triage encoding).
 
 ### 8. Out-of-scope fence (do not build)
 
