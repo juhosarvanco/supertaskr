@@ -27,12 +27,12 @@ disjoint from this merge). Nothing broken.
 
 ## Next up (1–3)
 1. T-009 verdict → merge; T-011 (derivation) unblocks when both
-   T-008 and T-009 are merged. NOW DISPATCHABLE meanwhile: T-016
-   (rejected-encoding ratification, S) — its lib-parser touch was
-   serialized behind this merge and the board is now clear of
-   lib-parser writers.
-2. T-016 dispatch (first of the T-016…T-022 hardening fillers,
-   slice-line-exempt per triage).
+   T-008 and T-009 are merged.
+2. T-016 DONE and merged (1f1009a) — method is v0.1.4; the triage
+   encoding is ratified law. Remaining hardening fillers
+   (T-017…T-022) all declare app-shell or wait on it, so they queue
+   behind T-009's app-shell claim (Cargo plumbing) — next filler
+   dispatches when T-009 merges.
 3. NEW suggestions for next triage: T-008-s1 (C-02/03/04 intent
    globs — architect), T-008-s2 (undeclared C-08/C-09 → C-05 edges
    via the shared cn helper WILL light drift amber on our own
