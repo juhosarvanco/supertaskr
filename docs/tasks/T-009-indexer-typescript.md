@@ -5,10 +5,10 @@ feature: F-06
 milestone: 2
 priority: 2
 size: L
-status: planned
+status: building
 blocked_by: []
 touches: [crate-index, app-shell]
-builder:
+builder: claude-fable-5
 verifier:
 built_by:
 verified_by:
