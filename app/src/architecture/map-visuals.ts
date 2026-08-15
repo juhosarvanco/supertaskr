@@ -170,17 +170,29 @@ export function nodeVisual(component: DerivedComponent, ui: NodeUiState): NodeVi
   // Selected wins the border (ink/bone, 1.5px, padding compensated —
   // the box never changes); hover darkens one step; focus adds the
   // ring composite. Dimming is opacity on the node, never a color swap.
+  // Exactly ONE shadow class is emitted (they all set box-shadow, so
+  // stacking them would leave the winner to stylesheet order): selected
+  // > focused > hovered > the rest shadow, which the mock gives only to
+  // filled non-planned nodes.
   const hoverBorder =
     ui.hovered && !ui.selected && !ghost && !declaredOnly
       ? NODE_HOVER_BORDER[status]
       : undefined;
+  const shadow = ui.selected
+    ? "shadow-map-selected"
+    : ui.focused
+      ? "shadow-map-focus"
+      : ui.hovered && !ghost && !declaredOnly
+        ? "shadow-map-hover-strong"
+        : !ghost && !declaredOnly && status !== "planned"
+          ? "shadow-map-node"
+          : undefined;
   const container = join(
     "map-node",
     fill,
     hoverBorder,
-    ui.selected && "map-node-selected shadow-map-selected",
-    ui.hovered && !ui.selected && "shadow-map-hover-strong",
-    ui.focused && "shadow-map-focus",
+    ui.selected && "map-node-selected",
+    shadow,
     ui.dimmed && "opacity-32",
     // Drift overlay: the only overlay that dims — clean nodes fall back.
     ui.overlay === "drift" && !component.hasDrift && kind !== "unmapped" && "opacity-40",

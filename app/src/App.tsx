@@ -1,11 +1,14 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { MapView } from "@/architecture/MapView";
 import { Board } from "@/components/board/Board";
+import { PaneRail, type PaneId } from "@/components/shell/PaneRail";
 import { Button } from "@/components/ui/button";
 import {
   getShellState,
   isTauriRuntime,
   keepCurrentProject,
   pickProjectFolder,
+  runIndexRepo,
   selectScreen,
   startDocsWatcher,
   subscribeShell,
@@ -15,7 +18,8 @@ import {
 // feeds the store; T-004's story map board renders it (home pane); T-007
 // decides WHICH project is open (launch resolution + folder picker) and
 // shows a friendly empty state when there is no board to show. T-006
-// brings the design language. Everything styles itself via tokens.css
+// brings the design language. T-012 adds the pane rail (board | map) and
+// the architecture map. Everything styles itself via tokens.css
 // utilities.
 
 /** Non-blocking parse-error chip (criterion 3; T-006 look — the
@@ -117,19 +121,30 @@ function App() {
     void startDocsWatcher();
   }, []);
 
+  // T-012 pane state: session-ephemeral by design (defaults each
+  // launch — persistence is T-022's charter). The board pane's behavior
+  // is byte-compatible; the map mounts/unmounts (layout is
+  // deterministic, remount is free).
+  const [pane, setPane] = useState<PaneId>("board");
+
   const { model, failures, seq } = shell.docs;
   const screen = selectScreen(shell);
   const milestone = milestoneLine(model);
 
   return (
     <main
-      className="flex min-h-screen flex-col"
+      className="flex min-h-screen"
       data-testid="docs-model"
       data-screen={screen.screen}
+      data-pane={pane}
       data-seq={seq}
       data-task-count={model.tasks.length}
       data-failure-count={failures.length}
     >
+      {/* The rail renders only when a project is open; front door /
+          loading / browser screens stay full-bleed. */}
+      {screen.screen === "board" && <PaneRail active={pane} onSelect={setPane} />}
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
       <header className="flex items-center justify-between gap-4 border-b border-hairline px-6 pt-4.5 pb-3.5">
         <div className="flex items-baseline gap-3.5">
           <h1 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h1>
@@ -187,7 +202,7 @@ function App() {
         />
       )}
 
-      {screen.screen === "board" && (
+      {screen.screen === "board" && pane === "board" && (
         <>
           <div className="flex items-baseline justify-between gap-4 px-6 pt-2.75 pb-3.5">
             <p className="text-sm text-muted-foreground" data-testid="model-counts">
@@ -219,6 +234,19 @@ function App() {
           </div>
         </>
       )}
+
+      {screen.screen === "board" && pane === "map" && (
+        <MapView
+          model={model}
+          {...(shell.docs.graphContent !== undefined
+            ? { graphContent: shell.docs.graphContent }
+            : {})}
+          indexing={shell.indexing}
+          indexOutcome={shell.indexOutcome}
+          onRunIndex={() => void runIndexRepo()}
+        />
+      )}
+      </div>
     </main>
   );
 }

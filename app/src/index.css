@@ -201,6 +201,7 @@
     --color-status-done-meta: var(--status-done-meta);
     --color-status-merging-meta: var(--status-merging-meta);
     /* Map shadows + micro-type (values in tokens.css). */
+    --shadow-map-node: var(--map-node-shadow);
     --shadow-map-hover: var(--shadow-map-hover);
     --shadow-map-selected: var(--shadow-map-selected);
     --shadow-map-hover-strong: var(--shadow-map-hover-strong);
@@ -256,6 +257,18 @@
 @utility map-drift-ring {
   outline: 1.5px dashed var(--warning);
   outline-offset: 3px;
+}
+/* Selected node: 1.5px ink/bone border with the measured half-pixel
+   padding compensation so the 192×66 box (and its content) never
+   moves — the bundle's selection rule as one compound treatment. */
+@utility map-node-selected {
+  border-width: 1.5px;
+  border-color: var(--map-node-border-selected);
+  padding: 7.5px 10.5px;
+}
+/* The measured 1.5px stroke for CSS-shape icons (rail glyphs). */
+@utility icon-stroke {
+  border-width: 1.5px;
 }
 
 @layer base {
