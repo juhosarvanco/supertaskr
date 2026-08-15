@@ -27,8 +27,8 @@ describe('smoke — the real docs/ tree parses cleanly', () => {
     expect(t002?.sections.acceptanceCriteria).toContain('typed model');
   });
 
-  it('parses the five backbone features in order', () => {
-    expect(result.features.map((f) => f.id)).toEqual(['F-01', 'F-02', 'F-03', 'F-04', 'F-05']);
+  it('parses the backbone features in order', () => {
+    expect(result.features.map((f) => f.id)).toEqual(['F-01', 'F-02', 'F-03', 'F-04', 'F-05', 'F-06']);
     const f02 = result.features[1];
     expect(f02?.name).toBe('App shell + board');
     expect(f02?.description).toContain('story map');
