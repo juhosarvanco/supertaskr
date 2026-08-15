@@ -170,6 +170,50 @@
     --color-verdict-approved-ink: var(--verdict-approved-ink);
     --color-verdict-approved-meta: var(--verdict-approved-meta);
 
+    /* T-012 map pane: the §06 warning/map families go LIVE (T-006
+       landed the values inert; landing these mappings is T-012's
+       charter). --warning is a STROKE: text/border/outline utilities
+       are the sanctioned consumers — bg-warning must stay unconsumed
+       (the panel chip uses the --warning-chip-* tints instead). */
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-chip: var(--warning-chip-bg);
+    --color-warning-chip-border: var(--warning-chip-border);
+    --color-map-canvas: var(--map-canvas);
+    --color-map-node-border: var(--map-node-border);
+    --color-map-node-border-selected: var(--map-node-border-selected);
+    --color-map-edge: var(--map-edge);
+    --color-map-edge-muted: var(--map-edge-muted);
+    --color-map-edge-planned: var(--map-edge-planned);
+    --color-map-unmapped: var(--map-unmapped-bg);
+    --color-map-unmapped-foreground: var(--map-unmapped-fg);
+    --color-map-group: var(--map-group-bg);
+    --color-map-declared-only-border: var(--map-declared-only-border);
+    --color-map-declared-only-foreground: var(--map-declared-only-fg);
+    --color-map-declared-only-title: var(--map-declared-only-title);
+    --color-map-legend-planned: var(--map-legend-planned);
+    --color-provenance-unverified: var(--provenance-unverified);
+    /* Node meta-line ink per status (measured; text-status-*-meta). */
+    --color-status-planned-meta: var(--status-planned-meta);
+    --color-status-building-meta: var(--status-building-meta);
+    --color-status-verifying-meta: var(--status-verifying-meta);
+    --color-status-rejected-meta: var(--status-rejected-meta);
+    --color-status-done-meta: var(--status-done-meta);
+    --color-status-merging-meta: var(--status-merging-meta);
+    /* Map shadows + micro-type (values in tokens.css). */
+    --shadow-map-hover: var(--shadow-map-hover);
+    --shadow-map-selected: var(--shadow-map-selected);
+    --shadow-map-hover-strong: var(--shadow-map-hover-strong);
+    --shadow-map-panel: var(--shadow-map-panel);
+    --shadow-map-popover: var(--shadow-map-popover);
+    --shadow-map-focus: var(--shadow-map-focus);
+    --text-map-id: var(--text-map-id-size);
+    --text-map-id--line-height: var(--text-map-id-line);
+    --text-map-meta: var(--text-map-meta-size);
+    --text-map-meta--line-height: var(--text-map-meta-line);
+    --text-map-name: var(--text-map-name-size);
+    --text-map-name--line-height: var(--text-map-name-line);
+
     /* status pulse (T-004): opacity oscillation for verifying/merging
        cards. Duration/depth VALUES live in tokens.css. Applied as
        `motion-safe:animate-status-pulse`, so prefers-reduced-motion
@@ -180,6 +224,38 @@
         opacity: var(--pulse-opacity-dip);
       }
     }
+
+    /* The turn to teal (T-012): a one-shot left-edge wipe when a
+       component's derived status transitions to done. The overlay
+       carries the PREVIOUS fill anchored right and shrinks to nothing,
+       revealing the new teal from the left edge — 400ms, once, gated
+       motion-safe (reduced motion swaps colors directly). The map's
+       only transition. */
+    --animate-map-teal-wipe: map-teal-wipe var(--map-wipe-duration) ease-out forwards;
+    @keyframes map-teal-wipe {
+      from {
+        transform: scaleX(1);
+      }
+      to {
+        transform: scaleX(0);
+      }
+    }
+}
+
+/* T-012 map utilities: gradients and outline composites are not
+   expressible as color utilities, so the map's two compound treatments
+   are named utilities here — MECHANISM only, every value a token. */
+@utility map-canvas-grid {
+  background-color: var(--map-canvas);
+  background-image: radial-gradient(circle, var(--map-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+/* Drift ring: outline composes with any fill and never changes the
+   node's box (design bundle rule — status is a fill, drift is a
+   stroke). */
+@utility map-drift-ring {
+  outline: 1.5px dashed var(--warning);
+  outline-offset: 3px;
 }
 
 @layer base {

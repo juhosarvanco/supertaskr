@@ -123,9 +123,10 @@
   --verdict-approved-ink: #264a3c;
   --verdict-approved-meta: #4a6f60;
 
-  /* ---- warning + map (sheet §06, INERT until the map pane) --------- */
+  /* ---- warning + map (sheet §06, live since T-012) ----------------- */
   /* Drift, contradiction, truth maintenance. STROKE ONLY — status is a
-     fill, warning is a stroke; --warning never becomes a background. */
+     fill, warning is a stroke; --warning never becomes a background
+     (the panel's finding chip uses the separate --warning-chip-* tints). */
   --warning: #b3600a;
   --warning-foreground: #fff8ee;
   --map-canvas: #fbfbfa;
@@ -143,6 +144,43 @@
   --provenance-independent: #1f7a58;
   --provenance-same: #1f7a58;
   --provenance-self: #1f7a58;
+
+  /* ---- map pane measured additions (T-012; bundle map screens) ----- */
+  /* Node meta-line ink, one step lighter than the id fg (hero source;
+     rejected/merging derived by the same step — hero shows neither,
+     flagged to the screenshot pass). */
+  --status-planned-meta: #8a8a8a;
+  --status-building-meta: #8a6a1f;
+  --status-verifying-meta: #8a6440;
+  --status-rejected-meta: #9d4430;
+  --status-done-meta: #3f8065;
+  --status-merging-meta: #38728a;
+  /* Declared-only nodes: dashed border + muted inks (hero C-08). */
+  --map-declared-only-border: #cfcfcd;
+  --map-declared-only-fg: #a3a3a3;
+  --map-declared-only-title: #8a8a8a;
+  /* Edge hover ink (behavior screen, 2.25px). */
+  --map-edge-hover: #525252;
+  /* Arrowhead fills (hero marker source). */
+  --map-arrowhead: #b8b8b6;
+  --map-arrowhead-planned: #cfcfcd;
+  /* Legend strip's dotted planned swatch (measured; darker than the
+     edge stroke so 1.5px dotted reads at 22px length). */
+  --map-legend-planned: #b0b0ae;
+  /* Drift-finding chip tints (panel header + finding left rule). The
+     ONE sanctioned warning-family surface — nodes/edges never fill. */
+  --warning-chip-bg: #fdf4e8;
+  --warning-chip-border: #e6c49a;
+  /* Provenance overlay: hairline dashed ring = no verified task yet. */
+  --provenance-unverified: #c4c4c2;
+  /* Map shadows (README shadow table; none in dark per scheme rule —
+     focus composite excepted: keyboard focus must survive dark). */
+  --shadow-map-hover: 0 2px 6px rgba(0, 0, 0, 0.1);
+  --shadow-map-selected: 0 2px 6px rgba(0, 0, 0, 0.09);
+  --shadow-map-hover-strong: 0 3px 10px rgba(0, 0, 0, 0.13);
+  --shadow-map-panel: -24px 0 48px -30px rgba(0, 0, 0, 0.2);
+  --shadow-map-popover: 0 8px 24px -14px rgba(0, 0, 0, 0.3);
+  --shadow-map-focus: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
 /* Dark scheme: same tokens, different values. Toggled by putting the
@@ -237,7 +275,7 @@
   --verdict-approved-ink: #bfe3d2;
   --verdict-approved-meta: #6fa78d;
 
-  /* ---- warning + map (sheet §06, INERT) ------------------------------ */
+  /* ---- warning + map (sheet §06, live since T-012) ------------------- */
   --warning: #f0a63c;
   --warning-foreground: #2a1a06;
   --map-canvas: #0c0c0c;
@@ -255,6 +293,36 @@
   --provenance-independent: #4ecf9e;
   --provenance-same: #4ecf9e;
   --provenance-self: #4ecf9e;
+
+  /* ---- map pane measured additions (T-012; map·dark screen source;
+     rejected/merging metas + edge-hover + unverified ring derived —
+     the behavior screen is light-only) ------------------------------- */
+  --status-planned-meta: #6e6e6e;
+  --status-building-meta: #b08f42;
+  --status-verifying-meta: #a8794f;
+  --status-rejected-meta: #bb6c5b;
+  --status-done-meta: #5fae8c;
+  --status-merging-meta: #549ab3;
+  --map-declared-only-border: #333333;
+  --map-declared-only-fg: #6e6e6e;
+  --map-declared-only-title: #8a8a8a;
+  --map-edge-hover: #d4d4d4;
+  /* Dark marker fills, bundle-true: confirmed #4a4a4a is the LIGHTER
+     (more visible) of the pair on near-black, planned #3a3a3a dimmer —
+     the plan's §6 dark pair is transposed against the map·dark source
+     (mapArrowD #4a4a4a / mapArrowPlannedD #3a3a3a); the bundle wins. */
+  --map-arrowhead: #4a4a4a;
+  --map-arrowhead-planned: #3a3a3a;
+  --map-legend-planned: #4a4a4a;
+  --warning-chip-bg: #1c1608;
+  --warning-chip-border: #5a4318;
+  --provenance-unverified: #4a4a4a;
+  --shadow-map-hover: none;
+  --shadow-map-selected: none;
+  --shadow-map-hover-strong: none;
+  --shadow-map-panel: none;
+  --shadow-map-popover: none;
+  --shadow-map-focus: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
 /* ---- scheme-independent: type, geometry, motion (sheet §03) --------- */
@@ -296,4 +364,18 @@
 
   --pulse-duration: 2.4s;
   --pulse-opacity-dip: 0.45;
+
+  /* Map micro-type (T-012): the 192×66 node / 150px-slot geometry is
+     load-bearing for the layout rules, so node internals keep the
+     bundle's exact sizes instead of mapping to the board scale (panel
+     and chrome text DO map by role — disclosed reconciliation). */
+  --text-map-id-size: 0.65625rem; /* 10.5 / 14 — node id line */
+  --text-map-id-line: 0.875rem;
+  --text-map-meta-size: 0.59375rem; /* 9.5 / 13 — node meta line */
+  --text-map-meta-line: 0.8125rem;
+  --text-map-name-size: 0.8125rem; /* 13 / 18 — node name */
+  --text-map-name-line: 1.125rem;
+
+  /* The turn to teal — the map's one delight moment (400ms, once). */
+  --map-wipe-duration: 400ms;
 }
