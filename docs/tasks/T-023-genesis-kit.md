@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [method/, docs/CONVENTIONS.md]
 builder: claude-fable-5
-verifier:
+verifier: claude-fable-5
 built_by: "claude-fable-5 @fresh"
-verified_by:
-review:
+verified_by: "claude-fable-5 @fresh"
+review: same-model
 ---
 
 The method gap F-03 exposes: nputer.yaml names `planner: claude` but
@@ -704,3 +704,97 @@ transcript above.
   produce it in-product.
 
 ## Verdicts
+
+2026-08-16 — claude-fable-5 @fresh, verifier — same-model review: APPROVED
+
+Every claim re-derived, none trusted. Evidence per criterion:
+
+- planner.md (criterion 1): present, established shape vs
+  orchestrator.md (# Role + second-person intro + numbered flow); all
+  seven mandated elements located — one-question interview per
+  plan-interview.md (step 2), challenge (step 2), incremental banking
+  from docs-templates/ (step 3), post-Q7 decomposition per
+  decomposition.md (step 4), full scaffold incl. .gitignore `.nputer/`
+  + git init (step 1), cold-start (step 5), succession last (step 7).
+  Every kit path it names exists on the branch (roles/, interview/
+  incl. archaeology.md, docs-templates/, adapters/, tasks/, runtime/).
+- Driver contract (criterion 2): all five elements in the single
+  section — kickoff file list with the kit-root stated-path rule,
+  plain-text turns, literal "pushing back:" as rendering hint with
+  absence-has-no-effect stated, skip → [?] bank, transcript-not-record
+  with succession restated. Internally consistent with the dry run
+  (two prefixed challenges, two unprefixed pushbacks — absence
+  genuinely load-free).
+- Banking map (criterion 3): Output section supersedes one-pass;
+  transcribability attacked with a naive 20-line table walk — header
+  Stage | Interview step | Banks into, 9 rows, stages 0–8 unique and
+  contiguous, all rows exactly 3 non-empty cells; stage→artifact
+  mapping matches the criterion's list; landed table byte-identical
+  to the notes' quoted copy; Sequence names align with row names.
+- Dry-run parse (criterion 4): tree reconstructed BLIND from the
+  notes into scratch, parseProject (branch parser, fresh npm ci +
+  build) → 3 tasks (T-001:planned:M:pri1, T-002:planned:M:pri1
+  blocked[T-001], T-003:planned:S:pri2 blocked[T-001]), 4 features,
+  0 components, ISSUES: 0 — the claimed result, re-derived. The
+  executor's actual scratch tree still existed and was parsed too:
+  identical model, 0 issues; git log shows exactly b18a33c and
+  status --ignored shows the `.nputer/` ignore mark, corroborating
+  the transcript.
+  Dispatchability walk: all 8 answers grounded in real produced
+  content (T-001's first criterion does init the crate; Interfaces
+  does pin path/format/Monday-ISO; the literal empty-state string,
+  20-row cap, both IF/THEN lines all present in T-002).
+- Resume (criterion 5): rule explicit in planner.md
+  (first-missing-row derivation, STATE hint, artifacts-win); the
+  transcript shows the stage-4 kill, a disk-only pass stating "next
+  stage: 5", and continuation; surviving tree corroborates (all four
+  [?] constraints present, 001-stack.md exists from post-resume Q5).
+- Overwrite guard (criterion 6): present, covers stage 0's copies
+  (rule keys on any about-to-write file with unbanked content),
+  .gitignore is append-not-overwrite, adoption fenced to
+  interview/archaeology.md which exists.
+- Scaffold-parses-clean: re-derived, both directions — verbatim copy
+  of the branch templates + empty dirs → 0 issues, 0 features;
+  counterfactual with base-3c468fd templates → the exact 2 phantom
+  `<feature name>` features the notes predicted. Amendment necessary
+  and effective.
+- T-023-s1: real. Probed the branch parser: a column-0 `- F-99:`
+  bullet inside an HTML comment in Backbone parses as a feature with
+  zero issues; a malformed `- F-` line in a comment emits
+  roadmap-error; the template's indented example evades both. Filed
+  in the established sN encoding (matches T-011-s4/T-017-s2 shape).
+- Suites: lib/parser 132/132 + tsc --noEmit clean + build clean,
+  fresh run. The orchestrator's 153/153 brief was wrong; 132 is the
+  truth at 3c468fd — the executor's deviation note is accurate and
+  the handling (keep branch-point truth green, document) correct.
+  Repo's own tree through the branch parser: 49 tasks, 6 features,
+  9 components, 0 issues. Diff confined to method/** +
+  docs/CONVENTIONS.md + docs/tasks/T-023-* exactly; all modes
+  100644; adapters untouched (no bypass/auto-approve anywhere); no
+  URLs, no scripts, no secrets; the kit's imperative surface is file
+  copies, docs writes, git init/add/commit, with two human gates
+  (board approval, overwrite stop-and-ask). Product-agnostic sweep
+  of method/: only pre-existing generic format examples hit; nothing
+  app-specific entered. CONVENTIONS v0.1.4 → v0.1.5 + (v0.1.5,
+  T-023) gotcha confirmed; no other live file carries the version.
+
+Deviation found (does not break a criterion): the notes' "verbatim"
+framing and the integrator line "its full content is preserved above"
+overstate — only NORTH_STAR.md and ROADMAP.md are byte-exact;
+001-stack.md is restructured, CONVENTIONS.md/T-002 quotes drop
+template comments, the mermaid block is paraphrased, T-001/T-003 are
+disclosed summaries. Everything parse- and T-024-model-relevant IS
+byte-preserved (proven by the blind reconstruction). Filed T-023-s2:
+land T-024's fixture from the still-alive scratch tree, else record
+the five divergences.
+
+For the integrator, additionally: docs/architecture/components/
+C-01-method.md line 9 carries a stale "(v0.1.4)" status comment —
+same merge-time bookkeeping as the ARCHITECTURE.md C-01 cell the
+executor already flagged.
+
+@human (not judged here): dry-run conversational quality — whether
+the two "pushing back:" challenges actually challenge and the skip
+handling reads honest; the founder was scripted in-session by the
+builder (limitation stated in the notes). A true cold-context run
+remains future evidence (T-026/T-029).
