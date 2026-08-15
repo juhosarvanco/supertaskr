@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fbfbfb; }
+  a { color: #1f7a58; text-decoration: none; border-bottom: 1px solid rgba(31,122,88,0.35); }
+  a:hover { color: #14503c; border-bottom-color: #14503c; }
+</style>
+</helmet>
+<div style="font-family:'Geist',system-ui,sans-serif;color:#171717;padding:64px 56px 120px;display:flex;flex-direction:column;gap:52px;width:1080px">
+
+  <div style="display:flex;flex-direction:column;gap:12px;max-width:78ch">
+    <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:0.16em;text-transform:uppercase;color:#737373">T-006 · design language pass · deliverable 1–3</div>
+    <div style="font-family:'Geist Mono',monospace;font-size:34px;font-weight:700;letter-spacing:-0.045em;line-height:1.1">nputer token sheet</div>
+    <div style="font-size:15.5px;line-height:1.6;color:#404040;text-wrap:pretty">Native is the default: <code style="font-family:'Geist Mono',monospace;font-size:14px;background:#f2f2f2;padding:1px 5px;border-radius:5px">:root</code> is light, <code style="font-family:'Geist Mono',monospace;font-size:14px;background:#f2f2f2;padding:1px 5px;border-radius:5px">.dark</code> is dark, both first-class. Six statuses are diverged — building yellow, verifying orange, done teal, merging cyan — so none of them read alike without motion. Every value below is paste-ready for <code style="font-family:'Geist Mono',monospace;font-size:14px;background:#f2f2f2;padding:1px 5px;border-radius:5px">tokens.css</code>; names are exactly the ones in the handoff schema, and the additions are listed separately at §4.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:0.16em;text-transform:uppercase;color:#737373">01 · type</div>
+    <div style="display:flex;gap:40px;flex-wrap:wrap;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:26px 28px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:34px;font-weight:600;letter-spacing:-0.03em;line-height:1">Geist</div>
+        <div style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#737373;line-height:1.6">UI + reading face · 400/500/600/700<br>SIL OFL 1.1 · ships as local woff2</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'Geist Mono',monospace;font-size:32px;font-weight:700;letter-spacing:-0.045em;line-height:1">nputer</div>
+        <div style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#737373;line-height:1.6">Geist Mono · wordmark, ids, paths, criteria, verdict text<br>400/500/700 · wordmark at 700, −0.045em</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-family:'Geist Mono',monospace;font-size:11.5px;color:#525252;line-height:1.7;border-left:1px solid #e5e5e5;padding-left:24px">
+        <div>no remote fonts — both families bundled in-binary, CSP-safe</div>
+        <div>two families total, so a second theme can bring at most one more</div>
+        <div>fallbacks: system-ui, sans-serif / ui-monospace, monospace</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:0.16em;text-transform:uppercase;color:#737373">02 · status palette — the six, with intent</div>
+    <div style="display:flex;flex-direction:column;gap:0;background:#fff;border:1px solid #e5e5e5;border-radius:12px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:120px 190px 190px 1fr;gap:0;padding:11px 20px;background:#fafafa;border-bottom:1px solid #e5e5e5;font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#737373"><span>status</span><span>light</span><span>dark</span><span>intent</span></div>
+      <div style="display:grid;grid-template-columns:120px 190px 190px 1fr;gap:0;padding:13px 20px;border-bottom:1px solid #f0f0f0;align-items:center">
+        <span style="font-family:'Geist Mono',monospace;font-size:12.5px">planned</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#f5f5f5;border:1px solid #e8e8e8;color:#525252;padding:4px 10px;border-radius:6px">#f5f5f5 / #525252</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#141414;border:1px solid #262626;color:#a3a3a3;padding:4px 10px;border-radius:6px">#141414 / #a3a3a3</span>
+        <span style="font-size:13.5px;color:#404040">committed, untouched. Reads as paper, not as absence.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 190px 190px 1fr;gap:0;padding:13px 20px;border-bottom:1px solid #f0f0f0;align-items:center">
+        <span style="font-family:'Geist Mono',monospace;font-size:12.5px">building</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#fdeecb;border:1px solid #f3ddab;color:#7d5c12;padding:4px 10px;border-radius:6px">#fdeecb / #7d5c12</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#2a2008;border:1px solid #4a3a12;color:#e2b855;padding:4px 10px;border-radius:6px">#2a2008 / #e2b855</span>
+        <span style="font-size:13.5px;color:#404040">work in the open. Yellow — heat, no alarm.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 190px 190px 1fr;gap:0;padding:13px 20px;border-bottom:1px solid #f0f0f0;align-items:center">
+        <span style="font-family:'Geist Mono',monospace;font-size:12.5px">verifying</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#fce6d2;border:1px solid #f3d0ae;color:#84501c;padding:4px 10px;border-radius:6px">#fce6d2 / #84501c</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#2c1a0c;border:1px solid #503018;color:#e8a468;padding:4px 10px;border-radius:6px">#2c1a0c / #e8a468</span>
+        <span style="font-size:13.5px;color:#404040">under attack by the verifier. Orange: hotter than building, adjacent to rejection. Pulses.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 190px 190px 1fr;gap:0;padding:13px 20px;border-bottom:1px solid #f0f0f0;align-items:center">
+        <span style="font-family:'Geist Mono',monospace;font-size:12.5px">rejected</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#fbe1da;border:1px solid #f2c7bd;color:#93331d;padding:4px 10px;border-radius:6px">#fbe1da / #93331d</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#2c1210;border:1px solid #5a221c;color:#f08d76;padding:4px 10px;border-radius:6px">#2c1210 / #f08d76</span>
+        <span style="font-size:13.5px;color:#404040">a verdict exists and it says no. Terracotta, not siren red — it's information, not failure.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 190px 190px 1fr;gap:0;padding:13px 20px;border-bottom:1px solid #f0f0f0;align-items:center">
+        <span style="font-family:'Geist Mono',monospace;font-size:12.5px">done</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#d5f0e4;border:1px solid #bfe7d6;color:#2f7256;padding:4px 10px;border-radius:6px">#d5f0e4 / #2f7256</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#0d2a21;border:1px solid #1c4a3a;color:#79dcb4;padding:4px 10px;border-radius:6px">#0d2a21 / #79dcb4</span>
+        <span style="font-size:13.5px;color:#404040">merged and remembered. The colour that fills columns top-down.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 190px 190px 1fr;gap:0;padding:13px 20px;align-items:center">
+        <span style="font-family:'Geist Mono',monospace;font-size:12.5px">merging</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#d9edf7;border:1px solid #bedeee;color:#26647e;padding:4px 10px;border-radius:6px">#d9edf7 / #26647e</span>
+        <span style="justify-self:start;font-family:'Geist Mono',monospace;font-size:11px;background:#0c2430;border:1px solid #1a475c;color:#6fc6e4;padding:4px 10px;border-radius:6px">#0c2430 / #6fc6e4</span>
+        <span style="font-size:13.5px;color:#404040">almost done — one hue step cooler than done, so it never needs the pulse to be legible. Pulses anyway.</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:28px;flex-wrap:wrap;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:18px 20px">
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <div style="font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#737373">review badge — the honesty trio</div>
+        <div style="display:flex;gap:20px;align-items:center;font-size:13px;color:#404040">
+          <span style="display:flex;align-items:center;gap:7px"><span style="width:15px;height:15px;border-radius:50%;background:#1f7a58;color:#fff;font-size:9.5px;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none">✓</span>independent — solid disc</span>
+          <span style="display:flex;align-items:center;gap:7px"><span style="width:15px;height:15px;border-radius:50%;background:#1f7a58;color:#fff;font-size:9.3px;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none">✓</span>same-model — solid disc, same mark</span>
+          <span style="display:flex;align-items:center;gap:7px"><span style="width:15px;height:15px;border-radius:50%;border:1.5px solid #1f7a58;background:linear-gradient(90deg,#1f7a58 50%,transparent 50%)"></span>self-verified — half disc</span>
+        </div>
+        <div style="font-size:12.5px;color:#525252;max-width:82ch;line-height:1.55">A filled disc means someone actually checked the work; half-fill means the builder signed off on itself, and reads visibly weaker at a glance. Independent vs same-model is carried by the label and the detail panel rather than the mark.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:0.16em;text-transform:uppercase;color:#737373">03 · the sheet — paste into tokens.css</div>
+    <div style="font-family:'Geist Mono',monospace;font-size:12px;line-height:1.75;white-space:pre;overflow-x:auto;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:22px 24px;color:#171717">:root {
+  /* core */
+  --background: #ffffff;              --foreground: #171717;
+  --card: #ffffff;                   --card-foreground: #171717;
+  --popover: #ffffff;                --popover-foreground: #171717;
+  --primary: #111111;                --primary-foreground: #fafafa;
+  --secondary: #f5f5f5;              --secondary-foreground: #404040;
+  --muted: #f5f5f5;                  --muted-foreground: #737373;
+  --accent: #ededed;                 --accent-foreground: #171717;
+  --destructive: #b3391f;
+  --border: #e5e5e5;                 --input: #e2e2e2;            --ring: #171717;
+  --chart-1: #1f7a58;  --chart-2: #2e7691;  --chart-3: #b08316;  --chart-4: #b5651d;  --chart-5: #b3391f;
+  --sidebar: #fafafa;                --sidebar-foreground: #171717;
+  --sidebar-primary: #111111;        --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #f0f0f0;         --sidebar-accent-foreground: #171717;
+  --sidebar-border: #e5e5e5;         --sidebar-ring: #171717;
+  --static-white: #ffffff;           --static-black: #0a0a0a;
+
+  /* status */
+  --status-planned-bg:   #f5f5f5;    --status-planned-fg:   #525252;
+  --status-building-bg:  #fdeecb;    --status-building-fg:  #7d5c12;
+  --status-verifying-bg: #fce6d2;    --status-verifying-fg: #84501c;
+  --status-rejected-bg:  #fbe1da;    --status-rejected-fg:  #93331d;
+  --status-done-bg:      #d5f0e4;    --status-done-fg:      #2f7256;
+  --status-merging-bg:   #d9edf7;    --status-merging-fg:   #26647e;
+
+  /* additions — see §4 */
+  --status-planned-border:   #e8e8e8;
+  --status-building-border:  #f3ddab;
+  --status-verifying-border: #f3d0ae;
+  --status-rejected-border:  #f2c7bd;
+  --status-done-border:      #bfe7d6;
+  --status-merging-border:   #bedeee;
+  --column-header-bg: #111111;       --column-header-fg: #fafafa;
+  --column-header-id: #a3a3a3;
+  --hairline: #e5e5e5;
+  --ghost-border: #d4d4d4;
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-pop:  0 12px 28px -12px rgba(0,0,0,0.22);
+  --review-disc: #1f7a58;            --review-mark: #ffffff;
+  --drift-bg: #f1e9fb;               --drift-fg: #6340a8;
+}
+
+.dark {
+  /* core */
+  --background: #0a0a0a;             --foreground: #ededed;
+  --card: #141414;                   --card-foreground: #d4d4d4;
+  --popover: #2a2a2a;                --popover-foreground: #e5e5e5;
+  --primary: #ededed;                --primary-foreground: #0a0a0a;
+  --secondary: #171717;              --secondary-foreground: #d4d4d4;
+  --muted: #171717;                  --muted-foreground: #949494;
+  --accent: #262626;                 --accent-foreground: #ededed;
+  --destructive: #f08d76;
+  --border: #262626;                 --input: #2e2e2e;            --ring: #ededed;
+  --chart-1: #4ecf9e;  --chart-2: #6fc6e4;  --chart-3: #e2b855;  --chart-4: #e8a468;  --chart-5: #f08d76;
+  --sidebar: #0f0f0f;                --sidebar-foreground: #ededed;
+  --sidebar-primary: #ededed;        --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #1f1f1f;         --sidebar-accent-foreground: #ededed;
+  --sidebar-border: #262626;         --sidebar-ring: #ededed;
+  --static-white: #ffffff;           --static-black: #0a0a0a;
+
+  /* status */
+  --status-planned-bg:   #141414;    --status-planned-fg:   #a3a3a3;
+  --status-building-bg:  #2a2008;    --status-building-fg:  #e2b855;
+  --status-verifying-bg: #2c1a0c;    --status-verifying-fg: #e8a468;
+  --status-rejected-bg:  #2c1210;    --status-rejected-fg:  #f08d76;
+  --status-done-bg:      #0d2a21;    --status-done-fg:      #79dcb4;
+  --status-merging-bg:   #0c2430;    --status-merging-fg:   #6fc6e4;
+
+  /* additions */
+  --status-planned-border:   #262626;
+  --status-building-border:  #4a3a12;
+  --status-verifying-border: #503018;
+  --status-rejected-border:  #5a221c;
+  --status-done-border:      #1c4a3a;
+  --status-merging-border:   #1a475c;
+  --column-header-bg: #ededed;       --column-header-fg: #0a0a0a;
+  --column-header-id: #666666;
+  --hairline: #2a2a2a;
+  --ghost-border: #333333;
+  --shadow-card: none;
+  --shadow-pop:  0 12px 28px -10px rgba(0,0,0,0.7);
+  --review-disc: #4ecf9e;            --review-mark: #06231a;
+  --drift-bg: #1d1630;               --drift-fg: #b79af2;
+}
+
+/* scheme-independent: type, geometry, motion */
+:root {
+  --font-sans-stack: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono-stack: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --weight-normal: 400;   --weight-medium: 500;
+  --weight-semibold: 600; --weight-bold: 700;
+
+  --text-xs-size: 0.6875rem;  --text-xs-line: 1rem;      /* 11 / 16  — overlines, uppercase meta */
+  --text-sm-size: 0.78125rem; --text-sm-line: 1.125rem;  /* 12.5 / 18 — ids, chips, paths */
+  --text-base-size: 0.875rem; --text-base-line: 1.25rem; /* 14 / 20  — body, counts line */
+  --text-lg-size: 0.90625rem; --text-lg-line: 1.3125rem; /* 14.5 / 21 — card + column titles */
+  --text-xl-size: 1.0625rem;  --text-xl-line: 1.5rem;    /* 17 / 24  — panel headings */
+  --text-2xl-size: 1.25rem;   --text-2xl-line: 1.75rem;  /* 20 / 28  — section titles */
+  --text-3xl-size: 1.625rem;  --text-3xl-line: 2rem;     /* 26 / 32  — wordmark */
+
+  --spacing-unit: 0.25rem;
+  --radius: 0.625rem;        /* 10px — cards, column headers, buttons */
+  --radius-chip: 0.375rem;   /* 6px  — size + model chips (addition) */
+
+  --pulse-duration: 2.4s;
+  --pulse-opacity-dip: 0.45;
+}</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:0.16em;text-transform:uppercase;color:#737373">04 · additions — name, purpose</div>
+    <div style="display:flex;flex-direction:column;background:#fff;border:1px solid #e5e5e5;border-radius:12px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:300px 1fr;padding:11px 20px;background:#fafafa;border-bottom:1px solid #e5e5e5;font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#737373"><span>token</span><span>purpose</span></div>
+      <div style="display:grid;grid-template-columns:300px 1fr;padding:12px 20px;border-bottom:1px solid #f0f0f0;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--status-*-border</span><span style="font-size:13.5px;color:#404040">Each status needs a border a step darker than its fill — flat cards on a flat canvas need an edge, and in dark mode the fill alone is nearly invisible.</span></div>
+      <div style="display:grid;grid-template-columns:300px 1fr;padding:12px 20px;border-bottom:1px solid #f0f0f0;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--column-header-bg / -fg / -id</span><span style="font-size:13.5px;color:#404040">Feature headers invert between schemes (ink pill on white, bone pill on black) — that inversion can't come from --primary alone once themes exist.</span></div>
+      <div style="display:grid;grid-template-columns:300px 1fr;padding:12px 20px;border-bottom:1px solid #f0f0f0;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--hairline</span><span style="font-size:13.5px;color:#404040">The 1px rules under headers, the milestone slice, and the column footer. Quieter than --border, which stays for controls.</span></div>
+      <div style="display:grid;grid-template-columns:300px 1fr;padding:12px 20px;border-bottom:1px solid #f0f0f0;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--ghost-border</span><span style="font-size:13.5px;color:#404040">Dashed edge for suggestion cards — an idea, not a commitment. Never gets a fill.</span></div>
+      <div style="display:grid;grid-template-columns:300px 1fr;padding:12px 20px;border-bottom:1px solid #f0f0f0;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--shadow-card / --shadow-pop</span><span style="font-size:13.5px;color:#404040">Elevation, per scheme: hairline lift in light, none in dark (dark uses border only); --shadow-pop for the detail drawer, tooltips, popovers.</span></div>
+      <div style="display:grid;grid-template-columns:300px 1fr;padding:12px 20px;border-bottom:1px solid #f0f0f0;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--review-disc / --review-mark</span><span style="font-size:13.5px;color:#404040">Provenance is its own semantic, not a reuse of --status-done-fg. One disc colour and one mark: full disc = checked, half disc = self-verified.</span></div>
+      <div style="display:grid;grid-template-columns:300px 1fr;padding:12px 20px;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--drift-bg / --drift-fg</span><span style="font-size:13.5px;color:#404040">The warning semantic for drift and contradicted premises. Deliberately violet, not amber — both ambers are already spoken for by building and verifying, so "amber" would have been unreadable next to them.</span></div>
+    </div>
+  </div>
+
+  <sc-if value="{{ showThemeStub }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:0.16em;text-transform:uppercase;color:#737373">05 · theme hook — port Candy before the interview pane</div>
+      <div style="font-size:14px;line-height:1.6;color:#404040;max-width:80ch;text-wrap:pretty">Themes are a class above the scheme class: same token names, new values, zero component changes. Adding one early is what proves nothing is hardcoded. Sketch only — full Candy values come with the port.</div>
+      <div style="font-family:'Geist Mono',monospace;font-size:12px;line-height:1.75;white-space:pre;overflow-x:auto;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:22px 24px;color:#171717">.theme-candy {
+  --background: #f4eefb;             --foreground: #3a2450;
+  --card: #ffffff;                   --muted-foreground: #6a5a80;
+  --primary: #7c5cf0;                --primary-foreground: #ffffff;
+  --column-header-bg: linear-gradient(120deg,#7c5cf0,#b24dd6,#e85fae);
+  --column-header-fg: #ffffff;
+  --status-done-bg: #e2f7ee;         --status-done-fg: #2f7256;
+  --radius: 1rem;                    --radius-chip: 0.5rem;
+  --shadow-card: 0 5px 0 rgba(124,92,240,0.07);
+  --font-sans-stack: 'Geist', system-ui, sans-serif;   /* + Bricolage for display */
+}
+.theme-candy.dark { /* … same names, dark values … */ }</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#525252;max-width:80ch;text-wrap:pretty">One caveat worth writing down now: <a href="nputer directions.dc.html">Phosphor, Ledger and Signal</a> are not themes. They move where status lives (left spine / hairline rules / edge + pill), so they need card <em>variants</em>, not token values — every later surface would have to be built three ways. Keep them as a possible skin system, not as part of T-006.</div>
+    </div>
+  </sc-if>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:0.16em;text-transform:uppercase;color:#737373">06 · map tokens — architecture map</div>
+    <div style="font-size:14px;line-height:1.6;color:#404040;max-width:80ch;text-wrap:pretty">The map adds no status colours. It adds one semantic — <code style="font-family:'Geist Mono',monospace;font-size:13px;background:#f2f2f2;padding:1px 5px;border-radius:4px">--warning</code>, for drift and, later, truth maintenance — plus the canvas chrome. The rule that keeps drift amber and building amber apart is structural, not chromatic: <strong style="font-weight:600">status is always a fill, warning is always a stroke</strong>. <code style="font-family:'Geist Mono',monospace;font-size:13px;background:#f2f2f2;padding:1px 5px;border-radius:4px">--warning</code> never becomes a background, so the two ambers are never the same kind of thing on screen. Chroma does the rest: status fills sit at ~0.03, warning at ~0.13.</div>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:8px;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:18px 20px">
+        <div style="display:flex;gap:10px">
+          <div style="width:96px;height:44px;border-radius:9px;background:#fdeecb;border:1px solid #f3ddab"></div>
+          <div style="width:96px;height:44px;border-radius:9px;background:#fce6d2;border:1px solid #f3d0ae"></div>
+          <div style="width:96px;height:44px;border-radius:9px;background:#fdeecb;border:1px solid #f3ddab;outline:1.5px dashed #b3600a;outline-offset:-4px"></div>
+          <div style="width:96px;height:44px;border-radius:9px;background:#d5f0e4;border:1px solid #bfe7d6;outline:1.5px dashed #b3600a;outline-offset:-4px"></div>
+        </div>
+        <div style="display:flex;gap:10px;font-family:'Geist Mono',monospace;font-size:10px;color:#737373">
+          <span style="width:96px">building</span><span style="width:96px">verifying</span><span style="width:96px">+ drift</span><span style="width:96px">done + drift</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;background:#0c0c0c;border:1px solid #1f1f1f;border-radius:12px;padding:18px 20px">
+        <div style="display:flex;gap:10px">
+          <div style="width:96px;height:44px;border-radius:9px;background:#2a2008;border:1px solid #4a3a12"></div>
+          <div style="width:96px;height:44px;border-radius:9px;background:#2c1a0c;border:1px solid #503018"></div>
+          <div style="width:96px;height:44px;border-radius:9px;background:#2a2008;border:1px solid #4a3a12;outline:1.5px dashed #f0a63c;outline-offset:-4px"></div>
+          <div style="width:96px;height:44px;border-radius:9px;background:#0d2a21;border:1px solid #1c4a3a;outline:1.5px dashed #f0a63c;outline-offset:-4px"></div>
+        </div>
+        <div style="display:flex;gap:10px;font-family:'Geist Mono',monospace;font-size:10px;color:#949494">
+          <span style="width:96px">building</span><span style="width:96px">verifying</span><span style="width:96px">+ drift</span><span style="width:96px">done + drift</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-family:'Geist Mono',monospace;font-size:12px;line-height:1.75;white-space:pre;overflow-x:auto;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:22px 24px;color:#171717">:root {
+  /* warning — drift, contradiction, truth maintenance. stroke only. */
+  --warning:                   #b3600a;
+  --warning-foreground:        #fff8ee;
+
+  /* map canvas */
+  --map-canvas:                #fbfbfa;   /* one step off --background */
+  --map-grid:                  #e6e6e4;   /* 1px dots, 24px pitch */
+
+  /* map nodes */
+  --map-node-border:           #e2e2e0;
+  --map-node-border-selected:  #171717;
+  --map-node-shadow:           0 1px 2px rgba(0,0,0,0.05);
+
+  /* map edges */
+  --map-edge:                  #c2c2c0;   /* confirmed, 1.5px solid    */
+  --map-edge-muted:            #e5e5e3;   /* dimmed while hovering     */
+  --map-edge-planned:          #d4d4d2;   /* 1.25px, dash 1 4          */
+  --map-edge-drift:            var(--warning);  /* 1.5px, dash 5 4     */
+
+  /* map surfaces */
+  --map-unmapped-bg:           #fafaf9;
+  --map-unmapped-fg:           #737373;
+  --map-group-bg:              #f7f7f6;
+
+  /* provenance, shared with cards */
+  --provenance-independent:    #1f7a58;   /* solid disc + check        */
+  --provenance-same:           #1f7a58;   /* solid disc, no glyph      */
+  --provenance-self:           #1f7a58;   /* half disc, 1.5px ring     */
+}
+
+.dark {
+  --warning:                   #f0a63c;
+  --warning-foreground:        #2a1a06;
+
+  --map-canvas:                #0c0c0c;
+  --map-grid:                  #1c1c1c;
+
+  --map-node-border:           #262626;
+  --map-node-border-selected:  #ededed;
+  --map-node-shadow:           none;
+
+  --map-edge:                  #3f3f3f;
+  --map-edge-muted:            #232323;
+  --map-edge-planned:          #333333;
+  --map-edge-drift:            var(--warning);
+
+  --map-unmapped-bg:           #101010;
+  --map-unmapped-fg:           #949494;
+  --map-group-bg:              #121212;
+
+  --provenance-independent:    #4ecf9e;
+  --provenance-same:           #4ecf9e;
+  --provenance-self:           #4ecf9e;
+}</div>
+
+    <div style="display:flex;flex-direction:column;background:#fff;border:1px solid #e5e5e5;border-radius:12px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:230px 1fr;padding:11px 20px;background:#fafafa;border-bottom:1px solid #e5e5e5;font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#737373"><span>token</span><span>where it earns its place</span></div>
+      <div style="display:grid;grid-template-columns:230px 1fr;padding:12px 20px;border-bottom:1px solid #f0f0f0;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--warning</span><span style="font-size:13.5px;color:#404040">Drift ring on nodes, drift edges, the finding ids in the panel. AA on both canvases at 1.5px. Never a fill — that is the whole separation from building amber.</span></div>
+      <div style="display:grid;grid-template-columns:230px 1fr;padding:12px 20px;border-bottom:1px solid #f0f0f0;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--map-canvas / --map-grid</span><span style="font-size:13.5px;color:#404040">One step off the app background so the pane reads as a surface you pan, not a page. Grid may be set transparent without breaking anything.</span></div>
+      <div style="display:grid;grid-template-columns:230px 1fr;padding:12px 20px;border-bottom:1px solid #f0f0f0;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--map-node-border-selected</span><span style="font-size:13.5px;color:#404040">Ink in light, bone in dark. Selection is the one place chrome outranks fill, so it inverts rather than tints.</span></div>
+      <div style="display:grid;grid-template-columns:230px 1fr;padding:12px 20px;border-bottom:1px solid #f0f0f0;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--map-edge-planned</span><span style="font-size:13.5px;color:#404040">Dotted, quieter than confirmed. Early in a build most of the map is planned; it must read as normal, never as missing.</span></div>
+      <div style="display:grid;grid-template-columns:230px 1fr;padding:12px 20px;align-items:baseline"><span style="font-family:'Geist Mono',monospace;font-size:12px">--map-unmapped-* / --map-group-bg</span><span style="font-size:13.5px;color:#404040">Ghost-card family at map scale: dashed border, no fill weight, muted ink. Same vocabulary as suggested cards on the board.</span></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;border-top:1px solid #e5e5e5;padding-top:24px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11.5px;letter-spacing:0.16em;text-transform:uppercase;color:#737373">next</div>
+    <div style="font-size:14px;line-height:1.65;color:#404040;max-width:80ch;text-wrap:pretty">Still owed from the handoff: card + badge spec at rest/hover/focus, the T-005 detail panel, T-007 empty states, and the parse-error chip. Say which one you want first and I'll build it in Native.</div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showThemeStub&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Sections&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { showThemeStub: this.props.showThemeStub ?? true };
+  }
+}
+</script>
+</body>
+</html>
