@@ -7,7 +7,12 @@ export type DismissalDoc = Pick<Document, "addEventListener" | "removeEventListe
  * Dismissal wiring for the task detail panel: Esc closes; a POINTERDOWN
  * outside the panel closes unless it lands on a card trigger (that
  * press's click opens/switches the panel — closing here too would race
- * it shut). Returns the detach function (the effect's cleanup).
+ * it shut) or inside a `[data-panel-exempt]` subtree (T-005-s3/T-017:
+ * controls whose activation must not cost the panel — the app header's
+ * theme toggle and siblings, the board's parked-row toggle. Checking a
+ * card's colors in both themes, or expanding parked to switch to one of
+ * its tasks, should never dismiss what you are looking at). Returns the
+ * detach function (the effect's cleanup).
  *
  * Why pointerdown and not click (T-005 rejection, 2026-08-15): under a
  * trusted click the browser runs microtask checkpoints between listener
@@ -39,6 +44,7 @@ export function attachPanelDismissal(
     if (!(target instanceof Element)) return;
     if (panel()?.contains(target)) return;
     if (target.closest("[data-card-trigger]") !== null) return;
+    if (target.closest("[data-panel-exempt]") !== null) return;
     onClose();
   };
   doc.addEventListener("keydown", onKeyDown);

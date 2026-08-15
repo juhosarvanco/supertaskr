@@ -16,7 +16,8 @@ import { SliceLine } from "./SliceLine";
  * equally and floor at 320px, below which the board scrolls sideways
  * (density rule). `dense` forwards the >40-cards meta-row rule to cards.
  *
- * T-005: cards forward clicks up as detail-panel opens.
+ * T-005: cards forward clicks up as detail-panel opens. T-017: the
+ * parked row expands into entries that open the panel the same way.
  */
 export function FeatureColumn({
   column,
@@ -64,7 +65,7 @@ export function FeatureColumn({
           <GhostCard key={card.key} card={card} onOpen={onOpen} />
         ))}
       </ul>
-      <ParkedRow count={column.parkedCount} />
+      <ParkedRow parked={column.parked} onOpen={onOpen} />
     </section>
   );
 }

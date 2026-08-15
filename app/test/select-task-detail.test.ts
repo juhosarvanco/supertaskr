@@ -64,7 +64,7 @@ const FULL_BODY = [
   "- WHILE open THE panel SHALL live-update.",
   "",
   "## Implementation notes",
-  "builder notes (not a panel section)",
+  "builder notes — verbatim, `code`, <img onerror=x>",
   "",
   "## Verdicts",
   VERDICTS,
@@ -116,6 +116,11 @@ describe("selectTaskDetail — derivation", () => {
   it("passes the verdicts section through VERBATIM (markup, indentation and all)", () => {
     const detail = selectTaskDetail(model, byId("T-010"));
     expect(detail?.verdicts).toBe(VERDICTS);
+  });
+
+  it("passes the implementation-notes section through VERBATIM (T-017, T-005-s2)", () => {
+    const detail = selectTaskDetail(model, byId("T-010"));
+    expect(detail?.implementationNotes).toBe("builder notes — verbatim, `code`, <img onerror=x>");
   });
 
   it("resolves blocked_by entries against the model: link data when present, unresolved when not", () => {
@@ -204,6 +209,7 @@ describe("selectTaskDetail — empty sections (criterion 3)", () => {
     const detail = selectTaskDetail(model, byId("T-010"));
     expect(detail).toBeDefined();
     expect(detail?.acceptanceCriteria).toBeUndefined();
+    expect(detail?.implementationNotes).toBeUndefined();
     expect(detail?.verdicts).toBeUndefined();
     expect(detail?.blockedBy).toEqual([]);
     expect(detail?.touches).toEqual([]);
@@ -214,10 +220,14 @@ describe("selectTaskDetail — empty sections (criterion 3)", () => {
 
   it("a heading with no content under it is empty too (not an empty-string section)", () => {
     const model = withRoadmap([
-      [path("T-010"), task("T-010", [], "\n## Acceptance criteria\n\n## Verdicts\n\n")],
+      [
+        path("T-010"),
+        task("T-010", [], "\n## Acceptance criteria\n\n## Implementation notes\n\n## Verdicts\n\n"),
+      ],
     ]);
     const detail = selectTaskDetail(model, byId("T-010"));
     expect(detail?.acceptanceCriteria).toBeUndefined();
+    expect(detail?.implementationNotes).toBeUndefined();
     expect(detail?.verdicts).toBeUndefined();
   });
 });

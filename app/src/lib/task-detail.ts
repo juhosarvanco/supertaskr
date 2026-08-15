@@ -76,6 +76,11 @@ export interface TaskDetail {
   /** Raw markdown under `## Acceptance criteria`; undefined when absent
    * or empty. */
   acceptanceCriteria?: string;
+  /** Raw markdown under `## Implementation notes`, verbatim; undefined
+   * when absent or empty. The panel renders it collapsed by default
+   * (T-005-s2, the @human-confirmed taste call) — the builder's working
+   * record is reachable without dominating the accountability surface. */
+  implementationNotes?: string;
   /** Raw markdown under `## Verdicts`, verbatim; undefined when absent
    * or empty. */
   verdicts?: string;
@@ -136,49 +141,6 @@ export function criterionLines(raw: string, status: TaskStatus): CriterionLine[]
   return rows;
 }
 
-/** One verdict-history entry, VERBATIM, with a derived tint. */
-export interface VerdictEntry {
-  /** Which block tint the entry takes; "note" is the neutral fallback. */
-  kind: "approved" | "rejected" | "note";
-  /** The entry's full text, exactly as written in the task file. */
-  text: string;
-}
-
-const VERDICT_DATE = /^\d{4}-\d{2}-\d{2}/;
-
-/**
- * Split raw `## Verdicts` markdown into entries at date-headed
- * paragraphs (the convention's verdict form: `2026-08-15 — who (role):
- * VERDICT …`). The tint comes from the verdict word in the entry's
- * first paragraph; text stays verbatim — the panel is a reading
- * surface, never a summary (T-005). Unheaded text folds into a neutral
- * entry, so arbitrary content still renders.
- */
-export function verdictEntries(raw: string): VerdictEntry[] {
-  const blocks: string[][] = [];
-  let current: string[] | undefined;
-  for (const line of raw.split("\n")) {
-    if (VERDICT_DATE.test(line.trim()) || current === undefined) {
-      current = [line];
-      blocks.push(current);
-    } else {
-      current.push(line);
-    }
-  }
-  return blocks
-    .map((lines) => lines.join("\n").trim())
-    .filter((text) => text !== "")
-    .map((text) => {
-      const firstParagraph = text.split(/\n\s*\n/, 1)[0] ?? "";
-      const kind = /\bREJECTED\b/.test(firstParagraph)
-        ? ("rejected" as const)
-        : /\bAPPROVED\b/.test(firstParagraph)
-          ? ("approved" as const)
-          : ("note" as const);
-      return { kind, text };
-    });
-}
-
 function findTask(model: ProjectParseResult, ref: TaskRef): TaskRecord | undefined {
   if (ref.kind === "file") return model.tasks.find((t) => t.file === ref.file);
   // Duplicate ids: first occurrence wins (the parser already flags
@@ -225,6 +187,7 @@ export function selectTaskDetail(model: ProjectParseResult, ref: TaskRef): TaskD
     priority: task.priority,
     suggestedBy: task.suggestedBy,
     acceptanceCriteria: section(task.sections.acceptanceCriteria),
+    implementationNotes: section(task.sections.implementationNotes),
     verdicts: section(task.sections.verdicts),
     blockedBy,
     touches: task.touches,

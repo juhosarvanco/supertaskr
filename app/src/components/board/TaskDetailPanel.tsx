@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ProjectParseResult } from "@nputer/parser/pure";
 import { cn } from "@/lib/utils";
 import {
   criterionLines,
   refLabel,
   selectTaskDetail,
-  verdictEntries,
   type TaskRef,
-  type VerdictEntry,
 } from "@/lib/task-detail";
+import { verdictEntries, type VerdictEntry } from "@/lib/verdicts";
 import { attachPanelDismissal } from "./panel-dismissal";
 import { CHIP_BORDER_CLASSES, STATUS_CLASSES } from "./TaskCard";
 import { ReviewBadge } from "./badges/ReviewBadge";
@@ -28,6 +27,14 @@ import { ReviewBadge } from "./badges/ReviewBadge";
  * verdict history as tinted verbatim blocks; provenance rows where the
  * independent/same-model distinction lives in TEXT (ADR-016). The
  * mockup's dispatch footer belongs to F-04 and is deliberately absent.
+ *
+ * T-017 (T-005-s2): Implementation notes — often the richest text in a
+ * finished task file — render as a collapsed-by-default disclosure
+ * (the @human-confirmed taste call) between the verdict history and
+ * provenance: verbatim and mono like the verdict blocks, the body a
+ * horizontal scroll container so preformatted runs stay contained.
+ * The disclosure is keyed by task ref, so re-targeting the panel
+ * (blocker click, another card) starts the new task collapsed again.
  *
  * Pure-lens note: the open/closed ref is ephemeral VIEW state (like a
  * scroll position), never project state — nothing here writes files.
@@ -236,6 +243,17 @@ export function TaskDetailPanel({
             )}
           </Section>
 
+          {detail.implementationNotes === undefined ? (
+            <Section title="implementation notes" testid="detail-notes">
+              <Empty />
+            </Section>
+          ) : (
+            <NotesDisclosure
+              key={`${taskRef.kind}:${refLabel(taskRef)}`}
+              notes={detail.implementationNotes}
+            />
+          )}
+
           {!detail.suggested && (
             <Section title="provenance" testid="detail-stamps">
               <dl className="flex flex-col gap-1.75 text-sm">
@@ -286,6 +304,43 @@ function NeutralChip({ children }: { children: ReactNode }) {
     <span className="rounded-chip border border-ghost-border px-1.75 py-0.5 font-mono text-xs text-muted-foreground">
       {children}
     </span>
+  );
+}
+
+/** Implementation notes as a collapsed-by-default disclosure (T-017,
+ * T-005-s2): the summary row wears the section-header dress and toggles
+ * the body — verbatim, mono, whitespace-preserving like the verdict
+ * blocks, inside an `overflow-x-auto` container so unbroken
+ * preformatted runs scroll instead of widening the panel. Collapse
+ * state is ephemeral view state; the parent keys this component by task
+ * ref so every newly targeted task starts collapsed. */
+function NotesDisclosure({ notes }: { notes: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section data-testid="detail-notes" data-expanded={open ? "true" : "false"} className="flex flex-col gap-2.5">
+      <button
+        type="button"
+        data-testid="detail-notes-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="flex items-baseline justify-between gap-2 rounded-sm text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        <h3 className="font-mono text-xs tracking-overline text-muted-foreground uppercase">
+          implementation notes · verbatim
+        </h3>
+        <span aria-hidden="true" className="font-mono text-xs text-muted-foreground">
+          {open ? "⌄" : "›"}
+        </span>
+      </button>
+      {open && (
+        <div
+          data-testid="detail-notes-text"
+          className="overflow-x-auto rounded-lg border border-border bg-muted px-3.75 py-3.25 font-mono text-sm whitespace-pre-wrap text-foreground"
+        >
+          {notes}
+        </div>
+      )}
+    </section>
   );
 }
 

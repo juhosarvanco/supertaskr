@@ -120,6 +120,11 @@ class ListenerDoc {
 
 /** The board DOM around the race, in fakes:
  *  documentElement
+ *  ├─ header
+ *  │   ├─ headerBlank                 (bare header space — NOT exempt)
+ *  │   └─ headerControls [data-panel-exempt]  (T-017, T-005-s3)
+ *  │       └─ themeToggle
+ *  │           └─ toggleLabel         (real presses land on inner spans)
  *  ├─ board
  *  │   ├─ background                  (genuine outside-press target)
  *  │   └─ cardTrigger [data-card-trigger]
@@ -132,6 +137,11 @@ class ListenerDoc {
 const buildTree = () => {
   const documentElement = new FakeElement();
   documentElement.isRoot = true;
+  const header = documentElement.append(new FakeElement());
+  const headerBlank = header.append(new FakeElement());
+  const headerControls = header.append(new FakeElement(["data-panel-exempt"]));
+  const themeToggle = headerControls.append(new FakeElement());
+  const toggleLabel = themeToggle.append(new FakeElement());
   const board = documentElement.append(new FakeElement());
   const background = board.append(new FakeElement());
   const cardTrigger = board.append(new FakeElement(["data-card-trigger"]));
@@ -140,7 +150,18 @@ const buildTree = () => {
   const blockedByList = panel.append(new FakeElement());
   const chipItem = blockedByList.append(new FakeElement());
   const chip = chipItem.append(new FakeElement(["data-blocker-id"]));
-  return { background, cardLabel, panel, blockedByList, chipItem, chip };
+  return {
+    headerBlank,
+    headerControls,
+    themeToggle,
+    toggleLabel,
+    background,
+    cardLabel,
+    panel,
+    blockedByList,
+    chipItem,
+    chip,
+  };
 };
 
 /** Attach the real wiring to a fresh fake board; returns probes. */
@@ -214,6 +235,28 @@ describe("panel dismissal wiring (T-005 rejection, 2026-08-15)", () => {
     t.doc.deliver("pointerdown", t.cardLabel);
     t.doc.deliver("click", t.cardLabel);
     expect(t.closeCount()).toBe(0);
+  });
+
+  // T-017 (T-005-s3): controls inside a [data-panel-exempt] subtree —
+  // the app header's theme toggle and siblings, the parked-row toggle —
+  // must not dismiss the panel; checking a card's colors in both themes
+  // was costing the panel on every toggle.
+  it("a press inside a [data-panel-exempt] subtree does not dismiss (theme toggle, T-005-s3)", () => {
+    const t = attach();
+    // Real presses land on the toggle's inner label; closest() walks up.
+    t.doc.deliver("pointerdown", t.toggleLabel);
+    t.doc.deliver("click", t.toggleLabel);
+    expect(t.closeCount()).toBe(0);
+    // The exempt container itself is exempt too.
+    t.doc.deliver("pointerdown", t.headerControls);
+    expect(t.closeCount()).toBe(0);
+  });
+
+  it("bare header space outside the exempt controls still dismisses", () => {
+    const t = attach();
+    t.doc.deliver("pointerdown", t.headerBlank);
+    t.doc.deliver("click", t.headerBlank);
+    expect(t.closeCount()).toBe(1);
   });
 
   it("Escape closes; other keys do not", () => {
