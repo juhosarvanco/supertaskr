@@ -6,7 +6,7 @@ paths:
   - method/**
 depends_on: []
 decisions: [ADR-001, ADR-004, ADR-005, ADR-006]
-status: done              # pinned: built and versioned (v0.1.4); no task slug maps here
+status: done              # pinned: built and versioned (v0.1.5); no task slug maps here
 touch_slugs: []
 ---
 The generic, product-agnostic convention: task/roadmap/decision/room
