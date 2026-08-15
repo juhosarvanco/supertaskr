@@ -1,21 +1,18 @@
 # Architecture
 
 ## System map
-<!-- Keep this Mermaid current — the integrator updates it at checkpoint
+<!-- A Mermaid `graph TD` block: components as nodes, dependencies as
+     edges. Keep it current — the integrator updates it at checkpoint
      whenever a component, dependency, or interface changed. -->
-
-```mermaid
-graph TD
-  A[Component A] --> B[Component B]
-```
 
 ## Components
 
 | ID | Component | Responsibility | Depends on | Status |
 |----|-----------|----------------|------------|--------|
-| C-01 | <name> | <one line> | — | planned |
 
-<!-- Status: planned / built / verified. The dashboard colors the map from
+<!-- One row per component, e.g.
+       | C-01 | store | append-only log file | — | planned |
+     Status: planned / built / verified. The dashboard colors the map from
      this column plus the tasks that reference each component. -->
 
 ## Interfaces

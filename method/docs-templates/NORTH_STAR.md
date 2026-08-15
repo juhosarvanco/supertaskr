@@ -14,5 +14,9 @@
      session #14 from helpfully adding a feature rejected in week one.
      If work contradicts this file, stop and open a room — don't edit this file. -->
 
+## Riskiest assumption
+<!-- The single belief that, if wrong, kills the project — plus the
+     cheapest, earliest test of it. Interview Q6 banks here. -->
+
 ## Hard constraints
 <!-- Budget, deadline, must-use tech, compliance. Things no session may trade away. -->
