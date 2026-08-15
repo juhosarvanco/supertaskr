@@ -69,6 +69,9 @@ export interface TaskDetail {
    * (no stamps block; suggested_by shown instead). */
   suggested: boolean;
   size?: TaskSize;
+  /** Chip row (T-006): owning feature and priority, when set. */
+  feature?: string;
+  priority?: number;
   suggestedBy?: string;
   /** Raw markdown under `## Acceptance criteria`; undefined when absent
    * or empty. */
@@ -90,6 +93,90 @@ export interface TaskDetail {
  * both render as visibly empty. */
 function section(text: string | undefined): string | undefined {
   return text === undefined || text.trim() === "" ? undefined : text;
+}
+
+// ---- presentation derivations (T-006 design pass) ----------------------
+
+/** One acceptance-criterion row for the panel's per-criterion marks. */
+export interface CriterionLine {
+  text: string;
+  /** Task-level honesty: ✓ only when the task passed its verdict gate
+   * (done/merging) — there is no per-criterion verification record. */
+  met: boolean;
+}
+
+/**
+ * Split raw `## Acceptance criteria` markdown into displayable rows:
+ * top-level bullets become criterion rows (continuation lines fold in);
+ * bare paragraphs keep one row each. Total — any text renders.
+ */
+export function criterionLines(raw: string, status: TaskStatus): CriterionLine[] {
+  const met = status === "done" || status === "merging";
+  const rows: CriterionLine[] = [];
+  let current: string | undefined;
+  const flush = (): void => {
+    if (current !== undefined && current !== "") rows.push({ text: current, met });
+    current = undefined;
+  };
+  for (const line of raw.split("\n")) {
+    const trimmed = line.trim();
+    const bullet = /^[-*]\s+(.*)$/.exec(trimmed);
+    if (bullet !== null) {
+      flush();
+      current = bullet[1] ?? "";
+    } else if (trimmed === "") {
+      flush();
+    } else if (current !== undefined) {
+      current += ` ${trimmed}`;
+    } else {
+      rows.push({ text: trimmed, met });
+    }
+  }
+  flush();
+  return rows;
+}
+
+/** One verdict-history entry, VERBATIM, with a derived tint. */
+export interface VerdictEntry {
+  /** Which block tint the entry takes; "note" is the neutral fallback. */
+  kind: "approved" | "rejected" | "note";
+  /** The entry's full text, exactly as written in the task file. */
+  text: string;
+}
+
+const VERDICT_DATE = /^\d{4}-\d{2}-\d{2}/;
+
+/**
+ * Split raw `## Verdicts` markdown into entries at date-headed
+ * paragraphs (the convention's verdict form: `2026-08-15 — who (role):
+ * VERDICT …`). The tint comes from the verdict word in the entry's
+ * first paragraph; text stays verbatim — the panel is a reading
+ * surface, never a summary (T-005). Unheaded text folds into a neutral
+ * entry, so arbitrary content still renders.
+ */
+export function verdictEntries(raw: string): VerdictEntry[] {
+  const blocks: string[][] = [];
+  let current: string[] | undefined;
+  for (const line of raw.split("\n")) {
+    if (VERDICT_DATE.test(line.trim()) || current === undefined) {
+      current = [line];
+      blocks.push(current);
+    } else {
+      current.push(line);
+    }
+  }
+  return blocks
+    .map((lines) => lines.join("\n").trim())
+    .filter((text) => text !== "")
+    .map((text) => {
+      const firstParagraph = text.split(/\n\s*\n/, 1)[0] ?? "";
+      const kind = /\bREJECTED\b/.test(firstParagraph)
+        ? ("rejected" as const)
+        : /\bAPPROVED\b/.test(firstParagraph)
+          ? ("approved" as const)
+          : ("note" as const);
+      return { kind, text };
+    });
 }
 
 function findTask(model: ProjectParseResult, ref: TaskRef): TaskRecord | undefined {
@@ -134,6 +221,8 @@ export function selectTaskDetail(model: ProjectParseResult, ref: TaskRef): TaskD
     visual: statusVisual(task.status),
     suggested: task.status === "suggested",
     size: task.size,
+    feature: task.feature,
+    priority: task.priority,
     suggestedBy: task.suggestedBy,
     acceptanceCriteria: section(task.sections.acceptanceCriteria),
     verdicts: section(task.sections.verdicts),

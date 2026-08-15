@@ -18,22 +18,25 @@ import {
 // brings the design language. Everything styles itself via tokens.css
 // utilities.
 
-/** Non-blocking parse-error badge (criterion 3). Renders only while at
- * least one changed file fails to parse; the model below keeps showing
- * each failing file's last valid state meanwhile. */
+/** Non-blocking parse-error chip (criterion 3; T-006 look — the
+ * terracotta chip from the board mockup). Renders only while at least
+ * one changed file fails to parse; the model below keeps showing each
+ * failing file's last valid state meanwhile — the chip says so. */
 function ParseErrorBadge({ failures }: { failures: ReturnType<typeof getShellState>["docs"]["failures"] }) {
   if (failures.length === 0) return null;
   // Parser issue messages already name the file; no path prefix needed.
   const detail = failures
     .map((f) => f.issues[0]?.message ?? `${f.path}: unparsable`)
     .join("\n");
+  const lastValid = failures.some((f) => f.showingLastGood);
   return (
     <span
       data-testid="parse-error-badge"
       title={detail}
-      className="rounded-md border border-destructive px-2 py-1 font-mono text-xs text-destructive"
+      className="flex items-center gap-1.75 rounded-md border border-status-rejected-border bg-status-rejected px-2.5 py-1.25 font-mono text-xs text-destructive"
     >
       {failures.length} parse error{failures.length === 1 ? "" : "s"}
+      {lastValid && <span className="text-status-rejected-foreground">· last valid state</span>}
     </span>
   );
 }
@@ -41,8 +44,10 @@ function ParseErrorBadge({ failures }: { failures: ReturnType<typeof getShellSta
 /** Friendly empty state (T-007): no project resolved at launch, the
  * launch-resolved repo has no docs/, or a picked folder was rejected —
  * always with the message naming what was looked for and a re-pick
- * affordance. Pure presentational; DOM-tested in
- * test/project-shell.test.tsx. */
+ * affordance. T-006 dresses it as the front door from the open-a-folder
+ * mockup: hero wordmark, the docs/ pitch, and the no-plan card (an
+ * empty folder is an invitation, never an error). Pure presentational;
+ * DOM-tested in test/project-shell.test.tsx. */
 export function EmptyState({
   message,
   picking,
@@ -59,24 +64,50 @@ export function EmptyState({
   return (
     <section
       data-testid="empty-state"
-      className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center"
+      className="flex flex-1 items-center justify-center px-10 py-12"
     >
-      <h2 className="font-mono text-lg font-semibold">no board to show</h2>
-      <p data-testid="empty-state-message" className="max-w-96 text-sm text-muted-foreground">
-        {message}
-      </p>
-      <div className="flex items-center gap-2">
-        <Button data-testid="pick-folder" disabled={picking} onClick={onPick}>
-          {picking ? "choosing…" : "Open a project folder…"}
-        </Button>
-        {canKeepCurrent && (
-          <Button data-testid="keep-current" variant="ghost" onClick={onKeepCurrent}>
-            keep current project
-          </Button>
-        )}
+      <div className="flex w-full max-w-150 flex-col gap-8">
+        <div className="flex flex-col gap-3">
+          <h2 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h2>
+          <p className="max-w-120 text-base text-secondary-foreground">
+            Point it at a repo. It reads{" "}
+            <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span> and
+            renders the plan as a board. Nothing is copied, nothing is imported — if nputer
+            disappears, the project is still there.
+          </p>
+        </div>
+        <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-card">
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-semibold tracking-heading">no board to show</h3>
+            <p data-testid="empty-state-message" className="text-sm text-secondary-foreground">
+              {message}
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Button data-testid="pick-folder" disabled={picking} onClick={onPick}>
+              {picking ? "choosing…" : "Open a project folder…"}
+            </Button>
+            {canKeepCurrent && (
+              <Button data-testid="keep-current" variant="outline" onClick={onKeepCurrent}>
+                keep current project
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );
+}
+
+/** The board header's right-edge milestone counter: milestone-1 real
+ * tasks (ghosts and parked never count), done only. */
+function milestoneLine(model: ReturnType<typeof getShellState>["docs"]["model"]): string | undefined {
+  const real = model.tasks.filter(
+    (t) => t.milestone === 1 && t.status !== "suggested" && t.status !== "parked",
+  );
+  if (real.length === 0) return undefined;
+  const done = real.filter((t) => t.status === "done").length;
+  return `milestone 1 · ${done} of ${real.length} done`;
 }
 
 function App() {
@@ -88,22 +119,26 @@ function App() {
 
   const { model, failures, seq } = shell.docs;
   const screen = selectScreen(shell);
+  const milestone = milestoneLine(model);
 
   return (
     <main
-      className="flex min-h-screen flex-col gap-4 p-6"
+      className="flex min-h-screen flex-col"
       data-testid="docs-model"
       data-screen={screen.screen}
       data-seq={seq}
       data-task-count={model.tasks.length}
       data-failure-count={failures.length}
     >
-      <header className="flex items-center justify-between gap-4 border-b border-border pb-4">
-        <div className="flex items-center gap-3">
-          <h1 className="font-mono text-2xl font-semibold">nputer</h1>
-          <ParseErrorBadge failures={failures} />
+      <header className="flex items-center justify-between gap-4 border-b border-hairline px-6 pt-4.5 pb-3.5">
+        <div className="flex items-baseline gap-3.5">
+          <h1 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h1>
+          {screen.screen === "board" && (
+            <p className="font-mono text-sm text-muted-foreground">{shell.docs.projectDir}</p>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.25">
+          <ParseErrorBadge failures={failures} />
           {screen.screen === "board" && isTauriRuntime() && (
             <Button
               variant="outline"
@@ -124,11 +159,13 @@ function App() {
       </header>
 
       {screen.screen === "loading" && (
-        <p className="text-sm text-muted-foreground">waiting for the first docs snapshot…</p>
+        <p className="px-6 py-3 text-sm text-muted-foreground">
+          waiting for the first docs snapshot…
+        </p>
       )}
 
       {screen.screen === "browser" && (
-        <p className="text-sm text-muted-foreground">
+        <p className="px-6 py-3 text-sm text-muted-foreground">
           no Tauri IPC — dev harness active, no snapshot applied yet
         </p>
       )}
@@ -145,22 +182,24 @@ function App() {
 
       {screen.screen === "board" && (
         <>
-          <div className="flex flex-col gap-1">
-            <p className="font-mono text-xs text-muted-foreground">{shell.docs.projectDir}</p>
+          <div className="flex items-baseline justify-between gap-4 px-6 pt-2.75 pb-3.5">
             <p className="text-sm text-muted-foreground" data-testid="model-counts">
               {model.tasks.length} tasks · {model.features.length} features ·{" "}
               {model.issues.length} issues · seq {seq} · updated{" "}
               {new Date(shell.docs.generatedAtMs).toLocaleTimeString()}
             </p>
+            {milestone !== undefined && (
+              <p className="font-mono text-xs text-muted-foreground">{milestone}</p>
+            )}
           </div>
 
           {failures.length > 0 && (
             <ul
               data-testid="parse-error-details"
-              className="flex flex-col gap-1 rounded-md border border-destructive p-3 text-xs"
+              className="mx-6 mb-3.5 flex flex-col gap-1 rounded-lg border border-status-rejected-border bg-status-rejected p-3 text-xs"
             >
               {failures.map((f) => (
-                <li key={f.path} className="font-mono text-destructive">
+                <li key={f.path} className="font-mono text-status-rejected-foreground">
                   {f.issues[0]?.message ?? `${f.path}: unparsable`}
                   {f.showingLastGood ? " (showing last valid state)" : ""}
                 </li>
@@ -168,7 +207,9 @@ function App() {
             </ul>
           )}
 
-          <Board model={model} />
+          <div className="px-6 pb-7.5">
+            <Board model={model} />
+          </div>
         </>
       )}
     </main>

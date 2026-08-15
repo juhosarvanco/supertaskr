@@ -9,6 +9,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./styles/fonts.css";
 @import "./styles/tokens.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -22,6 +23,14 @@
     --font-*: initial;
     --text-*: initial;
     --spacing-*: initial;
+    /* T-006 extends the same enforcement to the namespaces the design
+       pass now uses: shadows and letter-spacing come exclusively from
+       tokens.css (the token-backed replacements are defined below). */
+    --shadow-*: initial;
+    --inset-shadow-*: initial;
+    --drop-shadow-*: initial;
+    --text-shadow-*: initial;
+    --tracking-*: initial;
 
     /* spacing: one base unit drives the whole spacing/size scale */
     --spacing: var(--spacing-unit);
@@ -84,7 +93,8 @@
     --color-foreground: var(--foreground);
     --color-background: var(--background);
 
-    /* radius scale derived from the single --radius token */
+    /* radius scale derived from the single --radius token; `chip` is
+       the sheet's named 6px radius for size/model chips (T-006). */
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -92,22 +102,73 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+    --radius-chip: var(--radius-chip);
+
+    /* shadows: the two sheet elevations + the measured card hover
+       (values live in tokens.css; the stock scale is disabled above) */
+    --shadow-card: var(--shadow-card);
+    --shadow-card-hover: var(--shadow-card-hover);
+    --shadow-pop: var(--shadow-pop);
+
+    /* letter-spacing roles (values in tokens.css; stock scale disabled) */
+    --tracking-wordmark: var(--tracking-wordmark);
+    --tracking-title: var(--tracking-title);
+    --tracking-heading: var(--tracking-heading);
+    --tracking-overline: var(--tracking-overline);
+    --tracking-tag: var(--tracking-tag);
 
     /* status colors (T-004): board card colors, one pair per status.
        Values live in tokens.css; this mapping only creates the
-       token-backed utilities (bg-status-*, text-status-*-foreground). */
+       token-backed utilities (bg-status-*, text-status-*-foreground).
+       T-006 adds the sheet's per-status border plus the measured title
+       ink and strong border (chip outline / hover edge) per status. */
     --color-status-planned: var(--status-planned-bg);
     --color-status-planned-foreground: var(--status-planned-fg);
+    --color-status-planned-border: var(--status-planned-border);
+    --color-status-planned-border-strong: var(--status-planned-border-strong);
+    --color-status-planned-title: var(--status-planned-title);
     --color-status-building: var(--status-building-bg);
     --color-status-building-foreground: var(--status-building-fg);
+    --color-status-building-border: var(--status-building-border);
+    --color-status-building-border-strong: var(--status-building-border-strong);
+    --color-status-building-title: var(--status-building-title);
     --color-status-verifying: var(--status-verifying-bg);
     --color-status-verifying-foreground: var(--status-verifying-fg);
+    --color-status-verifying-border: var(--status-verifying-border);
+    --color-status-verifying-border-strong: var(--status-verifying-border-strong);
+    --color-status-verifying-title: var(--status-verifying-title);
     --color-status-rejected: var(--status-rejected-bg);
     --color-status-rejected-foreground: var(--status-rejected-fg);
+    --color-status-rejected-border: var(--status-rejected-border);
+    --color-status-rejected-border-strong: var(--status-rejected-border-strong);
+    --color-status-rejected-title: var(--status-rejected-title);
     --color-status-done: var(--status-done-bg);
     --color-status-done-foreground: var(--status-done-fg);
+    --color-status-done-border: var(--status-done-border);
+    --color-status-done-border-strong: var(--status-done-border-strong);
+    --color-status-done-title: var(--status-done-title);
     --color-status-merging: var(--status-merging-bg);
     --color-status-merging-foreground: var(--status-merging-fg);
+    --color-status-merging-border: var(--status-merging-border);
+    --color-status-merging-border-strong: var(--status-merging-border-strong);
+    --color-status-merging-title: var(--status-merging-title);
+
+    /* T-006 board chrome + card anatomy (sheet §04 additions) */
+    --color-column-header: var(--column-header-bg);
+    --color-column-header-foreground: var(--column-header-fg);
+    --color-column-header-id: var(--column-header-id);
+    --color-hairline: var(--hairline);
+    --color-ghost-border: var(--ghost-border);
+    --color-review-disc: var(--review-disc);
+    --color-review-mark: var(--review-mark);
+
+    /* T-006 detail panel: verdict-history block tints */
+    --color-verdict-rejected: var(--verdict-rejected-bg);
+    --color-verdict-rejected-ink: var(--verdict-rejected-ink);
+    --color-verdict-rejected-meta: var(--verdict-rejected-meta);
+    --color-verdict-approved: var(--verdict-approved-bg);
+    --color-verdict-approved-ink: var(--verdict-approved-ink);
+    --color-verdict-approved-meta: var(--verdict-approved-meta);
 
     /* status pulse (T-004): opacity oscillation for verifying/merging
        cards. Duration/depth VALUES live in tokens.css. Applied as
