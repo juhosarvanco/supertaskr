@@ -5,7 +5,7 @@ feature: F-06
 milestone: 2
 priority: 4
 size: M
-status: verifying
+status: done
 blocked_by: [T-008, T-009]
 touches: [app-map]
 builder: claude-fable-5
@@ -307,6 +307,45 @@ Working tree clean; committed graph.json byte-identical to main's.
 - T-011-s1 — engine location vs C-12 paths (the post-regen D2 decision).
 - T-011-s2 — D3 permanently ambers non-code components (C-01/C-11).
 - T-011-s3 — T-016 done-with-no-stamp → C-06 provenance `unreviewed`.
+
+### Fixture reconciliation at integration (2026-08-15, integrator claude-fable-5 @fresh)
+Third exercise of the T-009-s1 standing practice, plus the fixture
+re-pin this task's notes prepared. Merged main regen (release,
+regenerate-twice byte-identical, sha256 4d60f936…, ignored self-check
+green): **59 files / 308 symbols / 535 edges**, 197,398 bytes — the
+precomputed branch-tree delta (57/512, confirmed independently by the
+verifier) plus T-017's two files and 23 edges, exactly additive, no
+surprises. One prediction correction: T-017's app/src/lib/verdicts.ts
+is claimed by NO registry pattern (C-05's only app/src/lib literal is
+utils.ts), so D2 carries FOUR files, not three. Deltas applied —
+changed, never loosened; every count and content exact:
+- Mapping test: fileComponent 49→59; counts C-05 15→21 (the branch's
+  4 architecture tests + node-builtins.d.ts + T-017's
+  board-truth.test.tsx), + ["unmapped", 4]; unmappedFiles []→[derive.ts,
+  glob.ts, graph.ts, verdicts.ts]; unmapped node now asserted present
+  (kind unmapped, hasDrift, files = the four).
+- Findings: D1:C-05->C-06 fileEdges 2→5 (+ architecture-derive.test.ts,
+  architecture-dogfood.test.ts, board-truth.test.tsx); NEW D2:unmapped
+  [the four files above] between the D1s and D3s (lexical id order);
+  D1:C-05->C-09, D1:C-08->C-05, D1:C-09->C-05 byte-identical; the four
+  D3s (C-01/C-07/C-11/C-12) unchanged; no D4/D5 — the four D1 families
+  persist, D2 now exists (T-011-s1's subject, honest until T-012's
+  registry amendment), D3 unchanged.
+- Relation table 20→24 edges (7 confirmed / 8 undeclared / 9 planned):
+  C-05→C-06 undeclared 2→5; C-05→C-08 confirmed 3→4 (board-truth →
+  Board.tsx); C-08→C-09 confirmed 5→6 (TaskCard → task-detail's cardRef,
+  T-017); NEW C-05→unmapped undeclared 7 (the branch's predicted 6 +
+  detail-presentation.test.ts → verdicts.ts), C-08→unmapped 1
+  (board-model → verdicts), C-09→unmapped 1 (TaskDetailPanel →
+  verdicts), unmapped→C-06 undeclared 1 (derive.ts → @nputer/parser);
+  all other rows byte-identical.
+- Drift flags: + "unmapped" (D2); declaredOnly unchanged.
+- Seam test (C-08/C-09/C-10→C-06 fileEdges) needed zero edits — the
+  package-join lists were stable under both merges.
+Suites after reconciliation: app 256/256 (121 main + 135 this task),
+build clean; lib/parser 132/132 + tsc + build; bare cargo 100 + 2
+ignored. Pre-regen state was the forecast exactly: 252/256 with only
+the four dogfood pins red.
 
 ## Verdicts
 

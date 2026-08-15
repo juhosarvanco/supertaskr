@@ -433,6 +433,643 @@
       ]
     },
     {
+      "id": "f:app/src/lib/architecture/derive.ts",
+      "path": "app/src/lib/architecture/derive.ts",
+      "lang": "ts",
+      "hash": "blake3:33e031917e8db45490d991cdb9700b304faef94475391a716c4d4546d82d4851",
+      "loc": 677,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#DeriveInputs",
+          "name": "DeriveInputs",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            164,
+            171
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+          "name": "DerivedArchitecture",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            138,
+            162
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+          "name": "DerivedComponent",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            103,
+            126
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#DerivedComponentKind",
+          "name": "DerivedComponentKind",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            77,
+            85
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#DerivedEdge",
+          "name": "DerivedEdge",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            66,
+            75
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#DerivedMode",
+          "name": "DerivedMode",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            136,
+            136
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#DerivedProvenance",
+          "name": "DerivedProvenance",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            44,
+            44
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+          "name": "DerivedStatus",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            34,
+            34
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#DerivedTaskRef",
+          "name": "DerivedTaskRef",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            88,
+            101
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+          "name": "DriftFinding",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            129,
+            134
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#EdgeRelation",
+          "name": "EdgeRelation",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            54,
+            54
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#KIND_ORDER",
+          "name": "KIND_ORDER",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            179,
+            184
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#MutableEdge",
+          "name": "MutableEdge",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            269,
+            274
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#ObservedFileEdge",
+          "name": "ObservedFileEdge",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            57,
+            64
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#PROVENANCE_RANK",
+          "name": "PROVENANCE_RANK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            207,
+            212
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#ROLLUP_STATUSES",
+          "name": "ROLLUP_STATUSES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            187,
+            194
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#UNMAPPED_ID",
+          "name": "UNMAPPED_ID",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            31,
+            31
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#byNewestTask",
+          "name": "byNewestTask",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            238,
+            242
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#byPath",
+          "name": "byPath",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            177,
+            177
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#byText",
+          "name": "byText",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            174,
+            174
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#compareEdges",
+          "name": "compareEdges",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            278,
+            279
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#compareFileEdges",
+          "name": "compareFileEdges",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            281,
+            282
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#componentRefs",
+          "name": "componentRefs",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            228,
+            235
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
+          "name": "deriveArchitecture",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            288,
+            308
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+          "name": "deriveDeclared",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            311,
+            580
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#deriveInferred",
+          "name": "deriveInferred",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            590,
+            677
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#edgeKey",
+          "name": "edgeKey",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            276,
+            276
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#rollupProvenance",
+          "name": "rollupProvenance",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            215,
+            225
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#rollupStatus",
+          "name": "rollupStatus",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            197,
+            205
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#tasksForComponent",
+          "name": "tasksForComponent",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            257,
+            267
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/derive.ts#toTaskRef",
+          "name": "toTaskRef",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            244,
+            254
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/lib/architecture/glob.ts",
+      "path": "app/src/lib/architecture/glob.ts",
+      "lang": "ts",
+      "hash": "blake3:38985502c29d16fc2153d159e9b8fc2fc6ceca5743a5650659fd823b2349257c",
+      "loc": 227,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/architecture/glob.ts#CompiledPattern",
+          "name": "CompiledPattern",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            71,
+            78
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/glob.ts#OWNERSHIP_PROBE",
+          "name": "OWNERSHIP_PROBE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            214,
+            214
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/glob.ts#claimingPattern",
+          "name": "claimingPattern",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            197,
+            206
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/glob.ts#claimsDirContents",
+          "name": "claimsDirContents",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            223,
+            227
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/glob.ts#claimsPath",
+          "name": "claimsPath",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            179,
+            188
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/glob.ts#compilePattern",
+          "name": "compilePattern",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            80,
+            97
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/glob.ts#matchAnchored",
+          "name": "matchAnchored",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            105,
+            143
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/glob.ts#matchSegment",
+          "name": "matchSegment",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            43,
+            68
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/glob.ts#pathSegments",
+          "name": "pathSegments",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            146,
+            151
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/glob.ts#patternHits",
+          "name": "patternHits",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            154,
+            173
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/lib/architecture/graph.ts",
+      "path": "app/src/lib/architecture/graph.ts",
+      "lang": "ts",
+      "hash": "blake3:59d432799ffa6e6e2e5d16afc92dec3befa42cfd7e8228b503e014f8646ea4cd",
+      "loc": 437,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+          "name": "ArchGraph",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            89,
+            101
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#GRAPH_EDGE_KINDS",
+          "name": "GRAPH_EDGE_KINDS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            23,
+            23
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#GRAPH_PATH",
+          "name": "GRAPH_PATH",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            20,
+            20
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#GraphEdge",
+          "name": "GraphEdge",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            62,
+            71
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#GraphEdgeKind",
+          "name": "GraphEdgeKind",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            24,
+            24
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#GraphFile",
+          "name": "GraphFile",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            37,
+            45
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#GraphIssue",
+          "name": "GraphIssue",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            109,
+            115
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#GraphPackage",
+          "name": "GraphPackage",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            47,
+            60
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#GraphParseResult",
+          "name": "GraphParseResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            117,
+            121
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#GraphStats",
+          "name": "GraphStats",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            80,
+            87
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#GraphSymbol",
+          "name": "GraphSymbol",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            26,
+            35
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#GraphUnresolved",
+          "name": "GraphUnresolved",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            73,
+            77
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#isFiniteNumber",
+          "name": "isFiniteNumber",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            128,
+            129
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#isRecord",
+          "name": "isRecord",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            123,
+            124
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#isRepoRelativePath",
+          "name": "isRepoRelativePath",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            142,
+            146
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#isString",
+          "name": "isString",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            126,
+            126
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#own",
+          "name": "own",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            135,
+            136
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#parseGraph",
+          "name": "parseGraph",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            152,
+            162
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+          "name": "parseGraphValue",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            164,
+            437
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/graph.ts#stringArray",
+          "name": "stringArray",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            138,
+            139
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/src/lib/board-model.ts",
       "path": "app/src/lib/board-model.ts",
       "lang": "ts",
@@ -1163,6 +1800,211 @@
       "symbols": []
     },
     {
+      "id": "f:app/test/architecture-derive.test.ts",
+      "path": "app/test/architecture-derive.test.ts",
+      "lang": "ts",
+      "hash": "blake3:2de244e3b63b67dba9829a70bc85121c270b70756cbb874d080c4f5b2b7e3af3",
+      "loc": 721,
+      "symbols": [
+        {
+          "id": "s:app/test/architecture-derive.test.ts#ComponentSpec",
+          "name": "ComponentSpec",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            25,
+            32
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-derive.test.ts#GraphFileSpec",
+          "name": "GraphFileSpec",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            99,
+            103
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-derive.test.ts#TaskSpec",
+          "name": "TaskSpec",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            65,
+            71
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-derive.test.ts#componentFile",
+          "name": "componentFile",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            34,
+            52
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-derive.test.ts#componentsOf",
+          "name": "componentsOf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            56,
+            63
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-derive.test.ts#edgeOf",
+          "name": "edgeOf",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            136,
+            137
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-derive.test.ts#graphOf",
+          "name": "graphOf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            105,
+            134
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-derive.test.ts#taskCounter",
+          "name": "taskCounter",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            73,
+            73
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-derive.test.ts#taskOf",
+          "name": "taskOf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            75,
+            97
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/architecture-dogfood.test.ts",
+      "path": "app/test/architecture-dogfood.test.ts",
+      "lang": "ts",
+      "hash": "blake3:51791fd0414655f2f0002edafb04341efd349597b5e065ec513617125003dbb2",
+      "loc": 284,
+      "symbols": [
+        {
+          "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
+          "name": "LIB_PARSER",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            77,
+            77
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-dogfood.test.ts#PARSER_PKG",
+          "name": "PARSER_PKG",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            76,
+            76
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-dogfood.test.ts#ROOT",
+          "name": "ROOT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            42,
+            42
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-dogfood.test.ts#docsFiles",
+          "name": "docsFiles",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            48,
+            63
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-dogfood.test.ts#liveModel",
+          "name": "liveModel",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            65,
+            74
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-dogfood.test.ts#read",
+          "name": "read",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            44,
+            46
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/architecture-glob.test.ts",
+      "path": "app/test/architecture-glob.test.ts",
+      "lang": "ts",
+      "hash": "blake3:6d00fab82bdc3b0bdc3c3aee6d23c4ed24aa77f2b2c74bfc6fa39c4ebdf48283",
+      "loc": 196,
+      "symbols": []
+    },
+    {
+      "id": "f:app/test/architecture-graph.test.ts",
+      "path": "app/test/architecture-graph.test.ts",
+      "lang": "ts",
+      "hash": "blake3:c547b59d84bcb012c2b915a75e64092544e9955562efa34f5dc85c1c993af83e",
+      "loc": 267,
+      "symbols": [
+        {
+          "id": "s:app/test/architecture-graph.test.ts#baseGraph",
+          "name": "baseGraph",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            10,
+            39
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-graph.test.ts#parse",
+          "name": "parse",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            41,
+            41
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/board-truth.test.tsx",
       "path": "app/test/board-truth.test.tsx",
       "lang": "ts",
@@ -1417,6 +2259,14 @@
           ]
         }
       ]
+    },
+    {
+      "id": "f:app/test/node-builtins.d.ts",
+      "path": "app/test/node-builtins.d.ts",
+      "lang": "ts",
+      "hash": "blake3:e8171663ef4e6c738a24e8bd1c63a19081a84ba6343e765d1ad959848c2cbb3a",
+      "loc": 25,
+      "symbols": []
     },
     {
       "id": "f:app/test/panel-dismissal.test.ts",
@@ -3224,6 +4074,38 @@
       ]
     },
     {
+      "from": "f:app/src/lib/architecture/derive.ts",
+      "to": "f:app/src/lib/architecture/glob.ts",
+      "kind": "import",
+      "symbols": [
+        "claimingPattern",
+        "claimsDirContents",
+        "claimsPath"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/architecture/derive.ts",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "ArchGraph"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/architecture/derive.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ComponentRecord",
+        "ComponentStatus",
+        "ParseIssue",
+        "ReviewMode",
+        "TaskRecord",
+        "TaskStatus",
+        "compareComponentIds"
+      ]
+    },
+    {
       "from": "f:app/src/lib/board-model.ts",
       "to": "f:app/src/lib/verdicts.ts",
       "kind": "import",
@@ -3338,6 +4220,152 @@
       "kind": "import",
       "symbols": [
         "default"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-derive.test.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedArchitecture",
+        "DerivedTaskRef",
+        "UNMAPPED_ID",
+        "deriveArchitecture",
+        "rollupProvenance",
+        "rollupStatus"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-derive.test.ts",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "ArchGraph",
+        "parseGraph"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-derive.test.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ComponentRecord",
+        "TaskRecord",
+        "parseComponentsFromFiles",
+        "parseTaskFile"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-derive.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-dogfood.test.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "UNMAPPED_ID",
+        "deriveArchitecture"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-dogfood.test.ts",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "GRAPH_PATH",
+        "parseGraph"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-dogfood.test.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "FileEntry",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-dogfood.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-dogfood.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "resolve"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-dogfood.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-dogfood.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-glob.test.ts",
+      "to": "f:app/src/lib/architecture/glob.ts",
+      "kind": "import",
+      "symbols": [
+        "claimingPattern",
+        "claimsDirContents",
+        "claimsPath",
+        "matchSegment"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-glob.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-graph.test.ts",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "GraphIssue",
+        "parseGraph"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-graph.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
       ]
     },
     {
@@ -4608,6 +5636,582 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/architecture/derive.ts#DeriveInputs",
+      "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedMode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "to": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponentKind",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedProvenance",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedTaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#DerivedEdge",
+      "to": "s:app/src/lib/architecture/derive.ts#EdgeRelation",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#DerivedEdge",
+      "to": "s:app/src/lib/architecture/derive.ts#ObservedFileEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+      "to": "s:app/src/lib/architecture/derive.ts#ObservedFileEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#KIND_ORDER",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponentKind",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#MutableEdge",
+      "to": "s:app/src/lib/architecture/derive.ts#ObservedFileEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#PROVENANCE_RANK",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedProvenance",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#byNewestTask",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedTaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#byNewestTask",
+      "to": "s:app/src/lib/architecture/derive.ts#byText",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#compareEdges",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#compareFileEdges",
+      "to": "s:app/src/lib/architecture/derive.ts#ObservedFileEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#compareFileEdges",
+      "to": "s:app/src/lib/architecture/derive.ts#byPath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
+      "to": "s:app/src/lib/architecture/derive.ts#DeriveInputs",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
+      "to": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
+      "to": "s:app/src/lib/architecture/derive.ts#deriveInferred",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#EdgeRelation",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#MutableEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#ObservedFileEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#edgeKey",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#rollupProvenance",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#rollupStatus",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/derive.ts#tasksForComponent",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/glob.ts#claimingPattern",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/glob.ts#claimsDirContents",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/glob.ts#claimsPath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveDeclared",
+      "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveInferred",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveInferred",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveInferred",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveInferred",
+      "to": "s:app/src/lib/architecture/derive.ts#MutableEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveInferred",
+      "to": "s:app/src/lib/architecture/derive.ts#ObservedFileEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveInferred",
+      "to": "s:app/src/lib/architecture/derive.ts#byPath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveInferred",
+      "to": "s:app/src/lib/architecture/derive.ts#edgeKey",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#deriveInferred",
+      "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#rollupProvenance",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedProvenance",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#rollupProvenance",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedTaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#rollupStatus",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#tasksForComponent",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedTaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#tasksForComponent",
+      "to": "s:app/src/lib/architecture/derive.ts#componentRefs",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#tasksForComponent",
+      "to": "s:app/src/lib/architecture/derive.ts#toTaskRef",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/derive.ts#toTaskRef",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedTaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#claimingPattern",
+      "to": "s:app/src/lib/architecture/glob.ts#compilePattern",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#claimingPattern",
+      "to": "s:app/src/lib/architecture/glob.ts#pathSegments",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#claimingPattern",
+      "to": "s:app/src/lib/architecture/glob.ts#patternHits",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#claimsDirContents",
+      "to": "s:app/src/lib/architecture/glob.ts#claimsPath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#claimsDirContents",
+      "to": "s:app/src/lib/architecture/glob.ts#pathSegments",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#claimsPath",
+      "to": "s:app/src/lib/architecture/glob.ts#compilePattern",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#claimsPath",
+      "to": "s:app/src/lib/architecture/glob.ts#pathSegments",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#claimsPath",
+      "to": "s:app/src/lib/architecture/glob.ts#patternHits",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#compilePattern",
+      "to": "s:app/src/lib/architecture/glob.ts#CompiledPattern",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#matchAnchored",
+      "to": "s:app/src/lib/architecture/glob.ts#matchSegment",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#patternHits",
+      "to": "s:app/src/lib/architecture/glob.ts#CompiledPattern",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#patternHits",
+      "to": "s:app/src/lib/architecture/glob.ts#matchAnchored",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/glob.ts#patternHits",
+      "to": "s:app/src/lib/architecture/glob.ts#matchSegment",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphFile",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphPackage",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphStats",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphUnresolved",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#GraphEdge",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphEdgeKind",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#GraphFile",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphSymbol",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#GraphParseResult",
+      "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#GraphParseResult",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraph",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraph",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraph",
+      "to": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphEdgeKind",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphFile",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphPackage",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphStats",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphSymbol",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphUnresolved",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#isFiniteNumber",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#isRecord",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#isRepoRelativePath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#isString",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#own",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/graph.ts#parseGraphValue",
+      "to": "s:app/src/lib/architecture/graph.ts#stringArray",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/board-model.ts#BoardCard",
       "to": "s:app/src/lib/board-model.ts#ModelBadgeInfo",
       "kind": "type_ref",
@@ -5084,6 +6688,90 @@
     {
       "from": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
       "to": "s:app/src/lib/watcher-store.ts#applyProjectStatus",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-derive.test.ts#componentFile",
+      "to": "s:app/test/architecture-derive.test.ts#ComponentSpec",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-derive.test.ts#componentsOf",
+      "to": "s:app/test/architecture-derive.test.ts#ComponentSpec",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-derive.test.ts#componentsOf",
+      "to": "s:app/test/architecture-derive.test.ts#componentFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-derive.test.ts#edgeOf",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-derive.test.ts#graphOf",
+      "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-derive.test.ts#graphOf",
+      "to": "s:app/src/lib/architecture/graph.ts#parseGraph",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-derive.test.ts#graphOf",
+      "to": "s:app/test/architecture-derive.test.ts#GraphFileSpec",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-derive.test.ts#taskOf",
+      "to": "s:app/test/architecture-derive.test.ts#TaskSpec",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-dogfood.test.ts#docsFiles",
+      "to": "s:app/test/architecture-dogfood.test.ts#read",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-dogfood.test.ts#liveModel",
+      "to": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-dogfood.test.ts#liveModel",
+      "to": "s:app/src/lib/architecture/graph.ts#parseGraph",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-dogfood.test.ts#liveModel",
+      "to": "s:app/test/architecture-dogfood.test.ts#docsFiles",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-dogfood.test.ts#liveModel",
+      "to": "s:app/test/architecture-dogfood.test.ts#read",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/architecture-graph.test.ts#parse",
+      "to": "s:app/src/lib/architecture/graph.ts#parseGraph",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -5858,8 +7546,8 @@
     }
   ],
   "stats": {
-    "files": 51,
-    "symbols": 230,
-    "edges": 407
+    "files": 59,
+    "symbols": 308,
+    "edges": 535
   }
 }

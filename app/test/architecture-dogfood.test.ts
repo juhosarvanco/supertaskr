@@ -22,15 +22,22 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 // deliberately NOT asserted here (they live in the unit tables; the live
 // values are recorded in T-011's implementation notes).
 //
-// KNOWN POST-MERGE DELTA (for the integrator regenerating the graph at
-// the T-011 merge): this branch's own files land in the regenerated
-// graph. app/test/** maps to C-05; app/src/lib/architecture/** is claimed
-// by no component until the architect settles T-011-s1, so expect:
-// D2:unmapped gains the three engine files, and two new D1-adjacent
-// undeclared edges appear (C-05 → unmapped from these tests' imports,
-// unmapped → C-06 from the engine importing @nputer/parser). The exact
-// post-regen expectation table is written out in T-011's implementation
-// notes — apply it mechanically if this test goes red at the merge regen.
+// RECONCILED AT THE T-011 MERGE (2026-08-15, integrator — third
+// exercise of the T-009-s1 practice): the regenerated 59-file graph
+// includes both this task's own files and T-017's. app/test/** maps to
+// C-05 (now 21 files, board-truth.test.tsx included); D2 exists and
+// carries FOUR unclaimed files — the three engine files (claimed by no
+// component until the architect settles T-011-s1: C-12 declares
+// app/src/architecture/**, the engine lives in app/src/lib/
+// architecture/**) plus T-017's app/src/lib/verdicts.ts (no registry
+// literal claims it — C-05 claims only utils.ts under app/src/lib/).
+// The unmapped node draws four undeclared edges: C-05→unmapped (7: the
+// four architecture tests importing the engine + detail-presentation
+// importing verdicts), C-08→unmapped (board-model → verdicts),
+// C-09→unmapped (TaskDetailPanel → verdicts), unmapped→C-06 (derive.ts
+// → @nputer/parser). These pins are honest current truth, not targets:
+// T-012's dispatch carries the registry amendment decision (T-011-s1)
+// that should drain D2 back to empty.
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
@@ -95,18 +102,27 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("every indexed file maps; nothing is unclaimed", () => {
-    expect(derived.fileComponent.size).toBe(49);
-    expect(derived.unmappedFiles).toEqual([]);
-    expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
+  it("59 files map except the four known-unclaimed (engine trio + verdicts.ts)", () => {
+    expect(derived.fileComponent.size).toBe(59);
+    expect(derived.unmappedFiles).toEqual([
+      "app/src/lib/architecture/derive.ts",
+      "app/src/lib/architecture/glob.ts",
+      "app/src/lib/architecture/graph.ts",
+      "app/src/lib/verdicts.ts",
+    ]);
+    const unmappedNode = derived.components.find((c) => c.id === UNMAPPED_ID);
+    expect(unmappedNode?.kind).toBe("unmapped");
+    expect(unmappedNode?.hasDrift).toBe(true);
+    expect(unmappedNode?.files).toEqual(derived.unmappedFiles);
     const counts = new Map<string, number>();
     for (const id of derived.fileComponent.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
     expect([...counts.entries()].sort()).toEqual([
-      ["C-05", 15],
+      ["C-05", 21],
       ["C-06", 19],
       ["C-08", 10],
       ["C-09", 3],
       ["C-10", 2],
+      ["unmapped", 4],
     ]);
   });
 
@@ -114,7 +130,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: four undeclared dependencies, four declared-only components", () => {
+  it("THE FINDINGS: four undeclared dependencies, one unmapped-files group, four declared-only components", () => {
     expect(derived.findings).toEqual([
       {
         rule: "D1",
@@ -122,6 +138,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         from: "C-05",
         to: "C-06",
         fileEdges: [
+          { from: "app/test/architecture-derive.test.ts", to: LIB_PARSER, package: PARSER_PKG },
+          { from: "app/test/architecture-dogfood.test.ts", to: LIB_PARSER, package: PARSER_PKG },
+          { from: "app/test/board-truth.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/select-board.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/select-task-detail.test.ts", to: LIB_PARSER, package: PARSER_PKG },
         ],
@@ -157,6 +176,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           { from: "app/src/components/board/TaskDetailPanel.tsx", to: "app/src/lib/utils.ts" },
         ],
       },
+      {
+        rule: "D2",
+        id: "D2:unmapped",
+        files: [
+          "app/src/lib/architecture/derive.ts",
+          "app/src/lib/architecture/glob.ts",
+          "app/src/lib/architecture/graph.ts",
+          "app/src/lib/verdicts.ts",
+        ],
+      },
       { rule: "D3", id: "D3:C-01", component: "C-01" },
       { rule: "D3", id: "D3:C-07", component: "C-07" },
       { rule: "D3", id: "D3:C-11", component: "C-11" },
@@ -164,28 +193,32 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
   });
 
-  it("the full relation table: 7 confirmed, 4 undeclared, 9 planned", () => {
+  it("the full relation table: 7 confirmed, 8 undeclared, 9 planned", () => {
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
-      ["C-05", "C-06", "undeclared", 2],
-      ["C-05", "C-08", "confirmed", 3],
+      ["C-05", "C-06", "undeclared", 5],
+      ["C-05", "C-08", "confirmed", 4],
       ["C-05", "C-09", "undeclared", 3],
       ["C-05", "C-10", "confirmed", 5],
       ["C-05", "C-11", "planned", 0],
+      ["C-05", "unmapped", "undeclared", 7],
       ["C-06", "C-01", "planned", 0],
       ["C-08", "C-05", "undeclared", 3],
       ["C-08", "C-06", "confirmed", 4],
-      ["C-08", "C-09", "confirmed", 5],
+      ["C-08", "C-09", "confirmed", 6],
       ["C-08", "C-11", "planned", 0],
+      ["C-08", "unmapped", "undeclared", 1],
       ["C-09", "C-05", "undeclared", 1],
       ["C-09", "C-06", "confirmed", 2],
       ["C-09", "C-08", "confirmed", 3],
       ["C-09", "C-11", "planned", 0],
+      ["C-09", "unmapped", "undeclared", 1],
       ["C-10", "C-06", "confirmed", 1],
       ["C-12", "C-06", "planned", 0],
       ["C-12", "C-07", "planned", 0],
       ["C-12", "C-10", "planned", 0],
       ["C-12", "C-11", "planned", 0],
+      ["unmapped", "C-06", "undeclared", 1],
     ]);
   });
 
@@ -221,8 +254,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
 
   it("drift flags land on the right nodes", () => {
     const drift = derived.components.filter((c) => c.hasDrift).map((c) => c.id);
-    // D1 sources: C-05, C-08, C-09; D3: C-01, C-07, C-11, C-12.
-    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11", "C-12"]);
+    // D1 sources: C-05, C-08, C-09; D3: C-01, C-07, C-11, C-12; D2: unmapped.
+    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11", "C-12", "unmapped"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
     expect(declaredOnly).toEqual(["C-01", "C-07", "C-11", "C-12"]);
   });
