@@ -276,6 +276,45 @@ describe("selectTaskDetail — suggestions (minimal ghost variant)", () => {
     expect(detail?.id).toBeUndefined();
   });
 
+  it("T-019: the context paragraph before any heading reaches the detail as `preamble`, verbatim", () => {
+    const CONTEXT =
+      "Re-parsing the whole tree on every save is wasteful;\na content-hash cache would make the watcher loop cheap.";
+    const model = withRoadmap([
+      [path("T-004-s9-ghost"), src(
+        [
+          ["title", "A ghost of an idea"],
+          ["status", "suggested"],
+          ["suggested_by", "verifier"],
+        ],
+        `\n${CONTEXT}\n`,
+      )],
+    ]);
+    const detail = selectTaskDetail(model, { kind: "file", file: path("T-004-s9-ghost") });
+    expect(detail?.preamble).toBe(CONTEXT);
+  });
+
+  it("T-019: a body-less suggestion has a visibly-empty preamble (undefined), not an error", () => {
+    const model = withRoadmap([[path("T-004-s9-ghost"), suggestion]]);
+    const detail = selectTaskDetail(model, { kind: "file", file: path("T-004-s9-ghost") });
+    expect(detail?.preamble).toBeUndefined();
+  });
+
+  it("T-019 criterion 4: a record whose issues include cross-reference findings still derives a detail", () => {
+    // blocked_by → missing task, feature → missing backbone id: the model
+    // carries both findings AND the record — flagging, not hiding.
+    const model = withRoadmap([
+      [path("T-010"), task("T-010", [["blocked_by", "[T-777]"], ["feature", "F-99"]])],
+    ]);
+    expect(model.issues).toEqual([
+      expect.objectContaining({ kind: "dangling-reference", field: "blocked_by", id: "T-777" }),
+      expect.objectContaining({ kind: "dangling-reference", field: "feature", id: "F-99" }),
+    ]);
+    const detail = selectTaskDetail(model, byId("T-010"));
+    expect(detail).toBeDefined();
+    expect(detail?.feature).toBe("F-99"); // preserved on the record
+    expect(detail?.blockedBy).toEqual([{ id: "T-777", resolved: false }]);
+  });
+
   it("cardRef prefers the id when the card has one", () => {
     expect(cardRef({ id: "T-010", file: path("T-010") })).toEqual({ kind: "id", id: "T-010" });
   });

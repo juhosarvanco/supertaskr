@@ -52,8 +52,16 @@ export interface ModelSession {
   policy: SessionPolicy;
 }
 
-/** The three body sections of a task file. Absent heading = absent key. */
+/** The body sections of a task file. Absent heading = absent key. */
 export interface TaskSections {
+  /**
+   * Body text BEFORE the first `##` heading (T-019, absorbing T-002-s2):
+   * the context paragraph a suggestion's entire content lives in
+   * (TASK-FORMAT.md: "title, one paragraph of context"). Preserved for
+   * every status, trimmed; absent when there is no such text. Optional so
+   * pre-T-019 hand-built sections stay valid (the T-008 precedent).
+   */
+  preamble?: string;
   /** Raw markdown under `## Acceptance criteria` (EARS lines). */
   acceptanceCriteria?: string;
   /** Raw markdown under `## Implementation notes` (executor appends). */
@@ -205,10 +213,20 @@ export type ParseIssue =
   | { kind: 'io-error'; file: string; message: string }
   /**
    * A reference field names an id no parsed record declares (e.g. a
-   * component's `depends_on` entry). The edge is preserved on the record
-   * for placeholder rendering, never dropped.
+   * component's `depends_on` entry, a task's `blocked_by` entry, or a
+   * task's `feature` against the roadmap backbone — the latter two from
+   * validateProject, T-019). The reference is preserved on the record
+   * (placeholder rendering / unresolved chips), never dropped.
    */
   | { kind: 'dangling-reference'; file: string; field: string; id: string; message: string }
+  /**
+   * A task's declared `id` disagrees with the id its filename encodes
+   * (`docs/tasks/T-NNN[-sN]-slug.md` — validateProject, T-019). `id` is
+   * the frontmatter value, `expected` the filename-derived one. The
+   * record keeps its declared id: frontmatter is the model's truth, the
+   * filename the convention being violated — flagging, not hiding.
+   */
+  | { kind: 'id-mismatch'; file: string; id: string; expected: string; message: string }
   /**
    * Two components' `paths` provably claim the same files; first by
    * component id order (`ids[0]`) wins file mapping. `ids`/`files`/

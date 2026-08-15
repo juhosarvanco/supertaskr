@@ -73,6 +73,10 @@ export interface TaskDetail {
   feature?: string;
   priority?: number;
   suggestedBy?: string;
+  /** Body text before the first heading (T-019, absorbing T-002-s2) —
+   * a suggestion's context paragraph is its ENTIRE content, so the
+   * ghost panel variant renders this; undefined when absent or empty. */
+  preamble?: string;
   /** Raw markdown under `## Acceptance criteria`; undefined when absent
    * or empty. */
   acceptanceCriteria?: string;
@@ -186,6 +190,7 @@ export function selectTaskDetail(model: ProjectParseResult, ref: TaskRef): TaskD
     feature: task.feature,
     priority: task.priority,
     suggestedBy: task.suggestedBy,
+    preamble: section(task.sections.preamble),
     acceptanceCriteria: section(task.sections.acceptanceCriteria),
     implementationNotes: section(task.sections.implementationNotes),
     verdicts: section(task.sections.verdicts),

@@ -92,12 +92,17 @@ const FILES: Array<{ path: string; content: string }> = [
   },
   {
     path: "docs/tasks/T-100-s1-ghost.md",
-    content: src([
-      ["title", PATHOLOGICAL],
-      ["feature", "F-01"],
-      ["status", "suggested"],
-      ["suggested_by", "verifier"],
-    ]),
+    // T-019: a suggestion's entire content is its context paragraph (the
+    // preamble before any heading) — the ghost panel variant renders it.
+    content: src(
+      [
+        ["title", PATHOLOGICAL],
+        ["feature", "F-01"],
+        ["status", "suggested"],
+        ["suggested_by", "verifier"],
+      ],
+      `\nGhost context: one paragraph, kept verbatim.\nSecond line ${PATHOLOGICAL}\n`,
+    ),
   },
   {
     path: "docs/tasks/T-140-parked.md",
@@ -296,6 +301,56 @@ describe("implementation-notes disclosure in the panel (T-005-s2)", () => {
     expect(section).not.toBeNull();
     expect(section?.querySelector('[data-testid="detail-empty"]')).not.toBeNull();
     expect(q('[data-testid="detail-notes-toggle"]')).toBeNull();
+  });
+});
+
+describe("ghost panel context (T-019, absorbing T-002-s2)", () => {
+  it("opening a suggestion renders its context paragraph — the panel is no longer empty", () => {
+    render(<Board model={model} />);
+    press(q('[data-testid="ghost-card"] button') as Element);
+    expect(panel()).not.toBeNull();
+    expect(panel()?.getAttribute("data-ref-kind")).toBe("file"); // id-less ghost opens by file
+
+    const section = q('[data-testid="detail-context"]');
+    expect(section).not.toBeNull();
+    const text = q('[data-testid="detail-context-text"]') as HTMLElement;
+    // VERBATIM, line breaks preserved by the whitespace class contract.
+    expect(text.textContent).toBe(
+      `Ghost context: one paragraph, kept verbatim.\nSecond line ${PATHOLOGICAL}`,
+    );
+    expect(text.classList.contains("whitespace-pre-wrap")).toBe(true);
+    // T-004-s1 containment: the unbroken run must not widen the panel.
+    expect(text.classList.contains("break-words")).toBe(true);
+    expect(text.classList.contains("min-w-0")).toBe(true);
+  });
+
+  it("the context section is the ghost variant's — a non-suggested panel does not grow one", () => {
+    render(<Board model={model} />);
+    press(q('[data-testid="task-card"][data-task-id="T-102"] button') as Element);
+    expect(panel()).not.toBeNull();
+    expect(q('[data-testid="detail-context"]')).toBeNull();
+  });
+
+  it("a body-less suggestion shows the context section visibly empty, never an error", () => {
+    const files = FILES.map((f) =>
+      f.path === "docs/tasks/T-100-s1-ghost.md"
+        ? {
+            path: f.path,
+            content: src([
+              ["title", "Bare ghost"],
+              ["feature", "F-01"],
+              ["status", "suggested"],
+              ["suggested_by", "verifier"],
+            ]),
+          }
+        : f,
+    );
+    render(<Board model={parseProjectFromFiles(files)} />);
+    press(q('[data-testid="ghost-card"] button') as Element);
+    const section = q('[data-testid="detail-context"]');
+    expect(section).not.toBeNull();
+    expect(section?.querySelector('[data-testid="detail-empty"]')).not.toBeNull();
+    expect(q('[data-testid="detail-context-text"]')).toBeNull();
   });
 });
 

@@ -44,9 +44,12 @@ function isNonEmptyString(value: unknown): value is string {
 
 /**
  * Split a task body into its three known `##` sections
- * (Acceptance criteria / Implementation notes / Verdicts).
- * Unknown `##` headings are ignored; `###` and deeper stay inside their
- * section's content. A heading that never appears yields no key.
+ * (Acceptance criteria / Implementation notes / Verdicts), plus the
+ * PREAMBLE: body text before the first `##` heading of any kind (T-019,
+ * absorbing T-002-s2 — a suggestion's context paragraph is its entire
+ * content, so a body with no headings at all is all preamble).
+ * Unknown `##` headings are still ignored; `###` and deeper stay inside
+ * their section's content. A heading that never appears yields no key.
  */
 export function splitSections(body: string): TaskSections {
   // Null prototype: headings are untrusted lookup keys, and on a plain {}
@@ -60,12 +63,17 @@ export function splitSections(body: string): TaskSections {
   });
   const sections: TaskSections = {};
   const lines = body.split(/\r?\n/);
-  let current: keyof TaskSections | undefined;
+  // Before any `##` heading is seen, lines accumulate as the preamble
+  // (`current` starts there); after one, headingless stretches under
+  // UNKNOWN headings stay dropped (current = undefined), as before.
+  let sawHeading = false;
+  let current: keyof TaskSections | undefined = 'preamble';
   let buffer: string[] = [];
 
   const flush = () => {
     if (current === undefined) return;
     const text = buffer.join('\n').trim();
+    if (current === 'preamble' && text === '') return; // no empty-string preamble
     sections[current] =
       sections[current] === undefined || sections[current] === ''
         ? text
@@ -76,11 +84,12 @@ export function splitSections(body: string): TaskSections {
     const heading = /^##\s+(.+?)\s*$/.exec(line);
     if (heading && heading[1] !== undefined) {
       flush();
+      sawHeading = true;
       current = KEYS[heading[1].toLowerCase().replace(/\s+/g, ' ')];
       buffer = [];
       continue;
     }
-    if (current !== undefined) buffer.push(line);
+    if (!sawHeading || current !== undefined) buffer.push(line);
   }
   flush();
   return sections;
@@ -154,11 +163,18 @@ export function parseTaskFile(content: string, file: string): TaskParseResult {
   }
 
   // -- id: required except on suggestions (renumbered at triage).
+  //    Format (T-019): the T-NNN / T-NNN-sN family, same first-match
+  //    ordering discipline as the feature rule below. A format-invalid id
+  //    stays off the record, so — like an absent one — the identity gate
+  //    withholds the card for statuses that require an id (the loud-trap
+  //    design; consistent with the pinned `id: 007` YAML-number probe).
   let id: string | undefined;
   if (isAbsent(data.id)) {
     if (statusKnown && !isSuggested) missing('id');
   } else if (!isNonEmptyString(data.id)) {
     invalid('id', `must be a non-empty string, got ${JSON.stringify(data.id)}`);
+  } else if (!/^T-\d+(?:-s\d+)?$/.test(data.id.trim())) {
+    invalid('id', `must be a task id like T-016 or T-016-s2, got ${JSON.stringify(data.id)}`);
   } else {
     id = data.id.trim();
   }
