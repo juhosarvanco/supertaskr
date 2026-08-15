@@ -144,3 +144,100 @@ construction, zero src-tauri diff). No screen control, no port 1420.
   their locations are decided).
 
 ## Verdicts
+
+2026-08-15 — claude-fable-5 @fresh (verifier, same-model as builder): APPROVED
+
+Suites reproduced from fresh `npm ci` installs, ADR-011 order:
+lib/parser **125/125** (arithmetic + diff confirm 78 pre-existing
+untouched — smoke.test.ts is pure addition — + 46 component.test.ts
++ 1 smoke) + `tsc --noEmit` clean + build clean; app `npm ci` +
+`npm run build` clean + **94/94**. Boundary exact: diff (merge-base
+5483a98, `main...HEAD`) = lib/parser/** + docs/architecture/
+components/** + ONE link paragraph in ARCHITECTURE.md + docs/tasks/
+T-008-*; app/ has ZERO diff incl. src-tauri (cargo untouched by
+construction); lockfiles/manifests zero-diff (no new dependencies).
+Main advanced during the build (150b227, 991b609, 185d26c — docs-only);
+overlap of the two file sets computed empty, so merge-base semantics
+are safe. Headless throughout; port 1420 never touched.
+
+Probed beyond the executor's tests (35 own probe groups against the
+BUILT dist, scratch scripts outside the repo, removed after the run):
+identity-gate edges (C-1/C05/c-05/C-05x/numeric-8 rejected with
+invalid-field naming `id`, no record; C-00/C-100/C-99999 pass; ids
+trimmed), status vocabulary (all seven accepted; suggested/parked/
+Done/junk → invalid-field + fallback auto, record kept), defaults
+(depends_on/decisions/touch_slugs `[]`, layer off, responsibility
+trimmed verbatim), duplicate ids (both kept; triple → two issues,
+files pairs correct), dangling depends_on (`dangling-reference`
+{file, field, id}; edge PRESERVED — incl. a reference to a file
+that failed identity), paths (missing → missing-field with record;
+`[]`/scalar → invalid-field), duplicate YAML keys → collected
+yaml-error (no throw), malformed YAML mid-directory on real disk →
+rest parses, unreadable file → io-error naming it while siblings
+parse, permutation determinism (deep-equal, issues included).
+
+ADR-009 verified at descriptor level: `__proto__:` frontmatter key
+lands as an OWN enumerable property of a NULL-PROTOTYPE `extra`
+(Object.getPrototypeOf(extra) === null), nothing inherited, global
+prototypes unpolluted, JSON/entries visible; constructor/prototype/
+toString/hasOwnProperty/valueOf keys own data; hostile body headings
+verbatim prose; hostile path names inert Map keys.
+
+**Honesty-pin ruling: HOLDS.** The conservative contract is exactly
+as stated and my adversarial sweep could not break it either way:
+identical normalized patterns and `P/**`⊃`P/…` flagged (both
+directions, `./`/`/` normalization, declared text reported, ids/
+files/patterns index-aligned, ids[0] = numeric-order winner — C-09
+beats C-100, comparator exported for T-011); NO false positive on
+disjoint or prefix-trap pairs (`app/**` vs `apple/x`, `lib/parser/**`
+vs `lib/parse/**`); `dir` vs `dir/**`, `*.ts` forms and bare `app`
+correctly NOT guessed; negations never participate (either side,
+even identical negations); same-id pairs stay duplicate-id only. No
+glob matcher was forked in: the pure closure's ONLY external is
+`yaml`. The T-011 handoff (file-level detection from derivation,
+same `ambiguous-mapping` issue kind) is recorded in types.ts, in
+component.ts and in this file. The criterion's WHEN-obligation is
+met under the dispatch-sanctioned conservative reading; the
+statement is true and the tests pin it. One nuance for the record:
+identical declared territory warns even when the globs currently
+match zero files — that is intent-level ambiguity and consistent
+with a WHEN (not ONLY-WHEN) obligation.
+
+Pure-entry webview proof, statically: import-closure walk of
+dist/pure.js = 8 files (component/files/frontmatter/model-session/
+pure/roadmap/task/types), no `node:` builtin reachable in code,
+`node:fs` in comments only, project.js unreachable (control: the
+node barrel DOES reach it). Barrel surface as specified — pure
+exports parseComponentFile/parseComponentsFromFiles (+ comparator,
+predicate, COMPONENT_STATUSES), parseComponentDirectory node-only;
+pure and node deep-equal on identical inputs.
+
+Dogfood registry audit: 9 files parse **0 issues** through the built
+dist (independent run + whole-project parse + pure-vs-node cross-
+check); ids C-01/05/06/07 keep their ARCHITECTURE meanings, C-08…C-12
+subdivide the app, C-02/03/04 slots left reserved. C-05's umbrella
+verified non-overlapping by an independent reimplementation of the
+textual check AND real-tree inspection of the literals. C-07's path
+is the ADR-015 location; touch_slugs match the ARCHITECTURE mapping
+(C-01 `[]` is correct — no slug maps to method/). depends_on
+spot-checked against real imports — 8/8 declared edges real, incl.
+BOTH directions of the C-08↔C-09 cycle (Board.tsx imports
+TaskDetailPanel; TaskDetailPanel imports TaskCard's exported classes
++ badges/ReviewBadge) and C-05's omission of C-06 verified honest
+(no C-05-owned file imports @nputer/parser; only child components'
+files do). **C-02/03/04 omission ruling: legitimate, not a criterion
+gap** — the criterion asks ≥5 in the shared namespace (met at 9),
+not table coverage; `paths` is required non-empty by the format,
+no doc decides those code locations, and inventing globs would
+breach ADR-004 single-writer. T-008-s1 is the right channel.
+
+Security sweep: clean. No new dependencies (lockfiles zero-diff),
+no eval/exec/dynamic regex (static anchored patterns only), no
+path-traversal surface beyond the caller-provided dir contract,
+collect-don't-throw holds on every hostile input tried, ADR-009
+descriptor-level clean, no secrets in the diff.
+
+Non-failures filed: T-008-s2 (undeclared C-08/C-09 → C-05 reality
+edges via the shared `cn` primitive — decide before T-011 lights
+them amber), T-008-s3 (numerically-equal id aliases C-05/C-005 pass
+the identity gate as distinct components — cheap set-level warning).
