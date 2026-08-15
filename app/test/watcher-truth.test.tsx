@@ -154,11 +154,28 @@ describe("skipped files in the chip family (T-018 criterion 2)", () => {
       "docs/tasks/T-702-huge.md: skipped — over 1 MiB",
     );
   });
+
+  it("a clipped skip report still counts honestly on the chip", () => {
+    // Rust caps the reported LIST; skippedTotal stays the true count.
+    mountAndApply(
+      payload(BASE_FILES, {
+        skipped: [
+          { path: "docs/notes/big-1.md", reason: "fileCap" },
+          { path: "docs/notes/big-2.md", reason: "fileCap" },
+        ],
+        skippedTotal: 41,
+        truncated: true,
+      }),
+    );
+    const badge = q("[data-testid=skipped-files-badge]")!;
+    expect(badge.textContent).toContain("41 skipped files");
+    expect(badge.getAttribute("title")).toContain("…and 39 more");
+  });
 });
 
 describe("the quiet truncation note (T-018 criterion 3)", () => {
   it("renders in the chip strip when the cap clipped the snapshot, and only then", () => {
-    mountAndApply(payload(BASE_FILES, { truncated: true, skippedTotal: 12 }));
+    mountAndApply(payload(BASE_FILES, { truncated: true }));
     const note = q("[data-testid=docs-truncation-note]")!;
     expect(note.textContent).toBe(`docs truncated · showing first ${BASE_FILES.length} files`);
     // Quiet: muted note in the header strip, not a chip.

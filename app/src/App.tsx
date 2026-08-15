@@ -49,11 +49,22 @@ function ParseErrorBadge({ failures }: { failures: ReturnType<typeof getShellSta
 /** T-018 sibling of the parse-error chip, same family: files the
  * collector could not ship (oversize, non-UTF-8, too deep, over the file
  * cap, unreadable). A skipped record keeps rendering its last valid
- * state below — never a phantom deletion — and the chip says so. */
-function SkippedFilesBadge({ skipped }: { skipped: ReturnType<typeof getShellState>["docs"]["skipped"] }) {
+ * state below — never a phantom deletion — and the chip says so. The
+ * count is the snapshot's honest total: when the Rust report clips at
+ * its cap, the number still tells the truth and the tooltip lists what
+ * was reported. */
+function SkippedFilesBadge({
+  skipped,
+  skippedTotal,
+}: {
+  skipped: ReturnType<typeof getShellState>["docs"]["skipped"];
+  skippedTotal: number;
+}) {
   if (skipped.length === 0) return null;
+  const count = Math.max(skipped.length, skippedTotal);
   const detail = skipped
     .map((s) => `${s.path}: skipped — ${skipReasonPhrase(s.reason)}`)
+    .concat(count > skipped.length ? [`…and ${count - skipped.length} more`] : [])
     .join("\n");
   const lastValid = skipped.some((s) => s.showingLastGood);
   return (
@@ -62,7 +73,7 @@ function SkippedFilesBadge({ skipped }: { skipped: ReturnType<typeof getShellSta
       title={detail}
       className="flex items-center gap-1.75 rounded-md border border-status-rejected-border bg-status-rejected px-2.5 py-1.25 font-mono text-xs text-destructive"
     >
-      {skipped.length} skipped file{skipped.length === 1 ? "" : "s"}
+      {count} skipped file{count === 1 ? "" : "s"}
       {lastValid && <span className="text-status-rejected-foreground">· last valid state</span>}
     </span>
   );
@@ -196,7 +207,7 @@ function App() {
               docs truncated · showing first {fileCount} files
             </span>
           )}
-          <SkippedFilesBadge skipped={skipped} />
+          <SkippedFilesBadge skipped={skipped} skippedTotal={shell.docs.skippedTotal} />
           <ParseErrorBadge failures={failures} />
           {screen.screen === "board" && isTauriRuntime() && (
             <Button
