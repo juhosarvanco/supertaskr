@@ -1,6 +1,8 @@
 import { parseTaskFile } from './task.js';
 import { parseRoadmap } from './roadmap.js';
+import { parseComponentSet } from './component.js';
 import type {
+  ComponentSetResult,
   ParseIssue,
   ProjectParseResult,
   TaskRecord,
@@ -35,6 +37,9 @@ export interface ParseProjectFromFilesOptions {
   tasksDir?: string;
   /** Roadmap path (relative POSIX), default `docs/ROADMAP.md`. */
   roadmapFile?: string;
+  /** Directory (relative POSIX) holding component files, default
+   * `docs/architecture/components`. */
+  componentsDir?: string;
 }
 
 /** Normalize accepted input shapes into a Map (ADR-009: untrusted keys). */
@@ -56,12 +61,52 @@ export function isTaskFilePath(path: string, tasksDir = 'docs/tasks'): boolean {
   return !name.includes('/') && /^T-.*\.md$/.test(name);
 }
 
+/** True when `path` names a component file directly inside `componentsDir`. */
+export function isComponentFilePath(
+  path: string,
+  componentsDir = 'docs/architecture/components',
+): boolean {
+  const prefix = `${componentsDir}/`;
+  if (!path.startsWith(prefix)) return false;
+  const name = path.slice(prefix.length);
+  return !name.includes('/') && /^C-.*\.md$/.test(name);
+}
+
+export interface ParseComponentsFromFilesOptions {
+  /** Directory (relative POSIX) holding component files, default
+   * `docs/architecture/components`. */
+  componentsDir?: string;
+}
+
+/**
+ * Parse every `<componentsDir>/C-*.md` entry of an in-memory file set
+ * into the architecture intent layer (T-008). Pure counterpart of
+ * parseComponentDirectory: same filename filter, same deterministic
+ * ordering, same cross-file rules (duplicate ids, dangling depends_on,
+ * provable paths overlap). An input with no component files yields an
+ * empty result with zero issues — "no architecture declared" is a legal
+ * state, not an error.
+ */
+export function parseComponentsFromFiles(
+  files: Iterable<FileEntry> | ReadonlyMap<string, string>,
+  options: ParseComponentsFromFilesOptions = {},
+): ComponentSetResult {
+  const componentsDir = options.componentsDir ?? 'docs/architecture/components';
+  const map = toFileMap(files);
+  const entries = [...map.entries()]
+    .filter(([path]) => isComponentFilePath(path, componentsDir))
+    .map(([path, content]) => ({ path, content }));
+  return parseComponentSet(entries);
+}
+
 /**
  * Assemble a whole-project model from in-memory files: every
- * `<tasksDir>/T-*.md` entry plus the roadmap. Returns the typed model and
- * every issue found; never throws. Insertion order of the input does not
- * matter — task files are processed in sorted path order, so results are
- * deterministic (mirrors parseTaskDirectory's filename ordering).
+ * `<tasksDir>/T-*.md` entry, the roadmap, plus every
+ * `<componentsDir>/C-*.md` component file (T-008; a set with none yields
+ * `components: []` and no issue). Returns the typed model and every issue
+ * found; never throws. Insertion order of the input does not matter —
+ * files are processed in sorted path order, so results are deterministic
+ * (mirrors the disk layer's filename ordering).
  */
 export function parseProjectFromFiles(
   files: Iterable<FileEntry> | ReadonlyMap<string, string>,
@@ -101,6 +146,12 @@ export function parseProjectFromFiles(
     tasks.push(task);
   }
 
+  // Components parse regardless of roadmap presence; their issues come
+  // last (task -> roadmap -> component order, mirroring the disk layer).
+  const componentSet = parseComponentsFromFiles(map, {
+    ...(options.componentsDir !== undefined ? { componentsDir: options.componentsDir } : {}),
+  });
+
   const roadmapContent = map.get(roadmapFile);
   if (roadmapContent === undefined) {
     issues.push({
@@ -108,10 +159,15 @@ export function parseProjectFromFiles(
       file: roadmapFile,
       message: `${roadmapFile}: cannot read roadmap — not present in file set`,
     });
-    return { tasks, features: [], issues };
+    return {
+      tasks,
+      features: [],
+      components: componentSet.components,
+      issues: [...issues, ...componentSet.issues],
+    };
   }
 
   const roadmap = parseRoadmap(roadmapContent, roadmapFile);
-  issues.push(...roadmap.issues);
-  return { tasks, features: roadmap.features, issues };
+  issues.push(...roadmap.issues, ...componentSet.issues);
+  return { tasks, features: roadmap.features, components: componentSet.components, issues };
 }

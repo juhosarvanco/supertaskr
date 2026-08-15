@@ -1,0 +1,330 @@
+import { extractFrontmatter } from './frontmatter.js';
+import {
+  COMPONENT_STATUSES,
+  type ComponentParseResult,
+  type ComponentRecord,
+  type ComponentSetResult,
+  type ComponentStatus,
+  type ParseIssue,
+} from './types.js';
+
+/**
+ * Architecture component files (T-008, ADR-014/015; format:
+ * docs/design/map-technical-plan.md §2 as revised by §0.0):
+ * `docs/architecture/components/C-xx-<slug>.md`, one component per file,
+ * YAML frontmatter + prose responsibility. This module is the intent
+ * layer's ONE parser — the map's derivation (T-011) consumes these
+ * records instead of re-reading files.
+ */
+
+/** Frontmatter keys defined by the component-file format (plan §2 + §0.0-4). */
+const KNOWN_FIELDS = new Set([
+  'id',
+  'name',
+  'layer',
+  'paths',
+  'depends_on',
+  'decisions',
+  'status',
+  'touch_slugs',
+]);
+
+const ID_PATTERN = /^C-(\d{2,})$/;
+
+/** YAML empty values (`layer:`) arrive as null; treat like absent. */
+function isAbsent(value: unknown): value is null | undefined {
+  return value === null || value === undefined;
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
+/**
+ * Order component ids the way "first match by id order wins" means it
+ * (plan §2/§4.1): numerically by the digits (`C-99` before `C-100`),
+ * falling back to string order for non-conforming ids so the comparator
+ * is total. Exported so derivation (T-011) reuses the SAME order instead
+ * of forking it.
+ */
+export function compareComponentIds(a: string, b: string): number {
+  const na = ID_PATTERN.exec(a)?.[1];
+  const nb = ID_PATTERN.exec(b)?.[1];
+  if (na !== undefined && nb !== undefined) {
+    const diff = Number(na) - Number(nb);
+    if (diff !== 0) return diff;
+  }
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
+ * Parse one component file's content into a ComponentRecord.
+ *
+ * Never throws on bad input: problems come back as structured issues
+ * naming the file and (where one exists) the field. A record is returned
+ * when the file's identity holds — a valid `C-\d{2,}` id plus a name —
+ * even if other fields carry issues, so the map can still draw the node
+ * alongside its errors. Cross-file rules (unique ids, dangling
+ * depends_on, overlapping paths) live in parseComponentSet.
+ *
+ * Requiredness per the format: `id`, `name`, `paths` required; `layer`
+ * optional; `depends_on`/`decisions`/`touch_slugs` default to `[]`;
+ * `status` defaults to `auto`.
+ */
+export function parseComponentFile(content: string, file: string): ComponentParseResult {
+  const fm = extractFrontmatter(content, file);
+  const issues: ParseIssue[] = [...fm.issues];
+  if (!fm.data) return { issues };
+  const data = fm.data;
+
+  const missing = (field: string): void => {
+    issues.push({
+      kind: 'missing-field',
+      file,
+      field,
+      message: `${file}: missing required field '${field}'`,
+    });
+  };
+  const invalid = (field: string, detail: string): void => {
+    issues.push({
+      kind: 'invalid-field',
+      file,
+      field,
+      message: `${file}: field '${field}' ${detail}`,
+    });
+  };
+
+  // -- id: required, pattern C-\d{2,} (identity — the C-registry handle).
+  let id: string | undefined;
+  if (isAbsent(data.id)) {
+    missing('id');
+  } else if (!isNonEmptyString(data.id) || !ID_PATTERN.test(data.id.trim())) {
+    invalid('id', `must be a component id like C-05 (pattern C-\\d{2,}), got ${JSON.stringify(data.id)}`);
+  } else {
+    id = data.id.trim();
+  }
+
+  // -- name: required (identity — the node's label).
+  let name: string | undefined;
+  if (isAbsent(data.name)) {
+    missing('name');
+  } else if (!isNonEmptyString(data.name)) {
+    invalid('name', `must be a non-empty string, got ${JSON.stringify(data.name)}`);
+  } else {
+    name = data.name.trim();
+  }
+
+  // -- layer: optional free-form label.
+  let layer: string | undefined;
+  if (!isAbsent(data.layer)) {
+    if (!isNonEmptyString(data.layer)) {
+      invalid('layer', `must be a non-empty string, got ${JSON.stringify(data.layer)}`);
+    } else {
+      layer = data.layer.trim();
+    }
+  }
+
+  // -- list fields: entries must be non-empty strings; bad entries are
+  //    flagged and dropped (mirrors the task parser's listField).
+  const listField = (field: 'paths' | 'depends_on' | 'decisions' | 'touch_slugs'): string[] => {
+    const value = data[field];
+    if (isAbsent(value)) return [];
+    if (!Array.isArray(value)) {
+      invalid(field, `must be a list, got ${JSON.stringify(value)}`);
+      return [];
+    }
+    const out: string[] = [];
+    for (const entry of value) {
+      if (isNonEmptyString(entry)) out.push(entry.trim());
+      else invalid(field, `entries must be non-empty strings, got ${JSON.stringify(entry)}`);
+    }
+    return out;
+  };
+
+  // -- paths: required AND non-empty (a component must claim territory;
+  //    globs matching nothing is derivation's D3, not a parse error).
+  let paths: string[] = [];
+  if (isAbsent(data.paths)) {
+    missing('paths');
+  } else {
+    paths = listField('paths');
+    if (Array.isArray(data.paths) && data.paths.length === 0) {
+      invalid('paths', 'must be a non-empty list of gitignore-style globs, got []');
+    }
+  }
+
+  const dependsOn = listField('depends_on');
+  const decisions = listField('decisions');
+  const touchSlugs = listField('touch_slugs');
+
+  // -- status: default auto; any other value pins the node's color.
+  let status: ComponentStatus = 'auto';
+  if (!isAbsent(data.status)) {
+    if (
+      !isNonEmptyString(data.status) ||
+      !(COMPONENT_STATUSES as readonly string[]).includes(data.status.trim())
+    ) {
+      invalid(
+        'status',
+        `must be one of ${COMPONENT_STATUSES.join(' | ')}, got ${JSON.stringify(data.status)}`,
+      );
+    } else {
+      status = data.status.trim() as ComponentStatus;
+    }
+  }
+
+  // -- unknown keys: preserved, never silently deleted. Null prototype so
+  //    hostile key names (`__proto__`, `constructor`, …) land as own data
+  //    properties instead of hitting Object.prototype's inherited setter
+  //    (ADR-009 — the T-002 REJECTED verdict's lesson).
+  const extra: Record<string, unknown> = Object.create(null);
+  for (const [key, value] of Object.entries(data)) {
+    if (!KNOWN_FIELDS.has(key)) extra[key] = value;
+  }
+
+  // -- identity gate: without a valid id + name there is no node to
+  //    return; the set-level dangling check then makes references to the
+  //    broken file visible as placeholders.
+  if (id === undefined || name === undefined) {
+    return { issues };
+  }
+
+  const component: ComponentRecord = {
+    id,
+    name,
+    ...(layer !== undefined ? { layer } : {}),
+    paths,
+    dependsOn,
+    decisions,
+    touchSlugs,
+    status,
+    responsibility: fm.body.trim(),
+    extra,
+    file,
+  };
+  return { component, issues };
+}
+
+/** One component source file: path (as reported in issues) + raw content. */
+interface ComponentSourceFile {
+  path: string;
+  content: string;
+}
+
+/** Strip decoration that never changes what a pattern claims. */
+function normalizePattern(pattern: string): string {
+  const p = pattern.trim();
+  if (p.startsWith('./')) return p.slice(2);
+  if (p.startsWith('/')) return p.slice(1);
+  return p;
+}
+
+/**
+ * True when two gitignore-style patterns PROVABLY claim overlapping
+ * files, without a file tree and without a glob matcher (so no matching
+ * semantics are forked out of T-011's derivation):
+ * - identical normalized patterns;
+ * - `P/**` contains any pattern whose text starts with `P/` (everything
+ *   such a pattern can match lives under P, whatever wildcards follow).
+ * Negated patterns (`!…`) never participate. Anything subtler (e.g. a
+ * bare directory name vs `dir/**`) is left to derivation against the
+ * real tree — conservative by design, so a certain warning is never
+ * wrong and an uncertain overlap is never guessed at.
+ */
+function patternsCertainlyOverlap(a: string, b: string): boolean {
+  const na = normalizePattern(a);
+  const nb = normalizePattern(b);
+  if (na.startsWith('!') || nb.startsWith('!')) return false;
+  if (na === nb) return true;
+  const contains = (outer: string, inner: string): boolean =>
+    outer.endsWith('/**') && inner.startsWith(outer.slice(0, -2));
+  return contains(na, nb) || contains(nb, na);
+}
+
+/**
+ * Parse a set of component files and apply the cross-file rules:
+ * duplicate ids (`duplicate-id`, both records kept — flagging, not
+ * hiding), depends_on entries naming no parsed component
+ * (`dangling-reference`, edge preserved on the record), and provably
+ * overlapping `paths` between two components (`ambiguous-mapping`,
+ * first by id order wins). Files are processed in sorted path order and
+ * pair checks in component id order, so results are deterministic.
+ *
+ * Internal engine shared by parseComponentsFromFiles (pure) and
+ * parseComponentDirectory (node); callers own file discovery/filtering.
+ */
+export function parseComponentSet(files: readonly ComponentSourceFile[]): ComponentSetResult {
+  const components: ComponentRecord[] = [];
+  const issues: ParseIssue[] = [];
+
+  const sorted = [...files].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+
+  const byId = new Map<string, string>(); // id -> first file seen (ADR-009)
+  for (const { path, content } of sorted) {
+    const result = parseComponentFile(content, path);
+    issues.push(...result.issues);
+    if (!result.component) continue;
+
+    const { component } = result;
+    const first = byId.get(component.id);
+    if (first !== undefined) {
+      issues.push({
+        kind: 'duplicate-id',
+        id: component.id,
+        files: [first, path],
+        message: `duplicate component id '${component.id}' in ${first} and ${path}`,
+      });
+    } else {
+      byId.set(component.id, path);
+    }
+    components.push(component);
+  }
+
+  // -- dangling depends_on: an id no parsed record declares. The edge
+  //    stays in dependsOn (criterion: preserved for placeholder
+  //    rendering, never dropped).
+  for (const component of components) {
+    for (const dep of component.dependsOn) {
+      if (!byId.has(dep)) {
+        issues.push({
+          kind: 'dangling-reference',
+          file: component.file,
+          field: 'depends_on',
+          id: dep,
+          message: `${component.file}: depends_on names '${dep}' but no component declares it (edge preserved for placeholder rendering)`,
+        });
+      }
+    }
+  }
+
+  // -- provable paths overlap between two DIFFERENT components. Same-id
+  //    pairs are the duplicate-id case above, not an ambiguity between
+  //    two components. Pairs are visited in id order; ids[0] is the
+  //    winner ("first match by component id order wins").
+  const inIdOrder = [...components].sort(
+    (a, b) => compareComponentIds(a.id, b.id) || (a.file < b.file ? -1 : a.file > b.file ? 1 : 0),
+  );
+  for (let i = 0; i < inIdOrder.length; i++) {
+    for (let j = i + 1; j < inIdOrder.length; j++) {
+      const winner = inIdOrder[i];
+      const loser = inIdOrder[j];
+      if (winner === undefined || loser === undefined) continue; // unreachable
+      if (winner.id === loser.id) continue;
+      for (const wp of winner.paths) {
+        for (const lp of loser.paths) {
+          if (patternsCertainlyOverlap(wp, lp)) {
+            issues.push({
+              kind: 'ambiguous-mapping',
+              ids: [winner.id, loser.id],
+              files: [winner.file, loser.file],
+              patterns: [wp, lp],
+              message: `components '${winner.id}' (${winner.file}) and '${loser.id}' (${loser.file}) declare overlapping paths '${wp}' and '${lp}' — first by id, '${winner.id}', wins file mapping`,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return { components, issues };
+}

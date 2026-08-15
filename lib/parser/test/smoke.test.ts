@@ -33,4 +33,37 @@ describe('smoke — the real docs/ tree parses cleanly', () => {
     expect(f02?.name).toBe('App shell + board');
     expect(f02?.description).toContain('story map');
   });
+
+  it('parses the dogfood component registry (T-008): same C-namespace as ARCHITECTURE.md', () => {
+    const components = result.components ?? [];
+    expect(components.length).toBeGreaterThanOrEqual(5);
+    expect(components.map((c) => c.id)).toEqual([
+      'C-01',
+      'C-05',
+      'C-06',
+      'C-07',
+      'C-08',
+      'C-09',
+      'C-10',
+      'C-11',
+      'C-12',
+    ]);
+
+    const parser = components.find((c) => c.id === 'C-06');
+    expect(parser).toMatchObject({
+      name: 'lib-parser',
+      layer: 'lib',
+      paths: ['lib/parser/**'],
+      dependsOn: ['C-01'],
+      touchSlugs: ['lib-parser'],
+      status: 'auto',
+    });
+    expect(parser?.responsibility).toContain('hardened frontmatter parser');
+
+    // every declared edge resolves — the dogfood registry has no danglers
+    const ids = new Set(components.map((c) => c.id));
+    for (const c of components) {
+      for (const dep of c.dependsOn) expect(ids.has(dep)).toBe(true);
+    }
+  });
 });
