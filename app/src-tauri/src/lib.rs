@@ -67,7 +67,7 @@ fn canonical_or(path: PathBuf) -> PathBuf {
 /// and, when one is, the current docs tree as a snapshot. Narrow by
 /// construction (ADR-010): no arguments, reads only
 /// `<resolved project>/docs`, symlinks skipped, canonical-prefix contained
-/// (see docs_watch::collect_docs_files). Subsequent updates arrive as
+/// (see docs_watch::collect_docs_tree). Subsequent updates arrive as
 /// `docs-changed` events pushed by the watcher; both share one seq counter.
 #[tauri::command]
 fn docs_snapshot(state: tauri::State<'_, WatchState>) -> ProjectStatus {
