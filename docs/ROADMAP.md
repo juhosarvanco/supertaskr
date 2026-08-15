@@ -30,8 +30,9 @@ Goal: open the nputer app and watch nputer being built on its own
 board — read-only story map of this repo, rendered beautifully;
 the method run by hand underneath (the coherence experiment starts
 at T-001). Deliberately feels too small. Tasks: T-001…T-007.
-Progress: T-001–T-005 + T-007 done (2026-08-15); T-006 last,
-awaiting external design input.
+Progress: COMPLETE 2026-08-15 — T-001…T-007 all through the
+pipeline; design language applied. Launch-screenshot judgment with
+@human.
 
 ### Milestone 2 — the map slice (decided 2026-08-15, rooms/map-sequencing.md)
 Goal: the architecture map's vertical slice on nputer's own repo —

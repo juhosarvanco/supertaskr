@@ -1,6 +1,6 @@
 ---
 title: Parser smoke test still expects five backbone features (F-06 broke it)
-status: suggested
+status: rejected
 suggested_by: executor claude-fable-5 @T-006
 ---
 
@@ -23,3 +23,5 @@ literal list, so backbone growth stops breaking a smoke test whose real
 job is "the live tree parses cleanly"). One-file change, touches
 lib-parser — outside T-006's [app-shell, app-board] scope, hence filed
 instead of fixed.
+
+2026-08-15 — architect triage at T-006 integration: REJECTED — already fixed on main (67cccd7) before integration.

@@ -42,6 +42,14 @@
   defaults or arbitrary values — unmapped utilities are deliberately
   dead, and arbitrary values (`p-[13px]`) bypass enforcement (see
   suggestion T-001-s2).
+- Triage-rejecting a SUGGESTION cannot happen in place: `status:
+  rejected` on a minimal file is a hard parse failure (every status
+  but suggested/parked requires the full placement set) — it lights
+  the board's parse-error badge and breaks the live-tree smoke test.
+  Interim encoding (T-006 integration): `git mv` the file to
+  docs/tasks/rejected/ with the one-line reasoning inside; both task
+  globs are deliberately flat, so nothing there is a model input and
+  nothing is deleted. Ratify or replace via T-006-s5.
 - Outside-click/dismissal listeners must decide on pointerdown, never
   click — under trusted input the browser runs microtask checkpoints
   between listeners, so React's discrete-update flush lands
