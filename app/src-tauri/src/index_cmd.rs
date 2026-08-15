@@ -266,8 +266,9 @@ mod tests {
         let (state, emits) = live_state(None);
 
         // Arm via the picker path — its rendezvous guarantees the watch
-        // and emit baseline are set before it returns.
-        match apply_picked_folder(&state, t.root()) {
+        // and emit baseline are set before it returns (T-021: under a
+        // freshly claimed single-flight guard, like the command).
+        match apply_picked_folder(&state, t.root(), state.begin_pick().expect("picker free")) {
             PickOutcome::Picked { snapshot } => {
                 assert!(
                     !snapshot.files.iter().any(|f| f.path.ends_with("graph.json")),

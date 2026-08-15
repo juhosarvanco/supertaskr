@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -151,6 +151,11 @@ pub enum ProjectStatus {
 pub enum PickOutcome {
     /// User dismissed the native dialog; nothing changed.
     Cancelled,
+    /// Another pick is already in flight (T-021 single-flight, absorbing
+    /// T-007-s3): the command refuses BEFORE opening a dialog, so a
+    /// double-invoking (or compromised) webview can never stack native
+    /// dialogs. Nothing changed.
+    Busy,
     /// Chosen folder has no plain `docs/` directory (or vanished before
     /// validation); nothing changed. `path` is what was looked at.
     NoDocs { path: String },
@@ -187,6 +192,25 @@ pub struct WatchState {
     project: Mutex<Option<PathBuf>>,
     seq: Arc<AtomicU64>,
     ctl: mpsc::Sender<WatchCtl>,
+    /// T-021 single-flight latch for the picker (absorbs T-007-s3):
+    /// claimed by `begin_pick` BEFORE the native dialog opens, released
+    /// by `PickInFlight::drop` after `apply_picked_folder` returns. This
+    /// guard — not the project mutex — is what serializes the whole
+    /// dialog -> validate -> re-arm -> commit pipeline, which is what
+    /// makes narrowing the mutex to the commit alone sound.
+    picking: Arc<AtomicBool>,
+}
+
+/// Exclusive claim on the picker pipeline (T-021). Holding this value IS
+/// the claim: `apply_picked_folder` consumes one, so the type system
+/// guarantees no pick pipeline runs unguarded, and dropping it — on any
+/// path, panic included — releases the latch.
+pub struct PickInFlight(Arc<AtomicBool>);
+
+impl Drop for PickInFlight {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::SeqCst);
+    }
 }
 
 impl WatchState {
@@ -199,7 +223,18 @@ impl WatchState {
             project: Mutex::new(project),
             seq,
             ctl,
+            picking: Arc::new(AtomicBool::new(false)),
         }
+    }
+
+    /// Claim the picker (T-021 single-flight). `None` means a pick is
+    /// already in flight — the command maps that to the typed
+    /// `PickOutcome::Busy` without opening a dialog.
+    pub fn begin_pick(&self) -> Option<PickInFlight> {
+        self.picking
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .ok()
+            .map(|_| PickInFlight(self.picking.clone()))
     }
 
     /// Next sequence number (first is 1; frontend starts at 0). Taken
@@ -450,8 +485,20 @@ pub fn project_status(state: &WatchState) -> ProjectStatus {
 /// then commit the new project dir and take a snapshot. Every early
 /// return leaves the previous project — state, watch, model — exactly as
 /// it was (criterion c's no-corruption guarantee lives here).
-pub fn apply_picked_folder(state: &WatchState, picked: &Path) -> PickOutcome {
-    let mut project = state.project.lock().expect("project mutex poisoned");
+///
+/// T-021 (the T-007 verifier's residual note): the project mutex used to
+/// be held across this whole pipeline, so a concurrent `docs_snapshot`
+/// blocked for up to the 10s rendezvous timeout behind a slow re-arm.
+/// Now the pipeline is serialized by the consumed `PickInFlight` guard
+/// (claimed by the command before the dialog even opened), and the mutex
+/// covers exactly one thing: the commit. `docs_snapshot` during a pick
+/// answers immediately with the still-open project; the pick's own
+/// snapshot seq is taken after the commit, so ordering across the switch
+/// is unchanged (monotonic, ack-then-commit-then-seq).
+pub fn apply_picked_folder(state: &WatchState, picked: &Path, flight: PickInFlight) -> PickOutcome {
+    // Consuming the guard makes "the pipeline runs under the latch"
+    // structural; its Drop releases the latch on every return path.
+    let _flight = flight;
 
     let Ok(canon) = picked.canonicalize() else {
         // Vanished or unreadable: nothing usable was found at that path.
@@ -469,6 +516,10 @@ pub fn apply_picked_folder(state: &WatchState, picked: &Path) -> PickOutcome {
     // state changes. The thread resets its emit baseline before acking,
     // and the snapshot below is read after the ack, so the snapshot is
     // never older than the baseline — post-pick changes always diff.
+    // No lock is held here (T-021): the thread's own has_plain_docs_dir
+    // gate re-checks the root at arm time (the T-007 validate->arm
+    // defense in depth), so the mutex never protected this window —
+    // it only made readers queue behind it.
     let (ack_tx, ack_rx) = mpsc::channel();
     if state
         .ctl
@@ -491,15 +542,25 @@ pub fn apply_picked_folder(state: &WatchState, picked: &Path) -> PickOutcome {
                 message,
             }
         }
-        Err(_) => {
+        // T-021: the two failure shapes report honestly (the T-007
+        // verifier's cosmetic note: a DROPPED ack is instant, not a
+        // timeout — saying "timed out" was a lie).
+        Err(mpsc::RecvTimeoutError::Timeout) => {
             return PickOutcome::Error {
                 path: canon.display().to_string(),
                 message: "watcher re-arm timed out".into(),
             }
         }
+        Err(mpsc::RecvTimeoutError::Disconnected) => {
+            return PickOutcome::Error {
+                path: canon.display().to_string(),
+                message: "watcher thread dropped the re-arm ack".into(),
+            }
+        }
     }
 
-    *project = Some(canon.clone());
+    // The commit — the only mutation, and now the only lock window.
+    *state.project.lock().expect("project mutex poisoned") = Some(canon.clone());
     let seq = state.next_seq();
     println!("[nputer] project folder picked: {}", canon.display());
     PickOutcome::Picked {
@@ -908,6 +969,13 @@ mod tests {
         WatchState::new(initial, Arc::new(AtomicU64::new(0)), ctl)
     }
 
+    /// The command layer's pick, minus the dialog (T-021): claim the
+    /// single-flight guard, then apply. Panics if a pick is already in
+    /// flight — sequential tests never are.
+    fn apply_pick(state: &WatchState, picked: &Path) -> PickOutcome {
+        apply_picked_folder(state, picked, state.begin_pick().expect("picker free"))
+    }
+
     fn recv_emit(rx: &mpsc::Receiver<DocsSnapshot>) -> DocsSnapshot {
         rx.recv_timeout(Duration::from_secs(10))
             .expect("expected a docs-changed emit")
@@ -1125,7 +1193,7 @@ mod tests {
         let prev = TempTree::new("pick-prev");
         let state = detached_state(Some(prev.root().to_path_buf()));
         let gone = prev.root().join("never-existed");
-        match apply_picked_folder(&state, &gone) {
+        match apply_pick(&state, &gone) {
             PickOutcome::NoDocs { path } => assert_eq!(path, gone.display().to_string()),
             other => panic!("expected NoDocs, got {other:?}"),
         }
@@ -1139,7 +1207,7 @@ mod tests {
         let state = detached_state(Some(prev.root().to_path_buf()));
         let bare = TempTree::new("pick-bare");
         fs::remove_dir_all(bare.root().join("docs")).expect("rm docs");
-        match apply_picked_folder(&state, bare.root()) {
+        match apply_pick(&state, bare.root()) {
             PickOutcome::NoDocs { path } => {
                 // Canonicalized form of what was looked at.
                 assert_eq!(path, bare.root().canonicalize().unwrap().display().to_string());
@@ -1160,7 +1228,7 @@ mod tests {
         outside.write("docs/leak.md", "outside content");
         symlink(outside.root().join("docs"), trap.root().join("docs")).expect("docs symlink");
 
-        match apply_picked_folder(&state, trap.root()) {
+        match apply_pick(&state, trap.root()) {
             PickOutcome::NoDocs { .. } => {}
             other => panic!("expected NoDocs for symlinked docs/, got {other:?}"),
         }
@@ -1183,7 +1251,7 @@ mod tests {
         .expect("file symlink");
         symlink(outside.root(), picked.root().join("docs/leakdir")).expect("dir symlink");
 
-        match apply_picked_folder(&state, picked.root()) {
+        match apply_pick(&state, picked.root()) {
             PickOutcome::Picked { snapshot } => {
                 let paths: Vec<&str> = snapshot.files.iter().map(|f| f.path.as_str()).collect();
                 assert_eq!(paths, vec!["docs/real.md"]);
@@ -1204,7 +1272,7 @@ mod tests {
         let alias = alias_parent.root().join("alias");
         symlink(real.root(), &alias).expect("root symlink");
 
-        match apply_picked_folder(&state, &alias) {
+        match apply_pick(&state, &alias) {
             PickOutcome::Picked { snapshot } => {
                 let canon = real.root().canonicalize().unwrap();
                 assert_eq!(snapshot.project_dir, canon.display().to_string());
@@ -1248,7 +1316,7 @@ mod tests {
         // returns, so everything after is deterministic.
         let (state, emits) = live_state(None);
         assert!(matches!(
-            apply_picked_folder(&state, a.root()),
+            apply_pick(&state, a.root()),
             PickOutcome::Picked { .. }
         ));
         let canon_a = a.root().canonicalize().unwrap();
@@ -1262,7 +1330,7 @@ mod tests {
         let bare = TempTree::new("rearm-bare");
         fs::remove_dir_all(bare.root().join("docs")).expect("rm docs");
         assert!(matches!(
-            apply_picked_folder(&state, bare.root()),
+            apply_pick(&state, bare.root()),
             PickOutcome::NoDocs { .. }
         ));
         a.write("docs/tasks/T-301-a.md", "alpha v3");
@@ -1271,7 +1339,7 @@ mod tests {
         assert_eq!(state.project_dir(), Some(canon_a));
 
         // Successful pick: seq continues past everything emitted so far.
-        let picked = match apply_picked_folder(&state, b.root()) {
+        let picked = match apply_pick(&state, b.root()) {
             PickOutcome::Picked { snapshot } => snapshot,
             other => panic!("expected Picked, got {other:?}"),
         };
@@ -1307,7 +1375,7 @@ mod tests {
         a.write("docs/one.md", "one");
         let (state, emits) = live_state(None); // launched with no project
 
-        let picked = match apply_picked_folder(&state, a.root()) {
+        let picked = match apply_pick(&state, a.root()) {
             PickOutcome::Picked { snapshot } => snapshot,
             other => panic!("expected Picked, got {other:?}"),
         };
@@ -1317,6 +1385,151 @@ mod tests {
         let emit = recv_emit(&emits);
         assert!(emit.seq > picked.seq);
         assert_eq!(emit.files.len(), 2);
+    }
+
+    // ---- T-021: picker single-flight + narrowed commit lock ------------
+
+    /// The single-flight latch is exclusive, its Busy result is TYPED
+    /// with a pinned wire shape, and dropping the guard frees the picker
+    /// (deterministic: hold, assert, release — no timing anywhere).
+    #[test]
+    fn second_pick_claim_is_refused_typed_until_the_first_releases() {
+        let state = detached_state(None);
+
+        let flight = state.begin_pick().expect("first claim wins");
+        assert!(
+            state.begin_pick().is_none(),
+            "a concurrent pick must be refused while one is in flight"
+        );
+        // The refusal the command returns is a typed outcome, not a
+        // string and not silence — pin the exact wire shape the
+        // frontend's PickOutcomePayload mirror matches on.
+        assert_eq!(
+            serde_json::to_value(PickOutcome::Busy).expect("serialize"),
+            serde_json::json!({ "kind": "busy" })
+        );
+
+        drop(flight);
+        assert!(
+            state.begin_pick().is_some(),
+            "dropping the guard must release the latch"
+        );
+    }
+
+    /// THE narrowed-mutex proof (T-021, the T-007 verifier's residual
+    /// note): while a re-arm rendezvous is parked mid-pick, a concurrent
+    /// `docs_snapshot` answers immediately with the still-open project —
+    /// pre-T-021 it blocked on the project mutex for up to the 10s
+    /// rendezvous timeout. Deterministic: a controllable stand-in
+    /// watcher thread parks the re-arm until the test releases it (the
+    /// timeouts below only bound the FAILURE mode; the pass path never
+    /// waits on wall-clock).
+    #[test]
+    fn a_parked_rearm_blocks_neither_docs_snapshot_nor_leaks_the_latch() {
+        let t = TempTree::new("parked-rearm");
+        t.write("docs/a.md", "# a");
+
+        let (ctl_tx, ctl_rx) = mpsc::channel::<WatchCtl>();
+        let (entered_tx, entered_rx) = mpsc::channel::<()>();
+        let (release_tx, release_rx) = mpsc::channel::<()>();
+        std::thread::spawn(move || {
+            for msg in ctl_rx {
+                if let WatchCtl::Rearm { ack, .. } = msg {
+                    entered_tx.send(()).expect("report the rendezvous");
+                    release_rx.recv().expect("wait for the release");
+                    ack.send(Ok(())).expect("ack the re-arm");
+                }
+            }
+        });
+        let state = Arc::new(WatchState::new(None, Arc::new(AtomicU64::new(0)), ctl_tx));
+
+        let flight = state.begin_pick().expect("picker free");
+        let apply_state = state.clone();
+        let root = t.root().to_path_buf();
+        let apply =
+            std::thread::spawn(move || apply_picked_folder(&apply_state, &root, flight));
+
+        // The pick is provably parked inside the rendezvous now.
+        entered_rx
+            .recv_timeout(Duration::from_secs(10))
+            .expect("apply must reach the re-arm rendezvous");
+
+        // In flight: a second claim is refused (what the command maps to
+        // the typed Busy)...
+        assert!(
+            state.begin_pick().is_none(),
+            "picker must be busy during the re-arm"
+        );
+
+        // ...and the T-021 point: project_status (the docs_snapshot
+        // command body) must NOT block behind the parked re-arm. Run it
+        // on a helper thread so a regression fails loudly instead of
+        // hanging the suite.
+        let status_state = state.clone();
+        let (status_tx, status_rx) = mpsc::channel();
+        std::thread::spawn(move || {
+            let status = project_status(&status_state);
+            let _ = status_tx.send(matches!(status, ProjectStatus::NoProject));
+        });
+        let no_project_still = status_rx
+            .recv_timeout(Duration::from_secs(5))
+            .expect("docs_snapshot must answer while a re-arm is parked (pre-T-021 it blocked here)");
+        assert!(
+            no_project_still,
+            "nothing may be committed before the re-arm acks"
+        );
+
+        // Release the rendezvous: the pick commits and completes.
+        release_tx.send(()).expect("release the parked re-arm");
+        match apply.join().expect("apply thread") {
+            PickOutcome::Picked { snapshot } => assert_eq!(snapshot.files.len(), 1),
+            other => panic!("expected Picked, got {other:?}"),
+        }
+        assert_eq!(
+            state.project_dir(),
+            Some(t.root().canonicalize().expect("canonical root")),
+            "commit lands exactly once, after the ack"
+        );
+        assert!(
+            state.begin_pick().is_some(),
+            "the latch must be free again after the pick completes"
+        );
+    }
+
+    /// A watcher thread that dies holding the re-arm ack produces the
+    /// honest typed error INSTANTLY (disconnect, not the 10s timeout
+    /// lie the T-007 verifier noted), mutates nothing, and releases the
+    /// latch.
+    #[test]
+    fn a_dropped_rearm_ack_reports_disconnect_mutates_nothing_frees_latch() {
+        let t = TempTree::new("dead-ack");
+        t.write("docs/a.md", "# a");
+
+        let (ctl_tx, ctl_rx) = mpsc::channel::<WatchCtl>();
+        std::thread::spawn(move || {
+            for msg in ctl_rx {
+                if let WatchCtl::Rearm { ack, .. } = msg {
+                    drop(ack); // die mid-re-arm without answering
+                }
+            }
+        });
+        let state = WatchState::new(None, Arc::new(AtomicU64::new(0)), ctl_tx);
+
+        match apply_pick(&state, t.root()) {
+            PickOutcome::Error { path, message } => {
+                assert_eq!(path, t.root().canonicalize().expect("canon").display().to_string());
+                assert!(
+                    message.contains("dropped the re-arm ack"),
+                    "a dead ack is a disconnect, not a timeout: {message}"
+                );
+            }
+            other => panic!("expected Error, got {other:?}"),
+        }
+        assert!(state.project_dir().is_none(), "nothing mutated");
+        assert!(
+            state.begin_pick().is_some(),
+            "the latch must be free after the failed pick"
+        );
     }
 
     // ---- T-018: the collector reports skips + truncation ---------------
@@ -1475,7 +1688,7 @@ mod tests {
         t.write("docs/b.md", "b starts small");
         let (state, emits) = live_state(None);
         assert!(matches!(
-            apply_picked_folder(&state, t.root()),
+            apply_pick(&state, t.root()),
             PickOutcome::Picked { .. }
         ));
 
@@ -1547,7 +1760,7 @@ mod tests {
         t.write("docs/tasks/T-401-a.md", "original tree");
         let (state, emits) = live_state(None);
         assert!(matches!(
-            apply_picked_folder(&state, t.root()),
+            apply_pick(&state, t.root()),
             PickOutcome::Picked { .. }
         ));
 
@@ -1585,7 +1798,7 @@ mod tests {
         t.write("docs/tasks/T-402-r.md", "here v1");
         let (state, emits) = live_state(None);
         assert!(matches!(
-            apply_picked_folder(&state, t.root()),
+            apply_pick(&state, t.root()),
             PickOutcome::Picked { .. }
         ));
 
