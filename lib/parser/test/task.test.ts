@@ -249,6 +249,104 @@ describe('parseTaskFile — malformed input', () => {
   });
 });
 
+describe('parseTaskFile — id and feature FORMAT (T-019)', () => {
+  it('id outside the T-NNN family: one structured invalid-field, no record for a planned task', () => {
+    const bad = VALID.replace('id: T-016', 'id: banana');
+    const { task, issues } = parseTaskFile(bad, FILE);
+    expect(issues).toEqual([
+      expect.objectContaining({ kind: 'invalid-field', file: FILE, field: 'id' }),
+    ]);
+    expect(issues[0]?.message).toContain('banana');
+    // Same loud-trap consequence as an absent id: identity requires a
+    // usable id on non-suggested statuses (consistent with the `id: 007`
+    // YAML-number probe in verifier-probes.test.ts).
+    expect(task).toBeUndefined();
+  });
+
+  it('the family: T-NNN and T-NNN-sN pass; lookalikes fail (first-match — one issue per field)', () => {
+    for (const good of ['T-1', 'T-016', 'T-016-s1', 'T-999-s12']) {
+      const { task, issues } = parseTaskFile(VALID.replace('id: T-016', `id: ${good}`), FILE);
+      expect(issues).toEqual([]);
+      expect(task?.id).toBe(good);
+    }
+    for (const bad of ['t-016', 'T016', 'T-016-s', 'T-016-x1', 'T-016-s1-s2', '"T-016 extra"']) {
+      const { task, issues } = parseTaskFile(VALID.replace('id: T-016', `id: ${bad}`), FILE);
+      expect(issues).toEqual([
+        expect.objectContaining({ kind: 'invalid-field', field: 'id', file: FILE }),
+      ]);
+      expect(task).toBeUndefined();
+    }
+  });
+
+  it('a suggestion with a malformed id keeps its record (id is optional there) — flagged, not hidden', () => {
+    const suggestion = `---
+id: banana
+title: Ghost with a broken id
+status: suggested
+suggested_by: verifier
+---
+`;
+    const { task, issues } = parseTaskFile(suggestion, 'docs/tasks/T-016-s1-ghost.md');
+    expect(issues).toEqual([
+      expect.objectContaining({ kind: 'invalid-field', field: 'id' }),
+    ]);
+    expect(task?.status).toBe('suggested');
+    expect(task?.id).toBeUndefined();
+  });
+
+  it('feature outside F-NN: structured invalid-field; record still returned (same discipline)', () => {
+    const bad = VALID.replace('feature: F-03            # story map column', 'feature: banana');
+    const { task, issues } = parseTaskFile(bad, FILE);
+    expect(issues).toEqual([
+      expect.objectContaining({ kind: 'invalid-field', file: FILE, field: 'feature' }),
+    ]);
+    expect(task?.id).toBe('T-016');
+    expect(task?.feature).toBeUndefined();
+  });
+});
+
+describe('parseTaskFile — the suggestion preamble (T-019, absorbing T-002-s2)', () => {
+  it('a heading-less body is ALL preamble — a suggestion\'s paragraph is its entire content', () => {
+    const suggestion = `---
+title: Cache parsed models
+status: suggested
+suggested_by: executor codex @T-101
+---
+
+Re-parsing the whole tree on every save is wasteful once projects grow;
+a content-hash cache would make the watcher loop cheap.
+`;
+    const { task, issues } = parseTaskFile(suggestion, 'docs/tasks/T-101-s1-cache.md');
+    expect(issues).toEqual([]);
+    expect(task?.sections.preamble).toBe(
+      'Re-parsing the whole tree on every save is wasteful once projects grow;\na content-hash cache would make the watcher loop cheap.',
+    );
+  });
+
+  it('on a full task the text before the first heading is the preamble; sections are untouched', () => {
+    const withPreamble = VALID.replace(
+      '\n## Acceptance criteria',
+      '\nAbsorbs: T-002-s1. Context paragraph kept verbatim.\n\n## Acceptance criteria',
+    );
+    const { task, issues } = parseTaskFile(withPreamble, FILE);
+    expect(issues).toEqual([]);
+    expect(task?.sections.preamble).toBe('Absorbs: T-002-s1. Context paragraph kept verbatim.');
+    expect(task?.sections.acceptanceCriteria).toContain('WHEN an egress event occurs');
+  });
+
+  it('no preamble key when there is no pre-heading text (blank lines are not a preamble)', () => {
+    const { task } = parseTaskFile(VALID, FILE);
+    expect(task?.sections.preamble).toBeUndefined();
+    expect('preamble' in (task?.sections ?? {})).toBe(false);
+  });
+
+  it('an empty body yields no preamble key either', () => {
+    const headerOnly = VALID.split('\n\n## Acceptance criteria')[0] ?? '';
+    const { task } = parseTaskFile(`${headerOnly}\n`, FILE);
+    expect(task?.sections).toEqual({});
+  });
+});
+
 describe('parseTaskFile — suggested and parked statuses', () => {
   it('suggested: minimal file (title, status, suggested_by; no id) is valid', () => {
     const suggestion = `---

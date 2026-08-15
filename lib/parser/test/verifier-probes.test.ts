@@ -219,11 +219,24 @@ describe('verifier probes — section splitting', () => {
     expect(splitSections('## Implementation   notes\ntext\n').implementationNotes).toBe('text');
   });
 
-  it('##NoSpace is not a heading; preamble before the first heading is dropped', () => {
-    expect(splitSections('##Acceptance criteria\n- x\n')).toEqual({});
-    // Documents current behavior: body text before any known ## heading
-    // is not captured anywhere (see suggestion T-002-s2).
-    expect(splitSections('orphan context paragraph\n## Verdicts\nv\n')).toEqual({ verdicts: 'v' });
+  it('##NoSpace is not a heading; preamble before the first heading is PRESERVED (T-019)', () => {
+    // Flipped 2026-08-16 by T-019 (absorbing T-002-s2): the pre-heading
+    // text used to be dropped; it is now the `preamble` key — a
+    // suggestion's context paragraph is its entire content. ##NoSpace is
+    // still not a heading, so that whole body is preamble text.
+    expect(splitSections('##Acceptance criteria\n- x\n')).toEqual({
+      preamble: '##Acceptance criteria\n- x',
+    });
+    expect(splitSections('orphan context paragraph\n## Verdicts\nv\n')).toEqual({
+      preamble: 'orphan context paragraph',
+      verdicts: 'v',
+    });
+    // Text under an UNKNOWN heading is still dropped — the preamble is
+    // only what comes before the FIRST heading of any kind.
+    expect(splitSections('context\n## Unknown\nleaked?\n## Verdicts\nv\n')).toEqual({
+      preamble: 'context',
+      verdicts: 'v',
+    });
   });
 });
 

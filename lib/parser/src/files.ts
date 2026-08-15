@@ -1,6 +1,7 @@
 import { parseTaskFile } from './task.js';
 import { parseRoadmap } from './roadmap.js';
 import { parseComponentSet } from './component.js';
+import { validateProject } from './validate.js';
 import type {
   ComponentSetResult,
   ParseIssue,
@@ -107,6 +108,11 @@ export function parseComponentsFromFiles(
  * found; never throws. Insertion order of the input does not matter —
  * files are processed in sorted path order, so results are deterministic
  * (mirrors the disk layer's filename ordering).
+ *
+ * Cross-reference validation (T-019) runs last over the assembled model
+ * on BOTH return paths — mirroring parseProject exactly, so the two
+ * layers stay deep-equal on the same files. Its issues append after the
+ * per-layer ones; flagged records are still in `tasks`.
  */
 export function parseProjectFromFiles(
   files: Iterable<FileEntry> | ReadonlyMap<string, string>,
@@ -159,15 +165,36 @@ export function parseProjectFromFiles(
       file: roadmapFile,
       message: `${roadmapFile}: cannot read roadmap — not present in file set`,
     });
-    return {
+    const result: ProjectParseResult = {
       tasks,
       features: [],
       components: componentSet.components,
       issues: [...issues, ...componentSet.issues],
     };
+    // The roadmap layer reported (the io-error above), so validateProject
+    // skips the per-task feature cascade — one root cause, one report
+    // (the pinned pre-T-019 missing-roadmap behavior).
+    result.issues.push(...validateProject(result, { roadmapReported: true }));
+    return result;
   }
 
   const roadmap = parseRoadmap(roadmapContent, roadmapFile);
   issues.push(...roadmap.issues, ...componentSet.issues);
-  return { tasks, features: roadmap.features, components: componentSet.components, issues };
+  const result: ProjectParseResult = {
+    tasks,
+    features: roadmap.features,
+    components: componentSet.components,
+    issues,
+  };
+  // Distilled from the roadmap layer's OWN issues (never the merged list,
+  // where a task-file issue could spoof it — mirrors the disk layer): a
+  // roadmap-error means the feature reference space failed and already
+  // reported, so validateProject skips the per-task feature cascade. A
+  // clean-but-empty backbone reports nothing here, so its danglers fire
+  // (the 2026-08-16 T-019 rejection).
+  const roadmapReported = roadmap.issues.some(
+    (i) => i.kind === 'io-error' || i.kind === 'roadmap-error',
+  );
+  result.issues.push(...validateProject(result, { roadmapReported }));
+  return result;
 }

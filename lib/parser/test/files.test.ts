@@ -46,15 +46,19 @@ describe('parseProjectFromFiles — mirrors the filesystem layer exactly', () =>
   });
 
   it('reports duplicate ids with the same message shape as parseTaskDirectory', () => {
+    // 2026-08-16 (T-019): fixture filenames now encode the duplicated id
+    // (T-300-first/T-300-second) — see the note in project.test.ts. The
+    // duplicate is this project's ONLY issue, cross-reference pass included.
     const result = parseProjectFromFiles(loadFixture('dup-project', (rel) => rel));
     const dup = result.issues.find((i) => i.kind === 'duplicate-id');
     expect(dup).toMatchObject({
       id: 'T-300',
-      files: ['docs/tasks/T-301-first.md', 'docs/tasks/T-302-second.md'],
+      files: ['docs/tasks/T-300-first.md', 'docs/tasks/T-300-second.md'],
     });
     expect(dup?.message).toBe(
-      "duplicate task id 'T-300' in docs/tasks/T-301-first.md and docs/tasks/T-302-second.md",
+      "duplicate task id 'T-300' in docs/tasks/T-300-first.md and docs/tasks/T-300-second.md",
     );
+    expect(result.issues).toHaveLength(1);
     // both records stay visible — flagged, not hidden
     expect(result.tasks).toHaveLength(2);
   });

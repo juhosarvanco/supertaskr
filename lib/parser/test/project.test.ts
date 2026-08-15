@@ -7,10 +7,14 @@ const fixture = (name: string): string =>
   fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 
 describe('parseProject — valid fixture project', () => {
+  // 2026-08-16 (T-019): the fixture gains T-100-genesis.md — T-101's
+  // blocked_by: [T-100] had no target, which the new cross-reference pass
+  // rightly flags as dangling. A "valid project" now means references
+  // resolve too, so the fixture was made genuinely valid (4 → 5 tasks).
   it('parses all tasks (full, suggested, parked, stamped) and features with zero issues', () => {
     const result = parseProject(fixture('valid-project'));
     expect(result.issues).toEqual([]);
-    expect(result.tasks).toHaveLength(4);
+    expect(result.tasks).toHaveLength(5);
 
     const alpha = result.tasks.find((t) => t.id === 'T-101');
     expect(alpha).toMatchObject({
@@ -78,6 +82,10 @@ describe('parseProject — broken files never stop the rest', () => {
 });
 
 describe('parseTaskDirectory — duplicate ids', () => {
+  // 2026-08-16 (T-019): fixture files renamed T-301-first/T-302-second →
+  // T-300-first/T-300-second so their names encode the id they both
+  // declare — dup-project stays about exactly ONE violation now that
+  // validateProject also flags id ↔ filename mismatches at project level.
   it('reports a duplicate-id issue listing both file paths', () => {
     const dir = join(fixture('dup-project'), 'docs', 'tasks');
     const { tasks, issues } = parseTaskDirectory(dir);
@@ -86,11 +94,11 @@ describe('parseTaskDirectory — duplicate ids', () => {
       {
         kind: 'duplicate-id',
         id: 'T-300',
-        files: [join(dir, 'T-301-first.md'), join(dir, 'T-302-second.md')],
-        message: expect.stringContaining('T-301-first.md'),
+        files: [join(dir, 'T-300-first.md'), join(dir, 'T-300-second.md')],
+        message: expect.stringContaining('T-300-first.md'),
       },
     ]);
-    expect(issues[0]?.message).toContain('T-302-second.md');
+    expect(issues[0]?.message).toContain('T-300-second.md');
     // both records stay visible — flagged, not hidden
     expect(tasks).toHaveLength(2);
   });

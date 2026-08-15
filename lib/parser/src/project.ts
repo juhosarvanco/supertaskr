@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { parseTaskFile } from './task.js';
 import { parseRoadmap } from './roadmap.js';
 import { parseComponentSet } from './component.js';
+import { validateProject } from './validate.js';
 import type {
   ComponentSetResult,
   ParseIssue,
@@ -175,6 +176,12 @@ export interface ParseProjectOptions {
  * ("no architecture declared", plan §6.5): it yields `components: []`
  * with no issue, mirroring the pure layer's behavior on a file set
  * containing no component files.
+ *
+ * Cross-reference validation (T-019) runs last over the assembled model
+ * — blocked_by → task ids, feature → backbone ids, id ↔ filename — and
+ * its issues append after the per-layer ones (task → roadmap →
+ * component → cross-reference). Records flagged by it are still in
+ * `tasks`: flagging, not hiding.
  */
 export function parseProject(root: string, options: ParseProjectOptions = {}): ProjectParseResult {
   const tasksDir = options.tasksDir ?? join(root, 'docs', 'tasks');
@@ -187,10 +194,21 @@ export function parseProject(root: string, options: ParseProjectOptions = {}): P
     ? parseComponentDirectory(componentsDir)
     : { components: [], issues: [] };
 
-  return {
+  const result: ProjectParseResult = {
     tasks: taskResult.tasks,
     features: roadmapResult.features,
     components: componentResult.components,
     issues: [...taskResult.issues, ...roadmapResult.issues, ...componentResult.issues],
   };
+  // Distilled from the roadmap layer's OWN issues (never the merged list,
+  // where a task-file io-error could spoof it): an unreadable roadmap or a
+  // roadmap-error means the feature reference space failed and already
+  // reported — validateProject then skips the per-task feature cascade. A
+  // clean-but-empty backbone reports nothing here, so its danglers fire
+  // (the 2026-08-16 T-019 rejection).
+  const roadmapReported = roadmapResult.issues.some(
+    (i) => i.kind === 'io-error' || i.kind === 'roadmap-error',
+  );
+  result.issues.push(...validateProject(result, { roadmapReported }));
+  return result;
 }

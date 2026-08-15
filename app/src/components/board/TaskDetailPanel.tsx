@@ -149,6 +149,25 @@ export function TaskDetailPanel({
         </div>
       ) : (
         <div className="flex flex-1 flex-col gap-5.5 px-6.5 py-5">
+          {detail.suggested && (
+            // T-019 (absorbing T-002-s2): a suggestion's context paragraph
+            // is its ENTIRE content, so the ghost variant leads with it —
+            // verbatim, wrapped, break-words for pathological unbroken
+            // runs (the T-004-s1 containment). Absent context renders
+            // visibly empty like every other section, never as an error.
+            <Section title="context" testid="detail-context">
+              {detail.preamble === undefined ? (
+                <Empty />
+              ) : (
+                <p
+                  data-testid="detail-context-text"
+                  className="min-w-0 text-sm whitespace-pre-wrap break-words text-foreground"
+                >
+                  {detail.preamble}
+                </p>
+              )}
+            </Section>
+          )}
           <Section
             title={criteria.length > 0 ? `acceptance criteria · ${criteria.length}` : "acceptance criteria"}
             testid="detail-acceptance"
