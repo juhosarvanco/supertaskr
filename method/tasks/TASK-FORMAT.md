@@ -74,6 +74,24 @@ through the FULL decomposition rules — the suggestion is raw material,
 the rewrite makes it exact), park, or reject with one line of reasoning
 left in the file. Nothing is silently deleted.
 
+Triage encoding — how each outcome is written down, so the board and
+the parser agree:
+
+- Promoted: the planned task ABSORBS the suggestion — it lists the
+  absorbed ids in its body (`Absorbs: T-001-s2, …`) and the suggestion
+  file is removed in the same commit; the absorption line is the
+  surviving record, so removal is not silent deletion.
+- Parked: `status: parked` in place, still flat in the tasks dir.
+  Placement fields stay optional, but `id:` becomes required — an
+  id-less suggestion gains one when parked.
+- Rejected: the file MOVES to `docs/tasks/rejected/`, keeping
+  `status: rejected` plus a dated one-line reasoning. The task globs
+  are deliberately flat, so nothing under rejected/ is a model input.
+
+Rationale of record: on tasks `rejected` is a retriable lifecycle
+state; on a triaged suggestion it is terminal — one status word must
+not carry both meanings in one directory.
+
 ## Lifecycle rules
 
 - Fields lock at dispatch (status: building); unlock on rejected/planned.

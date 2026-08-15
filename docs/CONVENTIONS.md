@@ -22,7 +22,7 @@
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   nputer-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.3) and noted here.
+  method/ formats are version-bumped (currently v0.1.4) and noted here.
 - [?] marks an unresolved claim (archaeology convention) — resolve or
   room it; never silently delete.
 - This project was planned in a long chat session before the folder
@@ -42,14 +42,15 @@
   defaults or arbitrary values — unmapped utilities are deliberately
   dead, and arbitrary values (`p-[13px]`) bypass enforcement (see
   suggestion T-001-s2).
-- Triage-rejecting a SUGGESTION cannot happen in place: `status:
-  rejected` on a minimal file is a hard parse failure (every status
-  but suggested/parked requires the full placement set) — it lights
-  the board's parse-error badge and breaks the live-tree smoke test.
-  Interim encoding (T-006 integration): `git mv` the file to
-  docs/tasks/rejected/ with the one-line reasoning inside; both task
-  globs are deliberately flat, so nothing there is a model input and
-  nothing is deleted. Ratify or replace via T-006-s5.
+- Suggestion-triage encoding is ratified in method/tasks/TASK-FORMAT.md
+  (v0.1.4, T-016): promoted → absorbed into the promoted task ("Absorbs:"
+  line) + suggestion file removed in the same commit; parked → in place,
+  id now required; rejected → `git mv` to docs/tasks/rejected/ with a
+  dated one-line reasoning. Flat `status: rejected` in docs/tasks/ stays
+  a hard parse failure BY DESIGN (missing placement fields light the
+  board's parse-error badge) — move the file, don't "fix" the parser;
+  the flat-glob exclusion and the loud trap are both pinned in
+  lib/parser/test/rejected-exclusion.test.ts.
 - Outside-click/dismissal listeners must decide on pointerdown, never
   click — under trusted input the browser runs microtask checkpoints
   between listeners, so React's discrete-update flush lands
