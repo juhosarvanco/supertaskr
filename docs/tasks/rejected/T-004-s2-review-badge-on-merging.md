@@ -1,6 +1,6 @@
 ---
 title: Consider showing the verification badge on merging (approved, not yet landed) cards
-status: suggested
+status: rejected
 suggested_by: verifier claude-fable-5 @T-004-verify
 ---
 
@@ -26,3 +26,5 @@ done-only and let T-005's expanded card surface `review:` during the
 merge window. If shown on merging, keep the pulse/badge combination
 legible (the badge strokes reference `--status-done-bg`, which equals
 `--status-merging-bg` today but may diverge under T-006).
+
+Triage 2026-08-15 (architect): REJECTED — the disjunction resolved via its second arm: T-005 panel surfaces review: during the merge window; card badge done-only is test-pinned design of record. If @human wants the badge at merging, it is a one-line isDoneish rider on T-017.

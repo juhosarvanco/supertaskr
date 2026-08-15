@@ -43,12 +43,16 @@ Nothing building, nothing broken. Board free.
    (rooms/map-sequencing.md) — T-008 (component-files parser, M,
    lib-parser) and T-009's L planning pass (crate-index) are the next
    dispatches, disjoint touches, awaiting @human word.
-3. Architect triage of the TWENTY-TWO open suggestions:
-   T-001-s1/s2/s3, T-002-s1/s2/s3, T-003-s1/s2/s3, T-004-s1/s2,
-   T-005-s1/s2/s3/s4, T-006-s2/s3/s4/s5, T-007-s1/s2/s3
-   (21 forecast after s1's rejection, +1: s5 filed at integration —
-   the rejected-suggestion encoding gap). Then the domain
-   (.dev/.fi/.com) + trademark sweep for "nputer".
+3. TRIAGE DONE (2026-08-15): 19 promoted → SEVEN hardening tasks
+   T-016…T-022 (milestone 4, below the line; T-016 ratifies the
+   rejected-encoding as method v0.1.4 and dispatches FIRST; T-020 is
+   L → planning pass; each task lists the suggestion ids it absorbs);
+   1 parked (T-003-s2 scale work); 2 rejected to docs/tasks/rejected/
+   (T-001-s1 superseded by T-007; T-004-s2 resolved via its second
+   arm). Suggestion queue is EMPTY. Hardening tasks are architect-
+   noted as slice-line-exempt fillers during milestone 2's serialized
+   stretches (disjoint touches; H-order in the task files). Then the
+   domain (.dev/.fi/.com) + trademark sweep for "nputer".
 
 ## Open questions
 None.

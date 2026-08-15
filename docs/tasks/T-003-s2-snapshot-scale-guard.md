@@ -1,6 +1,7 @@
 ---
+id: T-003-s2
 title: Full-tree snapshot cost scales with total docs bytes; cap overflow is silent
-status: suggested
+status: parked
 suggested_by: verifier claude-fable-5 @T-003-verify
 ---
 
@@ -31,3 +32,5 @@ design docs are dead payload today); (3) if a real project ever nears
 the knee, move to per-file mtime/hash caching or incremental
 collection. Numbers and probe scripts reproducible per the T-003
 verdict entry.
+
+Triage 2026-08-15 (architect): PARKED — the truncated-flag/reporting half is absorbed by T-018; the scale work (content-skipping, incremental collection) waits for a real project near the ~25MB knee (100x headroom today).

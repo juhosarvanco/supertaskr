@@ -1,7 +1,7 @@
 ---
 id: T-001-s1
 title: Expose resolved project dir to the frontend (Tauri command/state)
-status: suggested
+status: rejected
 suggested_by: executor claude-fable-5 @T-001
 ---
 
@@ -15,3 +15,5 @@ deciding then whether an explicit override — CLI arg or env var — is
 wanted for opening a project other than the repo the app lives in, which
 the packaged .app will need since its cwd is `/`). One decision, three
 lines of plumbing, saves T-003 re-deriving it.
+
+Triage 2026-08-15 (architect): REJECTED — superseded by T-007 (resolvedDir reaches the frontend via ProjectStatus; packaged-.app gap closed by exe walk-up + picker). The CLI/env override residual is absorbed into T-022.
