@@ -1,5 +1,7 @@
 import {
+  isComponentFilePath,
   isTaskFilePath,
+  parseComponentFile,
   parseProjectFromFiles,
   parseRoadmap,
   parseTaskFile,
@@ -20,6 +22,10 @@ import {
 
 /** Paths the model derives from, relative to the project dir (POSIX). */
 export const ROADMAP_FILE = "docs/ROADMAP.md";
+
+/** The committed reality layer (ADR-014), delivered by the collector's
+ * .json rule (T-012). */
+export const GRAPH_FILE = "docs/architecture/graph.json";
 
 /** One file as delivered by the Rust side. */
 export interface DocsFilePayload {
@@ -60,6 +66,16 @@ export interface DocsModelState {
   /** Model-input files whose current on-disk content fails to parse;
    * non-empty drives the parse-error badge. */
   failures: ParseFailure[];
+  /**
+   * Raw graph.json bytes as delivered, or undefined when the snapshot
+   * carries none (index not run / over the collector cap). DELIBERATELY
+   * no last-good fallback (T-012 plan §4): ADR-014 forbids hand-editing,
+   * so a corrupt graph is an abnormal state whose designed recovery is
+   * regeneration — parseGraph degrades it to the index-not-run family
+   * and Re-index heals it. Value-stable across snapshots with unchanged
+   * bytes (string identity), so downstream derivation memos hit.
+   */
+  graphContent?: string;
 }
 
 export function emptyState(): DocsModelState {
@@ -80,6 +96,9 @@ export function emptyState(): DocsModelState {
  * - Task file: fails when no TaskRecord can be established (the parser's
  *   identity gate) — soft issues on a returned record are NOT a failure;
  *   the parser's job is flagging, not hiding.
+ * - Component file (T-012; the map's intent layer): same identity gate —
+ *   fails when no ComponentRecord can be established, so a mid-edit
+ *   save keeps the last good record on the map (parse chip machinery).
  * - Roadmap: fails when it yields zero features AND at least one issue
  *   (e.g. mid-edit save with the Backbone heading missing). A genuinely
  *   empty backbone (no issues) is a valid state, not a failure.
@@ -90,11 +109,22 @@ function failingIssues(path: string, content: string): ParseIssue[] | undefined 
     const result = parseTaskFile(content, path);
     return result.task === undefined ? result.issues : undefined;
   }
+  if (isComponentFilePath(path)) {
+    const result = parseComponentFile(content, path);
+    return result.component === undefined ? result.issues : undefined;
+  }
   if (path === ROADMAP_FILE) {
     const result = parseRoadmap(content, path);
     return result.features.length === 0 && result.issues.length > 0 ? result.issues : undefined;
   }
   return undefined;
+}
+
+/** Model-input predicate: files that flow through last-good + failure
+ * machinery into the parsed model. The graph is NOT one (see
+ * `graphContent` — raw passthrough, no fallback). */
+function isModelInput(path: string): boolean {
+  return isTaskFilePath(path) || isComponentFilePath(path) || path === ROADMAP_FILE;
 }
 
 /**
@@ -110,10 +140,15 @@ export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload
   const effective = new Map<string, string>();
   const failures: ParseFailure[] = [];
   const present = new Set<string>();
+  let graphContent: string | undefined;
 
   for (const { path, content } of payload.files) {
     present.add(path);
-    if (!isTaskFilePath(path) && path !== ROADMAP_FILE) continue; // not a model input
+    if (path === GRAPH_FILE) {
+      graphContent = content; // raw passthrough — no last-good by design
+      continue;
+    }
+    if (!isModelInput(path)) continue;
     const issues = failingIssues(path, content);
     if (issues === undefined) {
       lastGood.set(path, content);
@@ -138,7 +173,7 @@ export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload
     if (!present.has(path)) lastGood.delete(path);
   }
 
-  return {
+  const next: DocsModelState = {
     seq: payload.seq,
     projectDir: payload.projectDir,
     generatedAtMs: payload.generatedAtMs,
@@ -146,4 +181,6 @@ export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload
     model: parseProjectFromFiles(effective),
     failures,
   };
+  if (graphContent !== undefined) next.graphContent = graphContent;
+  return next;
 }
