@@ -9,10 +9,10 @@ status: verifying
 blocked_by: [T-008, T-009]
 touches: [app-map]
 builder: claude-fable-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-fable-5
+built_by: "claude-fable-5 @fresh"
+verified_by: "claude-fable-5 @fresh"
+review: same-model
 ---
 
 ## Acceptance criteria
@@ -309,3 +309,101 @@ Working tree clean; committed graph.json byte-identical to main's.
 - T-011-s3 — T-016 done-with-no-stamp → C-06 provenance `unreviewed`.
 
 ## Verdicts
+
+2026-08-15 — claude-fable-5 @fresh (verifier, same-model as builder): APPROVED
+
+Suites reproduced from fresh `npm ci`, ADR-011 order: lib/parser
+**132/132** + `tsc --noEmit` clean + build clean (zero lib/parser
+diff); app `npm ci` + build clean + **229/229** (94 baseline + 46 glob
++ 30 graph + 50 derive + 9 dogfood); bare `cargo test` **100 passed +
+2 ignored** (20+68+3+7+2; zero src-tauri diff). Boundary exact
+(merge-base 850b5b0, `main...HEAD`): the 12 claimed files only; zero
+wiring (App.tsx / watcher-store / docs-model untouched), zero board
+components, zero deps (lockfiles/manifests zero-diff); committed
+graph.json byte-identical to main (sha256-checked). Headless
+throughout; port 1420 never touched.
+
+**Glob matcher attacked** with an 83-assertion adversarial table, 60
+rows cross-checked against real `git check-ignore` (scratch repo,
+core.ignorecase=false): full agreement except exactly four
+divergences, all anticipated from the code, none present in the live
+registry (35/35 path lines are plain literals or `dir/**`):
+(1) single-segment leading slash (`/dist`) is unanchored here (the
+documented T-008 normalization) where git anchors to root; (2+3)
+negation below an excluded parent re-includes here — pure
+last-match-wins as documented — where git refuses re-inclusion; this
+deviation is load-bearing and CORRECT for intent declaration (git's
+traversal rule would silently no-op every `!dir/**` carve-out and
+fake D4s; the C-01/C-02 negation fixture depends on it); (4) `a//b`
+collapses its empty segment (git matches nothing) — degenerate.
+Everything else matches gitignore exactly: `**` at every position
+(incl. `a/**` ≠ `a`), prefix traps, dir-only `/`, unanchored
+per-segment matching, `?`, case, dotfiles, unicode, spaces; literal
+classes/escapes are honestly documented as unsupported, and literal
+braces AGREE with git (gitignore has no brace expansion).
+claimsDirContents: adjacency (`a/b/**` never owns `a/bc`), nesting,
+negated disown, literal-owns-nothing all hold; the NUL probe is
+defeatable only by a pattern containing a literal NUL — YAML-encodable
+but gains nothing a wildcard doesn't; recorded, not exploitable.
+Deviations 1–3 deserve explicit header text → T-011-s4.
+
+**parseGraph** under my own hostile battery beyond the shipped tests:
+spoofed `f:`/`p:`-prefixed SYMBOL ids cannot forge file/package
+endpoints (edges to them skipped loudly); cross-file duplicate symbol
+ids first-win; 15-path traversal battery (`..`, absolute, backslash,
+trailing-slash, empty-segment refused with containment issues;
+`.`-segments accepted but only ever glob-joined — no filesystem
+surface anywhere, worst case degrades to D2); 1M-deep nesting →
+graph-unreadable without hang; 4 MB ids parse and map bounded (<5 s);
+empty-string path accepted and inert (even `**` cannot claim it);
+descriptor-level ADR-009 clean (null-prototype pollution absent
+after every run, Maps throughout, `own()` unshadowable by a crafted
+`hasOwnProperty` key, hostile stats/top-level `__proto__` inert).
+
+**Derivation** probed cell-by-cell: §4.2 relations incl. both
+package.path directions and the forced-undeclared unmapped rule
+(launder probe holds), §4.3 order with suggested/parked
+listed-not-rolled and the pin overriding color while NEVER
+suppressing hasDrift (probed), §4.4 done-only weakest with the
+unreviewed floor (T-016 verified live as done-with-empty-stamp →
+C-06 `unreviewed`; data stays three-way per ADR-016), D1 strictly
+declared×declared, D3 assignment-based beside its explaining D4, D5
+intent-only firing in no-graph mode, both degraded modes + empty
+model, determinism under input permutation, NUL-joined edge keys.
+Recorded non-failures: duplicate component ids duplicate D3 finding
+ids; self depends_on draws a planned self-loop; a path-bearing
+package no edge imports is invisible → T-011-s5.
+
+**THE DOGFOOD re-derived independently** (Python, zero shared code:
+own frontmatter read, own matcher, own join): every pinned number
+reproduces — 49 files all mapped (15/19/10/3/2), the 20-edge table
+7 confirmed / 4 undeclared / 9 planned, exactly 4 D1s (the s2-
+predicted pair + the two app/test/** ones), 4 D3s, zero D2/D4/D5.
+Reality spot-check: all nine D1 file edges are real import statements
+at exact lines (select-board.test.ts:2 + select-task-detail.test.ts:2
+→ @nputer/parser/pure; detail-presentation.test.ts:2 +
+select-task-detail.test.ts:3 → task-detail; panel-dismissal.test.ts:5;
+TaskCard:1 / ModelBadge:1 / SizeBadge:1 / TaskDetailPanel:3 →
+@/lib/utils), and the matching depends_on omissions are real. No
+finding lies. **Post-regen delta verified the strong way**: transient
+regen on this branch's tree → 57 files / 512 edges exactly; D2 gains
+exactly [derive.ts, glob.ts, graph.ts]; C-05 count 20; C-05→C-06
+undeclared 2→4; C-05→unmapped undeclared 6; unmapped→C-06 undeclared
+1; all else unchanged; committed graph restored byte-identically
+(sha256-verified). The integrator's prepared edit is mechanical and
+correct.
+
+**Security sweep: clean.** No new dependencies; no eval/exec, no
+regexes at all in the matcher (hostile text cannot smuggle
+metacharacters); the engine imports only @nputer/parser/pure and its
+siblings (glob.ts/graph.ts import nothing); no IO outside the dogfood
+test's read-only walk; package paths never touch the filesystem;
+collect-don't-throw held under everything thrown. node-builtins.d.ts
+weighed (decision 13): tsconfig includes src+test, so its five names
+now typecheck from src/ too — least-erosion option vs @types/node,
+documented; a src-tree `node:`-import tripwire test would restore
+full loudness → T-011-s6.
+
+Non-failures filed: T-011-s4 (name the gitignore deviations in
+glob.ts, optional parse-time warnings), T-011-s5 (derivation
+edge-case blemishes), T-011-s6 (src node-import tripwire).
