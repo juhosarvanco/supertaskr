@@ -45,6 +45,10 @@ through the pipeline; the map renders the repo's own drift.
 Goal: the planning interview as split view; decomposed at its own
 /plan review. The F-06 remainder (T-010, T-013, T-014, T-015 —
 milestone 4) re-enters after it.
+Tasks: T-023…T-029 (kit → lens → runner → entry → split view →
+crescendo → resume); first slice T-023+T-024+T-026 — hand-driven
+genesis rendered live, deliberately too small. (Decomposed
+2026-08-16, ADR-017.)
 
 ## Parked
 The staged future lives in docs/future.md (two expert-room batches:
@@ -54,4 +58,6 @@ horizon: truth maintenance, production feedback, synthetic users,
 seeds, explainer, proof of process). Nothing there enters scope until
 the first real project run — one recorded exception: the
 architecture-drift slice of truth maintenance was pulled forward into
-F-06 v1 by human directive (ADR-013, 2026-08-15).
+F-06 v1 by human directive (ADR-013, 2026-08-15). Also parked:
+archaeology/Adopt variant — after the first real greenfield genesis
+run (reuses the F-03 runner + split view wholesale; ADR-005).

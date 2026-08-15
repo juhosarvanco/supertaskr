@@ -74,10 +74,12 @@ Nothing in flight. Nothing broken.
    pending screenshot predates the rail — light + dark now include
    it) · the standing real-input checklist (picker flows,
    blocker-link click, real-key Esc/Enter/Space) · a Linux run.
-2. MILESTONE 3 = F-03 in-app genesis (the planning interview as split
-   view, planner chat + board materializing live). Nothing exists
-   yet — it needs its own decomposition at a /plan review before any
-   card can be cut.
+2. MILESTONE 3 DECOMPOSED (T-023…T-029, ADR-017): T-023 (genesis
+   kit, method lane) dispatchable IMMEDIATELY; T-026 unblocks at
+   T-018's merge; T-025/T-027 are L (planning passes at dispatch);
+   T-021 recommended into the app-shell lane before T-025 (the ACL
+   pin). First slice: T-023+T-024+T-026 — hand-driven genesis
+   rendered live.
 3. Next architect triage, the full suggestion backlog: T-008-s1/s2/s3,
    T-009-s1 (ratify as standing rule or keep interim until T-014),
    T-009-s2, T-009-s3, T-011-s1 (**RESOLVED** by T-012's option-a

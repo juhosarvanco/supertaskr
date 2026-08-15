@@ -25,7 +25,8 @@ graph TD
 
 Task `touches:` slugs map here: `app-shell` = C-05 shell/window/watcher
 plumbing · `app-board` = C-05 board pane · `app-map` = C-05 map pane
-(F-06) · `lib-parser` = C-06 · `crate-index` = C-07.
+(F-06) · `app-interview` = C-13 genesis pane (F-03) · `app-agent` =
+C-14 agent runner (F-03) · `lib-parser` = C-06 · `crate-index` = C-07.
 
 Component intent files: docs/architecture/components/ (same
 C-namespace, one file per mapped component; parsed by C-06 — T-008,
@@ -38,6 +39,9 @@ ADR-014/015).
   prompts from method/roles/; never call model APIs directly.
 - App ↔ project: read-only first; writes are single-field
   frontmatter edits or thread appends, nothing else (pure-lens rule).
+- Genesis: the spawned planner session is the writer; the app renders
+  what lands (ADR-017); app-side writes confined to .nputer/ runtime
+  files.
 - Code layout: `app/` = C-05 (Tauri 2 + React + Vite + Tailwind/shadcn;
   areas app-shell, app-board, app-map) · `lib/parser/` = C-06,
   self-contained package · `app/src-tauri/crates/nputer-index` = C-07
@@ -55,9 +59,12 @@ ADR-014/015).
   budget).
 
 ## Related decisions
-decisions/001–016. 007 (stack) and 008 (app-first) shape the map
+decisions/001–017. 007 (stack) and 008 (app-first) shape the map
 above; 008 supersedes the original dashboard-last build order; 011
 fixes the app → parser wiring (file: dep, no root workspace yet);
 012 keeps native OS surfaces Rust-side (webview grant set stays
 empty); 013–015 charter the architecture map (intent+reality v1,
-committed deterministic graph files, indexer-Rust/derivation-TS).
+committed deterministic graph files, indexer-Rust/derivation-TS);
+017 settles genesis (spawned planner writes, app stays a lens —
+supersedes ADR-008's Node-daemon-sidecar phrasing for the spawn
+surface).

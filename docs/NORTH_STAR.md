@@ -25,8 +25,10 @@ Within ~2 months:
 1. nputer ships nputer — milestone 1 built entirely through its own
    pipeline; every merged change traces to a task card with a verdict;
    zero retreats to a single mega-session. Git history is the proof.
-2. Idea → dispatchable milestone-1 board in ≤ 30 minutes via
-   `npx nputer init` (the magic moment, timed).
+2. Idea → dispatchable milestone-1 board in ≤ 30 minutes via the
+   app's interview or `npx nputer init` (the magic moment, timed).
+   (Mechanism amended 2026-08-16 with @human approval — ADR-008 made
+   the app the front door; the CLI path arrives with C-02.)
 3. 2 of 3 outside technical users who run the interview on a real idea
    dispatch ≥ 1 task from the board within a week (acted, not liked).
 4. Every architect model/session switch passes the cold-start test
