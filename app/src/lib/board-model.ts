@@ -5,6 +5,7 @@ import type {
   TaskSize,
   TaskStatus,
 } from "@nputer/parser/pure";
+import { rejectedVerdictCount } from "./verdicts";
 
 /**
  * Story map board model (T-004): a pure function of the T-003 store's
@@ -116,6 +117,12 @@ export interface BoardCard {
   review?: ReviewMode;
   /** Ghost provenance line (T-006): who suggested a suggested task. */
   suggestedBy?: string;
+  /** How many REJECTED entries the task's `## Verdicts` history carries
+   * (T-006-s3), derived here from the panel's own verdict classifier —
+   * no parser change, and face/panel can never disagree. Present only
+   * when > 0: zero verdicts (or zero rejections) is ABSENCE, never ×0.
+   * The face renders it as the design's `rejected ×N` status word. */
+  rejectedCount?: number;
   file: string;
 }
 
@@ -135,8 +142,13 @@ export interface BoardColumn {
   sliceIndex: number;
   /** Suggested tasks, rendered as dashed ghosts below all real cards. */
   ghosts: BoardCard[];
-  /** Parked tasks collapsed into one "N parked" row at the bottom. */
-  parkedCount: number;
+  /** Parked tasks, collapsed into one "N parked" row at the bottom that
+   * expands in place (T-005-s1): the row surfaces the entries themselves
+   * — id-ordered like ghosts — so the one population the board could
+   * not inspect opens in the detail panel via cardRef like everything
+   * else. Parked tasks always carry ids (TASK-FORMAT requiredness), so
+   * their refs resolve by id. */
+  parked: BoardCard[];
 }
 
 export interface BoardModel {
@@ -158,6 +170,7 @@ function modelBadge(task: TaskRecord): ModelBadgeInfo | undefined {
 }
 
 function toCard(task: TaskRecord): BoardCard {
+  const rejections = rejectedVerdictCount(task.sections.verdicts);
   return {
     key: task.file,
     id: task.id,
@@ -171,6 +184,8 @@ function toCard(task: TaskRecord): BoardCard {
     // Plan: the verification badge renders on done cards, from review:.
     review: task.status === "done" ? task.review : undefined,
     suggestedBy: task.suggestedBy,
+    // Absence, not 0 (T-017): no verdicts — or none rejected — is no count.
+    rejectedCount: rejections > 0 ? rejections : undefined,
     file: task.file,
   };
 }
@@ -202,7 +217,7 @@ interface MutableColumn {
   description: string;
   real: BoardCard[];
   ghosts: BoardCard[];
-  parkedCount: number;
+  parked: BoardCard[];
 }
 
 /** Column key/name for the trailing catch-all column. */
@@ -218,11 +233,12 @@ export const UNMAPPED_KEY = "unmapped";
  *   or not in the backbone land in the trailing "unmapped" column
  *   (criterion 4 — nothing is ever dropped), which appears only when
  *   non-empty. Feature-less suggestions land there too.
- * - Within a column: parked → count, suggested → ghosts, the rest →
- *   real cards ordered milestone-1 block first (slice line between the
- *   blocks stays a single boundary even if priorities interleave across
- *   milestones), priority asc / id asc / file asc within each block.
- *   Status never affects position: done cards keep their slot.
+ * - Within a column: parked → the collapsed row's entries (id-ordered,
+ *   T-005-s1), suggested → ghosts, the rest → real cards ordered
+ *   milestone-1 block first (slice line between the blocks stays a
+ *   single boundary even if priorities interleave across milestones),
+ *   priority asc / id asc / file asc within each block. Status never
+ *   affects position: done cards keep their slot.
  */
 export function selectBoard(model: ProjectParseResult): BoardModel {
   // ADR-009: feature ids come from files — keyed collection is a Map.
@@ -238,7 +254,7 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
       description: feature.description,
       real: [],
       ghosts: [],
-      parkedCount: 0,
+      parked: [],
     };
     byFeature.set(feature.id, column);
     featureColumns.push(column);
@@ -250,18 +266,16 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
     description: "tasks whose feature is not in the backbone",
     real: [],
     ghosts: [],
-    parkedCount: 0,
+    parked: [],
   };
 
   for (const task of model.tasks) {
     const column =
       (task.feature !== undefined ? byFeature.get(task.feature) : undefined) ?? unmapped;
-    if (task.status === "parked") {
-      column.parkedCount += 1;
-      continue;
-    }
     const card = toCard(task);
-    if (task.status === "suggested") {
+    if (task.status === "parked") {
+      column.parked.push(card);
+    } else if (task.status === "suggested") {
       column.ghosts.push(card);
     } else {
       column.real.push(card);
@@ -269,7 +283,7 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
   }
 
   const hasContent =
-    unmapped.real.length > 0 || unmapped.ghosts.length > 0 || unmapped.parkedCount > 0;
+    unmapped.real.length > 0 || unmapped.ghosts.length > 0 || unmapped.parked.length > 0;
   const all = hasContent ? [...featureColumns, unmapped] : featureColumns;
 
   const columns: BoardColumn[] = all.map((column) => {
@@ -283,7 +297,7 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
       cards: [...milestone1, ...later],
       sliceIndex: milestone1.length,
       ghosts: [...column.ghosts].sort(byIdThenFile),
-      parkedCount: column.parkedCount,
+      parked: [...column.parked].sort(byIdThenFile),
     };
   });
 

@@ -137,7 +137,14 @@ function App() {
             <p className="font-mono text-sm text-muted-foreground">{shell.docs.projectDir}</p>
           )}
         </div>
-        <div className="flex items-center gap-2.25">
+        {/* T-017 (T-005-s3): header controls are app chrome, not board
+            surface — pressing the theme toggle (or any sibling control)
+            while the detail panel is open must not dismiss it. The
+            single data-panel-exempt attribute on this container is the
+            attribute mechanism from panel-dismissal.ts (pointerdown
+            walks closest()), so controls added here inherit the
+            exemption; blank header space still closes the panel. */}
+        <div className="flex items-center gap-2.25" data-panel-exempt>
           <ParseErrorBadge failures={failures} />
           {screen.screen === "board" && isTauriRuntime() && (
             <Button

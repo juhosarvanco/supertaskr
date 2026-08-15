@@ -6,7 +6,9 @@ import { cardRef, type TaskRef } from "@/lib/task-detail";
  * edge, no fill ever, title plus one line of provenance in the uppercase
  * tag style. Suggestions are minimal files: id and suggested_by render
  * when present. T-005: clicking opens the detail panel's minimal
- * suggestion variant (id-less ghosts open by file ref). */
+ * suggestion variant (id-less ghosts open by file ref). T-017
+ * (T-004-s1): the title span breaks pathological unbroken runs instead
+ * of bleeding across columns — same containment as TaskCard. */
 export function GhostCard({ card, onOpen }: { card: BoardCard; onOpen: (ref: TaskRef) => void }) {
   return (
     <li
@@ -24,7 +26,9 @@ export function GhostCard({ card, onOpen }: { card: BoardCard; onOpen: (ref: Tas
           {card.id !== undefined && (
             <span className="shrink-0 font-mono text-xs text-muted-foreground">{card.id}</span>
           )}
-          <span className="min-w-0 text-sm text-status-planned-foreground">{card.title}</span>
+          <span className="min-w-0 text-sm break-words text-status-planned-foreground">
+            {card.title}
+          </span>
         </span>
         <span className="font-mono text-xs tracking-tag text-muted-foreground uppercase">
           {card.suggestedBy === undefined ? "suggested" : `suggested · ${card.suggestedBy}`}

@@ -87,6 +87,17 @@ const DOT_CLASSES: Partial<Record<StatusToken, string>> = {
  * T-005: the face is a real button — click (or Enter/Space) opens the
  * detail panel; `data-card-trigger` exempts it from the panel's
  * outside-click close so clicking another card switches instead.
+ *
+ * T-017 (T-004-s1): title spans carry `break-words` — a pathological
+ * unbroken title (10k chars, no whitespace) wraps inside the card
+ * instead of painting across every column to the right. Wrapping, not
+ * clamping: the board tells the whole truth, so no glyph is hidden —
+ * a hostile title makes a tall card, never a defaced board.
+ *
+ * T-017 (T-006-s3): the rejected status word carries the design's
+ * rejection count — `rejected ×2` — from card.rejectedCount (derived in
+ * selectBoard from the verdict history's classifier). No count on the
+ * face means no rejected verdicts recorded: absence, never ×0.
  */
 export function TaskCard({
   card,
@@ -123,7 +134,9 @@ export function TaskCard({
             {card.id !== undefined && (
               <span className="shrink-0 font-mono text-sm text-muted-foreground">{card.id}</span>
             )}
-            <span className="min-w-0 text-sm text-status-planned-foreground">{card.title}</span>
+            <span className="min-w-0 text-sm break-words text-status-planned-foreground">
+              {card.title}
+            </span>
           </span>
           {meta.length > 0 && (
             <span className="font-mono text-xs text-muted-foreground">{meta.join(" · ")}</span>
@@ -143,6 +156,7 @@ export function TaskCard({
       data-task-id={card.id ?? ""}
       data-status={card.status}
       data-pulse={card.visual.pulse ? "true" : undefined}
+      data-rejected-count={card.rejectedCount}
       className={cn(
         "group relative rounded-lg border shadow-card hover:-translate-y-px hover:shadow-card-hover active:translate-y-0 active:shadow-none",
         STATUS_CLASSES[token],
@@ -170,7 +184,7 @@ export function TaskCard({
           )}
           <span
             className={cn(
-              "min-w-0 text-base font-semibold tracking-title",
+              "min-w-0 text-base font-semibold tracking-title break-words",
               TITLE_CLASSES[token],
             )}
           >
@@ -196,7 +210,9 @@ export function TaskCard({
                     )}
                   />
                 )}
-                {card.status}
+                {card.status === "rejected" && card.rejectedCount !== undefined
+                  ? `rejected ×${card.rejectedCount}`
+                  : card.status}
               </span>
             )}
             {card.review !== undefined && (

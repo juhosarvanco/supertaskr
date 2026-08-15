@@ -72,7 +72,7 @@ describe("selectBoard — grouping and column order", () => {
     expect(f3).toBeDefined();
     expect(f3?.cards).toEqual([]);
     expect(f3?.ghosts).toEqual([]);
-    expect(f3?.parkedCount).toBe(0);
+    expect(f3?.parked).toEqual([]);
     expect(f3?.sliceIndex).toBe(0);
   });
 
@@ -262,7 +262,7 @@ describe("selectBoard — ghost/parked partition", () => {
     expect(col?.ghosts.map((g) => g.title)).toEqual(["Numbered idea", "Raw idea"]);
   });
 
-  it("parked tasks collapse into a per-feature count (feature-less parked count under unmapped)", () => {
+  it("parked tasks collapse into per-feature row ENTRIES (feature-less parked under unmapped) — T-005-s1", () => {
     const parked = (id: string, title: string, feature?: string): string =>
       fm(
         ["id", id],
@@ -272,17 +272,97 @@ describe("selectBoard — ghost/parked partition", () => {
       );
     const board = selectBoard(
       withRoadmap([
-        [path("T-040-parked-a"), parked("T-040", "Parked A", "F-01")],
         [path("T-041-parked-b"), parked("T-041", "Parked B", "F-01")],
+        [path("T-040-parked-a"), parked("T-040", "Parked A", "F-01")],
         [path("T-042-parked-c"), parked("T-042", "Parked C")],
       ]),
     );
-    expect(board.columns[0]?.parkedCount).toBe(2);
+    // The entries themselves surface — the board can now inspect its
+    // one previously opaque population — id-ordered like ghosts, and
+    // never as real cards or ghosts.
+    expect(board.columns[0]?.parked.map((c) => [c.id, c.title])).toEqual([
+      ["T-040", "Parked A"],
+      ["T-041", "Parked B"],
+    ]);
     expect(board.columns[0]?.cards).toEqual([]);
     expect(board.columns[0]?.ghosts).toEqual([]);
     const last = board.columns[board.columns.length - 1];
     expect(last?.key).toBe("unmapped");
-    expect(last?.parkedCount).toBe(1);
+    expect(last?.parked.map((c) => c.id)).toEqual(["T-042"]);
+  });
+
+  it("parked entries open by id: every parked entry carries the id its cardRef resolves by", () => {
+    // TASK-FORMAT requiredness: only suggestions may omit id, so a
+    // parked task always has one — the detail panel ref is stable.
+    const board = selectBoard(
+      withRoadmap([
+        [path("T-040-parked-a"), fm(["id", "T-040"], ["title", "Parked A"], ["feature", "F-01"], ["status", "parked"])],
+      ]),
+    );
+    const entry = board.columns[0]?.parked[0];
+    expect(entry?.id).toBe("T-040");
+    expect(entry?.file).toBe(path("T-040-parked-a"));
+  });
+});
+
+describe("selectBoard — rejected ×N derivation (T-006-s3)", () => {
+  const TWICE_REJECTED = [
+    "",
+    "## Verdicts",
+    "2026-08-12 — codex (verifier): REJECTED",
+    "",
+    "repro: file order.",
+    "",
+    "2026-08-13 — codex (verifier): REJECTED — still file order.",
+    "",
+    "2026-08-14 — claude (verifier): APPROVED — quoting the REJECTED repro.",
+    "",
+  ].join("\n");
+
+  /** Task source with a body (fm() has no body parameter). */
+  const taskWithBody = (id: string, status: string, body: string): string =>
+    `${fm(
+      ["id", id],
+      ["title", `${id} title`],
+      ["feature", "F-01"],
+      ["milestone", 1],
+      ["priority", 1],
+      ["size", "M"],
+      ["status", status],
+    )}${body}`;
+
+  it("counts REJECTED verdict entries from the verdicts section — panel classifier, no parser change", () => {
+    const board = selectBoard(
+      withRoadmap([[path("T-011"), taskWithBody("T-011", "rejected", TWICE_REJECTED)]]),
+    );
+    expect(board.columns[0]?.cards[0]?.rejectedCount).toBe(2);
+  });
+
+  it("zero verdicts -> absence, not 0 (criterion 6)", () => {
+    const board = selectBoard(
+      withRoadmap([[path("T-011"), task("T-011", "F-01", 1, "rejected")]]),
+    );
+    expect(board.columns[0]?.cards[0]?.rejectedCount).toBeUndefined();
+  });
+
+  it("approved-only history -> absence too (a REJECTED quoted in an approved header tints approved, first-match-wins)", () => {
+    const approvedOnly = [
+      "",
+      "## Verdicts",
+      "2026-08-14 — verifier: APPROVED — the REJECTED repro no longer reproduces.",
+      "",
+    ].join("\n");
+    const board = selectBoard(
+      withRoadmap([[path("T-011"), taskWithBody("T-011", "done", approvedOnly)]]),
+    );
+    expect(board.columns[0]?.cards[0]?.rejectedCount).toBeUndefined();
+  });
+
+  it("the count is model truth for any status (a building card keeps its scar count)", () => {
+    const board = selectBoard(
+      withRoadmap([[path("T-011"), taskWithBody("T-011", "building", TWICE_REJECTED)]]),
+    );
+    expect(board.columns[0]?.cards[0]?.rejectedCount).toBe(2);
   });
 });
 
