@@ -1,0 +1,4820 @@
+{
+  "schema": 1,
+  "root": ".",
+  "languages": [
+    "ts"
+  ],
+  "files": [
+    {
+      "id": "f:app/src/App.tsx",
+      "path": "app/src/App.tsx",
+      "lang": "ts",
+      "hash": "blake3:f1ad5f0afc7d61bee0094f7efdb2fd4a15ef799edb982f407c14ff425e04fb9b",
+      "loc": 219,
+      "symbols": [
+        {
+          "id": "s:app/src/App.tsx#App",
+          "name": "App",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            113,
+            217
+          ]
+        },
+        {
+          "id": "s:app/src/App.tsx#EmptyState",
+          "name": "EmptyState",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            51,
+            100
+          ]
+        },
+        {
+          "id": "s:app/src/App.tsx#ParseErrorBadge",
+          "name": "ParseErrorBadge",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            25,
+            42
+          ]
+        },
+        {
+          "id": "s:app/src/App.tsx#milestoneLine",
+          "name": "milestoneLine",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            104,
+            111
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/board/Board.tsx",
+      "path": "app/src/components/board/Board.tsx",
+      "lang": "ts",
+      "hash": "blake3:c6440732224827c77c2e8120b04cb3a31a490e5ee2a620b1f3c80ac67751e1c0",
+      "loc": 58,
+      "symbols": [
+        {
+          "id": "s:app/src/components/board/Board.tsx#Board",
+          "name": "Board",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            28,
+            58
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/Board.tsx#DENSE_CARD_THRESHOLD",
+          "name": "DENSE_CARD_THRESHOLD",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            10,
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/board/FeatureColumn.tsx",
+      "path": "app/src/components/board/FeatureColumn.tsx",
+      "lang": "ts",
+      "hash": "blake3:03874ff43f92ea3f8715212ded047472a671d6cdda32929770c70048d2c113f5",
+      "loc": 70,
+      "symbols": [
+        {
+          "id": "s:app/src/components/board/FeatureColumn.tsx#FeatureColumn",
+          "name": "FeatureColumn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            21,
+            70
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/board/GhostCard.tsx",
+      "path": "app/src/components/board/GhostCard.tsx",
+      "lang": "ts",
+      "hash": "blake3:e70e075bb9864edc4a1c62f827d70dc2c8f4b88dbf13bd81b24a94a1794847c3",
+      "loc": 35,
+      "symbols": [
+        {
+          "id": "s:app/src/components/board/GhostCard.tsx#GhostCard",
+          "name": "GhostCard",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            10,
+            35
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/board/ParkedRow.tsx",
+      "path": "app/src/components/board/ParkedRow.tsx",
+      "lang": "ts",
+      "hash": "blake3:2b83c19ce68de0166d276e034c7f23c8ac87e98cc54e5045a4dd45f3516cae97",
+      "loc": 18,
+      "symbols": [
+        {
+          "id": "s:app/src/components/board/ParkedRow.tsx#ParkedRow",
+          "name": "ParkedRow",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            5,
+            18
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/board/SliceLine.tsx",
+      "path": "app/src/components/board/SliceLine.tsx",
+      "lang": "ts",
+      "hash": "blake3:074443e20c00133ae1d1bdb591a77f002127c6fba3facea29e8c8d80a17a207d",
+      "loc": 16,
+      "symbols": [
+        {
+          "id": "s:app/src/components/board/SliceLine.tsx#SliceLine",
+          "name": "SliceLine",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            5,
+            16
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/board/TaskCard.tsx",
+      "path": "app/src/components/board/TaskCard.tsx",
+      "lang": "ts",
+      "hash": "blake3:46a20d9f7df4b6ecddceccc6ad085a90c3c3fb92fff5d477de8aae85bcfe9307",
+      "loc": 212,
+      "symbols": [
+        {
+          "id": "s:app/src/components/board/TaskCard.tsx#CHIP_BORDER_CLASSES",
+          "name": "CHIP_BORDER_CLASSES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            37,
+            44
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskCard.tsx#DOT_CLASSES",
+          "name": "DOT_CLASSES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            66,
+            69
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskCard.tsx#HOVER_CLASSES",
+          "name": "HOVER_CLASSES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            46,
+            53
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskCard.tsx#STATUS_CLASSES",
+          "name": "STATUS_CLASSES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            17,
+            24
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskCard.tsx#STATUS_WORD",
+          "name": "STATUS_WORD",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            57,
+            62
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskCard.tsx#TITLE_CLASSES",
+          "name": "TITLE_CLASSES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            26,
+            33
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskCard.tsx#TaskCard",
+          "name": "TaskCard",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            91,
+            212
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "path": "app/src/components/board/TaskDetailPanel.tsx",
+      "lang": "ts",
+      "hash": "blake3:3cd04f833f6e0ddfbdbbbd304855c1d6f1b5ba869ff7903b5cc67d37be6ab6ea",
+      "loc": 370,
+      "symbols": [
+        {
+          "id": "s:app/src/components/board/TaskDetailPanel.tsx#Empty",
+          "name": "Empty",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            353,
+            359
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskDetailPanel.tsx#NeutralChip",
+          "name": "NeutralChip",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            284,
+            290
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskDetailPanel.tsx#Section",
+          "name": "Section",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            325,
+            349
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskDetailPanel.tsx#Stamp",
+          "name": "Stamp",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            361,
+            370
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+          "name": "TaskDetailPanel",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            35,
+            281
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskDetailPanel.tsx#VerdictBlock",
+          "name": "VerdictBlock",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            293,
+            323
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/board/badges/ModelBadge.tsx",
+      "path": "app/src/components/board/badges/ModelBadge.tsx",
+      "lang": "ts",
+      "hash": "blake3:b5b34d3d20a74412c921e66e8c7cd2ff62002591df19e50fc3f8742ec9715bbe",
+      "loc": 17,
+      "symbols": [
+        {
+          "id": "s:app/src/components/board/badges/ModelBadge.tsx#ModelBadge",
+          "name": "ModelBadge",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            7,
+            17
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/board/badges/ReviewBadge.tsx",
+      "path": "app/src/components/board/badges/ReviewBadge.tsx",
+      "lang": "ts",
+      "hash": "blake3:b2a5d751751098e7fd052dc0e12f9623a985b00efae6264c59a6ef5de6442ac9",
+      "loc": 63,
+      "symbols": [
+        {
+          "id": "s:app/src/components/board/badges/ReviewBadge.tsx#ReviewBadge",
+          "name": "ReviewBadge",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            19,
+            63
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/board/badges/SizeBadge.tsx",
+      "path": "app/src/components/board/badges/SizeBadge.tsx",
+      "lang": "ts",
+      "hash": "blake3:c74be4ce8e185d70c8d2c87dc6e920b61fe56400f23d094e2bdd67abc536750b",
+      "loc": 18,
+      "symbols": [
+        {
+          "id": "s:app/src/components/board/badges/SizeBadge.tsx#SizeBadge",
+          "name": "SizeBadge",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            8,
+            18
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/board/panel-dismissal.ts",
+      "path": "app/src/components/board/panel-dismissal.ts",
+      "lang": "ts",
+      "hash": "blake3:3601470a54d87de1c6c220b34e2ab8af8d1c79605ae71aeabd4d94d6fb352d8a",
+      "loc": 50,
+      "symbols": [
+        {
+          "id": "s:app/src/components/board/panel-dismissal.ts#DismissalDoc",
+          "name": "DismissalDoc",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            4,
+            4
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/panel-dismissal.ts#attachPanelDismissal",
+          "name": "attachPanelDismissal",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            29,
+            50
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/ui/button.tsx",
+      "path": "app/src/components/ui/button.tsx",
+      "lang": "ts",
+      "hash": "blake3:c08eaadf5997b4adf328b3d794f372ab8481f5408b8df4d22a1b20862f612998",
+      "loc": 70,
+      "symbols": [
+        {
+          "id": "s:app/src/components/ui/button.tsx#Button",
+          "name": "Button",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            47,
+            68
+          ]
+        },
+        {
+          "id": "s:app/src/components/ui/button.tsx#buttonVariants",
+          "name": "buttonVariants",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            19,
+            45
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/lib/board-model.ts",
+      "path": "app/src/lib/board-model.ts",
+      "lang": "ts",
+      "hash": "blake3:88e81857b9509ca606e68bc0b74aa1b5a432f103c61f533a80e7b2d05da621bc",
+      "loc": 291,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/board-model.ts#BoardCard",
+          "name": "BoardCard",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            102,
+            120
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#BoardColumn",
+          "name": "BoardColumn",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            122,
+            140
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#BoardModel",
+          "name": "BoardModel",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            142,
+            148
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#ModelBadgeInfo",
+          "name": "ModelBadgeInfo",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            93,
+            98
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#MutableColumn",
+          "name": "MutableColumn",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            198,
+            206
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#StatusToken",
+          "name": "StatusToken",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            27,
+            33
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#StatusVisual",
+          "name": "StatusVisual",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            35,
+            40
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#UNMAPPED_KEY",
+          "name": "UNMAPPED_KEY",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            209,
+            209
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#byIdThenFile",
+          "name": "byIdThenFile",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            192,
+            196
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#byPriority",
+          "name": "byPriority",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            182,
+            189
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#byText",
+          "name": "byText",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            179,
+            179
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#isDoneish",
+          "name": "isDoneish",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            150,
+            150
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#modelBadge",
+          "name": "modelBadge",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            152,
+            158
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#selectBoard",
+          "name": "selectBoard",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            227,
+            291
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#shortModelName",
+          "name": "shortModelName",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            77,
+            90
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#statusVisual",
+          "name": "statusVisual",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            49,
+            67
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#toCard",
+          "name": "toCard",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            160,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/lib/docs-model.ts",
+      "path": "app/src/lib/docs-model.ts",
+      "lang": "ts",
+      "hash": "blake3:313b679b9a6959511209b0c79f0bb3d39e8fcee91600da0459f0b7649bc9c374",
+      "loc": 149,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+          "name": "DocsFilePayload",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            25,
+            28
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#DocsModelState",
+          "name": "DocsModelState",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            49,
+            63
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+          "name": "DocsSnapshotPayload",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            32,
+            38
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#ParseFailure",
+          "name": "ParseFailure",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            41,
+            47
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#ROADMAP_FILE",
+          "name": "ROADMAP_FILE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            22,
+            22
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#applySnapshot",
+          "name": "applySnapshot",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            106,
+            149
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#emptyState",
+          "name": "emptyState",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            65,
+            74
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#failingIssues",
+          "name": "failingIssues",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            88,
+            98
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/lib/task-detail.ts",
+      "path": "app/src/lib/task-detail.ts",
+      "lang": "ts",
+      "hash": "blake3:ba900c76379930c4956e9e54fb78f975e9d76d5fe6bce1b2c1aef5aba545b89d",
+      "loc": 236,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/task-detail.ts#BlockerLink",
+          "name": "BlockerLink",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            45,
+            56
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#CriterionLine",
+          "name": "CriterionLine",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            101,
+            106
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#TaskDetail",
+          "name": "TaskDetail",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            63,
+            90
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#TaskRef",
+          "name": "TaskRef",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            31,
+            31
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#VERDICT_DATE",
+          "name": "VERDICT_DATE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            147,
+            147
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#VerdictEntry",
+          "name": "VerdictEntry",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            140,
+            145
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#cardRef",
+          "name": "cardRef",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            34,
+            36
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#criterionLines",
+          "name": "criterionLines",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            113,
+            137
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#findTask",
+          "name": "findTask",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            182,
+            187
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#refLabel",
+          "name": "refLabel",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            40,
+            42
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#section",
+          "name": "section",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            94,
+            96
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#selectTaskDetail",
+          "name": "selectTaskDetail",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            195,
+            236
+          ]
+        },
+        {
+          "id": "s:app/src/lib/task-detail.ts#verdictEntries",
+          "name": "verdictEntries",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            157,
+            180
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/lib/utils.ts",
+      "path": "app/src/lib/utils.ts",
+      "lang": "ts",
+      "hash": "blake3:cb488a6352482fc7a7ded88a7d5312a953f7113b0ca3598e60979a44f75fb3f5",
+      "loc": 6,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/utils.ts#cn",
+          "name": "cn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            4,
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/lib/watcher-store.ts",
+      "path": "app/src/lib/watcher-store.ts",
+      "lang": "ts",
+      "hash": "blake3:39b7ce86c18492973ce9ba920738fd1b3e8035e2030d1c73670f9666c2f05f64",
+      "loc": 317,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
+          "name": "CONVENTION_HINT",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            118,
+            119
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#ModelUpdateEcho",
+          "name": "ModelUpdateEcho",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            32,
+            41
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#PickOutcomePayload",
+          "name": "PickOutcomePayload",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            50,
+            54
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#ProjectStatusPayload",
+          "name": "ProjectStatusPayload",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            44,
+            47
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#RejectedPick",
+          "name": "RejectedPick",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            68,
+            71
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#ScreenModel",
+          "name": "ScreenModel",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            128,
+            132
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#ShellPhase",
+          "name": "ShellPhase",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            64,
+            64
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#ShellState",
+          "name": "ShellState",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            73,
+            83
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
+          "name": "applyDocsPayload",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            226,
+            241
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#applyProjectStatus",
+          "name": "applyProjectStatus",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            243,
+            255
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#buildEcho",
+          "name": "buildEcho",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            213,
+            224
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#getShellState",
+          "name": "getShellState",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            200,
+            202
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#isTauri",
+          "name": "isTauri",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            183,
+            183
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#isTauriRuntime",
+          "name": "isTauriRuntime",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            204,
+            206
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#keepCurrentProject",
+          "name": "keepCurrentProject",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            315,
+            317
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#listeners",
+          "name": "listeners",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            192,
+            192
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#noDocsMessage",
+          "name": "noDocsMessage",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            122,
+            124
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#pickProjectFolder",
+          "name": "pickProjectFolder",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            288,
+            312
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#reduceDocs",
+          "name": "reduceDocs",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            105,
+            115
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#resetDocsForProjectSwitch",
+          "name": "resetDocsForProjectSwitch",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            95,
+            97
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#selectScreen",
+          "name": "selectScreen",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            134,
+            166
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#setShell",
+          "name": "setShell",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            208,
+            211
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#shell",
+          "name": "shell",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            185,
+            191
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
+          "name": "startDocsWatcher",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            262,
+            280
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#started",
+          "name": "started",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            193,
+            193
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#subscribeShell",
+          "name": "subscribeShell",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            195,
+            198
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/main.tsx",
+      "path": "app/src/main.tsx",
+      "lang": "ts",
+      "hash": "blake3:55dd25c5a654e1f030b0947c000e2e30fd95ccc660c2cff6f158c29ba11567fa",
+      "loc": 10,
+      "symbols": []
+    },
+    {
+      "id": "f:app/src/vite-env.d.ts",
+      "path": "app/src/vite-env.d.ts",
+      "lang": "ts",
+      "hash": "blake3:00a29185efbdf41c38089c4164fb1b9415449bcd9eaa57c77623a12b55a50b6f",
+      "loc": 1,
+      "symbols": []
+    },
+    {
+      "id": "f:app/test/detail-presentation.test.ts",
+      "path": "app/test/detail-presentation.test.ts",
+      "lang": "ts",
+      "hash": "blake3:e3f6bbf15ad0c5360b4baa2f0e271db3ef33b3e4a77771f2aa4f77f6dfdc5e6b",
+      "loc": 69,
+      "symbols": []
+    },
+    {
+      "id": "f:app/test/docs-model.test.ts",
+      "path": "app/test/docs-model.test.ts",
+      "lang": "ts",
+      "hash": "blake3:ca0af41dba9cbef16037ba9dffbf562b6f980c4343aa468694287a0e57918d70",
+      "loc": 192,
+      "symbols": [
+        {
+          "id": "s:app/test/docs-model.test.ts#BROKEN_TASK",
+          "name": "BROKEN_TASK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            18,
+            18
+          ]
+        },
+        {
+          "id": "s:app/test/docs-model.test.ts#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            17,
+            17
+          ]
+        },
+        {
+          "id": "s:app/test/docs-model.test.ts#apply",
+          "name": "apply",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            33,
+            34
+          ]
+        },
+        {
+          "id": "s:app/test/docs-model.test.ts#baseFiles",
+          "name": "baseFiles",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            27,
+            31
+          ]
+        },
+        {
+          "id": "s:app/test/docs-model.test.ts#payload",
+          "name": "payload",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            20,
+            25
+          ]
+        },
+        {
+          "id": "s:app/test/docs-model.test.ts#task",
+          "name": "task",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            15,
+            16
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/panel-dismissal.test.ts",
+      "path": "app/test/panel-dismissal.test.ts",
+      "lang": "ts",
+      "hash": "blake3:9fe8b0946852b2c1aef4220a1de2e08a766dd46ebb27f33980354f386b65c503",
+      "loc": 235,
+      "symbols": [
+        {
+          "id": "s:app/test/panel-dismissal.test.ts#FakeElement",
+          "name": "FakeElement",
+          "kind": "class",
+          "exported": false,
+          "range": [
+            30,
+            84
+          ]
+        },
+        {
+          "id": "s:app/test/panel-dismissal.test.ts#ListenerDoc",
+          "name": "ListenerDoc",
+          "kind": "class",
+          "exported": false,
+          "range": [
+            95,
+            119
+          ]
+        },
+        {
+          "id": "s:app/test/panel-dismissal.test.ts#attach",
+          "name": "attach",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            147,
+            159
+          ]
+        },
+        {
+          "id": "s:app/test/panel-dismissal.test.ts#buildTree",
+          "name": "buildTree",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            132,
+            144
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/project-shell.test.tsx",
+      "path": "app/test/project-shell.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:42b5e9137b10da1f64fb0248e9096706910ab0d620e2cdabbf24494d3535317d",
+      "loc": 127,
+      "symbols": [
+        {
+          "id": "s:app/test/project-shell.test.tsx#click",
+          "name": "click",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            37,
+            41
+          ]
+        },
+        {
+          "id": "s:app/test/project-shell.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            19,
+            19
+          ]
+        },
+        {
+          "id": "s:app/test/project-shell.test.tsx#noop",
+          "name": "noop",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            43,
+            43
+          ]
+        },
+        {
+          "id": "s:app/test/project-shell.test.tsx#render",
+          "name": "render",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            33,
+            35
+          ]
+        },
+        {
+          "id": "s:app/test/project-shell.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            20,
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/review-badge.test.tsx",
+      "path": "app/test/review-badge.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:814c2a2df81b9bc6e775a889671263e23f76ce3efe1f5b74f2ab5006f3780638",
+      "loc": 82,
+      "symbols": [
+        {
+          "id": "s:app/test/review-badge.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            18,
+            18
+          ]
+        },
+        {
+          "id": "s:app/test/review-badge.test.tsx#renderBadge",
+          "name": "renderBadge",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            32,
+            37
+          ]
+        },
+        {
+          "id": "s:app/test/review-badge.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            19,
+            19
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/select-board.test.ts",
+      "path": "app/test/select-board.test.ts",
+      "lang": "ts",
+      "hash": "blake3:0656a9b996b859e33dd14c559894242d604dd068af47cd672ae4b4bd724fd10d",
+      "loc": 422,
+      "symbols": [
+        {
+          "id": "s:app/test/select-board.test.ts#Field",
+          "name": "Field",
+          "kind": "type",
+          "exported": false,
+          "range": [
+            21,
+            21
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            11,
+            19
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#fm",
+          "name": "fm",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            24,
+            25
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#path",
+          "name": "path",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            53,
+            53
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#project",
+          "name": "project",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            47,
+            48
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#task",
+          "name": "task",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            28,
+            45
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#withRoadmap",
+          "name": "withRoadmap",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            50,
+            51
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/select-task-detail.test.ts",
+      "path": "app/test/select-task-detail.test.ts",
+      "lang": "ts",
+      "hash": "blake3:941c6f4b5f8812ff6384fc15dcd3a6f487f75f6b91ed9a5fad327f66c190dfd3",
+      "loc": 277,
+      "symbols": [
+        {
+          "id": "s:app/test/select-task-detail.test.ts#FULL_BODY",
+          "name": "FULL_BODY",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            60,
+            72
+          ]
+        },
+        {
+          "id": "s:app/test/select-task-detail.test.ts#Field",
+          "name": "Field",
+          "kind": "type",
+          "exported": false,
+          "range": [
+            20,
+            20
+          ]
+        },
+        {
+          "id": "s:app/test/select-task-detail.test.ts#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            11,
+            18
+          ]
+        },
+        {
+          "id": "s:app/test/select-task-detail.test.ts#VERDICTS",
+          "name": "VERDICTS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            52,
+            58
+          ]
+        },
+        {
+          "id": "s:app/test/select-task-detail.test.ts#byId",
+          "name": "byId",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            50,
+            50
+          ]
+        },
+        {
+          "id": "s:app/test/select-task-detail.test.ts#path",
+          "name": "path",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            48,
+            48
+          ]
+        },
+        {
+          "id": "s:app/test/select-task-detail.test.ts#project",
+          "name": "project",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            42,
+            43
+          ]
+        },
+        {
+          "id": "s:app/test/select-task-detail.test.ts#src",
+          "name": "src",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            23,
+            24
+          ]
+        },
+        {
+          "id": "s:app/test/select-task-detail.test.ts#task",
+          "name": "task",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            28,
+            40
+          ]
+        },
+        {
+          "id": "s:app/test/select-task-detail.test.ts#withRoadmap",
+          "name": "withRoadmap",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            45,
+            46
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/watcher-store.test.ts",
+      "path": "app/test/watcher-store.test.ts",
+      "lang": "ts",
+      "hash": "blake3:42fb357857bd392b771a51e8099bce9e4824e7119cc3eedccfd2ff292c2e1c52",
+      "loc": 212,
+      "symbols": [
+        {
+          "id": "s:app/test/watcher-store.test.ts#BROKEN_ROADMAP",
+          "name": "BROKEN_ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            27,
+            27
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-store.test.ts#ROADMAP_A",
+          "name": "ROADMAP_A",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            25,
+            25
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-store.test.ts#ROADMAP_B",
+          "name": "ROADMAP_B",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            26,
+            26
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-store.test.ts#openProjectA",
+          "name": "openProjectA",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            45,
+            46
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-store.test.ts#payload",
+          "name": "payload",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            29,
+            38
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-store.test.ts#projectAFiles",
+          "name": "projectAFiles",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            40,
+            43
+          ]
+        },
+        {
+          "id": "s:app/test/watcher-store.test.ts#task",
+          "name": "task",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            23,
+            24
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/vite.config.ts",
+      "path": "app/vite.config.ts",
+      "lang": "ts",
+      "hash": "blake3:9925c2dd30a3f54ec3a8711750a3e54e11832fe03f986d6f6b6655f2fb3fe098",
+      "loc": 47,
+      "symbols": [
+        {
+          "id": "s:app/vite.config.ts#host",
+          "name": "host",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            7,
+            7
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/vitest.config.ts",
+      "path": "app/vitest.config.ts",
+      "lang": "ts",
+      "hash": "blake3:1223ce99ea3faf026208508c79355c259829e1dd4fe1806c3d3ee546c61ab5a7",
+      "loc": 23,
+      "symbols": []
+    },
+    {
+      "id": "f:lib/parser/src/files.ts",
+      "path": "lib/parser/src/files.ts",
+      "lang": "ts",
+      "hash": "blake3:d49a583df07622b911cfd53bfc1061b23336e081dc4521a8600920a44a117f7e",
+      "loc": 117,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/files.ts#FileEntry",
+          "name": "FileEntry",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            28,
+            31
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/files.ts#ParseProjectFromFilesOptions",
+          "name": "ParseProjectFromFilesOptions",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            33,
+            38
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/files.ts#isTaskFilePath",
+          "name": "isTaskFilePath",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            52,
+            57
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+          "name": "parseProjectFromFiles",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            66,
+            117
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/files.ts#toFileMap",
+          "name": "toFileMap",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            41,
+            49
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/src/frontmatter.ts",
+      "path": "lib/parser/src/frontmatter.ts",
+      "lang": "ts",
+      "hash": "blake3:c3403b945bad2920913e7de1ca8db47e69ed2019fc545c4cb8d3cde905fd28e5",
+      "loc": 88,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/frontmatter.ts#FrontmatterResult",
+          "name": "FrontmatterResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            4,
+            10
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/frontmatter.ts#OPEN",
+          "name": "OPEN",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            12,
+            12
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/frontmatter.ts#extractFrontmatter",
+          "name": "extractFrontmatter",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            19,
+            88
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/src/index.ts",
+      "path": "lib/parser/src/index.ts",
+      "lang": "ts",
+      "hash": "blake3:57b5059abcf01a85c15199d77f011be4fc479940f7ad34282ef1981466adfba4",
+      "loc": 44,
+      "symbols": []
+    },
+    {
+      "id": "f:lib/parser/src/model-session.ts",
+      "path": "lib/parser/src/model-session.ts",
+      "lang": "ts",
+      "hash": "blake3:37ef826dffdeae5513f00c139d3d09f4be1f89f9da80408ee2da5bcb6ad4f80f",
+      "loc": 32,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/model-session.ts#parseModelSession",
+          "name": "parseModelSession",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            18,
+            32
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/src/project.ts",
+      "path": "lib/parser/src/project.ts",
+      "lang": "ts",
+      "hash": "blake3:c97d22b5ba958e8af0deb2c4722616ea1597ae00cf90007780809dee7931642a",
+      "loc": 135,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/project.ts#ParseProjectOptions",
+          "name": "ParseProjectOptions",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            112,
+            117
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/project.ts#TaskDirectoryResult",
+          "name": "TaskDirectoryResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            18,
+            21
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/project.ts#parseProject",
+          "name": "parseProject",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            123,
+            135
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/project.ts#parseRoadmapFile",
+          "name": "parseRoadmapFile",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            93,
+            110
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/project.ts#parseTaskDirectory",
+          "name": "parseTaskDirectory",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            31,
+            90
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/src/pure.ts",
+      "path": "lib/parser/src/pure.ts",
+      "lang": "ts",
+      "hash": "blake3:f89b9203233714fc9a0040c06b4febd95ad2d31e10ec4e8693df810bbbadb529",
+      "loc": 38,
+      "symbols": []
+    },
+    {
+      "id": "f:lib/parser/src/roadmap.ts",
+      "path": "lib/parser/src/roadmap.ts",
+      "lang": "ts",
+      "hash": "blake3:ed202ecc70df5d321bd8ec318f21a17b681bbe796da57aeffb31f933d2246981",
+      "loc": 93,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/roadmap.ts#parseRoadmap",
+          "name": "parseRoadmap",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            18,
+            93
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/src/task.ts",
+      "path": "lib/parser/src/task.ts",
+      "lang": "ts",
+      "hash": "blake3:ce430bad0022823fdfeb49d98a0fb36f48f7b7c85490fb54a057c262d422af50",
+      "loc": 314,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/task.ts#KNOWN_FIELDS",
+          "name": "KNOWN_FIELDS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            18,
+            34
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task.ts#isAbsent",
+          "name": "isAbsent",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            37,
+            39
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task.ts#isNonEmptyString",
+          "name": "isNonEmptyString",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            41,
+            43
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task.ts#parseTaskFile",
+          "name": "parseTaskFile",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            103,
+            314
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task.ts#splitSections",
+          "name": "splitSections",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            51,
+            87
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/src/types.ts",
+      "path": "lib/parser/src/types.ts",
+      "lang": "ts",
+      "hash": "blake3:89f95fe9760add95f5f9e120d971b025af56b6de52bea02681bf4778a9fe6a8b",
+      "loc": 166,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/types.ts#FeatureRecord",
+          "name": "FeatureRecord",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            112,
+            123
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#ModelSession",
+          "name": "ModelSession",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            44,
+            53
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#ParseIssue",
+          "name": "ParseIssue",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            129,
+            145
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#ProjectParseResult",
+          "name": "ProjectParseResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            162,
+            166
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#REVIEW_MODES",
+          "name": "REVIEW_MODES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            28,
+            28
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#ReviewMode",
+          "name": "ReviewMode",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            30,
+            30
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#RoadmapParseResult",
+          "name": "RoadmapParseResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            156,
+            159
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#SessionPolicy",
+          "name": "SessionPolicy",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            37,
+            37
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#TASK_SIZES",
+          "name": "TASK_SIZES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            23,
+            23
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#TASK_STATUSES",
+          "name": "TASK_STATUSES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            9,
+            18
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#TaskParseResult",
+          "name": "TaskParseResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            150,
+            153
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#TaskRecord",
+          "name": "TaskRecord",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            74,
+            109
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#TaskSections",
+          "name": "TaskSections",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            56,
+            63
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#TaskSize",
+          "name": "TaskSize",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            25,
+            25
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#TaskStatus",
+          "name": "TaskStatus",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            20,
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/test/files.test.ts",
+      "path": "lib/parser/test/files.test.ts",
+      "lang": "ts",
+      "hash": "blake3:2040777ecde343d118c6aa9bb2a41bec32b39b821ce860fbdd6066b25c758cbe",
+      "loc": 171,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/files.test.ts#fixture",
+          "name": "fixture",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            7,
+            8
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/files.test.ts#loadFixture",
+          "name": "loadFixture",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            11,
+            25
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/test/model-session.test.ts",
+      "path": "lib/parser/test/model-session.test.ts",
+      "lang": "ts",
+      "hash": "blake3:e64c03030ca51d650adbb683332cf4582c4fdeff630cf2bdc14f9fd8a5508ef6",
+      "loc": 54,
+      "symbols": []
+    },
+    {
+      "id": "f:lib/parser/test/project.test.ts",
+      "path": "lib/parser/test/project.test.ts",
+      "lang": "ts",
+      "hash": "blake3:4911fa0cc63e8aaa583e604c2361e4a6e6a189a737f7f61bbf8520781ea5a0fc",
+      "loc": 107,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/project.test.ts#fixture",
+          "name": "fixture",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            6,
+            7
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/test/roadmap.test.ts",
+      "path": "lib/parser/test/roadmap.test.ts",
+      "lang": "ts",
+      "hash": "blake3:fb4f1e5a92dec93e83a839316eda358d223e722de5002bebb24fcbc75d39c482",
+      "loc": 89,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/roadmap.test.ts#FILE",
+          "name": "FILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            4,
+            4
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/roadmap.test.ts#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            6,
+            22
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/test/smoke.test.ts",
+      "path": "lib/parser/test/smoke.test.ts",
+      "lang": "ts",
+      "hash": "blake3:532f8f590c946e2f7d1c4be05a8d37241c9177638551051c8350370e7e55336b",
+      "loc": 36,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/smoke.test.ts#repoRoot",
+          "name": "repoRoot",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            10,
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/test/task.test.ts",
+      "path": "lib/parser/test/task.test.ts",
+      "lang": "ts",
+      "hash": "blake3:65f2119031d0cf4020ff5a9661b04a33a6e0418752a46305a10c7e9df694f224",
+      "loc": 308,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/task.test.ts#FILE",
+          "name": "FILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            4,
+            4
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/task.test.ts#VALID",
+          "name": "VALID",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            6,
+            32
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/test/verifier-probes.test.ts",
+      "path": "lib/parser/test/verifier-probes.test.ts",
+      "lang": "ts",
+      "hash": "blake3:15f54a040519be32fc5d7a8b39080f114ddbd5f5e31eb21ab4b09ea1bf4738e8",
+      "loc": 277,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/verifier-probes.test.ts#F",
+          "name": "F",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            24,
+            24
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/verifier-probes.test.ts#full",
+          "name": "full",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            26,
+            41
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/verifier-probes.test.ts#kinds",
+          "name": "kinds",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            43,
+            43
+          ]
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "id": "p:@nputer/parser",
+      "name": "@nputer/parser",
+      "ecosystem": "npm",
+      "path": "lib/parser"
+    },
+    {
+      "id": "p:@tailwindcss/vite",
+      "name": "@tailwindcss/vite",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:@tauri-apps/api",
+      "name": "@tauri-apps/api",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:@vitejs/plugin-react",
+      "name": "@vitejs/plugin-react",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:class-variance-authority",
+      "name": "class-variance-authority",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:clsx",
+      "name": "clsx",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:node:fs",
+      "name": "node:fs",
+      "ecosystem": "node"
+    },
+    {
+      "id": "p:node:os",
+      "name": "node:os",
+      "ecosystem": "node"
+    },
+    {
+      "id": "p:node:path",
+      "name": "node:path",
+      "ecosystem": "node"
+    },
+    {
+      "id": "p:node:url",
+      "name": "node:url",
+      "ecosystem": "node"
+    },
+    {
+      "id": "p:radix-ui",
+      "name": "radix-ui",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:react",
+      "name": "react",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:react-dom",
+      "name": "react-dom",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:tailwind-merge",
+      "name": "tailwind-merge",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:vite",
+      "name": "vite",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:vitest",
+      "name": "vitest",
+      "ecosystem": "npm"
+    },
+    {
+      "id": "p:yaml",
+      "name": "yaml",
+      "ecosystem": "npm"
+    }
+  ],
+  "edges": [
+    {
+      "from": "f:app/src/App.tsx",
+      "to": "f:app/src/components/board/Board.tsx",
+      "kind": "import",
+      "symbols": [
+        "Board"
+      ]
+    },
+    {
+      "from": "f:app/src/App.tsx",
+      "to": "f:app/src/components/ui/button.tsx",
+      "kind": "import",
+      "symbols": [
+        "Button"
+      ]
+    },
+    {
+      "from": "f:app/src/App.tsx",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "getShellState",
+        "isTauriRuntime",
+        "keepCurrentProject",
+        "pickProjectFolder",
+        "selectScreen",
+        "startDocsWatcher",
+        "subscribeShell"
+      ]
+    },
+    {
+      "from": "f:app/src/App.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "useEffect",
+        "useSyncExternalStore"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/Board.tsx",
+      "to": "f:app/src/components/board/FeatureColumn.tsx",
+      "kind": "import",
+      "symbols": [
+        "FeatureColumn"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/Board.tsx",
+      "to": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "kind": "import",
+      "symbols": [
+        "TaskDetailPanel"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/Board.tsx",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "selectBoard"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/Board.tsx",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "TaskRef"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/Board.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/Board.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "useCallback",
+        "useMemo",
+        "useState"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/FeatureColumn.tsx",
+      "to": "f:app/src/components/board/GhostCard.tsx",
+      "kind": "import",
+      "symbols": [
+        "GhostCard"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/FeatureColumn.tsx",
+      "to": "f:app/src/components/board/ParkedRow.tsx",
+      "kind": "import",
+      "symbols": [
+        "ParkedRow"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/FeatureColumn.tsx",
+      "to": "f:app/src/components/board/SliceLine.tsx",
+      "kind": "import",
+      "symbols": [
+        "SliceLine"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/FeatureColumn.tsx",
+      "to": "f:app/src/components/board/TaskCard.tsx",
+      "kind": "import",
+      "symbols": [
+        "TaskCard"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/FeatureColumn.tsx",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "BoardColumn",
+        "UNMAPPED_KEY"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/FeatureColumn.tsx",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "TaskRef"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/GhostCard.tsx",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "BoardCard"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/GhostCard.tsx",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "TaskRef",
+        "cardRef"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskCard.tsx",
+      "to": "f:app/src/components/board/badges/ModelBadge.tsx",
+      "kind": "import",
+      "symbols": [
+        "ModelBadge"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskCard.tsx",
+      "to": "f:app/src/components/board/badges/ReviewBadge.tsx",
+      "kind": "import",
+      "symbols": [
+        "ReviewBadge"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskCard.tsx",
+      "to": "f:app/src/components/board/badges/SizeBadge.tsx",
+      "kind": "import",
+      "symbols": [
+        "SizeBadge"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskCard.tsx",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "BoardCard",
+        "StatusToken"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskCard.tsx",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "TaskRef",
+        "cardRef"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskCard.tsx",
+      "to": "f:app/src/lib/utils.ts",
+      "kind": "import",
+      "symbols": [
+        "cn"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "to": "f:app/src/components/board/TaskCard.tsx",
+      "kind": "import",
+      "symbols": [
+        "CHIP_BORDER_CLASSES",
+        "STATUS_CLASSES"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "to": "f:app/src/components/board/badges/ReviewBadge.tsx",
+      "kind": "import",
+      "symbols": [
+        "ReviewBadge"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "to": "f:app/src/components/board/panel-dismissal.ts",
+      "kind": "import",
+      "symbols": [
+        "attachPanelDismissal"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "TaskRef",
+        "VerdictEntry",
+        "criterionLines",
+        "refLabel",
+        "selectTaskDetail",
+        "verdictEntries"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "to": "f:app/src/lib/utils.ts",
+      "kind": "import",
+      "symbols": [
+        "cn"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "ReactNode",
+        "useEffect",
+        "useMemo",
+        "useRef"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/badges/ModelBadge.tsx",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "ModelBadgeInfo"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/badges/ModelBadge.tsx",
+      "to": "f:app/src/lib/utils.ts",
+      "kind": "import",
+      "symbols": [
+        "cn"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/badges/ReviewBadge.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ReviewMode"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/badges/SizeBadge.tsx",
+      "to": "f:app/src/lib/utils.ts",
+      "kind": "import",
+      "symbols": [
+        "cn"
+      ]
+    },
+    {
+      "from": "f:app/src/components/board/badges/SizeBadge.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "TaskSize"
+      ]
+    },
+    {
+      "from": "f:app/src/components/ui/button.tsx",
+      "to": "f:app/src/lib/utils.ts",
+      "kind": "import",
+      "symbols": [
+        "cn"
+      ]
+    },
+    {
+      "from": "f:app/src/components/ui/button.tsx",
+      "to": "p:class-variance-authority",
+      "kind": "import",
+      "symbols": [
+        "VariantProps",
+        "cva"
+      ]
+    },
+    {
+      "from": "f:app/src/components/ui/button.tsx",
+      "to": "p:radix-ui",
+      "kind": "import",
+      "symbols": [
+        "Slot"
+      ]
+    },
+    {
+      "from": "f:app/src/components/ui/button.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/board-model.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult",
+        "ReviewMode",
+        "TaskRecord",
+        "TaskSize",
+        "TaskStatus"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/docs-model.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ParseIssue",
+        "ProjectParseResult",
+        "isTaskFilePath",
+        "parseProjectFromFiles",
+        "parseRoadmap",
+        "parseTaskFile"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/task-detail.ts",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "BoardCard",
+        "StatusVisual",
+        "statusVisual"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/task-detail.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult",
+        "ReviewMode",
+        "TaskRecord",
+        "TaskSize",
+        "TaskStatus"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/utils.ts",
+      "to": "p:clsx",
+      "kind": "import",
+      "symbols": [
+        "ClassValue",
+        "clsx"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/utils.ts",
+      "to": "p:tailwind-merge",
+      "kind": "import",
+      "symbols": [
+        "twMerge"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/watcher-store.ts",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsModelState",
+        "DocsSnapshotPayload",
+        "applySnapshot",
+        "emptyState"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/watcher-store.ts",
+      "to": "p:@tauri-apps/api",
+      "kind": "import",
+      "symbols": [
+        "emit",
+        "invoke",
+        "listen"
+      ]
+    },
+    {
+      "from": "f:app/src/main.tsx",
+      "to": "f:app/src/App.tsx",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/src/main.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/src/main.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/test/detail-presentation.test.ts",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "criterionLines",
+        "verdictEntries"
+      ]
+    },
+    {
+      "from": "f:app/test/detail-presentation.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/docs-model.test.ts",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsFilePayload",
+        "DocsModelState",
+        "DocsSnapshotPayload",
+        "applySnapshot",
+        "emptyState"
+      ]
+    },
+    {
+      "from": "f:app/test/docs-model.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/panel-dismissal.test.ts",
+      "to": "f:app/src/components/board/panel-dismissal.ts",
+      "kind": "import",
+      "symbols": [
+        "DismissalDoc",
+        "attachPanelDismissal"
+      ]
+    },
+    {
+      "from": "f:app/test/panel-dismissal.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/project-shell.test.tsx",
+      "to": "f:app/src/App.tsx",
+      "kind": "import",
+      "symbols": [
+        "EmptyState"
+      ]
+    },
+    {
+      "from": "f:app/test/project-shell.test.tsx",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "noDocsMessage"
+      ]
+    },
+    {
+      "from": "f:app/test/project-shell.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/project-shell.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/project-shell.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it",
+        "vi"
+      ]
+    },
+    {
+      "from": "f:app/test/review-badge.test.tsx",
+      "to": "f:app/src/components/board/badges/ReviewBadge.tsx",
+      "kind": "import",
+      "symbols": [
+        "ReviewBadge"
+      ]
+    },
+    {
+      "from": "f:app/test/review-badge.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/review-badge.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/review-badge.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/select-board.test.ts",
+      "to": "f:app/src/lib/board-model.ts",
+      "kind": "import",
+      "symbols": [
+        "selectBoard",
+        "shortModelName",
+        "statusVisual"
+      ]
+    },
+    {
+      "from": "f:app/test/select-board.test.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/select-board.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/select-task-detail.test.ts",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "TaskRef",
+        "cardRef",
+        "refLabel",
+        "selectTaskDetail"
+      ]
+    },
+    {
+      "from": "f:app/test/select-task-detail.test.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/select-task-detail.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/watcher-store.test.ts",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsFilePayload",
+        "DocsModelState",
+        "DocsSnapshotPayload",
+        "applySnapshot",
+        "emptyState"
+      ]
+    },
+    {
+      "from": "f:app/test/watcher-store.test.ts",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "CONVENTION_HINT",
+        "ShellState",
+        "noDocsMessage",
+        "reduceDocs",
+        "resetDocsForProjectSwitch",
+        "selectScreen"
+      ]
+    },
+    {
+      "from": "f:app/test/watcher-store.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/vite.config.ts",
+      "to": "p:@tailwindcss/vite",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/vite.config.ts",
+      "to": "p:@vitejs/plugin-react",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/vite.config.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/vite.config.ts",
+      "to": "p:vite",
+      "kind": "import",
+      "symbols": [
+        "defineConfig"
+      ]
+    },
+    {
+      "from": "f:app/vitest.config.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/vitest.config.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "defineConfig"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/files.ts",
+      "to": "f:lib/parser/src/roadmap.ts",
+      "kind": "import",
+      "symbols": [
+        "parseRoadmap"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/files.ts",
+      "to": "f:lib/parser/src/task.ts",
+      "kind": "import",
+      "symbols": [
+        "parseTaskFile"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/files.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "ParseIssue",
+        "ProjectParseResult",
+        "TaskRecord"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/frontmatter.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "ParseIssue"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/frontmatter.ts",
+      "to": "p:yaml",
+      "kind": "import",
+      "symbols": [
+        "parse"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/files.ts",
+      "kind": "import",
+      "symbols": [
+        "FileEntry",
+        "ParseProjectFromFilesOptions",
+        "isTaskFilePath",
+        "parseProjectFromFiles"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/frontmatter.ts",
+      "kind": "import",
+      "symbols": [
+        "FrontmatterResult",
+        "extractFrontmatter"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/model-session.ts",
+      "kind": "import",
+      "symbols": [
+        "parseModelSession"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/project.ts",
+      "kind": "import",
+      "symbols": [
+        "ParseProjectOptions",
+        "TaskDirectoryResult",
+        "parseProject",
+        "parseRoadmapFile",
+        "parseTaskDirectory"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/roadmap.ts",
+      "kind": "import",
+      "symbols": [
+        "parseRoadmap"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/task.ts",
+      "kind": "import",
+      "symbols": [
+        "parseTaskFile",
+        "splitSections"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "FeatureRecord",
+        "ModelSession",
+        "ParseIssue",
+        "ProjectParseResult",
+        "REVIEW_MODES",
+        "ReviewMode",
+        "RoadmapParseResult",
+        "SessionPolicy",
+        "TASK_SIZES",
+        "TASK_STATUSES",
+        "TaskParseResult",
+        "TaskRecord",
+        "TaskSections",
+        "TaskSize",
+        "TaskStatus"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/model-session.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "ModelSession"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/project.ts",
+      "to": "f:lib/parser/src/roadmap.ts",
+      "kind": "import",
+      "symbols": [
+        "parseRoadmap"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/project.ts",
+      "to": "f:lib/parser/src/task.ts",
+      "kind": "import",
+      "symbols": [
+        "parseTaskFile"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/project.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "ParseIssue",
+        "ProjectParseResult",
+        "RoadmapParseResult",
+        "TaskRecord"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/project.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/project.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/files.ts",
+      "kind": "import",
+      "symbols": [
+        "FileEntry",
+        "ParseProjectFromFilesOptions",
+        "isTaskFilePath",
+        "parseProjectFromFiles"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/frontmatter.ts",
+      "kind": "import",
+      "symbols": [
+        "FrontmatterResult",
+        "extractFrontmatter"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/model-session.ts",
+      "kind": "import",
+      "symbols": [
+        "parseModelSession"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/roadmap.ts",
+      "kind": "import",
+      "symbols": [
+        "parseRoadmap"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/task.ts",
+      "kind": "import",
+      "symbols": [
+        "parseTaskFile",
+        "splitSections"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "FeatureRecord",
+        "ModelSession",
+        "ParseIssue",
+        "ProjectParseResult",
+        "REVIEW_MODES",
+        "ReviewMode",
+        "RoadmapParseResult",
+        "SessionPolicy",
+        "TASK_SIZES",
+        "TASK_STATUSES",
+        "TaskParseResult",
+        "TaskRecord",
+        "TaskSections",
+        "TaskSize",
+        "TaskStatus"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/roadmap.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "FeatureRecord",
+        "ParseIssue",
+        "RoadmapParseResult"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/task.ts",
+      "to": "f:lib/parser/src/frontmatter.ts",
+      "kind": "import",
+      "symbols": [
+        "extractFrontmatter"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/task.ts",
+      "to": "f:lib/parser/src/model-session.ts",
+      "kind": "import",
+      "symbols": [
+        "parseModelSession"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/task.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "ModelSession",
+        "ParseIssue",
+        "REVIEW_MODES",
+        "ReviewMode",
+        "TASK_SIZES",
+        "TASK_STATUSES",
+        "TaskParseResult",
+        "TaskRecord",
+        "TaskSections",
+        "TaskSize",
+        "TaskStatus"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/files.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "isTaskFilePath",
+        "parseProject",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/files.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/files.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/files.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/files.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/model-session.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "parseModelSession"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/model-session.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/project.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "parseProject",
+        "parseTaskDirectory"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/project.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/project.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/project.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/roadmap.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "parseRoadmap"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/roadmap.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/smoke.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "parseProject"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/smoke.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/smoke.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/task.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "parseTaskFile"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/task.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/verifier-probes.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "parseModelSession",
+        "parseRoadmap",
+        "parseTaskDirectory",
+        "parseTaskFile",
+        "splitSections"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/verifier-probes.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "mkdirSync",
+        "mkdtempSync",
+        "rmSync",
+        "writeFileSync"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/verifier-probes.test.ts",
+      "to": "p:node:os",
+      "kind": "import",
+      "symbols": [
+        "tmpdir"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/verifier-probes.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/verifier-probes.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterAll",
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/App.tsx#milestoneLine",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/lib/watcher-store.ts#isTauriRuntime",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/lib/watcher-store.ts#pickProjectFolder",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/lib/watcher-store.ts#selectScreen",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/Board.tsx#Board",
+      "to": "s:app/src/lib/board-model.ts#selectBoard",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/Board.tsx#Board",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/FeatureColumn.tsx#FeatureColumn",
+      "to": "s:app/src/lib/board-model.ts#BoardColumn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/FeatureColumn.tsx#FeatureColumn",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/GhostCard.tsx#GhostCard",
+      "to": "s:app/src/lib/board-model.ts#BoardCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/GhostCard.tsx#GhostCard",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/GhostCard.tsx#GhostCard",
+      "to": "s:app/src/lib/task-detail.ts#cardRef",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskCard.tsx#CHIP_BORDER_CLASSES",
+      "to": "s:app/src/lib/board-model.ts#StatusToken",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskCard.tsx#DOT_CLASSES",
+      "to": "s:app/src/lib/board-model.ts#StatusToken",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskCard.tsx#HOVER_CLASSES",
+      "to": "s:app/src/lib/board-model.ts#StatusToken",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskCard.tsx#STATUS_CLASSES",
+      "to": "s:app/src/lib/board-model.ts#StatusToken",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskCard.tsx#STATUS_WORD",
+      "to": "s:app/src/lib/board-model.ts#StatusToken",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskCard.tsx#TITLE_CLASSES",
+      "to": "s:app/src/lib/board-model.ts#StatusToken",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskCard.tsx#TaskCard",
+      "to": "s:app/src/lib/board-model.ts#BoardCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskCard.tsx#TaskCard",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskCard.tsx#TaskCard",
+      "to": "s:app/src/lib/task-detail.ts#cardRef",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskCard.tsx#TaskCard",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+      "to": "s:app/src/components/board/panel-dismissal.ts#attachPanelDismissal",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+      "to": "s:app/src/lib/task-detail.ts#criterionLines",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+      "to": "s:app/src/lib/task-detail.ts#refLabel",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+      "to": "s:app/src/lib/task-detail.ts#selectTaskDetail",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+      "to": "s:app/src/lib/task-detail.ts#verdictEntries",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#TaskDetailPanel",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#VerdictBlock",
+      "to": "s:app/src/lib/task-detail.ts#VerdictEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/TaskDetailPanel.tsx#VerdictBlock",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/badges/ModelBadge.tsx#ModelBadge",
+      "to": "s:app/src/lib/board-model.ts#ModelBadgeInfo",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/badges/ModelBadge.tsx#ModelBadge",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/badges/SizeBadge.tsx#SizeBadge",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/board/panel-dismissal.ts#attachPanelDismissal",
+      "to": "s:app/src/components/board/panel-dismissal.ts#DismissalDoc",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/ui/button.tsx#Button",
+      "to": "s:app/src/components/ui/button.tsx#buttonVariants",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/ui/button.tsx#Button",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#BoardCard",
+      "to": "s:app/src/lib/board-model.ts#ModelBadgeInfo",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#BoardCard",
+      "to": "s:app/src/lib/board-model.ts#StatusVisual",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#BoardColumn",
+      "to": "s:app/src/lib/board-model.ts#BoardCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#BoardModel",
+      "to": "s:app/src/lib/board-model.ts#BoardColumn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#MutableColumn",
+      "to": "s:app/src/lib/board-model.ts#BoardCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#StatusVisual",
+      "to": "s:app/src/lib/board-model.ts#StatusToken",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#byIdThenFile",
+      "to": "s:app/src/lib/board-model.ts#BoardCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#byIdThenFile",
+      "to": "s:app/src/lib/board-model.ts#byText",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#byPriority",
+      "to": "s:app/src/lib/board-model.ts#BoardCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#byPriority",
+      "to": "s:app/src/lib/board-model.ts#byText",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#modelBadge",
+      "to": "s:app/src/lib/board-model.ts#ModelBadgeInfo",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#modelBadge",
+      "to": "s:app/src/lib/board-model.ts#isDoneish",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#modelBadge",
+      "to": "s:app/src/lib/board-model.ts#shortModelName",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectBoard",
+      "to": "s:app/src/lib/board-model.ts#BoardColumn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectBoard",
+      "to": "s:app/src/lib/board-model.ts#BoardModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectBoard",
+      "to": "s:app/src/lib/board-model.ts#MutableColumn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectBoard",
+      "to": "s:app/src/lib/board-model.ts#toCard",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#statusVisual",
+      "to": "s:app/src/lib/board-model.ts#StatusVisual",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#toCard",
+      "to": "s:app/src/lib/board-model.ts#BoardCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#toCard",
+      "to": "s:app/src/lib/board-model.ts#modelBadge",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#toCard",
+      "to": "s:app/src/lib/board-model.ts#statusVisual",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "to": "s:app/src/lib/docs-model.ts#ParseFailure",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "to": "s:app/src/lib/docs-model.ts#ParseFailure",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "to": "s:app/src/lib/docs-model.ts#failingIssues",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#emptyState",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#BlockerLink",
+      "to": "s:app/src/lib/board-model.ts#StatusVisual",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#TaskDetail",
+      "to": "s:app/src/lib/board-model.ts#StatusVisual",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#TaskDetail",
+      "to": "s:app/src/lib/task-detail.ts#BlockerLink",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#cardRef",
+      "to": "s:app/src/lib/board-model.ts#BoardCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#cardRef",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#criterionLines",
+      "to": "s:app/src/lib/task-detail.ts#CriterionLine",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#findTask",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#refLabel",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectTaskDetail",
+      "to": "s:app/src/lib/board-model.ts#statusVisual",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectTaskDetail",
+      "to": "s:app/src/lib/task-detail.ts#BlockerLink",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectTaskDetail",
+      "to": "s:app/src/lib/task-detail.ts#TaskDetail",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectTaskDetail",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectTaskDetail",
+      "to": "s:app/src/lib/task-detail.ts#findTask",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectTaskDetail",
+      "to": "s:app/src/lib/task-detail.ts#section",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#verdictEntries",
+      "to": "s:app/src/lib/task-detail.ts#VerdictEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#PickOutcomePayload",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#ProjectStatusPayload",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#ShellState",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#ShellState",
+      "to": "s:app/src/lib/watcher-store.ts#RejectedPick",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#ShellState",
+      "to": "s:app/src/lib/watcher-store.ts#ShellPhase",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
+      "to": "s:app/src/lib/watcher-store.ts#buildEcho",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
+      "to": "s:app/src/lib/watcher-store.ts#reduceDocs",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
+      "to": "s:app/src/lib/watcher-store.ts#setShell",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#applyProjectStatus",
+      "to": "s:app/src/lib/watcher-store.ts#ProjectStatusPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#applyProjectStatus",
+      "to": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#applyProjectStatus",
+      "to": "s:app/src/lib/watcher-store.ts#setShell",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#buildEcho",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#buildEcho",
+      "to": "s:app/src/lib/watcher-store.ts#ModelUpdateEcho",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#getShellState",
+      "to": "s:app/src/lib/watcher-store.ts#ShellState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#keepCurrentProject",
+      "to": "s:app/src/lib/watcher-store.ts#setShell",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#pickProjectFolder",
+      "to": "s:app/src/lib/watcher-store.ts#PickOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#pickProjectFolder",
+      "to": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#pickProjectFolder",
+      "to": "s:app/src/lib/watcher-store.ts#setShell",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#reduceDocs",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#reduceDocs",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#reduceDocs",
+      "to": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#reduceDocs",
+      "to": "s:app/src/lib/watcher-store.ts#resetDocsForProjectSwitch",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#resetDocsForProjectSwitch",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#resetDocsForProjectSwitch",
+      "to": "s:app/src/lib/docs-model.ts#emptyState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#selectScreen",
+      "to": "s:app/src/lib/watcher-store.ts#ScreenModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#selectScreen",
+      "to": "s:app/src/lib/watcher-store.ts#ShellState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#selectScreen",
+      "to": "s:app/src/lib/watcher-store.ts#noDocsMessage",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#setShell",
+      "to": "s:app/src/lib/watcher-store.ts#ShellState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#shell",
+      "to": "s:app/src/lib/docs-model.ts#emptyState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#shell",
+      "to": "s:app/src/lib/watcher-store.ts#ShellState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
+      "to": "s:app/src/lib/watcher-store.ts#ProjectStatusPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
+      "to": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
+      "to": "s:app/src/lib/watcher-store.ts#applyProjectStatus",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#apply",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#apply",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#apply",
+      "to": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#apply",
+      "to": "s:app/test/docs-model.test.ts#payload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#baseFiles",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#baseFiles",
+      "to": "s:app/test/docs-model.test.ts#task",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#payload",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/docs-model.test.ts#payload",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/panel-dismissal.test.ts#FakeElement",
+      "to": "s:app/test/panel-dismissal.test.ts#FakeElement",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/panel-dismissal.test.ts#ListenerDoc",
+      "to": "s:app/test/panel-dismissal.test.ts#FakeElement",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/panel-dismissal.test.ts#attach",
+      "to": "s:app/src/components/board/panel-dismissal.ts#DismissalDoc",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/panel-dismissal.test.ts#attach",
+      "to": "s:app/src/components/board/panel-dismissal.ts#attachPanelDismissal",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/panel-dismissal.test.ts#attach",
+      "to": "s:app/test/panel-dismissal.test.ts#ListenerDoc",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/panel-dismissal.test.ts#attach",
+      "to": "s:app/test/panel-dismissal.test.ts#buildTree",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/panel-dismissal.test.ts#buildTree",
+      "to": "s:app/test/panel-dismissal.test.ts#FakeElement",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#fm",
+      "to": "s:app/test/select-board.test.ts#Field",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#task",
+      "to": "s:app/test/select-board.test.ts#Field",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#task",
+      "to": "s:app/test/select-board.test.ts#fm",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#withRoadmap",
+      "to": "s:app/test/select-board.test.ts#project",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-task-detail.test.ts#byId",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-task-detail.test.ts#src",
+      "to": "s:app/test/select-task-detail.test.ts#Field",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-task-detail.test.ts#task",
+      "to": "s:app/test/select-task-detail.test.ts#Field",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-task-detail.test.ts#task",
+      "to": "s:app/test/select-task-detail.test.ts#src",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-task-detail.test.ts#withRoadmap",
+      "to": "s:app/test/select-task-detail.test.ts#project",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-store.test.ts#openProjectA",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-store.test.ts#openProjectA",
+      "to": "s:app/src/lib/docs-model.ts#emptyState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-store.test.ts#openProjectA",
+      "to": "s:app/src/lib/watcher-store.ts#reduceDocs",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-store.test.ts#openProjectA",
+      "to": "s:app/test/watcher-store.test.ts#payload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-store.test.ts#openProjectA",
+      "to": "s:app/test/watcher-store.test.ts#projectAFiles",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-store.test.ts#payload",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-store.test.ts#payload",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-store.test.ts#projectAFiles",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/watcher-store.test.ts#projectAFiles",
+      "to": "s:app/test/watcher-store.test.ts#task",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+      "to": "s:lib/parser/src/files.ts#FileEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+      "to": "s:lib/parser/src/files.ts#ParseProjectFromFilesOptions",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+      "to": "s:lib/parser/src/files.ts#isTaskFilePath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+      "to": "s:lib/parser/src/files.ts#toFileMap",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+      "to": "s:lib/parser/src/roadmap.ts#parseRoadmap",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+      "to": "s:lib/parser/src/task.ts#parseTaskFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+      "to": "s:lib/parser/src/types.ts#ProjectParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#toFileMap",
+      "to": "s:lib/parser/src/files.ts#FileEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/frontmatter.ts#FrontmatterResult",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/frontmatter.ts#extractFrontmatter",
+      "to": "s:lib/parser/src/frontmatter.ts#FrontmatterResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/model-session.ts#parseModelSession",
+      "to": "s:lib/parser/src/types.ts#ModelSession",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#TaskDirectoryResult",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#TaskDirectoryResult",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseProject",
+      "to": "s:lib/parser/src/project.ts#ParseProjectOptions",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseProject",
+      "to": "s:lib/parser/src/project.ts#parseRoadmapFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseProject",
+      "to": "s:lib/parser/src/project.ts#parseTaskDirectory",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseProject",
+      "to": "s:lib/parser/src/types.ts#ProjectParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseRoadmapFile",
+      "to": "s:lib/parser/src/roadmap.ts#parseRoadmap",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseRoadmapFile",
+      "to": "s:lib/parser/src/types.ts#RoadmapParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseTaskDirectory",
+      "to": "s:lib/parser/src/project.ts#TaskDirectoryResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseTaskDirectory",
+      "to": "s:lib/parser/src/task.ts#parseTaskFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseTaskDirectory",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseTaskDirectory",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/roadmap.ts#parseRoadmap",
+      "to": "s:lib/parser/src/types.ts#FeatureRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/roadmap.ts#parseRoadmap",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/roadmap.ts#parseRoadmap",
+      "to": "s:lib/parser/src/types.ts#RoadmapParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/frontmatter.ts#extractFrontmatter",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/model-session.ts#parseModelSession",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/task.ts#isAbsent",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/task.ts#isNonEmptyString",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/task.ts#splitSections",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/types.ts#ModelSession",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/types.ts#ReviewMode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/types.ts#TaskParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/types.ts#TaskSize",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#parseTaskFile",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#splitSections",
+      "to": "s:lib/parser/src/types.ts#TaskSections",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#ModelSession",
+      "to": "s:lib/parser/src/types.ts#SessionPolicy",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#ProjectParseResult",
+      "to": "s:lib/parser/src/types.ts#FeatureRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#ProjectParseResult",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#ProjectParseResult",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#RoadmapParseResult",
+      "to": "s:lib/parser/src/types.ts#FeatureRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#RoadmapParseResult",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#TaskParseResult",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#TaskParseResult",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#TaskRecord",
+      "to": "s:lib/parser/src/types.ts#ModelSession",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#TaskRecord",
+      "to": "s:lib/parser/src/types.ts#ReviewMode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#TaskRecord",
+      "to": "s:lib/parser/src/types.ts#TaskSections",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#TaskRecord",
+      "to": "s:lib/parser/src/types.ts#TaskSize",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#TaskRecord",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/files.test.ts#loadFixture",
+      "to": "s:lib/parser/test/files.test.ts#fixture",
+      "kind": "call",
+      "confidence": "resolved"
+    }
+  ],
+  "unresolved": [
+    {
+      "from": "f:app/src/main.tsx",
+      "specifier": "./index.css",
+      "reason": "asset"
+    }
+  ],
+  "stats": {
+    "files": 46,
+    "symbols": 184,
+    "edges": 335
+  }
+}
