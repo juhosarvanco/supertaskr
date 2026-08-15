@@ -113,6 +113,19 @@ export interface DocsModelState {
   generatedAtMs: number;
   /** Last content per path that parsed cleanly enough to render. */
   lastGood: ReadonlyMap<string, string>;
+  /**
+   * Effective content per delivered path — what the app treats as the
+   * file's current renderable text (T-024): model inputs carry their
+   * last-good fallback exactly as fed to `parseProjectFromFiles`;
+   * every other snapshot file (NORTH_STAR, STATE, decisions, …)
+   * carries its raw delivered content, which applySnapshot previously
+   * discarded. The graph stays out (its own `graphContent` contract).
+   * ADDITIVE EXPOSURE ONLY: nothing downstream of the existing fields
+   * changes — the map handed to the parser is this same map, and the
+   * parser filters by path, so the parsed model is byte-identical.
+   * Consumed by the genesis lens (C-13), which derives purely from it.
+   */
+  effective: ReadonlyMap<string, string>;
   /** Model assembled from effective contents (failing files fall back to
    * their last good content — criterion 3's "keep showing the last valid
    * state"). */
@@ -149,6 +162,7 @@ export function emptyState(): DocsModelState {
     projectDir: "",
     generatedAtMs: 0,
     lastGood: new Map(),
+    effective: new Map(),
     model: { tasks: [], features: [], issues: [] },
     failures: [],
     skipped: [],
@@ -217,7 +231,12 @@ export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload
       graphContent = content; // raw passthrough — no last-good by design
       continue;
     }
-    if (!isModelInput(path)) continue;
+    if (!isModelInput(path)) {
+      // Not parsed, but rendered by the genesis lens (T-024): retain the
+      // delivered text so `effective` carries every docs file's content.
+      effective.set(path, content);
+      continue;
+    }
     const issues = failingIssues(path, content);
     if (issues === undefined) {
       lastGood.set(path, content);
@@ -265,6 +284,7 @@ export function applySnapshot(prev: DocsModelState, payload: DocsSnapshotPayload
     projectDir: payload.projectDir,
     generatedAtMs: payload.generatedAtMs,
     lastGood,
+    effective,
     model: parseProjectFromFiles(effective),
     failures,
     skipped,
