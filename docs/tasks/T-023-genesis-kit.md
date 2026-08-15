@@ -5,10 +5,10 @@ feature: F-03
 milestone: 3
 priority: 1
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [method/, docs/CONVENTIONS.md]
-builder:
+builder: claude-fable-5
 verifier:
 built_by:
 verified_by:
