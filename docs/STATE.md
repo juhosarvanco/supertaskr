@@ -58,10 +58,16 @@ only), so graph.json was deliberately not regenerated and both
 dogfood fixtures stand.
 
 ## In progress / broken right now
-T-021 (shell IPC hardening, M, app-shell) BUILDING in its worktree
-(../nputer-t021), dispatched at main@7e28f30. T-024 (genesis lens)
-DISPATCHES NEXT — unblocked by the T-023 merge; the orchestrator
-dispatches it when this checkpoint lands. Nothing broken.
+OVERNIGHT AUTONOMOUS RUN (human granted 2026-08-16 night, awake for
+the grant card): T-021 (shell IPC hardening, M, app-shell) BUILDING
+in ../nputer-t021, dispatched at main@7e28f30. T-024 (genesis lens,
+M, app-interview) BUILDING in ../nputer-t024 — first slice, dispatched
+this commit; harvests the T-023 dry-run scratch tree as its fixture
+(T-023-s2). T-020 (CI real-input lane, L, .github/ + tools/e2e/)
+BUILDING in ../nputer-t020 — HOLD lifted by the human, T-018-s3
+folded at dispatch. Read-only drafts in flight: T-025 planning pass;
+the full suggestion-backlog triage (APPLY granted — see item 3).
+Nothing broken.
 
 ## Next up (1–4)
 1. @human, consolidated: the at-a-glance amber judgment (T-012
@@ -78,23 +84,27 @@ dispatches it when this checkpoint lands. Nothing broken.
    T-026/T-029.
 2. MILESTONE 3 (T-023…T-029, ADR-017), first slice T-023+T-024+T-026
    — hand-driven genesis rendered live: T-023 is DONE (merged, this
-   checkpoint); T-024 is UNBLOCKED and dispatches next; T-026
-   (genesis entry, M, app-shell) is unblocked but the app-shell lane
-   is held by T-021. T-025/T-027 are L (planning passes at dispatch).
-3. APP-SHELL LANE QUEUE (human-decided 2026-08-16): after T-021
-   merges, T-026 takes the lane NEXT; T-022 (front-door persistence,
-   milestone 4) queues BEHIND T-026 — supersedes the earlier
-   T-021→T-022 standing order. T-020 (CI real-input lane):
-   human-decided HOLD — not dispatched now; the next architect
-   triage folds T-018-s3 (the Linux replace-regression pin) into it
-   before build.
+   checkpoint); T-024 is BUILDING; T-026 (genesis entry, M,
+   app-shell) is unblocked but the app-shell lane is held by T-021.
+   T-025/T-027 are L (planning passes at dispatch).
+3. OVERNIGHT DISPATCH GRANTS (human, 2026-08-16 night, via question
+   card while awake): app-shell lane queue is now T-021 → T-026 →
+   T-025 (agent runner, L; planning pass drafting tonight, architect
+   reviews/applies before dispatch) → T-022. T-020: HOLD lifted —
+   fold T-018-s3 + dispatch granted (done, this commit's sibling).
+   Milestone 3 runs through T-029 as blockers clear: T-027 planning
+   pass + dispatch when T-024+T-025+T-026 all merge; T-028/T-029
+   behind T-027. Triage: APPLY granted tonight — but tasks NEWLY
+   created by triage do NOT dispatch without the human. Unchanged
+   method rule: a second REJECTED on any task parks that lane for
+   the human. @human judgments are never self-answered.
 4. Next architect triage, the full suggestion backlog: T-008-s1/s2/s3,
    T-009-s1 (ratify as standing rule or keep interim until T-014),
    T-009-s2, T-009-s3, T-011-s1 (**RESOLVED** by T-012's option-a
    amendment — mark it so), T-011-s2/s3/s4/s5/s6, T-012-s1/s2/s3/s4,
    T-017-s1/s2/s3, T-018-s1 (Windows replace identity), T-018-s2
-   (dir-level skips sweep buried records), T-018-s3 (pin the replace
-   regression on the Linux lane — folds into T-020 per item 3),
+   (dir-level skips sweep buried records), T-018-s3 (ABSORBED into
+   T-020 at its dispatch — file removed, triage encoding),
    T-018-s4 (empty-docs front-door staleness), T-019-s1 (card-level
    soft-issue surfacing), T-019-s2 (filename convention rule),
    T-019-s3 (blocked_by self-references and cycles), and new
