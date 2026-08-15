@@ -38,7 +38,8 @@ pipeline; design language applied. Launch-screenshot judgment with
 Goal: the architecture map's vertical slice on nputer's own repo —
 component files + TS indexer + derivation + T0 map view (T-008 →
 T-009 → T-011 → T-012). Starts only after T-006 closes milestone 1.
-Progress: T-008 done (2026-08-15); T-009 building.
+Progress: T-008 + T-009 done (2026-08-15); T-011 (derivation) +
+T-012 (map view) remain — the slice is half done.
 
 ### Milestone 3 — in-app genesis (F-03)
 Goal: the planning interview as split view; decomposed at its own

@@ -1652,11 +1652,120 @@
       "symbols": []
     },
     {
+      "id": "f:lib/parser/src/component.ts",
+      "path": "lib/parser/src/component.ts",
+      "lang": "ts",
+      "hash": "blake3:21d756ef59a081858b64ad1f407fc46426d38df38b81ab1768128d33dfed5892",
+      "loc": 330,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/component.ts#ComponentSourceFile",
+          "name": "ComponentSourceFile",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            209,
+            212
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/component.ts#ID_PATTERN",
+          "name": "ID_PATTERN",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            32,
+            32
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/component.ts#KNOWN_FIELDS",
+          "name": "KNOWN_FIELDS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            21,
+            30
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/component.ts#compareComponentIds",
+          "name": "compareComponentIds",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            50,
+            58
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/component.ts#isAbsent",
+          "name": "isAbsent",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            35,
+            37
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/component.ts#isNonEmptyString",
+          "name": "isNonEmptyString",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            39,
+            41
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/component.ts#normalizePattern",
+          "name": "normalizePattern",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            215,
+            220
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/component.ts#parseComponentFile",
+          "name": "parseComponentFile",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            74,
+            206
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/component.ts#parseComponentSet",
+          "name": "parseComponentSet",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            256,
+            330
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/component.ts#patternsCertainlyOverlap",
+          "name": "patternsCertainlyOverlap",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            234,
+            242
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:lib/parser/src/files.ts",
       "path": "lib/parser/src/files.ts",
       "lang": "ts",
-      "hash": "blake3:d49a583df07622b911cfd53bfc1061b23336e081dc4521a8600920a44a117f7e",
-      "loc": 117,
+      "hash": "blake3:52e9901f45d20905bc9d95b1fd9115600293f64bc95504eb5c94dd6819860f38",
+      "loc": 173,
       "symbols": [
         {
           "id": "s:lib/parser/src/files.ts#FileEntry",
@@ -1664,8 +1773,18 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            28,
-            31
+            30,
+            33
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/files.ts#ParseComponentsFromFilesOptions",
+          "name": "ParseComponentsFromFilesOptions",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            75,
+            79
           ]
         },
         {
@@ -1674,8 +1793,18 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            33,
-            38
+            35,
+            43
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/files.ts#isComponentFilePath",
+          "name": "isComponentFilePath",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            65,
+            73
           ]
         },
         {
@@ -1684,8 +1813,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            52,
-            57
+            57,
+            62
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/files.ts#parseComponentsFromFiles",
+          "name": "parseComponentsFromFiles",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            90,
+            100
           ]
         },
         {
@@ -1694,8 +1833,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            66,
-            117
+            111,
+            173
           ]
         },
         {
@@ -1704,8 +1843,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            41,
-            49
+            46,
+            54
           ]
         }
       ]
@@ -1753,8 +1892,8 @@
       "id": "f:lib/parser/src/index.ts",
       "path": "lib/parser/src/index.ts",
       "lang": "ts",
-      "hash": "blake3:57b5059abcf01a85c15199d77f011be4fc479940f7ad34282ef1981466adfba4",
-      "loc": 44,
+      "hash": "blake3:3971ceb09e69aa9c7ba6a9a97fe99d4f65a6fb0919fc4fe96f584888b19cbdb3",
+      "loc": 54,
       "symbols": []
     },
     {
@@ -1780,8 +1919,8 @@
       "id": "f:lib/parser/src/project.ts",
       "path": "lib/parser/src/project.ts",
       "lang": "ts",
-      "hash": "blake3:c97d22b5ba958e8af0deb2c4722616ea1597ae00cf90007780809dee7931642a",
-      "loc": 135,
+      "hash": "blake3:af6f76da888630a586d0eee66b24a12b038bf23ce2e7f47569ffff974879dbca",
+      "loc": 196,
       "symbols": [
         {
           "id": "s:lib/parser/src/project.ts#ParseProjectOptions",
@@ -1789,8 +1928,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            112,
-            117
+            161,
+            168
           ]
         },
         {
@@ -1799,8 +1938,18 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            18,
-            21
+            20,
+            23
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/project.ts#parseComponentDirectory",
+          "name": "parseComponentDirectory",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            103,
+            139
           ]
         },
         {
@@ -1809,8 +1958,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            123,
-            135
+            179,
+            196
           ]
         },
         {
@@ -1819,8 +1968,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            93,
-            110
+            142,
+            159
           ]
         },
         {
@@ -1829,8 +1978,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            31,
-            90
+            33,
+            92
           ]
         }
       ]
@@ -1839,8 +1988,8 @@
       "id": "f:lib/parser/src/pure.ts",
       "path": "lib/parser/src/pure.ts",
       "lang": "ts",
-      "hash": "blake3:f89b9203233714fc9a0040c06b4febd95ad2d31e10ec4e8693df810bbbadb529",
-      "loc": 38,
+      "hash": "blake3:9dde68e8cb65ee2b9cf956c74d503865733108fac296104db8eeee4e8e016b97",
+      "loc": 47,
       "symbols": []
     },
     {
@@ -1925,17 +2074,67 @@
       "id": "f:lib/parser/src/types.ts",
       "path": "lib/parser/src/types.ts",
       "lang": "ts",
-      "hash": "blake3:89f95fe9760add95f5f9e120d971b025af56b6de52bea02681bf4778a9fe6a8b",
-      "loc": 166,
+      "hash": "blake3:bcce029df75643a421fce7f978dcbef2b14dcb95b509e24e5a557c2a42ea4d55",
+      "loc": 269,
       "symbols": [
+        {
+          "id": "s:lib/parser/src/types.ts#COMPONENT_STATUSES",
+          "name": "COMPONENT_STATUSES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            116,
+            124
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#ComponentParseResult",
+          "name": "ComponentParseResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            245,
+            248
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#ComponentRecord",
+          "name": "ComponentRecord",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            135,
+            169
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#ComponentSetResult",
+          "name": "ComponentSetResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            251,
+            254
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/types.ts#ComponentStatus",
+          "name": "ComponentStatus",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            126,
+            126
+          ]
+        },
         {
           "id": "s:lib/parser/src/types.ts#FeatureRecord",
           "name": "FeatureRecord",
           "kind": "interface",
           "exported": true,
           "range": [
-            112,
-            123
+            172,
+            183
           ]
         },
         {
@@ -1954,8 +2153,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            129,
-            145
+            189,
+            226
           ]
         },
         {
@@ -1964,8 +2163,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            162,
-            166
+            258,
+            269
           ]
         },
         {
@@ -1994,8 +2193,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            156,
-            159
+            237,
+            240
           ]
         },
         {
@@ -2034,8 +2233,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            150,
-            153
+            231,
+            234
           ]
         },
         {
@@ -2076,6 +2275,65 @@
           "range": [
             20,
             20
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/test/component.test.ts",
+      "path": "lib/parser/test/component.test.ts",
+      "lang": "ts",
+      "hash": "blake3:b339880642dc0d4a639e7b62c8fbdbd10c0cc95c87bf088be1834e6b16cc70d7",
+      "loc": 606,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/component.test.ts#FILE",
+          "name": "FILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            15,
+            15
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/component.test.ts#VALID",
+          "name": "VALID",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            17,
+            31
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/component.test.ts#componentSrc",
+          "name": "componentSrc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            273,
+            278
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/component.test.ts#fixture",
+          "name": "fixture",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            33,
+            34
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/component.test.ts#path",
+          "name": "path",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            280,
+            280
           ]
         }
       ]
@@ -2137,6 +2395,45 @@
       ]
     },
     {
+      "id": "f:lib/parser/test/rejected-exclusion.test.ts",
+      "path": "lib/parser/test/rejected-exclusion.test.ts",
+      "lang": "ts",
+      "hash": "blake3:fbc545228d9426534e75fdf663984a21f9ffd91a403beaf26fffe759162f3240",
+      "loc": 135,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/rejected-exclusion.test.ts#fixture",
+          "name": "fixture",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            31,
+            32
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/rejected-exclusion.test.ts#issueTouches",
+          "name": "issueTouches",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            35,
+            39
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/rejected-exclusion.test.ts#repoRoot",
+          "name": "repoRoot",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            30,
+            30
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:lib/parser/test/roadmap.test.ts",
       "path": "lib/parser/test/roadmap.test.ts",
       "lang": "ts",
@@ -2169,8 +2466,8 @@
       "id": "f:lib/parser/test/smoke.test.ts",
       "path": "lib/parser/test/smoke.test.ts",
       "lang": "ts",
-      "hash": "blake3:532f8f590c946e2f7d1c4be05a8d37241c9177638551051c8350370e7e55336b",
-      "loc": 36,
+      "hash": "blake3:e53ce026cd59be4694351ef569fc8c02ebf5015e70051882c256609ed621c413",
+      "loc": 69,
       "symbols": [
         {
           "id": "s:lib/parser/test/smoke.test.ts#repoRoot",
@@ -3080,6 +3377,35 @@
       ]
     },
     {
+      "from": "f:lib/parser/src/component.ts",
+      "to": "f:lib/parser/src/frontmatter.ts",
+      "kind": "import",
+      "symbols": [
+        "extractFrontmatter"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/component.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "COMPONENT_STATUSES",
+        "ComponentParseResult",
+        "ComponentRecord",
+        "ComponentSetResult",
+        "ComponentStatus",
+        "ParseIssue"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/files.ts",
+      "to": "f:lib/parser/src/component.ts",
+      "kind": "import",
+      "symbols": [
+        "parseComponentSet"
+      ]
+    },
+    {
       "from": "f:lib/parser/src/files.ts",
       "to": "f:lib/parser/src/roadmap.ts",
       "kind": "import",
@@ -3100,6 +3426,7 @@
       "to": "f:lib/parser/src/types.ts",
       "kind": "import",
       "symbols": [
+        "ComponentSetResult",
         "ParseIssue",
         "ProjectParseResult",
         "TaskRecord"
@@ -3123,12 +3450,25 @@
     },
     {
       "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/component.ts",
+      "kind": "import",
+      "symbols": [
+        "compareComponentIds",
+        "parseComponentFile"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
       "to": "f:lib/parser/src/files.ts",
       "kind": "import",
       "symbols": [
         "FileEntry",
+        "ParseComponentsFromFilesOptions",
         "ParseProjectFromFilesOptions",
+        "isComponentFilePath",
         "isTaskFilePath",
+        "parseComponentsFromFiles",
         "parseProjectFromFiles"
       ],
       "reexport": true
@@ -3159,6 +3499,7 @@
       "symbols": [
         "ParseProjectOptions",
         "TaskDirectoryResult",
+        "parseComponentDirectory",
         "parseProject",
         "parseRoadmapFile",
         "parseTaskDirectory"
@@ -3189,6 +3530,11 @@
       "to": "f:lib/parser/src/types.ts",
       "kind": "import",
       "symbols": [
+        "COMPONENT_STATUSES",
+        "ComponentParseResult",
+        "ComponentRecord",
+        "ComponentSetResult",
+        "ComponentStatus",
         "FeatureRecord",
         "ModelSession",
         "ParseIssue",
@@ -3217,6 +3563,14 @@
     },
     {
       "from": "f:lib/parser/src/project.ts",
+      "to": "f:lib/parser/src/component.ts",
+      "kind": "import",
+      "symbols": [
+        "parseComponentSet"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/project.ts",
       "to": "f:lib/parser/src/roadmap.ts",
       "kind": "import",
       "symbols": [
@@ -3236,6 +3590,7 @@
       "to": "f:lib/parser/src/types.ts",
       "kind": "import",
       "symbols": [
+        "ComponentSetResult",
         "ParseIssue",
         "ProjectParseResult",
         "RoadmapParseResult",
@@ -3247,6 +3602,7 @@
       "to": "p:node:fs",
       "kind": "import",
       "symbols": [
+        "existsSync",
         "readFileSync",
         "readdirSync"
       ]
@@ -3261,12 +3617,25 @@
     },
     {
       "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/component.ts",
+      "kind": "import",
+      "symbols": [
+        "compareComponentIds",
+        "parseComponentFile"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
       "to": "f:lib/parser/src/files.ts",
       "kind": "import",
       "symbols": [
         "FileEntry",
+        "ParseComponentsFromFilesOptions",
         "ParseProjectFromFilesOptions",
+        "isComponentFilePath",
         "isTaskFilePath",
+        "parseComponentsFromFiles",
         "parseProjectFromFiles"
       ],
       "reexport": true
@@ -3314,6 +3683,11 @@
       "to": "f:lib/parser/src/types.ts",
       "kind": "import",
       "symbols": [
+        "COMPONENT_STATUSES",
+        "ComponentParseResult",
+        "ComponentRecord",
+        "ComponentSetResult",
+        "ComponentStatus",
         "FeatureRecord",
         "ModelSession",
         "ParseIssue",
@@ -3377,6 +3751,55 @@
       ]
     },
     {
+      "from": "f:lib/parser/test/component.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "compareComponentIds",
+        "isComponentFilePath",
+        "parseComponentDirectory",
+        "parseComponentFile",
+        "parseComponentsFromFiles",
+        "parseProject",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/component.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/component.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/component.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/component.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
       "from": "f:lib/parser/test/files.test.ts",
       "to": "f:lib/parser/src/index.ts",
       "kind": "import",
@@ -3466,6 +3889,53 @@
     },
     {
       "from": "f:lib/parser/test/project.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/rejected-exclusion.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "ParseIssue",
+        "parseProject",
+        "parseProjectFromFiles",
+        "parseTaskDirectory"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/rejected-exclusion.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/rejected-exclusion.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "sep"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/rejected-exclusion.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/rejected-exclusion.test.ts",
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
@@ -4475,6 +4945,132 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/component.ts#parseComponentFile",
+      "to": "s:lib/parser/src/component.ts#isAbsent",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentFile",
+      "to": "s:lib/parser/src/component.ts#isNonEmptyString",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentFile",
+      "to": "s:lib/parser/src/frontmatter.ts#extractFrontmatter",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentFile",
+      "to": "s:lib/parser/src/types.ts#ComponentParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentFile",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentFile",
+      "to": "s:lib/parser/src/types.ts#ComponentStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentFile",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentSet",
+      "to": "s:lib/parser/src/component.ts#ComponentSourceFile",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentSet",
+      "to": "s:lib/parser/src/component.ts#compareComponentIds",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentSet",
+      "to": "s:lib/parser/src/component.ts#parseComponentFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentSet",
+      "to": "s:lib/parser/src/component.ts#patternsCertainlyOverlap",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentSet",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentSet",
+      "to": "s:lib/parser/src/types.ts#ComponentSetResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentSet",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#patternsCertainlyOverlap",
+      "to": "s:lib/parser/src/component.ts#normalizePattern",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseComponentsFromFiles",
+      "to": "s:lib/parser/src/component.ts#parseComponentSet",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseComponentsFromFiles",
+      "to": "s:lib/parser/src/files.ts#FileEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseComponentsFromFiles",
+      "to": "s:lib/parser/src/files.ts#ParseComponentsFromFilesOptions",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseComponentsFromFiles",
+      "to": "s:lib/parser/src/files.ts#isComponentFilePath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseComponentsFromFiles",
+      "to": "s:lib/parser/src/files.ts#toFileMap",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseComponentsFromFiles",
+      "to": "s:lib/parser/src/types.ts#ComponentSetResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
       "to": "s:lib/parser/src/files.ts#FileEntry",
       "kind": "type_ref",
@@ -4489,6 +5085,12 @@
     {
       "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
       "to": "s:lib/parser/src/files.ts#isTaskFilePath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/files.ts#parseProjectFromFiles",
+      "to": "s:lib/parser/src/files.ts#parseComponentsFromFiles",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -4565,9 +5167,33 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/project.ts#parseComponentDirectory",
+      "to": "s:lib/parser/src/component.ts#parseComponentSet",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseComponentDirectory",
+      "to": "s:lib/parser/src/types.ts#ComponentSetResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseComponentDirectory",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/project.ts#parseProject",
       "to": "s:lib/parser/src/project.ts#ParseProjectOptions",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseProject",
+      "to": "s:lib/parser/src/project.ts#parseComponentDirectory",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -4580,6 +5206,12 @@
       "from": "s:lib/parser/src/project.ts#parseProject",
       "to": "s:lib/parser/src/project.ts#parseTaskDirectory",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/project.ts#parseProject",
+      "to": "s:lib/parser/src/types.ts#ComponentSetResult",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -4721,8 +5353,44 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/types.ts#ComponentParseResult",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#ComponentParseResult",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#ComponentRecord",
+      "to": "s:lib/parser/src/types.ts#ComponentStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#ComponentSetResult",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#ComponentSetResult",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/types.ts#ModelSession",
       "to": "s:lib/parser/src/types.ts#SessionPolicy",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/types.ts#ProjectParseResult",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -4813,8 +5481,8 @@
     }
   ],
   "stats": {
-    "files": 46,
-    "symbols": 184,
-    "edges": 335
+    "files": 49,
+    "symbols": 211,
+    "edges": 384
   }
 }
