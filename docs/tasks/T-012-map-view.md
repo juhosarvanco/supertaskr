@@ -9,10 +9,10 @@ status: verifying
 blocked_by: [T-011]
 touches: [app-map, app-shell]
 builder: claude-fable-5
-verifier:
+verifier: claude-fable-5
 built_by: claude-fable-5@t012
-verified_by:
-review:
+verified_by: "claude-fable-5 @fresh"
+review: same-model
 ---
 
 Size L: planning pass COMPLETE (below; architect-approved 2026-08-15).
@@ -530,3 +530,178 @@ is the verifier's, per plan §10 flag 3 — `strings` proves nothing
   "map · tasks" screen as a promotable second lens.
 
 ## Verdicts
+
+2026-08-15 — claude-fable-5 @fresh (verifier, same-model as builder): APPROVED
+
+Suites reproduced fresh, ADR-011 order: lib/parser `npm ci` +
+`npx vitest run` **132/132** + `tsc --noEmit` clean + build clean
+(lib/parser zero-byte diff); app `npm ci` + `npm run build` clean +
+`npm test` **375/375**; bare `cargo test` **109 passed + 2 ignored**
+(29+68+3+7 across suites; perf + self-graph ignored). The ignored
+self-check `cargo test --release -p nputer-index --test self_graph --
+--ignored` is **RED with exactly the required assertion** ("committed
+docs/architecture/graph.json is stale — regenerate deliberately…") —
+nine new TS files on the branch; the regen is the integrator's at merge
+(T-009-s1) and nothing else fails. Re-run green after every probe of
+mine was reverted.
+
+**Layout, attacked with my own adversarial suite** (14 probes, all
+held, then deleted): determinism twice AND under shuffled input order
+(same graph, same picture, same layoutKey); a 40-deep chain (cols
+0–39); a diamond whose longer arm pushes the join (longest-path
+verified); a 3-cycle cut ONLY at the edge into the SCC's lowest id; an
+overlapping-2-cycles SCC that needs two cut rounds (C-02→C-01 then
+C-03→C-02, all four edges still drawn, `cycleBroken` marked); two
+disjoint cycles cut independently; registry growth 12→45 components
+with every prior position deep-equal (append-only holds structurally:
+id-ascending rows + bottom-append); observed `declared:false` edges
+added everywhere moved no real node; rule 8 (partner-max+1, no-partner
+col 0, bottom-append below a higher-sorting real id); hostile inputs
+(unknown endpoints skipped, `__proto__`/`constructor` ids inert, self
+and duplicate edges no-crash); and the hero elbow claim reproduced
+byte-equal from the geometry constants — `M192 73 H216`,
+`M408 223 H420 V73 H432`, `M624 73 H636 V223 H648`, and the back edge
+`M528 106 V148 H312 V190` — plus the same-column bow
+(`M192 73 H204 V223 H192` shape) the dogfood never exercises.
+
+**Registry amendments + fixture, audited by re-derivation**: the §2
+edits are plan-exact plus the two path claims
+(`app/src/lib/architecture/**`, `app/src/lib/verdicts.ts`) whose
+authority chain I verified in the repo record — STATE.md's dispatch
+note ("that decision plus a verdicts.ts claim drains the D2 group") and
+the fixture's own header; option (b) appears nowhere in plan §10's
+surface and could never drain verdicts.ts. Every enumerated delta
+CONFIRMED against the committed 59-file graph with my own edge counts:
+C-05→C-12 confirmed **6** = exactly the six `f:` test→engine import
+edges (derive.test ×2, dogfood ×2, glob.test, graph.test); C-12→C-06
+confirmed **1** = derive.ts → `p:@nputer/parser` (package path
+lib/parser); D1:C-08→C-05 3→4 = board-model.ts→verdicts.ts (real
+import, line 8); D1:C-09→C-05 1→2 = TaskDetailPanel.tsx→verdicts.ts
+(real import, line 10); D2 and D3:C-12 drained; relation table 23 rows
+= 9/4/10; D1:C-05→C-06 (5) and C-05→C-09 (3) untouched. The fixture
+diff is line-by-line enumerable — changed, never loosened.
+
+**Sixteen states + fidelity, my own DOM probes** (16, all held, then
+deleted): building+drift and done+drift compose with the fill class
+intact and the ring as `map-drift-ring`; the built CSS proves the ring
+is `outline: 1.5px dashed var(--warning); outline-offset: 3px` — a
+stroke that cannot move the box, and the DOM box is byte-identical
+(192×66) ringed or not; pinned beats declared-only (C-08 fixture:
+status fill + `pin` word + D3 ring all at once — C-01 is the live
+dogfood twin, `status: done` pinned in its file); pulse rides exactly
+one element and it is the 5px dot, never a node; dimming is
+`opacity-32` with fill classes untouched; selection is the compound
+border with the box unchanged and **inverts to bone in dark**
+(`--map-node-border-selected` #171717/#ededed in built CSS); the
+provenance twin renders 12px base / 14px overlay, two marks + the
+unverified dashed ring only in the overlay, with the three-way
+distinction in hover TEXT (independent / same-model / self-verified
+phrases + the "N of M tasks independently checked" line); drift is
+never overlay-gated (ring survives all three modes; drift mode dims
+clean nodes to opacity-40, bares the numeral, prints the footer);
+legend follows the overlay (status swatches → checked/self/unverified →
+drift footer); the teal wipe is first-render exempt, keyed per
+transition, carries the OLD fill, and sits under
+`motion-safe:animate-map-teal-wipe` with the `scale-x-0` base; degraded
+trio all render (no-graph → index-not-run + Run index; unreadable graph
+→ the regeneration line; no-components → `~` inferred pseudo-components,
+never blank); panel placeholders in every empty section (and a
+paper-only component correctly earns its honest D3 as a fact, not an
+error); the task row re-targets to the REAL TaskDetailPanel under the
+trusted event order (pointerdown decides, click activates), node→node
+press switches, chrome and legend are `data-panel-exempt`, search
+Escape self-closes without costing the panel, bare-canvas pointerdown
+closes and clears selection in one state; exactly three overlay
+segments (status · provenance · drift), no churn, no lens control;
+roving tabindex keeps exactly one node tabbable.
+
+**THE ARROWHEAD RULING** (my own extraction from the bundle source):
+`nputer app.dc.html` defines `mapArrowD` fill **#4a4a4a** (confirmed,
+dark) and `mapArrowPlannedD` fill **#3a3a3a** (planned, dark) — the
+plan §6 pair IS transposed against the source, and the executor's
+bundle-wins correction is RIGHT. tokens.css carries the bundle-true
+values in both schemes (light #b8b8b6/#cfcfcd verified too), and the
+planned marker's smaller 6px width (vs 6.5) is also bundle-true
+(`markerWidth="6"` in source, matched in MapEdgeMarkers). Every other
+claimed-measured value I spot-checked exists verbatim in the bundle
+source, including the dark `--warning-chip-bg` #1c1608 the plan
+expected to be derived.
+
+**Security sweep** (mandatory pass, all clean):
+- ACL: capabilities/ zero-diff; gen/schemas/capabilities.json DELETED
+  AND REGENERATED by my own build = exactly
+  `{default: {…, local: true, windows: ["main"], permissions:
+  ["core:default"]}}`, no `remote` key. My own runtime probe per the
+  T-007-s2 protocol (temporary MockRuntime test, since reverted):
+  shipped authority reconstructed through
+  `Resolved::resolve(acl-manifests.json, capabilities/default.json)`,
+  installed via `runtime_authority_mut`, real dialog plugin registered,
+  real InvokeRequests — **`index_repo` reachable with zero grants**
+  (stub marker returned), `docs_snapshot` positive control reachable,
+  eleven plugin commands (dialog open/save/message/ask/confirm, fs
+  read/write/read_dir/remove, opener open_url/open_path) ALL denied,
+  and from `https://evil.example.com` even the app's own commands are
+  rejected (local-only capability). Authority-level cross-check: no
+  dialog/fs/opener command resolves while `plugin:event|listen` does.
+  `strings` was not consulted (proves nothing — CONVENTIONS).
+- CSP zero-diff (tauri.conf.json untouched). Cargo.lock delta is the
+  single `nputer-index` path-dep line — zero new external packages.
+  `index_repo` takes zero webview arguments by construction.
+- Collector: containment-first verified in code (predicate runs on the
+  post-canonicalize relative path) and in the suite (symlinked .json
+  never followed, oversized skipped like .md, docs/foo.json and
+  `docs/architecture.json` prefix-trick excluded).
+- Hostile rendered content: my probes injected `<script>`,
+  `<img onerror>`, an RTL override, a 10k-char name, and a hostile file
+  path — text nodes only, zero injected elements, `window` unpolluted;
+  `__proto__` graph ids inert end to end (ADR-009: every file-keyed
+  collection in the new code is a Map; the only `Record`s are keyed by
+  the closed six-status union). Diff-wide grep: zero `innerHTML` /
+  `dangerouslySetInnerHTML` / `eval`; zero `-[` arbitrary values.
+- `--warning` is a stroke: `bg-warning` is UNMINTED in the built CSS
+  (the only bg match is the sanctioned `.bg-warning-chip` tint); the
+  two motion-starting animations (status-pulse, map-teal-wipe) are the
+  only ones and both sit inside
+  `@media(prefers-reduced-motion:no-preference)`.
+- Pure-lens: the map writes nothing; the one write path is
+  `index_repo`'s ADR-014 graph write in Rust, exactly as chartered;
+  no layout.json anywhere (T-015's).
+
+**Loop termination, live**: the pinned
+`reindex_emits_once_then_never_again` reproduced fresh (armed watcher →
+one emit carrying graph.json → 6×debounce silence → `changed:false` →
+provable silence), and MY OWN third-leg variant (temporary, since
+reverted) — touch `src/a.ts`, re-index → `changed:true` + **exactly one
+more emit** whose graph differs and carries the new symbol, then
+silence again. All three brakes observed end to end. **Payload
+reproduced to the byte**: 197,398 raw → **220,465** serialized
+`{path, content}` snapshot bytes. Judgment: the graph now dominates the
+docs snapshot (~10× the markdown) but rides only on real changes, the
+brakes guarantee an idle tree ships nothing, and the 1 MiB collector
+cap bounds growth with a designed degraded state plus the header's
+"over the snapshot cap" honesty — acceptable at this scale, honestly
+measured (the frontend's duplicated cap constant is T-012-s3).
+
+**Boundary**: `git diff main...HEAD` (8 commits f8046fa→eaf81c6,
+merge-base 7ca2ec1) = the §10 expected-surface list exactly, plus the
+plan-sanctioned T-012-s1 suggestion file; ZERO diff on capabilities/,
+tauri.conf.json, package.json + both npm lockfiles, lib/parser/**,
+board/**, ui/**, crates/nputer-index/**; committed graph.json untouched
+on the branch (the integrator's regen at merge, correctly left).
+
+**@human — carried forward, not attempted** (the two visual judgments
+this verdict cannot close):
+1. **The at-a-glance amber judgment** (criterion 5's human half): drift
+   stroke vs building/verifying fills, BOTH schemes, including composed
+   building+drift on one node. Machines pinned value distinctness
+   (#b3600a vs #fdeecb/#fce6d2 light; #f0a63c vs #2a2008/#2c1a0c dark);
+   the glance is yours. The dogfood hero renders it live.
+2. **The launch-shot re-judgment** (T-006's pending screenshot predates
+   the rail): light + dark launch screenshots now include the 72px
+   rail — re-judge composition.
+
+Suggestions filed (non-failures): T-012-s2 (pin the touch-then-reindex
+third leg), T-012-s3 (single-source the collector cap constant),
+T-012-s4 (layoutKey separator hygiene for hostile inferred ids). All
+verifier probes reverted; tree clean; no processes or ports left
+behind; port 1420 never touched.
