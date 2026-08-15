@@ -489,14 +489,26 @@ describe("selectBoard — empty states", () => {
   });
 
   it("tasks without any backbone render in unmapped alone (nothing is dropped)", () => {
-    const board = selectBoard(
-      project([
-        ["docs/ROADMAP.md", "# R\n\n## Backbone\n"],
-        [path("T-011"), task("T-011", "F-01", 1)],
-      ]),
-    );
+    const model = project([
+      ["docs/ROADMAP.md", "# R\n\n## Backbone\n"],
+      [path("T-011"), task("T-011", "F-01", 1)],
+    ]);
+    const board = selectBoard(model);
     expect(board.empty).toBe(false);
     expect(board.columns.map((c) => c.key)).toEqual(["unmapped"]);
     expect(board.columns[0]?.cards.map((c) => c.id)).toEqual(["T-011"]);
+    // 2026-08-16 (T-019 rejection fix): a clean-but-empty backbone no
+    // longer silences feature danglers — this model now carries exactly
+    // one, attributed to the TASK file (never the roadmap, so the
+    // watcher's roadmap last-good machinery stays untouched), while the
+    // card still renders in unmapped exactly as pinned above.
+    expect(model.issues).toEqual([
+      expect.objectContaining({
+        kind: "dangling-reference",
+        field: "feature",
+        id: "F-01",
+        file: path("T-011"),
+      }),
+    ]);
   });
 });

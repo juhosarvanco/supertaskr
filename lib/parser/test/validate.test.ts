@@ -120,14 +120,88 @@ describe('validateProject — feature → missing backbone id (T-002-s1)', () =>
     expect(result.tasks[0]?.feature).toBe('F-99'); // preserved, never dropped
   });
 
-  it('is SKIPPED when the model has zero features — the absent/failed roadmap already reported itself once', () => {
+  it('is skipped when the zero features come from a roadmap that REPORTED (missing → io-error)', () => {
     // Pinned pre-T-019: a missing roadmap yields exactly one io-error
     // (files.test.ts). Cascading one dangling-feature per task would
-    // repeat that single root cause as noise.
+    // repeat that single already-reported root cause as noise. Narrowed
+    // 2026-08-16 (rejection fix): the skip now requires the roadmap
+    // layer's OWN report — zero features from a CLEAN parse check
+    // normally (next tests).
     const result = parseProjectFromFiles(
       new Map([['docs/tasks/T-901-alpha.md', task('T-901')]]),
     );
     expect(kinds(result.issues)).toEqual(['io-error']);
+  });
+
+  it('is skipped when the roadmap has no Backbone heading (roadmap-error already loud)', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', '# Roadmap\n\n## Milestones\n- F-01: Hidden\n'],
+        ['docs/tasks/T-901-alpha.md', task('T-901')],
+      ]),
+    );
+    expect(kinds(result.issues)).toEqual(['roadmap-error']);
+  });
+
+  it('is skipped when the backbone holds only malformed bullets (roadmap-error already loud)', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', '# Roadmap\n\n## Backbone\n- F-XX: broken id\n'],
+        ['docs/tasks/T-901-alpha.md', task('T-901')],
+      ]),
+    );
+    expect(result.features).toEqual([]);
+    expect(kinds(result.issues)).toEqual(['roadmap-error']);
+  });
+
+  it('fires against a well-formed EMPTY backbone — zero bullets is a reference space, not a report (2026-08-16 rejection)', () => {
+    // The rejected hole, verbatim: `## Backbone` present and well-formed,
+    // zero bullets under it → features: [] with NO roadmap issue
+    // (roadmap.ts saw the heading), and the old zero-features skip then
+    // silenced every feature dangler — total silence in exactly the
+    // mid-genesis bootstrap state. Criterion 1 requires the dangler.
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', '# Roadmap\n\n## Backbone\n\n(features to be decided)\n'],
+        ['docs/tasks/T-901-a.md', task('T-901')], // feature: F-01
+      ]),
+    );
+    expect(result.features).toEqual([]);
+    expect(result.issues).toEqual([
+      {
+        kind: 'dangling-reference',
+        file: 'docs/tasks/T-901-a.md',
+        field: 'feature',
+        id: 'F-01',
+        message: expect.stringContaining("feature names 'F-01'"),
+      },
+    ]);
+    // Flagged, not hidden: the record renders and keeps its reference.
+    expect(result.tasks.map((t) => t.id)).toEqual(['T-901']);
+    expect(result.tasks[0]?.feature).toBe('F-01');
+  });
+
+  it('an honestly-empty backbone stays silent when nothing references a feature', () => {
+    const emptyBackbone = '# Roadmap\n\n## Backbone\n\n(features to be decided)\n';
+    // No tasks at all: nothing to check, nothing to say.
+    expect(
+      parseProjectFromFiles(new Map([['docs/ROADMAP.md', emptyBackbone]])).issues,
+    ).toEqual([]);
+    // A feature-less suggestion alongside it: still zero issues — the
+    // fix makes silent DANGLERS loud, never an honestly-empty project.
+    const suggestion = src([
+      ['title', 'Just a thought'],
+      ['status', 'suggested'],
+      ['suggested_by', 'verifier'],
+    ]);
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', emptyBackbone],
+        ['docs/tasks/T-901-s1-thought.md', suggestion],
+      ]),
+    );
+    expect(result.issues).toEqual([]);
+    expect(result.tasks).toHaveLength(1);
   });
 });
 
@@ -247,6 +321,30 @@ describe('validateProject — the standalone export (both entries)', () => {
   it('an empty model validates to zero issues', () => {
     expect(validateProject({ tasks: [], features: [] })).toEqual([]);
   });
+
+  it('with zero features it is loud by default, quiet only when told the roadmap reported (2026-08-16 rejection)', () => {
+    // A hand-built model has no roadmap layer to have reported, so the
+    // default must be the loud path — silence here was the rejected hole.
+    const zeroFeatures = { tasks: model.tasks, features: [] };
+    expect(kinds(validateProject(zeroFeatures))).toEqual([
+      'dangling-reference', // blocked_by T-777
+      'dangling-reference', // feature F-99 — checked against the empty space
+      'id-mismatch', // T-901 vs T-902
+    ]);
+    // roadmapReported is the assemblers' cascade suppression: the roadmap
+    // layer's own io-error/roadmap-error already reported the one root
+    // cause, so ONLY the feature check goes quiet — nothing else does.
+    expect(kinds(validateProject(zeroFeatures, { roadmapReported: true }))).toEqual([
+      'dangling-reference', // blocked_by T-777
+      'id-mismatch',
+    ]);
+    // With features present the flag is inert — never a silencer.
+    expect(kinds(validateProject(model, { roadmapReported: true }))).toEqual([
+      'dangling-reference',
+      'dangling-reference',
+      'id-mismatch',
+    ]);
+  });
 });
 
 describe('validateProject — wired into the disk layer identically', () => {
@@ -268,5 +366,27 @@ describe('validateProject — wired into the disk layer identically', () => {
       true,
     );
     expect(result.tasks.map((t) => t.id)).toEqual(['T-901']); // still rendered
+  });
+
+  it('an empty-but-clean backbone on disk fires the same danglers as the pure layer (2026-08-16 rejection)', () => {
+    const root = join(dir, 'empty-backbone-project');
+    const tasks = join(root, 'docs', 'tasks');
+    mkdirSync(tasks, { recursive: true });
+    writeFileSync(
+      join(root, 'docs', 'ROADMAP.md'),
+      '# Roadmap\n\n## Backbone\n\n(features to be decided)\n',
+    );
+    writeFileSync(join(tasks, 'T-901-a.md'), task('T-901')); // feature: F-01
+    const result = parseProject(root);
+    expect(result.features).toEqual([]);
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        kind: 'dangling-reference',
+        field: 'feature',
+        id: 'F-01',
+        file: join(tasks, 'T-901-a.md'),
+      }),
+    ]);
+    expect(result.tasks.map((t) => t.id)).toEqual(['T-901']);
   });
 });

@@ -200,6 +200,15 @@ export function parseProject(root: string, options: ParseProjectOptions = {}): P
     components: componentResult.components,
     issues: [...taskResult.issues, ...roadmapResult.issues, ...componentResult.issues],
   };
-  result.issues.push(...validateProject(result));
+  // Distilled from the roadmap layer's OWN issues (never the merged list,
+  // where a task-file io-error could spoof it): an unreadable roadmap or a
+  // roadmap-error means the feature reference space failed and already
+  // reported — validateProject then skips the per-task feature cascade. A
+  // clean-but-empty backbone reports nothing here, so its danglers fire
+  // (the 2026-08-16 T-019 rejection).
+  const roadmapReported = roadmapResult.issues.some(
+    (i) => i.kind === 'io-error' || i.kind === 'roadmap-error',
+  );
+  result.issues.push(...validateProject(result, { roadmapReported }));
   return result;
 }

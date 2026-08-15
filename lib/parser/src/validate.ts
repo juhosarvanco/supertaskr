@@ -16,12 +16,20 @@ import type { ParseIssue, ProjectParseResult } from './types.js';
  *    docs/tasks/rejected/ are not model inputs (T-016), so a reference
  *    into rejected territory dangles — deliberately.
  * 2. `feature` → must be a backbone id from the roadmap
- *    (`dangling-reference`, field `feature`). SKIPPED entirely when the
- *    model has zero features: an absent/failed roadmap already reports
- *    itself once (io-error / roadmap-error — behavior pinned before
- *    T-019), and with no backbone there is no reference space to check
- *    against — repeating the one root cause per task would be noise,
- *    not findings.
+ *    (`dangling-reference`, field `feature`). The parsed backbone is the
+ *    reference space WHATEVER its size: a well-formed `## Backbone` with
+ *    zero bullets parses clean to zero features, and every task feature
+ *    then dangles against it, loudly — that is the mid-genesis
+ *    accidentally-emptied-backbone state the 2026-08-16 rejection proved
+ *    was end-to-end silent under the old zero-features skip. The check
+ *    is skipped ONLY when the zero features are explained by the roadmap
+ *    layer itself having failed and reported (`options.roadmapReported`:
+ *    the roadmap's own io-error / roadmap-error — behavior pinned before
+ *    T-019): with no backbone there is no reference space at all, and
+ *    repeating that one already-reported root cause per task would be
+ *    noise, not findings. Standalone callers omitting the option get the
+ *    loud path — a hand-built model has no roadmap layer to have
+ *    reported, so silence would just re-create the rejected hole.
  * 3. declared `id` ↔ filename (`id-mismatch`): the basename of a task
  *    file encodes its id (`T-NNN[-sN]-slug.md`); when the declared id
  *    and the encoded id disagree, the declared id stays the model's
@@ -40,8 +48,24 @@ import type { ParseIssue, ProjectParseResult } from './types.js';
  * never object literals, so `blocked_by: [__proto__]` cannot resolve
  * against inherited state.
  */
+export interface ValidateProjectOptions {
+  /**
+   * True when the roadmap layer ALREADY reported its own failure — the
+   * roadmap file's io-error or a roadmap-error from parsing it. Only the
+   * assembler holding the roadmap layer's own issue list can assert this
+   * precisely (a task-file or component io-error in the merged project
+   * list must never spoof it), which is why it arrives as a distilled
+   * flag instead of validateProject re-detecting roadmap-ness from mixed
+   * issues. With zero features AND this flag, the feature check is
+   * skipped (cascade suppression — one root cause, one report); in every
+   * other state the flag is inert. Default false: loud.
+   */
+  roadmapReported?: boolean;
+}
+
 export function validateProject(
   project: Pick<ProjectParseResult, 'tasks' | 'features'>,
+  options: ValidateProjectOptions = {},
 ): ParseIssue[] {
   const issues: ParseIssue[] = [];
 
@@ -51,6 +75,9 @@ export function validateProject(
   }
   const featureIds = new Set<string>();
   for (const feature of project.features) featureIds.add(feature.id);
+  // The feature reference space is absent (not merely empty) only when
+  // the roadmap layer failed AND said so — see check 2 in the module doc.
+  const skipFeatureCheck = featureIds.size === 0 && options.roadmapReported === true;
 
   for (const task of project.tasks) {
     for (const ref of task.blockedBy) {
@@ -65,7 +92,7 @@ export function validateProject(
       }
     }
 
-    if (task.feature !== undefined && featureIds.size > 0 && !featureIds.has(task.feature)) {
+    if (task.feature !== undefined && !skipFeatureCheck && !featureIds.has(task.feature)) {
       issues.push({
         kind: 'dangling-reference',
         file: task.file,

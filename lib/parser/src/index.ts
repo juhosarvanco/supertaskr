@@ -35,7 +35,7 @@ export { extractFrontmatter, type FrontmatterResult } from './frontmatter.js';
 export { parseTaskFile, splitSections } from './task.js';
 export { parseRoadmap } from './roadmap.js';
 export { parseComponentFile, compareComponentIds } from './component.js';
-export { validateProject } from './validate.js';
+export { validateProject, type ValidateProjectOptions } from './validate.js';
 export {
   parseProjectFromFiles,
   parseComponentsFromFiles,

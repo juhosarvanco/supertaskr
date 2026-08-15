@@ -158,6 +158,82 @@ red for the same staleness — expected, not run here (cargo untouched).
   count — no card-level mark), T-019-s2 (filenames encoding no id slip
   the mismatch check by design).
 
+**Fix pass after 2026-08-16 rejection — fresh executor claude-fable-5
+(2026-08-16, this branch).** Scope: the verdict's one finding only.
+
+Chosen shape: the verdict's FIRST option — gate the skip on the roadmap
+having actually REPORTED. validateProject gains
+`options.roadmapReported?: boolean`; the feature check is skipped only
+when `featureIds.size === 0 && roadmapReported`, otherwise it runs
+normally — so a PRESENT, well-formed, zero-bullet `## Backbone`
+(features: [], zero roadmap issues) now makes every task feature
+reference fire its criterion-1 `feature → missing backbone id` dangler,
+attributed to the task file. Why this shape over the one-aggregate-issue
+option: (1) criterion 1 literally names the per-reference dangler, and
+the danglers say WHICH tasks name WHICH undeclared ids — an aggregate
+says neither; (2) it removes an arbitrary cliff — a backbone declaring
+one wrong feature already produced N danglers, so a backbone declaring
+zero producing silence was indefensible; (3) no new issue kind and no
+second module emitting `roadmap-error` (roadmap.ts stays its sole
+emitter). Refinement over the verdict's letter ("a roadmap
+io-error/roadmap-error present in the issue list"): the flag is
+distilled by the ASSEMBLERS from the roadmap layer's OWN issue sublist
+(`roadmapResult.issues` / `roadmap.issues` `.some(kind === 'io-error' |
+'roadmap-error')`; the pure layer's missing-roadmap branch passes
+`true`), never re-detected from the merged project list — a task-file
+or component io-error there must not spoof "the roadmap reported" and
+re-create the silence. Standalone default is the LOUD path (a
+hand-built model has no roadmap layer to have reported); the flag is
+inert whenever features exist. `ValidateProjectOptions` exported from
+both entries; both assemblers pass it, so disk/pure stay deep-equal.
+
+App-side consequence, ruled deliberately: dangler-side reporting, not a
+roadmap-side issue. parseRoadmap is byte-untouched, so docs-model's
+per-file roadmap predicate ("zero features AND ≥1 issue" → hard-fail
+into last-good) still sees a clean empty backbone as a VALID state — an
+early-genesis ROADMAP never hard-fails, never badges, never falls back
+to last-good; the signal reaches the board only as project-level soft
+issues attributed to the TASK files (header count, T-019-s1 surface),
+records still render (criterion 4 — validateProject never touches the
+identity gate). For the T-024 genesis lens that means honest per-card
+signal, not spam: backbone-first genesis order produces no danglers,
+and the loud state is precisely the accidentally-emptied-backbone
+accident the verdict proved was end-to-end silent. Honestly-empty stays
+silent: empty backbone + no feature-bearing tasks → zero issues
+(pinned).
+
+Failing→passing proof: regression tests written first, fix stashed —
+old code: 3 failed / 16 passed in validate.test.ts (the verifier's
+exact repro: empty backbone + `feature: F-01` task → `issues: []`;
+standalone loud-default; disk-layer parity); fix restored: 19/19. New
+pins (flip/extend, never weaken): the verdict's verbatim repro fixture
+→ exactly one dangler with record + reference preserved; honestly-empty
+silence (zero tasks, and a feature-less suggestion); skip still holds
+for all three already-loud states (missing roadmap → io-error only —
+the pre-T-019 pin, assertion unchanged, rationale re-dated; no-Backbone
+heading and malformed-bullets-only backbone → roadmap-error only);
+standalone loud-by-default / quiet-only-when-told / flag-inert-with-
+features; disk layer fires identically. files.test.ts missing-roadmap
+io-error pin: byte-untouched, green. App reconciliation (enumerated,
+nothing loosened): exactly one app fixture sits in the changed state —
+select-board "tasks without any backbone" (empty backbone + F-01 task,
+model 0 → 1 issue); its board assertions were already emission-blind
+and still pass; STRENGTHENED with a dated pin asserting the dangler and
+its task-file attribution. No other app fixture has zero features from
+a clean parse (verified: docs-model/watcher-store/board-truth/detail
+fixtures all declare F-01+; missing-roadmap fixtures keep the skip).
+
+Suites (ADR-011 order): lib/parser npm ci · vitest 159/159 (153 + 6) ·
+tsc --noEmit clean · build clean; app npm ci · build clean · npm test
+381/381 (same count — extended an existing test). Live-tree proofs,
+branch parser dist: this worktree's docs 45 tasks / 6 features / 0
+issues (smoke + architecture-dogfood also green in-suite); main's
+CURRENT committed docs via git archive (b2d4660) 52 tasks / 6 features
+/ 0 issues. Boundary: lib/parser/src (validate/project/files/index/
+pure), lib/parser/test/validate.test.ts, app/test/select-board.test.ts,
+this file only; zero src-tauri/app-src/dep/token diff; T-019-s1/s2/s3
+untouched.
+
 ## Verdicts
 
 2026-08-16 — claude-fable-5 @fresh (verifier, same-model as builder):
