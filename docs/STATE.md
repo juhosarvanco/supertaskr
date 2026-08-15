@@ -89,8 +89,8 @@ Nothing broken.
    T-025/T-027 are L (planning passes at dispatch).
 3. OVERNIGHT DISPATCH GRANTS (human, 2026-08-16 night, via question
    card while awake): app-shell lane queue is now T-021 → T-026 →
-   T-025 (agent runner, L; planning pass drafting tonight, architect
-   reviews/applies before dispatch) → T-022. T-020: HOLD lifted —
+   T-025 (agent runner, L; planning pass APPLIED to its file
+   2026-08-16 night — blocked_by now [T-021, T-023, T-026]) → T-022. T-020: HOLD lifted —
    fold T-018-s3 + dispatch granted (done, this commit's sibling).
    Milestone 3 runs through T-029 as blockers clear: T-027 planning
    pass + dispatch when T-024+T-025+T-026 all merge; T-028/T-029
