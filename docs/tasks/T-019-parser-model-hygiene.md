@@ -159,3 +159,129 @@ red for the same staleness — expected, not run here (cargo untouched).
   the mismatch check by design).
 
 ## Verdicts
+
+2026-08-16 — claude-fable-5 @fresh (verifier, same-model as builder):
+REJECTED — one hole in the flagged judgment call: the zero-feature
+skip is silent in exactly one state, and it is a state the skip's own
+rationale says must be loud. Everything else verified green — all
+four criteria's happy and hostile paths, both suites fresh, the
+boundary, the security sweep, both fixture repairs, the live-tree
+proof on BOTH trees (branch, and main's current docs with the T-020
+promotion landed) — so the fix round is one guard plus its test.
+
+Failure (lib/parser/src/validate.ts, the `featureIds.size > 0` skip):
+the documented justification is "an absent/failed roadmap already
+reports itself once (io-error / roadmap-error)". True for a missing
+roadmap (io-error), a roadmap with no `## Backbone` heading
+(roadmap-error), and a backbone of only malformed bullets
+(roadmap-error per line) — all three reproduced. But a PRESENT,
+well-formed `## Backbone` heading with ZERO bullets under it parses
+to `features: []` with NO issue (roadmap.ts: `sawBackbone = true`
+suppresses the roadmap-error; no bullet ever fires the malformed
+arm), and the skip then silences every feature dangler. Repro
+(vitest, lib/parser):
+
+    parseProjectFromFiles(new Map([
+      ['docs/ROADMAP.md',
+       '# Roadmap\n\n## Backbone\n\n(features to be decided)\n'],
+      ['docs/tasks/T-901-a.md',  // planned task, feature: F-01
+       '---\nid: T-901\ntitle: x\nfeature: F-01\nmilestone: 1\n' +
+       'priority: 1\nsize: S\nstatus: planned\n---\n'],
+    ]))
+    // actual:   features: [], issues: []  — total silence
+    // expected: criterion 1 — `feature → missing backbone id` fires
+    //           (or at minimum ONE loud root-cause issue exists)
+
+Why REJECTED-level, not a suggestion: (1) criterion 1 literally
+requires the feature → missing-backbone issue, and this state has a
+feature naming an id the backbone does not declare; (2) the
+one-root-cause-one-report principle the skip is built on delivers
+ZERO reports here — the state fails the skip's own rule; (3) it is
+not a corner: T-019 lands before milestone 3 because "the interview
+writes the task graphs this validates", and a heading-present,
+features-not-yet-written backbone alongside feature-carrying tasks
+is precisely a mid-genesis bootstrap state. The silence is
+end-to-end: docs-model's failure predicate codifies "empty backbone
+(no issues) is a valid state", so no layer reports anything — an
+accidentally emptied backbone renders a zero-issue board.
+
+The cited pinned test (files.test.ts "missing roadmap is an io-error
+issue") is untouched by this finding — no per-task cascade is being
+asked for when the roadmap is missing or failed. The gap is only the
+parsed-clean-but-empty backbone. Fix shape (executor's choice): gate
+the skip on the roadmap having actually REPORTED (features empty AND
+a roadmap io-error/roadmap-error present in the issue list),
+otherwise check normally; or emit one aggregate issue when a clean
+backbone declares zero features while tasks reference features.
+Either preserves the pinned behavior and kills the silence.
+
+Everything else — verified, not trusted:
+- Suites fresh (ADR-011 order): lib/parser npm ci · 153/153 (132+21)
+  · tsc clean · build clean; app npm install · build clean · 381/381
+  (375+6). Zero src-tauri diff; no dep / tokens / App.tsx /
+  docs-model / watcher-store changes (name-only sweep).
+- Hostile validation probes (28, all held): ADR-009 at DESCRIPTOR
+  level — blocked_by [__proto__, constructor, hasOwnProperty,
+  toString, valueOf] all five dangle, Object.prototype's own-property
+  set byte-identical after; references into rejected/ dangle;
+  resolution is case-sensitive; identity-gate-failed targets dangle;
+  one-issue-per-root-cause interactions hold (format-invalid feature
+  → invalid-field ONLY; valid-but-missing → dangler ONLY;
+  duplicate-id + filename-mismatch + a resolving reference → exactly
+  one duplicate-id + one id-mismatch, zero danglers, no explosion).
+- Id family edges: T-0 / T-00 / T-1-s0 / T-016-s01 pass (the regex
+  permits them; no live-tree conflict), unicode digits (NKO,
+  Arabic-Indic) fail, inner space fails; the record is withheld on
+  planned/building/verifying/done/parked with a format-invalid id
+  while suggested survives id-less — consistent with the T-002/T-016
+  loud-trap precedents; rejected-exclusion suite still green.
+- filenameId boundary: T-909.bak.md → skip (the documented T-019-s2
+  narrowness, confirmed at the boundary); greedy -sN
+  (T-909-s1-s2-slug.md encodes T-909-s1); uppercase -S1 reads as
+  slug → flags conservatively (errs toward loud); leading zeros
+  compare string-exact; lowercase t-*.md is never collected at all
+  (pre-existing glob anchor, not a T-019 hole).
+- Preamble: `## Preamble` / `## __proto__` headings cannot address
+  the key (null-proto KEYS verified); whitespace-only pre-heading
+  text yields NO key (absent, never empty string); hostile content
+  (script/img/style tags, ANSI, RTL override, 5k unbroken run)
+  preserved VERBATIM as data.
+- Ghost panel DOM probe: hostile preamble renders as TEXT NODES only
+  (children.length 0, no script/img/style elements materialized,
+  innerHTML escaped, nothing executed), verbatim including newlines;
+  whitespace-pre-wrap + break-words + min-w-0 on the text node and
+  all three present in the compiled CSS bundle; non-suggested panels
+  grow NO detail-context even when a full task HAS a preamble
+  (probed stronger than the builder's preamble-less pin); zero
+  innerHTML/dangerouslySetInnerHTML anywhere in app/src.
+- Union-extension safety: confirmed — no exhaustive switch over
+  ParseIssue kinds anywhere in the app (issues are consumed as count
+  + first message; the only `.kind` matches are verdict/map/ref
+  kinds); tsc clean rules out type-level exhaustiveness too.
+- Disk/pure parity: the fixture mirror tests exercise only
+  validateProject's zero-finding path (valid-project and
+  broken-project produce no cross-reference findings), so parity was
+  probed on a project whose validation FIRES — deep-equal holds
+  across parseProject and parseProjectFromFiles (danglers + mismatch
+  identical).
+- Fixture repairs: both are truth-repairs, dated, and NET TIGHTER —
+  valid-project's blocked_by: [T-100] was a genuine dangler the old
+  suite could not see (T-100-genesis.md makes "valid" include
+  reference resolution); dup-project's renames keep one-fixture-one-
+  violation and the new `issues toHaveLength(1)` pin is STRONGER
+  than the old shape-only check. Nothing widened.
+- Live-tree proof re-derived independently: branch tree 44 tasks /
+  6 features / 0 issues with an independent audit (26 id-bearing
+  records all family-clean, all filenames consistent, every
+  blocked_by resolves, features ⊆ backbone); main's CURRENT docs
+  (T-020 planning landed, T-009-s3 absorbed/removed) through the
+  BRANCH parser: 48 tasks / 6 features / 0 issues — the promotion
+  interacts cleanly, nothing to enumerate.
+- Security sweep: no new dependencies, no secrets in the diff, no
+  new injection surface (hostile content stays inert data
+  end-to-end), prototype-pollution probes clean at descriptor level.
+
+Suggestion filed (not part of the verdict): T-019-s3 (blocked_by
+self-references and cycles resolve silently — out of T-019's stated
+scope, worth a deliberate rule before dispatch logic consumes the
+graph).
