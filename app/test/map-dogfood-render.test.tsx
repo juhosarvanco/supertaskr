@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseProjectFromFiles, type FileEntry } from "@nputer/parser/pure";
 import { MapView } from "../src/architecture/MapView";
+import { deriveArchitecture } from "../src/lib/architecture/derive";
 import { GRAPH_FILE } from "../src/lib/docs-model";
 
 // THE DOGFOOD HERO (T-012 plan §8): the live docs/ tree + the committed
@@ -116,9 +117,20 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).not.toContain("map-drift-ring");
   });
 
-  it("C-12 renders building — this task, on its own map", () => {
-    expect(node("C-12").getAttribute("data-status")).toBe("building");
-    expect(node("C-12").className).toContain("bg-status-building");
+  it("C-12 renders its LIVE rollup — this task, on its own map (churn-proof)", () => {
+    // The dogfood fixture's maintenance contract: task-status churn
+    // must never move these pins — T-012 itself flips building →
+    // verifying → done as it moves through the pipeline. Assert the
+    // face matches the live derivation instead of pinning a value.
+    const model = parseProjectFromFiles(liveFiles());
+    const derived = deriveArchitecture({
+      components: model.components ?? [],
+      tasks: model.tasks,
+    });
+    const status = derived.components.find((c) => c.id === "C-12")?.status;
+    expect(status).toBeDefined();
+    expect(node("C-12").getAttribute("data-status")).toBe(status);
+    expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
   it("draws the full 23-edge relation table", () => {
