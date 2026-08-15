@@ -114,6 +114,8 @@ export interface BoardCard {
   model?: ModelBadgeInfo;
   /** Verification badge; present only on done cards with review: set. */
   review?: ReviewMode;
+  /** Ghost provenance line (T-006): who suggested a suggested task. */
+  suggestedBy?: string;
   file: string;
 }
 
@@ -168,6 +170,7 @@ function toCard(task: TaskRecord): BoardCard {
     model: modelBadge(task),
     // Plan: the verification badge renders on done cards, from review:.
     review: task.status === "done" ? task.review : undefined,
+    suggestedBy: task.suggestedBy,
     file: task.file,
   };
 }

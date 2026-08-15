@@ -1,0 +1,28 @@
+/*
+ * Local font faces (T-006). Geist + Geist Mono, SIL OFL 1.1 — vendored
+ * variable woff2 from the `geist` npm package v1.7.2 (Vercel), copied
+ * verbatim with its license (src/assets/fonts/OFL-LICENSE.txt). Vite
+ * fingerprints the files into dist/assets, so every font request is
+ * same-origin and the strict CSP (default-src 'self'; no font-src
+ * loosening) holds. NO remote font loads, ever — the token sheet §01
+ * requires both families bundled in-binary.
+ *
+ * One variable file per family covers the weights the sheet uses
+ * (400/500/600/700); `font-weight: 100 900` lets the UA derive them.
+ */
+
+@font-face {
+  font-family: "Geist";
+  src: url("../assets/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("../assets/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}

@@ -7,153 +7,293 @@
  * and re-derives them from these tokens, so a utility class with no token
  * behind it simply does not exist.
  *
- * All values are PLACEHOLDERS (shadcn neutral). T-006 (design language)
- * replaces the values — never the mechanism.
+ * T-006: values are the measured Claude Design sheet — docs/design/
+ * claudedesign_handoff/"nputer tokens.dc.html" §03 (core + status +
+ * additions), the scheme-independent type/geometry/motion block, and §06
+ * (map + --warning, landed INERT for the future map pane — no utility
+ * consumes them yet). The violet --drift-bg/--drift-fg pair from §04 is
+ * deliberately ABSENT: superseded by §06's --warning (architect
+ * directive; amber, stroke-only). Additions beyond the sheet's named
+ * list are measured surface inks from the app mockups ("nputer
+ * app.dc.html" board/board·dark/card-states tabs), tokenized here
+ * because the card spec mandates "token values only; the card never
+ * carries a one-off" — each is annotated with its source.
  */
 
 :root {
-  /* ---- color ------------------------------------------------------- */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* ---- core (sheet §03, light) ------------------------------------- */
+  --background: #ffffff;
+  --foreground: #171717;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  --primary: #111111;
+  --primary-foreground: #fafafa;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #404040;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --accent: #ededed;
+  --accent-foreground: #171717;
+  --destructive: #b3391f;
+  --border: #e5e5e5;
+  --input: #e2e2e2;
+  --ring: #171717;
+  --chart-1: #1f7a58;
+  --chart-2: #2e7691;
+  --chart-3: #b08316;
+  --chart-4: #b5651d;
+  --chart-5: #b3391f;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #171717;
+  --sidebar-primary: #111111;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #f0f0f0;
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #171717;
   /* fixed poles referenced by stock shadcn variants */
   --static-white: #ffffff;
-  --static-black: #000000;
+  --static-black: #0a0a0a;
 
-  /* ---- spacing ----------------------------------------------------- */
-  /* Base unit behind EVERY Tailwind spacing/size utility (p-*, m-*,
-     gap-*, w-*, h-*, size-*, …): utility value = n × this unit. */
-  --spacing-unit: 0.25rem;
+  /* ---- status (sheet §02/§03): six diverged fills ------------------ */
+  --status-planned-bg: #f5f5f5;
+  --status-planned-fg: #525252;
+  --status-building-bg: #fdeecb;
+  --status-building-fg: #7d5c12;
+  --status-verifying-bg: #fce6d2;
+  --status-verifying-fg: #84501c;
+  --status-rejected-bg: #fbe1da;
+  --status-rejected-fg: #93331d;
+  --status-done-bg: #d5f0e4;
+  --status-done-fg: #2f7256;
+  --status-merging-bg: #d9edf7;
+  --status-merging-fg: #26647e;
 
-  /* ---- radius ------------------------------------------------------ */
-  --radius: 0.625rem;
+  /* ---- additions (sheet §04) --------------------------------------- */
+  /* Per-status border, one step darker than the fill. */
+  --status-planned-border: #e8e8e8;
+  --status-building-border: #f3ddab;
+  --status-verifying-border: #f3d0ae;
+  --status-rejected-border: #f2c7bd;
+  --status-done-border: #bfe7d6;
+  --status-merging-border: #bedeee;
+  /* Feature headers invert between schemes (ink pill / bone pill). */
+  --column-header-bg: #111111;
+  --column-header-fg: #fafafa;
+  --column-header-id: #a3a3a3;
+  /* 1px rules under headers, milestone slice, column footer. */
+  --hairline: #e5e5e5;
+  /* Dashed edge for suggestion ghosts; never gets a fill. */
+  --ghost-border: #d4d4d4;
+  /* Elevation per scheme: hairline lift in light, none in dark. */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-pop: 0 12px 28px -12px rgba(0, 0, 0, 0.22);
+  /* Provenance is its own semantic: one disc color, one mark color. */
+  --review-disc: #1f7a58;
+  --review-mark: #ffffff;
 
-  /* ---- type -------------------------------------------------------- */
-  --font-sans-stack: system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-mono-stack: ui-monospace, "SF Mono", SFMono-Regular, Menlo,
-    Consolas, "Liberation Mono", monospace;
+  /* ---- measured card/panel inks (app mockups, T-006) --------------- */
+  /* Card TITLE ink, one step darker than the id/meta fg — the id/title
+     hierarchy on filled cards (board + board·dark tabs). */
+  --status-planned-title: #171717;
+  --status-building-title: #6b4d09;
+  --status-verifying-title: #6e3f12;
+  --status-rejected-title: #7d2c19;
+  --status-done-title: #14503c;
+  --status-merging-title: #134559;
+  /* One step darker than -border: chip outlines on filled cards AND the
+     hover border ("border darkens one step", card-states tab). */
+  --status-planned-border-strong: #d4d4d4;
+  --status-building-border-strong: #e3c98d;
+  --status-verifying-border-strong: #e6bd93;
+  --status-rejected-border-strong: #e8b3a4;
+  --status-done-border-strong: #a9dcc6;
+  --status-merging-border-strong: #a7d2e5;
+  /* Card hover shadow ("lifts 1px", card-states tab). */
+  --shadow-card-hover: 0 3px 10px -4px rgba(0, 0, 0, 0.18);
+  /* Verdict-history blocks (card-detail tab): tinted reading surfaces.
+     Border + label reuse the status pair; these are the block-only inks.
+     Dark values derived (the mockup draws the panel light-only). */
+  --verdict-rejected-bg: #fdf1ee;
+  --verdict-rejected-ink: #3f2b26;
+  --verdict-rejected-meta: #8a6a62;
+  --verdict-approved-bg: #f2fbf7;
+  --verdict-approved-ink: #264a3c;
+  --verdict-approved-meta: #4a6f60;
+
+  /* ---- warning + map (sheet §06, INERT until the map pane) --------- */
+  /* Drift, contradiction, truth maintenance. STROKE ONLY — status is a
+     fill, warning is a stroke; --warning never becomes a background. */
+  --warning: #b3600a;
+  --warning-foreground: #fff8ee;
+  --map-canvas: #fbfbfa;
+  --map-grid: #e6e6e4;
+  --map-node-border: #e2e2e0;
+  --map-node-border-selected: #171717;
+  --map-node-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --map-edge: #c2c2c0;
+  --map-edge-muted: #e5e5e3;
+  --map-edge-planned: #d4d4d2;
+  --map-edge-drift: var(--warning);
+  --map-unmapped-bg: #fafaf9;
+  --map-unmapped-fg: #737373;
+  --map-group-bg: #f7f7f6;
+  --provenance-independent: #1f7a58;
+  --provenance-same: #1f7a58;
+  --provenance-self: #1f7a58;
+}
+
+/* Dark scheme: same tokens, different values. Toggled by putting the
+   `dark` class on <html> (see @custom-variant in src/index.css). */
+.dark {
+  /* ---- core (sheet §03, dark) -------------------------------------- */
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card: #141414;
+  --card-foreground: #d4d4d4;
+  --popover: #2a2a2a;
+  --popover-foreground: #e5e5e5;
+  --primary: #ededed;
+  --primary-foreground: #0a0a0a;
+  --secondary: #171717;
+  --secondary-foreground: #d4d4d4;
+  --muted: #171717;
+  --muted-foreground: #949494;
+  --accent: #262626;
+  --accent-foreground: #ededed;
+  --destructive: #f08d76;
+  --border: #262626;
+  --input: #2e2e2e;
+  --ring: #ededed;
+  --chart-1: #4ecf9e;
+  --chart-2: #6fc6e4;
+  --chart-3: #e2b855;
+  --chart-4: #e8a468;
+  --chart-5: #f08d76;
+  --sidebar: #0f0f0f;
+  --sidebar-foreground: #ededed;
+  --sidebar-primary: #ededed;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #1f1f1f;
+  --sidebar-accent-foreground: #ededed;
+  --sidebar-border: #262626;
+  --sidebar-ring: #ededed;
+  --static-white: #ffffff;
+  --static-black: #0a0a0a;
+
+  /* ---- status -------------------------------------------------------- */
+  --status-planned-bg: #141414;
+  --status-planned-fg: #a3a3a3;
+  --status-building-bg: #2a2008;
+  --status-building-fg: #e2b855;
+  --status-verifying-bg: #2c1a0c;
+  --status-verifying-fg: #e8a468;
+  --status-rejected-bg: #2c1210;
+  --status-rejected-fg: #f08d76;
+  --status-done-bg: #0d2a21;
+  --status-done-fg: #79dcb4;
+  --status-merging-bg: #0c2430;
+  --status-merging-fg: #6fc6e4;
+
+  /* ---- additions ----------------------------------------------------- */
+  --status-planned-border: #262626;
+  --status-building-border: #4a3a12;
+  --status-verifying-border: #503018;
+  --status-rejected-border: #5a221c;
+  --status-done-border: #1c4a3a;
+  --status-merging-border: #1a475c;
+  --column-header-bg: #ededed;
+  --column-header-fg: #0a0a0a;
+  --column-header-id: #666666;
+  --hairline: #2a2a2a;
+  --ghost-border: #333333;
+  --shadow-card: none;
+  --shadow-pop: 0 12px 28px -10px rgba(0, 0, 0, 0.7);
+  --review-disc: #4ecf9e;
+  --review-mark: #06231a;
+
+  /* ---- measured card/panel inks (board·dark tab) --------------------- */
+  --status-planned-title: #d4d4d4;
+  --status-building-title: #f0cd7e;
+  --status-verifying-title: #f2bd8c;
+  --status-rejected-title: #f5a897;
+  --status-done-title: #a8ecd0;
+  --status-merging-title: #96d8ee;
+  --status-planned-border-strong: #333333;
+  --status-building-border-strong: #58461a;
+  --status-verifying-border-strong: #5e3a1e;
+  --status-rejected-border-strong: #6a2a22;
+  --status-done-border-strong: #245a46;
+  --status-merging-border-strong: #235870;
+  --shadow-card-hover: none;
+  /* Verdict blocks in dark ride the status fills (derived — the mockup
+     is light-only): fill = status bg, inks = one step off the fg. */
+  --verdict-rejected-bg: #2c1210;
+  --verdict-rejected-ink: #e5c2b8;
+  --verdict-rejected-meta: #b08578;
+  --verdict-approved-bg: #0d2a21;
+  --verdict-approved-ink: #bfe3d2;
+  --verdict-approved-meta: #6fa78d;
+
+  /* ---- warning + map (sheet §06, INERT) ------------------------------ */
+  --warning: #f0a63c;
+  --warning-foreground: #2a1a06;
+  --map-canvas: #0c0c0c;
+  --map-grid: #1c1c1c;
+  --map-node-border: #262626;
+  --map-node-border-selected: #ededed;
+  --map-node-shadow: none;
+  --map-edge: #3f3f3f;
+  --map-edge-muted: #232323;
+  --map-edge-planned: #333333;
+  --map-edge-drift: var(--warning);
+  --map-unmapped-bg: #101010;
+  --map-unmapped-fg: #949494;
+  --map-group-bg: #121212;
+  --provenance-independent: #4ecf9e;
+  --provenance-same: #4ecf9e;
+  --provenance-self: #4ecf9e;
+}
+
+/* ---- scheme-independent: type, geometry, motion (sheet §03) --------- */
+:root {
+  --font-sans-stack: "Geist", system-ui, -apple-system, sans-serif;
+  --font-mono-stack: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
 
   --weight-normal: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
 
-  --text-xs-size: 0.75rem;
+  --text-xs-size: 0.6875rem; /* 11 / 16  — overlines, uppercase meta */
   --text-xs-line: 1rem;
-  --text-sm-size: 0.875rem;
-  --text-sm-line: 1.25rem;
-  --text-base-size: 1rem;
-  --text-base-line: 1.5rem;
-  --text-lg-size: 1.125rem;
-  --text-lg-line: 1.75rem;
-  --text-xl-size: 1.25rem;
-  --text-xl-line: 1.75rem;
-  --text-2xl-size: 1.5rem;
-  --text-2xl-line: 2rem;
-  --text-3xl-size: 1.875rem;
-  --text-3xl-line: 2.25rem;
+  --text-sm-size: 0.78125rem; /* 12.5 / 18 — ids, chips, paths */
+  --text-sm-line: 1.125rem;
+  --text-base-size: 0.875rem; /* 14 / 20  — body, counts line */
+  --text-base-line: 1.25rem;
+  --text-lg-size: 0.90625rem; /* 14.5 / 21 — card + column titles */
+  --text-lg-line: 1.3125rem;
+  --text-xl-size: 1.0625rem; /* 17 / 24  — panel headings */
+  --text-xl-line: 1.5rem;
+  --text-2xl-size: 1.25rem; /* 20 / 28  — section titles */
+  --text-2xl-line: 1.75rem;
+  --text-3xl-size: 1.625rem; /* 26 / 32  — wordmark */
+  --text-3xl-line: 2rem;
 
-  /* ---- status colors (T-004, story map board) ---------------------- */
-  /* One bg+fg pair per card-rendering task status. Placeholder values
-     (restrained neutrals + amber/red/teal); T-006 edits VALUES only.
-     verifying/building and merging/done start with identical values —
-     the pulse (below) is what distinguishes them until T-006 diverges
-     the palettes. */
-  --status-planned-bg: oklch(0.97 0 0);
-  --status-planned-fg: oklch(0.44 0 0);
-  --status-building-bg: oklch(0.95 0.055 90);
-  --status-building-fg: oklch(0.5 0.12 70);
-  --status-verifying-bg: oklch(0.95 0.055 90);
-  --status-verifying-fg: oklch(0.5 0.12 70);
-  --status-rejected-bg: oklch(0.95 0.035 25);
-  --status-rejected-fg: oklch(0.5 0.19 27);
-  --status-done-bg: oklch(0.94 0.045 185);
-  --status-done-fg: oklch(0.45 0.09 190);
-  --status-merging-bg: oklch(0.94 0.045 185);
-  --status-merging-fg: oklch(0.45 0.09 190);
+  /* Letter-spacing roles measured across the mockups (wordmark
+     −0.045em is in the sheet §01 itself). */
+  --tracking-wordmark: -0.045em;
+  --tracking-title: -0.01em; /* card + column titles */
+  --tracking-heading: -0.02em; /* panel headings */
+  --tracking-overline: 0.12em; /* uppercase section labels */
+  --tracking-tag: 0.09em; /* ghost provenance tag */
 
-  /* ---- status pulse (T-004) ---------------------------------------- */
-  /* Values for the verifying/merging pulse; the keyframe + utility live
-     in the mechanism layer (src/index.css). */
-  --pulse-duration: 2s;
-  --pulse-opacity-dip: 0.55;
-}
+  --spacing-unit: 0.25rem;
+  --radius: 0.625rem; /* 10px — cards, column headers, buttons */
+  --radius-chip: 0.375rem; /* 6px  — size + model chips (addition) */
 
-/* Dark scheme: same tokens, different values. Toggled by putting the
-   `dark` class on <html> (see @custom-variant in src/index.css). */
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-
-  /* status colors (T-004): same tokens, dark values */
-  --status-planned-bg: oklch(0.25 0 0);
-  --status-planned-fg: oklch(0.75 0 0);
-  --status-building-bg: oklch(0.28 0.05 85);
-  --status-building-fg: oklch(0.82 0.11 85);
-  --status-verifying-bg: oklch(0.28 0.05 85);
-  --status-verifying-fg: oklch(0.82 0.11 85);
-  --status-rejected-bg: oklch(0.27 0.055 25);
-  --status-rejected-fg: oklch(0.78 0.13 25);
-  --status-done-bg: oklch(0.28 0.045 185);
-  --status-done-fg: oklch(0.8 0.1 185);
-  --status-merging-bg: oklch(0.28 0.045 185);
-  --status-merging-fg: oklch(0.8 0.1 185);
+  --pulse-duration: 2.4s;
+  --pulse-opacity-dip: 0.45;
 }
