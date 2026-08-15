@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [crate-index, app-shell]
 builder: claude-fable-5
-verifier:
+verifier: claude-fable-5
 built_by: "claude-fable-5 @t009-executor"
-verified_by:
-review:
+verified_by: "claude-fable-5 @fresh"
+review: same-model
 ---
 
 Size L: planning pass COMPLETE (below; architect-approved 2026-08-15).
@@ -490,3 +490,95 @@ app/src/**, lib/parser/**, npm lockfiles.
   `--check` gate exists.
 
 ## Verdicts
+
+2026-08-15 — claude-fable-5 @fresh (verifier, same-model as builder): APPROVED
+
+Suites, fresh: bare `cargo test` from app/src-tauri **100 passed**
+(app 20 + index 68 lib + 3 containment + 7 golden + 2 self-graph),
+2 `#[ignore]`d by design — run twice, then again with an unrelated
+app/src TS file edited: green all three times, tree clean after every
+run. lib/parser `npm ci` + vitest **78/78** + tsc + build clean; app
+`npm ci` + build clean + **94/94**. Diff surface vs 185d26c is exactly
+the plan §10 list — zero diff in app/src-tauri/src/, tauri.conf.json,
+capabilities/, app/src/**, lib/parser/**, npm locks.
+
+Dependencies (the task's biggest surface): six direct crates at the
+exact `=` pins in both manifests; all 16 new Cargo.lock packages'
+checksums MATCH crates.io (none yanked); no existing package changed
+version — the lock's single minus-line is the sha2 dependency string
+gaining "cpufeatures 0.2.17" as blake3's 0.3.0 joins beside it.
+`cargo tree -p nputer-index`: zero tauri. Transitive additions
+enumerated and judged: tree-sitter-language (23-line ABI shim; build.rs
+prints wasm metadata only), streaming-iterator, globset + bstr
+(ignore's glob engine), crossbeam-deque/epoch (ignore's parallel-walk
+API, unused single-threaded), arrayref/arrayvec/constant_time_eq/
+cpufeatures (blake3 SIMD micro-deps). Vendored build scripts READ at
+these versions: both grammar crates are pure `cc` compiles of vendored
+parser.c/scanner.c; tree-sitter core compiles vendored lib.c
+(wasm/bindgen paths feature-gated OFF here); blake3 selects vendored
+C/asm SIMD — no fetch, no exec beyond the C compiler, no writes
+outside OUT_DIR anywhere. jsonc-parser and ignore ship no build.rs.
+
+Determinism, reproduced not trusted: `NPUTER_UPDATE_GOLDEN=1`
+regeneration of all three goldens AND docs/architecture/graph.json
+from the clean tree left `git status` empty (byte-identical); the
+ignored `self_graph_is_current` passes; an independently compiled
+release probe binary (own target dir) reproduces the committed
+**122,853-byte** graph byte-for-byte; cold×2, cold-vs-warm, cache
+deleted mid-sequence, cache corrupted — all byte-identical; a hostile
+HOME/XDG_CONFIG_HOME/GIT_CONFIG_GLOBAL whose global excludesFile
+ignores *.ts/tsx/js/jsx/mts/cts changes nothing (probe byte-identical
+to the committed graph; golden test binary 7/7 under the same env).
+Committed payload: no volatile fields, no absolute paths, POSIX
+separators throughout, root ".".
+
+Containment, attacked live (16/16 fresh probes beyond the suite):
+file/dir/nested-dir symlinks and link→link→outside chains walk
+nothing, and a planted secret marker never appears in the serialized
+payload; symlink cycles and FIFOs (as a .ts file AND as
+tsconfig.json/package.json where the resolver looks) complete without
+hangs or reads; `../` escape specifiers → `outside_root` with zero
+edges; a symlinked package.json is refused (no `path` minted from it);
+.gitignore/.nputerignore negations cannot resurrect node_modules;
+tsconfig `paths` targeting outside the root leak nothing and fall
+through honestly. Code audit: filesystem access in resolve/ is exactly
+`read_contained` (symlink-refuse → canonicalize → prefix-check) for
+the two config filenames; candidate matching queries only the walked
+set.
+
+Extraction/resolution vs real TS semantics: 26/26 own scratch-repo
+probes — exact-beats-star, longest-prefix, multi-target array order,
+nearest-tsconfig with dir-rooted paths (no baseUrl), declaration
+merging (interface + const + namespace; overload collapse),
+`export * from` chains with reexport flags, `.js`→`.ts` /
+`.jsx`→`.tsx` NodeNext substitution, scoped-subpath / `node:` /
+bare-subpath package identity, literal-vs-non-literal dynamic import,
+query-strip → asset, `.d.ts` sibling preference both directions,
+`/index` resolution, candidate gating (undeclared imported name emits
+no edge; `confidence: "resolved"` on call/type_ref only). Dogfood: 6
+committed edges spot-verified against source, including
+`p:@nputer/parser` carrying `path: "lib/parser"` from
+app/package.json's `file:../lib/parser`.
+
+Budget honesty, forced: truncation sets truncated_symbols +
+truncated_files, drops zero files/import-edges/unresolved entries,
+leaves zero dangling `s:` ids, recomputes stats to the emitted
+payload, and is deterministic; the floor emits the flagged over-budget
+graph with all files intact. 122,853 B vs the 1,000,000 budget vs the
+1,048,576 collector cap confirmed.
+
+Perf, re-measured on a release build: cold **[40, 15, 15, 15, 15] ms**
+(max 40 vs the < 500 ms criterion); incremental single-file
+**[3, 2, 2, 2, 2] ms** (max 3 vs < 50 ms); the ignored 3× harness
+passes.
+
+All 16 recorded smallest choices audited against the binding plan:
+each fills a genuine silence consistently with the plan's own
+rationale (several reproduced directly by the probes above); none
+contradicts it. The CONVENTIONS edit changes only the cargo-test
+description line and states something verified true here. T-009-s1's
+framing is accurate — its regeneration command is the exact mechanism
+this verification used.
+
+Non-failure ideas filed as T-009-s2 (URL-scheme specifier gate) and
+T-009-s3 (advisory audit lane for the pinned tree).
