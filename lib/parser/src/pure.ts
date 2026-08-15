@@ -12,6 +12,7 @@ export {
   TASK_STATUSES,
   TASK_SIZES,
   REVIEW_MODES,
+  COMPONENT_STATUSES,
   type TaskStatus,
   type TaskSize,
   type ReviewMode,
@@ -20,9 +21,13 @@ export {
   type TaskSections,
   type TaskRecord,
   type FeatureRecord,
+  type ComponentStatus,
+  type ComponentRecord,
   type ParseIssue,
   type TaskParseResult,
   type RoadmapParseResult,
+  type ComponentParseResult,
+  type ComponentSetResult,
   type ProjectParseResult,
 } from './types.js';
 
@@ -30,9 +35,13 @@ export { parseModelSession } from './model-session.js';
 export { extractFrontmatter, type FrontmatterResult } from './frontmatter.js';
 export { parseTaskFile, splitSections } from './task.js';
 export { parseRoadmap } from './roadmap.js';
+export { parseComponentFile, compareComponentIds } from './component.js';
 export {
   parseProjectFromFiles,
+  parseComponentsFromFiles,
   isTaskFilePath,
+  isComponentFilePath,
   type FileEntry,
   type ParseProjectFromFilesOptions,
+  type ParseComponentsFromFilesOptions,
 } from './files.js';

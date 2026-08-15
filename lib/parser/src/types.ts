@@ -108,6 +108,66 @@ export interface TaskRecord {
   file: string;
 }
 
+/**
+ * Component statuses (docs/design/map-technical-plan.md §2): `auto`
+ * (default — derive from the tasks touching the component, T-011) or one
+ * of the six pinnable task statuses. `suggested` and `parked` are task-only.
+ */
+export const COMPONENT_STATUSES = [
+  'auto',
+  'planned',
+  'building',
+  'verifying',
+  'rejected',
+  'merging',
+  'done',
+] as const;
+
+export type ComponentStatus = (typeof COMPONENT_STATUSES)[number];
+
+/**
+ * One architecture intent file (ADR-014):
+ * docs/architecture/components/C-xx-<slug>.md — frontmatter + prose,
+ * one component per file, same C-namespace as docs/ARCHITECTURE.md
+ * (plan §0.0 item 8). Parsed here per ADR-015 so the map's derivation
+ * (T-011) never grows a second frontmatter parser.
+ */
+export interface ComponentRecord {
+  /** Component id, pattern `C-\d{2,}`, unique across files. */
+  id: string;
+  name: string;
+  /** Free-form grouping/lane label; optional. */
+  layer?: string;
+  /** Non-empty gitignore-style globs relative to the repo root. */
+  paths: string[];
+  /**
+   * Declared, directional dependencies (this component → those C-ids).
+   * Entries naming no known component are PRESERVED (never dropped) so
+   * derivation can draw placeholder nodes; the parser flags them with a
+   * `dangling-reference` issue at set level.
+   */
+  dependsOn: string[];
+  /** Linked decision records (ids resolve to docs/decisions/*). */
+  decisions: string[];
+  /**
+   * Task-intersection slugs per the ARCHITECTURE.md mapping (plan §0.0
+   * item 4): tasks whose `touches` intersect these roll up into this
+   * component's derived status.
+   */
+  touchSlugs: string[];
+  /** `auto` = derive from tasks (T-011); any other value pins the node. */
+  status: ComponentStatus;
+  /** Body prose — the component's responsibility, shown verbatim. */
+  responsibility: string;
+  /**
+   * Frontmatter keys outside the component format, preserved verbatim.
+   * Never silently deleted (archaeology convention); empty when none.
+   */
+  extra: Record<string, unknown>;
+  /** Path of the source file, as given to the parser. */
+  file: string;
+}
+
 /** One `- F-NN: Name — description` backbone line from docs/ROADMAP.md. */
 export interface FeatureRecord {
   /** Feature id, e.g. `F-02`. */
@@ -142,7 +202,28 @@ export type ParseIssue =
   /** Roadmap structure problem (no backbone section, malformed F-line). */
   | { kind: 'roadmap-error'; file: string; message: string }
   /** A file or directory could not be read. */
-  | { kind: 'io-error'; file: string; message: string };
+  | { kind: 'io-error'; file: string; message: string }
+  /**
+   * A reference field names an id no parsed record declares (e.g. a
+   * component's `depends_on` entry). The edge is preserved on the record
+   * for placeholder rendering, never dropped.
+   */
+  | { kind: 'dangling-reference'; file: string; field: string; id: string; message: string }
+  /**
+   * Two components' `paths` provably claim the same files; first by
+   * component id order (`ids[0]`) wins file mapping. `ids`/`files`/
+   * `patterns` are index-aligned. Emitted at parse time only for
+   * matcher-agnostic certain overlaps (identical patterns, `P/**` prefix
+   * containment); file-level detection against a real tree is derivation's
+   * job (T-011), which reports through this same variant.
+   */
+  | {
+      kind: 'ambiguous-mapping';
+      ids: [string, string];
+      files: [string, string];
+      patterns: [string, string];
+      message: string;
+    };
 
 /** Result of parsing one task file. `task` is absent when the file's
  * identity (title + valid status, id where required) could not be
@@ -158,9 +239,31 @@ export interface RoadmapParseResult {
   issues: ParseIssue[];
 }
 
-/** Result of parsing a whole project (tasks directory + roadmap). */
+/** Result of parsing one component file. `component` is absent when the
+ * file's identity (a valid `C-\d{2,}` id plus a name) could not be
+ * established; field-level issues may accompany a returned record. */
+export interface ComponentParseResult {
+  component?: ComponentRecord;
+  issues: ParseIssue[];
+}
+
+/** Result of parsing a component-file set (directory or in-memory). */
+export interface ComponentSetResult {
+  components: ComponentRecord[];
+  issues: ParseIssue[];
+}
+
+/** Result of parsing a whole project (tasks directory + roadmap +
+ * architecture component files). */
 export interface ProjectParseResult {
   tasks: TaskRecord[];
   features: FeatureRecord[];
+  /**
+   * Architecture components (T-008). Optional so pre-T-008 hand-built
+   * models stay valid; every parser entry point always sets it. Absent
+   * docs/architecture/components/ is a legal state (plan §6.5) and yields
+   * `[]` with no issue — unlike the required roadmap.
+   */
+  components?: ComponentRecord[];
   issues: ParseIssue[];
 }

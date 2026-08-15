@@ -27,6 +27,10 @@ Task `touches:` slugs map here: `app-shell` = C-05 shell/window/watcher
 plumbing · `app-board` = C-05 board pane · `app-map` = C-05 map pane
 (F-06) · `lib-parser` = C-06 · `crate-index` = C-07.
 
+Component intent files: docs/architecture/components/ (same
+C-namespace, one file per mapped component; parsed by C-06 — T-008,
+ADR-014/015).
+
 ## Interfaces
 - Everything coordinates through files; no component holds project
   state the files don't. Killing anything is safe by construction.

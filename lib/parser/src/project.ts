@@ -1,8 +1,10 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseTaskFile } from './task.js';
 import { parseRoadmap } from './roadmap.js';
+import { parseComponentSet } from './component.js';
 import type {
+  ComponentSetResult,
   ParseIssue,
   ProjectParseResult,
   RoadmapParseResult,
@@ -89,6 +91,53 @@ export function parseTaskDirectory(dir: string): TaskDirectoryResult {
   return { tasks, issues };
 }
 
+/**
+ * Parse every `C-*.md` in a directory (the docs/architecture/components/
+ * convention, T-008). Mirrors parseTaskDirectory: an unreadable directory
+ * or file is an io-error issue (io-errors precede parse issues), never a
+ * throw, and every readable file still parses. Cross-file rules
+ * (duplicate ids, dangling depends_on, provable paths overlap) are
+ * applied by the shared set engine, so this and parseComponentsFromFiles
+ * behave identically on the same files.
+ */
+export function parseComponentDirectory(dir: string): ComponentSetResult {
+  let names: string[];
+  try {
+    names = readdirSync(dir)
+      .filter((name) => /^C-.*\.md$/.test(name))
+      .sort();
+  } catch (err) {
+    return {
+      components: [],
+      issues: [
+        {
+          kind: 'io-error',
+          file: dir,
+          message: `${dir}: cannot read components directory — ${err instanceof Error ? err.message : String(err)}`,
+        },
+      ],
+    };
+  }
+
+  const ioIssues: ParseIssue[] = [];
+  const entries: { path: string; content: string }[] = [];
+  for (const name of names) {
+    const file = join(dir, name);
+    try {
+      entries.push({ path: file, content: readFileSync(file, 'utf8') });
+    } catch (err) {
+      ioIssues.push({
+        kind: 'io-error',
+        file,
+        message: `${file}: cannot read file — ${err instanceof Error ? err.message : String(err)}`,
+      });
+    }
+  }
+
+  const result = parseComponentSet(entries);
+  return { components: result.components, issues: [...ioIssues, ...result.issues] };
+}
+
 /** Parse a roadmap file from disk; a missing file is an io-error issue. */
 export function parseRoadmapFile(file: string): RoadmapParseResult {
   let content: string;
@@ -114,22 +163,34 @@ export interface ParseProjectOptions {
   tasksDir?: string;
   /** Roadmap file, default `<root>/docs/ROADMAP.md`. */
   roadmapFile?: string;
+  /** Components directory, default `<root>/docs/architecture/components`. */
+  componentsDir?: string;
 }
 
 /**
- * Parse a whole nputer project: docs/tasks/T-*.md plus the ROADMAP
- * backbone. Returns the typed model and every issue found; never throws.
+ * Parse a whole nputer project: docs/tasks/T-*.md, the ROADMAP backbone,
+ * plus docs/architecture/components/C-*.md (T-008). Returns the typed
+ * model and every issue found; never throws. Unlike the required tasks
+ * dir and roadmap, an ABSENT components directory is a legal state
+ * ("no architecture declared", plan §6.5): it yields `components: []`
+ * with no issue, mirroring the pure layer's behavior on a file set
+ * containing no component files.
  */
 export function parseProject(root: string, options: ParseProjectOptions = {}): ProjectParseResult {
   const tasksDir = options.tasksDir ?? join(root, 'docs', 'tasks');
   const roadmapFile = options.roadmapFile ?? join(root, 'docs', 'ROADMAP.md');
+  const componentsDir = options.componentsDir ?? join(root, 'docs', 'architecture', 'components');
 
   const taskResult = parseTaskDirectory(tasksDir);
   const roadmapResult = parseRoadmapFile(roadmapFile);
+  const componentResult: ComponentSetResult = existsSync(componentsDir)
+    ? parseComponentDirectory(componentsDir)
+    : { components: [], issues: [] };
 
   return {
     tasks: taskResult.tasks,
     features: roadmapResult.features,
-    issues: [...taskResult.issues, ...roadmapResult.issues],
+    components: componentResult.components,
+    issues: [...taskResult.issues, ...roadmapResult.issues, ...componentResult.issues],
   };
 }
