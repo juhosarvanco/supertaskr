@@ -1,58 +1,47 @@
 # State
 
-Updated: 2026-08-15 by integrator (T-006 merge — milestone 1
-complete), claude-fable-5 @fresh
+Updated: 2026-08-15 by integrator (T-008 merge — first milestone-2
+merge), claude-fable-5 @fresh
 
 ## Just completed
-MILESTONE 1 COMPLETE. T-006 (design language pass) merged — the last
-of the seven milestone-1 tasks, every one through the full pipeline
-on the method itself. Three carried one rejection each (T-001
-security, T-002 security, T-005 trusted-input race); four approved
-first-pass (T-003, T-004, T-006, T-007). Every merge traces to a card
-with a verdict. The design language is applied: six diverged status
-colors, bundled Geist/Geist Mono (vendored, zero new deps), two-mark
-review provenance per ADR-016. Post-merge suite green — lib/parser
-78/78 + tsc + build, app build + 94/94, cargo 20/20 — and a headless
-render sanity on the BUILT dist confirmed the board renders this
-repo's live tree with the new tokens in both schemes (status fills +
-wordmark exact, fonts same-origin, zero parse failures).
-
-Triage at integration (sanctioned, one obvious item): T-006-s1
-(parser smoke backbone stale) REJECTED — already fixed on main
-(67cccd7) before integration. The file moved to docs/tasks/rejected/
-with the one-line reasoning: `status: rejected` on a minimal file is
-a hard parse failure, so in-place rejection has no legal encoding —
-interim convention recorded in CONVENTIONS, ratification filed as
-T-006-s5.
+T-008 (component files convention + parser) done and merged — the
+first milestone-2 merge, APPROVED first-pass (same-model). The
+component registry is live: 9 components declared across 9 files in
+docs/architecture/components/ (the shared C-namespace now spans 12
+ids — C-08…C-12 subdivide the app along real import seams, incl. the
+declared C-08↔C-09 cycle); C-02/03/04 are OMITTED honestly — planned-
+only, no doc decides their code locations, so globs would be invented
+intent (architect territory, filed T-008-s1). ComponentRecord ships
+in @nputer/parser through BOTH entries (node + pure; conservative
+pattern-overlap detection with the honesty pin verifier-ruled HOLDS;
+first-by-numeric-id comparator exported for T-011). Parser suite is
+now 125 tests. Post-merge suite green in ADR-011 order: lib/parser
+125/125 + tsc + build, app build + 94/94, cargo 20/20 (src-tauri
+untouched); live registry re-parsed 0 issues through the built dist
+after the checkpoint edits.
 
 ## In progress / broken right now
-Nothing building, nothing broken. Board free.
+T-009 (TS indexer, L — planned via its own planning pass) BUILDING in
+parallel in its own worktree (touches crate-index + app-shell,
+disjoint from this merge). Nothing broken.
 
 ## Next up (1–3)
-1. @human, OUTSTANDING: (1) the screenshot-ready judgment (T-006
-   criterion 2) — run the app on this repo, BOTH schemes; your live
-   instance hot-reloaded the new design at this merge. (2) The
-   consolidated real-input checklist (visual-confirmation precedent,
-   T-001/T-007): three picker dialog flows (valid pick → live board ·
-   docs-less pick → named empty state, keep-current works · cancel →
-   no change); one real mouse click on a resolved blocker link in the
-   detail panel → re-targets, does NOT close (the T-005 rejection's
-   repro); real-key Escape / Enter / Space on the panel; Linux run
-   (T-001-s3 — Linux halves of T-001/T-003 still machine-unverified).
-2. Frontier: milestone 2 = the map vertical slice
-   (rooms/map-sequencing.md) — T-008 (component-files parser, M,
-   lib-parser) and T-009's L planning pass (crate-index) are the next
-   dispatches, disjoint touches, awaiting @human word.
-3. TRIAGE DONE (2026-08-15): 19 promoted → SEVEN hardening tasks
-   T-016…T-022 (milestone 4, below the line; T-016 ratifies the
-   rejected-encoding as method v0.1.4 and dispatches FIRST; T-020 is
-   L → planning pass; each task lists the suggestion ids it absorbs);
-   1 parked (T-003-s2 scale work); 2 rejected to docs/tasks/rejected/
-   (T-001-s1 superseded by T-007; T-004-s2 resolved via its second
-   arm). Suggestion queue is EMPTY. Hardening tasks are architect-
-   noted as slice-line-exempt fillers during milestone 2's serialized
-   stretches (disjoint touches; H-order in the task files). Then the
-   domain (.dev/.fi/.com) + trademark sweep for "nputer".
+1. T-009 verdict → merge; T-011 (derivation) unblocks when both
+   T-008 and T-009 are merged. NOW DISPATCHABLE meanwhile: T-016
+   (rejected-encoding ratification, S) — its lib-parser touch was
+   serialized behind this merge and the board is now clear of
+   lib-parser writers.
+2. T-016 dispatch (first of the T-016…T-022 hardening fillers,
+   slice-line-exempt per triage).
+3. NEW suggestions for next triage: T-008-s1 (C-02/03/04 intent
+   globs — architect), T-008-s2 (undeclared C-08/C-09 → C-05 edges
+   via the shared cn helper WILL light drift amber on our own
+   registry when the map lands — architect decision: declare /
+   restructure / accept), T-008-s3 (numeric-alias id warning).
+   @human outstanding items unchanged: the launch-screenshot judgment
+   (T-006 criterion 2, both schemes) and the consolidated real-input
+   checklist (picker flows, blocker-link click, real-key
+   Esc/Enter/Space, Linux run).
 
 ## Open questions
 None.

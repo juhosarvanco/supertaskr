@@ -5,14 +5,14 @@ feature: F-06
 milestone: 2
 priority: 1
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [lib-parser]
 builder: claude-fable-5
-verifier:
-built_by: claude-fable-5 @fresh
-verified_by:
-review:
+verifier: claude-fable-5
+built_by: "claude-fable-5 @fresh"
+verified_by: "claude-fable-5 @fresh"
+review: same-model
 ---
 
 ## Acceptance criteria

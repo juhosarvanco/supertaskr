@@ -55,7 +55,7 @@ ADR-014/015).
   budget).
 
 ## Related decisions
-decisions/001–015. 007 (stack) and 008 (app-first) shape the map
+decisions/001–016. 007 (stack) and 008 (app-first) shape the map
 above; 008 supersedes the original dashboard-last build order; 011
 fixes the app → parser wiring (file: dep, no root workspace yet);
 012 keeps native OS surfaces Rust-side (webview grant set stays
