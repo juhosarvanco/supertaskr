@@ -157,8 +157,10 @@ describe("the nputer repo on its own map", () => {
   });
 
   it("the header hint reads the committed graph's scale", () => {
+    // 59 → 75 at the T-012 merge regen (T-009-s1): the map's own nine
+    // sources and seven test suites joined the committed graph.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 59 files",
+      "committed graph · 75 files",
     );
   });
 });

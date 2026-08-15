@@ -49,6 +49,27 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 // blemishes; the T-012 code this branch adds is NOT in the committed
 // graph until the integrator's merge regen (T-009-s1), which this
 // fixture meets again there.
+//
+// RECONCILED AT THE T-012 MERGE (2026-08-15, integrator — fourth
+// exercise of the T-009-s1 practice): the regenerated 75-file graph
+// (59→75: eight map-pane sources + PaneRail + seven test suites) now
+// contains the map's own code, so the §2 amendments meet reality.
+// Deltas, each verified by independent re-derivation before this edit:
+// mapping C-05 22→30 (the new tests + the rail), C-12 3→11 (the map
+// joins its engine); D2 STAYS EMPTY and the unmapped node stays gone —
+// the amended registry claimed everything this branch added. Findings:
+// only D1:C-05→C-06 moves, 5→8 file edges (map-dogfood-render,
+// map-search, map-view-dom import @nputer/parser under the app/test/**
+// umbrella); the other three D1s and D3 C-01/C-07/C-11 are byte-
+// unchanged. Relation table: same 23 rows, tally 9/4/10 → 12/4/7 —
+// C-12's declared edges to C-05 (4: utils + button), C-09 (4:
+// panel-dismissal, task-detail, TaskDetailPanel) and C-10 (1:
+// watcher-store) flip planned → CONFIRMED now that its code is
+// indexed; C-12→C-06 grows 1→4 (MapPanel/MapView/map-layout join
+// derive.ts on the parser); C-05→C-12 6→20 (the map test suites);
+// C-05→C-10 5→8 (three new tests consume docs-model). C-12→C-07 and
+// C-12→C-11 honestly remain planned: no TS import can confirm a Rust
+// crate or a token file. Changed, never loosened.
 
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
@@ -113,22 +134,31 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 59 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(59);
+  it("all 75 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(75);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
     for (const id of derived.fileComponent.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
     expect([...counts.entries()].sort()).toEqual([
-      ["C-05", 22],
+      ["C-05", 30],
       ["C-06", 19],
       ["C-08", 10],
       ["C-09", 3],
       ["C-10", 2],
-      ["C-12", 3],
+      ["C-12", 11],
     ]);
-    // The engine trio is C-12 territory now (T-011-s1 option a).
+    // The map pane joined its engine at the T-012 merge regen
+    // (T-011-s1 option a keeps the trio in place under lib/).
     expect(derived.components.find((c) => c.id === "C-12")?.files).toEqual([
+      "app/src/architecture/MapEdge.tsx",
+      "app/src/architecture/MapNode.tsx",
+      "app/src/architecture/MapPanel.tsx",
+      "app/src/architecture/MapProvenanceMark.tsx",
+      "app/src/architecture/MapView.tsx",
+      "app/src/architecture/map-layout.ts",
+      "app/src/architecture/map-search.ts",
+      "app/src/architecture/map-visuals.ts",
       "app/src/lib/architecture/derive.ts",
       "app/src/lib/architecture/glob.ts",
       "app/src/lib/architecture/graph.ts",
@@ -150,6 +180,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           { from: "app/test/architecture-derive.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/architecture-dogfood.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/board-truth.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
+          { from: "app/test/map-dogfood-render.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
+          { from: "app/test/map-search.test.ts", to: LIB_PARSER, package: PARSER_PKG },
+          { from: "app/test/map-view-dom.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/select-board.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/select-task-detail.test.ts", to: LIB_PARSER, package: PARSER_PKG },
         ],
@@ -193,15 +226,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
   });
 
-  it("the full relation table: 9 confirmed, 4 undeclared, 10 planned", () => {
+  it("the full relation table: 12 confirmed, 4 undeclared, 7 planned", () => {
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
-      ["C-05", "C-06", "undeclared", 5],
+      ["C-05", "C-06", "undeclared", 8],
       ["C-05", "C-08", "confirmed", 4],
       ["C-05", "C-09", "undeclared", 3],
-      ["C-05", "C-10", "confirmed", 5],
+      ["C-05", "C-10", "confirmed", 8],
       ["C-05", "C-11", "planned", 0],
-      ["C-05", "C-12", "confirmed", 6],
+      ["C-05", "C-12", "confirmed", 20],
       ["C-06", "C-01", "planned", 0],
       ["C-08", "C-05", "undeclared", 4],
       ["C-08", "C-06", "confirmed", 4],
@@ -212,11 +245,11 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["C-09", "C-08", "confirmed", 3],
       ["C-09", "C-11", "planned", 0],
       ["C-10", "C-06", "confirmed", 1],
-      ["C-12", "C-05", "planned", 0],
-      ["C-12", "C-06", "confirmed", 1],
+      ["C-12", "C-05", "confirmed", 4],
+      ["C-12", "C-06", "confirmed", 4],
       ["C-12", "C-07", "planned", 0],
-      ["C-12", "C-09", "planned", 0],
-      ["C-12", "C-10", "planned", 0],
+      ["C-12", "C-09", "confirmed", 4],
+      ["C-12", "C-10", "confirmed", 1],
       ["C-12", "C-11", "planned", 0],
     ]);
   });

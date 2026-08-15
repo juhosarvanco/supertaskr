@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:6172a0499f93f796575580816f342b9891390eda3f7e2442f4c73b01cd18b812",
-      "loc": 226,
+      "hash": "blake3:101ba084256fdd2f4a97570d3ca69699221ce2500fa7dad1cda183a64d64846e",
+      "loc": 254,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -18,8 +18,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            113,
-            224
+            117,
+            252
           ]
         },
         {
@@ -28,8 +28,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            51,
-            100
+            55,
+            104
           ]
         },
         {
@@ -38,8 +38,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            25,
-            42
+            29,
+            46
           ]
         },
         {
@@ -48,8 +48,830 @@
           "kind": "function",
           "exported": false,
           "range": [
+            108,
+            115
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/architecture/MapEdge.tsx",
+      "path": "app/src/architecture/MapEdge.tsx",
+      "lang": "ts",
+      "hash": "blake3:ac9fa03a4d64d95cdaa252431562330667590eaf8a4b123e827bf5df8c495070",
+      "loc": 81,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/MapEdge.tsx#MapEdge",
+          "name": "MapEdge",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            16,
+            52
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapEdge.tsx#MapEdgeMarkers",
+          "name": "MapEdgeMarkers",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            55,
+            81
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapEdge.tsx#edgeKey",
+          "name": "edgeKey",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            5,
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/architecture/MapNode.tsx",
+      "path": "app/src/architecture/MapNode.tsx",
+      "lang": "ts",
+      "hash": "blake3:20f1684ecd3994f6edbeb998765ce5606f6f4cb9e74e0f956d72e1ea1d627368",
+      "loc": 182,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/MapNode.tsx#MapNode",
+          "name": "MapNode",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            30,
+            182
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapNode.tsx#WIPE_FILL",
+          "name": "WIPE_FILL",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            14,
+            21
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/architecture/MapPanel.tsx",
+      "path": "app/src/architecture/MapPanel.tsx",
+      "lang": "ts",
+      "hash": "blake3:01a3a41d4e33819dad16a60d93a58285f0ef845deda98a448514ebe2039a8222",
+      "loc": 431,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/MapPanel.tsx#DependencyGrid",
+          "name": "DependencyGrid",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            266,
+            327
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapPanel.tsx#FileGroups",
+          "name": "FileGroups",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            330,
+            354
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapPanel.tsx#MapPanel",
+          "name": "MapPanel",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            27,
+            246
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapPanel.tsx#Placeholder",
+          "name": "Placeholder",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            259,
+            261
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapPanel.tsx#Section",
+          "name": "Section",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            248,
+            257
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapPanel.tsx#TaskRow",
+          "name": "TaskRow",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            379,
+            431
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapPanel.tsx#modelWord",
+          "name": "modelWord",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            361,
+            374
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/architecture/MapProvenanceMark.tsx",
+      "path": "app/src/architecture/MapProvenanceMark.tsx",
+      "lang": "ts",
+      "hash": "blake3:125285a4ed0c23e05274a5a6b3674da3e22d55b05e7c084d7dfdc435985d5b7d",
+      "loc": 96,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/MapProvenanceMark.tsx#MapProvenanceMark",
+          "name": "MapProvenanceMark",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            19,
+            96
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/architecture/MapView.tsx",
+      "path": "app/src/architecture/MapView.tsx",
+      "lang": "ts",
+      "hash": "blake3:37b9dff2d9ec9ca10b93c1067092fa78e96d7a2f49dbbcd3e2d78f0287251e42",
+      "loc": 724,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/MapView.tsx#COLLECTOR_CAP_BYTES",
+          "name": "COLLECTOR_CAP_BYTES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            48,
+            48
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapView.tsx#LegendLine",
+          "name": "LegendLine",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            717,
+            724
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapView.tsx#MAX_SCALE",
+          "name": "MAX_SCALE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            45,
+            45
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapView.tsx#MIN_SCALE",
+          "name": "MIN_SCALE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            44,
+            44
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapView.tsx#MapView",
+          "name": "MapView",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            103,
+            715
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapView.tsx#PanelState",
+          "name": "PanelState",
+          "kind": "type",
+          "exported": false,
+          "range": [
+            56,
+            59
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapView.tsx#Viewport",
+          "name": "Viewport",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            50,
+            54
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapView.tsx#centerViewport",
+          "name": "centerViewport",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            63,
+            73
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapView.tsx#indexHint",
+          "name": "indexHint",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            88,
+            101
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapView.tsx#relativeTime",
+          "name": "relativeTime",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            76,
+            84
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/architecture/map-layout.ts",
+      "path": "app/src/architecture/map-layout.ts",
+      "lang": "ts",
+      "hash": "blake3:a34417881a050b2733fd144006ddeb683672eee6744318c860e771dd903e4049",
+      "loc": 406,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/map-layout.ts#BACK_DROP",
+          "name": "BACK_DROP",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            50,
+            50
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#COLUMN_PITCH",
+          "name": "COLUMN_PITCH",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            42,
+            42
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
+          "name": "LayoutComponentInput",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            52,
+            55
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#LayoutEdge",
+          "name": "LayoutEdge",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            73,
+            82
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#LayoutEdgeInput",
+          "name": "LayoutEdgeInput",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            57,
+            62
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#LayoutNode",
+          "name": "LayoutNode",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            64,
+            71
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#MapLayout",
+          "name": "MapLayout",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            84,
+            92
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#NODE_H",
+          "name": "NODE_H",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            40,
+            40
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#NODE_W",
+          "name": "NODE_W",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            39,
+            39
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#SLOT_H",
+          "name": "SLOT_H",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            44,
+            44
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#SLOT_TOP",
+          "name": "SLOT_TOP",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            46,
+            46
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#STUB",
+          "name": "STUB",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            48,
+            48
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#assignColumns",
+          "name": "assignColumns",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            201,
+            254
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#assignRows",
+          "name": "assignRows",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            260,
+            281
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#breakCycles",
+          "name": "breakCycles",
+          "kind": "function",
+          "exported": true,
+          "range": [
             104,
-            111
+            127
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#byId",
+          "name": "byId",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            94,
+            94
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#layoutKey",
+          "name": "layoutKey",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            396,
+            406
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#layoutMap",
+          "name": "layoutMap",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            332,
+            386
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#routeEdge",
+          "name": "routeEdge",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            284,
+            326
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#stronglyConnected",
+          "name": "stronglyConnected",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            130,
+            195
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/architecture/map-search.ts",
+      "path": "app/src/architecture/map-search.ts",
+      "lang": "ts",
+      "hash": "blake3:9cc9b26c05d7542296041629e3ec72fb687913e7504a5f7dbfb7deae8fd734b0",
+      "loc": 81,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/map-search.ts#SEARCH_CAP",
+          "name": "SEARCH_CAP",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            31,
+            31
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-search.ts#SearchResult",
+          "name": "SearchResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            16,
+            28
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-search.ts#searchMap",
+          "name": "searchMap",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            33,
+            81
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/architecture/map-visuals.ts",
+      "path": "app/src/architecture/map-visuals.ts",
+      "lang": "ts",
+      "hash": "blake3:badd68ee6aa23a6c61e60011347b8d204027f6ceafe58843b0946f6cb581d80d",
+      "loc": 518,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#DOT",
+          "name": "DOT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            84,
+            87
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#EdgeRelationVisual",
+          "name": "EdgeRelationVisual",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            285,
+            285
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#EdgeUiState",
+          "name": "EdgeUiState",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            287,
+            293
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#EdgeVisual",
+          "name": "EdgeVisual",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            295,
+            305
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#FindingText",
+          "name": "FindingText",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            456,
+            463
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#ID_INK",
+          "name": "ID_INK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            46,
+            53
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#MAP_OVERLAYS",
+          "name": "MAP_OVERLAYS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            24,
+            24
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#META_INK",
+          "name": "META_INK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            64,
+            71
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#MapOverlay",
+          "name": "MapOverlay",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            23,
+            23
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#NODE_FILL",
+          "name": "NODE_FILL",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            27,
+            34
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#NODE_HOVER_BORDER",
+          "name": "NODE_HOVER_BORDER",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            37,
+            44
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#NodeUiState",
+          "name": "NodeUiState",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            89,
+            96
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#NodeVisual",
+          "name": "NodeVisual",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            98,
+            120
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#STATUS_CHIP",
+          "name": "STATUS_CHIP",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            74,
+            81
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#TITLE_INK",
+          "name": "TITLE_INK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            55,
+            62
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#attributedFindings",
+          "name": "attributedFindings",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            418,
+            428
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#driftCount",
+          "name": "driftCount",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            443,
+            445
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#driftFooter",
+          "name": "driftFooter",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            502,
+            518
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#edgeVisual",
+          "name": "edgeVisual",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            313,
+            408
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#edgeWeight",
+          "name": "edgeWeight",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            308,
+            311
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#evidenceList",
+          "name": "evidenceList",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            450,
+            454
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#findingText",
+          "name": "findingText",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            465,
+            499
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#hasVisibleMark",
+          "name": "hasVisibleMark",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            251,
+            257
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#independentLine",
+          "name": "independentLine",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            274,
+            279
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#join",
+          "name": "join",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            122,
+            123
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#leaf",
+          "name": "leaf",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            447,
+            447
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#nodeVisual",
+          "name": "nodeVisual",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            129,
+            247
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#panelFindings",
+          "name": "panelFindings",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            431,
+            441
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#provenanceLabel",
+          "name": "provenanceLabel",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            260,
+            271
           ]
         }
       ]
@@ -399,6 +1221,45 @@
           "range": [
             34,
             56
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/shell/PaneRail.tsx",
+      "path": "app/src/components/shell/PaneRail.tsx",
+      "lang": "ts",
+      "hash": "blake3:4a958802f21b30a6707987c61ecd27a054851316c0ce16a49a5b13942db80667",
+      "loc": 77,
+      "symbols": [
+        {
+          "id": "s:app/src/components/shell/PaneRail.tsx#ITEMS",
+          "name": "ITEMS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            22,
+            25
+          ]
+        },
+        {
+          "id": "s:app/src/components/shell/PaneRail.tsx#PaneId",
+          "name": "PaneId",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            20,
+            20
+          ]
+        },
+        {
+          "id": "s:app/src/components/shell/PaneRail.tsx#PaneRail",
+          "name": "PaneRail",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            27,
+            77
           ]
         }
       ]
@@ -1252,8 +2113,8 @@
       "id": "f:app/src/lib/docs-model.ts",
       "path": "app/src/lib/docs-model.ts",
       "lang": "ts",
-      "hash": "blake3:313b679b9a6959511209b0c79f0bb3d39e8fcee91600da0459f0b7649bc9c374",
-      "loc": 149,
+      "hash": "blake3:b6f1f0b4c227e7dc37e6476d7f17f00a4df68bdde1cae04cbb475ebf2573e3ab",
+      "loc": 186,
       "symbols": [
         {
           "id": "s:app/src/lib/docs-model.ts#DocsFilePayload",
@@ -1261,8 +2122,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            25,
-            28
+            31,
+            34
           ]
         },
         {
@@ -1271,8 +2132,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            49,
-            63
+            55,
+            79
           ]
         },
         {
@@ -1281,8 +2142,18 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            32,
-            38
+            38,
+            44
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#GRAPH_FILE",
+          "name": "GRAPH_FILE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            28,
+            28
           ]
         },
         {
@@ -1291,8 +2162,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            41,
-            47
+            47,
+            53
           ]
         },
         {
@@ -1301,8 +2172,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            22,
-            22
+            24,
+            24
           ]
         },
         {
@@ -1311,8 +2182,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            106,
-            149
+            136,
+            186
           ]
         },
         {
@@ -1321,8 +2192,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            65,
-            74
+            81,
+            90
           ]
         },
         {
@@ -1331,8 +2202,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            88,
-            98
+            107,
+            121
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#isModelInput",
+          "name": "isModelInput",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            126,
+            128
           ]
         }
       ]
@@ -1518,8 +2399,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:39b7ce86c18492973ce9ba920738fd1b3e8035e2030d1c73670f9666c2f05f64",
-      "loc": 317,
+      "hash": "blake3:99426a9b7b98973efc1793d085d2387bc26e2e5f758804c9efdd8b60829eb290",
+      "loc": 368,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -1527,8 +2408,18 @@
           "kind": "const",
           "exported": true,
           "range": [
-            118,
-            119
+            143,
+            144
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#IndexOutcomePayload",
+          "name": "IndexOutcomePayload",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            59,
+            73
           ]
         },
         {
@@ -1567,8 +2458,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            68,
-            71
+            87,
+            90
           ]
         },
         {
@@ -1577,8 +2468,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            128,
-            132
+            153,
+            157
           ]
         },
         {
@@ -1587,8 +2478,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            64,
-            64
+            83,
+            83
           ]
         },
         {
@@ -1597,8 +2488,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            73,
-            83
+            92,
+            108
           ]
         },
         {
@@ -1607,8 +2498,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            226,
-            241
+            253,
+            268
           ]
         },
         {
@@ -1617,8 +2508,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            243,
-            255
+            270,
+            282
           ]
         },
         {
@@ -1627,8 +2518,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            213,
-            224
+            240,
+            251
           ]
         },
         {
@@ -1637,8 +2528,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            200,
-            202
+            227,
+            229
           ]
         },
         {
@@ -1647,8 +2538,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            183,
-            183
+            208,
+            208
           ]
         },
         {
@@ -1657,8 +2548,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            204,
-            206
+            231,
+            233
           ]
         },
         {
@@ -1667,8 +2558,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            315,
-            317
+            342,
+            344
           ]
         },
         {
@@ -1677,8 +2568,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            192,
-            192
+            219,
+            219
           ]
         },
         {
@@ -1687,8 +2578,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            122,
-            124
+            147,
+            149
           ]
         },
         {
@@ -1697,8 +2588,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            288,
-            312
+            315,
+            339
           ]
         },
         {
@@ -1707,8 +2598,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            105,
-            115
+            130,
+            140
           ]
         },
         {
@@ -1717,8 +2608,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            95,
-            97
+            120,
+            122
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#runIndexRepo",
+          "name": "runIndexRepo",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            357,
+            368
           ]
         },
         {
@@ -1727,8 +2628,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            134,
-            166
+            159,
+            191
           ]
         },
         {
@@ -1737,8 +2638,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            208,
-            211
+            235,
+            238
           ]
         },
         {
@@ -1747,8 +2648,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            185,
-            191
+            210,
+            218
           ]
         },
         {
@@ -1757,8 +2658,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            262,
-            280
+            289,
+            307
           ]
         },
         {
@@ -1767,8 +2668,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            193,
-            193
+            220,
+            220
           ]
         },
         {
@@ -1777,8 +2678,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            195,
-            198
+            222,
+            225
           ]
         }
       ]
@@ -1902,8 +2803,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:51791fd0414655f2f0002edafb04341efd349597b5e065ec513617125003dbb2",
-      "loc": 284,
+      "hash": "blake3:ba0205dea64b5f0090c3166ea5629014aaea19538085ce0239a3ac17362ef6f0",
+      "loc": 316,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -1911,8 +2812,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            77,
-            77
+            109,
+            109
           ]
         },
         {
@@ -1921,8 +2822,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            76,
-            76
+            108,
+            108
           ]
         },
         {
@@ -1931,8 +2832,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            42,
-            42
+            74,
+            74
           ]
         },
         {
@@ -1941,8 +2842,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            48,
-            63
+            80,
+            95
           ]
         },
         {
@@ -1951,8 +2852,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            65,
-            74
+            97,
+            106
           ]
         },
         {
@@ -1961,8 +2862,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            44,
-            46
+            76,
+            78
           ]
         }
       ]
@@ -2000,6 +2901,65 @@
           "range": [
             41,
             41
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/architecture-store.test.ts",
+      "path": "app/test/architecture-store.test.ts",
+      "lang": "ts",
+      "hash": "blake3:946e08445ee1cbe2670bea9ad42e65902d0fa1a9df3b8a9582a4399519d477e4",
+      "loc": 220,
+      "symbols": [
+        {
+          "id": "s:app/test/architecture-store.test.ts#COMPONENT",
+          "name": "COMPONENT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            17,
+            27
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-store.test.ts#COMPONENT_BROKEN",
+          "name": "COMPONENT_BROKEN",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            29,
+            35
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-store.test.ts#GRAPH",
+          "name": "GRAPH",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            48,
+            56
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-store.test.ts#TASK",
+          "name": "TASK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            37,
+            42
+          ]
+        },
+        {
+          "id": "s:app/test/architecture-store.test.ts#snapshot",
+          "name": "snapshot",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            44,
+            46
           ]
         }
       ]
@@ -2256,6 +3216,360 @@
           "range": [
             15,
             16
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/map-dogfood-render.test.tsx",
+      "path": "app/test/map-dogfood-render.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:228427cbf9dcd2d23545823b42f0b9482f54528abd889efab708fdb611fa9702",
+      "loc": 166,
+      "symbols": [
+        {
+          "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
+          "name": "ROOT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            26,
+            26
+          ]
+        },
+        {
+          "id": "s:app/test/map-dogfood-render.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            48,
+            48
+          ]
+        },
+        {
+          "id": "s:app/test/map-dogfood-render.test.tsx#liveFiles",
+          "name": "liveFiles",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            29,
+            46
+          ]
+        },
+        {
+          "id": "s:app/test/map-dogfood-render.test.tsx#node",
+          "name": "node",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            74,
+            78
+          ]
+        },
+        {
+          "id": "s:app/test/map-dogfood-render.test.tsx#read",
+          "name": "read",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            27,
+            27
+          ]
+        },
+        {
+          "id": "s:app/test/map-dogfood-render.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            49,
+            49
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/map-layout.test.ts",
+      "path": "app/test/map-layout.test.ts",
+      "lang": "ts",
+      "hash": "blake3:4842ba62666a851165840d2a389ae9fdac3ec6d6ac0fcbf3d1a04322ae4afe0e",
+      "loc": 347,
+      "symbols": [
+        {
+          "id": "s:app/test/map-layout.test.ts#c",
+          "name": "c",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            20,
+            23
+          ]
+        },
+        {
+          "id": "s:app/test/map-layout.test.ts#declared",
+          "name": "declared",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            24,
+            24
+          ]
+        },
+        {
+          "id": "s:app/test/map-layout.test.ts#observed",
+          "name": "observed",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            25,
+            25
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/map-search.test.ts",
+      "path": "app/test/map-search.test.ts",
+      "lang": "ts",
+      "hash": "blake3:437ee3a0a0bd829cd1cfe9e5c323e8dd5fb6b07b8824cda5b0ef254d4a2f8327",
+      "loc": 114,
+      "symbols": [
+        {
+          "id": "s:app/test/map-search.test.ts#comp",
+          "name": "comp",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            10,
+            26
+          ]
+        },
+        {
+          "id": "s:app/test/map-search.test.ts#derived",
+          "name": "derived",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            43,
+            45
+          ]
+        },
+        {
+          "id": "s:app/test/map-search.test.ts#graphOf",
+          "name": "graphOf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            28,
+            41
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/map-shell-dom.test.tsx",
+      "path": "app/test/map-shell-dom.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:74363a35b4ab39496a1da8419cef6bb4110d0eedd09f96f14fad32bbe5f2151a",
+      "loc": 178,
+      "symbols": [
+        {
+          "id": "s:app/test/map-shell-dom.test.tsx#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            52,
+            56
+          ]
+        },
+        {
+          "id": "s:app/test/map-shell-dom.test.tsx#TASK",
+          "name": "TASK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            43,
+            50
+          ]
+        },
+        {
+          "id": "s:app/test/map-shell-dom.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            20,
+            20
+          ]
+        },
+        {
+          "id": "s:app/test/map-shell-dom.test.tsx#nextSeq",
+          "name": "nextSeq",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            36,
+            36
+          ]
+        },
+        {
+          "id": "s:app/test/map-shell-dom.test.tsx#openProject",
+          "name": "openProject",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            58,
+            72
+          ]
+        },
+        {
+          "id": "s:app/test/map-shell-dom.test.tsx#payload",
+          "name": "payload",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            38,
+            41
+          ]
+        },
+        {
+          "id": "s:app/test/map-shell-dom.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            21,
+            21
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/map-view-dom.test.tsx",
+      "path": "app/test/map-view-dom.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:c75662c3ed5cea9640f832da4ee05356a1466597065aa11df80b7f1fbb11f285",
+      "loc": 641,
+      "symbols": [
+        {
+          "id": "s:app/test/map-view-dom.test.tsx#componentFile",
+          "name": "componentFile",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            38,
+            68
+          ]
+        },
+        {
+          "id": "s:app/test/map-view-dom.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            22,
+            22
+          ]
+        },
+        {
+          "id": "s:app/test/map-view-dom.test.tsx#graphJson",
+          "name": "graphJson",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            91,
+            104
+          ]
+        },
+        {
+          "id": "s:app/test/map-view-dom.test.tsx#node",
+          "name": "node",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            173,
+            177
+          ]
+        },
+        {
+          "id": "s:app/test/map-view-dom.test.tsx#project",
+          "name": "project",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            106,
+            108
+          ]
+        },
+        {
+          "id": "s:app/test/map-view-dom.test.tsx#renderMap",
+          "name": "renderMap",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            154,
+            171
+          ]
+        },
+        {
+          "id": "s:app/test/map-view-dom.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            23,
+            23
+          ]
+        },
+        {
+          "id": "s:app/test/map-view-dom.test.tsx#statesFixture",
+          "name": "statesFixture",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            111,
+            152
+          ]
+        },
+        {
+          "id": "s:app/test/map-view-dom.test.tsx#taskFile",
+          "name": "taskFile",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            70,
+            89
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/map-visuals.test.ts",
+      "path": "app/test/map-visuals.test.ts",
+      "lang": "ts",
+      "hash": "blake3:24e95ffed3fafb7a8cd4bd9f89b92aab3513bcdf8323e57f68cef92c011fbaed",
+      "loc": 413,
+      "symbols": [
+        {
+          "id": "s:app/test/map-visuals.test.ts#base",
+          "name": "base",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            40,
+            46
+          ]
+        },
+        {
+          "id": "s:app/test/map-visuals.test.ts#component",
+          "name": "component",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            24,
+            38
           ]
         }
       ]
@@ -2607,8 +3921,8 @@
       "id": "f:app/test/watcher-store.test.ts",
       "path": "app/test/watcher-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:42fb357857bd392b771a51e8099bce9e4824e7119cc3eedccfd2ff292c2e1c52",
-      "loc": 212,
+      "hash": "blake3:14927c9afe0599a066aaeb2e0ca94a3fa059bcb10a5c28725c8ca1c5456b883b",
+      "loc": 214,
       "symbols": [
         {
           "id": "s:app/test/watcher-store.test.ts#BROKEN_ROADMAP",
@@ -3699,10 +5013,27 @@
   "edges": [
     {
       "from": "f:app/src/App.tsx",
+      "to": "f:app/src/architecture/MapView.tsx",
+      "kind": "import",
+      "symbols": [
+        "MapView"
+      ]
+    },
+    {
+      "from": "f:app/src/App.tsx",
       "to": "f:app/src/components/board/Board.tsx",
       "kind": "import",
       "symbols": [
         "Board"
+      ]
+    },
+    {
+      "from": "f:app/src/App.tsx",
+      "to": "f:app/src/components/shell/PaneRail.tsx",
+      "kind": "import",
+      "symbols": [
+        "PaneId",
+        "PaneRail"
       ]
     },
     {
@@ -3722,6 +5053,7 @@
         "isTauriRuntime",
         "keepCurrentProject",
         "pickProjectFolder",
+        "runIndexRepo",
         "selectScreen",
         "startDocsWatcher",
         "subscribeShell"
@@ -3733,7 +5065,335 @@
       "kind": "import",
       "symbols": [
         "useEffect",
+        "useState",
         "useSyncExternalStore"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapEdge.tsx",
+      "to": "f:app/src/architecture/map-layout.ts",
+      "kind": "import",
+      "symbols": [
+        "LayoutEdge"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapEdge.tsx",
+      "to": "f:app/src/architecture/map-visuals.ts",
+      "kind": "import",
+      "symbols": [
+        "EdgeUiState",
+        "edgeVisual"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapEdge.tsx",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedEdge"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapNode.tsx",
+      "to": "f:app/src/architecture/MapProvenanceMark.tsx",
+      "kind": "import",
+      "symbols": [
+        "MapProvenanceMark"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapNode.tsx",
+      "to": "f:app/src/architecture/map-layout.ts",
+      "kind": "import",
+      "symbols": [
+        "LayoutNode",
+        "NODE_H",
+        "NODE_W"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapNode.tsx",
+      "to": "f:app/src/architecture/map-visuals.ts",
+      "kind": "import",
+      "symbols": [
+        "NodeUiState",
+        "attributedFindings",
+        "hasVisibleMark",
+        "nodeVisual"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapNode.tsx",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedComponent",
+        "DerivedStatus",
+        "DriftFinding"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapNode.tsx",
+      "to": "f:app/src/lib/utils.ts",
+      "kind": "import",
+      "symbols": [
+        "cn"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapPanel.tsx",
+      "to": "f:app/src/architecture/map-visuals.ts",
+      "kind": "import",
+      "symbols": [
+        "STATUS_CHIP",
+        "findingText",
+        "panelFindings",
+        "provenanceLabel"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapPanel.tsx",
+      "to": "f:app/src/components/board/panel-dismissal.ts",
+      "kind": "import",
+      "symbols": [
+        "attachPanelDismissal"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapPanel.tsx",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedArchitecture",
+        "DerivedTaskRef",
+        "UNMAPPED_ID"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapPanel.tsx",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "TaskRef"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapPanel.tsx",
+      "to": "f:app/src/lib/utils.ts",
+      "kind": "import",
+      "symbols": [
+        "cn"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapPanel.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapPanel.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "ReactNode",
+        "useEffect",
+        "useRef"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapProvenanceMark.tsx",
+      "to": "f:app/src/architecture/map-visuals.ts",
+      "kind": "import",
+      "symbols": [
+        "independentLine",
+        "provenanceLabel"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapProvenanceMark.tsx",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedComponent",
+        "DerivedProvenance"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/architecture/MapEdge.tsx",
+      "kind": "import",
+      "symbols": [
+        "MapEdge",
+        "MapEdgeMarkers",
+        "edgeKey"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/architecture/MapNode.tsx",
+      "kind": "import",
+      "symbols": [
+        "MapNode"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/architecture/MapPanel.tsx",
+      "kind": "import",
+      "symbols": [
+        "MapPanel"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/architecture/map-layout.ts",
+      "kind": "import",
+      "symbols": [
+        "LayoutComponentInput",
+        "LayoutEdgeInput",
+        "LayoutNode",
+        "MapLayout",
+        "layoutKey",
+        "layoutMap"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/architecture/map-search.ts",
+      "kind": "import",
+      "symbols": [
+        "searchMap"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/architecture/map-visuals.ts",
+      "kind": "import",
+      "symbols": [
+        "MAP_OVERLAYS",
+        "MapOverlay",
+        "driftFooter",
+        "edgeVisual"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/components/board/TaskDetailPanel.tsx",
+      "kind": "import",
+      "symbols": [
+        "TaskDetailPanel"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/components/ui/button.tsx",
+      "kind": "import",
+      "symbols": [
+        "Button"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedArchitecture",
+        "DerivedStatus",
+        "deriveArchitecture"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "GraphParseResult",
+        "parseGraph"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/lib/task-detail.ts",
+      "kind": "import",
+      "symbols": [
+        "TaskRef"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/lib/utils.ts",
+      "kind": "import",
+      "symbols": [
+        "cn"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "IndexOutcomePayload"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "useEffect",
+        "useMemo",
+        "useRef",
+        "useState"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/map-layout.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedComponentKind",
+        "UNMAPPED_ID"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/map-layout.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "compareComponentIds"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/map-search.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedArchitecture",
+        "UNMAPPED_ID"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/map-visuals.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedComponent",
+        "DerivedProvenance",
+        "DerivedStatus",
+        "DriftFinding",
+        "UNMAPPED_ID"
       ]
     },
     {
@@ -4041,6 +5701,14 @@
       ]
     },
     {
+      "from": "f:app/src/components/shell/PaneRail.tsx",
+      "to": "f:app/src/lib/utils.ts",
+      "kind": "import",
+      "symbols": [
+        "cn"
+      ]
+    },
+    {
       "from": "f:app/src/components/ui/button.tsx",
       "to": "f:app/src/lib/utils.ts",
       "kind": "import",
@@ -4132,7 +5800,9 @@
       "symbols": [
         "ParseIssue",
         "ProjectParseResult",
+        "isComponentFilePath",
         "isTaskFilePath",
+        "parseComponentFile",
         "parseProjectFromFiles",
         "parseRoadmap",
         "parseTaskFile"
@@ -4369,6 +6039,43 @@
       ]
     },
     {
+      "from": "f:app/test/architecture-store.test.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "deriveArchitecture"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-store.test.ts",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "parseGraph"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-store.test.ts",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsSnapshotPayload",
+        "GRAPH_FILE",
+        "applySnapshot",
+        "emptyState"
+      ]
+    },
+    {
+      "from": "f:app/test/architecture-store.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
       "from": "f:app/test/board-truth.test.tsx",
       "to": "f:app/src/App.tsx",
       "kind": "import",
@@ -4463,6 +6170,315 @@
     },
     {
       "from": "f:app/test/docs-model.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/map-dogfood-render.test.tsx",
+      "to": "f:app/src/architecture/MapView.tsx",
+      "kind": "import",
+      "symbols": [
+        "MapView"
+      ]
+    },
+    {
+      "from": "f:app/test/map-dogfood-render.test.tsx",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "deriveArchitecture"
+      ]
+    },
+    {
+      "from": "f:app/test/map-dogfood-render.test.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "GRAPH_FILE"
+      ]
+    },
+    {
+      "from": "f:app/test/map-dogfood-render.test.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "FileEntry",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/map-dogfood-render.test.tsx",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync"
+      ]
+    },
+    {
+      "from": "f:app/test/map-dogfood-render.test.tsx",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "resolve"
+      ]
+    },
+    {
+      "from": "f:app/test/map-dogfood-render.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/map-dogfood-render.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/map-dogfood-render.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterAll",
+        "beforeAll",
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/map-layout.test.ts",
+      "to": "f:app/src/architecture/map-layout.ts",
+      "kind": "import",
+      "symbols": [
+        "COLUMN_PITCH",
+        "LayoutComponentInput",
+        "LayoutEdgeInput",
+        "NODE_H",
+        "NODE_W",
+        "SLOT_H",
+        "SLOT_TOP",
+        "breakCycles",
+        "layoutKey",
+        "layoutMap"
+      ]
+    },
+    {
+      "from": "f:app/test/map-layout.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/map-search.test.ts",
+      "to": "f:app/src/architecture/map-search.ts",
+      "kind": "import",
+      "symbols": [
+        "SEARCH_CAP",
+        "searchMap"
+      ]
+    },
+    {
+      "from": "f:app/test/map-search.test.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DeriveInputs",
+        "deriveArchitecture"
+      ]
+    },
+    {
+      "from": "f:app/test/map-search.test.ts",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "parseGraph"
+      ]
+    },
+    {
+      "from": "f:app/test/map-search.test.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "parseComponentFile"
+      ]
+    },
+    {
+      "from": "f:app/test/map-search.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/map-shell-dom.test.tsx",
+      "to": "f:app/src/App.tsx",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/test/map-shell-dom.test.tsx",
+      "to": "f:app/src/components/shell/PaneRail.tsx",
+      "kind": "import",
+      "symbols": [
+        "PaneRail"
+      ]
+    },
+    {
+      "from": "f:app/test/map-shell-dom.test.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsSnapshotPayload"
+      ]
+    },
+    {
+      "from": "f:app/test/map-shell-dom.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/map-shell-dom.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/map-shell-dom.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/map-view-dom.test.tsx",
+      "to": "f:app/src/architecture/MapView.tsx",
+      "kind": "import",
+      "symbols": [
+        "MapView",
+        "centerViewport",
+        "indexHint",
+        "relativeTime"
+      ]
+    },
+    {
+      "from": "f:app/test/map-view-dom.test.tsx",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "deriveArchitecture"
+      ]
+    },
+    {
+      "from": "f:app/test/map-view-dom.test.tsx",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "parseGraph"
+      ]
+    },
+    {
+      "from": "f:app/test/map-view-dom.test.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "FileEntry",
+        "ProjectParseResult",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/map-view-dom.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/map-view-dom.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/map-view-dom.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it",
+        "vi"
+      ]
+    },
+    {
+      "from": "f:app/test/map-visuals.test.ts",
+      "to": "f:app/src/architecture/map-visuals.ts",
+      "kind": "import",
+      "symbols": [
+        "NodeUiState",
+        "attributedFindings",
+        "driftCount",
+        "driftFooter",
+        "edgeVisual",
+        "edgeWeight",
+        "findingText",
+        "hasVisibleMark",
+        "independentLine",
+        "nodeVisual",
+        "panelFindings",
+        "provenanceLabel"
+      ]
+    },
+    {
+      "from": "f:app/test/map-visuals.test.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedComponent",
+        "DriftFinding"
+      ]
+    },
+    {
+      "from": "f:app/test/map-visuals.test.ts",
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
@@ -5403,6 +7419,12 @@
     },
     {
       "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/components/shell/PaneRail.tsx#PaneId",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
       "to": "s:app/src/lib/watcher-store.ts#isTauriRuntime",
       "kind": "call",
       "confidence": "resolved"
@@ -5410,6 +7432,12 @@
     {
       "from": "s:app/src/App.tsx#App",
       "to": "s:app/src/lib/watcher-store.ts#pickProjectFolder",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/lib/watcher-store.ts#runIndexRepo",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -5423,6 +7451,690 @@
       "from": "s:app/src/App.tsx#App",
       "to": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapEdge.tsx#MapEdge",
+      "to": "s:app/src/architecture/MapEdge.tsx#edgeKey",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapEdge.tsx#MapEdge",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapEdge.tsx#MapEdge",
+      "to": "s:app/src/architecture/map-visuals.ts#EdgeUiState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapEdge.tsx#MapEdge",
+      "to": "s:app/src/architecture/map-visuals.ts#edgeVisual",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapEdge.tsx#MapEdge",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapEdge.tsx#edgeKey",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapNode.tsx#MapNode",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutNode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapNode.tsx#MapNode",
+      "to": "s:app/src/architecture/map-visuals.ts#NodeUiState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapNode.tsx#MapNode",
+      "to": "s:app/src/architecture/map-visuals.ts#attributedFindings",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapNode.tsx#MapNode",
+      "to": "s:app/src/architecture/map-visuals.ts#hasVisibleMark",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapNode.tsx#MapNode",
+      "to": "s:app/src/architecture/map-visuals.ts#nodeVisual",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapNode.tsx#MapNode",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapNode.tsx#MapNode",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapNode.tsx#MapNode",
+      "to": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapNode.tsx#MapNode",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapNode.tsx#WIPE_FILL",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#DependencyGrid",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#DependencyGrid",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapPanel",
+      "to": "s:app/src/architecture/map-visuals.ts#findingText",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapPanel",
+      "to": "s:app/src/architecture/map-visuals.ts#panelFindings",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapPanel",
+      "to": "s:app/src/architecture/map-visuals.ts#provenanceLabel",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapPanel",
+      "to": "s:app/src/components/board/panel-dismissal.ts#attachPanelDismissal",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapPanel",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapPanel",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapPanel",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#TaskRow",
+      "to": "s:app/src/architecture/MapPanel.tsx#modelWord",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#TaskRow",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedTaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#TaskRow",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#TaskRow",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapProvenanceMark.tsx#MapProvenanceMark",
+      "to": "s:app/src/architecture/map-visuals.ts#independentLine",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapProvenanceMark.tsx#MapProvenanceMark",
+      "to": "s:app/src/architecture/map-visuals.ts#provenanceLabel",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapProvenanceMark.tsx#MapProvenanceMark",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapProvenanceMark.tsx#MapProvenanceMark",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedProvenance",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/MapEdge.tsx#edgeKey",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/MapView.tsx#PanelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/MapView.tsx#Viewport",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/MapView.tsx#centerViewport",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/MapView.tsx#indexHint",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdgeInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-layout.ts#MapLayout",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-layout.ts#layoutKey",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-search.ts#searchMap",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-visuals.ts#MapOverlay",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-visuals.ts#driftFooter",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-visuals.ts#edgeVisual",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/architecture/graph.ts#parseGraph",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/watcher-store.ts#IndexOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#PanelState",
+      "to": "s:app/src/lib/task-detail.ts#TaskRef",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#centerViewport",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutNode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#indexHint",
+      "to": "s:app/src/architecture/MapView.tsx#relativeTime",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#indexHint",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#indexHint",
+      "to": "s:app/src/lib/watcher-store.ts#IndexOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponentKind",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#MapLayout",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#MapLayout",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutNode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#assignColumns",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#assignColumns",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdgeInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#assignColumns",
+      "to": "s:app/src/architecture/map-layout.ts#breakCycles",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#assignRows",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#breakCycles",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdgeInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#breakCycles",
+      "to": "s:app/src/architecture/map-layout.ts#stronglyConnected",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutKey",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutKey",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdgeInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdgeInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutNode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "to": "s:app/src/architecture/map-layout.ts#MapLayout",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "to": "s:app/src/architecture/map-layout.ts#assignColumns",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "to": "s:app/src/architecture/map-layout.ts#assignRows",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "to": "s:app/src/architecture/map-layout.ts#breakCycles",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "to": "s:app/src/architecture/map-layout.ts#byId",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "to": "s:app/src/architecture/map-layout.ts#routeEdge",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#routeEdge",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#routeEdge",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutNode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#stronglyConnected",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdgeInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-search.ts#searchMap",
+      "to": "s:app/src/architecture/map-search.ts#SearchResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-search.ts#searchMap",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#DOT",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#EdgeUiState",
+      "to": "s:app/src/architecture/map-visuals.ts#MapOverlay",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#ID_INK",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#MAP_OVERLAYS",
+      "to": "s:app/src/architecture/map-visuals.ts#MapOverlay",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#META_INK",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#NODE_FILL",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#NODE_HOVER_BORDER",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#NodeUiState",
+      "to": "s:app/src/architecture/map-visuals.ts#MapOverlay",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#STATUS_CHIP",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#TITLE_INK",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#attributedFindings",
+      "to": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#driftCount",
+      "to": "s:app/src/architecture/map-visuals.ts#attributedFindings",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#driftCount",
+      "to": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#driftFooter",
+      "to": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#edgeVisual",
+      "to": "s:app/src/architecture/map-visuals.ts#EdgeRelationVisual",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#edgeVisual",
+      "to": "s:app/src/architecture/map-visuals.ts#EdgeUiState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#edgeVisual",
+      "to": "s:app/src/architecture/map-visuals.ts#EdgeVisual",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#edgeVisual",
+      "to": "s:app/src/architecture/map-visuals.ts#edgeWeight",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#findingText",
+      "to": "s:app/src/architecture/map-visuals.ts#FindingText",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#findingText",
+      "to": "s:app/src/architecture/map-visuals.ts#evidenceList",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#findingText",
+      "to": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#hasVisibleMark",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedProvenance",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#independentLine",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#nodeVisual",
+      "to": "s:app/src/architecture/map-visuals.ts#NodeUiState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#nodeVisual",
+      "to": "s:app/src/architecture/map-visuals.ts#NodeVisual",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#nodeVisual",
+      "to": "s:app/src/architecture/map-visuals.ts#hasVisibleMark",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#nodeVisual",
+      "to": "s:app/src/architecture/map-visuals.ts#join",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#nodeVisual",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#panelFindings",
+      "to": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#provenanceLabel",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedProvenance",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -5621,6 +8333,24 @@
       "from": "s:app/src/components/board/panel-dismissal.ts#attachPanelDismissal",
       "to": "s:app/src/components/board/panel-dismissal.ts#DismissalDoc",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/shell/PaneRail.tsx#ITEMS",
+      "to": "s:app/src/components/shell/PaneRail.tsx#PaneId",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/shell/PaneRail.tsx#PaneRail",
+      "to": "s:app/src/components/shell/PaneRail.tsx#PaneId",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/shell/PaneRail.tsx#PaneRail",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -6380,6 +9110,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "to": "s:app/src/lib/docs-model.ts#isModelInput",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/docs-model.ts#emptyState",
       "to": "s:app/src/lib/docs-model.ts#DocsModelState",
       "kind": "type_ref",
@@ -6496,6 +9232,12 @@
     {
       "from": "s:app/src/lib/watcher-store.ts#ShellState",
       "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#ShellState",
+      "to": "s:app/src/lib/watcher-store.ts#IndexOutcomePayload",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -6628,6 +9370,18 @@
     {
       "from": "s:app/src/lib/watcher-store.ts#resetDocsForProjectSwitch",
       "to": "s:app/src/lib/docs-model.ts#emptyState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runIndexRepo",
+      "to": "s:app/src/lib/watcher-store.ts#IndexOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runIndexRepo",
+      "to": "s:app/src/lib/watcher-store.ts#setShell",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -6776,6 +9530,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/architecture-store.test.ts#snapshot",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/board-truth.test.tsx#FILES",
       "to": "s:app/test/board-truth.test.tsx#src",
       "kind": "call",
@@ -6856,6 +9616,96 @@
     {
       "from": "s:app/test/docs-model.test.ts#payload",
       "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-dogfood-render.test.tsx#liveFiles",
+      "to": "s:app/test/map-dogfood-render.test.tsx#read",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-layout.test.ts#c",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-layout.test.ts#declared",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdgeInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-layout.test.ts#observed",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutEdgeInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-search.test.ts#derived",
+      "to": "s:app/src/lib/architecture/derive.ts#DeriveInputs",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-search.test.ts#derived",
+      "to": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-search.test.ts#graphOf",
+      "to": "s:app/src/lib/architecture/graph.ts#parseGraph",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-shell-dom.test.tsx#openProject",
+      "to": "s:app/test/map-shell-dom.test.tsx#payload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-shell-dom.test.tsx#payload",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-view-dom.test.tsx#statesFixture",
+      "to": "s:app/test/map-view-dom.test.tsx#componentFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-view-dom.test.tsx#statesFixture",
+      "to": "s:app/test/map-view-dom.test.tsx#graphJson",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-view-dom.test.tsx#statesFixture",
+      "to": "s:app/test/map-view-dom.test.tsx#project",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-view-dom.test.tsx#statesFixture",
+      "to": "s:app/test/map-view-dom.test.tsx#taskFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-visuals.test.ts#base",
+      "to": "s:app/src/architecture/map-visuals.ts#NodeUiState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-visuals.test.ts#component",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -7546,8 +10396,8 @@
     }
   ],
   "stats": {
-    "files": 59,
-    "symbols": 308,
-    "edges": 535
+    "files": 75,
+    "symbols": 425,
+    "edges": 749
   }
 }
