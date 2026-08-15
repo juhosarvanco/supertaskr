@@ -1,0 +1,133 @@
+# T-020: the repo's one CI job — a thin invoker of the CONVENTIONS-
+# verbatim per-package commands (docs/CONVENTIONS.md "Build & test" is
+# the one source of truth; tools/e2e/tests/workflow-parity.spec.ts pins
+# validity, command parity, SHA pins, and the xvfb boot step, so drift
+# between this file and CONVENTIONS fails the lane).
+#
+# Committed COMPLETE and DORMANT: no remote exists today (plan §1). It
+# activates at the repo's first GitHub push — the Linux halves of
+# T-001/T-003's criteria close at that activation and remain honestly
+# open until it. First run to watch: the full job, and specifically the
+# three T-018 sentinel live tests inside `cargo test` — ubuntu's inotify
+# watches inodes, the first backend where replaced-wholesale /
+# deleted-recreated handles can actually die (T-018-s3 fold).
+#
+# Every `uses:` is pinned by full commit SHA (tag noted beside it).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Linux prerequisites (Tauri v2 webkit2gtk set + xvfb)
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev xvfb
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            lib/parser/package-lock.json
+            app/package-lock.json
+            tools/e2e/package-lock.json
+
+      - name: Record rust toolchain (runner-preinstalled stable, no third-party action)
+        run: rustc --version && cargo --version
+
+      - name: Cache cargo + target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            app/src-tauri/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('app/src-tauri/Cargo.lock') }}
+
+      - name: Cache playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tools/e2e/package-lock.json') }}
+
+      # ---- token lint (zero-dep; runs before any install) --------------
+      - name: Token lint selftest
+        working-directory: tools/e2e
+        run: node scripts/lint-tokens.mjs --selftest
+      - name: Token lint
+        working-directory: tools/e2e
+        run: node scripts/lint-tokens.mjs
+
+      # ---- lib/parser (ADR-011 order: parser before app) ---------------
+      - name: parser install
+        working-directory: lib/parser
+        run: npm ci
+      - name: parser suite
+        working-directory: lib/parser
+        run: npx vitest run
+      - name: parser types
+        working-directory: lib/parser
+        run: npx tsc --noEmit
+      - name: parser build
+        working-directory: lib/parser
+        run: npm run build
+
+      # ---- app ----------------------------------------------------------
+      - name: app install
+        working-directory: app
+        run: npm ci
+      - name: app build
+        working-directory: app
+        run: npm run build
+      - name: app suite
+        working-directory: app
+        run: npm test
+
+      # ---- rust workspace ----------------------------------------------
+      - name: cargo suite (both workspace crates; incl. the T-018 sentinel live tests)
+        working-directory: app/src-tauri
+        run: cargo test
+
+      # ---- advisory audit (T-009-s3): dev tool, never a repo dep -------
+      # HARD fail on an advisory against the exact pins — a red run with
+      # no code change is the FEATURE (deliberate re-pin + re-review at
+      # the stop-and-consult gate), never continue-on-error. Fetches the
+      # RUSTSEC advisory DB — the one network-touching step.
+      - name: install cargo-audit
+        working-directory: app/src-tauri
+        run: cargo install cargo-audit --locked
+      - name: cargo audit
+        working-directory: app/src-tauri
+        run: cargo audit
+
+      # ---- real-input E2E lane -----------------------------------------
+      - name: e2e install
+        working-directory: tools/e2e
+        run: npm ci
+      - name: e2e browsers
+        working-directory: tools/e2e
+        run: npx playwright install --with-deps chromium
+      - name: e2e lane
+        working-directory: tools/e2e
+        run: npm test
+
+      # ---- xvfb tauri boot (LAST — the cargo cache above warms it) -----
+      # WEBKIT_DISABLE_DMABUF_RENDERER: known webkit2gtk-in-headless-CI
+      # rendering workaround; the check asserts startup lines, not pixels.
+      - name: xvfb tauri boot
+        env:
+          WEBKIT_DISABLE_DMABUF_RENDERER: "1"
+        run: xvfb-run -a node tools/e2e/scripts/tauri-boot-check.mjs
