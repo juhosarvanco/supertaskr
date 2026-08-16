@@ -3,6 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmptyState } from "../src/App";
+import { useAccelerators } from "../src/components/shell/accelerators";
 import { CONVENTION_HINT, EMPTY_PROBE } from "../src/lib/watcher-store";
 
 // T-007 empty-state rendering (criteria a and c's DOM half), redressed by
@@ -11,7 +12,24 @@ import { CONVENTION_HINT, EMPTY_PROBE } from "../src/lib/watcher-store";
 // named the card becomes "No plan in <folder>" — the checklist of what
 // was looked for, answered per row, with "Start an interview here" and no
 // Adopt button (fenced to archaeology in v1). EmptyState is presentational
-// apart from its two accelerators, so it mounts here without the store.
+// and mounts here without the store.
+//
+// T-049 CHANGED TWO TESTS IN THIS FILE, and nothing else. The ⌘O/⌘N
+// listener is no longer EmptyState's — it is the app's, registered once
+// at the root (components/shell/accelerators.ts) — because unmount-scoping it to the
+// front door is precisely why the chords stopped working once a project
+// opened. So:
+//   * "the advertised accelerators actually work" now mounts the
+//     PRODUCTION hook beside the front door, exactly as App does. Same
+//     presses, same expectations, byte-identical assertions; what it
+//     pins is the chord semantics (which chords are ours, which are
+//     not), while "⌘O/⌘N reach the right command from every screen" is
+//     proven against the real App and the real store in
+//     test/accelerators.test.tsx.
+//   * "stops listening once the front door is gone" is REPLACED by its
+//     opposite — see the comment on that test. Left as it was, it would
+//     have passed vacuously (a component that never listens cannot stop
+//     listening), which is the one outcome nobody wants.
 
 declare global {
   // React 19's act() requires this opt-in outside a test renderer.
@@ -74,6 +92,49 @@ function mount(patch: Partial<React.ComponentProps<typeof EmptyState>> = {}): {
   return handlers;
 }
 
+/** The front door with the APP's accelerator table mounted beside it —
+ * the same hook, wired to the same two actions, that `App` mounts at the
+ * root (T-049). Not a copy of the handler: the production one. */
+function FrontDoorWithAccelerators(props: React.ComponentProps<typeof EmptyState>) {
+  useAccelerators({ openFolder: props.onPick, startInterview: props.onStartInterview });
+  return <EmptyState {...props} />;
+}
+
+function mountWithAccelerators(): ReturnType<typeof mount> {
+  const handlers = {
+    onPick: vi.fn(),
+    onStartInterview: vi.fn(),
+    onStartInterviewHere: vi.fn(),
+    onKeepCurrent: vi.fn(),
+  };
+  render(
+    <FrontDoorWithAccelerators
+      notice={{ kind: "noPlan", path: "/tmp/not-a-project", probe: EMPTY_PROBE }}
+      picking={false}
+      canKeepCurrent={false}
+      {...handlers}
+    />,
+  );
+  return handlers;
+}
+
+/** How many keydown listeners `body()` registers on `window`. */
+function keydownRegistrations(body: () => void): number {
+  const node: EventTarget = window;
+  const add = node.addEventListener.bind(node);
+  let count = 0;
+  node.addEventListener = (type, handler, options) => {
+    if (type === "keydown") count += 1;
+    add(type, handler, options);
+  };
+  try {
+    body();
+  } finally {
+    node.addEventListener = add;
+  }
+  return count;
+}
+
 const q = (selector: string): HTMLElement | null =>
   container.querySelector<HTMLElement>(selector);
 
@@ -95,7 +156,9 @@ describe("front door: the two ways in (T-026 criterion 1)", () => {
   });
 
   it("the advertised accelerators actually work (⌘O opens, ⌘N interviews)", () => {
-    const h = mount();
+    // T-049: the table is the app's, not this component's — mounted here
+    // exactly as App mounts it. The assertions below are unchanged.
+    const h = mountWithAccelerators();
     press("o");
     press("n");
     expect(h.onPick).toHaveBeenCalledTimes(1);
@@ -111,11 +174,30 @@ describe("front door: the two ways in (T-026 criterion 1)", () => {
     expect(h.onStartInterview).toHaveBeenCalledTimes(1);
   });
 
-  it("stops listening once the front door is gone", () => {
-    const h = mount();
-    act(() => root.render(<div />));
+  // T-049 REPLACES T-026's "stops listening once the front door is gone".
+  // That test asserted the unmount-scoping deliberately — and the scoping
+  // is the defect: the chords this screen advertises died with it. The
+  // replacement asserts the mechanical form of the same concern and is
+  // strictly stronger, because the old assertion would now pass for the
+  // boring reason that this component never listened at all:
+  //   (a) the front door registers ZERO window keydown listeners, so
+  //       nothing here can supplement the app's one (criterion 5), and
+  //   (b) a chord pressed while it IS mounted reaches none of its props,
+  //       which is the same fact stated positively.
+  // The behaviour that matters — the chords still reaching the right
+  // command once the front door is gone — is asserted where it now lives,
+  // against the real App and store: test/accelerators.test.tsx, "2. the
+  // board — the screen the chords used to die on".
+  it("owns no window listener of its own (the app's table is the only one)", () => {
+    let h: ReturnType<typeof mount> | null = null;
+    const registered = keydownRegistrations(() => {
+      h = mount();
+    });
+    expect(registered, "EmptyState must add no keydown listener").toBe(0);
     press("o");
-    expect(h.onPick).not.toHaveBeenCalled();
+    press("n");
+    expect(h!.onPick).not.toHaveBeenCalled();
+    expect(h!.onStartInterview).not.toHaveBeenCalled();
   });
 
   it("disables both ways in while the native dialog is open", () => {

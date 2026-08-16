@@ -4,6 +4,7 @@ import { Board } from "@/components/board/Board";
 import { GenesisScreen } from "@/components/shell/GenesisScreen";
 import { PaneRail, type PaneId } from "@/components/shell/PaneRail";
 import { Button } from "@/components/ui/button";
+import { useAccelerators } from "@/components/shell/accelerators";
 import { skipReasonPhrase } from "@/lib/docs-model";
 import {
   CONVENTION_HINT,
@@ -118,9 +119,14 @@ function ChecklistRow({ row }: { row: PlanChecklistRow }) {
  * slot carries T-007's convention hint instead, so redesigning this state
  * dropped none of what it used to say.
  *
- * Presentational apart from the two accelerators, which are mounted here
- * because they belong to THIS screen and nowhere else (the board has its
- * own key handling). DOM-tested in test/project-shell.test.tsx. */
+ * PURELY PRESENTATIONAL since T-049. The ⌘O / ⌘N listener used to live
+ * here, which is exactly why the chords this screen advertises stopped
+ * working the moment a project opened: the listener unmounted with the
+ * screen. It now lives once at the root (`useAccelerators` in `App`,
+ * components/shell/accelerators.ts) — replaced, not supplemented, so
+ * this component registers no window listener at all. DOM-tested in
+ * test/project-shell.test.tsx; the accelerators in
+ * test/accelerators.test.tsx. */
 export function EmptyState({
   notice,
   picking,
@@ -138,21 +144,6 @@ export function EmptyState({
   onStartInterviewHere: () => void;
   onKeepCurrent: () => void;
 }) {
-  // ⌘O / ⌘N (Ctrl on the platforms without a Command key — the label
-  // renders the design's macOS glyphs, the handler is not that fussy).
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
-      const key = event.key.toLowerCase();
-      if (key !== "o" && key !== "n") return;
-      event.preventDefault();
-      if (key === "o") onPick();
-      else onStartInterview();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onPick, onStartInterview]);
-
   return (
     <section
       data-testid="empty-state"
@@ -263,6 +254,21 @@ function App() {
     void startDocsWatcher();
   }, []);
 
+  // T-049: THE app's accelerators, registered once at the root so ⌘O and
+  // ⌘N reach the same commands from every screen the app can show — the
+  // board, the map, the interview and every empty state — instead of
+  // only while the front door happens to be mounted. There is exactly
+  // one keydown path in this app for these chords (see
+  // components/shell/accelerators.ts, and the enumeration in
+  // test/accelerators.test.tsx that would fail if a second appeared).
+  // Both commands are the store's own single-flight picker entries, so a
+  // chord fired while a native dialog is already open does nothing —
+  // T-021's guard respected, not re-implemented.
+  useAccelerators({
+    openFolder: () => void pickProjectFolder(),
+    startInterview: () => void pickGenesisFolder(),
+  });
+
   // T-012 pane state: session-ephemeral by design (defaults each
   // launch — persistence is T-022's charter). The board pane's behavior
   // is byte-compatible; the map mounts/unmounts (layout is
@@ -317,15 +323,35 @@ function App() {
           )}
           <SkippedFilesBadge skipped={skipped} skippedTotal={shell.docs.skippedTotal} />
           <ParseErrorBadge failures={failures} />
+          {/* T-049: the front door's two ways in, in the header's own
+              idiom — same verbs, same order (open first, interview
+              second), the quiet outline control both header buttons
+              already use. Before this, genesis from an open project took
+              four steps (Open folder… → a folder with no docs/ → the "No
+              plan in <folder>" card → Start an interview here), the first
+              of which is a picker; now it is one, and the capability is
+              discoverable without knowing a chord. Both are the same
+              commands ⌘O / ⌘N reach, and both carry the picker's
+              single-flight disable. */}
           {screen.screen === "board" && isTauriRuntime() && (
-            <Button
-              variant="outline"
-              data-testid="open-folder"
-              disabled={shell.picking}
-              onClick={() => void pickProjectFolder()}
-            >
-              Open folder…
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                data-testid="open-folder"
+                disabled={shell.picking}
+                onClick={() => void pickProjectFolder()}
+              >
+                Open folder…
+              </Button>
+              <Button
+                variant="outline"
+                data-testid="header-start-interview"
+                disabled={shell.picking}
+                onClick={() => void pickGenesisFolder()}
+              >
+                Start an interview
+              </Button>
+            </>
           )}
           <Button
             variant="outline"
