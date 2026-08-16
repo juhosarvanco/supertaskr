@@ -250,6 +250,20 @@ smoke test (`parseProject` over this repo, `issues toEqual([])`) is
 green in every run reported below, which is the same proof re-derived
 on every `npx vitest run`.
 
+And against a tree this branch has never seen — main advanced three
+merges while this was built (T-050, T-051/T-014 planning, T-027's
+planning pass, T-042 dispatch), so main@8dadb59's docs were extracted
+with `git archive` and parsed through the BRANCH parser:
+
+    MAIN@8dadb59 docs through the BRANCH parser:
+      tasks 85 · features 6 · components 11 · ISSUES 0
+      long-or-wrong stamps remaining: none
+
+Eighty-five task files including four written after this branch point,
+zero issues, and no stamp left reporting `resume` for a fresh session or
+carrying a model longer than 25 characters. The merge interacts cleanly;
+there is nothing for the integrator to enumerate.
+
 Audit of what COULD have flagged it, checked directly: ROADMAP.md
 contains no `<!--` at all (so the strip is a no-op there); no component
 `paths` pattern starts with `/` (11 files, every pattern read); no
