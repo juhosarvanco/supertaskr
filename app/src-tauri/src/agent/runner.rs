@@ -156,6 +156,11 @@ pub struct RunnerConfig {
     /// TEST SEAM: extra env pairs on the child (fake-agent scenario
     /// selection). Always empty in production.
     pub extra_env: Vec<(String, String)>,
+    /// TEST SEAM: `false` forbids the login-shell probe entirely, so no
+    /// suite can spawn the user's shell or accidentally RESOLVE THE REAL
+    /// CLI. Production is `true` — that probe is criterion 4's whole
+    /// point (GUI-launch PATH poverty).
+    pub probe_login_shell: bool,
     /// Where the resolution cache lives (the app's config dir).
     pub config_dir: Option<PathBuf>,
     /// No first stream line within this → `StartTimeout`.
@@ -177,6 +182,7 @@ impl Default for RunnerConfig {
             binary_override: None,
             path_override: None,
             extra_env: Vec::new(),
+            probe_login_shell: true,
             config_dir: None,
             start_timeout: Duration::from_secs(30),
             stall_timeout: Duration::from_secs(300),
@@ -245,8 +251,17 @@ pub fn resolve_cli(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Result<Resolve
     }
 
     // (2) The login-shell probe, once. Fixed argv, no user data anywhere
-    // in it — the `-c` argument is a compile-time constant.
-    match login_shell_probe(cfg, adapter.binary) {
+    // in it — the `-c` argument is a compile-time constant. Suites turn
+    // it off so no test can spawn a shell or resolve the real CLI.
+    let probe = if cfg.probe_login_shell {
+        login_shell_probe(cfg, adapter.binary)
+    } else {
+        cfg.path_override
+            .as_ref()
+            .and_then(|path| which_in(path, adapter.binary))
+            .map(|found| (found, cfg.path_override.clone()))
+    };
+    match probe {
         Some((path, login_path)) => {
             if let Some(cache) = cache_path(cfg) {
                 write_cache(&cache, adapter.key, &path, login_path.as_deref());
@@ -339,8 +354,12 @@ fn login_shell_probe(cfg: &RunnerConfig, binary: &str) -> Option<(PathBuf, Optio
 
 /// Plain PATH lookup — the fallback when there is no usable login shell.
 fn which_on_path(binary: &str) -> Option<PathBuf> {
-    let path = std::env::var_os("PATH")?;
-    std::env::split_paths(&path)
+    which_in(&std::env::var("PATH").ok()?, binary)
+}
+
+/// PATH lookup over an explicit search path.
+fn which_in(path: &str, binary: &str) -> Option<PathBuf> {
+    std::env::split_paths(path)
         .map(|dir| dir.join(binary))
         .find(|candidate| is_executable_file(candidate))
 }
@@ -926,6 +945,15 @@ pub fn run_turn(
     }
     flush_pending(emitter, req.turn, &mut pending, &mut pending_since, &mut relayed);
 
+    // A cancel that RACED the stream's EOF is still a cancel. Without
+    // this re-read, `genesis_cancel` killing the child fast enough would
+    // reach the loop as a plain EOF and be reported as `ExitNonZero`
+    // (signal-killed, no code) — a typed FAILURE for something the user
+    // deliberately did. Cancel is an outcome, not an error.
+    if cancel.load(Ordering::SeqCst) {
+        out.cancelled = true;
+    }
+
     // --- reap, then decide -------------------------------------------
     let status = if failure.is_some() || out.cancelled {
         terminate_group(pid, cfg.kill_grace);
@@ -951,16 +979,16 @@ pub fn run_turn(
         match status {
             Some(status) if !status.success() => Some(TurnError::ExitNonZero {
                 code: status.code(),
-                stderr_tail: super::super::docs_watch::sanitize_for_log(&stderr_tail),
+                stderr_tail: crate::docs_watch::sanitize_for_log(&stderr_tail),
             }),
             _ => {
-                if req.resume.is_none() && out.native_session_id.is_none() {
-                    Some(TurnError::MalformedStream {
-                        why: "no session init line in the stream".into(),
-                    })
-                } else if !saw_json_anchor {
+                if !saw_json_anchor {
                     Some(TurnError::MalformedStream {
                         why: "no JSON stream lines at all".into(),
+                    })
+                } else if req.resume.is_none() && out.native_session_id.is_none() {
+                    Some(TurnError::MalformedStream {
+                        why: "no session init line in the stream".into(),
                     })
                 } else if result_text.is_none() {
                     Some(TurnError::MalformedStream {
@@ -1100,6 +1128,10 @@ mod tests {
         assert_eq!(cfg.path_override, None);
         assert!(cfg.extra_env.is_empty());
         assert_eq!(cfg.config_dir, None);
+        assert!(
+            cfg.probe_login_shell,
+            "production DOES probe the login shell - that is criterion 4"
+        );
         std::env::remove_var("NPUTER_AGENT_BIN");
         std::env::remove_var("NPUTER_FAKE_SCENARIO");
         std::env::remove_var("NPUTER_AGENT_PATH");
