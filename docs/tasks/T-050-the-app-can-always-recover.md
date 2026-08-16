@@ -407,4 +407,77 @@ concurrent, long after success — and asserts `listenCalls` stays 1 and
 `invokeCalls` stays 1. Probe A above is the same claim through the real
 `<StrictMode>`.
 
+### Obligation 6 — the pre-existing tests were STRENGTHENED, not weakened
+
+The diff touches two files that already existed. Both were inspected by
+diffing their test-name lists between `b623f6a` and HEAD, not by
+reading the patch alone.
+
+**`app/test/watcher-store.test.ts` — 28 tests, names IDENTICAL, zero
+added, zero removed.** The only change is two defaults added to the
+local `shell()` fixture helper (`starting: false`,
+`startupFailure: null`), which is forced: `ShellState` gained two
+required fields. No expectation changed, and the defaults appear on
+BOTH sides of every comparison, so nothing became vacuous — if a pure
+reducer ever touched these fields, the existing `toEqual`s would catch
+it.
+
+**`app/test/shell-harness.test.ts` — 8 tests, ONE renamed.** The rename
+is honest and is the only name change in the diff:
+
+```
+- it("exposes exactly applyProjectStatus / applyPickOutcome / getShell", …
++ it("exposes exactly applyProjectStatus / applyPickOutcome / applyStartupFailure / getShell", …
+```
+
+The name states the key set and the key set grew by one door, so the
+name had to move with it. The assertion keeps its shape — an EXACT
+sorted key array, so a fifth door still reds — and gains a second one
+the old form never had (every value must be a `function`).
+
+Not taken on trust. Both halves poison-checked against production code:
+
+| poison in `watcher-store.ts` | result |
+|---|---|
+| add a fifth harness door `applyBogusFifthDoor` | RED — `expected [ 'applyBogusFifthDoor', …(4) ] to deeply equal [ 'applyPickOutcome', …(3) ]` |
+| keep the keys, make one door the string `"not-a-function"` | RED — `every door is callable — a key that is not a function is not a door` |
+
+The second is the interesting one: it passes the old assertion and
+fails the new one, so the change is a strict strengthening. (The
+build-freshness gate in the same file also fired on its own during this
+work, refusing a `dist/` older than the store — worth recording as a
+guard that is alive rather than decorative.) `watcher-store.ts` was
+restored byte-identically afterwards (sha256 `b52e7ff…fce1f`).
+
+### Obligation 7 — every new test body EXECUTES
+
+Not "the file runs" — every individual body. Each `it`/`test` in the
+three new files had `throw new Error("POISONED_… #N")` injected as its
+first statement, mechanically, and the suites were run:
+
+| file | bodies | poisoned | went RED |
+|---|---|---|---|
+| `app/test/startup-recovery.test.ts` | 17 | 17 | 17 |
+| `app/test/startup-screen.test.tsx` | 11 | 11 | 11 |
+| `tools/e2e/tests/startup-recovery.spec.ts` | 4 | 4 | 4 |
+
+`Tests 28 failed (28)` for the vitest pair and `4 failed` for the
+Playwright spec, with all 32 distinct markers observed in the output.
+A skipped, unreachable or vacuous body would have stayed green; none
+did. All three restored and verified by sha256:
+
+```
+app/test/startup-recovery.test.ts: OK
+app/test/startup-screen.test.tsx: OK
+tools/e2e/tests/startup-recovery.spec.ts: OK
+```
+
+One thing worth flagging for the verifier, because it looks alarming
+and is not: `app/test/startup-screen.test.tsx` shows in
+`git diff --stat` as `Bin 0 -> 13002 bytes`. It is ordinary UTF-8 text
+(`perl` reports valid UTF-8, and the file reads normally); git calls it
+binary because the file deliberately contains 2 NUL bytes plus BEL and
+ESC — the control characters in its hostile-message fixture, at lines
+73 and 237. That is the test doing its job, not a corrupt file.
+
 ## Verdicts
