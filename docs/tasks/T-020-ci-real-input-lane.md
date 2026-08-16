@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [.github/, tools/e2e/, .nputerignore]
 builder: claude-fable-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-fable-5 @fresh (WIP through 986431e) + claude-opus-5 @fresh (completion)
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 Absorbs: T-001-s2, T-001-s3, T-005-s4, T-009-s3, T-018-s3 (folded at
@@ -585,3 +585,390 @@ finding), T-020-s3 (boot check unverifiable while the human's app
 holds 1420).
 
 ## Verdicts
+
+2026-08-16 (today where this ran) — claude-opus-5 @fresh, verifier —
+same-model relative to the completing builder; the fable-built half
+received cross-model review: **APPROVED.** All five criteria met, with
+one clause of the audit criterion ruled HALF-MET by construction and
+correctly escalated rather than papered over (below). Every §9
+obligation re-derived from scratch in worktree /Users/ujju/Projects/
+nputer-t020 at `d06bd4f` (merge-base with main confirmed `45894b7`);
+nothing was taken from the notes on trust. Provenance stamped at the
+conservative floor: the lane's construction — package, seven specs,
+both scripts, the dormant workflow — is claude-fable-5's through
+`986431e` and this is its first review of any kind (cross-model); the
+§9 verification pass and the notes are claude-opus-5's, and this
+verdict is same-model to that half. `review: same-model` is the floor
+the whole card takes.
+
+**The load-bearing proof, re-derived (§9.2).** `sed -i ''
+'s/"pointerdown"/"click"/g'` on
+app/src/components/board/panel-dismissal.ts (both listener strings) →
+`npm test` in tools/e2e → **4 failed, 12 passed**, exit 1: the two
+REQUIRED specs (blocker-retarget; keyboard-activation ×2 for Enter and
+Space) plus the at-press assertion, matching the notes exactly. The
+signature is the real T-005 rejection shape, not an incidental
+selector miss, and this was checked rather than assumed: the SAME
+locator `getByTestId('task-detail-panel')` resolved one line earlier
+for `data-task-ref="T-101"` (the panel opened), and Playwright's own
+failure page snapshot shows a fully rendered board — rail, heading,
+`/e2e/fixture`, "4 tasks · 2 features", the F-01 region — with NO
+panel node anywhere. The panel opened and then CLOSED on the blocker
+click; `element(s) not found` is that closure. Failure 4 is the same
+mechanism from the other side: `toHaveCount(0)` between `mouse.down()`
+and `mouse.up()` got 1 fourteen times — a click-time decision cannot
+be at-press. `git checkout` → `git status --porcelain` empty, both
+`"pointerdown"` strings back → **16 passed (5.0s)**. The lane
+demonstrably distinguishes the shipped app from the rejected one.
+
+**Canary discrimination (§9.3), re-derived with my own probe.** A
+transient tests/zz-verifier-probe.spec.ts installed capture listeners
+and fed them `document.body.dispatchEvent(new MouseEvent("click"…))`
+and `new KeyboardEvent("keydown"…)`: both recorded **isTrusted:
+false**, and the canary's own literal assertions (`toBe(true)` with
+its own messages) were then APPLIED to those values and both threw —
+asserted, not assumed. Control in the same spec: the identical
+listeners under `page.mouse.click` / `page.keyboard.press` record
+true. Probe green, then deleted; tree clean. Sweep of the whole lane
+for synthetic input under test: every activation is a Playwright
+locator `.click()` / `keyboard.press`; all eleven `page.evaluate`
+blocks are state plumbing (harness apply, node tagging, pointerdown
+counter, computed style, activeElement read) and not one dispatches an
+event. The canary asserts on both a click AND a keypress, as required.
+
+**Lint guard — attacked for false positives AND false negatives
+(§9.4).** Done in a scratch fake-repo (a copy of the script over a
+synthetic app/src) so the real tree was never at risk, then confirmed
+end-to-end in the real tree. Seventeen crafted near-misses fired ZERO
+hits: `[&_svg]:` variants, `closest("[data-card-trigger]")` and other
+attribute-selector strings, template strings with `${}` interpolation,
+`items[i - 1]`, `total - [1,2,3].length`, `arr.at(-1)`,
+`Foo["bar-baz"]`, `Map<string, Array<[string, number]>>`, state
+variants, spacing tokens, mapped tokens, token+opacity, `var(--x)`.
+The real tree is itself the structural near-miss proof — 33 files
+scanned clean including vendored ui/button.tsx with its three
+`[&_svg…]` variants (verified present at button.tsx:20). Then one true
+violation per pattern, planted in the REAL tree
+(app/src/components/board/FeatureColumn.tsx lines 40 and 44) and each
+caught with file:line, exit 1:
+
+    FeatureColumn.tsx:40: p-[13px]  [P1: arbitrary value …]
+    FeatureColumn.tsx:44: text-red-500 [mask-type:luminance]  [P2: …]
+    FeatureColumn.tsx:44: text-red-500  [P3: …]
+    FeatureColumn.tsx:44: bg-(--brand)  [P4: …]
+
+`git checkout` → clean, 33 files, exit 0. `--selftest` green at 17
+samples through both `node scripts/lint-tokens.mjs --selftest` and
+`npm run lint:tokens -- --selftest`, and it is a CI step (in fact TWO
+steps — selftest and tree-lint are separate, correctly, since
+`--selftest` short-circuits the walk). Precision note on the plan's
+"part of the lane": the selftest is a local command and a CI step —
+criterion 3's actual requirement, met — but it is NOT inside `npm
+test`; the Playwright run never invokes the linter. Recorded, not
+counted against.
+
+FALSE POSITIVES FOUND, filed as **T-020-s5**: P1 (`/-\[[^\]]/`) fires
+on every arbitrary VARIANT whose bracket follows a hyphen —
+`data-[state=open]:`, `group-[.peer]:`, `supports-[display:grid]:`,
+`min-[600px]:` — although plan §5 records arbitrary variants as
+DELIBERATELY not linted. The exclusion holds today only because the
+one variant shape in the tree (`[&_svg…]`) has no preceding hyphen;
+the next `npx shadcn add dialog` brings `data-[state=…]` and reds the
+lint on unmodified upstream code. P1 also fires on any regex literal
+containing `-[`; app/src has none, but lib/parser/src/frontmatter.ts:35
+is `/^---[ \t]*(?:\r?\n|$)/m`, exactly that shape, safe only because
+the walk is scoped to app/src. P2 additionally fires on prose of the
+form `[note: …]` in a comment or string. None of this breaks a
+criterion — the tree passes and plants are caught — but the code and
+the plan's recorded exclusion disagree, and that is worth a decision.
+
+**Loud-failure drills (criterion 4) — five, all loud, none silent.**
+(a) `NPUTER_E2E_PORT=1420 npx playwright test` throws with the stated
+message, and the stack proves WHERE: `resolveLanePort` ←
+playwright.config.ts:17 ← `loadUserConfig` ← `loadConfigFromFile` ←
+`runTests` — config load, before any webServer spawn. 1420 was free
+before and free after; no vite process appeared. (b) `mv lib/parser/
+dist` aside → throws naming the ADR-011 order and dist/pure.js;
+restored, tree clean. (c) The lane's own vite on 14520 (pid resolved
+by `lsof -nP -iTCP:14520 -sTCP:LISTEN -t`, command string verified as
+`…/nputer-t020/app/node_modules/.bin/vite --port 14520 --host
+127.0.0.1` before signalling) SIGKILLed mid-run → **10 failed, 6
+passed, exit 1, ZERO skipped** — the word "skip" does not appear in
+the output at all — every failure `page.goto: net::ERR_CONNECTION_
+REFUSED at http://127.0.0.1:14520/`. (d) Busy port, both layers: a
+scratch listener on 14599 + `NPUTER_E2E_PORT=14599` → preflight
+EADDRINUSE message; and `npm run dev -- --port 14599` directly → vite
+strictPort, "Port 14599 is already in use" (app/vite.config.ts
+confirmed `port: 1420, strictPort: true`). (e) Bonus: a spawn failure
+in the boot script exits 1 naming the cause. Ban sweep: NO
+`test.skip`, `.only`, `.fixme`, `test.fail`, `describe.skip` anywhere
+under tools/e2e — and `forbidOnly: true` makes a stray `.only` fail
+the run rather than silently narrow it.
+
+**RULING on the preflight deviation (plan says "global-setup"; the
+file is preflight.ts imported at CONFIG LOAD): SOUND, and strictly
+stronger — not a spec violation.** Two independent grounds. First, by
+construction: Playwright must evaluate the config module before it can
+know there is a globalSetup at all, so config-load is earlier than or
+equal to every hook, unconditionally. Second, the executor's stated
+REASON was tested rather than believed — a transient probe config with
+a logging globalSetup printed `[probe] CONFIG MODULE evaluated`, then
+`[probe] globalSetup ran; port 14520 already listening = true`. The
+webServer really does start between the two, so a globalSetup port
+probe really would collide with our own server. The same probe
+incidentally proved the config module is evaluated TWICE (runner, then
+worker), which makes the `TEST_WORKER_INDEX` guard in
+assertLanePreconditions load-bearing rather than defensive — deleting
+that one line and re-running made the lane fail with "lane port 14520
+is not bindable", exactly as its comment predicts. Restored; tree
+clean. The 1420 throw sits OUTSIDE that guard and therefore runs in
+every process, which is the right split.
+
+**Parity-test honesty (§9, criterion 1's machine half) — seven
+mutations, each caught by exactly the intended assertion, all
+reverted, tree clean after each.** `npm test` → `npm run test` on the
+app step: "missing verbatim step: [app] npm test". `actions/checkout@
+<sha>` → `@v7`: "unpinned action: actions/checkout@v7". Dropping
+`xvfb` from the apt list: "apt step must install xvfb". A tab in the
+indentation: all five tests fail on `YAMLParseError: Tabs are not
+allowed as indentation at line 29`. Moving `cargo audit` above `cargo
+test`: the ORDER assertion fails (the verbatim-presence check alone
+would have passed — the order half is real). Dropping
+`WEBKIT_DISABLE_DMABUF_RENDERER`, and separately appending any step
+after the boot step: the boot test fails on each. So the spec does
+check YAML validity, verbatim command presence AND order, 40-hex SHA
+shape on every `uses:`, the apt set, and the xvfb boot invocation. I
+also checked the hard-coded list against today's docs/CONVENTIONS.md
+"Build & test": all four lib/parser commands, app's build + test, and
+`cargo test` match verbatim; app's `npm ci` vs the doc's `npm install`
+is the one divergence and it is the deliberate, documented one.
+
+On the flagged SHA↔tag gap: **no new suggestion needed.** The fence
+forbids GitHub API use, the shape IS machine-checked, and a wrong SHA
+fails the very first CI run immediately and unmissably — which is
+precisely the §1 tier-3 shape ("honestly unverified until
+activation"), already carried by the drafted STATE launch item that
+names "the three `uses:` SHA pins resolve". It is honestly-unverified,
+not silently-unverified. What I DID file, as **T-020-s6**, is the
+other half of criterion 1's phrase: the spec pins ci.yml against a
+hard-coded array, so drift in the WORKFLOW is caught but drift in
+CONVENTIONS is not — and six of those sixteen commands currently point
+at a CONVENTIONS section that does not exist yet (drafted for the
+integrator). The plan sanctioned the hard-coding, so this is a growth
+step, not a defect.
+
+**The fence (§8/§10) — proved, exactly as declared.**
+`git diff 45894b7..HEAD --name-status` is 23 paths and nothing else:
+.github/workflows/ci.yml (A), .nputerignore (M, +3), the task file
+(M), the three suggestion files (A), and twenty tools/e2e files (A).
+`git diff 45894b7..HEAD --stat` over `app/`, `lib/parser/`,
+`docs/architecture/`, `method/` is **zero lines each**. The only
+lockfile in the diff is the new tools/e2e/package-lock.json — no
+existing lockfile touched. Every created file is mode 100644: no
+executable bits, nothing outside the declared surface. The two .mjs
+scripts carry shebangs but are invoked as `node script.mjs`
+everywhere, so the missing +x is consistent, not a bug. Both declared
+deviations assessed: preflight.ts ruled sound and stronger (above);
+tests/helpers.ts is shared locators and `openApp`/`openBoard`, not an
+eighth spec — inside tools/e2e, inside the fence.
+
+**Dependency review — the executor's correction of the plan verified
+from the lockfile itself, not from the notes.** lockfileVersion 3,
+**8 packages, every one `dev: true`, every one resolved from
+registry.npmjs.org, every one carrying an integrity hash, none
+missing, none production**: @playwright/test 1.62.1 → playwright
+1.62.1 → playwright-core 1.62.1, yaml 2.9.0, typescript 5.9.3,
+@types/node 22.20.1 → undici-types 6.21.0, and fsevents 2.3.2 —
+declared as playwright's `optionalDependencies`, `os: ["darwin"]`, and
+the tree's ONLY `hasInstallScript` entry; `npm ls` shows it as UNMET
+OPTIONAL, i.e. not even materialized here. The plan's "three packages"
+line was wrong and the notes say so plainly; the corrected account is
+accurate in every particular. Exact-pin discipline holds where the
+plan requires it: `"@playwright/test": "1.62.1"` with no range (the
+browser rides the version), while yaml/typescript/@types/node carry
+the caret ranges the plan itself specified (`^2.8.0`, `^5.8.0`,
+`^22.15.0`) — resolved and locked. Browser cache confirmed OUTSIDE the
+repo: `~/Library/Caches/ms-playwright`, 554 MB, chromium-1234 +
+chromium_headless_shell-1234 + ffmpeg-1011; a find over the worktree
+turns up no browser blob anywhere inside it, and node_modules/ +
+test-results/ are gitignored.
+
+**The 1420 rule as code (§9, attack 4).** Every occurrence of "1420"
+in the lane is a comment, the `resolveLanePort` throw, or the boot
+script's bind-probe constant — there is no client anywhere: zero
+`fetch`, `http.request`, `net.connect`, `createConnection`, curl or
+wget in tools/e2e. The throw is unconditional (no env escape, no
+opt-out) and runs in every process including workers. The boot script
+BINDS and never connects — `net.createServer().listen()` then
+`close()`, on BOTH `::1` and `127.0.0.1` so a live app on either
+family is seen — and it kills only its own tree: `spawn(…, {detached:
+true})` makes the child a process-group leader and `process.kill(
+-child.pid, sig)` targets exactly that group, with `child.kill()` as
+fallback. No `pkill`, no `killall`, no name matching, anywhere. The
+lane also cannot be tricked into attaching to someone else's server:
+`reuseExistingServer: false`, plus the preflight bind probe means ANY
+listener on the lane port aborts the run rather than being adopted;
+and `openApp` fails loudly naming the cause if `__nputerDocsHarness`
+is absent, so a prod bundle or a Tauri runtime cannot be silently
+tested. Nothing in this verification bound, connected to, or signalled
+1420 except the sanctioned boot-check runs below.
+
+**Boot-script mechanics (§9.6) — re-derived on the shipped file and on
+a two-line copy.** 1420 was free throughout, so the busy-port branch
+could not be reproduced against the shipped constant without binding
+1420 myself, which the standing order forbids; it was reproduced
+instead on a scratch copy whose ONLY deltas are `TAURI_PORT` 14733 and
+an env-swappable spawn command (`diff` shows two lines). Copy drills:
+busy port → **exit 2**, "ABORT: port 1420 is in use … Nothing was
+spawned", and nothing was; both `[nputer]` needles → **exit 0** with
+the process tree — including a deliberately forked GRANDCHILD —
+verified dead afterwards by `ps`; forced 1s timeout → **exit 1** with
+`MISSING` beside both needles; forced 400ms no-output watchdog → exit
+1 likewise; child exiting on its own → exit 1 naming the exit code and
+both missing lines. Then the SHIPPED file, unmodified, twice: `npm run
+boot:check` → both startup lines detected, tree stopped on SIGTERM,
+**exit 0**, ~4 s each, 1420 released after each, `lsof` + `ps` showing
+no stray vite/tauri/nputer. Each run briefly opened the app's own
+window — the sole documented exception (T-001 precedent), outside `npm
+test`; no OS input was injected and nothing was screenshotted. The
+lane proper has no `headless: false` anywhere and never opened a
+window in any of the ~15 runs here.
+
+**Fixture fidelity (§9, attack 8).** The mirrored `DocsSnapshotPayload`
+in fixtures/board.ts is a correct structural SUBSET of the real one in
+app/src/lib/docs-model.ts today — same four required fields (`seq`,
+`projectDir`, `generatedAtMs`, `files: {path, content}[]`), omitting
+only the three optional ones (`skipped?`, `skippedTotal?`,
+`truncated?`), which is sound for a producer — and the drift comment
+names the source of truth by path. The harness contract matches
+watcher-store.ts (dev-only, non-Tauri, `apply`). Component C-90's
+frontmatter matches the real T-008 shape field-for-field against
+C-08-board-pane.md (id, name, layer, paths, depends_on, decisions,
+status: auto, touch_slugs), and the four fixture tasks match
+method/tasks/TASK-FORMAT.md, using only statuses from its vocabulary
+(done, building, planned, parked).
+
+**`.nputerignore` + graph (§9.7) — no-op re-derived, WITH a negative
+control.** `cargo test -p nputer-index --test self_graph -- --ignored`
+→ ok, 1 passed; `shasum -a 256 docs/architecture/graph.json` identical
+before and after (`862acc57…1cdb2e`), `git status --short
+docs/architecture/` empty, and the committed graph contains zero
+`tools/` paths (78 files, 449 symbols, 790 edges). The control that
+makes it mean something: deleting the `tools/` line from
+.nputerignore and re-running the same ritual FAILS — "committed
+docs/architecture/graph.json is stale — regenerate deliberately with
+NPUTER_UPDATE_GOLDEN=1 …". The exclusion is load-bearing, not
+vacuous. Restored; tree clean.
+
+**Suites at this branch point — all three re-run, all matching the
+notes' corrected baselines.** lib/parser `npx vitest run` **159 passed
+(10 files)** + `npx tsc --noEmit` clean; app `npm test` **398 passed
+(21 files)**; app/src-tauri `cargo test` **121 passed, 0 failed, 2
+ignored** summed across every binary and doc-test (the notes' warning
+about `tail`-truncated totals is correct and was avoided by summing
+`test result:` lines). tools/e2e `npm run typecheck` clean; `npm test`
+**16 passed** in 4.9–5.0 s, headless, one worker, retries 0.
+
+**RULING on cargo-audit policy (criterion 4 / T-020-s2): the criterion
+is MET for the class it can be met for, HALF-MET in prose, and the
+escalation is the right move — not grounds for rejection.** Re-derived
+here: `cargo audit` over app/src-tauri → **0 vulnerabilities, 17
+warnings, exit 0** ("warning: 17 allowed warnings found"), cargo-audit
+0.22.2, matching the notes exactly. `cargo audit --deny warnings` →
+**exit 1**, "error: 17 denied warnings found!" — the one-flag fix
+exists and would red the lane today. And the half that matters most,
+proven rather than assumed: a synthetic Cargo.lock pinning `time
+0.1.44` audited with `cargo audit -f` → **exit 1**, "error: 1
+vulnerability found!" (RUSTSEC-2020-0071). So a genuine vulnerability
+against the pins DOES become a hard failure, which is the case where
+the criterion's own remedy — "deliberate re-pin + re-review" — is even
+possible; all 17 current findings are `unmaintained`/`unsound` under
+Tauri v2's GTK stack, upstream, with nothing to re-pin. The residual
+gap is real (an 18th warning lands green) and it is exactly one
+severity class below what T-009-s3 closed. The executor shipped the
+command the architect-approved plan §6 specified, measured the
+mismatch between that command and the criterion's prose, refused to
+either hide it or unilaterally add an ignore-list, and filed T-020-s2
+for the architect. Rejecting that would be rejecting the
+stop-and-consult convention itself. **s2 is the correct encoding; it
+needs an architect decision before merge, and whichever branch is
+taken belongs in CONVENTIONS beside the command, as s2 says.**
+
+**Suggestion assessment.** **s1** (panel occludes the header
+exemption) — REAL and already pinned in code: the spec's
+`document.elementFromPoint` assertion passes today, i.e. the open
+panel genuinely owns the toggle's centre point at 1280×720, and the
+keyboard path it falls back to is trusted UA activation, not a
+synthetic shortcut. Its "at EVERY viewport width" is a reasoned
+extrapolation from a right-anchored 600px full-height panel over
+right-anchored header controls rather than a measured claim, but the
+tripwire (`expect(occluded).toBe(true)`) makes the extrapolation
+self-correcting. Encoding and scope right; it is a design call for the
+architect, not a bug fix. **s2** — REAL, re-derived above, correctly
+scoped as a fork with three named options; the only thing I would add
+is that option 2 costs exactly one flag and fails today on 17, both
+now measured. **s3** (boot check unrunnable while the app holds 1420)
+— REAL: the guard's abort branch reproduced here on the copy, and the
+friction is inherent to `strictPort` on 1420. Its option 1 ("leave
+it") is well argued and its warning that the lane's config went the
+opposite way — a hard THROW rather than a knob — is the right thing to
+weigh. All three are honest, specific, and none is a disguised
+criterion failure.
+
+**New suggestions filed: T-020-s4** (ci.yml declares no `permissions:`
+block, so the GITHUB_TOKEN scope is a web-UI checkbox rather than a
+fact in the repo — plus the `~/.cargo/bin` executable cache keyed on
+Cargo.lock), **T-020-s5** (the P1 variant/regex collisions above), and
+**T-020-s6** (the parity spec mirrors CONVENTIONS instead of parsing
+it, and six of its sixteen commands point at an unwritten section).
+
+**Security sweep — clean.** Diff confined as proved above. Every
+`uses:` is a full 40-hex SHA with the tag in a comment; no
+`pull_request_target`; no `continue-on-error` anywhere (the only
+occurrence of the phrase is the comment forbidding it on the audit);
+no `secrets.*`, no `GITHUB_TOKEN` reference, no credential of any kind
+in the workflow or the lane. `${{ }}` appears exactly three times — in
+`concurrency.group` and the two cache keys — and NEVER inside a `run:`
+block, so there is no shell-interpolation surface for
+attacker-controlled data. The only network the lane touches is the
+documented one: npm installs, `npx playwright install`, and the RUSTSEC
+advisory DB fetch. The lane cannot run against a production bundle
+(harness absence fails loudly by name) nor against the human's app
+(unconditional 1420 throw + `reuseExistingServer: false` + a bind
+probe that refuses any occupied lane port). No executable bits, no
+files outside the declared surface. The one hardening gap is the
+missing `permissions:` block, filed as s4.
+
+**Notes-vs-reality: no deviation found.** Every number in the
+Implementation notes reproduced — 16/16, 4 failed/12 passed under the
+sed-swap with the same four spec names, the `element(s) not found`
+signature, 17 selftest samples, 33 files scanned, 0 vulnerabilities /
+17 warnings, 8 lockfile packages with fsevents as the sole install
+script, 554 MB of browsers outside the repo, 159 · 398 · 121+2, the
+byte-identical graph. The two declared deviations are both real and
+both accounted for. The notes' honesty about the predecessor's empty
+notes section, about the stale §9.7 baselines, about the plan's
+"three packages" error, and about the bogus first `tail`-truncated
+cargo count is borne out by everything re-derived here.
+
+**For the INTEGRATOR (drafted in notes, NOT in this diff — the card is
+not honestly closed until these land):** (a) the CONVENTIONS "Build &
+test" block for tools/e2e, including the one-time `npx playwright
+install chromium` and `cargo install cargo-audit --locked`
+expectations, the PORT RULE, and the `npm ci`-in-CI-vs-`npm
+install`-locally note — without it, criteria 3 and 4's "local command"
+half is undocumented and s6's hole is wider; (b) the ADR-011 addendum
+(§3 exact text); (c) the STATE launch-checklist item "watch the first
+CI run", including the T-018-s3 fold (the three sentinel live tests on
+ubuntu inotify) and the SHA-pins-resolve check. Re-run the three
+suites plus the lane at main's then-current numbers at merge; the
+graph regen ritual is a verified no-op but run it anyway — byte
+identity is the proof. **@human:** T-020-s2 needs your call on audit
+exit policy before this can be called finished-as-promised, and s1 is
+a design question about whether the header exemption is meant to be
+reachable with a panel open.
+
+Tree clean at verdict time; every probe reverted (sed-swap, lint
+plants, preflight guard deletion, seven workflow mutations, the
+.nputerignore control, the canary probe spec, Playwright
+test-results/). `status: building` left for the integrator.
