@@ -134,9 +134,16 @@
   method version bump, and code reading it must be kept in sync.
   "pushing back:" is a rendering hint, never load-bearing; the
   transcript is not record. docs-templates/ are scaffolded VERBATIM —
-  examples live inside HTML comments; a bare example row (e.g. a
-  `- F-01:` bullet) would parse as real content on a fresh board, so
-  don't add one.
+  examples live inside HTML comments. The trap that made those comments
+  load-bearing is CLOSED since T-030 (2026-08-17, absorbing T-023-s1):
+  parseRoadmap blanks every `<!-- … -->` span before matching lines, so
+  a column-0 `- F-01:` example row inside a comment yields neither a
+  phantom feature nor a roadmap-error, and the examples no longer have
+  to be indented to stay invisible (pinned in
+  lib/parser/test/roadmap.test.ts, template shape included). The
+  templates stay comment-wrapped REGARDLESS — a comment is how an
+  example says it is an example, and the parser's tolerance is a safety
+  net, not a licence to ship live-looking rows in a scaffold.
 - Outside-click/dismissal listeners must decide on pointerdown, never
   click — under trusted input the browser runs microtask checkpoints
   between listeners, so React's discrete-update flush lands

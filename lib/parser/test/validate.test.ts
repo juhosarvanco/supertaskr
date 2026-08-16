@@ -267,7 +267,7 @@ describe('validateProject — id ↔ filename mismatch', () => {
     ]);
   });
 
-  it('skips id-less suggestions and filenames that encode no id', () => {
+  it('skips id-less suggestions — free-form beyond the `T-` prefix, by design', () => {
     const idless = src([
       ['title', 'Ghost'],
       ['status', 'suggested'],
@@ -277,11 +277,259 @@ describe('validateProject — id ↔ filename mismatch', () => {
       new Map([
         ['docs/ROADMAP.md', ROADMAP],
         ['docs/tasks/T-901-s9-ghost.md', idless], // no declared id → nothing to mismatch
-        ['docs/tasks/T-banana.md', task('T-901')], // encodes no id → not this check's business
+        ['docs/tasks/T-banana-idea.md', idless], // encodes no id AND declares none → legal
       ]),
     );
     expect(result.issues).toEqual([]);
     expect(result.tasks).toHaveLength(2);
+  });
+});
+
+describe('validateProject — an id-bearing file whose name encodes no id (T-030, T-019-s2)', () => {
+  // FLIPPED 2026-08-17 (T-030): this exact input — `T-banana.md` declaring
+  // `id: T-901` — was pinned above as producing ZERO issues, the
+  // deliberate T-019 narrowness the suggestion asked to close. The
+  // criterion now requires the flag: changed, never loosened.
+  it('flags T-banana.md declaring id T-901, and keeps the record', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-banana.md', task('T-901')],
+      ]),
+    );
+    expect(result.issues).toEqual([
+      {
+        kind: 'filename-id-missing',
+        file: 'docs/tasks/T-banana.md',
+        id: 'T-901',
+        message: expect.stringContaining('the filename encodes no id'),
+      },
+    ]);
+    expect(result.issues[0]?.message).toContain("'T-NNN[-sN]-<slug>.md'");
+    // Flagging, not hiding — the declared id stays the model's truth.
+    expect(result.tasks.map((t) => t.id)).toEqual(['T-901']);
+  });
+
+  it('covers the shapes the encoder rejects, and only those', () => {
+    const flagged = ['docs/tasks/T-901.bak.md', 'docs/tasks/T-9x1-slug.md', 'docs/tasks/T-.md'];
+    for (const file of flagged) {
+      const result = parseProjectFromFiles(
+        new Map([
+          ['docs/ROADMAP.md', ROADMAP],
+          [file, task('T-901')],
+        ]),
+      );
+      expect(kinds(result.issues), file).toEqual(['filename-id-missing']);
+    }
+    // ...while a well-formed name stays silent, and a WRONG id stays an
+    // id-mismatch — one issue per root cause, never both.
+    const ok = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-901.md', task('T-901')],
+      ]),
+    );
+    expect(ok.issues).toEqual([]);
+    const wrong = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-902-beta.md', task('T-901')],
+      ]),
+    );
+    expect(kinds(wrong.issues)).toEqual(['id-mismatch']);
+  });
+
+  it('fires identically through the disk layer', () => {
+    const root = mkdtempSync(join(tmpdir(), 'nputer-fname-'));
+    const tasks = join(root, 'docs', 'tasks');
+    mkdirSync(tasks, { recursive: true });
+    writeFileSync(join(root, 'docs', 'ROADMAP.md'), ROADMAP);
+    writeFileSync(join(tasks, 'T-banana.md'), task('T-901'));
+    const result = parseProject(root);
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        kind: 'filename-id-missing',
+        file: join(tasks, 'T-banana.md'),
+        id: 'T-901',
+      }),
+    ]);
+    rmSync(root, { recursive: true, force: true });
+  });
+});
+
+describe('validateProject — blocked_by cycles (T-030, absorbing T-019-s3)', () => {
+  const cycleIssues = (issues: ParseIssue[]): ParseIssue[] =>
+    issues.filter((i) => i.kind === 'dependency-cycle');
+
+  it('a self-reference is a cycle: one issue, the record and the reference kept', () => {
+    // Used to resolve SILENTLY — the reference names a task that exists,
+    // so nothing dangled and nothing was said.
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-901-a.md', task('T-901', [['blocked_by', '[T-901]']])],
+      ]),
+    );
+    expect(result.issues).toEqual([
+      {
+        kind: 'dependency-cycle',
+        field: 'blocked_by',
+        ids: ['T-901'],
+        files: ['docs/tasks/T-901-a.md'],
+        message: expect.stringContaining("'T-901' lists itself"),
+      },
+    ]);
+    expect(result.tasks[0]?.blockedBy).toEqual(['T-901']);
+  });
+
+  it('ONE issue per cycle, not one per member (two-task ring)', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-901-a.md', task('T-901', [['blocked_by', '[T-902]']])],
+        ['docs/tasks/T-902-b.md', task('T-902', [['blocked_by', '[T-901]']])],
+      ]),
+    );
+    expect(result.issues).toEqual([
+      {
+        kind: 'dependency-cycle',
+        field: 'blocked_by',
+        ids: ['T-901', 'T-902'],
+        files: ['docs/tasks/T-901-a.md', 'docs/tasks/T-902-b.md'],
+        message: expect.stringContaining('T-901, T-902 block each other'),
+      },
+    ]);
+    expect(result.tasks.map((t) => t.id)).toEqual(['T-901', 'T-902']);
+  });
+
+  it('a three-task ring is still one issue, naming every member in model order', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-903-c.md', task('T-903', [['blocked_by', '[T-901]']])],
+        ['docs/tasks/T-901-a.md', task('T-901', [['blocked_by', '[T-902]']])],
+        ['docs/tasks/T-902-b.md', task('T-902', [['blocked_by', '[T-903]']])],
+      ]),
+    );
+    expect(cycleIssues(result.issues)).toHaveLength(1);
+    expect(result.issues[0]).toMatchObject({ ids: ['T-901', 'T-902', 'T-903'] });
+  });
+
+  it('two rings sharing a member are ONE root cause, not two overlapping reports', () => {
+    // Figure-eight: T-901↔T-902 and T-901↔T-903. Reporting each simple
+    // ring would name T-901 twice; the strongly connected component names
+    // it once. (Enumerating simple rings is also exponential — no parser
+    // should be.)
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-901-a.md', task('T-901', [['blocked_by', '[T-902, T-903]']])],
+        ['docs/tasks/T-902-b.md', task('T-902', [['blocked_by', '[T-901]']])],
+        ['docs/tasks/T-903-c.md', task('T-903', [['blocked_by', '[T-901]']])],
+      ]),
+    );
+    expect(cycleIssues(result.issues)).toHaveLength(1);
+    expect(result.issues[0]).toMatchObject({ ids: ['T-901', 'T-902', 'T-903'] });
+  });
+
+  it('two independent cycles are two issues, ordered by their first member', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-901-a.md', task('T-901', [['blocked_by', '[T-902]']])],
+        ['docs/tasks/T-902-b.md', task('T-902', [['blocked_by', '[T-901]']])],
+        ['docs/tasks/T-903-c.md', task('T-903', [['blocked_by', '[T-903]']])],
+      ]),
+    );
+    expect(cycleIssues(result.issues).map((i) => ('ids' in i ? i.ids : []))).toEqual([
+      ['T-901', 'T-902'],
+      ['T-903'],
+    ]);
+  });
+
+  it('acyclic graphs stay silent, however long the chain', () => {
+    const files = new Map([['docs/ROADMAP.md', ROADMAP]]);
+    for (let n = 901; n <= 940; n++) {
+      const blocked = n === 901 ? '' : `T-${n - 1}`;
+      files.set(`docs/tasks/T-${n}-x.md`, task(`T-${n}`, [['blocked_by', `[${blocked}]`]]));
+    }
+    // A diamond too: two paths to one root is not a cycle.
+    files.set('docs/tasks/T-950-d.md', task('T-950', [['blocked_by', '[T-901, T-902]']]));
+    expect(parseProjectFromFiles(files).issues).toEqual([]);
+  });
+
+  it('a dangling reference is not an edge — it dangles, and cycles come after', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-901-a.md', task('T-901', [['blocked_by', '[T-902, T-777]']])],
+        ['docs/tasks/T-902-b.md', task('T-902', [['blocked_by', '[T-901]']])],
+      ]),
+    );
+    // Per-task findings first (the pinned order), cycles last.
+    expect(kinds(result.issues)).toEqual(['dangling-reference', 'dependency-cycle']);
+  });
+
+  it('a 5000-member ring does not blow the stack (iterative by construction)', () => {
+    const tasks = [];
+    for (let n = 0; n < 5000; n++) {
+      tasks.push({
+        id: `T-${n}`,
+        title: 'x',
+        status: 'planned' as const,
+        blockedBy: [`T-${(n + 1) % 5000}`],
+        touches: [],
+        extra: {},
+        sections: {},
+        file: `docs/tasks/T-${n}-x.md`,
+      });
+    }
+    const issues = validateProject({ tasks, features: [] });
+    expect(issues).toHaveLength(1);
+    const first = issues[0];
+    expect(first?.kind).toBe('dependency-cycle');
+    expect(first && 'ids' in first ? first.ids : []).toHaveLength(5000);
+  });
+
+  it('ADR-009: a hostile id cannot resolve through inherited state', () => {
+    const hostile = {
+      tasks: [
+        {
+          id: '__proto__',
+          title: 'x',
+          status: 'planned' as const,
+          blockedBy: ['__proto__'],
+          touches: [],
+          extra: {},
+          sections: {},
+          file: 'docs/tasks/T-901-a.md',
+        },
+      ],
+      features: [],
+    };
+    // The id-mismatch is the filename check doing its job on a hand-built
+    // model (`T-901-a.md` does not encode `__proto__`); the point here is
+    // the cycle resolving through a Map, not through Object.prototype.
+    expect(kinds(validateProject(hostile))).toEqual(['id-mismatch', 'dependency-cycle']);
+    expect(Object.prototype).not.toHaveProperty('polluted');
+  });
+
+  it('fires identically through the disk layer', () => {
+    const root = mkdtempSync(join(tmpdir(), 'nputer-cycle-'));
+    const tasks = join(root, 'docs', 'tasks');
+    mkdirSync(tasks, { recursive: true });
+    writeFileSync(join(root, 'docs', 'ROADMAP.md'), ROADMAP);
+    writeFileSync(join(tasks, 'T-901-a.md'), task('T-901', [['blocked_by', '[T-902]']]));
+    writeFileSync(join(tasks, 'T-902-b.md'), task('T-902', [['blocked_by', '[T-901]']]));
+    const result = parseProject(root);
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        kind: 'dependency-cycle',
+        ids: ['T-901', 'T-902'],
+        files: [join(tasks, 'T-901-a.md'), join(tasks, 'T-902-b.md')],
+      }),
+    ]);
+    rmSync(root, { recursive: true, force: true });
   });
 });
 
