@@ -6,8 +6,8 @@ milestone: 3
 priority: 5
 size: L
 status: planned
-blocked_by: [T-024, T-025, T-026]
-touches: [app-interview, app-shell]
+blocked_by: [T-024, T-025, T-026, T-037, T-041, T-048, T-049]
+touches: [app-interview, app-shell, tools/e2e/]
 builder:
 verifier:
 built_by:
@@ -42,9 +42,17 @@ beside it. This settles the question T-027's planning pass has been
 held on all day, and it means criterion 1's geometry stands as
 written rather than being re-reconciled against a full-width lens.
 
+FIRST FRAME RULED by @human 2026-08-17: the interview AUTO-STARTS on
+arrival — the user already clicked "Start an interview" to get here,
+and re-asking is the four-step problem T-049 fixed one screen over. An
+explicit "Start the interview" affordance stays visible so the
+auto-start is a convenience and never load-bearing.
+
 ## Acceptance criteria
 - WHEN genesis starts THE split view SHALL render 640px chat left +
-  the T-024 lens right (window label "nputer — new project"), drive
+  the T-024 lens right (the app's own header names the new project — the OS window title
+  is not set; that needs a window grant outside `core:default`, and
+  the design's chrome bar is mockup furniture), drive
   the interview through T-025's events one question at a time, and
   keep exactly one current question prominent with history quieter
   above (design treatment, tokens-only, both schemes).
@@ -64,11 +72,17 @@ written rather than being re-reconciled against a full-width lens.
 - IF a turn fails (typed runner failure) THEN the chat SHALL show a
   calm inline failure with a retry affordance and the interview
   SHALL remain resumable — no dead end, no lost banked docs; pinned
-  against the fake-CLI failure fixtures.
+  against fixtures transcribed from T-025's typed failure variants
+  (`app/src-tauri/src/agent/runner.rs`'s `TurnError`, named in the
+  fixture header) — the fake CLI is a Rust [[bin]] no webview test
+  can spawn; the mirror-without-a-comparison is T-041-s2's.
 - IF the CLI is missing at start THEN the screen SHALL route to the
-  hand-driven fallback state (T-029's surface; until T-029 lands, a
-  minimal copyable-kickoff-prompt card is acceptable and stated in
-  notes).
+  hand-driven fallback state (T-029's surface; until T-029 lands, a card
+  naming the typed `cliNotFound { probed }` fact, the project path
+  and the hand-driven route is acceptable and stated in notes. It
+  does NOT carry the assembled kickoff: `assemble_kickoff` is
+  Rust-only and no command returns it, so a copyable block needs a
+  fifth genesis command and belongs with T-029).
 - IF model output contains hostile content (script-shaped text, RTL
   overrides, 10k-char turns) THEN it renders as text nodes only —
   no injected elements; no-innerHTML grep gate across the pane;
@@ -78,22 +92,282 @@ written rather than being re-reconciled against a full-width lens.
 
 Verification: headless — vitest state-machine units against fake
 runner event scripts; jsdom DOM states (question/challenge/banked/
-failed/complete); served-bundle probe walking a full scripted
-interview over the fake CLI writing real files into a temp project
-(the whole loop: spawn → turn → agent writes → watcher → banked
-chip). @human, listed explicitly: the one-question-at-a-time feel and
+failed/complete); and a tools/e2e lane walking a full scripted
+interview against the real bundle and real CSS through T-041's
+`__nputerShellHarness` + the docs harness + this task's DEV-only
+interview harness (start → turn → docs land → banked chip →
+challenge → failure → retry). AMENDED 2026-08-17: the original third
+leg — a served-bundle probe driving the fake CLI to write real files —
+described something no browser can do (no Tauri, therefore no runner,
+no CLI, no watcher); the spawn → agent-writes → watcher half is
+already proven Rust-side by T-025's `writes-docs` scenario and its
+two-direction watcher test, and nothing re-proves it from a webview.
+@human, listed explicitly: the one-question-at-a-time feel and
 challenge treatment judgment, light + dark; the milestone closer's
 live run rides T-028.
 - WHEN any screen registers a WINDOW-LEVEL accelerator THE app SHALL
   route it through ONE screen-scoped accelerator table rather than a
   second `window` keydown listener: T-026's front-door Cmd-O/Cmd-N
-  move onto it unchanged (their unmount-scoping test stays green) and
-  this screen's own keys join it — two independent window listeners
+  are ALREADY on it (T-049 lifted them to
+  `app/src/components/shell/accelerators.ts`; its "exactly one keydown
+  path" tests stay green) and this screen's own keys join it — two independent window listeners
   racing over modifier chords is how key handling rots. Input-local
   keys (Enter send, Shift-Enter newline) are NOT accelerators and stay
   on the input. Out of scope, recorded rather than forgotten: the
   Cmd-vs-Ctrl label and a native Tauri menu, both of which stay with
   T-022 (T-026-s2).
+
+## Implementation plan (size-L planning pass — planner session claude-opus-5, 2026-08-17)
+
+Drafted read-only by the planning session; the architect reviews this section, applies it into `docs/tasks/T-027-interview-split-view.md`, and commits — nothing below is in effect until that commit. Repo facts were verified against the working tree at `main@fa84ebc` on 2026-08-17: `agent-store.ts` read in full, the design bundle's `interview` screen read line by line (lines 499–617), and every test this task must reconcile opened by hand. No model was called; nothing bound or contacted port 1420.
+
+This pass settles the nine questions the dispatch names plus everything a fresh executor would otherwise guess, including **five places where a criterion or the Verification line predates a reality this pass discovered** (§10's amendment block, T-012 §1 precedent). The @human composition ruling of 2026-08-17 — 640px chat left, T-024's lens right — is the fixed point; every geometry decision below serves it.
+
+**Frontmatter changes made by this pass.** `blocked_by` becomes `[T-024, T-025, T-026, T-037, T-041, T-048, T-049]`. All seven are `done`, so this changes no scheduling — it records that four of them are *technical* prerequisites this task must not rediscover: T-037 landed the mount plus two source-grep tests T-027 must reconcile; T-041 landed `__nputerShellHarness` and the genesis lane spec T-027 rewrites; T-048 landed the bounded frame and the `min-h-0` chain assertion T-027 breaks by construction; T-049 landed the accelerator module T-027 extends. `touches` becomes `[app-interview, app-shell, tools/e2e/]` — the third is the T-041 precedent and the guardrail only works if `touches` tells the truth. Verified against the registry: `app/src/genesis/**` is C-13 (`app-interview`); `app/src/components/shell/**`, `App.tsx`, `app/test/**` are C-05 and `app/src/styles/**` is C-11, both carrying `app-shell`. **`app/src/lib/agent-store.ts` is C-14 (`app-agent`) and is therefore not editable by this task — §7 makes that a fence, not an accident.**
+
+### 1. The chat state machine — the store already holds the turns; the UI holds the user's half
+
+**Decision: T-027 adds no reducer for planner turns.** `reduceGenesisEvent` (`app/src/lib/agent-store.ts:181`) already folds the `genesis-turn` channel into `GenesisState.turns: GenesisTurn[]`, and `GenesisTurn` is `{ turn, text, activity[], status: "running"|"completed"|"failed"|"cancelled", truncatedRelay, error }`. **Deltas are already coalesced into `turn.text` inside the store** (`text: t.text + event.text`, :209) and `completed` **replaces** the buffer with the canonical `result` text (:230). So there is no delta coalescing in the UI, no second buffer, and no second reduction implementation. The chat renders `turn.text` as the store gives it.
+
+**The store does NOT hold the user's answers** — `sendGenesisTurn(text)` passes `text` to `invoke` and records nothing. The transcript is therefore a join: *planner halves from the store* ⨝ *user halves the chat records itself*. The chat records `{ turn: N, text }` only when `genesis_send_turn` answers `accepted { turn: N }`; `busy` / `noSession` / `staleProject` / `error` record nothing and render as an inline outcome notice. Turn 1 has no user half by design (its user half is the kickoff, which lives in `.nputer/genesis/transcript.jsonl` and is not exposed by any command) — the chat renders no bubble for it. **Consequence, stated rather than discovered: the user's half does not survive a remount or an app restart.** `refreshGenesisStatus` rebuilds `phase`/`turn`/`nativeSessionId` but never `turns`, so a remount mid-interview shows an empty transcript over a live session. That is T-029's rehydration, named here so nobody builds half of it.
+
+**Ordering.** The transcript is rendered by ascending `turn`; for turn N the order is *user bubble (N≥2) → planner turn N → banked chip row for N* (§2). Everything above the last planner turn is history; **the last planner turn is the "current question"** and carries the 17px/500 treatment (§6) — unless it is a challenge, in which case the pushing-back block wins and carries the `one question at a time · N of 7` footer (§3).
+
+**Mid-stream vs completed.** `status === "running"` renders the text as it stands plus a 5px `bg-chart-4 motion-safe:animate-status-pulse` dot (the `GenesisPane.tsx:105` precedent, so reduced motion is the existing mechanism) and the LAST `activity` label as a quiet mono line. `status === "completed"` drops the dot and the label. `truncatedRelay` renders one honest mono line — the relay stopped at T-025's 1 MiB cap, the turn did not.
+
+**`seq` stale-drop × rendering, settled and pinned.** `reduceGenesisEvent` returns `prev` **by identity** on `event.seq <= prev.seq` (:185), and `setState` is identity-guarded (:311), so `useSyncExternalStore` skips the render. Nothing for the UI to do; the obligation is to *prove* it, because a chat that re-renders on every dropped duplicate is how a stream becomes a stutter. §8's unit replays a full event script twice and asserts the render count is unchanged by the replay.
+
+**`textDelta` after `completed` — the sharp edge, and the executor's first job.** There is no status guard in the reducer: a `textDelta` with a higher `seq` arriving after `completed` appends to the already-canonical text and leaves `status: "completed"`. The user would see the canonical answer with a duplicated tail. **Reachability is a Rust question this pass could not settle from TS alone: it depends on whether `runner.rs`'s relay loop flushes a pending coalesced delta before emitting `completed`.** The executor reads that ordering first, then does exactly one of: (a) unreachable by construction — record the emit ordering with the line reference and pin the store's behaviour as a documented invariant; (b) reachable — pin the observable behaviour in a vitest unit, render it as the store gives it (there is no pure-UI defence once the buffer is polluted), and **file a suggestion against C-14** with the reproduction. Under no circumstance does T-027 edit `agent-store.ts` to fix it (§7).
+
+**Where the state comes from, and how the lane reaches it.** A single hook, `useGenesisState(): GenesisState`, in `app/src/genesis/interview-source.ts`:
+
+- **Under Tauri:** `useSyncExternalStore(subscribeGenesis, getGenesisState)` — the real store, no duplication.
+- **Browser + DEV only** (`!isTauri && import.meta.env.DEV`, the byte-identical gate expression `watcher-store.ts:533-534` uses): local state folded with the **same exported `reduceGenesisEvent`**, fed by `window.__nputerInterviewHarness = { push(event), get(), sent }`.
+
+That is T-041's `commitPickOutcome` argument in a different shape: there is only one reduction spelling in the tree, so a parallel implementation would have to be written on purpose. `sent: string[]` records what the UI *asked* to send — the cheapest of T-049-s1's three remedies, scoped to this screen — because `sendGenesisTurn` returns early on `!isTauri` and a served bundle can otherwise prove a keystroke was claimed but never that it reached a command. **`startGenesisListener()` is never called today; T-027 calls it from `App.tsx` beside `startDocsWatcher` (`App.tsx:254-256`)** — an app-shell edit, not a C-14 edit.
+
+Rejected: **a second `listen("genesis-turn")` in the chat** (two subscribers on one channel, two folds, two stale-drop states — the store owns the channel). Rejected: **extending `__nputerShellHarness`** (conceptually cleaner — one gate — but it means editing `watcher-store.ts`, which **T-050 is editing right now**, and the harness would have to reach `agent-store`'s private `setState`; the cost of the second gate is named in §8 and paid down with the same three proofs T-041 used).
+
+**Starting the interview.** The chat auto-starts turn 1 when the mount-time `genesis_status` reports `phase: "idle"` and `turn === 0`. The user's action that reached this screen was literally "Start an interview"; re-asking on arrival is the four-step problem T-049 just fixed one screen over. Three guards, and **T-050's lesson applied preemptively rather than inherited**: the attempt latch is keyed by `projectDir` and set on a *typed outcome*, never before the await; a rejected `invoke` clears it; and **the screen always renders an explicit "Start the interview" affordance whenever `phase === "idle"` and `turns` is empty**, so the auto-start is a convenience and never load-bearing. Outcomes render inline: `cliNotFound` → §5's fallback card; `resumeAvailable` → a plain notice naming T-029's territory; `alreadyPlanned` / `noProject` / `unsupportedVersion` / `error` → an inline notice carrying the typed fields as text nodes. Rejected: **an explicit start card as the only path** (honest, but it makes the flagship screen's first frame a button, and the consent was already given by the button that got here) — recorded as the one-line revert if @human disagrees.
+
+### 2. Banked chips — file evidence only, and exactly what that costs
+
+**The signal is the `DocsModelState` prop the screen already receives, and nothing else.** Not `activity` events (those are tool-use markers off the model's own stream — model output, which criterion 3 bans), not `completed.text`, not the banking map's expectations. **`activity` labels may render as the mid-stream progress line and may never produce a chip; a test asserts an event script whose `activity` labels name docs paths produces zero chips.**
+
+A pure module, `app/src/genesis/interview-model.ts` (C-13, so the standing no-innerHTML gate covers it for free — §8):
+
+```ts
+export interface BankBaseline { projectDir: string; seq: number; contents: ReadonlyMap<string, string>; primed: boolean }
+export function bankBaseline(docs: DocsModelState): BankBaseline
+export function bankedSince(baseline: BankBaseline, docs: DocsModelState): readonly string[]
+```
+
+`bankedSince` returns the sorted paths present in `docs.effective` whose content differs from the baseline's, i.e. **added or changed**. Deletions are not chips — a deletion is not a banking. `docs.seq === 0` and `docs.seq <= baseline.seq` return empty and the baseline is unchanged, mirroring `observeDocsChange`'s identity contract (`genesis-derive.ts:206-208`) rather than inventing a second convention.
+
+**Timing and attribution, settled.** On every observation (a `docs` prop whose `seq` advanced), the chat computes `bankedSince`, unions the result into `chipsByTurn[activeTurn]`, and **resets the baseline to the observed state**. `activeTurn` is the highest turn number in `turns` at observation time — running or completed. Consequences, each deliberate:
+
+- **An artifact that lands after `completed` still belongs to that turn.** The watcher's debounce routinely pushes a snapshot past the `result` line; attributing to "the turn that was in flight" alone would silently drop the most common case.
+- **An artifact that changes twice between turns produces one chip.** The diff is a set; the files cannot prove two bankings, so the chat does not claim two.
+- **A write that lands after the next turn has started attributes to the new turn.** That is what the file evidence supports and the plan does not pretend otherwise.
+- **The chip asserts "this file changed on disk at this point in the conversation", not "this turn caused it."** §8 pins this with the sharpest possible test: a change made by a *human writing the file in a terminal* mid-interview produces an identical chip. That is not a bug — it is ADR-006's hand-driven mode rendering correctly, and it is the proof that no causation was inferred.
+
+**Priming — and the one case where a chip can lie.** The baseline is captured when `started { turn: 1 }` is first observed; before that there are no chips. On a docs-less folder (the ordinary path) the baseline is genuinely empty, so turn 1's stage-0 scaffold chips correctly. **On the T-026-s4 shape — genesis over a folder whose `docs/` already holds files but no plan — no snapshot exists at that moment** (`arm_genesis` delegates to `rearm` and nothing emits until the next fs event), so the baseline is empty and the pre-existing files chip falsely on turn 1.
+
+Ranked honestly: priming on the first `seq > 0` state instead would remove that lie and cost **every** interview its turn-1 scaffold chips — a common-path loss traded for a narrow-path lie. **Decision: prime at first-`started`, name the lie, and pin it as a tripwire** (`genesis-screen.spec.ts`'s T-041 precedent: a test that asserts today's wrong answer with a comment naming the task that fixes it, so it cannot silently keep passing). **T-042's criterion 1 removes the case by construction** — see the cover note.
+
+**Rendering.** One chip row per turn, matching the design (line 536): a 14px `bg-review-disc` disc carrying ✓ in `text-review-mark`, then `font-mono text-xs text-status-done-foreground` reading `banked → <path>[, <path>…]`, left-aligned in deliberate contrast to the right-aligned user bubble above it. **Paths, not the design's section names.** The design reads `banked → north star, person`; a section-level claim is not file evidence, and T-024 made exactly this call already (its deviation 2: the design shows `docs/north-star.md`, the pane shows real paths). Cap at 4 paths with a `+K more` tail (T-003's cap discipline); the cap is a UI cap and the underlying set is complete.
+
+**The stage strip follows the derived stage, not the chips.** The chat calls the already-exported `deriveGenesis(docs, EMPTY_CHANGE_LOG, 0)` and reads only `approxStage` and `stageStep` — both independent of the change log and of `nowMs`, so the call is deterministic and the chat adds no clock. Rejected: **exporting a `deriveStage` convenience from `genesis-derive.ts`** — that module carries a test which re-reads `method/interview/plan-interview.md` cell by cell, and touching it for a convenience export buys nothing. `BANKING_MAP` is not edited, read, or transcribed by anything T-027 adds.
+
+### 3. The challenge treatment — detected on the turn's current text, inert by construction
+
+**One pure function**, `challengeOf(text): { challenge: boolean; body: string }`, applied to the turn's *current* text — the streaming buffer while `status === "running"`, the canonical `completed.text` after. That single rule is both halves of the dispatch's question: mid-stream the treatment settles as soon as the first delta carries the prefix, and `completed.text` — T-025's canonical `result` line, the only text the driver contract blesses — is authoritative the moment it lands and overwrites the buffer, so a turn whose deltas were truncated or dropped still gets the treatment at completion, and a turn whose deltas merely *looked* like a challenge loses it.
+
+Match: the first non-whitespace run of the text, **case-insensitive** against the literal `pushing back:`. The method says "the literal prefix"; case-insensitivity is a deliberate widening with a stated reason (models capitalise sentence starts, and a rendering hint that fails on `Pushing back:` is a hint that fails). The prefix and the whitespace after it are **stripped from the rendered body** — the label carries the semantics, and `method/roles/planner.md` is explicit that the transcript is not the record, so nothing is lost.
+
+**Treatment**, values read from the design (lines 539–542): `border-l-2 border-chart-4` (`#b5651d`, exact token), `bg-interview-challenge` (§6's new token, `#fdf6ee`), `rounded-r-lg` — the design's asymmetric `0 10px 10px 0`, square on the ruled edge — `px-4 py-3.5`, `gap-2`; label `font-mono text-xs tracking-overline uppercase text-status-verifying-foreground` (`#84501c`, exact token) reading `planner · pushing back`; body `text-lg` (14.5px, exact) `text-interview-challenge-ink`. Full width — no bubble, no 78% clamp.
+
+**Inertness, proven not asserted.** The prefix is read by exactly one function and consumed by exactly one class list. §8's unit runs the *same* event script twice, once with the prefix and once without, and asserts the two resulting states are deep-equal **except** for the `challenge` boolean and the rendered label — the turn count, the banked chips, the stage strip, the input's enabled state and the footer's `N of 7` are byte-identical. That is what "the hint is never load-bearing" means as a test.
+
+### 4. Input, single-flight, and the screen-scoped accelerator table
+
+**The input is a plain `<textarea>` in `app/src/genesis/`, not a vendored primitive.** `app/src/components/ui/` contains exactly one file (`button.tsx`); T-027 is the app's first form control. Vendoring shadcn's Textarea would drag `data-[state=…]` arbitrary variants into the tree, which is precisely the class T-020-s5 measured as a P1 token-lint false positive on unmodified upstream code — a red lint before the first render. A ~10-line textarea with token classes costs less and lives beside the only screen that uses it. Values from the design (line 557): `border border-input rounded-lg px-3.5 py-3 text-base bg-card shadow-card`, `placeholder:text-muted-foreground`, placeholder verbatim `Answer, or say "skip" and I'll mark it an assumption…` (straight quotes, ASCII apostrophe, single-character U+2026). One row, auto-growing to a bounded max, then scrolling — the design draws a single line and gives no guidance, so the bound is stated rather than discovered.
+
+**⏎ / ⇧⏎ / skip.** `Enter` without `Shift` sends; `Shift+Enter` inserts a newline. **These are input-local handlers, never accelerators** — the criterion says so and `matchAccelerator` requires a modifier anyway. The skip convention is *typed by the user*: the app sends the literal text and the planner does the rest (`method/roles/planner.md` step 2). **No Skip button in v1** — the placeholder is the affordance the design draws, and a button that types a word for you is a feature nobody asked for. Empty or whitespace-only send is a no-op.
+
+**Single-flight, on the store's own flag, not a third one.** `isTurnInFlight(state)` = `state.sending || state.phase === "running"` (`agent-store.ts:289`) is the `picking`/`indexing` pattern's counterpart and already exists; `startGenesis`/`sendGenesisTurn` both guard on it internally. The textarea and the Bank-answer button take `disabled={inFlight}`, **and the ⏎ handler re-checks the flag before calling** — the `disabled` attribute is not the guard, because a keydown can be delivered between state updates. §8 drives this the way T-049's C3 did: a parked `invoke`, then a burst of ⏎ presses, asserting `invoke` was called exactly once and the state is unchanged by identity.
+
+**The accelerator table becomes screen-scoped, and the interview contributes exactly one row.** `App.tsx:268` becomes `useAccelerators(acceleratorsFor(screen, actions))` — a change of **argument**, not of mechanism, exactly as `accelerators.ts:28-36` already predicts. One listener, unchanged; T-049's three instruments (per-chord `preventDefault` count, live-path enumeration, `EmptyState`'s zero registrations) stay green by construction.
+
+- **`openFolder` / `startInterview` are in every screen's table, unchanged.** T-049's criterion 1 says the chords fire from any screen and its tests pin it. Narrowing ⌘N on the interview screen was considered — it opens a picker that can abandon a live interview — and **rejected**: T-025 already types that outcome (`staleProject`, with `genesis_cancel` still available), the picker's own single-flight bounds it, and silently removing an advertised chord on one screen is worse than a typed consequence.
+- **`cancelTurn`, on ⌘/Ctrl+`.`** — added to `AcceleratorId` and `matchAccelerator` in `accelerators.ts`, present only in the interview screen's row, calling `cancelGenesis()`. It earns its place because §1 auto-starts turn 1: a screen that spawns a process on arrival owes a way to stop it. ⌘. is the long-established macOS cancel chord, needs no `event.target` inspection (a typed period carries no modifier, so T-049's deliberate target-blindness survives), and is inert when no turn is in flight. Advertised in the hint slot while in flight (`planner is thinking… · ⌘. to stop`), which is a text swap in a slot the design already has rather than a new control.
+- **This USES and PINS T-049-s3's property (2)**, one of the two that suggestion names as "the ones that would bite: an accelerator absent from a screen's table must be left completely alone — no `preventDefault`, nothing swallowed. Today deleting that guard leaves 503/503 green. §8 adds the pin: ⌘. pressed on the board is claimed **zero** times and reaches no command, while ⌘. on the interview is claimed exactly once. Half of T-049-s3 discharges here as a side effect of doing this task correctly.
+- **`accelerators.test.tsx`'s 26-chord sweep moves** — the app now declares five chords, not four. **Changed, never loosened**: the assertion stays a whole-set equality and every pre-existing chord's verdict is byte-unchanged.
+- **Not touched, as T-026-s2 and T-049-s2 both leave them:** the ⌘-vs-Ctrl label and a native Tauri menu stay with T-022.
+
+### 5. Failure, retry, and the CLI-missing fallback
+
+**Typed failures render as a calm inline block in the transcript**, in the position of the turn that failed — never a modal, never a toast, never a screen replacement. The block carries the error's own words as text nodes, capped in the UI, plus one "Try again" button. Per variant (`TurnErrorPayload`, `agent-store.ts:29-36`): `spawnFailed { os }` · `startTimeout` · `stall` · `exitNonZero { code, stderrTail }` · `malformedStream { why }`. The `stderrTail` is already `sanitize_for_log`'d Rust-side (T-025's recorded silence) and is nonetheless rendered under the same ADR-009 discipline as every other model-adjacent string (§8's hostile-content probe covers it).
+
+**Retry re-issues the command that produced the failure, with the same argument, and renders whatever typed outcome comes back.** For turn N≥2 that is `sendGenesisTurn(storedText)`; for turn 1 it is `startGenesis()`, and if that answers `resumeAvailable` the screen surfaces it as a plain notice naming T-029 rather than auto-resuming. Simple, honest, and testable — no retry state machine, no backoff, no attempt counter.
+
+**Resumable, and nothing banked is lost.** T-025 leaves the registry `idle` after every failure and the runner never opens a path under `docs/`, so this is by construction: after a failed turn the input re-enables, the lens keeps rendering, and every chip already emitted stays. §8 pins exactly that (chips before the failure are still present after it) because "no lost banked docs" is the criterion's phrase and it deserves a positive assertion rather than the absence of a crash.
+
+**What T-029 owns, so the fence is clean:** auth classification (`AuthFailed { status, message }` — T-025's smoke proved the CLI reports 401 in-band on stdout with an empty stderr and `subtype: "success"`, which is why `exitNonZero` is what T-027 receives today and why T-027 renders it verbatim rather than guessing); `terminal_reason` / `permission_denials`; restart resume and transcript rehydration; the fresh-session fallback; and where "an interview was running on `<folder>`" is persisted (the `.nputer/` registry, T-026-s3's fold). **T-027 parses no error text for any reason.**
+
+**The CLI-missing card, and why criterion 6's parenthetical must change.** `cliNotFound { probed: string[] }` routes to a fallback card carrying: the typed fact (the binary names the app looked for — const data from the adapter table, never disk-sourced), the project path, and one sentence saying the method can be hand-driven in a terminal while this screen renders what lands. **It does NOT render the assembled kickoff prompt, because no command exposes it.** `assemble_kickoff` is a Rust `pub fn` reachable only from Rust; `GenesisStatusPayload` carries `phase / projectDir / turn / nativeSessionId / cliVersion / methodVersion / lastError / lastEventAtMs` and no kickoff. A copyable kickoff needs a fifth genesis command — new IPC, an `acl_pin.rs` roster line and a capabilities regen — which is squarely T-029's, since T-029 is the task whose criterion asks for it. Amendment text in §10.
+
+### 6. Geometry inside the bounded frame — the split, its two scroll regions, and where it degrades
+
+**The split is flush, not gapped.** The design (line 509) is `width:640px; flex:none; border-right:1px solid #ededed`; the right pane (line 565) is `flex:1; min-width:0; background:#fafafa` with no border and no radius. The 1px rule belongs to the chat side. There is no gap element and no card frame anywhere between them.
+
+**So `GenesisScreen.tsx` loses its interim chrome.** Today it renders an `interview` overline, an `<h2>` with the project dir, an explanatory paragraph, `px-10 py-9`, and a `rounded-lg border border-border bg-card shadow-card` box around the pane — every one of which T-026 built as an acknowledged placeholder ("the genesis screen has no design source in this task — T-027 fills it") and which T-037's @human item 1 flags as a sidebar tone inside a card the design never draws. T-027 replaces all of it:
+
+```
+<section data-testid="genesis-screen"  className="flex min-h-0 flex-1 flex-col">
+  <div data-testid="genesis-split"     className="flex min-h-0 min-w-0 flex-1">
+     <InterviewChat …/>                      ← w-160 shrink-0 border-r border-hairline  (split on)
+                                               mx-auto w-full max-w-160                 (split off)
+     <div data-testid="genesis-pane-slot" className="hidden min-h-0 min-w-0 flex-1 lg:flex lg:flex-col">
+        <GenesisPaneBoundary resetKey={docs.seq}><GenesisPane docs={docs} /></GenesisPaneBoundary>
+```
+
+`w-160` is 640px exactly (`--spacing-unit: 0.25rem`). **`GenesisScreen.tsx` stays IPC-free and timer-free** — `genesis-mount.test.tsx:141-157` forbids `invoke`, `listen(`, `setTimeout` and seven more strings *in this file's source text*, and that gate is kept, not weakened; every scrap of the conversation half lives in `app/src/genesis/`. The same test pins `<GenesisPane docs={docs} />` by regex (`:142-143`); that pin **must be re-derived** for the new nesting, changed never loosened.
+
+**Two scroll regions now.** The chat's transcript is `min-h-0 flex-1 overflow-y-auto` between a fixed header (the stage strip) and a fixed input row; the lens keeps its own `overflow-y-auto` region untouched. The chat sticks to the bottom **only when the user is already at the bottom** — a pure `shouldStickToBottom(scrollTop, scrollHeight, clientHeight, threshold)` helper unit-tested in vitest (jsdom has no layout, so the *policy* is pinned there) and the *behaviour* pinned in the lane with real layout and a trusted `page.mouse.wheel`, the T-048 precedent. The design draws no scroll region at all (it draws an 800px-tall pane); this is stated as an extension, not a reading.
+
+**The `min-h-0` chain test breaks, by construction, and is re-derived.** `app/test/shell-frame.test.tsx:258-263` pins the exact array `["div.flex", "genesis-pane", "genesis-pane-slot", "genesis-screen"]`. The new link needs `min-h-0` **and** a `data-testid` to get a stable name — hence `genesis-split` above, giving `["div.flex", "genesis-pane", "genesis-pane-slot", "genesis-split", "genesis-screen"]`. T-048's own flags say this test "will go red and should be re-derived, not deleted"; T-027 additionally **adds a second chain** for the chat's log region, so both scroll regions are protected rather than one.
+
+**Degradation, measured rather than guessed.** The genesis column has no horizontal padding of its own now, so at viewport W the split has W to divide. 640 chat + 1px rule leaves the lens W−641: at 1440 → 799 (the design's own number), at 1280 → 639, at 1024 → 383, at 800 → 159. **Decision: the split renders at Tailwind's existing `lg` breakpoint (1024px) and above; below it the lens is not rendered and the chat centres at `max-w-160`.** One existing default breakpoint, no new token, no config change, no new responsive vocabulary — which matters because T-027 is the app's first responsive call site and T-038-s1 is still open on whether breakpoints are tokens. At 1024 the lens has 383px: tight but complete (rows `truncate`, the backbone grid wraps). At 1280 it has 639px, the geometry the design draws.
+
+**The consequence, stated plainly and flagged to @human: at the app's own configured 800×600 window the lens does not render.** The interview is usable — the chat takes the frame, and T-048's measurements say the frame holds — but the half the human just ruled "earns its half" is invisible at the size the app opens. **T-027 deliberately does not change `tauri.conf.json`**: the window size governs every screen, it triggers the BOOT GATE and sits beside T-048-s5's missing `minHeight`, and a flagship screen's width requirement is a reason to raise the default window, not a licence for this task to do it in passing. Recorded as the cover note's third finding. Alternatives rejected with costs: **shrinking the chat below 640** (violates the ruling's geometry and gives the lens 300-odd px anyway); **stacking the halves vertically** (two ~250px scroll regions inside a 600px frame — worse than one good one); **`xl` (1280) as the threshold** (drops the lens at 1024×768, one of T-048's own three pinned viewports).
+
+**Ruling on T-048-s1, which named T-027 as the decider.** The **decision** is taken here: bounded frames everywhere, growing pages nowhere — two scroll models in one shell is a thing users feel and cannot name. The **work** is not taken here, and the conditional at `App.tsx:313` stays, because collapsing it requires a sticky rail, a board scroll region, and **T-048-s2's map-canvas fix first** (the canvas is `overflow-hidden` with no scroll region under it and clips silently the instant anything bounds it) — three changes across two screens T-027 does not touch, each owing its own before/after measurement at three viewports. That belongs in its own S/M card, and this pass recommends it be filed with T-048-s2 as its prerequisite.
+
+**Tokens.** Two new, added to `app/src/styles/tokens.css` and mapped in `app/src/index.css` (both C-11/C-05, both `app-shell`, both in `touches`): `--interview-challenge-bg` (light `#fdf6ee`, exact from the design) and `--interview-challenge-ink` (light `#3f2b1a`, exact). Every other value in the pane maps to an existing token — `#b5651d`→`--chart-4`, `#84501c`→`--status-verifying-fg`, `#1f7a58`→`--review-disc`, `#2f7256`→`--status-done-fg`, `#f5f5f5`→`--muted`, `#e2e2e2`→`--input`, `#171717`→`--foreground`, `#111`/`#fafafa`→`--primary`/`--primary-foreground` — all exact. **There is no dark interview screen in the design bundle** (the `sc-if` list carries `boardDark` and `mapDark` and no `interviewDark`), so the two dark values are derived by family the way `--status-verifying-bg/-fg` inverts (`#fce6d2`/`#84501c` → `#2c1a0c`/`#e8a468`): starting point `--interview-challenge-bg` dark `#1d1710`, `--interview-challenge-ink` dark `#e4d3c0`, refinable by the executor and **flagged to the @human dark pass as the one place the design cannot be followed, only extended.**
+
+**Disclosed deviations beyond nearest-step rounding**, each with its reason. (1) **Line heights**: the design's 1.55 / 1.6 / 1.5 against the token pairs' 1.43 / 1.45 / 1.41 — the largest systematic gap in the pane; the tokens are taken and the deviation is flagged, because chat prose wanting more air is a judgment @human should make once rather than a token this task should invent. (2) **10px overlines → `text-xs` (11px)** and **ls 0.1em → `tracking-overline` (0.12em)** — no 10px step and no second tracking step exist. (3) **The three-step recency ink ladder** (`#525252` → `#262626` → `#171717`) **collapses to two**: all history at `text-secondary-foreground`, the current question at `text-foreground` — which is exactly what criterion 1 asks for ("one current question prominent with history quieter above"); a positional gradient across a live transcript is a nuance the criterion does not ask for and the design's own instance is explainable as its pre/post-challenge split. (4) **The user bubble's `max-width:78%` becomes `max-w-114` (456px)** — 78% of the 640px pane's content box, so the two coincide at the fixed width and stay stable when the chat is alone. (5) **Hairlines `#ededed` → `border-hairline` (`#e5e5e5`)**, the identical call T-024 disclosed. (6) **Strip segment radius 2px → `rounded-full`** (1.5px effective on a 3px bar); 2px is below the radius scale and `rounded-[2px]` is a token-lint P1 violation. (7) **The stage readout**: the strip's 7 segments are interview stages 1–7, while `approxStage` is 0–8 — stage 0 renders all-future with `scaffold` and no "of 7", stage 8 renders all-done with `decomposition · 7 of 7`; the chat writes `stage N of 7` where T-024's pane writes `stage ~N`, so the two halves phrase the same approximation differently and that is flagged. (8) **The design's chat header, footer line, and input row are drawn only mid-interview** — the empty, failed, and cli-missing states have no design source and are built from the nearest precedent in the existing vocabulary, T-024's deviation 3 pattern.
+
+Every new utility must be confirmed to **emit** into `dist/assets/index-*.css` (T-024's protocol) — Tailwind's stock scales are disabled in `index.css`, so an unmapped token yields a silently dead class.
+
+### 7. Module layout, and what T-027 must not edit
+
+New, all under `app/src/genesis/**` (C-13, `app-interview`) — which also means the **standing recursive no-innerHTML gate** at `genesis-pane-dom.test.tsx:315-336` covers every one of them the moment they exist, satisfying the criterion's "no-innerHTML grep gate across the pane" by construction:
+
+    interview-model.ts      pure: bankBaseline / bankedSince / challengeOf /
+                            shouldStickToBottom / stage-strip mapping
+    interview-source.ts     useGenesisState(): the Tauri subscription, the
+                            DEV-only harness twin, the send recorder
+    InterviewChat.tsx       the pane: header + strip, transcript, input row
+    interview-turns.tsx     turn/chip/challenge/failure presentational pieces
+
+Modified: `app/src/components/shell/GenesisScreen.tsx` (the split; still IPC-free), `app/src/components/shell/accelerators.ts` (`cancelTurn`), `app/src/App.tsx` (`startGenesisListener()`, `acceleratorsFor(screen)`, the header's project line extended to genesis), `app/src/styles/tokens.css` + `app/src/index.css` (two tokens + their mapping), the reconciled tests, and `tools/e2e/tests/genesis-screen.spec.ts` + a new interview spec.
+
+**Not editable, and each for a stated reason:**
+
+- **`app/src/lib/agent-store.ts`** — C-14, `app-agent`, not in `touches`. It already exposes everything the chat needs; the one defect §1 names is filed, not fixed.
+- **`app/src/lib/watcher-store.ts`** — C-10 is `app-shell` so this is a *lane* fence rather than a slug fence: **T-050 is `status: building` on that exact file right now** and was serialized behind T-049 for precisely this reason. Nothing in this plan needs it.
+- **`app/src/genesis/GenesisPane.tsx` and `genesis-derive.ts`** — T-024's landed module. The chat calls the exported `deriveGenesis` and edits nothing. `BANKING_MAP` is normative-transcribed and coupled to `method/` by a test; leave it alone.
+- **`app/src-tauri/**`** — zero Rust. The ACL surface therefore cannot have moved, and that is proven by the empty diff rather than by a regen.
+- **`method/**`** — the pass reads the driver contract and changes nothing in it.
+
+**The screen's props do not change**: `GenesisScreen` still takes `{ projectDir, docs }`, and everything the chat needs beyond that it gets from the store. The T-026 seam holds without a widening.
+
+### 8. Test strategy — what is vitest, what is the lane, what is honestly @human
+
+**No real model call anywhere, by construction:** T-027 adds no Rust, and the only path from the webview to a CLI is `invoke`, which is mocked at the boundary in vitest and returns before `invoke` in the browser (`!isTauri`). Nothing in this task can spawn a process.
+
+**vitest units** (`app/test/interview-model.test.ts`, node env), against scripted `GenesisEvent[]` arrays: turn assembly and user/planner interleave; the identity/no-render property under a replayed script; `textDelta`-after-`completed` (§1's pinned answer, whichever it is); `challengeOf` across prefix present / absent / mid-word / leading whitespace / uppercase / split across deltas; the **inertness pin** (same script ± prefix → deep-equal but for one boolean); `bankedSince` over add / change / change-twice / delete / no-op; chip attribution across turn boundaries, including after-`completed` and after-next-`started`; the priming rule and the T-026-s4 tripwire; caps and dedupe; `shouldStickToBottom`.
+
+**vitest jsdom** (`app/test/interview-chat-dom.test.tsx`), the states the criteria name: question, challenge, banked, failed-with-retry, in-flight-disabled, cli-missing, empty/not-started. Plus, in the register this repo uses: **hostile content** — a 10k-char turn, `<script>`/`<img onerror>`, an RTL override and a NUL in turn text, in `stderrTail`, in `activity` labels and in chip paths, asserted by the *absence of the elements* plus the presence of the literal bytes as text, with zero `on*` attributes anywhere; **reduced motion** — the streaming dot carries `motion-safe:` and no bare `animate-status-pulse` exists (T-024's exact form); and **ADR-009 discipline** in every model-keyed collection (turns keyed by number, chips by path, both through null-prototype maps or arrays, never object literals keyed by model-supplied strings).
+
+**The lane** (`tools/e2e/`), against the real bundle and real CSS: `__nputerShellHarness` drives phase `genesis`, `__nputerDocsHarness` pushes T-024's `streak` fixture, and the new `__nputerInterviewHarness` pushes a scripted event stream. It walks a full interview — start, question, answer, challenge, banked chips, failure, retry — asserting phases through `expectPhase`, computed colours through `tokenColor` (the challenge rule and warm paper resolved from the served sheet, both schemes via a trusted Toggle-theme click), the two scroll regions with a trusted `page.mouse.wheel`, the split present at ≥1024 and absent below, and a real ⏎ producing a recorded send attempt with the typed text. **T-041's `genesis-screen.spec.ts` must be re-derived**, not deleted: it asserts the pane's strings inside `genesis-pane-slot` at the lane's 1280×720 (still true) and T-048's three-viewport sweep includes 800×600, **where the slot no longer renders** — that assertion changes and the comment says why.
+
+**The DEV harness's cost, paid the way T-041 paid it.** A second dev-gated window property is a second gate to audit, and T-041 argued for one. Three proofs: the gate *expression* is byte-identical and a test asserts both harnesses live behind the same `!isTauri && import.meta.env.DEV` shape; the Tauri path never defines it (asserted with a positive control first, so "absent" cannot pass for the boring reason that nothing ran); and a **bundle grep** over `dist/assets/*.js` proves `__nputerInterviewHarness` contributes zero bytes, with in-bundle controls in the same file and the staleness guard T-037 built. Both halves are **drilled**: flip `DEV` to `true` → the bundle test reds; drop `!isTauri` → the runtime test reds.
+
+**Reconciled, each declared loudly with its diff and its strength argued** (the T-049 precedent, and the STATE open question "who owns the property a retired test was reaching for" answered in advance — every dropped assertion names its new home): `genesis-mount.test.tsx` (the `<GenesisPane docs={docs} />` regex; the forbidden-strings list **stays**), `shell-frame.test.tsx` (both `min-h-0` chains), `accelerators.test.tsx` (five declared chords, whole-set equality), `genesis-entry.test.tsx` (steps 4–6 read the screen's new structure), `genesis-screen.spec.ts` (above). Nothing is deleted; nothing becomes `toContain`, `arrayContaining`, `toHaveLength` or `.skip`.
+
+**What the fake CLI can and cannot do here.** T-025's `fake_agent` is a Rust `[[bin]]` driven by `cargo` integration tests; **vitest cannot reach it and a served bundle has no Tauri, so no browser test can drive a real spawn.** T-027 consumes the failure fixtures as their *event shapes*, transcribed into a TS fixture module whose header names `app/src-tauri/src/agent/runner.rs`'s `TurnError` as the source of truth. That is T-041-s2's exact gap — a wire shape pinned in Rust, mirrored by hand in TS, compared nowhere — widened by one more mirror, and it is named rather than quietly widened. The honest closer (a cargo test that dumps real emitted event JSON into a committed fixture the TS suite reads) requires editing `app/src-tauri/tests/agent_runner.rs`, which is `app-agent`; recorded as the growth step and left with T-041-s2.
+
+**Honestly @human**, listed and never performed here: the one-question-at-a-time feel and whether the current question is big enough to be the only thing on the left; the challenge treatment's judgment, **light and dark** — the two new tokens have no dark source at all; the eight disclosed deviations, especially the line-height gap read at real size; the 640/lens balance at 1280 and 1440; **the 800×600 consequence** (no lens at the app's own window size) and whether the default window should move; and whether the header's "nputer + project path" reads as the design's "nputer — new project". The milestone closer's live run rides T-028; one real observed planner turn remains the biggest unobserved thing in the project (T-025-s2).
+
+### 9. Out-of-scope fence (do not build)
+
+- **No T-028**: no lens→board switch, no card-rain transition, no completion state, no elapsed timer, no CTA into the board, no rail restoration.
+- **No T-029**: no restart resume, no transcript rehydration, no auth classification (`exitNonZero` is rendered verbatim), no fresh-session fallback, no copyable kickoff block, no persistence of "an interview was running here".
+- **No `app/src-tauri/**`** — zero Rust, zero new commands, zero grants, `EXPECTED_GRANTS` untouched by construction. **No `setTitle`**: the OS window title stays as the manifest sets it; a title change needs a window grant outside `core:default` and the design's chrome bar is mockup furniture (it also draws the OS traffic lights).
+- **No `agent-store.ts`, no `watcher-store.ts`, no `GenesisPane.tsx`/`genesis-derive.ts`, no `method/**`** — §7's reasons.
+- **No markdown rendering.** Model text is plain text nodes; the criterion fences it and a test asserts a turn containing `**bold**`, a fenced block and a link renders those bytes literally.
+- **No global scroll-model change** (T-048-s1 ruled, not built — §6), no `tauri.conf.json`, no window-size change, no board/map/front-door changes.
+- **No new dependency** — no textarea library, no markdown library, no virtualiser, no animation library; `package.json` and both lockfiles zero-diff.
+- **No new component declaration** — everything lands in C-13's and C-05's existing territory, so the three-fixture registry rule does **not** fire and `lib/parser/test/smoke.test.ts` must not move.
+
+### 10. Criteria amendments, verification protocol, dispatch note, silences
+
+**Criteria amendments (exact text), T-012 §1 precedent — applied by the architect at this section's commit.**
+
+*Criterion 1's parenthetical* `(window label "nputer — new project")` becomes:
+
+> (the app's own header names the new project — the OS window title is
+> not set; that needs a window grant outside `core:default`, and the
+> design's chrome bar is mockup furniture)
+
+*Criterion 5's* `pinned against the fake-CLI failure fixtures` becomes:
+
+> pinned against fixtures transcribed from T-025's typed failure
+> variants (`app/src-tauri/src/agent/runner.rs`'s `TurnError`, named in
+> the fixture header) — the fake CLI is a Rust `[[bin]]` no webview
+> test can spawn; the mirror-without-a-comparison is T-041-s2's
+
+*Criterion 6's parenthetical* becomes:
+
+> (T-029's surface; until T-029 lands, a card naming the typed
+> `cliNotFound { probed }` fact, the project path, and the hand-driven
+> route is acceptable and stated in notes. It does NOT carry the
+> assembled kickoff: `assemble_kickoff` is Rust-only and no command
+> returns it, so a copyable block needs a fifth genesis command and
+> belongs with T-029)
+
+*The last criterion's* `T-026's front-door Cmd-O/Cmd-N move onto it unchanged (their unmount-scoping test stays green)` becomes, per T-049-s2:
+
+> T-026's front-door Cmd-O/Cmd-N are already on it (T-049 lifted them to
+> `app/src/components/shell/accelerators.ts`; its "exactly one keydown
+> path" tests stay green) and this screen's own keys join it
+
+*The Verification line's third leg* — `served-bundle probe walking a full scripted interview over the fake CLI writing real files into a temp project (the whole loop: spawn → turn → agent writes → watcher → banked chip)` — describes something no served bundle can do: a browser has no Tauri, hence no runner, no CLI and no watcher. Replace with:
+
+> tools/e2e lane walking a full scripted interview against the real
+> bundle and real CSS through T-041's `__nputerShellHarness` + the
+> docs harness + this task's DEV-only interview harness (start → turn
+> → docs land → banked chip → challenge → failure → retry). The
+> spawn → agent-writes → watcher half is already proven Rust-side by
+> T-025's `writes-docs` scenario and its two-direction watcher test;
+> nothing re-proves it from a webview.
+
+All other criteria stand unchanged.
+
+**Executor proof obligations:**
+
+1. Suites green at branch-point truth. Today's record: lib/parser **159/159**, app **507/507 (30 files, after `npm run build`)**, bare `cargo test` **217 + 3 ignored**, lane **36**, `lint:tokens` clean at 38 files. T-050 will move the app and lane counts; branch-point truth governs and deviations are noted (T-023 precedent).
+2. Every new test body execution-swept: `expect("PROBE").toBe("EXECUTED")` as the first statement of every new/changed body, run, reverted, sha256-verified against pre-probe copies.
+3. §1's `textDelta`-after-`completed` question answered from `runner.rs`'s emit ordering, with the line reference, and pinned either way; a suggestion filed if reachable.
+4. The banked-chip semantics drilled: the human-writes-the-file test (identical chip, no causation claimed); change-twice → one chip; delete → no chip; an `activity`-labelled path → zero chips; the T-026-s4 tripwire red-when-fixed with its comment naming T-042.
+5. The challenge inertness pin: same script ± prefix, deep-equal but for one boolean.
+6. Single-flight drilled with a parked `invoke`: an ⏎ burst yields exactly one `invoke` and state unchanged by identity; release, next send works.
+7. Accelerators: ⌘. claimed exactly once on the interview and **zero** times on the board/map/front door (T-049-s3 property 2, newly pinned); T-049's three instruments still green; the 26-chord sweep re-derived at five declared chords.
+8. The DEV gate proved both ways and drilled both ways (§8), including the zero-bytes bundle grep with in-bundle controls.
+9. Geometry measured, before → after, at 800×600 / 1024×768 / 1280×720 / 1440×900: page `scrollHeight` equals the viewport at every one; both scroll regions engage; the split present at ≥1024 and absent below; **the other screens byte-identical** (front door, no-plan card, board, map) — T-048's criterion-4 table re-run, since T-027 restructures the screen T-048 bounded.
+10. Tokens: every new utility confirmed present in the built stylesheet; `lint:tokens` clean; both new tokens carrying light **and** dark values.
+11. Every reconciled test declared with its diff and its strength argued; no assertion loosened; every dropped assertion names its new home.
+12. Fence audit: `git diff --stat` confined to §7's list; zero diff to `app/src-tauri/**`, `app/src/lib/**`, `app/src/genesis/GenesisPane.tsx`, `genesis-derive.ts`, `method/**`, `lib/parser/**`, `capabilities/**`, `tauri.conf.json`, `docs/architecture/graph.json`, every manifest and every lockfile.
+13. **BOOT GATE fires** (`app/src/**`): `NPUTER_BOOT_PORT=<free scratch port> npm run boot:check`, result recorded — or declared UNRUN **loudly** with the reason and the exit code if the dispatch fences 1420 (T-049's precedent; a skipped gate is news, never silence).
+14. Graph regen delta **measured in-branch and restored byte-exact**, not forecast. Expected shape: `app/src/genesis/` gains four files and `app/test/` gains two, all inside existing component territory; **C-13 gains an import edge into C-14** (`interview-source.ts` → `agent-store.ts`), which C-13's `depends_on: [C-10, C-11]` does not declare — so a new `["C-13","C-14",…]` relation row and possibly a D1 finding appear. Either declare `C-14` in C-13's `depends_on` in-branch (the honest option; it moves the relation table and the map edge count but **not** `lib/parser/test/smoke.test.ts`, which pins only the id array) or record the undeclared row deliberately. `tools/e2e/**` stays invisible (`.nputerignore` carries `tools/`).
+
+**Verifier's likely attack surface, flagged now:** (1) prove a chip cannot come from model output — feed `activity` labels and `completed.text` naming real paths and require zero chips; (2) attack the priming rule with a snapshot that arrives before `started`, and with a project switch mid-interview; (3) replay and re-order events (duplicate `seq`, `completed` before `textDelta`, a `started` for a turn that never existed) and require no crash and no phantom turn — `upsertTurn` silently creates a turn for an unseen number; (4) plant a second `useAccelerators` and confirm T-049's instruments still catch it, then confirm ⌘. is genuinely inert off-screen by deleting `useAccelerators`' absent-entry guard; (5) drive the split at 1023/1024/1025 px and at the app's own 800×600, and re-measure T-048's four other screens; (6) hostile content through *every* string channel including `stderrTail`, `activity`, `probed` and chip paths, asserting zero `on*` attributes and zero injected elements; (7) attack the DEV gate (`NODE_ENV=development npm run build` is the one lever T-041's verifier found — T-041-s4); (8) confirm zero Rust and therefore zero ACL movement without taking it on report; (9) re-derive the graph delta independently, especially the C-13→C-14 edge.
+
+**Dispatch note.** Builds in the **app-shell lane strictly after T-050 merges** — T-050 is `building` on `App.tsx` and `watcher-store.ts`, and T-027 edits `App.tsx` at the accelerator mount, the screen render site and the header's project line. The `app-interview` half is free. If T-042 is dispatched first (recommended — cover note), T-027 rebases on it and the §2 tripwire flips from "pins the lie" to "pins the fix". Executor reads, in order: this section top to bottom; the design bundle's `interview` screen lines 499–617 **directly**, not this summary of it; `method/roles/planner.md`'s driver contract and `method/interview/plan-interview.md`'s banking table; `agent-store.ts` in full; T-025's §§1–10 and its notes (the four commands, the caps, the 250 ms bound, the in-band auth defect); T-024's derivation and its deviation table; T-048's measurement tables and its flags; T-049's module header and T-049-s2/s3; T-041's harness and gate proofs; ADR-017 and ADR-009. Integrator at merge: graph regen (the rule fires), BOOT GATE (`app/src/**`), ARCHITECTURE's C-13 status cell and the Genesis interfaces line, ROADMAP's milestone-3 progress narrative (this one **does** add a user capability), STATE.
+
+**Genuine silences, left open deliberately.** The user's half of the transcript does not survive a remount (T-029's rehydration) · the T-026-s4 false-chip case, tripwired here and closed by T-042 · `textDelta`-after-`completed` (pinned, not fixed — C-14's) · no dark interview mockup exists, so two tokens are family-derived and unchecked · the design's line heights are looser than every token pair and the tokens win, pending @human · the three-step recency ink ladder collapsed to two · the lens is absent at the app's own 800×600 window, and the window size is not this task's to change · T-048-s1's global scroll unification decided but not built · T-041-s2's wire mirror widened by one and not closed · T-049-s4's `event.key` layout limitation inherited unchanged, now with a fifth chord riding it · render volume under a long streaming turn is unthrottled and unmeasured (the measurement to take: renders per turn under T-025's `happy` scenario) · **T-047-s3 has no caller here** — no command exposes `model`, and T-027 renders neither `model` nor `cliVersion` · the packaged wkwebview is still not what the lane drives (T-020's standing limit) · Windows remains the repo-wide standing silence.
 
 ## Implementation notes
 
