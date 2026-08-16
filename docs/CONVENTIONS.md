@@ -171,7 +171,10 @@
   app/src-tauri/Cargo.toml), run the boot check —
   `NPUTER_BOOT_PORT=<free scratch port> npm run boot:check` from
   tools/e2e/ — and RECORD the result (exit code, both `[nputer]` lines)
-  in the checkpoint. IF the check cannot run THEN say so LOUDLY in the
+  in the checkpoint. The four exit codes are legended in the tools/e2e
+  commands bullet under "Build & test" above: 0 booted · 1 the boot
+  failed · 2 the port is busy · 3 the override was refused.
+  IF the check cannot run THEN say so LOUDLY in the
   checkpoint, naming the reason and the exit code — a skipped gate is
   news, never silence. It exists because `cargo run` is the ONE command
   this pipeline never issues: T-040, a one-line manifest regression that

@@ -5,7 +5,7 @@ feature: F-02
 milestone: 3
 priority: 7
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [tools/e2e/, docs/CONVENTIONS.md]
 builder: claude-opus-5
