@@ -15,6 +15,28 @@
 # Every `uses:` is pinned by full commit SHA (tag noted beside it).
 name: ci
 
+# LEAST PRIVILEGE for the one credential this workflow carries (T-036 —
+# ADR-012's discipline applied to CI: the minimum is the default, and
+# every addition is argued in place). This job checks out, installs,
+# builds, runs three suites, lints, audits, runs the E2E lane and boots
+# under xvfb — it writes nothing back, opens no PR, uploads nothing, so
+# `contents: read` is the whole of what GITHUB_TOKEN needs. Declared
+# here because WITHOUT this block the token's scope is whatever the
+# repository's default workflow-permission setting says: a checkbox in a
+# web UI, not a fact in this repo (the machine-local invisible input
+# T-009 §3 exterminated from the graph).
+#
+# THE RULE, at the point of temptation: WHEN a future step genuinely
+# needs more, add the grant at THAT JOB's scope with its reason recorded
+# beside it — a `permissions:` key on the job that needs it, naming
+# `contents: read` plus the one extra scope — and NEVER by widening this
+# workflow default, which would hand the extra scope to every job and
+# every step in the file. tools/e2e/tests/workflow-parity.spec.ts fails
+# loudly on any widening, top-level or per-job: that failure is the
+# conversation, not an obstacle to route around.
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
