@@ -33,6 +33,15 @@ no markdown-to-HTML (fenced).
 Absorbs: T-026-s2 (triage 2026-08-16) — this is the second screen that
 wants keys, which is exactly the trigger that suggestion named.
 
+COMPOSITION RULED by @human 2026-08-17, after seeing T-024's lens at
+full width in a real genesis run (the `streak`/birding demo, five
+artifacts landing live): **build the split as designed** — 640px
+planner chat on the left, the T-024 lens on the right. The pane earns
+its half; the interview is a conversation with the plan assembling
+beside it. This settles the question T-027's planning pass has been
+held on all day, and it means criterion 1's geometry stands as
+written rather than being re-reconciled against a full-width lens.
+
 ## Acceptance criteria
 - WHEN genesis starts THE split view SHALL render 640px chat left +
   the T-024 lens right (window label "nputer — new project"), drive
