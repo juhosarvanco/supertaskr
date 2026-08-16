@@ -536,9 +536,111 @@ fn t021_real_invokes_dialog_fs_opener_denied_app_allowed_remote_denied() {
         "pick_genesis_folder",
         "start_genesis_here",
         "index_repo",
+        // T-025's agent runner: FOUR more app commands — three
+        // zero-argument, one taking the user's own typed answer as data.
+        // They join the roster rather than moving the grant set, for the
+        // same ADR-012 reason as T-026's pair: `std::process` is not a
+        // plugin, so there is nothing to grant. EXPECTED_GRANTS above is
+        // untouched by this task, which is the mechanical proof.
+        //
+        // What this loop proves, precisely (the T-026 verifier's
+        // correction, kept): the shipped authority denies these NAMES
+        // from a remote origin BEFORE dispatch. That is name-agnostic —
+        // a bogus name would pass too — and it is the real security
+        // property. Local registration is proven separately, below.
+        "genesis_start",
+        "genesis_send_turn",
+        "genesis_status",
+        "genesis_cancel",
         "plugin:event|listen",
         "plugin:dialog|open",
     ] {
+        let err = get_ipc_response(&webview, invoke_request(cmd, REMOTE_ORIGIN, InvokeBody::default()))
+            .expect_err(&format!("{cmd} must be DENIED from a remote origin"));
+        let msg = err.as_str().map(str::to_string).unwrap_or_else(|| err.to_string());
+        assert!(
+            msg.contains("not allowed"),
+            "{cmd} remote denial must be an ACL decision, got: {msg}"
+        );
+    }
+}
+
+/// T-025: the four genesis commands, REGISTERED AND INVOKED for real on
+/// the MockRuntime app carrying the shipped authority.
+///
+/// This is deliberately stronger than the remote-denial loop above, which
+/// is name-agnostic by construction. Here the commands are in the invoke
+/// handler and the local invokes reach their real handlers and answer
+/// their real typed payloads — which is what makes "app commands are
+/// un-gated locally and denied remotely" a demonstrated fact for THESE
+/// commands rather than an argument by analogy.
+///
+/// Headless and spawn-free by construction: `WatchState` holds no
+/// project, so `genesis_start` returns `noProject` before it resolves a
+/// binary or materializes anything, and `genesis_send_turn` returns
+/// `noSession`. No child process exists in this test.
+#[test]
+fn t025_genesis_commands_are_locally_invokable_and_remotely_denied() {
+    let mut context = mock_context(noop_assets());
+    *context.runtime_authority_mut() =
+        tauri::runtime_authority!(shipped_manifests(), resolve_shipped());
+
+    let (ctl, _ctl_rx) = mpsc::channel();
+    let watch = WatchState::new(None, Arc::new(AtomicU64::new(0)), ctl);
+    let agent = crate::agent::AgentState::new(
+        crate::agent::runner::RunnerConfig::default(),
+        |_event| {},
+    );
+
+    let app = mock_builder()
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![
+            crate::genesis_start,
+            crate::genesis_send_turn,
+            crate::genesis_status,
+            crate::genesis_cancel
+        ])
+        .manage(watch)
+        .manage(agent)
+        .build(context)
+        .expect("mock app builds with the shipped authority");
+    let webview = tauri::WebviewWindowBuilder::new(&app, "main", Default::default())
+        .build()
+        .expect("mock 'main' webview window");
+
+    let call = |cmd: &str, body: InvokeBody| {
+        get_ipc_response(&webview, invoke_request(cmd, local_origin(), body))
+            .unwrap_or_else(|err| panic!("{cmd} must be allowed from the local origin: {err:?}"))
+            .deserialize::<serde_json::Value>()
+            .expect("typed JSON payload")
+    };
+
+    // Zero-argument, and the typed outcome comes back through the real
+    // handler and the real managed state.
+    assert_eq!(call("genesis_cancel", InvokeBody::default()), json!({ "kind": "idle" }));
+    assert_eq!(call("genesis_start", InvokeBody::default()), json!({ "kind": "noProject" }));
+    // The one command that takes a datum takes exactly one: the user's
+    // own text. No path, no binary, no flag, no adapter selector.
+    assert_eq!(
+        call("genesis_send_turn", InvokeBody::Json(json!({ "text": "hello" }))),
+        json!({ "kind": "noSession" })
+    );
+    let status = call("genesis_status", InvokeBody::default());
+    assert_eq!(status["phase"], json!("idle"));
+    assert_eq!(status["turn"], json!(0));
+    assert_eq!(status["methodVersion"], json!(crate::agent::kit::METHOD_SNAPSHOT_VERSION));
+    // The adapter table is unreachable: no command returns it, and the
+    // status payload names no binary, argv, flag or permission mode.
+    let rendered = status.to_string();
+    for leak in ["claude", "acceptEdits", "allowedTools", "--", "Bash("] {
+        assert!(
+            !rendered.contains(leak),
+            "the status payload must not disclose the adapter table: {rendered}"
+        );
+    }
+
+    // And every one of them is denied from a remote origin.
+    for cmd in ["genesis_start", "genesis_send_turn", "genesis_status", "genesis_cancel"] {
         let err = get_ipc_response(&webview, invoke_request(cmd, REMOTE_ORIGIN, InvokeBody::default()))
             .expect_err(&format!("{cmd} must be DENIED from a remote origin"));
         let msg = err.as_str().map(str::to_string).unwrap_or_else(|| err.to_string());

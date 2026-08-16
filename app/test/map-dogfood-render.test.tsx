@@ -78,10 +78,11 @@ const node = (id: string): HTMLElement => {
 };
 
 describe("the nputer repo on its own map", () => {
-  it("renders all ten declared components in full mode, no unmapped bucket, no banner", () => {
-    // Ten since T-024 declared C-13 (genesis pane); see the reconciliation
-    // block in architecture-dogfood.test.ts for the enumerated delta.
-    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(10);
+  it("renders all eleven declared components in full mode, no unmapped bucket, no banner", () => {
+    // Ten since T-024 declared C-13 (genesis pane); ELEVEN since T-025
+    // declared C-14 (agent runner). See the reconciliation blocks in
+    // architecture-dogfood.test.ts for both enumerated deltas.
+    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(11);
     expect(container.querySelector('[data-component-id="unmapped"]')).toBeNull();
     expect(container.querySelector("[data-testid=map-degraded]")).toBeNull();
   });
@@ -140,10 +141,12 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 26-edge relation table", () => {
+  it("draws the full 27-edge relation table", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
-    // C-05→C-13 the merge regen surfaced.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(26);
+    // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
+    // declared edge (planned: no TS import can confirm a Rust-side
+    // dependency until T-010 extracts Rust).
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(27);
     expect(
       container.querySelectorAll('[data-testid=map-edge][data-relation="undeclared"]'),
     ).toHaveLength(5);
