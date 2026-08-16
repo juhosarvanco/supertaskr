@@ -68,6 +68,43 @@ ADR-014/015).
   root, so they raise no snapshots. What is NOT yet true: no UI calls
   any of it (T-027), and the loop has never run against a real model —
   it is proven against a fake CLI fixture only.
+- Resolving the agent CLI (disk → `execve`) — the boundary the Genesis
+  bullet above does not describe, and since T-047 the one with a gate
+  on it. Before any turn can spawn, `resolve_cli` decides WHICH
+  `claude` runs, and it reads that from a file OUTSIDE the project:
+  `agent-paths.json` in the app config dir — the app's only durable
+  state that is not under `.nputer/`, so the `.nputer/` list above is
+  not the whole disk footprint. It is read live at both doors
+  (`start_genesis` and `send_turn`), i.e. re-judged before EVERY turn
+  rather than trusted once. What T-047 changed is that its contents
+  are no longer believed: a cached path is validated — absolute, no
+  `.`/`..` component, file name == the adapter's binary, executable —
+  BEFORE `Command::new` and before the `--version` probe, and a
+  failure discards the entry, says so on stdout with the refused path
+  sanitized, then falls through to a fresh probe and to typed
+  `cliNotFound`; never a silent fallback to the poisoned value. The
+  cached login `PATH` is GONE rather than gated: the field no longer
+  exists on the struct, so a planted value still parses and is
+  structurally unreachable, and the child's PATH is re-probed per
+  resolve instead. That arm was chosen by measurement, not taste (a
+  login-shell probe is 4.8–7.7 ms against the 41–57 ms
+  `claude --version` the same resolve already paid), and it means a
+  turn is not one process: the turn's own child is still exactly one,
+  and the resolve ahead of it spawns a login shell and a version
+  probe. Note what that probe reads: the CHILD's environment is still
+  built rather than inherited (the `env_clear()` claim above is
+  unchanged and still true), but the RESOLVER reads the app's own
+  environment — `$SHELL` picks the program run with `-l -c`, and the
+  fallback arm reads `PATH` — so "nothing is read from the
+  environment" is true of `RunnerConfig` and false of the two
+  functions beside it (T-047-s4). TWO honest residuals, both filed and
+  both recorded in the validator's own header: the gate checks SHAPE
+  and never identity, so an absolute traversal-free file named
+  `claude` still passes (there is no `canonicalize`, so a symlink or a
+  swapped file is enough, and no race is needed — T-047-s1), and the
+  FRESHLY-PROBED path is exempt
+  from the gate the cached one must pass, which leaves two doors
+  holding one standard between them (T-047-s5).
 - Test surfaces (DEV, browser-only) — part of what the app exposes, so
   named here rather than left to be discovered in the source. Two
   harnesses hang off `window` in a browser DEV build:

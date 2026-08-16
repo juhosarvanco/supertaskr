@@ -1,199 +1,228 @@
 # State
 
-Updated: 2026-08-16 by integrator (T-041 merge), claude-opus-5 @fresh
+Updated: 2026-08-16 by integrator (T-047 merge), claude-opus-5 @fresh
 
 ## Just completed
-T-041 (shell harness — the served bundle can reach every front-door
-state, M, app-shell + tools/e2e) done and merged — built by
-`claude-opus-5 @fresh`, verified by `claude-opus-5 @fresh`,
-`review: same-model`, **APPROVED first pass**. It absorbs T-024-s1 and
-T-026-s7, and it is **the hard gate T-027, T-028 and T-029 were each
-writing cheques against**: all three name a served-bundle probe in
-their Verification lines, and until today none of them could have
-written one. The reason was structural, not lazy —
-`window.__nputerDocsHarness` exposed only `{ apply, getState }`, and
-`apply` is `applyDocsPayload`, which in a browser always lands on phase
-`open`. `noProject`, `noDocs`+probe, `rejectedPick` and `genesis` come
-only from `applyProjectStatus`/`reducePickOutcome`, both behind the
-Tauri branch. **Four of the five phases were simply unreachable from a
-served bundle.** They are all reachable now.
+T-047 (what the runner trusts from disk, M, app-agent) done and merged
+— built by `claude-opus-5 @fresh`, verified by `claude-opus-5 @fresh`,
+`review: same-model`, **APPROVED first pass**. It absorbs T-039-s1,
+T-039-s2 and T-039-s4, and it closes **four things the runner believed
+without checking** between a file on disk and `execve`. Every one was
+REPRODUCED against the unfixed code before it was fixed, by the builder
+and then independently by the verifier with its own instruments.
 
-**WHAT SHIPPED.** A DEV-only `window.__nputerShellHarness`
-(`applyProjectStatus` / `applyPickOutcome` / `getShell`) installed
-inside **exactly the same `!isTauri && import.meta.env.DEV` block** that
-already fences the docs harness — not a copy of the gate, the same
-gate, the same statement sequence, in `watcher-store.ts`. Plus:
+**(1) THE CACHED LOGIN `PATH` IS GONE FROM THE STRUCT, not validated.**
+`login_path` no longer exists as a field on `CacheEntry`
+(`runner.rs:634`), so serde makes a planted value **structurally
+unreachable rather than merely unused** — it still parses, and nothing
+can read it, and no later change can trust it by accident. The PATH is
+re-probed per resolve by `probe_login_path`, whose script is narrower
+than the resolution probe's on purpose (it asks only for the PATH: a
+compile-time constant, no `command -v`, no interpolation). **The arm was
+chosen by MEASUREMENT, not by taste**: a login-shell probe costs
+4.8–7.7 ms against the 41–57 ms `claude --version` the same resolve
+**already paid** — and the verifier measured the FREQUENCY rather than
+reading it, with a counting `$SHELL`: **exactly one spawn per turn** (1
+at `start_genesis`, 1 at `send_turn`), and, with the cache file deleted,
+still exactly one. Pre-fix the child's PATH was
+`/verifier-hostile/bin:/tmp/verifier-attacker-shims`; post-fix it is the
+live environment's, and **the planted value is still sitting in the
+user's file, unread** — refusing to read a value is not a licence to
+rewrite someone's file.
 
-- **`commitPickOutcome` EXTRACTED from `runPicker`** — `runPicker` minus
-  the `invoke`. The harness therefore drives SHIPPED code rather than a
-  parallel implementation, and a parallel implementation would now have
-  to be written on purpose, because the only spelling in the file is the
-  shared one. The verifier checked behaviour preservation line by line:
-  `const before = shell` is still read after `invoke` resolves,
-  `if (next !== before) {…}` became `if (next === before) return; …`
-  (the same branch inverted), the assignment → listener loop → echo
-  condition keep their order and their text, the call sits inside the
-  SAME `try` so a throw still lands in the same `catch` and still sets
-  `rejectedPick`, `finally` still clears `picking`, and
-  **`reducePickOutcome` still returns `prev` BY IDENTITY** for
-  `cancelled`/`busy` — `applyPickOutcome({kind:"cancelled"})` leaves
-  `getShellState()` `toBe(before)` and notifies nobody.
-- **Three lane specs against the real bundle and the real sheet** —
-  `front-door.spec.ts` (3), `no-plan-card.spec.ts` (4),
-  `genesis-screen.spec.ts` (3). Colours are resolved by a probe element
-  from the served stylesheet, never hard-coded hex; the ○/✓ marks are
-  derived from the probe the spec itself sent, row by row.
-- **THE PROBE T-024 COULD NOT WRITE.** The genesis spec drives the
-  bundle to phase `genesis` and asserts T-024's PANE strings **inside
-  `genesis-pane-slot`** — `genesis-file-count` = `docs/ · 9 files
-  written`, the north-star title byte-for-byte, three `genesis-chip`s by
-  `data-kind`, five `genesis-feature` cells, nine `genesis-artifact`
-  rows in banking-map order, comment-aware assumption badges
-  (`4 [?]`/`2 [?]`), `stage ~8 · decomposition`, `data-stage="8"` —
-  never the screen's own strings. The fixture is **T-024's real tree
-  read from disk** (`app/test/fixtures/genesis/streak/docs`), and the
-  verifier proved that rather than reading it: perturbing ONE byte of
-  the real NORTH_STAR.md (`terminal.` → `TERMINAL.`) reds the pane
-  assertion with the perturbed string visible in the rendered text, and
-  adding a tenth file throws the fixture's own loud "reconcile rather
-  than loosen".
-- **`getShell` reports the PHASE, and the phase genuinely
-  discriminates.** `data-screen="empty"` is shared by THREE different
-  shell states; the verifier built the confusable cases and required
-  red — `noDocs`→`noProject` and `open`+rejectedPick→`noDocs`, both with
-  byte-identical `data-screen`, both RED. A selector-only probe cannot
-  tell a rejected pick over an open project from a launch that resolved
-  nothing; `getShell` can.
+**(2) THE CACHED BINARY PATH IS VALIDATED BEFORE `Command::new` AND
+BEFORE `probe_version`**, so a poisoned `agent-paths.json` **no longer
+executes its binary at resolve time** — which it did, before any turn,
+on both doors. `validate_cached_binary` (`runner.rs:293`) requires
+absolute, no `.`/`..` component, file name == `adapter.binary`, and
+keeps the executable-file check as the last step. On failure: a
+sanitized loud line, the entry discarded from the file, the reason
+pushed into `probed`, then a fresh probe, then typed `cliNotFound` —
+never a silent fallback to the poisoned value. **The verifier
+reproduced this with its own tattler** (a `/bin/sh` script with the
+tattle path baked into its TEXT, so it survives `env_clear()` and does
+not depend on the fake agent's env var), its own planted JSON, at both
+doors: pre-fix `TATTLE EXISTS AFTER RESOLVE: true`; post-fix **`false`**,
+a typed `NotFound` whose `probed` NAMES the refused entry and never
+relays the poisoned bytes, and the cache file left as
+`{ "entries": {} }`. It then confirmed the file is **re-judged before
+EVERY turn**: turn 1 through a LEGITIMATE entry (the discriminating
+half), poisoned mid-session, turn 2 → `CliNotFound`, no second child, no
+turn-2 dump, single-flight latch released. `resolve_cli` has exactly two
+production call sites and no spawn path bypasses it. The WRITE side is
+gated too, and discriminates: a probe result carrying a `.` component
+was USED for its own resolve and NOT written, while a clean one was.
 
-**THE TWO RESULTS THAT MAKE THIS TRUSTWORTHY, and they are measurements
-rather than greps.**
+**(3) `check_no_data_borne_flag` NOW INSPECTS THE WHOLE ASSEMBLED ARGV.**
+The pre-fix `zip` skipped any tail longer than the template — a template
+of 2 with a flag at index 2 returned `Ok(())`. It now walks `assembled`
+by index against `template.get(at)`, and a length disagreement in either
+direction is itself a refusal (`ArgvLengthMismatch`). **The length rule
+now has ONE home**: the pin's own `assert_eq!(template.len(),
+assembled.len())` was replaced by an assertion **through the production
+function**, so the two copies that disagreed cannot drift apart again.
+Both halves were drilled rather than asserted: deleting the production
+length block reds exactly the dedicated pin and nothing else, and making
+`argv` push one extra element reds **seven** lib tests including the
+derived pin (`the spawn template assembles: FlagInValuePosition { at:
+17, arg: "--settings=/tmp/evil.json", shape: FlagEqualsValue }`).
 
-- **THE HARNESS COSTS 17 BYTES IN PRODUCTION — and the 17 bytes are the
-  refactor, not the harness.** Not "we grepped and found nothing": the
-  verifier built THREE trees. Pristine main → `index-DvrlAOQE.js`,
-  **442,052 B**. Main plus ONLY the `runPicker`/`commitPickOutcome`
-  split, with the harness, the type, the snapshot function and the test
-  file all absent → `index-vTAlOtQD.js`, **442,069 B**, sha256
-  `3132ec98549553481f9422b8e0f999621b80406850732d8dfa64ba0d9c6d63fb`.
-  T-041's HEAD → **the same name, the same 442,069 bytes, the same
-  sha256.** So the harness contributes ZERO bytes, and the object
-  provably never CONSTRUCTS — proven by grepping for `failureCount`, a
-  field that exists only inside `shellHarnessSnapshot` (0 hits), against
-  seven in-bundle controls that all hit (`"no project open —"`,
-  `model-updated`, `"No plan in"`, `"the project, so far"`,
-  `docs-changed`, `docs_snapshot`, `genesis-pane-slot`). The controls
-  are the point: the store and the pane ARE in that bundle. **The test
-  surface is not "small in the bundle"; it is not in the bundle.**
-  *Re-derived at this merge*: `npm run build` on merged main emits
-  `index-vTAlOtQD.js`, **442,069 bytes**, sha256 `3132ec98…` — the same
-  asset, third independent measurement.
-- **ONE REAL GATE-DEFEAT PATH EXISTS AND IS FILED.**
-  `npx vite build --mode development` does **NOT** flip DEV — the asset
-  comes out sha-identical to the production one, because Vite's CLI
-  forces `NODE_ENV=production` for builds. But
-  **`NODE_ENV=development npm run build` DOES** flip it (696,302 B, all
-  four harness markers present) — and `tauri.conf.json`'s
-  `beforeBuildCommand` is `npm run build`, so an inherited env var could
-  package the harness. Two things keep it from being a hole: the runtime
-  `__TAURI_INTERNALS__` half still fences it (the verifier read the
-  emitted code — the install is still inside `if(NS=!0,!Wo){…}`), and
-  the branch's own bundle test reds on the next `npm test`. Filed as
-  **T-041-s4** with the table.
+**(4) THE `model` STRING FROM THE INIT LINE IS BOUNDED AND VALIDATED**
+like the session id — 128 bytes, printable ASCII with no space, typed
+named rejections, never coerced. The class is deliberately WIDER than
+the id's and the reason is in the header beside it: an id becomes an
+ARGV ELEMENT and a model never does, it is a stored, rendered fact, so
+refusing `:`/`@`/`/` would break real Bedrock, Vertex and router
+spellings for no security gain. A refused model **does not fail its
+turn** (a refused id must, because a turn whose id was refused cannot be
+resumed; a refused model costs only the recorded NAME of what ran) — the
+key is **ABSENT** from `sessions.json` rather than present-and-shortened,
+so nothing was coerced. Pre-fix a hostile init line wrote a 200,290-byte
+registry; post-fix 271 B, no `model` key, and no fragment of the hostile
+value survives anywhere in the bytes. The discriminating half
+round-trips, including a 101-byte Bedrock ARN the id's class would have
+refused.
 
-**THE @human ITEM THIS TASK MEASURED, AND WHERE IT NOW STANDS.** The
-genesis screen overflows at **every ordinary window size**, not just
-short ones: at **800×600 — the app's OWN configured window — by 572px**;
-1024×768 by 373; 1280×720 by 390; 1920×1080 **still by 30**. It stops
-overflowing only at a 1110px viewport, and the pane's own scroll region
-measures **796/796 at every height**, i.e. it never engages at ANY size,
-because the column is content-sized rather than bounded. The verifier
-also **FALSIFIED the fix that was filed with the measurement**: flipping
-the two `min-h-screen` to `h-screen` alone leaves the page scrolling
-1110 against 720. The missing link is **`min-h-0` on
-GenesisScreen.tsx:37**; with all three edits the page stops scrolling
-(720/720) and the pane's region engages (796/406). That correction is
-**T-048**, human-approved mid-review "because the screen is unusable at
-the size the app actually opens", and BUILDING now. **The composition
-question — full-width vs the right half of a split view — is untouched
-by all of this. It remains T-027's and it remains @human.**
+**THE VERIFICATION, RECORDED HONESTLY — including what SURVIVED.**
 
-**A COORDINATION DEBT, and this merge SHRANK it.** T-041's lane spec
-(`tools/e2e/tests/genesis-screen.spec.ts`, the block at ~196-228)
-currently **PINS the overflow as a tripwire**, asserting the broken
-numbers on purpose: `pageScroll > viewport` and `scrollHeight ===
-clientHeight`, with a comment that says outright it is "a tripwire on
-today's truth, not an endorsement of it". T-048's **criterion 5** owes
-the replacement — assert the FIXED behaviour and rewrite the comment to
-name T-048 rather than the open question. **A tripwire silently passing
-on the old numbers is the one outcome nobody wants.** The good news:
-T-041 merged FIRST, so that spec is **on main now**, and T-048's builder
-can edit it directly in its own branch. The "drafted-for-integrator
-hunk" workaround that was expected when T-048 was dispatched (the file
-did not exist at its branch point) **is no longer needed** — but the
-obligation is unchanged and it must not be forgotten.
+- **The `--help` table audit found ZERO MISSES IN EITHER DIRECTION.**
+  `claude 2.1.226`'s `--help` was read and parsed **first-hand by the
+  verifier** — **73 option tokens, 15 subcommand spellings** — and
+  diffed against `KNOWN_CLI_FLAGS`/`KNOWN_CLI_SUBCOMMANDS`. No miss, in
+  either direction. The only asymmetry is two EXTRA rows
+  (`--append-system-prompt-file`, `--system-prompt-file`) — real flags
+  named in prose but absent from the Options list — so the table is a
+  superset, i.e. stricter, i.e. harmless.
+- **REFUSED** (eighteen path shapes and twelve argv shapes attacked):
+  `..`, `.`, relative, `~/…`, `$HOME/…`, empty, a DIRECTORY named
+  `claude`, a 0644 file, a trailing slash, a case-folded `CLAUDE`
+  (byte-exact name — stricter than this case-insensitive filesystem), a
+  NUL inside the path and a NUL in the name, an ANSI escape in the name;
+  a lone `-` and a lone `--` (both `LeadingDash`), a value equal to the
+  template's literal at a DIFFERENT index (per-index exemption, not set
+  membership), and **reordered equal-length argv** (refused at index 0).
+  Log forging refused too: a planted path carrying `\u{1b}[2K` and two
+  newlines spelling a fake `[nputer] agent:` record printed as literal
+  escapes on one physical line, `cat -v` confirming no raw ESC byte.
+- **SURVIVED, all four inside the residual the function header already
+  records**: a **symlink named `claude`** pointing elsewhere (the gate
+  does not `canonicalize`), a real `claude` inside a directory whose
+  NAME carries a newline, `//double//slash`, and a **setuid** binary
+  (unexamined, and worth nothing to an attacker who already owns the
+  config dir). The verifier's ruling on the shape of that residual is
+  the useful part: **TOCTOU adds nothing, because the gate never checks
+  identity** — an attacker with write access to the referenced directory
+  does not need to win a race. Demonstrated directly by leaving the path
+  alone and swapping the FILE, after which the binary ran the full
+  resume argv.
+- **A calibration on the builder's prose, not a criterion failure.** In
+  today's template the substituted value sits at index 18, immediately
+  after `--resume` at 17, and `-r, --resume [value]` binds the next
+  non-dash token as its VALUE — so **a bare `doctor` would be consumed
+  as a resume value, not dispatched as a subcommand**. "`claude doctor`
+  is a different program" is true of the CLI and NOT true of today's
+  argv. The subcommand class is therefore a **backstop for a future
+  substituted slot**, which is what its own doc comment says, and
+  **criterion 6's stated minimum (known flag names, `--flag=value`) is
+  met independently**. The cost side is real and measured: a CLI that
+  ever issued a session id spelled `doctor` would become unresumable.
 
-**THE ENCODING DEBT IS CLOSED, and it is worth saying why it arose.**
-T-048 was dispatched (`0378cb9`) carrying `Absorbs: T-041-s1,
-T-041-s3` while both suggestion files were still on the unmerged
-`t041-shell-harness` branch, so the absorbing commit could not delete
-them — the ratified rule (method/tasks/TASK-FORMAT.md v0.1.4, T-016) is
-"Absorbs: line PLUS the suggestion file removed in the same commit", and
-the second half was undeliverable at the time. **This checkpoint deletes
-both** (`docs/tasks/T-041-s1-genesis-column-is-unbounded.md`,
-`docs/tasks/T-041-s3-h-screen-alone-does-not-bound-the-column.md`), so
-the board no longer shows a promoted suggestion as open. **The general
-shape, for whoever writes the rule: when a triage absorbs a suggestion
-that lives on an unmerged branch, the deletion falls to that branch's
-integrator, and nothing in the encoding says so.** T-041-s2 and
-T-041-s4 stay — nothing absorbs them.
-*Note the three surviving references to `T-041-s1` in
-`genesis-screen.spec.ts`'s tripwire comment were deliberately left
-alone.* They are not dangling: an absorbed id lives on inside the
-absorbing task, which is exactly what `Absorbs:` means. And that block
-is T-048's criterion-5 territory — an integrator rewriting a spec's
-assertions mid-flight, for a task already dispatched to rewrite them,
-would be the wrong hand on the pen.
+**THE FINDINGS, and the new one is the sharpest.**
 
-**T-041-s2, carried forward because the harness raises its stakes.**
-The picker/status wire shape is **pinned in Rust**
-(`genesis_and_no_docs_wire_shapes_are_pinned`, docs_watch.rs:2641,
-asserting the serialized JSON literally) and **mirrored by hand in TS**,
-with **nothing comparing the two**. tools/e2e now mirrors the mirror:
-three specs assert shell coverage against payloads a TS file invented.
-T-041 neither creates nor widens the gap — it adds no IPC and changes no
-wire shape — but it is worth closing **before** T-027/T-028/T-029 write
-more specs on that surface.
+- **T-047-s5 (NEW, verifier) — the FRESHLY-PROBED path skips the gate
+  the cached one must pass.** `login_shell_probe` falls back to
+  `which_on_path`, which reads the APP's inherited `PATH` and does
+  `dir.join(binary)` — so a relative PATH entry yields a relative binary
+  path, **and it is executed**. Reproduced: `resolve_cli -> Ok(path:
+  "relbin/claude")`, tattle present, **while `validate_cached_binary`
+  calls that same string `NotAbsolute`** and the write-side gate
+  declines to cache it. **Two doors, one standard, and only one door is
+  guarded** — and the tell is that the code already knows the value is
+  not one it would trust from a file, and runs it anyway. The recorded
+  justification for the exemption ("it came from the user's own login
+  shell in this process") is true of one probe arm and **false of the
+  other**. Remedy 1 (apply the same validator to the probe result) is
+  ~5 lines in `runner.rs`.
+- **T-047-s4 — an arbitrary `$SHELL` script IS executed with `-l -c`.**
+  Reproduced directly. Reachability is **equivalent-privilege** and the
+  verifier ruled it correctly NOT a gate: `launchctl setenv` in the
+  user's own domain reaches subsequently-launched GUI apps with no
+  admin, but the precondition already buys `~/.zshrc` — the very file
+  the login shell is about to source. **What is NOT optional is its
+  option 3**: `RunnerConfig`'s doc comment "a hostile env var cannot
+  redirect the production spawn" is now **demonstrably FALSE**, and a
+  false claim in the record is a defect by this project's own standard.
+  T-047's chosen arm also makes this spawn happen **every turn** instead
+  of once per install.
+- **T-047-s1 — the binary cache now buys almost nothing.** Measured, not
+  argued: with or without the file, **exactly one login shell runs per
+  turn**, so the cache saves **ZERO** shell spawns. Its stated
+  justification ("so the login-shell probe runs once per install rather
+  than once per turn") is gone, and the probe already returns the binary
+  path and the PATH in one spawn. Retiring the file deletes the whole
+  file→exec class rather than narrowing it. The one input it lacks: a
+  heavy `~/.zshrc` (nvm/rbenv/conda) could make the spawn cost real — in
+  which case the right answer is a process-lifetime memo, never a file.
+- **T-047-s2** (the flag/subcommand table is a version snapshot;
+  subcommands are the one-sided exposure since the leading-dash arm
+  covers unknown flags), **T-047-s3** (the model is validated on the way
+  IN but has no READ boundary, unlike `native_session_id`'s
+  `resume_id()` — its home is T-027, the first task that renders it),
+  and **T-047-s6** as filed below.
+
+**THE @human ITEM, CARRIED FORWARD EXACTLY.** During verification a
+scratch probe set `probe_login_shell: true` with no binary override and
+no cache entry. The controlled `$SHELL` answered the PATH question and
+**failed its `command -v claude` half**, so `login_shell_probe` fell
+through to `which_on_path`, which found **the human's REAL `claude`** and
+spawned it with the genesis planner prompt. It answered `API Error: 401
+OAuth access token has been revoked` and exited — **every assistant
+record in the resulting file reads `"model":"<synthetic>"` with ZERO
+tokens, so no model ran.** The verifier reported it rather than hiding
+it, and **left the artifact in place rather than deleting the human's
+data**:
+
+    ~/.claude/projects/-private-var-folders-8h-bknxwr1x63x8w2c4t7nk1p2c0000gp-T-t047va-count-97806-1786893110341-project/
+      4873202c-1d76-4842-8110-9cd07ab4e936.jsonl   (17,128 bytes)
+
+Confirmed still present at this merge, one file, unchanged. **The human
+decides whether to delete it.** That incident is exactly what **T-047-s6**
+is filed about: `tests/agent_runner.rs`'s header says "no test can
+resolve the user's real CLI even by accident", and that is
+**discipline, not construction** — the property lives in a field every
+test must remember to set, while `RunnerConfig::default()` correctly
+ships `probe_login_shell: true` and `..RunnerConfig::default()` is the
+idiom the whole suite uses. Its remedy 1 (a `NPUTER_NO_REAL_CLI=1` guard
+`resolve_cli` honours, set once for the suite) turns "every test
+remembers" into "one place decides". **Worth doing before F-04**, which
+adds more spawn sites and more test files that will each have to
+remember.
 
 **SUITES ON MERGED MAIN**, all four re-derived here first-hand, fresh
 installs, ADR-011 order:
 - lib/parser `npm ci` + `npm test` **159/159 (10 files)**, `npx tsc
-  --noEmit` clean, `npm run build` clean. **Re-run after the docs edits
-  and after the graph regen — still 159/159**, which is the positive
-  proof that `lib/parser/test/smoke.test.ts` did NOT move (see the regen
-  section).
+  --noEmit` clean, `npm run build` clean.
 - app `npm install`, `npx tsc --noEmit` clean, `npm run build` exit 0
   (**252 modules**, `index-vTAlOtQD.js` **442.07 kB** /
-  `index-BheOMAjN.css` 41.24 kB), `npm test` **491/491 (28 files)** =
-  483 + the 8 new — exactly the forecast. Re-run after the fixture
-  reconciliation: **491/491 again**.
-- app/src-tauri bare `cargo test` **208 passed + 3 ignored, 0 failed**,
-  exit 0, summed across **11 test binaries** (100 / 0 / 0 / 28+1 / 68 /
-  3 / 7 / 0+1 / 2+1 / 0 / 0) — unmoved, as it must be for a branch with
-  zero Rust. **NOT piped through `tail`** (the standing trap: T-046's
-  verifier fell into it and T-020's notes record it). The unnamed
-  `agent_runner` flake did not appear.
-- tools/e2e `npm ci` + `npx playwright test` **33/33 in 8.0s**,
-  headless, one worker, retries 0, no skips. **Derived rather than
-  trusted**: 23 at the branch point after T-046, plus exactly 10 new,
-  counted off the run's own listing (front-door 3, genesis-screen 3,
-  no-plan-card 4). `npm run typecheck` clean · `npm run lint:tokens`
-  **clean, 37 files** · `--selftest` **43 samples green**.
+  `index-BheOMAjN.css` 41.24 kB — **byte-identical to the asset T-041
+  shipped**, which is the correct outcome for a branch whose entire
+  payload is Rust), `npm test` **491/491 (28 files)** — unmoved, as it
+  must be.
+- app/src-tauri bare `cargo test` **217 passed + 3 ignored, 0 failed**,
+  exit 0, **zero warnings**, summed across **11 test binaries** (105 / 0
+  / 0 / 32+1 / 68 / 3 / 7 / 0+1 / 2+1 / 0 / 0) — **+9 over T-041's 208**,
+  exactly the nine new tests. **THREE consecutive runs, identical
+  per-binary, not just identical in total.** **NOT piped through `tail`**
+  (the standing trap: T-046's verifier fell into it, T-020's notes record
+  it). The unnamed `agent_runner` flake did not appear in any run.
+- tools/e2e `npm ci` + `npx playwright test` **33/33 in 7.3s**,
+  headless, one worker, retries 0, no skips — unmoved from T-041.
+  `npm run typecheck` clean · `npm run lint:tokens` **clean, 37 files** ·
+  `--selftest` **43 samples green**.
 
-**THE BOOT GATE FIRED, AND THIS IS THE FIRST MERGE IT GOVERNS.** T-046
-landed the CONVENTIONS bullet one merge ago and — as that checkpoint
-recorded — did not fire on itself. This diff touches `app/src/**`
-(`watcher-store.ts`), so the trigger is met. Run on scratch port
-**14521**, never 1420:
+**THE BOOT GATE FIRED — the SECOND merge it governs, and the first on a
+Rust diff.** The trigger is `app/src-tauri/**`, met by four files. Run on
+scratch port **14521**, never 1420:
 
     [boot-check] port 14521 free — spawning `npm run tauri dev -- --config {…}` in /Users/ujju/Projects/nputer/app
     [boot-check] NPUTER_BOOT_PORT=14521 — threading --config {…}
@@ -204,345 +233,309 @@ recorded — did not fire on itself. This diff touches `app/src/**`
     [boot-check] process tree stopped (exit=null signal=SIGTERM)
     BOOT_EXIT=0
 
-**Exit 0, both `[nputer]` startup lines, and NO STRAYS.** It was run
-TWICE — the first run's exit code was lost to a `$PIPESTATUS` that zsh
-does not define (zsh spells it `$pipestatus`), and **a gate whose exit
-code was not actually captured has not been recorded**, so it was re-run
-rather than inferred from the success text. Both runs identical. After
-each: `lsof -nP -iTCP:14521` empty (the scratch port released),
-`lsof` on 14520 empty, `pgrep -fl tauri-boot-check` empty, and a full
-`ps` showed the ONLY surviving tauri/vite/`target/debug/nputer`/esbuild
-processes were **the same pids that existed before** — 89936/89938/89953
-the human's `tauri dev` chain, 90127 its vite, 90128 its esbuild, 1753
-its app binary — every one with an unchanged start time. **T-046-s1 did
-not bite on this path**, which is consistent with s1 (it names the
+**Exit 0, both `[nputer]` startup lines, ONE run.** The exit code was
+captured **from `$?` on an unpiped command** writing to a file — not from
+`$PIPESTATUS`, which zsh does not define and which cost the T-041
+integrator its first run. A gate whose exit code was not actually
+captured has not been recorded; this one was, so no re-run was needed.
+After it: `lsof -nP -iTCP:14521` **empty** (the scratch port released),
+14520 empty, `pgrep -fl tauri-boot-check` empty, `pgrep -fl fake_agent`
+empty. The full `ps` sweep is the strong form — **zero pids appeared and
+zero pids vanished** against the pre-run baseline, compared by pid set,
+not by eye. T-046-s1 did not bite on this path (it names the
 SIGKILL-mid-boot path, not the orderly exit).
 
 **1420 was never bound, contacted or signalled.** The human's vite still
 holds `[::1]:1420` on **the same pid 90127, the same fd 28u, the same
-device 0xc074e387883bd776** as before the merge began. The lane bound
-14520 only; the boot check bound 14521 only.
+device 0xc074e387883bd776** as at T-041's merge. The boot check bound
+14521 only; the lane bound 14520 only.
 
-**The one honest side effect T-046's checkpoint predicted, observed
-again**: the boot check's `--no-default-features` build **relinked
-`target/debug/nputer`** (39,626,680 → 39,597,432 bytes, mtime 18:24:52 →
-18:25:54). The RUNNING app was unaffected — pid 1753 kept its 14:04:31
-start time, because a replaced file does not disturb a process holding
-the old inode. Same target-dir sharing `cargo test` already does. Not
-new, not filed.
+**A SIDE EFFECT THE HUMAN SHOULD KNOW ABOUT, larger than T-041's and
+worth a rule.** T-041's checkpoint recorded that a boot check RELINKS
+`target/debug/nputer` while leaving the running app alone, because a
+replaced file does not disturb a process holding the old inode. **This
+merge did something stronger, and it was the MERGE itself, not the boot
+check.** The human's live `tauri dev` (pid 89953) watches
+`app/src-tauri/src/**`; the merge landed four `.rs` files there at
+18:46:04, and one second later that dev server **rebuilt and restarted
+its own app binary** — the app the human is reviewing on 1420 went from
+pid 1753 to **pid 8392**, parented to the same unchanged `tauri dev`
+chain, with vite on 1420 untouched throughout. Nothing was signalled by
+this session; the human's own watcher reacted to files on disk. **It is
+unavoidable for any app-agent or app-shell merge** — a merge must write
+the working tree — but it means **the human's app silently restarts
+under them mid-review**, and nobody has written that down. Worth a
+CONVENTIONS line or a note in the @human item; left for a triage rather
+than settled here.
 
-**THE MERGE WAS CLEAN, AND THE ANTICIPATED COLLISION DID NOT EXIST.**
-Merge commit **`9e70ea9`**, merge-base `2961599`, twelve files.
-`tools/e2e/tsconfig.json` was flagged in advance as the one real
-collision risk — T-046 edited it (added `allowJs`) — and it is **not on
-T-041's side at all**. The two changed-file sets were enumerated and
-`comm -12` is **EMPTY**: T-041 carries `app/src/lib/watcher-store.ts`,
-`app/test/shell-harness.test.ts`, five files under `tools/e2e/`
-(`fixtures/shell.ts`, `tests/shell-harness.ts` and the three specs) and
-five under `docs/tasks/`; main since the base carries
-`docs/CONVENTIONS.md`, `docs/STATE.md`, six task files and four under
-`tools/e2e/` (`scripts/boot-port.mjs`, `scripts/tauri-boot-check.mjs`,
-`tests/boot-check-guard.spec.ts`, `tsconfig.json`). **Both lanes land
-under `tools/e2e/` and still share nothing** — T-046 owns `scripts/`,
-`tsconfig.json` and `boot-check-guard.spec.ts`; T-041 owns `fixtures/`
-and four new files under `tests/`. `git merge-tree --write-tree` was run
-first and produced zero conflict markers. Neither ../nputer-t047 nor
-../nputer-t048 was entered.
-
-**A BRANCH-POINT DIVERGENCE THE NEXT INTEGRATOR MUST KNOW ABOUT, found
-while checking the pre-conditions.** Main's T-046 checkpoint is
-**`37cb0ed`**. The `t048-frame-holds` branch — and its worktree — sit on
-**`cf5a650`**, which is **NOT an ancestor of main**: it is a SIBLING,
-same parent `0378cb9`, same tree except **two lines of docs/STATE.md**
-(cf5a650 gives T-047's worktree hash as `242697f`; 37cb0ed says it is
-moving to `28efd7f`). Both were committed at 18:20:59 and one was
-evidently remade. Consequences, stated plainly so nobody rediscovers
-them at merge time:
-- `git merge-base main t048-frame-holds` is **`0378cb9`**, not the
-  checkpoint. So at T-048's merge **both sides will have rewritten
-  docs/STATE.md** relative to that base, and **a docs/STATE.md conflict
-  is expected**. The correct resolution is **take main's side whole** —
-  the t048 side is a stale near-duplicate of a checkpoint main has since
-  superseded twice.
-- T-048's branch therefore does NOT yet contain this merge or T-046's
-  checkpoint STATE. Its builder should merge or rebase-forward
-  deliberately (**never rebase per house rule — merge main into the
-  branch, or branch afresh**) before touching
-  `tools/e2e/tests/genesis-screen.spec.ts`, which only exists on main as
-  of `9e70ea9`.
-- `t047-runner-trust` is unaffected: its merge-base is the ordinary
-  `2961599`, and its file set (`app/src-tauri/src/agent/**`,
-  `tests/agent_runner.rs`) shares nothing with this merge — re-checked
-  here rather than inherited.
+**THE MERGE WAS CLEAN AND THE INTERSECTION WAS PROVED EMPTY, not
+assumed.** Merge commit **`3f2eb1e`**, merge-base **`2961599`**, eleven
+files. Both changed-file sets were enumerated and `comm -12` is
+**EMPTY**: T-047 carries four source files
+(`app/src-tauri/src/agent/{adapter,runner}.rs`, `src/bin/fake_agent.rs`,
+`tests/agent_runner.rs`) plus its card and six suggestions; main since
+the base carries `app/src/lib/watcher-store.ts`, four `app/test/**`,
+three docs, `graph.json`, ten task files and nine under `tools/e2e/`.
+`git merge-tree --write-tree` was run first and produced a single tree
+hash with **zero conflict markers**. Neither ../nputer-t048 nor the
+removed ../nputer-t047 was entered.
 
 STANDING INTEGRATOR PRACTICE (T-009-s1, the ratified CONVENTIONS interim
 regen rule; retires when T-014's `nputer index --check` becomes the
-gate) — **SIXTEENTH** exercise, and unlike the last two it **MOVED THE
-GRAPH**. The rule fires on a merged diff touching
-`*.ts/*.tsx/*.js/*.jsx` outside docs/, and this diff carries **seven**
-such files. Order per ceaa949, held for the tenth time: **fixture edits
-BEFORE the final regen.**
-- Deltas, each re-derived here by full added/removed enumeration against
-  `git show HEAD:docs/architecture/graph.json`, and **every one matches
-  the verifier's forecast**: files **88 → 89**, symbols **595 → 602**,
-  edges **990 → 1003**. One file added
-  (`app/test/shell-harness.test.ts`), **none removed**;
-  `app/src/lib/watcher-store.ts` content-changed 560 → 659 loc and
-  37 → 40 symbols.
-- **Fifteen edges added and TWO REMOVED — the first removals this
-  fixture has ever recorded.** Not churn: it is the refactor as
-  topology. `runPicker`→`reducePickOutcome` and `runPicker`→`sendEcho`
-  are gone, replaced by `runPicker`→`commitPickOutcome` plus that new
-  symbol's own three call edges. The same +17 production bytes, seen
-  from the other side.
-- **`tools/` is invisible, checked rather than assumed**:
-  `.nputerignore:8` is `tools/`, and the regenerated file list contains
-  **zero** paths under it. A merge that lands ten new lane tests moves
-  the map by exactly one file.
-- **FOUR fixture assertions moved, not three — and the discrepancy is
-  structural, so it is recorded rather than smoothed over.** The
-  verifier forecast three (`toBe(88)`→89, `["C-05","C-10","confirmed",
-  19]`→20, and `committed graph · 88 files`→89) and **all three are
-  right**. The fourth is `["C-05", 38]` → **39** in the same it() body
-  as the file count — vitest stops at the first failing `expect`, so a
-  forecast read off a failure list under-counts every assertion sitting
-  behind another one. The it() TITLE moved too ("all 88 files map" →
-  "all 89 files map"), per the precedent of every prior regen. Two
-  files: `app/test/architecture-dogfood.test.ts` and
-  `app/test/map-dogfood-render.test.tsx`, each with a dated
-  reconciliation comment enumerating the deltas.
-- **Relation table: same 28 rows, same 13 confirmed / 6 undeclared / 9
-  planned tally, EXACTLY ONE observedCount moving** — C-05→C-10 19→20.
-  **Findings: nothing added, removed or renumbered** — five D1 rows and
-  three D3s, byte-identical, because the new suite's only
-  cross-component import is watcher-store and C-05→C-10 is already
-  CONFIRMED, so it deepens an honest edge instead of raising a finding.
-- **`lib/parser/test/smoke.test.ts` did NOT move**, as forecast — no
-  component is declared, so the T-024-s5 three-fixture rule does not
-  fire in its registry form. Verified positively: lib/parser re-run
-  **159/159** against the regenerated tree.
-- **Determinism**: the final regen was run **twice** and the committed
-  file is byte-identical both times — sha256
+gate) — **SEVENTEENTH** exercise, and the first in a while where **the
+rule never FIRED at all**, which is a different thing from firing to no
+effect and is recorded as such.
+- **Trigger ABSENT, verified from the merged diff**: `git diff
+  --name-only e78bfdc..HEAD` filtered to `*.ts/*.tsx/*.js/*.jsx` returns
+  **nothing** — and the stronger form is true too, there is not a single
+  file of those extensions in the diff **even inside docs/**. The diff is
+  four `.rs` files and seven `.md`. Contrast the last two exercises:
+  T-041's rule fired and MOVED the graph (88→89 files), T-046's fired and
+  was a NO-OP (its `.ts` lived under `.nputerignore`d `tools/`). This one
+  did neither — there was nothing to evaluate.
+- **`.rs` is invisible to the indexer until T-010**, checked rather than
+  assumed: `nputer-index` walks `Lang::Ts, Lang::Js` only, and the four
+  files T-047 changed are among the ones ARCHITECTURE already flags as
+  claimed by no component.
+- **Byte-identity proved anyway, positively rather than as an absence.**
+  The **plain (non-golden) ignored self-check** — `cargo test -p
+  nputer-index --test self_graph -- --ignored`, with
+  `NPUTER_UPDATE_GOLDEN` confirmed unset in the environment — returned
+  `self_graph_is_current ... ok`, which re-derives the graph in memory
+  and compares it to the committed bytes. sha256 before and after:
   `05ebc2c772ffa3aaabc23aefa0feae60f2c4652ab9e64ac1c64de0044f5e478a`,
-  **368,496 bytes**, 89 files / 602 symbols / 1003 edges. The **plain
-  (non-golden) ignored self-check** was then run separately and is the
-  positive proof rather than an absence: `self_graph_is_current ... ok`
-  on the merged tree.
-- **The ceaa949 ordering lesson, measured again rather than asserted**:
-  regenerating BEFORE the fixture edits gave sha
-  `83ba6f02588c2481900a3101489542d00a639f4ab44b5758b8cd0ebee68e7e05`;
-  regenerating after them gives `05ebc2c7…`. A regen-first ordering
-  would have committed a stale graph.
+  **368,496 bytes**, 89 files / 602 symbols / 1003 edges, and `git
+  status` shows `graph.json` unmodified. **Nothing was regenerated**, per
+  the builder's and verifier's concurring instruction.
 
-**No model call was made anywhere in this merge.** No screen control, no
-screenshots, no OS input injection, nothing read off the screen. The two
-boot runs opened and closed their own window, which is the @human ruling
-of 2026-08-16 that T-046 rests on and this merge does not extend.
+**No model call was made anywhere in this merge.** The env-gated
+`#[ignore]` smoke was NOT run (it is one of the 3 ignored). No screen
+control, no screenshots, no OS input injection, nothing read off the
+screen. The boot run opened and closed its own window, which is the
+@human ruling of 2026-08-16 that T-046 rests on and this merge does not
+extend.
 
 INTEGRATOR JUDGMENT CALLS, recorded.
-- **ARCHITECTURE: EDITED — one new Interfaces bullet, "Test surfaces
-  (DEV, browser-only)".** Ruled the section genuinely incomplete rather
-  than merely terse. A reader of ARCHITECTURE.md today learns the app's
-  boundary is the docs watcher plus two zero-argument entry commands
-  plus four genesis commands over one event channel, and would
-  reasonably conclude that is the whole exposed surface. **It is not**:
-  in a browser DEV build there is a `window` surface that reaches the
-  shell's real reducers and can drive it to any phase. Before T-041 the
-  omission was defensible — the docs harness only fed snapshots and
-  always landed on `open`. T-041 changes the CHARACTER of the thing from
-  "feed the lens some data" to "drive the shell", and a surface a reader
-  cannot learn about from the architecture document is a surface that
-  gets rediscovered as a surprise. The bullet names both harnesses, the
-  single shared gate, **why the code lives in `watcher-store.ts` rather
-  than a test-only module** (a separate module could only reach the
-  module-private reducers through NEW PRODUCTION EXPORTS, which exist
-  whether or not a test imports them — the fenced window property is the
-  SMALLER surface), the three-build byte measurement, and the one known
-  lever with its filed id. Everything else in the file stayed true: the
-  T-010 note that FOUR `.rs` files are claimed by no component is still
-  exactly right and still exactly four, and the `tools/e2e/` description
-  ("dev tooling under no component … .nputerignored out of the map")
-  is unchanged and was just re-proved by the regen.
-- **ROADMAP: NOT edited, and the T-039 disanalogy is the reason.**
-  T-041 is unusual among gate tasks in being IN milestone 3 and IN F-03,
-  so the T-046 precedent ("ROADMAP mentions T-020, T-036, T-038 and
-  T-040 exactly nowhere") does not settle it by itself. The deciding
-  question is what milestone 3's Progress line is FOR: it enumerates
-  what a user can do. **T-041 adds no user capability** — the same
-  bundle, minus 17 bytes of nothing. T-039 WAS named there, but for a
-  reason that does not transfer: ROADMAP itself had said the remainder
-  was "held by security debt", so retiring that hold changed a sentence
-  already in the file. **T-041's hold was never stated in ROADMAP**, it
-  was stated in T-027/T-028/T-029's Verification lines, and that is
-  where its retirement belongs. The honest remainder (T-027, T-028,
-  T-029, plus one observed real turn) is untouched and the milestone is
+- **ARCHITECTURE: EDITED — one new Interfaces bullet, "Resolving the
+  agent CLI (disk → `execve`)".** Ruled genuinely incomplete rather than
+  merely terse, on the section's own terms: Interfaces describes what
+  crosses the app's boundaries, and **disk → `execve` is a boundary
+  crossing the document did not mention at all.** Two specific falsehoods
+  a careful reader would have drawn from it. First, the Genesis bullet
+  enumerates the app's durable writes as `sessions.json`,
+  `genesis/transcript.jsonl` and `genesis/kit/` — "all outside the docs
+  watch root" — from which a reader concludes the app's disk footprint is
+  `.nputer/`. **It is not**: `agent-paths.json` lives in the app config
+  dir, outside the project entirely, and its contents decide which binary
+  is executed. Second, "one short-lived child per turn" is true of the
+  agent child and no longer the whole picture — the resolve ahead of
+  every turn now spawns a login shell and a version probe. The bullet
+  states both, names the gate and what it checks, records the measurement
+  that chose the not-cached arm, and carries the two residuals with their
+  filed ids. It also **scopes the environment claim** rather than leaving
+  it to be contradicted: the CHILD's environment is still built not
+  inherited (`env_clear()` — unchanged and still true), while the
+  RESOLVER reads `$SHELL` and `PATH` from the app's own environment. That
+  wording is deliberate — T-047-s4's live finding is that
+  `RunnerConfig`'s comment makes the unscoped claim and is now false, and
+  **an integrator should not leave the same falsehood in the architecture
+  document while filing a task about it in the code.** Everything else in
+  the file stayed true and was re-checked: the FOUR `.rs` files claimed
+  by no component are still exactly four and still exactly those four.
+- **ROADMAP: NOT edited.** T-047 is in milestone 3 and F-03, so the T-046
+  precedent does not settle it by itself and the T-041 test was applied
+  instead: milestone 3's Progress line enumerates **what a user can do**,
+  and T-047 adds no user capability — the same UI, the same commands, the
+  same wire shapes, byte-identical bundle. The T-039 disanalogy holds
+  exactly as T-041 recorded it: T-039 was named in ROADMAP only because
+  ROADMAP itself had said the remainder was "held by security debt", so
+  retiring that hold edited a sentence already in the file. **T-047's
+  work was never held out in ROADMAP**, and the honest remainder (T-027,
+  T-028, T-029, plus one observed real turn) is untouched. Milestone 3
   still NOT claimed.
-- **CONVENTIONS: NOT edited.** The BOOT GATE bullet was exercised for
-  the first time exactly as written — trigger, command with the scratch
-  port, record — and it needed nothing. The one friction encountered was
-  mine, not the bullet's (see the `$PIPESTATUS` note above), and the
-  right home for it is this checkpoint. The T-046 checkpoint's open
-  question about whether BOOT GATE retires is **still open and still
-  belongs to a triage**; an integrator who has now run the gate once is
-  not thereby entitled to charter its lifetime.
-- **NO NEW ADR (three-prong).** The candidate is real and was raised
-  deliberately: *the shipping app's source may carry a DEV-only,
-  browser-only test surface, fenced by a build-time AND runtime gate, in
-  preference to widening the production export surface.* **Ruled
-  CONVENTIONS-and-ARCHITECTURE-level, for three reasons.**
-  (a) **T-041 does not establish the pattern; it re-uses one.**
-  `__nputerDocsHarness` has lived behind that exact gate for many
-  merges, and ADR-011 already refers in passing to "the dev harness" as
-  an established fact of how the E2E lane reaches the app. The builder's
-  own note is "not a copy of the gate: the same gate". A charter written
-  at the SECOND instance of an existing pattern is a charter written
-  late and for the wrong occasion.
-  (b) **The ADR series' territory is what nputer IS or how it is
-  shaped** — files-are-the-brain, shell-out-to-CLIs, app-first, native
-  surfaces Rust-side, graph-as-committed-files, spawned-planner-lens.
-  Where a test surface lives inside one module is an implementation call
-  with a recorded rationale. It changes nothing a user, a component or
-  another lane can rely on.
-  (c) **The whole risk was closed by MEASUREMENT, and a decision whose
-  risk is measured does not need a charter to hold it — it needs the
-  measurement recorded where a reader will meet it.** That is now
-  ARCHITECTURE's job, done above. The one residual lever is already a
-  filed suggestion with a named remedy, i.e. backlog, not charter.
-  **Prong two, verified as an empty set rather than by eye**:
-  `git diff --name-only 2961599..HEAD` restricted to `method/`,
-  `lib/parser/`, `app/src-tauri/`, `capabilities/`, `tauri.conf.json`
-  and every `Cargo.toml`/`Cargo.lock`/`package.json`/`package-lock.json`
-  returns **nothing**. So ADR-012 held (no native surface moved, zero
-  grants touched, `acl_pin.rs` zero-diff), ADR-010 held (no webview
-  grant), ADR-011 held (zero new crates, zero new npm deps, no lockfile
-  line), ADR-003 held (no model call anywhere), ADR-014/015 held and
-  were exercised (the graph was regenerated by the Rust indexer and
-  committed; derivation stayed TS). The app/src export surface grew by
-  **exactly one line and it is an `interface`**, erased at build; zero
-  exports were removed or changed; zero new `invoke(`/`listen(`/`emit(`
-  call sites. Prong three: the durable calls live in the task file's
-  criteria→evidence map, its six proof obligations, and its four honest
-  limits.
+- **CONVENTIONS: NOT edited.** The BOOT GATE bullet was exercised a
+  second time, on its other trigger limb (`app/src-tauri/**` rather than
+  `app/src/**`), and needed nothing. The one new friction — the human's
+  live `tauri dev` restarting its app under them when a merge writes
+  `.rs` — is real and is written up above, but **it is a rule about the
+  shared working tree, not about the gate**, it belongs with the two
+  open questions already in that family, and an integrator who just
+  caused it is not thereby entitled to charter the remedy.
+- **NO NEW ADR (three-prong), and this one was argued rather than
+  assumed, because it is the THIRD instance.** The candidate: *everything
+  the runner hands to `execve` — argv, environment, and now the binary
+  path itself — is built from compile-time constants or validated
+  inputs, never trusted from disk or environment.* T-025 (env allowlist)
+  and T-039 (argv gate) were both ruled C-14-local, each flagging that
+  the charter question arrives when a **SECOND component spawns agents at
+  F-04**. **Does a third instance change that? No — and the reason is
+  better than "the named trigger has not fired" (though it has not: C-14
+  is still the only spawner, C-02 is `planned`).**
+  (a) **An ADR charters a DECISION between live alternatives, and there
+  is no alternative here.** Nobody has proposed trusting the disk. All
+  three tasks closed holes against a standard everyone already agreed to;
+  none of them chose between designs. The ADR series' territory is what
+  nputer IS or how it is shaped — files-are-the-brain, shell-out-to-CLIs,
+  app-first, native surfaces Rust-side, graph-as-committed-files,
+  spawned-planner-lens. "Validate before you exec" is engineering hygiene
+  inside one component.
+  (b) **THE DECIDING REASON, and it is specific to the third instance:
+  the standard is not yet settled, so a charter would freeze the wrong
+  version of it.** T-047-s5 is the proof — the cached door and the probed
+  door apply **different** standards today, the verifier ruled the
+  recorded justification for that exemption does not cover the
+  `which_on_path` arm, and the reconciliation is an OPEN suggestion. A
+  charter that said "one standard for everything reaching `execve`"
+  would be contradicted by the code on the day it was written; one that
+  described the two-door reality would not be a decision worth
+  chartering. **The moment to write it is when s5 lands** — that is when
+  there is a single rule to charter — and that is a nearer, sharper
+  trigger than "a second component", so it is recorded as an addition to
+  the existing one rather than a replacement.
+  (c) **T-047-s1 argues the cache should be RETIRED**, which would delete
+  `validate_cached_binary` and its pins outright. Chartering how to
+  validate a cache entry while the live proposal is to remove the cache
+  would charter a thing that may not exist next month.
+  **Prong two, verified as an EMPTY SET rather than by eye**: `git diff
+  --name-only e78bfdc..HEAD` restricted to `method/`, `lib/parser/`,
+  `app/src/`, `tools/`, `capabilities/`, `tauri.conf.json`, `acl_pin.rs`,
+  `lib.rs`, `index_cmd.rs`, `docs_watch.rs`, `graph.json` and every
+  `Cargo.toml`/`Cargo.lock`/`package.json`/`package-lock.json` returns
+  **nothing**. So ADR-012 held (no native surface moved, zero grants
+  touched, `acl_pin.rs` zero-diff, the 92-grant set unmoved), ADR-011
+  held (zero new crates, zero new npm deps, no lockfile line), ADR-003
+  held (no model call anywhere in this merge), ADR-014/015 held (the
+  graph was not regenerated because the rule did not fire, and was proved
+  current by the indexer's own self-check). **No new IPC variant**: the
+  six wire enums are unchanged, and the three new Rust enums
+  (`ArgShape`, `ModelRejection`, `CachedPathRejection`) derive **no
+  `Serialize`** — checked at the derive line, not by grep — so
+  `app/src/lib/agent-store.ts` needs no mirror and has none. Prong three:
+  the durable calls live in the task file's criteria→evidence map, its
+  eight proof obligations, its six deviations and its six genuine
+  silences.
 
 ## In progress / broken right now
-**TWO TASKS ARE `building`.**
-- **T-047** (what the runner trusts from disk, app-agent), worktree
-  ../nputer-t047 at **`28efd7f`** — **VERIFIED APPROVED and awaiting
-  integration**. Merge-base `2961599`, disjoint from this merge
-  (`app/src-tauri/src/agent/**` + `tests/agent_runner.rs`), so it should
-  merge without reconciliation. Note it will be the SECOND merge the
-  BOOT GATE governs — its diff touches `app/src-tauri/**`.
+**ONE TASK IS `building`.**
 - **T-048** (the frame holds — the genesis page stops growing and the
-  pane starts scrolling, S, app-shell, F-03), **BUILDING**, worktree
-  ../nputer-t048. It absorbs T-041-s1 and T-041-s3 (both suggestion
-  files now deleted — see the encoding-debt note above) and carries the
-  corrected three-edit fix: two `min-h-screen` → `h-screen` **plus
-  `min-h-0` on GenesisScreen.tsx:37**, which is the link the original
-  one-line remedy was missing. **Read the branch-point divergence note
-  above before merging it** — its base is `0378cb9`, a docs/STATE.md
-  conflict is expected, and its criterion 5 must edit a spec that only
-  reached main at `9e70ea9`.
+  pane starts scrolling, S, app-shell, F-03), worktree ../nputer-t048.
+  It absorbs T-041-s1 and T-041-s3 and carries the corrected three-edit
+  fix: two `min-h-screen` → `h-screen` **plus `min-h-0` on
+  GenesisScreen.tsx:37**, the link the original one-line remedy was
+  missing.
+  **THE ORPHANED-SIBLING HAZARD IS RESOLVED — re-derived here rather
+  than carried forward, and the previous checkpoint's warning is now
+  STALE.** T-041's checkpoint recorded that t048 sat on `cf5a650`, an
+  orphaned sibling of main's `37cb0ed`, making the merge-base `0378cb9`
+  and a docs/STATE.md conflict expected. **Its builder has since MERGED
+  MAIN FORWARD** (`a3a5ccb`, "Merge main into t048-frame-holds", never a
+  rebase — the house rule was followed), so as of this checkpoint:
+  `git merge-base main t048-frame-holds` is **`e78bfdc`**, the branch
+  now contains both T-046's and T-041's checkpoints, and
+  `git diff e78bfdc..t048-frame-holds` is **EMPTY** — it carries no
+  commits of its own yet. **So no docs/STATE.md conflict is expected any
+  more**: its STATE.md is byte-identical to `e78bfdc`'s, this
+  checkpoint's rewrite applies cleanly over it, and the "take main's
+  side whole" instruction no longer has anything to resolve. That stays
+  true unless its builder edits docs/STATE.md, which is an integrator's
+  file, not a builder's. Note the branch does NOT contain T-047 —
+  disjoint by area (app-shell + tools/e2e vs app-agent), so no
+  reconciliation is expected there either. Its **criterion 5** owes the
+  replacement of `tools/e2e/tests/genesis-screen.spec.ts`'s tripwire
+  block (~196-228),
+  which deliberately PINS the overflow as today's broken truth; that file
+  has been on main since `9e70ea9`, so the drafted-hunk workaround is not
+  needed, but **a tripwire silently passing on the old numbers is the one
+  outcome nobody wants.**
 
-**Do not enter ../nputer-t047 or ../nputer-t048.**
+**Do not enter ../nputer-t048.**
 
-**THE SHARED-INDEX HAZARD, and it did not recur.** The T-046 merge
-recorded that `git add` in the shared main working tree publishes staged
-work to every other actor's next `git commit` — the architect's dispatch
-commit swept that integrator's staged checkpoint edits, giving main the
-shape merge → someone else's dispatch → checkpoint. This session was
-told the pen was its own, and **`git diff --cached --stat` was checked
-before every commit** to confirm the staged set was exactly its own.
-The house shape here is clean: **merge → checkpoint**, two commits.
-The lesson stands and still wants a rule: an integrator should stage and
-commit in one breath, or the architect should dispatch from an index it
-owns.
+**THE SHARED-INDEX HAZARD, and it did not recur.** `git diff --cached
+--stat` was checked before **both** commits and the staged set was
+exactly this session's each time. The house shape here is clean: **merge
+→ checkpoint**, two commits.
 
-The t041 worktree is removed and its branch KEPT — **27 task branches
-merged now**, `t001-app-shell` through `t046-boot-gate` plus
-`t041-shell-harness` (counted with `git branch --merged main`), plus the
-two live ones. Main tree clean; all four suites green; the token lint
-green; the committed graph current and proved so by the plain self-check
-rather than by assumption. The parser re-parses the whole live tree at
-**0 issues**: **64 tasks**, tally **28 done / 18 planned / 9 parked / 7
-suggested / 2 building** (T-047, T-048), 6 features, 11 components. (The
-task count DROPS by two and `suggested` by two against the last
-checkpoint — that is the two absorbed suggestion files being deleted,
-not a board that lost anything.)
+The t047 worktree is removed and its branch KEPT — **28 task branches
+merged now**, `t001-app-shell` through `t047-runner-trust` (counted with
+`git branch --merged main`), plus the one live branch. Main tree clean;
+all four suites green; the token lint green; the committed graph current
+and proved so by the plain self-check rather than by assumption. The
+parser re-parses the whole live tree at **0 issues**: **70 tasks**, tally
+**29 done / 18 planned / 9 parked / 13 suggested / 1 building** (T-048),
+6 features, 11 components. (Tasks rise by six and `suggested` by six —
+that is T-047's six suggestion files, not a board that grew work.)
 
 **NO STANDING SECURITY GATE.** T-025-s6 closed at T-039 and nothing
-replaced it. The sharpest open items are process-hygiene rather than
-boundary crossings: **T-046-s1** (the unsignalled process group, on the
-human's own port, and the boot check now runs at every qualifying merge
-— it just ran twice here) and **T-041-s4** (the one env-var path that
-would package a DEV harness, kept inert by the runtime half).
+replaced it. What T-047 leaves behind is the sharpest open set this
+component has had: **T-047-s5** (two doors, one standard, only one
+guarded — the only one whose remedy is ~5 lines), **T-047-s6** (nothing
+structurally stops a test resolving the real CLI — the one that has
+already fired once), **T-047-s4** (`$SHELL` picks the program, and a
+comment in the code is now false), and **T-047-s1** (the cache that saves
+zero spawns). Beside them the older process-hygiene pair stands:
+**T-046-s1** (the unsignalled process group, on the human's own port) and
+**T-041-s4** (the one env-var path that would package a DEV harness).
 
-LAUNCH ITEM, carried forward and now slightly larger — **watch the
-first CI run** (T-020). At the repo's first push (`git remote -v` is
-still empty), confirm in order: the ubuntu apt/webkit2gtk set installs;
-the three `uses:` SHA pins resolve; playwright-on-Linux runs the lane —
-**now 33 tests, not 23**, and the ten new ones are the most
-platform-sensitive additions the lane has ever taken, because they
-measure REAL CSS (computed colours resolved from the served sheet,
-bounding-box layout, Geist Mono) in Chromium-on-Linux rather than
-Chromium-on-macOS. **If anything in that lane goes red on Linux, look at
-the font and colour assertions in `front-door.spec.ts` and
-`genesis-screen.spec.ts` first.** Then: `cargo audit` behaves as it does
-locally; and **the xvfb `tauri dev` boot prints both `[nputer]` startup
-lines** — the FIRST exercise of the boot check on Linux, and the only
-place the T-046 override's Linux behaviour will ever be observed (CI
-deliberately sets no `NPUTER_BOOT_PORT`: on a fresh runner 1420 is free,
-so the default path is correct there and the OVERRIDE path stays
-Linux-unverified, exactly as T-046's honest-limits section says).
-AND (T-018-s3 fold) the THREE T-018 SENTINEL LIVE TESTS inside the
-ubuntu `cargo test` step — replaced-wholesale and deleted-recreated
-docs/. They discriminate only where inotify watches INODES; macOS
-FSEvents watches paths and was accidentally resilient, which is why
-T-018's replace-half evidence is mechanism-only today. Green there
-CLOSES that evidence gap; red there is a real reconcile gap macOS could
-never surface, and gets filed immediately. This run also closes
-T-001/T-003's Linux halves, and it carries T-026-s1 (the plan probe's
-exact-case match makes macOS and Linux disagree about "already has a
-plan") and T-021-s1 (the ACL pin is macOS-derived). Since T-025 the
-ubuntu `cargo test` step also runs the `agent_runner` integration tests,
-which spawn real child processes and send real signals — 28 of them —
-the first time this repo exercises process control on Linux. Watch it,
-and watch for the unnamed `agent_runner` flake there too.
+LAUNCH ITEM, carried forward unchanged in substance — **watch the first
+CI run** (T-020). At the repo's first push (`git remote -v` is still
+empty), confirm in order: the ubuntu apt/webkit2gtk set installs; the
+three `uses:` SHA pins resolve; playwright-on-Linux runs the lane — **33
+tests**, whose ten newest are the most platform-sensitive the lane has
+ever taken because they measure REAL CSS in Chromium-on-Linux (**if
+anything goes red there, look at the font and colour assertions in
+`front-door.spec.ts` and `genesis-screen.spec.ts` first**). Then:
+`cargo audit` behaves as it does locally; and **the xvfb `tauri dev` boot
+prints both `[nputer]` startup lines** — the FIRST exercise of the boot
+check on Linux, and the only place T-046's override's Linux behaviour
+will ever be observed (CI deliberately sets no `NPUTER_BOOT_PORT`, so the
+override path stays Linux-unverified by design). AND (T-018-s3 fold) the
+THREE T-018 SENTINEL LIVE TESTS inside the ubuntu `cargo test` step —
+replaced-wholesale and deleted-recreated docs/. They discriminate only
+where inotify watches INODES; macOS FSEvents watches paths and was
+accidentally resilient, which is why T-018's replace-half evidence is
+mechanism-only today. Green there CLOSES that gap; red there is a real
+reconcile gap macOS could never surface, and gets filed immediately.
+This run also closes T-001/T-003's Linux halves, and carries T-026-s1
+(the plan probe's exact-case match) and T-021-s1 (the ACL pin is
+macOS-derived). Since T-025 the ubuntu `cargo test` step also runs the
+`agent_runner` integration tests — **now 32 + 1 ignored**, up from 28 —
+which spawn real child processes and send real signals, the first time
+this repo exercises process control on Linux. **T-047 makes that step
+sharper in one specific way**: its new tests plant files, refuse paths
+and assert on executable bits, so a Linux permissions or `/bin/sh`
+difference would show up there first. Watch it, and watch for the unnamed
+`agent_runner` flake there too.
 
 ## Next up (1–4)
 1. **@human — THE VISUAL SESSION IS STILL OPEN.** The app is RUNNING on
-   1420 as this checkpoint lands (same pid 90127 since 13:21), and
-   T-041 ships **no UI and no CSS** — the shipped bundle's entire delta
-   is a 17-byte function extraction — so every item below stands as the
-   T-046 checkpoint left it. **The route to the pane**: "Start an
-   interview" on a docs-less folder, or "Start an interview here" on a
-   folder the app just refused.
+   1420 as this checkpoint lands, **though its process was restarted by
+   its own dev server at 18:46 when this merge wrote four `.rs` files**
+   (pid 1753 → 8392; see the side-effect note above — if the window
+   looks freshly launched, that is why). T-047 ships **no UI and no
+   CSS** — the bundle is byte-identical to T-041's — so every item below
+   stands as the last checkpoint left it. **The route to the pane**:
+   "Start an interview" on a docs-less folder, or "Start an interview
+   here" on a folder the app just refused.
    - **T-024's pane, light AND dark**: built/forming/slot card contrast
      in dark, the warm writing-row border, the five type sizes that
      moved 0.5–1px, the substituted footer right slot
      (`stage ~4 · constraints`).
-   - **THE COMPOSITION QUESTION, which is now the ONLY framing item
-     left here.** T-024 drew the pane as the **RIGHT HALF of a split
-     view**; until T-027 it sits **full-width inside T-026's card
-     frame**. Does its `bg-sidebar` ground read right framed by a
-     `bg-card` bordered box, and does the **five-across backbone grid**
-     hold at full width when it was drawn for a half-width pane?
-     **This is the question T-027's planning pass waits on** (item 2).
-     *The scroll/overflow half of this item is GONE from the @human
-     list*: T-041 measured it, its verifier falsified the proposed fix,
-     and it is now T-048, BUILDING. How the frame FEELS once it holds is
-     still an eye judgment — look again after T-048 lands.
+   - **THE COMPOSITION QUESTION, still the ONLY framing item left here.**
+     T-024 drew the pane as the **RIGHT HALF of a split view**; until
+     T-027 it sits **full-width inside T-026's card frame**. Does its
+     `bg-sidebar` ground read right framed by a `bg-card` bordered box,
+     and does the **five-across backbone grid** hold at full width when
+     it was drawn for a half-width pane? **This is the question T-027's
+     planning pass waits on** (item 2). The scroll/overflow half is
+     T-048's, BUILDING — look again once it lands.
    - **T-026's front door, light AND dark**: the two-button row and the
      "No plan in &lt;folder&gt;" card against the design's `open a
      folder` screen — button sizes/inks, the checklist ○/✓ (the ✓ rides
      `--review-disc`, whose dark value #4ecf9e is a token-family
      derivation, not measured from a dark mockup), the card's 10px vs
      the design's 12px radius, and whether the footnote reads as a
-     footnote. **Note the lane now pins the machine-checkable half of
-     both screens** (labels, the `⌘O · ⌘N` hint, one-row layout, the
-     ink pill resolving `--primary`, the outline border resolving
-     `--input`, the ○/✓ glyphs resolving `--muted-foreground` and
-     `--review-disc`, in BOTH schemes) — so what is left for the eye is
-     genuinely taste, not spelling.
+     footnote. The lane now pins the machine-checkable half of both
+     screens, so what is left for the eye is genuinely taste.
    - **The at-a-glance amber judgment** (T-012 criterion 5's human
      half — drift stroke vs building/verifying fills, BOTH schemes,
      incl. composed building+drift; the dogfood hero renders it live).
@@ -550,9 +543,8 @@ and watch for the unnamed `agent_runner` flake there too.
    - **The launch-shot re-judgment** (T-006's pending screenshot
      predates the rail — light + dark now include it).
    - **The T-023 dry-run conversational quality judgment** (did the two
-     "pushing back:" challenges actually challenge; the founder was
-     builder-scripted in-session, so true cold-context evidence still
-     arrives with T-029).
+     "pushing back:" challenges actually challenge; true cold-context
+     evidence still arrives with T-029).
    - **T-026-s4's question**: point the app at a folder whose `docs/`
      holds files but no plan (a lone ARCHITECTURE.md). It renders
      **through the lens** now, as the pane's own `docs/ · 0 files
@@ -560,10 +552,7 @@ and watch for the unnamed `agent_runner` flake there too.
      `forming…`. Judge whether THAT reads right over a non-empty docs/.
    - **The real picker flows on the real screen** — the standing T-007
      checklist, still @human because native dialogs are unreachable from
-     a browser harness and tauri-driver has no macOS. **T-041 narrowed
-     this deliberately rather than accidentally**: the harness delivers
-     the picker's OUTCOME, which is where the shell's behaviour starts,
-     and does NOT simulate the dialog. So what remains for the human is
+     a browser harness and tauri-driver has no macOS. What remains is
      exactly the native half: "Start an interview" → native dialog → a
      docs-less folder lands on the genesis screen; ⌘N and ⌘O on the
      front door; "Start an interview here" on a folder the app just
@@ -573,105 +562,129 @@ and watch for the unnamed `agent_runner` flake there too.
      no orphan — **and watch for T-025-s7's ~5 s main-thread hang on
      quit**, which is expected, harmless, and worth confirming is only
      ~5 s.
+   - **NEW, and it is a decision not a look: the T-047-s6 stray.**
+     `~/.claude/projects/-private-var-folders-…-t047va-count-97806-…-project/`
+     (one .jsonl, 17,128 bytes, zero-token synthetic records). It is
+     outside the repo and was deliberately not deleted. **Delete it or
+     keep it — the call is yours.**
    - **ONE REAL OBSERVED PLANNER TURN, on an authenticated machine** —
      still the biggest unobserved thing in the project. This machine's
-     `claude` OAuth token is revoked, so no model call has ever gone
-     through the runner. Two questions ride on it: does the kickoff land
-     a real planner in stage 0, and is the six-pattern Bash allowlist
-     sufficient for a real stage-0 scaffold (which is what T-025-s4
-     needs before it can narrow `Bash(cp:*)` / `Bash(mkdir:*)` safely).
-     **T-025-s2 carries the exact command.**
+     `claude` OAuth token is revoked (**re-confirmed the hard way during
+     T-047's verification: the accidental real spawn 401'd**), so no
+     model call has ever gone through the runner. Two questions ride on
+     it: does the kickoff land a real planner in stage 0, and is the
+     six-pattern Bash allowlist sufficient for a real stage-0 scaffold
+     (which is what T-025-s4 needs before it can narrow `Bash(cp:*)` /
+     `Bash(mkdir:*)` safely). **T-025-s2 carries the exact command.**
    - **A Linux run** — the "watch the first CI run" item above.
-   - **A PRIORITY CALL, not a screen action — T-046-s1.** The orphan it
-     names sits on **1420** on the default path, and the gate now runs
-     at every qualifying merge (twice in this one). The next triage
-     should weigh it against T-039-s1's `PATH`-cache item.
-2. MILESTONE 3 (T-023…T-029 + T-039 + T-041, ADR-017). **T-041's gate is
-   now DOWN**: T-027, T-028 and T-029 can each write the served-bundle
-   probe their Verification line promises, against a harness that
-   reaches all five phases and a lane that already demonstrates the
-   pattern in three specs. **What still holds the milestone is the
-   human, in this order:**
+   - **A PRIORITY CALL, not a screen action.** The next triage now has
+     **three** process/spawn-hygiene items to rank against each other:
+     T-046-s1 (the unsignalled group, on the human's own port),
+     T-047-s6 (the guard that stops a test reaching the real CLI — the
+     only one that has already fired), and T-047-s5 (two doors, one
+     standard, ~5 lines).
+2. MILESTONE 3 (T-023…T-029 + T-039 + T-041 + T-047, ADR-017). **T-041's
+   served-bundle gate is DOWN** and T-027/T-028/T-029 can each write the
+   probe their Verification line promises. **What still holds the
+   milestone is the human, in this order:**
    (a) **T-027's planning pass waits on the human's split-view verdict**
    (item 1) — it builds the LEFT half of a composition whose whole
    design question is what the open visual session is judging.
    `blocked_by` [T-024 ✓, T-025 ✓, T-026 ✓] has been satisfied since
-   T-025 merged.
+   T-025 merged. **T-027 also now inherits T-047-s3**, which wants a
+   read boundary on `model` at the first site that renders it.
    (b) **T-029 is UNGATED but not unblocked** — its `blocked_by` is
    still `[T-027]`, and T-028's is too.
    (c) **T-048 is ahead of T-027 in the app-shell lane** and is the
    thing that makes the screen usable at the size the app opens.
-   The milestone itself is NOT claimed: the first slice delivers
-   hand-driven genesis, the runner exists and is hardened, but no agent
-   loop has ever run against a real model.
+   The milestone is NOT claimed: the first slice delivers hand-driven
+   genesis, the runner exists and is now hardened at four boundaries,
+   but no agent loop has ever run against a real model.
 3. OVERNIGHT DISPATCH GRANTS (human, 2026-08-16 night): the app-shell
    lane queue was T-021 → T-026 → T-025 → T-022; T-021, T-026 and T-025
    are all DONE, so the standing grant's next named item is **T-022**
    (M, milestone 4, `blocked_by: []`), with T-027 ahead of it in
-   milestone order but held for the visual verdict. **app-shell is
-   OCCUPIED by T-048; app-agent is occupied by T-047 until it merges**
-   — and T-047 is verified and ready, so app-agent frees up as soon as
-   an integrator takes it. Triage: APPLY granted — but tasks NEWLY
-   created by triage (T-041…T-048) do NOT dispatch without the human;
-   T-041, T-046, T-047 and T-048 each got that nod explicitly (T-048's
-   came mid-review, from the screen itself). Unchanged method rules: a
-   second REJECTED on any task parks that lane for the human; @human
-   judgments are never self-answered.
-4. SUGGESTION BACKLOG — **13 open files: 9 parked + 4 suggested.**
-   The T-046 four are the newest untriaged set; **T-041-s2 and T-041-s4
-   join them**; T-039-s3 is the one older untriaged card left. T-041-s1
-   and T-041-s3 are GONE — absorbed by T-048 and deleted at this merge
-   (see the encoding-debt note above).
-   **Untriaged (7)**: T-041-s2 (the wire shape is pinned in Rust and
-   mirrored by hand in TS with nothing comparing them — **rank it
-   against the fact that three new lane specs now assert against those
-   hand-written payloads, and T-027/T-028/T-029 will add more**),
-   T-041-s4 (`NODE_ENV`, not `--mode`, is what flips the DEV gate — the
-   one path that would package a harness, kept inert by the runtime
-   half), T-046-s1 (the unsignalled process group — reproduced, and the
-   only one whose blast radius is the human's own port), T-046-s4 (the
-   overlay's blind spot — the only one that weakens a gate the pipeline
-   now depends on), T-046-s2 (`checkJs` — note the file's worked example
-   is wrong and the verifier's correction is IN the file), T-046-s3
-   (nothing gates the packaged build — read together with s4 and with
-   T-041-s4: all three are the same shape, "a gate proves the
-   configuration it was handed, not the one that ships"), and T-039-s3
-   (give the session-id refusal its own typed outcome; its home is
-   T-029, still no disposition).
+   milestone order but held for the visual verdict. **app-agent is now
+   FREE** — T-047 has merged — which unblocks **T-043**'s "serialize
+   behind T-039 on app-agent" condition outright; **app-shell is
+   OCCUPIED by T-048.** Triage: APPLY granted — but tasks NEWLY created
+   by triage (T-041…T-048) do NOT dispatch without the human; T-041,
+   T-046, T-047 and T-048 each got that nod explicitly. Unchanged method
+   rules: a second REJECTED on any task parks that lane for the human;
+   @human judgments are never self-answered.
+4. SUGGESTION BACKLOG — **22 open files: 9 parked + 13 suggested.**
+   (The last checkpoint's "13 open" line was wrong against its own
+   parser tally of 9 + 7; the number here is read straight from the
+   parser.) **T-047 contributes six**, which is the largest single
+   addition the board has taken.
+   **Untriaged (13)**: the six T-047 cards — **s5** (the probed path
+   skips the gate; smallest remedy, and it makes the write-side gate
+   redundant rather than load-bearing), **s6** (nothing structurally
+   stops a test resolving the real CLI; **already fired once**, and its
+   remedy should land before F-04), **s4** (`$SHELL` picks the program;
+   its option 3 is NECESSARY because a code comment is now false),
+   **s1** (retire the cache — it saves zero spawns; wants one
+   measurement first, a heavy `~/.zshrc`), **s2** (the flag table is a
+   version snapshot; subcommands are the one-sided exposure), **s3**
+   (the model has no read boundary; home is T-027) — plus **T-041-s2**
+   (the wire shape is pinned in Rust and mirrored by hand in TS with
+   nothing comparing them; three lane specs now assert against those
+   hand-written payloads), **T-041-s4** (`NODE_ENV`, not `--mode`,
+   flips the DEV gate), **T-046-s1** (the unsignalled process group),
+   **T-046-s4** (the overlay's blind spot), **T-046-s2** (`checkJs` —
+   its worked example is wrong and the correction is IN the file),
+   **T-046-s3** (nothing gates the packaged build — read with s4 and
+   T-041-s4: all three are "a gate proves the configuration it was
+   handed, not the one that ships"), and **T-039-s3** (give the
+   session-id refusal its own typed outcome; home is T-029).
    **The nine parked, unchanged**, all blocked on something only the
    world can provide: T-003-s2 (a real project near the ~25 MB knee),
-   T-008-s1 (F-04/F-05 layout), T-018-s1 (a Windows lane), T-021-s1 and
-   T-026-s1 (both await the first Linux run — already on the launch
-   item), T-025-s2 (@human, one command on an authenticated machine),
-   T-025-s4 (gated by s2), T-025-s3 (nputer.yaml is F-04 era; its count
-   fix rides T-043), T-038-s1 (no responsive call site yet).
+   T-008-s1 (F-04/F-05 layout), T-018-s1 (a Windows lane — **note
+   T-047 made `is_executable_file` return `false` off-unix, so a
+   Windows lane now inherits a refusal it must deliberately implement
+   rather than a hole it must remember to find**), T-021-s1 and
+   T-026-s1 (both await the first Linux run), T-025-s2 (@human, one
+   command on an authenticated machine), T-025-s4 (gated by s2),
+   T-025-s3 (nputer.yaml is F-04 era; its count fix rides T-043),
+   T-038-s1 (no responsive call site yet).
    Five triage-born tasks stand ready and un-dispatched: T-042 (genesis
-   switch truthfulness), T-043 (kill path: honest grace and honest
-   scope — its "serialize behind T-039 on app-agent" condition is
-   satisfied, but app-agent is occupied by T-047 until that merges),
-   T-044 (shell pins cover their surface), T-045 (the gates cover the
-   rules). Milestone-4 queue after F-03: T-010, T-013, T-014, T-015,
-   T-030…T-035, T-044, T-045, plus T-022.
+   switch truthfulness), **T-043** (kill path: honest grace and honest
+   scope — **its serialization condition is now SATISFIED and app-agent
+   is free**; T-047-s4 explicitly nominates it as a home), T-044 (shell
+   pins cover their surface), T-045 (the gates cover the rules).
+   Milestone-4 queue after F-03: T-010, T-013, T-014, T-015, T-030…
+   T-035, T-044, T-045, plus T-022.
 
 ## Open questions
 - **Does the BOOT GATE rule retire, and when?** Carried forward
-  unchanged from T-046's checkpoint. T-009-s1's sibling rule names its
-  retirement (T-014's `nputer index --check`); BOOT GATE names none in
-  CONVENTIONS, and `.github/workflows/ci.yml` already invokes the boot
-  check on ubuntu while dormant. Does it retire at the repo's first
-  push, or only when a macOS gate exists too? Deliberately left for a
-  triage rather than settled by an integrator edit — including by this
-  integrator, who has now run it and is therefore the most tempted.
+  unchanged. T-009-s1's sibling rule names its retirement (T-014's
+  `nputer index --check`); BOOT GATE names none in CONVENTIONS, and
+  `.github/workflows/ci.yml` already invokes the boot check on ubuntu
+  while dormant. Does it retire at the repo's first push, or only when a
+  macOS gate exists too? Left for a triage. **Two exercises in now, on
+  both trigger limbs** (`app/src/**` at T-041, `app/src-tauri/**` here),
+  and it has needed no amendment either time.
 - **Should `method/` name the class of CONVENTIONS-level pipeline
-  gates?** T-046's checkpoint recorded the obligation: there are now TWO
-  gates with the shape trigger → command → record, one of which binds
-  the executor, and `method/roles/executor.md` still says only "run the
-  test commands from CONVENTIONS.md until green". Ask ONCE when a THIRD
-  lands, or when the executor rule proves noisy. A method version bump,
-  not an ADR.
-- **NEW: does the shared main working tree need a rule?** The T-046
-  merge lost its house shape to a shared git index, and the fix that
-  worked here was purely social ("the pen is yours") plus a
-  `git diff --cached --stat` check before every commit. That is a
-  practice nobody has written down, in a repo whose whole thesis is that
-  practices get written down. Method/process, so the architect's (ADR-004).
+  gates?** Unchanged: there are TWO gates with the shape trigger →
+  command → record, one of which binds the executor, and
+  `method/roles/executor.md` still says only "run the test commands from
+  CONVENTIONS.md until green". Ask ONCE when a THIRD lands, or when the
+  executor rule proves noisy. A method version bump, not an ADR.
+- **Does the shared main working tree need a rule?** Carried forward and
+  **now with a second, different symptom**. The first was the git INDEX
+  (T-046's merge lost its house shape to a shared index; the fix that
+  works is social — "the pen is yours" — plus `git diff --cached --stat`
+  before every commit, done twice here). The second, new today, is the
+  WORKING TREE ITSELF: the human's live `tauri dev` watches
+  `app/src-tauri/src/**`, so **any app-agent or app-shell merge restarts
+  the app the human is reviewing**, one second after the merge commit,
+  with no signal from the integrator. Neither is written down anywhere.
+  Method/process, so the architect's (ADR-004).
+- **NEW: when does spawn hygiene become an ADR?** Three C-14-local rules
+  now exist (T-025's env allowlist, T-039's argv gate, T-047's four
+  boundaries) and this merge ruled AGAINST a charter — see the
+  three-prong above. The existing trigger ("a second component spawns
+  agents at F-04") is joined by a nearer one: **when T-047-s5 lands and
+  the cached and probed doors hold ONE standard**, there is for the first
+  time a single rule to charter. Until then a charter would either freeze
+  a two-door reality or contradict the code.
