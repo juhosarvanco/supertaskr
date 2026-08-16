@@ -10,7 +10,7 @@ blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: "claude-opus-5 @fresh ×2 (build session, then a continuation that re-derived the evidence first-hand)"
 verified_by:
 review:
 ---
@@ -113,6 +113,39 @@ session two and pasted verbatim.
 `app/test/watcher-store.test.ts`, `app/test/shell-harness.test.ts`,
 `tools/e2e/fixtures/shell.ts`, `tools/e2e/tests/shell-harness.ts`. Plus
 this card and two suggestions (T-050-s1, T-050-s2).
+
+### What was built, one layer at a time
+
+**Layer 1, the latch** — `watcher-store.ts`. `started: boolean` became
+`startup: Promise<void> | null` plus an honest `startupAttempts` counter.
+Detailed in the next two sections, because it is the crux.
+
+**Layer 2, the rejection becomes state** — `watcher-store.ts`.
+`ShellState` gained `starting: boolean` and
+`startupFailure: StartupFailure | null` (`{ step, message, attempt }`,
+where `step` is `"subscribe" | "snapshot"`). One recorder,
+`recordStartupFailure`, is the single place a rejection becomes state; it
+is called by the store's own two catches AND exported through T-041's
+dev harness as `applyStartupFailure`, so the served bundle renders the
+SHIPPED state rather than a lane-side imitation of it. `message` is
+`String(reason)` — the store's existing idiom from `runPicker` /
+`runIndexRepo`.
+
+**Layer 3, the screen** — `App.tsx`. `ScreenModel` gained
+`{ screen: "startupFailed"; failure }`, selected only while
+`phase === "loading" || "browser"` (every other phase is an ANSWER some
+completed startup or pick produced) and placed BELOW the rejected-pick
+branch. The one-line `<p>waiting for the first docs snapshot…</p>` became
+a `StartupScreen` component serving both waiting and failed states, with
+`Try again` (`disabled={starting}`), `Open a folder…`,
+`Start an interview` and the `⌘O · ⌘N` hint. The header's own pair stays
+board-only — T-049's gate is not widened, so this escape belongs to the
+screen.
+
+**What deliberately did NOT change**: the subscribe-then-pull order (the
+seq guard still settles the race), the call site's `void
+startDocsWatcher()`, and the IPC surface — no new command, no new grant,
+no new dependency.
 
 ### The latch — what shape it is, and why that shape
 
@@ -594,6 +627,16 @@ and every escape T-050 promises does arrive somewhere. The asymmetry it
 names is also already pinned as a FACT by
 `startup-recovery.test.ts` → "records the snapshot step, and the
 subscription that DID succeed is not lost".
+
+### Criteria → evidence
+
+| # | criterion | where it lives | evidence |
+|---|---|---|---|
+| 1 | latch set only on success; retryable; StrictMode safety survives | `watcher-store.ts:508`, `:713-741` | obligation 1 (unfixed vs HEAD, `listenCalls 1 -> 2`) + obligation 2 probes A/B/C. Concurrent clause was NOT satisfied as committed; fixed and pinned this session. |
+| 2 | failure surfaced, not swallowed; nothing reaches the DOM as markup | `recordStartupFailure` `:625`, `StartupScreen` detail `App.tsx:300-320` | obligation 3 — single TEXT node, zero element descendants, `innerHTML` returns escaped brackets, nothing executed, nothing truncated. Log line takes the reason as an ARGUMENT. |
+| 3 | the loading screen carries a real escape; says so when startup failed | `selectScreen` `:294-302`, `App.tsx:529-541` | obligation 4 — four controls not one, ⌘O/⌘N fire with exactly one handler each, retry reaches the board, pipeline live afterwards (`data-seq` 2). |
+| 4 | suite pins rejecting `listen` and rejecting `invoke` as RECOVERABLE; happy path latches once | `app/test/startup-recovery.test.ts` (17), `startup-screen.test.tsx` (11), `tools/e2e/tests/startup-recovery.spec.ts` (4) | obligations 5 and 7 — all 32 bodies poison-proven to execute. |
+| 5 | otherwise unchanged; every current watcher-store and shell test green by name | — | obligation 6 — 28 identical names, 8 with one honest rename, assertion strengthened and poison-checked; obligations 8 and 9. |
 
 ### What the task did not name
 
