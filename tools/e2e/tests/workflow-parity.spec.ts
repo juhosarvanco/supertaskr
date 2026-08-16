@@ -10,9 +10,11 @@ import { repoRoot } from "../preflight";
  * GitHub push (no remote exists), so THIS spec is its machine
  * validation: valid YAML, every CONVENTIONS suite command present as a
  * step verbatim and in the plan-§7 order, every `uses:` pinned by full
- * commit SHA, and the boot step invoking tauri-boot-check.mjs under
- * xvfb-run. The workflow stays a thin invoker of the same commands
- * CONVENTIONS documents — one source of truth, drift caught here.
+ * commit SHA, the GITHUB_TOKEN scope (T-036 — `contents: read` and
+ * nothing wider, anywhere), and the boot step invoking
+ * tauri-boot-check.mjs under xvfb-run. The workflow stays a thin
+ * invoker of the same commands CONVENTIONS documents — one source of
+ * truth, drift caught here.
  */
 
 interface WorkflowStep {
@@ -61,6 +63,54 @@ const APT_PACKAGES = [
   "xvfb",
 ];
 
+/**
+ * The workflow's whole GITHUB_TOKEN grant (T-036): the top level
+ * declares exactly this, and nothing may exceed it.
+ */
+const LEAST_PRIVILEGE: Record<string, string> = { contents: "read" };
+
+/**
+ * Every `permissions:` declaration in the document, with its dotted
+ * path — top level, any job, any step. Actions honours only the first
+ * two, but a step-level key is collected as well so a grant written
+ * anywhere fails this spec instead of passing unread.
+ */
+function collectPermissions(
+  node: unknown,
+  at: string,
+  into: { at: string; value: unknown }[],
+): { at: string; value: unknown }[] {
+  if (node === null || typeof node !== "object") return into;
+  if (Array.isArray(node)) {
+    node.forEach((item, i) => collectPermissions(item, `${at}[${i}]`, into));
+    return into;
+  }
+  for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+    const here = at === "" ? key : `${at}.${key}`;
+    // Don't recurse INTO a permissions block: its children are scope
+    // names, and the block itself is what gets judged.
+    if (key === "permissions") into.push({ at: here, value });
+    else collectPermissions(value, here, into);
+  }
+  return into;
+}
+
+/**
+ * Everything a `permissions:` value grants beyond `{ contents: read }`,
+ * rendered `scope: level`. Empty means "not wider" — `{}` (narrower)
+ * and a redundant `{ contents: read }` both pass; `contents: write`,
+ * any second scope (`packages: write`), and the `read-all`/`write-all`
+ * shorthands do not.
+ */
+function widenings(value: unknown): string[] {
+  if (value === null || typeof value !== "object") {
+    return [`the whole-token shorthand \`${String(value)}\``];
+  }
+  return Object.entries(value as Record<string, unknown>)
+    .filter(([scope, level]) => LEAST_PRIVILEGE[scope] !== level)
+    .map(([scope, level]) => `${scope}: ${String(level)}`);
+}
+
 function loadWorkflow(): { raw: string; doc: Record<string, unknown>; steps: WorkflowStep[] } {
   const file = path.join(repoRoot, ".github", "workflows", "ci.yml");
   const raw = readFileSync(file, "utf8");
@@ -87,6 +137,40 @@ test("ci.yml is valid YAML with the one pinned ubuntu job", () => {
   expect(job["runs-on"], "pinned runner, not -latest").toBe("ubuntu-24.04");
   expect(job["timeout-minutes"]).toBe(45);
   expect(steps.length).toBeGreaterThan(0);
+});
+
+test("GITHUB_TOKEN is least-privilege: `contents: read`, and nothing widens it", () => {
+  const { doc } = loadWorkflow();
+
+  // 1. The block EXISTS. Without it the token's scope is whatever the
+  //    repository's default workflow-permission setting says — a
+  //    web-UI checkbox, not a fact in this repo (T-036).
+  expect(
+    doc.permissions,
+    "ci.yml declares no top-level `permissions:` block — GITHUB_TOKEN would silently inherit the repository's default workflow-permission setting instead of being a fact in this repo",
+  ).toBeDefined();
+
+  // 2. It is EXACTLY `contents: read` — this job reads the repo and
+  //    writes nothing back.
+  expect(
+    doc.permissions,
+    "the top-level `permissions:` block must be exactly { contents: read }",
+  ).toEqual(LEAST_PRIVILEGE);
+
+  // 3. NOTHING anywhere widens it — a job or step granting
+  //    `contents: write`, a second scope like `packages: write`, or a
+  //    `write-all` shorthand fails here, naming what it grants and
+  //    where. The rule (stated in ci.yml at the point of temptation) is
+  //    that a genuine need is granted at THAT JOB's scope with its
+  //    reason beside it; this assertion makes such a grant a deliberate,
+  //    argued edit to both files rather than a silent one.
+  const wider = collectPermissions(doc, "", []).flatMap(({ at, value }) =>
+    widenings(value).map((grant) => `${at} grants ${grant}`),
+  );
+  expect(
+    wider,
+    "a `permissions:` declaration exceeds the workflow's least-privilege default (contents: read) — if the grant is genuinely needed, argue it at that job's scope in ci.yml and update this spec deliberately",
+  ).toEqual([]);
 });
 
 test("every CONVENTIONS suite command is a step, verbatim and in plan-§7 order", () => {
