@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: "claude-opus-5 @fresh"
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 Absorbs: T-041-s1, T-041-s3. Human-approved 2026-08-16 during the
@@ -413,3 +413,217 @@ re-verified after restore, `git status docs/` clean. The ignored
    scrolling away at 800x600 while the interview's does not.
 
 ## Verdicts
+
+2026-08-16 — claude-opus-5 @fresh, verifier — same-model review (the
+builder was claude-opus-5 too; recorded so this is not read as an
+independent-model check): **APPROVED**, with two suggestions filed (s4,
+s5), one of them a **CORRECTION to this branch's own T-048-s3**. Every
+number below is mine, re-derived from the branch against the real dev
+bundle on a scratch port (14526; 14520 for the lane, **1420 never
+bound or contacted** — it stayed the human's live app throughout).
+Merge-base confirmed **`e78bfdc`**, HEAD `517ecde`, **8 files**.
+
+**Rig.** The REAL dev bundle, headless Chromium driven through T-041's
+`__nputerShellHarness` + `__nputerDocsHarness`, T-024's `streak`
+fixture (9 files) under a genesis project. Written from scratch rather
+than run from the branch's lane, so the measurement is independent of
+the coverage it is checking.
+
+**C1 + C2 — THE MEASUREMENT TABLE, BOTH HALVES, MINE.** BEFORE
+(merge-base sources checked back in, same rig):
+
+| viewport | page / vp | column | pane region |
+|---|---|---|---|
+| 800x600 | **1172 / 600** | 1172 | **858 / 858** — never scrolls |
+| 1024x768 | **1141 / 768** | 1141 | **827 / 827** — never scrolls |
+| 1280x720 | **1110 / 720** | 1110 | **796 / 796** — never scrolls |
+
+AFTER:
+
+| viewport | page / vp | column | pane region |
+|---|---|---|---|
+| 800x600 | **600 / 600** | 600 | **858 / 286** — scrolls |
+| 1024x768 | **768 / 768** | 768 | **827 / 454** — scrolls |
+| 1280x720 | **720 / 720** | 720 | **796 / 406** — scrolls |
+
+Every recorded figure reproduces to the pixel, including the notes'
+empty-genesis line (800x600 page **971 → 600**, region 657/657 →
+657/286). Extended past the three the criterion names: 1920x1080
+1080/1080 (796/766), 1440x900 900/900 (796/586), 640x480 480/480
+(886/166) — all hold, and the last artifact is fully reachable at every
+one. The floor is measured and filed as **s5** (below ~250px of window
+height the pane's region stops at 44px and the last row cannot be
+brought into view; below ~225px the page grows again). Far outside the
+criterion and outside any plausible window, but it is a real trade a
+bounded frame makes and `tauri.conf.json` declares no `minHeight`.
+
+**C3 — THE DEVIATION IS CORRECT, AND THE TASK FILE'S OWN PRESCRIPTION
+WAS WRONG. Both grounds re-derived by building the three-edit version
+and measuring it.**
+
+- **board**: the rail is a stretch-height sibling of the column, so it
+  goes **2202 → 720** at 1280x720 and **2202 → 600** at 800x600, while
+  the page still scrolls to **2202**. The sidebar strip and its border
+  stop at the fold on a document that keeps going. Reproduced.
+- **map at 800x600**: `div.map-canvas-grid` joins the
+  `overflow:hidden`-with-taller-content list **only** under the
+  three-edit version — **446/392, `overflow-y: hidden`**, no scrollbar
+  anywhere. (The notes say 446/320 and 126px lost; my board fixture is
+  this branch's own docs/ tree and measures a shorter map page, so I
+  lose 54px instead of 126. Same mechanism, same arithmetic —
+  unreachable == the page overflow the bound removes — different
+  fixture height. Not a discrepancy in the claim.)
+- **the no-plan card at 800x600**: `main` **663 → 600**, movement where
+  criterion 4 asked for none. Reproduced.
+- **and it buys nothing**: the three-edit version's genesis numbers are
+  **identical to what shipped** at all three viewports (600/600
+  858/286, 768/768 827/454, 720/720 796/406). So the second
+  `min-h-screen → h-screen` costs two screens and gains zero pixels.
+
+The criterion offered "a demonstrably better equivalent" and this is
+one. **Criterion 3's own prescription, inherited from T-041-s1, would
+have failed criterion 4** — the two are in conflict and the builder
+resolved it the right way, with measurements, and said so.
+
+**C4 — RE-MEASURED, NOT TAKEN ON TRUST.** Every screen, every field,
+before → after, at BOTH viewports the dispatch names:
+
+| screen | 1280x720 | 800x600 |
+|---|---|---|
+| front door | page 720/720, main 720, card 67+653 | page 600/600, main 600, card 67+533 |
+| no-plan card | page 720/720, main 720, card 67+653 | page 663/600, main 663, card 67+596 |
+| board (this repo's own docs/, 122 files) | page 2202/720, main 2202, **rail 2202** | page 2202/600, main 2202, **rail 2202** |
+| map | page 720/720, main 720, rail 720, canvas 546/546 | page 654/600, main 654, rail 654, canvas 446/446 |
+
+**Every field identical before → after, at both sizes.** Two extra
+probes agree: `minTop` stayed 0 everywhere (nothing above the scroll
+origin), and the `overflow:hidden`-with-taller-content list stayed the
+same eleven pre-existing map-node buttons — the canvas joins it only
+under the rejected variant. Zero regressions.
+
+**C5 — THE TRIPWIRE FLIPPED, AND IT CATCHES. Three revert drills, each
+run separately, each red with a legible message:**
+
+| revert | lane result |
+|---|---|
+| both halves (back to merge-base) | **2 failed** — "the genesis column is bounded to the window (T-048)" Expected 720 Received **1110**; "the column is bounded to the window at 800x600" Expected 600 Received **1172**. App suite **2 failed** — "the interview's column is bounded", "genesis-screen must be able to shrink below its content" |
+| `h-screen` kept, `min-h-0` reverted (the falsified fix) | **2 failed** — "the frame HOLDS: the page never grows past the viewport (T-048)" Expected 720 Received **1110**; "the page does not grow past the window at 800x600" Expected 600 Received **1172**. The column assertions **PASS** — the falsification in one line, and the lane re-derives the falsified fix's numbers on its own |
+| `min-h-0` kept, `h-screen` reverted | **2 failed** — both column assertions |
+
+The comment names T-048 eight times, `T-041-s1` is gone from the block
+(0 occurrences), the single `T-041-s3` mention is explanatory, and
+T-041's s1/s3 FILES are absent on branch and on main alike — absorbed,
+not recreated. The one residue: line 197 still opens "the open @human
+question from T-026/T-037", which now reads as a topic heading rather
+than a live question since the next sentence says T-041 pinned the
+wrong answer and T-048 fixed it. Criterion met; the phrasing is worth a
+word if anyone touches the block again.
+
+**THE TRUSTED WHEEL — it proves reachability, not a delta.** Before the
+wheel the last artifact sits at top 954 / bottom 994 against a 720
+viewport, intersection ratio **0** — `toBeInViewport()` would fail.
+After `page.mouse.wheel(0, 2000)`: `scrollTop` **390**, which is the
+region's full range (796 − 406), the row at 564–604, ratio **1.0**,
+`window.scrollY` **0**. The page's own listener reports
+`isTrusted: true`, so it is real browser input, not synthetic dispatch.
+
+**THE CONDITIONAL — principled today, incidental tomorrow; ruled
+acceptable.** `boundedFrame = screen.screen === "genesis"` and the
+`<GenesisScreen>` render guard are the **same expression off the same
+`screen` object in the same render**, so they cannot desync. Proved
+rather than argued: nine reachable shell states driven through the
+harness — browser, noProject, noDocs, genesis empty, genesis + streak,
+**genesis phase + a rejected pick**, genesis phase + an error pick,
+back to genesis, and docs landing under a different dir while genesis —
+and in every one `genesisRendered === bounded` and `bounded !== floor`.
+No state renders genesis unbounded or bounds a screen that is not it.
+It is also coextensive with the real rule: the genesis pane's
+`overflow-y-auto` is the shell's ONLY in-flow scroll region (the board
+detail panel and the map panel are `fixed inset-y-0`, already
+viewport-bounded). The forward-looking gap is real — the default is
+`min-h-screen`, so a NEW screen with an in-flow scroll region
+reproduces T-048 silently and nothing in either suite would catch it —
+but criterion 4 *requires* the scoping, T-027 restructures this screen
+and will red the chain test on its way through, and **T-048-s1 already
+holds exactly this decision** with the rail and the board in scope. Not
+worth a second file; not worth blocking.
+
+**COVERAGE EXECUTES.** `expect("PROBE").toBe("EXECUTED")` injected as
+the first statement of each new/edited body: `shell-frame.test.tsx` all
+**4** it() bodies → **4 failed (4)**, each on the PROBE line;
+`genesis-screen.spec.ts` both touched bodies → **2 failed, 2 passed**,
+both failures on the PROBE line. Reverted and `cmp`-verified byte-exact
+against pre-probe copies; sha256 of all four touched files unchanged.
+
+**SUITES (macOS 15/Darwin 25.6, node v22.22.0, ADR-011 order, this
+worktree).** lib/parser `npm test` **159 passed (10 files)**. app
+`npx tsc --noEmit` **clean**, `npm run build` **exit 0** —
+`index-DV-d_LjB.js` **442.12 kB**, matching the notes — `npm test`
+**495 passed (29 files)**. src-tauri bare `cargo test` **208 passed + 3
+ignored** over 11 binaries, summed from the eleven `test result:` lines
+(100 / 0 / 0 / 28+1 / 68 / 3 / 7 / 0+1 / 2+1 / 0 / 0), **not** read off
+a tail. tools/e2e `npx playwright test` **34 passed (8.5s)**, one
+worker, retries 0, no skips; `npm run typecheck` clean; `lint:tokens`
+**clean, 37 files**. Cargo is **208, not T-047's 217, and that is
+correct for this base** — the branch's merge-base predates T-047; it is
+noted, not counted as a miss. **Boot check NOT run**, by instruction —
+the builder correctly did not run it either and said so; the merge that
+lands this must.
+
+**FENCE — proved, not asserted.** `git diff --name-only e78bfdc..HEAD`
+is **8 files** and nothing else. Zero changed under
+`app/src/lib/watcher-store.ts`, `tools/e2e/scripts/**`,
+`app/src-tauri/**`, `lib/**`, `method/**`, `docs/CONVENTIONS.md`,
+`app/src/genesis/**`, `docs/architecture/graph.json`, `docs/STATE.md`,
+`docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, and every lockfile (0).
+**Nothing T-049 owns is touched**: T-048's three App.tsx hunks are
+`@@ -7,0 +8`, `@@ -275,0 +277,32` and `@@ -291 +324`, while T-049 owns
+the `EmptyState` keydown listener (:142-153) and the header's button
+region (:356) — no shared line, and the nearest edit is 32 lines clear
+of the button block, well outside merge context. `../nputer-t049` was
+never entered; T-049's task file was read via `git show main:`.
+
+**GRAPH FORECAST — regenerated myself, confirmed, restored byte-exact.**
+`self_graph_is_current` RED on-branch as forecast. After
+`NPUTER_UPDATE_GOLDEN=1`: files **89 → 90** (adds
+`app/test/shell-frame.test.tsx`, nothing removed), content-changed
+hash/loc only on `App.tsx` and `GenesisScreen.tsx`, stats symbols
+**602 → 616**, edges **1003 → 1013** — every figure as forecast. Three
+assertions move and no more: `architecture-dogfood.test.ts` file count
+89 → **90**, its relation row `["C-05","C-10","confirmed",20]` → **21**
+(vitest's own diff, and the table stays 28 rows either side — one
+count, no rows added or lost), and `map-dogfood-render.test.tsx`
+`committed graph · 89 files` → **90 files**. `lib/parser` stayed
+**159/159 with `smoke.test.ts` green**, so the registry pin does NOT
+move, exactly as forecast. `docs/architecture/graph.json` restored and
+re-verified at sha256 `05ebc2c772ffa3aaabc23aefa0feae60f2c4652ab9e64ac1c64de0044f5e478a`, `git status` clean.
+
+**THE THREE SUGGESTIONS.** **s1** — reproduced: bounded genesis
+(600/600) beside a board that runs to 2202 with its header scrolling
+away at 800x600. Two scroll models, correctly described, and it is
+genuinely T-027's composition call, not something smaller: unifying
+needs a sticky rail AND a board scroll region AND s2's canvas fix
+before the conditional can collapse. **s2** — reproduced and it is the
+sharpest of the three: the canvas is `overflow-hidden` with no scroll
+region under it, harmless only because nothing bounds it today, and it
+enters the clipped list the instant anything does, with every suite
+green. Worth closing on its own terms. **s3 — the measurement holds and
+the CONCLUSION DOES NOT**, filed as **s4**: 663/600 reproduces exactly,
+but "Start an interview here" measures top 524 / bottom 556 and the
+footnote ends at 590, both clear of a 600px fold; **no element's text
+starts at or below y=600**. What overflows is the section's `py-12` and
+15px of the card's painted bottom edge. It is a cosmetic fit blemish on
+the first screen, not a hidden primary action — schedule it with the
+front-door visual pass, not ahead of it. s3's own `115+500` card figure
+already implied this; the prose overshot.
+
+**Verdict: APPROVED.** All five criteria met. The deviation from
+criterion 3 is not a shortcut — it is the branch measuring its own
+task file's prescription and finding it wrong, and it is right. The
+coverage reds on the class rather than on a class name, the tripwire
+was flipped and drilled three ways, and the fence is clean. `status`
+left `building` for the integrator. **@human, when you look at the
+screen again**: the frame holds at 800x600 and the artifact list has
+286px of the 858px it wants — whether that is enough list is the eye
+judgment the notes ask for, and the composition question (full-width
+pane vs right half) is still T-027's. Read **s4 before s3**.
