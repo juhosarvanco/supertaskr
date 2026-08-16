@@ -186,10 +186,18 @@ export function auditPermissions(files: WorkflowFile[], exceptions: Exception[])
   return complaints;
 }
 
-/** Every workflow file GitHub would load: `*.yml` and `*.yaml`, sorted. */
+/** Every workflow file GitHub would load: `*.yml` and `*.yaml`, sorted.
+ * A missing directory returns [] rather than throwing, so the vacuity
+ * complaint above states the problem instead of an ENOENT stack. */
 export function workflowFiles(): WorkflowFile[] {
   const dir = path.join(repoRoot, ".github", "workflows");
-  return readdirSync(dir)
+  let names: string[];
+  try {
+    names = readdirSync(dir);
+  } catch {
+    return [];
+  }
+  return names
     .filter((n) => n.endsWith(".yml") || n.endsWith(".yaml"))
     .sort()
     .map((name) => ({ name, text: readFileSync(path.join(dir, name), "utf8") }));

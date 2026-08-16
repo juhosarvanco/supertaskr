@@ -105,6 +105,20 @@ export function commandBullets(section: string): { dir: string; commands: string
   return out;
 }
 
+/**
+ * The section's CI bullet — where a reader goes to learn how CI differs
+ * from local. Every disposition that is not "verbatim" has to be written
+ * down THERE, not merely somewhere in the doc: a divergence buried in
+ * another bullet is one the next editor of ci.yml will not meet.
+ */
+export function ciBullet(section: string): string {
+  const bullet = section
+    .split(/\n(?=- )/)
+    .map((b) => b.replace(/\s+/g, " ").trim())
+    .find((b) => b.startsWith("- CI (.github/workflows/ci.yml)"));
+  return bullet ?? "";
+}
+
 // ── the CI correspondence: the doc's commands, and how CI runs them ────
 
 type Correspondence =
@@ -230,9 +244,16 @@ const DOC_DIRS = ["lib/parser", "app", "app/src-tauri", "tools/e2e"];
  */
 export function deriveExpectedSteps(md: string): { steps: Step[]; problems: string[] } {
   const section = buildAndTestSection(md);
-  const flat = section.replace(/\s+/g, " ");
+  const ci = ciBullet(section);
   const doc = docCommandMap(section);
   const problems: string[] = [];
+  if (ci === "") {
+    problems.push(
+      'docs/CONVENTIONS.md "Build & test" has no `- CI (.github/workflows/' +
+        "ci.yml)` bullet — that bullet is where every divergence between the " +
+        "documented commands and the workflow has to be written down.",
+    );
+  }
 
   // 0. The parse is not vacuous. Four bullets, in order, each with
   //    commands — a restructured section must fail loudly here rather
@@ -284,20 +305,32 @@ export function deriveExpectedSteps(md: string): { steps: Step[]; problems: stri
     }
   }
 
-  // 2. Every divergence is documented in the DOC, not only argued here.
-  //    A mapping this file knows about and CONVENTIONS does not is exactly
-  //    the untracked difference criterion 1 forbids.
+  // 2. Every disposition that is not "verbatim" is documented in the DOC's
+  //    CI bullet, not only argued here. A mapping this file knows about and
+  //    CONVENTIONS does not is exactly the untracked difference criterion 1
+  //    forbids — and the CI bullet is the one place its reader will look.
   for (const entry of CI_SEQUENCE) {
     if (entry.kind === "verbatim") continue;
     const steps = entry.kind === "mapped" ? entry.steps : [entry.step];
     for (const step of steps) {
-      if (!flat.includes(`\`${step.run}\``)) {
+      if (!ci.includes(`\`${step.run}\``)) {
         problems.push(
           `the workflow runs \`${step.run}\` but docs/CONVENTIONS.md "Build & ` +
             'test" never mentions it — an untracked divergence. Document it in ' +
             "the CI bullet (which enumerates them) so both sides say the same thing.",
         );
       }
+    }
+  }
+  //    Same rule for the commands CI deliberately skips: a reader of the CI
+  //    bullet must be able to see that they are skipped on purpose.
+  for (const entry of LOCAL_ONLY) {
+    if (!ci.includes(`\`${entry.cmd}\``)) {
+      problems.push(
+        `this spec says CI deliberately does not run \`${entry.cmd}\` (${entry.why}) ` +
+          'but docs/CONVENTIONS.md\'s CI bullet does not say so — an omission a ' +
+          "reader cannot tell from a mistake.",
+      );
     }
   }
 
