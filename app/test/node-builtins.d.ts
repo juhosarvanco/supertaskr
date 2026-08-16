@@ -14,8 +14,10 @@ declare module "node:fs" {
   export function readFileSync(path: string, encoding: "utf8"): string;
   export function readdirSync(path: string): string[];
   /** Exactly the surface the genesis fixture walkers consume (T-024):
-   * directory-vs-file discrimination while recursing a fixture tree. */
-  export function statSync(path: string): { isDirectory(): boolean };
+   * directory-vs-file discrimination while recursing a fixture tree —
+   * plus, since T-037, mtimeMs, so the built-bundle assertion can refuse
+   * a dist/ older than the sources it claims to be evidence about. */
+  export function statSync(path: string): { isDirectory(): boolean; mtimeMs: number };
 }
 
 declare module "node:path" {
