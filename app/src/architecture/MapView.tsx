@@ -29,6 +29,8 @@ import { searchMap } from "./map-search";
 import { MapEdge, MapEdgeMarkers, edgeKey } from "./MapEdge";
 import { MapNode } from "./MapNode";
 import { MapPanel } from "./MapPanel";
+import { TasksLens } from "./TasksLens";
+import { MAP_LENSES, type MapLens } from "./map-lens";
 
 /**
  * The map pane (T-012): T0 architecture map — T-011's derived model
@@ -153,6 +155,7 @@ export function MapView({
   const layout = layoutCache.current.layout;
 
   // --- view state (session-ephemeral; T-022 owns persistence) ----------
+  const [lens, setLens] = useState<MapLens>("architecture");
   const [overlay, setOverlay] = useState<MapOverlay>("status");
   const [selected, setSelected] = useState<string | null>(null);
   const [panel, setPanel] = useState<PanelState>(null);
@@ -306,9 +309,44 @@ export function MapView({
         className="flex items-center justify-between gap-4 border-b border-hairline px-5 pt-3.5 pb-3.25"
       >
         <div className="flex min-w-0 items-center gap-3.5">
-          <h2 className="font-mono text-2xl font-bold tracking-wordmark">map</h2>
-          {/* Lens control (architecture · tasks) is absent until a
-              tasks-lens task exists (criterion; T-012-s1 filed). */}
+          <h2 className="font-mono text-2xl font-bold tracking-wordmark">
+            {lens === "tasks" ? "map · tasks" : "map"}
+          </h2>
+          {/* Lens control (architecture · tasks) — T-034. It keeps ONE
+              home across both lenses (the README's pane-header order:
+              wordmark · lens · search); the design's tasks screen parks
+              it on the far right instead, and a segmented control that
+              jumps across the header when you use it is a defect, not a
+              design (recorded deviation). */}
+          <div
+            data-testid="map-lens-control"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-secondary p-0.75"
+          >
+            {MAP_LENSES.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                data-testid={`map-lens-${mode}`}
+                aria-pressed={lens === mode}
+                onClick={() => setLens(mode)}
+                className={cn(
+                  "rounded-chip px-2.75 py-1.25 font-mono text-xs",
+                  lens === mode
+                    ? "bg-primary text-primary-foreground"
+                    : "text-secondary-foreground",
+                )}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+          {lens === "tasks" && (
+            <p data-testid="map-lens-subtitle" className="truncate text-sm text-muted-foreground">
+              what has to happen before what · the same {model.tasks.length} tasks, ordered by
+              dependency instead of story
+            </p>
+          )}
+          {lens === "architecture" && (
           <div className="relative">
             <span className="flex w-57.5 items-center gap-2 rounded-lg border border-border bg-sidebar px-2.75 py-1.5">
               <span aria-hidden="true" className="size-2.25 rounded-full icon-stroke border-muted-foreground" />
@@ -383,7 +421,15 @@ export function MapView({
               </div>
             )}
           </div>
+          )}
         </div>
+        {/* Search, the overlay control, the indexed-at hint and Re-index
+            are ARCHITECTURE chrome: search runs over components and
+            files, the overlay modes are the architecture model's layers,
+            and Re-index regenerates graph.json — none of which the tasks
+            lens reads. The design's tasks screen draws none of them
+            either. */}
+        {lens === "architecture" && (
         <div className="flex shrink-0 items-center gap-3">
           <div
             data-testid="map-overlay-control"
@@ -439,8 +485,15 @@ export function MapView({
             Re-index
           </Button>
         </div>
+        )}
       </div>
 
+      {lens === "tasks" && (
+        <TasksLens model={model} onOpenTask={(ref) => setPanel({ kind: "task", ref })} />
+      )}
+
+      {lens === "architecture" && (
+      <>
       {/* Degraded-state banners (never an error, never blank). */}
       {derived.mode !== "full" && (
         <div
@@ -691,6 +744,8 @@ export function MapView({
           </span>
         </span>
       </div>
+      </>
+      )}
 
       {/* Panel: component drawer, or the REAL task detail on re-target. */}
       {panel?.kind === "component" && (
