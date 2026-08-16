@@ -1781,6 +1781,295 @@
       ]
     },
     {
+      "id": "f:app/src/lib/agent-store.ts",
+      "path": "app/src/lib/agent-store.ts",
+      "lang": "ts",
+      "hash": "blake3:9a481010ec8e6b46cbd06a64eee770916db3374963862853752697d40bdaa468",
+      "loc": 406,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/agent-store.ts#CancelOutcomePayload",
+          "name": "CancelOutcomePayload",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            79,
+            81
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#GenesisEvent",
+          "name": "GenesisEvent",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            41,
+            53
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#GenesisPhase",
+          "name": "GenesisPhase",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            83,
+            83
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#GenesisState",
+          "name": "GenesisState",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            114,
+            131
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#GenesisStatusPayload",
+          "name": "GenesisStatusPayload",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            86,
+            95
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#GenesisTurn",
+          "name": "GenesisTurn",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            100,
+            112
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#SendOutcomePayload",
+          "name": "SendOutcomePayload",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            70,
+            76
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
+          "name": "StartOutcomePayload",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            56,
+            67
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#TurnErrorPayload",
+          "name": "TurnErrorPayload",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            29,
+            36
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#__resetGenesisStoreForTests",
+          "name": "__resetGenesisStoreForTests",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            402,
+            406
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#applyGenesisStatus",
+          "name": "applyGenesisStatus",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            255,
+            270
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#cancelGenesis",
+          "name": "cancelGenesis",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            368,
+            388
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#emptyGenesisState",
+          "name": "emptyGenesisState",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            133,
+            147
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#getGenesisState",
+          "name": "getGenesisState",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            307,
+            309
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#isTauri",
+          "name": "isTauri",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            295,
+            296
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#isTurnInFlight",
+          "name": "isTurnInFlight",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            289,
+            291
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#listeners",
+          "name": "listeners",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            299,
+            299
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#reduceGenesisEvent",
+          "name": "reduceGenesisEvent",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            181,
+            250
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#reduceGenesisOutcome",
+          "name": "reduceGenesisOutcome",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            275,
+            286
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#refreshGenesisStatus",
+          "name": "refreshGenesisStatus",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            390,
+            399
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#sendGenesisTurn",
+          "name": "sendGenesisTurn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            349,
+            364
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#setState",
+          "name": "setState",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            311,
+            315
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#startGenesis",
+          "name": "startGenesis",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            333,
+            344
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#startGenesisListener",
+          "name": "startGenesisListener",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            322,
+            329
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#started",
+          "name": "started",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            300,
+            300
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#state",
+          "name": "state",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            298,
+            298
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#subscribeGenesis",
+          "name": "subscribeGenesis",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            302,
+            305
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#upsertTurn",
+          "name": "upsertTurn",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            151,
+            173
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/src/lib/architecture/derive.ts",
       "path": "app/src/lib/architecture/derive.ts",
       "lang": "ts",
@@ -3318,6 +3607,35 @@
       "symbols": []
     },
     {
+      "id": "f:app/test/agent-store.test.ts",
+      "path": "app/test/agent-store.test.ts",
+      "lang": "ts",
+      "hash": "blake3:b1811197010eddcb458b5b323eb2c00fdd40aa592a3d177a178731850dcdf201",
+      "loc": 251,
+      "symbols": [
+        {
+          "id": "s:app/test/agent-store.test.ts#ev",
+          "name": "ev",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            22,
+            24
+          ]
+        },
+        {
+          "id": "s:app/test/agent-store.test.ts#play",
+          "name": "play",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            26,
+            28
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/architecture-derive.test.ts",
       "path": "app/test/architecture-derive.test.ts",
       "lang": "ts",
@@ -3420,8 +3738,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:1427d2626be4820e3fbaf9bbaa11d0a18cbc004a4874f22aa7f8a79eeb13dc28",
-      "loc": 567,
+      "hash": "blake3:4c9dee5f152033fe7fe31470382b931d196648214be4445741dabc046bce8d10",
+      "loc": 697,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -3429,8 +3747,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            298,
-            298
+            384,
+            384
           ]
         },
         {
@@ -3439,8 +3757,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            297,
-            297
+            383,
+            383
           ]
         },
         {
@@ -3449,8 +3767,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            263,
-            263
+            349,
+            349
           ]
         },
         {
@@ -3459,8 +3777,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            269,
-            284
+            355,
+            370
           ]
         },
         {
@@ -3469,8 +3787,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            286,
-            295
+            372,
+            381
           ]
         },
         {
@@ -3479,8 +3797,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            265,
-            267
+            351,
+            353
           ]
         }
       ]
@@ -4486,8 +4804,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:1edef281bb36617eee78d6a9728afa7a6e7ca211d583b3c50f850a3a231b6af8",
-      "loc": 186,
+      "hash": "blake3:e4d8765f941900d156a4af90da8656e49c572692d26e26e67f0171b93ddf7e86",
+      "loc": 200,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -6278,8 +6596,8 @@
       "id": "f:lib/parser/test/smoke.test.ts",
       "path": "lib/parser/test/smoke.test.ts",
       "lang": "ts",
-      "hash": "blake3:9dcbd7cad73efb38e3ef5669d3fe92c91445146dfeb81c1849254eccf3230402",
-      "loc": 82,
+      "hash": "blake3:61b589e82e6bdfda5ae1908582db2915c15d82dbe7d80600a065892f1427f468",
+      "loc": 95,
       "symbols": [
         {
           "id": "s:lib/parser/test/smoke.test.ts#repoRoot",
@@ -7328,6 +7646,15 @@
       ]
     },
     {
+      "from": "f:app/src/lib/agent-store.ts",
+      "to": "p:@tauri-apps/api",
+      "kind": "import",
+      "symbols": [
+        "invoke",
+        "listen"
+      ]
+    },
+    {
       "from": "f:app/src/lib/architecture/derive.ts",
       "to": "f:app/src/lib/architecture/glob.ts",
       "kind": "import",
@@ -7476,6 +7803,31 @@
       "kind": "import",
       "symbols": [
         "default"
+      ]
+    },
+    {
+      "from": "f:app/test/agent-store.test.ts",
+      "to": "f:app/src/lib/agent-store.ts",
+      "kind": "import",
+      "symbols": [
+        "GenesisEvent",
+        "GenesisState",
+        "GenesisStatusPayload",
+        "applyGenesisStatus",
+        "emptyGenesisState",
+        "isTurnInFlight",
+        "reduceGenesisEvent",
+        "reduceGenesisOutcome"
+      ]
+    },
+    {
+      "from": "f:app/test/agent-store.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
       ]
     },
     {
@@ -10695,6 +11047,258 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/agent-store.ts#GenesisEvent",
+      "to": "s:app/src/lib/agent-store.ts#TurnErrorPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#GenesisState",
+      "to": "s:app/src/lib/agent-store.ts#GenesisPhase",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#GenesisState",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#GenesisState",
+      "to": "s:app/src/lib/agent-store.ts#SendOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#GenesisState",
+      "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#GenesisState",
+      "to": "s:app/src/lib/agent-store.ts#TurnErrorPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#GenesisStatusPayload",
+      "to": "s:app/src/lib/agent-store.ts#GenesisPhase",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#GenesisStatusPayload",
+      "to": "s:app/src/lib/agent-store.ts#TurnErrorPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "to": "s:app/src/lib/agent-store.ts#TurnErrorPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#__resetGenesisStoreForTests",
+      "to": "s:app/src/lib/agent-store.ts#emptyGenesisState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#applyGenesisStatus",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#applyGenesisStatus",
+      "to": "s:app/src/lib/agent-store.ts#GenesisStatusPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#cancelGenesis",
+      "to": "s:app/src/lib/agent-store.ts#CancelOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#cancelGenesis",
+      "to": "s:app/src/lib/agent-store.ts#setState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#emptyGenesisState",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#getGenesisState",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#isTurnInFlight",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#reduceGenesisEvent",
+      "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#reduceGenesisEvent",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#reduceGenesisEvent",
+      "to": "s:app/src/lib/agent-store.ts#upsertTurn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#reduceGenesisOutcome",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#reduceGenesisOutcome",
+      "to": "s:app/src/lib/agent-store.ts#SendOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#reduceGenesisOutcome",
+      "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#refreshGenesisStatus",
+      "to": "s:app/src/lib/agent-store.ts#GenesisStatusPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#refreshGenesisStatus",
+      "to": "s:app/src/lib/agent-store.ts#applyGenesisStatus",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#refreshGenesisStatus",
+      "to": "s:app/src/lib/agent-store.ts#setState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#sendGenesisTurn",
+      "to": "s:app/src/lib/agent-store.ts#SendOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#sendGenesisTurn",
+      "to": "s:app/src/lib/agent-store.ts#isTurnInFlight",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#sendGenesisTurn",
+      "to": "s:app/src/lib/agent-store.ts#reduceGenesisOutcome",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#sendGenesisTurn",
+      "to": "s:app/src/lib/agent-store.ts#setState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#setState",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#startGenesis",
+      "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#startGenesis",
+      "to": "s:app/src/lib/agent-store.ts#isTurnInFlight",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#startGenesis",
+      "to": "s:app/src/lib/agent-store.ts#reduceGenesisOutcome",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#startGenesis",
+      "to": "s:app/src/lib/agent-store.ts#setState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#startGenesisListener",
+      "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#startGenesisListener",
+      "to": "s:app/src/lib/agent-store.ts#reduceGenesisEvent",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#startGenesisListener",
+      "to": "s:app/src/lib/agent-store.ts#refreshGenesisStatus",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#startGenesisListener",
+      "to": "s:app/src/lib/agent-store.ts#setState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#state",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#state",
+      "to": "s:app/src/lib/agent-store.ts#emptyGenesisState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#upsertTurn",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/architecture/derive.ts#DeriveInputs",
       "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
       "kind": "type_ref",
@@ -11909,6 +12513,30 @@
     {
       "from": "s:app/src/lib/watcher-store.ts#startGenesisHere",
       "to": "s:app/src/lib/watcher-store.ts#runPicker",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/agent-store.test.ts#ev",
+      "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/agent-store.test.ts#play",
+      "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/agent-store.test.ts#play",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/agent-store.test.ts#play",
+      "to": "s:app/src/lib/agent-store.ts#emptyGenesisState",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -13259,8 +13887,8 @@
     }
   ],
   "stats": {
-    "files": 86,
-    "symbols": 565,
-    "edges": 941
+    "files": 88,
+    "symbols": 595,
+    "edges": 990
   }
 }

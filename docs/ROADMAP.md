@@ -63,9 +63,29 @@ each file lands: the north-star card, the backbone grid filling in,
 artifact rows going from expected to written, the approximate banking
 stage climbing. No re-pick, no refresh, no polling — the first
 `mkdir docs` arms the watcher and every write after it flows through.
-The honest remainder: T-025 (the agent runner that removes "by hand"),
-T-027 (the split view's conversation half — the pane is currently
-full-width where it was drawn as the right half), T-028, T-029.
+T-025 (the agent runner, the milestone's hard core) merged 2026-08-16
+and the honest reading of it is narrow. The MECHANISM exists: four app
+commands spawn the user's own `claude` headless once per turn, resume
+it by its native session id, materialize the method kit into the
+project's `.nputer/`, stream deltas back on one event channel, and kill
+the process group on cancel — with zero new webview grants, zero new
+crates, and an environment BUILT rather than inherited so no key can
+reach the child. All of that is proven against a FAKE CLI fixture, and
+proven hard (61 new cargo tests, every one execution-swept). **What has
+never happened is a real planner turn.** The one permitted real-CLI
+smoke could not complete: this machine's `claude` OAuth token is
+revoked, so every attempt 401s. It did establish that the real CLI
+accepts the whole adapter argv, that the session id and model are
+captured, and — by failing — that the CLI reports auth failure in band
+on stdout, which was a wrong assumption in the plan and is now fixed.
+It established nothing about the conversation. So: "by hand" is NOT
+removed yet. Nothing in the UI calls the runner (T-027 owns that), and
+the kickoff has never landed a real planner in stage 0. The honest
+remainder: T-027 (the split view's conversation half — the pane is
+currently full-width where it was drawn as the right half, and the
+first consumer of the runner's store), T-028, T-029 — plus one
+observed real turn on an authenticated machine (T-025-s2, @human),
+which is the evidence this milestone's claim will ultimately rest on.
 
 ## Parked
 The staged future lives in docs/future.md (two expert-room batches:

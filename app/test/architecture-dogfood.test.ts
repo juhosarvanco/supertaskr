@@ -288,6 +288,64 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //   · drift gains C-14 (it is a D3 source); declaredOnly gains C-14.
 // Changed, never loosened: every assertion is still a whole-array
 // toEqual, and no pre-existing value moved.
+//
+// RECONCILED AT THE T-025 MERGE (2026-08-16, integrator — THIRTEENTH
+// exercise of the practice), and this block SUPERSEDES the absolute
+// numbers in the branch block directly above. Read those two blocks as
+// two halves of one merge: the branch moved the REGISTRY-derived numbers
+// (it declares C-14) against its own branch point f7fdf13, where the
+// mapping was 84; main had meanwhile moved the GRAPH-derived numbers to
+// 86 at the T-037 merge. Both edit sets survive here — the same
+// "absolute numbers do not apply, deltas do" note the T-024 block above
+// carries. Every number below re-derived twice before this edit: once
+// from the raw graph by enumerating the added/removed file and edge
+// sets, once from an independent re-run of the derivation engine. They
+// agreed, and both agreed with the branch's forecast:
+//   · stats 86→88 files, 565→595 symbols, 941→990 edges — 49 added,
+//     ZERO removed. The two new files are app/src/lib/agent-store.ts
+//     (C-14's own, by its explicit declared path) and
+//     app/test/agent-store.test.ts (C-05's, by the app/test/** umbrella);
+//     nothing removed. Content-changed (hash/loc only, symbol counts
+//     unmoved): this file 567→608 loc, map-dogfood-render.test.tsx
+//     186→189, lib/parser/test/smoke.test.ts 82→95 — i.e. exactly the
+//     three registry pins the BRANCH moved, picked up because the final
+//     regen runs after these lines land (ceaa949, TENTH hold).
+//   · THE FIVE NEW .rs FILES ARE INVISIBLE, and that is not a bug:
+//     app/src-tauri/src/agent/{mod,adapter,kit,runner,sessions}.rs are
+//     C-14's larger half by far (~3,200 lines) and the indexer's
+//     languages is still ["ts"]. They join at T-010. Until then C-14's
+//     indexed footprint is one TS file and the map under-reports it.
+//   · mapping 86→88; C-05 37→38, C-14 0→1. Every other count holds —
+//     C-06 21, C-08 10, C-09 3, C-10 2, C-12 11, C-13 2. D2 stays empty,
+//     unmappedFiles stays empty, derived.issues stays [].
+//   · findings: ONE ADDED, ONE CLEARED, net unchanged at eight rows.
+//     D3:C-14 clears (C-14 has a file now) and D1:C-05→C-14 appears with
+//     one file edge. The branch predicted both. All five pre-existing D1
+//     rows byte-unchanged, including D1:C-05→C-13's four fileEdges from
+//     the T-037 merge — checked explicitly at the conflict resolution,
+//     because a take-one-side merge would have silently reverted them.
+//   · relation table 27→28 rows: C-05→C-14 lands UNDECLARED with
+//     observedCount 1. Tally 13 confirmed / 5 undeclared / 9 planned →
+//     13 confirmed / 6 undeclared / 9 planned. C-14→C-10 STAYS PLANNED
+//     at 0, exactly as the branch called it: agent-store.ts imports only
+//     @tauri-apps/api, so no TS import can confirm the Rust-side
+//     WatchState dependency until T-010.
+//   · drift LOSES C-14 and declaredOnly LOSES C-14 — the branch put it
+//     in both (it had no file), the regen takes it back out (it has
+//     one). A component that appears and clears inside one merge.
+//   · INTEGRATOR JUDGMENT, same call as T-037's and for the same
+//     reasons: C-05→C-14 stays UNDECLARED. It is genuine drift of the
+//     familiar umbrella shape (C-05's own suite reaching a child
+//     component's module) and the honest drain would be a `depends_on`
+//     C-14 in C-05-app.md — a REGISTRY edit, the architect's call, not
+//     the integrator's, and one that would move the tally to 14/5/9.
+//     Filed for triage alongside T-037's identical C-05→C-13 question;
+//     they should be ruled together, since they are one question asked
+//     twice.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched HERE: the
+//     branch already moved it (+C-14, eleven ids) because it declares a
+//     component — the T-024 three-fixtures lesson. A merge regen alone
+//     never moves it.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -353,8 +411,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 86 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(86);
+  it("all 88 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(88);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -364,7 +422,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // shell glob, genesis-entry.test.tsx under the app/test umbrella.
       // 35 → 37 at the T-037 merge regen: genesis-mount.test.tsx and
       // genesis-pane-boundary.test.tsx, both under that same umbrella.
-      ["C-05", 37],
+      // 37 → 38 at the T-025 merge regen: agent-store.test.ts, under it
+      // again — the SUITE lands here while the module it drives lands in
+      // C-14, which is what makes the new D1 below.
+      ["C-05", 38],
       ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
@@ -374,6 +435,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // STAYS 2 at T-037's: the mount gave the lens a consumer, not a
       // file.
       ["C-13", 2],
+      // C-14 joins the mapping at the T-025 merge regen with exactly ONE
+      // file: agent-store.ts. Its other declared path
+      // (app/src-tauri/src/agent/**, five .rs files) is invisible to the
+      // indexer until T-010 lands Rust extraction — languages is still
+      // ["ts"]. The same arc C-13 walked at T-024, one language short.
+      ["C-14", 1],
     ]);
     // The map pane joined its engine at the T-012 merge regen
     // (T-011-s1 option a keeps the trio in place under lib/).
@@ -396,7 +463,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: five undeclared dependencies, four declared-only components, no unclaimed territory", () => {
+  it("THE FINDINGS: six undeclared dependencies, three declared-only components, no unclaimed territory", () => {
     expect(derived.findings).toEqual([
       {
         rule: "D1",
@@ -456,6 +523,24 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         ],
       },
       {
+        // NEW at the T-025 merge regen, and the SIXTH undeclared row:
+        // C-05's app/test/** umbrella reaches into C-14's store the
+        // moment the store joins the index. Exactly the shape C-13 took
+        // at T-024 and for the same structural reason — the suite is
+        // C-05's by umbrella, the module it drives belongs to the child
+        // component. Left UNDECLARED, same reasoning as C-05→C-13 above:
+        // the integrator regenerates, the ARCHITECT rules on the
+        // registry, and draining a finding at the merge that created it
+        // destroys the signal. Filed for triage.
+        rule: "D1",
+        id: "D1:C-05->C-14",
+        from: "C-05",
+        to: "C-14",
+        fileEdges: [
+          { from: "app/test/agent-store.test.ts", to: "app/src/lib/agent-store.ts" },
+        ],
+      },
+      {
         rule: "D1",
         id: "D1:C-08->C-05",
         from: "C-08",
@@ -477,20 +562,20 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           { from: "app/src/components/board/TaskDetailPanel.tsx", to: "app/src/lib/verdicts.ts" },
         ],
       },
-      // D3:C-13 cleared at the T-024 merge regen exactly as predicted:
-      // the three that remain are the genuinely code-less components…
+      // D3:C-13 cleared at the T-024 merge regen exactly as predicted,
+      // and D3:C-14 cleared at the T-025 one on the same arc and inside
+      // a single merge: the branch declared C-14 with no indexed file
+      // (D3 appears), this regen indexed agent-store.ts (D3 clears). The
+      // three that remain are the genuinely code-less components — C-01
+      // is method/ (not code), C-07 is Rust-only until T-010, C-11 is
+      // still planned.
       { rule: "D3", id: "D3:C-01", component: "C-01" },
       { rule: "D3", id: "D3:C-07", component: "C-07" },
       { rule: "D3", id: "D3:C-11", component: "C-11" },
-      // …plus C-14, which is code-less only until the merge regen indexes
-      // app/src/lib/agent-store.ts (T-025 declares the component
-      // in-branch and does NOT regenerate graph.json — the integrator's
-      // ritual). C-13 walked this same arc at T-024.
-      { rule: "D3", id: "D3:C-14", component: "C-14" },
     ]);
   });
 
-  it("the full relation table: 13 confirmed, 5 undeclared, 9 planned", () => {
+  it("the full relation table: 13 confirmed, 6 undeclared, 9 planned", () => {
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
       ["C-05", "C-06", "undeclared", 8],
@@ -511,6 +596,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // the shell's own SOURCE import of the lens — the mount. Still
       // undeclared: the integrator's reasoning is in the dated addendum.
       ["C-05", "C-13", "undeclared", 4],
+      // NEW at the T-025 merge regen: the sixth undeclared row, one file
+      // edge (agent-store.test.ts → agent-store.ts). See the D1 above.
+      ["C-05", "C-14", "undeclared", 1],
       ["C-06", "C-01", "planned", 0],
       ["C-08", "C-05", "undeclared", 4],
       ["C-08", "C-06", "confirmed", 4],
@@ -575,13 +663,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
 
   it("drift flags land on the right nodes", () => {
     const drift = derived.components.filter((c) => c.hasDrift).map((c) => c.id);
-    // D1 sources: C-05, C-08, C-09; D3: C-01, C-07, C-11, and C-14 which
-    // T-025 declares ahead of the merge regen. C-13 left the set at the
-    // T-024 merge regen — it has files now, and it is the TARGET of
-    // D1:C-05→C-13, not its source.
-    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11", "C-14"]);
+    // D1 sources: C-05, C-08, C-09; D3: C-01, C-07, C-11. C-13 left the
+    // set at the T-024 merge regen and C-14 at the T-025 one — both have
+    // files now, and both are the TARGET of a D1 from C-05, never its
+    // source. C-14 was in this list on the branch, before the regen it
+    // could not run; it comes back out here, which is the ritual working.
+    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
-    expect(declaredOnly).toEqual(["C-01", "C-07", "C-11", "C-14"]);
+    expect(declaredOnly).toEqual(["C-01", "C-07", "C-11"]);
   });
 
   it("stable rollup structure (values live in the unit tables, not here)", () => {

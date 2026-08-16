@@ -19,7 +19,7 @@ graph TD
 | C-02 | CLI | Plumbing + power/CI path (ADR-008): genesis, dispatch; shells out to agent CLIs | C-01, C-06 | planned |
 | C-03 | Runtime | nputer.yaml role defaults; sessions.json registry | C-02 | planned |
 | C-04 | Daemon | Sidecar: watcher, websocket, @mention → headless turns | C-02, C-03 | planned |
-| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06; C-07 when F-06 lands | building (board + map panes complete T-001…T-012; T-026 landed the genesis front door and the full-bleed `genesis` screen, and T-037 mounted C-13's lens inside it — the screen renders the pane on the watched `DocsModelState`, behind an error boundary, so hand-driven genesis renders live; T-027 still owes the split view's left half; rooms/sessions pending F-05) |
+| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06; C-07 when F-06 lands | building (board + map panes complete T-001…T-012; T-026 landed the genesis front door and the full-bleed `genesis` screen, and T-037 mounted C-13's lens inside it — the screen renders the pane on the watched `DocsModelState`, behind an error boundary, so hand-driven genesis renders live; T-025 registered C-14's four genesis commands + the exit-reap hook in lib.rs, so the shell can now spawn the planner although nothing in the UI calls it yet; T-027 still owes the split view's left half; rooms/sessions pending F-05) |
 | C-06 | lib-parser | Pure library: docs/tasks/ + ROADMAP backbone → typed model (T-002); browser-safe pure exports (T-003); component files (T-008); cross-ref validation (T-019) | C-01 | verified |
 | C-07 | nputer-index | Rust crate + small binary: code → docs/architecture/graph.json (tree-sitter TS/JS/Rust); deterministic, no tauri dependency (ADR-014/015); F-06 | — | building (TS/JS extraction + committed graph done T-009; Rust lang T-010, binary T-014 — milestone 4) |
 
@@ -51,7 +51,23 @@ ADR-014/015).
   plumbing. The pane is on the shell's critical path, so the mount
   wraps it in an error boundary that does NOT latch (it resets on the
   next snapshot's seq): a throwing pane degrades to a read-only notice
-  inside the slot and cannot take the window down.
+  inside the slot and cannot take the window down. The SPAWNING half is
+  real since T-025 (C-14): four app commands — `genesis_start`,
+  `genesis_send_turn(text)`, `genesis_status`, `genesis_cancel` — over
+  one `genesis-turn` event channel, still exactly `core:default` (the
+  92-grant set is byte-identical; `std::process` is not a plugin). One
+  short-lived child per turn, resumed by the CLI's own native session
+  id, cwd = the open project, argv fixed arrays and the user's text on
+  stdin (never a shell string, never in argv); the child's environment
+  is BUILT, not inherited — `env_clear()` plus a named allowlist, so no
+  key or token can reach it (ADR-003 made mechanical). The `.nputer/`
+  runtime writes are no longer planned but real and losable by charter:
+  `sessions.json`, `genesis/transcript.jsonl`, and the compiled-in
+  method snapshot materialized per genesis into `genesis/kit/` so the
+  CLI reads it inside its own cwd scope — all outside the docs watch
+  root, so they raise no snapshots. What is NOT yet true: no UI calls
+  any of it (T-027), and the loop has never run against a real model —
+  it is proven against a fake CLI fixture only.
 - Code layout: `app/` = C-05 (Tauri 2 + React + Vite + Tailwind/shadcn;
   areas app-shell, app-board, app-map, and app-interview since T-024 —
   `app/src/genesis/**` is C-13's own territory inside the app package;
@@ -62,7 +78,16 @@ ADR-014/015).
   source edge, both of which were measured absent before that merge.
   That import is a source dependency of the shell on a child component
   and is still UNDECLARED in the registry — deliberate, live drift the
-  map shows and the architect rules on) · `lib/parser/` = C-06,
+  map shows and the architect rules on; area app-agent since T-025,
+  where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
+  `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and
+  `lib.rs` keeps only the four thin command wrappers and the exit hook,
+  which are C-05's. Note for T-010: FOUR `.rs` files under
+  `app/src-tauri/` are claimed by no component — `acl_pin.rs` and
+  `index_cmd.rs` (pre-existing) and T-025's `src/bin/fake_agent.rs` and
+  `tests/agent_runner.rs`. All four are invisible while the indexer is
+  `languages: ["ts"]`; they become a live unmapped-territory question
+  the moment Rust extraction lands) · `lib/parser/` = C-06,
   self-contained package · `app/src-tauri/crates/nputer-index` = C-07
   (Cargo workspace inside app/src-tauri arrives with T-009 — the Rust
   sibling of ADR-011) · `tools/e2e/` = the real-input E2E lane (T-020),

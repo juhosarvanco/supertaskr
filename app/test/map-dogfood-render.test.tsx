@@ -103,11 +103,12 @@ describe("the nputer repo on its own map", () => {
   });
 
   it("the reconciled findings light the right faces (D1 sources + D3 rings)", () => {
-    // D1 sources: C-05 (×3: →C-06, →C-09, and →C-13 since the T-024
-    // merge regen), C-08, C-09. D3: C-01, C-07, C-11 — C-13's D3
-    // cleared when the indexer first saw app/src/genesis/.
+    // D1 sources: C-05 (×4: →C-06, →C-09, →C-13 since the T-024 merge
+    // regen, and →C-14 since the T-025 one), C-08, C-09. D3: C-01,
+    // C-07, C-11 — C-13's D3 cleared when the indexer first saw
+    // app/src/genesis/, C-14's when it first saw agent-store.ts.
     expect(node("C-05").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
-      "drift 3",
+      "drift 4",
     );
     expect(node("C-08").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
       "drift 1",
@@ -141,26 +142,32 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 27-edge relation table", () => {
+  it("draws the full 28-edge relation table", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
-    // dependency until T-010 extracts Rust).
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(27);
+    // dependency until T-010 extracts Rust) + the undeclared C-05→C-14
+    // the T-025 merge regen surfaced, which is why undeclared is 6.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(28);
     expect(
       container.querySelectorAll('[data-testid=map-edge][data-relation="undeclared"]'),
-    ).toHaveLength(5);
+    ).toHaveLength(6);
   });
 
   it("opens the C-05 panel on its real findings", () => {
     act(() => node("C-05").click());
     const panel = container.querySelector("[data-testid=map-panel]") as HTMLElement;
     expect(panel.querySelector("[data-testid=map-panel-drift-chip]")?.textContent).toContain(
-      "3 drift findings",
+      "4 drift findings",
     );
     expect(panel.textContent).toContain("C-05 imports C-06 without declaring the dependency.");
     expect(panel.textContent).toContain("C-05 imports C-09 without declaring the dependency.");
     expect(panel.textContent).toContain("C-05 imports C-13 without declaring the dependency.");
+    // The fourth, since the T-025 merge regen: C-05's own suite reaching
+    // the agent runner's store. Asserted by its rendered sentence, not
+    // just counted, so the renumbering above can never pass on a
+    // different finding.
+    expect(panel.textContent).toContain("C-05 imports C-14 without declaring the dependency.");
     // The dependency grid shows the observed-only rows in warning ink
     // and the header hint counts the committed graph.
     expect(panel.querySelector("[data-testid=map-panel-dependencies]")).not.toBeNull();
@@ -182,8 +189,12 @@ describe("the nputer repo on its own map", () => {
     // (the shell's SLOT for that pane) and the genesis-entry suite.
     // 84 → 86 at the T-037 merge regen (2026-08-16): the two suites that
     // pin the actual MOUNT — genesis-mount and genesis-pane-boundary.
+    // 86 → 88 at the T-025 merge regen (2026-08-16): the agent runner's
+    // TS half — agent-store.ts (C-14's) and its suite (C-05's). The
+    // runner's five .rs files are NOT in this count: languages is still
+    // ["ts"] until T-010, so the map under-reports C-14 by design.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 86 files",
+      "committed graph · 88 files",
     );
   });
 });
