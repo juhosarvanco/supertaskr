@@ -45,19 +45,42 @@ export interface ModelUpdateEcho {
   truncated: boolean;
 }
 
+/** Mirror of Rust's `PlanProbe` (T-026): what the front door looked for
+ * in a folder, and what it found. Booleans only — the checklist's ○/✓
+ * marks are measured, and no path the user did not choose is disclosed. */
+export interface PlanProbePayload {
+  roadmap: boolean;
+  tasks: boolean;
+  architecture: boolean;
+  git: boolean;
+}
+
+/** Nothing found — the honest default when no probe rode a payload. */
+export const EMPTY_PROBE: PlanProbePayload = {
+  roadmap: false,
+  tasks: false,
+  architecture: false,
+  git: false,
+};
+
 /** Mirror of Rust's `ProjectStatus` (src-tauri/src/docs_watch.rs). */
 export type ProjectStatusPayload =
   | { kind: "noProject" }
-  | { kind: "noDocs"; projectDir: string }
+  | { kind: "noDocs"; projectDir: string; probe: PlanProbePayload }
   | { kind: "open"; snapshot: DocsSnapshotPayload };
 
 /** Mirror of Rust's `PickOutcome` (src-tauri/src/docs_watch.rs). */
 export type PickOutcomePayload =
   | { kind: "cancelled" }
   | { kind: "busy" }
-  | { kind: "noDocs"; path: string }
+  | { kind: "noDocs"; path: string; probe: PlanProbePayload }
   | { kind: "error"; path: string; message: string }
-  | { kind: "picked"; snapshot: DocsSnapshotPayload };
+  | { kind: "picked"; snapshot: DocsSnapshotPayload }
+  /** T-026: opened as a genesis project — no plan there yet, the watcher
+   * is armed on the root sentinel, and `seq` is the switch's ordering
+   * stamp (there is no snapshot to send, so this is what makes late
+   * emits from the previous project provably stale). */
+  | { kind: "genesis"; projectDir: string; seq: number; probe: PlanProbePayload };
 
 /** Mirror of Rust's `IndexOutcome` (src-tauri/src/index_cmd.rs) —
  * T-012's zero-argument index_repo command. Volatile stats live here,
@@ -84,21 +107,36 @@ export type IndexOutcomePayload =
  * - "browser": no Tauri IPC (plain-browser dev; harness may apply payloads)
  * - "noProject": launch resolved no repo and nothing has been picked
  * - "noDocs": launch resolved a repo (resolvedDir) that has no docs/
+ * - "genesis": a folder with no plan is open for an interview (T-026);
+ *   the docs model still tracks whatever lands, so the pipeline lighting
+ *   up does NOT yank the screen away mid-interview
  * - "open": a project is open; `docs` holds its live model
  */
-export type ShellPhase = "loading" | "browser" | "noProject" | "noDocs" | "open";
+export type ShellPhase =
+  | "loading"
+  | "browser"
+  | "noProject"
+  | "noDocs"
+  | "genesis"
+  | "open";
 
-/** A picker choice Rust rejected. message === null means "no docs/ there";
- * otherwise it is a re-arm/dialog error explanation. */
+/** A picker choice Rust rejected. message === null means "no docs/ there"
+ * — the front door's "No plan in <folder>" card, whose checklist renders
+ * from `probe`; otherwise it is a re-arm/dialog error explanation. */
 export interface RejectedPick {
   path: string;
   message: string | null;
+  probe: PlanProbePayload | null;
 }
 
 export interface ShellState {
   phase: ShellPhase;
   /** Launch-resolved project root when phase === "noDocs". */
   resolvedDir: string | null;
+  /** What the launch-resolved root was probed for (T-026), when known. */
+  resolvedProbe: PlanProbePayload | null;
+  /** The genesis project's root when phase === "genesis" (T-026). */
+  genesisDir: string | null;
   /** Last rejected pick, until dismissed or a pick succeeds. */
   rejectedPick: RejectedPick | null;
   /** Native folder dialog currently open. */
@@ -145,33 +183,72 @@ export function reduceDocs(
   return applySnapshot(base, payload);
 }
 
-/** What criterion (c)'s message points at: the convention layout. */
+/** What criterion (c)'s message points at: the convention layout. Kept
+ * verbatim from T-007 — the "No plan in <folder>" card carries it as its
+ * footnote, so redesigning the state lost none of what it said. */
 export const CONVENTION_HINT =
   "an nputer project keeps its board in docs/tasks/, decisions in docs/decisions/";
 
-/** Friendly empty-state line naming what was looked for, and where. */
-export function noDocsMessage(path: string): string {
-  return `no docs/ found in ${path} — ${CONVENTION_HINT}`;
+/** One row of the "No plan in <folder>" checklist (T-026): a path the
+ * front door looked for, and whether it is there. */
+export interface PlanChecklistRow {
+  path: string;
+  found: boolean;
+  /** Extra clause the design gives a found row (only .git has one). */
+  note?: string;
 }
 
-/** Which screen the shell shows. Empty screens carry their message and
+/** The design's checklist, marks measured from the Rust-side probe. The
+ * paths are exactly what the shell looks for — the T-007 message's
+ * enumeration, now itemized and answered per row. */
+export function planChecklist(probe: PlanProbePayload | null): PlanChecklistRow[] {
+  const p = probe ?? EMPTY_PROBE;
+  return [
+    { path: "docs/ROADMAP.md", found: p.roadmap },
+    { path: "docs/tasks/*.md", found: p.tasks },
+    { path: "docs/ARCHITECTURE.md", found: p.architecture },
+    ...(p.git
+      ? [{ path: ".git", found: true, note: "it is a repo, so the plan can live here" }]
+      : [{ path: ".git", found: false }]),
+  ];
+}
+
+/**
+ * What the front door says about the folder it is looking at.
+ * - "noPlan": a folder is named and has no plan — the design's "No plan
+ *   in <folder>" card, with the checklist and "Start an interview here".
+ * - "message": nothing is named yet (no project open), or a pick failed
+ *   for a reason worth spelling out.
+ */
+export type FrontDoorNotice =
+  | { kind: "noPlan"; path: string; probe: PlanProbePayload }
+  | { kind: "message"; message: string };
+
+/** Which screen the shell shows. Empty screens carry their notice and
  * whether "keep the current project" is a meaningful escape hatch. */
 export type ScreenModel =
   | { screen: "loading" }
   | { screen: "browser" }
-  | { screen: "empty"; message: string; canKeepCurrent: boolean }
+  | { screen: "empty"; notice: FrontDoorNotice; canKeepCurrent: boolean }
+  /** T-026: a genesis project is open — full-bleed, no rail (the rail
+   * stays board|map, which are the panes an OPEN project has). */
+  | { screen: "genesis" }
   | { screen: "board" };
 
 export function selectScreen(shell: ShellState): ScreenModel {
   if (shell.rejectedPick !== null) {
-    const { path, message } = shell.rejectedPick;
+    const { path, message, probe } = shell.rejectedPick;
     return {
       screen: "empty",
-      message:
+      notice:
         message === null
-          ? noDocsMessage(path)
-          : `could not open ${path || "the chosen folder"}: ${message}`,
-      canKeepCurrent: shell.phase === "open",
+          ? { kind: "noPlan", path, probe: probe ?? EMPTY_PROBE }
+          : {
+              kind: "message",
+              message: `could not open ${path || "the chosen folder"}: ${message}`,
+            },
+      // A genesis project is something to keep, exactly like an open one.
+      canKeepCurrent: shell.phase === "open" || shell.phase === "genesis",
     };
   }
   switch (shell.phase) {
@@ -182,17 +259,78 @@ export function selectScreen(shell: ShellState): ScreenModel {
     case "noProject":
       return {
         screen: "empty",
-        message: `no project open — ${CONVENTION_HINT}`,
+        notice: { kind: "message", message: `no project open — ${CONVENTION_HINT}` },
         canKeepCurrent: false,
       };
     case "noDocs":
+      // The launch-resolved repo has no plan: the same card a rejected
+      // pick shows, which is the first-launch genesis entry.
       return {
         screen: "empty",
-        message: noDocsMessage(shell.resolvedDir ?? "the resolved folder"),
+        notice: {
+          kind: "noPlan",
+          path: shell.resolvedDir ?? "the resolved folder",
+          probe: shell.resolvedProbe ?? EMPTY_PROBE,
+        },
         canKeepCurrent: false,
       };
+    case "genesis":
+      return { screen: "genesis" };
     case "open":
       return { screen: "board" };
+  }
+}
+
+/**
+ * Apply one picker outcome to the shell (T-026, pure and unit-tested —
+ * the three picker commands share it). Returns `prev` BY IDENTITY when
+ * nothing changed, which is criterion 6 made mechanical: a cancelled
+ * dialog and a refused concurrent claim cannot touch the open project,
+ * and a rejected choice only adds a notice.
+ */
+export function reducePickOutcome(
+  prev: ShellState,
+  outcome: PickOutcomePayload,
+): ShellState {
+  switch (outcome.kind) {
+    case "cancelled":
+      return prev; // criterion 6: nothing changed, nothing to show
+    case "busy":
+      // T-021's Rust latch refused a concurrent pick. This store's own
+      // `picking` gate makes it near-unreachable from here; either way,
+      // nothing changed.
+      return prev;
+    case "noDocs":
+      return { ...prev, rejectedPick: { path: outcome.path, message: null, probe: outcome.probe } };
+    case "error":
+      return {
+        ...prev,
+        rejectedPick: { path: outcome.path, message: outcome.message, probe: null },
+      };
+    case "picked":
+      return {
+        ...prev,
+        docs: reduceDocs(prev.docs, outcome.snapshot),
+        phase: "open",
+        genesisDir: null,
+        rejectedPick: null,
+        resolvedDir: null,
+        resolvedProbe: null,
+      };
+    case "genesis":
+      return {
+        ...prev,
+        // No snapshot rides a genesis switch (there is nothing there
+        // yet), so the previous project's model is cleared HERE and the
+        // seq watermark is advanced past every pre-switch emit — the
+        // T-007 stale-drop invariant, kept without a snapshot.
+        docs: { ...resetDocsForProjectSwitch(prev.docs), seq: outcome.seq },
+        phase: "genesis",
+        genesisDir: outcome.projectDir,
+        rejectedPick: null,
+        resolvedDir: null,
+        resolvedProbe: null,
+      };
   }
 }
 
@@ -216,6 +354,8 @@ const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window
 let shell: ShellState = {
   phase: isTauri ? "loading" : "browser",
   resolvedDir: null,
+  resolvedProbe: null,
+  genesisDir: null,
   rejectedPick: null,
   picking: false,
   indexing: false,
@@ -264,7 +404,18 @@ function applyDocsPayload(payload: DocsSnapshotPayload): void {
   // A snapshot only ever describes an open project; deliberately does NOT
   // clear rejectedPick — a background update must not yank the empty
   // state away while the user is deciding what to do about a bad pick.
-  setShell({ docs: next, phase: "open" });
+  //
+  // T-026: nor does it yank a GENESIS project onto the board. The model
+  // updates underneath (that IS the pipeline lighting up — criteria 3
+  // and 4), while the screen stays where the interview is; the front
+  // door's stale "no docs/ found" claim is what an emit replaces.
+  setShell({ docs: next, phase: shell.phase === "genesis" ? "genesis" : "open" });
+  sendEcho(next);
+}
+
+/** The `model-updated` round trip (T-003): every applied snapshot is
+ * echoed back to Rust for stdout, or captured by the dev harness. */
+function sendEcho(next: DocsModelState): void {
   const echo = buildEcho(next);
   if (isTauri) {
     emit("model-updated", echo).catch((err) => {
@@ -281,7 +432,11 @@ function applyProjectStatus(status: ProjectStatusPayload): void {
       applyDocsPayload(status.snapshot);
       break;
     case "noDocs":
-      setShell({ phase: "noDocs", resolvedDir: status.projectDir });
+      setShell({
+        phase: "noDocs",
+        resolvedDir: status.projectDir,
+        resolvedProbe: status.probe,
+      });
       break;
     case "noProject":
       setShell({ phase: "noProject" });
@@ -321,32 +476,55 @@ export async function startDocsWatcher(): Promise<void> {
  * the open project's model or watch.
  */
 export async function pickProjectFolder(): Promise<void> {
+  await runPicker("pick_project_folder");
+}
+
+/**
+ * T-026: "Start an interview" (⌘N) — the genesis variant of the picker.
+ * Zero arguments again: Rust opens the dialog, validates the choice, and
+ * decides what it MEANS (a folder with no plan opens for genesis; one
+ * that already has a plan opens as the normal project it is — there is
+ * no overwrite path in this app).
+ */
+export async function pickGenesisFolder(): Promise<void> {
+  await runPicker("pick_genesis_folder");
+}
+
+/**
+ * T-026: "Start an interview here" — genesis in the folder the front door
+ * is already naming, with no dialog. Still zero arguments: Rust knows
+ * which folder that is (the user's own last dialog choice, or the open
+ * project), so the path never crosses the boundary in either direction.
+ */
+export async function startGenesisHere(): Promise<void> {
+  await runPicker("start_genesis_here");
+}
+
+/**
+ * The one picker pipeline behind all three commands: single-flight
+ * webview-side (the Rust latch is the real gate — T-021), invoke, then
+ * the pure `reducePickOutcome`. A snapshot that lands this way is echoed
+ * exactly like a watcher push (T-003's round-trip contract); a genesis
+ * switch carries no snapshot, so it echoes nothing.
+ */
+async function runPicker(command: string): Promise<void> {
   if (!isTauri || shell.picking) return;
   setShell({ picking: true });
   try {
-    const outcome = await invoke<PickOutcomePayload>("pick_project_folder");
-    switch (outcome.kind) {
-      case "cancelled":
-        break; // no change, criterion b's cancel path
-      case "busy":
-        // T-021: Rust's single-flight guard refused a concurrent pick.
-        // This store's own `picking` gate makes that near-unreachable
-        // from here; the Rust latch is the real gate (it also covers
-        // other webview contexts). Nothing changed — nothing to show.
-        break;
-      case "noDocs":
-        setShell({ rejectedPick: { path: outcome.path, message: null } });
-        break;
-      case "error":
-        setShell({ rejectedPick: { path: outcome.path, message: outcome.message } });
-        break;
-      case "picked":
-        applyDocsPayload(outcome.snapshot);
-        setShell({ rejectedPick: null, resolvedDir: null, phase: "open" });
-        break;
+    const outcome = await invoke<PickOutcomePayload>(command);
+    const before = shell;
+    const next = reducePickOutcome(before, outcome);
+    if (next !== before) {
+      shell = next;
+      for (const callback of listeners) callback();
+      // Only a real snapshot advances the docs seq; a project-switch
+      // reset keeps the watermark, so it never fakes an echo.
+      if (next.docs !== before.docs && next.docs.seq > before.docs.seq) {
+        sendEcho(next.docs);
+      }
     }
   } catch (err) {
-    setShell({ rejectedPick: { path: "", message: String(err) } });
+    setShell({ rejectedPick: { path: "", message: String(err), probe: null } });
   } finally {
     setShell({ picking: false });
   }

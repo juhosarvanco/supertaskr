@@ -139,6 +139,97 @@ async fn pick_project_folder(app: tauri::AppHandle) -> PickOutcome {
     })
 }
 
+/// T-026: the GENESIS picker — the zero-argument variant of the folder
+/// picker for "Start an interview" (⌘N). Same ADR-012 posture as
+/// `pick_project_folder`, command for command: the webview supplies no
+/// path, the native dialog opens in Rust, the choice is validated here
+/// (canonicalized; must be a plain, non-symlink directory — the T-003
+/// rule family applied to the root), and only a typed outcome comes back.
+///
+/// The difference is what a valid choice MEANS: a folder with no plan
+/// opens as a genesis project (watcher armed on T-018's root sentinel, so
+/// the interview's first `mkdir docs` lights the ordinary pipeline), while
+/// a folder that already holds one is never offered genesis — it opens as
+/// the normal project it is (`apply_genesis_folder` routes it). Cancelling
+/// or failing validation leaves the previously open project untouched.
+#[tauri::command]
+async fn pick_genesis_folder(app: tauri::AppHandle) -> PickOutcome {
+    let Some(flight) = app.state::<WatchState>().begin_pick() else {
+        return PickOutcome::Busy; // a pick is already in flight
+    };
+
+    let (tx, mut rx) = tauri::async_runtime::channel::<Option<tauri_plugin_dialog::FilePath>>(1);
+    app.dialog()
+        .file()
+        .set_title("Start an interview in a folder")
+        .pick_folder(move |picked| {
+            let _ = tx.blocking_send(picked);
+        });
+    let picked = rx.recv().await.flatten();
+
+    let Some(file_path) = picked else {
+        return PickOutcome::Cancelled; // dialog dismissed; guard drops here
+    };
+    let path = match file_path.into_path() {
+        Ok(path) => path,
+        Err(err) => {
+            return PickOutcome::Error {
+                path: String::new(),
+                message: format!("dialog returned an unusable selection: {err}"),
+            }
+        }
+    };
+
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<WatchState>();
+        docs_watch::apply_genesis_folder(&state, &path, flight)
+    })
+    .await
+    .unwrap_or_else(|err| PickOutcome::Error {
+        path: String::new(),
+        message: format!("picker task failed: {err}"),
+    })
+}
+
+/// T-026: "Start an interview here" — genesis in the folder the front
+/// door is already talking about, with NO dialog and, as always, no path
+/// from the webview (ADR-012). The target is Rust's own memory of the
+/// user's last dialog choice that turned out to have no `docs/`, falling
+/// back to the open project (the launch-resolved repo with no plan — the
+/// first-launch genesis entry). A webview that invokes this out of turn
+/// can therefore only re-open a folder the USER already chose, and the
+/// plan check in `apply_genesis_folder` still governs.
+#[tauri::command]
+async fn start_genesis_here(app: tauri::AppHandle) -> PickOutcome {
+    // Scoped so the State borrow never crosses the await below.
+    let claimed = {
+        let state = app.state::<WatchState>();
+        state.begin_pick().map(|flight| (flight, state.genesis_target()))
+    };
+    let Some((flight, target)) = claimed else {
+        return PickOutcome::Busy;
+    };
+    let Some(target) = target else {
+        // The guard drops here, releasing the latch.
+        return PickOutcome::Error {
+            path: String::new(),
+            message: "no folder to start an interview in - open a folder first".into(),
+        };
+    };
+
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<WatchState>();
+        docs_watch::apply_genesis_folder(&state, &target, flight)
+    })
+    .await
+    .unwrap_or_else(|err| PickOutcome::Error {
+        path: String::new(),
+        message: format!("genesis task failed: {err}"),
+    })
+}
+
 /// T-012: run the indexer over the open project and write the committed
 /// graph (ADR-013/014/015). Zero-argument by construction (ADR-010/012
 /// pattern): the webview names no path — the project root comes from
@@ -226,6 +317,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             docs_snapshot,
             pick_project_folder,
+            pick_genesis_folder,
+            start_genesis_here,
             index_repo
         ])
         .run(tauri::generate_context!())
