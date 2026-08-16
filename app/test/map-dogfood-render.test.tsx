@@ -197,8 +197,13 @@ describe("the nputer repo on its own map", () => {
     // app/test/shell-harness.test.ts. The merge's other five new .ts
     // files live under tools/, which .nputerignore excludes, so a lane
     // that grew by ten specs adds exactly one node to the map.
+    // 89 → 90 at the T-048 merge regen (2026-08-16): one file —
+    // app/test/shell-frame.test.tsx. T-048's two SOURCE edits (App.tsx,
+    // GenesisScreen.tsx) are class-string changes: they move those
+    // files' hash and loc and add no node, which is what a layout fix
+    // should look like on the map.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 89 files",
+      "committed graph · 90 files",
     );
   });
 });

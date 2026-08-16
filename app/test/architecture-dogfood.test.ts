@@ -400,6 +400,47 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     regenerating after them gives a different one, because this file
 //     and map-dogfood-render.test.tsx are both indexed. Fixture edits
 //     first, final regen last.
+//
+// RECONCILED AT THE T-048 MERGE (2026-08-16, integrator — eighteenth
+// exercise of the practice). Every number re-derived from the raw graph
+// by added/removed/content-changed enumeration against
+// `git show HEAD:docs/architecture/graph.json` before this edit:
+//   · stats 89→90 files, 602→616 symbols, 1003→1013 edges.
+//   · ONE new file, app/test/shell-frame.test.tsx; nothing removed.
+//     Content-changed (hash/loc only): app/src/App.tsx and
+//     app/src/components/shell/GenesisScreen.tsx — T-048's two class
+//     edits plus the comments that explain them. No symbol added or
+//     removed in either; the layout fix moves no interface.
+//   · mapping 89→90; C-05 39→40 (the new suite lands under the
+//     app/test/** umbrella again). Every other count holds — C-06 21,
+//     C-08 10, C-09 3, C-10 2, C-12 11, C-13 2, C-14 1. D2 stays empty,
+//     the unmapped node stays gone, derived.issues stays [].
+//   · findings: NOTHING added, removed or renumbered — five D1 rows and
+//     three D3s, byte-identical. shell-frame.test.tsx's only
+//     cross-component import is docs-model, and C-05→C-10 is already
+//     CONFIRMED, so it deepens an honest edge instead of raising a
+//     finding.
+//   · relation table: same 28 rows, same 13 confirmed / 6 undeclared /
+//     9 planned tally. EXACTLY ONE observedCount moves — C-05→C-10
+//     20→21.
+//   · FOUR assertions moved here, not three — THE SAME STRUCTURAL MISS
+//     T-041 RECORDED ABOVE, REPEATED BY T-048's VERIFIER AND CAUGHT AT
+//     THE MERGE. The branch forecast exactly three (this file's count,
+//     the C-05→C-10 cell, the map header string) and all three are
+//     right; the fourth — ["C-05", 39] → 40 — sits in the same it()
+//     body as the count, so vitest stopped at the first failing expect
+//     and never reached it. The lesson is now twice-proven and worth
+//     stating as a rule: a graph regen that adds a file under a
+//     component's glob ALWAYS moves that component's counts-table row,
+//     and a forecast read off a failure list can never see it. Derive
+//     it from the added-file list, not from the red.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched: T-048
+//     declares no component and changes no registry file, so the T-024
+//     three-fixtures rule does not fire in its registry form. Confirmed
+//     by re-running lib/parser after the regen: 159/159, unmoved.
+//   · The ceaa949 ordering lesson, ELEVENTH hold: this block and the
+//     map fixture are both indexed, so they were edited BEFORE the
+//     final regen and the regen was run twice for byte-identity.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -465,8 +506,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 89 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(89);
+  it("all 90 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(90);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -482,7 +523,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 38 → 39 at the T-041 merge regen: shell-harness.test.ts, the same
       // umbrella. T-041's five tools/e2e files land nowhere — `tools/` is
       // .nputerignored, so the lane is not territory.
-      ["C-05", 39],
+      // 39 → 40 at the T-048 merge regen: shell-frame.test.tsx, the same
+      // umbrella a third time. This is the row the branch's forecast
+      // missed both times — it hides behind the count assertion above,
+      // so vitest never reaches it while that one is red. Derive it from
+      // the added-file list, never from the failure output.
+      ["C-05", 40],
       ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
@@ -648,7 +694,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // watcher-store. All three in the DECLARED direction.
       // 19 → 20 at the T-041 merge regen: shell-harness.test.ts drives
       // watcher-store — the ONLY observedCount this merge moves.
-      ["C-05", "C-10", "confirmed", 20],
+      // 20 → 21 at the T-048 merge regen: shell-frame.test.tsx imports
+      // docs-model (a DocsSnapshotPayload type import) — again the only
+      // observedCount that moves.
+      ["C-05", "C-10", "confirmed", 21],
       ["C-05", "C-11", "planned", 0],
       ["C-05", "C-12", "confirmed", 20],
       // 2 → 4 at the T-037 merge regen, and one of the two additions is

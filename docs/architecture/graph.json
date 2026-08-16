@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:89658aeec29f46dc641a736d4f6f6572771d69ca0ab6925ee3a929c3fee8af23",
-      "loc": 428,
+      "hash": "blake3:bbe67f9911a25cf15d5802d3a09f6ffe1c6f862e0804783f9ed212201632b34a",
+      "loc": 461,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -18,8 +18,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            259,
-            426
+            260,
+            459
           ]
         },
         {
@@ -28,8 +28,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            91,
-            106
+            92,
+            107
           ]
         },
         {
@@ -38,8 +38,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            124,
-            246
+            125,
+            247
           ]
         },
         {
@@ -48,8 +48,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            37,
-            54
+            38,
+            55
           ]
         },
         {
@@ -58,8 +58,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            63,
-            87
+            64,
+            88
           ]
         },
         {
@@ -68,8 +68,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            250,
-            257
+            251,
+            258
           ]
         }
       ]
@@ -1249,8 +1249,8 @@
       "id": "f:app/src/components/shell/GenesisScreen.tsx",
       "path": "app/src/components/shell/GenesisScreen.tsx",
       "lang": "ts",
-      "hash": "blake3:014afcb1084c19aec17b2cacddc9da11ca34884702bc26cf9411aa3a661a79b9",
-      "loc": 141,
+      "hash": "blake3:b04ecd6061b59f7728f656beb4935378326c4a43cbcaf3e1df62f077d095178e",
+      "loc": 154,
       "symbols": [
         {
           "id": "s:app/src/components/shell/GenesisScreen.tsx#GenesisPaneBoundary",
@@ -1258,8 +1258,8 @@
           "kind": "class",
           "exported": false,
           "range": [
-            96,
-            141
+            109,
+            154
           ]
         },
         {
@@ -1269,7 +1269,7 @@
           "exported": true,
           "range": [
             25,
-            72
+            85
           ]
         }
       ]
@@ -3768,8 +3768,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:cc51687d21c81b3b6210796d22e9d6a8171f00466cb211e5a13907d934af92dc",
-      "loc": 756,
+      "hash": "blake3:b8e85e46d18c2d539ae6639b2e89f63f7168008683fe46051c924c975523cd13",
+      "loc": 805,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -3777,8 +3777,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            438,
-            438
+            479,
+            479
           ]
         },
         {
@@ -3787,8 +3787,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            437,
-            437
+            478,
+            478
           ]
         },
         {
@@ -3797,8 +3797,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            403,
-            403
+            444,
+            444
           ]
         },
         {
@@ -3807,8 +3807,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            409,
-            424
+            450,
+            465
           ]
         },
         {
@@ -3817,8 +3817,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            426,
-            435
+            467,
+            476
           ]
         },
         {
@@ -3827,8 +3827,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            405,
-            407
+            446,
+            448
           ]
         }
       ]
@@ -4834,8 +4834,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:69d79e4908d5dda5bc2717b545822332a8109032d8d3090452fb0f914db34e1e",
-      "loc": 204,
+      "hash": "blake3:945d2e59363f659d166f991cde108c9b7649a3867f55e94fecf615da5494522a",
+      "loc": 209,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -5543,6 +5543,155 @@
           "range": [
             45,
             46
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/shell-frame.test.tsx",
+      "path": "app/test/shell-frame.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:bfe95c0eb5101e117b0e31e19147988d182d22abe5194cf16fa710781481b5fc",
+      "loc": 266,
+      "symbols": [
+        {
+          "id": "s:app/test/shell-frame.test.tsx#App",
+          "name": "App",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            62,
+            62
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#GENESIS_DIR",
+          "name": "GENESIS_DIR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            64,
+            64
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#PROBE",
+          "name": "PROBE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            65,
+            65
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            104,
+            108
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#TASK",
+          "name": "TASK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            110,
+            124
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#click",
+          "name": "click",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            91,
+            96
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            67,
+            67
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#emitSnapshot",
+          "name": "emitSnapshot",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            98,
+            102
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#flush",
+          "name": "flush",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            85,
+            89
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#frame",
+          "name": "frame",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            77,
+            83
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#ipc",
+          "name": "ipc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            39,
+            42
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#q",
+          "name": "q",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            70,
+            71
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            68,
+            68
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#screenOf",
+          "name": "screenOf",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            72,
+            73
           ]
         }
       ]
@@ -6954,6 +7103,14 @@
       "kind": "import",
       "symbols": [
         "skipReasonPhrase"
+      ]
+    },
+    {
+      "from": "f:app/src/App.tsx",
+      "to": "f:app/src/lib/utils.ts",
+      "kind": "import",
+      "symbols": [
+        "cn"
       ]
     },
     {
@@ -8995,6 +9152,52 @@
       ]
     },
     {
+      "from": "f:app/test/shell-frame.test.tsx",
+      "to": "f:app/src/App.tsx",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/test/shell-frame.test.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsSnapshotPayload"
+      ]
+    },
+    {
+      "from": "f:app/test/shell-frame.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/shell-frame.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/shell-frame.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterAll",
+        "beforeAll",
+        "describe",
+        "expect",
+        "it",
+        "vi"
+      ]
+    },
+    {
       "from": "f:app/test/shell-harness.test.ts",
       "to": "f:app/src/lib/watcher-store.ts",
       "kind": "import"
@@ -9959,6 +10162,12 @@
     {
       "from": "s:app/src/App.tsx#App",
       "to": "s:app/src/lib/docs-model.ts#skipReasonPhrase",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/lib/utils.ts#cn",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -13377,6 +13586,24 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/shell-frame.test.tsx#click",
+      "to": "s:app/test/shell-frame.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/shell-frame.test.tsx#emitSnapshot",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/shell-frame.test.tsx#emitSnapshot",
+      "to": "s:app/test/shell-frame.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/shell-harness.test.ts#loadStore",
       "to": "s:app/test/shell-harness.test.ts#StoreModule",
       "kind": "type_ref",
@@ -14057,8 +14284,8 @@
     }
   ],
   "stats": {
-    "files": 89,
-    "symbols": 602,
-    "edges": 1003
+    "files": 90,
+    "symbols": 616,
+    "edges": 1013
   }
 }
