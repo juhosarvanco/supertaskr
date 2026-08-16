@@ -1,396 +1,381 @@
 # State
 
-Updated: 2026-08-16 by integrator (T-026 merge), claude-opus-5 @fresh
+Updated: 2026-08-16 by integrator (T-037 merge), claude-opus-5 @fresh
 
 ## Just completed
-T-026 (genesis entry, M, app-shell) done and merged — built by
-`claude-opus-5 @fresh`, verified by `claude-opus-5 @fresh`,
-`review: same-model`, **APPROVED first-pass** with no rejection round.
-**MILESTONE 3'S FIRST SLICE IS CLOSED**: T-023 (kit) → T-024 (lens) →
-T-026 (entry) are all through the pipeline. Hand-driven genesis is now
-a thing you can reach from a running app.
+T-037 (mount the lens, S, app-shell) done and merged — built by
+`claude-opus-5 @fresh`, S-tier (executor + tests, no verifier session),
+`review: self-verified`. **MILESTONE 3'S FIRST SLICE NOW DELIVERS ITS
+PROMISE.** T-023 (kit) → T-024 (lens) → T-026 (entry) → T-037 (mount)
+are all through the pipeline. Hand-driven genesis renders live: open a
+docs-less folder, hand-drive the method in a terminal, and watch the
+plan materialize in the pane as each file lands.
 
-WHAT SHIPPED. The front door has **two affordances** — "Open a folder…"
-and "Start an interview" — on EVERY empty state, with the `⌘O · ⌘N`
-hint, and the accelerators are real: the verifier drove ⌘N and ⌘O as
-keydowns on the REAL App (real store, IPC mocked only at the boundary)
-and saw `invoke("pick_genesis_folder")` and
-`invoke("pick_project_folder")` come out. The old "no docs/ found"
-rejection state IS the design's **"No plan in &lt;folder&gt;" card**
-now: heading path, body copy, a four-row checklist whose ○/✓ marks are
-**MEASURED** (`PlanProbe` stats `docs/ROADMAP.md`, `docs/tasks/*.md`,
-`docs/ARCHITECTURE.md`, `.git` and sends four booleans — no names, no
-contents cross the boundary), a "Start an interview here" button, and
-**Adopt deliberately ABSENT**, asserted absent case-insensitively in
-two suites. Genesis opens through **two zero-argument commands**
-(`pick_genesis_folder`, `start_genesis_here` — the ADR-012 pattern
-command-for-command with `pick_project_folder`; the native dialog opens
-Rust-side and no path crosses IPC in either direction), with the T-003
-validation family intact at the root (canonicalize → plain-directory
-gate at pick time AND again at arm time, which is what refuses a root
-swapped for a symlink inside the validate→arm window). The new
-`genesis` screen renders **full-bleed with no rail** — the rail
-condition (`screen === "board"`) is byte-identical to the branch point,
-so board|map is untouched for normal projects. T-018's sentinel lights
-the pipeline **with no re-pick**, exercised against a REAL watcher
-thread armed by this task's own genesis pick. A folder that already
-holds a plan is never offered genesis — the routing is a CALL to
-`open_as_project` split out of `apply_picked_folder`, so the
-Picked/NoDocs/Error shapes are identical by construction rather than by
-imitation. App suite +23 (11 DOM front-door, 6 end-to-end genesis, 6
-store/checklist/reducer), 432 → 455; cargo +10, 129 → 139.
+**THE MOUNT IS TWO LINES; THE REST IS PROOF.** `import { GenesisPane }
+from "@/genesis/GenesisPane"` and `<GenesisPane docs={docs} />` inside
+the slot T-026 marked. The props T-026 shaped for exactly this
+(`{ projectDir, docs: DocsModelState }`) were handed straight through —
+nothing plumbed, added or fetched, no new IPC, no polling, no new
+dependency, both lockfiles zero-diff. **Zero-byte diff under
+`app/src/genesis/**`**: T-024's fence held without a fight.
 
-**THE FOLDED T-018-s4 CRITERION** (criterion 4) is the sharpest part.
-An empty `docs/` is byte-for-byte the empty baseline, which is why
-T-018 sided with suppression and left the front door claiming "no docs/
-found" over a directory sitting right there. `ensure_docs_watch` now
-returns whether it performed the (unarmed → armed) transition
-(`#[must_use]`, true ONLY on that transition's success) and
-`handle_fs_batch` emits on it even when the outcome equals the
-baseline. The verifier ran an **8-step boundary sequence** against the
-real `handle_fs_batch` seam with exact counts and no sleeps: re-arm
-before docs/ exists → 0 · empty docs/ appears → exactly 1 · next batch
-→ 0 · arm again while docs/ exists → 0 (routes to `rearm`, no double) ·
-docs/ deleted → 0 · docs/ recreated empty → exactly 1 (second arming) ·
-next batch → 0 · docs/ replaced by a symlink → 0 and not armed. No
-sequence double-emits; the suppression invariant is untouched for every
-other batch. The mutation drill is load-bearing: removing
-`&& !just_armed` turns the test red at "the arm transition must emit
-exactly once".
+**THE BUNDLE GREP, RUN ON BOTH SIDES WITH THE SAME COMMAND** — and
+re-run independently here at the merge, not read from the notes. The
+pane's own strings (`the project, so far`, `genesis-artifact`,
+`genesis-north-star`, `genesis-backbone`, `grows as you answer`) go
+**0 → present**; the retired placeholder line `nothing written yet`
+goes **present → 0**; the screen's own strings stay present. Bundle
+**429.66 kB (`index-BP8uDHFW.js`) → 442.05 kB (`index-DvrlAOQE.js`)**,
+the +12.4 kB being the pane and its derivation module reaching the
+shipped JS for the first time. I found the pre-merge 429,655-byte asset
+still sitting in `app/dist/` and confirmed the before-half against it
+first-hand before rebuilding. **All three of T-026's original
+measurements are now closed on their own terms**: there IS a src-side
+import of `app/src/genesis/`, the regenerated graph DOES carry the
+C-05→C-13 file edge from `GenesisScreen.tsx`, and the built bundle DOES
+contain GenesisPane's own strings. (`genesis-pane` alone is a useless
+probe — it is a substring of `genesis-pane-slot`, which T-026 already
+shipped; every probe used is the pane's own testid suffix or its own
+copy.)
 
-**ACL, stated plainly.** Two new app commands, **ZERO new grants**.
-`gen/schemas/` is gitignored, so the verifier rebuilt **BOTH ENDS
-independently** rather than reading the notes: a detached worktree at
-the branch point with its own `CARGO_TARGET_DIR`, and HEAD after
-`rm -rf gen/schemas && cargo clean -p nputer && cargo build` so the
-schemas were genuinely regenerated with both commands registered. All
-four schema artifacts hash identical across the pair
-(`capabilities.json` `4fca70b5…6b07`, `acl-manifests.json`
-`d3eace19…9699`, `desktop-schema.json` = `macOS-schema.json`
-`2a16f62c…3b07`), and `EXPECTED_GRANTS` is **byte-identical, 7728
-bytes, 129 grant lines**. T-021's alarm held while the IPC surface
-grew, which is exactly what it was built for. The acl_pin roster gained
-the two names inside the remote-origin denial loop — and the verifier
-was precise about what that proves: adding a bogus
-`totally_not_a_registered_command` to the same loop ALSO passes,
-because the loop's mock app registers only `docs_snapshot`. So it
-proves "the shipped authority denies this name from a remote origin
-before dispatch", which is name-agnostic and is the real security
-property. It is not proof of local registration, and the notes do not
-claim it is.
+**THE GUARD.** Mounting the lens puts C-13 on the shell's critical
+path, and T-024's degradation criteria covered malformed DOCS, not a
+broken COMPONENT. `GenesisPaneBoundary` (React's own boundary contract,
+~45 lines, no library, nothing reusable invented for one call site)
+keeps a throwing pane from taking the shell down. Two design points,
+both pinned:
+- **It does NOT latch.** `resetKey` is `docs.seq`, so the next snapshot
+  the watcher delivers gets one fresh attempt — a single torn file
+  cannot brick an interview for the session, and a pane that keeps
+  throwing keeps showing the fallback.
+- **It WRAPS the pane rather than keying it**, so ordinary renders
+  leave the pane mounted and its change log — T-024's writing-pulse
+  window — intact.
 
-**THE VERIFIER'S CORRECTION, kept.** The notes say of the genesis
-switch "no snapshot exists to send". That is true for a docs-less
-folder and **FALSE** for the other shape `apply_genesis_folder`
-accepts — a folder whose `docs/` holds files but no plan (a lone
-`docs/ARCHITECTURE.md`, a `docs/decisions/` tree), which the task's own
-probe test declares genesis-eligible. There `arm_genesis` delegates to
-`rearm`, nothing emits until the next fs event, and the genesis screen
-reads **"docs/ · nothing written yet" over a non-empty docs/** — two
-clicks after the card truthfully showed `✓ docs/ARCHITECTURE.md`.
-Reproduced on both sides. It self-heals on the first write and breaks
-no SHALL (criterion 2's antecedent is a folder WITHOUT docs/), so it is
-not a criterion failure. Filed as **T-026-s4** with two candidate
-fixes, and it is on the @human list below.
+Proven at TWO levels, and the first uses the REAL pane with no module
+mocking at all: *screen level*, a `DocsModelState` whose `effective` map
+is a **throwing Proxy**, which `observeDocsChange` touches first thing,
+so the genuine `GenesisPane` throws during render — the screen, heading,
+project path and slot all survive, the fallback renders, and a further
+snapshot renders the real pane again (recovery asserted). *Shell level*,
+the REAL App with real store, real docs-model and real parser, driven
+front door → `genesis`: `<main data-screen="genesis">` still mounted,
+`<h1>nputer</h1>` still there, `data-seq` advanced to 21 (the store kept
+running underneath), only the pane's subtree replaced. The fallback copy
+deliberately refuses to imply data loss, because there is none — the
+screen only reads (ADR-017) — and deliberately avoids the string "the
+project, so far" so it can never satisfy this task's own bundle grep.
 
-**INTEGRATOR CORRECTION — READ THIS BEFORE THE VISUAL SESSION.
-T-024's pane is STILL NOT MOUNTED.** T-026 mounts the genesis
-**SCREEN**; it does not mount the **LENS**. `GenesisScreen.tsx` is a
-deliberate placeholder whose marked region
-(`data-testid="genesis-pane-slot"`) renders one honest live line —
-`docs/ · N files written` / `nothing written yet` — and nothing on main
-imports `app/src/genesis/**`. I verified this three ways rather than
-inferring it: `grep` finds no src-side import of the genesis directory;
-the regenerated graph shows no C-05→C-13 file edge from
-`GenesisScreen.tsx` (D1:C-05→C-13 still carries exactly its two T-024
-test-suite edges); and the built bundle is missing GenesisPane's own
-strings ("the project, so far", `genesis-artifact` — ABSENT, while
-`genesis-screen` and `genesis-pane-slot` are PRESENT). **T-024's
-boundary paragraph from the last checkpoint still stands: its code is
-absent from the shipped JS, Rollup still drops it.** This is not a
-T-026 defect — the two branches ran in parallel from a common base that
-predates `app/src/genesis/`, the task file's own seam section says so
-explicitly, and the verifier confirmed the zero-diff fence. But it does
-mean the mount is a **one-import-plus-one-element** job that is
-possible for the first time only now that both halves sit on main
-together, and it is **NOBODY'S TASK YET** — T-027 fills the screen and
-would do it in passing. Integrator observation for the next triage; I
-did not patch it at the merge. Two consequences: **T-024's visual pass
-is still BLOCKED** (corrected below), and **T-024-s1's served-bundle
-probe still has no route to the pane** — the verifier's aside that the
-E2E probe "discharges T-024-s1 now that T-026 has mounted the pane" is
-imprecise on exactly this point.
+**13 new tests, ALL canary-proven to execute** (`expect("PROBE").toBe(
+"EXECUTED")` injected as the first statement of every one of the 13
+`it()` bodies, run — 13 failed — then reverted, both files byte-identical
+after). **Five mutation drills**, each planted, run and reverted:
+unmounting the pane turns 15 of 19 tests red (and `tsc` catches it first
+via TS6133); unmounting + rebuilding reds the bundle test by name and
+shrinks the bundle back to 429.29 kB; **the stale-build guard caught a
+genuine false pass** — with a stale `dist/`, the *contents* test still
+passed while the *staleness* test went red; neutering the fallback reds
+criterion 5 at both levels while the healthy path stays green; removing
+the boundary entirely lets the throw escape uncaught.
+
+**NEW HOUSE FACT, and I reproduced it deliberately rather than taking
+it on faith: `npm test` in app/ NOW REQUIRES A PRIOR `npm run build`.**
+The bundle test **fails loudly — it never skips** — when `dist/` is
+missing or older than the mount. Running `npm test` against the
+pre-merge `dist/` at this merge gave **466 passed / 2 failed**, with the
+message naming the fix verbatim (`dist/ predates
+src/components/shell/GenesisScreen.tsx — rebuild (npm run build) before
+trusting the bundle grep`). A probe that quietly passes on an absent
+build is worse than no probe. This is already the documented order
+(CONVENTIONS § Build & test lists build then test) and already CI's
+order (`app build` at ci.yml:115-116 precedes `app suite` at :118-119),
+so nothing changed except that violating it is now caught. Assertions
+are made on `includes()` booleans, never on the 442 KB haystack, so a
+failure prints one line instead of the bundle.
+
+**THE ONE EXISTING TEST FILE THAT MOVED, declared loudly.**
+`app/test/genesis-entry.test.tsx`, +20/−5, three assertions — it could
+not not move: steps 4/5/6 asserted the text of the placeholder line that
+criterion 4 orders replaced. Those queries now read the PANE's own
+header, plus an added non-null assertion on the pane and three added
+assertions that written files reach the pane's artifact list as
+non-`expected` rows. **Changed, never loosened**: every replacement
+asserts strictly more than what it replaced, because it can only pass if
+the pane itself rendered inside the real App. Steps 1–3 byte-untouched.
+No `.skip`/`.only`/`.todo` anywhere in the branch.
 
 SUITES ON MERGED MAIN, all four re-derived here first-hand, fresh
 installs, ADR-011 order, and all four re-run green AFTER this
-checkpoint's docs edits (the T-024 live-tree lesson applied to my own
-commit): lib/parser `npm ci` + `npm test` **159/159 (10 files)**,
-`npx tsc --noEmit` clean, `npm run build` clean · app `npm install` +
-`npm run build` exit 0 + `npm test` **455/455 (24 files)** — 432 + 23,
-the forecast landing exactly · app/src-tauri bare `cargo test` **139
-passed + 2 ignored, three consecutive runs, identical counts** (the
-T-021 determinism bar, applied because this touches concurrency-adjacent
-code) · tools/e2e `npm ci` + `npx playwright test` **17/17 in 5.0s**,
-headless, one worker, its OWN vite on 14520. Nothing ever bound or
-contacted 1420; no server left running.
+checkpoint's docs and fixture edits (the T-024 live-tree lesson applied
+to my own commit): lib/parser `npm ci` + `npm test` **159/159 (10
+files)**, `npx tsc --noEmit` clean, `npm run build` clean · app `npm
+install` + `npx tsc --noEmit` clean + `npm run build` exit 0 + `npm
+test` **468/468 (26 files)** — 455 + 13, the forecast landing exactly ·
+app/src-tauri bare `cargo test` **139 passed + 2 ignored** (the branch
+touches no Rust — zero-byte diff under `app/src-tauri/` — and it was run
+anyway, because that is the lesson T-024 paid for) · tools/e2e `npm ci`
++ `npx playwright test` **17/17 in 4.9s**, headless, one worker, its OWN
+vite on 14520. Nothing ever bound or contacted 1420; no server left
+running.
 
-STANDING INTEGRATOR PRACTICE (T-009-s1, the ratified CONVENTIONS
-interim regen rule; retires when T-014's `nputer index --check` becomes
-the gate) — **ELEVENTH** exercise. It FIRED (the branch adds `.tsx`
-outside docs/) and it moved real numbers: the graph goes **82 → 84
-files, 513 → 539 symbols, 871 → 909 edges**, 333,934 bytes, sha256
-`ca146f89f976453645f037b6016ab9eef896a6d0f22577cd6cc95a460dfc056d` —
-byte-identical across three runs (golden regen → plain ignored
-self-check → second golden regen), and the plain self-check PASSES, so
-the committed graph is current. Still `languages: ["ts"]`, still ZERO
+STANDING INTEGRATOR PRACTICE (T-009-s1, the ratified CONVENTIONS interim
+regen rule; retires when T-014's `nputer index --check` becomes the
+gate) — **TWELFTH** exercise, and the first where the delta was the
+POINT rather than a side effect. It FIRED and it moved the graph to
+**86 files, 565 symbols, 941 edges** (from 84 / 539 / 909 — **32 edges
+added, ZERO removed**), 346,740 bytes, sha256
+`fc76b37961f613cb7ad6a17b24768f120c6ff5ddfcefd068f30a8104d42c563e` —
+**byte-identical across three runs** (golden regen → second golden regen
+→ plain ignored self-check), and the plain self-check PASSES, so the
+committed graph is current. Still `languages: ["ts"]`, still ZERO
 `tools/` paths, still zero `.rs` files indexed (Rust extraction is
-T-010's). The ceaa949 ordering lesson held an eighth time: the fixture
-edits landed BEFORE the final regen and they moved the graph (the two
-suites' own hash/loc), so a regen-first ordering would have committed a
-stale file.
+T-010's).
 
-THE REGEN DELTA, DERIVED HERE — and note where the branch's forecast
-does not apply. The builder and verifier both measured against the
-branch's own base, which PREDATES T-024's merge, so their absolute
-numbers (78 → 80 files, 449 → 475 symbols, 790 → 828 edges, C-05→C-10
-10 → 13) are stale on merged main. Their **deltas** reproduce exactly:
-+2 files, +26 symbols, +38 edges, +3 on that one row. My own
-measurement, from the enumerated added/removed edge sets with every new
-file edge classified by component pair:
-- files 82 → 84: adds `app/src/components/shell/GenesisScreen.tsx`
-  (C-05's shell glob) and `app/test/genesis-entry.test.tsx` (the
-  app/test umbrella); nothing removed. Content-changed, hash/loc only:
-  App.tsx 311→428, watcher-store.ts 382→560, project-shell.test.tsx
-  127→215, watcher-store.test.ts 242→375.
-- 43 edges added, 5 removed. The five removals are watcher-store
-  INTERNAL call/type_ref edges the picker refactor retired
-  (`applyDocsPayload` now reaches `buildEcho` through `sendEcho`,
-  `pickProjectFolder` through the shared `runPicker`, and
-  `selectScreen`'s `noDocsMessage` is gone) — no cross-component edge
-  was lost.
-- mapping 82 → 84; **C-05 33 → 35**, every other component's count
-  holds (C-06 21 / C-08 10 / C-09 3 / C-10 2 / C-12 11 / C-13 2). D2
-  still empty, no unmapped node.
-- **findings BYTE-UNCHANGED** — all five D1 rows and both remaining D3s
-  hold exactly. **The T-024 umbrella surprise did NOT recur**, and I
-  checked it rather than assuming: `genesis-entry.test.tsx` imports
-  App.tsx (C-05), docs-model and watcher-store (C-10, an already
-  confirmed pair) and three packages, and it does NOT reach into
-  `app/src/genesis/` — so no new component pair appears and
-  D1:C-05→C-13 keeps its two file edges.
+**THE EDGE THIS MERGE EXISTS FOR is in the graph**:
+`f:app/src/components/shell/GenesisScreen.tsx --import[GenesisPane]-->
+f:app/src/genesis/GenesisPane.tsx`. The rest of the delta, re-derived
+here from the raw added/removed edge sets and from an independent re-run
+of the derivation engine — **the branch's forecast was confirmed in
+every particular, which is unusual and worth recording**:
+- files 84 → 86: adds `app/test/genesis-mount.test.tsx` and
+  `app/test/genesis-pane-boundary.test.tsx`; nothing removed.
+  Content-changed (hash/loc/symbols only): `GenesisScreen.tsx` (73 → 141
+  loc, gaining a second symbol — the `GenesisPaneBoundary` class),
+  `genesis-entry.test.tsx` (220 → 235), `node-builtins.d.ts` (28 → 30).
+- mapping 84 → 86; **C-05 35 → 37** (both new suites under the app/test
+  umbrella). Every other count holds — C-06 21, C-08 10, C-09 3, C-10 2,
+  C-12 11, and **C-13 STAYS 2**: the lens gained a consumer, not a file.
+  D2 stays empty, no unmapped node, `derived.issues` stays `[]`.
+- findings: **no finding added or removed** — five D1 rows and the same
+  three D3s. `D1:C-05→C-13`'s fileEdges goes 2 → 4, gaining
+  GenesisScreen.tsx→GenesisPane.tsx (sorted first) and
+  genesis-pane-boundary.test.tsx→GenesisPane.tsx (sorted third).
 - relation table: same 26 rows, same **13 confirmed / 5 undeclared / 8
-  planned** tally. Exactly ONE observedCount moves — **C-05→C-10
-  13 → 16**, the three new file edges being GenesisScreen.tsx →
-  docs-model (the first shell-side src edge from this component),
-  genesis-entry.test.tsx → docs-model, and genesis-entry.test.tsx →
-  watcher-store. All three in the DECLARED direction.
+  planned** tally. **Exactly two observedCounts move** — C-05→C-10
+  **16 → 19** and C-05→C-13 **2 → 4**.
+- The ceaa949 ordering lesson, NINTH hold, and **measured this time
+  rather than asserted**: regenerating before the fixture edits landed
+  gave sha `413ddaec…`; regenerating after them gives `fc76b379…`. A
+  regen-first ordering would have committed a stale graph.
 
-FIXTURES RECONCILED, AND THE ONE DELIBERATELY NOT TOUCHED.
-`app/test/architecture-dogfood.test.ts` (dated addendum enumerating
-every delta above; test name and `toBe(82)` → 84; mapping `["C-05",33]`
-→ 35; the relation row → 16) and
-`app/test/map-dogfood-render.test.tsx` (index hint `committed graph ·
-82 files` → 84) were reconciled — changed, never loosened; the moved
-numbers are pinned by the same whole-array `toEqual` they were before.
-**`lib/parser/test/smoke.test.ts` was deliberately left alone**: it
-pins the component REGISTRY read from `docs/architecture/components/`,
-never the graph, and T-026 declares NO new component. Touching it would
-mirror the error that got T-024 rejected in the opposite direction —
-that rejection was for MISSING a registry pin when a component WAS
-declared; the discipline is the same either way, which is that the
-inventory is per-artifact, not per-regen. (T-024-s5 exists to write
-that inventory down.)
+FIXTURES RECONCILED, AND THE ONE DELIBERATELY NOT TOUCHED. Five
+assertions in `app/test/architecture-dogfood.test.ts` (the test name;
+`toBe(84)` → 86; mapping `["C-05",35]` → 37; D1:C-05→C-13's two new
+fileEdges; the two relation rows) plus a dated addendum enumerating
+every delta above, and one in `app/test/map-dogfood-render.test.tsx`
+(index hint `84 files` → 86). Changed, never loosened — every moved
+number is still pinned by the same whole-array `toEqual`.
+**`lib/parser/test/smoke.test.ts` was deliberately left alone** and is
+byte-untouched: it pins the component REGISTRY read from
+docs/architecture/components/, and T-037 declares no component.
+
+**MY C-05→C-13 DECLARATION JUDGMENT: it STAYS UNDECLARED, and I
+recorded why in the fixture itself so the next reader does not have to
+ask.** The finding changed character at this merge — before it, two of
+C-05's own test suites reaching a child component (arguably umbrella
+noise); now it carries a genuine SOURCE dependency of the shell on the
+lens, the same shape as the DECLARED C-05→C-08 and C-05→C-12. Declaring
+it (a `depends_on` C-13 in `docs/architecture/components/C-05-app.md`)
+would drain the D1 honestly and move the tally to 14/4/8. I did not take
+it, for three reasons: (a) **role boundary** — the dogfood fixture's own
+maintenance contract names two different actors, the integrator who
+regenerates the graph and the ARCHITECT who changes the registry, and a
+`depends_on` edit changes DERIVED OUTPUT (a finding drains, the tally
+moves), which is a ruling rather than a merge-time truth-fix; (b) **the
+composition is explicitly provisional and on the @human list right
+now** — the pane sits full-width inside T-026's card frame only until
+T-027 builds the split view around it; (c) **draining a finding at the
+same merge that first made it meaningful destroys the signal before any
+architect reads it**. Filed for triage below, not taken.
+**One correction of record while I am here**, because the belief is
+already circulating: such an edit would **NOT** move
+`lib/parser/test/smoke.test.ts`. I checked rather than assumed — that
+suite pins the component ID LIST, C-06's shape, and a
+referential-integrity loop C-13 already satisfies. **THREE fixtures move
+when a COMPONENT is declared** (the T-024 lesson); a `depends_on` edit
+moves the dogfood fixture only. That belongs in T-024-s5's inventory.
 
 INTEGRATOR JUDGMENT CALLS, recorded. **ARCHITECTURE: three edits, all
-truth-fixes, no new table row.** C-05's status cell said C-13's lens
-"has code since T-024 but no mount until T-026" — now false in BOTH
-directions, so it reads that T-026 landed the front door and the
-full-bleed `genesis` screen while C-13's lens is still an unmounted
-slot inside it. The "Code layout" bullet carried the same claim
-(`app/src/genesis/**` "code-complete and unmounted until T-026") and
-now says what is actually true: T-026 mounted the SCREEN, the lens is
-still a slot, nothing on main imports the directory and Rollup still
-drops it. The Interfaces "Genesis:" line gained the entry contract —
-two zero-argument commands, dialog Rust-side, no path across IPC, and a
-folder that already holds a plan routed to the ordinary open so no
-overwrite path exists by construction. No new component row: C-05's
-children (C-08…C-13) live in docs/architecture/components/ and the
-slug-map line, and GenesisScreen.tsx is plain C-05 shell code, not a
-new component. **ROADMAP: earned its first mid-milestone entry.**
-Milestone 3's card already named the first slice T-023+T-024+T-026;
-that slice is now COMPLETE, and the T-024 integrator explicitly parked
-the note for this merge. It reads: FIRST SLICE COMPLETE 2026-08-16 —
-T-023 → T-024 → T-026 all through the pipeline; the front door offers
-an interview, a docs-less folder opens as a genesis project, and the
-first `mkdir docs` lights the pipeline into the lens; hand-driven
-genesis now renders live, with no agent in the loop yet; T-025, T-027,
-T-028, T-029 remain. The milestone itself is NOT claimed.
-**NO new ADR** (three-prong): T-026 implements ADR-017's already-settled
-genesis architecture (planner writes, app is a lens) and ADR-012's IPC
-pattern, extending it to two more zero-argument commands rather than
-bending it — `EXPECTED_GRANTS` is byte-identical, which is the
-mechanical proof; nothing here contradicts any ADR (ADR-011 untouched,
-no new package, no lockfile movement); and the task's durable calls —
-the two-command rationale with its security analysis, the plan-probe
-predicate, the design table with its six disclosed deviations, the
-T-024 seam contract, and `ArmGenesis`'s hard-requirement ordering — are
-recorded in the task file's implementation notes and the verdict.
+truth-fixes, no new table row.** C-05's status cell and the "Code
+layout" bullet both said the lens was an unmounted slot that nothing
+imports and Rollup drops — **both false as of this merge**, and both now
+say what is real (the screen renders the pane behind an error boundary;
+the pane is in the shipped bundle; the graph carries the C-05→C-13
+source edge, still undeclared and deliberately so). The Interfaces
+"Genesis:" line gained the rendering half: the screen hands its live
+`DocsModelState` straight to the pane, so the lens updates on C-10's
+existing watcher path with no new IPC and no polling, behind a
+non-latching boundary. No new component row — `GenesisScreen.tsx` is
+plain C-05 shell code. **ROADMAP: the first-slice line was deliberately
+written to await this merge and has been rewritten.** It no longer says
+the promise is undelivered; it says the slice is COMPLETE, that
+hand-driven genesis renders live with no agent in the loop yet, and
+spells out what a user can do end to end. The honest remainder is kept:
+T-025, T-027, T-028, T-029. **NO new ADR** (three-prong): T-037
+implements ADR-017's already-settled genesis architecture (planner
+writes, app is a lens) using the seam ADR-012's IPC pattern already
+established — it adds no IPC at all, so there is nothing to charter;
+nothing here contradicts any ADR (ADR-011 untouched, no new package, no
+lockfile movement, zero Rust diff so `EXPECTED_GRANTS` cannot have
+moved); and the task's durable calls — the boundary's non-latching
+`resetKey = docs.seq` shape, the wrap-don't-key choice that preserves
+the change log, the fallback copy's refusal to imply data loss, and the
+build-before-test consequence — are recorded in the task file's
+implementation notes.
 
 ## In progress / broken right now
-Nothing in flight. The t026 worktree is removed; its branch is KEPT
-alongside t023/t024/t036. Main tree clean, all four suites green.
+**T-025** (agent runner, L, app-agent + app-shell) and **T-038** (token
+lint precision, S, tools/e2e) are both **BUILDING** in their own
+worktrees. The t037 worktree is removed; its branch is KEPT alongside
+t023/t024/t026/t036. Main tree clean, all four suites green.
 
-LAUNCH ITEM, carried forward — **watch the first CI run** (T-020). At
-the repo's first push (`git remote -v` is still empty), confirm in
-order: the ubuntu apt/webkit2gtk set installs; the three `uses:` SHA
-pins resolve; playwright-on-Linux runs the lane; `cargo audit` behaves
-as it does locally; the xvfb `tauri dev` boot prints both `[nputer]`
-startup lines. AND (T-018-s3 fold) the THREE T-018 SENTINEL LIVE TESTS
-inside the ubuntu `cargo test` step — replaced-wholesale and
-deleted-recreated docs/. They discriminate only where inotify watches
-INODES; macOS FSEvents watches paths and was accidentally resilient,
-which is why T-018's replace-half evidence is mechanism-only today.
-Green there CLOSES that evidence gap; red there is a real reconcile gap
-macOS could never surface, and gets filed immediately. This run is also
-the gate that closes T-001/T-003's Linux halves, and it now carries
-T-026-s1 (the plan probe's exact-case match makes macOS and Linux
-disagree about "already has a plan" — ruled safe, see below, but the
-Linux lane is where the divergence becomes visible).
+**KNOWN RED, OWNED — this is the one thing currently broken on main.**
+`npm run lint:tokens` (from tools/e2e) **exits 1 on untouched main**. A
+regex literal at `app/src/genesis/genesis-derive.ts:231`
+(`/<!--[\s\S]*?(?:-->|$)/g`, T-024's `stripHtmlComments`) trips pattern
+P1, whose `-\[[^\]]` matches the `--[` inside it. This is **the exact
+false-positive class T-020's verifier predicted**, arrived. The tool
+itself is fine — `--selftest` is green on 17 samples — the pattern is
+what is wrong. It is **not** a T-037 defect: the lint's output is
+byte-identical on main and on the branch. **Why it is sharper than an
+annoyance**: the lint is CI's step 1, gating *before* every install
+step, so the standing "watch the first CI run" item would abort before
+collecting **any** of the Linux evidence it exists to gather. **T-038 is
+in flight to fix it by PRECISION — never by removing a pattern, never by
+an allowlist.** I ran it here for information only and did not treat it
+as a merge blocker; it is outside this merge's fence and fixing it here
+would have hidden the finding rather than recorded it.
+
+LAUNCH ITEM, carried forward — **watch the first CI run** (T-020), now
+gated behind T-038 above. At the repo's first push (`git remote -v` is
+still empty), confirm in order: the ubuntu apt/webkit2gtk set installs;
+the three `uses:` SHA pins resolve; playwright-on-Linux runs the lane;
+`cargo audit` behaves as it does locally; the xvfb `tauri dev` boot
+prints both `[nputer]` startup lines. AND (T-018-s3 fold) the THREE
+T-018 SENTINEL LIVE TESTS inside the ubuntu `cargo test` step —
+replaced-wholesale and deleted-recreated docs/. They discriminate only
+where inotify watches INODES; macOS FSEvents watches paths and was
+accidentally resilient, which is why T-018's replace-half evidence is
+mechanism-only today. Green there CLOSES that evidence gap; red there is
+a real reconcile gap macOS could never surface, and gets filed
+immediately. This run is also the gate that closes T-001/T-003's Linux
+halves, and it carries T-026-s1 (the plan probe's exact-case match makes
+macOS and Linux disagree about "already has a plan" — ruled safe, but
+the Linux lane is where the divergence becomes visible) and T-021-s1
+(the ACL pin is macOS-derived).
 
 ## Next up (1–4)
-1. **@human — THE VISUAL SESSION IS OPEN.** This checkpoint is what you
-   said you were waiting for. Consolidated, in one sitting:
-   - **T-026's front door, light AND dark** (NEW, and the point of the
-     session): the two-button row and the "No plan in &lt;folder&gt;"
-     card against the design's `open a folder` screen — button
-     sizes/inks, the checklist ○/✓ (the ✓ rides `--review-disc`, whose
-     dark value #4ecf9e is a token-family derivation, not measured from
-     a dark mockup), the card's 10px vs the design's 12px radius, and
-     whether the footnote reads as a footnote.
-   - **Is the bare genesis placeholder acceptable as an interim?** And
-     is keeping the header chrome above it right? (T-027 fills it.)
-   - **The real picker flows on the real screen** — the standing T-007
-     checklist, extended and still @human because native dialogs are
-     unreachable from a browser harness and tauri-driver has no macOS:
-     "Start an interview" → native dialog → a docs-less folder lands on
-     the genesis screen; ⌘N and ⌘O on the front door; "Start an
-     interview here" on a folder the app just refused; a folder that
-     already has a plan → the board, not genesis.
-   - **s4's question**: point the app at a folder whose `docs/` holds
-     files but no plan (a lone ARCHITECTURE.md) and say whether
-     "docs/ · nothing written yet" over a non-empty docs/ is what you
-     want to see in the interim.
-   - **The at-a-glance amber judgment** (T-012 criterion 5's human
-     half — drift stroke vs building/verifying fills, BOTH schemes,
-     incl. composed building+drift; the dogfood hero renders it live
-     and shows C-05 at `drift 3`).
+1. **@human — THE VISUAL SESSION IS OPEN, AND NOW FULLY UNBLOCKED.**
+   Every item below is reachable in a running app for the first time.
+   **The route to the pane**: "Start an interview" on a docs-less
+   folder, or "Start an interview here" on a folder the app just
+   refused. Session agenda, in one sitting:
+   - **T-024's pane, light AND dark — the item this session was
+     scheduled on, and it is finally live.** The standing questions come
+     with it: built/forming/slot card contrast in dark, the warm
+     writing-row border, the five type sizes that moved 0.5–1px, and
+     the substituted footer right slot (`stage ~4 · constraints`).
+   - **Two NEW framing questions that exist only because of the mount**,
+     both about COMPOSITION rather than the pane itself. (a) T-024 drew
+     the pane as the **RIGHT HALF of a split view**; T-027 builds the
+     left half, so until then it sits **full-width inside T-026's card
+     frame**. Does its `bg-sidebar` ground read right framed by a
+     `bg-card` bordered box — a sidebar tone inside a card, which the
+     design never draws? And does the **five-across backbone grid** still
+     hold at full width when it was drawn for a half-width pane?
+     (b) The slot is `min-h-0 flex-1` so the pane's own `overflow-y-auto`
+     region scrolls — but the shell's column is **`min-h-screen`, not
+     `h-screen`**, so at very short window heights the page may grow
+     before the pane's own scroll region engages. Worth one look at a
+     short window with the complete tree loaded.
+   - **T-026's front door, light AND dark**: the two-button row and the
+     "No plan in &lt;folder&gt;" card against the design's `open a
+     folder` screen — button sizes/inks, the checklist ○/✓ (the ✓ rides
+     `--review-disc`, whose dark value #4ecf9e is a token-family
+     derivation, not measured from a dark mockup), the card's 10px vs
+     the design's 12px radius, and whether the footnote reads as a
+     footnote.
+   - **The at-a-glance amber judgment** (T-012 criterion 5's human half
+     — drift stroke vs building/verifying fills, BOTH schemes, incl.
+     composed building+drift; the dogfood hero renders it live).
    - **The launch-shot re-judgment** (T-006's pending screenshot
      predates the rail — light + dark now include it).
    - **The T-023 dry-run conversational quality judgment** (did the two
      "pushing back:" challenges actually challenge; the founder was
      builder-scripted in-session, so true cold-context evidence still
      arrives with T-029).
-   - **A Linux run** — this is the "watch the first CI run" item above.
-   - **T-024's pane, light + dark: STILL BLOCKED, correcting the
-     expectation this session was scheduled on.** T-026 mounted the
-     genesis SCREEN, not the LENS — nothing imports `app/src/genesis/`
-     and the pane is still absent from the shipped JS (proof in "Just
-     completed"). There is still no route to it in a running app. The
-     mount is now a one-import-plus-one-element change and both halves
-     finally sit on main together; it needs a ruling on WHO does it —
-     T-027 in passing, or a small dedicated card ahead of it. Until
-     then this item stays parked and the dark-mode questions it carries
-     (built/forming/slot card contrast, the warm writing-row border,
-     the five type sizes that moved 0.5–1px, the substituted footer
-     right slot `stage ~4 · constraints`) go with it.
-2. MILESTONE 3 (T-023…T-029, ADR-017) — **first slice T-023+T-024+T-026
-   COMPLETE**. Human-ruled queue for the app-shell lane is now
-   **T-025 → T-022**. **T-025 (agent runner, L, app-agent + app-shell)
-   is UNBLOCKED**: its `blocked_by` is [T-021 ✓, T-023 ✓, T-026 ✓] and
-   its full planning pass is already applied, so it is dispatch-ready.
-   T-026 landed all three things T-025's §4/§10 named: the `genesis`
-   screen state, the docs-less open path (`apply_genesis_folder` +
-   `WatchCtl::ArmGenesis`), and the plan-eligibility predicate
-   (`docs_watch::probe_plan` / `PlanProbe::has_plan`, `pub` and
-   importable for its Rust-side re-check); `lib.rs` command
-   registration is one list T-025 appends to, no structural change
-   waiting. T-027 (L, planning pass at dispatch) dispatches when
-   T-024 ✓ + T-025 + T-026 ✓ all merge — i.e. it waits only on T-025;
-   T-028/T-029 behind it.
+   - **T-026-s4's question, and note the answer CHANGED SHAPE.** Point
+     the app at a folder whose `docs/` holds files but no plan (a lone
+     ARCHITECTURE.md). It no longer reads "docs/ · nothing written yet"
+     — that line is gone from the bundle. It now renders **through the
+     lens**, as the pane's own `docs/ · 0 files written` scaffold with
+     `expected` placeholder rows and north star `forming…`. Judge
+     whether THAT reads right over a non-empty docs/.
+   - **The bare-placeholder question is MOOT** — the pane renders. It
+     can come off the list.
+   - **The real picker flows on the real screen** — the standing T-007
+     checklist, still @human because native dialogs are unreachable from
+     a browser harness and tauri-driver has no macOS: "Start an
+     interview" → native dialog → a docs-less folder lands on the
+     genesis screen; ⌘N and ⌘O on the front door; "Start an interview
+     here" on a folder the app just refused; a folder that already has a
+     plan → the board, not genesis.
+   - **A Linux run** — the "watch the first CI run" item above, which
+     **T-038 must land first** or it aborts at the token lint.
+2. MILESTONE 3 (T-023…T-029, ADR-017) — **first slice
+   T-023+T-024+T-026+T-037 COMPLETE, promise delivered**. T-025 (agent
+   runner, L) is BUILDING and holds the app-shell lane; the human-ruled
+   queue after it is T-022. **T-027** (L, split view — the conversation
+   half, and the left half of the composition the @human items above ask
+   about) dispatches when T-025 merges; T-028/T-029 behind it. The
+   milestone itself is NOT claimed.
 3. OVERNIGHT DISPATCH GRANTS (human, 2026-08-16 night): app-shell lane
-   queue was T-021 → T-026 → T-025 → T-022; T-021 and T-026 are now
-   DONE, so **T-025 holds that lane**. Milestone 3 runs through T-029
-   as blockers clear. Triage: APPLY granted — but tasks NEWLY created
-   by triage do NOT dispatch without the human. Unchanged method rules:
-   a second REJECTED on any task parks that lane for the human;
-   @human judgments are never self-answered.
-4. Suggestion backlog for the NEXT TRIAGE — **seventeen** to
-   disposition, plus three parked in place; none dispatched. Carried
-   over: T-021-s1 (the ACL pin's EXPECTED_GRANTS is macOS-derived; the
-   first CI run FEEDS this) · T-021-s2 (genericize the AppHandle-taking
-   commands over `R: Runtime` — T-026's two new commands join that
-   list) · T-021-s3 (pin the panic-path latch release) · T-020-s3 (the
-   boot check cannot run while the human's app holds 1420) · T-020-s5
-   (the token lint's P1 pattern fires on dash-prefixed arbitrary
-   VARIANTS and on regex literals) · T-020-s6 (the parity spec mirrors
-   CONVENTIONS in a hard-coded array instead of parsing it) ·
-   T-024-s1 (**still open, and its premise moved**: the served-bundle
-   probe was to land "with T-026's mount", but the pane is still
-   unmounted — see the correction above) · T-024-s3 (a render-phase ref
-   write stamps the change log; wants an architect ruling) · T-024-s4
-   (the north-star title is the pane's one unbounded text surface;
-   belongs with T-031) · T-024-s5 (write down the registry-pin
-   inventory so "declaring a component moves THREE fixtures" stops
-   being folklore) · T-024-s6 (compound cross-model `built_by` stamps
-   parse to a FALSE `policy: "resume"` and a ~50-char model badge with
-   no truncate; belongs to T-030. It renders on T-024's card now —
-   cosmetic, expected, and do NOT "fix" it by making the record less
-   honest about who built what). **T-024-s2 is DISCHARGED** by T-024's
-   own merge (C-13's D3 cleared at that regen) — the triage should
-   resolve it, not schedule it. Parked in place: T-008-s1 (awaits
-   F-04/F-05 layout decisions), T-018-s1 (awaits a Windows lane),
-   T-003-s2 (already encoded).
-   NEW FROM T-026, all seven filed by the builder (s1–s3) and verifier
-   (s4–s7): **T-026-s1** (the plan probe's exact-case match makes macOS
-   and Linux disagree about "already has a plan" — RULED by the
-   verifier as safe: the probe's spelling AGREES with the parser
-   (`files.ts:122`, `project.ts:188` both key on literal
-   `docs/ROADMAP.md`), so on a case-sensitive box the two never
-   disagree about what the app can see, and on macOS the probe
-   OVER-detects and REFUSES genesis — the conservative direction. It is
-   a cross-platform truthfulness divergence wanting a decision, not a
-   no-overwrite failure; feeds T-020's Linux lane) · **T-026-s2**
-   (⌘O/⌘N are front-door-local with macOS-shaped labels and no menu;
-   the advertised ⌘O genuinely stops working once a board opens —
-   decide who owns accelerators before T-027 wants keys) ·
-   **T-026-s3** (genesis intent does not survive a restart, though the
-   folder does — filed to stop T-022 and T-029 each inventing a
-   persistence mechanism) · **T-026-s4** (the genesis screen is blind
-   to an existing docs/ — the notes' correction above; on the @human
-   list) · **T-026-s5** (deleting an EMPTY docs/ is silent, so the
-   board outlives the docs/ it described — an edge criterion 4 itself
-   opened, since before this task an empty docs/ produced no board to
-   go stale) · **T-026-s6** (a genesis switch DOES send a
-   `model-updated` echo with `generatedAtMs: 0`, contradicting two code
-   comments that say it never fakes one — reproduced) · **T-026-s7**
-   (the deferred served-bundle probes belong in T-020's E2E lane, which
-   needs a small DEV-only shell harness first — the dev harness today
-   exposes only `__nputerDocsHarness = { apply, getState }` and `apply`
-   always lands on phase `"open"`, so NEITHER front-door state is
-   reachable from a served bundle at all; a browser would not have
-   sufficed, which is why the deferral was ruled acceptable rather than
-   excused. **It was expected to discharge T-024-s1 in the same
-   addition — it cannot yet**, because that probe needs the pane
-   mounted and it is not).
-   INTEGRATOR OBSERVATIONS for the same triage, both carried forward
-   and both GREW: (a) **the unmounted lens** — the one-line mount is
-   now possible and belongs to nobody; rule on it (see "Just
-   completed"). (b) **sixteen** open suggestion files carry no `id:`
-   field — nine at the last checkpoint plus all seven of T-026's
-   (verified by grep at this merge, not assumed). The T-016 encoding
-   requires an id at parking and the parser accepts the omission
-   silently, which is why it keeps recurring. Worth a rule, not a
-   fourth observation — same family as T-030's parser-strictness pass.
+   queue was T-021 → T-026 → T-025 → T-022; T-021 and T-026 are DONE and
+   **T-025 holds that lane**. Milestone 3 runs through T-029 as blockers
+   clear. Triage: APPLY granted — but tasks NEWLY created by triage do
+   NOT dispatch without the human. Unchanged method rules: a second
+   REJECTED on any task parks that lane for the human; @human judgments
+   are never self-answered.
+4. Suggestion backlog for the NEXT TRIAGE — **23 suggestion files on
+   disk**; none dispatched. Of those, **T-037-s1 is already ABSORBED**
+   (T-038's frontmatter carries `Absorbs: T-020-s5, T-037-s1`),
+   **T-024-s2 is DISCHARGED** (C-13's D3 cleared at T-024's own merge —
+   resolve it, do not schedule it), and **three are parked in place**
+   (T-008-s1 awaits F-04/F-05 layout decisions, T-018-s1 awaits a
+   Windows lane, T-003-s2 is already encoded). That leaves **eighteen**
+   genuinely awaiting disposition: T-020-s3 · T-020-s6 · T-021-s1 ·
+   T-021-s2 · T-021-s3 · T-024-s1 · T-024-s3 · T-024-s4 · T-024-s5 ·
+   T-024-s6 · T-026-s1 · T-026-s2 · T-026-s3 · T-026-s4 · T-026-s5 ·
+   T-026-s6 · T-026-s7 · T-036-s1.
+   **CHANGED BY THIS MERGE**: **T-024-s1 and T-026-s7 are UNBLOCKED but
+   NOT discharged.** Both wanted served-bundle probes; T-024-s1's needed
+   the pane mounted and now has a route to it, and T-026-s7's premise
+   that the dev harness cannot reach either front-door state is
+   unchanged. They still want the E2E lane's small DEV-only shell
+   harness — the blocker they named is gone, the work is not done. Also
+   **T-024-s5 gained a concrete entry**: a `depends_on` edit moves ONE
+   fixture, a component DECLARATION moves THREE (verified at this merge,
+   see the judgment above) — that distinction is exactly the folklore
+   that suggestion exists to write down.
+   INTEGRATOR OBSERVATIONS for the same triage:
+   (a) **RULE ON C-05→C-13.** The one-line mount is done, so the
+   observation "the unmounted lens belongs to nobody" is CLOSED. What
+   replaces it is a real architecture question: the shell now imports
+   the lens as source, and the registry does not say so. Declare it or
+   ratify the drift — my reasoning for leaving it is above, but it wants
+   an architect, not another integrator.
+   (b) **The T-037-s1 file should be REMOVED to complete the T-016
+   encoding.** T-038's dispatch already declared the absorption and
+   removed T-020-s5's file in that same commit; it could not remove
+   T-037-s1's, which existed only on the t037 branch until this merge.
+   I left the file in place rather than delete unilaterally — it is one
+   `git rm` and a line in the next commit that touches docs/tasks/.
+   (c) **SIXTEEN open suggestion files still carry no `id:` field**
+   (verified by grep at this merge, not assumed — the count held because
+   T-037-s1 correctly carries one). The T-016 encoding requires an id at
+   parking and the parser accepts the omission silently, which is why it
+   keeps recurring. Worth a rule, same family as T-030's
+   parser-strictness pass.
 
 ## Open questions
 None.

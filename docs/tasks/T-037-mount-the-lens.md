@@ -5,14 +5,14 @@ feature: F-03
 milestone: 3
 priority: 5
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5
 verifier:
 built_by: "claude-opus-5 @fresh"
 verified_by:
-review:
+review: self-verified
 ---
 
 The first slice's join, which fell between two parallel branches and

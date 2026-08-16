@@ -49,17 +49,23 @@ Tasks: T-023…T-029 (kit → lens → runner → entry → split view →
 crescendo → resume); first slice T-023+T-024+T-026 — hand-driven
 genesis rendered live, deliberately too small. (Decomposed
 2026-08-16, ADR-017.)
-Progress: first slice's three cards COMPLETE 2026-08-16 — T-023 →
-T-024 → T-026 all through the pipeline; the front door offers an
-interview, a docs-less folder opens as a genesis project, and the
-first `mkdir docs` lights the pipeline. But the SLICE'S OWN PROMISE —
-hand-driven genesis rendered live — is NOT yet delivered: T-026
-mounts the genesis screen with a placeholder slot, T-024's lens is
-built and tested but nothing imports it, so what renders today is one
-honest line (`docs/ · N files written`) where the pane belongs. The
-join is a one-import change that fell between two parallel branches
-and belonged to neither. T-037 closes it; the slice is complete when
-that lands. T-025, T-027, T-028, T-029 remain.
+Progress: FIRST SLICE COMPLETE 2026-08-16, promise delivered — T-023 →
+T-024 → T-026 → T-037 all through the pipeline. The join that fell
+between two parallel branches and belonged to neither is closed:
+T-037 mounted T-024's lens in T-026's slot, so the pane is in the
+shipped bundle and the placeholder line is gone. **Hand-driven genesis
+now renders live, with no agent in the loop yet.** End to end, what a
+user can do today: open a folder with no `docs/` in it (the front door
+offers "Open a folder…" and "Start an interview"), then hand-drive the
+method in a terminal — write NORTH_STAR.md, ROADMAP.md, the first
+decisions and tasks — and watch the plan materialize in the pane as
+each file lands: the north-star card, the backbone grid filling in,
+artifact rows going from expected to written, the approximate banking
+stage climbing. No re-pick, no refresh, no polling — the first
+`mkdir docs` arms the watcher and every write after it flows through.
+The honest remainder: T-025 (the agent runner that removes "by hand"),
+T-027 (the split view's conversation half — the pane is currently
+full-width where it was drawn as the right half), T-028, T-029.
 
 ## Parked
 The staged future lives in docs/future.md (two expert-room batches:

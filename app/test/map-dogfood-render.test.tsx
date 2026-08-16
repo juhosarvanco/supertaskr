@@ -176,9 +176,11 @@ describe("the nputer repo on its own map", () => {
     // 78 → 82 at the T-024 merge regen (2026-08-16): the genesis pane's
     // two sources and its two suites joined.
     // 82 → 84 at the T-026 merge regen (2026-08-16): GenesisScreen.tsx
-    // (the shell's mount for that pane) and the genesis-entry suite.
+    // (the shell's SLOT for that pane) and the genesis-entry suite.
+    // 84 → 86 at the T-037 merge regen (2026-08-16): the two suites that
+    // pin the actual MOUNT — genesis-mount and genesis-pane-boundary.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 84 files",
+      "committed graph · 86 files",
     );
   });
 });

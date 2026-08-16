@@ -198,6 +198,68 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 // C-10 10→13) was measured against the pre-T-024 base and its absolute
 // numbers do not apply here; its DELTAS (+2 files, +26 symbols, +38
 // edges, +3 on that one row) reproduce exactly. Changed, never loosened.
+//
+// RECONCILED AT THE T-037 MERGE (2026-08-16, integrator — twelfth
+// exercise of the practice): the regenerated 86-file graph. This is the
+// merge that MOUNTED the lens, so for the first time the delta is the
+// point rather than a side effect. Every number below was re-derived
+// here from the raw graph (full added/removed edge-set enumeration) and
+// from an independent re-run of the derivation engine, before this edit
+// — not read off the failure output and not taken from the branch's
+// forecast (which, unusually, matched in every particular):
+//   · stats 84→86 files, 539→565 symbols, 909→941 edges — 32 added,
+//     ZERO removed. The two new files are app/test/genesis-mount.test.tsx
+//     and app/test/genesis-pane-boundary.test.tsx; nothing removed.
+//     Content-changed (hash/loc/symbols only): GenesisScreen.tsx (73→141
+//     loc, and it gains a second symbol — the GenesisPaneBoundary class),
+//     genesis-entry.test.tsx (220→235), node-builtins.d.ts (28→30).
+//   · THE EDGE THIS MERGE EXISTS FOR: f:app/src/components/shell/
+//     GenesisScreen.tsx --import[GenesisPane]--> f:app/src/genesis/
+//     GenesisPane.tsx. T-026's merge measured that edge's ABSENCE three
+//     ways as proof the lens was unmounted; it is present now.
+//   · mapping 84→86; C-05 35→37 (both new suites land under the
+//     app/test/** umbrella). Every other component's count holds —
+//     C-06 21, C-08 10, C-09 3, C-10 2, C-12 11, and C-13 STAYS 2: the
+//     lens gained a consumer, not a file. D2 STAYS EMPTY; the unmapped
+//     node stays gone; derived.issues stays [].
+//   · findings: no finding added or removed — still five D1 rows and the
+//     same three D3s. D1:C-05→C-13's fileEdges goes 2→4, gaining
+//     GenesisScreen.tsx→GenesisPane.tsx (sorted FIRST, ahead of the
+//     app/test/ entries) and genesis-pane-boundary.test.tsx→
+//     GenesisPane.tsx (sorted third). Everything else byte-identical.
+//   · relation table: same 26 rows, same 13 confirmed / 5 undeclared /
+//     8 planned tally. EXACTLY TWO observedCounts move — C-05→C-10
+//     16→19 and C-05→C-13 2→4.
+//   · INTEGRATOR JUDGMENT, recorded because the next reader will ask.
+//     C-05→C-13 stays UNDECLARED, deliberately. Its character changed at
+//     this merge — it was two of C-05's own test suites reaching a child
+//     component (arguably umbrella noise); it now carries a genuine
+//     SOURCE dependency of the shell on the lens, the same shape as the
+//     declared C-05→C-08 and C-05→C-12. Declaring it (a `depends_on`
+//     C-13 in docs/architecture/components/C-05-app.md) would drain this
+//     D1 honestly and move the tally to 14/4/8. It was NOT taken here:
+//     (a) this fixture's own maintenance contract names two different
+//     actors — the integrator regenerates the graph, the ARCHITECT
+//     changes the registry — and a depends_on edit changes DERIVED
+//     OUTPUT (a finding drains, the tally moves), which is a ruling, not
+//     a merge-time truth-fix; (b) the composition is explicitly
+//     provisional and on the @human list right now — T-024's pane sits
+//     full-width inside T-026's card frame only until T-027 builds the
+//     split view around it; (c) draining a finding at the same merge
+//     that first made it meaningful destroys the signal before any
+//     architect reads it. Filed for triage, not taken. For the record,
+//     and correcting a widely-held belief: such an edit would NOT move
+//     lib/parser/test/smoke.test.ts — that suite pins the component ID
+//     LIST and C-06's shape, plus a referential-integrity loop C-13
+//     already satisfies. THREE fixtures move when a COMPONENT is
+//     declared (the T-024 lesson); a depends_on edit moves this file
+//     only.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched: T-037
+//     declares no component and changes no registry file.
+//   · The ceaa949 ordering lesson, NINTH hold, and measured this time
+//     rather than asserted: regenerating before these lines landed gave
+//     sha 413ddaec…; regenerating after them gives a different sha, so a
+//     regen-first ordering would have committed a stale graph.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -262,8 +324,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 84 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(84);
+  it("all 86 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(86);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -271,13 +333,17 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect([...counts.entries()].sort()).toEqual([
       // 33 → 35 at the T-026 merge regen: GenesisScreen.tsx under the
       // shell glob, genesis-entry.test.tsx under the app/test umbrella.
-      ["C-05", 35],
+      // 35 → 37 at the T-037 merge regen: genesis-mount.test.tsx and
+      // genesis-pane-boundary.test.tsx, both under that same umbrella.
+      ["C-05", 37],
       ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
       ["C-10", 2],
       ["C-12", 11],
-      // The genesis pane joined the index at the T-024 merge regen.
+      // The genesis pane joined the index at the T-024 merge regen, and
+      // STAYS 2 at T-037's: the mount gave the lens a consumer, not a
+      // file.
       ["C-13", 2],
     ]);
     // The map pane joined its engine at the T-012 merge regen
@@ -334,12 +400,29 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         // T-024 merge regen: C-05's own suites reach into the genesis
         // pane under the app/test/** umbrella — real drift, same shape
         // as C-05→C-06 and C-05→C-09 above.
+        // T-037 merge regen: 2 → 4 file edges, and the finding CHANGES
+        // CHARACTER. The first entry below is a SOURCE edge — the shell
+        // screen importing the lens — where before this merge the pair
+        // carried only test-suite edges. That import is the whole point
+        // of T-037; T-026's merge measured its absence as proof the lens
+        // was unmounted. Left UNDECLARED deliberately (see the dated
+        // T-037 addendum above for the integrator's reasoning); this row
+        // is the drift signal the architect is meant to rule on, not a
+        // blemish to drain at the merge that created it.
         rule: "D1",
         id: "D1:C-05->C-13",
         from: "C-05",
         to: "C-13",
         fileEdges: [
+          {
+            from: "app/src/components/shell/GenesisScreen.tsx",
+            to: "app/src/genesis/GenesisPane.tsx",
+          },
           { from: "app/test/genesis-derive.test.ts", to: "app/src/genesis/genesis-derive.ts" },
+          {
+            from: "app/test/genesis-pane-boundary.test.tsx",
+            to: "app/src/genesis/GenesisPane.tsx",
+          },
           { from: "app/test/genesis-pane-dom.test.tsx", to: "app/src/genesis/GenesisPane.tsx" },
         ],
       },
@@ -384,10 +467,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 13 → 16 at the T-026 merge regen: GenesisScreen.tsx takes a
       // DocsModelState (the first shell-side src edge into C-10), and
       // genesis-entry.test.tsx drives both docs-model and watcher-store.
-      ["C-05", "C-10", "confirmed", 16],
+      // 16 → 19 at the T-037 merge regen: both new suites import
+      // docs-model, and genesis-pane-boundary.test.tsx also drives
+      // watcher-store. All three in the DECLARED direction.
+      ["C-05", "C-10", "confirmed", 19],
       ["C-05", "C-11", "planned", 0],
       ["C-05", "C-12", "confirmed", 20],
-      ["C-05", "C-13", "undeclared", 2],
+      // 2 → 4 at the T-037 merge regen, and one of the two additions is
+      // the shell's own SOURCE import of the lens — the mount. Still
+      // undeclared: the integrator's reasoning is in the dated addendum.
+      ["C-05", "C-13", "undeclared", 4],
       ["C-06", "C-01", "planned", 0],
       ["C-08", "C-05", "undeclared", 4],
       ["C-08", "C-06", "confirmed", 4],
