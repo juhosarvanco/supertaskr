@@ -24,9 +24,22 @@ reproduced first-hand by T-026's verifier with exact counts. Landing
 them separately would rebuild the same batch-seam fixtures three
 times. Serialize app-shell with T-041/T-022 at dispatch.
 
-Land before or with T-027: criterion 4 decides where the docs change
-log lives, and T-027's banked-chip criterion makes it the SECOND
-consumer — the exact trigger T-024-s3 said to decide before.
+CORRECTED 2026-08-17 by T-027's planning pass, which read both sides:
+**T-027 is NOT the second consumer** and this card's original premise
+was wrong. T-024's log answers "what changed in the last 5 seconds"
+(the writing pulse); T-027's banked chips need "what changed since
+this turn began" — a per-turn baseline diff. Same evidence, different
+window, no shared log; T-027 reads T-024's log not at all and
+introduces no second rolling log of its own. So criterion 4's forcing
+function has evaporated.
+
+STILL LAND BEFORE T-027, for a different and better reason: criterion
+1. A genesis switch onto a folder whose `docs/` already holds files
+sends no snapshot, so T-027's turn-1 baseline would be empty and every
+pre-existing file would chip as if the planner had just written it.
+T-027's plan chose to accept that lie and tripwire it rather than lose
+every interview's turn-1 scaffold chips. Landing this first removes
+the case by construction and DELETES a tripwire instead of adding one.
 
 ## Acceptance criteria
 - WHEN a genesis switch lands on a folder whose docs/ already holds
@@ -58,16 +71,22 @@ consumer — the exact trigger T-024-s3 said to decide before.
   emitted `model-updated {"seq":7,"generatedAtMs":0,...}` — the zero
   timestamp is the tell. A test SHALL assert a snapshot-less switch
   emits no echo AND that a real snapshot still does (T-026-s6).
-- THE docs change log SHALL be folded where a second consumer can
-  share it — beside the snapshot in the watcher store — so GenesisPane
-  becomes a pure function of its props and T-027's chat reads the same
-  log instead of keeping its own; `observeDocsChange`'s identity
-  guarantees for the empty/already-observed/stale-seq cases SHALL stay
-  pinned. IF the architect instead rules the render-phase ref stamp
-  (`GenesisPane.tsx:140`) a ratified pattern THEN the ruling SHALL be
-  recorded in the pane's header AND in CONVENTIONS' Gotchas rather
-  than left implicit. The pick is recorded in this file before
-  dispatch (T-024-s3).
+- THE render-phase ref stamp SHALL be RATIFIED rather than relocated
+  — the architect's pick, recorded here before dispatch as the
+  criterion requires (T-024-s3). Rationale: the arm that moved the log
+  into the watcher store existed to serve a second consumer, and
+  T-027's planning pass proved there is no second consumer. Moving
+  state across a component boundary to serve nobody is cost without
+  benefit, and `observeDocsChange` is already a pure fold whose
+  identity guarantees are pinned. So: the pattern is recorded in
+  `GenesisPane.tsx`'s header AND as a CONVENTIONS gotcha (a
+  render-phase ref stamp is legitimate HERE because it is guarded,
+  bounded to a few-ms pulse window, and derives from props the render
+  already has — the T-012 precedent), `observeDocsChange`'s identity
+  guarantees for the empty / already-observed / stale-seq cases keep
+  their pins, and NOTHING moves into the store. IF a future second
+  consumer appears THEN the relocation is a change of source, not of
+  mechanism — recorded so the option stays open rather than lost.
 - THE existing suppression, stale-drop and project-switch invariants
   SHALL keep their current tests green — changed, never loosened.
 
