@@ -10,7 +10,7 @@ blocked_by: []
 touches: [.github/, tools/e2e/, .nputerignore]
 builder: claude-fable-5
 verifier:
-built_by:
+built_by: claude-fable-5 @fresh (WIP through 986431e) + claude-opus-5 @fresh (completion)
 verified_by:
 review:
 ---
@@ -193,5 +193,375 @@ New territory: tools/e2e/ and .github/ exist in no other card's touches — disp
 **Genuine silences, left open deliberately**: Chromium-not-wkwebview (the lane pins the timing class; engine parity is the boot check + @human until the Linux era) · picker flows stay @human — native dialogs are unreachable from the browser harness and tauri-driver has no macOS · the webkit project and a tauri-driver-on-Linux job are named growth steps once CI is live · a macOS CI job (cost/queue) is a launch-time call · map search-popover Esc layering waits for lane v2 · Windows remains the repo-wide standing silence · advisory-DB network dependence of `cargo audit` is documented, not worked around · Playwright re-pins are deliberate acts (the browser rides the version), same policy as the crate pins.
 
 ## Implementation notes
+
+Built across two executor sessions on branch `t020-ci-lane` (branch
+point main@45894b7). **claude-fable-5 @fresh, 2026-08-16** built the
+whole lane — tools/e2e scaffold, seven specs, both scripts, the dormant
+workflow — and committed it as two WIP checkpoints (fb54b52, 986431e)
+before its usage credits ran out mid-§9; **claude-opus-5 @fresh,
+2026-08-16** resumed from those commits and ran the verification
+protocol. The predecessor left NO written evidence (this section was
+empty), so every §9 obligation below was derived fresh by the second
+session against the committed tree — nothing is inherited on trust.
+The WIP-checkpoint habit is why a died-mid-task session cost zero work.
+
+**Baselines are this branch's point, not tonight's main.** The §9.7
+parenthetical "132 · 375 · 109+2" is stale (it predates two merges);
+the real branch-point suites are parser **159/159**, app **398/398**,
+cargo **121 passed + 2 ignored**. Main has since taken T-021 (+8 cargo
+tests) — irrelevant here; integration re-runs at main's numbers.
+
+### §9 obligations, one by one
+
+**1. Green run.** `npm test` in tools/e2e: **16 tests, 16 passed
+(7.9s)**, headless, one worker, retries 0 — trusted-canary 1,
+blocker-retarget 1, keyboard-activation 2, panel-real-keys 3,
+panel-exempt-controls 3, map-retarget 1, workflow-parity 5.
+`npm run typecheck` clean. `node scripts/lint-tokens.mjs --selftest` →
+17 samples green; `node scripts/lint-tokens.mjs` → clean, 33 files
+scanned under app/src, exit 0. `cargo audit` outcome in the
+consultation finding below. No window ever appears: Playwright's
+default is headless and the config never overrides it (the whole lane
+runs in ~5–8s with no display surface).
+
+**2. Failing→passing at LANE level (the load-bearing proof).** The
+T-005 rejection re-derived character-identically:
+`sed -i '' 's/"pointerdown"/"click"/g'` on
+app/src/components/board/panel-dismissal.ts (both listener strings,
+add + remove). Rerun: **4 failed, 12 passed** — the two REQUIRED
+specs plus the at-press assertion, all for the right reason. Verbatim:
+
+    ✘   1 [chromium] › tests/blocker-retarget.spec.ts:22:1 › a real blocker-chip click re-targets the panel — same node, stays open, board intact (5.7s)
+    ✘   2 [chromium] › tests/keyboard-activation.spec.ts:34:3 › real Enter on a focused blocker chip re-targets without closing (5.4s)
+    ✘   3 [chromium] › tests/keyboard-activation.spec.ts:34:3 › real Space on a focused blocker chip re-targets without closing (5.3s)
+    ✘   6 [chromium] › tests/panel-exempt-controls.spec.ts:68:1 › a genuine outside press closes the panel AT PRESS (asserted between down and up) (5.3s)
+
+      1) [chromium] › tests/blocker-retarget.spec.ts:22:1 › a real blocker-chip click re-targets the panel — same node, stays open, board intact
+
+        Error: expect(locator).toHaveAttribute(expected) failed
+
+        Locator: getByTestId('task-detail-panel')
+        Expected: "T-102"
+        Timeout: 5000ms
+        Error: element(s) not found
+
+        Call log:
+          - Expect "toHaveAttribute" with timeout 5000ms
+          - waiting for getByTestId('task-detail-panel')
+
+          43 |   // Panel RE-TARGETS and stays open (the rejected code closed it here).
+        > 44 |   await expect(panel).toHaveAttribute("data-task-ref", "T-102");
+             |                       ^
+
+"element(s) not found" is the exact rejection signature: under trusted
+timing the click-time listener read the detached chip as outside and
+closed the freshly re-targeted panel. The at-press spec failing too is
+the same mechanism from the other side (a click-time decision cannot
+be at-press: `toHaveCount(0)` between `mouse.down()` and `mouse.up()`
+got 1). Then `git checkout app/src/components/board/panel-dismissal.ts`
+→ `git diff --stat app/` empty, both `"pointerdown"` strings back →
+rerun **16 passed (4.9s)**. The lane demonstrably distinguishes the
+shipped app from the rejected one.
+
+**3. Canary integrity.** trusted-canary green in every run above.
+Discrimination proved by a transient probe spec
+(tests/zz-probe-canary.spec.ts) that installed the canary's own
+capture listeners and fed them
+`document.body.dispatchEvent(new MouseEvent("click", …))` +
+`new KeyboardEvent("keydown", …)`: both recorded **isTrusted: false**,
+and the canary's literal assertion (`toBe(true)` with its own message)
+throws on those values — asserted, not assumed. Probe green, then
+DELETED; `ls tools/e2e/tests/` shows the seven specs + helpers.ts only.
+
+**4. Lint planted-violation proof.** Transient edit to
+app/src/components/board/FeatureColumn.tsx — `p-[13px]` into line 40's
+class list, `text-red-500` into line 44's. Verbatim:
+
+    app/src/components/board/FeatureColumn.tsx:40: p-[13px]  [P1: arbitrary value (`p-[13px]` family — the T-001-s2 bypass)]
+    app/src/components/board/FeatureColumn.tsx:44: text-red-500  [P3: Tailwind default-palette utility (dead by mechanism here)]
+
+    lint-tokens: 2 violations — tokens live in app/src/styles/tokens.css; arbitrary values and default-palette utilities are banned (docs/CONVENTIONS.md).
+
+exit 1, file:line on both, one per intended pattern. `git checkout` →
+app diff empty → zero-hit run repeated (clean, 33 files, exit 0). The
+false-positive half is structural rather than staged: the 33 scanned
+files INCLUDE vendored ui/button.tsx with its arbitrary variants
+(`[&_svg]:…`) and the codebase's `closest("[data-card-trigger]")`
+selector strings — a clean run over that tree IS the near-miss proof,
+and the selftest pins eight negatives (variants, selector strings,
+state variants, spacing tokens, mapped tokens, token+opacity,
+`var(--x)` reads) against nine positives.
+
+**5. Loud-failure drills (criterion 4) — four, all loud, none silent.**
+- *Port forced to 1420*: `NPUTER_E2E_PORT=1420 npx playwright test` →
+  throws at CONFIG LOAD, before anything binds or connects:
+  "NPUTER_E2E_PORT is 1420 — refusing: 1420 is the human's live app
+  (app/vite.config.ts). The E2E lane always runs its own dev server on
+  its own port (default 14520) and never contacts 1420."
+- *Parser dist renamed aside*: `mv lib/parser/dist lib/parser/dist.bak`
+  → exit 1 with the ADR-011 order named: "lib/parser/dist is missing —
+  ADR-011 build order: lib/parser FIRST (`npm ci` + `npm run build`
+  from lib/parser/), then app/. …". Restored immediately.
+- *Server killed mid-run*: lane started, then the lane's OWN vite
+  (pid resolved via `lsof -nP -iTCP:14520 -sTCP:LISTEN -t`, verified
+  as `…/nputer-t020/app/node_modules/.bin/vite --port 14520`) killed
+  with SIGKILL at t≈4s. Result: **6 failed, 10 passed, 0 skipped**,
+  exit 1, every failure
+  `page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:14520/`.
+  A dead server fails; it never skips.
+- *Busy port*: both defence layers shown. Preflight (a scratch
+  listener on 14599, `NPUTER_E2E_PORT=14599`) → exit 1, "lane port
+  14599 is not bindable on 127.0.0.1 (EADDRINUSE) — something else is
+  listening. Set NPUTER_E2E_PORT to a free port (never 1420)." And the
+  layer behind it, exercised directly:
+  `npm run dev -- --port 14599 --host 127.0.0.1` → vite strictPort,
+  "error when starting dev server: Error: Port 14599 is already in
+  use", exit 1.
+
+**6. Boot-script mechanics on macOS — with one honest caveat.** THE
+HUMAN'S LIVE APP WAS RUNNING ON 1420 THROUGHOUT THIS SESSION (a
+`npm run tauri dev` in /Users/ujju/Projects/nputer/app, up since
+23:27), so the shipped script could not be run end-to-end unmodified —
+by its own design, which is the point of the guard:
+- *1420-busy abort*: the SHIPPED script, unmodified, against the REAL
+  condition (better evidence than the planned scratch listener):
+  `node tools/e2e/scripts/tauri-boot-check.mjs` → **exit 2**,
+  "ABORT: port 1420 is in use — the human's live app? The boot check
+  must not contend for it … Nothing was spawned." Zero packets
+  exchanged: the probe binds, never connects. Confirmed after the fact
+  that pid 13039 still held 1420, untouched.
+- *Both lines + clean kill + exit 0*, and *timeout path at 1s*: run
+  against a scratchpad COPY of the script whose only delta is three
+  mechanical lines — `repoRoot` hard-coded (the copy lives outside the
+  repo), `TAURI_PORT` 1420→14521, and `--config` appended to the spawn
+  args (`{"build":{"devUrl":"http://localhost:14521",
+  "beforeDevCommand":"npm run dev -- --port 14521 --strictPort"}}`,
+  CLI-flag-only — tauri.conf.json untouched, the same precedent the
+  lane's own webServer uses). Every logic path under test — bind
+  probe, spawn, needle detection, process-tree kill, exit code,
+  watchdogs — is byte-identical to the shipped file. Real run: both
+  lines detected in **8 s**, tree killed on SIGTERM, **exit 0**, no
+  stray vite/tauri/cargo left (`lsof` + `pgrep` after: none):
+
+      [boot-check] port 14521 free — spawning `npm run tauri dev` in …/nputer-t020/app
+      [boot-check] app: [nputer] project folder: /Users/ujju/Projects/nputer-t020
+      [boot-check] detected startup line 1/2: [nputer] project folder:
+      [boot-check] app: [nputer] window "main" created
+      [boot-check] detected startup line 2/2: [nputer] window "main" created
+      [boot-check] stopping the tauri dev process tree (SIGTERM, then SIGKILL after 10s)
+      [boot-check] process tree stopped (exit=null signal=SIGTERM)
+
+  Forced `NPUTER_BOOT_TIMEOUT_MS=1000`: **exit 1**, "timed out after
+  1000 ms waiting for the startup lines:" followed by
+  "MISSING  [nputer] project folder: / MISSING  [nputer] window
+  "main" created", then the same clean tree kill and no strays.
+  This run briefly opened a window — the sole documented exception
+  (T-001 precedent: an app opening its own window is not screen
+  control), outside `npm test`; no OS input was injected and nothing
+  was screenshotted.
+  **@human / verifier**: the shipped file's own end-to-end run needs
+  1420 free for ~15 s. Stop the live app, run
+  `node tools/e2e/scripts/tauri-boot-check.mjs`, expect exit 0. Filed
+  as T-020-s3 (the script has no test-mode port override BY DESIGN;
+  whether it should is the suggestion's question).
+
+**7. Suites + boundary/fence audit.** At this branch's point, all
+untouched and all matching: lib/parser `npx vitest run` → **159 passed
+(10 files)**, `npx tsc --noEmit` clean; app `npm test` → **398 passed
+(21 files)**; app/src-tauri `cargo test` → **121 passed, 0 failed, 2
+ignored** (summed across both workspace crates' binaries + doc-tests;
+`cargo test 2>&1 | tail -40` truncates the totals — the first attempt
+here recorded a bogus "9 passed" for exactly that reason, so the run
+was redone capturing full output). Graph regen ritual (T-009-s1):
+`cargo test -p nputer-index --test self_graph -- --ignored` → **ok, 1
+passed**, and `git status --short docs/architecture/` empty — the
+committed graph is byte-identical, i.e. the `tools/` .nputerignore line
+does its job and the merge-time regen is a verified no-op. Fence:
+`git diff 45894b7 HEAD -- app/ lib/ docs/architecture/ method/` is
+**empty**, `git status --porcelain` is **empty**, and the only lockfile
+in the diff is the new tools/e2e/package-lock.json — no existing
+lockfile touched. The never-1420 rule held all session: the lane bound
+only 14520 (and 14599/14521 in drills), and the human's app on 1420
+survived every drill.
+
+**Extra, unasked (the verifier's flagged attack surface §6, cheap):**
+parity-test honesty proved by mutation. `npm test` → `npm run test` on
+the app-suite step: only the parity command test fails, "missing
+verbatim step: [app] npm test". Unpinning
+`actions/checkout@3d3c…` → `@v7`: only the SHA test fails, "unpinned
+action: actions/checkout@v7". Both reverted (`git checkout`, working
+tree clean).
+
+### The `uses:` SHA map
+
+| action | pinned SHA | tag (comment in file) |
+|---|---|---|
+| actions/checkout | 3d3c42e5aac5ba805825da76410c181273ba90b1 | v7.0.1 |
+| actions/setup-node | 820762786026740c76f36085b0efc47a31fe5020 | v7.0.0 |
+| actions/cache (cargo) | 55cc8345863c7cc4c66a329aec7e433d2d1c52a9 | v6.1.0 |
+| actions/cache (playwright) | 55cc8345863c7cc4c66a329aec7e433d2d1c52a9 | v6.1.0 |
+
+Pinned by the first session at build time. The parity spec enforces
+the SHAPE (40-hex, every `uses:`); the SHA↔tag CORRESPONDENCE is not
+machine-verified locally — the §8 fence forbids GitHub API use, and a
+wrong SHA fails the very first CI run loudly and immediately. Confirm
+at the first-run watch.
+
+### Dependency truth
+
+tools/e2e's lockfile (lockfileVersion 3) resolves **8 packages, all
+dev, all from registry.npmjs.org with integrity hashes**:
+`@playwright/test` 1.62.1 → `playwright` 1.62.1 → `playwright-core`
+1.62.1 (the plan's three), plus `yaml` 2.9.0 (parity parser),
+`typescript` 5.9.3, `@types/node` 22.20.1 → `undici-types` 6.21.0, and
+`fsevents` 2.3.2 — an OPTIONAL darwin-only dependency of `playwright`
+and the tree's only entry with an install script (the plan's "three
+packages" line predates reading the resolved lock; stated correctly
+here). Nothing else in the repo gained a dependency.
+
+Two dev-tool installs, outside the repo, documented for CONVENTIONS:
+- `npx playwright install chromium` — browsers keyed to the package
+  version. Cache: `~/Library/Caches/ms-playwright` (macOS),
+  `~/.cache/ms-playwright` (Linux, the CI cache key). Present here:
+  `chromium-1234`, `chromium_headless_shell-1234`, `ffmpeg-1011`,
+  **554 MB** total.
+- `cargo install cargo-audit --locked` — installed this session,
+  **cargo-audit 0.22.2** → `~/.cargo/bin/cargo-audit`; advisory DB
+  clones to `~/.cargo/advisory-db` (1216 advisories at run time). The
+  one network-touching step, by design.
+
+Environment of record: node v22.22.0, npm 11.12.1, Playwright 1.62.1.
+
+### CONSULTATION FINDING — cargo audit against today's pins
+
+`cargo audit` from app/src-tauri/ over 472 locked crates: **0
+vulnerabilities, 17 warnings — 16 `unmaintained` + 1 `unsound`** — and
+**it exits 0**, because plain `cargo audit` fails hard on
+vulnerabilities only; warnings are printed, not red. Recorded, not
+accepted silently, and NOT "fixed" by floating any pin:
+
+- RUSTSEC-2024-0411/0412/0413/0414/0415/0416/0417/0418/0419/0420 —
+  the gtk-rs GTK3 binding family (`atk`, `atk-sys`, `gdk`, `gdk-sys`,
+  `gdkwayland-sys`, `gdkx11`, `gdkx11-sys`, `gtk`, `gtk-sys`,
+  `gtk3-macros`), unmaintained. Transitive through Tauri v2's Linux
+  webkit stack; Linux-only compile targets.
+- RUSTSEC-2024-0429 — `glib` 0.18.5, **unsound** (`Iterator` /
+  `DoubleEndedIterator` impls for `VariantStrIter`). Same GTK3 stack.
+- RUSTSEC-2024-0370 — `proc-macro-error`, unmaintained (build-time).
+- RUSTSEC-2025-0075/0080/0081/0098/0100 — the `unic-*` family,
+  unmaintained.
+
+None is a vulnerability and none is ours to re-pin: every one arrives
+under Tauri v2's own dependency tree, so the fix is upstream, not a
+`=` bump here. The live question is the STEP's policy, since the plan
+promised "an advisory appearing overnight without a code change going
+red is the FEATURE" — true today for vulnerabilities, false for
+warnings. `-D warnings` would make it true for both and would fail the
+lane today on 17 pre-existing upstream findings, which forces either
+an ignore-list (an escape hatch this project's zero-allowlist instinct
+distrusts) or a red main. Left as SHIPPED (plain `cargo audit`, hard
+fail on vulnerabilities, warnings visible in the log) and filed as
+**T-020-s2** for the architect's call rather than decided here.
+
+### Drafted for the INTEGRATOR (not in this executor's diff)
+
+**(a) docs/CONVENTIONS.md — add to "Build & test", after the
+app/src-tauri bullet:**
+
+> - tools/e2e (the real-input E2E lane, T-020), run from tools/e2e/:
+>   `npm ci` · `npm test` (the lane — Playwright drives the app's dev
+>   bundle in HEADLESS Chromium with trusted input; workers 1, retries
+>   0, no skips) · `npm run typecheck` · `npm run lint:tokens`
+>   (+ `-- --selftest`) · `npm run boot:check` (spawns `tauri dev` and
+>   asserts the two `[nputer]` startup lines; NOT part of `npm test` —
+>   it opens a real window and needs port 1420 free).
+> - One-time dev-tool setup, outside the repo and never a repo dep:
+>   `npx playwright install chromium` from tools/e2e/ (browsers cache
+>   in ~/Library/Caches/ms-playwright, ~/.cache/ms-playwright on
+>   Linux) and `cargo install cargo-audit --locked` for
+>   `cargo audit`, run from app/src-tauri/ (fetches the RUSTSEC
+>   advisory DB — the one network-touching command).
+> - PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
+>   runs its own vite on `NPUTER_E2E_PORT` (default 14520),
+>   `reuseExistingServer: false`; setting it to 1420 THROWS by design,
+>   and the boot check bind-probes 1420 and aborts if anything holds
+>   it. Nothing in the lane ever contacts a server it does not own.
+> - CI (.github/workflows/ci.yml) is a thin invoker of exactly these
+>   commands and uses `npm ci` for app/ where local setup says
+>   `npm install` (lockfile-exact installs in CI, everywhere).
+>   tools/e2e/tests/workflow-parity.spec.ts pins the correspondence —
+>   change a command here, change it there, or the lane fails.
+
+**(b) ADR-011 addendum (§3, exact text):**
+
+> Addendum (2026-08-16, T-020): the third package arrived — tools/e2e,
+> the real-input E2E lane. Revisit outcome: still no root workspace.
+> The trigger's substance was dependency wiring; tools/e2e imports
+> neither package (it drives the app over HTTP + the dev harness), so
+> a workspace would buy a shared install for three disjoint trees at
+> the cost of migrating every CONVENTIONS-verbatim command — the trap
+> this ADR names. CI installs per-package in CONVENTIONS order.
+> Revisit again when a package must IMPORT another beyond the existing
+> file: edge, or CI install time becomes the constraint.
+
+**(c) docs/STATE.md launch checklist — new item:**
+
+> - **Watch the first CI run** (T-020): .github/workflows/ci.yml is
+>   committed complete and DORMANT — no remote exists, so it activates
+>   at the repo's first GitHub push. The Linux halves of T-001/T-003's
+>   criteria stay honestly open until that run is green. Specifically
+>   confirm, in order: the ubuntu apt/webkit2gtk set installs; the
+>   three `uses:` SHA pins resolve; playwright-on-Linux runs the lane;
+>   `cargo audit` behaves as it does locally; the xvfb `tauri dev`
+>   boot prints both `[nputer]` startup lines. AND (T-018-s3 fold) the
+>   THREE T-018 sentinel live tests inside the ubuntu `cargo test`
+>   step — replaced-wholesale and deleted-recreated docs/ — which
+>   discriminate only where inotify watches inodes: green there closes
+>   the replace-half regression evidence T-018 carries as
+>   mechanism-only; red there is a real reconcile gap macOS's
+>   path-watching FSEvents could never show, and gets filed
+>   immediately.
+
+### §10 expected-diff-surface checklist vs actual
+
+`.github/workflows/ci.yml` (new) ✓ · `.nputerignore` (+3: one entry,
+two comment lines) ✓ · this task file (notes + `built_by`) ✓ ·
+`tools/e2e/**` new: package.json ✓, package-lock.json ✓, tsconfig.json
+✓, playwright.config.ts ✓, .gitignore ✓, fixtures/board.ts ✓, tests/
+seven specs ✓, scripts/lint-tokens.mjs ✓, scripts/tauri-boot-check.mjs
+✓. **Zero diff** in app/**, lib/parser/**, docs/architecture/**,
+method/**, every existing lockfile ✓. Two accountable deviations, both
+inside tools/e2e:
+- the plan says "global-setup"; the file is **preflight.ts, imported at
+  CONFIG LOAD** instead of a `globalSetup` hook. Reason, in its
+  docstring: Playwright starts the webServer BEFORE globalSetup runs,
+  so a globalSetup port probe would find the port taken by our own
+  server — and the 1420 refusal must fire before anything spawns. Same
+  obligations, strictly earlier.
+- **tests/helpers.ts** exists beyond the seven specs (shared
+  `openApp`/`openBoard`/locators). Not a spec, not new surface.
+
+### Silences and @human items carried out of this build
+
+- The shipped boot script's own end-to-end run is still owed on a
+  machine with 1420 free (§9.6 above; T-020-s3).
+- Everything §1 tier 3 listed stays honestly unverified until the
+  first push: ubuntu apt set, xvfb webkit2gtk boot, playwright on
+  Linux, audit-in-CI, and the three T-018 sentinel live tests.
+- T-014's `nputer index --check` is not a step here (the tool does not
+  exist yet); T-009-s1's regen ritual stays the integrator's manual
+  gate, and this lane is its named future home.
+- Chromium-not-wkwebview, picker flows, webkit/tauri-driver projects,
+  a macOS CI job, map search-popover Esc layering, Windows: all
+  unchanged from §10's list.
+
+### Suggestions filed
+
+T-020-s1 (panel occludes the header exemption — already referenced by
+a comment in panel-exempt-controls.spec.ts, filed here because the
+first session pinned the finding in code but died before writing the
+file), T-020-s2 (cargo-audit warning policy — the consultation
+finding), T-020-s3 (boot check unverifiable while the human's app
+holds 1420).
 
 ## Verdicts
