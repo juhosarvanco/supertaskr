@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { act } from "react";
-import { useSyncExternalStore } from "react";
+import { join, resolve } from "node:path";
+import { act, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { GenesisPane } from "../src/genesis/GenesisPane";
@@ -14,7 +12,7 @@ import {
   type DocsModelState,
   type DocsSnapshotPayload,
 } from "../src/lib/docs-model";
-import { getShellState, subscribeShell } from "../src/lib/watcher-store";
+import { getShellState, startDocsWatcher, subscribeShell } from "../src/lib/watcher-store";
 
 // T-024 criteria 2–5 in the DOM: the design's right pane rendered from
 // the derived model only — header count, north-star card + chips,
@@ -48,8 +46,12 @@ afterEach(() => {
 
 // ---- fixtures ----------------------------------------------------------
 
-const TEST_DIR = fileURLToPath(new URL(".", import.meta.url));
-const FIXTURES = join(TEST_DIR, "fixtures/genesis");
+// jsdom rewrites import.meta.url to the page origin, so anchor on the
+// runner's cwd via a relative path instead (vitest runs from app/ —
+// vitest.config.ts's home; node resolves relative fs paths against it).
+// The map-dogfood-render precedent; genesis-derive.test.ts may use the
+// import.meta.url form only because it runs in the node environment.
+const FIXTURES = resolve("test/fixtures/genesis");
 
 function walk(dir: string, prefix: string): DocsFilePayload[] {
   const out: DocsFilePayload[] = [];
@@ -314,16 +316,21 @@ describe("degradation (criterion 4)", () => {
 // ---- criterion 3: updates ride the existing watcher pipeline -----------
 
 describe("updates ride the existing store (no polling, no new IPC)", () => {
-  it("harness-applied snapshots flow store → pane exactly like board/map", () => {
+  it("harness-applied snapshots flow store → pane exactly like board/map", async () => {
     // The same dev-harness pattern the board/map suites use: the REAL
     // watcher-store applies payloads; the pane subscribes like any pane
     // T-026 will mount. No shell wiring ships — this wrapper is the
-    // test-side mount point.
+    // test-side mount point. The other suites reach the harness by
+    // rendering <App />, whose effect starts the pipeline; the pane is
+    // standalone (App.tsx is T-026's to touch), so the store's own
+    // public entry point starts it instead — the same code path, minus
+    // the shell.
     function LiveGenesis() {
       const shell = useSyncExternalStore(subscribeShell, getShellState);
       return <GenesisPane docs={shell.docs} now={() => 0} />;
     }
-    act(() => {
+    await act(async () => {
+      await startDocsWatcher();
       root.render(<LiveGenesis />);
     });
     const harness = window.__nputerDocsHarness;
