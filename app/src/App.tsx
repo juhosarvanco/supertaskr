@@ -1,18 +1,25 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { MapView } from "@/architecture/MapView";
 import { Board } from "@/components/board/Board";
+import { GenesisScreen } from "@/components/shell/GenesisScreen";
 import { PaneRail, type PaneId } from "@/components/shell/PaneRail";
 import { Button } from "@/components/ui/button";
 import { skipReasonPhrase } from "@/lib/docs-model";
 import {
+  CONVENTION_HINT,
   getShellState,
   isTauriRuntime,
   keepCurrentProject,
+  pickGenesisFolder,
   pickProjectFolder,
+  planChecklist,
   runIndexRepo,
   selectScreen,
   startDocsWatcher,
+  startGenesisHere,
   subscribeShell,
+  type FrontDoorNotice,
+  type PlanChecklistRow,
 } from "@/lib/watcher-store";
 
 // A live, read-only lens over the project's docs/ tree: T-003's watcher
@@ -79,26 +86,73 @@ function SkippedFilesBadge({
   );
 }
 
-/** Friendly empty state (T-007): no project resolved at launch, the
- * launch-resolved repo has no docs/, or a picked folder was rejected —
- * always with the message naming what was looked for and a re-pick
- * affordance. T-006 dresses it as the front door from the open-a-folder
- * mockup: hero wordmark, the docs/ pitch, and the no-plan card (an
- * empty folder is an invitation, never an error). Pure presentational;
- * DOM-tested in test/project-shell.test.tsx. */
+/** The design's ○ / ✓ marks for one looked-for path (T-026). The mark is
+ * measured Rust-side (PlanProbe), never decorative. */
+function ChecklistRow({ row }: { row: PlanChecklistRow }) {
+  return (
+    <li className="flex items-center gap-2.25">
+      <span
+        aria-hidden="true"
+        className={row.found ? "text-review-disc" : "text-muted-foreground"}
+      >
+        {row.found ? "✓" : "○"}
+      </span>
+      <span className={row.found ? "text-foreground" : undefined}>
+        {row.path}
+        {row.note !== undefined && ` — ${row.note}`}
+      </span>
+    </li>
+  );
+}
+
+/** Front door (T-007, redressed by T-026 to the design's open-a-folder
+ * screen): no project resolved at launch, the launch-resolved repo has no
+ * plan, or a picked folder was rejected. Two ways in — "Open a folder…"
+ * (⌘O) and "Start an interview" (⌘N) — over the hero wordmark and the
+ * docs/ pitch; when the shell knows WHICH folder has no plan, the card
+ * becomes the design's "No plan in <folder>": the checklist of what was
+ * looked for, answered per row, and "Start an interview here".
+ *
+ * "Adopt existing code" is deliberately ABSENT in v1 (fenced to
+ * archaeology), and with it the design's Adopt footnote — the footnote
+ * slot carries T-007's convention hint instead, so redesigning this state
+ * dropped none of what it used to say.
+ *
+ * Presentational apart from the two accelerators, which are mounted here
+ * because they belong to THIS screen and nowhere else (the board has its
+ * own key handling). DOM-tested in test/project-shell.test.tsx. */
 export function EmptyState({
-  message,
+  notice,
   picking,
   canKeepCurrent,
   onPick,
+  onStartInterview,
+  onStartInterviewHere,
   onKeepCurrent,
 }: {
-  message: string;
+  notice: FrontDoorNotice;
   picking: boolean;
   canKeepCurrent: boolean;
   onPick: () => void;
+  onStartInterview: () => void;
+  onStartInterviewHere: () => void;
   onKeepCurrent: () => void;
 }) {
+  // ⌘O / ⌘N (Ctrl on the platforms without a Command key — the label
+  // renders the design's macOS glyphs, the handler is not that fussy).
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
+      const key = event.key.toLowerCase();
+      if (key !== "o" && key !== "n") return;
+      event.preventDefault();
+      if (key === "o") onPick();
+      else onStartInterview();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onPick, onStartInterview]);
+
   return (
     <section
       data-testid="empty-state"
@@ -114,24 +168,78 @@ export function EmptyState({
             disappears, the project is still there.
           </p>
         </div>
-        <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-card">
-          <div className="flex flex-col gap-2">
-            <h3 className="text-xl font-semibold tracking-heading">no board to show</h3>
-            <p data-testid="empty-state-message" className="text-sm text-secondary-foreground">
-              {message}
-            </p>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <Button data-testid="pick-folder" disabled={picking} onClick={onPick}>
-              {picking ? "choosing…" : "Open a project folder…"}
-            </Button>
-            {canKeepCurrent && (
-              <Button data-testid="keep-current" variant="outline" onClick={onKeepCurrent}>
-                keep current project
+
+        {/* The two ways in, side by side, with the accelerators named. */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button size="lg" data-testid="pick-folder" disabled={picking} onClick={onPick}>
+            {picking ? "choosing…" : "Open a folder…"}
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            data-testid="start-interview"
+            disabled={picking}
+            onClick={onStartInterview}
+          >
+            Start an interview
+          </Button>
+          <span data-testid="shortcut-hint" className="ml-1 font-mono text-xs text-muted-foreground">
+            ⌘O · ⌘N
+          </span>
+        </div>
+
+        {notice.kind === "noPlan" ? (
+          <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-card">
+            <div className="flex flex-col gap-2">
+              <h3 data-testid="no-plan-heading" className="text-xl font-semibold tracking-heading">
+                No plan in <span className="font-mono text-lg">{notice.path}</span>
+              </h3>
+              <p data-testid="empty-state-message" className="text-sm text-secondary-foreground">
+                Not a problem — there&apos;s just nothing to render yet. Here&apos;s where it
+                looked:
+              </p>
+            </div>
+            <ul
+              data-testid="plan-checklist"
+              className="flex flex-col gap-1.5 font-mono text-sm text-secondary-foreground"
+            >
+              {planChecklist(notice.probe).map((row) => (
+                <ChecklistRow key={row.path} row={row} />
+              ))}
+            </ul>
+            <div className="flex flex-wrap items-center gap-2.25">
+              <Button
+                data-testid="start-interview-here"
+                disabled={picking}
+                onClick={onStartInterviewHere}
+              >
+                Start an interview here
               </Button>
+              {canKeepCurrent && (
+                <Button data-testid="keep-current" variant="outline" onClick={onKeepCurrent}>
+                  keep current project
+                </Button>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">{CONVENTION_HINT}</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-6 shadow-card">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-xl font-semibold tracking-heading">no board to show</h3>
+              <p data-testid="empty-state-message" className="text-sm text-secondary-foreground">
+                {notice.message}
+              </p>
+            </div>
+            {canKeepCurrent && (
+              <div className="flex items-center gap-2.25">
+                <Button data-testid="keep-current" variant="outline" onClick={onKeepCurrent}>
+                  keep current project
+                </Button>
+              </div>
             )}
           </div>
-        </div>
+        )}
       </div>
     </section>
   );
@@ -242,12 +350,21 @@ function App() {
 
       {screen.screen === "empty" && (
         <EmptyState
-          message={screen.message}
+          notice={screen.notice}
           picking={shell.picking}
           canKeepCurrent={screen.canKeepCurrent}
           onPick={() => void pickProjectFolder()}
+          onStartInterview={() => void pickGenesisFolder()}
+          onStartInterviewHere={() => void startGenesisHere()}
           onKeepCurrent={keepCurrentProject}
         />
+      )}
+
+      {/* T-026: a genesis project — full-bleed, no rail (see the rail
+          condition above). T-027 fills this screen; T-024's lens mounts
+          inside GenesisScreen's marked slot. */}
+      {screen.screen === "genesis" && (
+        <GenesisScreen projectDir={shell.genesisDir ?? ""} docs={shell.docs} />
       )}
 
       {screen.screen === "board" && pane === "board" && (

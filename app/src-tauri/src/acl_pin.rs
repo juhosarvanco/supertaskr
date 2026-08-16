@@ -528,6 +528,13 @@ fn t021_real_invokes_dialog_fs_opener_denied_app_allowed_remote_denied() {
     for cmd in [
         "docs_snapshot",
         "pick_project_folder",
+        // T-026's genesis entry: two more ZERO-ARGUMENT app commands, the
+        // same class as the picker (no path crosses the boundary in
+        // either direction). They join the roster rather than moving the
+        // grant set: EXPECTED_GRANTS is untouched by this task, because
+        // app commands are not grants — that is the whole ADR-012 point.
+        "pick_genesis_folder",
+        "start_genesis_here",
         "index_repo",
         "plugin:event|listen",
         "plugin:dialog|open",

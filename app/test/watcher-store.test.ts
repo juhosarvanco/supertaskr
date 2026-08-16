@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   CONVENTION_HINT,
-  noDocsMessage,
+  EMPTY_PROBE,
+  planChecklist,
   reduceDocs,
+  reducePickOutcome,
   resetDocsForProjectSwitch,
   selectScreen,
+  type PlanProbePayload,
   type ShellState,
 } from "../src/lib/watcher-store";
 import {
@@ -162,25 +165,20 @@ describe("reduceDocs — project switch (T-007)", () => {
   });
 });
 
-describe("selectScreen + messages (T-007 empty states)", () => {
-  const shell = (patch: Partial<ShellState>): ShellState => ({
-    phase: "loading",
-    resolvedDir: null,
-    rejectedPick: null,
-    picking: false,
-    indexing: false,
-    indexOutcome: null,
-    docs: emptyState(),
-    ...patch,
-  });
+const shell = (patch: Partial<ShellState>): ShellState => ({
+  phase: "loading",
+  resolvedDir: null,
+  resolvedProbe: null,
+  genesisDir: null,
+  rejectedPick: null,
+  picking: false,
+  indexing: false,
+  indexOutcome: null,
+  docs: emptyState(),
+  ...patch,
+});
 
-  it("names docs/, docs/tasks/ and docs/decisions/ in the no-docs message (criterion c)", () => {
-    const message = noDocsMessage("/x/y");
-    expect(message).toContain("no docs/ found in /x/y");
-    expect(message).toContain("docs/tasks/");
-    expect(message).toContain("docs/decisions/");
-  });
-
+describe("selectScreen + notices (T-007 empty states, T-026 front door)", () => {
   it("maps loading and browser phases to their screens", () => {
     expect(selectScreen(shell({ phase: "loading" }))).toEqual({ screen: "loading" });
     expect(selectScreen(shell({ phase: "browser" }))).toEqual({ screen: "browser" });
@@ -190,16 +188,21 @@ describe("selectScreen + messages (T-007 empty states)", () => {
     const s = selectScreen(shell({ phase: "noProject" }));
     expect(s).toEqual({
       screen: "empty",
-      message: `no project open — ${CONVENTION_HINT}`,
+      notice: { kind: "message", message: `no project open — ${CONVENTION_HINT}` },
       canKeepCurrent: false,
     });
   });
 
-  it("shows the empty screen naming the launch-resolved repo that lacks docs/", () => {
-    const s = selectScreen(shell({ phase: "noDocs", resolvedDir: "/repos/docless" }));
+  it("shows the no-plan card naming the launch-resolved repo that lacks docs/", () => {
+    // T-026: the same card a rejected pick shows — the first-launch
+    // genesis entry, with the probe's marks riding along.
+    const probe: PlanProbePayload = { ...EMPTY_PROBE, git: true };
+    const s = selectScreen(
+      shell({ phase: "noDocs", resolvedDir: "/repos/docless", resolvedProbe: probe }),
+    );
     expect(s).toEqual({
       screen: "empty",
-      message: noDocsMessage("/repos/docless"),
+      notice: { kind: "noPlan", path: "/repos/docless", probe },
       canKeepCurrent: false,
     });
   });
@@ -208,20 +211,44 @@ describe("selectScreen + messages (T-007 empty states)", () => {
     expect(selectScreen(shell({ phase: "open" }))).toEqual({ screen: "board" });
   });
 
+  it("shows the genesis screen when a folder is open for an interview (T-026)", () => {
+    expect(selectScreen(shell({ phase: "genesis", genesisDir: "/tmp/sketchpad" }))).toEqual({
+      screen: "genesis",
+    });
+  });
+
   it("a rejected pick overlays the open board, names the path, and offers keep-current", () => {
     const s = selectScreen(
-      shell({ phase: "open", rejectedPick: { path: "/tmp/not-a-project", message: null } }),
+      shell({
+        phase: "open",
+        rejectedPick: { path: "/tmp/not-a-project", message: null, probe: EMPTY_PROBE },
+      }),
     );
     expect(s).toEqual({
       screen: "empty",
-      message: noDocsMessage("/tmp/not-a-project"),
+      notice: { kind: "noPlan", path: "/tmp/not-a-project", probe: EMPTY_PROBE },
       canKeepCurrent: true,
     });
   });
 
+  it("a rejected pick over a genesis project can still keep it (T-026)", () => {
+    const s = selectScreen(
+      shell({
+        phase: "genesis",
+        genesisDir: "/tmp/sketchpad",
+        rejectedPick: { path: "/tmp/x", message: null, probe: EMPTY_PROBE },
+      }),
+    );
+    expect(s.screen).toBe("empty");
+    if (s.screen === "empty") expect(s.canKeepCurrent).toBe(true);
+  });
+
   it("a rejected pick with no open project cannot offer keep-current", () => {
     const s = selectScreen(
-      shell({ phase: "noProject", rejectedPick: { path: "/tmp/x", message: null } }),
+      shell({
+        phase: "noProject",
+        rejectedPick: { path: "/tmp/x", message: null, probe: EMPTY_PROBE },
+      }),
     );
     expect(s.screen).toBe("empty");
     if (s.screen === "empty") expect(s.canKeepCurrent).toBe(false);
@@ -231,12 +258,118 @@ describe("selectScreen + messages (T-007 empty states)", () => {
     const s = selectScreen(
       shell({
         phase: "open",
-        rejectedPick: { path: "/gone", message: "watcher re-arm timed out" },
+        rejectedPick: { path: "/gone", message: "watcher re-arm timed out", probe: null },
       }),
     );
     expect(s.screen).toBe("empty");
     if (s.screen === "empty") {
-      expect(s.message).toBe("could not open /gone: watcher re-arm timed out");
+      expect(s.notice).toEqual({
+        kind: "message",
+        message: "could not open /gone: watcher re-arm timed out",
+      });
     }
+  });
+});
+
+describe("planChecklist (T-026 criterion 1: the looked-for paths, answered)", () => {
+  it("lists every looked-for path, in the design's order, unfound by default", () => {
+    expect(planChecklist(EMPTY_PROBE).map((r) => [r.path, r.found])).toEqual([
+      ["docs/ROADMAP.md", false],
+      ["docs/tasks/*.md", false],
+      ["docs/ARCHITECTURE.md", false],
+      [".git", false],
+    ]);
+    // The convention hint's other half survives the redesign as the
+    // card's footnote, so docs/decisions/ is still named on this screen.
+    expect(CONVENTION_HINT).toContain("docs/tasks/");
+    expect(CONVENTION_HINT).toContain("docs/decisions/");
+  });
+
+  it("marks found paths from the probe, and only .git carries the design's note", () => {
+    const rows = planChecklist({ roadmap: false, tasks: true, architecture: true, git: true });
+    expect(rows.map((r) => r.found)).toEqual([false, true, true, true]);
+    expect(rows[3]?.note).toBe("it is a repo, so the plan can live here");
+    expect(rows.filter((r) => r.note !== undefined)).toHaveLength(1);
+    // A .git that is NOT there claims nothing.
+    expect(planChecklist(EMPTY_PROBE)[3]?.note).toBeUndefined();
+  });
+
+  it("an absent probe claims nothing found rather than inventing marks", () => {
+    expect(planChecklist(null).every((r) => !r.found)).toBe(true);
+  });
+});
+
+describe("reducePickOutcome (T-026: one pipeline for all three pickers)", () => {
+  const open = (): ShellState =>
+    shell({ phase: "open", docs: openProjectA(), resolvedDir: null });
+
+  it("criterion 6: a cancelled dialog changes nothing, by identity", () => {
+    const s = open();
+    expect(reducePickOutcome(s, { kind: "cancelled" })).toBe(s);
+  });
+
+  it("criterion 6: a refused concurrent claim (busy) changes nothing, by identity", () => {
+    const s = open();
+    expect(reducePickOutcome(s, { kind: "busy" })).toBe(s);
+  });
+
+  it("criterion 6: a rejected folder only adds the notice — the project stays open", () => {
+    const s = open();
+    const next = reducePickOutcome(s, {
+      kind: "noDocs",
+      path: "/tmp/sketchpad",
+      probe: { ...EMPTY_PROBE, git: true },
+    });
+    expect(next.phase).toBe("open");
+    expect(next.docs).toBe(s.docs); // model untouched, not even re-derived
+    expect(next.rejectedPick).toEqual({
+      path: "/tmp/sketchpad",
+      message: null,
+      probe: { ...EMPTY_PROBE, git: true },
+    });
+  });
+
+  it("criterion 6: a validation error leaves the project and its model alone", () => {
+    const s = open();
+    const next = reducePickOutcome(s, {
+      kind: "error",
+      path: "/tmp/gone",
+      message: "that folder is no longer there",
+    });
+    expect(next.phase).toBe("open");
+    expect(next.docs).toBe(s.docs);
+    expect(next.rejectedPick?.message).toBe("that folder is no longer there");
+  });
+
+  it("criterion 2: a genesis outcome switches screens and clears the old model", () => {
+    const s = open();
+    expect(s.docs.model.tasks.length).toBe(1);
+    const next = reducePickOutcome(s, {
+      kind: "genesis",
+      projectDir: "/tmp/sketchpad",
+      seq: 42,
+      probe: EMPTY_PROBE,
+    });
+    expect(next.phase).toBe("genesis");
+    expect(next.genesisDir).toBe("/tmp/sketchpad");
+    expect(next.rejectedPick).toBeNull();
+    // The previous project's board must not linger behind the interview.
+    expect(next.docs.model.tasks).toEqual([]);
+    expect(next.docs.lastGood.size).toBe(0);
+    // ...and the watermark advances past every pre-switch emit, so a
+    // late docs-changed from the old project drops as stale.
+    expect(next.docs.seq).toBe(42);
+    expect(reduceDocs(next.docs, payload(41, "/projects/a", projectAFiles()))).toBe(next.docs);
+  });
+
+  it("criterion 5: opening a planned folder from the genesis flow lands on the board", () => {
+    const s = shell({ phase: "genesis", genesisDir: "/tmp/sketchpad" });
+    const next = reducePickOutcome(s, {
+      kind: "picked",
+      snapshot: payload(9, "/projects/planned", projectAFiles()),
+    });
+    expect(next.phase).toBe("open");
+    expect(next.genesisDir).toBeNull();
+    expect(next.docs.model.tasks.map((t) => t.id)).toEqual(["T-901"]);
   });
 });

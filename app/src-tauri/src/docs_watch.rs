@@ -139,7 +139,12 @@ pub enum ProjectStatus {
     /// No repo resolved at launch (and nothing picked yet).
     NoProject,
     /// A project root is set but contains no plain `docs/` directory.
-    NoDocs { project_dir: String },
+    /// T-026: `probe` is what the front door's "No plan in <folder>"
+    /// checklist renders (measured, not decorative).
+    NoDocs {
+        project_dir: String,
+        probe: PlanProbe,
+    },
     /// Project open: here is the current docs tree.
     Open { snapshot: DocsSnapshot },
 }
@@ -157,14 +162,29 @@ pub enum PickOutcome {
     /// dialogs. Nothing changed.
     Busy,
     /// Chosen folder has no plain `docs/` directory (or vanished before
-    /// validation); nothing changed. `path` is what was looked at.
-    NoDocs { path: String },
+    /// validation); nothing changed. `path` is what was looked at, and
+    /// `probe` (T-026) is what was looked FOR — the "No plan in
+    /// <folder>" card's checklist. The folder is remembered Rust-side as
+    /// the genesis candidate, so "Start an interview here" needs no
+    /// argument from the webview (ADR-012).
+    NoDocs { path: String, probe: PlanProbe },
     /// Validation passed but the watcher could not re-arm; nothing changed
     /// (the previous project, if any, is still watched).
     Error { path: String, message: String },
     /// Folder validated and the watcher re-armed: this snapshot is the
     /// picked project's current docs tree.
     Picked { snapshot: DocsSnapshot },
+    /// T-026: opened as a GENESIS project — a folder with no plan yet.
+    /// The root is committed and the watcher armed on the root sentinel
+    /// (T-018), so the first `mkdir docs` lights the ordinary pipeline
+    /// with no re-pick. There is no snapshot to send (nothing is there),
+    /// so `seq` carries the switch's ordering stamp instead: every emit
+    /// from the PREVIOUS project has a lower seq and drops as stale.
+    Genesis {
+        project_dir: String,
+        seq: u64,
+        probe: PlanProbe,
+    },
 }
 
 /// Messages processed by the watcher control thread.
@@ -175,6 +195,15 @@ pub enum WatchCtl {
     /// success once the new watch is armed and the emit baseline reset;
     /// on failure the previous watch is untouched.
     Rearm {
+        root: PathBuf,
+        ack: mpsc::Sender<Result<(), String>>,
+    },
+    /// T-026: arm on a GENESIS root — a project folder that has no plan
+    /// yet, and usually no `docs/` at all. Same rendezvous contract as
+    /// `Rearm` (ack after arming; the previous project untouched on
+    /// failure), but the sentinel is the load-bearing watch: there may be
+    /// nothing to watch recursively until the interview writes docs/.
+    ArmGenesis {
         root: PathBuf,
         ack: mpsc::Sender<Result<(), String>>,
     },
@@ -199,6 +228,15 @@ pub struct WatchState {
     /// dialog -> validate -> re-arm -> commit pipeline, which is what
     /// makes narrowing the mutex to the commit alone sound.
     picking: Arc<AtomicBool>,
+    /// T-026: the last folder the user chose in the native dialog that
+    /// was refused for having no `docs/` — the genesis candidate the
+    /// front door's "No plan in <folder>" card is talking about.
+    ///
+    /// This is what keeps "Start an interview here" a ZERO-ARGUMENT
+    /// command (ADR-012): the path came from the user's own dialog
+    /// choice and stayed Rust-side; the webview never learned it in a
+    /// form it could send back, and cannot name a different one.
+    last_rejected: Mutex<Option<PathBuf>>,
 }
 
 /// Exclusive claim on the picker pipeline (T-021). Holding this value IS
@@ -224,6 +262,7 @@ impl WatchState {
             seq,
             ctl,
             picking: Arc::new(AtomicBool::new(false)),
+            last_rejected: Mutex::new(None),
         }
     }
 
@@ -248,6 +287,37 @@ impl WatchState {
     pub fn project_dir(&self) -> Option<PathBuf> {
         self.project.lock().expect("project mutex poisoned").clone()
     }
+
+    /// T-026: remember a user-chosen folder that had no `docs/` as the
+    /// genesis candidate (see `last_rejected`). Called only from the
+    /// pick path, with a canonicalized path the USER chose.
+    fn remember_rejected(&self, path: &Path) {
+        *self
+            .last_rejected
+            .lock()
+            .expect("rejected-pick mutex poisoned") = Some(path.to_path_buf());
+    }
+
+    /// T-026: the folder "Start an interview here" means. The user's most
+    /// recently refused choice if there is one, else the open project
+    /// (the launch-resolved repo that has no docs/ — the first-launch
+    /// genesis entry). None means the front door has nothing to point at.
+    pub fn genesis_target(&self) -> Option<PathBuf> {
+        self.last_rejected
+            .lock()
+            .expect("rejected-pick mutex poisoned")
+            .clone()
+            .or_else(|| self.project_dir())
+    }
+
+    /// Forget the candidate — it just became the open project, or a new
+    /// project was opened over it.
+    fn clear_rejected(&self) {
+        *self
+            .last_rejected
+            .lock()
+            .expect("rejected-pick mutex poisoned") = None;
+    }
 }
 
 fn next_seq(seq: &AtomicU64) -> u64 {
@@ -271,16 +341,92 @@ fn relative_posix(path: &Path, base: &Path) -> Option<String> {
     Some(parts.join("/"))
 }
 
+/// Is `path` a real directory — not a symlink, not a file, not absent?
+/// The T-003 rule family's one primitive: every arming gate in this
+/// module asks it (T-026 asks it of the project ROOT, which a genesis
+/// project has instead of a docs/ dir), so a symlink swapped in between
+/// validation and arming is refused at both ends.
+pub fn is_plain_dir(path: &Path) -> bool {
+    match fs::symlink_metadata(path) {
+        Ok(meta) => !meta.file_type().is_symlink() && meta.is_dir(),
+        Err(_) => false,
+    }
+}
+
 /// Does `root` contain a plain `docs/` directory — a real dir, not a
 /// symlink? The single definition of "convention layout present" used by
 /// startup status, the picker validation, and the watcher's arming gate
 /// (same symlink rules as T-003's collector, which refuses a symlinked
 /// docs/ at read time).
 pub fn has_plain_docs_dir(root: &Path) -> bool {
-    match fs::symlink_metadata(root.join(DOCS_DIR)) {
-        Ok(meta) => !meta.file_type().is_symlink() && meta.is_dir(),
-        Err(_) => false,
+    is_plain_dir(&root.join(DOCS_DIR))
+}
+
+/// What the front door looked for in a folder, and what it found (T-026).
+///
+/// Two jobs, one stat sweep: it decides whether genesis may be OFFERED
+/// for a folder (`has_plan` — criterion 5's predicate, which T-025's
+/// runner re-checks Rust-side before spawning anything), and it feeds the
+/// "No plan in <folder>" card's checklist so the ○/✓ marks are measured
+/// rather than decorative.
+///
+/// Booleans only: the webview learns whether each looked-for path exists,
+/// never any path the user did not already choose (the probe reads no
+/// file contents and lists no names — a symlinked `docs/tasks` pointing
+/// somewhere hostile can flip `tasks` to true, which only makes the app
+/// MORE conservative about offering genesis, and discloses nothing).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlanProbe {
+    /// `docs/ROADMAP.md` exists.
+    pub roadmap: bool,
+    /// At least one `docs/tasks/*.md` exists.
+    pub tasks: bool,
+    /// `docs/ARCHITECTURE.md` exists.
+    pub architecture: bool,
+    /// `.git` exists (file or dir — worktrees count, as in T-007's
+    /// launch resolution).
+    pub git: bool,
+}
+
+impl PlanProbe {
+    /// Criterion 5's predicate: the folder ALREADY holds a plan, so
+    /// genesis is never offered for it (there is no overwrite path in
+    /// this app by construction — the flow opens it as a normal project
+    /// instead). Deliberately narrow: a ROADMAP or any task file is a
+    /// plan; an ARCHITECTURE.md alone is not, and neither is a bare
+    /// `docs/`.
+    pub fn has_plan(&self) -> bool {
+        self.roadmap || self.tasks
     }
+}
+
+/// Stat what a plan would live in. Never reads content; never follows a
+/// symlink to decide `is_plain_dir`-style questions (it asks only "is
+/// there something here", which is the conservative direction — a
+/// symlinked plan still counts as a plan and blocks genesis).
+pub fn probe_plan(root: &Path) -> PlanProbe {
+    let docs = root.join(DOCS_DIR);
+    PlanProbe {
+        roadmap: fs::symlink_metadata(docs.join("ROADMAP.md")).is_ok(),
+        tasks: has_any_task_file(&docs.join("tasks")),
+        architecture: fs::symlink_metadata(docs.join("ARCHITECTURE.md")).is_ok(),
+        git: fs::symlink_metadata(root.join(".git")).is_ok(),
+    }
+}
+
+/// Any `*.md` directly inside `docs/tasks/` (names only — no content, no
+/// recursion, and the names never leave this function).
+fn has_any_task_file(tasks_dir: &Path) -> bool {
+    let Ok(entries) = fs::read_dir(tasks_dir) else {
+        return false;
+    };
+    entries.flatten().any(|entry| {
+        entry
+            .file_name()
+            .to_str()
+            .is_some_and(|name| name.ends_with(".md"))
+    })
 }
 
 /// Which files ride the docs snapshot: every `.md` under docs/ (T-003),
@@ -471,6 +617,7 @@ pub fn project_status(state: &WatchState) -> ProjectStatus {
             } else {
                 ProjectStatus::NoDocs {
                     project_dir: root.display().to_string(),
+                    probe: probe_plan(&root),
                 }
             }
         }
@@ -504,11 +651,27 @@ pub fn apply_picked_folder(state: &WatchState, picked: &Path, flight: PickInFlig
         // Vanished or unreadable: nothing usable was found at that path.
         return PickOutcome::NoDocs {
             path: picked.display().to_string(),
+            probe: PlanProbe::default(),
         };
     };
+    open_as_project(state, &canon)
+}
+
+/// The ordinary open, from a path that is already canonical (T-026 split
+/// it out of `apply_picked_folder` so the genesis pick can ROUTE to it
+/// outcome-for-outcome when the chosen folder turns out to hold a plan —
+/// criterion 5's "routes to opening it as a normal project" is a call,
+/// not a re-implementation).
+fn open_as_project(state: &WatchState, canon: &Path) -> PickOutcome {
+    let canon = canon.to_path_buf();
     if !has_plain_docs_dir(&canon) {
+        // T-026: the front door is about to offer genesis for exactly
+        // this folder, so remember it here — the user chose it, and the
+        // path stays Rust-side.
+        state.remember_rejected(&canon);
         return PickOutcome::NoDocs {
             path: canon.display().to_string(),
+            probe: probe_plan(&canon),
         };
     }
 
@@ -562,9 +725,118 @@ pub fn apply_picked_folder(state: &WatchState, picked: &Path, flight: PickInFlig
     // The commit — the only mutation, and now the only lock window.
     *state.project.lock().expect("project mutex poisoned") = Some(canon.clone());
     let seq = state.next_seq();
+    state.clear_rejected(); // a project opened: no candidate is pending
     println!("[nputer] project folder picked: {}", canon.display());
     PickOutcome::Picked {
         snapshot: build_snapshot(&canon, seq),
+    }
+}
+
+/// T-026 criterion 2: open a folder as a GENESIS project — one with no
+/// plan yet, where the interview is about to write `docs/` for the first
+/// time. Called from the zero-argument picker variant
+/// (`pick_genesis_folder`) and from `start_genesis_here`, which supplies
+/// the folder the front door is already talking about (`genesis_target`);
+/// the webview supplies no path in either case (ADR-012).
+///
+/// Order mirrors `apply_picked_folder`, and every early return leaves the
+/// previously open project — state, watch, model — exactly as it was
+/// (criterion 6):
+/// 1. canonicalize, then require a PLAIN DIRECTORY (the T-003 rule family
+///    applied to the root: a symlink swapped in for the folder — before
+///    or after this check — is refused here AND again by the watcher
+///    thread's own gate at arm time);
+/// 2. if the folder already holds a plan, genesis is NOT offered
+///    (criterion 5) — route to the ordinary open instead, which is the
+///    only writer of a project switch either way;
+/// 3. rendezvous with the watcher thread (`ArmGenesis`): the root
+///    sentinel goes on the project root, so the interview's first
+///    `mkdir docs` re-arms the docs watch and lights the existing
+///    pipeline with no re-pick (criterion 3, T-018's mechanism);
+/// 4. only then commit the project dir and take the ordering seq.
+pub fn apply_genesis_folder(
+    state: &WatchState,
+    picked: &Path,
+    flight: PickInFlight,
+) -> PickOutcome {
+    let _flight = flight; // same structural latch as the ordinary pick
+
+    let Ok(canon) = picked.canonicalize() else {
+        return PickOutcome::Error {
+            path: picked.display().to_string(),
+            message: "that folder is no longer there".into(),
+        };
+    };
+    if !is_plain_dir(&canon) {
+        return PickOutcome::Error {
+            path: canon.display().to_string(),
+            message: "not a plain directory - refusing to open it".into(),
+        };
+    }
+
+    let probe = probe_plan(&canon);
+    if probe.has_plan() {
+        // Criterion 5: there is no overwrite path in this app. A folder
+        // that already has a plan opens as the normal project it is.
+        println!(
+            "[nputer] genesis declined: {} already has a plan - opening it as a project",
+            canon.display()
+        );
+        return open_as_project(state, &canon);
+    }
+
+    let (ack_tx, ack_rx) = mpsc::channel();
+    if state
+        .ctl
+        .send(WatchCtl::ArmGenesis {
+            root: canon.clone(),
+            ack: ack_tx,
+        })
+        .is_err()
+    {
+        return PickOutcome::Error {
+            path: canon.display().to_string(),
+            message: "watcher thread is not running".into(),
+        };
+    }
+    match ack_rx.recv_timeout(REARM_TIMEOUT) {
+        Ok(Ok(())) => {}
+        Ok(Err(message)) => {
+            return PickOutcome::Error {
+                path: canon.display().to_string(),
+                message,
+            }
+        }
+        Err(mpsc::RecvTimeoutError::Timeout) => {
+            return PickOutcome::Error {
+                path: canon.display().to_string(),
+                message: "watcher re-arm timed out".into(),
+            }
+        }
+        Err(mpsc::RecvTimeoutError::Disconnected) => {
+            return PickOutcome::Error {
+                path: canon.display().to_string(),
+                message: "watcher thread dropped the re-arm ack".into(),
+            }
+        }
+    }
+
+    // The commit — the only mutation, and the only lock window.
+    *state.project.lock().expect("project mutex poisoned") = Some(canon.clone());
+    // The switch's ordering stamp: there is no snapshot to send (nothing
+    // is there yet), but every emit still in flight from the PREVIOUS
+    // project carries a lower seq and drops as stale on the frontend —
+    // the T-007 invariant, kept without a snapshot.
+    let seq = state.next_seq();
+    state.clear_rejected();
+    println!(
+        "[nputer] genesis project opened: {} (waiting for docs/ to appear)",
+        canon.display()
+    );
+    PickOutcome::Genesis {
+        project_dir: canon.display().to_string(),
+        seq,
+        probe,
     }
 }
 
@@ -686,11 +958,19 @@ fn arm_sentinel<T: notify_debouncer_mini::notify::Watcher>(
 /// across notify backends, but "does `<root>/docs` exist, and is it the
 /// directory we armed?" does not. Every failure path degrades to "watch
 /// as before, retry on the next batch" — never an error, never a panic.
+///
+/// Returns TRUE on the (unarmed -> armed) transition and only then
+/// (T-026 criterion 4, folding T-018-s4): that transition is a fact about
+/// the project the frontend cannot learn any other way, because an empty
+/// `docs/` collects EQUAL to the empty baseline and the suppression
+/// invariant would swallow it — leaving the front door claiming "no docs/
+/// found" while an empty docs/ exists. The caller emits once on a true.
+#[must_use]
 fn ensure_docs_watch<T: notify_debouncer_mini::notify::Watcher>(
     debouncer: &mut Debouncer<T>,
     target: &mut WatchTarget,
     root: &Path,
-) {
+) -> bool {
     let docs = root.join(DOCS_DIR);
     let present = has_plain_docs_dir(root);
     match (target.docs.is_some(), present) {
@@ -700,6 +980,7 @@ fn ensure_docs_watch<T: notify_debouncer_mini::notify::Watcher>(
                 target.docs = Some(docs.clone());
                 target.docs_id = dir_identity(&docs);
                 println!("[nputer] watch: docs/ appeared - watching {}", docs.display());
+                return true; // the transition the frontend must be told about
             }
             Err(err) => eprintln!(
                 "[nputer] watch: docs/ appeared but watch failed: {err} (will retry on the next event)"
@@ -750,6 +1031,7 @@ fn ensure_docs_watch<T: notify_debouncer_mini::notify::Watcher>(
         }
         (false, false) => {}
     }
+    false
 }
 
 /// Handle one debounced fs batch: run the sentinel's re-arm check, then
@@ -771,10 +1053,18 @@ fn handle_fs_batch<T: notify_debouncer_mini::notify::Watcher>(
     };
     // T-018 sentinel check BEFORE collecting, so this same batch ships
     // the re-armed tree's truth. Infallible by construction.
-    ensure_docs_watch(debouncer, target, &root);
+    let just_armed = ensure_docs_watch(debouncer, target, &root);
     let seq = next_seq(seq);
     let outcome = collect_docs_tree(&root);
-    if outcome == target.last {
+    // T-026 criterion 4 (T-018-s4): the (unarmed -> armed) transition
+    // emits even when the tree equals the baseline, because "docs/ exists
+    // now" is not in the tree — an EMPTY docs/ is byte-for-byte the empty
+    // baseline, and without this the front door would keep claiming "no
+    // docs/ found" over a directory that is sitting right there. It fires
+    // at most once per arming (the next batch finds the watch already
+    // armed), so the suppression invariant is untouched for every other
+    // batch — including the very next one over the same empty tree.
+    if outcome == target.last && !just_armed {
         println!(
             "[nputer] watch: {} fs event(s) coalesced, content unchanged - suppressed",
             events.len()
@@ -849,6 +1139,10 @@ fn run_watcher(
             WatchCtl::Rearm { root, ack } => {
                 let _ = ack.send(rearm(&mut debouncer, &mut target, root));
             }
+            // T-026: same rendezvous contract, genesis arming rules.
+            WatchCtl::ArmGenesis { root, ack } => {
+                let _ = ack.send(arm_genesis(&mut debouncer, &mut target, root));
+            }
         }
     }
     // Keep the debouncer alive for the loop's whole lifetime.
@@ -881,7 +1175,9 @@ fn rearm<T: notify_debouncer_mini::notify::Watcher>(
         // was replaced behind the same path, in which case the manual
         // re-pick is exactly the recovery the user reached for: heal the
         // handle (T-018; pre-T-018 this branch kept a stale handle).
-        ensure_docs_watch(debouncer, target, &new_root);
+        // The arm-transition flag is irrelevant here: this path resets the
+        // baseline and the pick answers with a fresh snapshot of its own.
+        let _ = ensure_docs_watch(debouncer, target, &new_root);
         if target.docs.is_none() {
             return Err(format!("cannot watch {}", new_docs.display()));
         }
@@ -915,6 +1211,63 @@ fn rearm<T: notify_debouncer_mini::notify::Watcher>(
         "[nputer] watch: watching {} (debounce {}ms)",
         new_docs.display(),
         DEBOUNCE.as_millis()
+    );
+    Ok(())
+}
+
+/// T-026: arm on a genesis root — a project folder whose `docs/` does not
+/// exist yet. The ROOT SENTINEL is the load-bearing watch here, so unlike
+/// T-018's best-effort sentinel this one is a hard requirement: if it
+/// cannot be armed, the interview's first `mkdir docs` would never be
+/// noticed and the app would sit there lying, so the pick fails instead
+/// and the previously open project keeps its watch.
+///
+/// A genesis root that DOES already carry a plain `docs/` (a folder with
+/// docs/ but no plan — an empty docs/, say) is simply the ordinary arm:
+/// `rearm` does everything right for it, including the sentinel.
+fn arm_genesis<T: notify_debouncer_mini::notify::Watcher>(
+    debouncer: &mut Debouncer<T>,
+    target: &mut WatchTarget,
+    new_root: PathBuf,
+) -> Result<(), String> {
+    // The T-003 rule family at arm time (defense in depth for the
+    // validate -> arm window, exactly as `rearm` re-checks docs/): a
+    // symlink swapped in for the root between the pick's check and this
+    // one is refused here, with nothing mutated.
+    if !is_plain_dir(&new_root) {
+        return Err(format!("{} is not a plain directory", new_root.display()));
+    }
+    if has_plain_docs_dir(&new_root) {
+        return rearm(debouncer, target, new_root);
+    }
+
+    // Arm the sentinel BEFORE dropping the old docs watch (T-007's rule:
+    // a failure must leave the previous project fully watched).
+    arm_sentinel(debouncer, target, &new_root);
+    if target.sentinel.as_deref() != Some(new_root.as_path()) {
+        return Err(format!(
+            "cannot watch {} for docs/ appearing",
+            new_root.display()
+        ));
+    }
+    if let Some(old_docs) = target.docs.take() {
+        if let Err(err) = debouncer.watcher().unwatch(&old_docs) {
+            // Not fatal: stale events collect from the NEW root and are
+            // suppressed by outcome equality.
+            eprintln!(
+                "[nputer] watch: unwatch {} failed: {err}",
+                old_docs.display()
+            );
+        }
+    }
+    target.docs_id = None;
+    target.root = Some(new_root.clone());
+    // Honest baseline for a root with no docs/: the empty outcome. The
+    // (unarmed -> armed) transition is what emits later, not a diff.
+    target.last = collect_docs_tree(&new_root);
+    println!(
+        "[nputer] watch: genesis root {} (no docs/ yet - the sentinel is the watch)",
+        new_root.display()
     );
     Ok(())
 }
@@ -1162,8 +1515,11 @@ mod tests {
         fs::remove_dir_all(t.root().join("docs")).expect("rm docs");
         let state = detached_state(Some(t.root().to_path_buf()));
         match project_status(&state) {
-            ProjectStatus::NoDocs { project_dir } => {
+            ProjectStatus::NoDocs { project_dir, probe } => {
                 assert_eq!(project_dir, t.root().display().to_string());
+                // T-026: the front door's checklist rides this status;
+                // an empty scratch tree finds nothing, honestly.
+                assert_eq!(probe, PlanProbe::default());
             }
             other => panic!("expected NoDocs, got {other:?}"),
         }
@@ -1194,7 +1550,10 @@ mod tests {
         let state = detached_state(Some(prev.root().to_path_buf()));
         let gone = prev.root().join("never-existed");
         match apply_pick(&state, &gone) {
-            PickOutcome::NoDocs { path } => assert_eq!(path, gone.display().to_string()),
+            PickOutcome::NoDocs { path, probe } => {
+                assert_eq!(path, gone.display().to_string());
+                assert_eq!(probe, PlanProbe::default()); // nothing there to find
+            }
             other => panic!("expected NoDocs, got {other:?}"),
         }
         // Previous project untouched (criterion c: no corruption).
@@ -1208,9 +1567,10 @@ mod tests {
         let bare = TempTree::new("pick-bare");
         fs::remove_dir_all(bare.root().join("docs")).expect("rm docs");
         match apply_pick(&state, bare.root()) {
-            PickOutcome::NoDocs { path } => {
+            PickOutcome::NoDocs { path, probe } => {
                 // Canonicalized form of what was looked at.
                 assert_eq!(path, bare.root().canonicalize().unwrap().display().to_string());
+                assert_eq!(probe, PlanProbe::default());
             }
             other => panic!("expected NoDocs, got {other:?}"),
         }
@@ -1915,5 +2275,411 @@ mod tests {
         // A second batch on the same dead root: suppressed, still alive.
         handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
         assert!(rx.try_recv().is_err());
+    }
+
+    // ---- T-026: genesis entry ------------------------------------------
+
+    /// The genesis pick, minus the dialog — the exact command-layer call
+    /// with the single-flight guard claimed first (the `apply_pick`
+    /// pattern; sequential tests are never in flight).
+    fn apply_genesis_pick(state: &WatchState, picked: &Path) -> PickOutcome {
+        apply_genesis_folder(state, picked, state.begin_pick().expect("picker free"))
+    }
+
+    /// A scratch tree with no docs/ at all — what a genesis folder looks
+    /// like before the interview runs.
+    fn bare_tree(tag: &str) -> TempTree {
+        let t = TempTree::new(tag);
+        fs::remove_dir_all(t.root().join("docs")).expect("rm docs");
+        t
+    }
+
+    #[test]
+    fn plan_probe_measures_each_looked_for_path_and_gates_on_roadmap_or_tasks() {
+        // Criterion 5's predicate, and the front-door checklist's marks.
+        let t = bare_tree("probe");
+        assert_eq!(probe_plan(t.root()), PlanProbe::default());
+        assert!(!probe_plan(t.root()).has_plan());
+
+        // An empty docs/ is not a plan (nor is ARCHITECTURE.md alone) —
+        // both are genesis-eligible states.
+        fs::create_dir_all(t.root().join("docs")).expect("mkdir docs");
+        assert!(!probe_plan(t.root()).has_plan());
+        t.write("docs/ARCHITECTURE.md", "# arch");
+        let probe = probe_plan(t.root());
+        assert!(probe.architecture && !probe.has_plan());
+
+        // .git counts as a file (worktrees) exactly like T-007's walk-up.
+        fs::write(t.root().join(".git"), "gitdir: elsewhere").expect("git file");
+        assert!(probe_plan(t.root()).git);
+
+        // Either half of the plan predicate is enough, on its own.
+        t.write("docs/tasks/T-001-x.md", "task");
+        assert!(probe_plan(t.root()).tasks && probe_plan(t.root()).has_plan());
+        fs::remove_dir_all(t.root().join("docs/tasks")).expect("rm tasks");
+        assert!(!probe_plan(t.root()).has_plan());
+        t.write("docs/ROADMAP.md", "# roadmap");
+        assert!(probe_plan(t.root()).roadmap && probe_plan(t.root()).has_plan());
+
+        // A non-.md file in docs/tasks/ is not a task file.
+        fs::remove_file(t.root().join("docs/ROADMAP.md")).expect("rm roadmap");
+        t.write("docs/tasks/notes.txt", "not a task");
+        assert!(!probe_plan(t.root()).has_plan());
+    }
+
+    #[test]
+    fn genesis_pick_opens_a_docsless_folder_and_arms_the_root_sentinel() {
+        // Criterion 2: the zero-argument picker variant's pipeline.
+        let t = bare_tree("genesis-open");
+        let (state, _emits) = live_state(None);
+        let outcome = apply_genesis_pick(&state, t.root());
+        let canon = t.root().canonicalize().expect("canon");
+        match outcome {
+            PickOutcome::Genesis {
+                project_dir,
+                seq,
+                probe,
+            } => {
+                assert_eq!(project_dir, canon.display().to_string());
+                assert!(seq >= 1, "the switch carries an ordering stamp");
+                assert_eq!(probe, PlanProbe::default());
+            }
+            other => panic!("expected Genesis, got {other:?}"),
+        }
+        // Committed: the genesis folder IS the open project now...
+        assert_eq!(state.project_dir(), Some(canon.clone()));
+        // ...and it is still docs-less, so the ordinary status call says
+        // so rather than pretending there is a board.
+        assert!(matches!(
+            project_status(&state),
+            ProjectStatus::NoDocs { .. }
+        ));
+    }
+
+    #[test]
+    fn genesis_pick_of_a_folder_that_already_has_a_plan_opens_it_as_a_project() {
+        // Criterion 5: genesis is NOT offered — and the routing is the
+        // ordinary open, outcome for outcome. No overwrite path exists.
+        for (tag, plan_file) in [
+            ("genesis-roadmap", "docs/ROADMAP.md"),
+            ("genesis-tasks", "docs/tasks/T-500-x.md"),
+        ] {
+            let t = TempTree::new(tag);
+            t.write(plan_file, "the plan is already here");
+            let (state, _emits) = live_state(None);
+            match apply_genesis_pick(&state, t.root()) {
+                PickOutcome::Picked { snapshot } => {
+                    assert_eq!(
+                        snapshot.files.iter().map(|f| f.path.as_str()).collect::<Vec<_>>(),
+                        vec![plan_file]
+                    );
+                }
+                other => panic!("expected the normal open for {plan_file}, got {other:?}"),
+            }
+            assert_eq!(
+                state.project_dir(),
+                Some(t.root().canonicalize().expect("canon"))
+            );
+        }
+    }
+
+    #[test]
+    fn an_empty_docs_dir_emits_exactly_once_on_the_unarmed_to_armed_transition() {
+        // Criterion 4 (T-018-s4), driven through the batch-handler seam so
+        // the counts are exact — no sleeps, no debounce luck.
+        use notify_debouncer_mini::DebouncedEventKind;
+        let t = bare_tree("s4-empty-docs");
+        let mut debouncer =
+            new_debouncer(DEBOUNCE, |_res: DebounceEventResult| {}).expect("debouncer");
+        let mut target = WatchTarget {
+            root: None,
+            docs: None,
+            docs_id: None,
+            sentinel: None,
+            last: CollectOutcome::default(),
+        };
+        arm_genesis(&mut debouncer, &mut target, t.root().to_path_buf()).expect("genesis arm");
+        assert!(target.docs.is_none(), "nothing to watch recursively yet");
+        assert_eq!(target.sentinel.as_deref(), Some(t.root()));
+
+        let seq = AtomicU64::new(0);
+        let (tx, rx) = mpsc::channel::<DocsSnapshot>();
+        let sink = move |snap: &DocsSnapshot| {
+            let _ = tx.send(snap.clone());
+        };
+        let batch = vec![DebouncedEvent::new(
+            t.root().join("docs"),
+            DebouncedEventKind::Any,
+        )];
+
+        // Root churn BEFORE docs/ exists: nothing to arm, nothing to say.
+        handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
+        assert!(rx.try_recv().is_err());
+
+        // docs/ appears EMPTY: the collected outcome is byte-for-byte the
+        // baseline, and pre-T-026 that meant silence — the front door kept
+        // claiming "no docs/ found" over a directory that exists.
+        fs::create_dir(t.root().join("docs")).expect("mkdir docs");
+        handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
+        let emit = rx
+            .recv_timeout(Duration::from_secs(5))
+            .expect("the arm transition must emit exactly once");
+        assert!(emit.files.is_empty(), "the empty board, rendered live");
+        assert_eq!(emit.skipped_total, 0);
+        assert!(!emit.truncated);
+        assert!(target.docs.is_some(), "the docs watch is armed now");
+        assert_eq!(target.last, CollectOutcome::default());
+
+        // EXACTLY once: every further batch over the unchanged empty tree
+        // is suppressed — the invariant holds for every other batch.
+        for _ in 0..5 {
+            handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
+        }
+        assert!(
+            rx.try_recv().is_err(),
+            "only the transition emits; equality suppression is intact"
+        );
+
+        // And the pipeline is genuinely live: real content still emits.
+        t.write("docs/ROADMAP.md", "# plan");
+        handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
+        let emit = rx.recv_timeout(Duration::from_secs(5)).expect("content emit");
+        assert_eq!(
+            emit.files.iter().map(|f| f.path.as_str()).collect::<Vec<_>>(),
+            vec!["docs/ROADMAP.md"]
+        );
+        // ...and settles back into silence.
+        handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
+        assert!(rx.try_recv().is_err());
+    }
+
+    #[test]
+    fn docs_appearing_under_a_genesis_project_lights_the_pipeline_with_no_repick() {
+        // Criterion 3, end to end from THIS task's flow: a real watcher
+        // thread, armed by the genesis pick, sees the interview's first
+        // write with no second trip through the picker.
+        let t = bare_tree("genesis-lights-up");
+        let (state, emits) = live_state(None);
+        assert!(matches!(
+            apply_genesis_pick(&state, t.root()),
+            PickOutcome::Genesis { .. }
+        ));
+        settle(); // let the sentinel arm land
+
+        // The interview writes its first artifact.
+        t.write("docs/NORTH_STAR.md", "# the point of this project");
+        let emit = loop {
+            let emit = recv_emit(&emits);
+            if emit.files.iter().any(|f| f.content.contains("the point")) {
+                break emit;
+            }
+        };
+        assert_eq!(emit.files[0].path, "docs/NORTH_STAR.md");
+        assert_eq!(
+            emit.project_dir,
+            t.root().canonicalize().expect("canon").display().to_string()
+        );
+
+        // The re-armed watch is LIVE for ordinary edits after that.
+        t.write("docs/NORTH_STAR.md", "# the point, revised");
+        loop {
+            let emit = recv_emit(&emits);
+            if emit.files.iter().any(|f| f.content.contains("revised")) {
+                break;
+            }
+        }
+    }
+
+    #[test]
+    fn a_failed_genesis_pick_leaves_the_open_project_untouched() {
+        // Criterion 6 (PickOutcome discipline) for the genesis variant.
+        let open = TempTree::new("genesis-keeps-open");
+        open.write("docs/ROADMAP.md", "v1");
+        let (state, emits) = live_state(None);
+        assert!(matches!(
+            apply_pick(&state, open.root()),
+            PickOutcome::Picked { .. }
+        ));
+        let committed = state.project_dir();
+
+        // (a) the folder vanished between dialog and apply.
+        let gone = open.root().join("never-existed");
+        assert!(matches!(
+            apply_genesis_pick(&state, &gone),
+            PickOutcome::Error { .. }
+        ));
+        assert_eq!(state.project_dir(), committed);
+
+        // (b) the chosen path is a FILE, not a directory.
+        let file = open.root().join("not-a-dir");
+        fs::write(&file, "just a file").expect("write");
+        assert!(matches!(
+            apply_genesis_pick(&state, &file),
+            PickOutcome::Error { .. }
+        ));
+        assert_eq!(state.project_dir(), committed);
+
+        // The open project's watch never noticed any of it.
+        open.write("docs/ROADMAP.md", "v2");
+        let emit = loop {
+            let emit = recv_emit(&emits);
+            if emit.files.iter().any(|f| f.content == "v2") {
+                break emit;
+            }
+        };
+        assert_eq!(
+            emit.project_dir,
+            open.root().canonicalize().expect("canon").display().to_string()
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_genesis_root_swapped_for_a_symlink_is_refused_at_arm_time() {
+        // The T-003 rule family applied to the ROOT: the arm-time gate is
+        // the one that matters (validation happened a moment earlier), so
+        // drive it directly — a symlinked root never becomes a project.
+        use std::os::unix::fs::symlink;
+        let open = TempTree::new("genesis-symlink-open");
+        open.write("docs/ROADMAP.md", "real project");
+        let outside = bare_tree("genesis-symlink-outside");
+        let link_home = bare_tree("genesis-symlink-home");
+        let link = link_home.root().join("linked-root");
+        symlink(outside.root(), &link).expect("symlink");
+
+        let mut debouncer =
+            new_debouncer(DEBOUNCE, |_res: DebounceEventResult| {}).expect("debouncer");
+        let mut target = WatchTarget {
+            root: None,
+            docs: None,
+            docs_id: None,
+            sentinel: None,
+            last: CollectOutcome::default(),
+        };
+        rearm(&mut debouncer, &mut target, open.root().to_path_buf()).expect("arm the real one");
+        let armed_docs = target.docs.clone();
+
+        let err = arm_genesis(&mut debouncer, &mut target, link.clone())
+            .expect_err("a symlinked root must be refused");
+        assert!(err.contains("not a plain directory"), "got: {err}");
+        // The previously open project keeps its watch, untouched.
+        assert_eq!(target.docs, armed_docs);
+        assert_eq!(target.root.as_deref(), Some(open.root()));
+    }
+
+    #[test]
+    fn start_genesis_here_targets_the_folder_the_front_door_named() {
+        // The zero-argument "Start an interview here": Rust remembers the
+        // user's own rejected dialog choice; the webview names nothing.
+        let open = TempTree::new("here-open");
+        open.write("docs/ROADMAP.md", "an open project");
+        let bare = bare_tree("here-bare");
+        let (state, _emits) = live_state(None);
+
+        // Nothing chosen and no project: nothing to point at.
+        assert_eq!(state.genesis_target(), None);
+
+        assert!(matches!(
+            apply_pick(&state, open.root()),
+            PickOutcome::Picked { .. }
+        ));
+        // With a project open and no rejection pending, "here" is the
+        // open project (the launch-resolved-repo case).
+        assert_eq!(
+            state.genesis_target(),
+            Some(open.root().canonicalize().expect("canon"))
+        );
+
+        // The user picks a folder with no docs/: refused, remembered.
+        let refused = apply_pick(&state, bare.root());
+        assert!(matches!(refused, PickOutcome::NoDocs { .. }));
+        let bare_canon = bare.root().canonicalize().expect("canon");
+        assert_eq!(state.genesis_target(), Some(bare_canon.clone()));
+
+        // "Start an interview here" opens exactly that folder...
+        let target = state.genesis_target().expect("a target");
+        match apply_genesis_pick(&state, &target) {
+            PickOutcome::Genesis { project_dir, .. } => {
+                assert_eq!(project_dir, bare_canon.display().to_string());
+            }
+            other => panic!("expected Genesis, got {other:?}"),
+        }
+        // ...and the candidate is spent: it is the open project now.
+        assert_eq!(state.project_dir(), Some(bare_canon.clone()));
+        assert_eq!(state.genesis_target(), Some(bare_canon));
+    }
+
+    #[test]
+    fn a_genesis_folder_that_already_has_an_empty_docs_dir_arms_the_docs_watch() {
+        // The in-between state: no plan (genesis-eligible) but docs/ is
+        // already there — the ordinary arm, so the board is live from the
+        // first file with no arm-transition emit needed.
+        let t = TempTree::new("genesis-with-empty-docs"); // TempTree makes docs/
+        let (state, emits) = live_state(None);
+        match apply_genesis_pick(&state, t.root()) {
+            PickOutcome::Genesis { probe, .. } => assert!(!probe.has_plan()),
+            other => panic!("expected Genesis, got {other:?}"),
+        }
+        t.write("docs/NORTH_STAR.md", "written into an existing docs/");
+        loop {
+            let emit = recv_emit(&emits);
+            if emit.files.iter().any(|f| f.path == "docs/NORTH_STAR.md") {
+                break;
+            }
+        }
+    }
+
+    #[test]
+    fn genesis_and_no_docs_wire_shapes_are_pinned() {
+        // The webview reads these tags; pin them like T-021 pinned busy.
+        let genesis = PickOutcome::Genesis {
+            project_dir: "/tmp/sketchpad".into(),
+            seq: 7,
+            probe: PlanProbe {
+                roadmap: false,
+                tasks: false,
+                architecture: true,
+                git: true,
+            },
+        };
+        assert_eq!(
+            serde_json::to_value(&genesis).expect("serialize"),
+            serde_json::json!({
+                "kind": "genesis",
+                "projectDir": "/tmp/sketchpad",
+                "seq": 7,
+                "probe": {
+                    "roadmap": false,
+                    "tasks": false,
+                    "architecture": true,
+                    "git": true
+                }
+            })
+        );
+        let no_docs = PickOutcome::NoDocs {
+            path: "/tmp/sketchpad".into(),
+            probe: PlanProbe::default(),
+        };
+        assert_eq!(
+            serde_json::to_value(&no_docs).expect("serialize"),
+            serde_json::json!({
+                "kind": "noDocs",
+                "path": "/tmp/sketchpad",
+                "probe": {
+                    "roadmap": false,
+                    "tasks": false,
+                    "architecture": false,
+                    "git": false
+                }
+            })
+        );
+        let status = ProjectStatus::NoDocs {
+            project_dir: "/tmp/sketchpad".into(),
+            probe: PlanProbe::default(),
+        };
+        assert_eq!(
+            serde_json::to_value(&status).expect("serialize")["kind"],
+            serde_json::json!("noDocs")
+        );
     }
 }

@@ -3,12 +3,15 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmptyState } from "../src/App";
-import { noDocsMessage } from "../src/lib/watcher-store";
+import { CONVENTION_HINT, EMPTY_PROBE } from "../src/lib/watcher-store";
 
-// T-007 empty-state rendering (criteria a and c's DOM half): the friendly
-// empty state must name what was looked for, offer a re-pick affordance,
-// and never render a blank region. EmptyState is pure presentational, so
-// it mounts here without the store or Tauri IPC.
+// T-007 empty-state rendering (criteria a and c's DOM half), redressed by
+// T-026 into the design's front door: the two ways in ("Open a folder…",
+// "Start an interview", ⌘O · ⌘N) always render, and when a folder is
+// named the card becomes "No plan in <folder>" — the checklist of what
+// was looked for, answered per row, with "Start an interview here" and no
+// Adopt button (fenced to archaeology in v1). EmptyState is presentational
+// apart from its two accelerators, so it mounts here without the store.
 
 declare global {
   // React 19's act() requires this opt-in outside a test renderer.
@@ -40,88 +43,173 @@ function click(el: Element): void {
   });
 }
 
-const noop = () => {};
+function press(key: string, init: KeyboardEventInit = { metaKey: true }): void {
+  act(() => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, ...init }));
+  });
+}
 
-describe("EmptyState (T-007)", () => {
-  it("renders the no-docs message naming the path and the convention layout", () => {
-    render(
-      <EmptyState
-        message={noDocsMessage("/tmp/not-a-project")}
-        picking={false}
-        canKeepCurrent={false}
-        onPick={noop}
-        onKeepCurrent={noop}
-      />,
-    );
-    const message = container.querySelector('[data-testid="empty-state-message"]');
-    expect(message?.textContent).toContain("no docs/ found in /tmp/not-a-project");
-    expect(message?.textContent).toContain("docs/tasks/");
-    expect(message?.textContent).toContain("docs/decisions/");
-    // Not blank: the section renders heading + message + actions.
-    expect(container.querySelector('[data-testid="empty-state"]')).not.toBeNull();
-    expect(container.textContent).toContain("no board to show");
+/** All props defaulted; each test overrides what it is about. */
+function mount(patch: Partial<React.ComponentProps<typeof EmptyState>> = {}): {
+  onPick: ReturnType<typeof vi.fn>;
+  onStartInterview: ReturnType<typeof vi.fn>;
+  onStartInterviewHere: ReturnType<typeof vi.fn>;
+  onKeepCurrent: ReturnType<typeof vi.fn>;
+} {
+  const handlers = {
+    onPick: vi.fn(),
+    onStartInterview: vi.fn(),
+    onStartInterviewHere: vi.fn(),
+    onKeepCurrent: vi.fn(),
+  };
+  render(
+    <EmptyState
+      notice={{ kind: "noPlan", path: "/tmp/not-a-project", probe: EMPTY_PROBE }}
+      picking={false}
+      canKeepCurrent={false}
+      {...handlers}
+      {...patch}
+    />,
+  );
+  return handlers;
+}
+
+const q = (selector: string): HTMLElement | null =>
+  container.querySelector<HTMLElement>(selector);
+
+describe("front door: the two ways in (T-026 criterion 1)", () => {
+  it("renders both buttons and the ⌘O · ⌘N hint on every empty state", () => {
+    mount({ notice: { kind: "message", message: "no project open" } });
+    expect(q('[data-testid="pick-folder"]')?.textContent).toContain("Open a folder…");
+    expect(q('[data-testid="start-interview"]')?.textContent).toContain("Start an interview");
+    expect(q('[data-testid="shortcut-hint"]')?.textContent).toBe("⌘O · ⌘N");
+    expect(q('[data-testid="empty-state"]')).not.toBeNull();
   });
 
-  it("offers a working re-pick affordance", () => {
-    const onPick = vi.fn();
-    render(
-      <EmptyState
-        message="no project open"
-        picking={false}
-        canKeepCurrent={false}
-        onPick={onPick}
-        onKeepCurrent={noop}
-      />,
-    );
-    const button = container.querySelector('[data-testid="pick-folder"]');
-    expect(button).not.toBeNull();
-    expect((button as HTMLButtonElement).disabled).toBe(false);
-    expect(button?.textContent).toContain("Open a project folder…");
-    click(button as Element);
-    expect(onPick).toHaveBeenCalledTimes(1);
+  it("wires each button to its own action", () => {
+    const h = mount();
+    click(q('[data-testid="pick-folder"]') as Element);
+    click(q('[data-testid="start-interview"]') as Element);
+    expect(h.onPick).toHaveBeenCalledTimes(1);
+    expect(h.onStartInterview).toHaveBeenCalledTimes(1);
   });
 
-  it("disables the picker button while the native dialog is open", () => {
-    const onPick = vi.fn();
-    render(
-      <EmptyState
-        message="no project open"
-        picking={true}
-        canKeepCurrent={false}
-        onPick={onPick}
-        onKeepCurrent={noop}
-      />,
-    );
-    const button = container.querySelector('[data-testid="pick-folder"]') as HTMLButtonElement;
-    expect(button.disabled).toBe(true);
-    expect(button.textContent).toContain("choosing…");
+  it("the advertised accelerators actually work (⌘O opens, ⌘N interviews)", () => {
+    const h = mount();
+    press("o");
+    press("n");
+    expect(h.onPick).toHaveBeenCalledTimes(1);
+    expect(h.onStartInterview).toHaveBeenCalledTimes(1);
+    // Ctrl for the platforms without a Command key.
+    press("o", { ctrlKey: true });
+    expect(h.onPick).toHaveBeenCalledTimes(2);
+    // Bare keys and other chords are not ours to swallow.
+    press("o", {});
+    press("p");
+    press("n", { metaKey: true, shiftKey: true });
+    expect(h.onPick).toHaveBeenCalledTimes(2);
+    expect(h.onStartInterview).toHaveBeenCalledTimes(1);
   });
 
-  it("offers keep-current only when a project is still open behind the rejection", () => {
-    const onKeep = vi.fn();
-    render(
-      <EmptyState
-        message={noDocsMessage("/tmp/x")}
-        picking={false}
-        canKeepCurrent={true}
-        onPick={noop}
-        onKeepCurrent={onKeep}
-      />,
+  it("stops listening once the front door is gone", () => {
+    const h = mount();
+    act(() => root.render(<div />));
+    press("o");
+    expect(h.onPick).not.toHaveBeenCalled();
+  });
+
+  it("disables both ways in while the native dialog is open", () => {
+    mount({ picking: true });
+    expect((q('[data-testid="pick-folder"]') as HTMLButtonElement).disabled).toBe(true);
+    expect((q('[data-testid="pick-folder"]') as HTMLElement).textContent).toContain("choosing…");
+    expect((q('[data-testid="start-interview"]') as HTMLButtonElement).disabled).toBe(true);
+    expect((q('[data-testid="start-interview-here"]') as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+describe('the "No plan in <folder>" card (T-026 criterion 1)', () => {
+  it("names the folder, keeps the looked-for paths, and offers the interview", () => {
+    mount({
+      notice: {
+        kind: "noPlan",
+        path: "/tmp/not-a-project",
+        probe: { ...EMPTY_PROBE, git: true },
+      },
+    });
+    const heading = q('[data-testid="no-plan-heading"]');
+    expect(heading?.textContent).toContain("No plan in");
+    expect(heading?.textContent).toContain("/tmp/not-a-project");
+    expect(q('[data-testid="empty-state-message"]')?.textContent).toContain(
+      "Here's where it looked",
     );
-    const keep = container.querySelector('[data-testid="keep-current"]');
+
+    // The checklist IS the preserved enumeration of what was looked for.
+    const rows = [...container.querySelectorAll('[data-testid="plan-checklist"] li')].map(
+      (li) => li.textContent ?? "",
+    );
+    expect(rows).toHaveLength(4);
+    expect(rows[0]).toContain("docs/ROADMAP.md");
+    expect(rows[1]).toContain("docs/tasks/*.md");
+    expect(rows[2]).toContain("docs/ARCHITECTURE.md");
+    expect(rows[3]).toContain(".git");
+    // Marks are measured: nothing found is ○, the probed .git is ✓.
+    expect(rows[0]).toContain("○");
+    expect(rows[3]).toContain("✓");
+    expect(rows[3]).toContain("it is a repo, so the plan can live here");
+
+    // ...and the T-007 hint survives as the footnote (docs/decisions/
+    // is still named on this screen).
+    expect(container.textContent).toContain(CONVENTION_HINT);
+  });
+
+  it("renders ○ for a .git it did not find — never a mark it did not measure", () => {
+    mount();
+    const rows = [...container.querySelectorAll('[data-testid="plan-checklist"] li')].map(
+      (li) => li.textContent ?? "",
+    );
+    expect(rows.every((r) => r.includes("○"))).toBe(true);
+    expect(container.textContent).not.toContain("✓");
+    expect(container.textContent).not.toContain("it is a repo");
+  });
+
+  it("starts the interview in THAT folder, without re-opening the dialog", () => {
+    const h = mount();
+    const here = q('[data-testid="start-interview-here"]');
+    expect(here?.textContent).toContain("Start an interview here");
+    click(here as Element);
+    expect(h.onStartInterviewHere).toHaveBeenCalledTimes(1);
+    expect(h.onStartInterview).not.toHaveBeenCalled();
+    expect(h.onPick).not.toHaveBeenCalled();
+  });
+
+  it("has no Adopt affordance in v1 (deliberately fenced to archaeology)", () => {
+    mount({ notice: { kind: "noPlan", path: "/tmp/x", probe: { ...EMPTY_PROBE, git: true } } });
+    expect(container.textContent).not.toContain("Adopt");
+    expect(container.textContent?.toLowerCase()).not.toContain("adopt");
+  });
+
+  it("offers keep-current only when something is still open behind the rejection", () => {
+    const h = mount({ canKeepCurrent: true });
+    const keep = q('[data-testid="keep-current"]');
     expect(keep).not.toBeNull();
     click(keep as Element);
-    expect(onKeep).toHaveBeenCalledTimes(1);
+    expect(h.onKeepCurrent).toHaveBeenCalledTimes(1);
 
-    render(
-      <EmptyState
-        message="no project open"
-        picking={false}
-        canKeepCurrent={false}
-        onPick={noop}
-        onKeepCurrent={noop}
-      />,
+    mount({ canKeepCurrent: false });
+    expect(q('[data-testid="keep-current"]')).toBeNull();
+  });
+});
+
+describe("the plain message card (no folder named yet, or a failed pick)", () => {
+  it("renders the message and no checklist", () => {
+    mount({ notice: { kind: "message", message: "could not open /gone: watcher re-arm timed out" } });
+    expect(q('[data-testid="empty-state-message"]')?.textContent).toBe(
+      "could not open /gone: watcher re-arm timed out",
     );
-    expect(container.querySelector('[data-testid="keep-current"]')).toBeNull();
+    expect(container.textContent).toContain("no board to show");
+    expect(q('[data-testid="plan-checklist"]')).toBeNull();
+    expect(q('[data-testid="start-interview-here"]')).toBeNull();
+    // Never blank, and the way in is still there.
+    expect(q('[data-testid="pick-folder"]')).not.toBeNull();
   });
 });
