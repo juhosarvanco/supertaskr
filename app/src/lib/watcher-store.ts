@@ -334,6 +334,37 @@ export function reducePickOutcome(
   }
 }
 
+/**
+ * What `__nputerShellHarness.getShell()` answers (T-041). Deliberately a
+ * SUMMARY rather than `ShellState` itself: the harness is read across the
+ * browser boundary (`page.evaluate` structured-clones its return value)
+ * and `DocsModelState` carries two `ReadonlyMap`s, which do not survive
+ * that trip. Every field here is a plain JSON value.
+ *
+ * `phase` is the point of the whole thing: a spec asserts on the shell's
+ * OWN phase, not on a selector that could just as well match a different
+ * screen. `screen` rides along so a spec can bind the two together
+ * (it is exactly what `App` stamps as `data-screen`).
+ */
+export interface ShellHarnessSnapshot {
+  phase: ShellPhase;
+  screen: ScreenModel["screen"];
+  resolvedDir: string | null;
+  resolvedProbe: PlanProbePayload | null;
+  genesisDir: string | null;
+  rejectedPick: RejectedPick | null;
+  picking: boolean;
+  indexing: boolean;
+  docs: {
+    seq: number;
+    projectDir: string;
+    fileCount: number;
+    taskCount: number;
+    featureCount: number;
+    failureCount: number;
+  };
+}
+
 // ---- store --------------------------------------------------------------
 
 declare global {
@@ -343,6 +374,26 @@ declare global {
     __nputerDocsHarness?: {
       apply: (payload: DocsSnapshotPayload) => void;
       getState: () => DocsModelState;
+    };
+    /**
+     * Dev-only shell harness (T-041) — absent in Tauri and in prod
+     * builds, behind the SAME `!isTauri && import.meta.env.DEV` gate as
+     * `__nputerDocsHarness` and installed in the same statement, so
+     * there is one gate to audit rather than two that could drift.
+     *
+     * A test surface over the shell's OWN state, never new IPC: both
+     * `applyProjectStatus` and `applyPickOutcome` are the very functions
+     * the Tauri path calls once a command has answered — `applyPickOutcome`
+     * is `commitPickOutcome`, i.e. `runPicker` minus the `invoke`. What
+     * this adds is a way to hand the store the payloads Rust would have
+     * sent; it adds no way to make Rust send anything, no command, and no
+     * grant. In a packaged app the whole block is unreachable (isTauri)
+     * and absent from the bundle (DEV).
+     */
+    __nputerShellHarness?: {
+      applyProjectStatus: (status: ProjectStatusPayload) => void;
+      applyPickOutcome: (outcome: PickOutcomePayload) => void;
+      getShell: () => ShellHarnessSnapshot;
     };
     /** Dev-only echo capture used by the browser harness. */
     __nputerEchoes?: ModelUpdateEcho[];
@@ -381,6 +432,32 @@ export function isTauriRuntime(): boolean {
 function setShell(patch: Partial<ShellState>): void {
   shell = { ...shell, ...patch };
   for (const callback of listeners) callback();
+}
+
+/**
+ * The dev harness's read side (T-041): the live shell, flattened to
+ * plain JSON. `screen` comes from the real `selectScreen`, not from a
+ * second opinion about what the phase means.
+ */
+function shellHarnessSnapshot(): ShellHarnessSnapshot {
+  return {
+    phase: shell.phase,
+    screen: selectScreen(shell).screen,
+    resolvedDir: shell.resolvedDir,
+    resolvedProbe: shell.resolvedProbe,
+    genesisDir: shell.genesisDir,
+    rejectedPick: shell.rejectedPick,
+    picking: shell.picking,
+    indexing: shell.indexing,
+    docs: {
+      seq: shell.docs.seq,
+      projectDir: shell.docs.projectDir,
+      fileCount: shell.docs.fileCount,
+      taskCount: shell.docs.model.tasks.length,
+      featureCount: shell.docs.model.features.length,
+      failureCount: shell.docs.failures.length,
+    },
+  };
 }
 
 function buildEcho(next: DocsModelState): ModelUpdateEcho {
@@ -459,6 +536,19 @@ export async function startDocsWatcher(): Promise<void> {
         apply: applyDocsPayload,
         getState: () => shell.docs,
       };
+      // T-041: the same gate, the same statement — a served DEV bundle
+      // can reach every shell phase the shipped app reaches, because it
+      // is handed the payloads Rust would have sent and runs the shell's
+      // own reducers on them. Nothing here is new IPC and nothing here
+      // exists in a packaged app: `isTauri` fences the runtime and
+      // `import.meta.env.DEV` fences the build (vite replaces it with
+      // `false` for `npm run build`, so Rollup drops the whole block —
+      // asserted against the built bundle in test/shell-harness.test.ts).
+      window.__nputerShellHarness = {
+        applyProjectStatus,
+        applyPickOutcome: commitPickOutcome,
+        getShell: shellHarnessSnapshot,
+      };
       console.info("[nputer] no Tauri IPC detected — browser dev harness active");
     }
     return;
@@ -511,22 +601,31 @@ async function runPicker(command: string): Promise<void> {
   if (!isTauri || shell.picking) return;
   setShell({ picking: true });
   try {
-    const outcome = await invoke<PickOutcomePayload>(command);
-    const before = shell;
-    const next = reducePickOutcome(before, outcome);
-    if (next !== before) {
-      shell = next;
-      for (const callback of listeners) callback();
-      // Only a real snapshot advances the docs seq; a project-switch
-      // reset keeps the watermark, so it never fakes an echo.
-      if (next.docs !== before.docs && next.docs.seq > before.docs.seq) {
-        sendEcho(next.docs);
-      }
-    }
+    commitPickOutcome(await invoke<PickOutcomePayload>(command));
   } catch (err) {
     setShell({ rejectedPick: { path: "", message: String(err), probe: null } });
   } finally {
     setShell({ picking: false });
+  }
+}
+
+/**
+ * Apply one picker outcome to the LIVE shell: the pure reducer, then the
+ * notify and echo the store owes. Split out of `runPicker` (T-041) so the
+ * dev harness can drive the same code the real picker drives — everything
+ * after `invoke` answers, and nothing before it. A harness with its own
+ * copy of this would prove nothing about the shipped shell.
+ */
+function commitPickOutcome(outcome: PickOutcomePayload): void {
+  const before = shell;
+  const next = reducePickOutcome(before, outcome);
+  if (next === before) return;
+  shell = next;
+  for (const callback of listeners) callback();
+  // Only a real snapshot advances the docs seq; a project-switch
+  // reset keeps the watermark, so it never fakes an echo.
+  if (next.docs !== before.docs && next.docs.seq > before.docs.seq) {
+    sendEcho(next.docs);
   }
 }
 
