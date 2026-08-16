@@ -97,4 +97,137 @@ header.
 
 ## Implementation notes
 
+Built across TWO sessions of claude-opus-5 @fresh, branch `t050-recover`
+(worktree ../nputer-t050), branch point main@`b623f6a` (the dispatch
+commit). The first session built and committed the whole fix as
+`e50fc1e` and then stalled twice at this very section, leaving no notes
+and no transcript. The second session re-derived every claim below
+FIRST-HAND against the committed tree — nothing here is transcribed
+from the predecessor; where a measurement is quoted it was re-run in
+session two and pasted verbatim.
+
+**Eleven files.** New: `app/test/startup-recovery.test.ts`,
+`app/test/startup-screen.test.tsx`,
+`tools/e2e/tests/startup-recovery.spec.ts`. Modified:
+`app/src/lib/watcher-store.ts`, `app/src/App.tsx`,
+`app/test/watcher-store.test.ts`, `app/test/shell-harness.test.ts`,
+`tools/e2e/fixtures/shell.ts`, `tools/e2e/tests/shell-harness.ts`. Plus
+this card and two suggestions (T-050-s1, T-050-s2).
+
+### The latch — what shape it is, and why that shape
+
+The crux of criterion 1 is that its two halves pull against each other.
+The old code was StrictMode-safe BECAUSE its latch was synchronous
+(`if (started) return; started = true;` above both awaits), and it was
+unretryable for exactly the same reason. Moving a boolean below the
+awaits trades a permanent-strand bug for a double-subscription bug.
+
+**What was chosen: the latch holds the in-flight PROMISE**
+(`watcher-store.ts:508`, `let startup: Promise<void> | null = null`),
+not a boolean and not a tri-state enum.
+
+```ts
+export function startDocsWatcher(): Promise<void> {
+  const inFlight = startup;
+  if (inFlight !== null) return inFlight;
+  const attempt: Promise<void> = runStartup().catch(() => {
+    if (startup === attempt) startup = null;   // release, by IDENTITY
+  });
+  startup = attempt;                            // SYNCHRONOUS
+  return attempt;
+}
+```
+
+Both properties come from one line each, and they are independent:
+
+- **SINGLE-FLIGHT** comes from `startup = attempt` being executed in the
+  same synchronous turn as the call — before any `await` inside
+  `runStartup` can resume. React's double-invoked effect calls twice in
+  one turn; the second call reads a non-null latch and gets THE SAME
+  promise. That is the old code's virtue, kept by the same mechanism
+  (synchronous assignment) rather than by luck.
+- **RETRYABLE** comes from the `.catch` releasing the latch. The old
+  `started` was set once and reset nowhere in the file (verified:
+  `git show b623f6a:app/src/lib/watcher-store.ts` has exactly three
+  mentions of `started`, at :417, :530, :531 — declare, check, set).
+
+Two details that are load-bearing rather than decorative:
+
+1. **Release by IDENTITY** (`if (startup === attempt)`). Without it, a
+   slow attempt that rejects AFTER a newer attempt has latched would
+   unlatch the newer one and a third call would open a second
+   subscription.
+2. **`recordStartupFailure` releases the latch itself, before it
+   notifies** (`watcher-store.ts:625-634`). So the invariant is "a
+   recorded failure ALWAYS means the latch is open" — the retry the
+   screen offers is never a no-op. A subscriber woken by that notify
+   may call `startDocsWatcher` synchronously and start a fresh attempt
+   inside that window; detail 1 is what makes that safe.
+
+Why a promise rather than a `"idle" | "starting" | "started"` enum (the
+other honest shape): a concurrent caller can AWAIT the attempt already
+running instead of returning immediately having done nothing. Both the
+retry affordance and the tests want that — `expect(b).toBe(a)` in
+startup-recovery.test.ts is only expressible because the latch IS the
+promise.
+
+`startDocsWatcher` also stopped being `async` and **never rejects by
+contract**. That is what makes the call site's unchanged
+`void startDocsWatcher()` (App.tsx:548) safe rather than merely silent:
+there is no rejection left to swallow, because the callee — the only
+place that knows WHICH await broke — records it as shell state instead.
+
+### Obligation 1 — the strand, measured against the UNFIXED code
+
+Not transcribed: `app/src/lib/watcher-store.ts` was checked out of
+`b623f6a` into a scratch module and driven directly (the scratch module
+and its drill were deleted; the tree is clean). Verbatim, one run:
+
+```
+=== UNFIXED (b623f6a) · listen rejects ===
+call#1 REJECTED(Error: listen: the event channel refused)
+  after call#1 -> {"phase":"loading","listenCalls":1,"invokeCalls":0,"screen":"loading","startupFailure":"<field does not exist>"}
+call#2 (boundary healed) resolved
+  after call#2 -> {"phase":"loading","listenCalls":1,"invokeCalls":0,"screen":"loading","startupFailure":"<field does not exist>"}
+call#3 resolved
+  after call#3 -> {"phase":"loading","listenCalls":1,"invokeCalls":0,"screen":"loading","startupFailure":"<field does not exist>"}
+
+=== UNFIXED (b623f6a) · invoke rejects ===
+call#1 REJECTED(Error: docs_snapshot: the command was refused)
+  after call#1 -> {"phase":"loading","listenCalls":1,"invokeCalls":1,"screen":"loading","startupFailure":"<field does not exist>"}
+call#2 (boundary healed) resolved
+  after call#2 -> {"phase":"loading","listenCalls":1,"invokeCalls":1,"screen":"loading","startupFailure":"<field does not exist>"}
+```
+
+Read it precisely. `call#2` **resolves** on the unfixed code — it does
+not throw, it does not retry, it returns at `if (started) return;`
+having touched the boundary zero times. `listenCalls` never leaves 1
+even though the boundary had HEALED before the call. That is the
+permanent strand from a transient failure, and the screen stays
+`loading` — the screenshot @human sent. (`<field does not exist>` is
+literal for the unfixed store: `startupFailure` and `starting` appear
+zero times in `b623f6a:app/src/lib/watcher-store.ts`.)
+
+Same drill, same inputs, against HEAD:
+
+```
+=== HEAD (e50fc1e) · listen rejects, SAME inputs ===
+call#1 resolved
+  after call#1 -> {"phase":"loading","listenCalls":1,"invokeCalls":0,"screen":"startupFailed","startupFailure":{"step":"subscribe","message":"Error: listen: the event channel refused","attempt":1}}
+call#2 (boundary healed) resolved
+  after call#2 -> {"phase":"open","listenCalls":2,"invokeCalls":1,"screen":"board"}
+
+=== HEAD (e50fc1e) · invoke rejects, SAME inputs ===
+call#1 resolved
+  after call#1 -> {"phase":"loading","listenCalls":1,"invokeCalls":1,"screen":"startupFailed","startupFailure":{"step":"snapshot","message":"Error: docs_snapshot: the command was refused","attempt":1}}
+call#2 (boundary healed) resolved
+  after call#2 -> {"phase":"open","listenCalls":2,"invokeCalls":2,"screen":"board"}
+```
+
+`listenCalls` goes 1 -> 2: the retry genuinely re-subscribed. The phase
+reaches `open` and the screen reaches `board` — recovered, from both
+failures, with the same call that used to do nothing. (`startupFailure`
+is `null` after recovery in both cases; the drill's `??` printed the
+same placeholder for null, so it is stated here rather than shown.)
+
 ## Verdicts
