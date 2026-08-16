@@ -190,14 +190,40 @@ are durably recorded in the task file's implementation notes and in
 C-13's component intent file. **T-023-s2 absorbed** (Absorbs line +
 `git rm` of the suggestion file, T-016 encoding).
 
+T-036 (CI token least privilege, S, .github/ + tools/e2e/) done and
+merged in the same breath — S-TIER, so executor + tests and the
+ORCHESTRATOR merged it directly (T-016 precedent; `review:
+self-verified` is the honest floor, stamped rather than left empty —
+T-011-s3's lesson). ci.yml now declares `permissions: contents: read`
+at workflow scope, so GITHUB_TOKEN's scope is a fact in this repo
+instead of a checkbox in a web UI. Taken NOW deliberately: the
+workflow is dormant, so this was an edit against a file nobody has
+run; after the first push it would be an edit against a live
+credential. The parity spec pins it three ways and the executor
+proved the third assertion is independent by planting a job-level
+`packages: write` BESIDE a redundant `contents: read` — assertions 1
+and 2 both pass there and only the document walker catches it, naming
+`jobs.linux.permissions grants packages: write`. Five mutation shapes
+in all (top-level widening, job-level extra scope, job-level write,
+step-level id-token, `write-all` shorthand), each failing exactly one
+test with the other 16 green. Suites on merged main: parser 159/159 +
+tsc, app 432/432, cargo 129 + 2 ignored, E2E lane 16 → **17**. Graph
+practice, TENTH exercise: fires by the letter (`.ts` under tools/) and
+is a proven no-op — sha256 966d73b6… identical before and after,
+`git status docs/architecture/` empty, because `.nputerignore`'s
+`tools/` line holds (the T-020 verifier's negative control showed
+deleting that line makes self_graph FAIL, so the exclusion is
+load-bearing). Absorbs T-020-s4; T-036-s1 filed (the assertions read
+ONLY ci.yml, so a second workflow file would silently inherit the
+repo default again — and its author would never see the rule, which
+lives as a comment in the file they are not editing).
+
 ## In progress / broken right now
-OVERNIGHT AUTONOMOUS RUN (human granted 2026-08-16 night):
-- T-026 (genesis entry, M, app-shell) in ../nputer-t026 —
-  VERIFICATION (its card on main still reads `building`; the branch
-  carries the build stamp `claude-opus-5 @fresh`). This is the card
-  that mounts T-024's pane and completes milestone 3's first slice.
-- T-036 (CI token least privilege, S, .github/ + tools/e2e/) BUILDING.
-The t024 worktree is removed; its branch `t024-genesis-lens` is KEPT.
+- T-026 (genesis entry, M, app-shell) in ../nputer-t026 — **VERIFIED
+  APPROVED** (`f5047df`), awaiting integration; its card on main still
+  reads `building` until the integrator stamps it. This is the card
+  that mounts T-024's pane and COMPLETES MILESTONE 3'S FIRST SLICE.
+The t024 and t036 worktrees are removed; their branches are KEPT.
 Nothing broken. Main tree clean.
 
 LAUNCH ITEM, carried forward — **watch the first CI run** (T-020). At

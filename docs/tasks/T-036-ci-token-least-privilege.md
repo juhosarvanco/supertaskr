@@ -5,14 +5,14 @@ feature: F-02
 milestone: 4
 priority: 20
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [.github/, tools/e2e/]
 builder: claude-opus-5
 verifier:
 built_by: claude-opus-5 @fresh
 verified_by:
-review:
+review: self-verified
 ---
 
 Absorbs: T-020-s4. Architect ruling 2026-08-16: least privilege, taken
