@@ -35,6 +35,18 @@ use std::time::Duration;
 fn main() {
     let argv: Vec<String> = std::env::args().collect();
 
+    // T-047: THE TATTLE. If this binary is executed AT ALL — including by
+    // the `--version` probe, which is what a poisoned `agent-paths.json`
+    // reaches FIRST, before any turn — it writes a file naming its own
+    // argv. The poisoned-cache proof is the ABSENCE of that file: a cached
+    // path the runner refuses is a path that never became a process.
+    if let Ok(tattle) = std::env::var("NPUTER_FAKE_TATTLE") {
+        if let Some(parent) = Path::new(&tattle).parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        let _ = fs::write(&tattle, format!("EXECUTED {argv:?}\n"));
+    }
+
     // The version probe: answer and exit, without disturbing the turn
     // dumps (the runner probes the version at every resolution).
     if argv.iter().any(|a| a == "--version") {

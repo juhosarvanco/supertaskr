@@ -13,6 +13,7 @@ use std::sync::atomic::AtomicU64;
 use std::sync::{mpsc, Arc};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+use nputer_lib::agent::adapter;
 use nputer_lib::agent::runner::{RunEvent, RunnerConfig, TurnError};
 use nputer_lib::agent::{
     self, sessions, CancelOutcome, GenesisStatus, Phase, SendOutcome, StartOutcome,
@@ -65,6 +66,9 @@ struct Options<'a> {
     /// line. `None` leaves the fake's own default (the T-025 verifier's
     /// exact injection).
     session_id: Option<&'a str>,
+    /// T-047: the `model` the fake puts in its init line. `None` leaves
+    /// the fake's own `fake-model-1`.
+    model: Option<String>,
 }
 
 impl Default for Options<'_> {
@@ -77,6 +81,7 @@ impl Default for Options<'_> {
             start_timeout: Duration::from_millis(1500),
             stall_timeout: Duration::from_millis(1500),
             session_id: None,
+            model: None,
         }
     }
 }
@@ -107,6 +112,9 @@ fn harness(tag: &str, opts: Options<'_>) -> Harness {
     ];
     if let Some(id) = opts.session_id {
         extra_env.push(("NPUTER_FAKE_SESSION_ID".to_string(), id.to_string()));
+    }
+    if let Some(model) = &opts.model {
+        extra_env.push(("NPUTER_FAKE_MODEL".to_string(), model.clone()));
     }
 
     let cfg = RunnerConfig {
@@ -1170,6 +1178,408 @@ fn a_hostile_resume_id_handed_straight_to_the_runner_spawns_nothing() {
     let argv = read_argv(&h.dump, 1);
     let idx = argv.iter().position(|a| a == "--resume").expect("resumed");
     assert_eq!(argv[idx + 1], "e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77");
+}
+
+// ==== T-047: what the runner trusts from disk ===========================
+
+/// Plant `agent-paths.json` BY HAND — a `format!` template, with no runner
+/// code involved in producing it. This is what an attacker with write
+/// access to the app config dir leaves behind, and it is deliberately not
+/// built through `write_cache`: a test that can only produce files the
+/// code already writes cannot test what the code refuses to read.
+fn plant_agent_paths(config: &Path, path: &str, login_path: Option<&str>) {
+    fs::create_dir_all(config).expect("mk config");
+    let entry = match login_path {
+        Some(lp) => format!(r#"{{"path":{path:?},"login_path":{lp:?}}}"#),
+        None => format!(r#"{{"path":{path:?}}}"#),
+    };
+    fs::write(config.join("agent-paths.json"), format!(r#"{{"entries":{{"claude":{entry}}}}}"#))
+        .expect("plant agent-paths.json");
+}
+
+/// A REAL, executable binary at `dest` — the fake agent, copied. Given
+/// `NPUTER_FAKE_TATTLE` it writes that file the instant it is executed, by
+/// ANY argv including `--version`, which is what the resolve-time
+/// `probe_version` reaches first.
+fn plant_binary(dest: &Path) {
+    fs::create_dir_all(dest.parent().expect("parent")).expect("mk bin dir");
+    fs::copy(fake_agent_bin(), dest).expect("copy the fake agent");
+}
+
+/// A cfg that resolves through the CACHE rather than through the seam:
+/// `binary_override` is None, so `resolve_cli` reads `agent-paths.json`.
+/// `probe_login_shell` stays false, so no test can spawn a login shell.
+fn cache_cfg(root: &Path, extra: Vec<(String, String)>, path_override: Option<&str>) -> RunnerConfig {
+    RunnerConfig {
+        binary_override: None,
+        path_override: path_override.map(str::to_string),
+        extra_env: extra,
+        probe_login_shell: false,
+        config_dir: Some(root.join("config")),
+        start_timeout: Duration::from_millis(1500),
+        stall_timeout: Duration::from_millis(1500),
+        coalesce: Duration::from_millis(40),
+        kill_grace: Duration::from_millis(300),
+        probe_timeout: Duration::from_secs(5),
+        ..RunnerConfig::default()
+    }
+}
+
+fn wired(project: &Path, cfg: RunnerConfig) -> (WatchState, agent::AgentState, mpsc::Receiver<RunEvent>) {
+    let (ctl, ctl_rx) = mpsc::channel::<WatchCtl>();
+    std::mem::forget(ctl_rx);
+    let watch = WatchState::new(Some(project.to_path_buf()), Arc::new(AtomicU64::new(0)), ctl);
+    let (tx, events) = mpsc::channel();
+    let agent = agent::AgentState::new(cfg, move |event| {
+        let _ = tx.send(event);
+    });
+    (watch, agent, events)
+}
+
+/// **THE T-047 HEADLINE (criterion 2, T-039-s1): A POISONED
+/// `agent-paths.json` EXECUTES NOTHING.**
+///
+/// What the pre-fix code did, measured before the fix was written — the
+/// cached path was gated on `is_executable_file` alone and then handed
+/// straight to `probe_version`, which is a `Command::new`:
+///
+///     [t047-probe-b/traversal] resolve_cli -> Ok(ResolvedCli { path: "…/bin/../evil/claude", … })
+///     [t047-probe-b/traversal] TATTLE FILE EXISTS: true
+///     [t047-probe-b/traversal] tattle says: EXECUTED ["…/bin/../evil/claude", "--version"]
+///
+/// …and through `start_genesis`, a whole turn:
+///
+///     [t047-probe-b2] start_genesis -> Started { turn: 1 }
+///     [t047-probe-b2] TATTLE FILE EXISTS: true
+///     [t047-probe-b2] tattle says: EXECUTED ["…/bin/../evil/claude", "-p", "--output-format", …]
+///
+/// The tattle-file's ABSENCE is the whole assertion: a refused path is a
+/// path that never became a process. Driven at all three doors, because
+/// `resolve_cli` runs from every one of them.
+#[test]
+fn a_poisoned_agent_paths_json_executes_nothing_at_any_door() {
+    for (label, planted) in [
+        // Traversal: absolute, correctly named, and pointing somewhere
+        // else entirely. The OS resolves `..` at exec time.
+        ("traversal", "bin/../evil/claude"),
+        // Absolute, real, executable — and not the adapter's binary name,
+        // so no probe could ever have produced it.
+        ("misnamed", "evil/tattler"),
+        // Relative: resolves against whatever CWD the OS handed the app.
+        ("relative", "evil/claude"),
+    ] {
+        let root = std::env::temp_dir().join(format!(
+            "nputer-t047-poison-{}-{}-{}",
+            label,
+            std::process::id(),
+            now_ms()
+        ));
+        let project = root.join("project");
+        let tattle = root.join("tattle.txt");
+        fs::create_dir_all(&project).expect("mk project");
+        fs::create_dir_all(root.join("bin")).expect("mk bin");
+        plant_binary(&root.join("evil/claude"));
+        plant_binary(&root.join("evil/tattler"));
+
+        let planted_abs = if label == "relative" {
+            planted.to_string()
+        } else {
+            root.join(planted).display().to_string()
+        };
+        plant_agent_paths(&root.join("config"), &planted_abs, None);
+
+        let extra = vec![
+            ("NPUTER_FAKE_TATTLE".to_string(), tattle.display().to_string()),
+            ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
+        ];
+
+        // DOOR 1 — `resolve_cli` itself, where `probe_version` spawns.
+        let cfg = cache_cfg(&root, extra.clone(), Some("/nputer-test-path/bin"));
+        match nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter()) {
+            Err(nputer_lib::agent::runner::ResolveError::NotFound { probed }) => {
+                assert!(
+                    probed.iter().any(|p| p.starts_with("cached path (refused:")),
+                    "the refusal must NAME the cached entry it discarded: {probed:?}"
+                );
+                assert!(
+                    !probed.iter().any(|p| p.contains("evil")),
+                    "…without a silent fallback to the poisoned value: {probed:?}"
+                );
+            }
+            other => panic!("[{label}] expected a typed NotFound, got {other:?}"),
+        }
+        assert!(
+            !tattle.exists(),
+            "[{label}] THE POISONED BINARY RAN AT RESOLVE TIME: {}",
+            fs::read_to_string(&tattle).unwrap_or_default()
+        );
+
+        // DOOR 2 — `start_genesis`, which resolves live on every start.
+        plant_agent_paths(&root.join("config"), &planted_abs, None);
+        let (watch, agent, _events) = wired(&project, cache_cfg(&root, extra.clone(), Some("/nputer-test-path/bin")));
+        match agent::start_genesis(&watch, &agent) {
+            StartOutcome::CliNotFound { probed } => assert!(
+                probed.iter().any(|p| p.starts_with("cached path (refused:")),
+                "[{label}] {probed:?}"
+            ),
+            other => panic!("[{label}] expected CliNotFound, got {other:?}"),
+        }
+        std::thread::sleep(Duration::from_millis(200));
+        assert!(!tattle.exists(), "[{label}] start_genesis executed the poisoned binary");
+        // Nothing was written on the way to refusing, either.
+        assert!(!sessions::sessions_path(&project).exists(), "[{label}] registry written");
+        assert!(!project.join(".nputer/genesis/kit").exists(), "[{label}] kit materialized");
+
+        let _ = fs::remove_dir_all(&root);
+    }
+}
+
+/// The same poison, planted BETWEEN TURNS — because `resolve_cli` runs on
+/// `send_turn` too, so a file that was clean at start is read again, live,
+/// before every single turn. Turn 1 goes through a LEGITIMATE cache entry,
+/// which is the discriminating half: the gate is one a real probe result
+/// passes.
+#[test]
+fn the_cache_is_re_read_and_re_judged_before_every_turn() {
+    let root = std::env::temp_dir().join(format!(
+        "nputer-t047-betweenturns-{}-{}",
+        std::process::id(),
+        now_ms()
+    ));
+    let project = root.join("project");
+    let dump = root.join("dump");
+    fs::create_dir_all(&project).expect("mk project");
+    fs::create_dir_all(&dump).expect("mk dump");
+    let tattle = root.join("tattle.txt");
+    plant_binary(&root.join("bin/claude"));
+    plant_binary(&root.join("evil/claude"));
+
+    let extra = vec![
+        ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
+        ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
+    ];
+    // Turn 1: a cache entry a fresh probe could genuinely have produced.
+    plant_agent_paths(
+        &root.join("config"),
+        &root.join("bin/claude").display().to_string(),
+        None,
+    );
+    let (watch, agent, events) = wired(&project, cache_cfg(&root, extra, Some("/nputer-test-path/bin")));
+    assert!(
+        matches!(agent::start_genesis(&watch, &agent), StartOutcome::Started { .. }),
+        "a VALID cached entry must still resolve - a gate nobody can pass is not a gate"
+    );
+    wait_completed(&events);
+    let status = loop {
+        let s = agent::status(&agent);
+        if s.phase != Phase::Running {
+            break s;
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(status.native_session_id.as_deref(), Some("fake-session-0001"));
+
+    // Now poison it, mid-session, and send turn 2.
+    plant_agent_paths(
+        &root.join("config"),
+        &root.join("bin/../evil/claude").display().to_string(),
+        None,
+    );
+    fs::write(&root.join("config/tattle-marker"), "x").expect("marker");
+    // The tattle only becomes meaningful from here: turn 1 legitimately
+    // ran the copy at bin/claude, which had no tattle variable set.
+    match agent::send_turn(&watch, &agent, "answer two".into()) {
+        SendOutcome::CliNotFound { probed } => assert!(
+            probed.iter().any(|p| p.starts_with("cached path (refused:")),
+            "{probed:?}"
+        ),
+        other => panic!("expected CliNotFound on turn 2, got {other:?}"),
+    }
+    std::thread::sleep(Duration::from_millis(200));
+    assert!(!tattle.exists(), "the poisoned binary ran on send_turn");
+    assert!(!turn_dump(&dump, 2).exists(), "a second child was spawned at all");
+    // The single-flight latch was released on the typed refusal.
+    assert!(matches!(
+        agent::send_turn(&watch, &agent, "again".into()),
+        SendOutcome::CliNotFound { .. }
+    ));
+
+    let _ = fs::remove_dir_all(&root);
+}
+
+/// **CRITERION 1 (T-039-s1's completely ungated half): THE CACHED LOGIN
+/// PATH NEVER REACHES THE CHILD.**
+///
+/// `cli.login_path` becomes the child's `PATH`, which decides which `git`
+/// and which `cp` the planner's own Bash resolves to — and it used to come
+/// out of `agent-paths.json` verbatim, with no gate at all. Measured
+/// pre-fix, with the hostile element planted in the cache file:
+///
+///     [t047-probe-c] CHILD PATH: /nputer-hostile/bin:/tmp/nputer-attacker-shims
+///     [t047-probe-c] child PATH carries the planted hostile element: true
+///
+/// The arm taken is NOT CACHED AT ALL, so the assertion is that the
+/// planted value reaches nothing, and that what the child does get came
+/// through the probe channel instead.
+#[test]
+fn the_cached_login_path_never_reaches_the_child() {
+    const HOSTILE: &str = "/nputer-hostile/bin:/tmp/nputer-attacker-shims";
+
+    // ARM ONE, the discriminating one: NO `path_override`, so if the cache
+    // were still trusted its `login_path` is exactly what `apply_child_env`
+    // would reach for — as it did, pre-fix.
+    let root = std::env::temp_dir().join(format!(
+        "nputer-t047-cachedpath-{}-{}",
+        std::process::id(),
+        now_ms()
+    ));
+    let project = root.join("project");
+    let dump = root.join("dump");
+    fs::create_dir_all(&project).expect("mk project");
+    fs::create_dir_all(&dump).expect("mk dump");
+    plant_binary(&root.join("bin/claude"));
+    plant_agent_paths(
+        &root.join("config"),
+        &root.join("bin/claude").display().to_string(),
+        Some(HOSTILE),
+    );
+
+    let extra = vec![
+        ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
+        ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
+    ];
+    let (watch, agent, events) = wired(&project, cache_cfg(&root, extra.clone(), None));
+    assert!(matches!(agent::start_genesis(&watch, &agent), StartOutcome::Started { .. }));
+    wait_completed(&events);
+    while agent::status(&agent).phase == Phase::Running {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+
+    let child_path = read_env(&dump, 1).get("PATH").cloned().unwrap_or_default();
+    assert!(
+        !child_path.contains("nputer-hostile") && !child_path.contains("nputer-attacker-shims"),
+        "THE CACHED login_path REACHED THE CHILD'S PATH: {child_path}"
+    );
+    // What it DID get is the live environment's PATH — the documented
+    // fallback when no probe answered — never the file's.
+    assert_eq!(
+        child_path,
+        std::env::var("PATH").unwrap_or_default(),
+        "with no probe channel the child gets what WE have, not what the file said"
+    );
+    let _ = fs::remove_dir_all(&root);
+
+    // ARM TWO: with the probe channel answering (under the seam, that is
+    // `path_override`), the child's PATH is the FRESH value, byte for
+    // byte, while the same hostile element sits in the cache file unread.
+    let root = std::env::temp_dir().join(format!(
+        "nputer-t047-freshpath-{}-{}",
+        std::process::id(),
+        now_ms()
+    ));
+    let project = root.join("project");
+    let dump = root.join("dump");
+    fs::create_dir_all(&project).expect("mk project");
+    fs::create_dir_all(&dump).expect("mk dump");
+    plant_binary(&root.join("bin/claude"));
+    plant_agent_paths(
+        &root.join("config"),
+        &root.join("bin/claude").display().to_string(),
+        Some(HOSTILE),
+    );
+    let extra = vec![
+        ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
+        ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
+    ];
+    let (watch, agent, events) = wired(&project, cache_cfg(&root, extra, Some("/t047-freshly-probed/bin")));
+    assert!(matches!(agent::start_genesis(&watch, &agent), StartOutcome::Started { .. }));
+    wait_completed(&events);
+    while agent::status(&agent).phase == Phase::Running {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    let child_path = read_env(&dump, 1).get("PATH").cloned().unwrap_or_default();
+    assert_eq!(child_path, "/t047-freshly-probed/bin");
+    assert!(
+        fs::read_to_string(root.join("config/agent-paths.json"))
+            .expect("the cache file is still there")
+            .contains("nputer-hostile"),
+        "the planted login_path is still ON DISK - it is simply never read"
+    );
+    let _ = fs::remove_dir_all(&root);
+}
+
+/// **CRITERION 4 (T-039-s2): THE `model` OFF THE INIT LINE IS BOUNDED.**
+///
+/// Measured pre-fix, from the same init line the session id rides:
+///
+///     [t047-probe-d/oversize] registry bytes: 200290 B, stored model len 200000 B
+///     [t047-probe-d/control chars] stored model: "claude\u{1b}[2K\u{7}-opus\nSTOLEN"
+///
+/// A hostile model is REFUSED — never coerced, never truncated into
+/// something acceptable — and the turn stands, because the answer the
+/// planner just wrote is still good and a cosmetic field is not worth
+/// destroying an interview turn over (the recorded asymmetry with the
+/// session id, which MUST fail its turn because it cannot be resumed).
+#[test]
+fn a_hostile_init_line_model_is_refused_and_a_real_one_round_trips() {
+    for (tag, model) in [
+        ("oversize", "M".repeat(200_000)),
+        ("control-chars", "claude\u{1b}[2K\u{7}-opus\nSTOLEN".to_string()),
+        ("non-ascii", "clau\u{202e}de-opus".to_string()),
+    ] {
+        let h = harness(
+            &format!("model-{tag}"),
+            Options { model: Some(model.clone()), ..Options::default() },
+        );
+        assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+        // THE TURN STANDS: a refused model does not fail the turn.
+        wait_completed(&h.events);
+        let status = settle(&h.agent);
+        assert_eq!(
+            status.native_session_id.as_deref(),
+            Some("fake-session-0001"),
+            "[{tag}] the id off the SAME init line still rides"
+        );
+
+        let registry = sessions::load(&h.project);
+        assert_eq!(registry.sessions[0].model, None, "[{tag}] registry model");
+        let raw = fs::read_to_string(sessions::sessions_path(&h.project)).expect("registry file");
+        assert!(
+            raw.len() < 1_000,
+            "[{tag}] the registry is {} bytes - the model was not bounded",
+            raw.len()
+        );
+        // Not coerced into something acceptable, either: the field is
+        // ABSENT (serde skips a `None`), not present-and-shortened, and no
+        // fragment of the hostile value survives anywhere in the bytes.
+        assert!(
+            !raw.contains("\"model\""),
+            "[{tag}] the model key is written at all: {raw}"
+        );
+        for fragment in ["MMMM", "STOLEN", "\u{1b}", "\u{202e}", "1b5b", "202e"] {
+            assert!(
+                !raw.contains(fragment),
+                "[{tag}] {fragment:?} survived into the registry: {raw}"
+            );
+        }
+    }
+
+    // The discriminating half: real model names still round-trip into
+    // `.nputer/sessions.json` untouched, including provider spellings the
+    // session-id character class would have refused.
+    for model in ["claude-opus-5", "us.anthropic.claude-3-5-sonnet-20241022-v2:0"] {
+        let h = harness(
+            "model-good",
+            Options { model: Some(model.to_string()), ..Options::default() },
+        );
+        assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+        wait_completed(&h.events);
+        settle(&h.agent);
+        assert_eq!(sessions::load(&h.project).sessions[0].model.as_deref(), Some(model));
+        assert!(fs::read_to_string(sessions::sessions_path(&h.project))
+            .expect("registry file")
+            .contains(model));
+    }
 }
 
 // ---- the one env-gated real smoke (§7) ---------------------------------
