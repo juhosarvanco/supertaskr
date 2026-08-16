@@ -3215,8 +3215,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:d406bc7dd36ba45aa52928424f5059e66c1ec16a92b3b08d1ef293e09a67a65d",
-      "loc": 560,
+      "hash": "blake3:da4bfcb95ee9f1e6ef50de405b194e6120a5df8978ef99bdedf8ab9c79815a86",
+      "loc": 659,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -3329,6 +3329,16 @@
           ]
         },
         {
+          "id": "s:app/src/lib/watcher-store.ts#ShellHarnessSnapshot",
+          "name": "ShellHarnessSnapshot",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            349,
+            366
+          ]
+        },
+        {
           "id": "s:app/src/lib/watcher-store.ts#ShellPhase",
           "name": "ShellPhase",
           "kind": "type",
@@ -3354,8 +3364,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            401,
-            414
+            478,
+            491
           ]
         },
         {
@@ -3364,8 +3374,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            429,
-            445
+            506,
+            522
           ]
         },
         {
@@ -3374,8 +3384,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            386,
-            399
+            463,
+            476
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#commitPickOutcome",
+          "name": "commitPickOutcome",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            619,
+            630
           ]
         },
         {
@@ -3384,8 +3404,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            373,
-            375
+            424,
+            426
           ]
         },
         {
@@ -3394,8 +3414,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            352,
-            352
+            403,
+            403
           ]
         },
         {
@@ -3404,8 +3424,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            377,
-            379
+            428,
+            430
           ]
         },
         {
@@ -3414,8 +3434,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            534,
-            536
+            633,
+            635
           ]
         },
         {
@@ -3424,8 +3444,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            365,
-            365
+            416,
+            416
           ]
         },
         {
@@ -3434,8 +3454,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            489,
-            491
+            579,
+            581
           ]
         },
         {
@@ -3444,8 +3464,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            478,
-            480
+            568,
+            570
           ]
         },
         {
@@ -3494,8 +3514,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            549,
-            560
+            648,
+            659
           ]
         },
         {
@@ -3504,8 +3524,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            510,
-            531
+            600,
+            610
           ]
         },
         {
@@ -3524,8 +3544,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            418,
-            427
+            495,
+            504
           ]
         },
         {
@@ -3534,8 +3554,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            381,
-            384
+            432,
+            435
           ]
         },
         {
@@ -3544,8 +3564,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            354,
-            364
+            405,
+            415
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#shellHarnessSnapshot",
+          "name": "shellHarnessSnapshot",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            442,
+            461
           ]
         },
         {
@@ -3554,8 +3584,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            452,
-            470
+            529,
+            560
           ]
         },
         {
@@ -3564,8 +3594,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            499,
-            501
+            589,
+            591
           ]
         },
         {
@@ -3574,8 +3604,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            366,
-            366
+            417,
+            417
           ]
         },
         {
@@ -3584,8 +3614,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            368,
-            371
+            419,
+            422
           ]
         }
       ]
@@ -3738,8 +3768,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:4c9dee5f152033fe7fe31470382b931d196648214be4445741dabc046bce8d10",
-      "loc": 697,
+      "hash": "blake3:cc51687d21c81b3b6210796d22e9d6a8171f00466cb211e5a13907d934af92dc",
+      "loc": 756,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -3747,8 +3777,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            384,
-            384
+            438,
+            438
           ]
         },
         {
@@ -3757,8 +3787,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            383,
-            383
+            437,
+            437
           ]
         },
         {
@@ -3767,8 +3797,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            349,
-            349
+            403,
+            403
           ]
         },
         {
@@ -3777,8 +3807,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            355,
-            370
+            409,
+            424
           ]
         },
         {
@@ -3787,8 +3817,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            372,
-            381
+            426,
+            435
           ]
         },
         {
@@ -3797,8 +3827,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            351,
-            353
+            405,
+            407
           ]
         }
       ]
@@ -4804,8 +4834,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:e4d8765f941900d156a4af90da8656e49c572692d26e26e67f0171b93ddf7e86",
-      "loc": 200,
+      "hash": "blake3:69d79e4908d5dda5bc2717b545822332a8109032d8d3090452fb0f914db34e1e",
+      "loc": 204,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -5513,6 +5543,55 @@
           "range": [
             45,
             46
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/shell-harness.test.ts",
+      "path": "app/test/shell-harness.test.ts",
+      "lang": "ts",
+      "hash": "blake3:6ad938cabfb55112b1b114e391ebd7d533e41ae552fd88fa13c9c0fdb8e0eada",
+      "loc": 312,
+      "symbols": [
+        {
+          "id": "s:app/test/shell-harness.test.ts#StoreModule",
+          "name": "StoreModule",
+          "kind": "type",
+          "exported": false,
+          "range": [
+            52,
+            52
+          ]
+        },
+        {
+          "id": "s:app/test/shell-harness.test.ts#TAURI",
+          "name": "TAURI",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            54,
+            54
+          ]
+        },
+        {
+          "id": "s:app/test/shell-harness.test.ts#ipc",
+          "name": "ipc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            33,
+            36
+          ]
+        },
+        {
+          "id": "s:app/test/shell-harness.test.ts#loadStore",
+          "name": "loadStore",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            59,
+            65
           ]
         }
       ]
@@ -8916,6 +8995,43 @@
       ]
     },
     {
+      "from": "f:app/test/shell-harness.test.ts",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import"
+    },
+    {
+      "from": "f:app/test/shell-harness.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync",
+        "statSync"
+      ]
+    },
+    {
+      "from": "f:app/test/shell-harness.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "resolve"
+      ]
+    },
+    {
+      "from": "f:app/test/shell-harness.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it",
+        "vi"
+      ]
+    },
+    {
       "from": "f:app/test/watcher-store.test.ts",
       "to": "f:app/src/lib/docs-model.ts",
       "kind": "import",
@@ -12229,6 +12345,30 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/watcher-store.ts#ShellHarnessSnapshot",
+      "to": "s:app/src/lib/watcher-store.ts#PlanProbePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#ShellHarnessSnapshot",
+      "to": "s:app/src/lib/watcher-store.ts#RejectedPick",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#ShellHarnessSnapshot",
+      "to": "s:app/src/lib/watcher-store.ts#ScreenModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#ShellHarnessSnapshot",
+      "to": "s:app/src/lib/watcher-store.ts#ShellPhase",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/watcher-store.ts#ShellState",
       "to": "s:app/src/lib/docs-model.ts#DocsModelState",
       "kind": "type_ref",
@@ -12310,6 +12450,24 @@
       "from": "s:app/src/lib/watcher-store.ts#buildEcho",
       "to": "s:app/src/lib/watcher-store.ts#ModelUpdateEcho",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#commitPickOutcome",
+      "to": "s:app/src/lib/watcher-store.ts#PickOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#commitPickOutcome",
+      "to": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#commitPickOutcome",
+      "to": "s:app/src/lib/watcher-store.ts#sendEcho",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -12428,13 +12586,7 @@
     },
     {
       "from": "s:app/src/lib/watcher-store.ts#runPicker",
-      "to": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/lib/watcher-store.ts#runPicker",
-      "to": "s:app/src/lib/watcher-store.ts#sendEcho",
+      "to": "s:app/src/lib/watcher-store.ts#commitPickOutcome",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -12484,6 +12636,18 @@
       "from": "s:app/src/lib/watcher-store.ts#shell",
       "to": "s:app/src/lib/watcher-store.ts#ShellState",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#shellHarnessSnapshot",
+      "to": "s:app/src/lib/watcher-store.ts#ShellHarnessSnapshot",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#shellHarnessSnapshot",
+      "to": "s:app/src/lib/watcher-store.ts#selectScreen",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -13213,6 +13377,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/shell-harness.test.ts#loadStore",
+      "to": "s:app/test/shell-harness.test.ts#StoreModule",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/watcher-store.test.ts#openProjectA",
       "to": "s:app/src/lib/docs-model.ts#DocsModelState",
       "kind": "type_ref",
@@ -13887,8 +14057,8 @@
     }
   ],
   "stats": {
-    "files": 88,
-    "symbols": 595,
-    "edges": 990
+    "files": 89,
+    "symbols": 602,
+    "edges": 1003
   }
 }
