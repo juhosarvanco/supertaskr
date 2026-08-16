@@ -277,9 +277,9 @@ bullet is where every divergence … has to be written down". Reverted;
 
     lint-tokens: clean (90 files scanned under app/src, app/test, tools/e2e)   exit 0
 
-90 files = 38 app/src + 31 app/test + 21 tools/e2e, minus the one
-by-name exclusion. **Zero hits, zero allowlist, nothing excluded to make
-it green** — the only exclusion is the lint's own script, and it is
+90 files = 38 app/src + 31 app/test + 21 tools/e2e (22 source files there,
+less the one by-name exclusion). **Zero hits, zero allowlist, nothing
+excluded to make it green** — the only exclusion is the lint's own script, and it is
 excluded for a reason that is asserted rather than asserted-and-hoped
 (drill 6). Nothing was found in app/test that I declined to fix, because
 nothing was found: the criterion's "green at zero allowlist" is MET.
