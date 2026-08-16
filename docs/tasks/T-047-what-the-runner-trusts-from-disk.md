@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [app-agent]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-039-s1, T-039-s2, T-039-s4. Triage 2026-08-16 (architect,
@@ -540,3 +540,340 @@ the graph in memory and compares it to the committed bytes.
   inside an argv-shape gate.
 
 ## Verdicts
+
+2026-08-16 — claude-opus-5 @fresh (verifier, same-model review):
+**APPROVED.** Seven criteria met. Every headline claim was re-derived from
+scratch — the verifier wrote its OWN tattler (a `/bin/sh` script with the
+tattle path baked into its TEXT, so it survives `env_clear()` and does not
+depend on `NPUTER_FAKE_TATTLE` reaching the child), planted its OWN
+`agent-paths.json` shapes by hand, checked the pre-fix `adapter.rs` +
+`runner.rs` out of `2961599` and ran the same probe file against both
+trees. The validator was then attacked with eighteen path shapes, the
+widened argv rule with twelve, and the `--help` tables audited token for
+token against a first-hand `claude --help`. **Two new suggestions filed
+(s5, s6), both earned by reproduction. Nothing found rises to a criterion
+failure.**
+
+**Branch point re-derived**: `git merge-base HEAD main` = `2961599`. Main
+has since moved to `94ee306` (T-046 merged); `git merge-tree` over
+`2961599..HEAD` vs `2961599..main` produces **zero conflict markers**.
+
+**No model was called by the verification, and one incident is recorded
+rather than hidden** — see s6. `claude --help` and `claude --version` only;
+the `#[ignore]`d smoke was never run; the boot-check script was never run;
+e2e ran on its own port **14547**, and 1420 stayed the human's
+(`node` pid 90127 LISTEN, untouched).
+
+**CRITERION 1 — the cached login PATH stops being trusted as stored.**
+Pre-fix, verifier's own hostile element planted in the cache file, no
+`path_override` so the file is the only PATH source:
+
+    [VC] CHILD PATH: /verifier-hostile/bin:/tmp/verifier-attacker-shims
+    [VC] child PATH carries the planted hostile element: true
+
+Post-fix, same probe, same planted file, unchanged:
+
+    [VC] CHILD PATH: /Users/ujju/.local/bin:/opt/homebrew/…   (the live environment's)
+    [VC] child PATH carries the planted hostile element: false
+    [VC] our own PATH == child PATH: true
+    [VC] cache file still holds the planted login_path: true
+
+The last line is the one that matters twice: refusing to READ a value is
+not a licence to rewrite the user's file, and the field is still there,
+unread. **Structural unreachability re-derived rather than accepted**: a
+planted `login_path` still parses (serde ignores unknown fields), `grep`
+finds no `login_path` field on any live `Deserialize` type (`ResolvedCli`
+carries one but derives no serde), and a read-modify-write drops it.
+**The PATH's real source was then proved WITHOUT the seam**: `$SHELL`
+pointed at a verifier-written script that answers `-l -c` with a PATH
+nothing else on the machine has, `probe_login_shell: true`,
+`path_override: None`:
+
+    [ATK-probe] CHILD PATH: /t047v-freshly-probed/bin
+    [ATK-probe] came from the live probe: true
+    [ATK-probe] carries the cached hostile element: false
+
+**The measurement holds and the re-probe did not land somewhere hotter.**
+Independently timed on this machine: `zsh -l -c 'echo …$PATH'` 7.7 / 5.6 /
+5.3 / 4.8 / 5.0 / 5.4 ms against `claude --version` 57.1 / 44.8 / 42.9 /
+42.1 / 41.2 / 41.7 ms — the builder's 6–8 vs 47–50 reproduced. Frequency
+was measured, not read: a counting `$SHELL` recorded **exactly one spawn
+per turn** (1 at `start_genesis`, 1 at `send_turn`), and — with the cache
+file deleted — still exactly one, the same shell simply running the wider
+script. That is the sharper form of s1's argument: the cache saves **zero**
+shell spawns, not one.
+
+**CRITERION 2, THE HEADLINE — a poisoned `agent-paths.json` executes
+nothing.** Verifier's own tattler, verifier's own JSON, both doors.
+Pre-fix:
+
+    [VB/traversal] resolve_cli -> Ok(ResolvedCli { path: "…/bin/../evil/claude", version: Some("9.9.9 (Verifier Tattler)"), login_path: Some("/verifier-hostile/bin") })
+    [VB/traversal] TATTLE EXISTS AFTER RESOLVE: true
+    [VB/traversal] tattle: VERIFIER-TATTLE argv0=…/bin/../evil/claude args=--version
+    [VB/traversal] start_genesis -> Started { turn: 1 }
+    [VB/traversal] TATTLE EXISTS AFTER START: true
+    [VB/misnamed]  TATTLE EXISTS AFTER RESOLVE: true
+
+Post-fix, same probe file, unchanged:
+
+    [nputer] agent: refusing the cached claude path in agent-paths.json: it carries a '.' or '..' component - discarding it and re-probing. Refused: …/bin/../evil/claude
+    [VB/traversal] resolve_cli -> Err(NotFound { probed: ["cached path (refused: it carries a '.' or '..' component)", "login shell `command -v claude`", "PATH lookup for `claude`"] })
+    [VB/traversal] TATTLE EXISTS AFTER RESOLVE: false
+    [VB/traversal] start_genesis -> CliNotFound { probed: ["cached path (refused: …)", …] }
+    [VB/traversal] TATTLE EXISTS AFTER START: false
+    [VB/traversal] cache file after: {   "entries": {} }
+    [VB/misnamed]  resolve_cli -> Err(NotFound { probed: ["cached path (refused: its file name is not 'claude')", …] })
+    [VB/relative]  resolve_cli -> Err(NotFound { probed: ["cached path (refused: it is not an absolute path)", …] })
+
+Typed at both doors, the discarded entry NAMED in `probed`, the poisoned
+path never relayed into the typed outcome, the entry gone from the file,
+no silent fallback.
+
+**Re-judged before EVERY turn — verified, not read.** Turn 1 through a
+legitimate entry, poisoned mid-session with the verifier's own JSON:
+
+    [ATK-turn] turn 1 -> Started { turn: 1 }
+    [ATK-turn] turn 2 (poisoned between turns) -> CliNotFound { probed: ["cached path (refused: it carries a '.' or '..' component)", …] }
+    [ATK-turn] tattle after turn 2: false
+    [ATK-turn] turn-2 dump exists: false
+    [ATK-turn] latch released (a second send also refuses): true
+
+`resolve_cli` has exactly two production call sites (`mod.rs:278`
+`start_genesis`, `mod.rs:375` `send_turn`) and no spawn path bypasses it.
+
+**The WRITE side is gated too, and it discriminates.** A probe result
+carrying a `.` component was USED for its own resolve and NOT written; a
+clean one was written with a one-key entry:
+
+    [ATK-write] probe result USED for this resolve: Ok("…/probe/./bin/claude")
+    [ATK-write] cache file after: None
+    [ATK-write] control cache file: Some("{ \"entries\": { \"claude\": { \"path\": \"…/probe/bin/claude\" } } }")
+
+**ATTACKS ON THE VALIDATOR — eighteen shapes, what survived.** Refused:
+`..`, `.`, relative, `~/…`, `$HOME/…`, empty, a DIRECTORY named `claude`
+(`NotExecutable`), a 0644 file, a trailing slash, `CLAUDE` (byte-exact
+name — stricter than this case-insensitive filesystem), a NUL inside the
+path (`NotExecutable`) and a NUL in the name (`WrongName`), an ANSI escape
+in the name. **Survived, all inside the residual the builder's own header
+records** — "an absolute, traversal-free path named `claude` pointing at
+an attacker's binary still passes": a **symlink** named `claude` pointing
+elsewhere (the gate does not `canonicalize`), a real `claude` inside a
+directory whose NAME carries a newline, `//double//slash`, and a
+**setuid** binary (unexamined — and worth nothing to an attacker who
+already owns the config dir). **TOCTOU adds nothing**: the gate never
+checks identity, so an attacker with write access to the referenced
+directory does not need to win a race — demonstrated directly by leaving
+the path alone and swapping the FILE, after which the binary ran the full
+resume argv. That is the residual, it is disclosed in the function header,
+and s1 is the task that closes it.
+
+**Log forging refused.** A planted path carrying `\u{1b}[2K` and two
+newlines spelling a fake `[nputer] agent:` record printed through
+`sanitize_for_log` as literal escapes on one physical line — `cat -v`
+confirms no raw ESC byte reaches the terminal, and the `probed` vector
+carries only the reason, never the bytes.
+
+**CRITERION 3 — `is_executable_file` no longer defaults to true off-unix.**
+Source-level only (`adapter.rs:686`, `false`; the diff shows `true` →
+`false`), and only `aarch64-apple-darwin` is installed, so no cross-target
+check was possible. The unix branch's two directions are pinned and were
+re-run.
+
+**CRITERION 4 — the model is bounded.** Pre-fix, three hostile init-line
+models through the live capture path:
+
+    [VD/oversize] registry bytes: 200290 B, stored model len 200000 B, has "model" key: true
+    [VD/control]  stored model: Some("claude\u{1b}[2K\u{7}-opus\nSTOLEN")
+    [VD/rtl-override] stored model: Some("clau\u{202e}de-opus")
+
+Post-fix, unchanged probe:
+
+    [nputer] agent: the CLI's init line carried an unusable model name (it is 200000 bytes, past the 128-byte bound) - the turn stands, the name is not recorded
+    [VD/oversize] phase=Idle session_id=Some("fake-session-0001")
+    [VD/oversize] registry bytes: 271 B, stored model len 0 B, has "model" key: false
+    [VD/control]  registry bytes: 271 B, has "model" key: false
+    [VD/rtl-override] registry bytes: 271 B, has "model" key: false
+
+The turn STANDS in every case, the id off the same init line still rides,
+and the key is **absent** rather than shortened — nothing was coerced. The
+discriminating half round-trips, including a long Bedrock-style ARN the
+session-id class would have refused:
+
+    [VD/real] stored model: Some("claude-opus-5")
+    [VD/bedrock-arn] stored model: Some("arn:aws:bedrock:us-east-1:123456789012:inference-profile/us.anthropic.claude-3-5-sonnet-20241022-v2:0")   (101 B)
+
+**CRITERION 5 — the blind tail, and ONE copy of the length rule.**
+Pre-fix, template of 2, assembled of 3, flag at index 2:
+
+    [VA] template len 2 assembled len 3
+    [VA] flag past the template end -> Ok(())
+    [VA] tail "--settings=/tmp/evil.json" -> Ok(())
+    [VA] tail "doctor" -> Ok(())
+    [VA] shorter -> Ok(())     [VA] empty -> Ok(())
+
+Post-fix:
+
+    [VA] flag past the template end -> Err(FlagInValuePosition { at: 2, arg: "--dangerously-skip-permissions", shape: KnownFlagName })
+    [VA] tail "--settings=/tmp/evil.json" -> Err(FlagInValuePosition { at: 2, …, shape: FlagEqualsValue })
+    [VA] tail "doctor" -> Err(FlagInValuePosition { at: 2, …, shape: KnownSubcommand })
+    [VA] tail "" -> Err(ArgvLengthMismatch { template: 2, assembled: 3 })
+    [VA] shorter -> Err(ArgvLengthMismatch { template: 2, assembled: 1 })
+    [VA] empty -> Err(ArgvLengthMismatch { template: 2, assembled: 0 })
+    [VA] reordered equal-length -> Err(FlagInValuePosition { at: 0, arg: "--resume", shape: KnownFlagName })
+
+**The rule has exactly one home**, re-derived twice. `grep` finds no
+restated `assert_eq!(template.len(), assembled.len())` anywhere. Deleting
+the production length block reds exactly the dedicated pin and nothing else
+(`the_argv_rule_inspects_the_whole_vector_not_the_zipped_prefix`, 104
+passed / 1 failed). Making `argv` push one element past its template reds
+**seven** lib tests including the derived pin — the builder's claim
+reproduced verbatim, `at: 17` and all:
+
+    a real id assembles: FlagInValuePosition { at: 19, arg: "--settings=/tmp/evil.json", shape: FlagEqualsValue }
+    the spawn template assembles: FlagInValuePosition { at: 17, … }
+
+`adapter.rs` `shasum -a 256` back to
+`cd4078f1a51718411bbfc6e1d0b486a920e69705bfa7952fb9028ce225504de7` after
+each drill. **Defeat attempts that did not work**: a lone `-` and a lone
+`--` are both `LeadingDash`; a value equal to the template's literal at a
+DIFFERENT index is refused (per-index exemption, not a set membership);
+reordering at equal length is refused at index 0. **Two inert cases, both
+ruled harmless**: `""` and the literal `{session_id}` classify as `None` —
+neither is special to commander, and `validate_session_id` refuses both
+long before assembly.
+
+**CRITERION 6 — the tables audited against a first-hand `--help`.**
+`claude 2.1.226`, `--help` read and parsed by the verifier:
+**73 option tokens, 15 subcommand spellings.** Diffed against the source
+tables: **zero misses in either direction for subcommands, zero misses for
+flags.** The only asymmetry is two EXTRA rows —
+`--append-system-prompt-file` and `--system-prompt-file` — which are real
+flags named in `--bare`'s description prose but absent from the Options
+list, so the table is a superset, i.e. stricter, i.e. harmless. **No miss
+was found**, which is the finding; s2 remains right about the future.
+
+**The subcommand class is real, and its reachability is calibrated.**
+Re-derived: `validate_session_id` accepts all 15 subcommand spellings and
+only the T-047 backstop refuses them —
+
+    [ATK-argv] id doctor       validate=true argv=Err("argv element 18 would be 'doctor', … it is one of the CLI's own subcommands")
+    [ATK-argv] id setup-token  validate=true argv=Err(…)
+    [ATK-argv] id e7954de6-…   validate=true argv=Ok(19)
+
+**One calibration on the builder's prose, not a criterion failure**: in
+TODAY's template the substituted value sits at index 18, immediately after
+`--resume` at 17, and `-r, --resume [value]` binds the next non-dash token
+as its VALUE — so a bare `doctor` would be consumed as a resume value, not
+dispatched as a subcommand. "`claude doctor` is a different program" is
+true of the CLI; it is not true that today's argv would run it. The class
+is a backstop for a future substituted slot, which is exactly what
+`FlagInValuePosition`'s own doc comment says, and criterion 6's stated
+minimum (known flag names, `--flag=value`) is met independently. The cost
+side is real and measured — a CLI that ever issued a session id spelled
+`doctor` would become unresumable — and s2 already records it.
+
+**The `Bash(*)` note is ruled correct and correctly scoped.** `Bash(*)`
+classifies as inert here, and rightly: it is a tool-PATTERN, invisible to
+the argument parser and dangerous only to the permission parser. Nothing
+substitutes into `--allowedTools` today (the six patterns are `const`, and
+`no_adapter_argv_can_ever_bypass_permissions` still guards the table). A
+rule about pattern semantics belongs with T-025-s4, not in an argv-shape
+gate.
+
+**CRITERION 7 — nothing else moved.** The six IPC enums were compared
+against `2961599` body-for-body and are **byte-identical**: `StartOutcome`,
+`SendOutcome`, `CancelOutcome`, `GenesisStatus`, `TurnError`, `RunEvent`.
+`acl_pin.rs` (`EXPECTED_GRANTS`), `capabilities/`, `tauri.conf.json`:
+zero-diff. `Cargo.toml` `35aa0898…` and `Cargo.lock` `03b5a5cb…`
+**byte-identical** to the branch point — no new dependency.
+`tauri::generate_handler!` identical — no new command. The three new enums
+have no reference outside `adapter.rs`/`runner.rs` and none is
+`Serialize`. **T-039's nine gate tests, run BY NAME**:
+`no_adapter_argv_can_ever_bypass_permissions`,
+`the_session_id_gate_is_an_allowlist_not_a_denylist`,
+`a_rejection_names_itself_without_relaying_raw_bytes`,
+`a_hostile_session_id_never_reaches_argv_at_all`,
+`a_session_id_read_back_out_of_the_registry_is_validated`,
+`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`,
+`every_hostile_id_class_fails_the_turn_at_capture`,
+`a_hostile_session_id_in_the_registry_file_is_refused_at_the_read_boundary`,
+`a_hostile_resume_id_handed_straight_to_the_runner_spawns_nothing` — all
+**ok**.
+
+**EXECUTION SWEEP — 9/9.** Each new test body was poisoned with
+`assert!(false, "T047V-SWEEP-<name>")`, run BY EXACT NAME so exactly one
+test ran, the marker confirmed in the failure output, the file restored
+from `HEAD` and `shasum -a 256` compared: **RED+marker, byte-identical, all
+nine**. The set was derived from the diff rather than from the notes —
+exactly 9 tests added, 0 removed, matching 208 → 217.
+
+**SUITES (verifier's own runs).** cargo `217 passed + 3 ignored`, **three
+consecutive runs, identical**, **zero warnings**. App: `npm run build` then
+`npm test` → **483/483, 27 files**, bundle `index-DvrlAOQE.js` **442.05
+kB**, `tsc --noEmit` clean. lib/parser **159/159, 10 files**, tsc clean.
+tools/e2e **17/17 in 4.7 s** on port 14547. `lint:tokens` clean, 37 files.
+**Graph delta: none** — `git diff --name-only 2961599` filtered to
+`*.ts/tsx/js/jsx` is empty, and the plain ignored self-check
+(`self_graph_is_current`) passes against the committed bytes with
+`graph.json` unmodified.
+
+**FENCE.** `git diff --name-only 2961599..HEAD` = four source files
+(`adapter.rs`, `runner.rs`, `fake_agent.rs`, `tests/agent_runner.rs`) plus
+this card and the suggestions. The forbidden set — `method/`, `lib/parser/`,
+`app/src/`, `tools/`, `graph.json`, `docs_watch.rs`, `index_cmd.rs`,
+`acl_pin.rs`, `lib.rs`, `capabilities/`, `tauri.conf.json` and every
+manifest/lockfile — returns **nothing**. Neither other lane's files appear;
+neither worktree was entered. No `fake_agent` orphan survives, no tattle
+file or temp root remains.
+
+**THE FOUR SUGGESTIONS, RULED.**
+
+- **s4 (`$SHELL` → `Command::new`) — VERIFIED, and it is the sharpest of
+  the four.** Reproduced directly: with `SHELL` pointed at a
+  verifier-written script, that script was executed with `-l -c` and its
+  answer became the child's PATH. The gate is shape-only (absolute +
+  executable), never "what the program is". **Reachability, honestly:**
+  in a GUI launch `SHELL` comes from the user's directory-services record
+  (root to change) — but `launchctl setenv` in the user's own domain
+  reaches subsequently-launched GUI apps with no admin, and in dev it is
+  simply the launching terminal. So the precondition is code execution as
+  the user, which already buys `~/.zshrc` — the very file this login shell
+  is about to source. **Equivalent-privilege, correctly ruled, correctly
+  not a gate.** Two things sharpen it, and s4 has one of them: T-047's own
+  chosen arm makes this spawn happen **every turn** instead of once per
+  install, and `RunnerConfig`'s doc comment "A hostile env var therefore
+  cannot redirect the production spawn" is now demonstrably false — s4's
+  option 3 is the necessary half, not the optional one. The half s4 does
+  NOT name is `PATH`, filed as **s5**.
+- **s1 (retire the cache) — VERIFIED AND STRENGTHENED.** Its economics
+  argument is right and understated: measured with a counting shell, the
+  cache saves **zero** login-shell spawns, not one — with or without the
+  file, exactly one shell runs per turn, differing only in which script it
+  is handed. Its quote of `runner.rs:227` is of the pre-fix wording (the
+  line now says "the login-shell probe's `command -v`"), which does not
+  touch the argument. The residual it exists to close was reproduced here
+  three ways (symlink, content swap, newline-dir).
+- **s2 (the table is a version snapshot) — VERIFIED, and the audit found
+  no current miss.** Both sides of its cost analysis reproduced: the
+  leading-dash arm covers unknown flags, subcommands are the one-sided
+  exposure, and the false-positive direction is real (a `doctor`-shaped id
+  becomes unresumable). One thing to add when it is picked up: the table
+  also cannot see subcommands the CLI does not print in `--help`.
+- **s3 (the model has no read boundary) — VERIFIED.** `SessionEntry.model`
+  is a bare `pub` field; `native_session_id` has `resume_id()`. Nothing
+  renders the disk-borne model today (`GenesisStatus` carries the
+  in-memory one), so "do it in T-027" is the right placement.
+
+**NEW: T-047-s5** — the freshly-probed path skips the gate the cached one
+must pass, and `which_on_path` can hand back a RELATIVE path from the app's
+inherited `PATH`; reproduced (`resolve_cli -> Ok(path: "relbin/claude")`,
+executed, while `validate_cached_binary` calls the same string
+`NotAbsolute` and the write gate declines to cache it). **T-047-s6** —
+"no test can resolve the user's real CLI" is a discipline claim, not a
+structural one; the verifier fell into it (a real `claude` process was
+spawned by a scratch probe, though it 401'd and no model ran).
+
+**@human:** one stray artifact outside the repo, left in place rather than
+deleted — `~/.claude/projects/-private-var-folders-…-t047va-count-97806-…-project/`
+(17 kB of synthetic, zero-token records from the s6 incident). Remove it if
+you want it gone. Nothing else.
