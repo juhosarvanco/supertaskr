@@ -404,28 +404,65 @@ INTEGRATOR JUDGMENT CALLS, recorded.
   deliberate deltas, and its four honest limits.
 
 ## In progress / broken right now
-**TWO LANES ARE IN ADVERSARIAL VERIFICATION**, both dispatched with
-T-046 at `2961599` and neither merged:
+**THREE TASKS ARE `building`.** Two are in ADVERSARIAL VERIFICATION,
+both dispatched with T-046 at `2961599` and neither merged; the third
+was dispatched mid-merge and has not started:
 - **T-041** (shell harness — the served-bundle probe, M, app-shell),
   worktree ../nputer-t041 at `ecb404c`. It is the hard gate before
   T-027/T-028/T-029 can write the served-bundle probes they each
   promise.
 - **T-047** (what the runner trusts from disk, app-agent), worktree
   ../nputer-t047 at `242697f`.
-**Do not enter either worktree.** Their file sets are disjoint from
-each other and from this merge (checked above), so both should merge
-without reconciliation — but T-041 lands specs under `tools/e2e/` and
-its integrator should re-check that against T-046's four files rather
-than inherit this note.
+- **T-048** (the frame holds — the genesis page stops growing and the
+  pane starts scrolling, S, app-shell, F-03), **dispatched by the
+  architect at 18:17 WHILE THIS MERGE WAS RUNNING** and committed as
+  `0378cb9` directly on top of the merge commit. It absorbs T-041-s1
+  and T-041-s3, was human-approved during the open visual review
+  session "because the screen is unusable at the size the app actually
+  opens", and carries the re-derived numbers: at the app's OWN
+  configured **800×600** window the genesis page is 1172 tall — **572px
+  of overflow** — and the pane's own region measures 796/796 at every
+  size, i.e. it never scrolls. It rules explicitly that this is **NOT**
+  T-027's composition question. **No worktree yet, and it is
+  effectively serialized behind T-041**: its fifth criterion updates a
+  lane spec that exists only on `t041-shell-harness`, and both tasks
+  are app-shell.
+
+**Do not enter ../nputer-t041 or ../nputer-t047.** T-041's and T-047's
+file sets are disjoint from each other and from this merge (checked
+above), so both should merge without reconciliation — but T-041 lands
+specs under `tools/e2e/` and its integrator should re-check that
+against T-046's four files rather than inherit this note.
+
+**A PROCESS HAZARD THIS MERGE HIT, AND IT SHOULD NOT BE LEARNED TWICE.**
+That dispatch commit **swept in this integrator's staged checkpoint
+edits** — the CONVENTIONS pointer, T-046's `status: done`, and an
+intermediate STATE — because two actors were working in the SAME main
+working tree and therefore shared one git INDEX. Nothing was lost or
+corrupted (all three landed byte-correct inside `0378cb9`, verified),
+and the T-048 file itself was never staged by this session. But the
+house shape was broken: main now reads **merge → someone else's
+dispatch → checkpoint**, and the checkpoint below carries only the
+STATE remainder rather than the whole checkpoint. **The lesson, for
+whoever writes the rule: `git add` in the shared main tree publishes
+your work to every other actor's next `git commit`.** An integrator
+should stage and commit in one breath, or the architect should dispatch
+from an index it owns. Recorded here rather than filed as a suggestion,
+because it is a method/process call and task creation is the
+architect's (ADR-004) — but it is worth a rule.
 
 The t046 worktree is removed and its branch KEPT — **26 task branches
-merged now**, `t001-app-shell` through `t046-boot-gate`, plus the two
-live ones. Main tree clean; all four suites green; the token lint
+merged now**, `t001-app-shell` through `t046-boot-gate` (counted with
+`git branch --merged main`), plus the two live ones; T-048 has no
+branch yet. Main tree clean; all four suites green; the token lint
 green; the committed graph current and proved so by the self-check
 rather than by assumption. The parser re-parses the whole live tree at
-**0 issues** (61 tasks, 6 features, 11 components; status tally
-**27 done / 18 planned / 9 parked / 5 suggested / 2 building** — the
-two are T-041 and T-047).
+**0 issues** — measured twice, before and after T-048 landed: **61
+tasks / 2 building** at the merge commit, **62 tasks / 3 building**
+with T-048, both at zero issues, and lib/parser's live-tree smoke test
+re-run green with T-048 present. Full tally now: **27 done / 18
+planned / 9 parked / 5 suggested / 3 building** (T-041, T-047, T-048),
+6 features, 11 components.
 
 **NO STANDING SECURITY GATE.** T-025-s6 closed at T-039 and nothing
 replaced it. T-046-s1 is the sharpest open item and it is a
@@ -490,11 +527,14 @@ Watch it, and watch for the unnamed `agent_runner` flake there too.
      `overflow-y-auto` still never engages (796/796).** So
      `min-h-screen` → `h-screen` is **measurably not the fix**; the
      branch files that correction as **T-041-s3**, naming the missing
-     link as `min-h-0` on the GenesisScreen section. It is a **T-027
-     composition call**, not a T-041 fix. (Rides T-041's merge; that
-     branch is still in verification, so treat the figures as pending
-     until it lands — but do NOT hand T-027 the old one-line remedy.)
-     How it FEELS at a short window is still an eye judgment.
+     link as `min-h-0` on the GenesisScreen section. (Rides T-041's
+     merge; that branch is still in verification, so treat the figures
+     as pending until it lands — but do NOT hand T-027 the old one-line
+     remedy.) **This is no longer an open item on this list**: see the
+     T-048 note under "In progress" — it was dispatched as its own task
+     during this merge, and it is explicitly NOT the composition
+     question, which stays with T-027 and stays @human. How the frame
+     FEELS once it holds is still an eye judgment.
    - **T-026's front door, light AND dark**: the two-button row and the
      "No plan in &lt;folder&gt;" card against the design's `open a
      folder` screen — button sizes/inks, the checklist ○/✓ (the ✓ rides
@@ -564,14 +604,26 @@ Watch it, and watch for the unnamed `agent_runner` flake there too.
    are all DONE, so the standing grant's next named item is **T-022**
    (M, milestone 4, `blocked_by: []`), with T-027 ahead of it in
    milestone order but held for the visual verdict. **app-shell is
-   currently OCCUPIED by T-041's verification and app-agent by
-   T-047's**, so neither lane is free until those merge. Triage: APPLY
-   granted — but tasks NEWLY created by triage (T-041…T-047) do NOT
-   dispatch without the human; T-041, T-046 and T-047 each got that nod
-   explicitly. Unchanged method rules: a second REJECTED on any task
+   currently OCCUPIED TWICE OVER — T-041 in verification and T-048
+   dispatched behind it — and app-agent by T-047**, so neither lane is
+   free until those merge, and T-048 is the app-shell lane's next
+   worktree. Triage: APPLY
+   granted — but tasks NEWLY created by triage (T-041…T-048) do NOT
+   dispatch without the human; T-041, T-046, T-047 and T-048 each got
+   that nod explicitly (T-048's came mid-review, from the screen
+   itself). Unchanged method rules: a second REJECTED on any task
    parks that lane for the human; @human judgments are never
    self-answered.
 4. SUGGESTION BACKLOG — **14 open files: 9 parked + 5 suggested.**
+   **AN OBLIGATION FOR T-041's INTEGRATOR, recorded here because it is
+   exactly the kind of thing that gets missed**: T-048 already carries
+   `Absorbs: T-041-s1, T-041-s3`, but both suggestion files still exist
+   on the unmerged `t041-shell-harness` branch. The ratified encoding
+   (method/tasks/TASK-FORMAT.md v0.1.4, T-016) says promoted →
+   "Absorbs:" line **plus the suggestion file removed in the same
+   commit**. The absorbing task landed first here, so T-041's merge
+   must delete those two files or the board will show a promoted
+   suggestion as still open.
    The four T-046 suggestions are **the newest untriaged set**, and
    T-039-s3 is the one older untriaged card left (the 2026-08-16 second
    triage absorbed T-039-s1/s2/s4 into T-047, which is why the board
