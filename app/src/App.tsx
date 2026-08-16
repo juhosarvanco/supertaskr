@@ -5,6 +5,7 @@ import { GenesisScreen } from "@/components/shell/GenesisScreen";
 import { PaneRail, type PaneId } from "@/components/shell/PaneRail";
 import { Button } from "@/components/ui/button";
 import { skipReasonPhrase } from "@/lib/docs-model";
+import { cn } from "@/lib/utils";
 import {
   CONVENTION_HINT,
   getShellState,
@@ -273,6 +274,38 @@ function App() {
   const screen = selectScreen(shell);
   const milestone = milestoneLine(model);
 
+  /**
+   * T-048: the interview is the one screen whose frame must HOLD.
+   *
+   * The genesis pane owns an `overflow-y-auto` region, and a scroll
+   * region can only engage inside a BOUNDED box. `min-h-screen` sets a
+   * floor, never a ceiling, so this column grew with the content and
+   * the PAGE took the scroll — at 800x600 (the app's own configured
+   * window) you scrolled the header and the interview heading
+   * off-screen to reach the artifact list, while the pane's own region
+   * sat at 858/858 and never moved. Bounding the column at `h-screen`
+   * is half the fix; the other half is `min-h-0` on the genesis
+   * screen's own section (GenesisScreen.tsx) — without it that
+   * section's automatic minimum holds it at content height and
+   * `overflow: visible` spills the page open anyway. Both halves are
+   * needed and neither is sufficient; measured, not assumed.
+   *
+   * Scoped to genesis DELIBERATELY, also measured: every other screen
+   * here is a scrolling PAGE, and bounding this column bounds `main`
+   * with it (its only sized child), which moves two of them. The
+   * board's rail is a stretch-height sibling of this column — over the
+   * dogfood tree it measures 2202px, the whole document, and a bounded
+   * frame stops the sidebar strip and its border at the fold. The map's
+   * canvas is `min-h-0 flex-1 overflow-hidden` (MapView.tsx), so at
+   * 800x600 a bounded frame clips it to 446/320 with NO scrollbar
+   * anywhere — 126px of graph unreachable. The tables for all of it are
+   * in T-048's notes. Whether the whole shell should be bounded with
+   * every screen owning its own scroll is a real question, but it is a
+   * composition one — it needs a sticky rail and a board scroll region
+   * — and it belongs with T-027, not with a frame that does not hold.
+   */
+  const boundedFrame = screen.screen === "genesis";
+
   return (
     <main
       className="flex min-h-screen"
@@ -288,7 +321,7 @@ function App() {
       {/* The rail renders only when a project is open; front door /
           loading / browser screens stay full-bleed. */}
       {screen.screen === "board" && <PaneRail active={pane} onSelect={setPane} />}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className={cn("flex min-w-0 flex-1 flex-col", boundedFrame ? "h-screen" : "min-h-screen")}>
       <header className="flex items-center justify-between gap-4 border-b border-hairline px-6 pt-4.5 pb-3.5">
         <div className="flex items-baseline gap-3.5">
           <h1 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h1>
