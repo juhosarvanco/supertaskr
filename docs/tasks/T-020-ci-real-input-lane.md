@@ -318,11 +318,16 @@ state variants, spacing tokens, mapped tokens, token+opacity,
   "error when starting dev server: Error: Port 14599 is already in
   use", exit 1.
 
-**6. Boot-script mechanics on macOS — with one honest caveat.** THE
-HUMAN'S LIVE APP WAS RUNNING ON 1420 THROUGHOUT THIS SESSION (a
-`npm run tauri dev` in /Users/ujju/Projects/nputer/app, up since
-23:27), so the shipped script could not be run end-to-end unmodified —
-by its own design, which is the point of the guard:
+**6. Boot-script mechanics on macOS — all three paths, shipped file.**
+Done in two stages for a reason worth recording. For most of the
+session THE HUMAN'S LIVE APP HELD 1420 (a `npm run tauri dev` in
+/Users/ujju/Projects/nputer/app, up since 23:27), so the shipped
+script could not run end-to-end — by its own design, which is the
+point of the guard. It exited on its own late in the session (not from
+anything this executor ran — no command here ever bound, connected to,
+or signalled anything on 1420; the only process this session killed
+was the lane's own vite on 14520, resolved by pid), and the drills
+were immediately redone with the shipped file. Both records kept:
 - *1420-busy abort*: the SHIPPED script, unmodified, against the REAL
   condition (better evidence than the planned scratch listener):
   `node tools/e2e/scripts/tauri-boot-check.mjs` → **exit 2**,
@@ -330,8 +335,29 @@ by its own design, which is the point of the guard:
   must not contend for it … Nothing was spawned." Zero packets
   exchanged: the probe binds, never connects. Confirmed after the fact
   that pid 13039 still held 1420, untouched.
-- *Both lines + clean kill + exit 0*, and *timeout path at 1s*: run
-  against a scratchpad COPY of the script whose only delta is three
+- *Both lines + clean kill + exit 0* — SHIPPED FILE, unmodified, once
+  1420 was free: `node tools/e2e/scripts/tauri-boot-check.mjs` →
+
+      [boot-check] port 1420 free — spawning `npm run tauri dev` in …/nputer-t020/app
+      [boot-check] overall timeout 1200000 ms, no-output watchdog 300000 ms
+      [boot-check] app: [nputer] project folder: /Users/ujju/Projects/nputer-t020
+      [boot-check] detected startup line 1/2: [nputer] project folder:
+      [boot-check] app: [nputer] window "main" created
+      [boot-check] detected startup line 2/2: [nputer] window "main" created
+      [boot-check] stopping the tauri dev process tree (SIGTERM, then SIGKILL after 10s)
+      [boot-check] process tree stopped (exit=null signal=SIGTERM)
+      SHIPPED_EXIT=0
+
+  Run twice, identical both times (~8 s each), 1420 released after
+  each, no stray vite/tauri/cargo (`lsof` + `pgrep`).
+- *Timeout path* — SHIPPED FILE, `NPUTER_BOOT_TIMEOUT_MS=1000`:
+  **exit 1**, "timed out after 1000 ms waiting for the startup lines:"
+  then "MISSING  [nputer] project folder:" / "MISSING  [nputer] window
+  "main" created", same clean tree kill, 1420 released, no strays.
+- *The earlier, copy-based record* (kept because it is what was
+  available while the live app held 1420, and it independently
+  corroborates the two runs above): a scratchpad COPY whose only
+  delta is three
   mechanical lines — `repoRoot` hard-coded (the copy lives outside the
   repo), `TAURI_PORT` 1420→14521, and `--config` appended to the spawn
   args (`{"build":{"devUrl":"http://localhost:14521",
@@ -351,19 +377,15 @@ by its own design, which is the point of the guard:
       [boot-check] stopping the tauri dev process tree (SIGTERM, then SIGKILL after 10s)
       [boot-check] process tree stopped (exit=null signal=SIGTERM)
 
-  Forced `NPUTER_BOOT_TIMEOUT_MS=1000`: **exit 1**, "timed out after
-  1000 ms waiting for the startup lines:" followed by
-  "MISSING  [nputer] project folder: / MISSING  [nputer] window
-  "main" created", then the same clean tree kill and no strays.
-  This run briefly opened a window — the sole documented exception
-  (T-001 precedent: an app opening its own window is not screen
-  control), outside `npm test`; no OS input was injected and nothing
-  was screenshotted.
-  **@human / verifier**: the shipped file's own end-to-end run needs
-  1420 free for ~15 s. Stop the live app, run
-  `node tools/e2e/scripts/tauri-boot-check.mjs`, expect exit 0. Filed
-  as T-020-s3 (the script has no test-mode port override BY DESIGN;
-  whether it should is the suggestion's question).
+  Forced `NPUTER_BOOT_TIMEOUT_MS=1000` on the copy: exit 1 with the
+  same MISSING report and clean kill.
+
+Every boot run — copy and shipped — briefly opened a window: the sole
+documented exception (T-001 precedent: an app opening its own window
+is not screen control), and it lives outside `npm test`. No OS input
+was ever injected and nothing was screenshotted. Standing dev-loop
+cost, filed as T-020-s3: a verifier whose own app is running gets exit
+2 and must stop it for ~10 s to reproduce the green run.
 
 **7. Suites + boundary/fence audit.** At this branch's point, all
 untouched and all matching: lib/parser `npx vitest run` → **159 passed
@@ -543,8 +565,6 @@ inside tools/e2e:
 
 ### Silences and @human items carried out of this build
 
-- The shipped boot script's own end-to-end run is still owed on a
-  machine with 1420 free (§9.6 above; T-020-s3).
 - Everything §1 tier 3 listed stays honestly unverified until the
   first push: ubuntu apt set, xvfb webkit2gtk boot, playwright on
   Linux, audit-in-CI, and the three T-018 sentinel live tests.
