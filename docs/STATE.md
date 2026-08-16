@@ -1,6 +1,6 @@
 # State
 
-Updated: 2026-08-16 by integrator (T-037 merge), claude-opus-5 @fresh
+Updated: 2026-08-16 by orchestrator (T-038 merge), claude-opus-5 @fresh
 
 ## Just completed
 T-037 (mount the lens, S, app-shell) done and merged — built by
@@ -223,31 +223,64 @@ the change log, the fallback copy's refusal to imply data loss, and the
 build-before-test consequence — are recorded in the task file's
 implementation notes.
 
+T-038 (token lint precision, S, tools/e2e) done and merged in the same
+breath — S-TIER, orchestrator merge, `review: self-verified`. **THE RED
+GATE IS CLOSED, and closed the right way**: `npm run lint:tokens` now
+exits 0 on the untouched tree, and the four patterns are BYTE-IDENTICAL
+to T-020's — proven mechanically, `makePatterns()` is character-for-
+character unchanged. Nothing was removed, weakened, or allowlisted;
+what changed is what the patterns can SEE. Two mechanisms: a
+length-preserving MASK (a hand-written lexer NULs out every character
+that is not string- or template-literal text, so code, comments and
+regex literals go dark while offsets and line numbers survive — a
+Tailwind class is always string text, a regex literal never is), and a
+VARIANT rule taken from Tailwind's own grammar (a bracket or paren
+group immediately followed by `:` is a selector-targeting variant, not
+a value — so `data-[state=open]:bg-primary` is silent while
+`data-[state=open]:bg-red-500` still trips P3, because the utility half
+is still governed). Zero new dependencies, and the reason is now
+structural rather than tasteful: the lint is CI's FIRST step, ahead of
+every `npm ci`, so it must run on a bare checkout — that constraint is
+recorded in the script header so nobody "improves" it into a dep.
+THE STRONGEST EVIDENCE was unasked for: a repo-wide differential over
+all **122** `.ts/.tsx` files — old scan **11** hits, new scan **0**,
+`NEW-only=0`. Every one of the 11 was a false positive, across THREE
+classes: the two regex literals, and a third nobody had catalogued —
+**TypeScript labeled tuples** (`type Field = [key: string, value:
+string]`, which P2 read as `[color:red]`; 9 hits over 6 files, one
+`type` alias away from landing in app/src). Measured in the other
+direction too: of 558 real Tailwind-token occurrences under app/src,
+exactly 3 are masked away and all 3 sit inside doc comments. Precision
+is PINNED, not asserted: `--selftest` grew 17 → **43** samples, and
+four separate mutations red them (`isVariant→false` reds 13,
+`maskSource→src` reds 7, `regexEnd→-1` reds 1, a corrupted expectation
+reds 1). All four true-violation patterns were re-proven by
+plant-and-revert in a real className. Honest limits are written in the
+script header where the next reader hits them, including one measured
+FALSE NEGATIVE (a braceless `if` whose regex carries a quote, sharing a
+line with a real violation — absent from the tree, add braces and it
+fires) and the fact that it scans every string, not only class strings
+(deliberate: a false positive is a one-line consultation, a false
+negative silently reopens the bypass). Suites on merged main: parser
+159/159, app 468/468, cargo 139 + 2 ignored, E2E lane 17/17, and the
+graph a proven no-op (`tools/` excluded; sha256 fc76b379… unchanged).
+Absorbs T-020-s5 and T-037-s1; T-038-s1 (a hard-coded breakpoint
+escapes `@theme --breakpoint-*` the way a hard-coded colour escapes
+`--color-*` — argued, then parked as its own rule rather than smuggled
+under P1) and T-038-s2 (the walk can now safely widen past app/src,
+with the 122-file differential as standing evidence) filed.
+
 ## In progress / broken right now
-**T-025** (agent runner, L, app-agent + app-shell) and **T-038** (token
-lint precision, S, tools/e2e) are both **BUILDING** in their own
-worktrees. The t037 worktree is removed; its branch is KEPT alongside
-t023/t024/t026/t036. Main tree clean, all four suites green.
+**T-025** (agent runner, L, app-agent + app-shell) is in **ADVERSARIAL
+VERIFICATION** — the milestone's hard core, built with cargo 139 → 200
+and app 455 → 470. The t037 and t038 worktrees are removed; their
+branches are KEPT alongside t023/t024/t026/t036.
+**NOTHING IS BROKEN.** Main tree clean; all four suites green; the
+token lint green. The only outstanding gate on main is the one that
+cannot run here at all — the first CI push, below.
 
-**KNOWN RED, OWNED — this is the one thing currently broken on main.**
-`npm run lint:tokens` (from tools/e2e) **exits 1 on untouched main**. A
-regex literal at `app/src/genesis/genesis-derive.ts:231`
-(`/<!--[\s\S]*?(?:-->|$)/g`, T-024's `stripHtmlComments`) trips pattern
-P1, whose `-\[[^\]]` matches the `--[` inside it. This is **the exact
-false-positive class T-020's verifier predicted**, arrived. The tool
-itself is fine — `--selftest` is green on 17 samples — the pattern is
-what is wrong. It is **not** a T-037 defect: the lint's output is
-byte-identical on main and on the branch. **Why it is sharper than an
-annoyance**: the lint is CI's step 1, gating *before* every install
-step, so the standing "watch the first CI run" item would abort before
-collecting **any** of the Linux evidence it exists to gather. **T-038 is
-in flight to fix it by PRECISION — never by removing a pattern, never by
-an allowlist.** I ran it here for information only and did not treat it
-as a merge blocker; it is outside this merge's fence and fixing it here
-would have hidden the finding rather than recorded it.
-
-LAUNCH ITEM, carried forward — **watch the first CI run** (T-020), now
-gated behind T-038 above. At the repo's first push (`git remote -v` is
+LAUNCH ITEM, carried forward — **watch the first CI run** (T-020), no
+longer gated (T-038 closed it). At the repo's first push (`git remote -v` is
 still empty), confirm in order: the ubuntu apt/webkit2gtk set installs;
 the three `uses:` SHA pins resolve; playwright-on-Linux runs the lane;
 `cargo audit` behaves as it does locally; the xvfb `tauri dev` boot
