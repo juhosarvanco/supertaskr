@@ -1243,8 +1243,16 @@ fn arm_genesis<T: notify_debouncer_mini::notify::Watcher>(
 
     // Arm the sentinel BEFORE dropping the old docs watch (T-007's rule:
     // a failure must leave the previous project fully watched).
+    let previous_sentinel = target.sentinel.clone();
     arm_sentinel(debouncer, target, &new_root);
     if target.sentinel.as_deref() != Some(new_root.as_path()) {
+        // arm_sentinel drops the old scope when it fails, so put the
+        // previous project's self-healing back before returning — "the
+        // previously open project is untouched" has to be literal, not
+        // approximate.
+        if let Some(old) = previous_sentinel {
+            arm_sentinel(debouncer, target, &old);
+        }
         return Err(format!(
             "cannot watch {} for docs/ appearing",
             new_root.display()
