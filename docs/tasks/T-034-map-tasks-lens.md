@@ -586,3 +586,236 @@ the judgments are against the design bundle's `map · tasks` screen.
   belongs.
 
 ## Verdicts
+
+2026-08-17 — claude-opus-5 @fresh, verifier — same-model review:
+**APPROVED.** All five criteria re-derived independently in this
+worktree against merge-base `6ed97cf` (main has since moved to
+`59558de`; every comparison below uses the merge-base, and main's own
+`app/src/architecture/` is byte-identical to it, so the cross-revision
+measurement is exact). Four corrections are recorded below — all in the
+NOTES, none in a criterion, and one of them (the graph forecast) must be
+read by the integrator **before** the merge regen.
+
+**Suites, first-hand in this worktree.** app `npm install` + `npm run
+build` (exit 0) + `npx vitest run` **586/586, 32 files**, `npx tsc
+--noEmit` clean — the 507 baseline + 79. All six existing map suites
+green BY NAME at exactly the claimed counts (`map-layout` 26,
+`map-visuals` 39, `map-search` 7, `map-view-dom` 25, `map-shell-dom` 4,
+`map-dogfood-render` 8) with 0 bytes changed. parser `npm ci` + `npm run
+build` + `npx vitest run` **159/159, 10 files**, tsc clean. cargo
+**217 passed + 3 ignored, 0 failed, 0 warnings**, summed from 11
+`test result:` lines (105/0/0/32+1/68/3/7/0+1/2+1/0/0). e2e lane
+**36/36 in 7.6s** on scratch port **14561** (mine, chosen free, released
+after — `lsof` empty). `lint:tokens` **clean over 41 files**, selftest
+**43 green**. Boot check NOT re-run: the builder's is green and the diff
+is unchanged since. **Port 1420 never bound, contacted or signalled** —
+still the human's node pid 64249, before and after.
+
+**Fence — clean.** `git diff --name-only 6ed97cf..HEAD` over
+`lib/parser/`, `app/src-tauri/`, `tools/e2e/`, `App.tsx`, `components/`,
+`lib/`, `genesis/`, `styles/`, `index.css`, `docs/architecture/`,
+`method/`, `capabilities/` and every lockfile returns **empty**. 13
+files, 7 code, all under `app/src/architecture/**` and `app/test/**`.
+No sibling worktree entered. Every probe reverted and sha-verified;
+tree clean at commit.
+
+**C1 — the lens control.** Verified in the DOM: two segments, order
+`["architecture","tasks"]`, `aria-pressed` true/false, round trip both
+directions, fresh mount back on `architecture` (no store, no
+localStorage). The control element is **exactly 472 bytes** (measured
+below).
+
+**C2 — waves, terracotta, strip, tokens-only.** The live tree
+re-derived from `docs/tasks/` independently: **50 cards drawn**, per-wave
+**0:32 · 1:7 · 2:3 · 3:6 · 4:2**, canvas **1440 × 3818**, critical path
+**`T-018 → T-026 → T-025 → T-027 → T-028 · 2 of 5 still to land`**,
+worst blocker **`T-027 … planned, holds 2`**, ready **`13 tasks, no
+unmet deps`**, blocked **`T-028, T-029`** — every number the notes claim,
+reproduced. Terracotta arithmetic recomputed: `--status-rejected-meta`
+(#9d4430) IS the nearest token step to BOTH design values (65.89 to
+#c96a4f, 71.58 to #d4694b) — **conclusion upheld**. Emission: all **70**
+utilities harvested from `TasksLens.tsx` have a rule in the built CSS,
+so nothing is silently unpainted; class names are assembled at runtime,
+so the T-012 scanner trap is genuinely avoided. The **staleness guard is
+not theoretical** — it fired on THIS verifier too, unprompted: the
+cross-revision probe below restored `MapView.tsx` after the build, and
+the guard refused the whole emission probe until it was rebuilt. That is
+a third independent firing on top of the builder's two.
+
+**C3 — the architecture lens byte-unchanged. Re-derived from scratch**
+and this is the strongest evidence in the task. Rendering `MapView` from
+the merge-base and from this branch in the same jsdom on the same
+fixture: `map-canvas`, `map-legend`, `map-overlay-control`, `map-search`,
+`map-reindex` and `map-degraded` are **byte-for-byte IDENTICAL**;
+`map-view` differs by **exactly 472 bytes**; and excising the
+`map-lens-control` element from the branch's `map-view` yields a string
+**byte-identical to the merge-base's** (`stripped == main: True`). The
+`map-layout.ts` swap was restored and sha-verified.
+
+**C4 — cycles degrade defined-ly.** Twelve hand-derived fixtures of my
+own, all green: the **diamond joins on the LONG arm** (`T-005` at wave
+3, not 1); the **2-cycle** shares wave 0 with both edges drawn and
+`tangled`; the **3-cycle behind a root with a tail** puts the SCC at
+wave 1 and the tail at 2; **two disjoint tangles** both release (into
+one wave — defined, worth knowing); **self-block** drops the self edge
+and neither stalls nor loops; the **40-ring** terminates in **1ms** in
+one wave with an **empty** critical path; the **500-deep chain** lays out
+waves 0–499 in 10ms with no stack overflow; a **parked blocker** moves no
+wave and draws no edge. Perf note, not a defect: `criticalPath` is
+roughly quadratic in task count (200→36ms, 400→141ms, 800→536ms; a
+synthetic 1800-task/53k-edge graph takes 2.7s). At this repo's scale
+(50 tasks) it is sub-millisecond, and "never hang" holds.
+
+**C5 — hostile content.** Attacked with **my own** payloads, not the
+builder's: `<script>`, `<svg/onload>`, `<iframe>`, `<img onerror>`,
+attribute-breakout, `<style>`, RTL/bidi overrides, a 10,000-char run,
+`String.fromCharCode(7,1,27,0)`, a DOM-breakout string forging
+`data-testid="map-canvas"`, and template-injection — through titles,
+ids and `blocked_by` entries. Result: **no global written**, **zero**
+injected `<script>/<img>/<iframe>/<style>/<object>/<embed>`, the forged
+canvas **not created** (0 `map-canvas`, exactly 1 `map-tasks-canvas`),
+bytes present as TEXT, 10k title rendered at full length, 108 elements
+total, no prototype pollution. The no-innerHTML gate covers
+`app/src/architecture/**` and asserts the four lens files **by name** —
+and it fires: a planted `d.innerHTML` reds it naming the file.
+
+**Execution sweep — stronger than the obligation.** All `it(` in both
+new files match the one-line form the poison script rewrites (50 and
+29, no exceptions), so none can be missed. Poisoning **all 79** (not the
+builder's 77) gives **79 failed / 0 passed**. Reverted byte-exact; the
+builder's recorded sha `1c991adc…` reproduced.
+
+---
+
+### Correction 1 — the control-byte finding is REAL; its blast radius as written is WRONG
+
+Both instances re-derived. `task-waves.ts` carried **two literal NULs**
+(offsets 25374 / 25507, in the two template literals keying the
+critical-path edge set) through checkpoints 1–3; `map-layout.ts` carries
+a literal **U+0003 at offset 14274 on main RIGHT NOW**, which makes
+`file(1)` call that source **data** on the mainline today. A third
+instance (U+0007/U+0001) sat in the test file, as disclosed. All fixed at
+`832edd6`. Behaviour-identity proven, not asserted: both source forms
+evaluate to codepoints **[67, 3, 69]**. Repo sweep of my own: **446
+tracked files, 0 C0 controls in text** — the cleanliness claim holds.
+
+**But the invisibility claim is refuted for two of the three mechanisms
+it names.** Planting a raw-HTML sink AND a literal NUL into the same
+file: the **no-innerHTML gate caught it**; **`lint:tokens` caught** two
+planted arbitrary values in the same NUL-carrying file; and
+**`.github/workflows/ci.yml` contains zero greps**. There is **not one
+shell-`grep`-based gate in this repository** — every gate reads through
+Node `readFileSync(…, "utf8")`, where a NUL is inert. Real
+`/usr/bin/grep` still matches (exit 0) and `grep -q`/`-l` gates still
+fire; only the LINE TEXT is suppressed.
+
+The hazard is real but it is aimed at the wrong target: what goes
+**totally** blind is a **binary-skipping searcher** — `ugrep`/`rg` with
+`-I`, which is the mode **Claude Code's own Grep tool runs in** — which
+returns *no match at all, exit 1*. In a method where agents audit the
+repo by searching it, one byte can make a file unfindable to every
+future session with every gate and suite green. Filed as **T-034-s6**,
+which also records that this verifier **reproduced the mechanism three
+more times while writing that very file** (six instances in one task).
+The standing C0 gate is correct, fires with codepoint and offset, and
+should be kept exactly as it is.
+
+### Correction 2 — the graph forecast: one value wrong, one assertion missing. INTEGRATOR, READ THIS
+
+Regenerated the graph myself and restored it byte-exact
+(`815412de…` verified). The **19 new import edges are exactly as
+enumerated** — all 19 confirmed one by one. Files **+5**, no removals.
+But:
+
+- **`["C-12", "C-05", "confirmed", 4]` → `6`, NOT `7`.**
+- **A NINTH assertion moves and is not in the enumeration:
+  `["C-12", "C-09", "confirmed", 4]` → `5`.**
+
+One root cause for both: **`app/src/lib/task-detail.ts` belongs to
+C-09**, not C-05 (`C-09-detail-panel.md` declares it explicitly). The
+forecast routed all three new `C-12 → app/src/lib/**` edges to C-05;
+two go there (`lib/utils.ts`, `lib/verdicts.ts`) and **one goes to
+C-09**. Ironically the notes cite `MapPanel.tsx → task-detail.ts` as the
+precedent proving type-only imports create edges — the right file, the
+wrong component. This is the fourth merge running bitten by an
+incomplete enumeration, exactly as the notes warned.
+
+Also: **`derived.findings`' `D1:C-05->C-06` `fileEdges` LIST grows 8 → 10
+entries** (the two new test files), in a *different* `it()` body from
+the relation-table count — a tenth moving assertion if counted
+separately. And **"edges 1063 → 1082" conflates import edges with the
+graph's total `edges` stat**: import is +19, but `call` is +29 and
+`type_ref` is +41, so the total moves by **+89**. Main's committed
+baseline is also **94 files / 670 symbols / 1069 edges**, not the
+667/1063 recorded.
+
+Corrected merge-time forecast, against main@`59558de`: files 94 → **99**;
+`["C-05", 44]` → **46**; `["C-12", 11]` → **14**;
+`["C-05","C-06","undeclared",8]` → **10**;
+`["C-05","C-12","confirmed",20]` → **22**;
+`["C-12","C-05","confirmed",4]` → **6**;
+`["C-12","C-06","confirmed",4]` → **6**;
+`["C-12","C-09","confirmed",4]` → **5**; the `D1:C-05->C-06` fileEdges
+list gains 2 rows; the `it()` name and `"committed graph · 94 files"` →
+**99**. `derived.issues` stays `[]`, `unmappedFiles` `[]`, 28 relation
+rows, no new findings — those claims hold.
+
+### Correction 3 — the utility count is 34, not 33
+
+The `UTILITIES` array has **35 entries / 34 distinct** (`px-2.75` is
+listed twice). All 34 emit. Cosmetic.
+
+### Correction 4 — two terracotta distances are rounded up, and the margin is thinner than stated
+
+Recomputed: `--chart-5`/`--destructive` to #d4694b is **73.00**, not 74;
+`--status-rejected-fg` is **96.21**, not 97. The conclusion is unchanged
+— but the margin on #d4694b is only **1.42 units** (71.58 vs 73.00),
+effectively a tie. What actually decides that half is the SEMANTIC
+argument the notes make (`--destructive` would say *danger*; the
+critical path is not danger), not the arithmetic. Worth saying plainly
+because the table reads like a clear win.
+
+---
+
+**Rulings requested by dispatch.**
+
+- **The critical-path definition: UPHELD, and the reasoning is
+  correct.** CPM-longest-chain is the right reading and the argument
+  against most-blocking is sound: *worst blocker* is the strip's
+  neighbouring cell and `transitiveHolds` IS that measurement, so
+  defining both the same way would make the pane answer one question
+  twice and "how deep is this" never. "Critical path" is also a term of
+  art and using it for anything else misleads. Verified they genuinely
+  differ on a hand-built fixture: `T-100` holds 4 while a 4-chain wins
+  the path, both readings asserted side by side. Tie-break rung 2
+  (more not-done wins at equal length) verified in both directions.
+- **The mock is indicative, not normative: CONFIRMED by count.** The
+  `map · tasks` screen draws **15 distinct task cards** (T-001…T-015)
+  against its own subtitle **"18 tasks, ordered by dependency instead of
+  story"**. Treating its drawn red chain as non-normative is justified.
+- **T-032's U+0003 criterion: does NOT strictly need amending** — it
+  constrains the divider's VALUE, and the escape produces that value.
+  But it READS as an instruction to type the character, which is how the
+  literal got there the first time. Filed as **T-034-s7**.
+
+**The five suggestions, ruled.** **s1 VALID and the urgent one** —
+re-derived exactly: 32 of 50 cards in wave 0, a 1440×3818 canvas in a
+~600px pane. This is the open question about whether the lens is
+*useful* here as opposed to correct, and it is the human's call; reads
+with T-048-s2. **s2 VALID, latent** — verified the tree today has **no**
+drawn task with an undrawn blocker (9 parked, 27 suggested), so the hole
+is real but currently unexercised; a trap, correctly filed. **s3 VALID**
+— straightforward, `lens` is the fourth member of the T-022 seam. **s4
+VALID and correctly escalated** — the bundle really does place the
+control in two different homes; one-home-for-both is the defensible
+call and the reasoning is written down. **s5 VALID conclusion, premise
+needs s6's correction** — lifting the check to `lint:tokens` is right,
+but because the tree must stay SEARCHABLE, not because the gates are
+blind (they are not; s5's own bullet already concedes lint-tokens
+survives, contradicting its lede).
+
+**@human — six visual judgments carry forward intact** (the terracotta
+in both schemes beside a `rejected` card; blocked ghost vs ready grey at
+arm's length; **wave 0 as a wall — s1**; where the lens control belongs
+— s4; the lens control beside the overlay control; and the tasks-lens
+header with nothing on the right). Headless cannot answer any of them.
