@@ -31,10 +31,23 @@ export function GenesisScreen({
 }) {
   const fileCount = docs.fileCount;
   return (
+    // T-048 — `min-h-0` is the link that makes the chain a chain. The
+    // shell bounds this screen's column at `h-screen` (App.tsx), the slot
+    // below already carries `min-h-0 flex-1`, and the pane carries it on
+    // down to its `overflow-y-auto` region — but a flex item's automatic
+    // minimum size is its CONTENT size, so without `min-h-0` here the
+    // section refused to shrink below its 1105px of content inside a
+    // 600px column and `overflow: visible` spilled the whole thing onto
+    // the page. The page grew instead of the pane, at every window size.
+    // Bounding the column alone was measured and does NOT fix it
+    // (T-041-s3): page 1110 vs a 720 viewport, pane region 796/796,
+    // both unmoved. With this one class the same measurement reads page
+    // 720/720 and pane region 796/406 — the frame holds, the pane
+    // scrolls.
     <section
       data-testid="genesis-screen"
       data-genesis-files={fileCount}
-      className="flex flex-1 flex-col gap-6 px-10 py-9"
+      className="flex min-h-0 flex-1 flex-col gap-6 px-10 py-9"
     >
       <div className="flex flex-col gap-2">
         <span className="font-mono text-xs tracking-overline text-muted-foreground uppercase">

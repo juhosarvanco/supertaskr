@@ -194,17 +194,23 @@ test("the pane is laid out and painted by the real sheet, inside the slot", asyn
   expect(paneBox.y).toBeGreaterThanOrEqual(slotBox.y - 1);
   expect(paneBox.width).toBeLessThanOrEqual(slotBox.width + 1);
 
-  // WHO SCROLLS — the open @human question from T-026/T-037, now
-  // MEASURED rather than suspected, which is what a served-bundle probe
-  // is for. The pane owns an `overflow-y-auto` region (min-h-0 + flex-1
-  // all the way up), but the shell's column is `min-h-screen`, not
-  // `h-screen`, so it is unbounded: with the complete tree at the
-  // lane's 1280x720 geometry the COLUMN grows past the viewport and the
-  // PAGE takes the scroll, while the pane's own region never engages.
-  // Recorded as T-041-s1. This assertion is a tripwire on today's
-  // truth, not an endorsement of it: bounding the column (h-screen)
-  // reds it, and the reconciliation is to flip both halves — page no
-  // longer scrolls, pane's region does.
+  // WHO SCROLLS — the open @human question from T-026/T-037, MEASURED
+  // rather than suspected, which is what a served-bundle probe is for.
+  // T-041 pinned the wrong answer here as a deliberate tripwire: the
+  // pane owned an `overflow-y-auto` region while the shell's column was
+  // `min-h-screen` — a floor, never a ceiling — so the column grew, the
+  // PAGE took the scroll, and the pane's own region sat at
+  // scrollHeight === clientHeight and never engaged.
+  //
+  // T-048 fixed it and this block now asserts the FIXED behaviour: the
+  // genesis column is bounded (`h-screen`, scoped to that screen) and
+  // the genesis section carries `min-h-0`, which is the link that lets a
+  // flex item shrink below its content and hand the overflow to the
+  // pane. Both halves are needed: T-048 re-derived T-041-s3 by doing it
+  // — bounding the column ALONE leaves page 1110 vs a 720 viewport and
+  // the region still 796/796. The three-viewport sweep below is the
+  // regression coverage; what is asserted here is the same claim at the
+  // lane's own 1280x720 geometry, where T-041 recorded 1110/720.
   const scroller = pane.locator("div.overflow-y-auto").first();
   const layout = await scroller.evaluate((el) => ({
     overflowY: getComputedStyle(el).overflowY,
@@ -212,20 +218,26 @@ test("the pane is laid out and painted by the real sheet, inside the slot", asyn
     clientHeight: el.clientHeight,
     pageScroll: document.documentElement.scrollHeight,
     viewport: document.documentElement.clientHeight,
-    columnMinHeight: getComputedStyle(
-      document.querySelector('[data-testid="docs-model"]')!,
-    ).minHeight,
+    // The COLUMN is what carries the bound — `[data-testid="docs-model"]`
+    // is `main`, one level up, and it keeps `min-h-screen` so that every
+    // other screen stays a scrolling page (T-048).
+    columnHeight: (
+      document.querySelector('[data-testid="docs-model"] > div') as HTMLElement
+    ).getBoundingClientRect().height,
   }));
   expect(layout.overflowY, "the pane's scroll region exists").toBe("auto");
-  expect(layout.columnMinHeight).toBe(`${layout.viewport}px`);
+  expect(
+    layout.columnHeight,
+    "the genesis column is bounded to the window (T-048)",
+  ).toBe(layout.viewport);
   expect(
     layout.pageScroll,
-    "today the PAGE grows past the viewport with the complete tree (T-041-s1)",
-  ).toBeGreaterThan(layout.viewport);
+    "the frame HOLDS: the page never grows past the viewport (T-048)",
+  ).toBe(layout.viewport);
   expect(
     layout.scrollHeight,
-    "…so the pane's own region is never asked to scroll (T-041-s1)",
-  ).toBe(layout.clientHeight);
+    "…and the pane's own region takes the scroll instead (T-048)",
+  ).toBeGreaterThan(layout.clientHeight);
 
   // The written ✓ disc paints the provenance token in both schemes.
   const disc = slot.locator('[data-path="docs/ROADMAP.md"] svg circle').first();
@@ -237,4 +249,83 @@ test("the pane is laid out and painted by the real sheet, inside the slot", asyn
   expect(await computed(pane, "background-color")).toBe(await tokenColor(page, "--sidebar"));
   expect(await computed(disc, "fill")).toBe(await tokenColor(page, "--review-disc"));
   await page.getByRole("button", { name: "Toggle theme" }).click();
+});
+
+/**
+ * T-048 — the frame holds at every window size.
+ *
+ * The regression coverage for the fix, and the one spec in this lane
+ * that leaves 1280x720. The three viewports are the ones T-041's probe
+ * measured, and 800x600 is the one that matters most: it is the app's
+ * OWN configured window (app/src-tauri/tauri.conf.json), where the page
+ * used to run to 1172px against a 600px viewport — you scrolled the
+ * header and the interview heading off-screen to reach the artifact
+ * list, and the pane's `overflow-y-auto` region never engaged at any
+ * size. Measured before/after at all three; the tables are in T-048's
+ * notes.
+ *
+ * This fails on the whole CLASS, not just on a reverted class name: it
+ * reads the page's own scrollHeight, so anything that makes the genesis
+ * screen grow past the window again reds it, whatever the cause.
+ */
+test("the frame holds and the pane scrolls at 800x600, 1024x768 and 1280x720", async ({
+  page,
+}) => {
+  await openShell(page);
+  await applyPick(page, {
+    kind: "genesis",
+    projectDir: GENESIS_DIR,
+    seq: 10,
+    probe: NOTHING_FOUND,
+  });
+  await applyDocs(page, streakFixture(11, GENESIS_DIR));
+  await expectPhase(page, "genesis", "genesis");
+
+  const slot = page.getByTestId("genesis-pane-slot");
+  const scroller = slot.getByTestId("genesis-pane").locator("div.overflow-y-auto").first();
+
+  for (const viewport of [
+    { width: 800, height: 600 },
+    { width: 1024, height: 768 },
+    { width: 1280, height: 720 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const at = `${viewport.width}x${viewport.height}`;
+    const layout = await scroller.evaluate((el) => ({
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight,
+      pageScroll: document.documentElement.scrollHeight,
+      viewport: document.documentElement.clientHeight,
+      columnHeight: (
+        document.querySelector('[data-testid="docs-model"] > div') as HTMLElement
+      ).getBoundingClientRect().height,
+    }));
+    expect(layout.viewport, `the viewport really is ${at}`).toBe(viewport.height);
+    expect(layout.columnHeight, `the column is bounded to the window at ${at}`).toBe(
+      viewport.height,
+    );
+    expect(layout.pageScroll, `the page does not grow past the window at ${at}`).toBe(
+      viewport.height,
+    );
+    expect(
+      layout.scrollHeight,
+      `the pane's own region is the one asked to scroll at ${at}`,
+    ).toBeGreaterThan(layout.clientHeight);
+  }
+
+  // And the same claim as BEHAVIOUR, with the trusted input this lane
+  // exists for: a real wheel over the pane scrolls the PANE, the page
+  // does not move, and the last artifact row — the one that used to sit
+  // below the fold — is reachable.
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const box = (await scroller.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, 2000);
+  await expect
+    .poll(() => scroller.evaluate((el) => el.scrollTop), {
+      message: "the wheel must scroll the pane's own region",
+    })
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY), "the page never moves").toBe(0);
+  await expect(slot.getByTestId("genesis-artifact").last()).toBeInViewport();
 });

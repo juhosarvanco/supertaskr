@@ -10,7 +10,7 @@ blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: "claude-opus-5 @fresh"
 verified_by:
 review:
 ---
@@ -76,5 +76,340 @@ with real CSS, plus the app suite. @human: the composition judgment
 here; look at the screen again once this lands.
 
 ## Implementation notes
+
+Executor claude-opus-5 @fresh, 2026-08-16, branch `t048-frame-holds`
+(worktree ../nputer-t048). Dispatched at main@0378cb9; the worktree was
+cut from `cf5a650`, which the orchestrator later found to be an ORPHAN
+(a sibling of main's `37cb0ed`, same parent, two lines of STATE.md
+apart). Corrected mid-task as instructed: **main was merged FORWARD**
+(`git merge --no-ff main`, never a rebase) at `a3a5ccb`, taking T-046
+and T-041. The one conflict was `docs/STATE.md` — both sides had
+rewritten it — resolved by taking **main's side whole**, verified with
+`git diff main HEAD -- docs/STATE.md` = **0 bytes**. Every number below
+was re-measured after that merge.
+
+Baselines re-derived on the merged tree, not inherited: lib/parser
+**159/159**, app **491/491 (28 files)** after `npm run build`, cargo
+**208 passed + 3 ignored** over 11 binaries, tools/e2e **33**,
+`lint:tokens` clean.
+
+### What shipped — TWO classes, not three, and the third is the reason
+
+    app/src/App.tsx
+      const boundedFrame = screen.screen === "genesis";
+      <div className={cn("flex min-w-0 flex-1 flex-col",
+                         boundedFrame ? "h-screen" : "min-h-screen")}>
+
+    app/src/components/shell/GenesisScreen.tsx
+      className="flex min-h-0 flex-1 flex-col gap-6 px-10 py-9"
+
+Criterion 3 offers "the three class edits the verifier proved sufficient
+or a demonstrably better equivalent". The three-edit version was built,
+measured, and **rejected on criterion 4 evidence**: `min-h-screen` →
+`h-screen` on `main` bounds the whole shell, and `main` is the row the
+pane rail lives in. Measured (every figure below is from the served
+bundle):
+
+- **board**: the rail is a stretch-height sibling of the column, so it
+  drops from **2202px → 720px** at 1280x720 and **2202 → 600** at
+  800x600. The page still scrolls to 2202; the sidebar strip and its
+  right border now stop at the fold.
+- **map at 800x600**: the canvas is `min-h-0 flex-1 overflow-hidden`
+  (MapView.tsx:490), so it shrinks and **clips**: `div.map-canvas-grid
+  446/320`, `overflow-y: hidden`, **126px of graph unreachable with no
+  scrollbar anywhere**. Page 726 → 600. Filed as T-048-s2.
+- **the "No plan" card at 800x600**: `main` 663 → 600 (the section keeps
+  its content height and spills). No visual consequence — `main` paints
+  nothing — but it is movement where criterion 4 asked for none.
+
+The genesis half of `main` needs no edit at all: with the column at
+`h-screen`, `main` is `min-h-screen` with a 100vh child, so it resolves
+to exactly 100vh. **Verified rather than argued** — a variant with BOTH
+conditional was built and measured, and every number at all three
+viewports is identical to what shipped. So the second edit buys nothing
+on genesis and costs two screens elsewhere; it is not in the diff.
+
+`cn()` is the codebase's existing conditional-class idiom
+(`@/lib/utils`, as PaneRail uses it). Zero new tokens, zero arbitrary
+values, no new dependency, no new IPC.
+
+### 1. The measurement table, before and after
+
+Rig: the REAL dev bundle on a scratch port (14523, never 1420), headless
+Chromium, driven through **T-041's own `__nputerShellHarness` +
+`__nputerDocsHarness`** — no IPC faked, no source patched. T-024's
+`streak` fixture (9 files) applied under a genesis project.
+
+Cross-check worth recording: before the forward merge the harness did
+not exist at the branch point, so the first pass drove the same screens
+through a fake `window.__TAURI_INTERNALS__` (the boundary
+`genesis-entry.test.tsx` mocks, in a real browser). After the merge the
+rig was re-pointed at the sanctioned harness and **every number came out
+byte-identical**. Two independent routes to the same screen agree.
+
+**BEFORE** — the recorded numbers reproduce exactly (1172 / 1141 / 1110,
+and 796/796 at the lane's geometry):
+
+| viewport | page scrollHeight / viewport | overflow | pane region scrollHeight/clientHeight | column |
+|---|---|---|---|---|
+| 800x600 | **1172 / 600** | 572 | **858 / 858** — never scrolls | 1172 |
+| 1024x768 | **1141 / 768** | 373 | **827 / 827** — never scrolls | 1141 |
+| 1280x720 | **1110 / 720** | 390 | **796 / 796** — never scrolls | 1110 |
+
+(The task table's "796/796" is the 1280x720 figure; the region is
+858/858 and 827/827 at the two smaller widths — taller content, because
+it wraps. It never scrolls at any of them, which is the claim.)
+
+**AFTER**:
+
+| viewport | page scrollHeight / viewport | overflow | pane region scrollHeight/clientHeight | column |
+|---|---|---|---|---|
+| 800x600 | **600 / 600** | 0 | **858 / 286** — scrolls | 600 |
+| 1024x768 | **768 / 768** | 0 | **827 / 454** — scrolls | 768 |
+| 1280x720 | **720 / 720** | 0 | **796 / 406** — scrolls | 720 |
+
+720/720 and 796/406 at 1280x720 are exactly what T-041's verifier
+measured for the three-edit version, so the two shapes are equivalent on
+the screen the criterion is about. The empty genesis screen (nothing
+written yet) moves too: 800x600 page **971 → 600**, region 657/657 →
+657/286.
+
+### 2. The falsified fix, re-derived by doing it
+
+Only the two `min-h-screen` → `h-screen` edits, no `min-h-0`:
+
+| viewport | page / viewport | main | column | pane region |
+|---|---|---|---|---|
+| 800x600 | **1172 / 600** | 600 | 600 | **858 / 858** |
+| 1024x768 | **1141 / 768** | 768 | 768 | **827 / 827** |
+| 1280x720 | **1110 / 720** | 720 | 720 | **796 / 796** |
+
+Both columns bind — `main` and the column are exactly the viewport, and
+their computed `min-height` drops to 0px — **and every page number is
+unchanged from BEFORE, to the pixel**, with the pane's region still
+frozen. `overflow: visible` spills, because the genesis section's
+automatic minimum size is its content (1105px) and nothing lets it
+shrink. T-041-s3 is exactly right and s1's "the whole mechanical fix" is
+exactly wrong. `min-h-0` alone (column unbounded) is equally
+insufficient — the section can shrink but nothing asks it to; both
+halves were reverted separately against the new coverage and both go
+red (below).
+
+### 3. Other screens unaffected — measured, not assumed
+
+Every field, before → after, at 1280x720 and at 800x600 (the app's own
+window). `page` = document scrollHeight / viewport; `rail` = the pane
+rail's rendered height; `card` = the empty-state card's document-relative
+top + height.
+
+| screen | before | after |
+|---|---|---|
+| front door 1280x720 | page 720/720, main 720, card 238+312 | **identical** |
+| no-plan card 1280x720 | page 720/720, main 720, card 144+500 | **identical** |
+| board 1280x720 | page 2202/720, main 2202, **rail 2202** | **identical** |
+| map 1280x720 | page 720/720, main 720, rail 720 | **identical** |
+| front door 800x600 | page 600/600, main 600, card 178+312 | **identical** |
+| no-plan card 800x600 | page 663/600, main 663, card 115+500 | **identical** |
+| board 800x600 | page 2202/600, main 2202, **rail 2202** | **identical** |
+| map 800x600 | page 726/600, main 726, rail 726 | **identical** |
+
+The board fixture is the repo's OWN docs/ tree (every task file, ROADMAP
+and component) — the tallest real board available, which is what makes
+the rail figure worth measuring. Two probes ran alongside, both unchanged
+before → after: `minTop` (anything above the scroll origin is
+unreachable) stayed 0 everywhere, and the `overflow:hidden`-with-taller-
+content list stayed the same eleven pre-existing map-node buttons (the
+canvas joins that list ONLY under the rejected three-edit version).
+
+Two honest findings from this sweep, both pre-existing and both filed
+rather than fixed: the no-plan card already overflows at 800x600
+(663 vs 600 — **T-048-s3**), and the map canvas clips rather than
+scrolls whenever anything bounds it (**T-048-s2**).
+
+### 4. Coverage that would catch a regression, proved by reverting
+
+**`tools/e2e/tests/genesis-screen.spec.ts`** — the measurement, where
+layout is real. This is also criterion 5 (below). Two blocks:
+
+- the existing "laid out and painted by the real sheet" test now asserts
+  the FIXED behaviour at the lane's 1280x720 — page scrollHeight ==
+  viewport, the pane's region scrollHeight > clientHeight, and the
+  COLUMN's height == viewport (the old assertion read
+  `[data-testid="docs-model"]`, which is `main`, one level up);
+- a new test sweeps **800x600, 1024x768 and 1280x720** — the same three
+  the task names — asserting all four facts at each, then proves the
+  same claim as BEHAVIOUR with this lane's trusted input: a real
+  `page.mouse.wheel` over the pane moves the pane's `scrollTop`, leaves
+  `window.scrollY` at 0, and brings the last artifact row into view.
+
+It fails on the CLASS, not on a class name: it reads the page's own
+scrollHeight, so anything that makes the screen grow again reds it.
+
+**`app/test/shell-frame.test.tsx`** (new, 4 tests) — what the lane
+cannot cheaply see. jsdom has no layout, so it pins the two facts that
+would otherwise be unprotected: **the scoping** (genesis bounded, board
+/ map / front door not, `main` always `min-h-screen` so the rail keeps
+stretching — nothing in the lane asserts the rail's height, so without
+this the conditional could be flattened and every suite would stay
+green), and **the chain** — a walk UP from the pane's `overflow-y-auto`
+region to the bounded column asserting every link carries `min-h-0`,
+including the two links inside T-024's pane that this task does not own.
+Real App, real store, real routing, IPC mocked (the T-026 precedent).
+
+Reverts with the coverage in place, each run separately:
+
+| revert | result |
+|---|---|
+| both halves (back to main) | lane **2 failed** — "the genesis column is bounded to the window (T-048)" and "the column is bounded at 800x600"; app suite 2 failed |
+| `h-screen` kept, `min-h-0` reverted (the falsified fix) | lane **2 failed** — "the frame HOLDS: the page never grows past the viewport (T-048)" and "the page does not grow past the window at 800x600". The column assertion PASSES, which is the falsification in one line |
+| `min-h-0` kept, `h-screen` reverted | lane **2 failed** — the column assertions |
+
+### 5. The T-041 tripwire — the real edit, not a drafted hunk
+
+The dispatch expected T-041 to be unmerged and asked for the replacement
+text as a drafted-for-integrator hunk. The forward merge landed T-041
+first, so `tools/e2e/tests/genesis-screen.spec.ts` is in this tree and
+the edit is **done here**. What changed:
+
+- the assertions flipped from pinning the break to pinning the fix —
+  `pageScroll` `toBeGreaterThan(viewport)` → `toBe(viewport)`, and
+  `scrollHeight` `toBe(clientHeight)` → `toBeGreaterThan(clientHeight)`;
+- `columnMinHeight` (read off `main`, and now meaningless — `main` keeps
+  `min-h-screen` deliberately) → `columnHeight`, read off the column
+  that actually carries the bound, asserted equal to the viewport;
+- the comment no longer names the open question. It says T-041 pinned
+  the wrong answer as a deliberate tripwire, that T-048 fixed it, and
+  that bounding the column ALONE leaves 1110/720 and 796/796 — so the
+  next reader learns the mechanism instead of inheriting the remedy that
+  was falsified. The three `T-041-s1` mentions in that block are gone
+  with the assertions they annotated; the s1/s3 FILES were already
+  deleted on main when T-041 merged (absorbed here) and were not
+  recreated.
+
+The tripwire's own failure modes were exercised: with the fix reverted
+it goes red at both viewport sizes (table above), and with the fix in
+place all 4 tests in the file pass. It cannot silently keep passing on
+the old numbers — the old numbers now fail it.
+
+### 6. Every new test executes
+
+Not counted, run. `expect("PROBE").toBe("EXECUTED")` injected as the
+first statement of each new/edited body, then reverted and `cmp`-checked
+byte-exact:
+
+- `app/test/shell-frame.test.tsx` — all **4** it() bodies → **4 failed
+  (4)**, each on the PROBE line;
+- `tools/e2e/tests/genesis-screen.spec.ts` — both touched test bodies
+  (the edited "laid out and painted" and the new three-viewport sweep) →
+  **2 failed, 2 passed**, the two failures on the PROBE line.
+
+### 7. Suites (macOS 15/Darwin 25.6, node 22.22.0; ADR-011 order)
+
+| suite | baseline (merged tree) | with T-048 |
+|---|---|---|
+| lib/parser `npm test` | 159/159 | **159/159 (10 files)**, `tsc --noEmit` clean, build clean |
+| app `npm test` (after `npm run build`) | 491/491 (28 files) | **495/495 (29 files)** — +4, all mine |
+| app `npx tsc --noEmit` | clean | **clean** |
+| app `npm run build` | exit 0 | **exit 0**, `index-DV-d_LjB.js` 442.12 kB (baseline `index-vTAlOtQD.js` 442.07 kB) |
+| app/src-tauri bare `cargo test` | 208 + 3 ignored | **208 passed + 3 ignored, 0 failed** over 11 binaries |
+| tools/e2e `npx playwright test` | 33 | **34/34 in 8.5s**, one worker, no skips |
+| tools/e2e `npm run typecheck` | clean | **clean** |
+| tools/e2e `npm run lint:tokens` | clean | **clean, 37 files** |
+
+The cargo total was summed from the eleven `test result:` lines, not
+read off a `tail` (the standing trap). The app suite's four
+bundle-reading tests (`shell-harness.test.ts`, `genesis-mount.test.tsx`)
+fail against a missing `dist/` — that is why the count is quoted "after
+`npm run build`", and it cost one confused run here before the cause was
+found. `genesis-mount.test.tsx`'s staleness guard is sharper still: a
+`git stash` / `stash pop` cycle re-touches the sources, so the build must
+be the LAST thing before the suite. Both were hit and both are the guard
+working.
+
+**Boot check NOT run** (CONVENTIONS BOOT GATE, landed by T-046 and now
+in this tree after the merge). The dispatch forbids it explicitly, and
+this diff would otherwise trigger it (`app/src/**`). Said out loud
+rather than passed over in silence, which is what that bullet requires:
+**the gate did not run on this branch, by instruction, and the merge
+that lands it should run it.**
+
+### 8. Fence
+
+`git diff --stat` against the merge commit is **six files**: the two
+source files, the two test files (one new), and three suggestion files
+— nothing else. Zero diff under `app/src/lib/watcher-store.ts`,
+`tools/e2e/scripts/**`, `app/src-tauri/**`, `lib/parser/**`, `method/**`,
+`docs/CONVENTIONS.md`, `app/src/genesis/**` (the criterion never forced
+it — T-024's pane already had its whole `min-h-0` chain, which is why
+this is two classes), and every lockfile. Neither ../nputer-t041,
+../nputer-t046 nor ../nputer-t047 was entered; T-041's branch content was
+read via `git show` from the main checkout before the merge made it
+moot. No port but 14520 (the lane) and 14523 (the scratch rig) was bound
+or contacted — **1420 was never touched**. No screenshots, no screen
+control, no model calls, no new dependencies.
+
+### 9. For the integrator: the graph regen delta, measured
+
+The T-009-s1 rule fires (this diff touches `*.tsx` outside docs/). I
+regenerated in-branch to MEASURE, then restored `docs/architecture/
+graph.json` to the committed bytes — sha256
+`05ebc2c772ffa3aaabc23aefa0feae60f2c4652ab9e64ac1c64de0044f5e478a`,
+re-verified after restore, `git status docs/` clean. The ignored
+`self_graph_is_current` is RED on-branch, exactly as forecast.
+
+- files **89 → 90**: adds `app/test/shell-frame.test.tsx`; nothing
+  removed. Content-changed (hash/loc only): `app/src/App.tsx`,
+  `app/src/components/shell/GenesisScreen.tsx`.
+- stats: symbols **602 → 616**, edges **1003 → 1013**.
+- **THREE assertions move**, and they must be edited in the same commit
+  as the regen: `app/test/architecture-dogfood.test.ts:469`
+  `toBe(89)` → `90` (with its test title at :468 and the header block's
+  stats line ~:357), the relation row `["C-05","C-10","confirmed",20]`
+  → **21** at :636, and `app/test/map-dogfood-render.test.tsx:201`
+  `committed graph · 89 files` → `90 files`. Every other row, finding,
+  drift flag and count is byte-unchanged — the new file is claimed by
+  C-05 (`app/test/**`) and imports `@/lib/docs-model`, so it adds one
+  observation to an edge that already exists. No new component, so
+  `lib/parser/test/smoke.test.ts` does NOT move (registry pin, not a
+  graph pin — T-024's lesson, read the right way round).
+
+### 10. Flags for the verifier
+
+- **The deviation from criterion 3 is the whole judgment call.** If you
+  disagree, the three-edit version is two `git checkout`s away and the
+  evidence against it is the criterion-4 table above; reproduce the rail
+  (2202 → 720) and the map canvas (446/320, hidden) before ruling.
+- **`main` keeps `min-h-screen` on the genesis screen** and resolves to
+  100vh anyway. That is measured, not assumed, and a both-conditional
+  variant was measured to be identical. If you think the frame should
+  SAY it is bounded rather than resolve to it, that is a readability
+  argument, not a measurement one.
+- **The chain test asserts a fixed path** (`div.flex` → `genesis-pane` →
+  `genesis-pane-slot` → `genesis-screen`). If T-027 restructures the
+  screen it will go red and should be re-derived, not deleted — the
+  loop above it is the real assertion; the equality is there so a new
+  link cannot appear unlooked-at.
+- **Not covered:** the app suite pins classes and the lane pins layout,
+  but nothing pins the RAIL's height, so criterion 4's board evidence is
+  a one-off measurement plus `shell-frame.test.tsx`'s class-level proxy.
+  A lane spec measuring the rail against the document height would close
+  it; it belongs with T-048-s1, which is where the decision lives.
+- **T-048-s3 is the finding I would look at first**: the front door's
+  no-plan card already overflows the app's own window (663 vs 600). It
+  is out of this task's fence and it is the same shape one screen over.
+
+### 11. @human (listed, never performed here — headless throughout)
+
+1. **The frame at 800x600.** The pane now scrolls inside a fixed header
+   and heading: the artifact list has 286px of the 858px it wants at
+   that size. Is that enough of a list to be useful, or does the
+   interview heading block want to be smaller? The measurement says the
+   frame holds; whether it holds ENOUGH is an eye judgment.
+2. **The composition question is untouched and still T-027's** —
+   full-width pane vs right half. A frame that does not hold was a bug
+   at any width; this changes nothing about the width.
+3. **T-048-s1**: the shell now has two scroll models (bounded genesis,
+   growing board/map/front door). Worth a look at the board's header
+   scrolling away at 800x600 while the interview's does not.
 
 ## Verdicts
