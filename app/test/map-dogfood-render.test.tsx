@@ -193,8 +193,12 @@ describe("the nputer repo on its own map", () => {
     // TS half — agent-store.ts (C-14's) and its suite (C-05's). The
     // runner's five .rs files are NOT in this count: languages is still
     // ["ts"] until T-010, so the map under-reports C-14 by design.
+    // 88 → 89 at the T-041 merge regen (2026-08-16): one file —
+    // app/test/shell-harness.test.ts. The merge's other five new .ts
+    // files live under tools/, which .nputerignore excludes, so a lane
+    // that grew by ten specs adds exactly one node to the map.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 88 files",
+      "committed graph · 89 files",
     );
   });
 });

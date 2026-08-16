@@ -68,6 +68,35 @@ ADR-014/015).
   root, so they raise no snapshots. What is NOT yet true: no UI calls
   any of it (T-027), and the loop has never run against a real model —
   it is proven against a fake CLI fixture only.
+- Test surfaces (DEV, browser-only) — part of what the app exposes, so
+  named here rather than left to be discovered in the source. Two
+  harnesses hang off `window` in a browser DEV build:
+  `__nputerDocsHarness` (pre-existing — feeds docs snapshots, which in a
+  browser always land on phase `open`) and, since T-041,
+  `__nputerShellHarness` (`applyProjectStatus` / `applyPickOutcome` /
+  `getShell`), which reaches the four phases a served bundle otherwise
+  could not — `noProject`, `noDocs`, `rejectedPick`, `genesis`. It hands
+  out the shell's OWN reducers by reference, so the E2E lane drives
+  shipped code instead of a parallel implementation. Both sit behind ONE
+  gate, not two that can drift: `!isTauri && import.meta.env.DEV`, the
+  same block in `watcher-store.ts`. Keeping them in that module rather
+  than a test-only one is deliberate and is the SMALLER surface — a
+  separate module could only reach the module-private reducers and the
+  live shell through NEW PRODUCTION EXPORTS on the store, which would
+  exist whether or not a test imported them. This is not IPC: no Tauri
+  command, no grant, nothing reachable from the packaged app, and the
+  app/src export surface grew by exactly one line, an `interface` that
+  is erased at build. Measured rather than asserted at T-041's merge:
+  pristine main, main + T-041's picker extraction alone, and T-041's
+  HEAD build to 442,052 / 442,069 / 442,069 bytes with the last two
+  byte-identical, so the harness contributes ZERO bytes and its object
+  provably never constructs — the whole production delta is a 17-byte
+  function extraction. ONE lever is known and filed (T-041-s4):
+  `--mode development` does not flip DEV, but an inherited
+  `NODE_ENV=development` does, and `npm run build` is
+  tauri.conf.json's `beforeBuildCommand`. The runtime `isTauri` half
+  keeps the harness inert in the packaged app even then, and a bundle
+  test reds on the next `npm test`.
 - Code layout: `app/` = C-05 (Tauri 2 + React + Vite + Tailwind/shadcn;
   areas app-shell, app-board, app-map, and app-interview since T-024 —
   `app/src/genesis/**` is C-13's own territory inside the app package;

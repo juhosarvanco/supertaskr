@@ -346,6 +346,60 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     branch already moved it (+C-14, eleven ids) because it declares a
 //     component — the T-024 three-fixtures lesson. A merge regen alone
 //     never moves it.
+//
+// RECONCILED AT THE T-041 MERGE (2026-08-16, integrator — sixteenth
+// exercise of the practice; the fourteenth and fifteenth, at T-039's
+// and T-046's merges, fired and were NO-OPS, which is why this file
+// skips from T-025 to here). Every number below re-derived from the raw
+// graph by full added/removed file-and-edge enumeration against
+// `git show HEAD:docs/architecture/graph.json`, and from an independent
+// re-run of the derivation engine, before this edit:
+//   · stats 88→89 files, 595→602 symbols, 990→1003 edges — 15 added and,
+//     for the first time in this file's history, TWO REMOVED. That is not
+//     churn, it is the branch's one refactor showing up as topology:
+//     `runPicker`→`reducePickOutcome` and `runPicker`→`sendEcho` are gone,
+//     replaced by `runPicker`→`commitPickOutcome` plus that new symbol's
+//     own three call edges. The extracted function is the +17 bytes the
+//     verifier measured in the shipped bundle, seen from the other side.
+//   · one new file, app/test/shell-harness.test.ts; nothing removed.
+//     Content-changed: app/src/lib/watcher-store.ts, 560→659 loc and
+//     37→40 symbols (ShellHarnessSnapshot, shellHarnessSnapshot,
+//     commitPickOutcome).
+//   · THE FIVE tools/e2e FILES IN THIS MERGE ARE INVISIBLE, checked
+//     rather than assumed: .nputerignore:8 is `tools/`, and the
+//     regenerated file list contains zero paths under it. The lane's
+//     three specs and two modules cannot move the map, which is why a
+//     merge that lands ten new tests moves the graph by one file.
+//   · mapping 88→89; C-05 38→39 (the new suite lands under the
+//     app/test/** umbrella). Every other count holds — C-06 21, C-08 10,
+//     C-09 3, C-10 2, C-12 11, C-13 2, C-14 1. D2 stays empty, the
+//     unmapped node stays gone, derived.issues stays [].
+//   · findings: NOTHING added, nothing removed, nothing renumbered —
+//     five D1 rows and three D3s, byte-identical. The new suite's only
+//     cross-component import is watcher-store, and C-05→C-10 is already
+//     CONFIRMED, so it deepens an honest edge instead of raising a
+//     finding.
+//   · relation table: same 28 rows, same 13 confirmed / 6 undeclared /
+//     9 planned tally. EXACTLY ONE observedCount moves — C-05→C-10
+//     19→20.
+//   · FOUR assertions moved here, not three. T-041's verifier forecast
+//     three (this file's count, the C-05→C-10 cell, and the map header
+//     string) and every one of those is right; the fourth —
+//     ["C-05", 38] → 39 in the counts table — is in the same it() body
+//     as the count, so vitest stopped at the first failing expect and
+//     never reached it. Recorded because the miss is structural, not
+//     careless: a forecast read off a failure list under-counts every
+//     assertion that sits behind another in the same test.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched: T-041
+//     declares no component and changes no registry file — the T-024
+//     three-fixtures rule does not fire in its registry form. Confirmed
+//     by re-running lib/parser after the regen: 159/159, unmoved.
+//   · The ceaa949 ordering lesson, TENTH hold, measured again:
+//     regenerating BEFORE these lines landed gave sha
+//     83ba6f02588c2481900a3101489542d00a639f4ab44b5758b8cd0ebee68e7e05;
+//     regenerating after them gives a different one, because this file
+//     and map-dogfood-render.test.tsx are both indexed. Fixture edits
+//     first, final regen last.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -411,8 +465,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 88 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(88);
+  it("all 89 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(89);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -425,7 +479,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 37 → 38 at the T-025 merge regen: agent-store.test.ts, under it
       // again — the SUITE lands here while the module it drives lands in
       // C-14, which is what makes the new D1 below.
-      ["C-05", 38],
+      // 38 → 39 at the T-041 merge regen: shell-harness.test.ts, the same
+      // umbrella. T-041's five tools/e2e files land nowhere — `tools/` is
+      // .nputerignored, so the lane is not territory.
+      ["C-05", 39],
       ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
@@ -589,7 +646,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 16 → 19 at the T-037 merge regen: both new suites import
       // docs-model, and genesis-pane-boundary.test.tsx also drives
       // watcher-store. All three in the DECLARED direction.
-      ["C-05", "C-10", "confirmed", 19],
+      // 19 → 20 at the T-041 merge regen: shell-harness.test.ts drives
+      // watcher-store — the ONLY observedCount this merge moves.
+      ["C-05", "C-10", "confirmed", 20],
       ["C-05", "C-11", "planned", 0],
       ["C-05", "C-12", "confirmed", 20],
       // 2 → 4 at the T-037 merge regen, and one of the two additions is
