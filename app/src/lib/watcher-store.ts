@@ -713,17 +713,31 @@ async function runStartup(): Promise<void> {
 export function startDocsWatcher(): Promise<void> {
   const inFlight = startup;
   if (inFlight !== null) return inFlight;
-  const attempt: Promise<void> = runStartup().catch(() => {
-    // `runStartup` already recorded which await broke and why (the shell
-    // state the screen renders). All that is left here is the latch,
-    // released so the NEXT call genuinely re-attempts — guarded by
-    // identity so a late rejection can never unlatch a newer attempt.
-    if (startup === attempt) startup = null;
+  // THE LATCH CLOSES BEFORE THE ATTEMPT RUNS, and that order is the
+  // whole guard. `runStartup`'s first act is a synchronous
+  // `setShell({ starting: true })`, which NOTIFIES — so if the latch
+  // were assigned from `runStartup(...)`'s return value, a subscriber
+  // woken by that notify and calling back in would read a still-null
+  // latch and open a SECOND subscription (measured: `listen` called
+  // twice). So `attempt` is a placeholder resolved when the real work
+  // settles, latched first, and the work chained onto it in the same
+  // synchronous turn. A second call arriving at any point while this
+  // one is in flight — re-entrant or not — gets THIS promise back.
+  let finish!: () => void;
+  const attempt = new Promise<void>((resolve) => {
+    finish = resolve;
   });
-  // Synchronous, in the same turn as the call: a second call arriving
-  // while this one is still in flight gets THIS promise back and starts
-  // no second subscription.
   startup = attempt;
+  void runStartup()
+    .catch(() => {
+      // `runStartup` already recorded which await broke and why (the
+      // shell state the screen renders). All that is left here is the
+      // latch, released so the NEXT call genuinely re-attempts —
+      // guarded by identity so a late rejection can never unlatch a
+      // newer attempt.
+      if (startup === attempt) startup = null;
+    })
+    .finally(finish);
   return attempt;
 }
 

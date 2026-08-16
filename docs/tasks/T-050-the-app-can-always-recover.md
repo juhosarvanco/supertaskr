@@ -130,10 +130,12 @@ not a boolean and not a tri-state enum.
 export function startDocsWatcher(): Promise<void> {
   const inFlight = startup;
   if (inFlight !== null) return inFlight;
-  const attempt: Promise<void> = runStartup().catch(() => {
-    if (startup === attempt) startup = null;   // release, by IDENTITY
-  });
-  startup = attempt;                            // SYNCHRONOUS
+  let finish!: () => void;
+  const attempt = new Promise<void>((resolve) => { finish = resolve; });
+  startup = attempt;                            // LATCHED FIRST
+  void runStartup()
+    .catch(() => { if (startup === attempt) startup = null; })  // by IDENTITY
+    .finally(finish);
   return attempt;
 }
 ```
@@ -141,11 +143,11 @@ export function startDocsWatcher(): Promise<void> {
 Both properties come from one line each, and they are independent:
 
 - **SINGLE-FLIGHT** comes from `startup = attempt` being executed in the
-  same synchronous turn as the call — before any `await` inside
-  `runStartup` can resume. React's double-invoked effect calls twice in
-  one turn; the second call reads a non-null latch and gets THE SAME
-  promise. That is the old code's virtue, kept by the same mechanism
-  (synchronous assignment) rather than by luck.
+  same synchronous turn as the call, and — after the defect below —
+  BEFORE the attempt itself runs. React's double-invoked effect calls
+  twice in one turn; the second call reads a non-null latch and gets THE
+  SAME promise. That is the old code's virtue, kept by the same
+  mechanism (synchronous assignment) rather than by luck.
 - **RETRYABLE** comes from the `.catch` releasing the latch. The old
   `started` was set once and reset nowhere in the file (verified:
   `git show b623f6a:app/src/lib/watcher-store.ts` has exactly three
@@ -163,6 +165,66 @@ Two details that are load-bearing rather than decorative:
    screen offers is never a no-op. A subscriber woken by that notify
    may call `startDocsWatcher` synchronously and start a fresh attempt
    inside that window; detail 1 is what makes that safe.
+
+### A DEFECT found in session two, and fixed — criterion 1's concurrent clause
+
+**The committed `e50fc1e` did not fully satisfy criterion 1, and this is
+the one substantive change session two made to production code.**
+
+`runStartup`'s first act is a synchronous
+`setShell({ starting: true, startupFailure: null })` (watcher-store.ts:658),
+and `setShell` NOTIFIES every subscriber synchronously. The committed
+code took the latch from `runStartup(...)`'s return value:
+
+```ts
+const attempt: Promise<void> = runStartup().catch(…);   // notify happens HERE
+startup = attempt;                                       // latch closes only HERE
+```
+
+So there is a window — the whole synchronous prologue of the attempt —
+in which the attempt is running and the latch is still `null`. A
+subscriber woken by that notify which calls `startDocsWatcher` back
+reads `null`, starts a SECOND `runStartup`, and opens a second
+subscription; worse, the outer `startup = attempt` then clobbers the
+inner attempt's latch, so the store tracks one of the two. Criterion 1
+says "a second call arriving while the first is still in flight SHALL
+NOT start a second subscription", and this is exactly such a call.
+
+Measured, by counting `listen` calls, before and after:
+
+```
+=== C. synchronous re-entrancy from a store subscriber ===
+  BEFORE (e50fc1e)  re-entrant call made: true
+                    listenCalls = 2   <-- DOUBLE SUBSCRIPTION
+  AFTER             re-entrant call made: true
+                    listenCalls = 1   <-- single-flight held
+```
+
+The fix does NOT change the shape of the latch — it is still the
+in-flight promise — only the moment it closes: `attempt` becomes a
+placeholder latched BEFORE the work starts, with the work chained onto
+it in the same synchronous turn (`.finally(finish)` settles it either
+way). Every other property is unchanged, including the synchronous
+`starting: true` the tests assert on.
+
+Pinned by a new test, `startup-recovery.test.ts` → "a RE-ENTRANT call,
+from inside the store's own notify, starts no second subscription".
+Poison-checked: reverting `watcher-store.ts` to the committed version
+reds it with `one subscription, not two: expected 2 to be 1`, and the
+restore was verified byte-identical by sha256
+(`b52e7ff…fce1f`).
+
+**Honest reachability.** This is not reproducible in the shipped app
+today: the only `subscribeShell` listener is React's
+`useSyncExternalStore`, which schedules a render rather than running an
+effect synchronously inside the notify. It is a latent hazard, not a
+second cause of @human's screenshot — nothing here revises the card's
+"what is NOT claimed". It is worth fixing anyway because the invariant
+is cheap to hold and because the asymmetry was already visible in the
+code: `recordStartupFailure` deliberately releases the latch BEFORE its
+notify and guards by identity, reasoning about a subscriber that calls
+back synchronously — the predecessor closed exactly this window on the
+failure path and left it open on the success path.
 
 Why a promise rather than a `"idle" | "starting" | "started"` enum (the
 other honest shape): a concurrent caller can AWAIT the attempt already
@@ -229,5 +291,37 @@ reaches `open` and the screen reaches `board` — recovered, from both
 failures, with the same call that used to do nothing. (`startupFailure`
 is `null` after recovery in both cases; the drill's `??` printed the
 same placeholder for null, so it is stated here rather than shown.)
+
+### Obligation 2 — StrictMode safety, kept, by COUNTING `listen` calls
+
+Not by reading outcomes: a second subscription applying the same
+snapshot is dropped by `reduceDocs`'s seq guard and is invisible from
+the outside. Three probes, verbatim:
+
+```
+=== A. real <StrictMode> around the real App ===
+  listenCalls=1  invokeCalls=1
+  CONTROL: a bare mount-effect under <StrictMode> ran 2 times
+
+=== B. three calls while the FIRST is still in flight ===
+  listenCalls while parked = 1
+  same promise handed back?  b===a: true   c===a: true
+  starting = true
+  after settle: listenCalls=1 invokeCalls=1 phase=noProject
+
+=== C. synchronous re-entrancy from a store subscriber ===
+  re-entrant call made: true
+  listenCalls = 1
+  after settle: listenCalls=1 invokeCalls=1
+```
+
+Probe A is the real thing, not a simulation of it: the real `App`
+rendered inside a real `<StrictMode>`, with only the IPC boundary
+mocked. The CONTROL line is what makes it an assertion rather than a
+tautology — a bare mount-effect in the same environment runs **2**
+times, so React really is double-invoking here, and the App still
+subscribed once. Probe B parks `listen` unresolved so the attempt is
+genuinely mid-flight, and shows the latch handing back the identical
+promise object. Probe C is the defect above, after its fix.
 
 ## Verdicts

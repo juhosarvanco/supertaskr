@@ -283,6 +283,34 @@ describe("the latch: single-flight AND retryable (criterion 1)", () => {
     expect(store.getShellState().phase).toBe("noProject");
   });
 
+  it("a RE-ENTRANT call, from inside the store's own notify, starts no second subscription", async () => {
+    // The sharpest form of criterion 1's concurrent case, and the one
+    // that was genuinely broken until it was measured: `runStartup`'s
+    // first act is a synchronous `setShell({ starting: true })`, which
+    // NOTIFIES. A subscriber woken there that calls `startDocsWatcher`
+    // back is "a second call arriving while the first is still in
+    // flight" — but it arrives BEFORE the latch has been assigned if the
+    // latch is taken from `runStartup(...)`'s return value. It opened a
+    // second subscription (`listen` called twice). The latch is now
+    // closed before the attempt runs, so this holds at one.
+    const store = await freshStore();
+    let reentered = 0;
+    const unsubscribe = store.subscribeShell(() => {
+      if (reentered === 0 && store.getShellState().starting) {
+        reentered += 1;
+        void store.startDocsWatcher();
+      }
+    });
+
+    await store.startDocsWatcher();
+
+    expect(reentered, "the re-entrant call really was made").toBe(1);
+    expect(ipc.listenCalls, "one subscription, not two").toBe(1);
+    expect(ipc.invokeCalls, "and one status pull").toBe(1);
+    unsubscribe();
+    expect(store.getShellState().phase).toBe("noProject");
+  });
+
   it("the happy path latches exactly once — later calls are no-ops (criterion 4)", async () => {
     const store = await freshStore();
     await store.startDocsWatcher();
