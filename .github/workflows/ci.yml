@@ -31,9 +31,12 @@ name: ci
 # beside it — a `permissions:` key on the job that needs it, naming
 # `contents: read` plus the one extra scope — and NEVER by widening this
 # workflow default, which would hand the extra scope to every job and
-# every step in the file. tools/e2e/tests/workflow-parity.spec.ts fails
-# loudly on any widening, top-level or per-job: that failure is the
-# conversation, not an obstacle to route around.
+# every step in the file. tools/e2e/tests/workflow-permissions.spec.ts
+# fails loudly on any widening, top-level or per-job, in THIS file or any
+# other workflow (T-045 generalised the rule off ci.yml's hard-coded
+# path). A genuinely needed grant is argued twice — here, and as a row in
+# that spec's EXCEPTIONS table carrying file, scope and reason. The
+# failure is the conversation, not an obstacle to route around.
 permissions:
   contents: read
 

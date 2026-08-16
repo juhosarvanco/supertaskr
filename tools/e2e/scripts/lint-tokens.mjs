@@ -121,6 +121,18 @@ const selfPath = path.relative(repoRoot, fileURLToPath(import.meta.url)).split(p
 export const WALK_ROOTS = ["app/src", "app/test", "tools/e2e"];
 
 /**
+ * The trees the lint MUST cover — deliberately a SECOND list, not derived
+ * from WALK_ROOTS. This is the requirement; WALK_ROOTS is the policy that
+ * satisfies it, and a policy that quietly drops a tree has to fail against
+ * something that did not move with it. Measured while building T-045: with
+ * the selftest's positive checks generated from WALK_ROOTS, deleting
+ * "app/test" from it left the selftest green at ten checks — the deletion
+ * removed its own check. Two lists that must agree is the right shape here
+ * precisely because one of them is the thing being checked.
+ */
+const MUST_COVER = ["app/src", "app/test", "tools/e2e"];
+
+/**
  * Trees deliberately NOT walked, with the reason. Left in code because
  * "we forgot" and "we decided" look identical in an absent list.
  *
@@ -632,9 +644,12 @@ function walkPolicyChecks() {
   const under = (root) => files.filter((f) => f.startsWith(`${root}/`)).length;
   const selfHits = scanSource(readFileSync(path.join(repoRoot, selfPath), "utf8")).length;
   return [
-    // positive: every declared root is actually read, and non-trivially —
-    // a root that silently walks zero files is a gate that does nothing.
-    ...WALK_ROOTS.map((root) => [`root ${root} is walked (${under(root)} files)`, under(root) > 0]),
+    // positive: every REQUIRED tree is actually read, and non-trivially —
+    // a tree that silently walks zero files is a gate that does nothing.
+    // Checked against MUST_COVER, not WALK_ROOTS: see the note there.
+    ...MUST_COVER.map((root) => [`required tree ${root} is walked (${under(root)} files)`, under(root) > 0]),
+    // positive: and no declared root is dead weight.
+    ...WALK_ROOTS.map((root) => [`declared root ${root} walks files`, under(root) > 0]),
     // negative: the trees argued OUT stay out. lib/parser is the one that
     // matters — no UI, ever (ADR-011).
     ...WALK_ROOTS_OUT.map((root) => [`root ${root} is NOT walked`, under(root) === 0]),
