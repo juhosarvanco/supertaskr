@@ -9,10 +9,10 @@ status: building
 blocked_by: [T-021, T-023, T-026]
 touches: [app-agent, app-shell, docs/architecture/components/]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 Size L: planning pass required before dispatch (process topology:
@@ -628,3 +628,346 @@ text nodes (ADR-009 is that task's criterion; escaping here would corrupt
 the content).
 
 ## Verdicts
+
+2026-08-16 — claude-opus-5 @fresh (verifier, same-model review):
+**APPROVED.** Seven criteria met against the applied §§1–10 pass
+including §3's two amendments; every security claim re-derived
+first-hand rather than read off the notes; four new suggestions filed
+(s4 the allowlist's missing path scope, s5 the setsid escape, s6 the
+unvalidated session id — **close before T-029**, s7 the always-paid
+kill grace). Nothing found rises to a criterion failure; the residuals
+are recorded, reproducible, and each carries a named fix.
+
+**Suites, fresh in this worktree.** Bare `cargo test` from
+`app/src-tauri` **200 passed + 3 ignored**, taken nine consecutive
+times, identical every time (plus twenty more runs of the
+`agent_runner` target alone, ten of them under a concurrent cold cargo
+build for load — all 24 + 1 ignored). `cargo build` clean. App: `npm
+run build` (250 modules) then `npm test` **470/470, 25 files**;
+lib/parser `npx vitest run` **159/159, 10 files**; `npx tsc --noEmit`
+clean in both packages; tools/e2e `npx playwright test` **17/17**.
+`node tools/e2e/scripts/lint-tokens.mjs` is red with **exactly one**
+violation — `app/src/genesis/genesis-derive.ts:231`, the known P1
+regex-literal false positive on untouched main that T-038 is fixing.
+This branch adds no new violation; the lint script and all of
+`tools/e2e` are zero-diff here. Nothing ever bound or contacted port
+1420: the runner opens no sockets and no suite starts a server.
+
+**Execution sweep (this project has been bitten twice).** A poison
+`assert!(false, …)` was scripted into **every one of the 61 new
+runnable cargo test bodies** (7 adapter + 7 kit + 8 runner + 7 sessions
++ 7 mod + 1 acl_pin + 24 integration; the `#[ignore]` smoke correctly
+excluded). `cargo test --no-fail-fast` → **61 failed, 61 unique sweep
+names printed**, zero silent passes. Reverted; 200 green again. Same
+for the app half: 15 poisoned `it()` bodies in
+`app/test/agent-store.test.ts` → **15/15 red**, reverted. Every new
+test body runs.
+
+**Criterion 1 (four commands, kickoff Rust-side, no outliving child).**
+Re-derived. `genesis_status`/`genesis_cancel` sync, `genesis_start`/
+`genesis_send_turn` async→`Result` (deviation 3, ruled below); the
+kickoff comes from `kit::assemble_kickoff` over the compiled snapshot +
+`WatchState::project_dir()`; the child dump proves cwd == the canonical
+project dir and that no argv element carries the prompt. Verified from
+source that no lock is held across I/O in the settle path, so the sync
+commands cannot stall the main thread on the turn thread's registry
+write.
+
+**Criterion 2 — THE ADAPTER SWEEP, argued flag by flag.** `-p`,
+`--output-format stream-json`, `--include-partial-messages` are the
+protocol; `--verbose` is measured-required (I confirmed 2.1.226's help
+independently). `--permission-mode acceptEdits` scopes Edit/Write to
+cwd and there is no `--add-dir`, no `--settings`, no
+`--setting-sources`, no `--strict-mcp-config`, no config override, no
+absolute path baked in, nothing reachable outside the project dir —
+pinned and re-derived. `--disallowedTools WebFetch WebSearch` is
+present and applied as two argv elements. The table is const data; no
+command returns it (the four return types carry no adapter field);
+`acl_pin`'s local-invoke test asserts the status payload discloses
+none of it. *Precision:* that assertion runs against an EMPTY status
+and is case-sensitive, so it would not catch a real
+`cliVersion: "2.1.226 (Claude Code)"`; the structural fact (no return
+type has an adapter field) is what carries the criterion, and version
+disclosure is deliberate for T-029. `CliNotFound { probed }` does
+disclose the binary NAME — necessary for the hand-driven fallback,
+read-only, not a selector.
+**My strongest case against an allowlist entry, filed as T-025-s4:**
+`--allowedTools` matches the COMMAND STRING, never the paths it
+touches, so `Bash(cp:*)` is a filesystem-wide read+write primitive
+(`cp ~/.aws/credentials ./docs/x.md` matches) and `Bash(mkdir:*)`
+creates directories anywhere. The criterion's "cwd scoping IS the
+containment" is true of `acceptEdits` and NOT of the Bash allowlist —
+that gap is unnamed in the plan and in the silences. Not a rejection:
+the six patterns are the T-023-recorded imperative surface, the
+criterion names verifier sweep as its control, and both verbs are
+avoidable (Read+Write is cwd-scoped, and Write creates parents) — a
+change that needs one observed real stage-0 run to make safely, which
+is already T-025-s2's @human ask.
+
+**The bypass pin: drilled, then attacked.** Planted each of
+`--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`
+and `bypassPermissions` into `CLAUDE_V1.spawn_args`, one at a time —
+red each time with the named message, three tests failing each time
+(the pin plus the two shape tests), `git status` clean after each
+revert. Confirmed both CLI spellings and the mode string exist in
+2.1.226's help, so the pin's list is complete for this CLI.
+**Defeat attempt: SUCCEEDED, by data rather than by concatenation.**
+There is no `format!`, no `push_str`, no const indirection building an
+argv element anywhere (`.args()` is called exactly twice, both with the
+adapter's own vectors), but `argv(Some(id))` substitutes the captured
+session id **unvalidated**, and `claude --help` shows `-r, --resume
+[value]` takes an OPTIONAL argument — so an id beginning with `-`
+becomes a standalone flag, not a value. Measured: injecting
+`"--dangerously-skip-permissions"` yields the argv tail
+`["WebSearch", "--resume", "--dangerously-skip-permissions"]` while the
+pin stays green. Reachable today only by substituting the binary
+(the model cannot author the `system`/`init` line, and `send_turn`
+resumes from memory, never from the registry file) — but T-029 will
+read that id off `.nputer/sessions.json`, a file on disk, and then it
+is reachable. Filed as **T-025-s6** with a one-line fix and a pin
+extension; flagged here as the single most important follow-up.
+
+**Criterion 3 (events, session id, `.nputer/` outside the watch root).**
+Re-derived. The 250 ms bound is structural (25 ms poll, 150 ms
+coalesce). `.nputer/` quiet: the sentinel is `RecursiveMode::
+NonRecursive` on the project root and the docs watch is recursive on
+`docs/` only, so nothing under `.nputer/**` can raise an event; I
+checked the one leak candidate — `write_atomic` puts its temp file in
+the TARGET's parent, i.e. inside `.nputer/`, never at the root — and
+found no other vector. The builder's two-direction test (full write
+set + 50 transcript appends → zero snapshots across 8×250 ms; then the
+fake's `docs/NORTH_STAR.md` lights the pipeline) is real code that
+runs, proven by the sweep.
+
+**Criterion 4 + "no model in any suite" — proven mechanically, not
+argued.** Production reads exactly three env vars (`SHELL`, guarded to
+an absolute executable; `PATH`, twice, as allowlist source/fallback) —
+**no env-var binary override of any kind**, and
+`default_config_reads_nothing_from_the_environment` pins the seam
+fields. The builder's `probe_login_shell` claim: I attacked it and
+could not make a suite resolve the real CLI. Every integration config
+sets it `false` with a synthetic `path_override`; the one config that
+leaves it `true` (acl_pin's `RunnerConfig::default()`) never reaches
+resolution because `start_genesis` returns `noProject` first. **Then I
+proved it empirically:** a tattling `claude` shim planted first on
+`PATH` **and** as `SHELL`, full `cargo test` run under it — 200 passed
++ 3 ignored, **tattle file ABSENT**. No suite resolves or executes any
+`claude`, real or poisoned. I made no real model call anywhere in this
+verification.
+
+**Criterion 5 / env hygiene — my own canaries, not the builder's.**
+Planted sixteen in the test process: `ANTHROPIC_API_KEY`,
+`ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`,
+`CLAUDE_CODE_OAUTH_TOKEN`, `AWS_SECRET_ACCESS_KEY`,
+`AWS_SESSION_TOKEN`, `GITHUB_TOKEN`, `GH_TOKEN`, `NPM_TOKEN`,
+`GOOGLE_APPLICATION_CREDENTIALS`, `TAURI_SIGNING_PRIVATE_KEY`, the
+hostile `NPUTER_AGENT_BIN` / `NPUTER_AGENT_PATH` /
+`NPUTER_AGENT_ARGS=--dangerously-skip-permissions` /
+`NPUTER_AGENT_SCENARIO`, and the fake's own seam variable set to a
+hostile value. **None reached the child by name, and none reached it by
+value under another name.** The seam variable came through as the
+SEAM's value, proving the environment is built, not inherited.
+Positive controls: `TERM=dumb` (forced), `PATH` byte-equal to the
+injected login PATH, `HOME` equal to ours. Whole-environment shape
+check: nothing outside `ENV_ALLOWLIST ∪ {TERM, PATH} ∪ seam`.
+
+**Kill semantics — re-derived with my own fakes, and two findings.**
+Grandchild proof reproduced with an independent double-forking fake:
+both pids alive before cancel, both dead after. Escape attacks: (a) a
+**SIGTERM-ignoring child** is correctly SIGKILLed after the grace and
+reaped — `ps -o stat=` empty, no zombie; (b) a **grandchild that calls
+`setsid()` SURVIVES** the cancel (`child_alive=false
+escapee_alive=true`, escapee pgid == its own pid) — a property of
+process groups, not a code defect, but §5's unqualified "no orphaned
+grandchildren" overstates the mechanism. Filed as **T-025-s5**;
+practical exposure is nil while the allowlist has no daemonizing verb.
+(c) The grace is **always paid in full**: `pid_alive` is `kill(pid, 0)`,
+true for a zombie, and the turn's child is our own unreaped child.
+Measured 3.035 s of held single-flight latch on a 3 s grace with a
+child that dies on the FIRST SIGTERM — so production is ~5 s of `busy`
+after a cancel, and `reap_for_exit` blocks the MAIN THREAD ~5 s on app
+quit. Latency only, nothing unsafe. Filed as **T-025-s7**, and worth
+watching for in the @human quit-the-app check.
+
+**Criterion 6 — the in-band auth fix, and the discrimination boundaries
+constructed by hand.** The fix is right: `classify_line` reads
+`is_error` and `subtype` survives only as (a) the `== "init"` selector
+and (b) a diagnostic label — no code path keys success or failure on
+it. The `auth-error` transcription is faithful to what the notes record
+observing: both lines carry every field the classifier reads, `subtype`
+still `"success"`, `is_error` true, `api_error_status: 401`, and the
+message verbatim; the omitted fields (`usage`, `total_cost_usd`,
+`uuid`, …) are ones nothing parses. I built six boundary streams and
+drove them straight through `run_turn`:
+
+| stream (turn 1 unless noted) | typed result |
+|---|---|
+| zero JSON lines at all | `no JSON stream lines at all` — the basic diagnosis wins over the also-true no-init |
+| a JSON anchor, no init, no result | `no session init line in the stream` |
+| a valid result, no init | `no session init line in the stream` |
+| the same stream **on a resume turn** | **no error** — the init check is correctly turn-1-only |
+| init present, exit 0, no result | `the CLI exited without a result line` |
+| exit **0** with `is_error: true` | `ExitNonZero { code: 0, … }` carrying the CLI's words |
+
+The discrimination order is right, and the last row proves a
+CLI-declared failure is never relayed as the planner's answer. Every
+failure leaves the registry `idle`/resumable, writes nothing under
+`docs/` (by construction — the runner never opens a path there), and
+nothing panics.
+
+**Criterion 3/§5 — the registry, byte-read from disk.** Written file
+carries exactly the nine keys `method/runtime/sessions-schema.md`
+names, no more, correctly typed (`turns` u64, `tasks`/`roles` arrays,
+`roles == ["planner"]`), top level exactly `sessions`, and no `.tmp`
+survivor from the atomic write. Corrupt drill and transcript caps
+verified in place. The hand-rolled ISO formatter cross-checked
+independently against `date -u -r` on all six of its epochs — epoch
+zero, 2026-04-16, both sides of the 2024 leap day, 2000-02-29 (the
+%400 rule) and 2100-03-01 (the %100 rule) — all exact, and my own live
+run stamped `2026-08-16T09:20:02Z` while local was 12:20 EEST, so it is
+genuinely UTC.
+
+**Criterion 7 — ACL zero-diff, re-derived from two independent
+builds.** `gen/schemas/` is gitignored, so I built both ends from
+separate sources with separate `CARGO_TARGET_DIR`s: branch point via
+`git archive f7fdf13 | tar -x` into scratch, HEAD in this worktree,
+`rm -rf gen/schemas` before each. **All four artifacts byte-identical
+across the pair:**
+
+    acl-manifests.json   d3eace193b1e453756736eaf27bb156df62c7a41b2fe101403ee92ef93e69699
+    capabilities.json    4fca70b5437f720b9a72c727c0663349aa9e8b31917dcc0a870012de02406b07
+    desktop-schema.json  2a16f62c90a059a1b67e4501216bb3476f402087e99ba659dd38c9d0521f3b07
+    macOS-schema.json    2a16f62c90a059a1b67e4501216bb3476f402087e99ba659dd38c9d0521f3b07
+
+`capabilities.json` is literally `"permissions":["core:default"]`.
+`EXPECTED_GRANTS` extracted from both trees: identical bytes, identical
+sha, 92 grant lines each. The roster gained the four names, and the
+builder's stronger claim holds — `t025_genesis_commands_are_locally_
+invokable_and_remotely_denied` registers all four in a real
+`generate_handler!` on the MockRuntime app carrying the shipped
+authority, invokes them from the local origin and gets real typed
+payloads back (`idle`, `noProject`, `noSession`, a real status), and
+gets an ACL denial from the remote origin for each. That is strictly
+stronger than the name-agnostic loop, and it is spawn-free by
+construction (no project ⇒ no resolution). T-021's pin is extended,
+never weakened.
+
+**The three registry pins — the T-024 lesson, applied.** All three
+moved in-branch: `lib/parser/test/smoke.test.ts` (+C-14, eleven ids),
+`app/test/architecture-dogfood.test.ts` (registry 11, declared 11, D3:
+C-14, relation row C-14→C-10 planned 0, drift + declaredOnly gain
+C-14), `app/test/map-dogfood-render.test.tsx` (11 nodes, 27 edges).
+Each carries a dated 2026-08-16 addendum naming the actor. Grepped the
+added lines for every loosening construct (`toContain`,
+`arrayContaining`, `objectContaining`, `expect.any`, `toBeGreaterThan`,
+`.skip`, `.todo`, `toMatchObject`): **none**. Every assertion is still
+a whole-array `toEqual` or an exact `toHaveLength`, no pre-existing
+value moved. All three suites green.
+
+**THE MERGE HAZARD — table verified, with one correction the integrator
+needs.** I ran `git merge-tree --write-tree main HEAD` (non-destructive)
+and read the resulting blobs. All nine rows of the notes' resolution
+table are **correct**: main is 86 files / C-05 37 / "committed graph ·
+86 files"; the branch is 84 / 35 / 84 and adds the eleventh id, the
+eleventh declared, the fourth D3, the 27th relation row, C-14 in drift
+and declaredOnly, 11 map nodes and 27 map edges. `lib/parser/test/
+smoke.test.ts` is indeed not a conflict.
+
+*The correction:* only **two hunks actually conflict**, both in
+`app/test/architecture-dogfood.test.ts` — the reconciliation comment
+block (both sides appended an addendum after T-024's; resolution: keep
+BOTH) and the `all 8x files map` title + `fileComponent.size` line
+(resolution: main's 86, and the branch's "Unmoved by T-025" comment
+needs its number reread). `map-dogfood-render.test.tsx` auto-merges
+cleanly. Everything else auto-merges **correctly** — I verified in the
+merged blob that main's values survive alongside the branch's:
+`["C-05", 37]`, `["C-05","C-10","confirmed",19]`,
+`["C-05","C-13","undeclared",4]`, and D1:C-05→C-13's **four**
+fileEdges, all intact next to `["C-14","C-10","planned",0]` and
+`D3:C-14`. Those three main-side value changes are what the table's
+row-count-only phrasing ("findings: three D3 → four", "relation table:
+26 rows → 27") does not mention: an integrator who resolves by taking
+the branch's whole findings/relation arrays would silently revert
+T-037's reconciliation. Git does it right if left alone; take both, and
+check those four values after.
+
+**Graph forecast sanity-checked.** 86 → 88 confirmed as the only
+possible delta: `app/src/lib/agent-store.ts` is claimed by C-14's
+explicit path and by nothing else (C-05 lists `app/src/lib/utils.ts`
+and `verdicts.ts` individually, no `app/src/lib/**` glob), and
+`app/test/agent-store.test.ts` falls under C-05's `app/test/**` — so
+C-05 37 → 38 and C-14 0 → 1, D3:C-14 clears, and the new undeclared
+D1:C-05→C-14 is the same shape C-13 took at T-024. The five new `.rs`
+files are invisible: `nputer-index` walks `Lang::Ts, Lang::Js` only.
+
+**Fence: clean.** `git diff f7fdf13..HEAD` is exactly 19 files. Zero
+diff to `method/**` (also verified against main), `lib/parser/src/**`,
+`capabilities/**`, `tauri.conf.json`, `docs_watch.rs` (the file is not
+in the diff at all — the `pub` is in lib.rs), `index_cmd.rs`,
+`graph.json`, `tools/**`, and every `app/src` file but the new store.
+**Zero new external crates, verified from `Cargo.lock` and
+`Cargo.toml`, not from the notes**: both byte-identical to the branch
+point AND to main. No `package.json`/lockfile line anywhere. The only
+`unsafe` in the module is the two signal calls; the only shell spawn
+in the tree is the login probe with a compile-time-constant script.
+
+**The eight deviations, ruled individually.**
+1. `fake_agent` not `fake-agent` — **sound**; a hyphen needs a `[[bin]]`
+   stanza and the fence forbids manifest lines; auto-discovery gives
+   `CARGO_BIN_EXE_fake_agent` with zero manifest diff, verified.
+2. 14 kit files not "13" — **sound**; §3's enumeration lists fourteen
+   and the enumeration is the normative half. Filed as s3, correctly.
+3. `async` + `Result` on the two spawning commands — **sound**; the
+   first `genesis_start` can run a 10 s login probe and Tauri runs sync
+   commands on the main thread. The `Err` arm is unreachable by
+   construction (`Ok(...)` at both call sites) and the webview still
+   receives the typed outcome. `genesis_cancel` staying sync is right:
+   it signals synchronously and hands the escalation to a thread — see
+   s7 for what that costs the exit hook, which is a different path.
+4. `probe_login_shell` seam field — **sound, and a genuine
+   strengthening**. I attacked the claim and could not make any suite
+   resolve the real CLI, then proved it with the poisoned PATH.
+5. `pub mod docs_watch` / `pub mod agent` — **widens nothing that
+   matters.** No item's visibility changed; the module's did. The
+   webview surface is the command set (unchanged bar the four) and
+   `EXPECTED_GRANTS`/`capabilities.json` are byte-identical. The crate
+   ships `staticlib`/`cdylib`/`rlib`, and a cdylib exports only
+   `#[no_mangle] extern "C"` symbols — Rust `pub mod` items are not
+   C-exported, so there is no new ABI surface either. In-repo consumers
+   only.
+6. Turn 1's kickoff written as the transcript's `user` half — **sound**;
+   §5's rule left turn 1's user half missing and the kickoff recorded
+   nowhere. The transcript is a losable `.nputer/` runtime file.
+7. `classify_line` reads `result.is_error` — **sound and necessary**;
+   this is the defect the smoke found, and my boundary streams confirm
+   both the exit-1 and the exit-0 forms are typed.
+8. Two `extern "C"` declarations instead of the `libc` crate —
+   **sound**. `int killpg(pid_t, int)` and `int kill(pid_t, int)` with
+   `pid_t == i32` on every unix this repo targets; libc/libSystem is
+   always linked into a std unix binary; `#[cfg(unix)]`-gated with a
+   `not(unix)` fallback. Empirically exercised: my probes proved
+   SIGTERM delivery, the SIGKILL escalation, and `kill(pid, 0)`
+   liveness all behave. A new crate here would have broken §9's fence
+   for twenty lines.
+
+**s1/s2/s3 assessed.** All three real, correctly encoded (frontmatter
+shape matches the house convention), correctly scoped. s1's
+observation that `stderrTail` is now "slightly a lie" is a good catch
+and belongs with T-027. s2 is the important one: it correctly records
+that the **allowlist has never been exercised by a real agent**, which
+is exactly the residual s4 sharpens — those two should be read
+together. s3 verified: `KIT_FILES` has fourteen entries against §3's
+"13", and nothing in the tree reads `nputer.yaml`.
+
+**@human, carried forward.** (1) The `tauri dev` quit-the-app orphan
+check — headless-only pipeline, not the verifier's; watch for s7's ~5 s
+hang while doing it. (2) One real observed planner turn on an
+authenticated machine (T-025-s2) — this machine's `claude` OAuth token
+is revoked and I made no model call; the conversational half and the
+allowlist's sufficiency for a real stage-0 scaffold remain unobserved.
+
+Probes: two temporary cargo binaries and two temporary integration
+suites (env canaries, setsid escape, SIGTERM-ignoring child, six
+boundary streams, registry byte-read, latch timing, pin-defeat).
+Deleted after use; no stray processes (`ps` clean); working tree clean
+but for this verdict and the four suggestion files.
