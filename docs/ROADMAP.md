@@ -49,11 +49,17 @@ Tasks: T-023…T-029 (kit → lens → runner → entry → split view →
 crescendo → resume); first slice T-023+T-024+T-026 — hand-driven
 genesis rendered live, deliberately too small. (Decomposed
 2026-08-16, ADR-017.)
-Progress: FIRST SLICE COMPLETE 2026-08-16 — T-023 → T-024 → T-026 all
-through the pipeline; the front door offers an interview, a docs-less
-folder opens as a genesis project, and the first `mkdir docs` lights
-the pipeline into the lens. Hand-driven genesis now renders live, with
-no agent in the loop yet. T-025, T-027, T-028, T-029 remain.
+Progress: first slice's three cards COMPLETE 2026-08-16 — T-023 →
+T-024 → T-026 all through the pipeline; the front door offers an
+interview, a docs-less folder opens as a genesis project, and the
+first `mkdir docs` lights the pipeline. But the SLICE'S OWN PROMISE —
+hand-driven genesis rendered live — is NOT yet delivered: T-026
+mounts the genesis screen with a placeholder slot, T-024's lens is
+built and tested but nothing imports it, so what renders today is one
+honest line (`docs/ · N files written`) where the pane belongs. The
+join is a one-import change that fell between two parallel branches
+and belonged to neither. T-037 closes it; the slice is complete when
+that lands. T-025, T-027, T-028, T-029 remain.
 
 ## Parked
 The staged future lives in docs/future.md (two expert-room batches:
