@@ -539,6 +539,63 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //   · The ceaa949 ordering lesson, THIRTEENTH hold: this block and the
 //     map fixture are both indexed, so they were edited BEFORE the
 //     final regen and the regen was run twice for byte-identity.
+//
+// RECONCILED AT THE T-030 MERGE (2026-08-17, integrator — twenty-first
+// exercise of the practice, and the FIRST in which the graph MOVED and
+// not one assertion in this file did). That combination is the reason
+// this block exists at all: a green fixture after a regen must not be
+// read as "the regen was a no-op". Every number re-derived from the raw
+// graph against `git show HEAD:docs/architecture/graph.json`, plus an
+// INDEPENDENT re-derivation of the file→component mapping written
+// against the registry globs rather than run through this app's own
+// derive.ts — before this edit, and BEFORE the suite was re-run:
+//   · stats 94 files (UNCHANGED), 667→670 symbols, 1063→1069 edges —
+//     8 added, 2 removed. ZERO files added, ZERO removed: T-030 is a
+//     lib/parser-only branch whose new tests EXTENDED the four existing
+//     test files rather than adding any, so C-06 gains no node.
+//   · the three new symbols are all UNEXPORTED top-level functions —
+//     stripHtmlComments (roadmap.ts), blockedByCycles (validate.ts),
+//     anchoredIdiomFor (component.ts) — which is the standing evidence
+//     that this graph records unexported symbols, re-confirmed here.
+//   · the 2 "removed" edges are NOT removals. They are two import edges
+//     whose `symbols` list WIDENED, which the graph models by value:
+//     validate.ts→types.ts gains TaskRecord, and model-session.test.ts→
+//     index.ts gains parseProjectFromFiles. No module PAIR became
+//     connected, so the branch's "no new import edges" forecast is right
+//     in substance and only looks wrong in the raw edge diff. Worth
+//     knowing before someone reads a remove/add pair as churn.
+//   · content-changed (hash/loc only, no node): all NINE are under
+//     lib/parser/ — src roadmap 93→144, validate 136→287, component
+//     330→404, model-session 32→75, types 287→320; test component
+//     606→734, model-session 54→172, roadmap 89→234, validate 392→640.
+//   · mapping 94→94 and BYTE-IDENTICAL per component (C-05 44, C-06 21,
+//     C-08 10, C-09 3, C-10 2, C-12 11, C-13 2, C-14 1), zero unclaimed,
+//     zero ambiguous. It CANNOT have moved and the reason is worth
+//     stating: the file SET is unchanged and the globs are unchanged, so
+//     the mapping is unchanged whatever the glob semantics are.
+//   · findings and the 28-row relation table BYTE-UNCHANGED, tally still
+//     13 confirmed / 6 undeclared / 9 planned, D2 empty, the unmapped
+//     node still gone, derived.issues still []. DERIVED, not observed:
+//     the registry was swept and `lib/parser/**` (C-06) is the ONLY
+//     pattern in all 41 globs that can match a lib/parser path, so all
+//     ten changed edges are C-06-INTERNAL by construction and no
+//     cross-component pair count can move. Every one was classified and
+//     every one is C-06→C-06. Same conclusion the T-019 block reached,
+//     and the same mechanism.
+//   · NO assertion moved here, and none in map-dogfood-render.test.tsx
+//     either — its comment log tracks the FILE COUNT, which held at 94,
+//     so that fixture is deliberately untouched. The GENERAL RULE, now
+//     that it has been derived once: a lib/parser-only change is
+//     structurally incapable of moving either app fixture unless it adds
+//     or removes a FILE, or the REGISTRY changes. T-031 and T-032 are
+//     next in this lane; use the rule rather than rediscovering it.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched: T-030
+//     declares no component and changes no registry file, so the T-024
+//     three-fixtures rule does not fire in its registry form. Confirmed
+//     rather than assumed by re-running lib/parser: 197/197.
+//   · The ceaa949 ordering lesson, FOURTEENTH hold: this block is itself
+//     indexed, so it was written BEFORE the final regen and the regen
+//     was then run twice for byte-identity.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {

@@ -1,404 +1,487 @@
 # State
 
-Updated: 2026-08-17 by integrator (T-050 merge), claude-opus-5 @fresh
+Updated: 2026-08-17 by integrator (T-030 merge), claude-opus-5 @fresh
 
 ## Just completed
-T-050 (the app can always recover — the startup latch, the swallowed
-error, the dead end, S, app-shell, F-02) done and merged. **@human hit
-this one themselves and sent a screenshot**: the app open on "waiting
-for the first docs snapshot…" with nothing else on screen but "Toggle
-theme". Their words: "it opens often like this. often also with nputer
-repo." **That screen can no longer strand them.** Built by
-`claude-opus-5 @fresh` ×2 (see the two-session story below), verified by
-`claude-opus-5 @fresh`, `review: same-model`, **APPROVED**.
+T-030 (parser strictness pass — comment-blind roadmap, cycles,
+filenames, id aliases, M, milestone 4, `lib-parser`, F-02) done and
+merged. Built by `claude-opus-5 @fresh`, verified by
+`claude-opus-5 @fresh`, `review: same-model`, **APPROVED first pass**.
+Six rules, ten criteria, nine files under `lib/parser/` plus the one
+`docs/CONVENTIONS.md` bullet criterion 1 requires.
 
-**WHAT SHIPPED — three layers, each independently a defect, each
-answered.** Two files changed, three test files added.
+**THE HEADLINE IS NOT WHAT THE CARD SAID.** Two of T-030's findings
+came out sideways to the dispatch, and in both cases the card
+UNDERSTATED the defect. Neither correction was taken on trust — the
+verifier re-derived both against a separately-built branch-point parser
+(`git archive 6ed97cf lib/parser`), and this merge re-derived the ones
+it could cheaply re-derive again.
 
-    app/src/lib/watcher-store.ts
-      let started = false          ->  let startup: Promise<void> | null
-      + startupAttempts, StartupStep, StartupFailure
-      + recordStartupFailure()  — the ONE place a rejection becomes state
-      + runStartup()            — the attempt, extracted
-      + applyStartupFailure     — a FOURTH dev-harness door
-    app/src/App.tsx
-      + StartupScreen / startupStepPhrase
-      + ScreenModel gains { screen: "startupFailed"; failure }
+**(a) THE COMMENT-BLINDNESS RAN THE WRONG WAY ROUND TOO — and that
+direction is worse.** The card described PHANTOM features: a commented
+`- F-NN:` bullet parsing as a real board column (T-023-s1). True, and
+fixed. But the inverse was also live and nobody had named it. A
+commented-out `## Milestones` heading sitting mid-backbone ENDED the
+backbone, so:
 
-1. **THE LATCH.** It is a `Promise<void> | null` **latched BEFORE the
-   work begins** — a placeholder assigned synchronously, with the work
-   chained onto it in the same turn — and released by a `.catch` that
-   clears it **only if it is still the same promise**, so a late
-   rejection cannot unlatch a newer attempt. `recordStartupFailure`
-   opens the latch itself, before it notifies, so the invariant is "a
-   recorded failure ALWAYS means the latch is open" and the retry the
-   screen offers is never a no-op. A promise rather than an
-   `idle|starting|started` enum, deliberately: a concurrent caller can
-   AWAIT the attempt already running instead of returning immediately
-   having done nothing.
-2. **THE FAILURE IS SURFACED.** Caught, recorded in shell state
-   (`{ step, message, attempt }`, step = `subscribe | snapshot`) and
-   rendered as a TEXT NODE. `startDocsWatcher` stopped being `async` and
-   **never rejects by contract** — which is what makes `App.tsx`'s
-   unchanged `void startDocsWatcher()` safe rather than merely silent.
-3. **THE SCREEN CARRIES A REAL ESCAPE.** The one-line
-   `<p>waiting for the first docs snapshot…</p>` became `StartupScreen`,
-   serving both waiting and failed: `Try again` (disabled while
-   starting, reading "trying…"), `Open a folder…`, `Start an interview`,
-   and the `⌘O · ⌘N` hint. The header's own pair stays board-only —
-   T-049's gate was NOT widened, so this escape belongs to the screen.
+    ## Backbone
+    - F-01: Real — first
+    <!--
+    ## Milestones
+    -->
+    - F-02: Real — second
 
-**THE TWO-SESSION STORY, TOLD STRAIGHT, BECAUSE IT IS THE POINT.** The
-first executor built and committed the whole fix at `e50fc1e`, then
-**stalled TWICE at the identical step** — writing the implementation
-notes — and its transcript was lost. A continuation session inherited a
-finished branch and no reasoning. It **re-derived every proof obligation
-first-hand** rather than transcribing claims nobody could check: it
-checked the `b623f6a` and `e50fc1e` stores out into throwaway modules
-and drove them side by side. And it **found that the committed fix did
-not fully satisfy criterion 1.**
+parsed to **`[F-01]` only, with ZERO issues** on the old parser, and to
+`[F-01@4, F-02@9]` on the new one. **A real, shipped feature vanished
+from the board and nothing said so.** A dropped column is strictly
+worse than a phantom one, and the asymmetry is the whole point: **a
+phantom is visible, so someone eventually asks what it is; a dropped
+column looks exactly like a column that was never written.** Both
+directions are now closed by one mechanism — `stripHtmlComments` blanks
+every `<!-- … -->` span to spaces before ANY line is matched, newlines
+survive, so every `FeatureRecord.line` and every `:N:` in a message
+stays truthful.
 
-`runStartup`'s first act is a synchronous
-`setShell({ starting: true, startupFailure: null })`, and `setShell`
-NOTIFIES every subscriber synchronously. The committed code took the
-latch from `runStartup(...)`'s **return value**:
+**The unterminated-opener behaviour was ruled RIGHT, for a better
+reason than the notes gave.** An unclosed `<!--` blanks to end of file
+AND emits a roadmap-error naming the opener's line — the one rule no
+criterion asked for, and the builder flagged it for attack rather than
+burying it. The notes justified it as "nothing after a broken opener
+can become a phantom". The verifier's reason is stronger and worth
+carrying: **CommonMark's HTML-block rule ALSO runs an unclosed `<!--`
+to the end of the document.** So blanking to EOF is not the parser
+inventing a reading — it is the parser AGREEING WITH THE RENDERER.
+Doing it silently would have been the violation; the error is what
+makes it legal under the flagging-not-hiding contract.
 
-    const attempt = runStartup().catch(…);   // the notify happens HERE
-    startup = attempt;                       // the latch closes only HERE
+**(b) THE STAMP COUNT WAS UNDERCOUNTED, and the undercount is in the
+card.** The card names SIX TASKS carrying a wrong `policy`. Measured by
+parsing the live tree through both parsers and diffing every
+`ModelSession` field: **NINE record fields change, `{builtBy 6,
+verifiedBy 3}`, of which EIGHT are policy flips** — because **T-002 and
+T-005 each carry a wrong stamp in BOTH `built_by` AND `verified_by`**,
+and the card counted tasks rather than fields.
 
-— so the entire synchronous prologue of the attempt ran with the latch
-still `null`. A subscriber woken there could call `startDocsWatcher`
-back, read `null`, and open a **second subscription**; worse, the outer
-assignment then clobbered the inner attempt's latch. Criterion 1 says a
-second call arriving while the first is in flight SHALL NOT start a
-second subscription, and this is exactly such a call. **Twenty-three
-insertions fixed it. The latch SHAPE was right all along — only the
-moment it closes moved.** Poison-checked: reverting the store reds the
-new test with `one subscription, not two: expected 2 to be 1`.
+    T-001 built_by     policy resume → fresh
+    T-002 built_by     policy resume → fresh
+    T-002 verified_by  policy resume → fresh      ← the card missed this
+    T-005 built_by     policy resume → fresh
+    T-005 verified_by  policy resume → fresh      ← and this
+    T-019 built_by     policy resume → fresh
+    T-020 built_by     policy resume → fresh · model 59 → 13 chars
+    T-024 built_by     policy resume → fresh · model 59 → 13 chars
+    T-001 verified_by  policy unchanged (`human`) · model 34 → 1 char
 
-**THE VERIFIER RE-DERIVED BOTH HALVES FROM SCRATCH** — `listenCalls = 2`
-before, `1` after — and then attacked the new shape **five more ways**:
-a `.then` on the returned promise; a `.then` after a failure (1→2, i.e.
-it genuinely re-attempts, and two calls in that handler join ONE
-attempt); a bare `queueMicrotask`; **four synchronous calls in one tick
-with `listen` parked** (`b===a c===a d===a`, the probe that shows the
-latch really is the in-flight promise rather than a flag); and a
-subscriber calling back on EVERY notify. **All held at one
-subscription.** It attacked the late-rejection release twice and proved
-B survives A's late rejection (delete the identity guard and a third
-call opens a second subscription — load-bearing, not decorative). Then
-it drove both properties TOGETHER, which is the trade a naive fix loses:
-**5 concurrent calls into a refusing boundary = 1 attempt, then 2, then
-3 on heal, frozen at 3 across ten further calls**, attempt counter
-honest at `[1,2,3]`.
+**`raw` is byte-unchanged on all nine**, and on every distinct stamp in
+the tree — which is what keeps the detail panel honest while the badge
+gets short. `features` and `components` are byte-identical before and
+after; there are ZERO diffs in any non-ModelSession field of any task.
+Through the app's own `shortModelName` (transcribed from
+`app/src/lib/board-model.ts`, which this branch does NOT touch): T-020
+and T-024 `built_by` go **50 characters → `opus`**, T-001 `verified_by`
+27 → `+`. **The longest rendered badge anywhere in the live tree is now
+FIVE characters.** `codex/gpt-5.2 @S3` is byte-unchanged, as are
+`codex`, `codex@fresh`, `human`, `claude-opus-5`, `claude-opus-5
+@fresh`, `claude-opus-5 @resume` and `claude-fable-5 @fresh`.
 
-**WHAT WAS RULED, RECORDED HONESTLY.** The re-entrancy defect is **NOT
-reachable through the shipped App**: the only `subscribeShell` listener
-is React's `useSyncExternalStore`, which schedules a render rather than
-running inside the notify. **Both the continuation and the verifier say
-so, and NEITHER claims it explains @human's screenshot.** The card's
-"what is NOT claimed" boundary stands unrevised — which trigger stranded
-their instance is still unknown. It was fixed anyway because the
-invariant is cheap to hold and the asymmetry was already visible in the
-code: the predecessor closed exactly this window on the FAILURE path and
-left it open on the SUCCESS path.
+**THE VERIFICATION'S OWN STANDARD, recorded because it sets a bar.**
+The cycle detector is an iterative Tarjan SCC over `blocked_by` edges,
+and the verifier did not stop at reproducing the pinned shapes:
+- **Differential-fuzzed against brute-force reachability** (a node is
+  in a cycle iff it reaches itself; SCCs by mutual reachability) over
+  **3,000 random graphs containing 4,069 reference cycles — ZERO
+  mismatches.** That is a correctness proof, not a liveness check.
+- **Scale, past the 5,000-member pin**: a **50,000-member ring in
+  224ms**, and a **50,000-deep ACYCLIC chain in 92ms** — the latter is
+  the real stack-depth test, because it forces maximum DFS depth, and
+  it is the reason "iterative" is load-bearing rather than stylistic.
+  Dense graphs at 20 edges/node: 1ms/1ms/4ms for N=200/400/800, linear
+  in edges.
+- **The poison sweep was re-derived independently.** The verifier
+  extracted the added `it(` declarations from `git diff -U0` by walking
+  hunk headers (39: component 8, model-session 8, roadmap 9, validate
+  14), injected its own throw into each, and got **197 total / 39
+  failed / 158 passed — 39 poisoned, 39 red, zero vacuous, zero
+  collateral** (grep for `AssertionError` in the verbose run returns
+  nothing). Restored and confirmed byte-identical by `git hash-object`
+  against `git rev-parse HEAD:<path>` for all ten test files.
+- **One issue per SCC, not per ring**, upheld on argument: a
+  figure-eight (T-901↔T-902 and T-901↔T-903) is ONE root cause, and
+  reporting each ring would name T-901 twice — the exact anti-pattern
+  the T-019 one-root-cause discipline forbids. Enumerating simple rings
+  is also exponential, which no parser should be.
 
-**THE REST OF THE EVIDENCE.** The strand re-derived against the unfixed
-store: `call#2` **resolves** having touched the boundary zero times even
-after it healed, `listenCalls` frozen at 1, screen still `loading` —
-that is the screenshot as a transcript. At HEAD, same inputs:
-`listenCalls 1 → 2`, phase `open`, screen `board`. StrictMode with a
-CONTROL (a bare mount-effect in the same environment runs **2** times;
-the App still subscribes once). Hostile payload written independently of
-the committed one — script, `svg onload`, `iframe src=javascript:`, raw
-entities, NUL + BEL + ESC, a 10 000-character run: **one TEXT node, zero
-element descendants, `__pwn3d` undefined, `innerHTML` hands the angle
-brackets back ESCAPED, and textContent length == String(Error) length**
-(nothing truncated — a renderer that hides part of what failed is
-lying). The escape: four buttons not one, ⌘O/⌘N each with
-`preventDefault×1` (T-049's own instrument, so two racing listeners
-would read 2), retry reaching a board that is **LIVE** (`data-seq` moves
-1→2 on a watcher push). Test integrity: **32/32 bodies poison-proven to
-execute**, and the two pre-existing files STRENGTHENED — 28 identical
-names in `watcher-store.test.ts`, one honest rename in
-`shell-harness.test.ts` whose new "every door is callable" clause reds a
-poison the old form accepted (confirmed BY LINE NUMBER: the failure lands
-at :138, below the exact-key-set assertion at :128).
+**THE FINDINGS, RANKED — the ranking is the verifier's.**
 
-**THE FINDINGS, RANKED — and the ranking is the verifier's, not mine.**
+- **T-030-s3 IS THE URGENT ONE, and the verifier sharpened its
+  mechanism into something worse than the title.** Zero-padding aliases
+  TASK and FEATURE ids too (`T-01` vs `T-001`, `F-1` vs `F-01`) and only
+  COMPONENT ids are checked. The sharp half: with only `T-001` present,
+  `blocked_by: [T-01]` is a **LOUD `dangling-reference`**; add an
+  unpadded `T-01` and **the SAME edge silently re-points to the new
+  task, zero issues raised.** So introducing a hand-numbered sibling
+  SILENTLY REWRITES AN EXISTING DEPENDENCY. That is a wrong answer in
+  the dependency graph, not a missing warning — and it is the graph
+  **T-034 is building the tasks-lens dependency waves over right now**.
+  A wave computation would be confidently wrong with nothing on the
+  board to say so. **Safe today only by accident**: all 90 live task ids
+  are three digits wide and all 6 feature ids two, verified. Correctly
+  out of scope for T-030 (criterion 4 scopes aliasing to the component
+  set, and that is exactly what landed). **PROMOTE before T-034's waves
+  ship, or before a genesis planner writes a backbone from an
+  interview, whichever comes first.** The fix is cheap: the slot-
+  grouping logic already exists and wants lifting to three call sites.
+- **T-030-s2** — the roadmap parser is comment-blind now but still
+  **FENCE-blind**: a fenced `- F-99:` example row parses as a real
+  feature (tilde fences too), and a fenced malformed row still emits
+  `roadmap-error`. The verifier added the matching half: **a fenced
+  `## Milestones` also ENDS the backbone**, so fence blindness drops
+  real features exactly the way comment blindness did. Proposes one
+  shared inert-span pass for both parsers.
+- **T-030-s4 (NEW, and sharp).** `parseRoadmap` and `splitSections` now
+  **DISAGREE about what content is** — they AGREED before this task,
+  both blind. A commented-out `## Verdicts` in a task body still
+  fabricates a section and truncates the previous one. The useful part
+  is the trap it records for s2's shared pass: **this very card
+  contains six `<!--` openers, all inside inline code, the last
+  unterminated**, so applying the roadmap strip to task bodies would
+  **eat this card's own `## Verdicts` section** — measured, four
+  sections becoming three. **The inert-span pass must treat inline code
+  as inert and must scan code spans BEFORE comment openers; s2's
+  proposed shape names neither.**
+- **T-030-s5** — `<!-->` and `<!--->` are complete empty comments in
+  CommonMark but read here as unterminated openers. **Loud, so the
+  contract holds**, and it is the only renderer divergence the verifier
+  could construct.
+- **T-030-s1** — the representative-model rule leaves a literal `+` on
+  T-001's `verified_by` (`claude-fable-5 @fresh (2 passes) + @human
+  (visual)` → model `+`, badge 27 chars → 1). Pinned in the suite as a
+  known wart rather than papered over, four arms costed, and arm (b)
+  rejected on measurement rather than taste. Right call to defer — the
+  grammar arm is the honest fix and the triage explicitly ruled it out.
 
-- **T-050-s2 is THE URGENT ONE, and the verifier says fix it AHEAD of
-  s1.** After a refused subscribe, a successful pick yields
-  `phase=open screen=board seq=5 tasks=1` with **no `docs-changed`
-  handler registered at all** — a board with real content whose pipeline
-  is dead. The user escapes an honest error screen onto something that
-  **looks fine and can never move again**, by the exact route criterion
-  3 advertises. Note the verifier's own correction: its first run
-  reported a handler registered; that was its mock recording before the
-  promise settled. Corrected to register only on resolve — what Tauri
-  does — it reports **none**, as filed. `startupFailure` survives onto
-  the board, so s2's remedy 1 condition is expressible exactly where it
-  says.
-- **T-050-s3 (NEW, and the most consequential for DIAGNOSIS).** The
-  startup failure **never reaches stdout** — the route ends at
-  `console.error`, and in a WKWebView that does not reach the Tauri
-  process's log. Every other boundary error in this store echoes through
-  `emit`; this one does not. **That is exactly why @human's log was
-  healthy while their screen was stranded, and why a real investigation
-  was impossible today.** Criterion 2's `sanitize_for_log` clause is
-  therefore satisfied VACUOUSLY.
-- **T-050-s1: conclusion right, one mechanism sentence wrong.** It says
-  pressing "Try again" returns the promise that is already hanging,
-  implying a silent no-op. Measured: the button is `disabled={starting}`
-  and reads **"trying…"**, so it cannot be pressed at all. The
-  user-visible outcome is BETTER than s1 claims — visibly unavailable,
-  not deceptively inert. **Correct that sentence when it is picked up.**
-  A **hang** remains a real third failure mode that T-050 does not
-  detect (`starting` stays true forever and the copy goes on saying
-  "waiting…", which is true and useless) — but it is no longer a dead
-  end, because the screen now has three working exits. Homed in s1; a
-  third card would be noise.
+**THE NARROW ESCAPE, RECORDED VERBATIM BECAUSE IT IS A LIVE TRAP.**
+One rule is a plausible edit away from flagging real content:
 
-**THE THING NOBODY MEASURED UNTIL THE VERIFIER LOOKED.** Retryability
-made subscription **STACKING** possible, which the unfixed code could
-not do: `listen` resolves to an unlisten function this store DISCARDS,
-so after a **snapshot** failure each retry adds a live handler — three
-failed attempts then one success gives **`listen calls = 4, unlisten =
-0, LIVE handlers = 4`**, and one watcher event then re-parses the
-snapshot four times. State stays correct (the store notifies once; the
-seq guard absorbs the duplicates), the subscribe-failure path does NOT
-leak (`listenCalls=3, LIVE=1` — a refused `listen` registers nothing),
-and criterion 1's clause is about calls arriving **in flight** while
-these attempts are fully settled — **so not a violation, but a real
-number.** Already homed in s2's remedy 3 and s1's caveat 1; recorded
-here so whoever picks up that remedy has the measurement.
+> **Any `<!--` in `docs/ROADMAP.md` that is not closed — inside a
+> fence, indented as quoted evidence, or in inline code — blanks the
+> rest of the file and drops every feature after it.**
+
+**Re-reproduced first-hand at this merge, in all three positions,
+against the real `docs/ROADMAP.md`: 6 features → 1 in every case**, each
+with exactly one `roadmap-error` naming the opener's line. It escapes
+today **only** because ROADMAP.md contains no `<!--` at all (checked:
+zero occurrences), and **the house style of indenting quoted evidence
+does NOT protect against it** — indentation was the mitigation for the
+column-0 anchor, and an unterminated opener does not care about
+columns. **The moment anyone documents the comment convention INSIDE
+ROADMAP.md the way CONVENTIONS.md now does, the roadmap loses its
+tail** — loudly, but it loses it. That is s4/s5 territory and the
+reason both were filed rather than left as verdict prose.
+
+**WHAT ELSE WAS RULED, briefly.** `T-banana.md` declaring `id: T-901`
+is flagged by a new `filename-id-missing` kind and keeps its id;
+id-LESS files stay free-form beyond the `T-` prefix, which protects a
+shape TASK-FORMAT.md permits rather than one the tree depends on (the
+live tree has no id-less task file at all). The numeric-alias
+normalization strips zeros as TEXT, not through `Number()` — verified
+that `Number()` genuinely fuses `9007199254740993` and
+`9007199254740992`, and the parser correctly does NOT alias those while
+still aliasing `C-09007199254740993` with `C-9007199254740993`.
+`invalid-field` was REUSED for the `/dist` warning rather than getting
+its own kind — flagged by the builder, ACCEPTED by the verifier (the
+criterion says "warn", `paths: []` already rides that kind, the record
+and the pattern survive verbatim, the app consumes issues generically).
+And the one FLIPPED pin was ruled legitimate and STRENGTHENING: the old
+`it('skips id-less suggestions and filenames that encode no id')`
+asserted two things, one of which the criterion inverts; the
+replacement keeps both outer assertions, swaps in a HARDER input
+(`T-banana-idea.md` with no declared id — the shape that must stay
+silent), and the flipped assertion did not vanish, it moved into a
+dated block that pins it positively plus three more rejected basenames.
+**Coverage strictly increases. Changed, never loosened.**
 
 **SUITES ON MERGED MAIN**, all four re-derived here first-hand, fresh
 installs, ADR-011 order:
-- lib/parser `npm ci` + `npm run build` + `npx vitest run`
-  **159/159 (10 files)**, `npx tsc --noEmit` clean. Re-run AFTER the
-  fixture edits and the final regen — still **159/159**, and
-  `git diff b623f6a..HEAD -- lib/parser/` is **0 bytes**, so
-  `smoke.test.ts` is confirmed unmoved rather than assumed so.
-- app `npm install`, `npx tsc --noEmit` clean, `npm run build` exit 0
-  (**253 modules**), `npx vitest run` **535/535 (32 files)** — exactly
-  the number both branch roles measured, and **+28** over main's 507
-  (17 in `startup-recovery.test.ts`, 11 in `startup-screen.test.tsx`).
-  Re-run again after the fixture edits and the final regen: **535/535**.
+- lib/parser `npm ci` (0 vulnerabilities) + `npm run build` clean +
+  `npx tsc --noEmit` clean + `npx vitest run` **197/197 (10 files)** —
+  the forecast 159 + 38 net new, confirmed by arithmetic and by run.
+  Re-run AFTER the fixture edit and the final regen: still **197/197**.
+- app `npm install` (0 vulnerabilities), `npx tsc --noEmit` clean,
+  `npm run build` exit 0 (**253 modules**), `npx vitest run`
+  **535/535 (32 files)** — **DERIVED, not assumed**: the dispatch
+  offered 507 or 535 and the answer is 535, because main took T-050's
+  +28 after this branch point. Re-run after the fixture edit and the
+  final regen: **535/535**.
 - app/src-tauri bare `cargo test` **217 passed + 3 ignored, 0 failed**,
-  exit 0, **zero warnings**, summed across **11 test binaries**
+  exit 0, **zero compiler warnings**, summed across **11 test binaries**
   (105 / 0 / 0 / 32+1 / 68 / 3 / 7 / 0+1 / 2+1 / 0 / 0) — **NOT piped
-  through `tail`** (the standing trap). Unmoved, as a branch with zero
-  Rust must be.
-- tools/e2e `npm ci` + `npx playwright test` **40/40 in 8.9s**,
-  headless, one worker, retries 0, no skips — **+4** over main's 36, all
-  in `startup-recovery.spec.ts`. `npm run typecheck` clean ·
-  `npm run lint:tokens` **clean, 38 files**.
+  through `tail`**. Unmoved, as a branch with zero Rust must be.
+- tools/e2e `npm ci` + `npm run typecheck` clean +
+  `NPUTER_E2E_PORT=14542 npm test` **40/40 in 9.8s**, headless, one
+  worker, retries 0, no skips · `npm run lint:tokens` **clean, 38
+  files**. **+4 over the branch roles' 36**, which is T-050's
+  `startup-recovery.spec.ts` and not anything of T-030's.
 
-**NO NEW CSS, and the strong form of the claim holds again.** This
-merge's app build emits `index-RXeeD2qB.css` at **41.30 kB — the same
-content-hashed asset name T-049's merge built**, so a task that adds a
-whole new screen adds not one CSS rule: `StartupScreen` is built
-entirely from tokens and utilities that already existed. The JS moved
-and only the JS: `index-DYl_93aj.js` **445.14 kB** (T-049's was
-`index-qfeIgiPJ.js` 442.54).
+**THE zsh `PIPESTATUS` TRAP BIT AGAIN, and the discipline caught it
+again.** `${PIPESTATUS[0]}` after the piped `cargo test` came back
+**EMPTY** (zsh spells it `$pipestatus`, lowercase and 1-indexed). The
+command was simply re-run **unpiped** with the exit code taken from
+`$?` on a redirect to a file — **exit 0** — and the per-binary counts
+summed from the file. This is the fourth checkpoint to record that
+trap. It costs one re-run every time and it has never yet produced a
+wrong number, because the rule "never pipe the suite through `tail`"
+already forces the honest form.
 
-**THE BOOT GATE FIRED AND WAS RUN HERE — and it was STILL UNRUN BY
-ANYONE on this branch.** The executor did not run it (its notes say so:
-"The boot-check script was NOT run"), the verifier did not either and
-said so in its verdict ("the merge owes it") — which is the CONVENTIONS
-bullet's "a skipped gate is news, never silence" working as designed.
-**The FIFTH exercise of the gate, the fourth on its `app/src/**` limb.**
-Scratch port **14521**, never 1420:
+**A BUILD-ASSET NOTE THAT IS THE OPPOSITE OF T-050's.** The CSS is
+byte-stable — `index-RXeeD2qB.css` at **41.30 kB, the same
+content-hashed name T-049's and T-050's merges built**, which is
+unremarkable here because this branch writes zero bytes under
+`app/src`. **The JS moved anyway**: `index-ChZ8PwVH.js` **448.55 kB**
+against T-050's `index-DYl_93aj.js` 445.14 — **+3.41 kB from a branch
+with no app source in it at all.** That is the parser's six new rules
+arriving in the app bundle through the `file:../lib/parser` symlink,
+and it is the cleanest single piece of evidence that a C-06-only change
+really does ship into C-05.
 
-    [boot-check] port 14521 free — spawning `npm run tauri dev -- --config {…}` in /Users/ujju/Projects/nputer/app
-    [boot-check] app: [nputer] project folder: /Users/ujju/Projects/nputer
-    [boot-check] detected startup line 1/2: [nputer] project folder:
-    [boot-check] app: [nputer] window "main" created
-    [boot-check] detected startup line 2/2: [nputer] window "main" created
-    [boot-check] process tree stopped (exit=null signal=SIGTERM)
-    BOOT_EXIT=0
+**BOOT GATE (T-046): DID NOT FIRE — stated explicitly, not silently
+skipped**, per the CONVENTIONS bullet's "a skipped gate is news, never
+silence". The trigger is a diff touching `app/src-tauri/**`,
+`app/src/**` or either manifest (`app/package.json`,
+`app/src-tauri/Cargo.toml`). **This merge's full changed set — branch
+plus checkpoint — is TWENTY files: nine under `lib/parser/`, six under
+`docs/tasks/`, plus `docs/CONVENTIONS.md`, `docs/ARCHITECTURE.md`,
+`docs/STATE.md`, `docs/architecture/graph.json`, and EXACTLY ONE file
+under `app/`: `app/test/architecture-dogfood.test.ts`.** That last one is
+under `app/test/`, **not** `app/src/`, and the rule names `app/src/**`
+— so no limb of the trigger is touched and the gate correctly stays
+dormant. **Both branch roles also declared it untriggered in as many
+words** rather than going quiet, which is the third consecutive clean
+exercise of that limb. Nothing was spawned; no scratch port was used
+for a boot check.
 
-**Exit 0, both `[nputer]` startup lines, ONE run.** The exit code was
-captured **from `$?` on an unpiped command** redirecting to a file — not
-from `$PIPESTATUS`, which zsh does not define and which cost the T-041
-integrator its first run. (It bit again here, harmlessly: a
-`${PIPESTATUS[0]}` on the self-check came back EMPTY and the command was
-simply re-run unpiped. The trap is real; the discipline caught it.)
-After the run: `lsof -nP -iTCP:14521` **empty** (the scratch port
-released), 14520 empty, `pgrep -fl tauri-boot-check` empty,
-`pgrep -fl fake_agent` empty, nothing with 14521 in its argv. The full
-`ps` sweep compared by **pid SET, not by eye**: everything that appeared
-was a Spotlight `mdworker_shared` worker, two macOS system XPC services
-and this session's own `ps` pipeline; everything that vanished was the
-previous mdworker cohort plus **a sibling worktree's own `npm run build`
-under `/Users/ujju/Projects/nputer-t034/`**, which ran and finished on
-its own and was neither started nor disturbed by this merge. **Zero
-boot-check pids survived.**
+**1420 WAS NEVER BOUND, CONTACTED OR SIGNALLED.** It was OBSERVED with
+`lsof` only: the human's vite is **pid 64249** holding `[::1]:1420`,
+**the same pid T-050's checkpoint recorded**, with one established
+connection to their webview — so their app has NOT been restarted since
+the last merge. The e2e lane ran on scratch port **14542**, chosen
+after probing 14542/14543/14544 free and deliberately avoiding
+**14520** (T-045's tonight), **14531** (T-030's builder) and **14577**
+(T-030's verifier). `lsof -nP -iTCP:14542` after the lane: **empty**.
 
-**1420 was never bound, contacted or signalled.** It was OBSERVED with
-`lsof` only. **Note a change worth carrying: the human's vite is now pid
-64249, not the 90127 that held `[::1]:1420` unchanged from T-041's merge
-through T-049's — their app has been restarted since.** Their app is
-`target/debug/nputer` **pid 64276**, parented to `tauri dev` pid 64073,
-confirmed alive both before and after the boot run, which shared
-`target/debug/` with it and disturbed nothing.
+**THE SHARED-WORKING-TREE SIDE EFFECT, SIXTH INSTANCE — AND A NEW
+FACE.** The previous five arrived through the git index, through Rust
+(rebuild + restart), through HMR on app source (twice), and once
+through the keyboard. **This one arrives through a LINKED DEPENDENCY'S
+BUILD OUTPUT.** The mechanism is confirmed present, not guessed:
+`app/node_modules/@nputer/parser` is a real symlink to `../lib/parser`;
+the package's `exports` resolve `.` to `./dist/index.js`; and
+`app/vite.config.ts` explicitly adds `../lib/parser` to `server.fs.allow`
+with a comment saying vite "resolves through the symlink to the real
+path". **This merge ran `npm run build` in `lib/parser/`, rewriting
+`dist/` at 02:21 today** — the exact files the human's running vite
+serves for `@nputer/parser`. **So the model badges on their live board
+very likely changed under them from a 50-character run to `opus`.**
+Stated at the confidence it deserves: **the mechanism is verified, the
+outcome on their screen was NOT observed** (no screen control), and
+whether vite pushed it by HMR or their window needs a reload is
+unknown. Recorded as a sixth data point on the open question below,
+and it is the first one whose trigger is not a file under `app/`.
 
-**THE SHARED-WORKING-TREE SIDE EFFECT, fifth instance, and this one has
-the best edge yet.** This merge wrote no `.rs`, so nothing restarted; it
-wrote two files under `app/src/` that the human's vite watches, so the
-change reached their live window by **HMR**. What makes this instance
-different: **the thing that changed is the screen they photographed.**
-If their window was sitting on the dead end when this landed, HMR
-replaced it under them with a screen carrying three ways out — the fix
-arriving, unannounced, on the exact surface they filed the report about.
-Recorded as a fifth data point on the open question below.
-
-STANDING INTEGRATOR PRACTICE (T-009-s1, the ratified CONVENTIONS interim
-regen rule; retires when T-014's `nputer index --check` becomes the
-gate) — **TWENTIETH** exercise, and it FIRED and MOVED the graph.
-- **Trigger present**: the diff carries `*.ts/*.tsx` outside docs/. The
-  plain ignored self-check was **RED before the regen** (exit 101,
-  `NPUTER_UPDATE_GOLDEN` confirmed unset), which is the rule earning its
-  place rather than being assumed.
+STANDING INTEGRATOR PRACTICE (T-009-s1, the ratified CONVENTIONS
+interim regen rule; retires when T-014's `nputer index --check` becomes
+the gate) — **TWENTY-FIRST** exercise, and it is the **FIRST in which
+the graph MOVED and not one fixture assertion did**.
+- **Trigger present**: the diff carries `*.ts` outside docs/
+  (`lib/parser/src/**` and `lib/parser/test/**`). The plain ignored
+  self-check was **RED BEFORE the regen** (exit **101**,
+  `NPUTER_UPDATE_GOLDEN` confirmed UNSET at the shell), which is the
+  rule earning its place rather than being assumed.
 - **Delta, enumerated from the raw graph** and cross-checked by an
   **independent re-derivation written against the registry globs**
-  rather than run through the app's own `derive.ts`: files **92 → 94**
-  (adds `app/test/startup-recovery.test.ts` and
-  `app/test/startup-screen.test.tsx`; **nothing removed**;
-  `tools/e2e/tests/startup-recovery.spec.ts` invisible — `.nputerignore`
-  carries `tools/`). Content-changed: `App.tsx` (loc 487→623, symbols
-  6→8), `watcher-store.ts` (659→841, symbols 40→45), plus hash/loc on
-  `shell-harness.test.ts` and `watcher-store.test.ts`. Stats symbols
-  **642 → 667**, edges **1038 → 1063** — 29 added and **FOUR REMOVED**,
-  which is not churn but the refactor as topology: `startDocsWatcher`
-  no longer does the work, so its two calls (`applyDocsPayload`,
-  `applyProjectStatus`) and two type_refs went with the extracted
-  `runStartup`. **The latch became a wrapper and the graph says so.**
-- **FOUR assertions moved, and the fourth was DERIVED, not discovered.**
-  `["C-05", 42] → 44` came from the ADDED-FILE LIST before a single test
-  ran: both new files match `app/test/**`, and the registry was swept to
-  confirm C-05 is that glob's ONLY claimant. It sits behind the file
-  count in the same `it()` body and appears in no red, ever. **That is
-  four merges running where three was forecast and four moved, and the
-  second running where the rule was USED rather than relearned.** The
-  other three: file count `toBe(92)` → **94** (and the test NAME),
-  relation row `["C-05","C-10","confirmed", 23] → 24`, and
-  `map-dogfood-render.test.tsx` `· 92 files` → `· 94 files`.
-- **ONE THING WORTH KNOWING ABOUT THAT EDGE**, checked rather than
-  assumed: `startup-recovery.test.ts` reaches the store through a
-  **DYNAMIC `await import("../src/lib/watcher-store")`** (it must, to
-  re-import a fresh module per case), and **the indexer resolves it to
-  the same file edge a static import would**. Had it not, the merge
-  would have presented as "no assertion moved" and read as an ordinary
-  no-op regen. No new component PAIR appears, so no finding is added,
-  removed or renumbered — six D1 rows and three D3s byte-identical,
-  tally still 13 confirmed / 6 undeclared / 9 planned, D2 empty, the
-  unmapped node still gone, no file ambiguous, `derived.issues` still
-  `[]`.
-- **`lib/parser/test/smoke.test.ts` did NOT move**, verified rather than
-  assumed: `git diff b623f6a..HEAD -- lib/parser/` is **0 bytes** and the
-  suite re-ran **159/159**. T-050 declares no component and changes no
-  registry file, so the T-024 three-fixtures rule does not fire in its
-  registry form.
-- **Order per ceaa949, THIRTEENTH hold.** Fixture edits went in BEFORE
-  the final regen (both fixtures are themselves indexed — and the final
-  graph proves it, carrying their own new loc: dogfood 857→920, map
-  fixture 215→224). Then regenerated **twice** for byte-identity: sha256
-  `a6ede920c34beb867c6e856fbcdf9099a458de766d22e6fa066220b68236933e`,
-  **396,620 bytes**, identical both runs (`cmp` clean). Then the
+  rather than run through the app's own `derive.ts`: files **94 → 94
+  (UNCHANGED — no new file nodes)**, symbols **667 → 670**, edges
+  **1063 → 1069** (8 added, 2 removed). **Nothing added, nothing
+  removed**: T-030's new tests EXTENDED the four existing test files
+  rather than adding any, so C-06 gains no node. The branch forecast
+  this exactly.
+- **The three new symbols are all UNEXPORTED top-level functions** —
+  `stripHtmlComments` (roadmap.ts), `blockedByCycles` (validate.ts),
+  `anchoredIdiomFor` (component.ts) — re-confirming that this graph
+  records unexported symbols.
+- **THE TWO "REMOVED" EDGES ARE NOT REMOVALS, and this is worth
+  knowing before someone reads a remove/add pair as churn.** They are
+  two IMPORT edges whose `symbols` list WIDENED, which the graph models
+  by value rather than by identity: `validate.ts→types.ts` gains
+  `TaskRecord`, and `model-session.test.ts→index.ts` gains
+  `parseProjectFromFiles`. **No module PAIR became connected**, so the
+  branch's "no new import edges" forecast is right in substance and
+  only looks wrong in the raw edge diff.
+- **NO APP FIXTURE MOVED, and that was DERIVED before anything was
+  run** — from the added/changed-file list, per the standing rule,
+  because this fixture has bitten four merges the other way. The
+  derivation, in the order it was made: (1) the file SET is unchanged
+  and the globs are unchanged, **so the file→component mapping cannot
+  have moved** whatever the glob semantics are — confirmed by an
+  independent re-derivation giving **94 → 94, byte-identical per
+  component (C-05 44, C-06 21, C-08 10, C-09 3, C-10 2, C-12 11, C-13
+  2, C-14 1), zero unclaimed, zero ambiguous**; (2) the registry was
+  swept and **`lib/parser/**` (C-06) is the ONLY pattern among all 41
+  globs that can match a `lib/parser` path**, so **all ten changed
+  edges are C-06-INTERNAL by construction** — every one was classified
+  and every one is C-06→C-06; (3) therefore no cross-component pair
+  count can move, and none did. Findings, the 28-row relation table and
+  the 13/6/9 tally are byte-unchanged, D2 empty, the unmapped node
+  still gone, `derived.issues` still `[]`.
+- **THE GENERAL RULE, now derived once and written into the fixture
+  header so the next lane uses it rather than rediscovering it: a
+  lib/parser-only change is structurally incapable of moving either app
+  fixture unless it ADDS or REMOVES a file, or the REGISTRY changes.**
+  T-031 and T-032 are next in this lane; both are parser/badge work.
+- **ONE fixture edit, and it is COMMENT-ONLY**:
+  `app/test/architecture-dogfood.test.ts` gains its twenty-first
+  reconciliation block, recording all of the above. **The block exists
+  precisely BECAUSE nothing moved** — a green fixture after a regen
+  must not be read as "the regen was a no-op", which is the failure
+  mode this header has always guarded against from the other side.
+  `app/test/map-dogfood-render.test.tsx` is **deliberately untouched**:
+  its comment log tracks the FILE COUNT, which held at 94, so a
+  "94 → 94" entry would be noise in a log whose whole purpose is to
+  chronicle the number in the assertion below it.
+- **`lib/parser/test/smoke.test.ts` did NOT move**, verified rather
+  than assumed: T-030 declares no component and changes no registry
+  file, so the T-024 three-fixtures rule does not fire in its registry
+  form. Re-ran lib/parser after the regen: **197/197**.
+- **Order per ceaa949, FOURTEENTH hold.** The fixture edit went in
+  BEFORE the final regen (the fixture is itself indexed — and the final
+  graph proves it, carrying the block's own new loc: dogfood **920 →
+  977**). Then regenerated **TWICE** for byte-identity: sha256
+  **`f80c1ba7e929ec71f18d01d21aee733bd1561d330a99fea70388ac1655b0f3ad`**,
+  **398,546 bytes**, identical both runs (`cmp` clean). Then the
   **plain (non-golden) ignored self-check** with `NPUTER_UPDATE_GOLDEN`
   confirmed UNSET: `self_graph_is_current ... ok`, **exit 0**. Then the
-  app suite re-run after the fixture edits: **535/535**.
+  app suite re-run after the fixture edit: **535/535**.
 
 **No model call was made anywhere in this merge.** The env-gated
-`#[ignore]` smoke was NOT run (one of the 3 ignored). No screen control,
-no screenshots, no OS input injection, nothing read off the screen. The
-boot run opened and closed its own window, which is the @human ruling of
-2026-08-16 that T-046 rests on and this merge does not extend.
+`#[ignore]` smoke was NOT run (one of the 3 ignored). No screen
+control, no screenshots, no OS input injection, nothing read off the
+screen. No boot check was spawned, because the gate did not fire.
 
 **THE MERGE WAS CLEAN AND THE OVERLAP WAS PROVED EMPTY, not assumed.**
-Merge commit **`5927adc`**, merge-base **`b623f6a`**, thirteen files.
-Both changed-file sets were enumerated and `comm -12` is **EXACTLY
-ZERO FILES** — main had taken only three docs-only commits since the
-dispatch (`fa84ebc` the composition verdict, `2905cfb` the overnight
-grants, `6ed97cf` three dispatch stamps), touching `docs/STATE.md` and
-four task cards, none of them T-050's. `git merge-tree --write-tree` was
-run FIRST and answered a single tree with zero conflict markers; the
-merged tree hash reproduced that prediction **exactly**
-(`b5d569f5503312908d48a67bb1a107fa408748bb`). **Three sibling executors
-are live in their own worktrees** (T-030 on `lib/parser/`, T-045 on
-`tools/e2e/`, T-034 on `app/src/architecture/`) and none has merged, so
-none could contend. `../nputer-t050` was never entered.
+Merge commit **`59558de`**, merge-base **`6ed97cf`**, sixteen files.
+Both changed-file sets were enumerated and `comm -12` is **EXACTLY ZERO
+FILES** (16 branch files against 23 main-side files). `git merge-tree
+--write-tree` was run FIRST and answered a single tree with zero
+conflict markers; **the merged tree hash reproduced that prediction
+exactly — `b3d639d1c9a6e23563fae4a9c8d42695a62e1f54`.**
+
+**THE CONVENTIONS COLLISION DID NOT MATERIALIZE — and the next lane
+owes the reconciliation, not this one.** The dispatch flagged that
+**T-045 is verifying a branch that ALSO edits `docs/CONVENTIONS.md`**.
+Checked before merging: **T-045 has NOT merged** (`main..t045-gates` is
+six commits, none of them on main), so `docs/CONVENTIONS.md` was not in
+main's changed set and there was nothing to reconcile. **Both edits
+were enumerated anyway, so whoever merges T-045 does not have to
+re-derive it**: T-030 rewrites the **genesis-kit bullet in `##
+Gotchas`** (the T-023-s1 trap note, +13/−3 around line 134); T-045
+rewrites the **CI bullet in `## Build & test`** (the four CI
+divergences, +22/−7 around line 70). **Different bullets, roughly sixty
+lines apart, no shared hunk — T-045's merge should be clean too, but it
+should still run `merge-tree` first rather than trusting this note.**
+One live interaction to know about: `tools/e2e/tests/workflow-parity.
+spec.ts` **PARSES `docs/CONVENTIONS.md`** and asserts every suite
+command is a workflow step. T-030's edit is in Gotchas, touches no
+command bullet, and that spec **passed here (40/40)** — but T-045's
+edit is in exactly the section that spec reads, which is by design and
+is that task's own subject.
 
 INTEGRATOR JUDGMENT CALLS, recorded.
-- **ARCHITECTURE: EDITED, two clauses, and one of them was a FACTUAL
-  STALENESS rather than a judgment.** (a) The **Test surfaces** bullet
-  enumerates `__nputerShellHarness`'s key set BY NAME —
-  `applyProjectStatus / applyPickOutcome / getShell` — and T-050 added a
-  fourth door, `applyStartupFailure`. That bullet was simply wrong the
-  moment this merged; it now names four and says precisely what the new
-  one reaches: **not a fifth phase but the `startupFailed` SCREEN**,
-  which has no phase of its own (it rides `loading` in the shipped app
-  and `browser` in a served bundle). It also records WHY the door exists
-  — a browser awaits neither boundary call and so cannot fail a real
-  startup, which is the exact hole T-041's harness exists to close, and
-  the door is `recordStartupFailure` ITSELF, so the lane renders shipped
-  state rather than an imitation. **The lesson: a document that
-  enumerates a key set has committed to maintaining it.** (b) C-05's
-  status cell — the running record of app-shell facts, where T-026,
-  T-025 and T-049 each left a clause — gains one for the recoverable
-  startup handshake. What was checked and deliberately NOT changed: the
-  Genesis bullet's "entry is two zero-argument Tauri commands" (T-050
-  adds no command — **`git diff` shows ZERO added and ZERO removed
-  `invoke(`/`listen(`/`emit(` call sites in `app/src`**), the pure-lens
-  bullet (no write path moved), and Code-layout (both new files are
-  tests under `app/test/**`, already C-05's declared territory).
-- **ROADMAP: EDITED, and the test comes out the same way it did for
-  T-049 and for the same reason.** Milestone 3's Progress line
-  enumerates **what a user can do**; T-041, T-047 and T-048 were all
-  declined on that test because they added no user capability. T-050
-  does: a user facing a failed startup can now read which step broke,
-  retry onto a live board, or leave by the front door's own two routes,
-  where before there was one muted line and a theme toggle. Ten lines
-  added. The honest remainder (T-027, T-028, T-029, plus one observed
-  real turn) is untouched and **milestone 3 is still NOT claimed**.
-- **CONVENTIONS: NOT edited.** The BOOT GATE bullet was exercised a
-  fifth time and needed nothing; its "the executor runs it too" limb was
-  again correctly OVERRIDDEN by a dispatch fencing 1420, and BOTH branch
-  roles declared the gate unrun in as many words — the second consecutive
-  clean exercise of that limb. The token-lint bullet governs
-  token-bearing utilities: `StartupScreen` is a whole new screen built
-  from utilities and tokens that already existed, and `lint:tokens` ran
-  **clean over 38 files** with zero new tokens, zero arbitrary values,
-  zero new dependencies.
+- **CONVENTIONS: the branch's edit was VERIFIED ACCURATE HERE, not
+  taken from the verdict.** Criterion 1 requires it, and the claim it
+  makes is bounded correctly. Checked three ways: (1) `parseRoadmap` is
+  applied to the roadmap file ALONE — `docs-model.ts` gates it on
+  `path === ROADMAP_FILE`, and the parser's own entry points reach it
+  only through `parseRoadmapFile(roadmapFile)`; (2) of the six things
+  under `method/docs-templates/` (ARCHITECTURE, CONVENTIONS,
+  NORTH_STAR, ROADMAP, STATE, decisions/), **only ROADMAP.md is a model
+  input at all** — the rest are snapshot prose no line scanner reads —
+  so "the examples no longer have to be indented to stay invisible"
+  does not over-reach; (3) the pin it cites is real —
+  `roadmap.test.ts` carries `it('the scaffolded template shape parses
+  to zero features and zero issues')`. **One thing checked because it
+  could easily have gone stale and did not**: the template's OWN
+  parenthetical says "a **bare** example row would parse as a real
+  feature", and that sentence is **still true** — a bare (uncommented)
+  row still parses as real, which is exactly what T-030 does not
+  change. The templates stay comment-wrapped regardless, which the
+  bullet says in as many words.
+- **ARCHITECTURE: EDITED, one clause, C-06's row.** That cell is a
+  per-task running record in the same idiom as C-05's — it already
+  names T-002, T-003, T-008 and T-019 — and **T-030 is the first
+  substantive C-06 change since T-019**, so leaving it unwritten would
+  have made the row's own convention lie by omission. It now names the
+  comment strip (both directions), one issue per SCC, and that the
+  three new kinds are additive and consumed generically. **What was
+  checked and deliberately NOT changed**: C-06's status stays
+  `verified`; and, applying the T-050 lesson that "a document which
+  enumerates a key set has committed to maintaining it", the whole file
+  was swept for an enumeration of parser ISSUE KINDS — **there is
+  none**, so the three new union members make nothing stale anywhere in
+  ARCHITECTURE.md.
+- **ROADMAP: NOT edited, and the test comes out the way it did for
+  T-041, T-047 and T-048.** Milestone 3's Progress line enumerates
+  **what a user can do**, and T-030 adds no user capability — it is a
+  correctness fix. There is also **no milestone-4 section to write it
+  into**, and writing parser internals into milestone 3's genesis
+  narrative would overstate it. The one arguably user-visible effect
+  (badges reading `opus`) is a rendering correction, not a capability.
+  **And the genesis flow's SHIPPED behaviour is unchanged**, checked
+  rather than assumed: the template's example row is BOTH indented and
+  comment-wrapped, so the old column-0 anchor never matched it — T-030
+  removes a LATENT trap that the templates were already bent around,
+  not a live defect a user could have hit.
 - **NO NEW ADR (three-prong).** (a) An ADR charters a DECISION between
-  live alternatives. The latch's shape — promise vs enum vs boolean —
-  was settled by MEASUREMENT inside ONE module of C-10's store, and the
-  broader pattern it follows (**a rejected boundary call becomes shell
-  state via `String(reason)` and is rendered, never thrown**) is not new:
-  `runPicker` and `runIndexRepo` already do exactly that, which is why
-  the notes call it "the store's existing idiom". T-050 CONFORMS to a
-  standing pattern rather than establishing one, and no cross-component
-  contract moved. (b) **Prong two, verified as an EMPTY SET rather than
-  by eye**: the full changed-file list (branch + this checkpoint)
-  restricted to `method/`, `capabilities/`, `lib/parser/`,
-  `app/src-tauri/` and every `Cargo.toml`/`Cargo.lock`/`package.json`/
-  `package-lock.json`/`tsconfig*.json`/`vite.config.ts`/
-  `vitest.config.ts`/`tauri.conf.json`/`.nputerignore` returns **0
-  files**. So ADR-012 held (no native surface moved, zero grants
-  touched, `acl_pin.rs` zero-diff, the 92-grant set unmoved and still
-  green under `cargo test`), ADR-011 held (zero new crates, zero new npm
-  deps, no lockfile line), ADR-003 held (no model call anywhere),
-  ADR-017 held (no write path changed — the app is still a lens), and
-  ADR-014/015 held (the graph was regenerated because the rule fired,
-  proved deterministic across two runs, and proved current by the
-  indexer's own plain self-check). **No new IPC variant**: the six wire
-  enums are unchanged and this branch touches no Rust at all. (c) Prong
-  three: the durable calls live in the task file's criteria→evidence
-  map, its nine proof obligations, and the verifier's independent
-  re-derivations — all of which now say, in the record, that the code
-  they describe was wrong and how.
+  live alternatives with a cross-component blast radius. Every choice
+  here is LOCAL to C-06 and already argued in the card: SCC-not-rings
+  (argued and pinned), iterative-not-recursive (a stack-safety
+  implementation detail), `invalid-field` reuse (a within-parser
+  channel choice, flagged and ruled), and the representative-model rule
+  — whose arm the triage **already ruled inside this task's own body**
+  ("T-024-s6's ARM IS RULED HERE"). **The one behaviour that could have
+  read as an invention is the opposite of ADR-worthy**: blanking an
+  unterminated `<!--` to EOF is CONFORMANCE to CommonMark's HTML-block
+  rule. No cross-component contract moved — the three new `ParseIssue`
+  members are ADDITIVE and the app consumes issues generically (no
+  exhaustive switch anywhere; re-verified by the app build and
+  535/535). (b) **Prong two is NOT vacuous here, unlike T-050's** —
+  this branch really does touch `lib/parser/`, so the four ADRs
+  governing C-06 were each checked rather than dismissed. **ADR-009 is
+  the one this diff could actually have violated, and it holds in the
+  STRONGEST form**: T-030 introduces six new structures keyed by
+  untrusted input — `order`, `fileOf`, `edges`, `index`, `low` in the
+  cycle detector and `bySlot` in the alias grouping — and **every one
+  is a real `Map`, not an object**, so `__proto__` and `constructor`
+  are ordinary keys with no inherited setter to hit; two independent
+  probes assert `Object.prototype` stays unpolluted. ADR-002 holds (all
+  state in files, no cloud). ADR-011 holds (zero manifests, zero
+  lockfiles; the per-package `npm ci` commands were run verbatim from
+  `lib/parser/` and `app/` and both worked). ADR-015 holds (parsing
+  stays in TypeScript; nothing moved to Rust). ADR-014 holds (the graph
+  was regenerated because the rule fired, proved deterministic across
+  two runs, and proved current by the indexer's own plain self-check).
+  **And the native/manifest surfaces are an EMPTY SET, verified as a
+  set rather than by eye**: the full changed-file list restricted to
+  `method/`, `capabilities/`, `app/src-tauri/` and every
+  `Cargo.toml`/`Cargo.lock`/`package.json`/`package-lock.json`/
+  `tsconfig*.json`/`vite.config.ts`/`vitest.config.ts`/
+  `tauri.conf.json`/`.nputerignore` returns **0 files** — so ADR-012
+  held (no native surface moved, zero grants touched, the 92-grant set
+  unmoved and still green under `cargo test`), ADR-003 held (no model
+  call anywhere) and ADR-017 held (no write path changed — the app is
+  still a lens). (c) Prong three: the durable calls live in the task
+  file's criteria→evidence map, its seven proof obligations, and the
+  verifier's independent re-derivations — including the two places the
+  record now says the CARD was wrong and by how much.
 
 ## Overnight grants — SECOND autonomous run (human, 2026-08-17 night)
 Given via question card while awake, before sleeping. Standing until
@@ -407,11 +490,13 @@ revoked:
    dispatch its build, then T-028 and T-029 as they unblock —
    INCLUDING sequencing T-042 first if the planning pass concludes it
    must land before T-027 (its criterion 4 decides where the docs
-   change log lives, and T-027 is the second consumer).
+   change log lives, and T-027 is the second consumer). **T-042 was so
+   sequenced and is building now; T-027 dispatches after it merges.**
 2. **THREE MILESTONE-4 LANES IN PARALLEL**, all disjoint from T-027's
    app-interview + app-shell: **T-030** (parser strictness, lib-parser),
    **T-045** (the gates cover the rules, tools/e2e), **T-034** (map
-   tasks lens, app-map). **All three are BUILDING now** — see below.
+   tasks lens, app-map). **T-030 IS DONE AND MERGED — this checkpoint.
+   T-034 is building; T-045 is verifying.**
 3. **THIRD TRIAGE APPLIED** — read-only analyst drafts, architect
    reviews and applies. Docs-only, reversible, one diff to read.
    Tasks NEWLY CREATED by triage still do NOT dispatch without the
@@ -421,50 +506,54 @@ for the human; @human judgments are never self-answered; no screen
 control beyond the ruled boot check; port 1420 is the human's.
 
 ## In progress / broken right now
-**THREE TASKS ARE `building`**, all under grant 2, all in their own
-worktrees, all disjoint from each other and from this merge (the parser
-re-parse confirms the count):
-- **T-030** — parser strictness, `lib-parser`, worktree
-  `../nputer-t030`. Has committed work on its branch.
-- **T-045** — the gates cover the rules, `tools/e2e`, worktree
-  `../nputer-t045`. Still at the dispatch commit.
-- **T-034** — map tasks lens, `app-map`, worktree `../nputer-t034`.
-  Still at the dispatch commit. (Its `npm run build` was observed
-  running and finishing during this merge's boot-gate window — noted
-  only to record that nothing here started or disturbed it.)
+**FOUR TASKS ARE `building`** (the parser re-parse confirms the count),
+all in their own worktrees, all disjoint from each other and from this
+merge:
+- **T-042** — genesis switch truthfulness, worktree `../nputer-t042`
+  (`docs_watch.rs` + `watcher-store.ts`). **Sequenced AHEAD of T-027
+  under grant 1** — its criterion 4 decides where the docs change log
+  lives and T-027 is the second consumer. **T-027 dispatches after
+  T-042 merges.**
+- **T-034** — map tasks lens, worktree `../nputer-t034`
+  (`app/src/architecture/`). **This is the lane T-030-s3 aims at**: it
+  builds dependency waves over the very `blocked_by` graph whose edges
+  can silently re-point. See the finding above — s3 wants promoting
+  before those waves ship.
+- **T-014** — `nputer index --check` binary, worktree
+  `../nputer-t014` (`crates/nputer-index/`). Its card now reads
+  `building` (it read `planned` at T-050's checkpoint, which that
+  checkpoint flagged as an owed dispatch stamp — **that debt is
+  settled**). It matters here for one specific reason: **it is the
+  named retirement trigger for the T-009-s1 interim regen rule this
+  checkpoint just exercised for the twenty-first time.**
+- **T-045** — the gates cover the rules, worktree `../nputer-t045`
+  (`tools/e2e/` + `.github/` + `docs/CONVENTIONS.md`). **VERIFYING**;
+  its card still reads `building`, which is normal — the card flips at
+  merge. **It carries the CONVENTIONS edit enumerated above.**
 
-**T-027's planning pass is drafting read-only** and is still held on
-@human's split-view verdict (see Next up 1).
-
-**ONE MORE LANE APPEARED WHILE THIS MERGE WAS RUNNING, and it is NOT
-yet building.** A worktree `../nputer-t014` on branch
-`t014-index-binary` was created partway through this session, branched
-off this merge's own commit `5927adc`. As of this checkpoint it has
-**zero commits of its own** and **T-014's card still reads `planned`**
-on main and in that worktree alike — which is why the tally above says
-three building and not four. Recorded so the next session does not read
-the worktree as an undocumented in-flight build; whoever owns it still
-owes the dispatch stamp. T-014 is the `nputer index --check` binary,
-which matters here for one specific reason: **it is the named retirement
-trigger for the T-009-s1 interim regen rule this checkpoint just
-exercised for the twentieth time.**
+None of the four worktrees was entered by this merge. The only
+cross-lane reads were of git REFS from the main checkout
+(`git log main..t045-gates`, `git diff` against that ref), which is
+read-only and touches no worktree.
 
 **THE SHARED-INDEX HAZARD, and it did not recur.** `git diff --cached
 --stat` was checked before **both** commits and the staged set was
 exactly this session's each time. The house shape here is clean:
 **merge → checkpoint**, two commits.
 
-The t050 worktree is removed and its branch KEPT — **31 task branches
-merged now**, `t001-app-shell` through `t050-recover` (`git branch
---merged main` lists 33; two of those, `t034-tasks-lens` and
-`t045-gates`, are live worktrees still sitting at main's own tip with no
-commits of their own, so they are not merges). Main tree clean; all four
-suites green; the token lint green; the committed graph current and
-proved so by the plain self-check rather than by assumption. The parser
-re-parses the whole live tree at **0 issues**: **84 tasks**, tally
-**32 done / 15 planned / 9 parked / 25 suggested / 3 building**, 6
-features, 11 components. (Tasks rise by four since T-049's checkpoint —
-T-050's own card plus its three suggestion files.)
+The t030 worktree is removed and its branch KEPT — **32 task branches
+merged now**, `t001-app-shell` through `t050-recover`. Main tree clean;
+all four suites green; the token lint green; the committed graph
+current and proved so by the plain self-check rather than by
+assumption. The parser re-parses the whole live tree at **0 issues**:
+**90 tasks**, tally **33 done / 14 planned / 9 parked / 30 suggested /
+4 building**, 6 features, 11 components. (Tasks rise by six since
+T-050's checkpoint — T-030's five suggestion files plus T-051's card,
+which main took separately.) **That zero-issue re-parse is now a
+stronger statement than it was yesterday**: it is the FIRST one made by
+a parser that checks cycles, filenames and id aliases, and it was
+independently re-derived by the verifier against main@8dadb59's
+eighty-five task files before this branch ever saw them.
 
 **NO STANDING SECURITY GATE.** T-025-s6 closed at T-039 and nothing
 replaced it. The sharpest open set is still app-agent's, untouched by
@@ -495,58 +584,51 @@ asserts `defaultPrevented`; on Linux the Meta key is not the platform
 accelerator and the app deliberately accepts Control too, so if that
 spec reds there, read it as a key-mapping difference to file before
 touching the matcher — and note it would be the first evidence about
-T-049-s4's territory that anyone has. **T-050 adds a MILD one**:
-`startup-recovery.spec.ts` includes a case that reads the failure card's
-computed colours from the real sheet in BOTH schemes, so it joins the
-CSS-sensitive group above; its other three drive the shell harness and
-are platform-neutral. Then: `cargo audit` behaves as it does locally;
-and **the xvfb `tauri dev` boot prints both `[nputer]` startup lines** —
-the FIRST exercise of the boot check on Linux, and the only place
-T-046's override's Linux behaviour will ever be observed (CI
-deliberately sets no `NPUTER_BOOT_PORT`, so the override path stays
-Linux-unverified by design). AND (T-018-s3 fold) the THREE T-018
-SENTINEL LIVE TESTS inside the ubuntu `cargo test` step —
-replaced-wholesale and deleted-recreated docs/. They discriminate only
-where inotify watches INODES; macOS FSEvents watches paths and was
-accidentally resilient, which is why T-018's replace-half evidence is
-mechanism-only today. Green there CLOSES that gap; red there is a real
-reconcile gap macOS could never surface, and gets filed immediately.
-This run also closes T-001/T-003's Linux halves, and carries T-026-s1
-(the plan probe's exact-case match) and T-021-s1 (the ACL pin is
-macOS-derived). The ubuntu `cargo test` step also runs the
-`agent_runner` integration tests — **32 + 1 ignored** — which spawn real
-child processes and send real signals; T-047's newest plant files,
+T-049-s4's territory that anyone has. **T-050's MILD one**:
+`startup-recovery.spec.ts` includes a case that reads the failure
+card's computed colours from the real sheet in BOTH schemes, so it
+joins the CSS-sensitive group above; its other three drive the shell
+harness and are platform-neutral. **T-030 adds NO Linux exposure** —
+it ships no spec and no CSS, and its whole surface is a pure library
+under `cargo`-free, browser-free unit test. Then: `cargo audit` behaves
+as it does locally; and **the xvfb `tauri dev` boot prints both
+`[nputer]` startup lines** — the FIRST exercise of the boot check on
+Linux, and the only place T-046's override's Linux behaviour will ever
+be observed (CI deliberately sets no `NPUTER_BOOT_PORT`, so the
+override path stays Linux-unverified by design). AND (T-018-s3 fold)
+the THREE T-018 SENTINEL LIVE TESTS inside the ubuntu `cargo test`
+step — replaced-wholesale and deleted-recreated docs/. They
+discriminate only where inotify watches INODES; macOS FSEvents watches
+paths and was accidentally resilient, which is why T-018's replace-half
+evidence is mechanism-only today. Green there CLOSES that gap; red
+there is a real reconcile gap macOS could never surface, and gets filed
+immediately. This run also closes T-001/T-003's Linux halves, and
+carries T-026-s1 (the plan probe's exact-case match) and T-021-s1 (the
+ACL pin is macOS-derived). The ubuntu `cargo test` step also runs the
+`agent_runner` integration tests — **32 + 1 ignored** — which spawn
+real child processes and send real signals; T-047's newest plant files,
 refuse paths and assert on executable bits, so a Linux permissions or
 `/bin/sh` difference would show up there first. Watch it, and watch for
 the unnamed `agent_runner` flake there too.
 
 ## Next up (1–4)
-1. **@human — THE VISUAL SESSION IS STILL OPEN, and the second thing you
-   reported is now fixed.** The app is RUNNING on 1420 as this
-   checkpoint lands — **note it is on a NEW pid since the last
-   checkpoint (vite 64249, app 64276), so you have restarted it at some
-   point.** This merge wrote no Rust, so nothing restarted here; the two
-   changed frontend files reached the window by **HMR**, which this time
-   means **the screen you photographed changed under you.**
-   - **FIRST, because it is your own report: the dead end is gone.**
-     There is no reliable way to make a real startup fail on demand, so
-     the honest ask is smaller than usual — **if you ever see "waiting
-     for the first docs snapshot…" again, tell us what the screen looks
-     like now.** It should carry `Try again`, `Open a folder…`,
-     `Start an interview` and a `⌘O · ⌘N` hint, and if startup actually
-     FAILED it should say which step broke and quote the reason instead
-     of claiming it is still waiting. **The two judgment calls T-050
-     explicitly leaves you** (they are in the card's Verification line):
-     **does the failure copy read right**, and **does retry belong on
-     that screen or in the header?**
-   - **AND A WARNING THAT MATTERS MORE THAN THE COPY — T-050-s2.** If
-     you land on the failure screen and escape it with **"Open a
-     folder…" rather than "Try again"**, you reach a board that has real
-     content and is **silently dead**: no `docs-changed` handler was
-     ever registered and picking does not re-subscribe, so nothing you
-     edit will ever appear. **Use "Try again" — that route is proven
-     live.** This is the highest-ranked open finding on the task and the
-     verifier says fix it first.
+1. **@human — THE VISUAL SESSION IS STILL OPEN, and one thing on it
+   moved WITHOUT any app code changing.** The app is RUNNING on 1420 as
+   this checkpoint lands — **vite pid 64249, the SAME pid T-050's
+   checkpoint recorded, so you have not restarted it since.**
+   - **NEW, AND THE ONLY T-030 ITEM: the model badges on your board
+     should have got short.** This merge wrote zero bytes under
+     `app/src`, but it rebuilt `lib/parser/dist/`, which your vite
+     serves through the `@nputer/parser` symlink — so **T-020's and
+     T-024's cards should now read `opus` where they read a
+     50-character run**, and **T-001's verified-by badge should read
+     `+`**. If they still show the long strings, reload the window; the
+     mechanism is confirmed but HMR through a linked dependency was not
+     observed. **The judgment that is yours: `+` is honest but ugly**
+     (it is what is left of `claude-fable-5 @fresh (2 passes) + @human
+     (visual)`), and it is filed as **T-030-s1** with four fixes
+     costed. Is a bare `+` acceptable on a card face, or does that
+     suggestion get promoted?
    - **THE HEADER'S DENSITY, T-049's item, still open** — the board
      header's right group is `Open folder… | Start an interview |
      Toggle theme`, three equal outline buttons where the front door
@@ -554,18 +636,28 @@ the unnamed `agent_runner` flake there too.
      capability milestone 3 is named after, looks exactly like "Toggle
      theme"**. Separator? Emphasis? Or is quiet right? Two more: the
      header pair carries **no `⌘O · ⌘N` hint** while the front door does
-     (and now the startup screen does too — so the chords are advertised
-     in two places out of three); and **neither group wraps or
-     truncates**, so at a narrow window that row has nowhere to go.
-     (Also: the header says `Open folder…`, the front door and now the
-     startup screen say `Open a folder…`. Same verb, two registers.)
-   - **NEW — the startup screen's own composition.** It is the first
-     screen in the app to put **four controls in one wrapping row** with
-     a hint riding beside them, and it reuses the front door's verbs
-     without reusing its layout. Worth an eye beside T-049's header
-     item, because they are the same question asked in two places: how
-     much emphasis does a primary action get?
-   - **NEW — the frame at 800x600, T-048's item, still open.** The pane
+     (and the startup screen does too — so the chords are advertised in
+     two places out of three); and **neither group wraps or truncates**,
+     so at a narrow window that row has nowhere to go. (Also: the header
+     says `Open folder…`, the front door and the startup screen say
+     `Open a folder…`. Same verb, two registers.)
+   - **T-050's TWO OPEN JUDGMENTS, unchanged and still yours.** If you
+     ever see "waiting for the first docs snapshot…" again, tell us what
+     the screen looks like now — it should carry `Try again`, `Open a
+     folder…`, `Start an interview` and a `⌘O · ⌘N` hint. **Does the
+     failure copy read right**, and **does retry belong on that screen
+     or in the header?**
+   - **AND T-050's WARNING, which still matters more than the copy —
+     T-050-s2.** If you land on the failure screen and escape it with
+     **"Open a folder…" rather than "Try again"**, you reach a board
+     with real content that is **silently dead**: no `docs-changed`
+     handler was ever registered and picking does not re-subscribe.
+     **Use "Try again" — that route is proven live.**
+   - **The startup screen's own composition** — the first screen in the
+     app to put four controls in one wrapping row with a hint beside
+     them, reusing the front door's verbs without its layout. Worth an
+     eye beside the header item: same question in two places.
+   - **The frame at 800x600, T-048's item, still open.** The pane
      scrolls inside a fixed header and heading, and the artifact list
      gets 286px of the 858px it wants at the size the app actually
      opens. The measurement says the frame holds; **whether it holds
@@ -634,27 +726,30 @@ the unnamed `agent_runner` flake there too.
      **T-025-s2 carries the exact command.**
    - **A Linux run** — the "watch the first CI run" item above.
    - **A PRIORITY CALL, not a screen action.** The next triage now has
-     **four** kinds to rank. Process/spawn hygiene: T-046-s1, T-047-s6
-     (the only one that has already fired), T-047-s5 (~5 lines).
-     Layout/scroll: T-048-s2 (the map canvas clips — silent graph loss
-     the day anything bounds it), s1 (two scroll models, T-027's), s5
-     (the floor, one line). Reach: T-049-s4 (chords dead on every
-     non-Latin layout while the UI advertises them) and s3 (four
-     advertised mechanism properties, none pinned). **And now
-     OBSERVABILITY, which is new and arguably outranks all of them:
-     T-050-s3 says a stranded startup writes nothing to the log, which
-     is the reason today's investigation could not name a cause.** Rank
-     it against T-050-s2 (the silently-dead board), which is the one
-     that can bite a user without warning.
+     **five** kinds to rank. **CORRECTNESS-OF-RECORD, which is new and
+     has a DEADLINE the others do not: T-030-s3.** A silently
+     re-pointing `blocked_by` edge is a wrong answer in the dependency
+     graph **T-034 is building waves over right now** — rank it against
+     T-034's own schedule, not against the rest of this list.
+     Observability: **T-050-s3** (a stranded startup writes nothing to
+     the log — the reason that investigation could not name a cause).
+     Process/spawn hygiene: T-046-s1, T-047-s6 (the only one that has
+     already fired), T-047-s5 (~5 lines). Layout/scroll: T-048-s2 (the
+     map canvas clips — silent graph loss the day anything bounds it),
+     s1 (two scroll models, T-027's), s5 (the floor, one line). Reach:
+     T-049-s4 (chords dead on every non-Latin layout while the UI
+     advertises them) and s3 (four advertised mechanism properties, none
+     pinned). And **T-050-s2** (the silently-dead board), the one that
+     can bite a user without warning.
 2. MILESTONE 3 (T-023…T-029 + T-039 + T-041 + T-047 + T-048 + T-049 +
-   T-050, ADR-017). **T-041's served-bundle gate is DOWN, T-048 made the
-   screen fit the window, T-049 made the way in work, and T-050 made the
-   way OUT work** — four things between the human and a verdict, all
-   cleared. **What still holds the milestone is the human, in this
-   order:**
-   (a) **T-027's planning pass waits on the human's split-view verdict**
-   (item 1) — it builds the LEFT half of a composition whose whole
-   design question is what the open visual session is judging.
+   T-050, ADR-017). **What holds the milestone is now BOTH the human and
+   a merge, in this order:**
+   (a) **T-042 must merge, then T-027 dispatches** — that sequencing was
+   taken under grant 1 because T-042's criterion 4 decides where the
+   docs change log lives and T-027 is the second consumer.
+   (b) **T-027's planning pass ALSO waits on the human's split-view
+   verdict** (item 1) — it builds the LEFT half of a composition whose
+   whole design question is what the open visual session is judging.
    `blocked_by` [T-024 ✓, T-025 ✓, T-026 ✓] has been satisfied since
    T-025 merged. **T-027 also inherits T-047-s3** (a read boundary on
    `model` at the first site that renders it), **T-048-s1** (the two
@@ -664,7 +759,7 @@ the unnamed `agent_runner` flake there too.
    purpose, so the criterion needs a one-line rewording before it
    dispatches, plus **T-049-s3** (the four unpinned mechanism properties
    it is about to lean on).
-   (b) **T-029 is UNGATED but not unblocked** — its `blocked_by` is
+   (c) **T-029 is UNGATED but not unblocked** — its `blocked_by` is
    still `[T-027]`, and T-028's is too.
    The milestone is NOT claimed: the first slice delivers hand-driven
    genesis, the runner exists and is hardened at four boundaries, but no
@@ -673,51 +768,59 @@ the unnamed `agent_runner` flake there too.
    lane queue was T-021 → T-026 → T-025 → T-022; T-021, T-026 and T-025
    are all DONE, so the standing grant's next named item is **T-022**
    (M, milestone 4, `blocked_by: []`), with T-027 ahead of it in
-   milestone order but held for the visual verdict. **app-agent is
-   FREE** — T-047 merged — which unblocks **T-043**'s "serialize behind
-   T-039 on app-agent" condition outright; **app-shell is FREE again
-   now that T-050 has merged.** Triage: APPLY granted — but tasks NEWLY
-   created by triage (T-041…T-050) do NOT dispatch without the human;
-   T-041, T-046, T-047, T-048, T-049 and T-050 each got that nod
-   explicitly. Unchanged method rules: a second REJECTED on any task
-   parks that lane for the human; @human judgments are never
+   milestone order but held for the visual verdict and for T-042.
+   **app-agent is FREE** — T-047 merged — which unblocks **T-043**'s
+   "serialize behind T-039 on app-agent" condition outright;
+   **app-shell is FREE** (T-050 merged); **lib-parser is FREE AGAIN as
+   of this merge**, which matters because **T-031 and T-032 both sit in
+   that lane and both inherit halves T-030 deliberately left them**
+   (T-024-s6's board-badge half is T-031's, its map-badge half and
+   T-011-s4's glob.ts header half are T-032's). Triage: APPLY granted —
+   but tasks NEWLY created by triage (T-041…T-051) do NOT dispatch
+   without the human. Unchanged method rules: a second REJECTED on any
+   task parks that lane for the human; @human judgments are never
    self-answered.
-4. SUGGESTION BACKLOG — **34 open files: 9 parked + 25 suggested.**
-   **T-050 contributes three, and they do not rank together — the
-   verifier ranked them explicitly, which is unusual and should be
-   honoured.**
-   **Untriaged (25)**: the three T-050 cards — **s2** (FIX FIRST: a
-   board reached after a failed subscribe is not live — real content, no
-   `docs-changed` handler, and picking does not re-subscribe; worse than
-   the state it escaped because it looks fine), **s3** (a startup
-   failure never reaches the log — the reason this investigation ran out
-   of evidence; the most consequential for future diagnosis), **s1** (a
-   hanging startup is not a rejection — conclusion right, **one
-   mechanism sentence wrong and the correction is recorded above**; also
-   the home for the hang-as-third-failure-mode and for the subscription
-   STACKING measurement) — plus the four T-049 cards (**s4** `event.key`
-   makes the chords silently dead on every non-Latin layout, **s3** the
-   hook's four advertised mechanism properties are each deletable with
-   the suite green, **s2** T-027's accelerator criterion names a test
-   T-049 retired — one-line reconciliation, cheapest thing on this list,
-   **s1** the lane sees a browser, not the app) — plus the five T-048
-   cards (**s2** the map canvas clips instead of scrolling, **s4** the
-   s3 CORRECTION — read it BEFORE s3, **s1** two scroll models, **s3**
-   the no-plan card overflows at 800x600, **s5** the bounded frame's
-   floor) — plus the six T-047 cards (**s5** the probed path skips the
-   gate, **s6** nothing structurally stops a test resolving the real
-   CLI, **s4** `$SHELL` picks the program, **s1** retire the cache,
-   **s2** the flag table is a version snapshot, **s3** the model has no
-   read boundary, home T-027) — plus **T-041-s2** (the wire shape is
-   pinned in Rust and mirrored by hand in TS with nothing comparing
-   them), **T-041-s4** (`NODE_ENV`, not `--mode`, flips the DEV gate),
-   **T-046-s1** (the unsignalled process group), **T-046-s4** (the
-   overlay's blind spot), **T-046-s2** (`checkJs` — its worked example
-   is wrong and the correction is IN the file), **T-046-s3** (nothing
-   gates the packaged build — read with s4 and T-041-s4: all three are
-   "a gate proves the configuration it was handed, not the one that
-   ships"), and **T-039-s3** (give the session-id refusal its own typed
-   outcome; home is T-029).
+4. SUGGESTION BACKLOG — **39 open files: 9 parked + 30 suggested.**
+   **T-030 contributes FIVE — three from the builder, two from the
+   verifier — and they do not rank together.**
+   **Untriaged (30)**: the five T-030 cards — **s3** (PROMOTE FIRST, and
+   against T-034's clock rather than against this list: zero-padding
+   aliases task and feature ids, and a `blocked_by: [T-01]` edge
+   silently RE-POINTS the moment an unpadded sibling appears), **s2**
+   (still fence-blind — a fenced `- F-99:` parses as real and a fenced
+   `## Milestones` ends the backbone), **s4** (the two parsers now
+   disagree about what content is, and the shared fix must treat inline
+   code as inert or it eats T-030's own card), **s5** (`<!-->` is a
+   valid empty comment read as an unterminated opener — loud, so the
+   contract holds), **s1** (the representative rule leaves a literal
+   `+`) — plus the three T-050 cards (**s2** FIX FIRST of that set: a
+   board reached after a failed subscribe is not live, **s3** a startup
+   failure never reaches the log, **s1** a hanging startup is not a
+   rejection — conclusion right, one mechanism sentence wrong and the
+   correction is in T-050's record) — plus the four T-049 cards
+   (**s4** `event.key` makes the chords silently dead on every
+   non-Latin layout, **s3** the hook's four advertised mechanism
+   properties are each deletable with the suite green, **s2** T-027's
+   accelerator criterion names a test T-049 retired — one-line
+   reconciliation, cheapest thing on this list, **s1** the lane sees a
+   browser, not the app) — plus the five T-048 cards (**s2** the map
+   canvas clips instead of scrolling, **s4** the s3 CORRECTION — read it
+   BEFORE s3, **s1** two scroll models, **s3** the no-plan card
+   overflows at 800x600, **s5** the bounded frame's floor) — plus the
+   six T-047 cards (**s5** the probed path skips the gate, **s6**
+   nothing structurally stops a test resolving the real CLI, **s4**
+   `$SHELL` picks the program, **s1** retire the cache, **s2** the flag
+   table is a version snapshot, **s3** the model has no read boundary,
+   home T-027) — plus **T-041-s2** (the wire shape is pinned in Rust and
+   mirrored by hand in TS with nothing comparing them), **T-041-s4**
+   (`NODE_ENV`, not `--mode`, flips the DEV gate), **T-046-s1** (the
+   unsignalled process group), **T-046-s4** (the overlay's blind spot),
+   **T-046-s2** (`checkJs` — its worked example is wrong and the
+   correction is IN the file), **T-046-s3** (nothing gates the packaged
+   build — read with s4 and T-041-s4: all three are "a gate proves the
+   configuration it was handed, not the one that ships"), and
+   **T-039-s3** (give the session-id refusal its own typed outcome; home
+   is T-029).
    **The nine parked, unchanged**, all blocked on something only the
    world can provide: T-003-s2 (a real project near the ~25 MB knee),
    T-008-s1 (F-04/F-05 layout), T-018-s1 (a Windows lane), T-021-s1 and
@@ -727,51 +830,54 @@ the unnamed `agent_runner` flake there too.
    T-038-s1 (no responsive call site yet — T-048 is the first task to
    measure the app at six viewport sizes, so s1's claim is weaker than
    it was).
-   Triage-born tasks standing ready and un-dispatched: **T-042** (genesis
-   switch truthfulness), **T-043** (kill path — its serialization
-   condition is SATISFIED and app-agent is free; T-047-s4 nominates it
-   as a home), **T-044** (shell pins cover their surface). T-045 left
+   Triage-born tasks standing ready and un-dispatched: **T-043** (kill
+   path — its serialization condition is SATISFIED and app-agent is
+   free; T-047-s4 nominates it as a home), **T-044** (shell pins cover
+   their surface), **T-051** (a window the split fits in). T-042 left
    this list — it is building now.
-   Milestone-4 queue after F-03: T-010, T-013, T-014, T-015, T-031…
-   T-033, T-035, T-044, plus T-022. (T-030 and T-034 are building.)
+   Milestone-4 queue after F-03: T-010, T-013, T-015, T-022, T-031…
+   T-033, T-035, T-044. (T-014, T-034, T-042 and T-045 are in flight;
+   **T-030 is done**.)
 
 ## Open questions
 - **Does the BOOT GATE rule retire, and when?** Carried forward
   unchanged. T-009-s1's sibling rule names its retirement (T-014's
-  `nputer index --check`); BOOT GATE names none in CONVENTIONS, and
-  `.github/workflows/ci.yml` already invokes the boot check on ubuntu
-  while dormant. Does it retire at the repo's first push, or only when a
-  macOS gate exists too? Left for a triage. **FIVE exercises in now**
-  (`app/src/**` at T-041, T-048, T-049 and here, `app/src-tauri/**` at
-  T-047), and it has needed no amendment any time. Its "THE EXECUTOR
-  RUNS IT TOO" clause has now been overridden by a 1420-fencing dispatch
-  **twice running**, and both times every branch role declared the gate
-  UNRUN in as many words rather than going quiet — the bullet's "a
-  skipped gate is news, never silence" is handling that correctly with
-  no amendment. Worth noting when the retirement question is taken.
+  `nputer index --check`, **now building**); BOOT GATE names none in
+  CONVENTIONS, and `.github/workflows/ci.yml` already invokes the boot
+  check on ubuntu while dormant. Does it retire at the repo's first
+  push, or only when a macOS gate exists too? Left for a triage. **FIVE
+  exercises in, unchanged by this merge — T-030 is the third
+  consecutive branch to declare it UNTRIGGERED rather than skip it
+  silently, which is the bullet's "a skipped gate is news, never
+  silence" working on its quiet limb.** Worth noting when the
+  retirement question is taken: the rule has now been correctly SILENT
+  as often as it has fired, and neither behaviour has needed amending.
 - **Should `method/` name the class of CONVENTIONS-level pipeline
   gates?** Unchanged: there are TWO gates with the shape trigger →
   command → record, one of which binds the executor, and
   `method/roles/executor.md` still says only "run the test commands from
   CONVENTIONS.md until green". Ask ONCE when a THIRD lands, or when the
   executor rule proves noisy. A method version bump, not an ADR.
-- **Does the shared main working tree need a rule?** Carried forward and
-  **now with a fifth data point, which is the sharpest of the five**.
-  The first was the git INDEX (T-046's merge lost its house shape to a
-  shared index; the fix that works is social — "the pen is yours" — plus
-  `git diff --cached --stat` before every commit, done twice here). The
-  second was the WORKING TREE via Rust: an app-agent merge REBUILDS and
-  RESTARTS the app the human is reviewing. The third (T-048) was the
-  same tree via **HMR** — no restart, same pid, but the screen under
-  review changed without a signal. The fourth (T-049) sharpened that:
-  the merge changed what the KEYBOARD does, so ⌘O started working
-  mid-session with no signal. **The fifth is today's: the merge replaced
-  the exact screen the human had photographed and filed a report about.**
-  If their window was sitting on that dead end, the fix arrived under
-  their eyes with no announcement — and the report and the fix would
-  have looked simultaneous. All five faces are recorded and none is
-  written down anywhere but here. Method/process, so the architect's
-  (ADR-004).
+- **Does the shared main working tree need a rule?** Carried forward
+  and **now with a SIXTH data point that is a new KIND rather than a new
+  instance**. The first was the git INDEX (T-046's merge lost its house
+  shape to a shared index; the fix that works is social — "the pen is
+  yours" — plus `git diff --cached --stat` before every commit, done
+  twice here). The second was the WORKING TREE via Rust: an app-agent
+  merge REBUILDS and RESTARTS the app the human is reviewing. The third
+  (T-048) was the same tree via **HMR** — no restart, same pid, but the
+  screen under review changed without a signal. The fourth (T-049)
+  sharpened that: the merge changed what the KEYBOARD does. The fifth
+  (T-050) replaced the exact screen the human had photographed.
+  **The sixth is this merge's, and every previous one was triggered by
+  a file under `app/`. This one was not.** T-030 wrote ZERO bytes under
+  `app/src` and still very likely changed their live board, because
+  rebuilding `lib/parser/dist/` rewrites the files their vite serves
+  through the `@nputer/parser` symlink. **So the blast radius of "a
+  merge can change the screen under review" is wider than the previous
+  five suggested: it includes any package the app links by `file:`.**
+  All six faces are recorded and none is written down anywhere but
+  here. Method/process, so the architect's (ADR-004).
 - **When does spawn hygiene become an ADR?** Unchanged from T-047's
   ruling: three C-14-local rules exist and a charter was argued against,
   because T-047-s5 proves the cached and probed doors hold DIFFERENT
@@ -779,49 +885,67 @@ the unnamed `agent_runner` flake there too.
   when there is a single rule to charter — which is a nearer, sharper
   trigger than "a second component spawns agents at F-04".
 - **Does a verifier's remedy belong in an acceptance criterion?**
-  Carried forward, unanswered, and now with a THIRD data point. T-041's
-  verifier filed a fix in s1's note 1; the architect promoted it into
-  T-048's criterion 3 as a prescription; **it was wrong, and the task
-  nearly required its own bug.** T-049 supplied the counter-example from
-  the other end: its criterion 5 named a MECHANISM to prove rather than
-  a remedy to build, and the builder had to invent three instruments to
-  satisfy it. **T-050 is the third and it lands with T-049**: criterion 1
-  names PROPERTIES ("set only on success… guard against the concurrent
-  case too… StrictMode-safety SHALL survive") and prescribes no shape at
-  all — and that is precisely why the continuation session could find
-  that the committed code satisfied two of the three and fix it. A
-  criterion naming a shape would have been met by the defective code.
-  Two candidate rules, both cheap: a criterion that names a specific
-  remedy SHALL carry an "or a demonstrably better equivalent" hatch, or
-  a remedy inherited from a suggestion SHALL be written as a hypothesis
-  to test rather than a shape to build. The architect's call (ADR-004).
+  Carried forward, and **T-030 is the FOURTH data point and the
+  cleanest yet on the "properties, not shapes" side.** T-041's verifier
+  filed a fix in s1's note 1; the architect promoted it into T-048's
+  criterion 3 as a prescription; **it was wrong, and the task nearly
+  required its own bug.** T-049 supplied the counter-example: its
+  criterion 5 named a MECHANISM to prove rather than a remedy to build.
+  T-050 was the third: criterion 1 named PROPERTIES and prescribed no
+  shape, which is precisely why a continuation session could find the
+  committed code satisfied only two of three. **T-030's criteria name
+  BEHAVIOURS ("SHALL ignore HTML-comment content", "one issue per
+  cycle, not per member") and deliberately do NOT name mechanisms** —
+  and the builder chose SCC-based Tarjan, a shape no criterion
+  mentions, which the verifier then differential-fuzzed against
+  brute-force reachability and upheld on its own merits. **A criterion
+  naming "detect simple rings" would have forbidden the better
+  answer.** Two candidate rules, both cheap and both now four-times
+  evidenced: a criterion that names a specific remedy SHALL carry an
+  "or a demonstrably better equivalent" hatch, or a remedy inherited
+  from a suggestion SHALL be written as a hypothesis to test rather
+  than a shape to build. The architect's call (ADR-004).
 - **When a task retires a test, who owns the property it was reaching
-  for?** Carried forward from T-049, unanswered. T-026's "stops
-  listening once the front door is gone" was retired CORRECTLY — it
-  would have been vacuously green forever — but the property underneath
-  it survived the refactor in a new form and is now pinned nowhere.
+  for?** Carried forward from T-049, and **T-030 supplies the best
+  positive example so far.** T-026's "stops listening once the front
+  door is gone" was retired CORRECTLY — it would have been vacuously
+  green forever — but the property underneath it is pinned nowhere.
   Candidate rule, one line in TASK-FORMAT: a task that deletes or
   replaces an existing test SHALL name, for each assertion dropped,
-  either its new home or its suggestion id. Method version bump, the
-  architect's call. **T-050 is a clean contrast worth noting beside it**:
-  it renamed one test rather than retiring it, and the rename was forced
-  by the name stating a key set that grew — the assertion was
-  STRENGTHENED in the same edit, and the strengthening was proved by
-  line number. That is what the good case looks like.
-- **NEW: what does the pipeline owe a task whose builder vanishes
-  mid-flight?** T-050 is the first case and it came out WELL, but by
-  virtue rather than by rule. The first session committed working code
-  and lost its transcript; the continuation could have transcribed the
-  diff into plausible notes and nobody would have known. Instead it
-  re-derived every obligation first-hand and **reported that the code it
-  inherited did not meet criterion 1** — which is how the defect was
-  found at all. Nothing in `method/` asks for that. The candidate rule
-  is narrow: a session that inherits committed work it did not write
-  SHALL say so in the notes and SHALL mark which measurements it re-ran
-  versus inherited. T-050's front matter did exactly this voluntarily
-  (`built_by: "claude-opus-5 @fresh ×2 (build session, then a
-  continuation that re-derived the evidence first-hand)"`), and the
-  verifier called it out as the opposite of the failure mode the
-  protocol exists to catch. Worth writing down before the next
-  continuation is less scrupulous. Method version bump, the architect's
-  call (ADR-004).
+  either its new home or its suggestion id. **T-030 did exactly that
+  without being asked**: it FLIPPED a pin whose assertion the criterion
+  inverts, kept both outer assertions, swapped in a harder input, and
+  **moved the flipped assertion into a dated block that pins it
+  positively** plus three more cases — so nothing was dropped, only
+  relocated and strengthened, and the verifier confirmed coverage
+  strictly increases. T-050's rename-not-retire was the previous good
+  case. **Two clean examples now exist; the rule is describing
+  behaviour the lane already has.** Method version bump, the
+  architect's call.
+- **What does the pipeline owe a task whose builder vanishes
+  mid-flight?** Carried forward from T-050, unanswered. That was the
+  first case and it came out WELL, but by virtue rather than by rule:
+  the continuation re-derived every obligation first-hand and
+  **reported that the code it inherited did not meet criterion 1**.
+  Nothing in `method/` asks for that. The candidate rule is narrow: a
+  session that inherits committed work it did not write SHALL say so in
+  the notes and SHALL mark which measurements it re-ran versus
+  inherited. Method version bump, the architect's call (ADR-004).
+- **NEW: should a card's own numbers be treated as a claim to verify
+  rather than a brief to implement?** T-030 is the sharpest instance
+  yet. Its card asserted two specific quantities — "a FIFTY-character
+  badge" and "SIX live stamps report the opposite of what happened" —
+  and **the builder measured both rather than transcribing them**,
+  finding that the fifty was exact at the RENDERED badge but 59 at the
+  `model` field, and that six TASKS is **eight wrong stamps across nine
+  changed fields** because two tasks carry a wrong stamp in both
+  `built_by` and `verified_by`. The verifier then re-derived both
+  independently and confirmed the corrections. **Neither error would
+  have shown up as a red test** — the criteria would have been "met"
+  by code that fixed six stamps and left two, because nothing pins a
+  count the card invented. The candidate rule is one line: a numeric
+  claim in a card body is EVIDENCE TO REPRODUCE, and a task that
+  reproduces it differently SHALL record the corrected number in the
+  notes rather than silently satisfying the criterion. Cheap, and it
+  generalises past parsers. Method version bump, the architect's call
+  (ADR-004).

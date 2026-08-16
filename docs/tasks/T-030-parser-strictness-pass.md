@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 14
 size: M
-status: building
+status: done
 blocked_by: []
 touches: [lib-parser]
 builder: claude-opus-5
