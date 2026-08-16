@@ -202,8 +202,14 @@ describe("the nputer repo on its own map", () => {
     // GenesisScreen.tsx) are class-string changes: they move those
     // files' hash and loc and add no node, which is what a layout fix
     // should look like on the map.
+    // 90 → 92 at the T-049 merge regen (2026-08-16): two files —
+    // app/src/components/shell/accelerators.ts and its suite
+    // app/test/accelerators.test.tsx. The third new file,
+    // tools/e2e/tests/accelerators.spec.ts, lives under tools/ and is
+    // .nputerignored, so the lane's real trusted-chord test is invisible
+    // here exactly as T-041's ten were.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 90 files",
+      "committed graph · 92 files",
     );
   });
 });

@@ -441,6 +441,50 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //   · The ceaa949 ordering lesson, ELEVENTH hold: this block and the
 //     map fixture are both indexed, so they were edited BEFORE the
 //     final regen and the regen was run twice for byte-identity.
+//
+// RECONCILED AT THE T-049 MERGE (2026-08-16, integrator — nineteenth
+// exercise of the practice). Every number re-derived from the raw graph
+// by added/removed/content-changed enumeration against
+// `git show HEAD:docs/architecture/graph.json` before this edit:
+//   · stats 90→92 files, 616→642 symbols, 1013→1038 edges.
+//   · TWO new files, app/src/components/shell/accelerators.ts and
+//     app/test/accelerators.test.tsx; nothing removed.
+//     tools/e2e/tests/accelerators.spec.ts is invisible — .nputerignore
+//     carries tools/. Content-changed (hash/loc only): app/src/App.tsx
+//     (loc 461→487) and app/test/project-shell.test.tsx (215→297).
+//   · mapping 90→92; C-05 40→42, because BOTH new files land in C-05's
+//     globs — app/src/components/shell/** and app/test/** — and the
+//     registry was checked to confirm C-05 is their ONLY claimant, so
+//     neither could go anywhere else. Every other count holds: C-06 21,
+//     C-08 10, C-09 3, C-10 2, C-12 11, C-13 2, C-14 1. D2 stays empty,
+//     the unmapped node stays gone, derived.issues stays [].
+//   · findings: NOTHING added, removed or renumbered. The new module
+//     lives in C-05's own declared territory (the alternative was
+//     measured: at app/src/lib/accelerators.ts the regen raises a
+//     D2:unmapped and moves SEVEN assertions, including the map's
+//     unmapped bucket this file asserts cannot exist).
+//   · relation table: same 28 rows, same 13 confirmed / 6 undeclared /
+//     9 planned tally. EXACTLY ONE observedCount moves — C-05→C-10
+//     21→23, the two new imports accelerators.test.tsx makes of
+//     docs-model and watcher-store, both C-10 files, on an edge that is
+//     already CONFIRMED.
+//   · FOUR assertions moved here, not three, AND THE RULE ABOVE IS WHAT
+//     CAUGHT IT — used as a rule this time rather than relearned. The
+//     branch forecast exactly three (this file's count, the C-05→C-10
+//     cell, the map header string) and all three are right; the fourth,
+//     ["C-05", 40] → 42, was derived from the ADDED-FILE LIST before a
+//     single test was run — both new files match C-05 globs, therefore
+//     its counts row moves by two — and never appeared in any red,
+//     because it sits behind the file count in the same it() body. That
+//     is three merges in a row where three was forecast and four moved.
+//     The rule holds; read it above and apply it, do not rediscover it.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched: T-049
+//     declares no component and changes no registry file, so the T-024
+//     three-fixtures rule does not fire in its registry form. Confirmed
+//     by re-running lib/parser after the regen: 159/159, unmoved.
+//   · The ceaa949 ordering lesson, TWELFTH hold: this block and the map
+//     fixture are both indexed, so they were edited BEFORE the final
+//     regen and the regen was run twice for byte-identity.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -506,8 +550,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 90 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(90);
+  it("all 92 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(92);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -528,7 +572,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // missed both times — it hides behind the count assertion above,
       // so vitest never reaches it while that one is red. Derive it from
       // the added-file list, never from the failure output.
-      ["C-05", 40],
+      // 40 → 42 at the T-049 merge regen, and it moves by TWO because
+      // both new files are C-05's: accelerators.test.tsx under app/test/**
+      // and accelerators.ts under app/src/components/shell/**. Forecast
+      // as three again, derived as four HERE from the added-file list
+      // before anything was run — which is the rule above being used.
+      ["C-05", 42],
       ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
@@ -697,7 +746,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 20 → 21 at the T-048 merge regen: shell-frame.test.tsx imports
       // docs-model (a DocsSnapshotPayload type import) — again the only
       // observedCount that moves.
-      ["C-05", "C-10", "confirmed", 21],
+      // 21 → 23 at the T-049 merge regen: accelerators.test.tsx imports
+      // BOTH docs-model and watcher-store, so this one edge takes both
+      // new imports. Still the only observedCount that moves.
+      ["C-05", "C-10", "confirmed", 23],
       ["C-05", "C-11", "planned", 0],
       ["C-05", "C-12", "confirmed", 20],
       // 2 → 4 at the T-037 merge regen, and one of the two additions is

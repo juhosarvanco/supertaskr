@@ -1,203 +1,214 @@
 # State
 
-Updated: 2026-08-16 by integrator (T-048 merge), claude-opus-5 @fresh
+Updated: 2026-08-16 by integrator (T-049 merge), claude-opus-5 @fresh
 
 ## Just completed
-T-048 (the frame holds — the genesis page stops growing and the pane
-starts scrolling, S, app-shell, F-03) done and merged — built by
+T-049 (a way in from anywhere — the accelerators leave the front door,
+and genesis gets a door, S, app-shell, F-03) done and merged — built by
 `claude-opus-5 @fresh`, verified by `claude-opus-5 @fresh`,
-`review: same-model`, **APPROVED first pass**. It absorbs T-041-s1 and
-T-041-s3. The human reported this one themselves, mid-review, because
-the screen was unusable at the size the app actually opens.
+`review: same-model`, **APPROVED first pass**. **@human reported this
+one themselves** — "command + o and command + n are not working in
+nputer" — and it is now closed.
 
-**WHAT SHIPPED: TWO CLASS CHANGES, NOT THE THREE THE TASK FILE ITSELF
-PRESCRIBED.**
+**WHAT SHIPPED, three edits and one new module.**
+
+    app/src/components/shell/accelerators.ts        (NEW, 129 lines)
+      matchAccelerator(chord) -> "openFolder" | "startInterview" | null
+      useAccelerators(table)  -> ONE window keydown listener
 
     app/src/App.tsx
-      const boundedFrame = screen.screen === "genesis";
-      <div className={cn("flex min-w-0 flex-1 flex-col",
-                         boundedFrame ? "h-screen" : "min-h-screen")}>
+      useAccelerators({...}) mounted at the ROOT (line 268)
+      the EmptyState useEffect DELETED
+      the board header: [Open folder…] [Start an interview]
 
-    app/src/components/shell/GenesisScreen.tsx
-      className="flex min-h-0 flex-1 flex-col gap-6 px-10 py-9"
+The defect was never the keys. `useEffect`'s
+`window.addEventListener("keydown", …)` lived INSIDE `EmptyState`, so
+it registered when the front door mounted and unregistered when it
+left; with a project open the board renders instead and the chords
+reached nothing. T-026 pinned that scoping DELIBERATELY, because its
+criterion said the affordances appear "on EVERY empty state". Built to
+spec; the spec was narrower than the app needs. The second half was
+sharper and had no shortcut at all: **there was no way to start an
+interview from an open project** — reaching genesis meant Open folder…
+→ a folder with no `docs/` → the no-plan card → "Start an interview
+here", four steps to the thing milestone 3 is named after, the first of
+which was a picker whose own shortcut did not work from where you were.
 
-The mechanism, because it is the part worth keeping: the genesis pane
-owns an `overflow-y-auto` region, and **a scroll region can only engage
-inside a bounded box**. `min-h-screen` sets a floor, never a ceiling, so
-the shell column grew with its content and the PAGE took the scroll.
-Bounding the column at `h-screen` is half of it; the other half is
-`min-h-0` on the genesis section, because a flex item's automatic
-minimum size is its CONTENT size — without it the section refuses to
-shrink below its 1105px inside a 600px column and `overflow: visible`
-spills the whole thing onto the page anyway. **Neither half is
-sufficient and both were reverted separately to prove it.**
+**THE TWO MEASUREMENTS THAT MAKE IT TRUSTWORTHY.** Both were built from
+scratch by the verifier, not re-read off the notes.
 
-**THE TASK FILE'S OWN PRESCRIBED THREE-EDIT FIX WAS WRONG, AND BOTH THE
-BUILDER AND THE VERIFIER PROVED IT BY BUILDING IT.** Criterion 3 named
-"the three class edits the verifier proved sufficient (two
-`min-h-screen` → `h-screen`, `min-h-0` on the genesis screen's column)
-**or a demonstrably better equivalent**". The third edit — `h-screen` on
-`main` — bounds the whole shell, and `main` is the row the board's pane
-rail lives in. Measured on the served bundle, twice, independently:
+**(a) THE DOUBLE-LISTENER MEASUREMENT — why the suite counts CLAIMS and
+not INVOKES.** With two registrations, one ⌘O yields **`preventDefault`
+×2 but `invoke("pick_project_folder")` ×1**. The mechanism is
+`runPicker`'s first two lines: `if (!isTauri || shell.picking) return;`
+then a SYNCHRONOUS `setShell({ picking: true })` *before* the `await
+invoke(...)` — so the second listener, firing in the same dispatch,
+finds the latch already closed and the duplicate never reaches IPC.
+**A naive "invoked once" test would have passed over two racing
+listeners.** That is the whole reason `accelerators.test.tsx`'s
+`chord()` helper returns a `preventDefault` COUNT and every accelerator
+assertion in the file requires exactly 1. Confirmed downstream: a second
+`useAccelerators` in `App` reds **11 of 12** tests, first failure `⌘O is
+claimed by exactly one handler: expected 2 to be 1`.
 
-- **board**: the rail is a stretch-height sibling of the column, so it
-  drops **2202 → 720** at 1280x720 and **2202 → 600** at 800x600 —
-  while the page still runs to **2202**. The sidebar strip and its
-  right border stop at the fold on a document that keeps going.
-- **map at 800x600**: the canvas is `min-h-0 flex-1 overflow-hidden`
-  (MapView.tsx), so it shrinks and **CLIPS** — `overflow-y: hidden`,
-  no scrollbar anywhere, graph unreachable. It would have failed
-  criterion 4.
-- **and it buys nothing**: the three-edit version's genesis numbers are
-  **identical to what shipped** at all three viewports. The second
-  `min-h-screen → h-screen` costs two screens and gains zero pixels.
+**(b) SIX DEFEAT ATTEMPTS, FOUR CAUGHT — and the two instruments proved
+INDEPENDENT rather than two readings of one.** Each was a real second
+handler injected into `App`:
 
-So criterion 3 and criterion 4 were in conflict, the builder resolved it
-with measurements and said so, and the verifier reproduced the whole
-falsification before ruling. **Where the wrong answer entered the record
-matters and is written down here so it is not repeated: the three-edit
-prescription came from T-041's VERIFIER (s1's note 1, "the whole
-mechanical fix"), and the ARCHITECT inherited it into T-048's criterion
-3 as a prescription rather than as a hypothesis.** A verifier's remedy
-is evidence about a bug, not a design that has been built; copying one
-into an acceptance criterion converts an untested suggestion into a
-requirement. Criterion 3's escape hatch ("a demonstrably better
-equivalent") is the only reason this task could ship the right fix, and
-it earned its keep on its first outing.
-
-**THE MEASUREMENTS — the verifier's own, from its own rig (scratch port
-14526, never 1420), not the builder's table re-read.** Every recorded
-figure reproduced to the pixel.
-
-| viewport | page scrollHeight, before → after | pane region before → after |
-|---|---|---|
-| 800x600 (the app's OWN window) | **1172 → 600** | 858/858 (never scrolls) → 858/**286** (scrolls) |
-| 1024x768 | **1141 → 768** | 827/827 → 827/**454** |
-| 1280x720 | **1110 → 720** | 796/796 → 796/**406** |
-
-Empty genesis (nothing written yet) moves too: 800x600 page **971 →
-600**. Extended past the three the criterion names — **1920x1080,
-1440x900 and 640x480 all hold, and the last artifact is reachable at
-every one.** Other screens re-measured field by field at both viewports
-— front door, no-plan card, board, map — **every field identical before
-→ after**, plus two probes that agree (`minTop` stayed 0 everywhere; the
-`overflow:hidden`-with-taller-content list stayed the same eleven
-pre-existing map-node buttons, and the canvas joins it ONLY under the
-rejected variant). Zero regressions.
-
-**THE TRUSTED-WHEEL PROOF, which is the one that shows a human could
-actually use it.** Before the wheel the last artifact row sits at top
-954 / bottom 994 against a 720 viewport — **intersection ratio 0**,
-`toBeInViewport()` would fail. After a real `page.mouse.wheel` over the
-pane: `scrollTop` **390**, which is the region's FULL range (796 − 406),
-the row at 564–604, **ratio 1.0**, `window.scrollY` still **0**. The
-page's own listener reports `isTrusted: true`, so it is real browser
-input and not a synthetic dispatch.
-
-**THE TRIPWIRE DISCIPLINE, and this is the half worth institutionalizing.**
-T-041's lane spec had **PINNED THE BROKEN NUMBERS ON PURPOSE** —
-`pageScroll` `toBeGreaterThan(viewport)`, region `scrollHeight`
-`toBe(clientHeight)` — as a deliberate tripwire against the day someone
-fixed it silently. T-048 **rewrote it rather than letting it keep
-passing**: the assertions flipped to pin the fix, `columnMinHeight` (read
-off `main`, now meaningless) became `columnHeight` read off the column
-that actually carries the bound, and the comment no longer names an open
-question — it says T-041 pinned the wrong answer deliberately, that
-T-048 fixed it, and that bounding the column ALONE leaves 1110/720 and
-796/796, so the next reader learns the MECHANISM instead of inheriting
-the remedy that was falsified. **Three revert drills, each run
-separately, each red with a legible message:**
-
-| revert | result |
+| attack | caught by |
 |---|---|
-| both halves (back to merge-base) | lane 2 failed — "the genesis column is bounded to the window (T-048)" Expected 720 Received **1110**; at 800x600 Expected 600 Received **1172**. App suite 2 failed |
-| **`h-screen` kept, `min-h-0` reverted** (the falsified fix) | lane 2 failed — **"the frame HOLDS: the page never grows past the viewport (T-048)"** and "the page does not grow past the window at 800x600" — **while the COLUMN assertions still PASS.** That is the falsification in one line, and the lane re-derives the falsified fix's own numbers unaided |
-| `min-h-0` kept, `h-screen` reverted | lane 2 failed — both column assertions |
+| raw `window` keydown, preventDefault + command | both — 11 red |
+| the same on `document` | both — 11 red |
+| `window` listener that runs the command but never `preventDefault`s | **the ENUMERATION alone** — 2 red |
+| `document.body` listener (outside the enumeration's scope) WITH preventDefault | **the per-chord CLAIM COUNT alone** — 11 red |
 
-It fails on the CLASS, not on a class name: it reads the page's own
-`scrollHeight`, so anything that makes the screen grow again reds it.
-A new `app/test/shell-frame.test.tsx` (4 tests) pins what the lane
-cannot cheaply see — the SCOPING (genesis bounded, board/map/front door
-not, `main` always `min-h-screen` so the rail keeps stretching) and the
-`min-h-0` CHAIN walked link by link from the pane's scroll region up to
-the bounded column.
+The third and fourth rows are the point: each instrument catches what
+the other cannot, in opposite directions, so they are genuinely
+independent. Two survived and both are narrow: a `window.onkeydown`
+PROPERTY handler (invisible to the enumeration by construction; in jsdom
+it never fires at all, so the miss cannot even be demonstrated) and a
+`document.body` listener that runs a command WITHOUT claiming the chord
+(seen by neither). **Neither is reachable from anything in the tree** —
+every keydown listener in `app/src` goes through `addEventListener` on
+`window` or `document` (`accelerators.ts`, `panel-dismissal.ts`,
+`MapView.tsx`'s ⌘F) — and both are filed rather than papered over.
 
-**A CORRECTION THAT MUST BE CARRIED, because the architect relayed the
-wrong version of it to the human.** **T-048-s3** claims the front door's
-"No plan in &lt;folder&gt;" card puts **"Start an interview here" BELOW
-THE FOLD** at 800x600. **Its measurement is right and its conclusion is
-WRONG.** The 663-vs-600 overflow reproduces exactly — but the verifier
-measured the button at **top 524 / bottom 556**, the footnote ending at
-**590**, both clear of a 600px fold, and **no element's text starts at
-or below y=600**. What overflows is the section's `py-12` plus about
-15px of the card's painted bottom edge: **a cosmetic fit blemish, not a
-hidden call to action.** s3's own `115+500` card figure already implied
-this; the prose overshot. Filed as **T-048-s4** — the verifier declined
-to edit s3 because it sits outside its fence, which is correct — and it
-should be scheduled **WITH the front-door visual pass, not ahead of
-it**. **Read s4 before s3.**
+**THE HONEST CORRECTION THE VERIFIER MADE TO THE NOTES, and it must be
+carried.** The replaced T-026 test — `"stops listening once the front
+door is gone"` → `"owns no window listener of its own"` — was
+**CORRECTLY retired**: a component that never listens cannot stop
+listening, so left as written it would have been **green forever**,
+which is the silent-green outcome nobody wants. **But the notes
+overstate the case as "could not have been kept meaningfully."** It
+could: re-pointed at `project-shell.test.tsx`'s own new
+`FrontDoorWithAccelerators` wrapper, it would mount the PRODUCTION hook,
+unmount it, press ⌘O and assert nothing fires — pinning the HOOK's
+unmount cleanup rather than the component's. Measured: deleting
+`return () => window.removeEventListener(...)` from `accelerators.ts`
+leaves the app suite at **503/503 green**. That property is now pinned
+nowhere. Filed as **T-049-s3** with three siblings — four advertised
+mechanism properties, each deletable with the suite green:
 
-**THE OTHER FINDINGS.**
-- **T-048-s2 — the map canvas clips rather than scrolls, and it is the
-  sharpest of the three.** The canvas is `overflow-hidden` with no
-  scroll region beneath it. It is harmless **today only because nothing
-  bounds it** — and the instant anything does (a bounded shell, a
-  future split view, a smaller window rule) it silently loses graph
-  **with every suite green**. That last clause is the whole reason it
-  matters: there is no test that would tell you.
-- **T-048-s1 — the shell now has TWO scroll models.** Bounded genesis
-  beside a board that runs to 2202 with its header scrolling away at
-  800x600, while the interview's no longer does. Correctly described,
-  and genuinely T-027's composition call rather than something smaller:
-  unifying it needs a **sticky rail AND a board scroll region AND s2's
-  canvas fix** before the conditional could collapse.
-- **T-048-s5 — the bound has a FLOOR, and no minimum window declares
-  it.** Below roughly 250px of window height the pane's region stops at
-  44px and the last row cannot be brought into view; below ~225px the
-  page grows again. Far outside any plausible window, but it is a real
-  trade a bounded frame makes, and `tauri.conf.json` sets **no
-  `minHeight`**. Low urgency, one-line remedy.
+1. the unmount cleanup (above);
+2. **"an absent entry is left completely alone"** — move
+   `preventDefault()` ABOVE the `if (run === undefined) return;` →
+   green. Unobservable today because `App` always supplies both
+   entries; the moment T-027 hands a screen a PARTIAL table it is the
+   difference between declining a chord and silently swallowing a key;
+3. **the table is re-read every render** — delete the `latest.current =
+   table` refresh → green. The card's whole argument that T-027's
+   absorption is "a change of ARGUMENT, not of mechanism" rests on it;
+4. **"added once, removed once"** — change the effect's deps from `[]`
+   to `[table]` → green. Still exactly one listener at any instant, so
+   the enumeration cannot see it.
 
-**THE CONDITIONAL WAS PROVED, NOT ARGUED.** `boundedFrame =
-screen.screen === "genesis"` and the `<GenesisScreen>` render guard are
-the **same expression off the same `screen` object in the same render**,
-so they cannot desync — and nine reachable shell states were driven
-through the harness to confirm it (browser, noProject, noDocs, genesis
-empty, genesis + streak, genesis + rejected pick, genesis + error pick,
-back to genesis, docs landing under a different dir while genesis). In
-every one `genesisRendered === bounded`. The forward-looking gap is real
-and recorded: the DEFAULT is `min-h-screen`, so a NEW screen with an
-in-flow scroll region would reproduce T-048 silently and neither suite
-would catch it — but criterion 4 *requires* the scoping, and T-048-s1
-already holds exactly that decision.
+None is a T-049 defect (every criterion is about observable behaviour
+and every one is met and drilled). They are the seam between "the
+accelerators work" and "the accelerator MODULE is safe for T-027 to
+extend", and T-049 is the task that created the module. (1) and (2) are
+the two that would bite.
+
+**THE LISTENER'S HOME WAS CHOSEN BY MEASUREMENT, NOT BY TASTE — and the
+verifier found the measurement UNDERSTATED.** At
+`app/src/lib/accelerators.ts` the regen produces a `D2:unmapped`
+finding naming the file (that directory's files are claimed one by one
+by three different components, so a new one is claimed by nobody) and
+moves **SEVEN** fixture assertions — findings 8→9, relation table 28→29
+rows, drift flags 6→7, the map's component count 11→12 (**the unmapped
+bucket `architecture-dogfood.test.ts` asserts cannot exist**), the map's
+edge table, plus the two file counts. At
+`app/src/components/shell/accelerators.ts` it is **THREE**, the ordinary
+regen shape, and costs no architecture edit — that path is already
+C-05's declared territory (`C-05-app.md:14`). The precedent is exact:
+`app/src/components/board/panel-dismissal.ts` is the same shape, a
+listener-wiring module living beside the components it serves.
+
+**T-049-s4 — TWO REAL LIMITS, INHERITED AND KEPT DELIBERATELY.**
+`matchAccelerator` decides on `event.key.toLowerCase()`, and `event.key`
+is the CHARACTER the layout produces, not the physical key: **measured,
+⌘+`щ` and ⌘+`т` reach nothing** where ⌘O and ⌘N would, so the chords are
+silently dead on every non-Latin layout (Russian, Greek, Hebrew, Arabic,
+Thai) and on Latin remaps that move the letters — with the front door
+still advertising `⌘O · ⌘N` and nothing on screen to explain it. Second:
+an `isComposing` keydown is still claimed. **Both are T-026's semantics
+kept byte for byte, on purpose** (a chord fix and a semantics change in
+one task is how you lose the ability to bisect either), not T-049
+regressions — but they are real, and the table is the moment to decide
+because T-027 is about to add rows to it.
+
+**THE DEFECT REPRODUCED MECHANICALLY, which is the evidence @human's
+report is actually closed.** With T-026's scoping restored (the
+`useEffect` back inside `EmptyState`, the root registration deleted,
+`tsc` clean), test 1 — the front door — stays **GREEN** while tests 2
+(board), 3 (map) and 4 (genesis) go **RED** with `⌘O is claimed by
+exactly one handler: expected +0 to be 1`. That is the bug report as a
+test transcript: right keys, listener absent, invisible from the one
+screen the old suite could see. The lane spec reds too, first on `the
+app claims ⌘O before any screen exists`.
+
+**THE REST OF THE EVIDENCE, in one pass.** C1: the chords fire from the
+front door, the board, the map (including from the focused, CONTROLLED
+`map-search` input, whose value survives) and the interview, ⌘ and Ctrl
+for both commands, each reaching the right command BY NAME through the
+real store — and the ⌘N pressed ON THE BOARD lands the app on the
+interview screen. C2: both header labels, correct order
+(`compareDocumentPosition`), each wired to its own command, both
+`disabled` while a dialog is in flight, both absent from the interview
+screen and the front door, and their `className` byte-identical to the
+Toggle theme sibling's. C3: with the mocked `invoke` PARKED, **20 rapid
+mixed chords plus a five-event synchronous burst** leave `invoke` called
+exactly ONCE and `getShellState()` unchanged BY IDENTITY at every step;
+release with `cancelled` clears the latch; the typed-`busy` case leaves
+six shell fields unchanged by identity; and a chord fired while the
+HEADER BUTTON's dialog is up opens no second dialog either — **one
+latch, three doors**. C4: `git diff` on `genesis-entry.test.tsx`,
+`front-door.spec.ts` and `no-plan-card.spec.ts` is **0 bytes**, and the
+`EmptyState` function body diffed across both revisions after deleting
+only the removed `useEffect` is **identical, zero remaining lines**. C6:
+**26 chords** fired at the real app; exactly one is claimed beyond the
+four the app declares — ⌘⌃O, and that BY DESIGN (Command OR Control, no
+Alt, no Shift). Mutants: swapping the two commands reds 13, dropping
+`preventDefault` reds 11, dropping the header button's
+`disabled={shell.picking}` reds 4, accepting Shift reds 2. **Remount
+drill**: four full screen cycles with the live keydown path list read at
+16 points — `[1,2,1,1] × 4`, the 2 being the MAP's own ⌘F while it is
+mounted. Nothing accumulates.
+
+**NO NEW CSS, and the strong form of the claim holds on TODAY's tree.**
+This merge's app build emits `index-RXeeD2qB.css` at **41.30 kB — the
+same content-hashed asset name main@6356246 builds**, so T-049 adds not
+one CSS rule on top of T-048's. The JS moved and only the JS:
+`index-qfeIgiPJ.js` **442.54 kB** (main's was `index-DV-d_LjB.js`
+442.12), which is the new module plus the header buttons.
 
 **SUITES ON MERGED MAIN**, all four re-derived here first-hand, fresh
 installs, ADR-011 order:
-- lib/parser `npm ci` + `npm test` **159/159 (10 files)**, `npx tsc
-  --noEmit` clean, `npm run build` clean.
+- lib/parser `npm ci` + `npm run build` + `npx vitest run`
+  **159/159 (10 files)**, `npx tsc --noEmit` clean. Re-run AFTER the
+  ROADMAP edit below (that suite parses the live tree) — still 159/159.
 - app `npm install`, `npx tsc --noEmit` clean, `npm run build` exit 0
-  (**252 modules**), `npm test` **495/495 (29 files)** — +4 over T-047's
-  491, exactly the four new `shell-frame.test.tsx` tests. **The bundle
-  moved for the first time since T-041, and moved in the right half**:
-  `index-DV-d_LjB.js` **442.12 kB** (was 442.07) and
-  `index-RXeeD2qB.css` **41.30 kB** (was `index-BheOMAjN.css` 41.24) —
-  a layout fix should show up mostly as CSS, and it does. The JS delta
-  is the `cn()` import and the conditional.
+  (**253 modules**), `npx vitest run` **507/507 (30 files)** — exactly
+  the number the verifier measured on the composed tree, and +12 over
+  main's 495 (the 12 new `accelerators.test.tsx` tests). Re-run again
+  after the fixture edits and the final regen: **507/507**.
 - app/src-tauri bare `cargo test` **217 passed + 3 ignored, 0 failed**,
   exit 0, **zero warnings**, summed across **11 test binaries**
   (105 / 0 / 0 / 32+1 / 68 / 3 / 7 / 0+1 / 2+1 / 0 / 0) — **NOT piped
-  through `tail`** (the standing trap). Unmoved from T-047, as a
-  frontend-only branch must be. **Note for readers of the branch's own
-  notes: it measured 208+3, which was CORRECT for its base** — its
-  merge-base predates T-047's +9. 217 is the merged-main number.
-- tools/e2e `npm ci` + `npx playwright test` **34/34 in 7.2s**,
-  headless, one worker, retries 0, no skips — **+1 over T-047's 33**,
-  the new three-viewport sweep. `npm run typecheck` clean ·
-  `npm run lint:tokens` **clean, 37 files** · `--selftest` **43 samples
+  through `tail`** (the standing trap). Unmoved, as a branch with zero
+  Rust must be.
+- tools/e2e `npm ci` + `npx playwright test` **36/36 in 8.0s**,
+  headless, one worker, retries 0, no skips — +2 over main's 34, the new
+  `accelerators.spec.ts`. `npm run typecheck` clean ·
+  `npm run lint:tokens` **clean, 38 files** · `--selftest` **43 samples
   green**.
 
-**THE BOOT GATE FIRED — the THIRD merge it governs, and the second on
-its `app/src/**` limb.** Run on scratch port **14521**, never 1420:
+**THE BOOT GATE FIRED AND WAS RUN HERE — and it was STILL UNRUN BY
+ANYONE on this branch, which is the point.** The dispatch forbade the
+executor from running it (1420 is the human's), the verifier did not run
+it either, and both said so LOUDLY rather than silently — which is
+exactly what the CONVENTIONS bullet asks for. **The FOURTH exercise of
+the gate, the third on its `app/src/**` limb.** Scratch port **14521**,
+never 1420:
 
     [boot-check] port 14521 free — spawning `npm run tauri dev -- --config {…}` in /Users/ujju/Projects/nputer/app
     [boot-check] app: [nputer] project folder: /Users/ujju/Projects/nputer
@@ -213,72 +224,74 @@ from `$PIPESTATUS`, which zsh does not define and which cost the T-041
 integrator its first run. After it: `lsof -nP -iTCP:14521` **empty**
 (the scratch port released), 14520 empty, `pgrep -fl tauri-boot-check`
 empty, `pgrep -fl fake_agent` empty. The full `ps` sweep compared by
-**pid SET, not by eye**: the only pids that appeared were Spotlight
-`mdworker_shared` workers and this session's own shell, and the only
-ones that vanished were the baseline command's own pipeline. **Zero
+**pid SET, not by eye**: everything that appeared was a Spotlight
+`mdworker_shared` worker, everything that vanished was the baseline
+command's own pipeline plus the previous mdworker cohort. **Zero
 boot-check pids survived.**
 
 **1420 was never bound, contacted or signalled.** The human's vite still
 holds `[::1]:1420` on **the same pid 90127, the same fd 28u, the same
-device 0xc074e387883bd776** as at T-041's and T-047's merges.
+device 0xc074e387883bd776** as at T-041's, T-047's and T-048's merges.
+Their app is still **pid 8392, started 18:46:05, parented to the same
+unchanged `tauri dev`** — confirmed alive both before and after the boot
+run, which shared `target/debug/` with it and disturbed nothing.
 
-**THE SHARED-WORKING-TREE SIDE EFFECT, and this merge shows its OTHER
-face.** T-047's checkpoint recorded that a merge writing `.rs` files
-makes the human's live `tauri dev` REBUILD and RESTART the app they are
-reviewing (pid 1753 → 8392). **This merge wrote no `.rs` at all**, and
-the app process is **still pid 8392, started 18:46:05, parented to the
-same unchanged `tauri dev` (89953, up since 13:21:58)** — confirmed
-present in the pre-boot baseline. What it wrote instead was two files
-under `app/src/`, which the human's vite watches: so the change reached
-their window by **HMR rather than a process restart**. The practical
-consequence is the same in kind and gentler in degree — **the screen
-the human is mid-review on changed under them without a signal from
-this session** — except that this time the change is the fix they were
-waiting for. Recorded as a second data point on the open question
-below, not settled here.
+**THE SHARED-WORKING-TREE SIDE EFFECT, second HMR instance and the one
+with the sharpest edge.** This merge wrote no `.rs`, so nothing
+restarted; it wrote two files under `app/src/` that the human's vite
+watches, so the change reached their live window by **HMR**. What makes
+this instance different from T-048's: the change is to **what the
+keyboard does**. ⌘O and ⌘N will have started working under the human's
+fingers, mid-session, with no signal from here — which is the fix they
+asked for arriving unannounced rather than a screen re-laying-out.
+Recorded as a fourth data point on the open question below.
 
 STANDING INTEGRATOR PRACTICE (T-009-s1, the ratified CONVENTIONS interim
 regen rule; retires when T-014's `nputer index --check` becomes the
-gate) — **EIGHTEENTH** exercise, and it FIRED and MOVED the graph.
-- **Trigger present**: the diff carries `*.tsx` outside docs/. The plain
-  ignored self-check was **RED before the regen** (exit 101), which is
-  the rule earning its place rather than being assumed.
+gate) — **NINETEENTH** exercise, and it FIRED and MOVED the graph.
+- **Trigger present**: the diff carries `*.ts/*.tsx` outside docs/. The
+  plain ignored self-check was **RED before the regen** (exit 101,
+  `NPUTER_UPDATE_GOLDEN` confirmed unset), which is the rule earning its
+  place rather than being assumed.
 - **Delta, enumerated from the raw graph rather than read off a
-  summary**: files **89 → 90** (adds `app/test/shell-frame.test.tsx`;
-  **nothing removed**), content-changed **hash/loc only** on
-  `app/src/App.tsx` and `app/src/components/shell/GenesisScreen.tsx` —
-  **no symbol added or removed in either, which is exactly what a
-  layout fix should look like on the map**. Stats symbols **602 → 616**,
-  edges **1003 → 1013**.
-- **FOUR assertions moved, not the three that were forecast — AND THE
-  MISS IS THE SAME STRUCTURAL ONE T-041 RECORDED IN THIS VERY FILE.**
-  The branch forecast three (the dogfood file count `toBe(89)`→90, the
-  relation row `["C-05","C-10","confirmed",20]`→**21**, and
-  `map-dogfood-render.test.tsx` `89 files`→`90`) and all three are
-  right. The fourth is **`["C-05", 39]` → `40`** in the counts table,
-  which sits in the **same `it()` body** as the file count, so vitest
-  stops at the first failing expect and never reaches it. T-041 hit this
-  exact trap, wrote the lesson into `architecture-dogfood.test.ts`, and
-  T-048's verifier repeated it anyway. **It is now twice-proven and
-  stated as a rule in the fixture file itself: a regen that adds a file
-  under a component's glob ALWAYS moves that component's counts-table
-  row, and a forecast read off a failure list can never see it — derive
-  it from the added-file list, not from the red.**
+  summary**: files **90 → 92** (adds
+  `app/src/components/shell/accelerators.ts` and
+  `app/test/accelerators.test.tsx`; **nothing removed**;
+  `tools/e2e/tests/accelerators.spec.ts` invisible — `.nputerignore`
+  carries `tools/`), content-changed **hash/loc only** on
+  `app/src/App.tsx` (loc 461→487) and `app/test/project-shell.test.tsx`
+  (215→297). Stats symbols **616 → 642**, edges **1013 → 1038**.
+- **FOUR assertions moved, not the three forecast — AND THIS TIME THE
+  RULE CAUGHT IT BEFORE ANY TEST RAN.** T-041 hit this trap, T-048 hit
+  it again, and T-048's integrator wrote it into
+  `architecture-dogfood.test.ts` as a rule. **Used as a rule here**: the
+  added-file list was checked against the registry FIRST — both new
+  files match C-05 globs (`app/src/components/shell/**` and
+  `app/test/**`), and the registry was swept to confirm **C-05 is their
+  only claimant** — therefore `["C-05", 40] → 42`, derived before a
+  single test was run and invisible in every red (it sits behind the
+  file count in the same `it()` body). The other three are the branch's
+  and all correct: file count `toBe(90)` → **92** (and the test NAME),
+  relation row `["C-05","C-10","confirmed", 21] → 23` (the two new
+  imports `accelerators.test.tsx` makes of `docs-model` and
+  `watcher-store`, both C-10, on an already-CONFIRMED edge), and
+  `map-dogfood-render.test.tsx` `· 90 files` → `· 92 files`. **Three
+  merges in a row where three was forecast and four moved.** No new
+  finding, no unmapped bucket, no drift-flag movement, `derived.issues`
+  still `[]`.
 - **`lib/parser/test/smoke.test.ts` did NOT move**, verified rather than
-  assumed: `git diff -- lib/parser/` is **zero files** and the suite
-  re-ran **159/159 with `smoke.test.ts` green**. T-048 declares no
-  component and changes no registry file, so the T-024 three-fixtures
-  rule does not fire in its registry form — the right way round.
-- **Order per ceaa949, ELEVENTH hold, and it demonstrated itself.**
-  Fixture edits went in BEFORE the final regen; a regen taken before
-  them produced **different bytes**, which is the lesson reproducing
-  live rather than being recited. Then regenerated **twice** for
-  byte-identity: sha256
-  `3ae0e268436118bc230cb8b32b503145aa65cc393ef90b1cd410fb545c1900e4`,
-  **373,714 bytes**, identical both runs (`cmp` clean). Then the
+  assumed: `git diff aab62f0..HEAD -- lib/parser/` is **0 bytes** and the
+  suite re-ran **159/159**. T-049 declares no component and changes no
+  registry file, so the T-024 three-fixtures rule does not fire in its
+  registry form.
+- **Order per ceaa949, TWELFTH hold.** Fixture edits went in BEFORE the
+  final regen (both fixtures are themselves indexed). Then regenerated
+  **twice** for byte-identity: sha256
+  `815412dedcd3fe6ecebce793e76c5f8119aaa91d2274c9c9137e2407795c0e73`,
+  **385,451 bytes**, identical both runs (`cmp` clean). Then the
   **plain (non-golden) ignored self-check** with `NPUTER_UPDATE_GOLDEN`
   confirmed UNSET: `self_graph_is_current ... ok`. Then the app suite
-  re-run after the fixture edits: **495/495**.
+  re-run after the fixture edits: **507/507**.
 
 **No model call was made anywhere in this merge.** The env-gated
 `#[ignore]` smoke was NOT run (one of the 3 ignored). No screen control,
@@ -286,121 +299,126 @@ no screenshots, no OS input injection, nothing read off the screen. The
 boot run opened and closed its own window, which is the @human ruling of
 2026-08-16 that T-046 rests on and this merge does not extend.
 
-**THE MERGE WAS CLEAN AND THE INTERSECTION WAS PROVED EMPTY, not
-assumed.** Merge commit **`0f55cc6`**, merge-base **`e78bfdc`**, ten
-files. The branch has an unusual history — it was cut from an ORPHANED
-commit (an architect index error), then **merged main FORWARD** at
-`a3a5ccb` (`--no-ff`, never rebased), which is why its merge-base is
-`e78bfdc` and not something newer; that was re-derived here, not taken
-on faith. Both changed-file sets were enumerated and `comm -12` is
-**EMPTY (0 files)**: T-048 carries two source files, one new app test,
-one lane spec, its card and five suggestions; main since the base
-carries T-047's four `.rs` files, three docs and eight task files, plus
-the T-049 dispatch. `git merge-tree --write-tree` was run first and
-produced a single tree hash with **zero conflict markers**. Neither
-../nputer-t048 nor ../nputer-t049 was entered.
+**THE MERGE WAS CLEAN AND THE ONE OVERLAP WAS PROVED HARMLESS, not
+assumed.** Merge commit **`f4b38c8`**, merge-base **`aab62f0`**, ten
+files. Both changed-file sets were enumerated and `comm -12` is exactly
+**ONE file — `app/src/App.tsx`**, which T-048 also edited. The hunks
+were re-derived in BASE coordinates rather than trusted from the flag:
+
+| side | base-side hunks |
+|---|---|
+| main (T-048) | insert after :7 (the `cn` import) · insert after :275 (32 lines) · change :291 (the column className) |
+| T-049 | insert after :6 (the `useAccelerators` import) · change :121–123 · **delete :141–155** (the `EmptyState` effect) · insert after :265 · insert after :319 · change :321–328 (the header group) |
+
+The nearest non-import pair is main's :291 against T-049's :319 —
+**28 lines clear**, far outside git's three-line context. The imports
+land one line apart at two distinct anchors and both survive.
+`git merge-tree --write-tree` was run FIRST and answered a single tree
+with zero conflict markers; the verifier's own tree
+`10c805c9…` reproduced exactly at the build head `3921426`, while the
+branch TIP (which carries the verdict prose and s3/s4) gives
+`1b703026…` — different bytes, same zero conflicts. The merged
+`App.tsx` was then sha256-compared against that predicted tree and is
+**identical**. Both changes are live in it: `useAccelerators` at :268,
+`boundedFrame` at :313, the header pair at :385. `../nputer-t049` was
+never entered.
 
 INTEGRATOR JUDGMENT CALLS, recorded.
-- **ARCHITECTURE: NOT edited, and checked rather than assumed.** A
-  layout fix adds no capability and moves no interface: no new IPC, no
-  new grant, no new component, no new territory, no boundary crossing
-  that the document does not already describe. The one line that could
-  plausibly have gone stale is C-05's "**the full-bleed `genesis`
-  screen**" — checked at the source, not by memory: the rail still
-  gates on `screen.screen === "board"` alone (App.tsx:323), so genesis
-  is still full-bleed and the word still means what it meant. Nothing
-  in the file mentions scrolling, viewport height or the frame, so
-  nothing in it was made false. **The honest tension**: the shell now
-  genuinely has two scroll models, which is a real fact about C-05 —
-  but it is a composition detail that crosses no boundary, T-048-s1
-  holds the decision, and T-027 will settle it. Writing it into
-  ARCHITECTURE now would record a state nobody has chosen to keep.
-- **ROADMAP: NOT edited.** The T-041/T-047 test applied: milestone 3's
-  Progress line enumerates **what a user can do**, and T-048 adds no
-  user capability — the same screens, the same commands, the same wire
-  shapes. Everything that line describes materializing in the pane
-  still materializes; what changed is that the PANE takes the scroll
-  instead of the page. T-048 is also **not named in milestone 3's task
-  list** (T-023…T-029) and was never held out there, so the T-039
-  disanalogy holds exactly as T-041 recorded it. The honest remainder
-  (T-027, T-028, T-029, plus one observed real turn) is untouched.
-  Milestone 3 still NOT claimed.
+- **ARCHITECTURE: EDITED, one clause, and the test that decided it.**
+  T-048's integrator declined the same document on the grounds that "a
+  layout fix adds no capability and moves no interface". **T-049 adds a
+  capability**: genesis is reachable from an open project, which was
+  structurally impossible before, and the app's keyboard surface moved
+  from a component to the root. C-05's status cell is precisely the
+  running record of that kind of fact — it already narrates "T-026
+  landed the genesis front door", "T-025 registered C-14's four genesis
+  commands … although nothing in the UI calls it yet" — so the clause
+  was added there and nowhere else. What was checked and deliberately
+  NOT changed: the Genesis interfaces bullet says entry is "two
+  zero-argument Tauri commands", and that is still exactly true — T-049
+  adds a new CALLER of one of them, not a new command (`git diff` shows
+  **zero** new `invoke(`/`listen(`/`emit(` call sites in `app/src`). The
+  Code-layout bullet needed nothing either: `accelerators.ts` sits under
+  `app/src/components/shell/**`, already described as C-05's, and
+  carries no cross-component edge worth naming.
+- **ROADMAP: EDITED, and this is the first time since T-039 that the
+  test came out the other way.** T-041, T-047 and T-048 all declined it
+  with the same argument — milestone 3's Progress line enumerates **what
+  a user can do**, and none of them added a user capability. T-049 does:
+  the advertised chords now work from every screen, and starting an
+  interview from an open project is one step rather than four. Six lines
+  were added to the Progress narrative saying so. The honest remainder
+  (T-027, T-028, T-029, plus one observed real turn) is untouched and
+  **milestone 3 is still NOT claimed**.
 - **CONVENTIONS: NOT edited.** The BOOT GATE bullet was exercised a
-  third time, second on the `app/src/**` limb, and needed nothing. One
-  bullet was worth re-reading against this diff and is fine: "UI work
-  adds tokens to app/src/styles/tokens.css, never Tailwind defaults or
-  arbitrary values" governs token-bearing utilities, and `h-screen` /
-  `min-h-0` are layout utilities carrying no token — the mechanical
-  arbiter of that rule, `lint:tokens`, ran **clean over 37 files**.
+  fourth time and needed nothing; its "the executor runs it too" limb
+  was correctly OVERRIDDEN by a dispatch fencing 1420, and both branch
+  roles said so loudly, which is the bullet's own instruction. The
+  token-lint bullet governs token-bearing utilities; this branch adds no
+  utility class at all and `lint:tokens` ran **clean over 38 files**.
   Zero new tokens, zero arbitrary values, zero new dependencies.
-- **NO NEW ADR (three-prong), and it is the easy call this time.**
-  (a) An ADR charters a DECISION between live alternatives, and there is
-  none here: **a frame that does not hold is a bug at any width**, and
-  nobody proposed keeping it. The adjacent question that IS chartering
-  material — should the whole shell be bounded with every screen owning
-  its own scroll region, or should genesis stay the exception — is
-  **exactly what T-048-s1 holds and what T-027 will decide**, and it is
-  waiting on a human verdict that has not been given. Chartering it now
-  would freeze a two-model reality nobody chose. (b) **Prong two,
-  verified as an EMPTY SET rather than by eye**: `git diff --name-only
-  aab62f0..HEAD` restricted to `method/`, `capabilities/`,
-  `lib/parser/`, `app/src-tauri/`, `tauri.conf.json`, `acl_pin.rs`,
-  `lib.rs`, `index_cmd.rs`, `docs_watch.rs` and every
+- **NO NEW ADR (three-prong).** (a) An ADR charters a DECISION between
+  live alternatives. The placement question was settled by MEASUREMENT
+  inside one component's territory, which is a file-placement call and
+  not a charter. The question that IS chartering material — **should the
+  accelerator table be screen-SCOPED** — is **T-027's**, folded there
+  from T-026-s2 at the second triage, and T-049-s2 already supplies the
+  one-line criterion reconciliation it needs. Inventing the screen
+  dimension now would be building T-027's design without its planning
+  pass. (b) **Prong two, verified as an EMPTY SET rather than by eye**:
+  `git diff --name-only aab62f0..HEAD` restricted to `method/`,
+  `capabilities/`, `lib/parser/`, `app/src-tauri/` and every
   `Cargo.toml`/`Cargo.lock`/`package.json`/`package-lock.json` returns
-  **nothing**. So ADR-012 held (no native surface moved, zero grants
+  **0 files**. So ADR-012 held (no native surface moved, zero grants
   touched, `acl_pin.rs` zero-diff, the 92-grant set unmoved and still
-  green under `cargo test`), ADR-011 held (zero new crates, zero new
-  npm deps, no lockfile line), ADR-003 held (no model call anywhere),
+  green under `cargo test`), ADR-011 held (zero new crates, zero new npm
+  deps, no lockfile line), ADR-003 held (no model call anywhere),
   ADR-017 held (no write path changed — the app is still a lens), and
   ADR-014/015 held (the graph was regenerated because the rule fired,
   proved deterministic across two runs, and proved current by the
   indexer's own plain self-check). **No new IPC variant**: the six wire
   enums are unchanged and this branch touches no Rust at all. (c) Prong
   three: the durable calls live in the task file's criteria→evidence
-  map, its measurement tables, and the verifier's independent ones.
+  map, its eight proof obligations, and the verifier's independent
+  re-derivations.
 
 ## In progress / broken right now
-**ONE TASK IS `building`.**
-- **T-049** (a way in from anywhere — the ⌘O/⌘N accelerators and a
-  header route to genesis, app-shell), worktree ../nputer-t049,
-  dispatched at `aab62f0`. Found by @human trying the shortcuts.
-- **FLAG FOR T-049'S INTEGRATOR — CHECK THIS, DO NOT ASSUME IT.**
-  **T-049 also edits `App.tsx`, and so did this merge.** T-048's three
-  hunks are the `cn` import (line 8), the `boundedFrame` block with its
-  comment (lines 274–311), and **the shell column's className line
-  (line 324)**. T-049 was fenced off layout classes and owns the
-  `EmptyState` keydown listener (**lines 145–154** post-merge) and the
-  header's button region (**the `data-panel-exempt` div at 339, with
-  the `open-folder` Button at 353–362**). Those are disjoint — the
-  nearest pair is T-048's :324 against T-049's :353, **29 lines
-  clear**, well outside git's three-line merge context — but note the
-  one thing that looks closer than it is: T-048's changed line :324 is
-  **immediately adjacent to `<header>` at :325**, so a T-049 hunk that
-  reached upward into the header's opening tag rather than into its
-  button div WOULD collide. Enumerate both hunk sets and run
-  `git merge-tree` before merging, exactly as this merge did. T-049's
-  worktree sits at pre-merge `aab62f0`, where every line above is 35
-  lower. **No behavioural interaction is expected**: `boundedFrame` is
-  recomputed per render off `screen.screen`, so a new header route INTO
-  genesis simply arrives bounded, which is the intended behaviour.
+**NOTHING IS `building`.** The parser reports zero.
 
-**Do not enter ../nputer-t049.**
+- **T-050 (the startup latch) DISPATCHES NEXT**, and it is @human's
+  second report of the session: they hit a dead-end **"waiting for the
+  first docs snapshot…"** screen with no escape. The diagnosis, checked
+  at the source here rather than relayed: `startDocsWatcher`
+  (`app/src/lib/watcher-store.ts:529`) sets its `started` latch at
+  **:530–531 — `if (started) return; started = true;` BEFORE its two
+  awaits** — and nothing ever resets it, so one failed attempt is
+  permanent; the call site is **`void startDocsWatcher()`
+  (`App.tsx:255`) with no `.catch`**, so any rejection is silent; and
+  the `loading` screen (`App.tsx:398`) carries no picker and no
+  affordance at all.
+- **THE ACCIDENT WORTH RECORDING: T-049 PARTIALLY MITIGATES IT.** The
+  accelerator hook is mounted at the App ROOT (`App.tsx:268`),
+  unconditionally, above the screen switch — so **⌘O now fires from the
+  `loading` screen too**, turning a dead end into something escapable.
+  That is a side effect, not the fix. **T-050 owns the real fix and
+  touches the SAME TWO FILES** (`watcher-store.ts`, `App.tsx`), which is
+  exactly why it was serialized behind this merge.
 
 **THE SHARED-INDEX HAZARD, and it did not recur.** `git diff --cached
 --stat` was checked before **both** commits and the staged set was
 exactly this session's each time. The house shape here is clean:
 **merge → checkpoint**, two commits.
 
-The t048 worktree is removed and its branch KEPT — **29 task branches
-merged now**, `t001-app-shell` through `t048-frame-holds` (counted with
-`git branch --merged main`; t048 shows with a `+` because its worktree
-was still registered at count time), plus the one live branch. Main tree
-clean; all four suites green; the token lint green; the committed graph
-current and proved so by the plain self-check rather than by assumption.
-The parser re-parses the whole live tree at **0 issues**: **76 tasks**,
-tally **30 done / 18 planned / 9 parked / 18 suggested / 1 building**
-(T-049), 6 features, 11 components. (Tasks rise by six — T-048's five
-suggestion files plus the T-049 card — not a board that grew work.)
+The t049 worktree is removed and its branch KEPT — **30 task branches
+merged now**, `t001-app-shell` through `t049-way-in` (counted with
+`git branch --merged main`), and **no live task branch at all** for the
+first time in a while. Main tree clean; all four suites green; the token
+lint green; the committed graph current and proved so by the plain
+self-check rather than by assumption. The parser re-parses the whole
+live tree at **0 issues**: **80 tasks**, tally **31 done / 18 planned /
+9 parked / 22 suggested / 0 building**, 6 features, 11 components.
+(Tasks rise by four — T-049's four suggestion files — not a board that
+grew work.)
 
 **NO STANDING SECURITY GATE.** T-025-s6 closed at T-039 and nothing
 replaced it. The sharpest open set is still app-agent's, untouched by
@@ -416,23 +434,28 @@ that would package a DEV harness).
 LAUNCH ITEM, carried forward — **watch the first CI run** (T-020). At
 the repo's first push (`git remote -v` is still empty), confirm in
 order: the ubuntu apt/webkit2gtk set installs; the three `uses:` SHA
-pins resolve; playwright-on-Linux runs the lane — **now 34 tests**,
+pins resolve; playwright-on-Linux runs the lane — **now 36 tests**,
 whose most platform-sensitive are the ones measuring REAL CSS in
 Chromium-on-Linux (**if anything goes red there, look at the font and
 colour assertions in `front-door.spec.ts` and `genesis-screen.spec.ts`
-first**). **T-048 sharpens that warning specifically**: the new
-three-viewport sweep asserts EXACT pixel equality between
-`document.scrollHeight` and the viewport at 800x600, 1024x768 and
-1280x720, so a Linux scrollbar-gutter or default-font difference would
-show up there before anywhere else — and it should be read as a real
-platform difference to file, not as a regression, unless the pane's
-region also stops scrolling. Then: `cargo audit` behaves as it does
-locally; and **the xvfb `tauri dev` boot prints both `[nputer]` startup
-lines** — the FIRST exercise of the boot check on Linux, and the only
-place T-046's override's Linux behaviour will ever be observed (CI
-deliberately sets no `NPUTER_BOOT_PORT`, so the override path stays
-Linux-unverified by design). AND (T-018-s3 fold) the THREE T-018
-SENTINEL LIVE TESTS inside the ubuntu `cargo test` step —
+first**), plus T-048's three-viewport sweep, which asserts EXACT pixel
+equality between `document.scrollHeight` and the viewport at 800x600,
+1024x768 and 1280x720 — a Linux scrollbar-gutter or default-font
+difference shows up there before anywhere else and should be read as a
+platform difference to file, not a regression, unless the pane's region
+also stops scrolling. **T-049 adds a NEW kind of Linux exposure to
+watch**: `accelerators.spec.ts` presses `Meta+o` / `Meta+n` in real
+Chromium and asserts `defaultPrevented`. On Linux the Meta key is not
+the platform accelerator and the app deliberately accepts Control too,
+so if that spec reds there, read it as a key-mapping difference to file
+before touching the matcher — and note it would be the first evidence
+about T-049-s4's territory that anyone has. Then: `cargo audit` behaves
+as it does locally; and **the xvfb `tauri dev` boot prints both
+`[nputer]` startup lines** — the FIRST exercise of the boot check on
+Linux, and the only place T-046's override's Linux behaviour will ever
+be observed (CI deliberately sets no `NPUTER_BOOT_PORT`, so the override
+path stays Linux-unverified by design). AND (T-018-s3 fold) the THREE
+T-018 SENTINEL LIVE TESTS inside the ubuntu `cargo test` step —
 replaced-wholesale and deleted-recreated docs/. They discriminate only
 where inotify watches INODES; macOS FSEvents watches paths and was
 accidentally resilient, which is why T-018's replace-half evidence is
@@ -441,39 +464,62 @@ reconcile gap macOS could never surface, and gets filed immediately.
 This run also closes T-001/T-003's Linux halves, and carries T-026-s1
 (the plan probe's exact-case match) and T-021-s1 (the ACL pin is
 macOS-derived). The ubuntu `cargo test` step also runs the
-`agent_runner` integration tests — **32 + 1 ignored** — which spawn
-real child processes and send real signals; T-047's newest plant files,
+`agent_runner` integration tests — **32 + 1 ignored** — which spawn real
+child processes and send real signals; T-047's newest plant files,
 refuse paths and assert on executable bits, so a Linux permissions or
 `/bin/sh` difference would show up there first. Watch it, and watch for
 the unnamed `agent_runner` flake there too.
 
 ## Next up (1–4)
-1. **@human — THE VISUAL SESSION IS STILL OPEN, and this merge is the
-   one you were waiting on.** The app is RUNNING on 1420 as this
-   checkpoint lands, **on the same pid 8392 as before** — this merge
-   wrote no Rust, so nothing restarted; the two changed frontend files
-   reached the window by **HMR**, so **the genesis screen may have
-   re-laid-out under you mid-look**. **The route to the pane**: "Start
-   an interview" on a docs-less folder, or "Start an interview here" on
-   a folder the app just refused.
-   - **NEW AND FIRST — the frame at 800x600, T-048's own @human item.**
-     The pane now scrolls inside a fixed header and heading, and **the
-     artifact list gets 286px of the 858px it wants** at the size the
-     app actually opens. The measurement says the frame holds;
-     **whether it holds ENOUGH list to be useful is an eye judgment
-     only you can make** — and if it does not, the question it turns
-     into is whether the interview heading block wants to be smaller,
-     which is a design call, not a bug.
+1. **@human — THE VISUAL SESSION IS STILL OPEN, and the thing you
+   reported now works.** The app is RUNNING on 1420 as this checkpoint
+   lands, **on the same pid 8392 as before** — this merge wrote no Rust,
+   so nothing restarted; the two changed frontend files reached the
+   window by **HMR**, which this time means **the keyboard changed under
+   your fingers**.
+   - **FIRST, because it is your own report: press ⌘O and ⌘N on the
+     board, on the map, and on the interview screen.** All three should
+     open the two native dialogs now, and a second chord while a dialog
+     is already up should do **nothing at all**. Also try the board
+     header's new **"Start an interview"** — one step to genesis from an
+     open project instead of four.
+   - **NEW — THE HEADER'S DENSITY, T-049's own @human item, and it is
+     three separate calls.** The board header's right-hand group is now
+     literally `Open folder… | Start an interview | Toggle theme` —
+     **three buttons where there were two**, all three with
+     byte-identical classes (the quiet outline, `px-3.5 py-1.75
+     text-sm`), sitting opposite the wordmark and the full project path.
+     1. **Three equal outline buttons read as one undifferentiated
+        group.** The front door gives its primary the ink pill; the
+        header gives nothing emphasis — so "Start an interview", **the
+        capability milestone 3 is named after, looks exactly like
+        "Toggle theme"**. Separator? Emphasis? Or is quiet right?
+     2. **The header pair carries no `⌘O · ⌘N` hint** while the front
+        door does — so chords that now work EVERYWHERE are advertised in
+        exactly one place. Left off deliberately (the buttons are the
+        discovery; the hint would add a third element to a row that just
+        gained one), and it is the obvious counter-argument.
+     3. **Neither group wraps or truncates** — no `flex-wrap`, no
+        `min-w-0`/`truncate` on the project path — so at a narrow window
+        that row has nowhere to go. **Worth looking at beside T-048's
+        freshly bounded frame**, since that is the other thing that just
+        changed about how this app behaves at small sizes.
+     (Also: the header says `Open folder…` and the front door says
+     `Open a folder…`. Not unified — same verb, two registers.)
+   - **NEW — the frame at 800x600, T-048's item, still open.** The pane
+     scrolls inside a fixed header and heading, and the artifact list
+     gets 286px of the 858px it wants at the size the app actually
+     opens. The measurement says the frame holds; **whether it holds
+     ENOUGH list to be useful is an eye judgment only you can make** —
+     and if it does not, the question becomes whether the interview
+     heading block wants to be smaller, which is a design call.
    - **THE COMPOSITION QUESTION, still the ONLY framing item left and
-     still T-027's.** T-024 drew the pane as the **RIGHT HALF of a
-     split view**; until T-027 it sits **full-width inside T-026's card
+     still T-027's.** T-024 drew the pane as the **RIGHT HALF of a split
+     view**; until T-027 it sits **full-width inside T-026's card
      frame**. Does its `bg-sidebar` ground read right framed by a
      `bg-card` bordered box, and does the **five-across backbone grid**
      hold at full width when it was drawn for a half-width pane?
      **This is the question T-027's planning pass waits on** (item 2).
-     **T-048 changed nothing about the width** — a frame that does not
-     hold was a bug at any width — so this question arrives at your eye
-     exactly as it was posed, only now on a screen that fits.
    - **T-024's pane, light AND dark**: built/forming/slot card contrast
      in dark, the warm writing-row border, the five type sizes that
      moved 0.5–1px, the substituted footer right slot
@@ -484,12 +530,12 @@ the unnamed `agent_runner` flake there too.
      `--review-disc`, whose dark value #4ecf9e is a token-family
      derivation, not measured from a dark mockup), the card's 10px vs
      the design's 12px radius, and whether the footnote reads as a
-     footnote. **Read T-048-s4 before T-048-s3** — s3 says the "Start
-     an interview here" button falls below the fold at 800x600 and
-     **that conclusion is wrong**; the button and the footnote both
-     measure clear of the fold, and what spills is padding and 15px of
-     painted card edge. It is a fit blemish to fold into this pass, not
-     a hidden action to chase.
+     footnote. **Read T-048-s4 before T-048-s3** — s3 says the "Start an
+     interview here" button falls below the fold at 800x600 and **that
+     conclusion is wrong**; the button and the footnote both measure
+     clear of the fold, and what spills is padding and 15px of painted
+     card edge. A fit blemish to fold into this pass, not a hidden
+     action to chase.
    - **The at-a-glance amber judgment** (T-012 criterion 5's human
      half — drift stroke vs building/verifying fills, BOTH schemes,
      incl. composed building+drift; the dogfood hero renders it live).
@@ -505,13 +551,16 @@ the unnamed `agent_runner` flake there too.
      written` scaffold with `expected` placeholder rows and north star
      `forming…`. Judge whether THAT reads right over a non-empty docs/.
    - **The real picker flows on the real screen** — the standing T-007
-     checklist, still @human because native dialogs are unreachable
-     from a browser harness and tauri-driver has no macOS. What remains
-     is exactly the native half: "Start an interview" → native dialog →
-     a docs-less folder lands on the genesis screen; ⌘N and ⌘O on the
-     front door; "Start an interview here" on a folder the app just
-     refused; a folder that already has a plan → the board, not
-     genesis. (T-049 is building the accelerator half of this now.)
+     checklist, still @human because native dialogs are unreachable from
+     a browser harness and tauri-driver has no macOS. **T-049 closed the
+     accelerator half of this and the lane cannot see the rest**: what
+     remains is the native half — "Start an interview" → native dialog →
+     a docs-less folder lands on the genesis screen; "Start an interview
+     here" on a folder the app just refused; a folder that already has a
+     plan → the board, not genesis. (T-049-s1 records why the served
+     bundle can prove a chord was CLAIMED but never that it was OBEYED,
+     and why the header's two buttons are invisible to the lane
+     entirely — both are behind `isTauriRuntime()`.)
    - **The `tauri dev` quit-the-app orphan check** (from T-025). Start a
      `hang`-scenario genesis in a scratch project, quit the app, confirm
      no orphan — **and watch for T-025-s7's ~5 s main-thread hang on
@@ -520,8 +569,8 @@ the unnamed `agent_runner` flake there too.
    - **The T-047-s6 stray, a decision not a look.**
      `~/.claude/projects/-private-var-folders-…-t047va-count-97806-…-project/`
      (one .jsonl, 17,128 bytes, zero-token synthetic records). Outside
-     the repo and deliberately not deleted. **Delete it or keep it —
-     the call is yours.**
+     the repo and deliberately not deleted. **Delete it or keep it — the
+     call is yours.**
    - **ONE REAL OBSERVED PLANNER TURN, on an authenticated machine** —
      still the biggest unobserved thing in the project. This machine's
      `claude` OAuth token is revoked, so no model call has ever gone
@@ -534,22 +583,32 @@ the unnamed `agent_runner` flake there too.
    - **A PRIORITY CALL, not a screen action.** The next triage has
      **three** process/spawn-hygiene items to rank against each other:
      T-046-s1, T-047-s6 (the only one that has already fired), and
-     T-047-s5 (~5 lines). **T-048 adds a fourth kind of call**: s2 (the
-     map canvas clips — silent graph loss the day anything bounds it)
-     versus s1 (two scroll models, which is T-027's) versus s5 (the
-     floor, one line). **s2 is the one that can bite without warning.**
-2. MILESTONE 3 (T-023…T-029 + T-039 + T-041 + T-047, ADR-017). **T-041's
-   served-bundle gate is DOWN**, and **T-048 has removed the second
-   thing standing between the human and a verdict**: the screen the
-   composition question is asked about now fits the window it is asked
-   in. **What still holds the milestone is the human, in this order:**
+     T-047-s5 (~5 lines). T-048 added a second kind: **s2** (the map
+     canvas clips — silent graph loss the day anything bounds it) versus
+     s1 (two scroll models, T-027's) versus s5 (the floor, one line).
+     **T-049 adds a third kind — a REACH question**: s4 says the chords
+     are dead on every non-Latin layout while the UI still advertises
+     them, and s3 says the module T-027 is about to extend has four
+     advertised properties none of which is pinned. **s2 is still the
+     one that can bite without warning; s4 is the one that is already
+     biting someone we cannot see.**
+2. MILESTONE 3 (T-023…T-029 + T-039 + T-041 + T-047 + T-048 + T-049,
+   ADR-017). **T-041's served-bundle gate is DOWN, T-048 made the screen
+   fit the window, and T-049 made the way in work** — three things
+   between the human and a verdict, all cleared. **What still holds the
+   milestone is the human, in this order:**
    (a) **T-027's planning pass waits on the human's split-view verdict**
    (item 1) — it builds the LEFT half of a composition whose whole
    design question is what the open visual session is judging.
    `blocked_by` [T-024 ✓, T-025 ✓, T-026 ✓] has been satisfied since
    T-025 merged. **T-027 also inherits T-047-s3** (a read boundary on
-   `model` at the first site that renders it) **and T-048-s1** (the two
-   scroll models, which only a composition decision can collapse).
+   `model` at the first site that renders it), **T-048-s1** (the two
+   scroll models, which only a composition decision can collapse), and
+   now **T-049-s2** — its accelerator criterion literally says "(their
+   unmount-scoping test stays green)" and T-049 made that false on
+   purpose, so the criterion needs a one-line rewording before it
+   dispatches, plus **T-049-s3** (the four unpinned mechanism properties
+   it is about to lean on).
    (b) **T-029 is UNGATED but not unblocked** — its `blocked_by` is
    still `[T-027]`, and T-028's is too.
    The milestone is NOT claimed: the first slice delivers hand-driven
@@ -561,46 +620,55 @@ the unnamed `agent_runner` flake there too.
    (M, milestone 4, `blocked_by: []`), with T-027 ahead of it in
    milestone order but held for the visual verdict. **app-agent is
    FREE** — T-047 merged — which unblocks **T-043**'s "serialize behind
-   T-039 on app-agent" condition outright; **app-shell is OCCUPIED by
-   T-049.** Triage: APPLY granted — but tasks NEWLY created by triage
-   (T-041…T-049) do NOT dispatch without the human; T-041, T-046,
-   T-047, T-048 and T-049 each got that nod explicitly. Unchanged
-   method rules: a second REJECTED on any task parks that lane for the
-   human; @human judgments are never self-answered.
-4. SUGGESTION BACKLOG — **27 open files: 9 parked + 18 suggested.**
-   **T-048 contributes five**, and they do not all rank together.
-   **Untriaged (18)**: the five T-048 cards — **s2** (the map canvas
-   clips instead of scrolling; the sharpest, because it is harmless
-   only until something bounds it and then loses graph with every suite
-   green), **s4** (the s3 CORRECTION — read it BEFORE s3; schedule with
-   the front-door visual pass), **s1** (two scroll models; genuinely
-   T-027's composition call, needs a sticky rail AND a board scroll
-   region AND s2), **s3** (the no-plan card overflows at 800x600 —
-   measurement right, conclusion superseded by s4), **s5** (the bounded
-   frame's floor; no `minHeight` in `tauri.conf.json`; one-line
-   remedy) — plus the six T-047 cards (**s5** the probed path skips the
-   gate, **s6** nothing structurally stops a test resolving the real
-   CLI, **s4** `$SHELL` picks the program, **s1** retire the cache,
-   **s2** the flag table is a version snapshot, **s3** the model has no
-   read boundary, home T-027) — plus **T-041-s2** (the wire shape is
-   pinned in Rust and mirrored by hand in TS with nothing comparing
-   them), **T-041-s4** (`NODE_ENV`, not `--mode`, flips the DEV gate),
-   **T-046-s1** (the unsignalled process group), **T-046-s4** (the
-   overlay's blind spot), **T-046-s2** (`checkJs` — its worked example
-   is wrong and the correction is IN the file), **T-046-s3** (nothing
-   gates the packaged build — read with s4 and T-041-s4: all three are
-   "a gate proves the configuration it was handed, not the one that
-   ships"), and **T-039-s3** (give the session-id refusal its own typed
-   outcome; home is T-029).
+   T-039 on app-agent" condition outright; **app-shell is now FREE too**,
+   and **T-050 is the named next dispatch on it** (see above). Triage:
+   APPLY granted — but tasks NEWLY created by triage (T-041…T-049) do
+   NOT dispatch without the human; T-041, T-046, T-047, T-048 and T-049
+   each got that nod explicitly, and **T-050 will need the same nod**.
+   Unchanged method rules: a second REJECTED on any task parks that lane
+   for the human; @human judgments are never self-answered.
+4. SUGGESTION BACKLOG — **31 open files: 9 parked + 22 suggested.**
+   **T-049 contributes four**, and they do not rank together.
+   **Untriaged (22)**: the four T-049 cards — **s4** (`event.key` makes
+   the chords silently dead on every non-Latin layout while the front
+   door still advertises `⌘O · ⌘N`; measured, inherited from T-026, and
+   the table is the moment to decide because T-027 adds rows to it),
+   **s3** (the hook's four advertised mechanism properties are each
+   deletable with 503/503 green — the unmount cleanup, "an absent entry
+   is left alone", the per-render table refresh, and "added once"; the
+   first is what the retired T-026 test was reaching for and the fix is
+   two lines in a file that already has the wrapper), **s2** (T-027's
+   accelerator criterion names a test T-049 retired — one-line
+   reconciliation, cheapest thing on this list), **s1** (the lane sees a
+   browser, not the app: it can prove a chord was CLAIMED, never that it
+   was OBEYED, and both header buttons are invisible to it; matters more
+   for T-027 than here) — plus the five T-048 cards (**s2** the map
+   canvas clips instead of scrolling, **s4** the s3 CORRECTION — read it
+   BEFORE s3, **s1** two scroll models, **s3** the no-plan card
+   overflows at 800x600, **s5** the bounded frame's floor) — plus the
+   six T-047 cards (**s5** the probed path skips the gate, **s6**
+   nothing structurally stops a test resolving the real CLI, **s4**
+   `$SHELL` picks the program, **s1** retire the cache, **s2** the flag
+   table is a version snapshot, **s3** the model has no read boundary,
+   home T-027) — plus **T-041-s2** (the wire shape is pinned in Rust and
+   mirrored by hand in TS with nothing comparing them), **T-041-s4**
+   (`NODE_ENV`, not `--mode`, flips the DEV gate), **T-046-s1** (the
+   unsignalled process group), **T-046-s4** (the overlay's blind spot),
+   **T-046-s2** (`checkJs` — its worked example is wrong and the
+   correction is IN the file), **T-046-s3** (nothing gates the packaged
+   build — read with s4 and T-041-s4: all three are "a gate proves the
+   configuration it was handed, not the one that ships"), and
+   **T-039-s3** (give the session-id refusal its own typed outcome; home
+   is T-029).
    **The nine parked, unchanged**, all blocked on something only the
    world can provide: T-003-s2 (a real project near the ~25 MB knee),
    T-008-s1 (F-04/F-05 layout), T-018-s1 (a Windows lane), T-021-s1 and
    T-026-s1 (both await the first Linux run), T-025-s2 (@human, one
    command on an authenticated machine), T-025-s4 (gated by s2),
    T-025-s3 (nputer.yaml is F-04 era; its count fix rides T-043),
-   T-038-s1 (no responsive call site yet — **note T-048 is the first
-   task to measure the app at six viewport sizes, so s1's "no
-   responsive call site" is now a slightly weaker claim than it was**).
+   T-038-s1 (no responsive call site yet — T-048 is the first task to
+   measure the app at six viewport sizes, so s1's claim is weaker than
+   it was).
    Five triage-born tasks stand ready and un-dispatched: T-042 (genesis
    switch truthfulness), **T-043** (kill path — its serialization
    condition is SATISFIED and app-agent is free; T-047-s4 nominates it
@@ -615,40 +683,67 @@ the unnamed `agent_runner` flake there too.
   `nputer index --check`); BOOT GATE names none in CONVENTIONS, and
   `.github/workflows/ci.yml` already invokes the boot check on ubuntu
   while dormant. Does it retire at the repo's first push, or only when a
-  macOS gate exists too? Left for a triage. **THREE exercises in now**
-  (`app/src/**` at T-041 and here, `app/src-tauri/**` at T-047), and it
-  has needed no amendment any time.
+  macOS gate exists too? Left for a triage. **FOUR exercises in now**
+  (`app/src/**` at T-041, T-048 and here, `app/src-tauri/**` at T-047),
+  and it has needed no amendment any time. **T-049 exercised a limb of
+  it nobody had tested**: its "THE EXECUTOR RUNS IT TOO" clause was
+  overridden by a dispatch that fenced 1420, and both the executor and
+  the verifier declared the gate UNRUN in as many words rather than
+  going quiet. The bullet's "a skipped gate is news, never silence"
+  handled that correctly with no amendment — worth noting when the
+  retirement question is actually taken.
 - **Should `method/` name the class of CONVENTIONS-level pipeline
   gates?** Unchanged: there are TWO gates with the shape trigger →
   command → record, one of which binds the executor, and
   `method/roles/executor.md` still says only "run the test commands from
   CONVENTIONS.md until green". Ask ONCE when a THIRD lands, or when the
   executor rule proves noisy. A method version bump, not an ADR.
-- **Does the shared main working tree need a rule?** Carried forward
-  and **now with a third data point**. The first was the git INDEX
-  (T-046's merge lost its house shape to a shared index; the fix that
-  works is social — "the pen is yours" — plus `git diff --cached
-  --stat` before every commit, done twice here). The second was the
-  WORKING TREE via Rust: an app-agent merge REBUILDS and RESTARTS the
-  app the human is reviewing. The third, today: an app-shell merge
-  reaches the same window by **HMR** — no restart, same pid, but the
-  screen under review changes without a signal. **Both faces of it are
-  now recorded and neither is written down anywhere but here.**
-  Method/process, so the architect's (ADR-004).
+- **Does the shared main working tree need a rule?** Carried forward and
+  **now with a fourth data point**. The first was the git INDEX (T-046's
+  merge lost its house shape to a shared index; the fix that works is
+  social — "the pen is yours" — plus `git diff --cached --stat` before
+  every commit, done twice here). The second was the WORKING TREE via
+  Rust: an app-agent merge REBUILDS and RESTARTS the app the human is
+  reviewing. The third (T-048) was the same tree via **HMR** — no
+  restart, same pid, but the screen under review changed without a
+  signal. The fourth is today's, and it sharpens the HMR face rather
+  than repeating it: **the merge changed what the KEYBOARD does**, so
+  the human's ⌘O started working mid-session with no signal from here.
+  A screen that re-lays-out is noticeable; an input that starts
+  responding is not. All four faces are recorded and none is written
+  down anywhere but here. Method/process, so the architect's (ADR-004).
 - **When does spawn hygiene become an ADR?** Unchanged from T-047's
   ruling: three C-14-local rules exist and a charter was argued against,
   because T-047-s5 proves the cached and probed doors hold DIFFERENT
   standards today. **The moment to write it is when s5 lands** — that is
   when there is a single rule to charter — which is a nearer, sharper
   trigger than "a second component spawns agents at F-04".
-- **NEW: does a verifier's remedy belong in an acceptance criterion?**
-  T-048 is the case that raises it. T-041's verifier filed a fix in
-  s1's note 1; the architect promoted it into T-048's criterion 3 as a
-  prescription; **it was wrong, and the task nearly required its own
-  bug.** Only the "or a demonstrably better equivalent" escape hatch
-  saved it. Two candidate rules, both cheap: a criterion that names a
-  specific remedy SHALL carry that hatch (T-048's did, by luck or by
-  habit — nobody recorded which), or a remedy inherited from a
-  suggestion SHALL be written as a hypothesis to test rather than a
-  shape to build. The architect's call (ADR-004), and worth taking
-  while the example is fresh.
+- **Does a verifier's remedy belong in an acceptance criterion?**
+  Carried forward from T-048, unanswered and still worth taking while
+  the example is fresh. T-041's verifier filed a fix in s1's note 1; the
+  architect promoted it into T-048's criterion 3 as a prescription; **it
+  was wrong, and the task nearly required its own bug.** Only the "or a
+  demonstrably better equivalent" escape hatch saved it. Two candidate
+  rules, both cheap: a criterion that names a specific remedy SHALL
+  carry that hatch, or a remedy inherited from a suggestion SHALL be
+  written as a hypothesis to test rather than a shape to build. The
+  architect's call (ADR-004). **T-049 supplies a second data point from
+  the other end**: its criterion 5 named a MECHANISM ("a single
+  app-scoped listener… a test SHALL assert exactly one keydown listener
+  path handles the chords") rather than a remedy, and the builder had to
+  invent three instruments to satisfy it — which caught four of six
+  attacks and produced the double-listener measurement above. Naming the
+  property to prove worked; naming the fix to build did not.
+- **NEW: when a task retires a test, who owns the property it was
+  reaching for?** T-049 is the case. T-026's `"stops listening once the
+  front door is gone"` was retired CORRECTLY — it would have been
+  vacuously green forever — but the property underneath it (the
+  listener's teardown) was real, survived the refactor in a new form,
+  and is now pinned nowhere; deleting the hook's cleanup leaves 503/503
+  green. Nothing in the method asks a builder who retires a test to say
+  where its property WENT, and no criterion failed here. The verifier
+  caught it by attacking the code rather than by reading the rules,
+  which is luck of the same-model draw. Candidate rule, one line in
+  TASK-FORMAT: a task that deletes or replaces an existing test SHALL
+  name, for each assertion dropped, either its new home or its
+  suggestion id. Method version bump, the architect's call.

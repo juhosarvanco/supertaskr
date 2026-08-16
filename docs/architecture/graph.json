@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:bbe67f9911a25cf15d5802d3a09f6ffe1c6f862e0804783f9ed212201632b34a",
-      "loc": 461,
+      "hash": "blake3:ce83e888d692e8c2bd59250cd1148614792e4c9b72f0b90ae9128a48ce4e2e19",
+      "loc": 487,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -18,8 +18,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            260,
-            459
+            251,
+            485
           ]
         },
         {
@@ -28,8 +28,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            92,
-            107
+            93,
+            108
           ]
         },
         {
@@ -38,8 +38,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            125,
-            247
+            131,
+            238
           ]
         },
         {
@@ -48,8 +48,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            38,
-            55
+            39,
+            56
           ]
         },
         {
@@ -58,8 +58,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            64,
-            88
+            65,
+            89
           ]
         },
         {
@@ -68,8 +68,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            251,
-            258
+            242,
+            249
           ]
         }
       ]
@@ -1309,6 +1309,65 @@
           "range": [
             27,
             77
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/components/shell/accelerators.ts",
+      "path": "app/src/components/shell/accelerators.ts",
+      "lang": "ts",
+      "hash": "blake3:d8f2253d8588a22d1cf6bc1624e81362c90e487b7c44cc7af3b981fdd95e82fa",
+      "loc": 129,
+      "symbols": [
+        {
+          "id": "s:app/src/components/shell/accelerators.ts#AcceleratorChord",
+          "name": "AcceleratorChord",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            63,
+            69
+          ]
+        },
+        {
+          "id": "s:app/src/components/shell/accelerators.ts#AcceleratorId",
+          "name": "AcceleratorId",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            59,
+            59
+          ]
+        },
+        {
+          "id": "s:app/src/components/shell/accelerators.ts#AcceleratorTable",
+          "name": "AcceleratorTable",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            98,
+            98
+          ]
+        },
+        {
+          "id": "s:app/src/components/shell/accelerators.ts#matchAccelerator",
+          "name": "matchAccelerator",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            81,
+            91
+          ]
+        },
+        {
+          "id": "s:app/src/components/shell/accelerators.ts#useAccelerators",
+          "name": "useAccelerators",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            108,
+            129
           ]
         }
       ]
@@ -3637,6 +3696,195 @@
       "symbols": []
     },
     {
+      "id": "f:app/test/accelerators.test.tsx",
+      "path": "app/test/accelerators.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:dbadc4c888f665bfdd589fc238eb8a41b23e56e5cdbbad8408742b7f1773b828",
+      "loc": 472,
+      "symbols": [
+        {
+          "id": "s:app/test/accelerators.test.tsx#App",
+          "name": "App",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            111,
+            111
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#GENESIS_DIR",
+          "name": "GENESIS_DIR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            114,
+            114
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#KeydownPath",
+          "name": "KeydownPath",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            69,
+            72
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#PROBE",
+          "name": "PROBE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            115,
+            115
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#PROJECT_DIR",
+          "name": "PROJECT_DIR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            113,
+            113
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#chord",
+          "name": "chord",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            151,
+            169
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#click",
+          "name": "click",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            131,
+            136
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            117,
+            117
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#emitSnapshot",
+          "name": "emitSnapshot",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            138,
+            142
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#expectBothChordsWork",
+          "name": "expectBothChordsWork",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            172,
+            188
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#flush",
+          "name": "flush",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            125,
+            129
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#ipc",
+          "name": "ipc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            29,
+            38
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#livePaths",
+          "name": "livePaths",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            73,
+            73
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#q",
+          "name": "q",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            120,
+            121
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            118,
+            118
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#screenOf",
+          "name": "screenOf",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            122,
+            123
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#trackKeydownPaths",
+          "name": "trackKeydownPaths",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            75,
+            105
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#untrack",
+          "name": "untrack",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            110,
+            110
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/agent-store.test.ts",
       "path": "app/test/agent-store.test.ts",
       "lang": "ts",
@@ -3768,8 +4016,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:b8e85e46d18c2d539ae6639b2e89f63f7168008683fe46051c924c975523cd13",
-      "loc": 805,
+      "hash": "blake3:3cbf7df7749f46159ea6ba1ce5843ec93b5bb21e33f6e90e0256127c5e978733",
+      "loc": 857,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -3777,8 +4025,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            479,
-            479
+            523,
+            523
           ]
         },
         {
@@ -3787,8 +4035,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            478,
-            478
+            522,
+            522
           ]
         },
         {
@@ -3797,8 +4045,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            444,
-            444
+            488,
+            488
           ]
         },
         {
@@ -3807,8 +4055,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            450,
-            465
+            494,
+            509
           ]
         },
         {
@@ -3817,8 +4065,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            467,
-            476
+            511,
+            520
           ]
         },
         {
@@ -3827,8 +4075,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            446,
-            448
+            490,
+            492
           ]
         }
       ]
@@ -4834,8 +5082,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:945d2e59363f659d166f991cde108c9b7649a3867f55e94fecf615da5494522a",
-      "loc": 209,
+      "hash": "blake3:c6d41e162914227899bea129927ee81dd6355edc05ad5a95dfe0e8ebdbd8ad9c",
+      "loc": 215,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -5245,17 +5493,27 @@
       "id": "f:app/test/project-shell.test.tsx",
       "path": "app/test/project-shell.test.tsx",
       "lang": "ts",
-      "hash": "blake3:370862b1a71aedaea7c80e9c59104e25388f02de091e9bdc903a7dc4c3207339",
-      "loc": 215,
+      "hash": "blake3:c04b4262774cd91259f5b9a494c329fcfab3de9d413b3c5963d31b0b346b539f",
+      "loc": 297,
       "symbols": [
+        {
+          "id": "s:app/test/project-shell.test.tsx#FrontDoorWithAccelerators",
+          "name": "FrontDoorWithAccelerators",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            98,
+            101
+          ]
+        },
         {
           "id": "s:app/test/project-shell.test.tsx#click",
           "name": "click",
           "kind": "function",
           "exported": false,
           "range": [
-            40,
-            44
+            58,
+            62
           ]
         },
         {
@@ -5264,8 +5522,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            22,
-            22
+            40,
+            40
+          ]
+        },
+        {
+          "id": "s:app/test/project-shell.test.tsx#keydownRegistrations",
+          "name": "keydownRegistrations",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            122,
+            136
           ]
         },
         {
@@ -5274,8 +5542,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            53,
-            75
+            71,
+            93
+          ]
+        },
+        {
+          "id": "s:app/test/project-shell.test.tsx#mountWithAccelerators",
+          "name": "mountWithAccelerators",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            103,
+            119
           ]
         },
         {
@@ -5284,8 +5562,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            46,
-            50
+            64,
+            68
           ]
         },
         {
@@ -5294,8 +5572,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            77,
-            78
+            138,
+            139
           ]
         },
         {
@@ -5304,8 +5582,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            36,
-            38
+            54,
+            56
           ]
         },
         {
@@ -5314,8 +5592,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            23,
-            23
+            41,
+            41
           ]
         }
       ]
@@ -7091,6 +7369,14 @@
     },
     {
       "from": "f:app/src/App.tsx",
+      "to": "f:app/src/components/shell/accelerators.ts",
+      "kind": "import",
+      "symbols": [
+        "useAccelerators"
+      ]
+    },
+    {
+      "from": "f:app/src/App.tsx",
       "to": "f:app/src/components/ui/button.tsx",
       "kind": "import",
       "symbols": [
@@ -7809,6 +8095,15 @@
       ]
     },
     {
+      "from": "f:app/src/components/shell/accelerators.ts",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "useEffect",
+        "useRef"
+      ]
+    },
+    {
       "from": "f:app/src/components/ui/button.tsx",
       "to": "f:app/src/lib/utils.ts",
       "kind": "import",
@@ -8039,6 +8334,69 @@
       "kind": "import",
       "symbols": [
         "default"
+      ]
+    },
+    {
+      "from": "f:app/test/accelerators.test.tsx",
+      "to": "f:app/src/App.tsx",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/test/accelerators.test.tsx",
+      "to": "f:app/src/components/shell/accelerators.ts",
+      "kind": "import",
+      "symbols": [
+        "matchAccelerator"
+      ]
+    },
+    {
+      "from": "f:app/test/accelerators.test.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsSnapshotPayload"
+      ]
+    },
+    {
+      "from": "f:app/test/accelerators.test.tsx",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:app/test/accelerators.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/accelerators.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/accelerators.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterAll",
+        "beforeAll",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it",
+        "vi"
       ]
     },
     {
@@ -9014,6 +9372,14 @@
       "kind": "import",
       "symbols": [
         "EmptyState"
+      ]
+    },
+    {
+      "from": "f:app/test/project-shell.test.tsx",
+      "to": "f:app/src/components/shell/accelerators.ts",
+      "kind": "import",
+      "symbols": [
+        "useAccelerators"
       ]
     },
     {
@@ -10161,6 +10527,12 @@
     },
     {
       "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/components/shell/accelerators.ts#useAccelerators",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
       "to": "s:app/src/lib/docs-model.ts#skipReasonPhrase",
       "kind": "call",
       "confidence": "resolved"
@@ -11140,6 +11512,36 @@
     {
       "from": "s:app/src/components/shell/PaneRail.tsx#PaneRail",
       "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/shell/accelerators.ts#AcceleratorTable",
+      "to": "s:app/src/components/shell/accelerators.ts#AcceleratorId",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/shell/accelerators.ts#matchAccelerator",
+      "to": "s:app/src/components/shell/accelerators.ts#AcceleratorChord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/shell/accelerators.ts#matchAccelerator",
+      "to": "s:app/src/components/shell/accelerators.ts#AcceleratorId",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/shell/accelerators.ts#useAccelerators",
+      "to": "s:app/src/components/shell/accelerators.ts#AcceleratorTable",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/shell/accelerators.ts#useAccelerators",
+      "to": "s:app/src/components/shell/accelerators.ts#matchAccelerator",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -12890,6 +13292,48 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/accelerators.test.tsx#chord",
+      "to": "s:app/test/accelerators.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/accelerators.test.tsx#click",
+      "to": "s:app/test/accelerators.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/accelerators.test.tsx#emitSnapshot",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/accelerators.test.tsx#emitSnapshot",
+      "to": "s:app/test/accelerators.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/accelerators.test.tsx#expectBothChordsWork",
+      "to": "s:app/test/accelerators.test.tsx#chord",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/accelerators.test.tsx#livePaths",
+      "to": "s:app/test/accelerators.test.tsx#KeydownPath",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/accelerators.test.tsx#untrack",
+      "to": "s:app/test/accelerators.test.tsx#trackKeydownPaths",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/agent-store.test.ts#ev",
       "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
       "kind": "type_ref",
@@ -13526,7 +13970,19 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/project-shell.test.tsx#FrontDoorWithAccelerators",
+      "to": "s:app/src/components/shell/accelerators.ts#useAccelerators",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/project-shell.test.tsx#mount",
+      "to": "s:app/test/project-shell.test.tsx#render",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/project-shell.test.tsx#mountWithAccelerators",
       "to": "s:app/test/project-shell.test.tsx#render",
       "kind": "call",
       "confidence": "resolved"
@@ -14284,8 +14740,8 @@
     }
   ],
   "stats": {
-    "files": 90,
-    "symbols": 616,
-    "edges": 1013
+    "files": 92,
+    "symbols": 642,
+    "edges": 1038
   }
 }

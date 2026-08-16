@@ -63,6 +63,13 @@ each file lands: the north-star card, the backbone grid filling in,
 artifact rows going from expected to written, the approximate banking
 stage climbing. No re-pick, no refresh, no polling — the first
 `mkdir docs` arms the watcher and every write after it flows through.
+T-049 merged 2026-08-16 and widened that entry after @human hit its
+edges: the ⌘O/⌘N the front door advertises now fire from every screen
+instead of only while the front door is mounted, and the board header
+carries its own "Start an interview" — so starting an interview from a
+project that is already open is one step rather than four (it used to
+mean opening a picker, choosing a folder with no `docs/`, landing on
+the no-plan card, and pressing its button).
 T-025 (the agent runner, the milestone's hard core) merged 2026-08-16
 and the honest reading of it is narrow. The MECHANISM exists: four app
 commands spawn the user's own `claude` headless once per turn, resume
