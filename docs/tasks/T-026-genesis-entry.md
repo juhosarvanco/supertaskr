@@ -80,7 +80,7 @@ index.css, capabilities/, tauri.conf.json, and both lockfiles.
 ### What was built
 
 **The plan probe — one predicate, three consumers** (`PlanProbe`,
-`probe_plan`, `PlanProbe::has_plan`, docs_watch.rs:337-411). A stat
+`probe_plan`, `PlanProbe::has_plan`, docs_watch.rs:344-425). A stat
 sweep of the four paths the front door looks for: `docs/ROADMAP.md`,
 any `docs/tasks/*.md`, `docs/ARCHITECTURE.md`, `.git` (file or dir —
 worktrees count, as in T-007's walk-up). `has_plan() = roadmap || tasks`
@@ -95,8 +95,9 @@ rule family's one primitive and `has_plain_docs_dir` re-expressed
 through it (behavior identical; the genesis path needs the same question
 asked of the ROOT).
 
-**Two zero-argument app commands** (lib.rs:142-231, ADR-012 pattern
-command-for-command with `pick_project_folder`):
+**Two zero-argument app commands** (lib.rs:142-231 —
+`pick_genesis_folder` at 156, `start_genesis_here` at 204; the ADR-012
+pattern command-for-command with `pick_project_folder`):
 - `pick_genesis_folder()` — "Start an interview" / ⌘N. Claims the T-021
   `PickInFlight` guard BEFORE the native dialog opens, opens the dialog
   Rust-side, and hands the choice to `apply_genesis_folder`. No path
@@ -111,7 +112,7 @@ command-for-command with `pick_project_folder`):
   the USER already chose, and the plan check still governs; that
   analysis is the security half of the "why two commands" answer.
 
-**`apply_genesis_folder`** (docs_watch.rs:733-844) mirrors
+**`apply_genesis_folder`** (docs_watch.rs:735-841) mirrors
 `apply_picked_folder`'s order exactly: canonicalize → require a plain
 directory (T-003 rule family at the root) → **if the folder already
 holds a plan, route to the ordinary open** → rendezvous `ArmGenesis` →
@@ -122,8 +123,8 @@ a planned folder picked for genesis answers with the identical
 `Picked`/`NoDocs`/`Error` shapes. There is no overwrite path in the app
 to guard, by construction — the app writes nothing under docs/ (ADR-017).
 
-**`WatchCtl::ArmGenesis` + `arm_genesis`** (docs_watch.rs:1218-1290).
-A genesis root usually has nothing to watch recursively, so T-018's root
+**`WatchCtl::ArmGenesis` + `arm_genesis`** (docs_watch.rs:1218-1281;
+the control-loop arm sits beside `Rearm`'s). A genesis root usually has nothing to watch recursively, so T-018's root
 sentinel becomes the load-bearing watch, and unlike T-018's best-effort
 arm this one is a HARD requirement: if the sentinel cannot arm, the pick
 fails rather than sitting there unable to notice `mkdir docs`. Ordering
@@ -149,7 +150,7 @@ timing.
 (no snapshot exists to send, so `seq` carries the switch's ordering
 stamp and every in-flight emit from the previous project drops as stale
 — the T-007 invariant kept without a snapshot). `reducePickOutcome`
-(watcher-store.ts:266-330) is one PURE reducer shared by all three
+(watcher-store.ts:291-335) is one PURE reducer shared by all three
 picker commands, which makes criterion 6 mechanical: cancelled and busy
 return `prev` BY IDENTITY. `ShellPhase` gains `"genesis"`;
 `applyDocsPayload` keeps that phase instead of forcing `"open"`, so the
@@ -162,9 +163,9 @@ what makes the genesis screen full-bleed.
 ### Criteria → evidence map
 
 **C1 — front door + the "No plan in <folder>" card.**
-app/src/App.tsx:82-224 (`EmptyState` + `ChecklistRow`),
-watcher-store.ts:148-232 (`planChecklist`, `FrontDoorNotice`,
-`selectScreen`). Both ways in render on EVERY empty state with the
+app/src/App.tsx:91-246 (`ChecklistRow` 91, `EmptyState` 124),
+watcher-store.ts:194-282 (`planChecklist` 204, `FrontDoorNotice` 223,
+`ScreenModel` 229, `selectScreen` 238). Both ways in render on EVERY empty state with the
 `⌘O · ⌘N` hint; the accelerators actually work (window keydown, mounted
 with the screen). The no-docs rejection state IS the design card now:
 heading `No plan in <path>`, the design's body copy, the four-row
@@ -178,10 +179,10 @@ card) and `app/test/watcher-store.test.ts` (`planChecklist` +
 
 **C2 — genesis via a zero-argument picker variant; screen state
 `genesis`, full-bleed.** lib.rs:142-231 (both commands, zero arguments),
-docs_watch.rs:733-844 (validation: canonicalize + `is_plain_dir`, with
+docs_watch.rs:735-841 (validation: canonicalize + `is_plain_dir`, with
 `arm_genesis`'s own re-check for the validate→arm window),
-docs_watch.rs:1218-1290 (sentinel arming), App.tsx:334-346 (the screen,
-mounted outside the rail's condition at App.tsx:295),
+docs_watch.rs:1218-1281 (sentinel arming), App.tsx:363-368 (the screen,
+mounted outside the rail's condition at App.tsx:290),
 `components/shell/GenesisScreen.tsx`. Tests: cargo
 `genesis_pick_opens_a_docsless_folder_and_arms_the_root_sentinel`,
 `a_genesis_root_swapped_for_a_symlink_is_refused_at_arm_time`,
@@ -201,7 +202,8 @@ while the screen stays `genesis`.
 
 **C4 — an EMPTY docs/ emits exactly once (T-018-s4).** docs_watch.rs
 `ensure_docs_watch` (returns the transition) + `handle_fs_batch`
-(`outcome == target.last && !just_armed`). Test:
+(`outcome == target.last && !just_armed`, docs_watch.rs:1056+1067;
+`ensure_docs_watch` 969-1053). Test:
 `an_empty_docs_dir_emits_exactly_once_on_the_unarmed_to_armed_transition`
 — driven through T-018's `handle_fs_batch` seam so the counts are EXACT
 with no sleeps: batch before docs/ exists → nothing; `create_dir` (empty)
@@ -260,7 +262,7 @@ Two new APP commands, ZERO new grants. `EXPECTED_GRANTS` untouched
 (the 92-grant `core:default` set is byte-identical in acl_pin.rs);
 capabilities/ and tauri.conf.json are zero-byte diffs; the acl_pin
 roster gained exactly `pick_genesis_folder` and `start_genesis_here` in
-the remote-origin denial loop (acl_pin.rs:528-543), so both are proven
+the remote-origin denial loop (acl_pin.rs:536-537, inside the remote-denial loop at 528-552), so both are proven
 DENIED from `https://evil.example.com` on every `cargo test` through the
 shipped authority. Regeneration proof, run as the protocol demands and
 not asserted from memory: `gen/schemas/capabilities.json` sha256 was
