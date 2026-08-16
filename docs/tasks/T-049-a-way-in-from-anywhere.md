@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: "claude-opus-5 @fresh"
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 Found by @human on 2026-08-16 during the visual review session, trying
@@ -559,3 +559,303 @@ not. Specifically worth your eye:
   planning pass, plus the two facts it should not have to rediscover.
 
 ## Verdicts
+
+2026-08-16 — claude-opus-5 @fresh (verifier, same-model as builder):
+**APPROVED** — all six criteria met and re-derived from the branch at
+`3921426` (merge-base `aab62f0` confirmed, 8 files). Nothing was taken
+from the notes: every number below is my own measurement, and where the
+notes made a claim I could falsify I tried to. Port 1420 was never
+bound or contacted (the human's vite still holds `[::1]:1420`, pid
+90127, fd 28u — observed, not touched); the lane bound 14520 only; the
+boot check was not run (the merge owes it, per the dispatch);
+`../nputer-t048` was never entered and is now gone from the worktree
+list.
+
+**THE DOUBLE-LISTENER MEASUREMENT — re-derived, and it is exactly
+right.** This is the claim the whole test design rests on, so I built
+it from scratch: a throwaway probe that mounts the real `App`,
+dispatches ONE ⌘O from the app's root element, and reports the
+`preventDefault` count and the `invoke` count side by side. One
+registration → `preventDefault=1, invoke(pick_project_folder)=1`. A
+SECOND `useAccelerators` added to `App` →
+**`preventDefault=2, invoke(pick_project_folder)=1`**. The mechanism is
+`runPicker`'s first two lines: `if (!isTauri || shell.picking) return;`
+then a SYNCHRONOUS `setShell({ picking: true })` before the `await
+invoke(...)`, so the second listener — firing in the same dispatch —
+finds the latch already closed and the duplicate never reaches IPC. A
+naive "invoked once" test would have passed over two racing listeners.
+Confirmed downstream: with the second registration in place
+`accelerators.test.tsx` reds **11 of 12**, first failure `⌘O is claimed
+by exactly one handler: expected 2 to be 1`; the enumeration test run
+alone reds with `expected 2 to be 1`. Both numbers are the notes'.
+
+**DEFEAT ATTEMPTS against "exactly one listener" — six shapes, four
+caught.** Each was a real second handler injected into `App` and run
+against the shipped suite: (V1) raw `window` keydown, preventDefault +
+command → **caught**, 11 red; (V2) same on `document` → **caught**, 11
+red; (V3) `window` listener that runs the command but never
+`preventDefault`s → **caught by the ENUMERATION only**, 2 red, which is
+the proof the two instruments are genuinely independent rather than two
+readings of one; (V4) listener on `document.body` — outside the
+enumeration's window/document scope — with preventDefault →
+**caught by the per-chord claim count**, 11 red, the complementary
+direction. Two survived and both are narrow: (V5) a `window.onkeydown`
+PROPERTY handler is invisible to the enumeration by construction, and
+in jsdom it never fires at all, so the miss cannot even be
+demonstrated; (V6) a `document.body` listener that runs the command
+WITHOUT claiming the chord is seen by neither instrument. Neither is
+reachable from anything in the tree — every keydown listener in
+`app/src` uses `addEventListener` on `window` or `document`
+(`accelerators.ts`, `panel-dismissal.ts`, `MapView.tsx`'s ⌘F) — and
+both are recorded in **T-049-s3** rather than papered over. Criterion 5
+asks for a test asserting exactly one keydown path handles the chords;
+three instruments do, and four of six attacks die on them.
+
+**Remount / leak drill.** Four full screen cycles (board → map →
+genesis → empty → board, driven by real chords) with the live keydown
+path list read at 16 points: `[1,2,1,1] × 4` — one path everywhere,
+two only while the MAP is mounted (its own ⌘F handler), back to one
+when it leaves. Nothing accumulates. After all that churn, exactly ONE
+live path reaches each of ⌘O, ⌘N, Ctrl+O and Ctrl+N.
+
+**C1 — the chords fire from every screen.** Re-derived independently
+against the real App and the real store: front door, board, map pane
+(including from the focused, CONTROLLED `map-search` input, whose value
+survives the chord unchanged), and the interview — ⌘O →
+`pick_project_folder`, ⌘N → `pick_genesis_folder`, both again with
+Ctrl, each with a claim count of exactly 1. The ⌘N pressed ON THE BOARD
+lands the app on the interview screen: the thing @human could not do,
+done in one keypress.
+
+**THE DEFECT REPRODUCED, mechanically.** I restored T-026's scoping
+(the `useEffect` back inside `EmptyState`, the root registration
+deleted, `tsc` clean) and ran the new suites against it. Vitest: test 1
+— the front door — stays **GREEN**, while tests 2 (board), 3 (map) and
+4 (genesis) go **RED** with `⌘O is claimed by exactly one handler:
+expected +0 to be 1`. That is @human's bug report as a test transcript:
+right keys, listener absent, and invisible from the one screen the old
+test suite could see. The lane spec reds too, first on
+`the app claims ⌘O before any screen exists` — the ordering fact its
+header explains, holding.
+
+**C2 — the header's second way in.** Both labels, correct order
+(`compareDocumentPosition`), each wired to its OWN command by name,
+both `disabled` while a dialog is in flight, both absent from the
+interview screen. I closed the one half the suite names but does not
+walk: on the FRONT DOOR both header buttons are `null` while the front
+door's own pair and the `⌘O · ⌘N` hint are intact, and on the MAP PANE
+the pair correctly stays (the map is a pane of the board screen, not a
+screen). The two new buttons' `className` is byte-identical to each
+other's and to the Toggle theme sibling's — the header's existing quiet
+outline, not a new look. Mutants: wrong command on the new button → 2
+red; dropping its `disabled={shell.picking}` → 4 red; disturbing the
+pair's order/presence → 9 red across two files.
+
+**THE CSS BYTE-IDENTITY — re-derived, and the stronger version holds.**
+I exported the merge-base app tree to scratch, built it with the same
+toolchain, and compared: branch `index-BheOMAjN.css` sha256
+`c8d9f6d9fc6f70ed65dc740f0507b6cd5ce4901625c6292d1e88db9df2b38342`,
+merge-base `index-BheOMAjN.css` the SAME sha256, `cmp` identical. Not
+one new CSS rule. One correction to the notes, which is staleness and
+not error: main has moved twice since this branch was cut, and today's
+main (`6356246`, T-048 merged and checkpointed) builds
+`index-RXeeD2qB.css` at 41.30 kB — so "byte-identical to main's" is no
+longer true as written, while the claim that matters is. I checked the
+stronger form instead: the COMPOSED tree (this branch + main) builds
+`index-RXeeD2qB.css` with sha256
+`a1fa12d094e4fe1b731ba5080fe39383fbd6541c939b1121f84002c53c4def2a` —
+byte-identical to current main's own build. T-049 adds no CSS on top of
+T-048 either.
+
+**C3 — the busy path, hammered.** Verified it is DRIVEN through the
+store rather than asserted: with the mocked `invoke` PARKED (native
+dialog standing open), one ⌘O opens it, then **20 rapid mixed chords**
+(⌘O, ⌘N, Ctrl+O, Ctrl+N in rotation) plus a **five-event SYNCHRONOUS
+burst** in a single flush — `invoke` still called exactly **once**, and
+`getShellState()` unchanged **by identity** (`toBe`) at every step,
+screen unmoved. Release with `cancelled` → latch clears, next chord
+works, one invoke. The typed-`busy` case separately: six chords whose
+command answers `{kind:"busy"}` leave `rejectedPick`, `docs`, `phase`,
+`resolvedDir`, `genesisDir` and `indexOutcome` each unchanged BY
+IDENTITY (whole-object identity cannot hold there, and correctly does
+not: `runPicker`'s `finally` re-boxes for `picking: false` — the notes'
+field-identity assertion is the right one). And the cross-affordance
+case the suite does not cover: a chord fired while the HEADER BUTTON's
+dialog is up opens no second dialog either. One latch, three doors.
+
+**C4 — the front door untouched, proven not asserted.**
+`git diff aab62f0..HEAD -- app/test/genesis-entry.test.tsx` = **0
+bytes**; the lane's `front-door.spec.ts` + `no-plan-card.spec.ts` = **0
+bytes**. For the JSX I did better than reading it: I extracted the
+`EmptyState` function body from both revisions and diffed them after
+deleting ONLY the removed `useEffect` — **identical, zero remaining
+lines**. Not one character of the render tree moved.
+
+**C5 / THE REPLACED T-026 TEST — RULED: the replacement is stronger on
+the property that survives, the retirement was correct, and the notes'
+one overstatement is "could not have been kept meaningfully".** The
+vacuity argument is right and I confirmed it: `EmptyState` now
+registers nothing, so `"stops listening once the front door is gone"`
+would assert that a component which never listened has stopped, and
+would be green forever. Keeping it as written was not an option. The
+replacement is strictly stronger on criterion 5's mechanical form — it
+counts registrations at mount time (zero) instead of inferring them
+from behaviour after unmount — and the behaviour the old test was
+guarding moved up to `accelerators.test.tsx` tests 2/3/4, where it runs
+against the real store on three screens instead of `vi.fn()` props on
+one. **But there WAS a meaningful form to keep**, and it is one the
+file was already equipped for: re-point the old test at
+`project-shell.test.tsx`'s own new `FrontDoorWithAccelerators` wrapper
+— mount the PRODUCTION hook, unmount it, press ⌘O, assert nothing fires
+— which asserts the hook's unmount cleanup rather than the component's.
+Measured: deleting `return () => window.removeEventListener(...)` from
+`accelerators.ts` leaves the app suite at **503/503 green**. That
+property is now pinned nowhere. Not a criterion failure (no criterion
+asks for it, and `App` never unmounts in production), but it is the one
+thing the retirement dropped on the floor, so it is filed as
+**T-049-s3** with three siblings. The other changed test —
+`"the advertised accelerators actually work"` — I diffed line by line:
+same name, same six presses, byte-identical assertions, only the mount
+line changed, and it now runs against the shipped matcher instead of a
+copy of it. Its wrapper is two lines and calls the production hook.
+
+**C6 — what the app claims, and only that.** 26 chords fired at the
+real app from the front door: ⌘⇧N, ⌘⇧O, ⌥⌘O, ⌥⌘N, ⌃⇧N, ⌘P, ⌘F, ⌘A,
+⌘S, ⌘W, ⌘Q, ⌘Z, bare `o`, bare `n`, Escape, Enter, Tab, `Dead`,
+`Unidentified`, `Process`, `ø`, `ó`, Cyrillic `щ`, Cyrillic `т`, ⌘
+alone, ⌘⌃O. **Exactly one** is claimed beyond the four the app
+declares: ⌘⌃O, and that BY DESIGN (Command OR Control, no Alt, no
+Shift). Zero new `preventDefault`. From the focused map search field:
+⌘O and ⌘N fire, the field's value is untouched, ⌘A and a bare `o` are
+claimed 0 times, and ⌘F is claimed by the MAP (claim count 1, `invoke`
+0) — the app's one accelerator owner and the app's other one do not
+collide. Mutants confirm the boundary is load-bearing: accepting Shift
+→ 2 red; accepting bare `o`/`n` → 3 red; dropping `preventDefault` →
+11 red; swapping the two commands → 13 red. Two honest limits found and
+filed as **T-049-s4**: `event.key` means the chords are silently dead
+on non-Latin layouts (⌘+`щ` reaches nothing where ⌘O would), and an
+`isComposing` keydown is still claimed. Both are T-026's semantics kept
+deliberately byte for byte, not T-049 regressions.
+
+**Execution sweep.** Poison-injected (`expect("PROBE").toBe("EXECUTED")`
+as the first statement of every body), run, reverted, sha256-verified:
+`accelerators.test.tsx` 12 bodies → **12 failed**, restored to
+`56f5f1e0…`; `accelerators.spec.ts` 2 bodies → **2 failed**, restored
+to `3c6e1b29…`; the two CHANGED bodies in `project-shell.test.tsx` →
+**2 failed | 9 passed**, surgical, restored to `8b8dc94b…`. All five of
+the notes' sha256 values matched the branch bytes before I started.
+
+**Suites, my actuals** (macOS/Darwin 25.6, node v22.22.0, this
+worktree): lib/parser `npx vitest run` **159 passed (10 files)**, `tsc`
+clean · app `tsc` clean, `npm run build` exit 0 (**253 modules**,
+`index-BumOZNae.js` 442.49 kB / `index-BheOMAjN.css` 41.24 kB),
+`npx vitest run` **503 passed (29 files)** · app/src-tauri `cargo test`
+**217 passed + 3 ignored, 0 failed**, exit 0, **zero warnings**, 11
+test binaries · tools/e2e `npx playwright test` **35 passed**,
+`npm run typecheck` clean, `npm run lint:tokens` **clean, 38 files**.
+Every number the notes report, reproduced.
+
+**THE COMPOSED MERGE, re-derived against TODAY's main.** Main moved
+again mid-review: it is now `6356246` (the T-048 checkpoint, which
+REGENERATED the graph to 90 files and moved the dogfood pins to match),
+not the `0f55cc6` the notes measured. `git merge-tree --write-tree HEAD
+main` answers one tree (`10c805c9…`) with zero conflict lines. I merged
+main into a scratch branch off `3921426` and ran the composition: `tsc`
+clean, `npm run build` exit 0, app **507 passed (30 files)**, lane
+**36 passed**, lane `typecheck` clean, `lint:tokens` clean at 38 files.
+The scratch branch is deleted, the worktree is back on `t049-way-in`
+with its own build, and `git worktree list` shows only main and this
+one. The notes' composed numbers hold on a newer main than they were
+measured against.
+
+**Fence, proven.** `git diff aab62f0..HEAD --name-only` is exactly 8
+files: `App.tsx`, `components/shell/accelerators.ts`,
+`test/accelerators.test.tsx`, `test/project-shell.test.tsx`,
+`tools/e2e/tests/accelerators.spec.ts`, this card, s1, s2.
+`git diff aab62f0..HEAD -- app/src/components/shell/GenesisScreen.tsx
+tools/e2e/tests/genesis-screen.spec.ts app/src-tauri lib/parser method
+docs/architecture capabilities app/package.json '**/package-lock.json'
+'**/Cargo.lock' '**/Cargo.toml' | wc -c` = **0**; zero manifests or
+lockfiles in the name list at all. `min-h-screen` / `h-screen` /
+`min-h-0`: three matches in the whole diff, all three PROSE inside this
+card describing the fence check — **zero** under `app`, `tools`, `lib`
+in either direction, so T-048's three edits land on lines this branch
+never saw (and they did: the composed merge is textually clean). Zero
+new `invoke(` / `listen(` / `emit(` call sites in `app/src`; no new
+dependency; no Rust.
+
+**THE GRAPH DELTA, regenerated myself and restored.** Against the
+graph committed on this branch: files **89 → 91**, symbols
+**602 → 628**, edges **1003 → 1028**; adds
+`app/src/components/shell/accelerators.ts` and
+`app/test/accelerators.test.tsx`, nothing removed, the lane spec
+invisible (`.nputerignore` carries `tools/`). Exactly **three**
+assertions move, in two files — `architecture-dogfood.test.ts`'s file
+count `89 → 91`, its relation row `["C-05","C-10","confirmed", 20 → 22]`,
+and `map-dogfood-render.test.tsx`'s `committed graph · 89 → 91 files`.
+No new finding, no unmapped bucket, no drift-flag movement. **Against
+TODAY's main**, which the integrator will actually face: **90 → 92**
+files, symbols 616 → 642, edges 1013 → 1038, and the same three
+assertions — file count `90 → 92`, relation row
+`["C-05","C-10","confirmed", 21 → 23]`, map hint `· 90 → · 92 files`.
+`docs/architecture/graph.json` restored to `05ebc2c7…` after each regen.
+
+**THE `app/src/lib/` MEASUREMENT — verified, and the notes UNDERSTATE
+it.** I moved the module to `app/src/lib/accelerators.ts`, rewrote the
+three import lines, regenerated and ran the dogfood suites: the new
+finding `{"rule":"D2","id":"D2:unmapped"}` appears, naming
+`app/src/lib/accelerators.ts` — and **seven** assertions move rather
+than the notes' four: the findings list (9 vs 8), the relation table
+(29 rows vs 28), the drift flags (7 vs 6), the map's component count
+(12 vs 11 — the unmapped bucket the dogfood asserts does not exist),
+the map's edge table (29 vs 28), plus the two file counts. In
+`components/shell/` it is three, and they are the ordinary regen shape.
+The placement reasoning is correct and it was worth measuring. Reverted;
+sha256 of all five source files and the graph confirmed against the
+pre-probe baseline.
+
+**Suggestions ruled.** T-049-s1 is VALID and accurate on both halves —
+`runPicker`'s `if (!isTauri || shell.picking) return;` really does make
+an accelerator's action unobservable in a browser, and
+`{screen.screen === "board" && isTauriRuntime() && …}` really does hide
+BOTH header buttons from the lane, so the one screen T-049's affordance
+is visible on is the one screen the served bundle cannot show; keep it
+suggested, it matters more for T-027 than here. T-049-s2 is VALID and
+its premise is literal — T-027's criterion at line 81 of its card reads
+"(their unmount-scoping test stays green)", which this task made false
+on purpose; the suggested one-line rewording is right. Two new ones
+filed: **T-049-s3** (the hook's four advertised mechanism properties —
+unmount cleanup, "an absent entry is left alone", the per-render table
+refresh, and "added once" — each deletable with 503/503 still green;
+the first is what the retired T-026 test was reaching for) and
+**T-049-s4** (`event.key` kills the chords on non-Latin layouts; an
+`isComposing` keydown is still claimed).
+
+**FOR @HUMAN — the header's density, sharpened.** The board header's
+right-hand group is now literally
+`<div class="flex items-center gap-2.25" data-panel-exempt>` carrying
+`Open folder… | Start an interview | Toggle theme` — **three buttons
+where there were two**, all three with byte-identical classes (the
+quiet outline, `px-3.5 py-1.75 text-sm`), sitting opposite the wordmark
+and the full project path under `justify-between gap-4`. Three specific
+things to judge, all cheap to change: (1) three equal outline buttons
+read as one undifferentiated group — the front door gives its primary
+the ink pill and the header gives nothing emphasis, so "Start an
+interview", the capability milestone 3 is named after, looks exactly
+like "Toggle theme"; (2) the header pair carries NO `⌘O · ⌘N` hint
+while the front door does, so the chords that now work everywhere are
+advertised in only one place; (3) neither the control group nor the
+left group wraps or truncates (no `flex-wrap`, no `min-w-0`/`truncate`
+on the project path), so at a narrow window this row has nowhere to go
+— worth a look next to T-048's freshly bounded frame. Also worth your
+fingers, since it is what you reported: ⌘O and ⌘N on the board, on the
+map, and on the interview screen; and a second chord while a dialog is
+already up, which should do nothing at all.
+
+Probes reverted, every file sha256-verified against its pre-probe
+bytes; the two throwaway test files deleted; the graph restored; no
+scratch branch, no stray process, no port left bound. Handoff: the
+branch touches `.ts/.tsx` outside `docs/`, so the T-009-s1 regen is
+owed at merge (numbers above), and the BOOT GATE is owed too and is
+still UNRUN by anyone — `NPUTER_BOOT_PORT=<free scratch port> npm run
+boot:check` from `tools/e2e/`.
