@@ -5,10 +5,10 @@ feature: F-02
 milestone: 3
 priority: 7
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [tools/e2e/, docs/CONVENTIONS.md]
-builder:
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
@@ -34,7 +34,9 @@ this task has the pipeline start the app. T-001 and T-020 both ruled
 that a window opening and closing on its own is NOT screen control —
 no input injected, no screenshot taken, nothing read off the screen;
 the prohibition is on DRIVING the screen. This task relies on that
-ruling and does not extend it. **Do not dispatch without that nod.**
+ruling and does not extend it. **The nod was given** — @human ruled 2026-08-16: allowed, the
+prohibition is on DRIVING the screen, not on a process opening and
+closing its own window. Recorded in the standing memory rule.
 
 ## Acceptance criteria
 - THE boot check SHALL be runnable beside a live app via a narrow,
