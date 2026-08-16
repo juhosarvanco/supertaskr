@@ -49,6 +49,18 @@ describe('smoke — the real docs/ tree parses cleanly', () => {
     // pre-existing id byte-unchanged, C-13 appended in registry order.
     // No lib/parser/src/** byte moved — the fence there is a SOURCE
     // fence; the fixture follows reality.
+    //
+    // RECONCILED AGAIN AT T-025 (2026-08-16, executor claude-opus-5
+    // @fresh): the branch declares C-14 agent runner
+    // (app/src-tauri/src/agent/** + app/src/lib/agent-store.ts, slug
+    // app-agent) per the task spec and the same T-012 §2 precedent, so
+    // this live-tree pin lists ELEVEN ids. All three registry fixtures
+    // were moved in this branch, not two — that is the lesson T-024's
+    // rejection wrote down, applied here deliberately rather than
+    // rediscovered: this file plus app/test/architecture-dogfood.test.ts
+    // and app/test/map-dogfood-render.test.tsx. Changed, never loosened:
+    // still a whole-array toEqual, every pre-existing id byte-unchanged,
+    // C-14 appended in registry order.
     expect(components.map((c) => c.id)).toEqual([
       'C-01',
       'C-05',
@@ -60,6 +72,7 @@ describe('smoke — the real docs/ tree parses cleanly', () => {
       'C-11',
       'C-12',
       'C-13',
+      'C-14',
     ]);
 
     const parser = components.find((c) => c.id === 'C-06');

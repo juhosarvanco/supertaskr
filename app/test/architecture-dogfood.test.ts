@@ -260,6 +260,34 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     rather than asserted: regenerating before these lines landed gave
 //     sha 413ddaec…; regenerating after them gives a different sha, so a
 //     regen-first ordering would have committed a stale graph.
+//
+// RECONCILED AT T-025 (2026-08-16, executor claude-opus-5 @fresh): the
+// branch declares C-14 agent runner (paths app/src-tauri/src/agent/** +
+// app/src/lib/agent-store.ts, depends_on [C-10], slug app-agent) per the
+// task spec and the T-012 §2 precedent. This is a REGISTRY-ONLY move —
+// the committed graph.json is NOT regenerated in-branch (that is the
+// integrator's ritual, T-009-s1), so C-14 arrives with zero indexed
+// files and the graph-derived numbers are untouched. Every delta below
+// was re-derived from the failure-free half of the suite, not read off a
+// diff:
+//   · registry 10 → 11 ids; declared 10 → 11; placeholders still 0.
+//   · mapping STAYS 84 and every per-component count is byte-unchanged
+//     (C-05 35, C-06 21, C-08 10, C-09 3, C-10 2, C-12 11, C-13 2) —
+//     C-14 claims two paths the committed graph has never seen. D2 stays
+//     empty; `unmappedFiles` stays empty. Its Rust path is invisible to
+//     the indexer until T-010 lands Rust extraction; agent-store.ts is
+//     ordinary TS and WILL join at the merge regen, which is exactly
+//     when D3:C-14 clears — the same arc C-13 walked at T-024/T-012.
+//   · findings gain exactly one row, D3:C-14 (declared-only), appended
+//     after D3:C-11 in id order. All five D1 rows byte-unchanged.
+//   · relation table 26 → 27 rows: C-14→C-10 lands PLANNED with
+//     observedCount 0 — honestly planned, because no TS import in the
+//     committed graph can confirm a Rust-side dependency yet (the same
+//     state C-12→C-07 carries). The 13 confirmed / 5 undeclared tally
+//     holds; planned goes 8 → 9.
+//   · drift gains C-14 (it is a D3 source); declaredOnly gains C-14.
+// Changed, never loosened: every assertion is still a whole-array
+// toEqual, and no pre-existing value moved.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -306,7 +334,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(graphResult.graph).toBeDefined();
   });
 
-  it("the live registry is the ten known components", () => {
+  it("the live registry is the eleven known components", () => {
     expect((project.components ?? []).map((c) => c.id)).toEqual([
       "C-01",
       "C-05",
@@ -318,9 +346,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       "C-11",
       "C-12",
       "C-13",
+      "C-14",
     ]);
     expect(derived.mode).toBe("full");
-    expect(derived.components.filter((c) => c.kind === "declared")).toHaveLength(10);
+    expect(derived.components.filter((c) => c.kind === "declared")).toHaveLength(11);
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
@@ -367,7 +396,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: five undeclared dependencies, three declared-only components, no unclaimed territory", () => {
+  it("THE FINDINGS: five undeclared dependencies, four declared-only components, no unclaimed territory", () => {
     expect(derived.findings).toEqual([
       {
         rule: "D1",
@@ -449,14 +478,19 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         ],
       },
       // D3:C-13 cleared at the T-024 merge regen exactly as predicted:
-      // the three that remain are the genuinely code-less components.
+      // the three that remain are the genuinely code-less components…
       { rule: "D3", id: "D3:C-01", component: "C-01" },
       { rule: "D3", id: "D3:C-07", component: "C-07" },
       { rule: "D3", id: "D3:C-11", component: "C-11" },
+      // …plus C-14, which is code-less only until the merge regen indexes
+      // app/src/lib/agent-store.ts (T-025 declares the component
+      // in-branch and does NOT regenerate graph.json — the integrator's
+      // ritual). C-13 walked this same arc at T-024.
+      { rule: "D3", id: "D3:C-14", component: "C-14" },
     ]);
   });
 
-  it("the full relation table: 13 confirmed, 5 undeclared, 8 planned", () => {
+  it("the full relation table: 13 confirmed, 5 undeclared, 9 planned", () => {
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
       ["C-05", "C-06", "undeclared", 8],
@@ -500,6 +534,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // state C-12→C-11 carries.
       ["C-13", "C-10", "confirmed", 2],
       ["C-13", "C-11", "planned", 0],
+      // T-025's declared edge, honestly PLANNED: the runner's Rust half
+      // consumes C-10's WatchState, which no TS import can confirm and
+      // the indexer cannot see until T-010 extracts Rust — the same
+      // honest state C-12→C-07 carries. It flips at the merge regen only
+      // if agent-store.ts grows an import into C-10, which it does not.
+      ["C-14", "C-10", "planned", 0],
     ]);
   });
 
@@ -535,12 +575,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
 
   it("drift flags land on the right nodes", () => {
     const drift = derived.components.filter((c) => c.hasDrift).map((c) => c.id);
-    // D1 sources: C-05, C-08, C-09; D3: C-01, C-07, C-11. C-13 left the
-    // set at the T-024 merge regen — it has files now, and it is the
-    // TARGET of D1:C-05→C-13, not its source.
-    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11"]);
+    // D1 sources: C-05, C-08, C-09; D3: C-01, C-07, C-11, and C-14 which
+    // T-025 declares ahead of the merge regen. C-13 left the set at the
+    // T-024 merge regen — it has files now, and it is the TARGET of
+    // D1:C-05→C-13, not its source.
+    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11", "C-14"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
-    expect(declaredOnly).toEqual(["C-01", "C-07", "C-11"]);
+    expect(declaredOnly).toEqual(["C-01", "C-07", "C-11", "C-14"]);
   });
 
   it("stable rollup structure (values live in the unit tables, not here)", () => {

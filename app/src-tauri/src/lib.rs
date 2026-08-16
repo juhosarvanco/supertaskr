@@ -1,4 +1,13 @@
-mod docs_watch;
+/// T-025 (C-14): the agent runner — spawns the user's own agent CLI
+/// headless for genesis turns. `pub` so the integration suite
+/// (tests/agent_runner.rs) can drive the seam functions directly; the
+/// webview reaches exactly four commands and nothing else.
+pub mod agent;
+/// `pub` since T-025: the two-direction watcher test lives in the
+/// integration suite and drives the REAL watcher thread against the
+/// runner's real write set. No item's visibility changed — the module's
+/// own `pub fn`s were already public.
+pub mod docs_watch;
 mod index_cmd;
 
 /// T-021: the pinned webview ACL surface (test-only module — the pin
@@ -13,6 +22,7 @@ use std::sync::Arc;
 use tauri::{Emitter, Listener, Manager};
 use tauri_plugin_dialog::DialogExt;
 
+use agent::{AgentState, CancelOutcome, GenesisStatus, SendOutcome, StartOutcome};
 use docs_watch::{PickOutcome, ProjectStatus, WatchState};
 use index_cmd::IndexOutcome;
 
@@ -263,6 +273,55 @@ async fn index_repo(app: tauri::AppHandle) -> IndexOutcome {
     })
 }
 
+/// T-025 criterion 1: start the genesis interview. ZERO ARGUMENTS — the
+/// kickoff prompt is assembled Rust-side from the compiled-in method
+/// snapshot plus the open project from `WatchState`, never from the
+/// webview, and the adapter table is data inside the binary that no
+/// command returns.
+///
+/// `async` on purpose: the first-ever call may run the login-shell probe
+/// (§6, bounded at 10s), and Tauri runs synchronous commands on the main
+/// thread. Async commands with borrowed `State` must return `Result`; the
+/// `Err` arm is unreachable by construction — every failure is a typed
+/// outcome, which is the whole PickOutcome discipline.
+#[tauri::command]
+async fn genesis_start(
+    watch: tauri::State<'_, WatchState>,
+    agent: tauri::State<'_, AgentState>,
+) -> Result<StartOutcome, String> {
+    Ok(agent::start_genesis(&watch, &agent))
+}
+
+/// T-025 criterion 1: the user's own typed answer — the ONLY
+/// webview-supplied datum in the whole runner. It is passed to the child
+/// as DATA on stdin (never an argv element, never interpolated into a
+/// shell line): argv is world-readable in `ps`, and an interview answer
+/// can carry a private product idea.
+#[tauri::command]
+async fn genesis_send_turn(
+    text: String,
+    watch: tauri::State<'_, WatchState>,
+    agent: tauri::State<'_, AgentState>,
+) -> Result<SendOutcome, String> {
+    Ok(agent::send_turn(&watch, &agent, text))
+}
+
+/// T-025 criterion 3: the mount-time catch-up pull (the `docs_snapshot`
+/// precedent), so a pane that mounts late learns where the interview is
+/// without replaying events. Synchronous: it reads in-memory state only.
+#[tauri::command]
+fn genesis_status(agent: tauri::State<'_, AgentState>) -> GenesisStatus {
+    agent::status(&agent)
+}
+
+/// T-025 criterion 1: kill the current turn's process group. Answers
+/// immediately — SIGTERM goes out synchronously and the grace + SIGKILL
+/// escalation runs on its own thread, so this never holds the caller.
+#[tauri::command]
+fn genesis_cancel(agent: tauri::State<'_, AgentState>) -> CancelOutcome {
+    agent::cancel(&agent)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -293,6 +352,21 @@ pub fn run() {
             );
             app.manage(WatchState::new(project_dir, seq, ctl));
 
+            // T-025: the agent runner. Its one event channel is
+            // `genesis-turn` (the `docs-changed` precedent); the app's
+            // config dir is where the resolved-binary cache lives — the
+            // webview never learns or supplies either.
+            let agent_emit = app.handle().clone();
+            let agent_cfg = agent::runner::RunnerConfig {
+                config_dir: app.path().app_config_dir().ok(),
+                ..agent::runner::RunnerConfig::default()
+            };
+            app.manage(AgentState::new(agent_cfg, move |event| {
+                if let Err(err) = agent_emit.emit(agent::GENESIS_EVENT, event) {
+                    eprintln!("[nputer] agent: emit failed: {err}");
+                }
+            }));
+
             // T-003: the frontend echoes each applied snapshot as a
             // `model-updated` event; logging it (sanitized — the payload
             // summarizes untrusted repo content) makes the full
@@ -319,10 +393,31 @@ pub fn run() {
             pick_project_folder,
             pick_genesis_folder,
             start_genesis_here,
-            index_repo
+            index_repo,
+            // T-025: four app commands, ZERO new webview grants — app
+            // commands are not grants, which is the whole ADR-012 point.
+            genesis_start,
+            genesis_send_turn,
+            genesis_status,
+            genesis_cancel
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        // T-025 criterion 1 ("child processes SHALL not outlive the
+        // app"): `.build(...).run(|app, event| ...)` instead of
+        // `.run(context)`, so the exit paths the app controls reap the
+        // turn's process group. A SIGKILL of the app itself cannot run
+        // cleanup; that orphan is bounded to one turn by the
+        // spawn-per-turn topology, and `AgentState::drop` covers the
+        // ordinary teardown.
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if matches!(
+                event,
+                tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit
+            ) {
+                app.state::<AgentState>().reap_for_exit();
+            }
+        });
 }
 
 #[cfg(test)]
