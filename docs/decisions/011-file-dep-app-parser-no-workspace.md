@@ -42,3 +42,17 @@ CI wants a single install — a root workspace becomes the right move
 at that point, but the migration must update CONVENTIONS'
 per-package commands in the same change, because they break silently
 otherwise (the exact trap that made file: the right call here).
+
+## Addendum
+The decision above stands unamended; this section records the
+revisit its own Consequences called for.
+
+Addendum (2026-08-16, T-020): the third package arrived — tools/e2e,
+the real-input E2E lane. Revisit outcome: still no root workspace.
+The trigger's substance was dependency wiring; tools/e2e imports
+neither package (it drives the app over HTTP + the dev harness), so
+a workspace would buy a shared install for three disjoint trees at
+the cost of migrating every CONVENTIONS-verbatim command — the trap
+this ADR names. CI installs per-package in CONVENTIONS order.
+Revisit again when a package must IMPORT another beyond the existing
+file: edge, or CI install time becomes the constraint.

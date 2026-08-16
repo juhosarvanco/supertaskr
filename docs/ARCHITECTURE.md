@@ -46,10 +46,16 @@ ADR-014/015).
   areas app-shell, app-board, app-map) · `lib/parser/` = C-06,
   self-contained package · `app/src-tauri/crates/nputer-index` = C-07
   (Cargo workspace inside app/src-tauri arrives with T-009 — the Rust
-  sibling of ADR-011). Each package owns its package.json; app depends
-  on @nputer/parser via file:../lib/parser (T-003; parser builds before
-  app — ADR-011); no root workspace until a third npm package forces
-  one. docs/ stays the brain.
+  sibling of ADR-011) · `tools/e2e/` = the real-input E2E lane (T-020),
+  dev tooling under no component — it drives the app from outside over
+  HTTP, imports neither package, and is .nputerignored out of the map ·
+  `.github/workflows/` = the one CI job (T-020), a thin invoker of the
+  CONVENTIONS commands, dormant until the repo's first push. Each
+  package owns its package.json; app depends on @nputer/parser via
+  file:../lib/parser (T-003; parser builds before app — ADR-011); the
+  third npm package arrived with T-020 and the ruling was revisited and
+  REAFFIRMED — still no root workspace (ADR-011 addendum). docs/ stays
+  the brain.
 - Map data (F-06): C-07 writes docs/architecture/graph.json —
   committed, deterministic, volatile-field-free (ADR-014); intent =
   docs/architecture/components/*.md parsed by C-06 (same C-namespace

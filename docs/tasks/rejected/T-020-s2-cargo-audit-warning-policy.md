@@ -1,7 +1,7 @@
 ---
 id: T-020-s2
 title: cargo audit exits 0 on unmaintained/unsound advisories — the CI step is green on 17 today
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-020
 ---
 
@@ -49,3 +49,8 @@ The fork, for the architect:
 
 Whatever is chosen belongs in CONVENTIONS next to the command, because
 the exit-code semantics are the whole meaning of the step.
+
+Triage 2026-08-16 (human ruling): REJECTED — accepted as-is (arm 1):
+vulnerabilities gate (proven), informational warnings recorded as a
+CONVENTIONS baseline rather than enforced; --deny warnings would red
+CI permanently with nothing to re-pin.

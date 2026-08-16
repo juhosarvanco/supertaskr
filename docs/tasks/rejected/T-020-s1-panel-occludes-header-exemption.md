@@ -1,7 +1,7 @@
 ---
 id: T-020-s1
 title: The open panel occludes the header's exempt controls — T-017's header exemption is pointer-unreachable
-status: suggested
+status: rejected
 suggested_by: executor claude-fable-5 @T-020 (filed by claude-opus-5 @T-020)
 ---
 
@@ -42,3 +42,11 @@ Whichever way it goes, the lane assertion is the tripwire: if a future
 change un-occludes the header, `expect(occluded).toBe(true)` fails
 loudly and the keyboard activation in that spec upgrades back to a
 real pointer press.
+
+Triage 2026-08-16 (human ruling): REJECTED — reading 1, intended: the
+`data-panel-exempt` exemption is a safety net so an accidental header
+click does not destroy your place mid-inspection, NOT a workflow that
+must stay pointer-reachable while a panel is open; close the panel,
+then toggle. Keyboard reach is sufficient by design. The intent is now
+recorded in docs/CONVENTIONS.md beside the dismissal gotcha, and the
+lane's occlusion tripwire stays as filed.

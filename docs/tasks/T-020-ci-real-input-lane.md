@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 11
 size: L
-status: building
+status: done
 blocked_by: []
 touches: [.github/, tools/e2e/, .nputerignore]
 builder: claude-fable-5

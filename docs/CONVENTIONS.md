@@ -19,7 +19,48 @@
 - app/src-tauri (C-05 Rust half + the C-07 workspace), run from
   app/src-tauri/: `cargo test` (watcher/collector unit tests, T-003;
   + nputer-index crate suite, T-009 — bare `cargo test` runs both
-  workspace crates via default-members).
+  workspace crates via default-members) · `cargo audit` (T-020 —
+  RUSTSEC advisories against the exact `=` pins).
+- AUDIT GATE POLICY (human ruling 2026-08-16, closing T-020-s2): the
+  gate is VULNERABILITIES — they exit non-zero and stop the lane
+  (proven: a crafted lock pinning `time 0.1.44` → exit 1,
+  RUSTSEC-2020-0071). Informational warnings stay NON-gating. Today's
+  baseline, audited 2026-08-16 over 472 locked crates with cargo-audit
+  0.22.2: **0 vulnerabilities / 17 informational warnings** — 16
+  `unmaintained` + 1 `unsound`, all transitive under Tauri v2's
+  GTK3/glib stack plus `proc-macro-error` and the `unic-*` family,
+  nothing ours to re-pin. Warning-count drift is reviewed BY EYE
+  against that baseline, not enforced by exit code; `--deny warnings`
+  would red CI permanently for no actionable signal.
+- tools/e2e (the real-input E2E lane, T-020 — the repo's THIRD npm
+  package, self-contained per the ADR-011 family), run from tools/e2e/:
+  `npm ci` · `npm test` (the lane — Playwright drives the app's dev
+  bundle in HEADLESS Chromium with trusted input; workers 1, retries 0,
+  no skips) · `npm run typecheck` · `npm run lint:tokens`
+  (+ `-- --selftest`) · `npm run boot:check` (spawns `tauri dev` and
+  asserts the two `[nputer]` startup lines; NOT part of `npm test` —
+  it opens a real window and needs port 1420 free).
+- One-time dev-tool setup, outside the repo and never a repo dep:
+  `npx playwright install chromium` from tools/e2e/ (browsers cache in
+  ~/Library/Caches/ms-playwright, ~/.cache/ms-playwright on Linux —
+  hundreds of MB, deliberately outside the tree) and
+  `cargo install cargo-audit --locked` for `cargo audit`, run from
+  app/src-tauri/ (fetches the RUSTSEC advisory DB — the one
+  network-touching command).
+- PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
+  runs its own vite on `NPUTER_E2E_PORT` (default 14520),
+  `reuseExistingServer: false`; setting it to 1420 THROWS at config
+  load by design, and the boot check bind-probes 1420 and aborts if
+  anything holds it. Nothing in the lane ever contacts a server it
+  does not own.
+- CI (.github/workflows/ci.yml) is a thin invoker of exactly these
+  commands — dormant until the repo's first GitHub push. Two
+  deliberate divergences: it uses `npm ci` for app/ where local setup
+  says `npm install` (lockfile-exact installs in CI, everywhere), and
+  `npx playwright install --with-deps chromium` (the Linux system libs
+  a fresh runner lacks). tools/e2e/tests/workflow-parity.spec.ts pins
+  the correspondence — change a command here, change it there, or the
+  lane fails.
 
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
@@ -78,8 +119,17 @@
   a rejection). Synthetic clicks propagate synchronously and CANNOT
   reproduce it — no unit/jsdom probe will warn you. Reuse
   attachPanelDismissal (app/src/components/board/panel-dismissal.ts);
-  its test pins the trusted event order headlessly (real-input E2E
-  lane proposed as T-005-s4).
+  its test pins the trusted event order headlessly, and since T-020 the
+  real-input lane (tools/e2e) pins it under TRUSTED input — swapping
+  those two strings back to `"click"` fails blocker-retarget,
+  keyboard-activation and the at-press assertion, which is the whole
+  reason that lane exists. The `data-panel-exempt` exemption is a
+  SAFETY NET against accidental dismissal, not a guarantee that exempt
+  controls stay pointer-reachable while a panel is open: the open panel
+  occludes the header's exempt controls and keyboard reach is
+  sufficient by design (human ruling 2026-08-16, closing T-020-s1;
+  tools/e2e/tests/panel-exempt-controls.spec.ts pins the occlusion as a
+  tripwire, so un-occluding it fails loudly).
 - INTERIM integrator rule (T-009-s1, ratified at the 2026-08-16
   triage; retires when T-014's `nputer index --check` becomes the
   gate): at any merge whose diff touches `*.ts/*.tsx/*.js/*.jsx`
