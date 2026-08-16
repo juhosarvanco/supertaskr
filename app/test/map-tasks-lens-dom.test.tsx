@@ -496,7 +496,11 @@ describe("a dependency cycle degrades defined-ly (criterion 4)", () => {
 describe("hostile task content stays TEXT (criterion 5)", () => {
   it("markup, control characters, bidi overrides and 10k runs render as text nodes", () => {
     const hostile =
-      "<script>alert(1)</script><img src=x onerror=alert(2)>‮gnp.evil‬" +
+      "<script>alert(1)</script><img src=x onerror=alert(2)>‮gnp.evil‬" +
+      // C0 controls built at runtime: the VALUE must carry them, the
+      // SOURCE must stay plain text (a control byte in a source file
+      // makes grep treat it as binary — see the NUL gate below).
+      String.fromCharCode(7, 1, 27) +
       "A".repeat(10_000);
     const model = parseProjectFromFiles([
       taskFile("T-001", hostile, "planned", []),
@@ -563,6 +567,44 @@ describe("hostile task content stays TEXT (criterion 5)", () => {
       expect(readFileSync(file, "utf8"), `${file} must not reach for a raw-HTML sink`).not.toMatch(
         /innerHTML|dangerouslySetInnerHTML|insertAdjacentHTML|document\.write/,
       );
+    }
+  });
+
+  it("no source file in the pane carries a literal C0 control character", () => {
+    // THIS IS WHAT MAKES THE GATE ABOVE TRUSTWORTHY, and it was found
+    // the hard way inside this very task. A control character written
+    // straight into a string literal — instead of the six-character
+    // escape map-layout.ts uses for two of its three separators —
+    // compiles, bundles and tests green, but makes file(1) call the
+    // source "data" and makes grep(1) treat it as BINARY. Every
+    // grep-based gate in this repo then silently stops seeing that
+    // file: the raw-HTML gate above, `lint:tokens`, the CI greps.
+    // T-012 shipped one such byte in map-layout.ts's `layoutKey`
+    // (a literal U+0003 beside two correct escapes); T-034 shipped two
+    // in task-waves.ts before this test existed. Both are now escapes.
+    const scan = (dir: string): string[] => {
+      const out: string[] = [];
+      for (const name of readdirSync(dir).sort()) {
+        const full = join(dir, name);
+        if (statSync(full).isDirectory()) out.push(...scan(full));
+        else out.push(full);
+      }
+      return out;
+    };
+    // utf8 is the only overload the deliberately-minimal node shim
+    // declares; a C0 byte decodes to the same codepoint, so reading as
+    // text is the byte test. Tab, LF and CR are the legal three.
+    const legal = new Set([9, 10, 13]);
+    for (const file of scan(resolve("src/architecture"))) {
+      const offenders: string[] = [];
+      const text = readFileSync(file, "utf8");
+      for (let i = 0; i < text.length; i += 1) {
+        const code = text.charCodeAt(i);
+        if ((code < 32 && !legal.has(code)) || code === 127) {
+          offenders.push(`U+${code.toString(16).padStart(4, "0")} at offset ${i}`);
+        }
+      }
+      expect(offenders, `${file} carries literal control characters`).toEqual([]);
     }
   });
 });

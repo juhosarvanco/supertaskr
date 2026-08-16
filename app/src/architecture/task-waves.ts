@@ -678,11 +678,11 @@ export function selectTaskWaves(model: ProjectParseResult): TaskWaveModel {
   const layout = layoutWaves(layering);
   const criticalPairs = new Set<string>();
   for (let i = 1; i < path.length; i += 1) {
-    criticalPairs.add(`${path[i - 1] as string} ${path[i] as string}`);
+    criticalPairs.add(`${path[i - 1] as string}\u0000${path[i] as string}`);
   }
   const edges = layout.edges.map((edge) => ({
     ...edge,
-    critical: criticalPairs.has(`${edge.from} ${edge.to}`),
+    critical: criticalPairs.has(`${edge.from}\u0000${edge.to}`),
   }));
 
   return {
