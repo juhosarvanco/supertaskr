@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: "claude-opus-5 @fresh ×2 (build session, then a continuation that re-derived the evidence first-hand)"
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 Reported by @human on 2026-08-16 with a screenshot, mid-review: the
@@ -657,3 +657,266 @@ subscription that DID succeed is not lost".
   which is precisely why the card could not say what stranded theirs.
 
 ## Verdicts
+
+2026-08-17 — claude-opus-5 @fresh, verifier — same-model review; built
+across two sessions, the second of which corrected the first:
+**APPROVED** — all five criteria met and re-derived from the branch at
+`761e662` (branch point `b623f6a` confirmed, twelve files). Nothing was
+taken from the notes above: I checked out the b623f6a and e50fc1e
+stores into throwaway modules and drove all three side by side, wrote my
+own hostile payload without reading the committed one, and tried to
+falsify every claim I could reach. Port 1420 was never bound or
+contacted — it is held by node pid 64249 on `[::1]:1420`, observed with
+`lsof` and otherwise untouched; the lane ran on `NPUTER_E2E_PORT=14520`.
+The boot check was not run (the merge owes it). No real model calls. All
+probes deleted; `watcher-store.ts` and the three new test files verified
+byte-identical afterwards by sha256 (store `b52e7fff…fce1f`, matching
+the notes' own stamp).
+
+**THE RECORD IS HONEST, and unusually so.** The continuation says in the
+front matter and in §Implementation notes that it did not write the code
+it is describing, that its predecessor's transcript is gone, and that
+every measurement was re-run rather than transcribed. Then it reports
+that the code it inherited **did not satisfy criterion 1** and fixes it.
+A note that volunteers "the thing I am verifying was wrong" is the
+opposite of the failure mode this protocol exists to catch. Every number
+in it that I re-derived came back the same; the one thing I found that it
+did not name is recorded at the end of this entry, and it is not a
+criterion failure.
+
+**THE CORRECTED DEFECT — reproduced at `e50fc1e`, closed at HEAD.** This
+is the crux and I built the drill from scratch: subscribe a listener to
+the store, have it call `startDocsWatcher` back on its first notify, and
+count `listen` calls. Verbatim, one run, same probe against both trees:
+
+```
+=== V·C. synchronous re-entrancy from a store subscriber ===
+  BEFORE (e50fc1e)  re-entrant call made: true
+                    listenCalls = 2   <-- DOUBLE SUBSCRIPTION
+  AFTER             re-entrant call made: true
+                    listenCalls = 1   <-- single-flight held
+```
+
+The mechanism is exactly as described: `runStartup`'s first act is a
+synchronous `setShell({ starting: true, … })` which notifies, and the
+committed code took the latch from `runStartup(…)`'s **return value**, so
+the whole synchronous prologue ran with `startup` still `null`. The fix
+latches a placeholder first and chains the work onto it — the shape of
+the latch is unchanged, only the moment it closes.
+
+**FIVE MORE RE-ENTRANCY SHAPES against the new code, all held at one
+subscription.** (a) from a `.then` on the returned promise, success path
+— `listenCalls=1`, and the same promise object is handed back; (b) from a
+`.then` after a FAILURE — `listenCalls` 1→2, i.e. it genuinely
+re-attempts, and two calls made in that same handler join one attempt
+(`a === b`); (c) from a bare `queueMicrotask` scheduled before the first
+call — 1; (d) four synchronous calls in one tick with `listen` parked —
+`listenCalls=1`, `b===a c===a d===a` all true, `starting=true`, and after
+release `listen=1 invoke=1`; (e) a subscriber that calls back in on
+EVERY notify, unconditionally — 3 notifies, `listenCalls=1`. Probe (d) is
+the one that shows the latch really is the in-flight promise rather than
+a flag.
+
+**STRICTMODE, with a control.** Real `<StrictMode>` around the real
+`App`, only the IPC boundary mocked: `listenCalls=1 docs_snapshot=1`,
+while a bare mount-effect rendered in the same environment ran **2**
+times. React is genuinely double-invoking; the app still subscribes once.
+
+**RETRYABILITY BY IDENTITY — attacked twice, survived twice.** Attempt A
+rejects, `recordStartupFailure` opens the latch and notifies, a
+subscriber starts B inside that notify, then A's rejection reaches
+`startDocsWatcher`'s `.catch`. `if (startup === attempt)` is false, so B
+is not unlatched: `listenCalls=2`, `phase=noProject`,
+`startupFailure=null`, and a further call after B succeeded leaves
+`listenCalls` at 2. Same result with A parked on a hand-held gate and
+rejected long after B had latched. Delete the identity guard and the
+third call opens a second subscription; it is load-bearing, not
+decorative.
+
+**BOTH PROPERTIES SIMULTANEOUSLY — the trade the naive fix makes.** One
+narrative, four rounds: five concurrent calls into a refusing boundary
+(`listenCalls=1`, one attempt for five callers), three more (2), heal and
+send four more (3), then ten further calls after success (still 3,
+`invoke=1`). Retryable and single-flight at the same time, not one at the
+expense of the other. The attempt counter is honest across it —
+`[1,2,3]` — and the stated invariant holds: from inside the failure
+notify, a call made there really does start a fresh attempt, so the
+retry the screen offers is never a no-op.
+
+**CRITERION 1's ANTECEDENT — the strand, re-derived from `b623f6a`.** Not
+inherited; the unfixed store driven directly:
+
+```
+=== V·UNFIXED (b623f6a) · listen rejects ===
+call#1 REJECTED(Error: listen: the event channel refused)
+  -> {"phase":"loading","listenCalls":1,"invokeCalls":0,"screen":"loading","startupFailure":"<field does not exist>"}
+call#2 (boundary healed) resolved
+  -> {"phase":"loading","listenCalls":1,"invokeCalls":0,"screen":"loading","startupFailure":"<field does not exist>"}
+call#3 resolved
+  -> {"phase":"loading","listenCalls":1,"invokeCalls":0,"screen":"loading","startupFailure":"<field does not exist>"}
+
+=== V·UNFIXED (b623f6a) · invoke rejects ===
+call#1 REJECTED(Error: docs_snapshot: the command was refused)
+  -> {"phase":"loading","listenCalls":1,"invokeCalls":1,"screen":"loading",…}
+call#2 (boundary healed) resolved
+  -> {"phase":"loading","listenCalls":1,"invokeCalls":1,"screen":"loading",…}
+```
+
+`call#2` resolves without touching the boundary — the permanent strand
+from a transient failure. Same inputs at HEAD: call#1 **resolves**
+(`startDocsWatcher` never rejects, by contract) with
+`screen=startupFailed` and the step named, and call#2 takes `listenCalls`
+1→2 and the phase out of `loading`. Both failure modes recover.
+
+**CRITERION 2 — my own hostile payload, and nothing truncated.** Written
+without reading the committed one: a `<script>`, an `<svg onload>`, an
+`<iframe src="javascript:">`, a pre-escaped entity, an unbalanced `</p`,
+raw NUL + BEL + ESC bytes, and a 10 000-character run.
+
+```
+  detail childNodes nodeTypes = [3]  (3 = TEXT_NODE)
+  detail element descendants  = 0     comment nodes = 0
+  script = 0   iframe = 0   img = 0   svg = 0
+  globalThis.__pwn3d = undefined
+  textContent length = 10174, String(Error) length = 10174  -> equal: true
+  control bytes preserved (NUL,BEL,ESC): true
+  entity round-trip intact: true
+  innerHTML starts: "Error: &lt;script&gt;globalThis.__pwn3d=1&lt;/script&gt;&lt;svg onload=\""
+```
+
+The serializer hands the angle brackets back escaped, so they were never
+parsed as markup; nothing executed; and the length equality proves the
+renderer is not hiding any of what failed. My own grep over `app/src`
+finds zero raw-HTML sinks, and the committed suite pins that going
+forward over the whole frontend rather than the `genesis/` subtree it
+previously covered — a genuine widening.
+
+**CRITERION 3 — the escape, attacked.** Buttons on the failed screen:
+`["Toggle theme","Try again","Open a folder…","Start an interview"]`.
+⌘O and ⌘N each fire with `preventDefault×1` — T-049's own instrument, so
+two racing listeners would read 2 — and reach
+`pick_project_folder` / `pick_genesis_folder`; both buttons reach the
+same commands; two cancelled picks leave you on the screen that still
+offers the escape. Retry attacked three ways: pressed once it takes
+`listenCalls` 1→2 and reaches `screen=board`; pressed three more times
+WHILE the attempt is in flight it starts nothing (`2→2`) and reads
+"trying…" `disabled`; called twice after success it starts nothing
+(`2→2`). And the board it reaches is live, not a photograph — a
+`docs-changed` push moves `data-seq` 1→2.
+
+**CRITERION 6 — the two pre-existing test files, checked hard, and the
+claim is exact.** Name lists extracted mechanically from both blobs:
+`watcher-store.test.ts` — 34 `describe`/`it` literals, `diff` **empty**,
+and `vitest list` counts **28** tests; the only change is two forced
+fixture defaults. `shell-harness.test.ts` — 11 literals, **exactly one
+line differs**, the claimed rename, and `vitest list` counts **8**.
+Nothing added, nothing removed, nothing renamed beyond that one. Both
+poisons re-run against production code:
+
+| poison in `watcher-store.ts` | result |
+|---|---|
+| fifth door `applyBogusFifthDoor` | RED — `expected [ 'applyBogusFifthDoor', …(4) ] to deeply equal [ 'applyPickOutcome', …(3) ]` |
+| `getShell: "not-a-function"` | RED — `every door is callable — a key that is not a function is not a door` |
+
+The second reds at `shell-harness.test.ts:138`, and the exact-key-set
+assertion sits at `:128-133` — ABOVE it. A failure at 138 means 128
+passed, which is the proof that the old form accepted this poison and
+the new one does not. Strict strengthening, confirmed by line number
+rather than by reading the patch. This is the third time this project has
+gone looking for a vacuous test; this time there is not one.
+
+**EXECUTION SWEEP — 32/32, re-derived.** Every `it`/`test` body in the
+three new files had a distinct `throw` injected as its first statement,
+mechanically, and the suites run: `startup-recovery.test.ts` 17,
+`startup-screen.test.tsx` 11, `startup-recovery.spec.ts` 4. Result
+`Tests 28 failed (28)` for the vitest pair with 17 + 11 distinct markers
+observed, and `4 failed` with all 4 markers for Playwright. All three
+restored and sha256-verified.
+
+**SUITES, my actuals, at the final tree state.** app after `npm run
+build`: **535 / 535**, 32 files; `tsc --noEmit` clean (exit 0). tools/e2e
+on 14520: **40 / 40** passed (9.2s); its `tsc --noEmit` clean.
+lib/parser: **159 / 159**, 10 files. cargo: **217 passed, 0 failed, 3
+ignored** (105 + 32 + 68 + 3 + 7 + 2 across the binaries; the three
+ignored split 1/1/1). `lint:tokens`: clean, 38 files scanned under
+`app/src`. Every figure in the notes' table reproduced.
+
+**FENCE — held.** Twelve files, and `app/src-tauri`, `lib/parser`,
+`method`, `tools/e2e/scripts`, `docs/architecture`, capabilities and
+every manifest/lockfile at **0 changed** each, checked by path rather
+than by eye. `docs/architecture/graph.json` correctly left for the merge.
+
+**THE TWO SUGGESTIONS, checked first-hand.**
+
+- **T-050-s2 — REPRODUCED, and it is the sharper one. Rule: fix it
+  next, ahead of s1.** My own run through the real App: after a refused
+  `subscribe`, a successful pick lands `phase=open screen=board seq=5
+  tasks=1` with `startupFailure` still set, `listenCalls` still **1**,
+  and **no `docs-changed` handler registered at all**. (My first
+  measurement said a handler WAS registered; that was my mock recording
+  the handler before the promise settled. Corrected to register only on
+  resolve — which is what Tauri does — it reports `false`, as filed.) The
+  user escapes an honest error screen onto a board that looks correct and
+  can never move again. That is worse than the state it escaped, and it
+  is reachable by the exact route criterion 3 advertises. Its remedy 1's
+  condition is expressible where it says, because `startupFailure`
+  survives onto the board — confirmed.
+- **T-050-s1 — right in conclusion, and the continuation is right about
+  the mechanism error. Rule: keep, lower urgency, correct one sentence
+  when picked up.** With `listen` parked and nothing rejecting:
+  `screen=loading`, `data-startup=waiting`,
+  `buttons=["Toggle theme","trying… [DISABLED]","Open a folder…","Start
+  an interview"]`, and a dispatched click on the retry moves `listenCalls
+  1 → 1` because it reaches no handler. So s1's sentence — "Try again"
+  "returns the promise that is already hanging" — is wrong: the button is
+  `disabled={starting}` and reads "trying…", so it cannot be pressed at
+  all. The user-visible outcome is better than s1 claims (visibly
+  unavailable, not deceptively inert) and the conclusion is unchanged.
+  ⌘O and "Open a folder…" both work during the hang.
+
+**THE TWO THINGS THE TASK NEVER NAMED — both real.**
+
+- **A hang is a third failure mode**, and T-050 does not detect it: with
+  `listen` parked, `starting` stays `true` forever and the copy goes on
+  saying "waiting for the first docs snapshot…", which is true and
+  useless. T-050 still improves that screen materially — three working
+  ways out instead of a theme toggle — so it is not a dead end any more,
+  it is an undiagnosed wait. **Rule: real, correctly scoped out, already
+  homed in T-050-s1.** No new card; a third one would be noise.
+- **The startup failure never reaches stdout.** Confirmed: `grep` over
+  the store finds exactly one `emit(` call site, `sendEcho`, and the
+  failure route ends at `console.error`, which in a WKWebView does not
+  reach the Tauri process's stdout. Criterion 2's `sanitize_for_log`
+  clause is therefore satisfied vacuously. **Rule: the most consequential
+  of the three, because it is the reason THIS investigation ran out of
+  evidence** — @human's log was healthy precisely because the thing that
+  broke could not write to it. Filed as **T-050-s3**.
+
+**ONE THING NEITHER THE NOTES NOR THE SUGGESTIONS MEASURED — not a
+criterion failure, recorded with a number.** Making startup retryable
+made it possible to stack subscriptions across attempts, which the
+unfixed code could never do. `listen` resolves to an unlisten function
+this store discards, so after a **snapshot** failure each retry adds a
+live `docs-changed` handler: three failed attempts then one success gives
+`listen calls = 4, unlisten calls = 0, LIVE handlers = 4`, and one
+watcher event then runs `applyDocsPayload` — a full re-parse of the
+snapshot — four times. State stays correct (the store is notified once;
+the seq guard absorbs the duplicates) and the subscribe-failure path does
+not leak (`listenCalls=3, LIVE=1`, since a refused `listen` registers
+nothing). Criterion 1's concurrent clause is about a call arriving while
+another is IN FLIGHT and is not violated: these attempts are fully
+settled. The root is already named — T-050-s2 remedy 3 ("stacking a
+second one") and T-050-s1's caveat 1 — so it gets no card of its own;
+this paragraph is the measurement whoever picks up that remedy should
+have.
+
+**What I could not prove, and am not claiming.** The card's "what is NOT
+claimed" boundary is respected and still stands: which trigger stranded
+@human's instance is unknown, and nothing I measured revises that. The
+re-entrancy defect fixed this session is a latent hazard, not a second
+cause — the only `subscribeShell` listener in the shipped app is React's
+`useSyncExternalStore`, which schedules a render rather than running an
+effect inside the notify, so I could not reach it from the App and did
+not try to claim I had. The lane cannot fail a real startup either (a
+browser awaits neither boundary call), which the e2e spec says out loud
+in its own header rather than papering over.
