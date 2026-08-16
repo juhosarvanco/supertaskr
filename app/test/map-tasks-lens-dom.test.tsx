@@ -183,6 +183,29 @@ describe("the lens segmented control (criterion 1)", () => {
     renderMap(lensFixture());
     expect(q("[data-testid=map-lens-control]")?.closest("[data-panel-exempt]")).not.toBeNull();
   });
+
+  it("⌘F is claimed only where there IS a search field — never swallowed on tasks", () => {
+    // T-049's lesson, at the first moment this pane has a state with no
+    // field: a chord that can do nothing must not be claimed either.
+    renderMap(lensFixture());
+    const chord = (): boolean => {
+      const event = new KeyboardEvent("keydown", {
+        key: "f",
+        metaKey: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      act(() => {
+        document.dispatchEvent(event);
+      });
+      return event.defaultPrevented;
+    };
+    expect(chord()).toBe(true); // architecture: claimed, focuses the field
+    toTasks();
+    expect(chord()).toBe(false); // tasks: declined, left completely alone
+    toArchitecture();
+    expect(chord()).toBe(true); // …and it comes back
+  });
 });
 
 // ---- criterion 2: waves, critical path, blocked/ready, the strip ------

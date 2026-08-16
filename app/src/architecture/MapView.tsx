@@ -199,8 +199,17 @@ export function MapView({
   }, [derived]);
 
   // --- ⌘F focuses the search field while the map is mounted ------------
+  // T-034: the chord is CLAIMED only while there is a field to focus.
+  // The tasks lens renders no search, so claiming ⌘F there would swallow
+  // a key and do nothing — T-049's "an absent entry is left completely
+  // alone", applied at the moment the pane first gained a state where
+  // the field is absent. Architecture behaviour is unchanged: the guard
+  // reads true on every render of that lens.
+  const lensRef = useRef(lens);
+  lensRef.current = lens;
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (lensRef.current !== "architecture") return;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "f") {
         event.preventDefault();
         searchRef.current?.focus();
