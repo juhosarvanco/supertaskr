@@ -71,8 +71,17 @@ project's `.nputer/`, stream deltas back on one event channel, and kill
 the process group on cancel — with zero new webview grants, zero new
 crates, and an environment BUILT rather than inherited so no key can
 reach the child. All of that is proven against a FAKE CLI fixture, and
-proven hard (61 new cargo tests, every one execution-swept). **What has
-never happened is a real planner turn.** The one permitted real-CLI
+proven hard (61 new cargo tests, every one execution-swept). T-039
+merged 2026-08-16 on top of it and closed the one security gate this
+milestone carried: a session id captured off the CLI's own stream was
+previously substituted into a resume argv unvalidated, so an id
+beginning with `-` would have parsed as a flag rather than as
+`--resume`'s value. Argv assembly is now FALLIBLE and the id is
+validated at both boundaries — the stream capture and the registry read
+T-029 will use — so no infallible path assembles a resume argv and a
+future caller cannot skip the check by forgetting. That was the
+scheduling gate on T-029; the remainder below is no longer held by
+security debt. **What has never happened is a real planner turn.** The one permitted real-CLI
 smoke could not complete: this machine's `claude` OAuth token is
 revoked, so every attempt 401s. It did establish that the real CLI
 accepts the whole adapter argv, that the session id and model are
