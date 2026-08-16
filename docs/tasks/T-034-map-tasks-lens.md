@@ -46,7 +46,7 @@ T-013/T-015/T-032 at dispatch.
 ## Implementation notes
 
 Executor `claude-opus-5 @fresh`, 2026-08-17, branch `t034-tasks-lens`
-off main@`6ed97cf`. Three checkpoint commits, each independently green.
+off main@`6ed97cf`. Four checkpoint commits, each independently green.
 `docs/architecture/graph.json` deliberately NOT regenerated (integrator's
 at merge, T-009-s1) — the expected delta is enumerated in full below.
 
@@ -64,8 +64,10 @@ at merge, T-009-s1) — the expected delta is enumerated in full below.
     app/src/architecture/MapView.tsx      +70/-3
       the lens control; architecture chrome made lens-conditional;
       ⌘F claimed only where a search field exists.
+    app/src/architecture/map-layout.ts    +1/-1
+      one source-encoding byte, behaviour-identical (below).
     app/test/map-task-waves.test.ts       NEW  50 tests
-    app/test/map-tasks-lens-dom.test.tsx  NEW  28 tests
+    app/test/map-tasks-lens-dom.test.tsx  NEW  29 tests
 
 Zero new tokens · zero new dependencies · zero arbitrary values · zero
 diff outside `app/src/architecture/**` and `app/test/**`.
@@ -130,7 +132,46 @@ cycle. T-030's parser-side cycle issue remains the net that gives it a
 NAME; this is the pane refusing to lie about the order.
 
 **C5 — hostile titles as text nodes; the grep gate extends to the lens
-files.** Below (obligation 4).
+files.** Below (obligation 4) — and the gate turned out to need a second
+gate under it, which is checkpoint 4's story:
+
+### The finding that made the grep gate real (checkpoint 4)
+
+Sweeping my own diff with `file(1)` — a habit, not a required step —
+turned up `app/src/architecture/task-waves.ts: **data**`. It carried
+**two literal NUL bytes** in the two template literals that key the
+critical-path edge set, where `map-layout.ts`'s separator idiom wants
+the six-character escape. It compiled, bundled, typechecked, and passed
+586 tests. But `file(1)` calls such a source *data* and **`grep(1)`
+treats it as BINARY** — which means the no-innerHTML gate I had just
+written, `lint:tokens`, and every CI grep **silently stop seeing that
+file**. A gate that cannot read its subject is not a gate, and this is
+the exact failure mode that a green suite cannot tell you about.
+
+Mechanism, worth recording because it will recur: writing a backslash-u escape into
+a tool-authored source file can land the CHARACTER rather than the
+six-character ESCAPE. It happened three times in this task — twice in
+`task-waves.ts`, once more in the test file while writing the gate
+itself — and each time everything stayed green.
+
+The sweep then found a **pre-existing instance on main**:
+`map-layout.ts`'s `layoutKey` writes its third separator as a literal
+`U+0003` beside two correct escapes (T-012 shipped it; `git show main`
+confirms it is not mine). Fixed here, one byte, in-lane: the escape and
+the literal denote the same string, so `layoutKey`'s output is
+unchanged, `map-layout` stays 26/26, and the cross-revision
+architecture-DOM identity below was **re-measured after the change** and
+still reports exactly 472 bytes.
+
+Standing gate added: `map-tasks-lens-dom.test.tsx` walks every file
+under `app/src/architecture/` and fails on any literal C0 control
+character (tab, LF and CR excepted), reporting codepoint and offset.
+Proven by re-planting a NUL. The hostile-content fixture now builds its
+own C0 characters with `String.fromCharCode(7, 1, 27)` so the VALUE
+still carries them while the SOURCE stays text. Every `.ts`/`.tsx` under
+`app/src`, `app/test`, `lib/parser/src` and `tools/e2e` now reads as
+text to `file(1)`; **T-034-s5** proposes lifting the check to
+`lint:tokens`, where it covers the whole tree instead of one pane.
 
 ### The critical path: which definition, and why
 
@@ -355,7 +396,10 @@ and `MapView.tsx` are in the scanned set. **Planted and proven**: a
 `d.innerHTML = card.title` in `TasksLens.tsx` reds it naming that file;
 with that reverted, a `// dangerouslySetInnerHTML` comment in
 `task-waves.ts` reds it naming that file. Both reverted, `git status`
-empty.
+empty. **And a second gate under it** — the C0-control check above,
+without which the first one can be blinded one byte at a time; also
+planted and proven (`U+0000 at offset 25269`, named with codepoint and
+offset), also reverted.
 
 **5 · Every new test executes.** Mechanical, not sampled: a script
 inserted `expect("POISON").toBe("never")` as the FIRST statement of
@@ -364,10 +408,14 @@ reported counts exactly, and every `it(` in both files matches the
 one-line form the script rewrites, so none was missed. Result: **77
 failed / 0 passed**. Reverted from byte copies; `git diff` and `git
 status` on `app/test/` both **empty**, sha256
-`1c991adc…` / `3ee4ec92…`. The 78th test (⌘F) was added afterwards and
-was mutation-proved on its own. **Beyond the obligation, a six-mutant
-sweep** confirmed the tests pin BEHAVIOUR and not just execution — each
-mutant applied to the real source, each reverted and byte-checked:
+`1c991adc…` / `3ee4ec92…`. The two tests added AFTERWARDS — ⌘F
+(checkpoint 3) and the C0-control gate (checkpoint 4) — were each
+mutation-proved on their own instead, which is the same guarantee: the
+guard was deleted / the byte re-planted, the test went red naming the
+right thing, and the revert was byte-verified. Final count **79**.
+**Beyond the obligation, a six-mutant sweep** confirmed the tests pin
+BEHAVIOUR and not just execution — each mutant applied to the real
+source, each reverted and byte-checked:
 
 | mutant | red |
 |---|---|
@@ -377,7 +425,8 @@ mutant applied to the real source, each reverted and byte-checked:
 | critical edges lose the terracotta | 2 |
 | the `tasks` segment becomes inert | 19 |
 | parked blockers become invisible to the schedule | 7 |
-| ⌘F guard deleted (the 78th test) | 1 |
+| ⌘F guard deleted | 1 |
+| a literal NUL re-planted in `task-waves.ts` | 1 |
 
 **6 · Suites** (ADR-011 order, all first-hand in this worktree):
 - **lib/parser** `npm ci` + `npm run build` + `npx vitest run`
@@ -386,8 +435,8 @@ mutant applied to the real source, each reverted and byte-checked:
   this branch declares no component and edits no registry file, so
   `smoke.test.ts` is unmoved (verified, not assumed).
 - **app** `npm install`, `npx tsc --noEmit` clean, `npm run build`
-  exit 0, `npx vitest run` **585/585 (32 files)** = the 507 baseline
-  **+78** (50 `map-task-waves` + 28 `map-tasks-lens-dom`). Baseline
+  exit 0, `npx vitest run` **586/586 (32 files)** = the 507 baseline
+  **+79** (50 `map-task-waves` + 29 `map-tasks-lens-dom`). Baseline
   reproduced at 507/507 on the untouched branch point first.
 - **app/src-tauri** bare `cargo test` **217 passed + 3 ignored, 0
   failed**, exit 0, **zero warnings**, summed across **11 test
@@ -424,11 +473,16 @@ mutant applied to the real source, each reverted and byte-checked:
 
     app/src/architecture/MapView.tsx      |  70 +-
     app/src/architecture/TasksLens.tsx    | 466 +++
+    app/src/architecture/map-layout.ts    |   2 +-
     app/src/architecture/map-lens.ts      |  17 +
     app/src/architecture/task-waves.ts    | 838 +++++
     app/test/map-task-waves.test.ts       | 743 +++++
-    app/test/map-tasks-lens-dom.test.tsx  | 682 +++++
-    6 files changed, 2813 insertions(+), 3 deletions(-)
+    app/test/map-tasks-lens-dom.test.tsx  | 724 +++++
+    7 files changed, 2856 insertions(+), 4 deletions(-)
+
+`map-layout.ts` is the one-line source-encoding correction described
+above — behaviour-identical, in-lane (`app/src/architecture/**`), and
+disclosed rather than folded in quietly.
 
 Zero files changed under `lib/parser/`, `app/src-tauri/`, `tools/e2e/`,
 `app/src/App.tsx`, `app/src/components/`, `app/src/lib/`,
@@ -527,5 +581,8 @@ the judgments are against the design bundle's `map · tasks` screen.
   separate on purpose.
 - **T-034-s4** — the two design screens put the lens control in two
   places; T-034 picked one, and it is an @human call.
+- **T-034-s5** — a control byte in a source file blinds every grep gate
+  in the repo; T-034's check covers one pane, `lint:tokens` is where it
+  belongs.
 
 ## Verdicts
