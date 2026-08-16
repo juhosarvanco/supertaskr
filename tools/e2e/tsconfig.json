@@ -9,7 +9,20 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    // T-046: the lane spec imports scripts/boot-port.mjs, which is plain JS
+    // with JSDoc types (the scripts run under bare `node`, so they cannot
+    // be TS). allowJs lets tsc infer from those annotations instead of
+    // failing TS7016. checkJs stays OFF deliberately — enabling it would
+    // newly type-check the two long-standing .mjs scripts, a separate
+    // change with its own diff rather than a side effect of this one.
+    "allowJs": true
   },
-  "include": ["playwright.config.ts", "preflight.ts", "fixtures/**/*.ts", "tests/**/*.ts"]
+  "include": [
+    "playwright.config.ts",
+    "preflight.ts",
+    "fixtures/**/*.ts",
+    "tests/**/*.ts",
+    "scripts/boot-port.mjs"
+  ]
 }
