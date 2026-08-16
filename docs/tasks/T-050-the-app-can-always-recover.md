@@ -324,4 +324,87 @@ subscribed once. Probe B parks `listen` unresolved so the attempt is
 genuinely mid-flight, and shows the latch handing back the identical
 promise object. Probe C is the defect above, after its fix.
 
+### Obligation 3 — the failure is VISIBLE, and hostile text stays text
+
+Driven through the real `App` and the real store, with a hostile payload
+written independently of the one the committed suite uses (a script, an
+`svg onload`, an `iframe src=javascript:`, raw entities, an unbalanced
+`</p`, NUL + BEL + ESC, and a 10 000-character run):
+
+```
+=== O3. the rendered failure state ===
+  main[data-screen] = startupFailed
+  section[data-startup] = failed
+  startup-message textContent = "nputer could not start — the watcher subscription was refused, so no file change can reach the board."
+  failure heading = "startup failed at subscribe · attempt 1"
+
+=== O3. hostile message -> TEXT NODES ONLY ===
+  detail childNodes nodeTypes = [3]  (3 = TEXT_NODE)
+  detail element descendants = 0
+  script elements in tree = 0
+  svg elements    = 0 (non-icon)
+  iframe elements = 0
+  img elements    = 0
+  globalThis.__pwn3d = undefined
+  textContent length = 10137, String(Error) length = 10137  -> equal: true
+  contains raw "<script>" as TEXT: true
+  contains the 10k run:            true
+  control bytes preserved (NUL,BEL,ESC): true
+  innerHTML starts: "Error: &lt;script&gt;globalThis.__pwn3d=1&lt;/script&gt;&lt;"
+```
+
+The last line is the one that settles it: the DOM's own serializer
+gives the angle brackets back ESCAPED, so they were never parsed as
+markup. Nothing executed (`__pwn3d` is `undefined`), the element has
+zero element descendants, and the length equality shows the whole
+rejection is on screen — nothing silently truncated, which would be the
+renderer lying about what failed. The `sanitize_for_log` discipline is
+respected on the other side too: the console line is
+`console.error("[nputer] startup failed at", step, reason)` — the reason
+is an ARGUMENT, never interpolated, and there is no stdout path from
+here (no `emit` on this route).
+
+### Obligation 4 — the escape works, and T-049 does not regress
+
+```
+=== O4. the escape ===
+  buttons on screen = ["Toggle theme","Try again","Open a folder…","Start an interview"]
+  ⌘O from startupFailed: preventDefault×1, invoked ["pick_project_folder"]
+  ⌘N from startupFailed: preventDefault×1, invoked ["pick_genesis_folder"]
+  click startup-open-folder -> invoked ["pick_project_folder"]
+  click startup-start-interview -> invoked ["pick_genesis_folder"]
+  screen after two cancelled picks = startupFailed
+  RETRY: listenCalls 1 -> 2 (re-subscribed: true)
+  screen after retry = board
+  startup screen gone = true
+  model counts = "1 tasks · 0 features · 1 issues · seq 1 · updated …"
+  a watcher push after retry -> data-seq = 2
+```
+
+Four things, each measured rather than assumed:
+
+- **T-049 does not regress.** ⌘O and ⌘N fire from the `startupFailed`
+  screen, each claimed by exactly ONE handler (`preventDefault×1` —
+  T-049's own instrument, so two racing listeners would show as 2).
+- **The picker route is reachable** from the failed screen by button as
+  well as by chord, and a cancelled pick leaves you on the screen that
+  still offers the escape rather than somewhere worse.
+- **Retry reaches the board**, and `listenCalls 1 -> 2` is the proof it
+  genuinely re-subscribed rather than replaying state.
+- **The pipeline is LIVE after the retry**, not a photograph: a
+  `docs-changed` push lands and `data-seq` moves to 2. (This is exactly
+  what does NOT hold on the picker route after a failed `subscribe` —
+  see T-050-s2, assessed below.)
+
+### Obligation 5 — recoverability pinned, happy path latches once
+
+Both are pinned by the committed suite and reproduced above:
+`startup-recovery.test.ts` holds the rejecting-`listen` and
+rejecting-`invoke` narratives (each proven recoverable by a retry that
+reaches the board, and by a successful pick), and "the happy path
+latches exactly once" makes seven further calls — sequential and
+concurrent, long after success — and asserts `listenCalls` stays 1 and
+`invokeCalls` stays 1. Probe A above is the same claim through the real
+`<StrictMode>`.
+
 ## Verdicts
