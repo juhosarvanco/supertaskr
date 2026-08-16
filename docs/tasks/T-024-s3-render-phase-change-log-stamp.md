@@ -4,7 +4,7 @@ status: suggested
 suggested_by: executor claude-opus-5 @T-024
 ---
 
-`GenesisPane.tsx:136` mutates a ref during the render phase:
+`GenesisPane.tsx:140` mutates a ref during the render phase:
 
     logRef.current = observeDocsChange(logRef.current, docs, clock());
 

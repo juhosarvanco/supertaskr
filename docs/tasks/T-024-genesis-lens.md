@@ -10,7 +10,7 @@ blocked_by: [T-023]
 touches: [app-interview, docs/architecture/components/]
 builder: claude-fable-5
 verifier: claude-opus-5
-built_by: claude-fable-5 @fresh (WIP through ad2716f) + claude-opus-5 @fresh (completion)
+built_by: claude-fable-5 @fresh (WIP through ad2716f) + claude-opus-5 @fresh ×2 (completion + rejection-fix sessions)
 verified_by: "claude-opus-5 @fresh"
 review: same-model
 ---
@@ -125,7 +125,7 @@ pulse window. Evidence: `app/test/genesis-pane-dom.test.tsx` (10
 tests). Token table and disclosed deviations below.
 
 **(3) Updates ride the existing watcher.** The pane is a pure function
-of its `docs` prop; `app/test/genesis-pane-dom.test.tsx:322` drives the
+of its `docs` prop; `app/test/genesis-pane-dom.test.tsx:341` drives the
 **real** `watcher-store` through the same dev harness the board and map
 suites use and asserts the pane advances (5 files → 6, stage 4 → 5) on
 pushed snapshots. Zero new IPC, zero new dependencies, no webview grant
@@ -346,6 +346,69 @@ probe lands with the mount rather than being quietly dropped.
    visual one.
 Blocked until T-026 mounts the pane, since there is no route to it in
 a running app today.
+
+### Fix pass after REJECTED (2026-08-16, fresh executor claude-opus-5 @fresh)
+
+Third session on this task, dispatched with the verifier's findings
+after the REJECTED verdict below. Scope: fix exactly what was broken,
+prove it, hand back. The earlier sessions' notes are left as written —
+this section is an append, not a rewrite.
+
+**What was broken — one line, one directory away.** Declaring C-13
+moves **three** fixtures that pin the live component registry, not two.
+`app/test/architecture-dogfood.test.ts` and
+`app/test/map-dogfood-render.test.tsx` were reconciled in `b9df9b1`;
+`lib/parser/test/smoke.test.ts:40` — T-008's live-tree registry pin —
+was not, and left that package's required suite RED at HEAD.
+Reproduced here first, before touching anything, rather than taken on
+the verdict's word: `cd lib/parser && npm test` → **1 failed | 158
+passed (159)** at `test/smoke.test.ts:40`, diff `+ "C-13"`. The
+verdict's account matched exactly, line for line.
+
+**The remedy.** `'C-13'` appended to that array in registry order,
+under a dated addendum comment in the same house form the other two
+reconciliations carry. **Changed, never loosened**: the assertion is
+still `expect(components.map((c) => c.id)).toEqual([…])` — a whole-array
+equality over ten explicit ids, not a subset check, not a length check,
+not a sort-insensitive compare — and every pre-existing id is
+byte-unchanged. `lib/parser/src/**` is byte-untouched. The task's "zero
+diff under `lib/parser/**`" fence is a **source** fence; a fixture
+reconciliation forced by an in-branch component declaration is the
+T-012 §2 move this branch already made twice, and the verifier ruled it
+in scope.
+
+**All three suites, run in this worktree.**
+
+| suite | before the fix | after |
+|---|---|---|
+| `lib/parser` — `npm test` | 158/159, **1 failed** | **159/159**, exit 0 |
+| `lib/parser` — `npx tsc --noEmit` | clean | clean, exit 0 |
+| `app` — `npm test` | 432/432 (23 files) | **432/432**, exit 0 |
+| `app` — `npm run build` | exit 0 | exit 0 |
+| `app/src-tauri` — `cargo test` | **never run** | **121 passed, 0 failed, 2 ignored** |
+
+The cargo tally matches the branch-point baseline exactly — this branch
+touches no Rust. It was run anyway, because that is the entire lesson.
+
+**Two line citations corrected** (the record should cite reality; both
+re-checked by grep here, not accepted from the verdict): the store test
+is at `genesis-pane-dom.test.tsx:341`, not `:322` — `:322` sits inside
+the innerHTML gate's `scan` helper; and T-024-s3's `GenesisPane.tsx:136`
+is the *comment above* the write — the render-phase ref stamp itself is
+`:140`. Corrected in the notes above and in the s3 file respectively.
+
+**The lesson, plainly.** Two halves, and the second is the general one.
+(i) A component declaration moves **three** registry pins, one of them
+in a different npm package — that inventory is exactly what T-024-s5
+asks to write down so it stops being folklore. (ii) **A suite not run
+is a suite not known.** The completing session reported `lib/parser`
+"untouched (zero files changed)", which was true *as a diff claim* and
+is precisely why the red was never seen: that fixture parses the **live
+docs/ tree**, so a docs-only commit breaks a suite whose own files
+never moved. Diff scope is not test scope. The habit the next executor
+should inherit is to run every package's suite before handing back,
+whatever the diff says — the same failure mode this task's completing
+session had already caught once, one directory away.
 
 ## Verdicts
 

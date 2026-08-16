@@ -37,6 +37,18 @@ describe('smoke — the real docs/ tree parses cleanly', () => {
   it('parses the dogfood component registry (T-008): same C-namespace as ARCHITECTURE.md', () => {
     const components = result.components ?? [];
     expect(components.length).toBeGreaterThanOrEqual(5);
+    // RECONCILED AT T-024 (2026-08-16, fix pass, executor claude-opus-5
+    // @fresh): the branch declares C-13 genesis pane in
+    // docs/architecture/components/ per the task spec and the T-012 §2
+    // precedent, so this live-tree pin lists ten ids, not nine. A
+    // component declaration moves THREE registry fixtures, not two —
+    // app/test/architecture-dogfood.test.ts (enumerated delta block) and
+    // app/test/map-dogfood-render.test.tsx were reconciled in b9df9b1;
+    // this one, one directory away, was missed and left this suite red.
+    // Changed, never loosened: still a whole-array toEqual, every
+    // pre-existing id byte-unchanged, C-13 appended in registry order.
+    // No lib/parser/src/** byte moved — the fence there is a SOURCE
+    // fence; the fixture follows reality.
     expect(components.map((c) => c.id)).toEqual([
       'C-01',
       'C-05',
@@ -47,6 +59,7 @@ describe('smoke — the real docs/ tree parses cleanly', () => {
       'C-10',
       'C-11',
       'C-12',
+      'C-13',
     ]);
 
     const parser = components.find((c) => c.id === 'C-06');
