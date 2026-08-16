@@ -235,13 +235,17 @@ Branch parser (fresh `npm run build`) over this worktree's live tree,
 AFTER all six rules:
 
     parseProject(<worktree>) →
-      tasks 81 · features 6 · components 11 · ISSUES 0
+      tasks 81 · features 6 · components 11 · ISSUES 0    (before the
+      three suggestion files existed)
+      tasks 84 · features 6 · components 11 · ISSUES 0    (final tree —
+      re-run after committing T-030-s1/s2/s3; a verifier re-deriving
+      this gets 84)
 
-Same tree through the BRANCH-POINT parser: tasks 81 · features 6 ·
-components 11 · ISSUES 0. Zero before, zero after — no new rule flags
-the live tree, and nothing was widened to make that true (the three
-T-030-sN suggestion files added by this branch are inside that count
-and parse clean: their basenames encode their ids). The suite's own
+The same tree through the BRANCH-POINT parser gives the identical
+counts and ISSUES 0 in both runs. Zero before, zero after — no new rule
+flags the live tree, and nothing was widened to make that true (the
+three T-030-sN suggestion files are inside the 84 and parse clean:
+their basenames encode their ids). The suite's own
 smoke test (`parseProject` over this repo, `issues toEqual([])`) is
 green in every run reported below, which is the same proof re-derived
 on every `npx vitest run`.
