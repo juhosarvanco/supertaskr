@@ -2449,8 +2449,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:4eae1771112d10f4766e4e895908a6577ebc0a8f80b995e4a1de372cc2a49ca3",
-      "loc": 375,
+      "hash": "blake3:2d5155e100fe92e969afc8ca8b5039b1375b4b75517e27077a38079fb2c4de50",
+      "loc": 382,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -2458,8 +2458,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            148,
-            149
+            149,
+            150
           ]
         },
         {
@@ -2468,8 +2468,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            64,
-            78
+            65,
+            79
           ]
         },
         {
@@ -2489,7 +2489,7 @@
           "exported": true,
           "range": [
             55,
-            59
+            60
           ]
         },
         {
@@ -2508,8 +2508,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            92,
-            95
+            93,
+            96
           ]
         },
         {
@@ -2518,8 +2518,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            158,
-            162
+            159,
+            163
           ]
         },
         {
@@ -2528,8 +2528,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            88,
-            88
+            89,
+            89
           ]
         },
         {
@@ -2538,8 +2538,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            97,
-            113
+            98,
+            114
           ]
         },
         {
@@ -2548,8 +2548,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            260,
-            275
+            261,
+            276
           ]
         },
         {
@@ -2558,8 +2558,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            277,
-            289
+            278,
+            290
           ]
         },
         {
@@ -2568,8 +2568,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            245,
-            258
+            246,
+            259
           ]
         },
         {
@@ -2578,8 +2578,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            232,
-            234
+            233,
+            235
           ]
         },
         {
@@ -2588,8 +2588,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            213,
-            213
+            214,
+            214
           ]
         },
         {
@@ -2598,8 +2598,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            236,
-            238
+            237,
+            239
           ]
         },
         {
@@ -2608,8 +2608,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            349,
-            351
+            356,
+            358
           ]
         },
         {
@@ -2618,8 +2618,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            224,
-            224
+            225,
+            225
           ]
         },
         {
@@ -2628,8 +2628,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            152,
-            154
+            153,
+            155
           ]
         },
         {
@@ -2638,8 +2638,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            322,
-            346
+            323,
+            353
           ]
         },
         {
@@ -2648,8 +2648,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            135,
-            145
+            136,
+            146
           ]
         },
         {
@@ -2658,8 +2658,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            125,
-            127
+            126,
+            128
           ]
         },
         {
@@ -2668,8 +2668,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            364,
-            375
+            371,
+            382
           ]
         },
         {
@@ -2678,8 +2678,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            164,
-            196
+            165,
+            197
           ]
         },
         {
@@ -2688,8 +2688,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            240,
-            243
+            241,
+            244
           ]
         },
         {
@@ -2698,8 +2698,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            215,
-            223
+            216,
+            224
           ]
         },
         {
@@ -2708,8 +2708,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            296,
-            314
+            297,
+            315
           ]
         },
         {
@@ -2718,8 +2718,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            225,
-            225
+            226,
+            226
           ]
         },
         {
@@ -2728,8 +2728,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            227,
-            230
+            228,
+            231
           ]
         }
       ]

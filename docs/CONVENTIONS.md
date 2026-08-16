@@ -38,8 +38,14 @@
   even for granted permissions; only config JSON, e.g. the CSP, is
   string-findable). Prove the webview surface with regenerated
   gen/schemas/capabilities.json plus a runtime ACL probe (T-007
-  verdict correction; T-007-s2 proposes pinning this as a test —
-  see ADR-012 for why the grant set stays empty).
+  verdict correction). Since T-021 that proof is PINNED, not
+  re-derived per task: `app/src-tauri/src/acl_pin.rs` re-resolves the
+  shipped gen/schemas through tauri's own resolver on every
+  `cargo test` and fails with a `+`/`-` grant diff if the 92-grant
+  `core:default` set moves. A deliberate grant is added by re-pinning
+  EXPECTED_GRANTS in the same commit, with the sweep — never by
+  deleting or muting the test (see ADR-012 for why the set stays
+  empty of app grants).
 - UI work adds tokens to app/src/styles/tokens.css, never Tailwind
   defaults or arbitrary values — unmapped utilities are deliberately
   dead, and arbitrary values (`p-[13px]`) bypass enforcement (see
