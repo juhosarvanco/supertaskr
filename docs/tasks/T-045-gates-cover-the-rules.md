@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [tools/e2e/, .github/, docs/CONVENTIONS.md]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-020-s6, T-036-s1, T-038-s2. Triage 2026-08-16: three
@@ -462,3 +462,189 @@ this merge, which is the expected outcome.
   instance of either.
 
 ## Verdicts
+
+2026-08-17 — claude-opus-5 @fresh, verifier — same-model review:
+**APPROVED.** All six criteria met. Everything below was re-derived in
+worktree /Users/ujju/Projects/nputer-t045 at `fd76164`, merge-base with
+main confirmed `6ed97cf` by `git merge-base` (main has since moved to
+`8dadb59`); nothing was taken from the notes on trust. Lane port 14533,
+probed free before use and released after — 1420 was never bound,
+contacted or signalled, the boot check was not run, no model calls, no
+GitHub API call, no remote. Three corrections to the notes are recorded
+at the end; none of them touches a gate.
+
+**Criterion 1 — the derivation, attacked twenty-four ways** (18 red
+loudly, 3 correctly tolerated, 3 silent). The DERIVE
+arm is taken and the parse is the doc's own typography. Every attack on
+content the parse already reads failed LOUDLY: reordered bullets (1
+problem, the four-bullet check), a new command mid-list (named, "no
+entry for"), a backticked PROSE segment mid-list (named — it forces a
+classification rather than guessing), an unbackticked prose segment
+mid-list (the truncated tail reported as "this spec expects … which the
+doc no longer lists"), a `*` bullet marker (9 problems), a non-breaking
+space after the dash (9 problems), a fifth `run from` bullet (3), a
+colon added after the dev-tool bullet's `run from app/src-tauri/` (2),
+`·` swapped for `,` (3), a command stripped of its backticks (3), a
+marker with zero commands (6, opening with "lists no commands for
+[app]"), the CI bullet losing a divergence (2) or deleted entirely (9),
+the local-only claim turned to prose (2). Renaming, emptying or DELETING
+the `## Build & test` header all THROW the hard error. Non-vacuity is
+proven, not claimed: the section replaced by one prose line yields **26
+problems and two derived steps**, and a marker with no commands is its
+own named complaint. Correctly tolerated, checked and not assumed: a
+non-breaking space inside `run from`, inside a command's backticks, or
+either side of a `·` — all parse identically, no false alarm.
+Three attacks were SILENT, all one class (a command ARRIVING in an
+unrecognised shape: an indented sub-bullet, an indented sub-bullet with
+its own marker, a fenced block). Nothing already in the doc can vanish
+unseen, and the replaced array could not see those shapes either, so
+this is filed as **T-045-s4**, not held against the arm.
+
+**Criterion 2 — a reworded command reds the lane.** Live drill on the
+real doc (`npx tsc --noEmit` → `… --incremental false`): **2 failed / 18
+passed**, both sides named, and the second failure is the "nothing
+beyond" assertion exactly as the notes predict. The four committed
+fixtures each red under mutation (P3–P6 below). Reverted byte-exact.
+
+**Criteria 3–4 — permissions, proven on real files, not only fixtures.**
+`.github/workflows/release.yml` written to disk with no block → **1
+failed**, complaint NAMES `release.yml`, ci.yml not implicated. A
+`.yaml` second workflow with a job-level `pages: write` → **1 failed**,
+"docs.yaml: jobs.pages.permissions grants `pages: write`". A job-level
+`packages: write` in ci.yml → caught; its redundant sibling `contents:
+read` NOT reported. A job-level redundant `contents: read` alone →
+**0 failed / 20 passed**, correctly silent. The top-level block deleted
+from ci.yml → named. Both synthetic workflows removed;
+`.github/workflows/` is `ci.yml` alone and the tree is clean. The
+exception table's per-row machinery is live code, not decoration: M8's
+triad (argued row passes → wrong-file row does not transfer AND is
+reported stale → grant removed leaves the row stale) each red under
+mutation, and a `read-all`/`write-all` shorthand is judged as the
+pseudo-scope `*`.
+
+**Criterion 5 — the widening, differential re-derived from scratch.**
+The pre-T-038 line-based scan reconstructed verbatim from `986431e` and
+run against the shipped masked scan over the newly walked corpus:
+**both=0 OLD-only=8 NEW-only=0**, all eight TypeScript labeled tuples in
+app/test across six files (architecture-derive ×2, architecture-glob,
+architecture-graph ×2, board-truth, select-board, select-task-detail).
+`lint-tokens: clean (90 files scanned under app/src, app/test,
+tools/e2e)` at ZERO allowlist, exit 0. All four patterns planted in
+app/test, in a tools/e2e spec AND in a tools/e2e non-spec helper: every
+one reported with `file:line`. Six near-miss classes planted in both new
+roots — regex literal spelling the patterns, arbitrary variant, paren
+variant, labeled tuple, line comment, block comment — all silent. The
+widening is the difference: the same planted `text-red-500` in
+app/test and in tools/e2e reads `clean (38 files scanned under app/src)`
+**exit 0** under main's script, run in place. Self-exclusion is
+deliberate and load-bearing: removing it yields exactly **29** hits
+against the script itself. lib/parser stays OUT and adding it reds.
+
+**Criterion 6 — the selftest.** `49 samples green, 14 walk-policy checks
+green`, exit 0.
+
+**The self-inflicted hole is genuinely closed.** L7 (delete "app/test"
+from `WALK_ROOTS`) now reds with `walk policy — required tree app/test
+is walked (0 files)`; the lint alone would have stayed green at 59
+files, so the `MUST_COVER` separation is what catches it, exactly as the
+notes claim.
+
+**Execution sweep, re-derived: 27 mutations.** 15 spec mutations (P1–P6,
+M1–M9), each run against both spec files: every one **1 failed / 19
+passed**, each reddening the NAMED test read off the output, each file
+restored and sha256-verified byte-identical. 12 lint mutations (six
+sample-expectation flips including both new surfaces, one negative flip,
+and L7–L11): each exactly one selftest failure, each named, each
+restored byte-exact.
+
+**Suites, my actuals.** tools/e2e `npm test` **50 passed** (7.4s);
+`npm run typecheck` clean; `--selftest` **49 samples + 14 walk-policy
+checks**; `lint:tokens` clean over 90 files. lib/parser **159 passed**
+(10 files), `npx tsc --noEmit` clean. app `npm run build` ✓ then **507
+passed** (30 files). app/src-tauri `cargo test` → 11 `test result:`
+lines summing **217 passed, 0 failed, 3 ignored**. Graph a verified
+no-op: `self_graph_is_current … ok`, `git status --short
+docs/architecture/` empty, `.nputerignore` line 4 `docs/` and line 8
+`tools/`.
+
+**Fence.** `git diff --stat 6ed97cf..HEAD` restricted to `app/`,
+`lib/parser/`, `method/`, `docs/architecture/`, all four lockfiles and
+`tools/e2e/package.json` is **EMPTY**. The diff is nine files: ci.yml,
+CONVENTIONS.md, this card and three suggestions, and the three
+tools/e2e files. `git status --porcelain` empty after every drill; no
+listener on 14533 or 14520 at close. No sibling worktree was entered.
+
+**`touches` — minimal and accurate.** `[tools/e2e/, .github/,
+docs/CONVENTIONS.md]` names exactly the three trees the diff moves
+outside docs/tasks/. ci.yml's non-comment content changed by exactly the
+three added `e2e types` lines: all 18 pre-existing `run:` strings are
+byte-identical to `6ed97cf`. The doc was made true; the workflow was not
+edited to suit the test.
+
+**The typecheck hole was REAL.** `6ed97cf`'s ci.yml contains no
+`npm run typecheck` anywhere, while CONVENTIONS listed it for tools/e2e.
+The new step is correctly placed (after `e2e install`, before the
+browser download, so `tsc` resolves from the freshly installed
+node_modules) and genuinely bound: deleting it reds with `missing
+verbatim step: [tools/e2e] npm run typecheck`.
+
+**Divergence count, derived independently: FOUR, as the builder found,
+not the TWO the card assumed.** From the doc's sixteen commands against
+ci.yml's nineteen run steps: `npm install`→`npm ci` (app), `npm run
+lint:tokens`→two `node scripts/lint-tokens.mjs` steps, `npm run
+boot:check`→the xvfb form, and the one-time `npx playwright install
+chromium`→`--with-deps`. Numbers 3 and 4 were undocumented at `6ed97cf`
+— the old CI bullet said "Two deliberate divergences" and named only 1
+and 2. `cargo install cargo-audit --locked` is correctly classed a
+CI-only addition rather than a fifth divergence: CI runs it verbatim as
+the doc writes it.
+
+**Suggestions ruled.** **s2 is correct and worth its own card** —
+demonstrated, not inferred: a plain `await import("./lint-tokens.mjs")`
+on a tree with one planted violation printed the violation, printed the
+"1 violation" summary and **exited the importing process with code 1**;
+the importer never reached its next line. With `--selftest` in argv the
+import completes. A module that terminates its importer is a real
+hazard, and the card's reasoning for extracting a side-effect-free
+module rather than the obvious `import.meta.url` guard is right and
+consistent with T-046's precedent. **s1 is sound and correctly
+deferred**: `npm run` only extends PATH, so the zero-dep first step
+survives the change, and setup-node precedes it anyway — the
+direction-of-causation argument for not doing it here holds. **s3 is
+directionally right but overstated in its point 2**: an unargued caller
+grant is NOT invisible — a `caller.yml` with `jobs.call.uses` plus
+`jobs.call.permissions: {contents: write}` fails, naming the file and
+the dotted path. What actually escapes is narrower: an ARGUED caller
+grant silently upgrades a callee whose own block says less. Point 1
+(composite actions under `.github/actions/` carry no `permissions:` key
+and are not enumerated) is exactly right.
+
+**Three corrections to the notes, none of which moves a gate.**
+1. Proof obligation 3 reports the differential as `files=51`. The true
+   count of newly walked files is **52** (31 app/test + 21 tools/e2e),
+   or 50 restricted to `.ts`/`.tsx`. The measured result — `both=0
+   OLD-only=8 NEW-only=0` — is exact; only the file-count label is off
+   by one. The separate 90 = 38 + 31 + 21 arithmetic is correct as
+   committed at `fd76164`.
+2. "The permissions test MOVED files … covering strictly more" is
+   strictly more in every direction that could ever widen the token, but
+   ONE sub-case of T-036's `expect(doc.permissions).toEqual({contents:
+   read})` is not carried: a top-level `permissions: {}` now passes
+   (measured **0 failed / 9 passed**). `actions: read`, `read-all`,
+   `write-all` and `contents: write` all still fail. The loss runs
+   toward LESS privilege, never more, it is documented in the spec's
+   header and pinned by fixture M7 — and criterion 4 names "no unargued
+   grant", not zero-allowlist, as the honest target. Recorded, not held
+   against the criterion.
+3. CONVENTIONS' CI bullet and the spec's DIVERGENCE-3 comment both say
+   the lint is "the job's FIRST step". The apt and `rustc --version`
+   steps precede it; the load-bearing half — "ahead of every `npm ci`" —
+   is exact, and ci.yml's own comment says "runs before any install".
+
+**Filed: T-045-s4** — the parse is loud about commands that move and
+silent about commands that arrive in a nested sub-bullet or a fenced
+block, with the three reproductions and the structural fix.
+
+**Honest limit inherited, not closed.** The workflow is still unverified
+against a live runner (T-020 §1 tier 3); the new `e2e types` step has
+never executed on one. Everything above validates the artifact.
