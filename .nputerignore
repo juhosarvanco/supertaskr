@@ -3,3 +3,6 @@
 # broken indexer inputs, not map content.
 docs/
 app/src-tauri/crates/nputer-index/tests/fixtures/
+# Dev tooling that drives the app from outside (T-020: the E2E lane) —
+# config-excluded like docs/, never registry territory.
+tools/

@@ -1,0 +1,22 @@
+{
+  "name": "@nputer/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "nputer real-input E2E lane (T-020): Playwright drives the dev bundle + __nputerDocsHarness with trusted input — the rejection class synthetic tests provably cannot catch. Third standalone package (ADR-011 family); imports neither app nor parser.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "lint:tokens": "node scripts/lint-tokens.mjs",
+    "boot:check": "node scripts/tauri-boot-check.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.0",
+    "yaml": "^2.8.0"
+  }
+}

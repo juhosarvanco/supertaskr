@@ -1,0 +1,4 @@
+# Playwright run artifacts (traces retained on failure, reports).
+# node_modules/ is covered by the root .gitignore.
+test-results/
+playwright-report/
