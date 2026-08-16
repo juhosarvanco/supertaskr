@@ -9,10 +9,10 @@ status: building
 blocked_by: [T-018]
 touches: [app-shell]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: "claude-opus-5 @fresh"
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 blocked_by T-018 is technical: opening a docs-less folder relies on
@@ -493,3 +493,263 @@ T-018's branch left it). What the regen does:
   inventing a persistence mechanism.
 
 ## Verdicts
+
+2026-08-16 — claude-opus-5 @fresh, verifier — same-model review (the
+builder was claude-opus-5 too; noted so the record is not read as an
+independent-model check): **APPROVED**, with one CORRECTION to the notes
+recorded below and four suggestions filed (s4–s7). Every EARS criterion
+was re-derived from the branch, not read from the notes; the numbers
+below are mine.
+
+**Suites (macOS 15/Darwin 25.6, node 22.22.0, ADR-011 order, from the
+branch worktree).** lib/parser `npm test` **159/159** and
+`git diff main -- lib/parser | wc -c` = **0** (untouched is literal);
+app `npx tsc --noEmit` clean, `npm run build` exit 0,
+`npm test` **421 passed / 22 files**; src-tauri bare `cargo test`
+**139 passed + 2 ignored, three consecutive runs, identical counts**;
+`cargo build` exit 0. Every number in the notes reproduces.
+
+**ACL zero-diff, re-derived independently (not read from the notes).**
+`gen/schemas/` is gitignored, so I built BOTH ends myself: a detached
+worktree at the branch point (3c16182) with its own `CARGO_TARGET_DIR`,
+and then HEAD after `rm -rf gen/schemas && cargo clean -p nputer &&
+cargo build` so the schemas were genuinely regenerated with both new
+commands registered. sha256, identical across the pair:
+`capabilities.json` `4fca70b5…6b07`, `acl-manifests.json` `d3eace19…9699`,
+`desktop-schema.json` = `macOS-schema.json` `2a16f62c…3b07`.
+`EXPECTED_GRANTS` byte-compared across revs: **identical, 7728 bytes,
+129 grant lines** — the diff touches acl_pin.rs only at the roster
+(536–537) and one comment. capabilities/, tauri.conf.json, Cargo.toml,
+Cargo.lock, both package-locks: zero-diff. All five T-021 pin tests pass
+by name on every run, unweakened.
+*Precision note on what the roster proves*: I added a bogus
+`totally_not_a_registered_command` to the same denial loop and the test
+still passed — the loop's mock app registers only `docs_snapshot`, so it
+proves "the shipped authority denies this name from a remote origin
+before dispatch", which is name-agnostic. That is the real security
+property and the notes claim exactly that (no overclaim); it is not, and
+does not say it is, proof that the two commands are registered locally.
+
+**C1 (front door + card).** Both affordances render on EVERY empty state
+with the `⌘O · ⌘N` hint; the card is the design's "No plan in
+&lt;folder&gt;" with heading path, body copy, the four-row checklist and
+"Start an interview here". Adopt is ASSERTED absent (case-insensitive)
+in two files. The DOM tests query rendered DOM, not component internals.
+The accelerators are wired, and I proved it end-to-end rather than in
+halves: a `⌘N` / `⌘O` keydown on the REAL App (real store, IPC mocked
+at the boundary) produced `invoke("pick_genesis_folder")` and
+`invoke("pick_project_folder")` — the labels are not decoration. The ○/✓
+marks are measured: `planChecklist` reads the Rust `PlanProbe`, and I
+re-derived the probe against the filesystem (below).
+
+**C2 (zero-argument picker + genesis screen).** Both commands are
+`async fn (app: tauri::AppHandle) -> PickOutcome` — no webview-supplied
+path in either direction (ADR-012), and the handler roster is exactly
+five commands, two of them new. Validation attacked four ways: a
+symlinked root is refused at ARM time (and mutation-drilled: deleting
+`arm_genesis`'s `is_plain_dir` gate turns
+`a_genesis_root_swapped_for_a_symlink_is_refused_at_arm_time` red with
+"a symlinked root must be refused"); a path that vanishes between
+validate and arm answers `Error` with `project_dir()` unchanged; a FILE
+where a directory is expected answers `Error`; a path that becomes a
+symlink after validation is caught by that same arm-time gate, which is
+why the gate is load-bearing rather than defensive. The genesis screen
+renders full-bleed on the real App with `pane-rail` absent, and the rail
+condition (`screen === "board"`) is byte-identical to the branch point,
+so board|map is untouched for normal projects.
+
+**C3 (docs/ appears → pipeline lights, no re-pick).** Re-derived that
+the cargo test is driven from THIS task's flow and not a synthetic arm:
+`docs_appearing_under_a_genesis_project_lights_the_pipeline_with_no_repick`
+runs `apply_genesis_pick` against a REAL watcher thread from
+`live_state`, writes a real `docs/NORTH_STAR.md`, asserts the emit
+(project_dir included), then proves the re-armed watch stays live with a
+second in-place edit. My own probe on a genesis-armed root saw the same
+thing independently.
+
+**C4 (exact counts — highest scrutiny).** The test drives T-018's real
+`handle_fs_batch` seam with exact counts and no sleeps. Mutation drill
+re-derived: removing `&& !just_armed` makes
+`an_empty_docs_dir_emits_exactly_once_on_the_unarmed_to_armed_transition`
+fail at "the arm transition must emit exactly once: Timeout". I then
+attacked the boundary with my own sequence (probes reverted):
+
+    re-arm genesis before docs/ exists   -> 0 emits
+    empty docs/ appears                  -> exactly 1
+    next batch                           -> 0
+    arm_genesis again while docs/ exists -> 0 (routes to rearm, no double)
+    docs/ deleted (was empty)            -> 0   <-- see s5
+    docs/ recreated empty                -> exactly 1 (second arming)
+    next batch                           -> 0
+    docs/ replaced by a symlink          -> 0, and not armed
+
+No sequence I could build double-emits on a second arm transition, and
+an empty→empty re-arm is silent. The one gap runs the other way — a
+deletion of an EMPTY docs/ is silent, so the board outlives the docs/ it
+described. Criterion 4 opened that edge (before this task an empty docs/
+produced no board to go stale); filed as **T-026-s5**, not a criterion
+failure.
+
+**C5 (a planned folder is never offered genesis).** `has_plan =
+roadmap || tasks` gates `apply_genesis_folder`, and the routing is a
+CALL to `open_as_project` (split out of `apply_picked_folder`), so the
+Picked/NoDocs/Error shapes are identical by construction rather than by
+imitation. Mutation drill re-derived: forcing `has_plan()` to false
+turns `genesis_pick_of_a_folder_that_already_has_a_plan…` red with the
+real `Genesis { … }` value. Edges attacked on this box: a docs/ holding
+only `rejected/` → not a plan (correct); `docs/rejected/T-999-x.md` →
+not a plan; `docs/tasks/README.txt` alone → not a plan; a DIRECTORY
+named `notes.md` inside docs/tasks/ → counted as a plan (over-refuses
+genesis — the safe direction); a symlinked `docs/` containing a real
+ROADMAP → `NoDocs`, never genesis, nothing committed.
+
+**s1's no-overwrite question, ruled.** s1 is REAL but it cannot produce
+the dangerous answer. The probe's exact spelling AGREES with the parser
+(`lib/parser/src/files.ts:122` and `project.ts:188` both key on the
+literal `docs/ROADMAP.md`), so on a case-sensitive filesystem a
+`docs/roadmap.md` is not a plan to the probe and not a plan to the
+parser either — the two never disagree about what the app can see. On
+this case-insensitive box I measured the opposite direction: lowercase
+`docs/roadmap.md` probes `roadmap: true` and `docs/Tasks/T-1.md` probes
+`tasks: true`, i.e. macOS OVER-detects and REFUSES genesis. So the
+platform where a later `docs/ROADMAP.md` write would collide is exactly
+the platform where the probe already blocks genesis; and ADR-017 leaves
+the app writing nothing under docs/ regardless. s1 is a cross-platform
+truthfulness divergence in the conservative direction, correctly filed
+and correctly aimed at T-020's Linux lane — not a no-overwrite failure.
+
+**C6 (cancel/failure leaves the previous project untouched).**
+`reducePickOutcome` returns `prev` BY IDENTITY for `cancelled` and
+`busy` (asserted with `toBe`), and the rejection cases keep
+`next.docs === prev.docs`. Rust side: both failure shapes leave
+`project_dir()` unchanged AND the previous project's watch still
+emitting afterwards; the symlink arm gate keeps both the old docs handle
+and the old root.
+
+**Single-flight.** All three picker commands claim the same
+`begin_pick()` CAS latch BEFORE any dialog opens, so genesis and a
+normal pick cannot race and cannot stack native dialogs; I confirmed the
+latch is exclusive and releases on drop. `start_genesis_here`'s
+no-candidate early return drops the guard before returning, so a failed
+"here" does not wedge the picker.
+
+**Test-execution sweep** (this project has been bitten twice). Canary
+injection, then revert: `panic!("VERIFIER-CANARY")` into all **10** new
+cargo tests → all 10 red; `throw new Error("VERIFIER-CANARY")` into
+every `it()` of the three touched frontend files (6 + 11 + 28 = **45**)
+→ **45 failed (45)**. Nothing is inert. The executor's fourth drill
+reproduces too: forcing `applyDocsPayload` back to `phase: "open"` turns
+`genesis-entry` steps 5 and 6 red with "expected 'board' to be
+'genesis'".
+
+**Fence, proven.** `git diff 3c16182..HEAD` is 13 files. Zero-diff
+verified for lib/, method/, app/src/genesis/ (T-024's territory — the
+seam is a slot, not an edit), board/ and architecture/ components,
+index.css, styles/tokens.css, capabilities/, tauri.conf.json,
+Cargo.toml, Cargo.lock and both package-locks.
+
+**Tokens-only.** Zero hits over the added frontend lines for arbitrary
+values, `[prop:value]`, `bg-(--x)`/`text-(--x)`, stock-palette utilities
+and raw hex; the built stylesheet contains no arbitrary-value class at
+all, and every utility the diff introduces emits a real token-backed
+rule (`.gap-2\.25{gap:calc(var(--spacing-unit) * 2.25)}`,
+`.text-review-disc{color:var(--review-disc)}`,
+`.py-2\.75`, `.max-w-120`, `tracking-overline`).
+
+**Security sweep.** Diff confined to app-shell + docs; two new commands,
+both zero-argument, no other IPC added (three `invoke` call sites total,
+one of them the shared `runPicker`); no new dependency and no lockfile
+movement; no `unsafe`, no `Command::`/`std::process`, no shell strings;
+no `innerHTML`/`dangerouslySetInnerHTML`/`eval`/`fetch`/`WebSocket`/
+`localStorage`; the only file-derived strings crossing the boundary are
+the canonical path the user chose and four booleans. Hostile folder
+names (`--force-delete`, `..dotdot`, an ANSI-escape name, a DEL
+character, 255 chars) all validate, commit, and stay contained; they
+render as React text nodes. Nothing bound or contacted port 1420 at any
+point. The genesis screen is unreachable for a folder with a plan (C5,
+drilled). One pre-existing pattern carried forward, not introduced:
+`println!` of `canon.display()` is unsanitized, exactly as
+`apply_picked_folder` has done since T-007 — `sanitize_for_log` is
+applied only to the echo payload. Not a T-026 regression.
+
+**CORRECTION to the notes.** The Frontend paragraph states of the
+genesis switch: "no snapshot exists to send". That is true for a
+docs-less folder and FALSE for the other shape `apply_genesis_folder`
+accepts — a folder with a plain `docs/` that holds no plan (a lone
+`docs/ARCHITECTURE.md`, a `docs/decisions/` tree), which the task's own
+probe test declares genesis-eligible. For that shape `arm_genesis`
+delegates to `rearm`, nothing emits until the next fs event, and the
+genesis screen renders "docs/ · nothing written yet" over a docs/ that
+is not empty — two clicks after the card truthfully showed
+`✓ docs/ARCHITECTURE.md`. Reproduced on both sides (Rust: `Genesis` and
+zero emits in a 1.2s window, then 2 files on the first real edit;
+frontend: `data-genesis-files="0"`). It self-heals on the first write
+and lives outside every criterion's antecedent — criterion 2's WHEN is
+"a folder without docs/" — so it does not fail a SHALL, but it is the
+T-018-s4 shape one screen over and it also blunts the T-024 seam this
+task documents. Filed as **T-026-s4** with two candidate fixes.
+
+**Suggestions assessed.** s1 real, correctly encoded, ruled above — keep
+as a decision, not a hot-patch. s2 real and honest (the ⌘O advertised on
+the front door genuinely stops working once a board opens; the ⌘ label
+over a Ctrl-accepting handler is a small standing lie) — right scope,
+correctly non-blocking. s3 real and well-aimed: it exists to stop T-022
+and T-029 each inventing a persistence mechanism, and its "a genesis
+project that only exists in RAM cannot lie about a stale session" is
+sound. New: **s4** (genesis screen blind to an existing docs/),
+**s5** (empty-docs deletion is silent), **s6** (a genesis switch DOES
+send a `model-updated` echo with `generatedAtMs: 0`, contradicting two
+code comments that say it never fakes one — reproduced), **s7** (the
+served-bundle probes belong in T-020's lane).
+
+**The served-bundle probe — RULED: acceptable, honestly-recorded
+deferral.** The stated reason (headless standing rule; 1420 owned by the
+human's live app) holds, and `genesis-entry.test.tsx` is a real
+substitute — it drives the real App, real store, real docs-model and
+parser with only the IPC boundary mocked. It was in fact
+over-determined: the dev harness exposes only
+`__nputerDocsHarness = { apply, getState }`, and `apply` always lands on
+phase `"open"`, so **neither front-door state is reachable from a served
+bundle at all** — a browser would not have sufficed. T-020's lane
+(merged after this branch point: `tools/e2e`, Playwright, own vite on
+14520, config that throws on 1420) is the obvious home, and it
+discharges T-024-s1 in the same addition now that T-026 has mounted the
+pane — but it needs a small DEV-only shell harness first. Proposed in
+**T-026-s7**; deliberately not built here.
+
+**Graph forecast confirmed for the integrator** (regenerated with
+`NPUTER_UPDATE_GOLDEN=1`, then restored to the committed bytes; tree
+clean). files **78 → 80** — adds `app/src/components/shell/GenesisScreen.tsx`
+and `app/test/genesis-entry.test.tsx`, nothing removed; content-changed:
+App.tsx, watcher-store.ts, project-shell.test.tsx, watcher-store.test.ts;
+stats symbols **449 → 475**, edges **790 → 828**; languages still
+`["ts"]`, zero `.rs` files indexed. EXACTLY three assertions move, as
+forecast: `architecture-dogfood.test.ts:175` `toBe(78)` → `80`, the
+relation row `["C-05","C-10","confirmed",10]` → `13` at :267, and
+`map-dogfood-render.test.tsx:167` `committed graph · 78 files` → `80`.
+Every other dogfood assertion passes against the regenerated graph
+untouched. The ignored `self_graph_is_current` is red on-branch exactly
+as the notes forecast.
+
+Notes' file:line references spot-checked and accurate (docs_watch.rs
+344/735/969/1056/1067/1218, lib.rs 156/204, App.tsx 91/124/290,
+watcher-store.ts 194/204/223/229/238/291, acl_pin.rs 528/536/537).
+
+**@human (listed, never performed here — headless session):**
+1. Front-door visual judgment, light AND dark, against the design's
+   `open a folder` screen: button sizes/inks, the checklist ○/✓ (the ✓
+   rides `--review-disc`, whose dark value is a token-family derivation,
+   not measured from a dark mockup), the card's 10px vs 12px radius, and
+   whether the footnote reads as a footnote.
+2. Whether the deliberately bare genesis placeholder is acceptable as an
+   interim, and whether keeping the header chrome above it is right.
+3. The real picker flows on the real screen: "Start an interview" →
+   native dialog → a docs-less folder lands on the genesis screen; ⌘N
+   and ⌘O on the front door; "Start an interview here" on a folder the
+   app just refused; a folder that already has a plan → the board.
+4. New, from s4: point the app at a folder whose `docs/` holds files but
+   no plan (a lone ARCHITECTURE.md) and confirm the "nothing written
+   yet" line is what you want to see there in the interim.
+
+All probes reverted; working tree clean apart from this verdict and the
+four new suggestion files.
