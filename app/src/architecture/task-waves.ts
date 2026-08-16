@@ -649,19 +649,29 @@ export function selectTaskWaves(model: ProjectParseResult): TaskWaveModel {
     cards.push(card);
   }
 
-  // Worst blocker: the not-done task holding up the most work. Ties go to
-  // the earlier wave (it gates more of the schedule), then to the lower id.
-  let worst: WaveCard | undefined;
+  // Worst blocker: the not-done task holding up the most work. The
+  // tie-break ladder, each rung with its reason:
+  //   1. the most holds — the measurement itself;
+  //   2. NOT in flight before in flight — at equal weight the worse
+  //      blocker is the one nobody is on, because nothing is moving it
+  //      (the design's own example is a stuck `rejected ×2` task);
+  //   3. the earlier wave — it gates more of the schedule behind it;
+  //   4. the lower id — determinism, the pane's carrying rule.
   const waveOf = (id: string): number => layering.wave.get(id) ?? 0;
+  const idle = (card: WaveCard): number =>
+    IN_FLIGHT.has(card.status as TaskStatus) ? 0 : 1;
+  let worst: WaveCard | undefined;
   for (const card of cards) {
     if (card.status === "done" || card.holds === 0) continue;
-    if (
-      worst === undefined ||
-      card.holds > worst.holds ||
-      (card.holds === worst.holds && waveOf(card.id) < waveOf(worst.id))
-    ) {
+    if (worst === undefined) {
       worst = card;
+      continue;
     }
+    const rank = (c: WaveCard): [number, number, number] => [c.holds, idle(c), -waveOf(c.id)];
+    const [ah, ai, aw] = rank(card);
+    const [bh, bi, bw] = rank(worst);
+    if (ah > bh || (ah === bh && (ai > bi || (ai === bi && aw > bw)))) worst = card;
+    // Equal on all three: `cards` is id-ascending and the first wins.
   }
   if (worst !== undefined) worst.worstBlocker = true;
 
