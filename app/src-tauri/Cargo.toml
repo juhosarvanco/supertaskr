@@ -4,6 +4,13 @@ version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
+# T-040: `tauri dev` shells out to bare `cargo run`, which refuses to
+# guess once a package has more than one [[bin]]. T-025's fake_agent
+# test fixture made that two, so the app stopped launching — invisible
+# to every gate we run (cargo test/build are happy with two binaries)
+# and to every agent (the headless rule means none of them runs the
+# app). Name the real one here; adding a third binary needs no change.
+default-run = "nputer"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
