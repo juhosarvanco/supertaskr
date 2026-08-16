@@ -4,6 +4,7 @@ import type {
   PickOutcomePayload,
   ProjectStatusPayload,
   ShellHarnessSnapshot,
+  StartupStep,
 } from "../fixtures/shell";
 import { openApp } from "./helpers";
 
@@ -19,6 +20,7 @@ declare global {
     __nputerShellHarness?: {
       applyProjectStatus: (status: ProjectStatusPayload) => void;
       applyPickOutcome: (outcome: PickOutcomePayload) => void;
+      applyStartupFailure: (step: StartupStep, reason: unknown) => void;
       getShell: () => ShellHarnessSnapshot;
     };
   }
@@ -56,6 +58,27 @@ export async function applyPick(page: Page, outcome: PickOutcomePayload): Promis
   await page.evaluate((o) => {
     window.__nputerShellHarness!.applyPickOutcome(o);
   }, outcome);
+}
+
+/**
+ * Hand the shell the startup failure the store's own catch would have
+ * recorded (T-050). It calls `recordStartupFailure` itself — the very
+ * function `startDocsWatcher` calls when `listen` or `invoke` rejects —
+ * so what renders here is the shipped state and not a lane-side copy of
+ * it. A served bundle cannot fail at startup on its own (a browser
+ * awaits neither), which is the whole reason this door exists.
+ */
+export async function applyStartupFailure(
+  page: Page,
+  step: StartupStep,
+  reason: string,
+): Promise<void> {
+  await page.evaluate(
+    (f) => {
+      window.__nputerShellHarness!.applyStartupFailure(f.step, f.reason);
+    },
+    { step, reason },
+  );
 }
 
 /** Push one snapshot through the docs harness — the watcher's own path

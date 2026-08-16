@@ -22,6 +22,8 @@ import {
   subscribeShell,
   type FrontDoorNotice,
   type PlanChecklistRow,
+  type StartupFailure,
+  type StartupStep,
 } from "@/lib/watcher-store";
 
 // A live, read-only lens over the project's docs/ tree: T-003's watcher
@@ -237,6 +239,125 @@ export function EmptyState({
   );
 }
 
+/** What the failed step MEANS, in the user's terms rather than the
+ * store's (T-050). The two are different situations and the sentence
+ * says which: a refused subscribe leaves no live watcher at all, while
+ * a refused snapshot leaves one up — so that one can still come alive
+ * on its own the next time a file changes. */
+function startupStepPhrase(step: StartupStep): string {
+  return step === "subscribe"
+    ? "the watcher subscription was refused, so no file change can reach the board."
+    : "the first docs snapshot was refused, so there is nothing to render yet.";
+}
+
+/**
+ * T-050: the startup screen — waiting, or FAILED, and never a dead end.
+ *
+ * @human hit this screen with nothing on it but "Toggle theme": the
+ * startup latch was set before the awaits and never reset, the rejection
+ * was swallowed, and the screen was one muted line. All three layers are
+ * answered here — the copy stops claiming the app is waiting once
+ * startup has failed, the rejection is shown as TEXT, and the three ways
+ * out (retry, plus the front door's own two) sit ON this screen rather
+ * than in a header it does not carry.
+ */
+export function StartupScreen({
+  failure,
+  starting,
+  picking,
+  onRetry,
+  onPick,
+  onStartInterview,
+}: {
+  failure: StartupFailure | null;
+  starting: boolean;
+  picking: boolean;
+  onRetry: () => void;
+  onPick: () => void;
+  onStartInterview: () => void;
+}) {
+  return (
+    <section
+      data-testid="startup-screen"
+      data-startup={failure === null ? "waiting" : "failed"}
+      className="flex flex-1 items-center justify-center px-10 py-12"
+    >
+      <div className="flex w-full max-w-150 flex-col gap-8">
+        <div className="flex flex-col gap-3">
+          <h2 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h2>
+          <p
+            data-testid="startup-message"
+            className="max-w-120 text-base text-secondary-foreground"
+          >
+            {failure === null
+              ? "waiting for the first docs snapshot…"
+              : `nputer could not start — ${startupStepPhrase(failure.step)}`}
+          </p>
+        </div>
+
+        {failure !== null && (
+          <div className="flex flex-col gap-2 rounded-lg border border-status-rejected-border bg-status-rejected p-6">
+            <h3 className="text-sm font-semibold tracking-heading text-destructive">
+              startup failed at {failure.step} · attempt {failure.attempt}
+            </h3>
+            {/* The rejection, verbatim and as a TEXT NODE — React escapes
+                it, and this app owns no raw-HTML sink at all (the
+                standing hygiene grep, widened from app/src/genesis/ to
+                the whole of app/src by test/startup-screen.test.tsx —
+                which is why this comment does not spell the sink's
+                name: the grep reads comments too, and it should). */}
+            <p
+              data-testid="startup-failure-detail"
+              className="font-mono text-sm break-words text-status-rejected-foreground"
+            >
+              {failure.message}
+            </p>
+          </div>
+        )}
+
+        {/* The escape. Retry first — it is what fixes a transient
+            boundary failure — then the front door's own two ways in,
+            same verbs and same order as everywhere else in the app. */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            size="lg"
+            variant={failure === null ? "outline" : "default"}
+            data-testid="startup-retry"
+            disabled={starting}
+            onClick={onRetry}
+          >
+            {starting ? "trying…" : "Try again"}
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            data-testid="startup-open-folder"
+            disabled={picking}
+            onClick={onPick}
+          >
+            Open a folder…
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            data-testid="startup-start-interview"
+            disabled={picking}
+            onClick={onStartInterview}
+          >
+            Start an interview
+          </Button>
+          <span
+            data-testid="startup-shortcut-hint"
+            className="ml-1 font-mono text-xs text-muted-foreground"
+          >
+            ⌘O · ⌘N
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /** The board header's right-edge milestone counter: milestone-1 real
  * tasks (ghosts and parked never count), done only. */
 function milestoneLine(model: ReturnType<typeof getShellState>["docs"]["model"]): string | undefined {
@@ -251,6 +372,12 @@ function milestoneLine(model: ReturnType<typeof getShellState>["docs"]["model"])
 function App() {
   const shell = useSyncExternalStore(subscribeShell, getShellState);
 
+  // T-050: still `void`, and now that is SAFE rather than silent —
+  // `startDocsWatcher` no longer rejects. A failed attempt is recorded in
+  // shell state and rendered by the startup screen below, because the
+  // store is the only place that knows WHICH await broke. It is also
+  // still idempotent under StrictMode's double-effect (the latch is
+  // assigned synchronously), and no longer permanent when it fails.
   useEffect(() => {
     void startDocsWatcher();
   }, []);
@@ -395,10 +522,19 @@ function App() {
         </div>
       </header>
 
-      {screen.screen === "loading" && (
-        <p className="px-6 py-3 text-sm text-muted-foreground">
-          waiting for the first docs snapshot…
-        </p>
+      {/* T-050: waiting AND failed are the same screen — one that always
+          carries a way out. The header's own "Open folder…" pair is
+          board-only (T-049) and this screen has no rail, so the escape
+          lives here or nowhere. */}
+      {(screen.screen === "loading" || screen.screen === "startupFailed") && (
+        <StartupScreen
+          failure={screen.screen === "startupFailed" ? screen.failure : null}
+          starting={shell.starting}
+          picking={shell.picking}
+          onRetry={() => void startDocsWatcher()}
+          onPick={() => void pickProjectFolder()}
+          onStartInterview={() => void pickGenesisFolder()}
+        />
       )}
 
       {screen.screen === "browser" && (

@@ -50,17 +50,26 @@ export type PickOutcomePayload =
   | { kind: "picked"; snapshot: DocsSnapshotPayload }
   | { kind: "genesis"; projectDir: string; seq: number; probe: PlanProbePayload };
 
+/** T-050: which of the two startup awaits refused. */
+export type StartupStep = "subscribe" | "snapshot";
+
 /** What `getShell()` answers — the shell's own PHASE first, so a spec
  * asserts on the phase rather than on a selector that could pass on a
  * different screen. */
 export interface ShellHarnessSnapshot {
   phase: "loading" | "browser" | "noProject" | "noDocs" | "genesis" | "open";
-  screen: "loading" | "browser" | "empty" | "genesis" | "board";
+  screen: "loading" | "startupFailed" | "browser" | "empty" | "genesis" | "board";
   resolvedDir: string | null;
   resolvedProbe: PlanProbePayload | null;
   genesisDir: string | null;
   rejectedPick: { path: string; message: string | null } | null;
   picking: boolean;
+  /** T-050: the startup attempt's own state. `startupFailed` is a SCREEN
+   * with no phase of its own — it rides "loading" in the shipped app and
+   * "browser" in a served bundle, which is exactly why `expectPhase`
+   * takes both and a spec about it asserts on this field too. */
+  starting: boolean;
+  startupFailure: { step: StartupStep; message: string; attempt: number } | null;
   indexing: boolean;
   docs: {
     seq: number;
