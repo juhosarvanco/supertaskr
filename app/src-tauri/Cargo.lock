@@ -2090,6 +2090,7 @@ dependencies = [
  "blake3",
  "ignore",
  "jsonc-parser",
+ "notify-debouncer-mini",
  "serde",
  "serde_json",
  "tree-sitter",

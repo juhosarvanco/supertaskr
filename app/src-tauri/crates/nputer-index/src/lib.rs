@@ -8,8 +8,18 @@
 //! consult cache) -> parse (tree-sitter, per-dialect grammars) ->
 //! extract (module-level symbols, imports, candidates) -> resolve
 //! (pure, against the walked set) -> emit (stable serializer, budget).
+//!
+//! T-014 adds the binary the future Node CLI shells out to, and with it
+//! three modes over the same pipeline: [`check`] (is the committed graph
+//! current?), [`watch`] (keep it current headless, debounced) and
+//! [`arch`] (the reality-side join, printed). The exit-code contract
+//! those modes share is documented on [`cli`].
 
+pub mod arch;
 mod cache;
+pub mod check;
+pub mod cli;
+pub mod diff;
 mod emit;
 mod error;
 mod extract;
@@ -18,6 +28,7 @@ mod hash;
 mod parse;
 mod resolve;
 mod walk;
+pub mod watch;
 
 #[cfg(test)]
 mod testutil;
@@ -25,6 +36,7 @@ mod testutil;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
+pub use diff::{diff, GraphDiff};
 pub use error::IndexError;
 pub use graph::{Edge, FileEntry, Graph, Lang, Package, Stats, Symbol, Unresolved};
 

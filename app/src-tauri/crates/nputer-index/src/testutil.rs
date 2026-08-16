@@ -38,3 +38,16 @@ impl Drop for TempTree {
         let _ = fs::remove_dir_all(&self.0);
     }
 }
+
+/// This repo's root: manifest-relative, four levels up
+/// (app/src-tauri/crates/nputer-index -> repo). Same derivation as the
+/// integration suites' `common::repo_root`, needed here because T-014's
+/// registry reader is exercised against the live dogfood registry from an
+/// in-module test.
+pub(crate) fn repo_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .nth(4)
+        .expect("repo root four levels up")
+        .to_path_buf()
+}
