@@ -657,7 +657,19 @@ pub enum StreamLine {
     Init { session_id: Option<String>, model: Option<String> },
     TextDelta(String),
     Activity(String),
-    Result(String),
+    /// The turn's canonical text. `is_error` is the CLI's OWN verdict on
+    /// it: observed in the real 2.1.226 smoke, an authentication failure
+    /// arrives as `subtype: "success"` with `is_error: true` and the
+    /// human-readable reason in `result` — while STDERR STAYS EMPTY. Not
+    /// reading this flag is what made the first smoke report
+    /// `exitNonZero { code: 1, stderrTail: "" }` and tell the user
+    /// nothing at all.
+    Result { text: String, is_error: bool },
+    /// A well-formed JSON line carrying an error the CLI is reporting
+    /// in-band (e.g. `system`/`api_retry` with `error_status: 401`).
+    /// Kept as diagnostics so a failure has the CLI's own words even when
+    /// nothing ever reaches stderr.
+    Diagnostic(String),
     /// A well-formed JSON line of a type we do not act on — ignored, so
     /// the protocol is forward-compatible with new CLI event types.
     Ignored,
@@ -680,6 +692,21 @@ pub fn classify_line(line: &str) -> StreamLine {
                     .and_then(|v| v.as_str())
                     .map(str::to_string),
                 model: value.get("model").and_then(|v| v.as_str()).map(str::to_string),
+            }
+        }
+        // Other `system` subtypes are ignored EXCEPT when they carry an
+        // error the CLI is reporting in-band (`api_retry` does: attempt,
+        // `error_status`, `error`). Observed live in the 2.1.226 smoke.
+        "system" => {
+            let status = value.get("error_status");
+            let error = value.get("error");
+            if status.is_some() || error.is_some() {
+                let subtype = value.get("subtype").and_then(|v| v.as_str()).unwrap_or("system");
+                let status = status.map(|v| v.to_string()).unwrap_or_default();
+                let error = error.and_then(|v| v.as_str()).unwrap_or("").to_string();
+                StreamLine::Diagnostic(format!("{subtype}: {error} {status}").trim().to_string())
+            } else {
+                StreamLine::Ignored
             }
         }
         "stream_event" => {
@@ -737,7 +764,11 @@ pub fn classify_line(line: &str) -> StreamLine {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            StreamLine::Result(text)
+            // NOTE (real smoke, claude 2.1.226): `subtype` reads
+            // "success" even on an authentication failure — `is_error` is
+            // the field that tells the truth.
+            let is_error = value.get("is_error").and_then(|v| v.as_bool()).unwrap_or(false);
+            StreamLine::Result { text, is_error }
         }
         _ => StreamLine::Ignored,
     }
@@ -855,6 +886,7 @@ pub fn run_turn(
     let mut saw_json_anchor = false;
     let mut last_activity: Option<String> = None;
     let mut result_text: Option<String> = None;
+    let mut result_is_error = false;
     let mut oversize = false;
     let mut last_line_at = Instant::now();
     let mut failure: Option<TurnError> = None;
@@ -900,9 +932,23 @@ pub fn run_turn(
                             last_activity = Some(label);
                         }
                     }
-                    StreamLine::Result(text) => {
+                    StreamLine::Result { text, is_error } => {
                         saw_json_anchor = true;
+                        if is_error {
+                            // The CLI's own explanation, which may be the
+                            // ONLY one there is (stderr can be empty).
+                            stderr_ring
+                                .lock()
+                                .expect("stderr ring poisoned")
+                                .push(text.as_bytes());
+                            result_is_error = true;
+                        }
                         result_text = Some(text);
+                    }
+                    StreamLine::Diagnostic(note) => {
+                        saw_json_anchor = true;
+                        stderr_ring.lock().expect("stderr ring poisoned").push(note.as_bytes());
+                        stderr_ring.lock().expect("stderr ring poisoned").push(b"\n");
                     }
                     StreamLine::Ignored => saw_json_anchor = true,
                     StreamLine::NotJson => {
@@ -993,6 +1039,15 @@ pub fn run_turn(
                 } else if result_text.is_none() {
                     Some(TurnError::MalformedStream {
                         why: "the CLI exited without a result line".into(),
+                    })
+                } else if result_is_error {
+                    // Exit 0 but the CLI marked its own result an error.
+                    // Not observed in the 2.1.226 smoke (it exited 1),
+                    // but relaying a failure as if it were the planner's
+                    // answer would be the worst outcome, so it is typed.
+                    Some(TurnError::ExitNonZero {
+                        code: status.and_then(|s| s.code()),
+                        stderr_tail: crate::docs_watch::sanitize_for_log(&stderr_tail),
                     })
                 } else {
                     None
@@ -1182,7 +1237,30 @@ mod tests {
         );
         assert_eq!(
             classify_line(r#"{"type":"result","subtype":"success","result":"done"}"#),
-            StreamLine::Result("done".into())
+            StreamLine::Result { text: "done".into(), is_error: false }
+        );
+        // The real 2.1.226 auth-failure shape: subtype STILL says
+        // "success" — `is_error` is the field that tells the truth.
+        assert_eq!(
+            classify_line(
+                r#"{"type":"result","subtype":"success","is_error":true,"api_error_status":401,"result":"Failed to authenticate."}"#
+            ),
+            StreamLine::Result { text: "Failed to authenticate.".into(), is_error: true }
+        );
+        // In-band system errors become diagnostics, not silence.
+        match classify_line(
+            r#"{"type":"system","subtype":"api_retry","attempt":1,"error_status":401,"error":"authentication_failed"}"#,
+        ) {
+            StreamLine::Diagnostic(note) => {
+                assert!(note.contains("api_retry") && note.contains("authentication_failed"));
+                assert!(note.contains("401"));
+            }
+            other => panic!("expected Diagnostic, got {other:?}"),
+        }
+        // A system line with no error stays ignored (e.g. `status`).
+        assert_eq!(
+            classify_line(r#"{"type":"system","subtype":"status","status":"requesting"}"#),
+            StreamLine::Ignored
         );
         // Forward-compatible: an unknown JSON type is ignored, not fatal.
         assert_eq!(classify_line(r#"{"type":"brand_new_thing"}"#), StreamLine::Ignored);

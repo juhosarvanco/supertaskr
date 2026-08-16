@@ -500,6 +500,46 @@ fn a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail() {
     assert_eq!(sessions::load(&h.project).sessions[0].status, "idle");
 }
 
+/// THE REGRESSION PIN FOR WHAT THE REAL SMOKE FOUND. Against the live
+/// `claude 2.1.226` this task's first smoke run produced
+/// `exitNonZero { code: 1, stderrTail: "" }` — a typed failure that told
+/// the user NOTHING, because the CLI reports authentication failures in
+/// band on stdout (an `api_retry` system line plus a `result` line whose
+/// `subtype` still reads "success" while `is_error` is true) and leaves
+/// stderr completely empty.
+///
+/// The `auth-error` scenario transcribes those exact lines. The runner
+/// must now surface the CLI's own words, because for this failure they
+/// are the only words there are.
+#[test]
+fn an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail() {
+    let h = harness("autherror", Options { scenario: "auth-error", ..Options::default() });
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ExitNonZero { code, stderr_tail } => {
+            assert_eq!(code, Some(1));
+            assert!(
+                stderr_tail.contains("401") && stderr_tail.contains("authenticate"),
+                "the failure must carry the CLI's own explanation, got: {stderr_tail:?}"
+            );
+            assert!(
+                stderr_tail.contains("authentication_failed"),
+                "the in-band api_retry diagnostic rides too, got: {stderr_tail:?}"
+            );
+        }
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+    let status = settle(&h.agent);
+    assert_eq!(status.phase, Phase::Failed);
+    // The session id was still captured, so the session stays resumable
+    // once the human fixes their login — never a dead end.
+    assert_eq!(status.native_session_id.as_deref(), Some("fake-session-0001"));
+    assert_eq!(sessions::load(&h.project).sessions[0].status, "idle");
+    // A failed turn is never banked as if the planner had answered.
+    let lines = sessions::read_transcript(&h.project);
+    assert!(lines.iter().all(|l| l.role != "planner"), "no planner line for a failed turn");
+}
+
 #[test]
 fn a_first_turn_with_no_init_line_is_malformed() {
     let h = harness("noinit", Options { scenario: "no-init", ..Options::default() });

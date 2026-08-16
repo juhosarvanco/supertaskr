@@ -128,6 +128,35 @@ fn main() {
             eprintln!("fake-agent: credentials expired, please run `claude login`");
             std::process::exit(3);
         }
+        // THE REAL AUTH-FAILURE SHAPE, transcribed from the 2.1.226 smoke
+        // (implementation notes record the captured lines): the CLI
+        // reports the failure IN BAND on stdout — an `api_retry` system
+        // line, then a `result` line whose `subtype` still reads
+        // "success" while `is_error` is true — exits 1, and writes
+        // NOTHING to stderr. A runner that only tails stderr shows the
+        // user an empty explanation.
+        "auth-error" => {
+            emit_init(&session_id, &model);
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "system", "subtype": "api_retry", "attempt": 1,
+                    "max_retries": 10, "retry_delay_ms": 508,
+                    "error_status": 401, "error": "authentication_failed",
+                    "session_id": session_id
+                })
+            );
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": true,
+                    "api_error_status": 401, "terminal_reason": "api_error",
+                    "num_turns": 1,
+                    "result": "Failed to authenticate. API Error: 401 OAuth access token has been revoked."
+                })
+            );
+            std::process::exit(1);
+        }
         "no-init" => {
             // A first turn with no init line: the session id can never be
             // captured, so the turn is MalformedStream.

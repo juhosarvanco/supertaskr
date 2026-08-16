@@ -56,9 +56,12 @@ pub const SESSION_ID_SLOT: &str = "{session_id}";
 /// - `--include-partial-messages` — `content_block_delta` events, so the
 ///   pane shows text as it is generated (§4's 250 ms bound). Requires
 ///   print + stream-json, which we pass.
-/// - `--verbose` — stream-json in print mode has historically required
-///   it; harmless when it does not (the CLI's own extra lines are
-///   non-JSON and land in the diagnostic ring, tolerated by §6).
+/// - `--verbose` — STILL REQUIRED by 2.1.226. The plan left this as an
+///   open question for the smoke to answer, and the answer is measured,
+///   not inherited: dropping the flag makes the CLI refuse at
+///   ARGUMENT-VALIDATION time — `Error: When using --print,
+///   --output-format=stream-json requires --verbose`, exit 1, on stderr,
+///   before any model call. Load-bearing, not vestigial.
 /// - `--permission-mode acceptEdits` — auto-accepts file writes INSIDE
 ///   THE CWD, which is the project directory. That cwd scoping IS the
 ///   project-dir scoping criterion 2 demands; there is no `--add-dir`
