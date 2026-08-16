@@ -61,6 +61,10 @@ struct Options<'a> {
     with_docs: bool,
     start_timeout: Duration,
     stall_timeout: Duration,
+    /// T-039: the session id the `hostile-id` scenario puts in its init
+    /// line. `None` leaves the fake's own default (the T-025 verifier's
+    /// exact injection).
+    session_id: Option<&'a str>,
 }
 
 impl Default for Options<'_> {
@@ -72,6 +76,7 @@ impl Default for Options<'_> {
             with_docs: false,
             start_timeout: Duration::from_millis(1500),
             stall_timeout: Duration::from_millis(1500),
+            session_id: None,
         }
     }
 }
@@ -95,15 +100,20 @@ fn harness(tag: &str, opts: Options<'_>) -> Harness {
         fs::create_dir_all(project.join("docs")).expect("mk docs");
     }
 
+    let mut extra_env = vec![
+        ("NPUTER_FAKE_SCENARIO".to_string(), opts.scenario.to_string()),
+        ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
+        ("NPUTER_FAKE_VERSION".to_string(), opts.version.to_string()),
+    ];
+    if let Some(id) = opts.session_id {
+        extra_env.push(("NPUTER_FAKE_SESSION_ID".to_string(), id.to_string()));
+    }
+
     let cfg = RunnerConfig {
         binary_override: Some(opts.binary.unwrap_or_else(fake_agent_bin)),
         // A PATH the child can be asserted against, byte for byte.
         path_override: Some("/nputer-test-path/bin:/nputer-test-path/sbin".into()),
-        extra_env: vec![
-            ("NPUTER_FAKE_SCENARIO".into(), opts.scenario.into()),
-            ("NPUTER_FAKE_DUMP_DIR".into(), dump.display().to_string()),
-            ("NPUTER_FAKE_VERSION".into(), opts.version.into()),
-        ],
+        extra_env,
         probe_login_shell: false,
         config_dir: Some(config),
         start_timeout: opts.start_timeout,
@@ -893,6 +903,273 @@ fn no_source_in_the_agent_module_builds_a_shell_command_line() {
         !runner.contains("format!(\"command -v"),
         "the probe script must never be format!-assembled"
     );
+}
+
+// ---- T-039: the session-id injection gate ------------------------------
+//
+// `-r, --resume [value]` takes an OPTIONAL argument (2.1.226's own
+// `--help`), so an id beginning with `-` is not the resume VALUE — it is a
+// standalone FLAG. The T-025 verifier measured
+// `--dangerously-skip-permissions` landing in a spawned argv exactly that
+// way, through DATA, while the adapter's bypass pin stayed green because
+// it searched the static TABLE. These are the pins for the gate that
+// closes it, at both boundaries a captured id can arrive through.
+
+/// THE REGRESSION PIN, end to end and data-borne: the fake CLI puts the
+/// verifier's exact injection in its own init line. Before the gate, this
+/// id was captured, emitted, written to `.nputer/sessions.json`, and
+/// substituted into turn 2's argv as `["WebSearch", "--resume",
+/// "--dangerously-skip-permissions"]` — a real spawned child, measured.
+/// Now the turn fails typed and nothing downstream ever sees the id.
+#[test]
+fn a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded() {
+    let h = harness("t039capture", Options { scenario: "hostile-id", ..Options::default() });
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+
+    // Every event up to the failure, so ABSENCE is assertable too.
+    let mut seen: Vec<RunEvent> = Vec::new();
+    let deadline = Instant::now() + Duration::from_secs(20);
+    let error = loop {
+        match h.events.recv_timeout(Duration::from_millis(200)) {
+            Ok(RunEvent::Failed { error, .. }) => break error,
+            Ok(other) => seen.push(other),
+            Err(mpsc::RecvTimeoutError::Timeout) if Instant::now() < deadline => continue,
+            Err(err) => panic!("no failed event ({err:?}); saw {seen:#?}"),
+        }
+    };
+    match &error {
+        TurnError::MalformedStream { why } => {
+            assert!(why.contains("unusable session id"), "{why}");
+            assert!(why.contains("begins with '-'"), "names the rejection: {why}");
+            assert!(why.contains("--resume"), "names why it matters: {why}");
+            assert!(!why.contains("dangerously"), "the refused id is not echoed back: {why}");
+        }
+        other => panic!("expected MalformedStream, got {other:?}"),
+    }
+    assert!(
+        !seen.iter().any(|e| matches!(e, RunEvent::SessionRegistered { .. })),
+        "the id must not be announced to the webview either: {seen:#?}"
+    );
+    assert!(
+        !seen.iter().any(|e| matches!(e, RunEvent::Completed { .. })),
+        "a turn whose init line is unusable is not an answer: {seen:#?}"
+    );
+
+    let status = settle(&h.agent);
+    assert_eq!(status.phase, Phase::Failed);
+    assert_eq!(status.native_session_id, None, "nothing to resume from");
+    assert_eq!(status.last_error.as_ref(), Some(&error));
+
+    // NOT WRITTEN TO THE REGISTRY. The entry exists (the start wrote it),
+    // and its id field is empty — the hostile value never landed on disk.
+    let registry = sessions::load(&h.project);
+    assert_eq!(registry.sessions.len(), 1);
+    assert_eq!(registry.sessions[0].native_session_id, None);
+    assert_eq!(registry.sessions[0].status, "idle");
+    let raw = fs::read_to_string(sessions::sessions_path(&h.project)).expect("registry file");
+    assert!(!raw.contains("dangerously"), "the file must not carry it either: {raw}");
+
+    // NO RESUME ATTEMPTED: there is nothing to resume with, and no second
+    // child was ever spawned.
+    assert!(matches!(agent::send_turn(&h.watch, &h.agent, "answer".into()), SendOutcome::NoSession));
+    assert!(!turn_dump(&h.dump, 2).exists(), "no second child ran");
+    let argv1 = read_argv(&h.dump, 1);
+    assert!(!argv1.iter().any(|a| a == "--resume"), "turn 1 spawns fresh: {argv1:?}");
+    assert!(
+        !argv1.iter().any(|a| a.contains("dangerously")),
+        "and nothing hostile is in turn 1's argv: {argv1:?}"
+    );
+}
+
+/// The same capture gate, driven with one id per rejected class — the
+/// allowlist is a shape, not a blocklist of the one string that was
+/// measured. (NUL rides the registry path instead: `Command::env` cannot
+/// carry one, so it is pinned at the unit level and in the read-boundary
+/// test.)
+#[test]
+fn every_hostile_id_class_fails_the_turn_at_capture() {
+    for (tag, id, fragment) in [
+        ("dash", "--dangerously-skip-permissions", "begins with '-'"),
+        ("traversal", "../../../etc/passwd", "starts with '.'"),
+        ("slash", "a/../../b", "U+002F"),
+        ("space", "e7954de6 --dangerously-skip-permissions", "U+0020"),
+        ("newline", "e7954de6\n--dangerously-skip-permissions", "U+000A"),
+        ("lookalike", "\u{435}7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77", "U+0435"),
+        ("escape", "e7954\u{1b}[2Kde6", "U+001B"),
+    ] {
+        let h = harness(
+            &format!("t039class-{tag}"),
+            Options { scenario: "hostile-id", session_id: Some(id), ..Options::default() },
+        );
+        assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+        match wait_failed(&h.events) {
+            TurnError::MalformedStream { why } => assert!(
+                why.contains("unusable session id") && why.contains(fragment),
+                "{tag}: expected {fragment:?} in {why:?}"
+            ),
+            other => panic!("{tag}: expected MalformedStream, got {other:?}"),
+        }
+        settle(&h.agent);
+        assert_eq!(sessions::load(&h.project).sessions[0].native_session_id, None, "{tag}");
+    }
+
+    // …and one absurdly long id, built rather than spelled out.
+    let long = "a".repeat(4096);
+    let h = harness(
+        "t039class-long",
+        Options { scenario: "hostile-id", session_id: Some(&long), ..Options::default() },
+    );
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    match wait_failed(&h.events) {
+        TurnError::MalformedStream { why } => {
+            assert!(why.contains("4096 bytes") && why.contains("128-byte bound"), "{why}")
+        }
+        other => panic!("expected MalformedStream, got {other:?}"),
+    }
+    settle(&h.agent);
+}
+
+/// THE READ BOUNDARY (criterion 3). `.nputer/sessions.json` is a runtime
+/// file in the user's project directory: a sync client, another tool, or a
+/// corruption can write it, and T-029 spawns from what it says. A hostile
+/// id in that file is refused with a typed outcome — and the discriminating
+/// half: the same file with a well-shaped id still offers the resume.
+#[test]
+fn a_hostile_session_id_in_the_registry_file_is_refused_at_the_read_boundary() {
+    let h = harness("t039registry", Options::default());
+    let path = sessions::sessions_path(&h.project);
+    fs::create_dir_all(path.parent().expect("parent")).expect("mkdir .nputer");
+    let planted = |id: &str| {
+        serde_json::json!({ "sessions": [{
+            "id": "S1", "agent": "claude", "model": "claude-sonnet-5",
+            "native_session_id": id, "created": "2026-08-16T09:20:02Z",
+            "turns": 3, "tasks": [], "roles": ["planner"], "status": "idle"
+        }]})
+        .to_string()
+    };
+
+    for hostile in [
+        "--dangerously-skip-permissions",
+        "--permission-mode=bypassPermissions",
+        // A NUL, which `execve` would truncate at — so what the CLI parses
+        // would not be what anything checked. JSON carries it happily.
+        "e7954de6\u{0}--dangerously-skip-permissions",
+        "../../../../etc/passwd",
+    ] {
+        fs::write(&path, planted(hostile)).expect("plant a hostile registry");
+        match agent::start_genesis(&h.watch, &h.agent) {
+            StartOutcome::Error { message } => {
+                assert!(message.contains("refusing to resume session 'S1'"), "{message}");
+                assert!(message.contains(sessions::SESSIONS_REL), "{message}");
+                assert!(
+                    message.contains("begins with '-'") || message.contains("U+"),
+                    "the outcome names the rejection: {message}"
+                );
+                assert!(!message.contains("dangerously"), "no echo of the id: {message}");
+            }
+            other => panic!("expected a typed refusal for {hostile:?}, got {other:?}"),
+        }
+        // Nothing spawned, nothing materialized, and the file left alone
+        // for the user to look at.
+        assert!(!turn_dump(&h.dump, 1).exists(), "a refused read spawns no child");
+        assert!(!h.project.join(".nputer/genesis/kit").exists(), "and materializes no kit");
+        assert_eq!(fs::read_to_string(&path).expect("still there"), planted(hostile));
+    }
+
+    // THE DISCRIMINATING HALF: a well-shaped id is still offered.
+    fs::write(&path, planted("e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77")).expect("plant a real id");
+    match agent::start_genesis(&h.watch, &h.agent) {
+        StartOutcome::ResumeAvailable { native_session_id, turns } => {
+            assert_eq!(native_session_id, "e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77");
+            assert_eq!(turns, 3);
+        }
+        other => panic!("expected ResumeAvailable, got {other:?}"),
+    }
+    assert!(!turn_dump(&h.dump, 1).exists(), "offering a resume still spawns nothing");
+}
+
+/// THE CHOKE POINT. Even handed straight to `run_turn` — the call T-029's
+/// restart-resume will make, with an id it read off disk — a hostile id
+/// produces a typed failure and NO CHILD AT ALL. Assembly is fallible by
+/// construction: there is no way to build a resume argv that skips the
+/// validation.
+#[test]
+fn a_hostile_resume_id_handed_straight_to_the_runner_spawns_nothing() {
+    use nputer_lib::agent::adapter::planner_adapter;
+    use nputer_lib::agent::runner::{run_turn, Emitter, TurnRequest};
+    use std::sync::atomic::AtomicBool;
+    use std::sync::Mutex;
+
+    let h = harness("t039choke", Options::default());
+    let cfg = RunnerConfig {
+        binary_override: Some(fake_agent_bin()),
+        path_override: Some("/nputer-test-path/bin".into()),
+        extra_env: vec![
+            ("NPUTER_FAKE_SCENARIO".into(), "happy".into()),
+            ("NPUTER_FAKE_DUMP_DIR".into(), h.dump.display().to_string()),
+        ],
+        probe_login_shell: false,
+        ..RunnerConfig::default()
+    };
+    let adapter = planner_adapter();
+    let cli = nputer_lib::agent::runner::resolve_cli(&cfg, adapter).expect("the fake resolves");
+    let (tx, events) = mpsc::channel();
+    let emitter = Emitter::new(
+        Arc::new(move |event| {
+            let _ = tx.send(event);
+        }),
+        Arc::new(AtomicU64::new(0)),
+    );
+    let child_slot = Mutex::new(None);
+    let cancel = AtomicBool::new(false);
+
+    let out = run_turn(
+        &cfg,
+        adapter,
+        &cli,
+        &TurnRequest {
+            project_dir: h.project.clone(),
+            prompt: "an answer".into(),
+            resume: Some("--dangerously-skip-permissions".into()),
+            turn: 2,
+        },
+        &emitter,
+        &child_slot,
+        &cancel,
+    );
+    match out.error {
+        Some(TurnError::MalformedStream { ref why }) => {
+            assert!(why.starts_with("refusing to resume:"), "{why}");
+            assert!(why.contains("begins with '-'"), "{why}");
+        }
+        other => panic!("expected MalformedStream, got {other:?}"),
+    }
+    assert!(out.text.is_none() && !out.cancelled);
+    assert!(!turn_dump(&h.dump, 1).exists(), "NOTHING was spawned");
+    let relayed: Vec<RunEvent> = events.try_iter().collect();
+    assert_eq!(relayed.len(), 1, "one failed event, no started: {relayed:#?}");
+    assert!(matches!(relayed[0], RunEvent::Failed { .. }));
+
+    // The same call with the observed real id shape spawns normally — the
+    // gate refuses flags, not resumes.
+    let out = run_turn(
+        &cfg,
+        adapter,
+        &cli,
+        &TurnRequest {
+            project_dir: h.project.clone(),
+            prompt: "an answer".into(),
+            resume: Some("e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77".into()),
+            turn: 2,
+        },
+        &emitter,
+        &child_slot,
+        &cancel,
+    );
+    assert!(out.error.is_none(), "{:?}", out.error);
+    let argv = read_argv(&h.dump, 1);
+    let idx = argv.iter().position(|a| a == "--resume").expect("resumed");
+    assert_eq!(argv[idx + 1], "e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77");
 }
 
 // ---- the one env-gated real smoke (§7) ---------------------------------

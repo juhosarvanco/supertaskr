@@ -240,14 +240,37 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
     }
 
     // A recorded planner session for this project is a CHOICE, not an
-    // auto-resume (T-029 renders it).
+    // auto-resume (T-029 renders it) — and the id it offers is read
+    // through T-039's registry gate, never straight off the field. The
+    // file is runtime state in the user's project dir; anything with disk
+    // access can write it, and T-029 spawns from what it says.
     let registry = sessions::load(&project_dir);
     if let Some(existing) = sessions::find_planner(&registry) {
-        if let Some(id) = &existing.native_session_id {
-            return StartOutcome::ResumeAvailable {
-                native_session_id: id.clone(),
-                turns: existing.turns,
-            };
+        match existing.resume_id() {
+            Ok(Some(id)) => {
+                return StartOutcome::ResumeAvailable {
+                    native_session_id: id.to_string(),
+                    turns: existing.turns,
+                }
+            }
+            // A planner entry with no id recorded: nothing to resume from,
+            // so genesis proceeds as a fresh start.
+            Ok(None) => {}
+            // LOUD, never silent: refusing to resume is the safe half, but
+            // starting a fresh interview while a poisoned entry sits on
+            // disk would hide the fact that something wrote it.
+            Err(rejection) => {
+                return StartOutcome::Error {
+                    message: format!(
+                        "refusing to resume session '{}' from {}: {rejection}. \
+                         That file is runtime state, losable by charter - delete it to start over.",
+                        // The entry's own id is file-borne data too: bounded
+                        // and escaped, like everything else that came off disk.
+                        sessions::truncate_utf8(&existing.id, 32).escape_debug(),
+                        sessions::SESSIONS_REL
+                    ),
+                }
+            }
         }
     }
 

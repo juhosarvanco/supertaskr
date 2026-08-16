@@ -22,7 +22,14 @@
 //! - cwd is the canonical open project dir from `WatchState`, never a
 //!   webview-supplied path;
 //! - no sockets: the runner's whole I/O is child pipes and `.nputer/`
-//!   files. Port 1420 is never involved.
+//!   files. Port 1420 is never involved;
+//! - T-039: the CLI's own session id is DATA, and it is validated at the
+//!   moment it is captured — before it is emitted, stored, or substituted
+//!   into a resume argv. `--resume [value]` takes an OPTIONAL argument, so
+//!   an unvalidated id beginning with `-` would parse as a standalone flag
+//!   rather than as a value. The gate is `adapter::validate_session_id`,
+//!   and assembly through `adapter::argv` is fallible so no path can skip
+//!   it.
 
 use std::collections::VecDeque;
 use std::io::{BufReader, Read, Write};
@@ -34,7 +41,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 
-use super::adapter::{is_executable_file, parse_major, AgentAdapter};
+use super::adapter::{is_executable_file, parse_major, validate_session_id, AgentAdapter};
 
 // ---- caps (T-003's cap discipline, §4) --------------------------------
 
@@ -816,9 +823,26 @@ pub fn run_turn(
 ) -> TurnOutcome {
     let mut out = TurnOutcome::default();
 
+    // T-039, THE SPAWN-SIDE GATE. Assembly is fallible, and a refusal
+    // happens BEFORE anything is spawned: no child, no argv, no partial
+    // state. This is the second boundary for an id read out of
+    // `.nputer/sessions.json` (the first is `SessionEntry::resume_id`) and
+    // the last one for any future caller.
+    let argv = match adapter.argv(req.resume.as_deref()) {
+        Ok(argv) => argv,
+        Err(rejection) => {
+            let error = TurnError::MalformedStream {
+                why: format!("refusing to resume: {rejection}"),
+            };
+            out.error = Some(error.clone());
+            emitter.failed(req.turn, error);
+            return out;
+        }
+    };
+
     let mut command = Command::new(&cli.path);
     command
-        .args(adapter.argv(req.resume.as_deref()))
+        .args(argv)
         .current_dir(&req.project_dir)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -904,6 +928,22 @@ pub fn run_turn(
                     StreamLine::Init { session_id, model } => {
                         saw_json_anchor = true;
                         if let Some(id) = session_id {
+                            // T-039, THE CAPTURE-SIDE GATE — before the
+                            // event, before the registry, before any
+                            // resume. A stream is data: the id is refused
+                            // LOUDLY here rather than coerced into
+                            // something acceptable, so `out
+                            // .native_session_id` stays None, the settle
+                            // path writes no id to `.nputer/sessions.json`,
+                            // and `send_turn` has nothing to resume from.
+                            if let Err(rejection) = validate_session_id(&id) {
+                                failure = Some(TurnError::MalformedStream {
+                                    why: format!(
+                                        "the CLI's init line carried an unusable session id: {rejection}"
+                                    ),
+                                });
+                                break;
+                            }
                             if out.native_session_id.as_deref() != Some(id.as_str()) {
                                 emitter.session_registered(id.clone());
                                 out.native_session_id = Some(id);
