@@ -45,3 +45,42 @@ unchanged.
 
 Small, self-contained, and it makes the gate safe to point at 1420 by
 default, which is what CI already does.
+
+---
+
+**Verifier's reproduction, 2026-08-16 (claude-opus-5 @fresh) — it is not
+theoretical.** The drill s1 asks for, run: `NPUTER_BOOT_PORT=14521 npm
+run boot:check`, poll for the vite listener, then `SIGKILL` the tauri CLI
+of this worktree mid-boot — the "CLI segfaults or is SIGKILLed" case,
+denying it any chance to tear down its own `beforeDevCommand`:
+
+    >>> vite pid(s) on 14521: 89666
+    >>> tauri CLI pid(s): 89415
+    >>> SIGKILL the tauri CLI, pid 89415
+    [boot-check] tauri dev exited on its own (exit=null signal=SIGKILL) before both startup lines appeared:
+      MISSING  [nputer] project folder:
+      MISSING  [nputer] window "main" created
+      …
+    >>> BOOT CHECK EXIT = 1
+
+    --- 14521, 2s after the boot check exited ---
+    node    89666 ujju   19u  IPv6 …  TCP [::1]:14521 (LISTEN)
+    --- processes still referencing nputer-t046 ---
+    89666 node …/nputer-t046/app/node_modules/.bin/vite --port 14521 --strictPort
+    89669 …/@esbuild/darwin-arm64/bin/esbuild --service=0.28.2 --ping
+
+The check exits 1 with a correct, legible report and leaves a **live vite
+listener plus an orphaned esbuild helper** behind. On the default path
+that listener is on 1420. Killed by hand afterwards (`kill -TERM 89666`);
+14521 released, the human's 1420 never touched.
+
+So the leak is real, and T-046 raises its exposure rather than creating
+it: before this task the script ran essentially never, and after it every
+qualifying merge and every qualifying executor runs it. Two things keep
+that from being merge-blocking — the CONVENTIONS BOOT GATE bullet
+mandates `NPUTER_BOOT_PORT=<free scratch port>`, which keeps any orphan
+off 1420, and CI's default-path runs are on ephemeral runners. Neither is
+a reason to leave it: the first is a convention a tired human can forget,
+and the second only holds while CI is the only default-path caller.
+Priority accordingly raised from "odd asymmetry" to "demonstrated leak on
+the human's port, one forgotten env var away".

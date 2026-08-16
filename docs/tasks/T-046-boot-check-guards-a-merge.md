@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [tools/e2e/, docs/CONVENTIONS.md]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-020-s3, T-040-s1. Triage 2026-08-16: these arrived hours
@@ -430,3 +430,245 @@ entered.
   as invisible.
 
 ## Verdicts
+
+2026-08-16 — claude-opus-5 @fresh, verifier — same-model review:
+**APPROVED.** All six criteria met. Every claim re-derived from scratch
+in worktree /Users/ujju/Projects/nputer-t046 at `9b2832b`, merge-base
+with main confirmed `2961599` by `git merge-base`; nothing was taken from
+the notes on trust, and the mutation table below is my own rather than
+the builder's. Two real holes found — one in the gate's reach (filed
+T-046-s4), one demonstrated in a pre-existing path the criteria froze
+(reproduced into T-046-s1) — neither of which is a criterion failure, and
+both of which are the kind of thing this task's own logic says to file
+rather than absorb. The human's app held `[::1]:1420` throughout: no
+command in this session bound it, connected to it, or signalled it, and
+every boot run used scratch port 14521 (or 14598/14599 for probes).
+
+**Criterion 5 — the T-040 fixture, both directions, shipped script.**
+`default-run = "nputer"` removed with the same perl one-liner
+(`git diff --stat` = `1 file changed, 1 deletion(-)`), then
+`NPUTER_BOOT_PORT=14521 npm run boot:check`: **exit 1**, and the tail
+carries the regression verbatim, ANSI bytes and all —
+
+    | error: `cargo run` could not determine which binary to run. Use the `--bin` option to specify a binary, or the `default-run` manifest key.
+    | available binaries: fake_agent, nputer
+
+`git checkout app/src-tauri/Cargo.toml`, then md5 of Cargo.toml
+(`903321552aa936a72c4220677f9286d2`) and Cargo.lock
+(`13fbe67226b6feaa4280ee597a141283`) identical to the pre-fixture
+baseline, sha256 too, `git status` clean — and the same command again:
+**exit 0** in 6 s, both `[nputer]` lines, `process tree stopped
+(exit=null signal=SIGTERM)`. The builder's recorded hashes are the ones I
+measured before touching anything, so the fixture was fully reverted at
+hand-off as well.
+
+**Does it catch the CLASS, or only that one string?** The question the
+task does not ask and should have. Four further launch-breaking
+mutations, one at a time, each reverted:
+
+| mutation | gate |
+| --- | --- |
+| `default-run = "nputrr"` — same class, different member | **exit 1**, cargo's `default-run target 'nputrr' not found` + its `help: a target with a similar name exists` quoted |
+| `app/package.json` `"dev": "true"` — dev server never starts | **exit 1**, tail repeats `Warn Waiting for your frontend dev server to start on http://localhost:14521/...` |
+| `tauri.conf.json` `devUrl` → dead port 14999 | **exit 0 — BLIND** |
+| `tauri.conf.json` `beforeDevCommand` → `npm run no-such-script-at-all` | **exit 0 — BLIND** |
+
+The first two answer the question yes, and their failures are legible
+enough to diagnose without re-running: the tail report earns its place.
+The last two are the hole — the `--config` overlay replaces exactly
+`devUrl` and `beforeDevCommand`, so the override path cannot see a
+regression in either. It is not an implementation bug; criterion 1
+prescribes the overlay, and both keys must move together or the check
+hangs. But it is an honest limit the notes do not carry, and the gate
+CONVENTIONS mandates is the overriding one. Filed **T-046-s4** with a
+shape that shrinks it (derive the overlay from the committed values
+instead of hard-coding them) rather than a demand to close it.
+
+**Criterion 2 — the 1420 refusal, attacked and instrumented.** I did not
+try to defeat the guard by inspection; I ran the shipped script under
+`node --import` with a spy patching `net.Server.listen`,
+`net.Socket.connect` and `child_process.spawn` (via `createRequire`, so
+the builtin's ESM facade is evaluated after the patch and the script's
+`import { spawn }` gets the wrapper — verified by a positive control on a
+free port, which logged both a BIND-ATTEMPT and the SPAWN-ATTEMPT). The
+script on disk was never modified. Twenty-two spellings, every one
+**exit 3, binds=0 connects=0 spawns=0**: `1420`, ` 1420`, `1420\n`,
+`1420\t`, `+1420`, `1420.0`, `0x58c`, `0X58C`, `01420`, `0000001420`,
+`1.42e3`, `14.20e2`, `0b10110001100`, `0o2614`, and — refused by the
+other exit-3 message, as not-a-port — `1420abc`, fullwidth `１４２０`,
+Arabic-indic `١٤٢٠`, `66956` (= 1420 + 65536, so nothing wraps),
+`-64116`, `0`, `70000`, `"  "`. At the resolver level a further set
+including NBSP, U+2028 and BOM prefixes all refuse as 1420. This is
+stronger than the notes' inference: not "it reported neither free nor
+busy" but "no bind was attempted", observed.
+
+The positive control the inference needs, taken separately: the DEFAULT
+path against the live app logged exactly one
+`BIND-ATTEMPT net.Server.listen([1420,"::1"])`, which FAILED
+(`lsof` immediately before confirmed `[::1]:1420` held, so `portFree`
+short-circuits and 127.0.0.1 is never touched) → **exit 2** with the
+correct message. `lsof` immediately after: same pid, same fd, same
+device. A failed bind exchanges zero packets; a spawn was additionally
+made impossible by arming the spy's hard block, so no run of mine could
+have booted on 1420 even had it come free mid-probe.
+
+The one input that resolves to 1420 without refusing is `""`. That is the
+documented "unset or empty" branch — it takes the DEFAULT path, which
+bind-probes and aborts, so it cannot become "a second way to contend";
+it is pinned by the first lane spec and stated in the JSDoc. Attacked and
+ruled benign, not a criterion violation.
+
+**Criterion 3 — the three original paths, plus exit-code semantics.**
+Exit 0: above, 6 s, both lines; after it `lsof -nP -iTCP:14521` empty and
+`pgrep -fl nputer-t046` empty, while `ps -Ao pid,ppid,command` showed the
+only surviving tauri/vite/`target/debug/nputer` processes were the
+human's, all under /Users/ujju/Projects/nputer. Exit 1:
+`NPUTER_BOOT_TIMEOUT_MS=1500` → the MISSING report, tail of 7 lines,
+clean tree kill, port released. Exit 2, both flavours: the default-path
+run above, and my own listener on 14598 → `ABORT: port 14598
+(NPUTER_BOOT_PORT) is in use`, naming the overridden port, nothing
+spawned. The four codes are disjoint and each means one thing: `3` is
+reachable only from `EXIT_REFUSED`, `2` only from the probe, and a
+refusal is raised before either, so it can never read as "busy" or as
+"the boot failed". A reader is told which is which — the tools/e2e
+commands bullet now carries the legend `Exit 0 booted · 1 the boot
+failed, with the child's last output quoted · 2 the port is busy · 3 the
+override was refused`. (It lives in that bullet, ~110 lines above the
+BOOT GATE bullet that tells the integrator to record the code; same
+document, but the BOOT GATE bullet does not point at it. Noted, not
+filed.)
+
+**The separate-module design — ruled sound, and demonstrated rather than
+argued.** The builder's claim is that an `import.meta.url === argv[1]`
+guard would turn a path mismatch into a silent exit 0. I built the guard
+in its usual form and ran it through a symlink: no output, **exit 0**.
+The failure mode is exactly as described. The shipped script through the
+same symlink: **exit 3** — it ran. Also probed for new ways to no-op,
+since that is the failure this task exists to end: from the repo root in
+CI's invocation form → exit 2 (ran); from `/` with an absolute path →
+exit 3 (ran); with `boot-port.mjs` renamed away → **exit 1** with a loud
+`ERR_MODULE_NOT_FOUND`, never a quiet 0. And exit 0 is reachable only
+through `finish(0)`, which is called only when both needles are seen in
+the child's output; the overlay JSON is derived from an integer, so there
+is no string a caller can inject to forge them. I could not make the
+check exit 0 without booting.
+
+**Criterion 6's npm finding — confirmed, my own probe.** An argv-echoing
+script named `tauri` in a scratch package, npm 11.12.1:
+
+    npm run tauri dev --config '{…}'      -> ["dev","{…}"]
+    npm run tauri -- dev --config '{…}'   -> ["dev","--config","{…}"]
+    npm run tauri dev -- --config '{…}'   -> ["dev","--config","{…}"]
+
+Exactly the builder's table; form 1 drops the flag and leaves the JSON a
+stray positional. The spy's SPAWN-ATTEMPT log confirms the shipped form
+is the third: `["run","tauri","dev","--","--config",<json>]`.
+
+**Criterion 4 — CONVENTIONS.** The BOOT GATE bullet sits immediately
+after the T-009-s1 rule and mirrors its shape (label + provenance →
+"at any merge whose diff touches …" → command → record). Its trigger
+matches the criterion's and is strictly more precise, naming both
+manifests. It carries the required sentence verbatim: "IF the check
+cannot run THEN say so LOUDLY in the checkpoint, naming the reason and
+the exit code — a skipped gate is news, never silence." The PORT RULE
+bullet carries `NPUTER_BOOT_PORT` beside `NPUTER_E2E_PORT` as required.
+Criterion 6's YES is recorded with its reasoning, including the case
+against, and the trim claim checked by doing it: deleting the single
+sentence "THE EXECUTOR RUNS IT TOO … in the notes." leaves a coherent
+integrator-only bullet, no other edit needed (one sentence over five
+wrapped lines, not literally one line — the spirit holds). The placement
+argument holds too: method/roles/executor.md §4 says only "Run the test
+commands from CONVENTIONS.md until green" and integrator.md names no
+commands at all, so CONVENTIONS is genuinely the only place a rule meets
+both roles. One asymmetry with the rule it sits beside: T-009-s1 carries
+a retirement condition and BOOT GATE does not. The notes say it retires
+"when something can check it"; that sentence is not in CONVENTIONS.
+Noted, not filed.
+
+**Every new test executes — my mutations, not the builder's.** One
+targeted mutation per spec, each aimed at the assertion carrying the
+task's actual claim, each run as `npx playwright test
+tests/boot-check-guard.spec.ts`, each reverted and `cmp`-verified
+byte-exact:
+
+    1/6  overridden: false -> true                        1 failed, 5 passed  (spec:52)
+    2/6  drop --strictPort from the expected command      1 failed, 5 passed  (spec:60)
+    3/6  0x58c -> 0x58d (=1421, resolves fine)            1 failed, 5 passed  (spec:87)
+    4/6  smuggle valid port "14521" into the reject list  1 failed, 5 passed  (spec:96)
+    5/6  not.toContain("free") -> toContain("free")       1 failed, 5 passed  (spec:104)
+    6/6  not.toContain("1420") -> toContain("1420")       1 failed, 5 passed  (spec:123)
+
+Each reddened the NAMED test, checked by reading the failure title, not
+the count. Mutations 5 and 6 are the load-bearing ones: they are the
+probed-nothing assertion and the override-honoured-end-to-end assertion,
+and both are live.
+
+**Suites, my own runs, all matching the notes.** lib/parser `npx vitest
+run` **159 passed** (10 files), `npx tsc --noEmit` clean · app
+`npm run build` clean then `npm test` **483 passed** (27 files) ·
+app/src-tauri `cargo test` **208 passed, 0 failed, 3 ignored** summed
+across 11 test binaries — the first attempt was piped through `tail` and
+reported a nonsense total, the exact trap T-020's notes record · tools/e2e
+`npm test` **23 passed** (17 + 6) · `npm run typecheck` clean ·
+`npm run lint:tokens` `clean (37 files scanned under app/src)` ·
+`-- --selftest` `43 samples green`. Graph correctly NOT regenerated:
+`cargo test -p nputer-index --test self_graph -- --ignored` →
+`self_graph_is_current ... ok`, `git status docs/architecture/` empty,
+and `.nputerignore:8` is `tools/` — so a diff confined to tools/** and
+docs/** moves nothing in the committed graph.
+
+**Fence, proved rather than asserted.** `git diff --stat 2961599..HEAD`
+is EMPTY for every one of `app/src`, `app/src-tauri`, `lib/parser`,
+`method`, `docs/architecture`, `.github`, `.nputerignore`,
+`app/package.json`, `app/src-tauri/Cargo.toml`,
+`app/src-tauri/tauri.conf.json`, `app/src-tauri/Cargo.lock`,
+`app/package-lock.json`, `lib/parser/package-lock.json`,
+`tools/e2e/package-lock.json` and `tools/e2e/package.json` — so no
+lockfile moved and no dependency was added. The whole diff is nine files
+under tools/e2e/ and docs/. My own probes touched Cargo.toml,
+tauri.conf.json and app/package.json transiently; all three were
+`git checkout`-reverted and the tree is clean, with Cargo.toml and
+Cargo.lock hash-checked. Neither ../nputer-t041 nor ../nputer-t047 was
+entered.
+
+**The three suggestions, ruled.**
+- **T-046-s1 — REAL, and I reproduced it.** The builder called it
+  empirically clean; it is clean only on the tauri CLI's ORDERLY exit. I
+  ran the drill s1 itself proposes — SIGKILL the CLI mid-boot — and the
+  check exited 1 with a correct report while leaving a live vite listener
+  and an orphaned esbuild behind, which I then killed by hand. Evidence
+  appended to the file. Not merge-blocking: the path is pre-existing, and
+  criterion 3 freezes it ("the three existing exit paths SHALL be
+  unchanged"), so fixing it here would have been the violation. But T-046
+  multiplies its exposure — the script went from never running to running
+  at every qualifying merge and every qualifying executor — and on the
+  default path the orphan sits on 1420. Correct encoding, correct scope,
+  priority raised.
+- **T-046-s2 — real, correctly scoped, but its example is wrong and the
+  file should be corrected before anyone works it.** s2 claims "a wrong
+  `@param {number}` on `bootConfigJson` would silently mistype the spec's
+  expectations rather than fail `npm run typecheck`". I lied in that
+  exact annotation (`{number} port` → `{string} port`) and typecheck did
+  NOT stay silent: `tests/boot-check-guard.spec.ts(67,36): error TS2345:
+  Argument of type 'number' is not assignable to parameter of type
+  'string'`. For any function the spec calls, a lying annotation surfaces
+  — loudly, though misattributed, since the error blames the caller for
+  the script's lie. The genuine unchecked surface is different and
+  larger: with `checkJs` off, neither script BODY is ever checked against
+  its own annotations, and `scripts/tauri-boot-check.mjs` and
+  `scripts/lint-tokens.mjs` are not in `include` at all, so tsc never
+  opens them. The remedy s2 proposes is right and its reason for
+  deferring — flipping the flag edits a merge gate's kill path as a side
+  effect of a tsconfig change — is right. Only the worked example is
+  wrong.
+- **T-046-s3 — real, and the argument transplants exactly.** Nothing in
+  the pipeline has ever produced or launched a packaged nputer, and s4
+  above is a second instance of the same shape (a gate that proves the
+  configuration it was handed, not the one that ships). Its cost
+  reasoning is right: minutes, not seconds, so it does not belong in the
+  per-merge bullet.
+
+**@human items: none new.** The standing-rule note is already ruled and
+recorded. Nothing in this review injected OS input, screenshotted, or
+read anything off the screen; the boot runs opened and closed their own
+windows, which is the 2026-08-16 ruling this task relies on.
