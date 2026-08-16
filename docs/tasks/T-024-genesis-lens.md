@@ -5,7 +5,7 @@ feature: F-03
 milestone: 3
 priority: 2
 size: M
-status: building
+status: done
 blocked_by: [T-023]
 touches: [app-interview, docs/architecture/components/]
 builder: claude-fable-5
@@ -29,6 +29,12 @@ context-fidelity, not README-measured — nearest token step, deviations
 disclosed). Declares component C-13-genesis-pane
 (paths app/src/genesis/**, touch slug app-interview) in
 docs/architecture/components/ in-branch, per the T-012 §2 precedent.
+Absorbs: T-023-s2 (triage 2026-08-16) — the dry-run fixture was
+harvested byte-faithfully from the surviving scratch tree rather than
+reconstructed from T-023's notes, which is exactly what s2 asked for;
+discharged in-branch and re-derived by the verifier (12 files, 343
+`.md` lines, NORTH_STAR/ROADMAP byte-identical to the certified
+quotes), so the suggestion file is removed at this merge.
 
 ## Acceptance criteria
 - THE app SHALL gain a pure module app/src/genesis/genesis-derive.ts

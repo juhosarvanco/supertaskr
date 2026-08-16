@@ -19,7 +19,7 @@ graph TD
 | C-02 | CLI | Plumbing + power/CI path (ADR-008): genesis, dispatch; shells out to agent CLIs | C-01, C-06 | planned |
 | C-03 | Runtime | nputer.yaml role defaults; sessions.json registry | C-02 | planned |
 | C-04 | Daemon | Sidecar: watcher, websocket, @mention → headless turns | C-02, C-03 | planned |
-| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06; C-07 when F-06 lands | building (board + map panes complete T-001…T-012; interview/rooms/sessions pending F-03/F-05) |
+| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06; C-07 when F-06 lands | building (board + map panes complete T-001…T-012; the genesis pane's lens C-13 has code since T-024 but no mount until T-026; rooms/sessions pending F-05) |
 | C-06 | lib-parser | Pure library: docs/tasks/ + ROADMAP backbone → typed model (T-002); browser-safe pure exports (T-003); component files (T-008); cross-ref validation (T-019) | C-01 | verified |
 | C-07 | nputer-index | Rust crate + small binary: code → docs/architecture/graph.json (tree-sitter TS/JS/Rust); deterministic, no tauri dependency (ADR-014/015); F-06 | — | building (TS/JS extraction + committed graph done T-009; Rust lang T-010, binary T-014 — milestone 4) |
 
@@ -43,7 +43,9 @@ ADR-014/015).
   what lands (ADR-017); app-side writes confined to .nputer/ runtime
   files.
 - Code layout: `app/` = C-05 (Tauri 2 + React + Vite + Tailwind/shadcn;
-  areas app-shell, app-board, app-map) · `lib/parser/` = C-06,
+  areas app-shell, app-board, app-map, and app-interview since T-024 —
+  `app/src/genesis/**` is C-13's own territory inside the app package,
+  code-complete and unmounted until T-026) · `lib/parser/` = C-06,
   self-contained package · `app/src-tauri/crates/nputer-index` = C-07
   (Cargo workspace inside app/src-tauri arrives with T-009 — the Rust
   sibling of ADR-011) · `tools/e2e/` = the real-input E2E lane (T-020),

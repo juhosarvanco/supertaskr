@@ -1,271 +1,310 @@
 # State
 
-Updated: 2026-08-16 by integrator (T-020 merge), claude-opus-5 @fresh
+Updated: 2026-08-16 by integrator (T-024 merge), claude-opus-5 @fresh
 
 ## Just completed
-T-020 (CI + real-input E2E lane, L, .github/ + tools/e2e/) done and
-merged — APPROVED first-pass. Built across models (claude-fable-5
-@fresh built the whole lane and died mid-verification at 986431e;
-claude-opus-5 @fresh resumed from those WIP commits and ran the §9
-protocol), verified by claude-opus-5 @fresh — `review: same-model`
-taken as the conservative floor relative to the COMPLETING builder,
-with the fable-built half receiving cross-model review. The repo gains
-its first CI workflow and its THIRD npm package.
+T-024 (genesis lens, M, app-interview) done and merged — the project's
+FIRST cross-model build (`claude-fable-5 @fresh` from dispatch through
+`ad2716f`, then `claude-opus-5 @fresh` ×2: the completion session and,
+after a REJECTED verdict, a fresh executor's fix pass), verified by
+`claude-opus-5 @fresh` — `review: same-model` relative to the
+completing builder, with the fable-built half receiving cross-model
+review. Component **C-13 (genesis pane)** now has code. Milestone 3's
+first slice is one card from complete.
 
-WHAT THE LANE IS: tools/e2e — a self-contained Playwright package
-(exact-pinned `@playwright/test` 1.62.1, Chromium project only,
-HEADLESS, workers 1, retries 0, no skips anywhere) that serves the
-app's dev bundle on its own vite and drives it with REAL, trusted
-input. Seven specs / 16 tests: trusted-canary (the lane's own
-credential — `isTrusted` true for a lane click AND a lane keypress),
-blocker-retarget, keyboard-activation (Enter + Space), panel-real-keys
-(Escape closes + focus returns; Enter/Space open), panel-exempt-controls
-(theme toggle keeps the panel open and the scheme actually flips;
-dismissal asserted AT PRESS between mouse.down and mouse.up; the parked
-row's exempt expander), map-retarget, and workflow-parity (no browser —
-it machine-validates the dormant ci.yml). This is the rejection class
-synthetic tests provably CANNOT reach: trusted events get microtask
-checkpoints between listeners, so React's discrete flush detaches the
-clicked node mid-propagation; jsdom dispatch propagates synchronously
-and stays silent.
+WHAT THE LENS IS: `app/src/genesis/genesis-derive.ts` — a pure,
+deterministic, I/O-free function from the watcher's existing docs
+state to a genesis model: per-artifact status (expected from T-023's
+banking map / written / writing / `[?]` assumption count), an
+approximate stage (highest banking-map stage whose artifacts exist,
+approximation recorded as designed), a north-star card (title sentence
++ person/success/non-goal chips, absent-tolerant) and backbone entries
+(built vs forming, from the parsed ROADMAP). Time enters ONLY as the
+`nowMs` argument, so the 5-second "writing" window is testable with
+zero wall-clock flake. `app/src/genesis/GenesisPane.tsx` renders the
+design's right pane from that model and nothing else — "the project,
+so far" header with the live `docs/ · N files written` count,
+north-star card, backbone grid (dark built cards, dashed forming
+placeholders), artifact rows with written ✓ / writing pulse, an
+assumption badge where `[?]` markers live, and the banking map's
+"next" line. It is DRIVER-AGNOSTIC by construction: it renders
+whatever lands in docs/, whether written by T-025's spawned planner or
+by a human hand-driving the method in a terminal. App suite +34
+(24 derivation + 10 DOM), 398 → 432.
 
-IT EARNS ITS KEEP, PROVEN: planting the T-005 rejection back into
-app/src/components/board/panel-dismissal.ts — `sed` both
-`"pointerdown"` strings to `"click"`, character-identical to the
-rejected code — turns the lane red on exactly the right tests: 4
-failed / 12 passed, i.e. blocker-retarget, keyboard-activation ×2, and
-the at-press assertion. The verifier re-derived that from scratch and
-did not stop at the count: the SAME locator resolved one line earlier
-for the opened panel, and Playwright's own failure snapshot shows a
-fully rendered board with NO panel node anywhere — so `element(s) not
-found` is the panel having opened and then CLOSED, the real T-005
-signature, not an incidental selector miss. Revert → 16 passed. The
-lane demonstrably distinguishes the shipped app from the rejected one.
+THE REJECTION, TOLD STRAIGHT — it is the useful part. Declaring a
+component moves **THREE** registry pins, not two. The first pass
+reconciled `app/test/architecture-dogfood.test.ts` and
+`app/test/map-dogfood-render.test.tsx` and missed
+`lib/parser/test/smoke.test.ts:40` — T-008's live-tree registry pin,
+one directory away, in a different npm package — leaving that
+package's required suite RED at HEAD (1 failed | 158 passed). It was
+caught only because the verifier ran a suite the implementation notes
+had declared "untouched (zero files changed)". That claim was TRUE as
+a diff claim, which is exactly why nobody ran it: the fixture parses
+the LIVE docs/ tree, so a docs-only commit reddens a suite whose own
+files never moved. **Diff scope is not test scope; a suite not run is
+a suite not known.** The fix was `'C-13'` appended to a whole-array
+`toEqual` — `git diff --numstat` on that file reads `13 0`, thirteen
+insertions and ZERO deletions, which is byte-level proof that nothing
+was loosened. Re-verified APPROVED.
 
-THREE-TIER HONESTY (plan §1) — this is the part that must not blur:
-1. LIVE NOW, local commands, run by every future integrator on this
-   machine: the E2E lane, the token lint (+ `--selftest`), `cargo
-   audit`, and `npm run boot:check`. All in CONVENTIONS as of this
-   commit.
-2. DORMANT BUT COMPLETE: .github/workflows/ci.yml — one ubuntu-24.04
-   job, every `uses:` pinned by full 40-hex commit SHA, a thin invoker
-   of the CONVENTIONS-verbatim commands. It cannot run: `git remote -v`
-   is still empty. It ACTIVATES at the repo's first GitHub push.
-   Machine-validated NOW by workflow-parity.spec: YAML validity, every
-   suite command present verbatim AND in order, 40-hex shape on every
-   `uses:`, the apt set, the xvfb boot invocation. The verifier
-   mutated it seven ways and each mutation was caught by exactly the
-   intended assertion.
-3. HONESTLY UNVERIFIED UNTIL ACTIVATION — say it plainly, do not let
-   it decay into "CI is green": the ubuntu apt/webkit2gtk set, the
-   xvfb webkit boot, playwright-on-Linux, audit-in-CI, and the SHA↔tag
-   correspondence (the shape is machine-checked; the mapping is not,
-   because the fence forbids GitHub API use — a wrong SHA fails the
-   first run loudly). The Linux halves of T-001/T-003's criteria do
-   NOT close here; this task built the machine that closes them.
+WHAT VERIFICATION PROVED (attacked, not accepted):
+- **All 34 new tests actually execute** — `expect("PROBE").toBe("EXECUTED")`
+  injected as the first statement of every one of the 34 `it()` bodies
+  → 34 failed (34), then reverted. Run in BOTH verification passes.
+  This is the direct answer to the earlier vacuous-suite incident: the
+  suite's existence is no longer taken on a file count.
+- **The banking-map coupling is real.** `BANKING_MAP` is a verbatim
+  transcription of the 9-row normative table in
+  `method/interview/plan-interview.md § Output`, and the suite re-reads
+  that method file. Mutating stage 4's "Banks into" cell to
+  `§ Hard limits` turns the suite RED naming the exact cell; reverted →
+  24/24. The CONVENTIONS "transcribed table" gotcha, mechanised.
+- **All 82 CSS utilities used by the pane emit** into the built
+  stylesheet (`dist/assets/index-D9PU4sJh.css`, selector-boundary
+  match, not substring) — zero arbitrary values, zero default-palette
+  utilities. A class that did not exist would otherwise fail silently.
+- **Hostile fixtures produce no injected markup.** The verifier wrote
+  its own 5 probes: script tags INSIDE filenames, a 10,000-character
+  unbroken run, BOM/NUL/ANSI/RTL/zero-width bytes, `"[?]"×5000`, and a
+  torn-file storm with EVERY file malformed. Nothing threw, every row
+  still rendered, and the DOM carried no `script`/`img`/`iframe`/
+  `style` element and **zero `on*` attributes** anywhere — the literal
+  bytes present only as text. The no-innerHTML gate is standing, not a
+  one-time grep: planting `el.innerHTML = "x"` reddens it by filename.
+- **Reduced motion by mechanism, not by class name**: the built sheet
+  carries `.motion-safe\:animate-status-pulse` ONLY inside
+  `@media(prefers-reduced-motion:no-preference)`, with no bare rule
+  anywhere.
+- **T-023-s2 discharged.** The dry-run fixture is the real scratch
+  tree harvested byte-faithfully at its single commit `b18a33c`, not a
+  reconstruction from T-023's notes (which the T-023 verifier had
+  found only partly verbatim). Inventory 12 files, 343 `.md` lines
+  reconciled (315 under docs/ + 28 in the two root adapters), and the
+  two files T-023 certified byte-exact re-diffed identical. The
+  `Absorbs:` line lands on T-024 and the suggestion file is removed in
+  this checkpoint, per the T-016 encoding.
 
-LAUNCH ITEM — **watch the first CI run** (T-020). At the repo's first
-push, confirm in order: the ubuntu apt/webkit2gtk set installs; the
-three `uses:` SHA pins resolve; playwright-on-Linux runs the lane;
-`cargo audit` behaves as it does locally; the xvfb `tauri dev` boot
-prints both `[nputer]` startup lines. AND (T-018-s3 fold) the THREE
-T-018 SENTINEL LIVE TESTS inside the ubuntu `cargo test` step —
-replaced-wholesale and deleted-recreated docs/. They discriminate only
-where inotify watches INODES; macOS FSEvents watches paths and was
-accidentally resilient all along, which is why T-018's replace-half
-evidence is mechanism-only today. Green there CLOSES that evidence gap;
-red there is a real reconcile gap macOS could never surface, and gets
-filed immediately.
-
-CARGO AUDIT, and the human ruling that closed it. Local run: **0
-vulnerabilities, 17 informational warnings** (16 `unmaintained` + 1
-`unsound` — the gtk-rs GTK3 family, `glib` 0.18.5, `proc-macro-error`,
-the `unic-*` family), 472 locked crates, cargo-audit 0.22.2 — every one
-transitive under Tauri v2's own tree, nothing ours to re-pin. Plain
-`cargo audit` exits 0 on warnings, so the executor measured the gap
-between the shipped command and the criterion's prose, refused to hide
-it or unilaterally add an ignore-list, and escalated it as T-020-s2;
-the verifier PROVED the half that matters — a synthetic lock pinning
-`time 0.1.44` audited → exit 1 (RUSTSEC-2020-0071) — so a genuine
-vulnerability against the pins really does go red. **@human ruled
-2026-08-16 (question card while awake): ACCEPT AS-IS.** Vulnerabilities
-gate; informational warnings stay non-gating and are recorded as a
-dated CONVENTIONS baseline reviewed by eye, because `--deny warnings`
-would red CI permanently for no actionable signal. T-020-s2 resolved to
-docs/tasks/rejected/ with that reasoning.
-
-The second @human item was ruled the same night: **T-020-s1** (the open
-panel occludes the header's exempt controls, so the theme toggle is
-keyboard-only while a panel is open) — the exemption is a SAFETY NET
-against accidental dismissal, not a promise that exempt controls stay
-pointer-reachable; close the panel, then toggle. Recorded in
-CONVENTIONS beside the dismissal gotcha so it stops reading as a bug;
-s1 resolved to rejected/ too. So T-020 opened two @human questions and
-BOTH closed the same night — the consolidated @human list below is two
-items shorter than this merge forecast, not two longer.
+BOUNDARY, STATED PLAINLY SO IT DOES NOT DECAY: the pane is **not
+mounted anywhere**. Its code is absent from the shipped JS today —
+nothing imports it, so Rollup drops it; its utilities reach the
+stylesheet only because Tailwind v4 scans source, not the bundle. Real
+bundle evidence today = tsc type-checks it and its classes are not
+silently dead. Everything else is jsdom. T-026 mounts it, and the
+served-bundle probe the Verification line asks for lands with the
+mount (T-024-s1).
 
 SUITES ON MERGED MAIN, all four re-derived here first-hand, fresh
-installs: lib/parser `npm ci` + `npm test` **159/159 (10 files)**,
-`npx tsc --noEmit` clean, `npm run build` clean · app `npm install` +
-`npm run build` exit 0 + `npm test` **398/398 (21 files)** ·
-app/src-tauri bare `cargo test` **129 passed + 2 ignored** (summed
-across all binaries and doc-tests — `tail` truncates the totals, a trap
-the notes flag and this session avoided) · tools/e2e `npm ci` clean (8
-packages, all dev, all with integrity hashes) + `npx playwright test`
-**16/16 in 5.1s**, headless, one worker, its OWN vite on 14520. Nothing
-ever bound or contacted 1420, and no server was left running.
+installs, and all four re-run green AFTER this checkpoint's docs edits
+(the live-tree lesson applied to my own commit): lib/parser `npm ci` +
+`npm test` **159/159 (10 files)**, `npx tsc --noEmit` clean, `npm run
+build` clean · app `npm install` + `npm run build` exit 0 + `npm test`
+**432/432 (23 files)** · app/src-tauri bare `cargo test` **129 passed
++ 2 ignored** (summed across all binaries and doc-tests — `tail`
+truncates the totals) · tools/e2e `npm ci` + `npx playwright test`
+**16/16 in 5.1s**, headless, one worker, its OWN vite on 14520.
+Nothing ever bound or contacted 1420; no server left running.
 
-STANDING INTEGRATOR PRACTICE (T-009-s1, the ratified CONVENTIONS
-interim regen rule; retires when T-014's `nputer index --check` becomes
-the gate) — EIGHTH exercise, and the first that is a deliberate NO-OP.
-TRIGGERED by the letter of the rule (the branch adds `.ts` files under
-tools/, i.e. outside docs/), and the ritual was run anyway rather than
-argued away: `NPUTER_UPDATE_GOLDEN=1` regen then the plain ignored
-self-check, both ok — and the committed graph is BYTE-IDENTICAL,
-sha256 a983156341274cf81fafce94a0a5bdb73c6f34b02b56603349340e110bb94dd9
-before and after, `git diff docs/architecture/graph.json` empty, still
-78 files / 449 symbols / 790 edges / languages ["ts"], and ZERO `tools/`
-paths anywhere in it. That is `.nputerignore`'s new `tools/` line doing
-its job. It is load-bearing, not decorative, and this is not an
-assumption: the verifier ran the negative control — DELETE the `tools/`
-line and the same ritual FAILS ("committed graph.json is stale"). No
-fixture reconciliation was owed and none was invented; both dogfood
-fixtures stand byte-unchanged and the app suite passed against the
-unchanged graph.
+STANDING INTEGRATOR PRACTICE (T-009-s1, now the ratified CONVENTIONS
+interim regen rule; retires when T-014's `nputer index --check`
+becomes the gate) — NINTH exercise, and the first since ratification.
+It FIRED (the branch adds `.ts/.tsx` outside docs/) and it MATTERED:
+the graph moves **78 → 82 files, 449 → 513 symbols, 790 → 871 edges**,
+319,886 bytes, sha256
+`966d73b6c75757b29e4fcfa828e75eaeca54c7371821406cacff5edbfd18ab72` —
+byte-identical across three runs (golden regen → plain ignored
+self-check → second golden regen), and the plain self-check passes, so
+the committed graph is current. Still `languages: ["ts"]` and still
+ZERO `tools/` paths. The ceaa949 ordering lesson held again: the
+fixture edits landed BEFORE the final regen, and they moved the graph
+(the two suites' own hash/loc), so a regen-first ordering would have
+committed a stale file.
 
-INTEGRATOR JUDGMENT CALLS, recorded. **CONVENTIONS: the big one, and
-it was owed** — the verifier flagged that without it criteria 3 and 4's
-"local command" half is undocumented. Added: the tools/e2e command set
-(lane, typecheck, `lint:tokens` + selftest, `boot:check` and why it is
-NOT inside `npm test`), `cargo audit` beside `cargo test`, the two
-one-time dev-tool expectations (`npx playwright install chromium` with
-its cache OUTSIDE the repo; `cargo install cargo-audit --locked`, the
-one network-touching command), the PORT RULE (the lane owns
-NPUTER_E2E_PORT / default 14520, `reuseExistingServer: false`, and 1420
-THROWS at config load by design), the audit gate policy with today's
-dated baseline, and the CI divergences — `npm ci` for app/ where local
-setup says `npm install`, and `--with-deps` on the browser install.
-Two truth-fixes to existing text while there: the dismissal gotcha's
-"real-input E2E lane proposed as T-005-s4" now names the lane that
-EXISTS, and carries the s1 ruling. **ADR-011: amended for the first
-time in this repo's history** — no ADR had ever been touched after its
-checkpoint. Deliberate, drafted in the plan, architect-approved, and
-applied as a clearly dated `## Addendum` section that leaves the
-original decision text untouched: the third package arrived, the
-revisit its own Consequences called for was performed, outcome still NO
-root workspace (tools/e2e imports neither package; a workspace would
-buy a shared install for three disjoint trees at the cost of migrating
-every CONVENTIONS-verbatim command — the exact trap this ADR named),
-with a sharper re-trigger condition. **ARCHITECTURE: minimal addition,
-because the old text became FALSE** — the "Code layout" bullet ended
-"no root workspace until a third npm package forces one", and the third
-package has now arrived without forcing one. That clause now says the
-ruling was revisited and REAFFIRMED (pointing at the addendum), and the
-enumeration gains `tools/e2e/` (dev tooling under no component — it
-drives the app from outside over HTTP and is .nputerignored out of the
-map) and `.github/workflows/`. **NO new ADR** (three-prong): the one
-cross-component question this task raised is the workspace one, and it
-is answered by the ADR-011 addendum rather than a new decision; nothing
-here contradicts any ADR; and the lane's own calls (Playwright pin,
-Chromium-only, port rule, zero-app-code fence) are durably recorded in
-the task's §§1–10 plan plus the CONVENTIONS block. **ROADMAP:
-untouched, verified line by line** — T-020 is a pulled-forward
-milestone-4 hardening task, the backbone tracks neither it nor
-mid-milestone progress, and nothing in the file is made false by it
-(T-017/T-021 precedent).
+THE REGEN DELTA, AND WHERE THE PRE-MERGE FORECAST WAS WRONG. The
+re-verifier derived an expected delta; I re-derived the whole thing
+independently from the raw graph (glob file→component mapping,
+cross-component import edges, declared-vs-observed classification) and
+it matched the engine on all 26 rows. Confirmed as forecast:
+**`D3:C-13` CLEARS** (C-13 gains 2 indexed files), **`C-13→C-10` flips
+planned → confirmed** (observedCount 2 — both genesis sources import
+docs-model), **`C-13→C-11` stays planned** (no TS import can confirm a
+stylesheet edge, the state `C-12→C-11` already carries), and C-13
+leaves the drift set (7 → 6 nodes; declared-only back to the three
+non-code components C-01/C-07/C-11). CORRECTED, twice, and both
+corrections come from the same blind spot — the forecast reasoned only
+over `app/src/genesis/` and forgot the `app/test/**` umbrella:
+1. **A FIFTH undeclared edge appeared** — `D1:C-05→C-13`,
+   observedCount 2 (the two new suites import the pane and the
+   module). The forecast said the undeclared tally would stay 4; it is
+   **5**, the relation tally moves 12/4/7 → **13 confirmed / 5
+   undeclared / 8 planned**, and C-05 now carries THREE drift
+   findings. Structurally identical to the existing D1:C-05→C-06 and
+   D1:C-05→C-09 — C-05's suites consume child components C-05 does not
+   declare. It is honest drift, and it is exactly the kind of thing
+   T-033 (zero-drift registry pass) exists to rule on.
+2. **`C-05→C-10` grew 10 → 13** — both new suites import docs-model
+   and the DOM suite also drives watcher-store.
+Mapping is now C-05 33 / C-06 21 / C-08 10 / C-09 3 / C-10 2 / C-12 11
+/ **C-13 2** = 82, D2 still empty, no unmapped node.
+
+FIXTURES RECONCILED, AND THE ONE DELIBERATELY NOT TOUCHED.
+`architecture-dogfood.test.ts` (dated addendum enumerating every
+delta) and `map-dogfood-render.test.tsx` (25 → 26 edges, undeclared
+4 → 5, C-05 face `drift 2` → `drift 3`, panel `3 drift findings`,
+index hint 78 → 82 files) were reconciled — changed, never loosened,
+and each edit ADDS assertions rather than relaxing them (the new D1
+row is pinned by whole-array `toEqual`; the panel gains the third
+drift sentence; C-13 gains a positive no-drift-ring assertion).
+`lib/parser/test/smoke.test.ts` was **deliberately left alone**: it
+pins the component REGISTRY read from `docs/architecture/components/`
+and never reads the graph. Reconciling it at a regen would be the
+mirror image of the error that got this task rejected — the third pin
+is a REGISTRY pin, not a graph pin.
+
+INTEGRATOR JUDGMENT CALLS, recorded. **ARCHITECTURE: no new table row,
+two truth-fixes.** The components table is deliberately the seven
+TOP-LEVEL components; C-08…C-13 are C-05's children, declared in
+docs/architecture/components/ and named by the slug-map line under the
+table. C-12 is the direct precedent — it has had code since
+T-011/T-012 and never gained a row. What DID become false is finer:
+the "Code layout" bullet enumerated the app's areas as "app-shell,
+app-board, app-map", which is now incomplete, so it gains
+app-interview / `app/src/genesis/**` = C-13, "code-complete and
+unmounted until T-026"; and C-05's status cell said interview was
+"pending F-03", which now understates — it reads that C-13's lens has
+code since T-024 but no mount until T-026. **ROADMAP: untouched,
+verified line by line.** Milestone 3's card already names the first
+slice T-023+T-024+T-026 and its task range; the file's own convention
+is that only WHOLE-milestone completion earns a `Progress:` line
+(milestones 1 and 2 have one; mid-milestone progress has never been
+tracked there — the T-017/T-020/T-021 precedent). Nothing in the file
+is made false by this merge. The first-slice note, if it is wanted at
+all, belongs at T-026's merge. **NO new ADR** (three-prong): C-13
+implements ADR-017's already-approved architecture (spawned planner
+writes, app stays a lens) and adds no cross-component question;
+nothing here contradicts any ADR; and the pane's own calls — the
+banking-map transcription, the injected clock, the design-token table
+with its four disclosed deviations, the zero-arbitrary-values fence —
+are durably recorded in the task file's implementation notes and in
+C-13's component intent file. **T-023-s2 absorbed** (Absorbs line +
+`git rm` of the suggestion file, T-016 encoding).
 
 ## In progress / broken right now
-OVERNIGHT AUTONOMOUS RUN (human granted 2026-08-16 night, awake for the
-grant card and for tonight's two T-020 rulings):
-- T-024 (genesis lens, M, app-interview) in ../nputer-t024 —
-  RE-VERIFICATION after a REJECTED verdict and a fresh-executor fix
-  (the third registry pin; lib/parser live-tree smoke now lists C-13).
-  Second REJECTED on this card would park the app-interview lane for
-  the human, per the standing method rule.
-- T-026 (genesis entry, M, app-shell) BUILDING in ../nputer-t026.
-The t020 worktree is removed; its branch `t020-ci-lane` is KEPT.
+OVERNIGHT AUTONOMOUS RUN (human granted 2026-08-16 night):
+- T-026 (genesis entry, M, app-shell) in ../nputer-t026 —
+  VERIFICATION (its card on main still reads `building`; the branch
+  carries the build stamp `claude-opus-5 @fresh`). This is the card
+  that mounts T-024's pane and completes milestone 3's first slice.
+- T-036 (CI token least privilege, S, .github/ + tools/e2e/) BUILDING.
+The t024 worktree is removed; its branch `t024-genesis-lens` is KEPT.
 Nothing broken. Main tree clean.
 
+LAUNCH ITEM, carried forward — **watch the first CI run** (T-020). At
+the repo's first push (`git remote -v` is still empty), confirm in
+order: the ubuntu apt/webkit2gtk set installs; the three `uses:` SHA
+pins resolve; playwright-on-Linux runs the lane; `cargo audit` behaves
+as it does locally; the xvfb `tauri dev` boot prints both `[nputer]`
+startup lines. AND (T-018-s3 fold) the THREE T-018 SENTINEL LIVE TESTS
+inside the ubuntu `cargo test` step — replaced-wholesale and
+deleted-recreated docs/. They discriminate only where inotify watches
+INODES; macOS FSEvents watches paths and was accidentally resilient,
+which is why T-018's replace-half evidence is mechanism-only today.
+Green there CLOSES that evidence gap; red there is a real reconcile
+gap macOS could never surface, and gets filed immediately. This run is
+also the gate that closes T-001/T-003's Linux halves.
+
 ## Next up (1–4)
-1. @human, consolidated (unchanged in length — T-020's two items were
-   opened and ruled the same night, see above): the at-a-glance amber
-   judgment (T-012 criterion 5's human half — drift stroke vs
-   building/verifying fills, BOTH schemes, incl. composed
-   building+drift; the dogfood hero renders it live) · the launch-shot
-   re-judgment (T-006's pending screenshot predates the rail — light +
-   dark now include it) · the standing real-input checklist, now
-   SHRUNK by T-020: blocker-link click and real-key Esc/Enter/Space are
-   automated in the lane and no longer need a human pass; PICKER FLOWS
-   remain @human (native dialogs are unreachable from a browser
-   harness and tauri-driver has no macOS) · a Linux run — this is now
-   the "watch the first CI run" item above, and it is the gate that
-   closes T-001/T-003's Linux halves and T-018's replace-half evidence
-   · the T-023 dry-run conversational quality judgment — did the two
-   "pushing back:" challenges actually challenge, does the skip
-   handling read honest; the founder was builder-scripted in-session
-   (stated limitation), true cold-context evidence arrives with
-   T-026/T-029.
+1. @human, consolidated: the at-a-glance amber judgment (T-012
+   criterion 5's human half — drift stroke vs building/verifying
+   fills, BOTH schemes, incl. composed building+drift; the dogfood
+   hero renders it live, and it now shows C-05 at `drift 3`) · the
+   launch-shot re-judgment (T-006's pending screenshot predates the
+   rail — light + dark now include it) · the standing real-input
+   checklist, SHRUNK by T-020: blocker-link click and real-key
+   Esc/Enter/Space are automated in the lane; PICKER FLOWS remain
+   @human (native dialogs are unreachable from a browser harness and
+   tauri-driver has no macOS) · a Linux run — this is the "watch the
+   first CI run" item above · the T-023 dry-run conversational quality
+   judgment (did the two "pushing back:" challenges actually
+   challenge; the founder was builder-scripted in-session, so true
+   cold-context evidence arrives with T-026/T-029) · **T-024's visual
+   pass, still BLOCKED**: the pane against the design's `interview`
+   screen in light AND dark (no dark mockup exists — every dark value
+   is derived by token family; look hardest at built/forming/slot card
+   contrast and the warm writing-row border), the five type sizes that
+   moved 0.5–1px read at real size (especially the 19px → 20px
+   north-star hero), and the substituted footer right slot
+   (`stage ~4 · constraints` in place of the design's `~9 min
+   elapsed`) — a product decision as much as a visual one. There is no
+   route to the pane in a running app until T-026 mounts it, and the
+   human has scheduled the whole visual session for after T-026
+   merges.
 2. MILESTONE 3 (T-023…T-029, ADR-017), first slice T-023+T-024+T-026 —
-   hand-driven genesis rendered live: T-023 DONE, T-024 in
-   RE-VERIFICATION, T-026 BUILDING. Human-ruled queue for the app-shell
-   lane: T-026 → T-025 → T-022. T-026's file carries the T-018-s4 fold
-   (docs-appeared staleness). T-025 (agent runner, L) is blocked ONLY
-   by T-026 now — T-021 and T-023 are both done — and its planning pass
-   is already applied. T-027 is L (planning pass at dispatch), and
-   dispatches when T-024+T-025+T-026 all merge; T-028/T-029 behind it.
-3. OVERNIGHT DISPATCH GRANTS (human, 2026-08-16 night, via question
-   card while awake): app-shell lane queue T-021 → T-026 → T-025 →
-   T-022; T-021 and now T-020 are DONE, so T-026 holds that lane.
-   T-020: HOLD lifted, T-018-s3 folded, dispatched, and now MERGED —
-   this item is closed. Milestone 3 runs through T-029 as blockers
+   hand-driven genesis rendered live: T-023 DONE, T-024 DONE, T-026 in
+   VERIFICATION. One card from complete. Human-ruled queue for the
+   app-shell lane: T-026 → T-025 → T-022. **T-025 (agent runner, L)
+   unblocks the moment T-026 merges** — its `blocked_by` is
+   [T-021 ✓, T-023 ✓, T-026] and its planning pass is already applied.
+   T-027 is L (planning pass at dispatch) and dispatches when
+   T-024 ✓ + T-025 + T-026 all merge; T-028/T-029 behind it.
+3. OVERNIGHT DISPATCH GRANTS (human, 2026-08-16 night): app-shell lane
+   queue T-021 → T-026 → T-025 → T-022; T-021 and T-020 are DONE, so
+   T-026 holds that lane. Milestone 3 runs through T-029 as blockers
    clear. Triage: APPLY granted — but tasks NEWLY created by triage do
    NOT dispatch without the human. Unchanged method rules: a second
-   REJECTED on any task parks that lane for the human; @human
-   judgments are never self-answered (tonight's two T-020 items went to
-   the human and came back ruled — that is the rule working, not an
-   exception to it).
-4. Suggestion-backlog triage APPLIED (2026-08-16, architect): 27 open
-   suggestions dispositioned, none skipped. Six new milestone-4 tasks —
-   T-030 (parser strictness; absorbs T-008-s3, T-011-s4 warn-half,
-   T-019-s2, T-019-s3, T-023-s1 — land before T-027, lib-parser lane
-   free now), T-031 (board completeness; absorbs T-017-s1/s2/s3,
-   T-019-s1 — launch-screenshot surface), T-032 (map-slice hardening;
-   absorbs T-009-s2, T-011-s4 doc-half, T-011-s5, T-011-s6,
-   T-012-s2/s3/s4), T-033 (zero-drift registry pass; absorbs T-008-s2,
-   T-011-s2), T-034 (map tasks lens; promotes T-012-s1), T-035
-   (skip-sweep prefix exemption; promotes T-018-s2). Folds: T-009-s1
-   ratified as the CONVENTIONS interim regen rule (retirement folded
-   into T-014); T-018-s4 into T-026; T-023-s2 into T-024 (Absorbs line
-   + file removal at its merge). Parked in place: T-008-s1 (awaits
-   F-04/F-05 layout decisions), T-018-s1 (awaits a Windows lane);
-   T-003-s2 stays parked as already encoded. Milestone-4 queue after
-   F-03: T-010, T-013, T-014, T-015, T-030…T-035, + T-022 (T-020 is
-   now merged and off this list).
-   FOR THE NEXT TRIAGE (seven open, none dispatched):
-   T-021-s1 — the ACL pin's EXPECTED_GRANTS is macOS-derived; exercise
-   it on the Linux lane (the first CI run FEEDS this) and decide
-   per-platform pins vs a normalized projection · T-021-s2 —
-   genericize the AppHandle-taking commands over `R: Runtime` ·
-   T-021-s3 — pin the panic-path latch release as a permanent test ·
-   **T-020-s3** — the boot check cannot run while the human's app holds
-   1420 (a recurring macOS dev-loop cost; its "leave it" arm is well
-   argued) · **T-020-s4** — ci.yml declares no `permissions:` block, so
-   GITHUB_TOKEN scope is a web-UI checkbox rather than a fact in the
-   repo (worth deciding BEFORE the first push) · **T-020-s5** — the
+   REJECTED on any task parks that lane for the human (T-024 came
+   within one verdict of parking app-interview, and the fresh-executor
+   fix pass is what avoided it); @human judgments are never
+   self-answered.
+4. Suggestion backlog for the NEXT TRIAGE — twelve to disposition
+   (six carried + six new from T-024), plus three parked in place;
+   none dispatched. Carried over: T-021-s1 (the ACL pin's EXPECTED_GRANTS
+   is macOS-derived; the first CI run FEEDS this) · T-021-s2
+   (genericize the AppHandle-taking commands over `R: Runtime`) ·
+   T-021-s3 (pin the panic-path latch release) · T-020-s3 (the boot
+   check cannot run while the human's app holds 1420) · T-020-s5 (the
    token lint's P1 pattern fires on dash-prefixed arbitrary VARIANTS
-   (`data-[state=open]:`) and on regex literals, contradicting plan §5's
-   recorded variant exclusion; harmless today only because the tree's
-   one variant shape has no preceding hyphen, so the next
-   `npx shadcn add dialog` reds the lint on unmodified upstream code ·
-   **T-020-s6** — the parity spec mirrors CONVENTIONS in a hard-coded
-   array instead of parsing it, so workflow drift is caught but
-   CONVENTIONS drift is not (this merge wrote the section those
-   commands point at, which narrows but does not close it). T-020-s1
-   and T-020-s2 are already resolved to rejected/ by tonight's human
-   rulings. Integrator observation for the same triage, filed here
-   rather than as a new card: four suggestion files carry no `id:`
-   field (T-021-s1/s2/s3 and T-023-s2) — the T-016 encoding requires
-   one at parking, and the parser accepts them silently today.
+   and on regex literals — the next `npx shadcn add dialog` reds the
+   lint on unmodified upstream code) · T-020-s6 (the parity spec
+   mirrors CONVENTIONS in a hard-coded array instead of parsing it).
+   Parked in place: T-008-s1 (awaits F-04/F-05 layout decisions),
+   T-018-s1 (awaits a Windows lane), T-003-s2 (already encoded).
+   NEW FROM T-024 — **T-024-s1** (the served-bundle probe lands with
+   T-026's mount; the pane has no route today) · **T-024-s2**
+   (C-13's D3 clears at the graph regen) — **already DISCHARGED by
+   this merge; the next triage should resolve it, not schedule it**,
+   and note for the record that its written "reverse delta" was
+   incomplete in the same way the rejection was: it predicted the two
+   C-13 rows and missed both umbrella deltas (D1:C-05→C-13 and
+   C-05→C-10 10→13) · **T-024-s3** (a render-phase ref write stamps
+   the change log — identity-guarded, but the concurrent-render blast
+   radius wants an architect ruling, not a fix) · **T-024-s4** (the
+   north-star title is the pane's one unbounded text surface: a
+   10,000-char single text node reproduced; chips clip at 44 and rows
+   `truncate`, but the title has no `break-words`/`min-w-0` — it
+   departs from T-017's established answer, so it belongs with T-031)
+   · **T-024-s5** (write down the registry-pin inventory so
+   "declaring a component moves THREE fixtures" stops being folklore —
+   this is the rejection's own lesson, and it is cheap) · **T-024-s6**
+   (compound cross-model `built_by` stamps parse to a FALSE
+   `policy: "resume"` — both sessions were `@fresh` — and to a
+   ~50-character model badge in a chip with no `truncate` and no
+   `max-w`; `modelField` rejects only an empty model or session, so
+   the live-tree gate passes on a stamp that parses to nonsense. It
+   belongs to T-019's parser/model-hygiene lane, i.e. T-030. **It
+   starts rendering on T-024's own card the moment this checkpoint
+   lands** — board and map both switch from `builder` to `built_by` at
+   done/merging. Cosmetic, expected, NOT a blocker; do not "fix" the
+   stamp by making the record less honest about who built what.)
+   Integrator observation carried forward for the same triage, and it
+   GREW rather than shrank: **nine** open suggestion files carry no
+   `id:` field — T-021-s1/s2/s3 and all six of T-024's (verified by
+   grep at this merge, not assumed; T-023-s2 was a tenth and leaves
+   here). The T-016 encoding requires an id at parking, and the parser
+   accepts the omission silently today, which is why it keeps
+   recurring. Worth a rule, not another observation — it is the same
+   family as T-030's parser-strictness pass.
 
 ## Open questions
 None.

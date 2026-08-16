@@ -102,10 +102,11 @@ describe("the nputer repo on its own map", () => {
   });
 
   it("the reconciled findings light the right faces (D1 sources + D3 rings)", () => {
-    // D1 sources: C-05 (×2: →C-06, →C-09), C-08, C-09. D3: C-01, C-07,
-    // C-11, and C-13 since T-024.
+    // D1 sources: C-05 (×3: →C-06, →C-09, and →C-13 since the T-024
+    // merge regen), C-08, C-09. D3: C-01, C-07, C-11 — C-13's D3
+    // cleared when the indexer first saw app/src/genesis/.
     expect(node("C-05").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
-      "drift 2",
+      "drift 3",
     );
     expect(node("C-08").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
       "drift 1",
@@ -116,8 +117,11 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-05").className).toContain("map-drift-ring");
     expect(node("C-01").className).toContain("map-drift-ring"); // D3, non-code
     expect(node("C-11").className).toContain("map-drift-ring"); // D3, non-code
-    // The map pane itself is clean after the §2 amendments.
+    // The map pane itself is clean after the §2 amendments, and the
+    // genesis pane is clean now that it has code: it is the target of
+    // C-05's undeclared edge, never its source.
     expect(node("C-12").className).not.toContain("map-drift-ring");
+    expect(node("C-13").className).not.toContain("map-drift-ring");
   });
 
   it("C-12 renders its LIVE rollup — this task, on its own map (churn-proof)", () => {
@@ -136,22 +140,24 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 25-edge relation table", () => {
-    // 23 + C-13's two declared (planned) edges, T-024.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(25);
+  it("draws the full 26-edge relation table", () => {
+    // 23 + C-13's two declared edges (T-024) + the undeclared
+    // C-05→C-13 the merge regen surfaced.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(26);
     expect(
       container.querySelectorAll('[data-testid=map-edge][data-relation="undeclared"]'),
-    ).toHaveLength(4);
+    ).toHaveLength(5);
   });
 
   it("opens the C-05 panel on its real findings", () => {
     act(() => node("C-05").click());
     const panel = container.querySelector("[data-testid=map-panel]") as HTMLElement;
     expect(panel.querySelector("[data-testid=map-panel-drift-chip]")?.textContent).toContain(
-      "2 drift findings",
+      "3 drift findings",
     );
     expect(panel.textContent).toContain("C-05 imports C-06 without declaring the dependency.");
     expect(panel.textContent).toContain("C-05 imports C-09 without declaring the dependency.");
+    expect(panel.textContent).toContain("C-05 imports C-13 without declaring the dependency.");
     // The dependency grid shows the observed-only rows in warning ink
     // and the header hint counts the committed graph.
     expect(panel.querySelector("[data-testid=map-panel-dependencies]")).not.toBeNull();
@@ -167,8 +173,10 @@ describe("the nputer repo on its own map", () => {
     // 76 → 78 at the T-019 merge regen (2026-08-16): validate.ts and
     // validate.test.ts joined C-06 — see architecture-dogfood's dated
     // reconciliation for the full delta enumeration.
+    // 78 → 82 at the T-024 merge regen (2026-08-16): the genesis pane's
+    // two sources and its two suites joined.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 78 files",
+      "committed graph · 82 files",
     );
   });
 });

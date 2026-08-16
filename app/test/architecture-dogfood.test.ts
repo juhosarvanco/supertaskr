@@ -125,6 +125,40 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 // planned); tally 12 confirmed / 4 undeclared / 7 → 9 planned; drift
 // nodes 6 → 7. Every pre-existing row, count and file edge is
 // untouched — the only movement in this fixture is C-13's own arrival.
+//
+// RECONCILED AT THE T-024 MERGE (2026-08-16, integrator — ninth
+// exercise of the practice, first since T-009-s1 was ratified into
+// docs/CONVENTIONS.md as the INTERIM integrator rule): the
+// regenerated 82-file graph (78→82: GenesisPane.tsx + genesis-derive.ts
+// under C-13's own paths, and their two suites under the app/test/**
+// umbrella) finally contains the pane, so the block above meets
+// reality and MOST of it reverses. Deltas, each independently
+// re-derived from the raw graph (file→component globs, cross-component
+// import edges, declared-vs-observed classification) before this edit,
+// not read off the failure output:
+//   · mapping 78→82; C-05 31→33 (the two new suites), C-13 0→2.
+//   · D2 STAYS EMPTY; the unmapped node stays gone.
+//   · D3:C-13 CLEARS — C-13 now has indexed files; declared-only is
+//     back to the three non-code components C-01/C-07/C-11, and the
+//     drift set drops from 7 nodes to 6.
+//   · C-13→C-10 flips planned → CONFIRMED (2 file edges: both genesis
+//     sources import docs-model). C-13→C-11 honestly STAYS planned —
+//     no TS import can confirm a stylesheet edge, the same state
+//     C-12→C-11 carries.
+// TWO DELTAS THE PRE-MERGE FORECAST DID NOT PREDICT, both from the
+// app/test/** umbrella rather than from the pane's own imports — the
+// forecast reasoned only over app/src/genesis/:
+//   · a FIFTH undeclared edge appears: D1:C-05→C-13, observedCount 2
+//     (genesis-derive.test.ts → genesis-derive.ts, genesis-pane-dom.
+//     test.tsx → GenesisPane.tsx). C-05's suites consume a child
+//     component it does not declare — structurally identical to the
+//     existing D1:C-05→C-06 and D1:C-05→C-09, and it lands C-05 on
+//     three drift findings. The tally moves 12/4/7 → 13/5/8.
+//   · C-05→C-10 grows 10→13: both new suites import docs-model and
+//     genesis-pane-dom.test.tsx also drives watcher-store.
+// Everything else — the four pre-existing D1 rows, the two remaining
+// D3s, C-12's file list, and every other observedCount — is
+// byte-unchanged. Changed, never loosened.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -189,19 +223,21 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 78 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(78);
+  it("all 82 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(82);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
     for (const id of derived.fileComponent.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
     expect([...counts.entries()].sort()).toEqual([
-      ["C-05", 31],
+      ["C-05", 33],
       ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
       ["C-10", 2],
       ["C-12", 11],
+      // The genesis pane joined the index at the T-024 merge regen.
+      ["C-13", 2],
     ]);
     // The map pane joined its engine at the T-012 merge regen
     // (T-011-s1 option a keeps the trio in place under lib/).
@@ -224,7 +260,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: four undeclared dependencies, four declared-only components, no unclaimed territory", () => {
+  it("THE FINDINGS: five undeclared dependencies, three declared-only components, no unclaimed territory", () => {
     expect(derived.findings).toEqual([
       {
         rule: "D1",
@@ -254,6 +290,19 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         ],
       },
       {
+        // T-024 merge regen: C-05's own suites reach into the genesis
+        // pane under the app/test/** umbrella — real drift, same shape
+        // as C-05→C-06 and C-05→C-09 above.
+        rule: "D1",
+        id: "D1:C-05->C-13",
+        from: "C-05",
+        to: "C-13",
+        fileEdges: [
+          { from: "app/test/genesis-derive.test.ts", to: "app/src/genesis/genesis-derive.ts" },
+          { from: "app/test/genesis-pane-dom.test.tsx", to: "app/src/genesis/GenesisPane.tsx" },
+        ],
+      },
+      {
         rule: "D1",
         id: "D1:C-08->C-05",
         from: "C-08",
@@ -275,24 +324,26 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           { from: "app/src/components/board/TaskDetailPanel.tsx", to: "app/src/lib/verdicts.ts" },
         ],
       },
+      // D3:C-13 cleared at the T-024 merge regen exactly as predicted:
+      // the three that remain are the genuinely code-less components.
       { rule: "D3", id: "D3:C-01", component: "C-01" },
       { rule: "D3", id: "D3:C-07", component: "C-07" },
       { rule: "D3", id: "D3:C-11", component: "C-11" },
-      // T-024: declared this branch, not yet in the committed index
-      // snapshot — a real D3 until the indexer next runs.
-      { rule: "D3", id: "D3:C-13", component: "C-13" },
     ]);
   });
 
-  it("the full relation table: 12 confirmed, 4 undeclared, 9 planned", () => {
+  it("the full relation table: 13 confirmed, 5 undeclared, 8 planned", () => {
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
       ["C-05", "C-06", "undeclared", 8],
       ["C-05", "C-08", "confirmed", 4],
       ["C-05", "C-09", "undeclared", 3],
-      ["C-05", "C-10", "confirmed", 10],
+      // 10 → 13 at the T-024 merge regen: both genesis suites import
+      // docs-model, and the DOM suite also drives watcher-store.
+      ["C-05", "C-10", "confirmed", 13],
       ["C-05", "C-11", "planned", 0],
       ["C-05", "C-12", "confirmed", 20],
+      ["C-05", "C-13", "undeclared", 2],
       ["C-06", "C-01", "planned", 0],
       ["C-08", "C-05", "undeclared", 4],
       ["C-08", "C-06", "confirmed", 4],
@@ -309,11 +360,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["C-12", "C-09", "confirmed", 4],
       ["C-12", "C-10", "confirmed", 1],
       ["C-12", "C-11", "planned", 0],
-      // T-024's declared edges. Planned, not confirmed: the pane's
-      // imports (docs-model, the token sheet) are real in the tree but
-      // absent from the committed graph, which has never indexed
-      // app/src/genesis/ — the same honest state as C-12→C-11.
-      ["C-13", "C-10", "planned", 0],
+      // T-024's declared edges, met by reality at the merge regen: the
+      // graph now indexes app/src/genesis/, so the docs-model edge is
+      // CONFIRMED by both genesis sources. C-13→C-11 stays planned —
+      // no TS import can confirm a token stylesheet, the same honest
+      // state C-12→C-11 carries.
+      ["C-13", "C-10", "confirmed", 2],
       ["C-13", "C-11", "planned", 0],
     ]);
   });
@@ -350,10 +402,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
 
   it("drift flags land on the right nodes", () => {
     const drift = derived.components.filter((c) => c.hasDrift).map((c) => c.id);
-    // D1 sources: C-05, C-08, C-09; D3: C-01, C-07, C-11, C-13 (T-024).
-    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11", "C-13"]);
+    // D1 sources: C-05, C-08, C-09; D3: C-01, C-07, C-11. C-13 left the
+    // set at the T-024 merge regen — it has files now, and it is the
+    // TARGET of D1:C-05→C-13, not its source.
+    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
-    expect(declaredOnly).toEqual(["C-01", "C-07", "C-11", "C-13"]);
+    expect(declaredOnly).toEqual(["C-01", "C-07", "C-11"]);
   });
 
   it("stable rollup structure (values live in the unit tables, not here)", () => {

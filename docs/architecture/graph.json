@@ -1304,6 +1304,444 @@
       ]
     },
     {
+      "id": "f:app/src/genesis/GenesisPane.tsx",
+      "path": "app/src/genesis/GenesisPane.tsx",
+      "lang": "ts",
+      "hash": "blake3:527ee34b0b311c274e20f32b2bd7c57d9e25f86257765c637feb14dd191cdad7",
+      "loc": 295,
+      "symbols": [
+        {
+          "id": "s:app/src/genesis/GenesisPane.tsx#ArtifactRow",
+          "name": "ArtifactRow",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            59,
+            116
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/GenesisPane.tsx#CHIP",
+          "name": "CHIP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            37,
+            38
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/GenesisPane.tsx#GenesisPane",
+          "name": "GenesisPane",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            134,
+            295
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/GenesisPane.tsx#MONO_HINT",
+          "name": "MONO_HINT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            35,
+            35
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/GenesisPane.tsx#OVERLINE",
+          "name": "OVERLINE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            34,
+            34
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/GenesisPane.tsx#WrittenMark",
+          "name": "WrittenMark",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            43,
+            57
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/GenesisPane.tsx#backboneCells",
+          "name": "backboneCells",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            120,
+            132
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/genesis/genesis-derive.ts",
+      "path": "app/src/genesis/genesis-derive.ts",
+      "lang": "ts",
+      "hash": "blake3:d9d5e903adc1fa8c085eb59009f29b5066092e336b9229b4d1f5d1e12cc61276",
+      "loc": 497,
+      "symbols": [
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#ARCHITECTURE_FILE",
+          "name": "ARCHITECTURE_FILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            314,
+            314
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#ArtifactStatus",
+          "name": "ArtifactStatus",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            88,
+            88
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#BANKING_MAP",
+          "name": "BANKING_MAP",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            40,
+            69
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#BackboneEntry",
+          "name": "BackboneEntry",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            119,
+            121
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#BankingStage",
+          "name": "BankingStage",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            31,
+            38
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#CHIP_CLIP",
+          "name": "CHIP_CLIP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            294,
+            294
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#CONVENTIONS_FILE",
+          "name": "CONVENTIONS_FILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            313,
+            313
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#ChipKind",
+          "name": "ChipKind",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            104,
+            104
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#EMPTY_CHANGE_LOG",
+          "name": "EMPTY_CHANGE_LOG",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            183,
+            189
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#GenesisArtifact",
+          "name": "GenesisArtifact",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            90,
+            102
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#GenesisChangeLog",
+          "name": "GenesisChangeLog",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            171,
+            181
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#GenesisModel",
+          "name": "GenesisModel",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            123,
+            155
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#NORTH_STAR_FILE",
+          "name": "NORTH_STAR_FILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            310,
+            310
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#NS_SECTION_BY_STAGE",
+          "name": "NS_SECTION_BY_STAGE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            325,
+            331
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#NorthStarCard",
+          "name": "NorthStarCard",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            111,
+            117
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#NorthStarChip",
+          "name": "NorthStarChip",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            106,
+            109
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#ROADMAP_FILE",
+          "name": "ROADMAP_FILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            311,
+            311
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#STACK_DECISION_FILE",
+          "name": "STACK_DECISION_FILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            315,
+            315
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#STATE_FILE",
+          "name": "STATE_FILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            312,
+            312
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#STEP_DISPLAY",
+          "name": "STEP_DISPLAY",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            74,
+            84
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#WRITING_WINDOW_MS",
+          "name": "WRITING_WINDOW_MS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            161,
+            161
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#clip",
+          "name": "clip",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            295,
+            300
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#countAssumptions",
+          "name": "countAssumptions",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            304,
+            306
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+          "name": "deriveGenesis",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            337,
+            472
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#firstSentence",
+          "name": "firstSentence",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            287,
+            291
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#firstUnit",
+          "name": "firstUnit",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            267,
+            284
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#isDecisionPath",
+          "name": "isDecisionPath",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            321,
+            322
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#isDocsMarkdown",
+          "name": "isDocsMarkdown",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            317,
+            318
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#isTaskPath",
+          "name": "isTaskPath",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            319,
+            320
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#nextFeatureId",
+          "name": "nextFeatureId",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            476,
+            483
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#nextLineForStage",
+          "name": "nextLineForStage",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            489,
+            497
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#observeDocsChange",
+          "name": "observeDocsChange",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            201,
+            224
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#sectionText",
+          "name": "sectionText",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            261,
+            263
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#splitSections",
+          "name": "splitSections",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            237,
+            257
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/genesis-derive.ts#stripHtmlComments",
+          "name": "stripHtmlComments",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            230,
+            232
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/src/lib/architecture/derive.ts",
       "path": "app/src/lib/architecture/derive.ts",
       "lang": "ts",
@@ -2123,8 +2561,8 @@
       "id": "f:app/src/lib/docs-model.ts",
       "path": "app/src/lib/docs-model.ts",
       "lang": "ts",
-      "hash": "blake3:47222ff2b1d0c36e7f66cba47b92290cc11870d8564d1989290a81a0848d881c",
-      "loc": 277,
+      "hash": "blake3:7e2f2684b0f52177784574c5525a3bb40fa0e136144b99b17e83c746d1dd47fb",
+      "loc": 297,
       "symbols": [
         {
           "id": "s:app/src/lib/docs-model.ts#DocsFilePayload",
@@ -2143,7 +2581,7 @@
           "exported": true,
           "range": [
             109,
-            144
+            157
           ]
         },
         {
@@ -2222,8 +2660,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            205,
-            277
+            219,
+            297
           ]
         },
         {
@@ -2232,8 +2670,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            146,
-            159
+            159,
+            173
           ]
         },
         {
@@ -2242,8 +2680,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            176,
-            190
+            190,
+            204
           ]
         },
         {
@@ -2252,8 +2690,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            195,
-            197
+            209,
+            211
           ]
         },
         {
@@ -2853,8 +3291,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:e8a0f318a5562bb9ea8a1658207bc499d876633640b74a794f28c1d5e4c2d62c",
-      "loc": 353,
+      "hash": "blake3:68cccff3bdeb03bfea2bb05415f944d1737007994cabf332fac24765ba083be1",
+      "loc": 434,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -2862,8 +3300,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            146,
-            146
+            197,
+            197
           ]
         },
         {
@@ -2872,8 +3310,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            145,
-            145
+            196,
+            196
           ]
         },
         {
@@ -2882,8 +3320,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            111,
-            111
+            162,
+            162
           ]
         },
         {
@@ -2892,8 +3330,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            117,
-            132
+            168,
+            183
           ]
         },
         {
@@ -2902,8 +3340,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            134,
-            143
+            185,
+            194
           ]
         },
         {
@@ -2912,8 +3350,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            113,
-            115
+            164,
+            166
           ]
         }
       ]
@@ -3281,11 +3719,249 @@
       ]
     },
     {
+      "id": "f:app/test/genesis-derive.test.ts",
+      "path": "app/test/genesis-derive.test.ts",
+      "lang": "ts",
+      "hash": "blake3:619be3c3c0592ebee69271a4d3c3b3f7bf4beca474a45aaf127d3c618dfcf12c",
+      "loc": 355,
+      "symbols": [
+        {
+          "id": "s:app/test/genesis-derive.test.ts#FIXTURES",
+          "name": "FIXTURES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            35,
+            35
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-derive.test.ts#REPO_ROOT",
+          "name": "REPO_ROOT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            34,
+            34
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-derive.test.ts#TEST_DIR",
+          "name": "TEST_DIR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            33,
+            33
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-derive.test.ts#artifactByPath",
+          "name": "artifactByPath",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            71,
+            72
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-derive.test.ts#baseline",
+          "name": "baseline",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            65,
+            66
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-derive.test.ts#derive",
+          "name": "derive",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            68,
+            69
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-derive.test.ts#fixtureTree",
+          "name": "fixtureTree",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            50,
+            51
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-derive.test.ts#seq",
+          "name": "seq",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            53,
+            53
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-derive.test.ts#state",
+          "name": "state",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            54,
+            62
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-derive.test.ts#walk",
+          "name": "walk",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            37,
+            48
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/genesis-pane-dom.test.tsx",
+      "path": "app/test/genesis-pane-dom.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:fe668c102ac3493f56914ee3ff602b1bb445747057b69a91c1599af189d1a9ca",
+      "loc": 386,
+      "symbols": [
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#FIXTURES",
+          "name": "FIXTURES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            54,
+            54
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            33,
+            33
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#docsState",
+          "name": "docsState",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            80,
+            82
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#fixtureTree",
+          "name": "fixtureTree",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            66,
+            67
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#nextSeq",
+          "name": "nextSeq",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            71,
+            71
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#payload",
+          "name": "payload",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            72,
+            78
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#q",
+          "name": "q",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            84,
+            85
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#qa",
+          "name": "qa",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            86,
+            87
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#renderPane",
+          "name": "renderPane",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            89,
+            93
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            34,
+            34
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#row",
+          "name": "row",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            95,
+            96
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-pane-dom.test.tsx#walk",
+          "name": "walk",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            56,
+            64
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:436cfc648d013acebe1bc192d050c51ac1255fc3ae6c730bb9988932e6594459",
-      "loc": 170,
+      "hash": "blake3:47471672529b2628a917d6757f10dcff6938980b7b54f0c1479bc8ea56913b4e",
+      "loc": 182,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -3638,8 +4314,8 @@
       "id": "f:app/test/node-builtins.d.ts",
       "path": "app/test/node-builtins.d.ts",
       "lang": "ts",
-      "hash": "blake3:e8171663ef4e6c738a24e8bd1c63a19081a84ba6343e765d1ad959848c2cbb3a",
-      "loc": 25,
+      "hash": "blake3:05ff2a6b5ceadeb669f1380edaed3068b47a136a229044a93cb91585bbc2c50e",
+      "loc": 28,
       "symbols": []
     },
     {
@@ -5046,8 +5722,8 @@
       "id": "f:lib/parser/test/smoke.test.ts",
       "path": "lib/parser/test/smoke.test.ts",
       "lang": "ts",
-      "hash": "blake3:e53ce026cd59be4694351ef569fc8c02ebf5015e70051882c256609ed621c413",
-      "loc": 69,
+      "hash": "blake3:9dcbd7cad73efb38e3ef5669d3fe92c91445146dfeb81c1849254eccf3230402",
+      "loc": 82,
       "symbols": [
         {
           "id": "s:lib/parser/test/smoke.test.ts#repoRoot",
@@ -6017,6 +6693,46 @@
       ]
     },
     {
+      "from": "f:app/src/genesis/GenesisPane.tsx",
+      "to": "f:app/src/genesis/genesis-derive.ts",
+      "kind": "import",
+      "symbols": [
+        "BackboneEntry",
+        "EMPTY_CHANGE_LOG",
+        "GenesisArtifact",
+        "GenesisChangeLog",
+        "deriveGenesis",
+        "observeDocsChange"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/GenesisPane.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsModelState",
+        "skipReasonPhrase"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/GenesisPane.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "useEffect",
+        "useReducer",
+        "useRef"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/genesis-derive.ts",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsModelState"
+      ]
+    },
+    {
       "from": "f:app/src/lib/architecture/derive.ts",
       "to": "f:app/src/lib/architecture/glob.ts",
       "kind": "import",
@@ -6450,6 +7166,150 @@
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-derive.test.ts",
+      "to": "f:app/src/genesis/genesis-derive.ts",
+      "kind": "import",
+      "symbols": [
+        "BANKING_MAP",
+        "EMPTY_CHANGE_LOG",
+        "GenesisChangeLog",
+        "WRITING_WINDOW_MS",
+        "countAssumptions",
+        "deriveGenesis",
+        "nextLineForStage",
+        "observeDocsChange",
+        "splitSections",
+        "stripHtmlComments"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-derive.test.ts",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsFilePayload",
+        "DocsModelState",
+        "applySnapshot",
+        "emptyState"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-derive.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync",
+        "statSync"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-derive.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "resolve"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-derive.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-derive.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-pane-dom.test.tsx",
+      "to": "f:app/src/genesis/GenesisPane.tsx",
+      "kind": "import",
+      "symbols": [
+        "GenesisPane"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-pane-dom.test.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsFilePayload",
+        "DocsModelState",
+        "DocsSnapshotPayload",
+        "applySnapshot",
+        "emptyState"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-pane-dom.test.tsx",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "getShellState",
+        "startDocsWatcher",
+        "subscribeShell"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-pane-dom.test.tsx",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync",
+        "statSync"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-pane-dom.test.tsx",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "resolve"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-pane-dom.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act",
+        "useSyncExternalStore"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-pane-dom.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-pane-dom.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
         "describe",
         "expect",
         "it"
@@ -8802,6 +9662,222 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/genesis/GenesisPane.tsx#ArtifactRow",
+      "to": "s:app/src/genesis/genesis-derive.ts#GenesisArtifact",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/GenesisPane.tsx#GenesisPane",
+      "to": "s:app/src/genesis/GenesisPane.tsx#backboneCells",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/GenesisPane.tsx#GenesisPane",
+      "to": "s:app/src/genesis/genesis-derive.ts#GenesisChangeLog",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/GenesisPane.tsx#GenesisPane",
+      "to": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/GenesisPane.tsx#GenesisPane",
+      "to": "s:app/src/genesis/genesis-derive.ts#observeDocsChange",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/GenesisPane.tsx#GenesisPane",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/GenesisPane.tsx#GenesisPane",
+      "to": "s:app/src/lib/docs-model.ts#skipReasonPhrase",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/GenesisPane.tsx#backboneCells",
+      "to": "s:app/src/genesis/genesis-derive.ts#BackboneEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#BANKING_MAP",
+      "to": "s:app/src/genesis/genesis-derive.ts#BankingStage",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#EMPTY_CHANGE_LOG",
+      "to": "s:app/src/genesis/genesis-derive.ts#GenesisChangeLog",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#GenesisArtifact",
+      "to": "s:app/src/genesis/genesis-derive.ts#ArtifactStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#GenesisModel",
+      "to": "s:app/src/genesis/genesis-derive.ts#BackboneEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#GenesisModel",
+      "to": "s:app/src/genesis/genesis-derive.ts#GenesisArtifact",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#GenesisModel",
+      "to": "s:app/src/genesis/genesis-derive.ts#NorthStarCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#NorthStarCard",
+      "to": "s:app/src/genesis/genesis-derive.ts#NorthStarChip",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#NorthStarChip",
+      "to": "s:app/src/genesis/genesis-derive.ts#ChipKind",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#countAssumptions",
+      "to": "s:app/src/genesis/genesis-derive.ts#stripHtmlComments",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#BackboneEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#GenesisArtifact",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#GenesisChangeLog",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#GenesisModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#NorthStarCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#NorthStarChip",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#clip",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#countAssumptions",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#firstSentence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#firstUnit",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#nextFeatureId",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#nextLineForStage",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#sectionText",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/genesis/genesis-derive.ts#splitSections",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#firstUnit",
+      "to": "s:app/src/genesis/genesis-derive.ts#firstSentence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#observeDocsChange",
+      "to": "s:app/src/genesis/genesis-derive.ts#GenesisChangeLog",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#observeDocsChange",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/genesis-derive.ts#sectionText",
+      "to": "s:app/src/genesis/genesis-derive.ts#stripHtmlComments",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/architecture/derive.ts#DeriveInputs",
       "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
       "kind": "type_ref",
@@ -10116,6 +11192,168 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/genesis-derive.test.ts#baseline",
+      "to": "s:app/src/genesis/genesis-derive.ts#GenesisChangeLog",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#baseline",
+      "to": "s:app/src/genesis/genesis-derive.ts#observeDocsChange",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#baseline",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#derive",
+      "to": "s:app/src/genesis/genesis-derive.ts#GenesisChangeLog",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#derive",
+      "to": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#derive",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#fixtureTree",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#fixtureTree",
+      "to": "s:app/test/genesis-derive.test.ts#walk",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#state",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#state",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#state",
+      "to": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#state",
+      "to": "s:app/src/lib/docs-model.ts#emptyState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#walk",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-derive.test.ts#walk",
+      "to": "s:app/test/genesis-derive.test.ts#walk",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#docsState",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#docsState",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#docsState",
+      "to": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#docsState",
+      "to": "s:app/src/lib/docs-model.ts#emptyState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#docsState",
+      "to": "s:app/test/genesis-pane-dom.test.tsx#payload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#fixtureTree",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#fixtureTree",
+      "to": "s:app/test/genesis-pane-dom.test.tsx#walk",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#payload",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#payload",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#renderPane",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#row",
+      "to": "s:app/test/genesis-pane-dom.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#walk",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-pane-dom.test.tsx#walk",
+      "to": "s:app/test/genesis-pane-dom.test.tsx#walk",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/map-dogfood-render.test.tsx#liveFiles",
       "to": "s:app/test/map-dogfood-render.test.tsx#read",
       "kind": "call",
@@ -10964,8 +12202,8 @@
     }
   ],
   "stats": {
-    "files": 78,
-    "symbols": 449,
-    "edges": 790
+    "files": 82,
+    "symbols": 513,
+    "edges": 871
   }
 }
