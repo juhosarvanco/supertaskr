@@ -31,9 +31,12 @@ name: ci
 # beside it — a `permissions:` key on the job that needs it, naming
 # `contents: read` plus the one extra scope — and NEVER by widening this
 # workflow default, which would hand the extra scope to every job and
-# every step in the file. tools/e2e/tests/workflow-parity.spec.ts fails
-# loudly on any widening, top-level or per-job: that failure is the
-# conversation, not an obstacle to route around.
+# every step in the file. tools/e2e/tests/workflow-permissions.spec.ts
+# fails loudly on any widening, top-level or per-job, in THIS file or any
+# other workflow (T-045 generalised the rule off ci.yml's hard-coded
+# path). A genuinely needed grant is argued twice — here, and as a row in
+# that spec's EXCEPTIONS table carrying file, scope and reason. The
+# failure is the conversation, not an obstacle to route around.
 permissions:
   contents: read
 
@@ -139,6 +142,14 @@ jobs:
       - name: e2e install
         working-directory: tools/e2e
         run: npm ci
+      # T-045: CONVENTIONS lists `npm run typecheck` for tools/e2e and this
+      # job never ran it — the hole that appears the moment the step list is
+      # DERIVED from the doc instead of mirrored. Placed before the browser
+      # download: it costs seconds, and a type error should not wait on
+      # 250MB of Chromium.
+      - name: e2e types
+        working-directory: tools/e2e
+        run: npm run typecheck
       - name: e2e browsers
         working-directory: tools/e2e
         run: npx playwright install --with-deps chromium

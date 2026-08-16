@@ -68,13 +68,28 @@
   positional (measured on npm 11.12.1). Nothing in the lane ever
   contacts a server it does not own.
 - CI (.github/workflows/ci.yml) is a thin invoker of exactly these
-  commands — dormant until the repo's first GitHub push. Two
-  deliberate divergences: it uses `npm ci` for app/ where local setup
-  says `npm install` (lockfile-exact installs in CI, everywhere), and
-  `npx playwright install --with-deps chromium` (the Linux system libs
-  a fresh runner lacks). tools/e2e/tests/workflow-parity.spec.ts pins
-  the correspondence — change a command here, change it there, or the
-  lane fails.
+  commands — dormant until the repo's first GitHub push.
+  tools/e2e/tests/workflow-parity.spec.ts DERIVES its expectations from
+  the bullets above (T-045): every command they list is a workflow step
+  VERBATIM, except the FOUR deliberate divergences below — each one a
+  commented mapping in that spec, and a lane failure if either side
+  drifts. (1) `npm ci` for app/ where local setup says `npm install` —
+  lockfile-exact installs in CI, everywhere. (2) `npx playwright install
+  --with-deps chromium` in place of the one-time local `npx playwright
+  install chromium` — the Linux system libs a fresh runner lacks.
+  (3) `node scripts/lint-tokens.mjs --selftest` and
+  `node scripts/lint-tokens.mjs` where local says `npm run lint:tokens`
+  (+ `-- --selftest`) — the lint is the job's FIRST step, ahead of every
+  `npm ci`, so CI invokes the zero-dep script directly, as two steps
+  because `--selftest` short-circuits the walk. (4) `xvfb-run -a node
+  tools/e2e/scripts/tauri-boot-check.mjs` from the repo root where local
+  says `npm run boot:check` — a headless runner has no display. CI also
+  runs `cargo install cargo-audit --locked` (the one-time dev-tool setup
+  above, per run because a fresh runner has no ~/.cargo/bin), and it
+  deliberately does NOT run `npm run tauri dev` or `npm run tauri build`
+  — one opens a window and the other packages a bundle; the xvfb boot
+  step covers the dev path. Change a command here, change it there, or
+  the lane fails.
 
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
