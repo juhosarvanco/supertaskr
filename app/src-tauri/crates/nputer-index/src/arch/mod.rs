@@ -19,15 +19,22 @@
 //!               `status` this prints is the component file's own
 //!               declared field, copied verbatim, never a rollup.
 //!
-//! The anti-fork guarantee is not a promise, it is a measurement:
-//! `tests/arch.rs` runs this join over the LIVE registry and the
-//! COMMITTED graph and reproduces the mapping, the relation table and
-//! the finding set that `app/test/architecture-dogfood.test.ts` pins for
-//! the TypeScript engine. If the two ever disagree, that test goes red
-//! before anyone reads a wrong report.
+//! The anti-fork claim is a MEASUREMENT, and it was taken: run against
+//! this repo's live registry and committed graph, this join reproduces
+//! what `app/test/architecture-dogfood.test.ts` pins for the TypeScript
+//! engine — all 8 mapping counts, the 28-row relation table row for row
+//! with every observed count, all 9 finding ids in order, and all 22 D1
+//! file edges in order. The reproduction command is in T-014's
+//! implementation notes.
 //!
-//! Filed as a suggestion for the architect either way — see
-//! docs/tasks/T-014-s1-arch-join-home.md.
+//! That agreement is deliberately NOT pinned as a fourth live-registry
+//! fixture here: CONVENTIONS already warns that declaring a component
+//! moves three of them, and a fourth in another language would be a real
+//! cost at every merge for a property the TypeScript fixture already
+//! guards. `tests/arch.rs` instead pins what cannot go stale — totality,
+//! determinism, order-independence, the package.path seam — over the
+//! live tree. Where a permanent cross-engine pin should live is filed as
+//! T-014-s2, and whether this join belongs in Rust at all as T-014-s1.
 
 pub mod glob;
 pub mod registry;
