@@ -70,6 +70,20 @@ carries its own "Start an interview" — so starting an interview from a
 project that is already open is one step rather than four (it used to
 mean opening a picker, choosing a folder with no `docs/`, landing on
 the no-plan card, and pressing its button).
+T-050 merged 2026-08-17 on @human's second report of that same review —
+a screenshot of the app stranded on "waiting for the first docs
+snapshot…" with nothing on screen but "Toggle theme". Three things were
+wrong at once and all three are fixed: the startup latch was set before
+its two awaits and reset nowhere, so ONE transient IPC failure stranded
+the app permanently (measured against the unfixed code — a later call
+resolves without touching the boundary, even after it has healed); the
+rejection was swallowed into an unhandled promise, so the user was told
+nothing; and the screen carried no way out. What a user can do now that
+they could not: read WHICH step failed and why, press "Try again" and
+have it genuinely re-subscribe onto a live board, or leave by the same
+"Open a folder…" / "Start an interview" route every other screen
+offers. **No reachable screen leaves the user with only the theme
+toggle.**
 T-025 (the agent runner, the milestone's hard core) merged 2026-08-16
 and the honest reading of it is narrow. The MECHANISM exists: four app
 commands spawn the user's own `claude` headless once per turn, resume

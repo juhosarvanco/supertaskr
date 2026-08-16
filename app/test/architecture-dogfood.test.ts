@@ -485,6 +485,60 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //   · The ceaa949 ordering lesson, TWELFTH hold: this block and the map
 //     fixture are both indexed, so they were edited BEFORE the final
 //     regen and the regen was run twice for byte-identity.
+//
+// RECONCILED AT THE T-050 MERGE (2026-08-17, integrator — twentieth
+// exercise of the practice). Every number below re-derived from the raw
+// graph — added/removed/content-changed enumeration plus an INDEPENDENT
+// re-derivation of the file→component mapping and the cross-component
+// import pairs, written against the registry globs rather than run
+// through this app's own derive.ts — against
+// `git show HEAD:docs/architecture/graph.json`, before this edit:
+//   · stats 92→94 files, 642→667 symbols, 1038→1063 edges — 29 added
+//     and FOUR REMOVED. The removals are not churn, they are T-050's one
+//     refactor seen as topology: `startDocsWatcher` no longer does the
+//     work itself, so its four outgoing edges (calls to applyDocsPayload
+//     and applyProjectStatus, type_refs to DocsSnapshotPayload and
+//     ProjectStatusPayload) move to the extracted `runStartup`. The
+//     latch became a wrapper and the graph says so.
+//   · TWO new files, app/test/startup-recovery.test.ts and
+//     app/test/startup-screen.test.tsx; nothing removed.
+//     tools/e2e/tests/startup-recovery.spec.ts is invisible —
+//     .nputerignore carries tools/. Content-changed: app/src/App.tsx
+//     (loc 487→623, symbols 6→8 — StartupScreen and startupStepPhrase),
+//     app/src/lib/watcher-store.ts (659→841, symbols 40→45 —
+//     StartupStep, StartupFailure, runStartup, recordStartupFailure and
+//     the harness door), and hash/loc only on app/test/shell-harness.
+//     test.ts (312→328) and app/test/watcher-store.test.ts (375→383).
+//   · mapping 92→94; C-05 42→44, because BOTH new files land under
+//     app/test/**, and the registry was swept to confirm C-05 is that
+//     glob's ONLY claimant. D2 stays empty, the unmapped node stays
+//     gone, no file is ambiguous, derived.issues stays [].
+//   · findings: NOTHING added, removed or renumbered — six D1 rows and
+//     three D3s, byte-identical. No new component PAIR appears: the two
+//     new suites reach only watcher-store (C-10, an already-CONFIRMED
+//     edge) and App.tsx (C-05's own), so neither can raise a finding.
+//   · relation table: same 28 rows, same 13 confirmed / 6 undeclared /
+//     9 planned tally. EXACTLY ONE observedCount moves — C-05→C-10
+//     23→24. Note WHICH import it is: startup-recovery.test.ts reaches
+//     the store through a DYNAMIC `await import("../src/lib/watcher-
+//     store")` (it must, to re-import a fresh module per case), and the
+//     indexer resolves that to the same file edge a static import would
+//     — checked here rather than assumed, because a missing dynamic-
+//     import edge would have shown up as "no assertion moved" and read
+//     as an ordinary no-op regen. startup-screen.test.tsx's only
+//     dynamic import is ../src/App, C-05's own, so it crosses nothing.
+//   · FOUR assertions moved in this file again, and for the fourth
+//     merge running the fourth was ["C-05", 42] → 44, derived from the
+//     ADDED-FILE LIST before anything was run. The rule stated at T-048
+//     and used at T-049 is now used a second time rather than
+//     rediscovered: it is load-bearing, keep it.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched: T-050
+//     declares no component and changes no registry file, so the T-024
+//     three-fixtures rule does not fire in its registry form. Confirmed
+//     by re-running lib/parser after the regen: 159/159, unmoved.
+//   · The ceaa949 ordering lesson, THIRTEENTH hold: this block and the
+//     map fixture are both indexed, so they were edited BEFORE the
+//     final regen and the regen was run twice for byte-identity.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -550,8 +604,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 92 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(92);
+  it("all 94 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(94);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -577,7 +631,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // and accelerators.ts under app/src/components/shell/**. Forecast
       // as three again, derived as four HERE from the added-file list
       // before anything was run — which is the rule above being used.
-      ["C-05", 42],
+      // 42 → 44 at the T-050 merge regen, by TWO again and by the same
+      // route: startup-recovery.test.ts and startup-screen.test.tsx are
+      // both under app/test/**, and the registry sweep confirms C-05 is
+      // that glob's only claimant. Derived from the added-file list
+      // BEFORE the suite was run, for the second merge in a row.
+      ["C-05", 44],
       ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
@@ -749,7 +808,11 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 21 → 23 at the T-049 merge regen: accelerators.test.tsx imports
       // BOTH docs-model and watcher-store, so this one edge takes both
       // new imports. Still the only observedCount that moves.
-      ["C-05", "C-10", "confirmed", 23],
+      // 23 → 24 at the T-050 merge regen: startup-recovery.test.ts
+      // reaches watcher-store through a DYNAMIC import — the indexer
+      // resolves it to the same file edge, which is worth knowing and
+      // was checked rather than assumed. Again the only one that moves.
+      ["C-05", "C-10", "confirmed", 24],
       ["C-05", "C-11", "planned", 0],
       ["C-05", "C-12", "confirmed", 20],
       // 2 → 4 at the T-037 merge regen, and one of the two additions is

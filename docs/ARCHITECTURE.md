@@ -19,7 +19,7 @@ graph TD
 | C-02 | CLI | Plumbing + power/CI path (ADR-008): genesis, dispatch; shells out to agent CLIs | C-01, C-06 | planned |
 | C-03 | Runtime | nputer.yaml role defaults; sessions.json registry | C-02 | planned |
 | C-04 | Daemon | Sidecar: watcher, websocket, @mention → headless turns | C-02, C-03 | planned |
-| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06; C-07 when F-06 lands | building (board + map panes complete T-001…T-012; T-026 landed the genesis front door and the full-bleed `genesis` screen, and T-037 mounted C-13's lens inside it — the screen renders the pane on the watched `DocsModelState`, behind an error boundary, so hand-driven genesis renders live; T-025 registered C-14's four genesis commands + the exit-reap hook in lib.rs, so the shell can now spawn the planner although nothing in the UI calls it yet; T-049 moved the app's keyboard surface out of a component and up to the root — `components/shell/accelerators.ts` holds a pure chord table and ONE window listener mounted by `App`, replacing the front-door-scoped one, so ⌘O/⌘N fire from every screen — and gave the board header its own "Start an interview", so genesis is reachable from an open project and not only from the front door; T-027 still owes the split view's left half; rooms/sessions pending F-05) |
+| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06; C-07 when F-06 lands | building (board + map panes complete T-001…T-012; T-026 landed the genesis front door and the full-bleed `genesis` screen, and T-037 mounted C-13's lens inside it — the screen renders the pane on the watched `DocsModelState`, behind an error boundary, so hand-driven genesis renders live; T-025 registered C-14's four genesis commands + the exit-reap hook in lib.rs, so the shell can now spawn the planner although nothing in the UI calls it yet; T-049 moved the app's keyboard surface out of a component and up to the root — `components/shell/accelerators.ts` holds a pure chord table and ONE window listener mounted by `App`, replacing the front-door-scoped one, so ⌘O/⌘N fire from every screen — and gave the board header its own "Start an interview", so genesis is reachable from an open project and not only from the front door; T-050 made the startup handshake RECOVERABLE — the `docs-changed` subscribe + `docs_snapshot` pull that C-10 delivers is latched on the in-flight PROMISE rather than a boolean set before the awaits, so a refused boundary call no longer strands the app permanently, the rejection becomes shell state and is rendered as text, and the startup screen carries retry + the front door's own two ways in, which means no reachable screen is a dead end; T-027 still owes the split view's left half; rooms/sessions pending F-05) |
 | C-06 | lib-parser | Pure library: docs/tasks/ + ROADMAP backbone → typed model (T-002); browser-safe pure exports (T-003); component files (T-008); cross-ref validation (T-019) | C-01 | verified |
 | C-07 | nputer-index | Rust crate + small binary: code → docs/architecture/graph.json (tree-sitter TS/JS/Rust); deterministic, no tauri dependency (ADR-014/015); F-06 | — | building (TS/JS extraction + committed graph done T-009; Rust lang T-010, binary T-014 — milestone 4) |
 
@@ -111,10 +111,18 @@ ADR-014/015).
   `__nputerDocsHarness` (pre-existing — feeds docs snapshots, which in a
   browser always land on phase `open`) and, since T-041,
   `__nputerShellHarness` (`applyProjectStatus` / `applyPickOutcome` /
-  `getShell`), which reaches the four phases a served bundle otherwise
-  could not — `noProject`, `noDocs`, `rejectedPick`, `genesis`. It hands
-  out the shell's OWN reducers by reference, so the E2E lane drives
-  shipped code instead of a parallel implementation. Both sit behind ONE
+  `applyStartupFailure` / `getShell`), which reaches the four phases a
+  served bundle otherwise could not — `noProject`, `noDocs`,
+  `rejectedPick`, `genesis` — and, since T-050, one state that is NOT a
+  phase: the `startupFailed` SCREEN, which rides `loading` in the
+  shipped app and `browser` in a served bundle. That fourth door is
+  `recordStartupFailure` itself, the module-private function the store's
+  own two catches call when `listen` or `invoke` rejects, so the lane
+  renders the shipped failure state rather than a lane-side imitation —
+  and it closes a hole only this harness can close, because a browser
+  awaits neither boundary call and so cannot fail a real startup. It
+  hands out the shell's OWN reducers by reference, so the E2E lane
+  drives shipped code instead of a parallel implementation. Both sit behind ONE
   gate, not two that can drift: `!isTauri && import.meta.env.DEV`, the
   same block in `watcher-store.ts`. Keeping them in that module rather
   than a test-only one is deliberate and is the SMALLER surface — a

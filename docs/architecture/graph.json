@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:ce83e888d692e8c2bd59250cd1148614792e4c9b72f0b90ae9128a48ce4e2e19",
-      "loc": 487,
+      "hash": "blake3:a6bbf6727692fb2e2d6f9a2af1554a131ef71a9e4a59bb13d3dcc6a693a5add1",
+      "loc": 623,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -18,8 +18,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            251,
-            485
+            372,
+            621
           ]
         },
         {
@@ -28,8 +28,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            93,
-            108
+            95,
+            110
           ]
         },
         {
@@ -38,8 +38,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            131,
-            238
+            133,
+            240
           ]
         },
         {
@@ -48,8 +48,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            39,
-            56
+            41,
+            58
           ]
         },
         {
@@ -58,8 +58,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            65,
-            89
+            67,
+            91
+          ]
+        },
+        {
+          "id": "s:app/src/App.tsx#StartupScreen",
+          "name": "StartupScreen",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            264,
+            359
           ]
         },
         {
@@ -68,8 +78,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            242,
-            249
+            363,
+            370
+          ]
+        },
+        {
+          "id": "s:app/src/App.tsx#startupStepPhrase",
+          "name": "startupStepPhrase",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            247,
+            251
           ]
         }
       ]
@@ -3274,8 +3294,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:da4bfcb95ee9f1e6ef50de405b194e6120a5df8978ef99bdedf8ab9c79815a86",
-      "loc": 659,
+      "hash": "blake3:540416acabfaf000a914229c2213ec269aea5aa79c4e3b7b8443ec14b42f77d7",
+      "loc": 841,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -3283,8 +3303,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            189,
-            190
+            218,
+            219
           ]
         },
         {
@@ -3303,8 +3323,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            223,
-            225
+            252,
+            254
           ]
         },
         {
@@ -3343,8 +3363,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            194,
-            199
+            223,
+            228
           ]
         },
         {
@@ -3373,8 +3393,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            126,
-            130
+            146,
+            150
           ]
         },
         {
@@ -3383,8 +3403,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            229,
-            236
+            258,
+            269
           ]
         },
         {
@@ -3393,8 +3413,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            349,
-            366
+            398,
+            419
           ]
         },
         {
@@ -3413,8 +3433,28 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            132,
-            152
+            152,
+            181
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#StartupFailure",
+          "name": "StartupFailure",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            135,
+            141
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#StartupStep",
+          "name": "StartupStep",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            131,
+            131
           ]
         },
         {
@@ -3423,8 +3463,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            478,
-            491
+            573,
+            586
           ]
         },
         {
@@ -3433,8 +3473,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            506,
-            522
+            601,
+            617
           ]
         },
         {
@@ -3443,8 +3483,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            463,
-            476
+            558,
+            571
           ]
         },
         {
@@ -3453,8 +3493,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            619,
-            630
+            801,
+            812
           ]
         },
         {
@@ -3463,8 +3503,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            424,
-            426
+            517,
+            519
           ]
         },
         {
@@ -3473,8 +3513,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            403,
-            403
+            464,
+            464
           ]
         },
         {
@@ -3483,8 +3523,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            428,
-            430
+            521,
+            523
           ]
         },
         {
@@ -3493,8 +3533,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            633,
-            635
+            815,
+            817
           ]
         },
         {
@@ -3503,8 +3543,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            416,
-            416
+            479,
+            479
           ]
         },
         {
@@ -3513,8 +3553,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            579,
-            581
+            761,
+            763
           ]
         },
         {
@@ -3523,8 +3563,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            568,
-            570
+            750,
+            752
           ]
         },
         {
@@ -3533,8 +3573,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            204,
-            214
+            233,
+            243
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#recordStartupFailure",
+          "name": "recordStartupFailure",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            625,
+            644
           ]
         },
         {
@@ -3543,8 +3593,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            174,
-            184
+            203,
+            213
           ]
         },
         {
@@ -3553,8 +3603,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            291,
-            335
+            340,
+            384
           ]
         },
         {
@@ -3563,8 +3613,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            164,
-            166
+            193,
+            195
           ]
         },
         {
@@ -3573,8 +3623,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            648,
-            659
+            830,
+            841
           ]
         },
         {
@@ -3583,8 +3633,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            600,
-            610
+            782,
+            792
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#runStartup",
+          "name": "runStartup",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            654,
+            700
           ]
         },
         {
@@ -3593,8 +3653,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            238,
-            282
+            271,
+            331
           ]
         },
         {
@@ -3603,8 +3663,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            495,
-            504
+            590,
+            599
           ]
         },
         {
@@ -3613,8 +3673,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            432,
-            435
+            525,
+            528
           ]
         },
         {
@@ -3623,8 +3683,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            405,
-            415
+            466,
+            478
           ]
         },
         {
@@ -3633,8 +3693,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            442,
-            461
+            535,
+            556
           ]
         },
         {
@@ -3643,8 +3703,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            529,
-            560
+            713,
+            742
           ]
         },
         {
@@ -3653,18 +3713,28 @@
           "kind": "function",
           "exported": true,
           "range": [
-            589,
-            591
+            771,
+            773
           ]
         },
         {
-          "id": "s:app/src/lib/watcher-store.ts#started",
-          "name": "started",
+          "id": "s:app/src/lib/watcher-store.ts#startup",
+          "name": "startup",
           "kind": "const",
           "exported": false,
           "range": [
-            417,
-            417
+            508,
+            508
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#startupAttempts",
+          "name": "startupAttempts",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            510,
+            510
           ]
         },
         {
@@ -3673,8 +3743,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            419,
-            422
+            512,
+            515
           ]
         }
       ]
@@ -4016,8 +4086,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:3cbf7df7749f46159ea6ba1ce5843ec93b5bb21e33f6e90e0256127c5e978733",
-      "loc": 857,
+      "hash": "blake3:f40bf1bef1fbbad4febf10cd1a963476ca482aaf42b5f32545fecb0294cad08f",
+      "loc": 920,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -4025,8 +4095,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            523,
-            523
+            577,
+            577
           ]
         },
         {
@@ -4035,8 +4105,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            522,
-            522
+            576,
+            576
           ]
         },
         {
@@ -4045,8 +4115,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            488,
-            488
+            542,
+            542
           ]
         },
         {
@@ -4055,8 +4125,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            494,
-            509
+            548,
+            563
           ]
         },
         {
@@ -4065,8 +4135,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            511,
-            520
+            565,
+            574
           ]
         },
         {
@@ -4075,8 +4145,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            490,
-            492
+            544,
+            546
           ]
         }
       ]
@@ -5082,8 +5152,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:c6d41e162914227899bea129927ee81dd6355edc05ad5a95dfe0e8ebdbd8ad9c",
-      "loc": 215,
+      "hash": "blake3:1e52524ec958a908550905b0cf71469ee321a1cf37fbcf0250b57337dafd86b6",
+      "loc": 224,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -5978,8 +6048,8 @@
       "id": "f:app/test/shell-harness.test.ts",
       "path": "app/test/shell-harness.test.ts",
       "lang": "ts",
-      "hash": "blake3:6ad938cabfb55112b1b114e391ebd7d533e41ae552fd88fa13c9c0fdb8e0eada",
-      "loc": 312,
+      "hash": "blake3:da89344c0f5783657b74a096e5ce246a12b5921ab37bd7a6d3029617aecb7a03",
+      "loc": 328,
       "symbols": [
         {
           "id": "s:app/test/shell-harness.test.ts#StoreModule",
@@ -6024,11 +6094,209 @@
       ]
     },
     {
+      "id": "f:app/test/startup-recovery.test.ts",
+      "path": "app/test/startup-recovery.test.ts",
+      "lang": "ts",
+      "hash": "blake3:446d2b5a34ffb2352ffec409e911be81ca0da3c3115a48392fea53ff4aa3c21e",
+      "loc": 469,
+      "symbols": [
+        {
+          "id": "s:app/test/startup-recovery.test.ts#SNAPSHOT",
+          "name": "SNAPSHOT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            71,
+            82
+          ]
+        },
+        {
+          "id": "s:app/test/startup-recovery.test.ts#StoreModule",
+          "name": "StoreModule",
+          "kind": "type",
+          "exported": false,
+          "range": [
+            69,
+            69
+          ]
+        },
+        {
+          "id": "s:app/test/startup-recovery.test.ts#errors",
+          "name": "errors",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            100,
+            100
+          ]
+        },
+        {
+          "id": "s:app/test/startup-recovery.test.ts#freshStore",
+          "name": "freshStore",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            87,
+            98
+          ]
+        },
+        {
+          "id": "s:app/test/startup-recovery.test.ts#ipc",
+          "name": "ipc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            34,
+            46
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/startup-screen.test.tsx",
+      "path": "app/test/startup-screen.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:9ac2e4d7997361204b5ea7e3b78a5218f35a248c71710615ba3f77858b5f75ea",
+      "loc": 328,
+      "symbols": [
+        {
+          "id": "s:app/test/startup-screen.test.tsx#App",
+          "name": "App",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            60,
+            60
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#HOSTILE",
+          "name": "HOSTILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            69,
+            74
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#chord",
+          "name": "chord",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            104,
+            113
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#click",
+          "name": "click",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            93,
+            99
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            76,
+            76
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#controls",
+          "name": "controls",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            117,
+            118
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#errors",
+          "name": "errors",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            78,
+            78
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#flush",
+          "name": "flush",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            87,
+            91
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#ipc",
+          "name": "ipc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            23,
+            32
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#q",
+          "name": "q",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            80,
+            81
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            77,
+            77
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#screenOf",
+          "name": "screenOf",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            82,
+            83
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#startupState",
+          "name": "startupState",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            84,
+            85
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/watcher-store.test.ts",
       "path": "app/test/watcher-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:8bf064a1da26abfe9cfd07eb25a21e2db670fcc68e79ecb3ae6060b834dfcc88",
-      "loc": 375,
+      "hash": "blake3:a86b8d7a29b982f65e8f8b0a2b60c764eac77fdff5d13da89b5730daf108d707",
+      "loc": 383,
       "symbols": [
         {
           "id": "s:app/test/watcher-store.test.ts#BROKEN_ROADMAP",
@@ -6097,7 +6365,7 @@
           "exported": false,
           "range": [
             168,
-            179
+            187
           ]
         },
         {
@@ -7407,6 +7675,8 @@
         "CONVENTION_HINT",
         "FrontDoorNotice",
         "PlanChecklistRow",
+        "StartupFailure",
+        "StartupStep",
         "getShellState",
         "isTauriRuntime",
         "keepCurrentProject",
@@ -9601,6 +9871,85 @@
       ]
     },
     {
+      "from": "f:app/test/startup-recovery.test.ts",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:app/test/startup-recovery.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it",
+        "vi"
+      ]
+    },
+    {
+      "from": "f:app/test/startup-screen.test.tsx",
+      "to": "f:app/src/App.tsx",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/test/startup-screen.test.tsx",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync",
+        "statSync"
+      ]
+    },
+    {
+      "from": "f:app/test/startup-screen.test.tsx",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "resolve"
+      ]
+    },
+    {
+      "from": "f:app/test/startup-screen.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/startup-screen.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/startup-screen.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterAll",
+        "beforeAll",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it",
+        "vi"
+      ]
+    },
+    {
       "from": "f:app/test/watcher-store.test.ts",
       "to": "f:app/src/lib/docs-model.ts",
       "kind": "import",
@@ -10607,6 +10956,24 @@
       "from": "s:app/src/App.tsx#SkippedFilesBadge",
       "to": "s:app/src/lib/docs-model.ts#skipReasonPhrase",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#StartupScreen",
+      "to": "s:app/src/App.tsx#startupStepPhrase",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#StartupScreen",
+      "to": "s:app/src/lib/watcher-store.ts#StartupFailure",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#startupStepPhrase",
+      "to": "s:app/src/lib/watcher-store.ts#StartupStep",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -12956,6 +13323,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/watcher-store.ts#ScreenModel",
+      "to": "s:app/src/lib/watcher-store.ts#StartupFailure",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/watcher-store.ts#ShellHarnessSnapshot",
       "to": "s:app/src/lib/watcher-store.ts#PlanProbePayload",
       "kind": "type_ref",
@@ -12976,6 +13349,12 @@
     {
       "from": "s:app/src/lib/watcher-store.ts#ShellHarnessSnapshot",
       "to": "s:app/src/lib/watcher-store.ts#ShellPhase",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#ShellHarnessSnapshot",
+      "to": "s:app/src/lib/watcher-store.ts#StartupFailure",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -13006,6 +13385,18 @@
     {
       "from": "s:app/src/lib/watcher-store.ts#ShellState",
       "to": "s:app/src/lib/watcher-store.ts#ShellPhase",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#ShellState",
+      "to": "s:app/src/lib/watcher-store.ts#StartupFailure",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#StartupFailure",
+      "to": "s:app/src/lib/watcher-store.ts#StartupStep",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -13118,6 +13509,18 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/watcher-store.ts#recordStartupFailure",
+      "to": "s:app/src/lib/watcher-store.ts#StartupStep",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#recordStartupFailure",
+      "to": "s:app/src/lib/watcher-store.ts#setShell",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/watcher-store.ts#reduceDocs",
       "to": "s:app/src/lib/docs-model.ts#DocsModelState",
       "kind": "type_ref",
@@ -13208,6 +13611,42 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/watcher-store.ts#runStartup",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runStartup",
+      "to": "s:app/src/lib/watcher-store.ts#ProjectStatusPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runStartup",
+      "to": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runStartup",
+      "to": "s:app/src/lib/watcher-store.ts#applyProjectStatus",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runStartup",
+      "to": "s:app/src/lib/watcher-store.ts#recordStartupFailure",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runStartup",
+      "to": "s:app/src/lib/watcher-store.ts#setShell",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/watcher-store.ts#selectScreen",
       "to": "s:app/src/lib/watcher-store.ts#ScreenModel",
       "kind": "type_ref",
@@ -13263,25 +13702,7 @@
     },
     {
       "from": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
-      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
-      "to": "s:app/src/lib/watcher-store.ts#ProjectStatusPayload",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
-      "to": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
-      "to": "s:app/src/lib/watcher-store.ts#applyProjectStatus",
+      "to": "s:app/src/lib/watcher-store.ts#runStartup",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -14066,6 +14487,36 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/startup-recovery.test.ts#freshStore",
+      "to": "s:app/test/startup-recovery.test.ts#StoreModule",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/startup-screen.test.tsx#chord",
+      "to": "s:app/test/startup-screen.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/startup-screen.test.tsx#click",
+      "to": "s:app/test/startup-screen.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/startup-screen.test.tsx#click",
+      "to": "s:app/test/startup-screen.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/startup-screen.test.tsx#startupState",
+      "to": "s:app/test/startup-screen.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/watcher-store.test.ts#openProjectA",
       "to": "s:app/src/lib/docs-model.ts#DocsModelState",
       "kind": "type_ref",
@@ -14740,8 +15191,8 @@
     }
   ],
   "stats": {
-    "files": 92,
-    "symbols": 642,
-    "edges": 1038
+    "files": 94,
+    "symbols": 667,
+    "edges": 1063
   }
 }

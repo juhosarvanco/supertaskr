@@ -208,8 +208,17 @@ describe("the nputer repo on its own map", () => {
     // tools/e2e/tests/accelerators.spec.ts, lives under tools/ and is
     // .nputerignored, so the lane's real trusted-chord test is invisible
     // here exactly as T-041's ten were.
+    // 92 → 94 at the T-050 merge regen (2026-08-17): two files —
+    // app/test/startup-recovery.test.ts and app/test/startup-screen.
+    // test.tsx. The third new file, tools/e2e/tests/startup-recovery.
+    // spec.ts, is .nputerignored under tools/ like every lane spec
+    // before it. T-050's two SOURCE edits (App.tsx, watcher-store.ts)
+    // add no node: they move those files' hash, loc and symbol counts,
+    // and they RETIRE four intra-file edges — the work moved out of
+    // startDocsWatcher into the extracted runStartup, so the latch's
+    // own outgoing calls and type_refs went with it.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 92 files",
+      "committed graph · 94 files",
     );
   });
 });
