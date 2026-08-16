@@ -139,6 +139,14 @@ jobs:
       - name: e2e install
         working-directory: tools/e2e
         run: npm ci
+      # T-045: CONVENTIONS lists `npm run typecheck` for tools/e2e and this
+      # job never ran it — the hole that appears the moment the step list is
+      # DERIVED from the doc instead of mirrored. Placed before the browser
+      # download: it costs seconds, and a type error should not wait on
+      # 250MB of Chromium.
+      - name: e2e types
+        working-directory: tools/e2e
+        run: npm run typecheck
       - name: e2e browsers
         working-directory: tools/e2e
         run: npx playwright install --with-deps chromium

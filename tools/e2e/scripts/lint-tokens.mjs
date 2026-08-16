@@ -9,10 +9,19 @@
  *
  * Plain node, zero deps — structural, not taste: this is CI's FIRST
  * step, ahead of every `npm ci` in the job, so it must run against a
- * bare checkout with nothing installed. Walks app/src `**` /
- * `*.{ts,tsx}` (css excluded — tokens.css/index.css are the legal home
- * of raw values and bracketed selectors), applies four patterns, prints
- * every `file:line: match`, exits non-zero on any hit.
+ * bare checkout with nothing installed. Walks the WALK_ROOTS below for
+ * `*.{ts,tsx,mjs}` (css excluded — tokens.css/index.css are the legal
+ * home of raw values and bracketed selectors), applies four patterns,
+ * prints every `file:line: match`, exits non-zero on any hit.
+ *
+ * ── WHAT IT WALKS (T-045) ────────────────────────────────────────────
+ * Until T-045 the walk was app/src alone, which left the one place a
+ * `text-red-500` can sit unnoticed while the shipped tree stays clean:
+ * app/test. The walk now covers app/src, app/test and tools/e2e — see
+ * WALK_ROOTS for the argument per root, WALK_ROOTS_OUT for the trees
+ * deliberately left out, and EXCLUDED_FILES for the one file excluded BY
+ * NAME rather than by extension. Still ZERO allowlist: those are walk
+ * boundaries argued in code, not mutes for a hit inside the corpus.
  *
  * ── WHAT IT LOOKS AT (T-038) ─────────────────────────────────────────
  * The four patterns below are UNCHANGED. What T-038 changed is the text
@@ -82,7 +91,80 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 /** tools/e2e/scripts -> repo root. */
 const repoRoot = path.resolve(here, "..", "..", "..");
-const target = path.join(repoRoot, "app", "src");
+/** This script, repo-relative — the one file excluded by NAME (below). */
+const selfPath = path.relative(repoRoot, fileURLToPath(import.meta.url)).split(path.sep).join("/");
+
+/**
+ * The trees walked, in order, each with the argument for including it
+ * (T-045 criterion 5). The corpus is the tree where a Tailwind class can
+ * be WRITTEN — not the tree that ships, because a class written in a test
+ * is a class the shipped tree is asserted against.
+ *
+ * - `app/src`   the shipped UI (T-020, the original walk).
+ * - `app/test`  the one place a `text-red-500` can sit unnoticed while
+ *               app/src stays clean: a unit test that asserts a
+ *               default-palette class is pinning a dead utility, and the
+ *               fixtures under it feed the same components.
+ * - `tools/e2e` the same argument, one rung out: the lane's specs assert
+ *               on class strings and computed styles, its fixtures feed
+ *               the real components, and an arbitrary value written into
+ *               a locator is the same silent bypass. Including it is also
+ *               what makes EXCLUDED_FILES load-bearing rather than
+ *               decorative — this script lives inside it.
+ *
+ * Safe to widen only since T-038: over this corpus the pre-T-038
+ * line-based scan produced 8 false positives (TypeScript labeled tuples
+ * in app/test, `[key: string, value: string]` read as `[color:red]`) and
+ * the masked scan produces none — measured `both=0 OLD-only=8 NEW-only=0`
+ * over the 51 files, the same differential T-038 ran repo-wide over 122.
+ */
+export const WALK_ROOTS = ["app/src", "app/test", "tools/e2e"];
+
+/**
+ * Trees deliberately NOT walked, with the reason. Left in code because
+ * "we forgot" and "we decided" look identical in an absent list.
+ *
+ * - `lib/parser` NO UI, ever (ADR-011): the parser is a pure library
+ *   with no DOM and no stylesheet, so every bracket in it is TypeScript.
+ *   Linting it would assert a rule that does not apply to it.
+ * - `app/src-tauri` Rust; the patterns are Tailwind grammar.
+ * - `docs`, `method` prose, not code.
+ */
+export const WALK_ROOTS_OUT = ["lib/parser", "app/src-tauri", "docs", "method"];
+
+/** Extensions walked. `.mjs` joined at T-045 with tools/e2e: the lane's
+ * scripts are plain node modules, and leaving them out would make the
+ * self-exclusion below an accident of file extension. */
+export const WALK_EXTENSIONS = /\.(ts|tsx|mjs)$/;
+
+/** Never descended into: build output and installed dependencies are not
+ * this repo's source (node_modules/, dist/, target/ are gitignored;
+ * test-results/ and playwright-report/ are the lane's run artifacts). */
+export const SKIP_DIRS = new Set([
+  "node_modules",
+  "dist",
+  "target",
+  "test-results",
+  "playwright-report",
+]);
+
+/**
+ * Excluded BY NAME, not by extension — the distinction criterion 5 asks
+ * for. THIS script is the one file in the repo where a violation-shaped
+ * string is the correct content: it embeds `p-[13px]`, `text-red-500`,
+ * `[color:red]` and `bg-(--brand)` as selftest samples and spells the
+ * four patterns out as source. Scanning it reports 25 hits — its own
+ * evidence read back as a violation. Before T-045 it was excluded only
+ * because `.mjs` was not walked; now `.mjs` IS walked, so the exclusion
+ * is a decision with a reason instead of a side effect, and the selftest
+ * asserts both that the file is excluded AND that excluding it is doing
+ * real work.
+ *
+ * This is not an allowlist. An allowlist mutes a hit inside the corpus;
+ * this names the one file that is not source under test, and nothing in
+ * it can mute a hit anywhere else.
+ */
+export const EXCLUDED_FILES = ["tools/e2e/scripts/lint-tokens.mjs"];
 
 /** The 22-name Tailwind default palette (P3). */
 const PALETTE =
@@ -393,30 +475,48 @@ export function scanSource(src) {
   return hits;
 }
 
-/** Recursive deterministic walk for .ts/.tsx files. */
+/** Recursive deterministic walk for the walked extensions, skipping
+ * SKIP_DIRS. Returns repo-relative POSIX paths. */
 function walk(dir) {
   const out = [];
   for (const name of readdirSync(dir).sort()) {
+    if (SKIP_DIRS.has(name)) continue;
     const full = path.join(dir, name);
     const st = statSync(full);
     if (st.isDirectory()) out.push(...walk(full));
-    else if (/\.(ts|tsx)$/.test(name)) out.push(full);
+    else if (WALK_EXTENSIONS.test(name)) {
+      out.push(path.relative(repoRoot, full).split(path.sep).join("/"));
+    }
   }
   return out;
 }
 
-function lintTree() {
-  let files;
-  try {
-    files = walk(target);
-  } catch (err) {
-    console.error(`lint-tokens: cannot walk ${target}: ${String(err)}`);
-    process.exit(2);
+/** Every file the lint reads, in WALK_ROOTS order — the corpus, with the
+ * by-name exclusions removed. Exported so the selftest can assert the
+ * walk policy rather than restate it. */
+export function corpus() {
+  const files = [];
+  for (const root of WALK_ROOTS) {
+    const abs = path.join(repoRoot, root);
+    let found;
+    try {
+      found = walk(abs);
+    } catch (err) {
+      // A missing root is a broken checkout, not an empty corpus: say so
+      // loudly rather than silently linting less than the policy claims.
+      console.error(`lint-tokens: cannot walk ${root}: ${String(err)}`);
+      process.exit(2);
+    }
+    files.push(...found);
   }
+  return files.filter((rel) => !EXCLUDED_FILES.includes(rel));
+}
+
+function lintTree() {
+  const files = corpus();
   let count = 0;
-  for (const file of files) {
-    const rel = path.relative(repoRoot, file);
-    for (const hit of scanSource(readFileSync(file, "utf8"))) {
+  for (const rel of files) {
+    for (const hit of scanSource(readFileSync(path.join(repoRoot, rel), "utf8"))) {
       count += 1;
       console.log(`${rel}:${hit.line}: ${hit.match.trim()}  [${hit.id}: ${hit.what}]`);
     }
@@ -429,7 +529,7 @@ function lintTree() {
     );
     process.exit(1);
   }
-  console.log(`lint-tokens: clean (${files.length} files scanned under app/src)`);
+  console.log(`lint-tokens: clean (${files.length} files scanned under ${WALK_ROOTS.join(", ")})`);
 }
 
 /**
@@ -498,7 +598,58 @@ const SAMPLES = [
   { text: '"data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:hidden"', expect: [] },
   // a variant built through an interpolation is still a variant
   { text: "className={`data-[state=${s}]:flex`}", expect: [] },
+  // ── T-045: app/test, newly walked — a pair for the surface ─────────
+  // positive: a unit test asserting a default-palette class is pinning a
+  // dead utility. This is the shape criterion 5 exists for — it can sit
+  // in app/test while app/src stays clean.
+  { text: 'expect(card.className).toContain("bg-red-500");', expect: ["P3"] },
+  // negatives: TypeScript LABELED TUPLES, verbatim from app/test — the
+  // third collision class T-038's differential catalogued and the ONLY
+  // thing the pre-T-038 scan reported over this newly walked tree (8
+  // hits, all this shape). Code, not string text: the mask kills them.
+  { text: "type Field = [key: string, value: string | number];", expect: [] },
+  { text: "const cases: [pattern: string, text: string, expected: boolean][] = [];", expect: [] },
+  // ── T-045: tools/e2e, newly walked — a pair for the surface ────────
+  // positive: a lane spec pinning a default-palette class asserts a
+  // utility that is dead by mechanism — the same bypass, one rung out.
+  { text: 'await page.locator(".text-red-500").first().click();', expect: ["P3"] },
+  // negatives: the lane's own idioms. Attribute-selector strings are
+  // everywhere in the specs, and the boot check's `[boot-check]` prefix
+  // is a bracketed token sharing a line with a colon — P2's near-miss.
+  { text: "await page.locator('[data-testid=\"task-card\"][data-task-id=\"T-101\"]').click();", expect: [] },
+  { text: 'expect(stderr).toContain("[boot-check] REFUSED:");', expect: [] },
 ];
+
+/**
+ * The walk policy, asserted rather than described (T-045 criterion 5).
+ * Text samples cannot cover a walk: which trees are read, which are not,
+ * and which single file is excluded by name are properties of `corpus()`,
+ * so the selftest checks them directly. Each entry is `[what, ok]` and
+ * the set carries the same positive/negative discipline as SAMPLES.
+ */
+function walkPolicyChecks() {
+  const files = corpus();
+  const under = (root) => files.filter((f) => f.startsWith(`${root}/`)).length;
+  const selfHits = scanSource(readFileSync(path.join(repoRoot, selfPath), "utf8")).length;
+  return [
+    // positive: every declared root is actually read, and non-trivially —
+    // a root that silently walks zero files is a gate that does nothing.
+    ...WALK_ROOTS.map((root) => [`root ${root} is walked (${under(root)} files)`, under(root) > 0]),
+    // negative: the trees argued OUT stay out. lib/parser is the one that
+    // matters — no UI, ever (ADR-011).
+    ...WALK_ROOTS_OUT.map((root) => [`root ${root} is NOT walked`, under(root) === 0]),
+    // positive: `.mjs` is walked, so the self-exclusion below is a
+    // decision and not an accident of file extension.
+    [".mjs files are walked", files.some((f) => f.endsWith(".mjs"))],
+    // negative: this script is excluded BY NAME...
+    [`${selfPath} is excluded by name`, !files.includes(selfPath)],
+    // ...and the exclusion is load-bearing: scanning it WOULD report.
+    [`excluding ${selfPath} is load-bearing (${selfHits} hits if walked)`, selfHits > 0],
+    // negative: installed dependencies are not this repo's source. Their
+    // absence is what keeps the file count a number a human can read.
+    ["node_modules is never walked", !files.some((f) => f.includes("/node_modules/"))],
+  ];
+}
 
 function selftest() {
   let failures = 0;
@@ -512,11 +663,21 @@ function selftest() {
       );
     }
   }
+  const checks = walkPolicyChecks();
+  for (const [what, ok] of checks) {
+    if (!ok) {
+      failures += 1;
+      console.error(`selftest FAIL: walk policy — ${what}`);
+    }
+  }
   if (failures > 0) {
     console.error(`lint-tokens selftest: ${failures} failure(s)`);
     process.exit(1);
   }
-  console.log(`lint-tokens selftest: ${SAMPLES.length} samples green`);
+  console.log(
+    `lint-tokens selftest: ${SAMPLES.length} samples green, ` +
+      `${checks.length} walk-policy checks green`,
+  );
 }
 
 if (process.argv.includes("--selftest")) selftest();
