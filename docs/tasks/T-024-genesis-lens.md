@@ -9,10 +9,10 @@ status: building
 blocked_by: [T-023]
 touches: [app-interview, docs/architecture/components/]
 builder: claude-fable-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-fable-5 @fresh (WIP through ad2716f) + claude-opus-5 @fresh (completion)
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 The split view's right half ("the project, so far") built as a
@@ -348,3 +348,233 @@ Blocked until T-026 mounts the pane, since there is no route to it in
 a running app today.
 
 ## Verdicts
+
+2026-08-16 — claude-opus-5 @fresh, verifier — same-model review
+relative to the completing builder; the fable-built half received
+cross-model review: **REJECTED** — the branch leaves `lib/parser`'s
+required suite RED. All five acceptance criteria were independently
+re-derived and hold; the break is in the C-13 reconciliation, which is
+one fixture short.
+
+**The break, with reproduction.** Declaring C-13 moves every fixture
+that pins the live component registry. There are **three**, not two:
+`app/test/architecture-dogfood.test.ts`, `app/test/map-dogfood-render.test.tsx`
+— both correctly reconciled — and `lib/parser/test/smoke.test.ts:40`
+("parses the dogfood component registry (T-008): same C-namespace as
+ARCHITECTURE.md"), which was not. T-008's own commit message names it:
+"live-tree smoke pins the exact registry".
+
+    cd lib/parser && npm test
+    → 1 failed | 158 passed (159)
+      test/smoke.test.ts:40  expected [ Array(10) ] to deeply equal [ Array(9) ]
+      + "C-13"
+
+    # cause isolated: move docs/architecture/components/C-13-genesis-pane.md
+    # aside, re-run, restore
+    → 159 passed (159)
+
+The suite was green at the branch point and is red at HEAD, caused
+solely by this branch. `docs/CONVENTIONS.md § Build & test` names that
+suite a gate ("The suite's smoke test parses this repo's live docs/
+tree"); `docs/tasks/T-012-map-view.md:179` — the §8 suites line of the
+very precedent these notes invoke — requires "lib/parser untouched **at
+its then-current count**". The count moved. The implementation notes
+present their delta as enumerated and complete ("Every pre-existing row,
+count and file edge is byte-unchanged … the only movement in this
+fixture is C-13's own arrival") and report only the app suite and build
+under "Commands and counts", stating `lib/parser` is "untouched (zero
+files changed)" — true as a diff claim, and exactly why the red was
+never seen. This is the same failure mode the completing session itself
+caught earlier on this task: **a suite not run is a suite not known**,
+and here it was one directory away.
+
+**Remedy (small, and a scope ruling so re-dispatch is not blocked).**
+Add `'C-13'` to the expected id array at `lib/parser/test/smoke.test.ts:40`
+— a CHANGE, not a loosening, identical in kind to the six app-side
+deltas already made. The task's "zero diff under lib/parser/**" fence is
+a *source* fence; a fixture reconciliation forced by an in-branch
+declaration is the T-012 §2 move this task already made twice, so it is
+in scope. The architect's alternative is to drop the C-13 declaration
+from this branch entirely; the reconciliation is the cheaper, honest
+path. Nothing else needs to change — re-verification is targeted.
+
+**Everything else attacked, and green.** Re-derived, not accepted:
+
+- **(1) Pure module.** `app/src/genesis/genesis-derive.ts` carries
+  **zero** time sources — `grep -rnE 'Date\.now|new Date|performance\.now|Math\.random|setInterval|setTimeout|fetch\(|invoke|listen\(|localStorage|window\.|document\.' app/src/genesis/` hits only `GenesisPane.tsx:135` (`Date.now` as the injectable default clock) and `:151` (the one-shot timer). No I/O anywhere. Hand-derived from the fixtures, then compared to what the tests assert — not read off the implementation: `find streak/docs -name '*.md' | wc -l` = 9 and stage4 = 5 (header counts); raw `[?]` counts 5 / 2 / 1 in NORTH_STAR / STATE / CONVENTIONS, with exactly one of NORTH_STAR's five inside the Q4 HTML comment (`NORTH_STAR.md:45-46`) → the asserted 4 / 2 / 1 is right; the Vision first sentence is byte-identically the asserted title; `ROADMAP.md § Backbone` yields F-01 Log / F-02 Week view / F-03 Habit management / F-04 History & stats, the asserted backbone. Approximation recorded as designed (`GenesisModel.approxStage` doc comment names highest-wins, the two collapses, and the gap rule). 24/24 green.
+- **The banking-map coupling — PROVEN, not accepted.** All nine rows
+  transcribed verbatim against `method/interview/plan-interview.md
+  § Output`, cell by cell, by hand. Then attacked: mutated stage 4's
+  "Banks into" cell to "§ Hard limits" in the method file → suite RED
+  naming the drift (`genesis-derive.test.ts:88`, expected/received on
+  the exact cell); reverted → 24/24 green; `git diff --stat method/`
+  empty. The claim is real.
+- **(3) The suite-actually-runs sweep — the highest-priority class,
+  swept exhaustively.** Not by counting files: I injected
+  `expect("PROBE").toBe("EXECUTED")` as the first statement of **every**
+  `it()` body in both new files (24 + 10) and ran them — **34 failed
+  (34)**, i.e. every single test body executes; reverted. Corroborated
+  by `--reporter=verbose` listing all 34 by name, and by a static pass
+  confirming no assertion-free test (min 1 `expect`, most 2–22). The
+  398 → 432 delta re-derived: `git diff --name-only` touches only the
+  two dogfood files among pre-existing tests, no test deleted, no
+  `.skip`/`.only`/`.todo` added (the ten `-` lines in the test diff are
+  four `it(...)` title rewrites and their paired comment lines), so
+  432 − 24 − 10 = 398 is the untouched remainder.
+- **(2) Rendering from the model only.** DOM assertions pin header
+  count, north-star card + the three chips, backbone (built
+  `bg-column-header` / dashed forming / dashed slot), rows with written
+  ✓ disc and writing pulse, assumption badges by path, and both footer
+  lines. **Tokens-only re-derived**: 82 utilities extracted from every
+  class-bearing literal in `GenesisPane.tsx` — **zero** arbitrary
+  values, zero `-(--x)` forms, zero default-palette utilities — and
+  **all 82 emit** into the freshly built `dist/assets/index-D9PU4sJh.css`
+  (selector-boundary match, not substring). `--review-disc` /
+  `--review-mark`, used as inline `var()` in the ✓ disc, carry both
+  light (`tokens.css:94-95`) and dark (`:252-253`) values.
+- **(3) Watcher-driven.** No `setInterval`, no repeating `setTimeout`,
+  no new `invoke`/`listen`, no new dependency (zero diff in
+  package.json, both lockfiles, Cargo.toml/lock). The one timer is the
+  one-shot at `model.nextTransitionMs`. The store test's entry point
+  **is** the shell's: `App.tsx:155` calls `void startDocsWatcher()`;
+  the test calls `await startDocsWatcher()` — same function, awaited
+  instead of fire-and-forget. Not a weaker path.
+- **(4) Degradation — attacked with my own hostile fixtures**, written
+  independently (5 probes, file deleted after the run): 14 hostile
+  derive shapes (10k unbroken run, RTL override + zero-width + BOM +
+  ANSI ESC + NUL, `<script>`/`<style>`/unclosed comment, `"[?]"×5000`,
+  bare `---`, empty file, `..`-shaped path, script tag *inside a
+  filename*, duplicate/lowercase/no-space headings, whitespace-only
+  Vision) — none threw, all deterministic on re-derive; a torn-file
+  storm with **every** file malformed still rendered all 7 rows and the
+  correct count; hostile paths and headings produced **no** `script`,
+  `img`, `iframe`, `svg[onload]`, `a[href^=javascript]`, `style`,
+  `object` or `embed` element, and **zero** `on*` attributes on any
+  element in the tree, with the literal bytes present as text. The
+  no-innerHTML gate is genuinely **standing**: planted
+  `el.innerHTML = "x"` in `genesis-derive.ts` → RED naming the file;
+  reverted.
+- **(5) Reduced motion — mechanism, not class name.** The built
+  stylesheet carries `.motion-safe\:animate-status-pulse{animation:status-pulse …}`
+  **only** inside `@media(prefers-reduced-motion:no-preference)`, and
+  there is no bare `.animate-status-pulse` rule anywhere in it. Under
+  `reduce` the dot is static by construction.
+- **The six cross-lane deltas, ruled individually — all CHANGED, none
+  loosened.** (i) registry id list gains an exact `"C-13"` element,
+  count 9 → 10, still `toEqual` on the whole array; (ii) findings gain
+  an exact `{rule:"D3", id:"D3:C-13", component:"C-13"}`, still a whole-
+  array `toEqual`, four D1 rows byte-unchanged; (iii) relation table
+  gains exactly `["C-13","C-10","planned",0]` and `["C-13","C-11","planned",0]`,
+  still a whole-table `toEqual`, 23 → 25 with 12/4 unchanged; (iv) drift
+  and declaredOnly arrays each gain exactly `"C-13"`; (v) map node count
+  9 → 10 exact; (vi) map edge count 23 → 25 exact, undeclared still 4.
+  No assertion became weaker, vaguer, or disappeared. The header block
+  at `architecture-dogfood.test.ts:111` matches the actual deltas
+  exactly — its omission is the third pin, not a misstatement about
+  these two. The new expectations are **correct**, re-derived from
+  first principles rather than accepted: `docs/architecture/graph.json`
+  indexes 78 files and **zero** under `app/src/genesis/`, and
+  `derive.ts:456` makes a declared-but-unobserved edge `planned` while
+  `:490` makes a declared component with no indexed files a D3 — so
+  D3:C-13 and two planned edges at observedCount 0 are the honest
+  state. `graph.json` correctly **not** regenerated (zero-byte diff).
+- **Fixture provenance (T-023-s2) — re-derived both counts.**
+  `find streak -name '*.md' | xargs wc -l` totals **343**; docs/-only is
+  **315**; the two root adapters are **14 + 14 = 28**; 315 + 28 = 343.
+  T-023's label "docs .md total 343 lines" is counting every `.md` in
+  the 13-file tree (11 of them are `.md`), so the reconciliation is
+  right and the fixture is not 28 lines short. Inventory: 12 files,
+  T-023's 13 minus the gitignored `.nputer/nputer.yaml`. Byte-diffed
+  the two files T-023's verifier certified byte-exact against the
+  transcript quotes extracted from `T-023-genesis-kit.md`:
+  `NORTH_STAR.md` and `ROADMAP.md` are **byte-identical**. T-023-s2 is
+  discharged.
+- **Fence.** `git diff --stat 45894b7..HEAD -- lib/ app/src-tauri/ method/
+  app/package.json app/package-lock.json package.json app/src/App.tsx
+  app/src/main.tsx docs/architecture/graph.json` → empty. lib/parser and
+  src-tauri diff is **zero bytes** (`git diff … | wc -c` = 0).
+- **C-10 read-only, verified structurally** (not just by green tests).
+  `isModelInput = isTaskFilePath || isComponentFilePath || path === ROADMAP_FILE`
+  is exactly the selector set `parseProjectFromFiles` uses
+  (`files.ts:128` task paths, `:98` components, `:161` roadmap), and
+  `applySnapshot` calls it with default options — so the paths newly
+  retained in `effective` are disjoint from everything the parser reads.
+  The parsed model is byte-identical by construction.
+- **Suites, fresh in this worktree.** app `npm test` → **23 files, 432
+  passed (432)**, exit 0. app `npm run build` (tsc && vite build) → exit
+  0, genuinely green. lib/parser → **158/159, the break above**. cargo
+  not run: zero-byte diff under `app/src-tauri/`.
+
+**The s1 ruling — acceptable, honestly-recorded deferral; s1 is the
+right encoding.** The Verification line's third leg ("served-bundle
+probe rendering the dry-run fixture") is in tension with the task's own
+opening paragraph, which specifies the pane as "a standalone,
+driver-agnostic surface" and assigns no mount; the criteria never ask
+for one, and `App.tsx` belongs to T-026. A probe that *renders* the
+fixture needs a route, a route needs the mount, and manufacturing one
+(a dev-only entry point) would plant exactly the dev harness the
+security sweep forbids in production paths. Repo precedent supports the
+split rather than the omission: T-017's verifier ran a served-bundle
+probe on ephemeral port 64502 purely to read the served *stylesheet* —
+no route required — and T-024 did that check statically instead, which
+I reproduced (82/82 utilities emit). So the deferral is real, not
+convenient, and s1 states what remains uncovered without overstating.
+**What exists TODAY for the pane in a real bundle, plainly: nothing.**
+Stronger than s1 claims — the pane is not merely unrouted, its code is
+**absent from the shipped JS**: `grep -F 'the project, so far'
+dist/assets/index-BX4hdacT.js` and four sibling probes all miss,
+because nothing imports it and Rollup drops it. Its utilities reach the
+stylesheet only because Tailwind v4 scans source, not the bundle. Real-
+bundle evidence today = tsc type-checks it, and its classes are not
+silently dead. Everything else is jsdom.
+
+**Suggestions assessed.** **s1** — real, correctly encoded, correctly
+scoped; independently corroborated above, and understated if anything.
+**s2** — real and correct: verified the graph indexes zero genesis
+files, so the D3 and the two planned edges are honest and self-clearing;
+folding into the merge-time regen (T-009-s1) is the right scope. It
+inherits the same blind spot as the notes — its reverse-delta list names
+two fixtures where three pin the registry. **s3** — real: the render-
+phase ref write is at `GenesisPane.tsx:140` (s3 says :136 — stale line
+ref, code as described), the identity guard is genuine, the analysis of
+the concurrent-render blast radius is fair, and (a)/(b)/(c) is the right
+shape for an architect ruling rather than a fix. All three earn their
+place.
+
+**New: T-024-s4** (the north-star title is the pane's one unbounded
+text surface — reproduced a 10,000-char single text node; chips clip at
+44 and rows `truncate`, the title has no `break-words`/`min-w-0`,
+departing from T-017's established answer) and **T-024-s5** (record the
+registry-pin inventory so "declaring a component moves three fixtures"
+stops being folklore).
+
+**Security sweep: clean.** Diff confined per the fence; no `innerHTML`
+family anywhere under `app/src/genesis/` and a standing test that
+proves it; no network, no `fetch`/`XMLHttpRequest`/`WebSocket`, no new
+IPC surface, no shell strings, no `process.env`, no secrets; hostile
+fixture content cannot reach the DOM as markup (verified with my own
+fixtures, including zero `on*` attributes anywhere); no new dependency
+and no lockfile or postinstall change; the browser harness stays gated
+behind `!isTauri && import.meta.env.DEV` in pre-existing C-10 code,
+unchanged here; port 1420 never bound or contacted — the only
+occurrence of "1420" in the whole diff is s1's prose telling a future
+executor not to use it. `app/test/node-builtins.d.ts` adds exactly one
+ambient `statSync` declaration, test-only, no runtime code.
+
+**Notes-vs-reality deviations (minor, recorded).** The implementation
+notes' line citations are accurate on ~15 spot-checks, with two drifts:
+the store test is at `genesis-pane-dom.test.tsx:341`, not `:322` (which
+is the innerHTML gate), and s3's `:136` is `:140`. One design nuance not
+in the notes: `countAssumptions` does not exclude fenced code blocks, so
+a `[?]` inside ``` counts — defensible (the convention marks an
+unresolved claim wherever it appears), but undocumented.
+
+**@human, unchanged and still blocked until T-026 mounts the pane** —
+listed, never performed (headless only): the pane against the design
+screen in light **and** dark, with the built/forming/slot contrast and
+the warm writing-row border the places to look hardest (no dark mockup
+exists; every dark value is derived by token family); the five type
+sizes that moved 0.5–1px read at real size, especially the 19px → 20px
+north-star hero; and the substituted footer right slot (`stage ~4 ·
+constraints` for `~9 min elapsed`), a product decision as much as a
+visual one.
