@@ -20,28 +20,51 @@
  * zero packets with whatever is listening. Busy -> abort loudly without
  * spawning anything.
  *
+ * NPUTER_BOOT_PORT (T-046) moves the whole check to a scratch port so it
+ * can run BESIDE that live app — the reason it guarded nothing at merge
+ * time (T-020-s3: exit 2 whenever the human's app is open is not a gate;
+ * T-040: the regression no other gate could see). Set it and the matching
+ * `--config` overlay is threaded through to `tauri dev` — devUrl AND
+ * beforeDevCommand, CLI flags only, tauri.conf.json never edited. Setting
+ * it to 1420 REFUSES (scripts/boot-port.mjs): the override must never
+ * become a second way to contend for the human's app.
+ *
  * Failure modes, each loud (criterion 4):
- *   exit 2  port 1420 busy (the abort above)
+ *   exit 3  NPUTER_BOOT_PORT refused — 1420, or not a port at all.
+ *           Refused BEFORE anything is probed or spawned.
+ *   exit 2  the port is busy (the bind-probe abort above)
  *   exit 1  overall timeout (NPUTER_BOOT_TIMEOUT_MS, default 20 min —
  *           debug cargo dominates cold builds), no-output watchdog
  *           (NPUTER_BOOT_QUIET_MS, default 5 min), spawn failure, or the
  *           child exiting before both lines — always naming which lines
- *           were and were not seen.
+ *           were and were not seen. `cargo run`'s two-binary ambiguity
+ *           (T-040) lands here: the child dies before either line.
  */
 import { spawn } from "node:child_process";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  BOOT_PORT_ENV,
+  BootPortRefusal,
+  DEFAULT_TAURI_PORT,
+  EXIT_REFUSED,
+  bootConfigJson,
+  resolveBootPort,
+  tauriDevArgs,
+} from "./boot-port.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..", "..", "..");
 const appDir = path.join(repoRoot, "app");
 
-const TAURI_PORT = 1420;
 const TIMEOUT_MS = Number(process.env.NPUTER_BOOT_TIMEOUT_MS ?? 20 * 60 * 1000);
 const QUIET_MS = Number(process.env.NPUTER_BOOT_QUIET_MS ?? 5 * 60 * 1000);
 
 const NEEDLES = ["[nputer] project folder:", '[nputer] window "main" created'];
+
+/** How many trailing child-output lines a failure report carries. */
+const TAIL_LINES = 40;
 
 const log = (line) => console.log(`[boot-check] ${line}`);
 
@@ -56,9 +79,9 @@ function bindable(host, port) {
 
 /** vite binds "localhost" (host: false), which may resolve to ::1 or
  * 127.0.0.1 — probe BOTH families so a live app on either is seen. */
-async function port1420Free() {
-  if (!(await bindable("::1", TAURI_PORT))) return false;
-  return bindable("127.0.0.1", TAURI_PORT);
+async function portFree(port) {
+  if (!(await bindable("::1", port))) return false;
+  return bindable("127.0.0.1", port);
 }
 
 function seenReport(seen) {
@@ -66,21 +89,45 @@ function seenReport(seen) {
 }
 
 async function main() {
-  if (!(await port1420Free())) {
+  // FIRST act, before any probe or spawn: resolve the port. A refused
+  // override never touches the network at all — in particular, asking for
+  // 1420 does not even bind-probe it.
+  let resolved;
+  try {
+    resolved = resolveBootPort(process.env[BOOT_PORT_ENV]);
+  } catch (err) {
+    if (!(err instanceof BootPortRefusal)) throw err;
+    console.error(`[boot-check] REFUSED: ${err.message}`);
+    process.exit(EXIT_REFUSED);
+  }
+  const { port, overridden } = resolved;
+
+  if (!(await portFree(port))) {
     console.error(
-      "[boot-check] ABORT: port 1420 is in use — the human's live app? " +
-        "The boot check must not contend for it (tauri dev owns 1420 via " +
-        "app/vite.config.ts strictPort). Nothing was spawned.",
+      port === DEFAULT_TAURI_PORT
+        ? "[boot-check] ABORT: port 1420 is in use — the human's live app? " +
+            "The boot check must not contend for it (tauri dev owns 1420 via " +
+            "app/vite.config.ts strictPort). Nothing was spawned. " +
+            `Set ${BOOT_PORT_ENV} to a free scratch port to run beside it.`
+        : `[boot-check] ABORT: port ${port} (${BOOT_PORT_ENV}) is in use — the ` +
+            "boot check must own the port it boots on, so it will not contend " +
+            "for someone else's server. Nothing was spawned. Pick a free port.",
     );
     process.exit(2);
   }
 
-  log(`port ${TAURI_PORT} free — spawning \`npm run tauri dev\` in ${appDir}`);
+  const args = tauriDevArgs(resolved);
+  log(`port ${port} free — spawning \`npm ${args.join(" ")}\` in ${appDir}`);
+  if (overridden) {
+    // Loud on purpose: the overlay is the only thing standing between this
+    // run and the human's 1420, so it is printed in full, not summarised.
+    log(`${BOOT_PORT_ENV}=${port} — threading --config ${bootConfigJson(port)}`);
+  }
   log(`overall timeout ${TIMEOUT_MS} ms, no-output watchdog ${QUIET_MS} ms`);
 
   // detached: own process group, so the WHOLE tree (npm -> tauri CLI ->
   // cargo -> app binary + vite) dies with one group signal.
-  const child = spawn("npm", ["run", "tauri", "dev"], {
+  const child = spawn("npm", args, {
     cwd: appDir,
     detached: true,
     stdio: ["ignore", "pipe", "pipe"],
@@ -90,6 +137,36 @@ async function main() {
   let buffered = "";
   let killing = false;
   let lastOutputAt = Date.now();
+  /** Rolling tail of the child's merged output, printed on failure only. */
+  const recent = [];
+  const pushLine = (line) => {
+    const text = line.replace(/\s+$/, "");
+    if (text === "") return;
+    recent.push(text);
+    if (recent.length > TAIL_LINES) recent.shift();
+  };
+
+  /**
+   * The child's last words, verbatim (T-046). Without this the gate can
+   * only say "exited before both lines" and the integrator has to re-run
+   * by hand to learn WHY — which for T-040 was one specific sentence,
+   * `cargo run` refusing to choose between two binaries. A gate whose
+   * failure is not legible is half a gate.
+   */
+  const tailReport = () => {
+    // Flush the partial last line — a crashing child often dies mid-line,
+    // and that line is usually the interesting one. Cleared so a second
+    // (discarded) report cannot duplicate it.
+    if (buffered.trim() !== "") {
+      pushLine(buffered);
+      buffered = "";
+    }
+    if (recent.length === 0) return "\n  (the child produced no output at all)";
+    return (
+      `\n  last ${recent.length} line(s) of \`npm run tauri dev\` output, verbatim:\n` +
+      recent.map((l) => `  | ${l}`).join("\n")
+    );
+  };
 
   const killTree = (signal) => {
     try {
@@ -124,6 +201,7 @@ async function main() {
     const lines = buffered.split(/\r?\n/);
     buffered = lines.pop() ?? "";
     for (const line of lines) {
+      pushLine(line);
       if (line.includes("[nputer]")) log(`app: ${line.trim()}`);
       for (const needle of NEEDLES) {
         if (!seen.has(needle) && line.includes(needle)) {
@@ -151,7 +229,8 @@ async function main() {
     console.error(
       `[boot-check] tauri dev exited on its own (exit=${code ?? "null"} ` +
         `signal=${signal ?? "null"}) before both startup lines appeared:\n` +
-        seenReport(seen),
+        seenReport(seen) +
+        tailReport(),
     );
     process.exit(1);
   });
@@ -161,7 +240,9 @@ async function main() {
       clearInterval(overall);
       finish(
         1,
-        `no output for ${QUIET_MS} ms (watchdog) — startup lines so far:\n` + seenReport(seen),
+        `no output for ${QUIET_MS} ms (watchdog) — startup lines so far:\n` +
+          seenReport(seen) +
+          tailReport(),
       );
     }
   }, 250);
@@ -171,7 +252,9 @@ async function main() {
     clearInterval(overall);
     finish(
       1,
-      `timed out after ${TIMEOUT_MS} ms waiting for the startup lines:\n` + seenReport(seen),
+      `timed out after ${TIMEOUT_MS} ms waiting for the startup lines:\n` +
+        seenReport(seen) +
+        tailReport(),
     );
   }, TIMEOUT_MS).unref?.();
 }

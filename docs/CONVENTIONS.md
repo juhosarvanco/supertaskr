@@ -39,7 +39,11 @@
   no skips) · `npm run typecheck` · `npm run lint:tokens`
   (+ `-- --selftest`) · `npm run boot:check` (spawns `tauri dev` and
   asserts the two `[nputer]` startup lines; NOT part of `npm test` —
-  it opens a real window and needs port 1420 free).
+  it opens a real window). Beside a live app, give it a scratch port:
+  `NPUTER_BOOT_PORT=14521 npm run boot:check` (T-046 — see PORT RULE;
+  1420 is refused, not borrowed). Exit 0 booted · 1 the boot failed,
+  with the child's last output quoted · 2 the port is busy · 3 the
+  override was refused.
 - One-time dev-tool setup, outside the repo and never a repo dep:
   `npx playwright install chromium` from tools/e2e/ (browsers cache in
   ~/Library/Caches/ms-playwright, ~/.cache/ms-playwright on Linux —
@@ -50,9 +54,19 @@
 - PORT RULE: 1420 belongs to the human's live `tauri dev`. The lane
   runs its own vite on `NPUTER_E2E_PORT` (default 14520),
   `reuseExistingServer: false`; setting it to 1420 THROWS at config
-  load by design, and the boot check bind-probes 1420 and aborts if
-  anything holds it. Nothing in the lane ever contacts a server it
-  does not own.
+  load by design, and the boot check bind-probes its port and aborts
+  (exit 2) if anything holds it. The boot check moves off 1420 with
+  `NPUTER_BOOT_PORT` (T-046; default 1420, so unset is exactly the old
+  behavior), which also threads the matching `--config` — `devUrl` AND
+  `beforeDevCommand` with `--strictPort` — through to `tauri dev` as
+  CLI flags; tauri.conf.json is never edited. Setting `NPUTER_BOOT_PORT`
+  to 1420 REFUSES loudly (exit 3, before anything is probed or spawned),
+  the same rule as the lane's throw: neither override may become a
+  second way to contend for the human's app. The `--` in
+  `npm run tauri dev -- --config …` is load-bearing — npm eats a bare
+  `--config` after the script name and leaves the JSON as a stray
+  positional (measured on npm 11.12.1). Nothing in the lane ever
+  contacts a server it does not own.
 - CI (.github/workflows/ci.yml) is a thin invoker of exactly these
   commands — dormant until the repo's first GitHub push. Two
   deliberate divergences: it uses `npm ci` for app/ where local setup
@@ -151,3 +165,23 @@
   `cargo test -p nputer-index --test self_graph -- --ignored` to
   confirm byte-identity, and commit docs/architecture/graph.json
   with the merge.
+- BOOT GATE (T-046, ratified at the 2026-08-16 triage on T-040-s1 +
+  T-020-s3): at any merge whose diff touches `app/src-tauri/**`,
+  `app/src/**` or either manifest (app/package.json,
+  app/src-tauri/Cargo.toml), run the boot check —
+  `NPUTER_BOOT_PORT=<free scratch port> npm run boot:check` from
+  tools/e2e/ — and RECORD the result (exit code, both `[nputer]` lines)
+  in the checkpoint. IF the check cannot run THEN say so LOUDLY in the
+  checkpoint, naming the reason and the exit code — a skipped gate is
+  news, never silence. It exists because `cargo run` is the ONE command
+  this pipeline never issues: T-040, a one-line manifest regression that
+  stopped the app launching at all, passed an executor, an adversarial
+  verifier and an integrator, each of whom ran `cargo test`, `cargo
+  build` and three consecutive full suites — all of which are perfectly
+  happy with two binaries. THE EXECUTOR RUNS IT TOO, on the same
+  trigger, before handing off (T-046 criterion 6): a red the executor's
+  own fence forbids fixing is still news, and news at build time is
+  cheaper than news after a merge — file it as a suggestion and say so
+  in the notes. Running it is NOT screen control (@human ruling
+  2026-08-16): the app opens and closes its own window; nothing is
+  clicked, typed into, screenshotted, or read off the screen.
