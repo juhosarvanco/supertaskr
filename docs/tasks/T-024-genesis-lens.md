@@ -641,3 +641,149 @@ sizes that moved 0.5–1px read at real size, especially the 19px → 20px
 north-star hero; and the substituted footer right slot (`stage ~4 ·
 constraints` for `~9 min elapsed`), a product decision as much as a
 visual one.
+
+2026-08-16 — claude-opus-5 @fresh, verifier — re-verification of the
+fix pass (6824e92, fresh executor); same-model relative to the
+completing builder: **APPROVED**.
+
+**The break, closed — both halves re-derived, neither accepted.**
+Restored the pre-fix fixture into this worktree
+(`git show 2bfa654:lib/parser/test/smoke.test.ts`) and ran the package
+suite: **1 failed | 158 passed (159)** at `test/smoke.test.ts:40`,
+`expected [ Array(10) ] to deeply equal [ Array(9) ]`, diff `+ "C-13"`
+— the rejection's reproduction, line for line. Restored HEAD:
+**159 passed (159)**, exit 0. The cause is this branch and only this
+branch: `git show 45894b7:docs/architecture/components/` lists nine
+components, HEAD lists ten. The new expectation is *correct*, not
+merely passing — the ten ids were re-derived independently from the
+directory listing, and `toEqual` is order-sensitive, so the assertion
+pins the parser's real output order rather than a convenient one.
+
+**Changed, never loosened — proven structurally, not read off the
+prose.** `git diff --numstat 2bfa654..HEAD -- lib/parser/test/smoke.test.ts`
+→ **`13  0`**: thirteen insertions, **zero deletions**. A pure
+insertion is byte-level proof that every pre-existing line survives
+untouched — the nine prior ids, and the neighbouring
+`expect(components.length).toBeGreaterThanOrEqual(5)` at `:39`. The
+assertion at `:52` is still
+`expect(components.map((c) => c.id)).toEqual([…])` over ten explicit
+string literals; an assertion-shape audit of the whole file finds no
+`arrayContaining`, no `toHaveLength`, no `sort()`, no `toContain`
+substituted for that pin. `'C-13'` sits last, in registry order. **The
+source fence holds at zero bytes**: `git diff 45894b7..HEAD -- lib/parser/src/`
+is **0 bytes**, and the fixture's +13/−0 is the only movement under
+`lib/parser/` across the entire branch.
+
+**Scope — the fix moved nothing it did not claim.**
+`git diff --numstat 2bfa654..HEAD` is exactly three files:
+`docs/tasks/T-024-genesis-lens.md` 65/2, `T-024-s3-…md` 1/1,
+`lib/parser/test/smoke.test.ts` 13/0 — **+79/−3**, matching the claim.
+Drive-by check: `git diff 2bfa654..HEAD -- app/src/genesis/ app/test/ docs/architecture/`
+is **0 bytes**, so the pane, the derivation module, both app-side
+fixtures and s1/s2/s4/s5 are untouched, and the six cross-lane deltas
+ruled individually above are byte-identical to what was ruled. The
+task-file edit is an append plus the `built_by` line plus one citation;
+the REJECTED entry above is byte-untouched.
+
+**All three suites, run here — nothing taken on report.** `lib/parser`
+`npm test` → **10 files, 159 passed (159)**, exit 0; `npx tsc --noEmit`
+→ exit 0. `app` `npm test` → **23 files, 432 passed (432)**, exit 0;
+`npm run build` → exit 0, 249 modules, assets `index-D9PU4sJh.css` /
+`index-BX4hdacT.js` — the same hashes the first pass built, so the fix
+is genuinely inert to the bundle. `app/src-tauri` `cargo test` →
+**121 passed, 0 failed, 2 ignored**, exit 0. All three re-run green
+*after* this verdict's own s6 file landed in `docs/tasks/` — a
+live-tree directory, which is this task's entire lesson applied to the
+verifier's own commit.
+
+**First-pass conclusions spot-checked at HEAD — all hold.** The 34 new
+tests still all execute: `expect("PROBE").toBe("EXECUTED")` injected as
+the first statement of every one of the 34 `it()` bodies → **34 failed
+(34)**; reverted. The banking-map coupling is still real: stage 4's
+"Banks into" cell mutated to `§ Hard limits` in
+`method/interview/plan-interview.md` → RED at `genesis-derive.test.ts:88`
+naming the cell; reverted → 24/24. The no-innerHTML gate still fires:
+planted `el.innerHTML = "x"` in `genesis-derive.ts` → RED at
+`genesis-pane-dom.test.tsx:332` naming the file; reverted. No
+`.skip`/`.only`/`.todo` in either new file. Every probe reverted;
+working tree clean at each step.
+
+**Both citation corrections verified by grep, not accepted.**
+`genesis-pane-dom.test.tsx:341` is the
+`describe("updates ride the existing store (no polling, no new IPC)")`
+that opens the real-store test (its `it()` at `:342`), and `:322` is
+`const full = join(dir, name);` inside the innerHTML gate's `scan`
+helper — exactly as the correction says. `GenesisPane.tsx:140` is
+`logRef.current = observeDocsChange(logRef.current, docs, clock());`,
+the render-phase write itself; `:136` opens the comment block above it.
+Both corrections cite reality.
+
+**Ruling on the fix session's finding (a) — consistent with the
+recorded design; not a gap, and the integrator closes it at this
+merge.** `self_graph_is_current` is `#[ignore]`d *deliberately*:
+`docs/tasks/T-009-indexer-typescript.md:217` records the reason ("the
+default `cargo test` must stay hermetic to unrelated TS edits … and
+must never dirty the working tree"). A green cargo run proving nothing
+about graph currency is therefore the design working as specified, not
+a hole this branch opened. What closes it is the integrator's ritual,
+and that ritual is no longer a suggestion: T-009-s1 was **ratified at
+the 2026-08-16 triage** into `docs/CONVENTIONS.md` on `main` as an
+INTERIM integrator rule (the s1 file is gone from `main`'s
+`docs/tasks/`, folded into the convention). This branch predates the
+ratification, so the rule is absent from the branch's own CONVENTIONS
+— it applies because the merge lands on `main`. The notes' claim that
+C-13's D3 self-clears on the next indexer run is accurate and, at this
+merge, *actionable* rather than indefinite; T-024-s2 already routes it
+correctly. No finding.
+
+**Ruling on finding (b) — a real record-truthfulness problem; filed as
+T-024-s6.** Verified against the running code, not reasoned about:
+`parseModelSession` (`model-session.ts:20`, `lastIndexOf('@')`) turns
+the current stamp into `model = "claude-fable-5 @fresh (WIP through
+ad2716f) + claude-opus-5"`, `session = "fresh ×2 (…)"`, `policy =
+"resume"`. The policy is **false** — both sessions were `@fresh`;
+`policy` comes from `session === 'fresh'`, an exact match that any
+annotation defeats. The model half also *renders*: board and map both
+switch from `builder` to `built_by` exactly when status reaches
+done/merging (`board-model.ts:165-167`, `MapPanel.tsx:392-397`), at
+which point `shortModelName` yields a **50-character** badge,
+`"fable-5 @fresh (WIP through ad2716f) + claude-opus"`, in a chip with
+no `truncate` and no `max-w` (`ModelBadge.tsx:12`), and again through
+the map's deliberate local twin (`MapPanel.tsx:361,426`). Nothing
+catches it: `modelField` (`task.ts:250`) rejects only an empty model or
+session, so the live-tree gate's `expect(result.issues).toEqual([])`
+passes on a stamp that parses to nonsense. **The executor's own claim
+checks out** — the pre-existing and edited stamps produce byte-identical
+`model`, `policy` and badge, so the `×2` edit is parse-shape-neutral
+and this is not a regression from the fix; the condition arrived with
+`09f772d`. Not a rejection ground: the stamp is *honest prose* about
+who built what, which is the behaviour the convention wants — what is
+missing is a form for saying it. Out of T-024's scope, correctly left
+alone, and filed as **T-024-s6** with three options (stamp grammar /
+parser change / accept-and-bound-the-render) and a note that it belongs
+to T-019's parser-model-hygiene lane.
+
+**Integrator note for this merge.** The graph regen ritual **fires**:
+the branch adds `app/src/genesis/GenesisPane.tsx` and
+`genesis-derive.ts` — `*.ts/*.tsx` outside `docs/` — so `main`'s
+CONVENTIONS rule applies. Run
+`NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test self_graph -- --ignored`,
+re-run without the env var to confirm byte-identity, and commit
+`docs/architecture/graph.json` with the merge. Expected delta, derived
+here rather than guessed: the genesis files import exactly
+`@/lib/docs-model` (C-10, three statements), `react` (external) and
+`./genesis-derive` (intra-component) and **nothing else** — so
+`D3:C-13` clears, `C-13→C-10` flips planned → confirmed, `C-13→C-11`
+stays **planned** (no TS import can confirm a stylesheet edge, the
+state `C-12→C-11` already carries), and **no new undeclared edge
+appears** (the undeclared tally stays 4). That moves
+`app/test/architecture-dogfood.test.ts` — the reverse of its enumerated
+block at `:111` — and possibly `map-dogfood-render.test.tsx`. It does
+**not** move `lib/parser/test/smoke.test.ts`, which pins the component
+*registry* from `docs/architecture/components/` and never reads the
+graph: the third pin is a registry pin, not a graph pin, and
+over-applying this task's lesson at regen would be the mirror error.
+
+**@human, unchanged and still blocked until T-026 mounts the pane** —
+the three visual judgments listed above stand exactly as written;
+nothing in the fix touches the pane, its tokens, or the bundle.
