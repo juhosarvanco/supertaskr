@@ -18,6 +18,13 @@ review:
 Absorbs: T-006-s2, T-007-s1, and T-001-s1's override residual.
 Triage 2026-08-15: one store, one precedence order.
 
+Persistence coordination (triage 2026-08-16, T-026-s3): "the shell was
+in genesis on <folder>" is NOT this task's to invent — T-029 owns it
+and writes it into the runtime `.nputer/` registry. This task persists
+recents + last project only, and CONSUMES that fact if T-029 has
+landed. Accelerator discoverability (a native Tauri menu, the
+Cmd-vs-Ctrl label) also lands here rather than in T-027 (T-026-s2).
+
 ## Acceptance criteria
 - THE app SHALL persist a recents list (app-config dir; last project
   = head) rendering the design's front-door recent rows (path + task

@@ -30,6 +30,9 @@ time · N of 7". Composes T-024's lens (right), T-025's runner
 (events), T-026's screen. Model text renders as plain text nodes —
 no markdown-to-HTML (fenced).
 
+Absorbs: T-026-s2 (triage 2026-08-16) — this is the second screen that
+wants keys, which is exactly the trigger that suggestion named.
+
 ## Acceptance criteria
 - WHEN genesis starts THE split view SHALL render 640px chat left +
   the T-024 lens right (window label "nputer — new project"), drive
@@ -72,6 +75,16 @@ interview over the fake CLI writing real files into a temp project
 chip). @human, listed explicitly: the one-question-at-a-time feel and
 challenge treatment judgment, light + dark; the milestone closer's
 live run rides T-028.
+- WHEN any screen registers a WINDOW-LEVEL accelerator THE app SHALL
+  route it through ONE screen-scoped accelerator table rather than a
+  second `window` keydown listener: T-026's front-door Cmd-O/Cmd-N
+  move onto it unchanged (their unmount-scoping test stays green) and
+  this screen's own keys join it — two independent window listeners
+  racing over modifier chords is how key handling rots. Input-local
+  keys (Enter send, Shift-Enter newline) are NOT accelerators and stay
+  on the input. Out of scope, recorded rather than forgotten: the
+  Cmd-vs-Ctrl label and a native Tauri menu, both of which stay with
+  T-022 (T-026-s2).
 
 ## Implementation notes
 

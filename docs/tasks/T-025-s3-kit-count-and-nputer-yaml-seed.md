@@ -1,7 +1,7 @@
 ---
 id: T-025-s3
 title: The kit snapshot ships 14 files, not the plan's "13" — and nothing yet reads nputer.yaml
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-025
 ---
 
@@ -42,3 +42,11 @@ warning has a threshold source no code reads. Decide once, when the
 second adapter lands: either the runtime yaml becomes a real input (and
 something seeds it deterministically), or it leaves the kit and the
 defaults live in Rust.
+
+Triage 2026-08-16 (architect): PARKED — split, both halves accounted
+for. The "13 vs 14" off-by-one is a plan-text correction with no test
+encoding it and rides T-043's T-025 text sweep, recorded there as a
+criterion. The real content is the `runtime/nputer.yaml` decision —
+packaged, reachable, consulted by nobody — and the suggestion's own
+answer is "decide once, when the second adapter lands", which is F-04
+era. Unpark with the second adapter.

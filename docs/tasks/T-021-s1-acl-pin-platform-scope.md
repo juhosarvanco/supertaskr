@@ -1,6 +1,7 @@
 ---
+id: T-021-s1
 title: ACL pin's expected grant set is macOS-derived — decide per-platform pins when the Linux lane lands
-status: suggested
+status: parked
 suggested_by: executor claude-fable-5 @T-021
 ---
 
@@ -23,3 +24,11 @@ single list). Decide when the Linux lane produces its first real diff;
 until then the macOS pin governs the only verified platform. The other
 three acl_pin tests (capability source, runtime denials, authority
 cross-check) are platform-independent and bind everywhere as-is.
+
+Triage 2026-08-16 (architect, second pass): PARKED — the decision
+wants the Linux lane's FIRST REAL DIFF, which STATE's launch item
+already watches for by name. The pin fails LOUDLY with the full +/-
+diff and a re-pin list if the set moves, so nothing goes silent while
+this waits; choosing between per-platform `#[cfg(target_os)]` consts
+and a platform-normalized projection before seeing the diff would be
+guessing. Unpark at the first CI run.

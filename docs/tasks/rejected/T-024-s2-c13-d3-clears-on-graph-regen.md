@@ -1,6 +1,7 @@
 ---
+id: T-024-s2
 title: C-13's D3 and its two planned edges clear on the next graph regeneration
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-024
 ---
 
@@ -30,3 +31,11 @@ when it happens — the reconciliation block at
 moved, so the reverse delta is already written down. `C-13→C-11` will
 stay planned regardless: no TS import can confirm an edge to a
 stylesheet, the same honest state C-12→C-11 already carries.
+
+Triage 2026-08-16 (architect): REJECTED — DISCHARGED by the event it
+forecast, and checked against the fixture rather than against the
+baton. `app/test/architecture-dogfood.test.ts` now lists the D3
+findings as exactly D3:C-01, D3:C-07, D3:C-11 and `declaredOnly` as
+["C-01","C-07","C-11"] — no D3:C-13 anywhere — while `C-13->C-10`
+flipped to confirmed and `C-13->C-11` honestly stays planned, which is
+precisely what this file predicted. Nothing left to schedule.

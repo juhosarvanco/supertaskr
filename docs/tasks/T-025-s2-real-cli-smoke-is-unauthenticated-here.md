@@ -1,7 +1,7 @@
 ---
 id: T-025-s2
 title: The real-CLI smoke could not observe a model turn — this machine's claude login is revoked
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-025
 ---
 
@@ -57,3 +57,12 @@ from `app/src-tauri/`, and read the printed events. It writes only into
 a temp dir. If the allowlist turns out to be short, the fix is one
 adapter entry line plus its justification, and the six patterns' test
 pins exactly what changed.
+
+Triage 2026-08-16 (architect): PARKED — @HUMAN, and not buildable work
+by anyone in this pipeline. This machine's `claude` OAuth token is
+revoked, a manual invocation with the FULL ambient environment fails
+identically (so env hygiene is not the cause), and forwarding a key is
+forbidden by ADR-003 and would not have helped. The ask is one command
+on an authenticated machine and it is carried in STATE's @human list.
+It GATES T-025-s4, also parked: the Bash allowlist cannot be narrowed
+safely without watching one real stage-0 scaffold.

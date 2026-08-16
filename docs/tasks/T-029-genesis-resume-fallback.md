@@ -21,6 +21,15 @@ and a missing CLI degrades to the method's manual protocol rendered
 live — option (b) as a first-class MODE (the ADR-006 instrument),
 not a separate build.
 
+Absorbs: T-025-s1, T-026-s3 (triage 2026-08-16) — the typed
+classification this task routes on, and the "where does 'the shell was
+in genesis on <folder>' live" question that T-022 must not answer
+separately.
+
+GATE: T-039 (session-id injection) must merge before this dispatches —
+this is the task that reads the id off .nputer/sessions.json, which is
+exactly what makes that injection reachable.
+
 ## Acceptance criteria
 - WHEN the app reopens a project with an in-flight genesis (genesis
   eligibility true + a live .nputer/sessions.json planner entry or
@@ -52,6 +61,21 @@ tests (kill mid-interview at a scripted stage, reopen, both resume
 paths; cache-corruption fixture; not-found routing). @human, listed
 explicitly: one real hand-driven run in the fallback mode (this
 doubles as an ADR-006 manual-interview instrument check).
+- THE runner SHALL classify an in-band authentication failure as a
+  TYPED outcome rather than a relayed blob. Measured against the real
+  claude 2.1.226: stderr is COMPLETELY EMPTY, the failure arrives on
+  stdout as an `api_retry` line with `error_status: 401`, and the
+  `result` line's `subtype` still reads `"success"` while `is_error`
+  is true. An `AuthFailed { status, message }` variant SHALL let this
+  screen render the one action that helps ("your CLI's login has
+  expired — run `claude login`") and route STRAIGHT to the
+  hand-driven fallback. `terminal_reason` and `permission_denials`
+  SHALL be read alongside it, so a turn that died because
+  `--allowedTools` was too narrow says so by name (T-025-s1).
+- THE fact that "an interview was running on <folder>" SHALL be
+  written in exactly ONE place — the runtime `.nputer/` registry,
+  never docs/, which stays project truth — and T-022 SHALL consume it
+  rather than invent a second mechanism (T-026-s3).
 
 ## Implementation notes
 

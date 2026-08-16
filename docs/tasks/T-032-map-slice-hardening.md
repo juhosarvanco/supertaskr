@@ -17,7 +17,8 @@ review:
 
 Absorbs: T-009-s2, T-011-s4 (the glob.ts header half; the parse-time
 warning lives in T-030), T-011-s5, T-011-s6, T-012-s2, T-012-s3,
-T-012-s4. Triage 2026-08-16: seven verifier/executor-probed edges of
+T-012-s4, T-024-s6 (the map-badge half; the parser half lives in
+T-030 and the board half in T-031). Triage 2026-08-16: seven verifier/executor-probed edges of
 the milestone-2 pipeline (indexer → graph → derivation → layout →
 emit loop), none a defect today, each a truthfulness or determinism
 wart worth pinning while the context is fresh. app-shell touch is
@@ -56,6 +57,11 @@ queue at dispatch; crate-index touch serializes with T-010/T-014.
   C0 control characters when deriving inferred pseudo-component ids;
   a unit probe SHALL pin layoutKey inequality for a crafted
   near-collision pair (T-012-s4).
+- THE map panel's task-row model chip SHALL be bounded: `modelWord`'s
+  chip (app/src/architecture/MapPanel.tsx:426) is `shrink-0` with no
+  max-width, so a long stamp pushes the row. It is the deliberate
+  local twin of the board's ModelBadge and SHALL be bounded and
+  pinned the same way T-031 bounds its sibling (T-024-s6).
 - THE glob.ts header SHALL name its two deliberate gitignore
   deviations (pure last-match-wins vs git's no-re-include-below-
   excluded-parent; single-segment leading-slash stripping ⇒

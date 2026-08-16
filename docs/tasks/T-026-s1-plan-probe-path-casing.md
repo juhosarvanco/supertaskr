@@ -1,6 +1,7 @@
 ---
+id: T-026-s1
 title: The plan probe matches docs/ROADMAP.md case-sensitively — decide the casing rule before Linux
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-026
 ---
 
@@ -33,3 +34,13 @@ reading `docs/`'s entries once and comparing lowercased names (one
 read_dir instead of two stats; also picks up `docs/Tasks/`). Cheap
 either way; wants a decision, not a hot-patch. Feeds the Linux lane
 (T-020) where the difference first becomes observable.
+
+Triage 2026-08-16 (architect): PARKED — the same shape as T-021-s1 and
+already on the launch item's watch list. Verified still true:
+`probe_plan` stats exactly `docs/ROADMAP.md` and `docs/ARCHITECTURE.md`
+via `fs::symlink_metadata`, so macOS and Linux genuinely disagree about
+"already has a plan" for a repo spelling it `docs/roadmap.md`. Nothing
+is overwritten either way (the app writes nothing; the agent is the
+writer, ADR-017), so this is truthfulness, not data loss. Decide when
+the first Linux run makes the divergence observable rather than
+argued.

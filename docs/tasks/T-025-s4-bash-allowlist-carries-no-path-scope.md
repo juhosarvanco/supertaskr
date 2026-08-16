@@ -1,7 +1,7 @@
 ---
 id: T-025-s4
 title: The Bash allowlist is the one grant cwd scoping does not cover — `cp` and `mkdir` reach the whole filesystem
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-025
 ---
 
@@ -62,3 +62,16 @@ six patterns are pinned by
 `allowed_tools_are_exactly_the_kits_imperative_surface`, so any change
 is a deliberate, reviewed edit with its own justification comment — the
 alarm is already wired.
+
+Triage 2026-08-16 (architect): PARKED — blocked on T-025-s2's observed
+run, which no agent can perform. RE-VERIFIED at triage: the six
+patterns are unchanged in adapter.rs and still include `Bash(mkdir:*)`
+and `Bash(cp:*)`, and `--allowedTools` still matches the COMMAND
+STRING and never a path — so `cp` is a filesystem-wide read+write
+primitive inside a grant whose containment argument is cwd scoping.
+NOT a rejection: the six are the T-023-recorded imperative surface, so
+the executor implemented a landed decision, and both suspect verbs
+look avoidable (Read+Write IS cwd-scoped under `acceptEdits`). But
+choosing an arm without one watched real stage-0 scaffold risks the
+first genesis a user ever runs dying on a denied tool. UNPARK WITH s2
+— read them together.

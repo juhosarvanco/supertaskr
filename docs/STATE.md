@@ -480,47 +480,65 @@ too.
    dispatch without the human. Unchanged method rules: a second REJECTED
    on any task parks that lane for the human; @human judgments are never
    self-answered.
-4. Suggestion backlog for the NEXT TRIAGE — **31 suggestion files on
-   disk**, counted at this merge, none dispatched. **Three are parked in
-   place** (T-008-s1 awaits F-04/F-05 layout decisions, T-018-s1 awaits
-   a Windows lane, T-003-s2 is already encoded) and **T-024-s2 is
-   DISCHARGED** (C-13's D3 cleared at T-024's own merge — resolve it, do
-   not schedule it). That leaves **twenty-seven** genuinely awaiting
-   disposition: T-020-s3 · T-020-s6 · T-021-s1 · T-021-s2 · T-021-s3 ·
-   T-024-s1 · T-024-s3 · T-024-s4 · T-024-s5 · T-024-s6 · **T-025-s1 ·
-   T-025-s2 · T-025-s3 · T-025-s4 · T-025-s5 · T-025-s6 · T-025-s7** ·
-   T-026-s1 · T-026-s2 · T-026-s3 · T-026-s4 · T-026-s5 · T-026-s6 ·
-   T-026-s7 · T-036-s1 · T-038-s1 · T-038-s2. **Read the T-025 seven in
-   this order: s6 first (it is a gate on T-029, not a suggestion), then
-   s2+s4 as a pair (s4 cannot be actioned safely until s2's observed run
-   happens), then s1/s3/s5/s7.**
-   **CORRECTION OF THE PREVIOUS BATON**: the last two entries said the
-   `T-037-s1` file was still on disk and wanted one `git rm`. **It is
-   already gone** — commit `f502d0c` removed it while absorbing it into
-   T-038, before that STATE was written. Observation (b) is DISCHARGED;
-   the T-016 encoding is complete for that pair. Verified by
-   `--diff-filter=D`, not assumed.
-   INTEGRATOR OBSERVATIONS for the same triage:
-   (a) **RULE ON C-05→C-13 AND C-05→C-14 TOGETHER.** They are the same
-   question — the shell's umbrella and its source reaching a child
-   component that the registry does not list as a dependency — and both
-   are now live undeclared D1 rows the map draws. Declare both, declare
-   neither, or write down why umbrella test edges do not count. My
-   reasoning for leaving them is above; it wants an architect.
-   (b) **THE T-010 UNMAPPED-TERRITORY PROBLEM IS NOW BIGGER THAN IT
-   LOOKS.** Four `.rs` files under `app/src-tauri/` are claimed by no
-   component (`acl_pin.rs`, `index_cmd.rs`, `src/bin/fake_agent.rs`,
-   `tests/agent_runner.rs`), and C-14's declared Rust half is ~3,200
-   lines the map cannot see at all. The moment T-010 lands, the dogfood
-   fixture's "zero unclaimed territory" assertion goes red and C-14's
-   file count jumps. That is a REGISTRY question to settle before T-010
-   builds, not at its merge.
-   (c) **SIXTEEN open suggestion files still carry no `id:` field**
-   (re-verified by grep at this merge — the count held across eight new
-   files because T-025's seven and T-038's two all carry one). The T-016
-   encoding requires an id at parking and the parser accepts the
-   omission silently, which is why it keeps recurring. Worth a rule,
-   same family as T-030's parser-strictness pass.
+4. Suggestion-backlog triage APPLIED (2026-08-16 SECOND pass,
+   architect; proposal drafted read-only by claude-opus-5 @fresh):
+   **32 suggestion files on disk** — 29 dispositioned, none skipped,
+   plus 3 standing parks re-confirmed unchanged (T-003-s2 awaits a
+   real project near the ~25 MB knee, T-008-s1 awaits F-04/F-05
+   layout, T-018-s1 awaits a Windows lane). The count moved past the
+   31 the T-025 checkpoint recorded because T-040 landed mid-triage
+   and filed T-040-s1.
+   SIX NEW TASKS, 18 suggestions absorbed — T-041 (shell harness +
+   served-bundle front-door lane; absorbs T-024-s1, T-026-s7 — **land
+   before T-027**, which with T-028 and T-029 names probes none of
+   them can write today), T-042 (genesis switch truthfulness; absorbs
+   T-024-s3, T-026-s4/s5/s6 — one seam, four findings, three
+   verifier-reproduced), T-043 (kill path: honest grace, honest scope;
+   absorbs T-025-s5, T-025-s7 — serialize behind T-039 on app-agent),
+   T-044 (shell pins cover their surface; absorbs T-021-s2, T-021-s3),
+   T-045 (the gates cover the rules; absorbs T-020-s6, T-036-s1,
+   T-038-s2), T-046 (the boot check guards a merge; absorbs T-020-s3,
+   T-040-s1 — the systemic answer to T-040, **and the ONE new task
+   that needs a human nod before dispatch**: it has the pipeline start
+   the app, relying on the T-001/T-020 ruling that a window opening on
+   its own is not screen control).
+   FOLDS: T-024-s4 + T-024-s6's board half into T-031 (which gains an
+   app-interview touch); T-024-s6's parser half into T-030 (with its
+   arm RULED there — the gate arm would have flagged the live tree)
+   and its map half into T-032; T-024-s5 ratified as a CONVENTIONS
+   gotcha ("declaring a component moves THREE fixtures") with its
+   derive-the-pin half into T-033; T-025-s1 and T-026-s3 into T-029
+   (plus a coordination pointer in T-022); T-026-s2 into T-027. Two
+   integrator findings with no sN file also folded: the FOUR unclaimed
+   `.rs` files into T-010 as a pre-dispatch registry decision, and the
+   C-05→C-13 / C-05→C-14 ruling into T-033's decision (1), to be
+   answered once and applied to both — closing items (a) and (b) that
+   the last two checkpoints raised.
+   PARKED IN PLACE: T-021-s1 and T-026-s1 (both await the first Linux
+   run — already on the launch item), T-025-s2 (@human, one command on
+   an authenticated machine), T-025-s4 (gated by s2 — read together),
+   T-025-s3 (nputer.yaml is F-04 era; its count fix rides T-043),
+   T-038-s1 (no responsive call site yet — re-checked, app/src still
+   has zero arbitrary breakpoint variants).
+   RESOLVED to rejected/: T-024-s2 — discharged by the regen it
+   forecast, verified against the fixture (D3s are exactly
+   C-01/C-07/C-11).
+   ENCODING DEBT CLOSED: T-025-s6's file was still on disk although
+   T-039's dispatch commit already carried `Absorbs: T-025-s6` — the
+   `git rm` the ratified encoding requires in the same commit, done
+   here. And item (c) of the last checkpoint is DISCHARGED, not
+   actioned: the "sixteen files with no `id:`" was never a violation —
+   TASK-FORMAT requires `id:` only AT PARKING, and T-030 already
+   carries that ruling. After this triage, zero open suggestion files
+   lack an id that needs one.
+   NINE open suggestions remain, ALL parked, ALL blocked on something
+   only the world can provide (a Linux run, a Windows lane, an
+   authenticated CLI, a real project at scale, a responsive
+   requirement, the second adapter). There is no unblocked suggestion
+   work left on the board.
+   NEW tasks do NOT dispatch without the human (item 3's grant).
+   Milestone-4 queue after F-03: T-010, T-013, T-014, T-015,
+   T-030…T-035, T-044, T-045, plus T-022.
 
 ## Open questions
 None.

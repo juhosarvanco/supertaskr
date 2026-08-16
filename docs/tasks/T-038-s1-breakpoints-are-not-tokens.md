@@ -1,7 +1,7 @@
 ---
 id: T-038-s1
 title: Arbitrary breakpoints (`min-[600px]:`) are now invisible to the token lint — if breakpoints should be tokens, that needs its own rule
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-038
 ---
 
@@ -47,3 +47,11 @@ unpick; a separate, argued pattern is the honest shape:
 
 Cheap to park; it costs one pattern and two samples whenever the design
 work that needs breakpoints actually arrives.
+
+Triage 2026-08-16 (architect): PARKED on the suggestion's own terms —
+"a rule with no call site is a rule nobody can evaluate". RE-CHECKED
+at triage: app/src still carries ZERO arbitrary breakpoint variants,
+and the only arbitrary variants in the tree remain the three vendored
+`[&_svg…]` in ui/button.tsx — so the rule would today guard nothing
+while widening the collision surface T-038 just spent a task
+unpicking. Unpark WITH the first responsive requirement.

@@ -87,6 +87,18 @@
   EXPECTED_GRANTS in the same commit, with the sweep — never by
   deleting or muting the test (see ADR-012 for why the set stays
   empty of app grants).
+- DECLARING A COMPONENT moves THREE live-registry fixtures, not two
+  (T-024-s5, ratified at the 2026-08-16 second triage after the
+  omission cost T-024 a rejection and the lesson recurred at T-025's
+  merge): `lib/parser/test/smoke.test.ts` (the exact id array over
+  this repo's live docs/ tree), `app/test/architecture-dogfood.test.ts`
+  (ids, declared count, findings, the relation table, drift/
+  declaredOnly) and `app/test/map-dogfood-render.test.tsx` (rendered
+  node + edge counts). Reconcile all three, changed never loosened. A
+  MERGE REGEN alone moves only the two app fixtures — the parser pin
+  holds unless the REGISTRY itself changed. The knowledge used to live
+  only in a T-008 commit message and behind a task fence reading "zero
+  diff under lib/parser/**".
 - UI work adds tokens to app/src/styles/tokens.css, never Tailwind
   defaults or arbitrary values — unmapped utilities are deliberately
   dead, and arbitrary values (`p-[13px]`) bypass enforcement (see
