@@ -186,12 +186,60 @@ pub enum SessionIdRejection {
     /// NUL, a control character, a unicode lookalike, a shell
     /// metacharacter.
     IllegalChar { at: usize, ch: char },
-    /// Defense in depth over the ASSEMBLED argv: an element begins with
-    /// `-` without being one of the template's own literal flags. Nothing
-    /// today can reach this after the checks above pass; it is the
-    /// structural backstop for a future template that substitutes
-    /// somewhere new.
-    FlagInValuePosition { at: usize, arg: String },
+    /// Defense in depth over the ASSEMBLED argv: an element the CLI would
+    /// parse SPECIALLY sits where a plain value belongs. Nothing today can
+    /// reach this after the checks above pass; it is the structural
+    /// backstop for a future template that substitutes somewhere new.
+    ///
+    /// T-047 widens it past the leading-dash class — `shape` names which
+    /// of the CLI's own parsing shapes the element matched.
+    FlagInValuePosition { at: usize, arg: String, shape: ArgShape },
+    /// T-047 (T-039-s4): the assembled vector and its template disagree on
+    /// length. [`AgentAdapter::argv`] builds one element per slot, so this
+    /// cannot happen from the shipped call site — and that is exactly why
+    /// it is checked. The pre-T-047 rule `zip`ped the two slices, so ANY
+    /// assembled tail past the template's end went uninspected: a template
+    /// of 2 with a flag at index 2 returned `Ok(())`. A guard that silently
+    /// skips part of its input is the shape of the bug T-039 closed.
+    ArgvLengthMismatch { template: usize, assembled: usize },
+}
+
+/// Which of the CLI's own parsing shapes an argv element matched.
+///
+/// Read first-hand from `claude --help` (2.1.226 — `--help` only, no model
+/// was called), because "looks like a flag" is a claim about a parser and
+/// not about punctuation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ArgShape {
+    /// Begins with `-`. THE T-039 CLASS: `-r, --resume [value]` takes an
+    /// OPTIONAL argument, so a `-`-leading value parses as a standalone
+    /// flag rather than as the value it was substituted to be.
+    LeadingDash,
+    /// The element IS one of the CLI's documented option names, byte for
+    /// byte (`--settings`, `--fork-session`, `-c`).
+    KnownFlagName,
+    /// The `--flag=value` form, which commander accepts interchangeably
+    /// with `--flag value`. `--settings=/tmp/evil.json` is ONE argv element
+    /// that loads an arbitrary settings file — the T-039 verifier's own
+    /// probe, which it judged arguably worse than the injection T-039
+    /// measured.
+    FlagEqualsValue,
+    /// One of the CLI's SUBCOMMANDS (`doctor`, `install`, `update`, …).
+    /// The only shape here carrying no leading dash at all, which is why
+    /// the leading-dash rule was too narrow: `claude doctor` runs a
+    /// different program than `claude -p`.
+    KnownSubcommand,
+}
+
+impl std::fmt::Display for ArgShape {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::LeadingDash => "it begins with '-', so the CLI reads it as a flag",
+            Self::KnownFlagName => "it is one of the CLI's own option names",
+            Self::FlagEqualsValue => "it is the CLI's `--flag=value` form",
+            Self::KnownSubcommand => "it is one of the CLI's own subcommands",
+        })
+    }
 }
 
 impl std::fmt::Display for SessionIdRejection {
@@ -222,10 +270,14 @@ impl std::fmt::Display for SessionIdRejection {
                 ch.escape_debug(),
                 *ch as u32
             ),
-            Self::FlagInValuePosition { at, arg } => write!(
+            Self::FlagInValuePosition { at, arg, shape } => write!(
                 f,
-                "argv element {at} would be '{}', which begins with '-' without being one of the adapter's own flags",
+                "argv element {at} would be '{}', which is not one of the adapter's own literals and {shape}",
                 arg.escape_debug()
+            ),
+            Self::ArgvLengthMismatch { template, assembled } => write!(
+                f,
+                "the assembled argv has {assembled} elements against a {template}-slot template; every slot yields exactly one element, so the two can only differ if something built the vector by another route"
             ),
         }
     }
@@ -277,10 +329,256 @@ pub fn validate_session_id(id: &str) -> Result<(), SessionIdRejection> {
     Ok(())
 }
 
+// ---- T-047: the model string off the same init line --------------------
+
+/// Longest model name the runner will record. The observed real names are
+/// well under 40 bytes; before T-047 the ONLY bound anywhere was
+/// `MAX_LINE_BYTES` (1 MiB), so ~1 MiB per turn could land in a registry
+/// file that is otherwise a few hundred bytes — measured at 200,290 bytes
+/// from a 200,000-byte model in this task's pre-fix probe.
+pub const MODEL_MAX_LEN: usize = 128;
+
+/// Why a model string was refused. Same shape as [`SessionIdRejection`],
+/// same discipline: typed, named, never coerced, and never echoing the
+/// refused bytes back.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ModelRejection {
+    Empty,
+    TooLong { len: usize },
+    /// Not a letter or a digit in the first position.
+    IllegalStart { ch: char },
+    /// A control character, whitespace, DEL, or anything outside ASCII.
+    IllegalChar { at: usize, ch: char },
+}
+
+impl std::fmt::Display for ModelRejection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Empty => write!(f, "it is empty"),
+            Self::TooLong { len } => {
+                write!(f, "it is {len} bytes, past the {MODEL_MAX_LEN}-byte bound")
+            }
+            Self::IllegalStart { ch } => write!(
+                f,
+                "it starts with '{}' (U+{:04X}); a model name starts with a letter or a digit",
+                ch.escape_debug(),
+                *ch as u32
+            ),
+            Self::IllegalChar { at, ch } => write!(
+                f,
+                "it carries '{}' (U+{:04X}) at byte {at}, outside printable ASCII",
+                ch.escape_debug(),
+                *ch as u32
+            ),
+        }
+    }
+}
+
+/// THE MODEL GATE (T-047, absorbing T-039-s2). The `model` field rides the
+/// same init line the session id does, is written to
+/// `.nputer/sessions.json`, and is RENDERED — and before this it was
+/// accepted unbounded and unchecked.
+///
+/// **THE CHARACTER CLASS IS DELIBERATELY WIDER THAN
+/// [`validate_session_id`]'s, and this header is where the criterion asks
+/// that be justified.** The id's class is `[A-Za-z0-9._-]` because an id
+/// becomes an ARGV ELEMENT: every character in it has to be inert to an
+/// argument parser, which is what rules out `=`, `/`, `:` and `@`. A model
+/// name is never argv (we never pass `--model` — ADR-003: the user's CLI
+/// default IS the model) and never a path; it is a RECORDED FACT about
+/// what ran. Reusing the id's class would therefore refuse real provider
+/// spellings for no security gain — Bedrock's
+/// `us.anthropic.claude-…-v1:0` carries `:`, Vertex's `claude-…@20240620`
+/// carries `@`, and a router-style `vendor/model` carries `/`.
+///
+/// So the rule keeps the id validator's SHAPE — first character
+/// alphanumeric, a hard byte bound, typed named rejections, no coercion —
+/// and widens the body to **printable ASCII with no space** (U+0021–U+007E).
+/// What that still refuses is exactly what can hurt a value that is stored
+/// and shown: control characters and terminal escapes (it is rendered, and
+/// it reaches log lines), newlines (which forge log records), DEL,
+/// everything non-ASCII (homoglyph and bidi-override spoofing in the UI),
+/// and size.
+pub fn validate_model(model: &str) -> Result<(), ModelRejection> {
+    if model.is_empty() {
+        return Err(ModelRejection::Empty);
+    }
+    if model.len() > MODEL_MAX_LEN {
+        return Err(ModelRejection::TooLong { len: model.len() });
+    }
+    let first = model.chars().next().expect("non-empty");
+    if !first.is_ascii_alphanumeric() {
+        return Err(ModelRejection::IllegalStart { ch: first });
+    }
+    for (at, ch) in model.char_indices() {
+        // Printable ASCII, space excluded: '!'..='~'.
+        if !matches!(ch, '\u{21}'..='\u{7e}') {
+            return Err(ModelRejection::IllegalChar { at, ch });
+        }
+    }
+    Ok(())
+}
+
+/// EVERY OPTION `claude 2.1.226` DOCUMENTS, long and short, read
+/// first-hand from its own `--help` at build time of this task (`--help`
+/// only — no model was called). Aliases are listed separately because the
+/// CLI accepts either spelling (`--allowedTools` / `--allowed-tools`).
+///
+/// This is a table of what the CLI parses specially, NOT a denylist of the
+/// dangerous ones: the rule below refuses the whole class, so a flag that
+/// looks harmless today (and a flag added by a future CLI whose name
+/// happens to be here) is refused in a value position too.
+pub const KNOWN_CLI_FLAGS: &[&str] = &[
+    "--add-dir",
+    "--agent",
+    "--agents",
+    "--allow-dangerously-skip-permissions",
+    "--allowedTools",
+    "--allowed-tools",
+    "--append-system-prompt",
+    "--append-system-prompt-file",
+    "--autocompact",
+    "--ax-screen-reader",
+    "--background",
+    "--bare",
+    "--betas",
+    "--bg",
+    "--brief",
+    "--chrome",
+    "--cloud",
+    "--continue",
+    "--dangerously-skip-permissions",
+    "--debug",
+    "--debug-file",
+    "--disable-slash-commands",
+    "--disallowedTools",
+    "--disallowed-tools",
+    "--effort",
+    "--environment",
+    "--exclude-dynamic-system-prompt-sections",
+    "--fallback-model",
+    "--file",
+    "--fork-session",
+    "--forward-subagent-text",
+    "--from-pr",
+    "--help",
+    "--ide",
+    "--include-hook-events",
+    "--include-partial-messages",
+    "--input-format",
+    "--json-schema",
+    "--max-budget-usd",
+    "--mcp-config",
+    "--model",
+    "--name",
+    "--no-chrome",
+    "--no-session-persistence",
+    "--output-format",
+    "--permission-mode",
+    "--plugin-dir",
+    "--plugin-url",
+    "--print",
+    "--prompt-suggestions",
+    "--remote-control",
+    "--remote-control-session-name-prefix",
+    "--replay-user-messages",
+    "--resume",
+    "--safe-mode",
+    "--session-id",
+    "--setting-sources",
+    "--settings",
+    "--strict-mcp-config",
+    "--system-prompt",
+    "--system-prompt-file",
+    "--teleport",
+    "--tmux",
+    "--tools",
+    "--verbose",
+    "--version",
+    "--worktree",
+    "-c",
+    "-d",
+    "-h",
+    "-n",
+    "-p",
+    "-r",
+    "-v",
+    "-w",
+];
+
+/// The CLI's SUBCOMMANDS, from the same `--help` (`Commands:`). These
+/// carry NO leading dash, which is the entire reason the leading-dash rule
+/// was too narrow to be called an argv gate: `claude doctor` and
+/// `claude install` are different programs, not different values.
+pub const KNOWN_CLI_SUBCOMMANDS: &[&str] = &[
+    "agents",
+    "auth",
+    "auto-mode",
+    "doctor",
+    "gateway",
+    "import",
+    "install",
+    "mcp",
+    "plugin",
+    "plugins",
+    "project",
+    "setup-token",
+    "ultrareview",
+    "update",
+    "upgrade",
+];
+
+/// Does this argv element match a shape the CLI parses specially?
+/// `None` = an inert value.
+///
+/// Ordered most-specific-first so the refusal NAMES the sharpest true
+/// thing: `--settings=/tmp/evil.json` is reported as the `--flag=value`
+/// form rather than merely as "begins with a dash". Comparison is
+/// ASCII-case-insensitive — stricter than the CLI, which cannot cost a
+/// legitimate value anything, since nothing this runner substitutes is
+/// ever a flag or subcommand spelling in any case.
+pub fn classify_arg_shape(arg: &str) -> Option<ArgShape> {
+    fn known(table: &[&str], needle: &str) -> bool {
+        table.iter().any(|k| k.eq_ignore_ascii_case(needle))
+    }
+    // `--flag=value`: one element the CLI splits into two.
+    if let Some((head, _)) = arg.split_once('=') {
+        if known(KNOWN_CLI_FLAGS, head) {
+            return Some(ArgShape::FlagEqualsValue);
+        }
+    }
+    if known(KNOWN_CLI_FLAGS, arg) {
+        return Some(ArgShape::KnownFlagName);
+    }
+    if arg.starts_with('-') {
+        return Some(ArgShape::LeadingDash);
+    }
+    if known(KNOWN_CLI_SUBCOMMANDS, arg) {
+        return Some(ArgShape::KnownSubcommand);
+    }
+    None
+}
+
 /// THE ASSEMBLED-ARGV RULE, in production and not only in the pin: an
-/// element of a spawned argv may begin with `-` ONLY by being one of the
-/// template's own literal flags, byte for byte. Every substituted value
-/// therefore sits in a value position and cannot be read as a flag.
+/// element of a spawned argv may be something the CLI parses specially
+/// ONLY by being the template's own literal at that index, byte for byte.
+/// Everything else — every substituted value, and every element past the
+/// template's end — must be inert to the CLI's parser.
+///
+/// The template is `const` data compiled into the binary (ADR-017 clause
+/// 2, unreachable from the webview), which is what makes "equal to its own
+/// slot" a safe exemption; anything that DIFFERS from its slot arrived
+/// from somewhere else and is treated as hostile.
+///
+/// **T-047 rewrites this function twice over** (T-039-s4, found by T-039's
+/// own verifier):
+/// 1. it inspects the WHOLE assembled vector. The old body `zip`ped the
+///    two slices, and `zip` stops at the shorter — so an assembled tail
+///    longer than its template was never looked at, and a 2-slot template
+///    with a flag at index 2 returned `Ok(())`. A length disagreement is
+///    now itself a refusal, whatever the tail contains;
+/// 2. it refuses every shape the CLI treats specially ([`ArgShape`]), not
+///    only the leading-dash one the doc comment used to promise.
 ///
 /// A real check returning a typed refusal rather than a `debug_assert!`:
 /// a test-only pin leaves the shipped binary unguarded, and a panic in
@@ -290,10 +588,22 @@ pub fn check_no_data_borne_flag(
     template: &[&str],
     assembled: &[String],
 ) -> Result<(), SessionIdRejection> {
-    for (at, (slot, arg)) in template.iter().zip(assembled.iter()).enumerate() {
-        if arg.starts_with('-') && arg.as_str() != *slot {
-            return Err(SessionIdRejection::FlagInValuePosition { at, arg: arg.clone() });
+    for (at, arg) in assembled.iter().enumerate() {
+        // The template's OWN literal at this index — trusted, byte for
+        // byte. `template.get` rather than `template[at]`, so the tail past
+        // the template's end takes the hostile branch instead of panicking.
+        if template.get(at).is_some_and(|slot| *slot == arg.as_str()) {
+            continue;
         }
+        if let Some(shape) = classify_arg_shape(arg) {
+            return Err(SessionIdRejection::FlagInValuePosition { at, arg: arg.clone(), shape });
+        }
+    }
+    if template.len() != assembled.len() {
+        return Err(SessionIdRejection::ArgvLengthMismatch {
+            template: template.len(),
+            assembled: assembled.len(),
+        });
     }
     Ok(())
 }
@@ -348,6 +658,17 @@ pub fn parse_major(version_line: &str) -> Option<u32> {
 
 /// Is `path` an executable regular file (or a symlink to one)? Used by
 /// the cached-path check in §6's resolution order.
+///
+/// **T-047: the non-unix arm answers `false`, not `true`.** It used to
+/// return `true` unconditionally — a stub that read as "we cannot check
+/// the executable bit here", but SPELLED "every file is executable",
+/// which is the permissive default for the one check standing between a
+/// cached path and `Command::new`. Recorded by the T-039 verifier as
+/// harmless today (Windows is not a target) and deliberately unfiled;
+/// closed here so a future Windows lane inherits a REFUSAL it must
+/// deliberately implement rather than a hole it must remember to find.
+/// The refusal is loud by construction: `resolve_cli` falls through to a
+/// fresh probe and then to typed `cliNotFound { probed }`.
 pub fn is_executable_file(path: &Path) -> bool {
     let Ok(meta) = std::fs::metadata(path) else {
         return false;
@@ -362,7 +683,7 @@ pub fn is_executable_file(path: &Path) -> bool {
     }
     #[cfg(not(unix))]
     {
-        true
+        false
     }
 }
 
@@ -450,7 +771,20 @@ mod tests {
             .chain(REAL_IDS.iter().map(|id| {
                 (adapter.resume_args, adapter.argv(Some(id)).expect("a real id assembles"))
             })) {
-                assert_eq!(template.len(), assembled.len(), "one template slot, one argv element");
+                // T-047: THE LENGTH RULE IS DERIVED, NOT RESTATED. This
+                // used to be the pin's own `assert_eq!(template.len(),
+                // assembled.len())` — one of TWO copies of one rule, and
+                // the copy the PRODUCTION function lacked (T-039-s4). The
+                // production function now owns it, and the pin asserts
+                // through it, so the two cannot disagree again: weaken
+                // `check_no_data_borne_flag` and this line reds.
+                assert_eq!(
+                    check_no_data_borne_flag(template, &assembled),
+                    Ok(()),
+                    "the PRODUCTION rule must accept a legitimately assembled argv - \
+                     one template slot, one argv element, nothing flag-shaped in a value \
+                     position"
+                );
                 for (at, (slot, arg)) in template.iter().zip(assembled.iter()).enumerate() {
                     if arg.starts_with('-') {
                         assert_eq!(
@@ -598,6 +932,7 @@ mod tests {
             Err(SessionIdRejection::FlagInValuePosition {
                 at: 1,
                 arg: "--dangerously-skip-permissions".into(),
+                shape: ArgShape::KnownFlagName,
             })
         );
         // A flag position whose element was REPLACED is caught too, not
@@ -611,6 +946,256 @@ mod tests {
             check_no_data_borne_flag(template, &swapped),
             Err(SessionIdRejection::FlagInValuePosition { at: 0, .. })
         ));
+    }
+
+    /// T-047 / T-039-s4, HALF ONE: THE BLIND TAIL.
+    ///
+    /// The pre-T-047 body `zip`ped `template` with `assembled`, and `zip`
+    /// stops at the shorter of the two — so every element past the
+    /// template's end went uninspected. The exact case the T-039 verifier
+    /// described, measured against the unfixed function before the fix was
+    /// written, returned `Ok(())`:
+    ///
+    ///     [t047-probe-a] template len 2 assembled len 3
+    ///     [t047-probe-a] assembled: ["--resume", "e7954de6-…", "--dangerously-skip-permissions"]
+    ///     [t047-probe-a] check_no_data_borne_flag -> Ok(())
+    ///
+    /// It is unreachable from `argv`, which builds one element per slot —
+    /// which is exactly why it is worth pinning: an unreachable hole is
+    /// one refactor away from being the reachable one, and this is the
+    /// same shape as the bug T-039 closed (a guard that looks like it
+    /// covers a class while silently skipping part of its input).
+    #[test]
+    fn the_argv_rule_inspects_the_whole_vector_not_the_zipped_prefix() {
+        let template = &["--resume", SESSION_ID_SLOT];
+
+        // THE VERIFIER'S CASE: a flag PAST the zip boundary.
+        let past_the_end = vec![
+            "--resume".to_string(),
+            "e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77".to_string(),
+            "--dangerously-skip-permissions".to_string(),
+        ];
+        assert_eq!(
+            check_no_data_borne_flag(template, &past_the_end),
+            Err(SessionIdRejection::FlagInValuePosition {
+                at: 2,
+                arg: "--dangerously-skip-permissions".into(),
+                shape: ArgShape::KnownFlagName,
+            }),
+            "an element past the template's end must be INSPECTED, not skipped by zip"
+        );
+
+        // A length disagreement is a refusal even when the tail is inert:
+        // one slot yields one element, so anything else means the vector
+        // was built by a route this function cannot vouch for.
+        let inert_tail = vec![
+            "--resume".to_string(),
+            "abc".to_string(),
+            "harmless".to_string(),
+        ];
+        assert_eq!(
+            check_no_data_borne_flag(template, &inert_tail),
+            Err(SessionIdRejection::ArgvLengthMismatch { template: 2, assembled: 3 })
+        );
+        // …and SHORTER is refused too: a dropped element shifts every
+        // value that follows it into a different slot's meaning.
+        assert_eq!(
+            check_no_data_borne_flag(template, &["--resume".to_string()]),
+            Err(SessionIdRejection::ArgvLengthMismatch { template: 2, assembled: 1 })
+        );
+        assert_eq!(
+            check_no_data_borne_flag(template, &[]),
+            Err(SessionIdRejection::ArgvLengthMismatch { template: 2, assembled: 0 })
+        );
+        // The legitimate shape still passes, unchanged.
+        assert_eq!(
+            check_no_data_borne_flag(template, &["--resume".to_string(), "abc".to_string()]),
+            Ok(())
+        );
+    }
+
+    /// T-047 / T-039-s4, HALF TWO: THE SHAPES THE CLI ACTUALLY PARSES.
+    ///
+    /// The old rule was `starts_with('-')`, which is a claim about
+    /// punctuation. This is the claim about the PARSER, and every row was
+    /// read first-hand out of `claude --help` (2.1.226 — `--help` only, no
+    /// model was called):
+    ///
+    /// - `--settings=/tmp/evil.json` — the T-039 verifier's own probe,
+    ///   which it judged arguably WORSE than the injection T-039 measured,
+    ///   because it loads an arbitrary settings file. One argv element,
+    ///   `--flag=value`, which commander splits itself;
+    /// - `doctor`, `install`, … — SUBCOMMANDS, and the reason the old rule
+    ///   was too narrow rather than merely imprecise: they carry no dash
+    ///   at all, and `claude doctor` is a different program.
+    #[test]
+    fn the_argv_rule_refuses_every_shape_the_cli_parses_specially() {
+        let template = &["--resume", SESSION_ID_SLOT];
+        let refuse = |value: &str| {
+            check_no_data_borne_flag(
+                template,
+                &["--resume".to_string(), value.to_string()],
+            )
+        };
+
+        for (value, shape) in [
+            // The `--flag=value` form.
+            ("--settings=/tmp/evil.json", ArgShape::FlagEqualsValue),
+            ("--permission-mode=bypassPermissions", ArgShape::FlagEqualsValue),
+            ("--add-dir=/", ArgShape::FlagEqualsValue),
+            ("--mcp-config=/tmp/evil.json", ArgShape::FlagEqualsValue),
+            // Case is not a way through: the table compares ASCII-folded.
+            ("--SETTINGS=/tmp/evil.json", ArgShape::FlagEqualsValue),
+            // Exactly a known option name.
+            ("--settings", ArgShape::KnownFlagName),
+            ("--dangerously-skip-permissions", ArgShape::KnownFlagName),
+            ("--fork-session", ArgShape::KnownFlagName),
+            ("--safe-mode", ArgShape::KnownFlagName),
+            ("--bare", ArgShape::KnownFlagName),
+            ("--session-id", ArgShape::KnownFlagName),
+            ("-c", ArgShape::KnownFlagName),
+            ("-r", ArgShape::KnownFlagName),
+            // Dash-leading but not a name this CLI knows: still refused,
+            // because the class is the danger, not the membership.
+            ("--a-flag-this-cli-has-never-heard-of", ArgShape::LeadingDash),
+            ("-", ArgShape::LeadingDash),
+            ("-zzz", ArgShape::LeadingDash),
+            ("--unknown=value", ArgShape::LeadingDash),
+            // SUBCOMMANDS — no leading dash anywhere in sight.
+            ("doctor", ArgShape::KnownSubcommand),
+            ("install", ArgShape::KnownSubcommand),
+            ("update", ArgShape::KnownSubcommand),
+            ("mcp", ArgShape::KnownSubcommand),
+            ("setup-token", ArgShape::KnownSubcommand),
+            ("Doctor", ArgShape::KnownSubcommand),
+        ] {
+            assert_eq!(
+                refuse(value),
+                Err(SessionIdRejection::FlagInValuePosition {
+                    at: 1,
+                    arg: value.to_string(),
+                    shape,
+                }),
+                "a value position must never carry {value:?}"
+            );
+            assert_eq!(classify_arg_shape(value), Some(shape), "{value:?}");
+        }
+
+        // INERT values pass — the rule refuses shapes, not strings. Every
+        // one of these is a real element of this adapter's own argv or a
+        // real session id.
+        for value in [
+            "e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77",
+            "fake-session-0001",
+            "01JQ8ZC4M7Q9K2VYB3T5N6XW0R",
+            "stream-json",
+            "acceptEdits",
+            "WebSearch",
+            "Bash(git init:*)",
+            "claude",
+        ] {
+            assert_eq!(classify_arg_shape(value), None, "{value:?} is an inert value");
+            assert_eq!(refuse(value), Ok(()), "{value:?}");
+        }
+
+        // The exemption is EXACT and per-index: the template's own literal
+        // is trusted where the template puts it, and nowhere else.
+        assert_eq!(
+            check_no_data_borne_flag(
+                &["--verbose", "--resume", SESSION_ID_SLOT],
+                &["--verbose".to_string(), "--resume".to_string(), "abc".to_string()]
+            ),
+            Ok(())
+        );
+        assert!(matches!(
+            check_no_data_borne_flag(
+                &["--verbose", "--resume", SESSION_ID_SLOT],
+                &["--resume".to_string(), "--verbose".to_string(), "abc".to_string()]
+            ),
+            Err(SessionIdRejection::FlagInValuePosition { at: 0, .. })
+        ));
+
+        // The whole shipped argv still assembles, which is the half that
+        // stops this from being a gate nobody can pass.
+        for adapter in ADAPTERS {
+            adapter.argv(None).expect("the spawn template assembles");
+            for id in REAL_IDS {
+                adapter.argv(Some(id)).expect("a real id assembles");
+            }
+        }
+    }
+
+    /// T-047 (absorbing T-039-s2): THE MODEL GATE, and the recorded reason
+    /// its character class is WIDER than the session id's.
+    ///
+    /// An id becomes an argv element, so every character in it must be
+    /// inert to an argument parser. A model name is never argv and never a
+    /// path — it is a recorded fact that gets stored and rendered — so the
+    /// classes that matter are the ones that hurt a stored, displayed
+    /// string: size, control characters, newlines, and non-ASCII
+    /// lookalikes. Refusing `:` and `@` would only refuse real provider
+    /// spellings.
+    #[test]
+    fn a_model_name_is_bounded_and_validated_with_a_wider_class_than_an_id() {
+        for model in [
+            "claude-opus-5",
+            "fake-model-1",
+            "claude-3-5-sonnet-20241022",
+            // Bedrock and Vertex spellings, which are exactly why the id's
+            // class does not fit: `:` and `@` are real here.
+            "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+            "claude-3-5-sonnet@20240620",
+            "vendor/model-name",
+            &"m".repeat(MODEL_MAX_LEN),
+        ] {
+            assert_eq!(validate_model(model), Ok(()), "a real model name: {model:?}");
+        }
+        // The contrast, asserted rather than asserted-about: the same
+        // strings the id validator refuses.
+        assert!(validate_session_id("us.anthropic.claude-3-5-sonnet-20241022-v2:0").is_err());
+        assert!(validate_session_id("claude-3-5-sonnet@20240620").is_err());
+
+        use ModelRejection::*;
+        let cases: &[(&str, ModelRejection)] = &[
+            ("", Empty),
+            // Control characters and a terminal escape: it is RENDERED.
+            ("claude\u{1b}[2K-opus", IllegalChar { at: 6, ch: '\u{1b}' }),
+            ("claude\u{7}-opus", IllegalChar { at: 6, ch: '\u{7}' }),
+            ("claude\u{7f}", IllegalChar { at: 6, ch: '\u{7f}' }),
+            // A newline forges a log record.
+            ("claude\nSTOLEN", IllegalChar { at: 6, ch: '\n' }),
+            ("claude\r\nx", IllegalChar { at: 6, ch: '\r' }),
+            ("abc\0def", IllegalChar { at: 3, ch: '\0' }),
+            ("claude opus", IllegalChar { at: 6, ch: ' ' }),
+            ("claude\topus", IllegalChar { at: 6, ch: '\t' }),
+            // Non-ASCII: homoglyphs and bidi overrides spoof a UI.
+            ("claude\u{202e}sunop", IllegalChar { at: 6, ch: '\u{202e}' }),
+            ("\u{43a}laude", IllegalStart { ch: '\u{43a}' }),
+            // First character, same rule the id uses.
+            ("-model", IllegalStart { ch: '-' }),
+            (".hidden", IllegalStart { ch: '.' }),
+            ("/etc/passwd", IllegalStart { ch: '/' }),
+        ];
+        for (model, expected) in cases {
+            assert_eq!(validate_model(model), Err(expected.clone()), "must refuse {model:?}");
+        }
+        // The bound, by length rather than by literal — the pre-fix probe
+        // put 200,000 bytes of model into a registry file.
+        assert_eq!(
+            validate_model(&"m".repeat(MODEL_MAX_LEN + 1)),
+            Err(TooLong { len: MODEL_MAX_LEN + 1 })
+        );
+        assert_eq!(validate_model(&"m".repeat(200_000)), Err(TooLong { len: 200_000 }));
+
+        // And the refusal never relays the raw bytes back, exactly like
+        // the id's does: a hostile model cannot paint a terminal on its
+        // way through the explanation of why it was refused.
+        let why = validate_model("claude\u{1b}[2K").unwrap_err().to_string();
+        assert!(why.contains("U+001B"), "{why}");
+        assert!(!why.contains('\u{1b}'), "a terminal escape must never survive: {why}");
+        let why = validate_model("claude\nSTOLEN").unwrap_err().to_string();
+        assert!(!why.contains('\n'), "no forged log line: {why}");
+        assert!(!why.contains("STOLEN"), "the refused value is not echoed back: {why}");
     }
 
     /// The permission mode we DO pass is the scoped one, named exactly

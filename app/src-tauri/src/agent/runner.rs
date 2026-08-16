@@ -41,7 +41,9 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 
-use super::adapter::{is_executable_file, parse_major, validate_session_id, AgentAdapter};
+use super::adapter::{
+    is_executable_file, parse_major, validate_model, validate_session_id, AgentAdapter,
+};
 
 // ---- caps (T-003's cap discipline, §4) --------------------------------
 
@@ -223,10 +225,105 @@ pub struct ResolvedCli {
     pub login_path: Option<String>,
 }
 
-/// The cache file beside the app config, so the login-shell probe runs
-/// once per install rather than once per turn.
+/// The cache file beside the app config, so the login-shell probe's
+/// `command -v` runs once per install rather than once per turn.
 fn cache_path(cfg: &RunnerConfig) -> Option<PathBuf> {
     cfg.config_dir.as_ref().map(|dir| dir.join("agent-paths.json"))
+}
+
+// ---- T-047: what the cached binary path has to survive -----------------
+
+/// Why a cached binary path was refused before anything executed it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum CachedPathRejection {
+    Empty,
+    /// Not absolute. A relative path resolves against the app's CWD, which
+    /// is whatever the OS handed the process — not a location anyone chose.
+    NotAbsolute,
+    /// A `.` or `..` component. `Command::new` hands the string to the OS,
+    /// which resolves traversal at exec time, so `…/bin/../evil/claude` is
+    /// an executable path that does not look like one. Measured, not
+    /// argued: this task's pre-fix probe executed exactly that.
+    Traversal,
+    /// The file name is not the adapter's own binary name.
+    WrongName { expected: &'static str },
+    /// Nothing executable there now (uninstalled, moved, chmod'ed).
+    NotExecutable,
+}
+
+impl std::fmt::Display for CachedPathRejection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Empty => write!(f, "it is empty"),
+            Self::NotAbsolute => write!(f, "it is not an absolute path"),
+            Self::Traversal => write!(f, "it carries a '.' or '..' component"),
+            Self::WrongName { expected } => {
+                write!(f, "its file name is not '{expected}'")
+            }
+            Self::NotExecutable => write!(f, "it is not an executable file"),
+        }
+    }
+}
+
+/// THE CACHED-PATH GATE (T-047, absorbing T-039-s1's first half).
+///
+/// `agent-paths.json` lives in the app config dir and was, before this,
+/// believed entirely: `read_cache` deserialized a string into a `PathBuf`
+/// and `resolve_cli` gated it on `is_executable_file` alone before handing
+/// it to `Command::new` — so a poisoned entry executed its binary AT
+/// RESOLVE TIME, before any turn, on every `start_genesis` AND every
+/// `send_turn`. This task's pre-fix probe measured exactly that, twice
+/// (a `--version` probe and a full spawn).
+///
+/// The rule is "what a fresh probe could have produced", because that is
+/// the only honest bar for a value whose whole justification is "we
+/// already probed this once". A login-shell probe resolves the NAME
+/// `claude` — `command -v claude`, or `dir.join("claude")` over PATH — so
+/// whatever it returns is absolute, traversal-free, and named `claude`.
+/// A cached entry that is none of those is not a probe result.
+///
+/// **The honest residual, recorded rather than implied**: an absolute,
+/// traversal-free path named `claude` pointing at an attacker's binary
+/// still passes. Closing THAT needs the cache bound to a probe signature
+/// or dropped entirely, and the precondition for reaching it is write
+/// access to the user's own config dir — which also buys `~/.zshrc`. What
+/// this closes is the gap between "an executable file" and "something a
+/// probe could have said", which is where the traversal and misnamed
+/// shapes lived.
+pub fn validate_cached_binary(
+    path: &Path,
+    adapter: &AgentAdapter,
+) -> Result<(), CachedPathRejection> {
+    if path.as_os_str().is_empty() {
+        return Err(CachedPathRejection::Empty);
+    }
+    if !path.is_absolute() {
+        return Err(CachedPathRejection::NotAbsolute);
+    }
+    // Both halves, because they catch different things. `Components`
+    // is authoritative for `..` — it preserves `ParentDir` — but it
+    // NORMALIZES `.` away, and `Command::new` hands the RAW string to the
+    // OS. So the raw segments are scanned too: what execve resolves is the
+    // string, not Rust's view of it.
+    let raw_has_dot_segment = path
+        .to_str()
+        .unwrap_or_default()
+        .split(['/', std::path::MAIN_SEPARATOR])
+        .any(|segment| segment == "." || segment == "..");
+    if raw_has_dot_segment
+        || path
+            .components()
+            .any(|c| matches!(c, std::path::Component::ParentDir | std::path::Component::CurDir))
+    {
+        return Err(CachedPathRejection::Traversal);
+    }
+    if path.file_name().and_then(|n| n.to_str()) != Some(adapter.binary) {
+        return Err(CachedPathRejection::WrongName { expected: adapter.binary });
+    }
+    if !is_executable_file(path) {
+        return Err(CachedPathRejection::NotExecutable);
+    }
+    Ok(())
 }
 
 /// Resolve the adapter's binary (§6 order): the test seam, then the
@@ -235,6 +332,15 @@ fn cache_path(cfg: &RunnerConfig) -> Option<PathBuf> {
 /// GUI-launch PATH poverty is the whole problem being solved: a packaged
 /// .app launched from Finder inherits a minimal PATH that has never seen
 /// the user's `~/.local/bin`, homebrew, nvm, or asdf shims.
+///
+/// **T-047 changes two things about what this function believes.** The
+/// cached PATH is gone — the login PATH is never stored and is re-probed
+/// when needed (see [`probe_login_path`]) — and the cached binary path now
+/// has to pass [`validate_cached_binary`] before `probe_version` (which is
+/// a `Command::new`) ever sees it. A cache entry that fails is discarded
+/// from the file and the resolution falls through to a FRESH probe, ending
+/// at typed `cliNotFound` if that also fails: never a silent fallback to
+/// the poisoned value.
 pub fn resolve_cli(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Result<ResolvedCli, ResolveError> {
     // (0) Test seam: an injected binary is used verbatim, version probe
     // included, so fixture scenarios exercise the same code path.
@@ -245,15 +351,31 @@ pub fn resolve_cli(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Result<Resolve
 
     let mut probed: Vec<String> = Vec::new();
 
-    // (1) Cached path from a previous probe, if still executable.
+    // (1) Cached path from a previous probe — validated first, executed
+    // second. The order is the whole point: `probe_version` spawns.
     if let Some(cache) = cache_path(cfg) {
-        if let Some((path, login_path)) = read_cache(&cache, adapter.key) {
-            if is_executable_file(&path) {
-                let version = probe_version(cfg, &path, adapter);
-                return finish(cfg, path, version, login_path, adapter);
+        if let Some(path) = read_cache(&cache, adapter.key) {
+            match validate_cached_binary(&path, adapter) {
+                Ok(()) => {
+                    // The login PATH is NOT cached (T-047): a fresh probe,
+                    // now, or nothing.
+                    let login_path = probe_login_path(cfg);
+                    let version = probe_version(cfg, &path, adapter);
+                    return finish(cfg, path, version, login_path, adapter);
+                }
+                Err(rejection) => {
+                    // Loud, discarded, and re-probed. `sanitize_for_log`
+                    // because the refused path is file-borne data and this
+                    // line goes to a terminal.
+                    eprintln!(
+                        "[nputer] agent: refusing the cached {} path in agent-paths.json: {rejection} - discarding it and re-probing. Refused: {}",
+                        adapter.key,
+                        crate::docs_watch::sanitize_for_log(&path.display().to_string())
+                    );
+                    invalidate_cache(cfg, adapter.key);
+                    probed.push(format!("cached path (refused: {rejection})"));
+                }
             }
-            // Stale cache (uninstalled, moved): fall through and re-probe.
-            probed.push(format!("cached {}", path.display()));
         }
     }
 
@@ -270,8 +392,17 @@ pub fn resolve_cli(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Result<Resolve
     };
     match probe {
         Some((path, login_path)) => {
+            // The gate is closed on the WRITE side too, so the cache can
+            // never hold something the read side would refuse — otherwise
+            // an unusual (but working) probe result would be re-written and
+            // re-refused on every single turn. A probe result that fails is
+            // still USED for this resolve: it came from the user's own login
+            // shell, not from a file, which is the whole distinction this
+            // task is drawing.
             if let Some(cache) = cache_path(cfg) {
-                write_cache(&cache, adapter.key, &path, login_path.as_deref());
+                if validate_cached_binary(&path, adapter).is_ok() {
+                    write_cache(&cache, adapter.key, &path);
+                }
             }
             let version = probe_version(cfg, &path, adapter);
             finish(cfg, path, version, login_path, adapter)
@@ -282,6 +413,59 @@ pub fn resolve_cli(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Result<Resolve
             Err(ResolveError::NotFound { probed })
         }
     }
+}
+
+/// THE LOGIN PATH, FRESHLY PROBED (T-047, absorbing T-039-s1's second and
+/// completely ungated half).
+///
+/// `cli.login_path` becomes the child's `PATH` — which decides which `git`
+/// and which `cp` the planner's own Bash resolves to, and therefore what
+/// nputer's advertised six-pattern Bash allowlist actually contains
+/// (T-025-s4: those patterns match the command STRING and carry no path
+/// scope). Before this it was read out of `agent-paths.json` with no gate
+/// whatsoever — not even an executable bit, because it is a string.
+///
+/// **The arm taken is "not cached at all", and the cost was measured
+/// rather than assumed**: `zsh -l -c 'echo …$PATH'` is **6–8 ms** on this
+/// machine, against the **47–50 ms** `claude --version` probe that already
+/// runs on every single resolve. Re-probing is ~15% of a cost the resolve
+/// path already pays, on a path that runs once per interview TURN. There
+/// was nothing to trade.
+///
+/// The script is narrower than [`login_shell_probe`]'s on purpose: this
+/// asks only for the PATH, so it is a compile-time constant with no
+/// interpolation and no `command -v`.
+fn probe_login_path(cfg: &RunnerConfig) -> Option<String> {
+    // The seam: suites never spawn a shell, and their `path_override` is
+    // the PATH the child is asserted against byte for byte.
+    if !cfg.probe_login_shell {
+        return cfg.path_override.clone();
+    }
+    if cfg!(not(unix)) {
+        return None;
+    }
+    let shell = std::env::var("SHELL")
+        .ok()
+        .map(PathBuf::from)
+        .filter(|p| p.is_absolute() && is_executable_file(p))
+        .unwrap_or_else(|| PathBuf::from("/bin/zsh"));
+    let mut command = Command::new(&shell);
+    command
+        .arg("-l")
+        .arg("-c")
+        .arg("echo NPUTER_LOGIN_PATH=$PATH")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null());
+    let output = run_with_timeout(command, cfg.probe_timeout)?;
+    if !output.status_ok {
+        return None;
+    }
+    output
+        .stdout
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("NPUTER_LOGIN_PATH=").map(str::to_string))
+        .filter(|path| !path.is_empty())
 }
 
 fn finish(
@@ -440,21 +624,26 @@ struct CacheFile {
     entries: std::collections::BTreeMap<String, CacheEntry>,
 }
 
+/// **T-047: `login_path` is GONE from this struct, and its absence is the
+/// fix.** serde ignores unknown fields, so an `agent-paths.json` written
+/// by an older build — or planted by an attacker — still parses, and its
+/// `login_path` is simply never read by anything. That is the "not cached
+/// at all" arm stated structurally: there is no field to trust, so no code
+/// path can be added later that trusts it by accident. The login PATH is
+/// re-probed by `probe_login_path` when it is needed.
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 struct CacheEntry {
     path: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    login_path: Option<String>,
 }
 
-fn read_cache(path: &Path, key: &str) -> Option<(PathBuf, Option<String>)> {
+fn read_cache(path: &Path, key: &str) -> Option<PathBuf> {
     let raw = std::fs::read_to_string(path).ok()?;
     let parsed: CacheFile = serde_json::from_str(&raw).ok()?;
     let entry = parsed.entries.get(key)?.clone();
-    Some((PathBuf::from(entry.path), entry.login_path))
+    Some(PathBuf::from(entry.path))
 }
 
-fn write_cache(path: &Path, key: &str, binary: &Path, login_path: Option<&str>) {
+fn write_cache(path: &Path, key: &str, binary: &Path) {
     let mut file: CacheFile = std::fs::read_to_string(path)
         .ok()
         .and_then(|raw| serde_json::from_str(&raw).ok())
@@ -463,7 +652,6 @@ fn write_cache(path: &Path, key: &str, binary: &Path, login_path: Option<&str>) 
         key.to_string(),
         CacheEntry {
             path: binary.display().to_string(),
-            login_path: login_path.map(str::to_string),
         },
     );
     if let Ok(bytes) = serde_json::to_vec_pretty(&file) {
@@ -949,8 +1137,34 @@ pub fn run_turn(
                                 out.native_session_id = Some(id);
                             }
                         }
-                        if model.is_some() {
-                            out.model = model;
+                        // T-047, THE MODEL GATE (absorbing T-039-s2). The
+                        // model rides the same init line the id does and
+                        // is written to `.nputer/sessions.json` and
+                        // rendered — before this it was accepted unbounded
+                        // behind only the 1 MiB line cap.
+                        //
+                        // DELIBERATELY NOT SYMMETRIC WITH THE ID ABOVE,
+                        // and this is the recorded reason: a refused id
+                        // must fail the turn, because a turn whose id was
+                        // refused cannot be resumed and telling the user
+                        // otherwise would be a lie. A refused model costs
+                        // the user nothing but the recorded name of what
+                        // ran — the answer the planner just wrote is still
+                        // good — so throwing away a completed interview
+                        // turn over a cosmetic field would be a worse
+                        // failure than the one being prevented. It is
+                        // refused, never coerced (no truncation, no
+                        // stripping): `out.model` stays None, the registry
+                        // records no model, and the fact is said out loud
+                        // on stdout rather than swallowed.
+                        match model {
+                            Some(model) => match validate_model(&model) {
+                                Ok(()) => out.model = Some(model),
+                                Err(rejection) => println!(
+                                    "[nputer] agent: the CLI's init line carried an unusable model name ({rejection}) - the turn stands, the name is not recorded"
+                                ),
+                            },
+                            None => {}
                         }
                     }
                     StreamLine::TextDelta(text) => {
@@ -1355,6 +1569,134 @@ mod tests {
         let huge = "a".repeat(MAX_EVENT_TEXT + 100);
         assert_eq!(cap_text(&huge).len(), MAX_EVENT_TEXT);
         assert_eq!(cap_text("small"), "small");
+    }
+
+    /// T-047 (T-039-s1, first half): what a cached binary path has to
+    /// survive before anything executes it.
+    ///
+    /// Each refused shape here is one this task MEASURED executing against
+    /// the unfixed code — the traversal and misnamed rows both ran their
+    /// binary at resolve time, through `probe_version`'s `Command::new`,
+    /// before any turn existed.
+    #[test]
+    fn a_cached_binary_path_must_look_like_something_a_probe_could_have_said() {
+        let adapter = super::super::adapter::planner_adapter();
+        for (path, expected) in [
+            ("", CachedPathRejection::Empty),
+            ("claude", CachedPathRejection::NotAbsolute),
+            ("bin/claude", CachedPathRejection::NotAbsolute),
+            ("./bin/claude", CachedPathRejection::NotAbsolute),
+            ("/opt/bin/../evil/claude", CachedPathRejection::Traversal),
+            ("/opt/./claude", CachedPathRejection::Traversal),
+            ("/../claude", CachedPathRejection::Traversal),
+            (
+                "/opt/homebrew/bin/tattler",
+                CachedPathRejection::WrongName { expected: "claude" },
+            ),
+            ("/opt/homebrew/bin/", CachedPathRejection::WrongName { expected: "claude" }),
+            // Absolute, traversal-free, correctly named — and nothing
+            // there. The file check is KEPT, not replaced.
+            ("/nonexistent-t047/bin/claude", CachedPathRejection::NotExecutable),
+        ] {
+            assert_eq!(
+                validate_cached_binary(Path::new(path), adapter),
+                Err(expected.clone()),
+                "cached path {path:?} must be refused as {expected:?}"
+            );
+        }
+
+        // The discriminating half: a real executable, absolute and named
+        // `claude`, is accepted — a gate nobody can pass is not a gate.
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let dir = std::env::temp_dir().join(format!(
+                "nputer-t047-cachepath-{}-{}",
+                std::process::id(),
+                now_ms()
+            ));
+            std::fs::create_dir_all(&dir).expect("mk dir");
+            let good = dir.join("claude");
+            std::fs::write(&good, "#!/bin/sh\nexit 0\n").expect("write");
+            std::fs::set_permissions(&good, std::fs::Permissions::from_mode(0o755))
+                .expect("chmod");
+            assert_eq!(validate_cached_binary(&good, adapter), Ok(()));
+            // …and the same file with the bit cleared is not.
+            std::fs::set_permissions(&good, std::fs::Permissions::from_mode(0o644))
+                .expect("chmod");
+            assert_eq!(
+                validate_cached_binary(&good, adapter),
+                Err(CachedPathRejection::NotExecutable)
+            );
+            let _ = std::fs::remove_dir_all(&dir);
+        }
+    }
+
+    /// T-047 (T-039-s1, second half): THE LOGIN PATH IS NOT CACHED.
+    ///
+    /// It used to be written into `agent-paths.json` and read back
+    /// verbatim into the child's `PATH` with no gate whatsoever — not even
+    /// an executable bit, because it is a string — which decides which
+    /// `git` and which `cp` the planner's own Bash resolves to. The arm
+    /// taken is "not cached at all": the field is gone from the struct, so
+    /// there is nothing to trust and nothing a later change can trust by
+    /// accident, and the PATH is re-probed instead (6-8 ms measured,
+    /// against the 47-50 ms `--version` probe the same resolve already
+    /// pays).
+    #[test]
+    fn the_resolution_cache_stores_a_path_and_never_a_login_path() {
+        let dir = std::env::temp_dir().join(format!(
+            "nputer-t047-cachefile-{}-{}",
+            std::process::id(),
+            now_ms()
+        ));
+        std::fs::create_dir_all(&dir).expect("mk dir");
+        let cache = dir.join("agent-paths.json");
+
+        // What we WRITE carries a path and nothing else.
+        write_cache(&cache, "claude", Path::new("/opt/homebrew/bin/claude"));
+        let raw = std::fs::read_to_string(&cache).expect("cache file");
+        let parsed: serde_json::Value = serde_json::from_str(&raw).expect("parses");
+        let entry = &parsed["entries"]["claude"];
+        let keys: Vec<&String> = entry.as_object().expect("object").keys().collect();
+        assert_eq!(keys, vec!["path"], "the written entry carries a path and nothing else");
+        assert!(!raw.contains("login_path"), "no login PATH is ever written: {raw}");
+        assert_eq!(read_cache(&cache, "claude"), Some(PathBuf::from("/opt/homebrew/bin/claude")));
+
+        // What we READ ignores a `login_path` an older build — or an
+        // attacker — left behind. It parses; it is simply unreachable.
+        std::fs::write(
+            &cache,
+            r#"{"entries":{"claude":{"path":"/opt/homebrew/bin/claude","login_path":"/nputer-hostile/bin"}}}"#,
+        )
+        .expect("plant");
+        assert_eq!(
+            read_cache(&cache, "claude"),
+            Some(PathBuf::from("/opt/homebrew/bin/claude")),
+            "a planted login_path must not stop the entry parsing…"
+        );
+        // …and there is no accessor that could return it: `CacheEntry` has
+        // one field. Re-derived from the type rather than asserted about
+        // it — a round trip through the struct drops the planted value.
+        write_cache(&cache, "claude", Path::new("/opt/homebrew/bin/claude"));
+        assert!(
+            !std::fs::read_to_string(&cache).expect("re-read").contains("nputer-hostile"),
+            "the planted login_path survived a read-modify-write"
+        );
+
+        // The PATH's source is the probe channel, not the file. Under the
+        // seam (`probe_login_shell: false`, which every suite sets so no
+        // test can spawn a shell) that channel is `path_override`.
+        let cfg = RunnerConfig {
+            probe_login_shell: false,
+            path_override: Some("/t047-fresh/bin".into()),
+            ..RunnerConfig::default()
+        };
+        assert_eq!(probe_login_path(&cfg), Some("/t047-fresh/bin".to_string()));
+        let cfg = RunnerConfig { probe_login_shell: false, ..RunnerConfig::default() };
+        assert_eq!(probe_login_path(&cfg), None, "no seam, no shell, no PATH");
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
