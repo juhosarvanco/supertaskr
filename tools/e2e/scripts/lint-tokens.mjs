@@ -165,7 +165,7 @@ export const SKIP_DIRS = new Set([
  * for. THIS script is the one file in the repo where a violation-shaped
  * string is the correct content: it embeds `p-[13px]`, `text-red-500`,
  * `[color:red]` and `bg-(--brand)` as selftest samples and spells the
- * four patterns out as source. Scanning it reports 25 hits — its own
+ * four patterns out as source. Scanning it reports 29 hits — its own
  * evidence read back as a violation. Before T-045 it was excluded only
  * because `.mjs` was not walked; now `.mjs` IS walked, so the exclusion
  * is a decision with a reason instead of a side effect, and the selftest
