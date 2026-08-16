@@ -47,19 +47,49 @@ Executor claude-opus-5 @fresh, 2026-08-17, branch `t014-index-binary`
 Headless throughout. No model call anywhere. Port 1420 never bound,
 contacted or signalled.
 
-### THE HEADLINE, and it is not a build result
+### THE HEADLINE, and it is not a build result — with its correction
 
-**The committed graph on `main` is STALE, and `--check` found it the
-first time it was pointed at anything.** The interim ritual this task
-retires was MISSED at the T-050 merge: `docs/architecture/graph.json` at
-`5927adc` is sha256 `815412de…` / 385,451 bytes — byte-identical to what
-STATE records the **T-049** integrator writing, last touched by commit
-`b3bfe45` — while T-050's merge rewrote `App.tsx` and
-`watcher-store.ts` and added two suites. Nineteen recorded exercises of
-the hand ritual; the twentieth was skipped in silence, and nothing
-noticed until a program looked. Filed as **T-014-s3** with the full
-delta and the fixture knock-ons, because the integrator owns regen and
-this branch must not do it.
+`--check`'s first run against this repo was RED, and chasing that red is
+the most useful thing in this task. **The first conclusion drawn from it
+was wrong and is recorded as wrong**, because the corrected version is
+narrower and more interesting.
+
+**Wrong first reading**: "the interim ritual was skipped at the T-050
+merge." **What is actually true**: the ritual ran — one commit later
+than the rule's own wording, in the checkpoint.
+
+| commit | what it is | `index --check` | `self_graph_is_current` |
+|---|---|---|---|
+| `5927adc` — **this branch's point** | Merge T-050 | **1 STALE** | **101 FAILED** |
+| `db8da6c` | Checkpoint: T-050 done | **0 CURRENT** | ok |
+
+At `5927adc` the committed graph is sha256 `815412de…` / 385,451 bytes,
+byte-identical to what STATE records the **T-049** integrator writing;
+at `db8da6c` it is `a6ede920…` / 396,620 bytes and matches its tree.
+Both instruments agree at both commits. The correction was found by
+checking the graph's own commit history rather than trusting the first
+inference, and the measurement was redone by extracting `db8da6c` with
+`git archive` and running the gate against it.
+
+**The finding that survives**, and it is real: CONVENTIONS says "commit
+`docs/architecture/graph.json` **with the merge**", the house shape is
+merge → checkpoint, and the regen necessarily lands in the second commit
+because the checkpoint also edits INDEXED files (T-050's touches
+`architecture-dogfood.test.ts` and `map-dogfood-render.test.tsx`, so the
+ceaa949 ordering rule forces the regen after them). So `main` points at
+a stale graph for the length of that window, and anything branching or
+measuring inside it inherits one. **This task is the worked example**:
+the dispatch said "branch from main" and predicted `--check` green; the
+branch was cut at the merge commit and inherited the red. Four siblings
+were dispatched the same night. Filed as **T-014-s3** with three
+candidate resolutions — and it directly shapes the GRAPH GATE wording
+drafted below, which names the checkpoint rather than the merge.
+
+Consequence for this branch, stated plainly so nobody re-derives it as a
+defect: `cargo test -p nputer-index --test self_graph -- --ignored` is
+RED here exactly as it is on `5927adc`, and this branch deliberately did
+not regenerate — the integrator owns regen and `docs/architecture/graph.json`
+is outside the fence.
 
 ### What was built (26 files under app/src-tauri/crates/nputer-index/)
 
@@ -420,27 +450,30 @@ runs recorded there. `index`, `--check` green and red, `--watch`,
 temp files. Numbers above.
 
 **3. `--check` against THIS repo's real committed graph, agreeing with
-the golden test.** The dispatch predicted green; the tree had moved and
-the honest answer is RED — **and the two instruments agree in all four
-states**, which is the stronger claim:
+the golden test.** The dispatch predicted green; the branch point had a
+stale graph (see the headline) and the honest answer is RED — **and the
+two instruments agree in all FIVE states measured**, which is the
+stronger claim:
 
 | tree | `index --check` | `self_graph_is_current` (ignored) |
 |---|---|---|
-| this repo @ 5927adc | **1** STALE | **101** FAILED |
+| this repo @ `5927adc` (the branch point) | **1** STALE | **101** FAILED |
+| `git archive db8da6c` (the T-050 checkpoint) | **0** CURRENT | — |
 | `git archive HEAD` copy, freshly indexed | **0** CURRENT | **ok** |
 | that copy + one planted `.ts` | **1** STALE, names the file | **101** FAILED |
 | that copy re-indexed | **0** CURRENT | **ok** |
 
-The copy is a full `git archive HEAD` extraction (465 tracked files)
-built and tested with its own `CARGO_TARGET_DIR`, so the golden test
-resolved to the copy's root. Red on the real repo, green after a
-regen, red on a plant, green on recovery — the whole cycle, both
-instruments, four agreements. Nothing in this repo's
-`docs/architecture/graph.json` was written: `git status` clean
-throughout, and the committed file's sha256 is still `815412de…`.
+The copies are full `git archive` extractions (465 tracked files for
+HEAD) built and tested with their own `CARGO_TARGET_DIR`, so the golden
+test resolved to the copy's root rather than this worktree's. Red on the
+branch point, green one commit later, green after a regen, red on a
+plant, green on recovery — the whole cycle, both instruments, agreeing
+every time. Nothing in this repo's `docs/architecture/graph.json` was
+written: `git status` clean throughout, and the committed file's sha256
+is still `815412de…`.
 
 **4. Determinism preserved.** The ignored `self_graph_is_current` still
-passes in a current tree (row 2 above). Repeated runs are byte-identical
+passes in a current tree (rows 3 and 5 above). Repeated runs are byte-identical
 on the copy: three consecutive `index` runs, sha256
 `6fcfee9b4dcea54432c7c0ab8fc2792a54feb92c63a988a737c3dec6a4506434`
 every time (396,620 bytes). The committed-but-stale graph is sha256
@@ -524,20 +557,28 @@ command → record → the IF-it-cannot-run clause → why it exists):
   `cargo build --release -p nputer-index` from app/src-tauri/ — and
   RECORD the result (exit code, and on a red the delta it prints) in the
   checkpoint. IF it is red THEN regenerate with `nputer-index index`
-  and re-run the check to confirm 0, and commit
-  docs/architecture/graph.json with the merge. The four exit codes are
+  and re-run the check to confirm 0. Commit the regenerated
+  docs/architecture/graph.json in the merge's CHECKPOINT, after the
+  fixture reconciliation and last — the dogfood fixtures are themselves
+  indexed, so a graph committed before they are edited is stale again
+  immediately (the ceaa949 ordering rule). The merge commit itself is
+  therefore expected to carry a stale graph; a session branching from a
+  merge commit inherits it, which is what T-014-s3 records. The four
+  exit codes are
   legended in the app/src-tauri commands bullet under "Build & test"
   above: 0 current · 1 stale · 2 called wrong · 3 could not run.
   IF the check cannot run THEN say so LOUDLY in the checkpoint, naming
   the reason and the exit code — a skipped gate is news, never silence.
-  It exists because the ritual it replaces was skipped in silence at
-  the T-050 merge and nobody noticed until T-014 pointed a program at
-  it (T-014-s3): nineteen recorded exercises, one silent miss, and the
-  committed graph on main was a merge behind. `--check` reads the same
-  bytes and makes the same comparison the `#[ignore]`d
-  `self_graph_is_current` test does — the two were run against each
-  other in four states and agreed in all four — but it prints WHAT
-  moved, so a red is actionable without a second run.
+  It exists because the ritual it replaces was a `#[ignore]`d test that
+  had to be REMEMBERED, and remembering left a window nobody could see:
+  the graph is regenerated in the checkpoint (it must be — the
+  checkpoint edits indexed fixtures), so `main` points at a stale graph
+  between merge and checkpoint, and every branch cut there inherits one.
+  T-014's own branch is the worked example (T-014-s3). `--check` reads
+  the same bytes and makes the same comparison `self_graph_is_current`
+  does — the two were run against each other in five tree states and
+  agreed every time — but it prints WHAT moved, so a red is actionable
+  without a second run.
 ```
 
 **(c) ADD to the `app/src-tauri` commands bullet under "Build & test"**,
@@ -624,11 +665,16 @@ outside this fence — so the honest reading is:
   and the cross-engine measurement are above; the open question is filed
   as T-014-s1 rather than decided here. If you read criterion 2 as
   satisfiable some other way, that is the place to say so.
-- **The committed graph is stale and this branch did not fix it.** That
-  is deliberate (the integrator owns regen, and the fence forbids it) and
-  it means `cargo test -p nputer-index --test self_graph -- --ignored`
-  is RED on this branch as it is on main. Do not read that as a T-014
-  regression — reproduce it on `main` first.
+- **The graph at this branch's point is stale and this branch did not
+  fix it.** Deliberate (the integrator owns regen; the fence forbids it),
+  so `cargo test -p nputer-index --test self_graph -- --ignored` is RED
+  here exactly as it is at `5927adc`. Do not read it as a T-014
+  regression — reproduce it at the branch point first, and note it is
+  GREEN one commit later at `db8da6c`.
+- **The headline carries a correction to the executor's own first
+  reading.** It concluded "the ritual was skipped" before checking the
+  graph's commit history; it had not been. Both readings and the
+  measurement that settled it are in T-014-s3.
 - **`tests/watch.rs` spawns processes and sleeps.** The three timing
   assertions all use a 10 s ceiling with the measured value printed;
   if you want the real numbers, run with `-- --nocapture`.
@@ -641,9 +687,12 @@ outside this fence — so the honest reading is:
   options, architect's call.
 - `T-014-s2-nothing-pins-the-two-joins-together.md` — the cross-engine
   pin and where it should live.
-- `T-014-s3-the-interim-regen-ritual-was-missed-at-t-050.md` — **live
-  defect on main**: the committed graph is a merge behind, with the
-  delta and the fixture knock-ons.
+- `T-014-s3-the-interim-regen-ritual-was-missed-at-t-050.md` — the
+  merge/checkpoint window: the rule says "with the merge", the ordering
+  discipline forces the checkpoint, and every branch cut between them
+  inherits a stale graph. Carries the executor's own wrong first reading
+  and its correction. (The filename records the wrong version; the file
+  corrects it in its first line.)
 - `T-014-s4-nothing-in-cargo-test-pins-default-run.md` — three binaries,
   two packages, one unpinned manifest line.
 - `T-014-s5-watch-triage-errs-toward-re-indexing.md` — the watcher spins
