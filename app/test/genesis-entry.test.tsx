@@ -175,7 +175,13 @@ describe("T-026 genesis entry, end to end through the real shell", () => {
     // panes — an interview is not a pane.
     expect(q('[data-testid="pane-rail"]')).toBeNull();
     // The previous project's board does not linger behind the interview.
-    expect(q('[data-testid="genesis-docs-count"]')?.textContent).toContain("nothing written yet");
+    // T-037 addendum (2026-08-16): the slot's placeholder line
+    // (`genesis-docs-count`) is gone — T-024's lens is mounted there now,
+    // so the live count is read off the PANE's own header. Changed, not
+    // loosened: this asserts strictly more than the placeholder did,
+    // since it can only pass if the pane itself rendered.
+    expect(q('[data-testid="genesis-pane"]')).not.toBeNull();
+    expect(q('[data-testid="genesis-file-count"]')?.textContent).toContain("0 files written");
   });
 
   it("5. docs/ landing under the genesis project lights the pipeline in place (criterion 3)", async () => {
@@ -187,7 +193,7 @@ describe("T-026 genesis entry, end to end through the real shell", () => {
     });
     // The model updated — and the interview screen stayed put.
     expect(screenOf()).toBe("genesis");
-    expect(q('[data-testid="genesis-docs-count"]')?.textContent).toContain("1 file written");
+    expect(q('[data-testid="genesis-file-count"]')?.textContent).toContain("1 file written");
 
     await emitSnapshot({
       seq: 10,
@@ -199,9 +205,18 @@ describe("T-026 genesis entry, end to end through the real shell", () => {
       ],
     });
     expect(screenOf()).toBe("genesis");
-    expect(q('[data-testid="genesis-docs-count"]')?.textContent).toContain("2 files written");
-    // The parsed model rode along (what T-024's lens will render).
+    expect(q('[data-testid="genesis-file-count"]')?.textContent).toContain("2 files written");
+    // The parsed model rode along — and since T-037 mounted the lens the
+    // files are now RENDERED, not merely carried: both writes reach the
+    // pane's artifact list through the real store and the real screen,
+    // no longer "expected" rows.
     expect(container.querySelector("main")?.getAttribute("data-seq")).toBe("10");
+    const status = (path: string): string | null =>
+      q(`[data-testid="genesis-artifact"][data-path="${path}"]`)?.getAttribute("data-status") ??
+      null;
+    expect(status("docs/NORTH_STAR.md")).not.toBe("expected");
+    expect(status("docs/ROADMAP.md")).not.toBe("expected");
+    expect(status("docs/ARCHITECTURE.md")).toBe("expected"); // unwritten, still a row
   });
 
   it("6. a cancelled picker leaves the genesis project exactly where it was (criterion 6)", async () => {
@@ -214,7 +229,7 @@ describe("T-026 genesis entry, end to end through the real shell", () => {
     });
     expect(ipc.invoke).toHaveBeenCalledWith("pick_genesis_folder");
     expect(screenOf()).toBe("genesis");
-    expect(q('[data-testid="genesis-docs-count"]')?.textContent).toContain("2 files written");
+    expect(q('[data-testid="genesis-file-count"]')?.textContent).toContain("2 files written");
     expect(q('[data-testid="genesis-project-dir"]')?.textContent).toBe(GENESIS_DIR);
   });
 });
