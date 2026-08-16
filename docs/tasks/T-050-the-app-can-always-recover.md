@@ -480,4 +480,137 @@ binary because the file deliberately contains 2 NUL bytes plus BEL and
 ESC — the control characters in its hostile-message fixture, at lines
 73 and 237. That is the test doing its job, not a corrupt file.
 
+### Obligation 8 — suites, all at the final tree state
+
+| suite | baseline | result |
+|---|---|---|
+| app (vitest), after `npm run build` | 507 | **535 / 535**, 32 files |
+| app `tsc --noEmit` | — | clean (exit 0) |
+| tools/e2e (Playwright, chromium) | 36 | **40 / 40** |
+| tools/e2e `tsc --noEmit` | — | clean (exit 0) |
+| lib/parser | 159 | **159 / 159**, 10 files |
+| cargo (app/src-tauri) | 217 + 3 ignored | **217 passed, 0 failed, 3 ignored** |
+| `lint:tokens` | — | clean, 38 files scanned under app/src |
+
+The app delta is **+28**: 17 in `startup-recovery.test.ts` (16 from the
+build session plus the re-entrancy regression this session added) and 11
+in `startup-screen.test.tsx`. 535 − 28 = 507, the stated baseline,
+exactly. The e2e delta is **+4**, all in `startup-recovery.spec.ts`.
+Cargo's 217 is the sum across nine binaries (105 + 32 + 68 + 3 + 7 + 2),
+with the 3 ignored being the perf harness, the byte-compare self-graph
+test and one agent-runner case — the usual shape.
+
+Port discipline: the lane ran on its own **14520**. Nothing in this
+session bound or contacted 1420, and `tools/e2e/preflight.ts`
+`resolveLanePort` throws on 1420 by construction. The boot-check script
+was NOT run. No real model calls, no new dependency.
+
+### Obligation 9 — the fence held
+
+`git diff --stat b623f6a..HEAD`, twelve files, and every fenced path at
+zero:
+
+```
+  app/src-tauri:        0 changed
+  lib/parser:           0 changed
+  method:               0 changed
+  tools/e2e/scripts:    0 changed
+  docs/architecture:    0 changed
+  capabilities:         0 changed
+  manifests/lockfiles:  0 changed
+```
+
+(the manifest check covers every `package.json`, `package-lock.json`,
+`Cargo.toml`, `Cargo.lock`, `tsconfig*.json`, `vite.config.ts` and
+`vitest.config.ts` in the tree.)
+
+**Expected graph delta, NOT applied.** `docs/architecture/graph.json`
+was deliberately not regenerated. `app/src/App.tsx` and
+`app/src/lib/watcher-store.ts` both changed, so a regen will move C-05
+(app-shell) and C-10 (the watcher store) — symbol counts and the
+`StartupScreen` / `startupStepPhrase` additions in C-05, the
+`StartupStep` / `StartupFailure` / `runStartup` / `recordStartupFailure`
+additions in C-10. No new file was added under `app/src`, so no new
+territory needs claiming and no `D2:unmapped` finding is expected — the
+ordinary refresh shape, not a structural one.
+
+### The predecessor's two suggestions — assessed first-hand
+
+Both were filed by the build session, whose reasoning is gone. I drove
+the real code to check them rather than trusting the prose.
+
+**T-050-s1 (a hanging startup is not a rejection) — REAL, correctly
+scoped, one mechanism detail wrong.** Measured, with `listen` returning
+a promise that never settles:
+
+```
+  screen = loading   data-startup = waiting
+  message = "waiting for the first docs snapshot…"
+  buttons = ["Toggle theme","trying… [DISABLED]","Open a folder…","Start an interview"]
+  after clicking "Try again": listenCalls 1 -> 1
+  "Open a folder…" during the hang -> ["pick_project_folder"]
+  ⌘O during the hang -> ["pick_project_folder"]
+```
+
+The conclusion is right and matters: T-050 answers a startup that
+REJECTS, not one that hangs, and a hang is indistinguishable from a slow
+start. The correction is to its stated mechanism — s1 says pressing
+"Try again" "calls `startDocsWatcher()`, which returns the promise that
+is already hanging", implying a silent no-op. In fact the button is
+`disabled={starting}` and reads **"trying…"**, so the user cannot press
+it at all (`listenCalls 1 -> 1` above is a click that never reached a
+handler). That is arguably better than s1 claims — the affordance is
+visibly unavailable rather than deceptively inert — but the sentence
+should be corrected if the suggestion is picked up. Its two "get this
+right" caveats (a raced-out attempt is still running and may register an
+untracked subscription; N is a guess) are both real, and its cheap
+intermediate (say how long it has been waiting) is sound. Correctly
+scoped OUT of T-050: no criterion mentions a timeout, and adding one
+under this card's fence would be a guess about N.
+
+**T-050-s2 (a board reached after a failed subscribe is not live) —
+REAL, correctly scoped, and the sharper of the two.** Measured:
+
+```
+  after failed subscribe: step=subscribe  screen=startupFailed
+  a docs-changed handler was registered? false
+  after a successful pick: phase=open screen=board seq=5 tasks=1
+  startupFailure STILL set on the board? {"step":"subscribe","message":"Error: listen: refused","attempt":1}
+  listenCalls total = 1  (a pick does NOT re-subscribe)
+```
+
+Exactly as filed. The user escapes an honest error screen onto a board
+with real content (seq 5, one task) whose pipeline is dead — no
+`docs-changed` handler was ever registered and the pick does not
+re-subscribe. That is a worse failure mode than the one escaped,
+because it looks fine. Two details confirmed in its favour:
+`startupFailure` survives onto the board, so its remedy 1's condition
+(`startupFailure?.step === "subscribe"`) is exactly expressible where it
+proposes; and remedy 3's premise is accurate — `await listen(…)`'s
+resolved unlisten function is discarded by this store. Contrast with the
+RETRY route, which is genuinely live (obligation 4: `data-seq` moves to
+2 after a retry). Correctly scoped out: no T-050 criterion asks for it,
+and every escape T-050 promises does arrive somewhere. The asymmetry it
+names is also already pinned as a FACT by
+`startup-recovery.test.ts` → "records the snapshot step, and the
+subscription that DID succeed is not lost".
+
+### What the task did not name
+
+- **A hang is a third failure mode** and the card's three layers do not
+  cover it. This does not revise the card's "what is NOT claimed" — it
+  widens it: @human's screenshot is equally consistent with a hang, and
+  T-050 would not have helped a hung instance beyond giving it three
+  buttons. T-050-s1 is the right home for that.
+- **`starting` is not a phase.** `startupFailed` is a SCREEN with no
+  phase of its own — it rides `loading` in the shipped app and `browser`
+  in a served bundle, which is why `selectScreen` gates it on exactly
+  those two and why the e2e spec asserts on the harness snapshot rather
+  than on a selector alone.
+- **The failure never reaches stdout.** Every other boundary error in
+  this store echoes through `emit`; this one goes only to the webview
+  console. That is defensible (there is no `model-updated` to ride) but
+  it means a stranded launch leaves no trace in the log @human sends —
+  which is precisely why the card could not say what stranded theirs.
+
 ## Verdicts
