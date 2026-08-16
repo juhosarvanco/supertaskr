@@ -268,7 +268,8 @@ describe("the writing window (injected clock — zero wall-clock flake)", () => 
     const third = state(roadmapTouched, second);
     const log3 = observeDocsChange(log2, third, 50_000);
     const model = derive(third, log3, 50_000);
-    expect(model.backbone.at(-1)).toEqual({ kind: "forming", id: "F-05" });
+    // Index access, not .at(-1): the app's tsconfig lib predates es2022.
+    expect(model.backbone[model.backbone.length - 1]).toEqual({ kind: "forming", id: "F-05" });
     // After the window it collapses back to the parsed features.
     const later = derive(third, log3, 50_000 + WRITING_WINDOW_MS);
     expect(later.backbone.every((b) => b.kind === "built")).toBe(true);

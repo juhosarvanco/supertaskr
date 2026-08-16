@@ -311,6 +311,29 @@ describe("degradation (criterion 4)", () => {
     );
     expect(qa("[data-testid=genesis-chip]")[0]?.textContent).toContain("<script>");
   });
+
+  it("the no-innerHTML gate covers every file in app/src/genesis/", () => {
+    // The T-019/T-012 hygiene grep, made standing for this component:
+    // the hostile-content probe above proves TODAY's tree escapes, this
+    // proves no future edit reaches for a raw-HTML sink.
+    const scan = (dir: string): string[] => {
+      const out: string[] = [];
+      for (const name of readdirSync(dir).sort()) {
+        const full = join(dir, name);
+        if (statSync(full).isDirectory()) out.push(...scan(full));
+        else out.push(full);
+      }
+      return out;
+    };
+    const files = scan(resolve("src/genesis"));
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      const source = readFileSync(file, "utf8");
+      expect(source, `${file} must not reach for a raw-HTML sink`).not.toMatch(
+        /innerHTML|dangerouslySetInnerHTML|insertAdjacentHTML|document\.write/,
+      );
+    }
+  });
 });
 
 // ---- criterion 3: updates ride the existing watcher pipeline -----------

@@ -63,7 +63,11 @@ function ArtifactRow({ artifact }: { artifact: GenesisArtifact }) {
       ? "border-status-building-border bg-card"
       : status === "written"
         ? "border-border bg-card"
-        : "border-dashed border-ghost-border";
+        : // Placeholder rows follow the design's dashed-placeholder
+          // treatment (its forming/slot backbone cards are dashed AND
+          // card-filled); the border style, not the fill, carries
+          // "not written yet".
+          "border-dashed border-ghost-border bg-card";
   return (
     <li
       data-testid="genesis-artifact"
@@ -251,7 +255,7 @@ export function GenesisPane({ docs, now }: { docs: DocsModelState; now?: () => n
                   key={cell.id}
                   data-testid="genesis-feature"
                   data-kind={forming ? "forming" : "slot"}
-                  className={`flex min-w-0 flex-col gap-0.75 rounded-lg border border-dashed px-3 py-2.5 ${
+                  className={`flex min-w-0 flex-col gap-0.75 rounded-lg border border-dashed bg-card px-3 py-2.5 ${
                     forming ? "border-ghost-border" : "border-border"
                   }`}
                 >

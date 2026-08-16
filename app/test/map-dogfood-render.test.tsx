@@ -78,8 +78,10 @@ const node = (id: string): HTMLElement => {
 };
 
 describe("the nputer repo on its own map", () => {
-  it("renders all nine declared components in full mode, no unmapped bucket, no banner", () => {
-    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(9);
+  it("renders all ten declared components in full mode, no unmapped bucket, no banner", () => {
+    // Ten since T-024 declared C-13 (genesis pane); see the reconciliation
+    // block in architecture-dogfood.test.ts for the enumerated delta.
+    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(10);
     expect(container.querySelector('[data-component-id="unmapped"]')).toBeNull();
     expect(container.querySelector("[data-testid=map-degraded]")).toBeNull();
   });
@@ -100,7 +102,8 @@ describe("the nputer repo on its own map", () => {
   });
 
   it("the reconciled findings light the right faces (D1 sources + D3 rings)", () => {
-    // D1 sources: C-05 (×2: →C-06, →C-09), C-08, C-09. D3: C-01, C-07, C-11.
+    // D1 sources: C-05 (×2: →C-06, →C-09), C-08, C-09. D3: C-01, C-07,
+    // C-11, and C-13 since T-024.
     expect(node("C-05").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
       "drift 2",
     );
@@ -133,8 +136,9 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 23-edge relation table", () => {
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(23);
+  it("draws the full 25-edge relation table", () => {
+    // 23 + C-13's two declared (planned) edges, T-024.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(25);
     expect(
       container.querySelectorAll('[data-testid=map-edge][data-relation="undeclared"]'),
     ).toHaveLength(4);
