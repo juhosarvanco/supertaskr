@@ -207,6 +207,19 @@ export type ParseIssue =
   | { kind: 'invalid-field'; file: string; field: string; message: string }
   /** The same id appears in two files; both paths listed, first seen first. */
   | { kind: 'duplicate-id'; id: string; files: [string, string]; message: string }
+  /**
+   * Two or more DIFFERENT id strings whose numeric value is equal — zero
+   * padding aliasing one slot (`C-05` and `C-005`; T-030 absorbing
+   * T-008-s3). A SIBLING of `duplicate-id` rather than the same kind: the
+   * ids differ as strings, so there is no single `id` to name, and the
+   * ordering comparator (compareComponentIds) can only break the numeric
+   * tie by string order — a winner nobody declared. ONE issue per numeric
+   * slot, never one per pair: the aliasing is a single root cause however
+   * many spellings share it (the T-019 one-root-cause discipline).
+   * `ids`/`files` are index-aligned, in comparator order. Every record is
+   * kept — flagging, not hiding.
+   */
+  | { kind: 'aliased-id'; ids: string[]; files: string[]; message: string }
   /** Roadmap structure problem (no backbone section, malformed F-line). */
   | { kind: 'roadmap-error'; file: string; message: string }
   /** A file or directory could not be read. */
@@ -227,6 +240,26 @@ export type ParseIssue =
    * filename the convention being violated — flagging, not hiding.
    */
   | { kind: 'id-mismatch'; file: string; id: string; expected: string; message: string }
+  /**
+   * An id-bearing task file whose BASENAME encodes no id at all
+   * (`T-banana.md` declaring `id: T-901` — T-030 absorbing T-019-s2).
+   * Distinct from `id-mismatch`, which compares two ids: here there is no
+   * filename-derived id to compare, so `expected` would have to repeat
+   * `id` and read as agreement. Id-LESS files (the suggestion shape) stay
+   * legitimately free-form beyond the `T-` prefix and are never flagged.
+   * The record keeps its declared id — flagging, not hiding.
+   */
+  | { kind: 'filename-id-missing'; file: string; id: string; message: string }
+  /**
+   * A `blocked_by` cycle: every member is reachable from every other, so
+   * no member can ever be unblocked (T-030 absorbing T-019-s3). ONE issue
+   * per cycle naming every member, never one per member — the T-019
+   * one-root-cause discipline. A self-reference (`T-901` blocked_by
+   * `T-901`) is the one-member case. `ids`/`files` are index-aligned in
+   * model order; `field` is always `blocked_by` (the only cyclic reference
+   * space today). Every record is kept and every reference preserved.
+   */
+  | { kind: 'dependency-cycle'; field: string; ids: string[]; files: string[]; message: string }
   /**
    * Two components' `paths` provably claim the same files; first by
    * component id order (`ids[0]`) wins file mapping. `ids`/`files`/

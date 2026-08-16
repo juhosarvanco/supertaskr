@@ -1,4 +1,4 @@
-import type { ParseIssue, ProjectParseResult } from './types.js';
+import type { ParseIssue, ProjectParseResult, TaskRecord } from './types.js';
 
 /**
  * Cross-reference validation over an assembled project model (T-019,
@@ -34,10 +34,28 @@ import type { ParseIssue, ProjectParseResult } from './types.js';
  *    file encodes its id (`T-NNN[-sN]-slug.md`); when the declared id
  *    and the encoded id disagree, the declared id stays the model's
  *    truth and the disagreement becomes an issue. Skipped when the task
- *    has no id (id-less suggestions — the dominant live pattern) or the
- *    basename encodes none (not this check's business; the parse layer
- *    already polices id FORMAT, so records only ever carry well-formed
- *    ids).
+ *    has no id (id-less suggestions — the dominant live pattern; the
+ *    parse layer already polices id FORMAT, so records only ever carry
+ *    well-formed ids).
+ * 4. declared `id` ↔ a basename encoding NO id (`filename-id-missing`,
+ *    T-030 absorbing T-019-s2): `T-banana.md` declaring `id: T-901` used
+ *    to slip check 3 entirely — the narrowness was deliberate at T-019
+ *    and is closed here. The rule is exactly as narrow as its reason:
+ *    only an ID-BEARING file is flagged. An id-LESS file is a suggestion
+ *    the architect has not numbered yet, and TASK-FORMAT.md leaves those
+ *    free-form beyond the `T-` prefix the glob already demands — flagging
+ *    them would make the convention stricter than it is written.
+ * 5. `blocked_by` cycles (`dependency-cycle`, T-030 absorbing T-019-s3):
+ *    a self-reference or any ring of tasks blocking each other is
+ *    unsatisfiable — no member can ever start — yet it resolved silently,
+ *    because every reference in a cycle points at a task that DOES exist.
+ *    ONE issue per cycle naming every member, never one per member (the
+ *    T-019 one-root-cause discipline). Cycles are strongly connected
+ *    components of the blocked_by graph: an SCC is exactly "every member
+ *    reaches every other", which is one root cause however many simple
+ *    rings weave through it — and enumerating simple rings is exponential
+ *    in the worst case, which no parser should be. Dangling references
+ *    are not edges (check 1 already owns them).
  *
  * Both project assemblers (parseProject, parseProjectFromFiles) run this
  * and append its issues after their own (task → roadmap → component →
@@ -104,7 +122,14 @@ export function validateProject(
 
     if (task.id !== undefined) {
       const encoded = filenameId(task.file);
-      if (encoded !== undefined && encoded !== task.id) {
+      if (encoded === undefined) {
+        issues.push({
+          kind: 'filename-id-missing',
+          file: task.file,
+          id: task.id,
+          message: `${task.file}: declares id '${task.id}' but the filename encodes no id — an id-bearing task file is named 'T-NNN[-sN]-<slug>.md' (declared id kept as the model's truth)`,
+        });
+      } else if (encoded !== task.id) {
         issues.push({
           kind: 'id-mismatch',
           file: task.file,
@@ -116,6 +141,132 @@ export function validateProject(
     }
   }
 
+  // Cycles are project-shaped, not task-shaped: they come after every
+  // per-task finding so the pinned per-task issue order is untouched.
+  issues.push(...blockedByCycles(project.tasks, taskIds));
+
+  return issues;
+}
+
+/**
+ * One issue per `blocked_by` cycle, in model order.
+ *
+ * Tarjan's SCC algorithm, iterative — the recursion depth of a real task
+ * graph is small, but a parser must not blow the stack on hostile input
+ * (a 10k-long blocked_by chain is a file anyone can write). Deterministic
+ * throughout: nodes are visited in model order (path-sorted from both
+ * collection layers), edges in declared list order, members are reported
+ * in model order, and cycles in the order of their first member.
+ *
+ * A one-member SCC is a cycle only when the member names ITSELF — the
+ * self-reference case the criterion calls out. Every other one-member SCC
+ * is just an ordinary task.
+ *
+ * ADR-009: every id-keyed collection here is a Map/Set, so a task literally
+ * named `__proto__` cannot resolve against inherited state.
+ */
+function blockedByCycles(
+  tasks: readonly TaskRecord[],
+  taskIds: ReadonlySet<string>,
+): ParseIssue[] {
+  const order = new Map<string, number>(); // id -> model position
+  const fileOf = new Map<string, string>(); // id -> first file declaring it
+  const edges = new Map<string, string[]>(); // id -> blocked_by targets in the model
+  for (const task of tasks) {
+    const { id } = task;
+    if (id === undefined) continue;
+    if (!order.has(id)) {
+      order.set(id, order.size);
+      fileOf.set(id, task.file);
+    }
+    const outgoing = edges.get(id) ?? [];
+    // Dangling references are not edges — check 1 owns them, and a
+    // reference to nothing cannot close a ring.
+    for (const ref of task.blockedBy) if (taskIds.has(ref)) outgoing.push(ref);
+    edges.set(id, outgoing);
+  }
+
+  const index = new Map<string, number>();
+  const low = new Map<string, number>();
+  const onStack = new Set<string>();
+  const stack: string[] = [];
+  const components: string[][] = [];
+  let counter = 0;
+
+  const open = (node: string): void => {
+    index.set(node, counter);
+    low.set(node, counter);
+    counter += 1;
+    stack.push(node);
+    onStack.add(node);
+  };
+
+  for (const root of order.keys()) {
+    if (index.has(root)) continue;
+    open(root);
+    const work: { node: string; edge: number }[] = [{ node: root, edge: 0 }];
+    while (work.length > 0) {
+      const frame = work[work.length - 1];
+      if (frame === undefined) break; // unreachable: length checked
+      const outgoing = edges.get(frame.node) ?? [];
+      const next = frame.edge < outgoing.length ? outgoing[frame.edge] : undefined;
+      if (next !== undefined) {
+        frame.edge += 1;
+        if (!index.has(next)) {
+          open(next);
+          work.push({ node: next, edge: 0 });
+        } else if (onStack.has(next)) {
+          const seen = index.get(next) ?? 0;
+          low.set(frame.node, Math.min(low.get(frame.node) ?? seen, seen));
+        }
+        continue;
+      }
+      work.pop();
+      const parent = work[work.length - 1];
+      const frameLow = low.get(frame.node) ?? 0;
+      if (parent !== undefined) {
+        low.set(parent.node, Math.min(low.get(parent.node) ?? frameLow, frameLow));
+      }
+      if (frameLow === index.get(frame.node)) {
+        const members: string[] = [];
+        for (;;) {
+          const popped = stack.pop();
+          if (popped === undefined) break; // unreachable: node is on the stack
+          onStack.delete(popped);
+          members.push(popped);
+          if (popped === frame.node) break;
+        }
+        components.push(members);
+      }
+    }
+  }
+
+  const issues: ParseIssue[] = [];
+  const cycles = components.filter((members) => {
+    if (members.length > 1) return true;
+    const only = members[0];
+    return only !== undefined && (edges.get(only) ?? []).includes(only);
+  });
+  const position = (id: string): number => order.get(id) ?? Number.MAX_SAFE_INTEGER;
+  for (const members of cycles) members.sort((a, b) => position(a) - position(b));
+  cycles.sort((a, b) => position(a[0] ?? '') - position(b[0] ?? ''));
+
+  for (const members of cycles) {
+    const files = members.map((id) => fileOf.get(id) ?? '');
+    const first = files[0] ?? '';
+    const named = members.join(', ');
+    const detail =
+      members.length === 1
+        ? `'${named}' lists itself, so it can never be unblocked`
+        : `${named} block each other, directly or transitively, so no member can ever be unblocked`;
+    issues.push({
+      kind: 'dependency-cycle',
+      field: 'blocked_by',
+      ids: members,
+      files,
+      message: `${first}: blocked_by cycle — ${detail} (one issue per cycle, not per member; every reference preserved)`,
+    });
+  }
   return issues;
 }
 

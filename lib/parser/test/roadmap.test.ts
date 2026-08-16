@@ -73,6 +73,118 @@ describe('parseRoadmap — backbone lines', () => {
     ]);
   });
 
+  it('is comment-blind: a column-0 bullet inside an HTML comment is not a feature (T-030, T-023-s1)', () => {
+    // The trap the scaffolded templates were bent around: this exact
+    // content used to yield a phantom F-99 record and render as a real
+    // board column on a fresh project.
+    const content = [
+      '## Backbone',
+      '<!-- example row, do not ship:',
+      '- F-99: Example — a template example row',
+      '-->',
+      '- F-01: Real — the only feature here',
+      '',
+    ].join('\n');
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(issues).toEqual([]);
+    expect(features.map((f) => f.id)).toEqual(['F-01']);
+  });
+
+  it('is comment-blind to MALFORMED bullets too — no roadmap-error from inside a comment', () => {
+    // Before: the commented `- F-` line tripped the malformed arm and the
+    // board lit its parse-error badge over content nobody shipped.
+    const content = '## Backbone\n<!-- - F-XX: broken id in a comment -->\n- F-01: Real — thing\n';
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(issues).toEqual([]);
+    expect(features.map((f) => f.id)).toEqual(['F-01']);
+  });
+
+  it('a live bullet adjacent to a comment is unchanged, and line numbers survive the strip', () => {
+    const commented = [
+      '# Roadmap', // 1
+      '', // 2
+      '## Backbone', // 3
+      '<!-- a note', // 4
+      '     spanning', // 5
+      '     three lines -->', // 6
+      '- F-01: Method — the convention itself', // 7
+      '<!-- inline note --> ', // 8
+      '- F-02: App shell — the board', // 9
+      '',
+    ].join('\n');
+    const { features, issues } = parseRoadmap(commented, FILE);
+    expect(issues).toEqual([]);
+    expect(features).toEqual([
+      { id: 'F-01', name: 'Method', description: 'the convention itself', line: 7, file: FILE },
+      { id: 'F-02', name: 'App shell', description: 'the board', line: 9, file: FILE },
+    ]);
+  });
+
+  it('a trailing comment on a bullet line leaves the bullet, not the comment text', () => {
+    const content = '## Backbone\n- F-01: Method — the convention <!-- TODO: reword -->\n';
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(issues).toEqual([]);
+    expect(features[0]).toMatchObject({ id: 'F-01', description: 'the convention' });
+  });
+
+  it('a commented-out heading is not a heading', () => {
+    const content = '# Roadmap\n\n<!-- ## Backbone\n- F-01: Hidden — commented out entirely\n-->\n';
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(features).toEqual([]);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        kind: 'roadmap-error',
+        message: expect.stringContaining("no '## Backbone' section found"),
+      }),
+    ]);
+  });
+
+  it('an UNTERMINATED comment is reported with its line, never silently eaten', () => {
+    // Comment-blind to end of file (nothing after a broken opener can
+    // become a phantom feature) — but it can swallow real bullets, so it
+    // says so instead of hiding them.
+    const content =
+      '## Backbone\n- F-01: Real — kept\n<!-- oops, never closed\n- F-02: Lost — swallowed\n';
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(features.map((f) => f.id)).toEqual(['F-01']);
+    expect(issues).toEqual([
+      expect.objectContaining({
+        kind: 'roadmap-error',
+        file: FILE,
+        message: expect.stringContaining(`${FILE}:3: unterminated HTML comment`),
+      }),
+    ]);
+  });
+
+  it('the scaffolded template shape parses to zero features and zero issues', () => {
+    // method/docs-templates/ROADMAP.md keeps its examples inside comments
+    // (T-023). They stayed INDENTED to dodge the column-0 regexes; with
+    // the strip in place the indentation is no longer load-bearing —
+    // pinned here at column 0, the shape that used to phantom.
+    const template = [
+      '# Roadmap',
+      '',
+      '## Backbone',
+      '<!-- Features ordered as the USER experiences the product.',
+      '- F-01: <feature name> — <one line>',
+      '- F-02: <feature name> — <one line>',
+      '-->',
+      '',
+      '## Milestones',
+      '',
+    ].join('\n');
+    const { features, issues } = parseRoadmap(template, FILE);
+    expect(features).toEqual([]);
+    expect(issues).toEqual([]);
+  });
+
+  it('CRLF content keeps its line numbers through the strip', () => {
+    const content = '## Backbone\r\n<!-- hidden\r\n- F-99: Phantom — no -->\r\n- F-01: Real — yes\r\n';
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(issues).toEqual([]);
+    expect(features).toEqual([{ id: 'F-01', name: 'Real', description: 'yes', line: 4, file: FILE }]);
+  });
+
   it('reports duplicate feature ids with both line numbers', () => {
     const dup = '## Backbone\n- F-01: One — first\n- F-01: One again — second\n';
     const { features, issues } = parseRoadmap(dup, FILE);

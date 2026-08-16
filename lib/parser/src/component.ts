@@ -151,6 +151,21 @@ export function parseComponentFile(content: string, file: string): ComponentPars
     if (Array.isArray(data.paths) && data.paths.length === 0) {
       invalid('paths', 'must be a non-empty list of gitignore-style globs, got []');
     }
+    // A leading slash means "root only" in git, but every consumer of
+    // these patterns strips it — which turns a SINGLE-segment pattern
+    // into an unanchored one matching at any depth, the exact opposite
+    // of what the author wrote (T-030, absorbing T-011-s4). Flagged, not
+    // rewritten: the pattern stays on the record verbatim and keeps
+    // matching as it did — the parser's job is to say so, not to guess.
+    for (const pattern of paths) {
+      const anchored = anchoredIdiomFor(pattern);
+      if (anchored !== undefined) {
+        invalid(
+          'paths',
+          `pattern ${JSON.stringify(pattern)} is root-anchored in git but has a single segment — the leading '/' is stripped when the pattern is matched, which UNANCHORS it (it then claims that name at any depth); write '${anchored}' for the root-anchored form`,
+        );
+      }
+    }
   }
 
   const dependsOn = listField('depends_on');
@@ -205,6 +220,29 @@ export function parseComponentFile(content: string, file: string): ComponentPars
   return { component, issues };
 }
 
+/**
+ * The anchored idiom a single-segment leading-slash pattern should have
+ * been written as (`/dist` → `dist/**`), or undefined when the pattern
+ * does not have the problem.
+ *
+ * Exactly as narrow as its reason: only a LEADING SLASH claims git's
+ * root-only anchoring, and only a single remaining segment loses it when
+ * the slash is stripped. `/app/src/**` keeps a `/`, so it stays anchored
+ * and is left alone; `dist` without the slash never claimed anchoring in
+ * the first place; `./dist` is not a git anchoring marker at all. A
+ * negation (`!/dist`) carries the same trap and gets the same warning,
+ * with its `!` preserved in the suggestion.
+ */
+function anchoredIdiomFor(pattern: string): string | undefined {
+  const trimmed = pattern.trim();
+  const negated = trimmed.startsWith('!');
+  const body = negated ? trimmed.slice(1) : trimmed;
+  if (!body.startsWith('/')) return undefined;
+  const stem = body.slice(1).replace(/\/+$/, '');
+  if (stem === '' || stem.includes('/')) return undefined;
+  return `${negated ? '!' : ''}${stem}/**`;
+}
+
 /** One component source file: path (as reported in issues) + raw content. */
 interface ComponentSourceFile {
   path: string;
@@ -244,11 +282,13 @@ function patternsCertainlyOverlap(a: string, b: string): boolean {
 /**
  * Parse a set of component files and apply the cross-file rules:
  * duplicate ids (`duplicate-id`, both records kept — flagging, not
- * hiding), depends_on entries naming no parsed component
- * (`dangling-reference`, edge preserved on the record), and provably
- * overlapping `paths` between two components (`ambiguous-mapping`,
- * first by id order wins). Files are processed in sorted path order and
- * pair checks in component id order, so results are deterministic.
+ * hiding), numerically equal ids spelled differently (`aliased-id`,
+ * T-030 absorbing T-008-s3 — one issue per aliased slot), depends_on
+ * entries naming no parsed component (`dangling-reference`, edge
+ * preserved on the record), and provably overlapping `paths` between two
+ * components (`ambiguous-mapping`, first by id order wins). Files are
+ * processed in sorted path order and pair checks in component id order,
+ * so results are deterministic.
  *
  * Internal engine shared by parseComponentsFromFiles (pure) and
  * parseComponentDirectory (node); callers own file discovery/filtering.
@@ -278,6 +318,40 @@ export function parseComponentSet(files: readonly ComponentSourceFile[]): Compon
       byId.set(component.id, path);
     }
     components.push(component);
+  }
+
+  // -- numerically equal ids that differ as strings: `C-05` and `C-005`
+  //    are two registry handles for one slot. Not a duplicate-id (the
+  //    strings differ, so nothing here is literally declared twice) and
+  //    not harmless (compareComponentIds finds a zero numeric difference
+  //    and falls through to string order, so "first by id order wins"
+  //    resolves by an accident of zero-padding). ONE issue per slot, in
+  //    comparator order; both records are kept.
+  //
+  //    The slot key strips leading zeros as TEXT rather than going
+  //    through Number(): an id may carry arbitrarily many digits, and two
+  //    genuinely different ids past 2^53 must not collide into a false
+  //    alias just because floating point ran out of room.
+  const bySlot = new Map<string, string[]>();
+  for (const id of byId.keys()) {
+    const digits = ID_PATTERN.exec(id)?.[1];
+    if (digits === undefined) continue; // unreachable: the identity gate pins the pattern
+    const slot = digits.replace(/^0+(?=\d)/, '');
+    const ids = bySlot.get(slot) ?? [];
+    ids.push(id);
+    bySlot.set(slot, ids);
+  }
+  for (const slotIds of bySlot.values()) {
+    if (slotIds.length < 2) continue;
+    const ids = [...slotIds].sort(compareComponentIds);
+    const files = ids.map((id) => byId.get(id) ?? '');
+    const named = ids.map((id, i) => `'${id}' (${files[i] ?? ''})`).join(', ');
+    issues.push({
+      kind: 'aliased-id',
+      ids,
+      files,
+      message: `numerically equal component ids ${named} — zero-padding aliases one registry slot; component id order cannot separate them, so which one wins file mapping falls to string comparison`,
+    });
   }
 
   // -- dangling depends_on: an id no parsed record declares. The edge

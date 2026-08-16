@@ -185,6 +185,54 @@ describe('parseComponentFile — identity and field validation', () => {
   });
 });
 
+describe('parseComponentFile — single-segment leading-slash paths (T-030, absorbing T-011-s4)', () => {
+  const withPaths = (patterns: string[]): string =>
+    `---\nid: C-08\nname: Board pane\npaths: [${patterns.map((p) => JSON.stringify(p)).join(', ')}]\n---\nProse.\n`;
+
+  it('warns on `/dist`, names `dist/**` as the anchored idiom, and keeps the pattern', () => {
+    // Used to parse silently: git reads `/dist` as root-only, but every
+    // consumer strips the leading slash, and a single-segment pattern
+    // without it is UNANCHORED — it claims `dist` at any depth, the
+    // opposite of what was written.
+    const { component, issues } = parseComponentFile(withPaths(['/dist']), FILE);
+    expect(issues).toEqual([
+      {
+        kind: 'invalid-field',
+        file: FILE,
+        field: 'paths',
+        message: expect.stringContaining("write 'dist/**' for the root-anchored form"),
+      },
+    ]);
+    expect(issues[0]?.message).toContain('UNANCHORS it');
+    // Flagging, not hiding or rewriting: record returned, pattern verbatim.
+    expect(component?.paths).toEqual(['/dist']);
+  });
+
+  it('leaves anchored and unanchored patterns alone (only the losing shape warns)', () => {
+    const quiet = ['app/src/**', 'dist', 'dist/**', '/app/src/**', '/a/b', './dist', '/'];
+    expect(parseComponentFile(withPaths(quiet), FILE).issues).toEqual([]);
+  });
+
+  it('a trailing slash still loses the anchor; a negation carries its `!` into the suggestion', () => {
+    const trailing = parseComponentFile(withPaths(['/dist/']), FILE);
+    expect(trailing.issues).toEqual([
+      expect.objectContaining({ kind: 'invalid-field', field: 'paths' }),
+    ]);
+    expect(trailing.issues[0]?.message).toContain("write 'dist/**'");
+
+    const negated = parseComponentFile(withPaths(['app/**', '!/dist']), FILE);
+    expect(negated.issues).toHaveLength(1);
+    expect(negated.issues[0]?.message).toContain("write '!dist/**'");
+  });
+
+  it('one issue per offending pattern, in declared order', () => {
+    const { issues } = parseComponentFile(withPaths(['/dist', 'app/**', '/build']), FILE);
+    expect(issues.map((i) => ('field' in i ? i.field : ''))).toEqual(['paths', 'paths']);
+    expect(issues[0]?.message).toContain('"/dist"');
+    expect(issues[1]?.message).toContain('"/build"');
+  });
+});
+
 describe('parseComponentFile — malformed input never throws', () => {
   it('broken YAML: structured yaml-error naming the file', () => {
     const broken = `---\nid: "unterminated\nname: x\n---\nbody\n`;
@@ -340,6 +388,86 @@ describe('parseComponentsFromFiles — cross-file rules', () => {
     ]);
     const reversed = new Map([...forward.entries()].reverse());
     expect(parseComponentsFromFiles(reversed)).toEqual(parseComponentsFromFiles(forward));
+  });
+});
+
+describe('parseComponentsFromFiles — numerically aliased ids (T-030, absorbing T-008-s3)', () => {
+  it('C-05 and C-005 are one slot spelled twice: one aliased-id issue, both records kept', () => {
+    // Used to parse with ZERO issues: the strings differ, so nothing is a
+    // duplicate — yet compareComponentIds finds no numeric difference, so
+    // "first by id order wins" is decided by string comparison alone.
+    const result = parseComponentsFromFiles(
+      new Map([
+        [path('C-05-app.md'), componentSrc('C-05', ['app/**'])],
+        [path('C-005-padded.md'), componentSrc('C-005', ['lib/**'])],
+      ]),
+    );
+    expect(result.issues).toEqual([
+      {
+        kind: 'aliased-id',
+        ids: ['C-005', 'C-05'], // comparator order: numeric tie → string order
+        files: [path('C-005-padded.md'), path('C-05-app.md')],
+        message: expect.stringContaining('numerically equal component ids'),
+      },
+    ]);
+    expect(result.issues[0]?.message).toContain("'C-005'");
+    expect(result.issues[0]?.message).toContain("'C-05'");
+    expect(result.issues[0]?.message).toContain('zero-padding aliases one registry slot');
+    // Flagging, not hiding: both components stay on the map.
+    expect(result.components.map((c) => c.id)).toEqual(['C-005', 'C-05']);
+  });
+
+  it('ONE issue per slot, not one per pair — three spellings of one slot report once', () => {
+    const result = parseComponentsFromFiles(
+      new Map([
+        [path('C-05-a.md'), componentSrc('C-05', ['a/**'])],
+        [path('C-005-b.md'), componentSrc('C-005', ['b/**'])],
+        [path('C-0005-c.md'), componentSrc('C-0005', ['c/**'])],
+      ]),
+    );
+    const aliased = result.issues.filter((i) => i.kind === 'aliased-id');
+    expect(aliased).toHaveLength(1);
+    expect(aliased[0]).toMatchObject({ ids: ['C-0005', 'C-005', 'C-05'] });
+  });
+
+  it('distinct slots and an exact duplicate stay out of it (one fixture, one violation)', () => {
+    const distinct = parseComponentsFromFiles(
+      new Map([
+        [path('C-05-a.md'), componentSrc('C-05', ['a/**'])],
+        [path('C-50-b.md'), componentSrc('C-50', ['b/**'])],
+        [path('C-500-c.md'), componentSrc('C-500', ['c/**'])],
+      ]),
+    );
+    expect(distinct.issues).toEqual([]);
+
+    // The same id twice is duplicate-id's business, never aliased-id's.
+    const dup = parseComponentsFromFiles(
+      new Map([
+        [path('C-05-a.md'), componentSrc('C-05', ['a/**'])],
+        [path('C-05-b.md'), componentSrc('C-05', ['b/**'])],
+      ]),
+    );
+    expect(dup.issues.map((i) => i.kind)).toEqual(['duplicate-id']);
+  });
+
+  it('slot equality is textual, so ids past 2^53 do not collide by floating point', () => {
+    const big = '9007199254740993'; // 2^53 + 1 — Number() cannot tell these apart
+    const other = '9007199254740992';
+    const result = parseComponentsFromFiles(
+      new Map([
+        [path(`C-${big}-a.md`), componentSrc(`C-${big}`, ['a/**'])],
+        [path(`C-${other}-b.md`), componentSrc(`C-${other}`, ['b/**'])],
+      ]),
+    );
+    expect(result.issues).toEqual([]);
+    // ...while a zero-padded spelling of the same huge id still aliases.
+    const padded = parseComponentsFromFiles(
+      new Map([
+        [path(`C-${big}-a.md`), componentSrc(`C-${big}`, ['a/**'])],
+        [path(`C-0${big}-b.md`), componentSrc(`C-0${big}`, ['b/**'])],
+      ]),
+    );
+    expect(padded.issues.map((i) => i.kind)).toEqual(['aliased-id']);
   });
 });
 
