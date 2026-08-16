@@ -49,6 +49,11 @@ Tasks: T-023…T-029 (kit → lens → runner → entry → split view →
 crescendo → resume); first slice T-023+T-024+T-026 — hand-driven
 genesis rendered live, deliberately too small. (Decomposed
 2026-08-16, ADR-017.)
+Progress: FIRST SLICE COMPLETE 2026-08-16 — T-023 → T-024 → T-026 all
+through the pipeline; the front door offers an interview, a docs-less
+folder opens as a genesis project, and the first `mkdir docs` lights
+the pipeline into the lens. Hand-driven genesis now renders live, with
+no agent in the loop yet. T-025, T-027, T-028, T-029 remain.
 
 ## Parked
 The staged future lives in docs/future.md (two expert-room batches:

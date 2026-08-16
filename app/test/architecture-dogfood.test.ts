@@ -159,6 +159,45 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 // Everything else — the four pre-existing D1 rows, the two remaining
 // D3s, C-12's file list, and every other observedCount — is
 // byte-unchanged. Changed, never loosened.
+//
+// RECONCILED AT THE T-026 MERGE (2026-08-16, integrator — eleventh
+// exercise of the practice): the regenerated 84-file graph (82→84:
+// app/src/components/shell/GenesisScreen.tsx under C-05's shell glob,
+// and app/test/genesis-entry.test.tsx under the app/test/** umbrella;
+// nothing removed). Deltas, each independently re-derived from the raw
+// graph — the added/removed edge sets enumerated in full and every new
+// file edge classified by component pair — before this edit, not read
+// off the failure output:
+//   · stats 82→84 files, 513→539 symbols, 871→909 edges (43 edges
+//     added, 5 removed — the five removals are watcher-store-internal
+//     call/type_ref edges the picker refactor retired: applyDocsPayload
+//     now reaches buildEcho through sendEcho, pickProjectFolder through
+//     the shared runPicker, and selectScreen's noDocsMessage is gone).
+//   · mapping 82→84; C-05 33→35. Every other component's count holds
+//     (C-06 21, C-08 10, C-09 3, C-10 2, C-12 11, C-13 2). D2 STAYS
+//     EMPTY; the unmapped node stays gone.
+//   · findings BYTE-UNCHANGED — all five D1 rows and both remaining D3s
+//     hold exactly. The umbrella surprise that T-024's merge produced
+//     did NOT recur: genesis-entry.test.tsx imports App.tsx (C-05),
+//     docs-model and watcher-store (C-10, already confirmed) and three
+//     packages, and it does NOT reach into app/src/genesis/ — T-026's
+//     seam is a SLOT, not an import, so no new component pair appears
+//     and D1:C-05→C-13 keeps its two file edges.
+//   · relation table: same 26 rows, same 13 confirmed / 5 undeclared /
+//     8 planned tally. Exactly one observedCount moves — C-05→C-10
+//     10→13→16, the three new file edges being GenesisScreen.tsx →
+//     docs-model (the first shell-side src edge from this component),
+//     genesis-entry.test.tsx → docs-model, and genesis-entry.test.tsx →
+//     watcher-store. All three are in the DECLARED direction.
+//   · hash/loc drift on the four pre-existing files T-026 modified
+//     (App.tsx 311→428, watcher-store.ts 382→560, project-shell.test.tsx
+//     127→215, watcher-store.test.ts 242→375), plus this fixture pair's
+//     own reconciliation edits — picked up because the final regen runs
+//     after these lines land (the ceaa949 ordering lesson, eighth hold).
+// Note for the record: the branch's own forecast (78→80 files, C-05→
+// C-10 10→13) was measured against the pre-T-024 base and its absolute
+// numbers do not apply here; its DELTAS (+2 files, +26 symbols, +38
+// edges, +3 on that one row) reproduce exactly. Changed, never loosened.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -223,14 +262,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 82 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(82);
+  it("all 84 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(84);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
     for (const id of derived.fileComponent.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
     expect([...counts.entries()].sort()).toEqual([
-      ["C-05", 33],
+      // 33 → 35 at the T-026 merge regen: GenesisScreen.tsx under the
+      // shell glob, genesis-entry.test.tsx under the app/test umbrella.
+      ["C-05", 35],
       ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
@@ -340,7 +381,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["C-05", "C-09", "undeclared", 3],
       // 10 → 13 at the T-024 merge regen: both genesis suites import
       // docs-model, and the DOM suite also drives watcher-store.
-      ["C-05", "C-10", "confirmed", 13],
+      // 13 → 16 at the T-026 merge regen: GenesisScreen.tsx takes a
+      // DocsModelState (the first shell-side src edge into C-10), and
+      // genesis-entry.test.tsx drives both docs-model and watcher-store.
+      ["C-05", "C-10", "confirmed", 16],
       ["C-05", "C-11", "planned", 0],
       ["C-05", "C-12", "confirmed", 20],
       ["C-05", "C-13", "undeclared", 2],

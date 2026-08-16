@@ -175,8 +175,10 @@ describe("the nputer repo on its own map", () => {
     // reconciliation for the full delta enumeration.
     // 78 → 82 at the T-024 merge regen (2026-08-16): the genesis pane's
     // two sources and its two suites joined.
+    // 82 → 84 at the T-026 merge regen (2026-08-16): GenesisScreen.tsx
+    // (the shell's mount for that pane) and the genesis-entry suite.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 82 files",
+      "committed graph · 84 files",
     );
   });
 });
