@@ -91,9 +91,20 @@ describe('parseRoadmap — backbone lines', () => {
   });
 
   it('is comment-blind to MALFORMED bullets too — no roadmap-error from inside a comment', () => {
-    // Before: the commented `- F-` line tripped the malformed arm and the
-    // board lit its parse-error badge over content nobody shipped.
-    const content = '## Backbone\n<!-- - F-XX: broken id in a comment -->\n- F-01: Real — thing\n';
+    // Before: the commented column-0 `- F-` line tripped the malformed
+    // arm and the board lit its parse-error badge over content nobody
+    // shipped. (The one-line form `<!-- - F-XX: … -->` never tripped it —
+    // the regex is anchored at the line start — so the pin uses the
+    // multi-line shape a template actually has.)
+    const content = [
+      '## Backbone',
+      '<!-- example, do not ship:',
+      '- F-XX: broken id',
+      '-->',
+      '<!-- - F-YY: the one-line form, equally silent -->',
+      '- F-01: Real — thing',
+      '',
+    ].join('\n');
     const { features, issues } = parseRoadmap(content, FILE);
     expect(issues).toEqual([]);
     expect(features.map((f) => f.id)).toEqual(['F-01']);
@@ -127,7 +138,29 @@ describe('parseRoadmap — backbone lines', () => {
     expect(features[0]).toMatchObject({ id: 'F-01', description: 'the convention' });
   });
 
-  it('a commented-out heading is not a heading', () => {
+  it('a commented-out heading neither opens nor CLOSES a section', () => {
+    // The sharpest form of the old blindness: a column-0 `##` line inside
+    // a comment ended the backbone, so every REAL bullet after the comment
+    // silently vanished from the board (F-02 below). Nothing reported it —
+    // the roadmap simply had fewer columns than the file did.
+    const content = [
+      '# Roadmap', // 1
+      '', // 2
+      '## Backbone', // 3
+      '- F-01: Real — first', // 4
+      '<!--', // 5
+      '## Milestones', // 6
+      '- F-99: Phantom — inside a comment', // 7
+      '-->', // 8
+      '- F-02: Real — second, and still in the backbone', // 9
+      '',
+    ].join('\n');
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(issues).toEqual([]);
+    expect(features.map((f) => `${f.id}@${f.line}`)).toEqual(['F-01@4', 'F-02@9']);
+  });
+
+  it('a roadmap whose only Backbone heading is commented out has no backbone', () => {
     const content = '# Roadmap\n\n<!-- ## Backbone\n- F-01: Hidden — commented out entirely\n-->\n';
     const { features, issues } = parseRoadmap(content, FILE);
     expect(features).toEqual([]);
