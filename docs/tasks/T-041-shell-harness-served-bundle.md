@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [app-shell, tools/e2e/]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: "claude-opus-5 @fresh"
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 Absorbs: T-024-s1, T-026-s7. Triage 2026-08-16: the two deferred
@@ -456,3 +456,194 @@ Forecast, derived from the indexer's own rules rather than guessed:
   file invented.
 
 ## Verdicts
+
+2026-08-16 — claude-opus-5 @fresh, verifier — same-model review (the
+builder was claude-opus-5 too; recorded so this is not read as an
+independent-model check): **APPROVED**, with two suggestions filed
+(s3, s4) and one CORRECTION to a suggestion the branch itself filed
+(T-041-s1's remedy is wrong; see s3). Every criterion was re-derived
+from the branch — every number below is mine, measured, not read from
+the notes. Merge-base confirmed `2961599`, HEAD `f29ac7c`, 10 files.
+
+**Suites (macOS 15/Darwin 25.6, node v22.22.0, ADR-011 order, this
+worktree).** lib/parser `npx vitest run` **159 passed (10 files)**,
+`tsc --noEmit` clean. app `npm run build` exit 0 (252 modules),
+`npx tsc --noEmit` clean, `npx vitest run` **491 passed (28 files)**.
+src-tauri bare `cargo test` **208 passed + 3 ignored**, exit 0
+(per-target 100 / 28+1 / 68 / 3 / 7 / 0+1 / 2+1). tools/e2e
+`npx playwright test` **27 passed (6.7s)**, one worker, retries 0, no
+skips; `npm run typecheck` clean; `lint:tokens` **clean, 37 files**;
+`--selftest` **43 samples green**. Every number in the notes reproduces.
+
+**C1 — THE GATE. Both halves re-derived, then attacked; it holds.**
+*Runtime half.* The test asserts the positive first — `listen("docs-changed")`,
+`invoke("docs_snapshot")`, phase → `noProject` — so "no harness" cannot
+pass for the boring reason that nothing ran; then both harnesses are
+`undefined`. I poisoned all 8 bodies and all 8 went red, so the
+assertions execute.
+*Build half, my own grep, wider than the notes'.* Over my own build of
+`dist/assets/index-vTAlOtQD.js` (442,069 B): `__nputerShellHarness` 0,
+`__nputerDocsHarness` 0, `__nputerEchoes` 0, `"browser dev harness
+active"` 0, `getShell:` 0, `applyPickOutcome:` 0, `failureCount` 0
+(that field exists only in `shellHarnessSnapshot`, so the harness OBJECT
+is provably never constructed, not merely unattached). In-bundle
+controls, same file: `"no project open —"` 1, `model-updated` 2,
+`"No plan in"` 1, `"the project, so far"` 1, `docs-changed` 1,
+`docs_snapshot` 1, `genesis-pane-slot` 1. The single lowercase
+`harness` hit is the pre-existing browser-screen copy ("no Tauri IPC —
+dev harness active, no snapshot applied yet"), shipped on main too.
+*The attacks.* (a) `npx vite build --mode development` does **not** flip
+DEV — the emitted asset is sha-identical to the production one
+(`3132ec98…`), because Vite's CLI forces `NODE_ENV=production` for
+builds. (b) `NODE_ENV=development npm run build` DOES flip it: 696,302 B,
+all four harness markers present. That is the one lever, it is an
+inherited env var rather than any configured path, **the runtime half
+still fences it** — I read the emitted code, and the install is still
+inside `if(NS=!0,!Wo){…}` with `Wo` the `__TAURI_INTERNALS__` check —
+and the branch's own bundle test reds on the next `npm test`. Filed as
+**T-041-s4** with the table. (c) `npm run preview` serves `dist/`, which
+has no harness. (d) No new IPC: `git diff main -- app/src` adds zero
+`invoke(`/`listen(`/`emit(` call sites, `app/src-tauri/` is a zero-byte
+diff. (e) `+export` in `app/src` is exactly one line and it is an
+`interface` (erased at build); nothing was removed or changed;
+`isTauriRuntime` is pre-existing (main:377).
+
+**The extraction is behaviour-preserving.** Line by line against main:
+`const before = shell` is still read after `invoke` resolves (it is the
+first statement of the callee, invoked with the awaited value);
+`if (next !== before) {…}` became `if (next === before) return; …`, the
+same branch inverted; assignment → listener loop → echo condition
+(`next.docs !== before.docs && next.docs.seq > before.docs.seq`) are in
+the same order with the same text; the call sits inside the SAME `try`,
+so a throw from the reducer or a listener still lands in the same
+`catch` and sets `rejectedPick`, and `finally` still clears `picking`.
+`reducePickOutcome` itself is untouched (`return prev` by identity for
+`cancelled` and `busy`), and the identity discipline survives the new
+path — `applyPickOutcome({kind:"cancelled"})` leaves `getShellState()`
+`toBe(before)` and notifies no one (the subscriber log is exactly
+`["noDocs","genesis"]`). Nothing before `invoke` moved: `!isTauri ||
+shell.picking` still guards, so the harness cannot re-enter the picker.
+
+**C2 — the phase assertions genuinely discriminate.** I built the
+confusable cases and required red. Four mutations, one lane run:
+`noDocs`→`noProject` (same `screen:"empty"`) RED "the shell must be in
+phase noProject / Received: noDocs"; the confusable pair
+`open`+rejectedPick→`noDocs` (same `screen:"empty"`) RED "Expected
+noDocs / Received: open"; `noProject`→`noDocs` RED; and phase-correct
+screen-wrong `genesis`/`board` RED at the screen line. So a spec
+asserting phase X cannot pass while the shell is in phase Y even when
+`data-screen` is byte-identical — which is the criterion. All four
+reverted, sha256-verified.
+
+**C3 — the specs, and the fixture is the real one.** 10 new lane tests,
+all green against the served bundle and the served sheet. The genesis
+spec reads T-024's tree from disk, and I proved it rather than reading
+it: perturbing ONE byte of the real
+`app/test/fixtures/genesis/streak/docs/NORTH_STAR.md` (`terminal.` →
+`TERMINAL.`) reds the pane assertion, with the perturbed string visible
+in the browser's rendered text; adding a 10th file to the fixture
+throws the loud "expected 9 markdown files … reconcile rather than
+loosen". Both reverted, sha256-verified
+(`0c9ee77b…` restored). Every content assertion in that test is scoped
+through `slot`/`pane`; the only unscoped `page.getByTestId` calls are
+the screen-level ones in test 1, where the screen is the subject, plus
+the screen-level negative at :165.
+
+**C4 — the lane owns its port.** `NPUTER_E2E_PORT=1420 npx playwright
+test --list` throws at config load, in `resolveLanePort`, before
+anything binds. `playwright.config.ts` and `preflight.ts` are zero-byte
+diffs. The lane bound 14520 only; 1420 stayed the human's app (pid
+90127) throughout, untouched, and 14520 is free again.
+
+**C5 / fence.** `git diff main -- tools/e2e/scripts/ docs/CONVENTIONS.md
+app/src-tauri/ lib/parser/ method/ docs/architecture/
+'**/package-lock.json' '**/Cargo.lock' | wc -c` = **0**. All 17
+pre-existing `tools/e2e` files are untouched (set intersection of
+"pre-existing" and "changed" is empty); the 5 lane changes are all
+additions. No new dependency.
+
+**Zero bytes — re-derived, and it holds.** I built three trees myself:
+pristine main `index-DvrlAOQE.js` **442,052 B**; main + ONLY the
+`runPicker`/`commitPickOutcome` split (harness, type, snapshot function
+and test file all absent) `index-vTAlOtQD.js` **442,069 B** sha256
+`3132ec98549553481f9422b8e0f999621b80406850732d8dfa64ba0d9c6d63fb`;
+and this branch's HEAD — **the same name, the same 442,069 bytes, the
+same sha256**. So the entire production delta of this branch is **+17
+bytes**, and those 17 bytes are the named function the refactor
+introduced. The harness costs production exactly nothing. This deserves
+to be read as the headline it is: the test surface is not "small in the
+bundle", it is *not in the bundle*.
+
+**Execution sweep.** All 18 new bodies poisoned with
+`expect("PROBE").toBe("EXECUTED")` as the first statement: vitest
+**8 failed (8)**, lane **10 failed**, each named. Reverted from
+pre-injection copies and confirmed by sha256 —
+`shell-harness.test.ts` `dac4009b…`, `front-door.spec.ts` `af4d8303…`,
+`no-plan-card.spec.ts` `a4295a02…`, `genesis-screen.spec.ts`
+`73d82af9…` (the notes' four hashes, independently reproduced) — and
+both suites re-run green.
+
+**Graph forecast — CONFIRMED, with the integrator's exact delta.** I ran
+`NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test self_graph --
+--ignored` and then restored the committed file
+(`git checkout`, sha256 `a4336380…` back). Measured: files **88 → 89**
+(adds `app/test/shell-harness.test.ts`, nothing removed),
+`app/src/lib/watcher-store.ts` content-changed, symbols **595 → 602**,
+edges **990 → 1003**. No `tools/e2e` file appears — `.nputerignore`'s
+`tools/` holds. Against the regenerated graph exactly **three**
+assertions move, in **two** files, and `lib/parser` stays **159/159** —
+`lib/parser/test/smoke.test.ts` does NOT move, as forecast:
+`app/test/architecture-dogfood.test.ts` file count `88` → `89`;
+`architecture-dogfood.test.ts:579` `["C-05","C-10","confirmed",19]` →
+`20` (the conditional clause in the forecast fires); and
+`app/test/map-dogfood-render.test.tsx` `committed graph · 88 files` →
+`· 89 files`.
+
+**T-041-s1 — the measurement is right, the remedy is wrong.** I
+reproduced s1's numbers exactly at 1280×720 with the streak tree:
+viewport **720**, `documentElement.scrollHeight` **1110** (the page
+scrolls), column computed `min-height` **720px** and actual height
+**1110px**, slot **851**, pane **849**, pane's `overflow-y-auto` region
+**796/796** — never engages. Two things s1 understates, both measured:
+(1) the page overflows at every ordinary window size, not just short
+ones — 800×600 (the app's own configured window size) overflows by
+**572px**, 1024×768 by 373, 1280×720 by 390, 1920×1080 still by 30; the
+page stops overflowing only at a viewport height of **1110px**, and the
+pane's own region never engages at ANY height, because the column is
+content-sized rather than bounded. (2) s1's note 1 says flipping the two
+`min-h-screen` to `h-screen` "is the whole mechanical fix" — I made that
+edit and measured it: both columns bound to 720px and **the page still
+scrolls 1110 vs 720, the pane's region still 796/796**. The missing link
+is `min-h-0` on `GenesisScreen.tsx:37`; with all three edits the page
+stops scrolling (720/720) and the pane's region engages (796/406).
+Filed as **T-041-s3**. Both probes reverted, sha256-verified.
+*Ruling on the spec: it PINS, it does not bless.* The block at
+`genesis-screen.spec.ts:197-228` carries the mechanism, names T-041-s1,
+and states the reconciliation; both messages read "today the PAGE grows
+past the viewport" and "…so the pane's own region is never asked to
+scroll". I drilled it: bounding the column reds the test. A tripwire on
+today's truth is the right thing for a task that proves assembly, not
+taste — accepted.
+
+**T-041-s2 — verified as stated and correctly scoped.** The Rust pin
+`genesis_and_no_docs_wire_shapes_are_pinned` is at docs_watch.rs:2641
+and asserts the serialized JSON literally; the TS mirror in
+`watcher-store.ts` and the lane's mirror in `fixtures/shell.ts` are
+hand-written; no test in the repo feeds Rust-produced JSON into the TS
+reducers and no shared fixture exists. The suggestion's own limit is
+right: T-041 adds no IPC and changes no wire shape, so it neither
+creates nor widens the gap. Worth closing before T-027/T-028/T-029
+write more specs on this surface.
+
+**@human, given what I measured.** The genesis composition is the item.
+At the app's configured 800×600 window the interview page is 1172px
+tall — you scroll the header and the interview heading off the screen to
+reach the bottom of the artifact list — and at 1920×1080 it still
+overflows by 30px. Judge whether the interview screen should be a
+bounded frame (pane scrolling inside a fixed header) or a growing page;
+T-027 needs that ruling, and per s3 the fix is three class edits rather
+than the two s1 named. Nothing else in this branch is visual: the
+shipped bundle's only delta is a 17-byte function extraction.
+
+Everything reverted; tree clean; no stray processes or listeners; port
+1420 never bound or contacted; no boot-check run; no model call.
