@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CONVENTION_HINT,
   EMPTY_PROBE,
+  outcomeCarriesSnapshot,
   planChecklist,
   reduceDocs,
   reducePickOutcome,
@@ -379,5 +380,87 @@ describe("reducePickOutcome (T-026: one pipeline for all three pickers)", () => 
     expect(next.phase).toBe("open");
     expect(next.genesisDir).toBeNull();
     expect(next.docs.model.tasks.map((t) => t.id)).toEqual(["T-901"]);
+  });
+
+  // T-042 criterion 1, at the pure reducer. "No plan" is weaker than "no
+  // docs/", so a genesis folder can arrive with a tree already in it.
+  it("T-042: a genesis switch CARRYING a tree applies it, and still clears the old project", () => {
+    const s = open();
+    expect(s.docs.model.tasks.length).toBe(1); // project A's board
+    const next = reducePickOutcome(s, {
+      kind: "genesis",
+      projectDir: "/tmp/sketchpad",
+      seq: 42,
+      probe: EMPTY_PROBE,
+      snapshot: payload(42, "/tmp/sketchpad", [
+        { path: "docs/ARCHITECTURE.md", content: "# the shape of the thing" },
+        { path: "docs/decisions/001-x.md", content: "# 001 - x" },
+      ]),
+    });
+    expect(next.phase).toBe("genesis");
+    expect(next.genesisDir).toBe("/tmp/sketchpad");
+    // The tree the folder actually holds, applied.
+    expect(next.docs.fileCount).toBe(2);
+    expect(next.docs.projectDir).toBe("/tmp/sketchpad");
+    expect([...next.docs.effective.keys()]).toEqual([
+      "docs/ARCHITECTURE.md",
+      "docs/decisions/001-x.md",
+    ]);
+    // ...and NOT project A's, whose board must not linger behind the
+    // interview and whose last-good content must never be fallen back to.
+    expect(next.docs.model.tasks).toEqual([]);
+    expect(next.docs.lastGood.has("docs/tasks/T-901-alpha.md")).toBe(false);
+    // The stale-drop watermark lands in exactly the same place as the
+    // tree-less branch: Rust stamps the snapshot with the switch's seq.
+    expect(next.docs.seq).toBe(42);
+    expect(reduceDocs(next.docs, payload(41, "/projects/a", projectAFiles()))).toBe(next.docs);
+  });
+
+  it("T-042: an older payload with no snapshot field at all still reads as 'no tree'", () => {
+    // The field is optional on the wire for the same reason T-018's
+    // skip fields are: a payload minted before it existed stays valid,
+    // and absent must read as "no tree", never as a claim about one.
+    const s = open();
+    const legacy = { kind: "genesis", projectDir: "/tmp/sketchpad", seq: 42, probe: EMPTY_PROBE };
+    const next = reducePickOutcome(s, legacy as Parameters<typeof reducePickOutcome>[1]);
+    expect(next.phase).toBe("genesis");
+    expect(next.docs.fileCount).toBe(0);
+    expect(next.docs.seq).toBe(42);
+  });
+});
+
+// T-042 criterion 3: the echo's guard, as a named predicate. It used to
+// be "the docs seq advanced", which a genesis switch ALWAYS satisfies
+// (it advances the watermark on purpose, and Rust's counter is global
+// and monotonic) — so the app echoed models nothing had generated.
+describe("outcomeCarriesSnapshot — provenance, not the seq", () => {
+  const snapshot = payload(9, "/projects/planned", projectAFiles());
+
+  it("is true for exactly the two outcomes a collection produced", () => {
+    expect(outcomeCarriesSnapshot({ kind: "picked", snapshot })).toBe(true);
+    expect(
+      outcomeCarriesSnapshot({
+        kind: "genesis",
+        projectDir: "/tmp/sketchpad",
+        seq: 42,
+        probe: EMPTY_PROBE,
+        snapshot,
+      }),
+    ).toBe(true);
+  });
+
+  it("is false for every outcome no collection produced", () => {
+    const cases: Parameters<typeof outcomeCarriesSnapshot>[0][] = [
+      { kind: "cancelled" },
+      { kind: "busy" },
+      { kind: "noDocs", path: "/tmp/elsewhere", probe: EMPTY_PROBE },
+      { kind: "error", path: "/tmp/gone", message: "that folder is no longer there" },
+      // The one that used to slip through, and its legacy spelling.
+      { kind: "genesis", projectDir: "/tmp/sketchpad", seq: 42, probe: EMPTY_PROBE, snapshot: null },
+      { kind: "genesis", projectDir: "/tmp/sketchpad", seq: 42, probe: EMPTY_PROBE },
+    ];
+    for (const outcome of cases) {
+      expect(outcomeCarriesSnapshot(outcome), `${outcome.kind} carries no tree`).toBe(false);
+    }
   });
 });
