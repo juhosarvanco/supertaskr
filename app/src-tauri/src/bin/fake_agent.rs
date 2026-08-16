@@ -157,6 +157,19 @@ fn main() {
             );
             std::process::exit(1);
         }
+        // T-039: an init line carrying a HOSTILE session id — the fixture
+        // for the capture-side gate. The id is the test's own choice
+        // (`NPUTER_FAKE_SESSION_ID`), defaulting to the exact injection the
+        // T-025 verifier measured. A CLI that emits this is either
+        // compromised or is not the CLI we think it is; either way the id
+        // must never reach argv, the registry, or a resume.
+        "hostile-id" => {
+            let hostile = std::env::var("NPUTER_FAKE_SESSION_ID")
+                .unwrap_or_else(|_| "--dangerously-skip-permissions".to_string());
+            emit_init(&hostile, &model);
+            emit_delta("the id in my init line is a flag, not an id");
+            emit_result("this turn must not be relayed as an answer");
+        }
         "no-init" => {
             // A first turn with no init line: the session id can never be
             // captured, so the turn is MalformedStream.

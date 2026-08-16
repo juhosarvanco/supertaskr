@@ -15,6 +15,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use super::adapter::{validate_session_id, SessionIdRejection};
 use super::kit::write_atomic;
 
 /// `.nputer/sessions.json`, relative to the project root.
@@ -51,6 +52,27 @@ pub struct SessionEntry {
     /// `dead` reserved for explicit abandonment (T-029's fresh-session
     /// choice) — never written by this task.
     pub status: String,
+}
+
+impl SessionEntry {
+    /// THE REGISTRY READ BOUNDARY (T-039 criterion 3).
+    ///
+    /// `native_session_id` is a value that came off a stream once and has
+    /// been sitting in a FILE ever since — `.nputer/sessions.json`, in the
+    /// user's own project directory, losable by charter and writable by
+    /// anything with disk access: a sync client, another tool, a
+    /// checked-in artifact, a corruption. T-029 resumes from this field,
+    /// so it is validated here, on the way OUT of the file, and not only
+    /// where it went in. Reading the raw field to spawn with is a bug;
+    /// `adapter::argv` refuses it a second time if anyone tries.
+    ///
+    /// `Ok(None)` = no id recorded (nothing to resume, not an error).
+    pub fn resume_id(&self) -> Result<Option<&str>, SessionIdRejection> {
+        match self.native_session_id.as_deref() {
+            None => Ok(None),
+            Some(id) => validate_session_id(id).map(|()| Some(id)),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -346,6 +368,71 @@ mod tests {
         file.sessions.push(entry("S2"));
         file.sessions.push(SessionEntry { id: "weird".into(), ..entry("S1") });
         assert_eq!(next_id(&file), "S8");
+    }
+
+    /// THE READ BOUNDARY (T-039 criterion 3). A registry file is a losable
+    /// runtime file in the user's project directory: it parses as JSON and
+    /// is still not trusted. An id that would parse as a FLAG is refused on
+    /// the way out — loudly, with the reason named — and the entry is
+    /// neither dropped nor rewritten (nothing here destroys a file the user
+    /// may want to look at).
+    #[test]
+    fn a_session_id_read_back_out_of_the_registry_is_validated() {
+        let t = TempTree::new("readgate");
+        let path = sessions_path(&t.0);
+        fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+        fs::write(
+            &path,
+            serde_json::json!({
+                "sessions": [{
+                    "id": "S1",
+                    "agent": "claude",
+                    "model": "claude-sonnet-5",
+                    // The T-025 verifier's exact injection, planted in a
+                    // file rather than in a stream — T-029's threat model.
+                    "native_session_id": "--dangerously-skip-permissions",
+                    "created": "2026-08-16T09:20:02Z",
+                    "turns": 3,
+                    "tasks": [],
+                    "roles": ["planner"],
+                    "status": "idle"
+                }]
+            })
+            .to_string(),
+        )
+        .expect("write hostile registry");
+
+        let file = load(&t.0);
+        let planner = find_planner(&file).expect("the entry is found, not silently dropped");
+        assert_eq!(
+            planner.resume_id(),
+            Err(super::super::adapter::SessionIdRejection::LeadingDash),
+            "a '-'-leading id must not survive the read boundary"
+        );
+        // The file itself is untouched: refusing to resume is not a licence
+        // to rewrite the user's runtime state.
+        assert!(path.exists());
+        assert!(fs::read_to_string(&path).expect("still there").contains("--dangerously"));
+
+        // Other file-borne shapes, each named.
+        for (id, expected) in [
+            ("../../../etc/passwd", SessionIdRejection::IllegalStart { ch: '.' }),
+            ("ok\0--dangerously-skip-permissions", SessionIdRejection::IllegalChar { at: 2, ch: '\0' }),
+            ("has space", SessionIdRejection::IllegalChar { at: 3, ch: ' ' }),
+            ("", SessionIdRejection::Empty),
+        ] {
+            let entry = SessionEntry { native_session_id: Some(id.into()), ..entry("S1") };
+            assert_eq!(entry.resume_id(), Err(expected), "registry-borne id {id:?}");
+        }
+
+        // …and the shapes that ARE ids come back untouched.
+        let good = SessionEntry {
+            native_session_id: Some("e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77".into()),
+            ..entry("S1")
+        };
+        assert_eq!(good.resume_id(), Ok(Some("e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77")));
+        let none = SessionEntry { native_session_id: None, ..entry("S1") };
+        assert_eq!(none.resume_id(), Ok(None), "no id recorded is not an error");
     }
 
     /// The corrupt-registry drill (§10 obligation 8): garbage in, renamed

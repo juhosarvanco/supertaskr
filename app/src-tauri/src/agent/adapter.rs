@@ -151,25 +151,180 @@ pub fn planner_adapter() -> &'static AgentAdapter {
     &CLAUDE_V1
 }
 
+// ---- T-039: the session-id gate ----------------------------------------
+//
+// The one value in a spawned argv that the bypass pin never saw was the
+// SUBSTITUTED session id. `-r, --resume [value]` takes an OPTIONAL
+// argument (verified in 2.1.226's own `--help`), so an id beginning with
+// `-` does not become the resume VALUE — it parses as a standalone FLAG,
+// and `--dangerously-skip-permissions` in that position turns a
+// six-pattern Bash allowlist into unrestricted tool use for that turn.
+// Everything below exists so that cannot happen from data.
+
+/// Longest session id the runner will accept. The observed real id is 36
+/// bytes; this is generous headroom with a hard stop, so an absurd id
+/// (a megabyte of hex) is refused rather than handed to `execve`.
+pub const SESSION_ID_MAX_LEN: usize = 128;
+
+/// Why a session id was refused. Typed and named — the id is NEVER
+/// coerced, truncated, or quietly reshaped into something acceptable: a
+/// value that is not an id is a fact about the stream or the file it came
+/// from, and the user is told which.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SessionIdRejection {
+    /// No id at all where one was required.
+    Empty,
+    TooLong { len: usize },
+    /// THE INJECTION CLASS THIS GATE CLOSES: an id that would parse as a
+    /// flag rather than as `--resume`'s value.
+    LeadingDash,
+    /// Not a letter or a digit in the first position (a leading `.`, `_`
+    /// or anything else): `..` must never be able to become a path
+    /// component, and no real id starts that way.
+    IllegalStart { ch: char },
+    /// A character outside the shape — a path separator, whitespace, a
+    /// NUL, a control character, a unicode lookalike, a shell
+    /// metacharacter.
+    IllegalChar { at: usize, ch: char },
+    /// Defense in depth over the ASSEMBLED argv: an element begins with
+    /// `-` without being one of the template's own literal flags. Nothing
+    /// today can reach this after the checks above pass; it is the
+    /// structural backstop for a future template that substitutes
+    /// somewhere new.
+    FlagInValuePosition { at: usize, arg: String },
+}
+
+impl std::fmt::Display for SessionIdRejection {
+    /// Rendered into the typed failure the webview shows, so every
+    /// borrowed character is escaped: a hostile id cannot smuggle a
+    /// terminal escape or a newline through the explanation of why it was
+    /// refused.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Empty => write!(f, "it is empty"),
+            Self::TooLong { len } => write!(
+                f,
+                "it is {len} bytes, past the {SESSION_ID_MAX_LEN}-byte bound"
+            ),
+            Self::LeadingDash => write!(
+                f,
+                "it begins with '-', which the CLI would parse as a FLAG rather than as the value of --resume"
+            ),
+            Self::IllegalStart { ch } => write!(
+                f,
+                "it starts with '{}' (U+{:04X}); an id starts with a letter or a digit",
+                ch.escape_debug(),
+                *ch as u32
+            ),
+            Self::IllegalChar { at, ch } => write!(
+                f,
+                "it carries '{}' (U+{:04X}) at byte {at}, outside the id shape [A-Za-z0-9._-]",
+                ch.escape_debug(),
+                *ch as u32
+            ),
+            Self::FlagInValuePosition { at, arg } => write!(
+                f,
+                "argv element {at} would be '{}', which begins with '-' without being one of the adapter's own flags",
+                arg.escape_debug()
+            ),
+        }
+    }
+}
+
+/// THE VALIDATION. One function, used by BOTH boundaries — the capture of
+/// an id off the CLI's init line and the read of one back out of
+/// `.nputer/sessions.json` — so the two can never drift apart.
+///
+/// **The pattern: `^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`.** Derived from
+/// what the CLI actually produces, not from a guess:
+///
+/// - the one real id ever observed here is a hyphenated lowercase-hex
+///   UUID (`e7954de6-…`, 36 bytes — T-025's real-CLI smoke, recorded in
+///   T-025-s2), and
+/// - 2.1.226's own `--help` documents the sibling flag as
+///   `--session-id <uuid>  … (must be a valid UUID)`, so the CLI's own
+///   name for the shape is "uuid".
+///
+/// A UUID-exact regex was considered and deliberately widened to this
+/// ASCII token: a CLI that changes its id format (a prefix, a ULID, a
+/// base58 blob) would otherwise make every recorded session unresumable
+/// on upgrade — a loud failure, but a needless one — and the fake CLI the
+/// whole suite runs against emits `fake-session-0001`. The security
+/// property does not depend on the widening: every character in the
+/// allowlist is INERT to an argument parser. No leading `-` (never a
+/// flag), no `=` (never `--flag=value`), no `/` or `\` (never a path), no
+/// whitespace, no NUL, no control character, nothing outside ASCII, and a
+/// hard length bound. A UUID is a strict subset of it.
+pub fn validate_session_id(id: &str) -> Result<(), SessionIdRejection> {
+    if id.is_empty() {
+        return Err(SessionIdRejection::Empty);
+    }
+    if id.len() > SESSION_ID_MAX_LEN {
+        return Err(SessionIdRejection::TooLong { len: id.len() });
+    }
+    let first = id.chars().next().expect("non-empty");
+    if first == '-' {
+        return Err(SessionIdRejection::LeadingDash);
+    }
+    if !first.is_ascii_alphanumeric() {
+        return Err(SessionIdRejection::IllegalStart { ch: first });
+    }
+    for (at, ch) in id.char_indices() {
+        if !(ch.is_ascii_alphanumeric() || ch == '-' || ch == '_' || ch == '.') {
+            return Err(SessionIdRejection::IllegalChar { at, ch });
+        }
+    }
+    Ok(())
+}
+
+/// THE ASSEMBLED-ARGV RULE, in production and not only in the pin: an
+/// element of a spawned argv may begin with `-` ONLY by being one of the
+/// template's own literal flags, byte for byte. Every substituted value
+/// therefore sits in a value position and cannot be read as a flag.
+///
+/// A real check returning a typed refusal rather than a `debug_assert!`:
+/// a test-only pin leaves the shipped binary unguarded, and a panic in
+/// the spawn path would be worse than the typed turn failure the runner
+/// already knows how to report.
+pub fn check_no_data_borne_flag(
+    template: &[&str],
+    assembled: &[String],
+) -> Result<(), SessionIdRejection> {
+    for (at, (slot, arg)) in template.iter().zip(assembled.iter()).enumerate() {
+        if arg.starts_with('-') && arg.as_str() != *slot {
+            return Err(SessionIdRejection::FlagInValuePosition { at, arg: arg.clone() });
+        }
+    }
+    Ok(())
+}
+
 impl AgentAdapter {
     /// The argv AFTER the binary for one turn. `resume` = `None` spawns a
     /// fresh session; `Some(id)` resumes, with the id substituted as ONE
     /// argv element (never interpolated into a string).
-    pub fn argv(&self, resume: Option<&str>) -> Vec<String> {
-        match resume {
-            None => self.spawn_args.iter().map(|s| (*s).to_string()).collect(),
-            Some(id) => self
-                .resume_args
-                .iter()
-                .map(|s| {
-                    if *s == SESSION_ID_SLOT {
-                        id.to_string()
-                    } else {
-                        (*s).to_string()
-                    }
-                })
-                .collect(),
-        }
+    ///
+    /// THE CHOKE POINT (T-039). Assembly is fallible: an id that fails
+    /// [`validate_session_id`] never becomes argv at all, whatever code
+    /// path produced it — the stream, the registry file, or a caller that
+    /// does not exist yet. There is no infallible way to assemble a resume
+    /// argv, by construction.
+    pub fn argv(&self, resume: Option<&str>) -> Result<Vec<String>, SessionIdRejection> {
+        let (template, id) = match resume {
+            None => (self.spawn_args, None),
+            Some(id) => {
+                validate_session_id(id)?;
+                (self.resume_args, Some(id))
+            }
+        };
+        let assembled: Vec<String> = template
+            .iter()
+            .map(|s| match id {
+                Some(id) if *s == SESSION_ID_SLOT => id.to_string(),
+                _ => (*s).to_string(),
+            })
+            .collect();
+        check_no_data_borne_flag(template, &assembled)?;
+        Ok(assembled)
     }
 
     /// argv for the one-shot version probe (§6).
@@ -215,26 +370,52 @@ pub fn is_executable_file(path: &Path) -> bool {
 mod tests {
     use super::*;
 
+    /// Ids that are legitimately shaped — the real observed form and the
+    /// fixtures — every one of which must assemble into a spawnable argv.
+    const REAL_IDS: &[&str] = &[
+        // The one real id ever observed here (T-025's smoke, T-025-s2).
+        "e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77",
+        // The fake CLI the whole suite runs against.
+        "fake-session-0001",
+        // Shapes a future CLI id could plausibly take, all inert.
+        "01JQ8ZC4M7Q9K2VYB3T5N6XW0R",
+        "sess_2f8a.9c",
+    ];
+
     /// Every argv string any adapter can ever produce, spawn and resume.
     fn all_argv_strings() -> Vec<String> {
         let mut out = Vec::new();
         for adapter in ADAPTERS {
             out.push(adapter.binary.to_string());
-            out.extend(adapter.argv(None));
-            out.extend(adapter.argv(Some("00000000-0000-0000-0000-000000000000")));
+            out.extend(adapter.argv(None).expect("the spawn template assembles"));
+            for id in REAL_IDS {
+                out.extend(adapter.argv(Some(id)).expect("a real id assembles"));
+            }
             out.extend(adapter.version_argv());
         }
         out
     }
 
-    /// THE BYPASS PIN (§2). The standing rule "never a bypass-permissions
-    /// flag" stops depending on verifier memory: it is red the moment any
-    /// adapter entry — this one or a future one — carries either CLI
-    /// spelling or the permission-mode string itself.
+    /// THE BYPASS PIN (§2, widened by T-039). The standing rule "never a
+    /// bypass-permissions flag" stops depending on verifier memory: it is
+    /// red the moment any adapter entry — this one or a future one —
+    /// carries either CLI spelling or the permission-mode string itself.
     ///
-    /// Drill (run at build time, output quoted in the implementation
+    /// **T-039 widens it from the TABLE to the FULLY ASSEMBLED argv.** The
+    /// T-025 verifier's finding was that this pin searched only static
+    /// template strings, so a forbidden flag arriving as DATA — the
+    /// captured session id substituted into the resume slot — walked past
+    /// it while it stayed green. The pin now also asserts the structural
+    /// property that makes the whole class impossible: in a spawned argv,
+    /// an element may begin with `-` ONLY by being one of the template's
+    /// own literal flags. Anything substituted sits in a value position and
+    /// cannot be read as a flag by a CLI whose `--resume [value]` takes an
+    /// OPTIONAL argument.
+    ///
+    /// Drills (run at build time, output quoted in the implementation
     /// notes): planting `--dangerously-skip-permissions` in
-    /// `CLAUDE_V1::spawn_args` turns this test red; reverting restores it.
+    /// `CLAUDE_V1::spawn_args` turns the search half red; removing the
+    /// validation from `AgentAdapter::argv` turns the assembled half red.
     #[test]
     fn no_adapter_argv_can_ever_bypass_permissions() {
         const FORBIDDEN: &[&str] = &[
@@ -242,6 +423,8 @@ mod tests {
             "--allow-dangerously-skip-permissions",
             "bypassPermissions",
         ];
+
+        // --- half one, unchanged: the three-spelling table search --------
         for arg in all_argv_strings() {
             let lowered = arg.to_ascii_lowercase();
             for needle in FORBIDDEN {
@@ -254,13 +437,187 @@ mod tests {
                 );
             }
         }
+
+        // --- half two (T-039): the FULLY ASSEMBLED argv ------------------
+        // Template plus every substituted value. An element may begin with
+        // `-` only by BEING one of the template's own flags; a value
+        // position that begins with `-` is a flag arriving as data.
+        for adapter in ADAPTERS {
+            for (template, assembled) in [
+                (adapter.spawn_args, adapter.argv(None).expect("spawn assembles")),
+            ]
+            .into_iter()
+            .chain(REAL_IDS.iter().map(|id| {
+                (adapter.resume_args, adapter.argv(Some(id)).expect("a real id assembles"))
+            })) {
+                assert_eq!(template.len(), assembled.len(), "one template slot, one argv element");
+                for (at, (slot, arg)) in template.iter().zip(assembled.iter()).enumerate() {
+                    if arg.starts_with('-') {
+                        assert_eq!(
+                            arg, slot,
+                            "ADAPTER VALUE-POSITION VIOLATED (T-039): assembled argv element {at} \
+                             is {arg:?}, which begins with '-' without being the template's own \
+                             flag {slot:?}. `--resume [value]` takes an OPTIONAL argument, so a \
+                             '-'-leading value parses as a STANDALONE FLAG - which is how \
+                             --dangerously-skip-permissions reached a spawned argv through DATA \
+                             while the search above stayed green (T-025-s6)."
+                        );
+                    }
+                }
+            }
+        }
+
+        // --- half three (T-039): the verifier's exact injection ----------
+        // The measured attack, as a regression pin: these are REFUSED at
+        // assembly, so there is no argv to search. Without the validation
+        // in `AgentAdapter::argv` this loop panics on the first unwrap and
+        // half two reds on the substituted element.
+        for injection in [
+            "--dangerously-skip-permissions",
+            "--permission-mode=bypassPermissions",
+            "--allow-dangerously-skip-permissions",
+            "-r",
+        ] {
+            assert_eq!(
+                CLAUDE_V1.argv(Some(injection)),
+                Err(SessionIdRejection::LeadingDash),
+                "a session id beginning with '-' must never assemble into argv: {injection:?}"
+            );
+        }
+    }
+
+    /// THE GATE'S TABLE: what an id may be, and everything it may not.
+    /// The accepted row is the shape the CLI actually produces; every
+    /// rejected row is a class the criterion names.
+    #[test]
+    fn the_session_id_gate_is_an_allowlist_not_a_denylist() {
+        // Accepted: the observed real id, the fixtures, and shapes a
+        // future CLI could plausibly emit.
+        for id in REAL_IDS {
+            assert_eq!(validate_session_id(id), Ok(()), "must accept a real id: {id:?}");
+            assert!(CLAUDE_V1.argv(Some(id)).is_ok());
+        }
+        for id in ["a", "A1", "0", &"a".repeat(SESSION_ID_MAX_LEN)] {
+            assert_eq!(validate_session_id(id), Ok(()), "inside the shape: {id:?}");
+        }
+
+        use SessionIdRejection::*;
+        let cases: &[(&str, SessionIdRejection)] = &[
+            // The injection class, in every spelling that reaches argv.
+            ("--dangerously-skip-permissions", LeadingDash),
+            ("--permission-mode=bypassPermissions", LeadingDash),
+            ("-r", LeadingDash),
+            ("-", LeadingDash),
+            // Path separators: an id must never be able to act as a path.
+            ("../../etc/passwd", IllegalStart { ch: '.' }),
+            ("a/../b", IllegalChar { at: 1, ch: '/' }),
+            ("a\\b", IllegalChar { at: 1, ch: '\\' }),
+            // Whitespace of every kind — a space would split nothing (argv
+            // is an array, not a line) but it is outside the shape, and an
+            // id that carries one is not an id.
+            ("has space", IllegalChar { at: 3, ch: ' ' }),
+            ("tab\there", IllegalChar { at: 3, ch: '\t' }),
+            ("line\nbreak", IllegalChar { at: 4, ch: '\n' }),
+            // NUL: `execve` would truncate at it, so what the CLI parses
+            // would not be what we checked.
+            ("abc\0--dangerously-skip-permissions", IllegalChar { at: 3, ch: '\0' }),
+            // Control characters, including a terminal escape.
+            ("abc\u{1b}[2Kdef", IllegalChar { at: 3, ch: '\u{1b}' }),
+            ("abc\u{7f}", IllegalChar { at: 3, ch: '\u{7f}' }),
+            // Unicode lookalikes: a Cyrillic 'е' and a full-width hyphen
+            // are not ASCII, whatever they look like in a font.
+            ("\u{435}7954de6", IllegalStart { ch: '\u{435}' }),
+            ("\u{ff0d}-abc", IllegalStart { ch: '\u{ff0d}' }),
+            ("e7954de6\u{2010}2ac1", IllegalChar { at: 8, ch: '\u{2010}' }),
+            // Shell metacharacters (inert without a shell, still not an id).
+            ("x; rm -rf ~ #`whoami`$(id)", IllegalChar { at: 1, ch: ';' }),
+            ("a=b", IllegalChar { at: 1, ch: '=' }),
+            // The empty string, and something absurdly long.
+            ("", Empty),
+            (".hidden", IllegalStart { ch: '.' }),
+            ("_leading", IllegalStart { ch: '_' }),
+        ];
+        for (id, expected) in cases {
+            assert_eq!(
+                validate_session_id(id),
+                Err(expected.clone()),
+                "must reject {id:?} as {expected:?}"
+            );
+            assert_eq!(
+                CLAUDE_V1.argv(Some(id)),
+                Err(expected.clone()),
+                "…and it must never assemble into argv: {id:?}"
+            );
+        }
+        // Absurdly long, checked by length rather than by a literal.
+        let absurd = "a".repeat(SESSION_ID_MAX_LEN + 1);
+        assert_eq!(
+            validate_session_id(&absurd),
+            Err(TooLong { len: SESSION_ID_MAX_LEN + 1 })
+        );
+        assert_eq!(validate_session_id(&"b".repeat(1024 * 1024)), Err(TooLong { len: 1024 * 1024 }));
+    }
+
+    /// The rejection explains itself in words a human can act on, and it
+    /// ESCAPES what it quotes: the id is hostile data, so the explanation
+    /// of why it was refused must not become a second injection (a
+    /// terminal escape in a log, a newline forging a line).
+    #[test]
+    fn a_rejection_names_itself_without_relaying_raw_bytes() {
+        let why = validate_session_id("--dangerously-skip-permissions").unwrap_err().to_string();
+        assert!(why.contains("begins with '-'"), "{why}");
+        assert!(why.contains("--resume"), "{why}");
+        assert!(!why.contains("dangerously"), "the refused id is not echoed back: {why}");
+
+        let why = validate_session_id("abc\u{1b}[2K").unwrap_err().to_string();
+        assert!(why.contains("U+001B"), "{why}");
+        assert!(!why.contains('\u{1b}'), "a terminal escape must never survive: {why}");
+
+        let why = validate_session_id("a\nb").unwrap_err().to_string();
+        assert!(!why.contains('\n'), "no forged log line: {why}");
+        assert_eq!(validate_session_id("").unwrap_err().to_string(), "it is empty");
+        assert!(validate_session_id(&"a".repeat(200)).unwrap_err().to_string().contains("200 bytes"));
+    }
+
+    /// The assembled-argv rule is a REAL check in the spawn path, not only
+    /// an assertion in a test: fed a template it has never seen, it still
+    /// refuses a substituted flag.
+    #[test]
+    fn the_assembled_argv_rule_refuses_a_flag_in_any_value_position() {
+        let template = &["--resume", SESSION_ID_SLOT, "--verbose"];
+        let good = vec!["--resume".to_string(), "abc".to_string(), "--verbose".to_string()];
+        assert_eq!(check_no_data_borne_flag(template, &good), Ok(()));
+
+        let bad = vec![
+            "--resume".to_string(),
+            "--dangerously-skip-permissions".to_string(),
+            "--verbose".to_string(),
+        ];
+        assert_eq!(
+            check_no_data_borne_flag(template, &bad),
+            Err(SessionIdRejection::FlagInValuePosition {
+                at: 1,
+                arg: "--dangerously-skip-permissions".into(),
+            })
+        );
+        // A flag position whose element was REPLACED is caught too, not
+        // just the slot: the rule is "only the template's own flags".
+        let swapped = vec![
+            "--dangerously-skip-permissions".to_string(),
+            "abc".to_string(),
+            "--verbose".to_string(),
+        ];
+        assert!(matches!(
+            check_no_data_borne_flag(template, &swapped),
+            Err(SessionIdRejection::FlagInValuePosition { at: 0, .. })
+        ));
     }
 
     /// The permission mode we DO pass is the scoped one, named exactly
     /// once, and it is an argv element of its own (not glued to the flag).
     #[test]
     fn permission_mode_is_accept_edits_and_scoped_to_cwd() {
-        let argv = CLAUDE_V1.argv(None);
+        let argv = CLAUDE_V1.argv(None).expect("the spawn template assembles");
         let idx = argv
             .iter()
             .position(|a| a == "--permission-mode")
@@ -282,7 +639,7 @@ mod tests {
     /// patterns, no wildcards wider than a verb, and web tools denied.
     #[test]
     fn allowed_tools_are_exactly_the_kits_imperative_surface() {
-        let argv = CLAUDE_V1.argv(None);
+        let argv = CLAUDE_V1.argv(None).expect("the spawn template assembles");
         let start = argv.iter().position(|a| a == "--allowedTools").expect("allowlist present");
         let end = argv.iter().position(|a| a == "--disallowedTools").expect("denylist present");
         let allowed: Vec<&str> = argv[start + 1..end].iter().map(String::as_str).collect();
@@ -318,12 +675,12 @@ mod tests {
     /// spawn template carries no `--resume` at all.
     #[test]
     fn resume_substitutes_one_argv_element_and_spawn_carries_none() {
-        let spawn = CLAUDE_V1.argv(None);
+        let spawn = CLAUDE_V1.argv(None).expect("the spawn template assembles");
         assert!(!spawn.iter().any(|a| a == "--resume"));
         assert!(!spawn.iter().any(|a| a.contains(SESSION_ID_SLOT)));
 
         let id = "1f2e3d4c-0000-4444-8888-aaaabbbbcccc";
-        let resume = CLAUDE_V1.argv(Some(id));
+        let resume = CLAUDE_V1.argv(Some(id)).expect("a real id assembles");
         let idx = resume.iter().position(|a| a == "--resume").expect("resume flag");
         assert_eq!(resume[idx + 1], id, "the id is its own argv element");
         assert!(
@@ -335,14 +692,26 @@ mod tests {
         assert_eq!(&resume[..spawn.len()], &spawn[..]);
     }
 
-    /// A hostile session id cannot become anything but one argv element —
-    /// there is no shell, so quoting/metacharacters are inert data.
+    /// A hostile session id never becomes an argv element at all.
+    ///
+    /// T-025 proved this id stayed ONE INERT ELEMENT (there is no shell,
+    /// so quoting and metacharacters are data) — true, and not enough:
+    /// T-025-s6 showed the element could BE a flag. Since T-039 the id is
+    /// refused before assembly, so the older property is now vacuous for
+    /// this input and is asserted below for a well-shaped id instead.
     #[test]
-    fn a_hostile_session_id_stays_one_inert_argv_element() {
+    fn a_hostile_session_id_never_reaches_argv_at_all() {
         let evil = "x; rm -rf ~ #`whoami`$(id)";
-        let argv = CLAUDE_V1.argv(Some(evil));
-        assert_eq!(argv.iter().filter(|a| a.as_str() == evil).count(), 1);
-        assert_eq!(argv.len(), CLAUDE_V1.argv(None).len() + 2);
+        assert_eq!(
+            CLAUDE_V1.argv(Some(evil)),
+            Err(SessionIdRejection::IllegalChar { at: 1, ch: ';' })
+        );
+
+        // A WELL-SHAPED id still rides as exactly one element, unchanged.
+        let ok = "e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77";
+        let argv = CLAUDE_V1.argv(Some(ok)).expect("a real id assembles");
+        assert_eq!(argv.iter().filter(|a| a.as_str() == ok).count(), 1);
+        assert_eq!(argv.len(), CLAUDE_V1.argv(None).expect("spawn").len() + 2);
     }
 
     #[test]
