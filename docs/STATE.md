@@ -382,6 +382,26 @@ INTEGRATOR JUDGMENT CALLS, recorded.
   map, its eight proof obligations, and the verifier's independent
   re-derivations.
 
+## Overnight grants — SECOND autonomous run (human, 2026-08-17 night)
+Given via question card while awake, before sleeping. Standing until
+revoked:
+1. **MILESTONE 3 TO COMPLETION.** Review + apply T-027's planning pass,
+   dispatch its build, then T-028 and T-029 as they unblock —
+   INCLUDING sequencing T-042 first if the planning pass concludes it
+   must land before T-027 (its criterion 4 decides where the docs
+   change log lives, and T-027 is the second consumer).
+2. **THREE MILESTONE-4 LANES IN PARALLEL**, all disjoint from T-027's
+   app-interview + app-shell: **T-030** (parser strictness, lib-parser),
+   **T-045** (the gates cover the rules, tools/e2e), **T-034** (map
+   tasks lens, app-map).
+3. **THIRD TRIAGE APPLIED** — read-only analyst drafts, architect
+   reviews and applies. Docs-only, reversible, one diff to read.
+   Tasks NEWLY CREATED by triage still do NOT dispatch without the
+   human.
+UNCHANGED by this grant: a second REJECTED on any task parks that lane
+for the human; @human judgments are never self-answered; no screen
+control beyond the ruled boot check; port 1420 is the human's.
+
 ## In progress / broken right now
 **NOTHING IS `building`.** The parser reports zero.
 
