@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [lib-parser]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 Absorbs: T-008-s3, T-011-s4 (the parse-time-warning half; the glob.ts
@@ -458,3 +458,256 @@ files and the app-side dogfood counts should not move at all.
   union extension is safe exactly as it was at T-019.
 
 ## Verdicts
+
+2026-08-17 — claude-opus-5 @fresh, verifier — same-model review:
+APPROVED. All ten criteria re-derived independently against a fresh
+`npm run build` of this branch, with the branch-point parser (`git
+archive 6ed97cf lib/parser`, built separately) as the before-image.
+Nothing in the notes was taken on trust; the two places the notes
+CORRECT the card are both right, and one of them matters more than the
+card says.
+
+**The last criterion first, since it constrains all the others.** The
+live tree parses at ZERO issues through the branch parser: 84 tasks · 6
+features · 11 components at the builder's HEAD, 86 · 6 · 11 after this
+verdict's two new suggestion files. Against a tree this branch has
+never seen — main@8dadb59 extracted with `git archive` and parsed
+through the BRANCH parser — 85 tasks · 6 features · 11 components ·
+ISSUES 0, re-derived exactly as claimed. I checked what could have
+fired rather than only that nothing did: `docs/ROADMAP.md` contains no
+`<!--` at all (branch and main), no component `paths` pattern begins
+with `/`, no basename fails to encode its declared id, no two component
+ids share a numeric slot, no blocked_by cycle exists, and every live
+task id is three digits wide with every feature id two — so the alias
+rule has nothing to bite. The suite's own smoke test re-proves this on
+every run.
+
+**Comment stripping (C1) — attacked, and the card UNDERSTATES the bug
+it fixed.** Re-derived against the branch-point parser: a column-0 `##`
+heading inside a comment ENDED the backbone, so
+
+    ## Backbone
+    - F-01: Real — first
+    <!--
+    ## Milestones
+    -->
+    - F-02: Real — second
+
+parsed to `[F-01]` with ZERO issues on the old parser and `[F-01@4,
+F-02@9]` on the new one. A real, shipped feature vanished from the
+board and nothing said so. That is strictly worse than the phantom the
+card describes — a phantom column is visible, a dropped column is not —
+and it is correctly in the record. The T-023-s1 trap itself reproduces:
+the real scaffolded `method/docs-templates/ROADMAP.md` with its example
+rows de-indented to column 0 yields a phantom `F-01` on the old parser
+and nothing on the new.
+
+Fourteen hostile shapes against `stripHtmlComments`; what survived:
+nested openers (`<!-- a <!-- b --> c -->`) leave `c` live and the
+trailing `-->` literal, which is exactly what CommonMark and any
+renderer do — comments do not nest, so the parser agrees with the page;
+a comment mid-bullet blanks to spaces and leaves name/description
+intact (a comment swallowing the em dash empties the description, which
+is the author commenting out their own delimiter, and is pre-existing
+behaviour for a dashless row); CRLF keeps its numbers; a 20-line span
+puts the next bullet at line 24, counted by hand; a lone `-->` with no
+opener is untouched; a commented `## Backbone` correctly leaves no
+backbone and says so.
+
+RULING on the unterminated opener, which the notes correctly flag as
+the one behaviour no criterion demanded: it is RIGHT, and for a better
+reason than the notes give. CommonMark's HTML-block rule runs an
+unclosed `<!--` to the end of the document, so blanking to EOF is not
+the parser inventing a reading — it is the parser agreeing with the
+renderer. Doing it silently would be the violation; the roadmap-error
+names the opener's line, and line numbers stay truthful because only
+non-newline bytes are blanked. Approved as implemented.
+
+**Cycles (C2).** Every shape the dispatch named, reproduced through
+`parseProjectFromFiles`: self-reference → one issue, one member;
+2-ring, 3-ring → one issue naming members in model order; figure-eight
+(T-901↔T-902 and T-901↔T-903) → ONE issue naming all three, not two
+overlapping reports; two independent cycles → two issues ordered by
+first member; a cycle through a task that does not exist → a
+`dangling-reference` and NO cycle; a ring whose member sits under
+`docs/tasks/rejected/` → `dangling-reference` only, consistent with the
+T-016 exclusion; a `status: parked` member participates normally; a
+self-reference listed twice in one `blocked_by` still reports once. Per-
+task findings always precede cycles, so the pinned order is intact.
+
+Scale: the 5000-member ring passes in 15ms. I pushed past the pin — a
+50000-member ring completes in 224ms and a 50000-deep ACYCLIC chain (the
+real stack-depth test, since it forces maximum DFS depth) in 92ms, both
+without overflow. Dense graphs at 20 edges/node run 1ms/1ms/4ms for
+N=200/400/800: linear in edges, not quadratic.
+
+Correctness, not just liveness: I differential-fuzzed the iterative
+Tarjan against a brute-force reference (a node is in a cycle iff it
+reaches itself; SCCs by mutual reachability) over 3000 random graphs
+containing 4069 reference cycles. ZERO mismatches. The SCC-not-simple-
+rings choice is deliberate, argued in the notes, and pinned; upheld.
+
+**The model/policy pair (C6/C7) — the notes' second correction is
+exact.** Parsing the live tree with both parsers and diffing every
+`ModelSession` field: NINE changed record fields, `{builtBy: 6,
+verifiedBy: 3}`, of which EIGHT are policy flips — T-002 and T-005 each
+carry a wrong stamp in BOTH `built_by` and `verified_by`, which is why
+the card's "six tasks" undercounts. `raw` is byte-unchanged on all
+nine, and on every distinct stamp in the tree. `features` and
+`components` are byte-identical before/after, and there are ZERO diffs
+in any non-ModelSession field of any task.
+
+Badges derived through `app/src/lib/board-model.ts`'s `shortModelName`
+(transcribed; that file is untouched by this branch): T-020 and T-024
+`built_by` go 50 chars → `opus`, T-001 `verified_by` 27 chars → `+`.
+The longest badge anywhere in the live tree after this change is FIVE
+characters. `codex/gpt-5.2 @S3` is byte-unchanged, as are
+`codex/gpt-5.2`, `codex`, `codex@fresh`, `human`, `claude-opus-5`,
+`claude-opus-5 @fresh`, `claude-opus-5 @resume` and
+`claude-fable-5 @fresh`.
+
+**Remaining rules (C3/C4/C5).** `T-banana.md` declaring `id: T-901` is
+flagged and keeps its id; `T-901.bak.md`, `T-9x1-slug.md`, `T-.md` too;
+a well-formed name is silent and a wrong id stays a single
+`id-mismatch`, never both. Id-less files stay free-form — and the live
+tree has no id-less task file at all, so that narrowness is protecting
+a shape TASK-FORMAT.md permits rather than one the tree depends on.
+
+The numeric-alias text normalization is not decoration: `Number()`
+genuinely fuses `9007199254740993` and `9007199254740992` (verified
+true), and the parser correctly does NOT alias them while still
+aliasing `C-09007199254740993` with `C-9007199254740993`. One issue per
+slot across three spellings, two independent slots → two issues, and an
+exact string duplicate stays `duplicate-id`'s business.
+
+`/dist` and `!/dist` warn with the derived idiom, `/dist/` too;
+`/app/src/**`, `/a/b`, `/dist/**`, `/`, `dist`, `./dist` are all
+silent; the pattern is preserved verbatim on the record in every case.
+RULING on reusing `invalid-field` rather than adding a kind: ACCEPTED.
+The criterion says "warn", the issue carries `field: 'paths'` on the
+parser's existing per-field channel, `paths: []` already rides that
+kind, the record and the pattern survive, and the app consumes issues
+generically. A distinct kind would read better; this is inside the
+criterion's latitude and the builder flagged it rather than burying it.
+
+**The flipped pin — RULED LEGITIMATE, and it strengthens.** Found at
+`lib/parser/test/validate.test.ts`: the old
+`it('skips id-less suggestions and filenames that encode no id')`
+asserted two things, one of which the criterion inverts. The
+replacement keeps both outer assertions (`issues` empty, 2 tasks) and
+swaps the now-illegal `T-banana.md` + `id: T-901` input for
+`T-banana-idea.md` with NO declared id — a harder input for the new
+rule, since it is the shape that must stay silent. The flipped
+assertion did not vanish: it moved into a dated describe block that
+pins it positively, plus three more rejected basenames, the
+well-formed-is-silent case, the not-both case, and the disk layer.
+Coverage strictly increases.
+
+**Execution sweep, re-derived independently.** I extracted the added
+`it(` declarations from `git diff -U0 6ed97cf..HEAD -- lib/parser/test`
+by walking hunk headers (39: component 8, model-session 8, roadmap 9,
+validate 14 — the 14th being the flipped pin, which reconciles the 39
+declarations to the 38 net-new tests), verified every target line is a
+single-line `it(...) => {` opener, and injected
+`throw new Error('T-030 VERIFIER POISON')` as the first statement of
+each. Result: **197 total, 39 failed, 158 passed** — 39 poisoned, 39
+red, zero vacuous. All 39 failures cite POISON; grepping the verbose
+run for `AssertionError` returns nothing, so zero collateral. Restored
+and confirmed byte-identical by comparing `git hash-object` against
+`git rev-parse HEAD:<path>` for all ten test files, with
+`git status --porcelain` empty.
+
+**Suites, my own actuals in this worktree.** lib/parser `npm run build`
+clean · `npx tsc --noEmit` clean · `npx vitest run` **197/197** (10
+files). app `npm run build` clean · `npm test` **507/507** (30 files),
+with the parser linked live through the `file:../lib/parser` symlink to
+the dist I rebuilt — so the app suite genuinely ran against the new
+rules, and the builder's prediction of NO fixture movement holds. The
+rendering change no test pins is real and correctly identified: T-020
+and T-024 card badges now read `opus` and T-001's verified-by badge
+reads `+`, and nothing asserts either. cargo **217 passed / 0 failed /
+3 ignored**. tools/e2e `lint:tokens` clean (38 files) and **36/36
+chromium** headless on scratch port **14577**, which I chose myself —
+14520 is T-045's tonight and 14531 was the builder's. Port 1420 has a
+live listener; it was never bound, probed or contacted.
+
+**Fence.** `git diff --name-only 6ed97cf..HEAD` is 14 files: nine under
+`lib/parser/`, `docs/CONVENTIONS.md`, and the four T-030 record files.
+ZERO under `app/`, `tools/`, `method/`, `docs/architecture/`,
+`app/src-tauri/`, and zero lockfiles. The CONVENTIONS edit is required
+by criterion 1 and is ACCURATE: I confirmed the claim it makes is
+bounded to the one template that is actually parsed. `parseRoadmap` is
+applied to `docs/ROADMAP.md` alone, and of the six things under
+`method/docs-templates/` only ROADMAP.md is a model input at all — the
+rest are snapshot files no line scanner reads — so "the examples no
+longer have to be indented to stay invisible" does not over-reach.
+
+**The three suggestions, ruled.**
+
+- **T-030-s3 — REPRODUCED, and the urgent one.** `F-1` beside `F-01`
+  and `T-01` beside `T-001` both parse with ZERO issues. The sharp
+  half is worse than the title suggests and I confirmed the mechanism:
+  with only `T-001` present, `blocked_by: [T-01]` is a LOUD
+  `dangling-reference`; add an unpadded `T-01` and the SAME edge
+  silently re-points to the new task, no issue raised. So introducing a
+  hand-numbered sibling silently rewrites an existing dependency. That
+  is a wrong answer, not a missing warning, in the graph T-034's tasks
+  lens is about to render as dependency waves — a wave computation
+  would be confidently wrong with nothing on the board to say so.
+  Not live today (all 84 live task ids are three digits, all 6 feature
+  ids two — verified), and correctly out of scope here: criterion 4
+  scopes aliasing to the component set and that is precisely what
+  landed. URGENCY: promote before T-034's waves ship or before genesis
+  writes a backbone from an interview, whichever comes first. The fix
+  is cheap — the slot-grouping logic already exists and wants lifting
+  to three call sites.
+- **T-030-s1 — verified.** `docs/tasks/T-001-app-shell.md`
+  `verified_by: "claude-fable-5 @fresh (2 passes) + @human (visual)"`
+  yields `model: '+'`; measured badge 27 chars → 1. Pinned in the suite
+  as a wart rather than papered over, four arms costed, and arm (b) is
+  correctly rejected on measurement rather than taste. Right call to
+  defer: the grammar arm is the honest fix and the triage ruled it out.
+- **T-030-s2 — verified, and I found one more instance.** A fenced
+  `- F-99:` row parses as a real feature with zero issues; a fenced
+  malformed row still emits `roadmap-error`; tilde fences behave the
+  same. Beyond the file's claims, a fenced `## Milestones` also ENDS
+  the backbone, so fence blindness drops real features exactly the way
+  comment blindness did. The shared inert-span pass is the right shape.
+
+**Two new suggestions filed**, both from attacks that survived:
+
+- **T-030-s4** — `parseRoadmap` and `splitSections` now DISAGREE about
+  what content is (before this task they agreed, both blind). A
+  commented-out `## Verdicts` in a task body still fabricates a section
+  and truncates the previous one. More usefully, s4 records the trap
+  waiting for s2's shared pass: this very card contains six `<!--`
+  openers, all inside inline code, the last unterminated as raw bytes
+  (body line 252, the audit sentence about ROADMAP.md), so applying the
+  roadmap strip to task bodies drops this card's own `## Verdicts`
+  section — measured, four sections becoming three. The inert-span pass
+  must treat inline code as inert and must scan spans before comment
+  openers; s2's shape names neither.
+- **T-030-s5** — `<!-->` and `<!--->` are complete empty comments in
+  CommonMark but read here as unterminated openers. Loud, so the
+  contract holds, and the only renderer divergence I could construct.
+
+**What only narrowly escapes, stated plainly.** One rule is a plausible
+edit away from flagging real content: any `<!--` in `docs/ROADMAP.md`
+that is not closed — inside a fence, indented as quoted evidence, or in
+inline code — blanks the rest of the file and drops every feature after
+it. Reproduced in all three positions. It escapes today only because
+ROADMAP.md contains no `<!--` at all, and the house style for quoted
+evidence (indentation) does NOT protect against it. The moment anyone
+documents the comment convention inside ROADMAP.md the way
+CONVENTIONS.md now does, the roadmap loses its tail — loudly, but it
+loses it. That is s4/s5 territory and the reason both are filed rather
+than left as verdict prose.
+
+Not run, deliberately: the T-046 boot gate (correctly not triggered —
+no `app/src-tauri/**`, no `app/src/**`, neither manifest) and the boot-
+check script, per dispatch. `docs/architecture/graph.json` is stale at
+merge as the notes state; the predicted delta (no new file nodes, three
+new unexported symbols, three new call edges, no registry change) is
+consistent with a diff that adds no files under `lib/parser/`.
+
+Status left `building` for the integrator.
