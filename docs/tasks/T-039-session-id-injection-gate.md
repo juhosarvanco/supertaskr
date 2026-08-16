@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [app-agent]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 Absorbs: T-025-s6. **This is a GATE on T-029, not a backlog item** —
@@ -379,3 +379,289 @@ graph stays at 88 files. Do not regenerate.
   when the table grows.
 
 ## Verdicts
+
+2026-08-16 — claude-opus-5 @fresh (verifier, same-model review):
+**APPROVED.** Five criteria met. The vulnerability was reproduced
+first-hand against the PRE-FIX code — both halves, unit and end-to-end
+through a real spawned child — before the fix was read as a fix; the
+allowlist was attacked by exhaustive brute force rather than by reading
+its table; both boundaries were re-proved with the verifier's own hostile
+registry and the verifier's own ids; every new test was poisoned red by
+the verifier. One new suggestion filed (s4, the backstop's unchecked
+slice lengths). Nothing found rises to a criterion failure.
+
+**Merge is still clean.** Branch point re-derived: `git merge-base
+t039-injection-gate main` = `7f5025b`, and main has since moved twice
+(`97845cf` T-040 `default-run`, `2536776` the second triage, which
+removed the absorbed `T-025-s6` file). `git merge-tree` over
+`7f5025b..HEAD` vs `7f5025b..main` produces **zero conflict markers**;
+the two ranges are disjoint.
+
+**The CLI facts, read first-hand, not inherited.** `claude 2.1.226`.
+`claude --help` line 175: `-r, --resume [value]` — SQUARE brackets, an
+OPTIONAL argument, which is the entire mechanism of the bug. Line 189:
+`--session-id <uuid>  Use a specific session ID for the conversation
+(must be a valid UUID)` — the CLI's own name for the id shape, verbatim,
+so the pattern's derivation is sourced and not guessed. `--help` and
+`--version` only; the `#[ignore]`d smoke was never run and no model was
+called.
+
+**Criteria 1+2 — the vulnerability, reproduced by the verifier on the
+pre-fix code.** Pre-fix `adapter.rs`/`runner.rs`/`sessions.rs`/`mod.rs`/
+`tests/agent_runner.rs` were checked out from `7f5025b` and driven by a
+scratch probe of the verifier's own writing. Unit half:
+
+    [vprobe-a] argv tail for "--dangerously-skip-permissions": ["WebSearch", "--resume", "--dangerously-skip-permissions"]
+    [vprobe-a] argv tail for "--add-dir=/": ["WebSearch", "--resume", "--add-dir=/"]
+
+…and on the same tree `cargo test --lib
+no_adapter_argv_can_ever_bypass_permissions` → **ok**. The pin was GREEN
+while the flag was in the argv. Both halves of T-025-s6 confirmed.
+End-to-end through DATA, a real spawned child recording its own argv:
+
+    [vprobe-b] captured native_session_id: Some("--dangerously-skip-permissions")
+    [vprobe-b] registry native_session_id: Some("--dangerously-skip-permissions")
+    [vprobe-b] registry file carries 'dangerously': true
+    [vprobe-b] send_turn -> Accepted { turn: 2 }
+    [vprobe-b] TURN 2 CHILD ARGV TAIL: ["WebSearch", "--resume", "--dangerously-skip-permissions"]
+
+The same probes against HEAD:
+
+    [vprobe-a2] argv("--dangerously-skip-permissions") -> Err(LeadingDash)
+    [vprobe-a2] argv("--add-dir=/") -> Err(LeadingDash)
+    [vprobe-a2] argv(real uuid) tail: ["WebSearch", "--resume", "e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77"]
+    [vprobe-b2] turn 1 typed failure: {"kind":"malformedStream","why":"the CLI's init line carried an unusable session id: it begins with '-', which the CLI would parse as a FLAG rather than as the value of --resume"}
+    [vprobe-b2] captured native_session_id: None
+    [vprobe-b2] registry native_session_id: None
+    [vprobe-b2] registry file carries 'dangerously': false
+    [vprobe-b2] send_turn -> NoSession
+    [vprobe-b2] turn-2 child dump exists: false
+
+`runner.rs:949` is the ONLY assignment to `out.native_session_id` in the
+tree, and it sits immediately after the validation break — so there is no
+second capture path to gate.
+
+**THE STRONGEST ATTACK ON THE PATTERN — exhaustive, and it holds.** The
+table in the notes is a list of strings; a list of strings cannot prove
+an allowlist. The verifier swept **every codepoint from U+0000 to
+U+2FFFF** (196,608 values) through `validate_session_id` in both
+positions and compared the accept sets to `[A-Za-z0-9]` and
+`[A-Za-z0-9._-]` by equality, not by sampling:
+
+    [vprobe-c] accepted at position 0: 62 chars   (== '0'..='9','A'..='Z','a'..='z', asserted equal)
+    [vprobe-c] accepted in body: 65 chars         (== the above + '-', '.', '_', asserted equal)
+
+Both `assert_eq!`s passed. **It is a genuine allowlist**: no homoglyph,
+no full-width form, no combining mark, no control character, no
+non-ASCII codepoint anywhere in that range is accepted in either
+position. The Cyrillic and full-width claims are true as a consequence of
+the rule, not as rows in a table. Length is exact: 128 `Ok`, 129
+`TooLong { len: 129 }`, 0 `Empty`; the length check runs on bytes BEFORE
+the char loop, so a 1 MiB id costs one comparison.
+
+Then, hunting for an ACCEPTED string that is still dangerous: all
+261,950 accepted three-character ids were generated and each asserted to
+be pure ASCII, to not begin with `-`, to carry no whitespace, control
+char, `=`, `/`, `\`, `@`, `$` or `:`, to never equal `.` or `..`, and to
+assemble into exactly one argv element whose last position does not begin
+with `-`. All passed. The `.`/`..` composition attack was measured rather
+than argued: `a..b`, `a..`, `a.` are indeed accepted, and
+`Path::new("/base/x").join(…)` renders every one of them as
+`Normal("a..")` — never `ParentDir`. Only a bare `..` is `ParentDir`, and
+a bare `..` cannot pass the first-character rule. An accepted id is
+always exactly one non-traversing path component. Normalization tricks
+are closed structurally: the accept set is pure ASCII, whose NFC/NFD/NFKC
+forms are itself, and no non-ASCII input ever gets through to be
+normalized. Overlong UTF-8 cannot exist in a Rust `&str`, and the two
+sources are both `serde_json` Strings.
+
+**What survived the attack, reported honestly:** Windows-reserved device
+names — `NUL`, `CON`, `AUX`, `PRN`, `COM1`, `LPT1`, `nul.txt` — are
+accepted by the pattern, and `is_executable_file` returns `true`
+unconditionally under `#[cfg(not(unix))]`. On a Windows host an id joined
+into a path could name a device rather than a file. Not filed: nothing in
+this tree joins the id to a path (it reaches `Command::args` only),
+Windows is not a target today, and the effect would be an empty read, not
+an escalation. Recorded so the day this ports, it is already known. Also
+measured: `--help` says `--resume`'s value may be "a search term" for the
+interactive picker, so a well-shaped id that is not this project's
+session is a search term rather than an error — which is exactly the
+"shape check, not authenticity check" silence the notes already record,
+and it is bounded by the runner's existing start/stall timeouts.
+
+**Criterion 3 — the registry read boundary, re-proved with the
+verifier's own file and the verifier's own ids.** A hand-written
+`.nputer/sessions.json` (a `format!` template, no runner code involved),
+planted with eleven ids the builder never used — chosen from
+`claude --help` for what they would actually DO, not for how they look:
+`--settings=/tmp/nputer-evil-settings.json` (loads an arbitrary settings
+file, arguably a worse injection than the measured one), `-c`
+(`--continue`), `--fork-session`, `--safe-mode`, `--add-dir=/`, plus `""`,
+`..`, a U+2010 lookalike, a NUL-carrying id, 129 bytes, and an
+embedded-space id. **Every one**: `StartOutcome::Error` naming the file,
+the entry (`'P9'`) and the rejection class; `child spawned: false`;
+`kit materialized: false`; `file byte-identical: true`; and no echo of
+the refused id in the message. The discriminating half, with ids the
+builder never used — `01JQ8ZC4M7Q9K2VYB3T5N6XW0R`, `a`, `0`,
+`sess.2f8a-9c_x` — all → `ResumeAvailable`; an entry with no id at all →
+`Started`, not an error. The T-029-shaped path independently: `run_turn`
+handed `resume: Some(hostile)` for six different values returned
+`MalformedStream` every time with `spawned=false` and exactly one
+`Failed` event, no `Started`; the same call with the real UUID spawned
+and resumed normally.
+
+**Criterion 4 — the widened pin, attacked and drilled.** Drills
+re-derived, not accepted. (a) Removing `validate_session_id(id)?` from
+`AgentAdapter::argv`: **three lib tests red**, the pin among them —
+`a session id beginning with '-' must never assemble into argv:
+"--dangerously-skip-permissions"`. (b) With the argv body restored to the
+literal pre-fix shape (validation AND backstop removed) and `--add-dir=/`
+planted in the pin's own id list — a string none of the three needles
+match, so half one cannot fire — half two red with its own message:
+`ADAPTER VALUE-POSITION VIOLATED (T-039): assembled argv element 18 is
+"--add-dir=/", which begins with '-' without being the template's own
+flag "{session_id}"`. Worth noting: with only the validation removed, the
+PRODUCTION backstop caught `--add-dir=/` first, inside
+`all_argv_strings()` — the guarantee is genuinely structural and not
+test-only. (c) Each of the three original spellings planted in
+`CLAUDE_V1.spawn_args` one at a time: all three fire with the ORIGINAL
+message, `--permission-mode=bypassPermissions` caught by the
+`bypassPermissions` needle exactly as claimed. (d) `adapter.rs` restored
+and `shasum`-compared byte-identical after every drill.
+
+**The strongest attack on the pin, and what survived.** The exemption
+clause (`arg == *slot`) cannot be abused: it can only exempt a
+non-substituted element, because a substituted position's slot is
+`{session_id}` and an id equal to `{session_id}` is rejected
+(`IllegalStart { ch: '{' }`). The rule is applied to EVERY index, not
+only to positions the code believes are value positions, which is
+stronger than criterion 4 asks. Two real gaps found, both in the
+production backstop and both currently unreachable, filed as
+**T-039-s4**: (1) `zip()` silently skips any assembled tail longer than
+the template — a flag at index 2 with a 2-element template returns
+`Ok(())`, while the TEST pin has the `assert_eq!(template.len(),
+assembled.len())` the production function lacks; (2) the backstop covers
+the leading-dash class only — `Bash(*)` substituted into an
+`--allowedTools` value slot returns `Ok(())` — which is correct for
+criterion 4 but narrower than the doc comment promises. Neither weakens
+T-039: the session-id allowlist is what makes the class impossible, and
+`@responsefile` and `+x`, which slip past the backstop, are both rejected
+by the allowlist before they can reach it.
+
+**Criterion 5 — nothing else moved, and the reuse of existing variants is
+honest.** Enum surfaces compared programmatically old-vs-new:
+`StartOutcome`, `SendOutcome`, `CancelOutcome`, `TurnError`, `RunEvent`
+identical. `app/src/**` zero-diff, so `agent-store.ts` needs no mirror and
+has none. `acl_pin.rs` zero-diff, so `EXPECTED_GRANTS` is untouched.
+**Ruling on the deliberate reuse (deviations 2 and 3):** honest, and
+correctly scoped. Both refusals ARE typed, both NAME the rejection in a
+`why`/`message` the user can act on, neither is silent and neither is
+coerced — the criteria are met on their own terms, not on a reading-down
+of them, and a Rust variant with no TS mirror would be drift across a
+fence this task was told to hold. What the reuse costs is MACHINE
+distinguishability in a UI that does not yet exist. One sharpening for
+T-029, recorded rather than filed twice: s3 frames the new variants as
+"worth doing", but the `StartOutcome` half is closer to a precondition
+for T-029 doing its job — T-029's resume affordance is exactly the screen
+that must say "your saved session is unusable, delete it" differently
+from "the registry could not be written", and today it can only tell
+them apart by parsing English. The message already carries the
+instruction, so no user is stranded meanwhile.
+
+**Coercion sweep (criterion 2's "loud, never coerced").** Grepped the
+whole agent module for `trim`/`replace`/`retain`/`strip_*`/`truncate`/
+`filter`/`to_lowercase`/`normali*`: nothing touches the id path. The one
+`truncate_utf8` near a rejection (`mod.rs:269`) bounds the ENTRY KEY
+(`'S1'`) inside the error message, not the id, and the id itself is never
+echoed at all — the message names the class, the codepoint and the byte
+offset, all `escape_debug`'d, so a refused id carrying `\u{1b}[2K` cannot
+paint a terminal on its way out. Re-derived: `it carries '\\0' (U+0000)
+at byte 2, …`.
+
+**Execution sweep — re-derived, not accepted.** A poison
+`assert!(false, "T039-VSWEEP-<name>")` was scripted into each of the
+**nine** changed test bodies one at a time (the 8 new + the renamed
+`a_hostile_session_id_never_reaches_argv_at_all`), that single test run
+by exact name, the sweep marker confirmed in the failure output, the file
+restored and `shasum -a 256` compared byte-identical. **9/9 red on
+demand.** Test-name delta independently derived by diffing function names
+`7f5025b` vs `HEAD`: 8 added, 1 renamed, 0 deleted-without-replacement —
+200 + 8 = 208, and the arithmetic matches the observed total.
+
+**Suites, run fresh in this worktree.** Bare `cargo test` from
+`app/src-tauri`: **208 passed + 3 ignored**, three consecutive runs,
+identical every time. `cargo build` clean. App: `npm run build` (252
+modules) then `npm test` **483/483, 27 files**. lib/parser **159/159, 10
+files**. tools/e2e **17/17**. `npm run lint:tokens` **clean, 37 files**.
+Nothing bound or contacted port 1420 — the runner opens no sockets and no
+suite starts a server. `pgrep -fl fake_agent` empty at the end; no
+orphans.
+
+**Fence, proved as an empty set rather than by eye.** `git diff
+--name-only 7f5025b..HEAD` is exactly TEN files: the six `.rs` inside
+`app/src-tauri/src/agent/` + `bin/fake_agent.rs` + `tests/agent_runner.rs`,
+this task file, and three suggestions. The same command restricted to
+`method/`, `lib/parser/`, `app/src/`, `tools/`,
+`docs/architecture/graph.json`, `docs_watch.rs`, `index_cmd.rs`,
+`acl_pin.rs`, `lib.rs`, `capabilities/`, `tauri.conf.json` and every
+`Cargo.toml`/`Cargo.lock`/`package.json`/`package-lock.json` returns
+**nothing**. The graph-delta forecast (none) is right: no
+`.ts/.tsx/.js/.jsx` file outside `docs/` moved.
+
+**T-039-s1 — verified line by line, and it is REAL. Ruling: live
+backlog, not a gate, and that makes it more urgent than s6 was, not
+less.** Every element of the claim checks out. `read_cache`
+(`runner.rs:450`) does `serde_json::from_str` → `PathBuf::from(entry
+.path)` with **zero** validation — not absolute, not `..`-free, not
+name-matched to `adapter.binary`, not signature-bound. `resolve_cli` step
+(1) (`runner.rs:249-254`) gates it on **exactly** `is_executable_file`,
+then hands it to `probe_version`, which does `Command::new(path)` —
+**the poisoned binary is executed at RESOLVE time, before any turn**, a
+step sharper than the s1 card claims. Then `run_turn` does
+`Command::new(&cli.path)` (`runner.rs:843`) for every turn thereafter.
+The second half is worse: `cli.login_path` reaches `apply_child_env`
+(`runner.rs:850`) and becomes the child's `PATH` at `runner.rs:546-553`
+with **no gate whatsoever** — not even an executable bit, since it is a
+string. `resolve_cli` is called from both `mod.rs:278` (`start_genesis`)
+and `mod.rs:375` (`send_turn`), so the file is read LIVE on every start
+and every turn, not once at install. The config dir is real
+(`lib.rs:361`, `app.path().app_config_dir()`).
+
+Where it differs from T-025-s6, which decides whether it gates anything:
+s6 was unreachable until T-029 landed, so "close it before T-029
+dispatches" was the correct shape. **This path is already live in shipped
+code — no future task turns it on.** There is therefore nothing for it to
+gate; it is backlog, but backlog that is reachable today rather than
+reachable later. The honest counterweight, which the s1 card does not
+state and should: the precondition is write access to the user's own app
+config dir, and anything with that generally also has `~/.zshrc`,
+`~/.claude/settings.json` and LaunchAgents — so this is not a privilege
+boundary crossing, it is one more equivalent-privilege persistence
+surface. What lifts it above ordinary backlog is the COMPOSITION s1
+correctly identifies: nputer's stated containment is a six-pattern Bash
+allowlist, T-025-s4 already records that those patterns match the COMMAND
+STRING and carry no path scope, and an ungated `login_path` silently
+decides which `git`/`cp` those patterns resolve to. The containment
+nputer advertises is weaker than it reads, and that is the class this
+project treats as load-bearing. Encoding and scope are right; the
+proposed fixes (bind the cache to a probe signature; validate absolute +
+no `..` + filename == `adapter.binary`; do not cache the PATH) are the
+right three. @human: worth a priority call at the next triage — the
+verifier would take the third option first, since the PATH half is both
+the ungated one and the cheap one.
+
+**T-039-s2 — real, correctly sized, correctly deferred.** Verified:
+`classify_line` reads `model` at `runner.rs:701`, `runner.rs:952-953`
+copies it into `out.model` unvalidated, and the only bound anywhere is
+`MAX_LINE_BYTES` (1 MiB) — so ~1 MiB per turn can land in a registry file
+that is otherwise a few hundred bytes. The card's own limiting analysis
+is right (never argv, never a path, serde-escaped), and declining to fold
+it into a security task by sympathy is the correct instinct.
+
+**T-039-s3 — real; see the ruling above.** `agent-store.ts:36`
+(`malformedStream`) and `:67` (`error`) confirm the mirror argument and
+confirm the webview genuinely cannot discriminate today.
+
+Verified headless throughout; no screen control, no boot-check script, no
+real model call, port 1420 never touched. @human: none blocking; one
+priority call on s1 noted above.
