@@ -1,26 +1,79 @@
 #!/usr/bin/env node
 /**
- * Token lint (T-020, absorbing T-001-s2): the grep-grade guard over the
- * Tailwind v4 escape hatches documented in CONVENTIONS. UI work adds
- * tokens to app/src/styles/tokens.css, never arbitrary values or
- * default-palette utilities — unmapped utilities are deliberately dead,
- * and arbitrary values (`p-[13px]`) bypass enforcement entirely.
+ * Token lint (T-020, absorbing T-001-s2; made precise by T-038): the
+ * guard over the Tailwind v4 escape hatches documented in CONVENTIONS.
+ * UI work adds tokens to app/src/styles/tokens.css, never arbitrary
+ * values or default-palette utilities — unmapped utilities are
+ * deliberately dead, and arbitrary values (`p-[13px]`) bypass
+ * enforcement entirely.
  *
- * Plain node, zero deps. Walks app/src `**` / `*.{ts,tsx}` (css excluded
- * — tokens.css/index.css are the legal home of raw values and bracketed
- * selectors), applies four patterns per line, prints every
- * `file:line: match`, exits non-zero on any hit.
+ * Plain node, zero deps — structural, not taste: this is CI's FIRST
+ * step, ahead of every `npm ci` in the job, so it must run against a
+ * bare checkout with nothing installed. Walks app/src `**` /
+ * `*.{ts,tsx}` (css excluded — tokens.css/index.css are the legal home
+ * of raw values and bracketed selectors), applies four patterns, prints
+ * every `file:line: match`, exits non-zero on any hit.
  *
- * Recorded exclusion (plan §5): arbitrary VARIANTS (`[&_svg]:…`) are
- * deliberately not linted — they target selectors, not values (the
- * token mechanism still governs the utility half), and vendored
- * ui/button.tsx legitimately carries three. No allow-comment mechanism —
- * zero-allowlist by design; a genuine future collision is a
- * consultation, not an escape hatch.
+ * ── WHAT IT LOOKS AT (T-038) ─────────────────────────────────────────
+ * The four patterns below are UNCHANGED. What T-038 changed is the text
+ * they are applied to, plus one grammar rule applied to their hits:
+ *
+ * 1. CONTEXT. A hand-written lexer masks every character that is not
+ *    string- or template-literal TEXT: code, comments and
+ *    regular-expression literals become NUL, with line lengths and
+ *    newlines preserved so `file:line` stays exact. String delimiters
+ *    survive the mask because P2 anchors on the quote. A Tailwind class
+ *    is always string text; a regex literal never is. This is what
+ *    unreds the HTML-comment regex in app/src/genesis/genesis-derive.ts
+ *    — the collision T-020's verifier predicted (T-020-s5) and T-037's
+ *    executor measured (T-037-s1) — without weakening P1 by one
+ *    character.
+ *
+ * 2. VARIANTS. A bracket or paren group immediately followed by `:` is
+ *    an arbitrary VARIANT, not an arbitrary value: `data-[state=open]:`,
+ *    `group-[.peer]:`, `supports-[display:grid]:`, `min-[600px]:`,
+ *    `has-[input:checked]:`, `[&_svg]:`, `supports-(--x):`. Tailwind's
+ *    own grammar draws that line — the `:` separates a
+ *    selector-targeting variant from the utility it modifies, while a
+ *    value ENDS its utility (`p-[13px]`, `bg-(--brand)`). Plan §5
+ *    recorded this exclusion in prose and shipped it only for the one
+ *    family whose bracket has no leading hyphen; here it is executable
+ *    for the whole family, so the next `shadcn add dialog` does not red
+ *    the tree. The token mechanism still governs the utility half:
+ *    `data-[state=open]:bg-red-500` is still a P3 hit.
+ *
+ * ── WHAT IT CANNOT SEE — read before trusting a green run ────────────
+ * - It is a LEXER, not a TypeScript parser: it knows strings, templates
+ *   (including nested substitutions), line and block comments, and regex
+ *   literals, and it knows nothing about types, JSX structure or scope.
+ * - Regex-versus-division is the classic previous-significant-character
+ *   heuristic, plus two JSX guards (a slash followed by `>` is a
+ *   self-closing tag; a slash preceded by `<` is a closing tag) and a
+ *   hard rule that a regex literal must close on its own line or the
+ *   slash is treated as an ordinary code character. So `if (x) /re/.f()`
+ *   reads as division, and a stray apostrophe in JSX text opens a
+ *   pseudo-string. Both misreads are contained to ONE line — strings and
+ *   regexes alike end at the newline — and neither can cascade.
+ * - It scans EVERY string, not only class strings: it cannot tell
+ *   `className="text-red-500"` from a URL string containing the same
+ *   token. That is deliberate. The scan errs toward seeing more, because
+ *   a false positive is a one-line consultation while a false negative
+ *   silently reopens the bypass this lint exists to close.
+ * - The variant rule trusts the `:`. A group that never closes on its
+ *   line is treated as a value (reported). A hard-coded breakpoint in
+ *   variant position (`min-[600px]:`) is invisible to the lint by that
+ *   rule — argued in T-038's notes, filed as T-038-s1.
+ * - Still zero allowlist, by design: no file, line or comment can mute
+ *   it. A genuine future collision is a consultation, not an escape
+ *   hatch (plan §5).
  *
  * Usage:
  *   node scripts/lint-tokens.mjs             lint app/src
  *   node scripts/lint-tokens.mjs --selftest  run the embedded samples
+ *
+ * `maskSource` and `scanSource` are exported so a throwaway harness can
+ * re-derive the evidence (T-038 diffed old-vs-new hits over all 122
+ * .ts/.tsx in the repo that way). Nothing in the repo imports them.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
@@ -42,8 +95,9 @@ const PALETTE =
 const COLOR_PREFIXES =
   "bg|text|border|ring|outline|fill|stroke|shadow|decoration|divide|accent|caret";
 
-/** The four patterns (plan §5 table). Fresh regexes per scan (global
- * flag state is per-instance). */
+/** The four patterns (plan §5 table), byte-identical since T-020 — T-038
+ * narrowed their INPUT, never them. Fresh regexes per scan (global flag
+ * state is per-instance). */
 function makePatterns() {
   return [
     {
@@ -69,6 +123,237 @@ function makePatterns() {
   ];
 }
 
+/** The masked character. No pattern can match it, and it is not a `]`,
+ * so an interpolated value (`p-[${n}px]`) still reads as one. */
+const HIDDEN = "\0";
+
+/** Keywords after which a `/` opens a regex literal rather than dividing
+ * (anything else identifier-shaped is a value: `x / y`). */
+const REGEX_AFTER = new Set([
+  "return",
+  "typeof",
+  "instanceof",
+  "in",
+  "of",
+  "new",
+  "delete",
+  "void",
+  "throw",
+  "case",
+  "do",
+  "else",
+  "yield",
+  "await",
+]);
+
+const WORD = /[A-Za-z0-9_$]/;
+
+/** Can a regex literal start at `start`, given the last significant code
+ * character at `prevSig`? The classic heuristic plus the two JSX guards
+ * (see header). A wrong call either way costs at most one line. */
+function regexCanStart(src, start, prevSig) {
+  if (src[start + 1] === ">") return false; // `/>` — JSX self-close
+  if (prevSig < 0) return true; // start of file
+  const ch = src[prevSig];
+  if (ch === "<") return false; // `</div>` — JSX closing tag
+  if (ch === ">") return src[prevSig - 1] === "="; // `=>` yes, a tag close no
+  if (ch === ")" || ch === "]" || ch === "}") return false; // value-ish: division
+  if (WORD.test(ch)) {
+    let s = prevSig;
+    while (s > 0 && WORD.test(src[s - 1])) s -= 1;
+    return REGEX_AFTER.has(src.slice(s, prevSig + 1));
+  }
+  if ((ch === "+" || ch === "-") && src[prevSig - 1] === ch) return false; // `x++ / y`
+  return true; // any other punctuator
+}
+
+/** Index just past a regex literal starting at `start` (flags included),
+ * or -1 if this slash does not open one. A literal that does not close on
+ * its own line is not one — that rule is what keeps a misread contained. */
+function regexEnd(src, start, prevSig) {
+  if (!regexCanStart(src, start, prevSig)) return -1;
+  let i = start + 1;
+  let inClass = false;
+  while (i < src.length) {
+    const c = src[i];
+    if (c === "\n" || c === "\r") return -1;
+    if (c === "\\") {
+      i += 2;
+      continue;
+    }
+    if (c === "[") inClass = true;
+    else if (c === "]") inClass = false;
+    else if (c === "/" && !inClass) {
+      i += 1;
+      while (i < src.length && /[a-z]/.test(src[i])) i += 1;
+      return i;
+    }
+    i += 1;
+  }
+  return -1;
+}
+
+/**
+ * Mask everything that is not string- or template-literal text. Returns a
+ * string of exactly the same length as `src`, newlines in place, so
+ * offsets and line numbers carry straight through. Delimiters (`"`, `'`,
+ * backtick) are kept: P2 anchors on them.
+ */
+export function maskSource(src) {
+  const n = src.length;
+  const out = new Array(n);
+  const keep = (i) => {
+    out[i] = src[i];
+  };
+  const hide = (i) => {
+    const c = src[i];
+    out[i] = c === "\n" || c === "\r" ? c : HIDDEN;
+  };
+
+  /** Last significant (non-whitespace, non-comment) code character. */
+  let prevSig = -1;
+  /** One entry per open template literal, carrying the `{` depth of the
+   * substitution currently being lexed. */
+  const templates = [];
+  let inTemplateText = false;
+  let i = 0;
+
+  while (i < n) {
+    const c = src[i];
+
+    if (inTemplateText) {
+      if (c === "\\") {
+        keep(i);
+        if (i + 1 < n) keep(i + 1);
+        i += 2;
+        continue;
+      }
+      if (c === "`") {
+        keep(i);
+        templates.pop();
+        inTemplateText = false;
+        prevSig = i;
+        i += 1;
+        continue;
+      }
+      if (c === "$" && src[i + 1] === "{") {
+        hide(i);
+        hide(i + 1);
+        templates[templates.length - 1].depth = 0;
+        inTemplateText = false;
+        prevSig = i + 1;
+        i += 2;
+        continue;
+      }
+      keep(i);
+      i += 1;
+      continue;
+    }
+
+    // ── code ─────────────────────────────────────────────────────────
+    if (c === "/" && src[i + 1] === "/") {
+      while (i < n && src[i] !== "\n") hide(i++);
+      continue;
+    }
+    if (c === "/" && src[i + 1] === "*") {
+      let j = i + 2;
+      while (j < n && !(src[j] === "*" && src[j + 1] === "/")) j += 1;
+      const end = j < n ? j + 2 : n;
+      while (i < end) hide(i++);
+      continue;
+    }
+    if (c === "/") {
+      const end = regexEnd(src, i, prevSig);
+      if (end !== -1) {
+        while (i < end) hide(i++);
+        prevSig = end - 1;
+        continue;
+      }
+      // not a regex — fall through, an ordinary code character
+    }
+    if (c === '"' || c === "'") {
+      keep(i);
+      let j = i + 1;
+      while (j < n) {
+        const d = src[j];
+        if (d === "\n" || d === "\r") break; // unterminated: resync at the line
+        if (d === "\\") {
+          keep(j);
+          if (j + 1 < n) keep(j + 1);
+          j += 2;
+          continue;
+        }
+        keep(j);
+        j += 1;
+        if (d === c) break; // closing delimiter
+      }
+      prevSig = j - 1;
+      i = j;
+      continue;
+    }
+    if (c === "`") {
+      keep(i);
+      templates.push({ depth: 0 });
+      inTemplateText = true;
+      prevSig = i;
+      i += 1;
+      continue;
+    }
+    if (templates.length > 0) {
+      const top = templates[templates.length - 1];
+      if (c === "{") top.depth += 1;
+      else if (c === "}") {
+        if (top.depth === 0) {
+          hide(i);
+          inTemplateText = true;
+          prevSig = i;
+          i += 1;
+          continue;
+        }
+        top.depth -= 1;
+      }
+    }
+    hide(i);
+    if (!/\s/.test(c)) prevSig = i;
+    i += 1;
+  }
+
+  for (let k = 0; k < n; k += 1) if (out[k] === undefined) hide(k);
+  const masked = out.join("");
+  /* Alignment is load-bearing (file:line is read off it) — assert it,
+   * never assume it. A lexer bug becomes a loud crash, not a quiet miss. */
+  if (masked.length !== n) {
+    throw new Error(`lint-tokens: mask length ${masked.length} != source ${n}`);
+  }
+  return masked;
+}
+
+/**
+ * Is this hit inside an arbitrary VARIANT? The group opened inside the
+ * match closes, and the next character is the `:` that separates a
+ * variant from what it modifies. Nesting counts
+ * (`[&_svg:not([class*='size-'])]:`), the search is line-bounded, and an
+ * unclosed group is NOT a variant — every uncertainty resolves toward
+ * reporting.
+ */
+function isVariant(masked, start, end) {
+  for (let i = start; i < end; i += 1) {
+    const open = masked[i];
+    if (open !== "[" && open !== "(") continue;
+    const close = open === "[" ? "]" : ")";
+    let depth = 0;
+    for (let j = i; j < masked.length; j += 1) {
+      if (masked[j] === open) depth += 1;
+      else if (masked[j] === close) {
+        depth -= 1;
+        if (depth === 0) return masked[j + 1] === ":";
+      }
+    }
+    return false; // never closes on this line
+  }
+  return false; // no group inside the match (P3) — never a variant
+}
+
 /** Widen a raw regex match to the surrounding utility-ish token so the
  * report reads `p-[13px]`, not the bare 3-char match. Display only —
  * detection is the regex alone. */
@@ -81,12 +366,28 @@ function displayMatch(line, index, length) {
   return line.slice(start, end);
 }
 
-/** Every pattern hit in one line of text: `{id, what, match}`. */
-function scanLine(line) {
+/**
+ * Every pattern hit in a source text: `{line, id, what, match}`.
+ * Detection runs over the MASKED text (string context only); the display
+ * string is cut from the raw line at the same offsets.
+ */
+export function scanSource(src) {
+  const maskedLines = maskSource(src).split(/\r?\n/);
+  const rawLines = src.split(/\r?\n/);
   const hits = [];
-  for (const { id, what, re } of makePatterns()) {
-    for (const m of line.matchAll(re)) {
-      hits.push({ id, what, match: displayMatch(line, m.index, m[0].length) });
+  for (let i = 0; i < maskedLines.length; i += 1) {
+    const masked = maskedLines[i];
+    const raw = rawLines[i] ?? masked;
+    for (const { id, what, re } of makePatterns()) {
+      for (const m of masked.matchAll(re)) {
+        if (isVariant(masked, m.index, m.index + m[0].length)) continue;
+        hits.push({
+          line: i + 1,
+          id,
+          what,
+          match: displayMatch(raw, m.index, m[0].length),
+        });
+      }
     }
   }
   return hits;
@@ -115,12 +416,9 @@ function lintTree() {
   let count = 0;
   for (const file of files) {
     const rel = path.relative(repoRoot, file);
-    const lines = readFileSync(file, "utf8").split(/\r?\n/);
-    for (let i = 0; i < lines.length; i++) {
-      for (const hit of scanLine(lines[i])) {
-        count += 1;
-        console.log(`${rel}:${i + 1}: ${hit.match.trim()}  [${hit.id}: ${hit.what}]`);
-      }
+    for (const hit of scanSource(readFileSync(file, "utf8"))) {
+      count += 1;
+      console.log(`${rel}:${hit.line}: ${hit.match.trim()}  [${hit.id}: ${hit.what}]`);
     }
   }
   if (count > 0) {
@@ -134,10 +432,14 @@ function lintTree() {
   console.log(`lint-tokens: clean (${files.length} files scanned under app/src)`);
 }
 
-/** Embedded selftest: positives each caught by exactly the intended
- * pattern(s); negatives (the tree's real near-misses) caught by none. */
+/**
+ * Embedded selftest — source fragments, lexed exactly as a file is.
+ * Positives are each caught by exactly the intended pattern(s);
+ * negatives by none. The negatives ARE the precision: delete the lexer
+ * or the variant rule and this set goes red long before the tree does.
+ */
 const SAMPLES = [
-  // positives
+  // ── positives: every pattern still fires ───────────────────────────
   { text: 'className="p-[13px]"', expect: ["P1"] },
   { text: 'className="text-[0.8rem] leading-none"', expect: ["P1"] },
   { text: '"max-h-[320px] overflow-auto"', expect: ["P1"] },
@@ -147,7 +449,12 @@ const SAMPLES = [
   { text: "className={cn('bg-stone-200')}", expect: ["P3"] },
   { text: '"shadow-slate-900/20"', expect: ["P3"] },
   { text: '"bg-(--brand)"', expect: ["P4"] },
-  // negatives — the tree's legal forms and real near-misses
+  // an arbitrary value assembled through an interpolation is still one
+  { text: "className={`p-[${n}px]`}", expect: ["P1"] },
+  // a VARIANT never excuses the utility it modifies (T-038)
+  { text: '"data-[state=open]:p-[13px]"', expect: ["P1"] },
+  { text: '"group-[.peer]:text-red-500"', expect: ["P3"] },
+  // ── negatives: the tree's legal forms and real near-misses ─────────
   { text: '"[&_svg]:size-4 [&_svg]:shrink-0"', expect: [] }, // arbitrary VARIANT (vendored button.tsx)
   { text: 'target.closest("[data-card-trigger]")', expect: [] }, // selector string
   { text: '"aria-invalid:border-destructive"', expect: [] }, // state variant on a token
@@ -155,13 +462,48 @@ const SAMPLES = [
   { text: '"bg-status-done text-status-done-foreground"', expect: [] }, // mapped tokens
   { text: '"focus-visible:ring-ring/50"', expect: [] }, // token + opacity
   { text: "var(--background)", expect: [] }, // css var read, no shorthand
+  { text: 'style={{ color: "var(--background)" }}', expect: [] }, // same, in string context
   { text: '"rounded-chip border px-2.25 py-0.75"', expect: [] },
+  // ── negatives (T-038): a regex literal is not a class string ───────
+  // the line that redded main — app/src/genesis/genesis-derive.ts
+  { text: 'return text.replace(/<!--[\\s\\S]*?(?:-->|$)/g, "");', expect: [] },
+  // the shape T-020's verifier predicted — lib/parser/src/frontmatter.ts:35
+  { text: "const close = /^---[ \\t]*(?:\\r?\\n|$)/m.exec(rest);", expect: [] },
+  // regexes spelling out the patterns' own positive cases, verbatim
+  { text: "const re = /text-[0-9]+/g;", expect: [] },
+  { text: "if (/[color:red]/.test(s)) return;", expect: [] },
+  { text: "const dead = /text-red-500|bg-(--x)/.test(cls);", expect: [] },
+  // a quote INSIDE a regex is not a string delimiter — this one is
+  // pinned by the regex recognition itself, not by the mask alone
+  { text: "if (/[\"']p-[0-9]/.test(s)) return;", expect: [] },
+  // division is not a regex: the scan must not swallow the class after it
+  { text: 'const w = total / count; const c = "p-4";', expect: [] },
+  // ── negatives (T-038): a comment is not a class string ─────────────
+  { text: "// never write p-[13px] or text-red-500 here", expect: [] },
+  { text: "/* doc: p-[13px] bypasses the tokens — see T-001-s2 */", expect: [] },
+  // ── negatives (T-038): arbitrary VARIANTS, one per family ──────────
+  { text: '<div className="data-[state=open]:bg-primary">', expect: [] },
+  { text: '"group-[.peer]:underline"', expect: [] },
+  { text: '"supports-[display:grid]:grid"', expect: [] },
+  { text: '"min-[600px]:flex max-[480px]:hidden"', expect: [] },
+  { text: '"has-[input:checked]:border-ring"', expect: [] },
+  { text: '"peer-[.is-open]:rotate-180"', expect: [] },
+  { text: '"aria-[sort=ascending]:font-semibold"', expect: [] },
+  { text: '"not-[:hover]:opacity-50 in-[.dark]:text-foreground"', expect: [] },
+  { text: '"nth-[2n+1]:bg-muted"', expect: [] },
+  { text: '"supports-(--tw-x):flex"', expect: [] }, // paren variant, same grammar
+  // the vendored nested one, verbatim from app/src/components/ui/button.tsx
+  { text: "\"[&_svg:not([class*='size-'])]:size-4\"", expect: [] },
+  // the stock shadcn shapes the next `shadcn add` would bring in
+  { text: '"data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:hidden"', expect: [] },
+  // a variant built through an interpolation is still a variant
+  { text: "className={`data-[state=${s}]:flex`}", expect: [] },
 ];
 
 function selftest() {
   let failures = 0;
   for (const { text, expect } of SAMPLES) {
-    const got = [...new Set(scanLine(text).map((h) => h.id))].sort();
+    const got = [...new Set(scanSource(text).map((h) => h.id))].sort();
     const want = [...expect].sort();
     if (JSON.stringify(got) !== JSON.stringify(want)) {
       failures += 1;
