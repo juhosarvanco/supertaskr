@@ -120,6 +120,26 @@ export type ShellPhase =
   | "genesis"
   | "open";
 
+/**
+ * T-050: which of `startDocsWatcher`'s two awaits broke. Naming the step
+ * is the difference between "startup failed" and a sentence the user can
+ * act on — and the two are genuinely different situations: a refused
+ * SUBSCRIBE leaves no live watcher at all, while a refused SNAPSHOT
+ * leaves the subscription up, so the next file change can still bring
+ * the app to life on its own.
+ */
+export type StartupStep = "subscribe" | "snapshot";
+
+/** A startup attempt that did not finish. `message` is a stringified
+ * rejection — rendered as a TEXT NODE, never as markup. */
+export interface StartupFailure {
+  step: StartupStep;
+  message: string;
+  /** Which attempt this was (1 on the first). Makes "the retry ran and
+   * failed again" distinguishable from "the retry never ran". */
+  attempt: number;
+}
+
 /** A picker choice Rust rejected. message === null means "no docs/ there"
  * — the front door's "No plan in <folder>" card, whose checklist renders
  * from `probe`; otherwise it is a re-arm/dialog error explanation. */
@@ -141,6 +161,15 @@ export interface ShellState {
   rejectedPick: RejectedPick | null;
   /** Native folder dialog currently open. */
   picking: boolean;
+  /** T-050: a startup attempt is in flight (single-flight like
+   * `picking`, and for the same reason — the retry affordance must not
+   * stack attempts). */
+  starting: boolean;
+  /** T-050: why the last startup attempt failed, or null while one is
+   * running / after one has succeeded. This is the whole of layer 2:
+   * the rejection used to become an unhandled promise and nothing else,
+   * so the user was told nothing. */
+  startupFailure: StartupFailure | null;
   /** index_repo in flight (T-012; single-flight like `picking`). */
   indexing: boolean;
   /** Last index_repo outcome THIS SESSION (drives the map header hint —
@@ -228,6 +257,10 @@ export type FrontDoorNotice =
  * whether "keep the current project" is a meaningful escape hatch. */
 export type ScreenModel =
   | { screen: "loading" }
+  /** T-050: startup rejected and the app is NOT still waiting. The
+   * failure rides the screen so the renderer needs no second opinion
+   * about what went wrong. */
+  | { screen: "startupFailed"; failure: StartupFailure }
   | { screen: "browser" }
   | { screen: "empty"; notice: FrontDoorNotice; canKeepCurrent: boolean }
   /** T-026: a genesis project is open — full-bleed, no rail (the rail
@@ -250,6 +283,22 @@ export function selectScreen(shell: ShellState): ScreenModel {
       // A genesis project is something to keep, exactly like an open one.
       canKeepCurrent: shell.phase === "open" || shell.phase === "genesis",
     };
+  }
+  // T-050: a startup that FAILED is not a startup that is still going,
+  // and the screen must stop claiming it is waiting. Shown only while
+  // nothing is open BY ANY ROUTE — "loading" and "browser" are exactly
+  // the two phases a failure can survive into, because every other
+  // phase is an ANSWER a completed startup (or a pick) produced. That
+  // gate is what makes criterion 3's escape arrive somewhere: a
+  // successful pick or interview from this very screen moves the phase
+  // and the board/genesis takes over. It sits BELOW the rejected-pick
+  // block deliberately — a folder the user just chose and had refused
+  // is the more immediate answer, and that screen has its own ways in.
+  if (
+    shell.startupFailure !== null &&
+    (shell.phase === "loading" || shell.phase === "browser")
+  ) {
+    return { screen: "startupFailed", failure: shell.startupFailure };
   }
   switch (shell.phase) {
     case "loading":
@@ -354,6 +403,10 @@ export interface ShellHarnessSnapshot {
   genesisDir: string | null;
   rejectedPick: RejectedPick | null;
   picking: boolean;
+  /** T-050: the startup state, so a spec can assert on the shell's own
+   * account of it rather than on a selector. */
+  starting: boolean;
+  startupFailure: StartupFailure | null;
   indexing: boolean;
   docs: {
     seq: number;
@@ -393,6 +446,14 @@ declare global {
     __nputerShellHarness?: {
       applyProjectStatus: (status: ProjectStatusPayload) => void;
       applyPickOutcome: (outcome: PickOutcomePayload) => void;
+      /** T-050: `recordStartupFailure` itself — what the store's own
+       * catch calls when `listen` or `invoke` rejects. Without it the
+       * served bundle cannot reach a state the shipped app CAN reach
+       * (a browser never awaits either), which is precisely the hole
+       * T-041 exists to close. It fakes no IPC: it hands the shell the
+       * failure Rust's boundary would have produced, exactly as
+       * `applyProjectStatus` hands it the status. */
+      applyStartupFailure: (step: StartupStep, reason: unknown) => void;
       getShell: () => ShellHarnessSnapshot;
     };
     /** Dev-only echo capture used by the browser harness. */
@@ -409,12 +470,44 @@ let shell: ShellState = {
   genesisDir: null,
   rejectedPick: null,
   picking: false,
+  starting: false,
+  startupFailure: null,
   indexing: false,
   indexOutcome: null,
   docs: emptyState(),
 };
 const listeners = new Set<() => void>();
-let started = false;
+
+/**
+ * THE STARTUP LATCH (T-050). Holds the attempt that is in flight, or the
+ * one that SUCCEEDED; `null` means "nothing is running and nothing has
+ * succeeded", i.e. the next call genuinely re-attempts.
+ *
+ * A promise, rather than the boolean it replaces, because the two
+ * properties this must have pull in opposite directions and a boolean
+ * set before the awaits can only have one of them:
+ *
+ *  - RETRYABLE. The old `started = true` sat above both awaits and was
+ *    never reset anywhere, so one transient rejection stranded the app
+ *    forever — every later call returned at the guard without touching
+ *    the boundary. The latch is now released in the failure path, so a
+ *    retry really re-subscribes.
+ *  - SINGLE-FLIGHT. The old code's one virtue was that a synchronous
+ *    latch made React's double-effect harmless. That survives: the
+ *    assignment below is synchronous — it happens in the same turn as
+ *    the call, before any await inside can resume — so a second call
+ *    arriving while the first is still running gets THE SAME promise
+ *    and starts no second subscription.
+ *
+ * Holding the promise (rather than a `"starting" | "started" | "idle"`
+ * enum, the other honest shape) buys one thing the enum does not: a
+ * concurrent caller can AWAIT the attempt already in progress instead of
+ * returning immediately having done nothing. The retry affordance and
+ * the tests both want that.
+ */
+let startup: Promise<void> | null = null;
+/** Attempts made this session — the failure card's honest count. */
+let startupAttempts = 0;
 
 export function subscribeShell(callback: () => void): () => void {
   listeners.add(callback);
@@ -448,6 +541,8 @@ function shellHarnessSnapshot(): ShellHarnessSnapshot {
     genesisDir: shell.genesisDir,
     rejectedPick: shell.rejectedPick,
     picking: shell.picking,
+    starting: shell.starting,
+    startupFailure: shell.startupFailure,
     indexing: shell.indexing,
     docs: {
       seq: shell.docs.seq,
@@ -522,13 +617,45 @@ function applyProjectStatus(status: ProjectStatusPayload): void {
 }
 
 /**
- * Start the live pipeline once: subscribe to `docs-changed` first, then
- * pull the startup status (the seq guard settles any ordering race
- * between the two). Safe to call repeatedly (StrictMode double-effects).
+ * Record a startup attempt that did not finish (T-050). THE one place a
+ * rejection becomes shell state — the store's own catch calls it, and so
+ * does the dev harness, so what the lane renders is what the app
+ * renders and not a second copy of it.
  */
-export async function startDocsWatcher(): Promise<void> {
-  if (started) return;
-  started = true;
+function recordStartupFailure(step: StartupStep, reason: unknown): void {
+  // THE INVARIANT, held here rather than only in the catch below: a
+  // recorded failure ALWAYS means the latch is open, so the retry the
+  // screen offers is never a no-op. Released BEFORE the notify, because
+  // a subscriber woken by it may call `startDocsWatcher` synchronously.
+  // Starting a fresh attempt in that window is safe: the catch releases
+  // by IDENTITY, so a late rejection cannot unlatch the newer attempt.
+  startup = null;
+  setShell({
+    starting: false,
+    // `String(reason)` is the store's existing idiom for a rejected
+    // boundary call (runPicker, runIndexRepo). It is put on screen as a
+    // text node; nothing from it is ever interpreted as markup.
+    startupFailure: { step, message: String(reason), attempt: startupAttempts },
+  });
+  // The message is an ARGUMENT, never interpolated into the line — the
+  // same discipline as the `model-updated` echo's error log, and the
+  // webview console is as far as it goes (no stdout path from here).
+  console.error("[nputer] startup failed at", step, reason);
+}
+
+/**
+ * One startup attempt: subscribe to `docs-changed` first, then pull the
+ * startup status (the seq guard settles any ordering race between the
+ * two — that order is deliberate and unchanged). Rejects if either
+ * await does, having first recorded WHICH one and why; the latch above
+ * turns that rejection into a retryable state rather than an unhandled
+ * promise.
+ */
+async function runStartup(): Promise<void> {
+  startupAttempts += 1;
+  // A fresh attempt: the previous failure is no longer the current
+  // truth, so the screen goes back to waiting while this one runs.
+  setShell({ starting: true, startupFailure: null });
 
   if (!isTauri) {
     if (import.meta.env.DEV) {
@@ -547,16 +674,57 @@ export async function startDocsWatcher(): Promise<void> {
       window.__nputerShellHarness = {
         applyProjectStatus,
         applyPickOutcome: commitPickOutcome,
+        applyStartupFailure: recordStartupFailure,
         getShell: shellHarnessSnapshot,
       };
       console.info("[nputer] no Tauri IPC detected — browser dev harness active");
     }
+    setShell({ starting: false });
     return;
   }
 
-  await listen<DocsSnapshotPayload>("docs-changed", (event) => applyDocsPayload(event.payload));
-  const status = await invoke<ProjectStatusPayload>("docs_snapshot");
-  applyProjectStatus(status);
+  try {
+    await listen<DocsSnapshotPayload>("docs-changed", (event) => applyDocsPayload(event.payload));
+  } catch (err) {
+    recordStartupFailure("subscribe", err);
+    throw err;
+  }
+  try {
+    const status = await invoke<ProjectStatusPayload>("docs_snapshot");
+    setShell({ starting: false });
+    applyProjectStatus(status);
+  } catch (err) {
+    recordStartupFailure("snapshot", err);
+    throw err;
+  }
+}
+
+/**
+ * Start the live pipeline. Idempotent while an attempt is in flight or
+ * has succeeded (StrictMode double-effects, and the retry affordance),
+ * and genuinely re-attempts once one has FAILED — see the `startup`
+ * latch above for why it is a promise.
+ *
+ * NEVER REJECTS, by contract: a failed attempt is recorded in shell
+ * state and rendered, so no caller can leave an unhandled rejection
+ * behind. That is layer 2 of T-050 fixed at the callee, which is the
+ * only place that knows WHICH await broke.
+ */
+export function startDocsWatcher(): Promise<void> {
+  const inFlight = startup;
+  if (inFlight !== null) return inFlight;
+  const attempt: Promise<void> = runStartup().catch(() => {
+    // `runStartup` already recorded which await broke and why (the shell
+    // state the screen renders). All that is left here is the latch,
+    // released so the NEXT call genuinely re-attempts — guarded by
+    // identity so a late rejection can never unlatch a newer attempt.
+    if (startup === attempt) startup = null;
+  });
+  // Synchronous, in the same turn as the call: a second call arriving
+  // while this one is still in flight gets THIS promise back and starts
+  // no second subscription.
+  startup = attempt;
+  return attempt;
 }
 
 /**

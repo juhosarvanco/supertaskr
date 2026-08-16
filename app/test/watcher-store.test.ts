@@ -172,6 +172,14 @@ const shell = (patch: Partial<ShellState>): ShellState => ({
   genesisDir: null,
   rejectedPick: null,
   picking: false,
+  // T-050 added two fields to ShellState; defaulting them here is the
+  // ONLY change to this file. Every expectation below keeps its exact
+  // expected value: `starting: false, startupFailure: null` is a
+  // healthy startup, which is what these cases always described
+  // implicitly. The new field's own behaviour is pinned separately in
+  // test/startup-recovery.test.ts.
+  starting: false,
+  startupFailure: null,
   indexing: false,
   indexOutcome: null,
   docs: emptyState(),

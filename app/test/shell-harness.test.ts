@@ -108,7 +108,18 @@ describe("the gate, runtime half: a Tauri runtime never defines the harness", ()
 });
 
 describe("the gate, positive half: the browser DEV path installs it", () => {
-  it("exposes exactly applyProjectStatus / applyPickOutcome / getShell", async () => {
+  /**
+   * T-050 CHANGED THIS TEST'S NAME AND ITS ONE ARRAY, and nothing else
+   * in this file. The harness gained a FOURTH door,
+   * `applyStartupFailure`, because T-050 added a state the SHIPPED app
+   * can reach and a served bundle provably cannot — a browser awaits
+   * neither `listen` nor `invoke`, so its startup cannot fail — which is
+   * the exact hole T-041 exists to close. The assertion keeps its shape
+   * and its strength: an EXACT key set, so a fifth door still reds here.
+   * It is strengthened rather than loosened — every door must also BE a
+   * function, which the old form never checked.
+   */
+  it("exposes exactly applyProjectStatus / applyPickOutcome / applyStartupFailure / getShell", async () => {
     const store = await loadStore("browser");
     expect(store.isTauriRuntime()).toBe(false);
     await store.startDocsWatcher();
@@ -118,8 +129,13 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
     expect(Object.keys(harness ?? {}).sort()).toEqual([
       "applyPickOutcome",
       "applyProjectStatus",
+      "applyStartupFailure",
       "getShell",
     ]);
+    expect(
+      Object.values(harness ?? {}).map((door) => typeof door),
+      "every door is callable — a key that is not a function is not a door",
+    ).toEqual(["function", "function", "function", "function"]);
     // getShell reports the PHASE (criterion 2) — a spec asserts on this,
     // not on a selector that could match a different screen.
     expect(harness?.getShell().phase).toBe("browser");
