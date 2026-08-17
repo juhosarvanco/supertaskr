@@ -274,8 +274,17 @@ describe("the nputer repo on its own map", () => {
     // undeclared and every drift count above stay byte-identical. A
     // lift that keeps its blast radius inside one component is what
     // that looks like on the map.
+    // 109 → 110 at the T-051 merge regen (2026-08-17): ONE file, C-05's
+    // app/test/window-manifest.test.ts. The branch added TWO .ts files and
+    // the hint moves by ONE — tools/e2e/tests/window-contract.spec.ts is
+    // under .nputerignored `tools/` and never enters the index. Like the
+    // T-053 entry above and unlike T-027's, the node and edge pictures do
+    // NOT move: all three new edges are file→package (node:fs, node:path,
+    // vitest), and an edge whose head is a package can create no component
+    // pair, so the relation table, the undeclared count and every drift
+    // ring above stay byte-identical.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 109 files",
+      "committed graph · 110 files",
     );
   });
 });

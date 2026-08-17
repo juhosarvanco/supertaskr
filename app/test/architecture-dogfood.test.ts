@@ -772,6 +772,52 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //   · The ceaa949 ordering lesson, SEVENTEENTH hold: this block and the
 //     map fixture are both indexed, so both were edited BEFORE the final
 //     regen and the regen was then run twice for byte-identity.
+//
+// RECONCILED AT THE T-051 MERGE (2026-08-17, integrator — TWENTY-EIGHTH
+// exercise of the practice). The log is unbroken from T-053's block
+// above. Every number re-derived from the raw graph against
+// `git show dca3731:docs/architecture/graph.json` with my own diff
+// script, BEFORE this edit and BEFORE the suite was re-run:
+//   · stats 109→110 files, 857→860 symbols, 1325→1328 edges (import +3,
+//     call +0, type_ref +0), 500788→502350 bytes. Nothing removed:
+//     3 added, 0 retired.
+//   · ONE file added, C-05's — app/test/window-manifest.test.ts (loc 176,
+//     3 symbols: MANIFEST, WindowBlock, windowBlock). THE BRANCH ADDED
+//     TWO `.ts` FILES AND ONLY ONE IS INDEXED: the other is
+//     tools/e2e/tests/window-contract.spec.ts, and `tools/` is
+//     .nputerignored, so the lane is not territory — the same reason
+//     T-041's five tools/e2e files landed nowhere. Derive the mapping
+//     move from the INDEXED added-file list, not from the merge's diff.
+//   · mapping 109→110; C-05 50→51 is the ONLY count that moves, and it
+//     is derivable before anything runs: `app/test/**` is C-05's glob
+//     and its only claimant (swept again here — C-05-app.md:9 is the
+//     single match in docs/architecture/components/).
+//   · NOTHING ELSE MOVES, and that was DERIVED rather than hoped. All
+//     three new edges are file→PACKAGE — `node:fs`, `node:path` and
+//     `p:vitest`. An edge whose head is a package can create no
+//     component PAIR at all, so the findings list, all six D1
+//     `fileEdges` lists, the 30-row relation table with its 13/8/9
+//     tally, every observedCount, every drift ring and the C-12 `files`
+//     array are byte-identical. The T-034 block's trap (lists hiding
+//     behind counts) was swept for directly anyway: the two LISTS in
+//     this file that could move are C-12's `files` array — C-12 is
+//     app/src/architecture/**, and no file was added there — and the
+//     D1 `fileEdges` lists, every one of which is a component pair.
+//     No symbol count moves either; the three new symbols are all in
+//     the new file.
+//   · THREE assertions move plus one `it()` name — the size check and
+//     the C-05 row here (SECOND in the same body as the size check, so
+//     a red hides it: the trap that cost T-048 and T-049 a row each),
+//     and the index hint in map-dogfood-render.test.tsx. Forecast from
+//     the added-file list and the registry glob before the regen was
+//     run, and the measurement matched it exactly — the SECOND complete
+//     forecast running.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched: T-051
+//     declares no component and changes no registry file, so the T-024
+//     three-fixtures rule does not fire in its registry form.
+//   · The ceaa949 ordering lesson, EIGHTEENTH hold: this block and the
+//     map fixture are both indexed, so both were edited BEFORE the final
+//     regen and the regen was then run twice for byte-identity.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -837,8 +883,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 109 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(109);
+  it("all 110 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(110);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -885,7 +931,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // not compose with the DOM fixture, so the branch split them into a
       // third file. Derived from the added-file list before the suite ran,
       // which is the rule above being used for the fifth merge running.
-      ["C-05", 50],
+      // 50 → 51 at the T-051 merge regen (2026-08-17), by ONE and by the
+      // same route a sixth time: window-manifest.test.ts is under
+      // app/test/**, C-05's alone. The branch added TWO .ts files and this
+      // row moves by ONE, not two — tools/e2e/tests/window-contract.spec.ts
+      // is under .nputerignored `tools/`, so it never enters the index and
+      // cannot be territory. Deriving this row from the MERGE's diff would
+      // have over-counted it; derive it from the INDEXED added-file list.
+      ["C-05", 51],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under

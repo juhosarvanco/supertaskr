@@ -64,16 +64,29 @@ any viewport. `genesis-screen.spec.ts:165` passes via the pre-T-042
 - THE LENS-SCROLL ASSERTION SHALL ASSERT THE PROPERTY IT MEANS.
   `interview.spec.ts:363` reads
   `expect(paneLayout.scrollHeight).toBeGreaterThan(paneLayout.clientHeight)`
-  at every viewport at or above 1024, and at 1440x900 there is
-  **zero** margin — the verifier's own probe, differing only by a
-  project dir one character longer, measured the lens region at
-  **780 / 780**, so `toBeGreaterThan` fails while nothing is wrong
-  with the screen (1024x768: 25px of margin; 1280x720: 57px;
-  1440x900: **0**). Assert `overflow-y: auto` AND a `clientHeight`
-  bounded by the column, keeping the strict comparison only where
-  headroom is guaranteed. "This region scrolls when there is
-  something to scroll" is the claim; a region with nothing to scroll
-  is not a failure of the frame (T-027-s5).
+  at every viewport at or above 1024, and at 1440x900 the margin is
+  thin enough that a content change tips it. **THE LEVER IS THE
+  FIXTURE'S ARTIFACT ROW COUNT, NOT THE PROJECT DIR PATH LENGTH** —
+  corrected at the T-051 merge (2026-08-17) from **T-051-s8**, which
+  measured both dirs against both fixtures at all three viewports and
+  found *every cell identical*. T-027-s5's "a project dir one
+  character longer" is FALSIFIED and must not be carried into the
+  build: one extra character in the path moves nothing. What moves it
+  is rows — artifact rows are 40px tall on a 47px pitch, so two rows
+  out of the lens is 78px out of the content, which is the whole
+  margin. Measured at 1440x900: `streakFixture` (9 rows) → **858/780**,
+  78px of margin, strict `>` PASSES; T-028's `streakMidInterview`
+  (7 rows) → **780/780**, zero margin, strict `>` FAILS. The three
+  older per-viewport figures (1024x768: 25px; 1280x720: 57px;
+  1440x900: 0) came from a probe rendering fewer rows still, so
+  RE-MEASURE them rather than trusting them.
+  T-027-s5's CONCLUSION stands and is vindicated: an assertion with no
+  headroom at the widest lens is unsafe. Assert `overflow-y: auto` AND
+  a `clientHeight` bounded by the column, keeping the strict
+  comparison only where headroom is guaranteed. "This region scrolls
+  when there is something to scroll" is the claim; a region with
+  nothing to scroll is not a failure of the frame (T-027-s5, as
+  corrected by T-051-s8).
 - THE FRAGILITY SHALL BE NAMED IN A COMMENT so the next person to add
   a row to `streak` or change a line-height does not spend a session
   bisecting a frame that is fine. **Read this beside T-062**, which

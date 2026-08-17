@@ -161,6 +161,31 @@ what a user can do that they could not this morning: open a folder with
 no plan in it, be asked a question, answer it in the app, watch the
 answer become a file, and see the file confirmed back — with the plan
 assembling in the pane beside the conversation that produced it.
+T-051 merged 2026-08-17 and it is the smallest change in this milestone
+with the largest reach: **four numbers in a manifest, and they decide
+whether anyone ever sees the paragraph above.** The app opened at
+800×600 with no minimum. T-027's split renders the lens only at or above
+1024 CSS px and centres the chat alone below it — so at the size the app
+actually launched, **a new user saw the chat and nothing else**, and the
+composition that was ruled on the same evening was unreachable without
+first dragging the window wider. Nobody widens a window before forming
+an opinion. The window now opens at **1280×840** and declares
+**minWidth 1024 / minHeight 700**, so the split is what launch looks
+like and the sub-breakpoint state is out of the window's legal range
+rather than its default. 1280 is not a round number chosen for taste: it
+is the unique width at which the two halves are equal (the chat is 640
+with its 1px rule inside it, so the lens is width − 640), and 1279 is
+the measured floor where the lens still clears the 639px T-027's plan
+calls the design's geometry. The floor of 700 clears every screen's
+natural content at the minimum — genesis 302, the front door 475, the
+no-plan card 663 and the repo map 692 — with **8px to spare, not the
+37px the card claimed**, because the card's guard measured a one-node
+map (T-051-s5). What a user can do that they could not this morning:
+launch the app and see the interview and the plan side by side, at the
+size the design was drawn for, without touching the window. **What is
+still @human's**: whether 840 or 867 is right depends on the ~28px macOS
+title bar, which is the one number nobody could measure headlessly
+(T-051-s3).
 **The milestone is still NOT complete, and the remainder is not
 cosmetic.** T-028 (the decomposition crescendo) and T-029 (resume plus
 the hand-driven fallback) are both open, and T-029 matters more than its

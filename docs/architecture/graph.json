@@ -5379,8 +5379,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:c8902fce73c67fa6585f2a93fa8438816575e5699900038f0a3c865a4b663fbd",
-      "loc": 1320,
+      "hash": "blake3:5c2b682137fb292e59c671dc812ca5ce899239c4d1cbbd8576e7367bfec64c4c",
+      "loc": 1373,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -5388,8 +5388,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            810,
-            810
+            856,
+            856
           ]
         },
         {
@@ -5398,8 +5398,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            809,
-            809
+            855,
+            855
           ]
         },
         {
@@ -5408,8 +5408,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            775,
-            775
+            821,
+            821
           ]
         },
         {
@@ -5418,8 +5418,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            781,
-            796
+            827,
+            842
           ]
         },
         {
@@ -5428,8 +5428,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            798,
-            807
+            844,
+            853
           ]
         },
         {
@@ -5438,8 +5438,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            777,
-            779
+            823,
+            825
           ]
         }
       ]
@@ -6941,8 +6941,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:76aa8720ca4e2abd6d2e5f76889e49f32c9a0c1fa278b47ca4c47dc909b7de8b",
-      "loc": 281,
+      "hash": "blake3:cc1da931348b426e98dfc51c88219962898256790f1af5ba5b6d26fbc2c01b3a",
+      "loc": 290,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -8432,6 +8432,45 @@
           "range": [
             23,
             23
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/window-manifest.test.ts",
+      "path": "app/test/window-manifest.test.ts",
+      "lang": "ts",
+      "hash": "blake3:1cb3694e0250360b6d8da15f97f0bc2b2c045eb8ed2bd4ebc42d5320780b62ff",
+      "loc": 176,
+      "symbols": [
+        {
+          "id": "s:app/test/window-manifest.test.ts#MANIFEST",
+          "name": "MANIFEST",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            34,
+            34
+          ]
+        },
+        {
+          "id": "s:app/test/window-manifest.test.ts#WindowBlock",
+          "name": "WindowBlock",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            26,
+            32
+          ]
+        },
+        {
+          "id": "s:app/test/window-manifest.test.ts#windowBlock",
+          "name": "windowBlock",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            36,
+            44
           ]
         }
       ]
@@ -12641,6 +12680,35 @@
       "symbols": [
         "afterEach",
         "beforeEach",
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/window-manifest.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync",
+        "statSync"
+      ]
+    },
+    {
+      "from": "f:app/test/window-manifest.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "resolve"
+      ]
+    },
+    {
+      "from": "f:app/test/window-manifest.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
         "describe",
         "expect",
         "it"
@@ -19059,8 +19127,8 @@
     }
   ],
   "stats": {
-    "files": 109,
-    "symbols": 857,
-    "edges": 1325
+    "files": 110,
+    "symbols": 860,
+    "edges": 1328
   }
 }
