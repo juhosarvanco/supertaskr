@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use super::adapter::{validate_session_id, SessionIdRejection};
+use super::adapter::{validate_model, validate_session_id, ModelRejection, SessionIdRejection};
 use super::kit::write_atomic;
 
 /// `.nputer/sessions.json`, relative to the project root.
@@ -71,6 +71,51 @@ impl SessionEntry {
         match self.native_session_id.as_deref() {
             None => Ok(None),
             Some(id) => validate_session_id(id).map(|()| Some(id)),
+        }
+    }
+
+    /// THE MODEL'S READ BOUNDARY (T-029, folding T-047-s3), mirroring
+    /// what [`Self::resume_id`] gives the id.
+    ///
+    /// T-047 validated the model at the CAPTURE boundary and left the READ
+    /// side raw — the exact asymmetry T-039's criterion 3 was written
+    /// about, and every word of its argument for the id applies here: this
+    /// is a losable runtime file in the user's project directory, writable
+    /// by anything with disk access. A registry written by a pre-T-047
+    /// build can hold ~1 MiB of `model` (measured at T-047: 200,290 bytes
+    /// of `sessions.json` from a 200,000-byte model), and upgrading does
+    /// not clean it.
+    ///
+    /// **UNLIKE THE ID'S, A REJECTION HERE REFUSES NOTHING.** There is
+    /// nothing to refuse — the session is fine, only the recorded name of
+    /// what ran is unusable — so the caller renders "model not recorded"
+    /// and says so once in a log line. Throwing away a resumable interview
+    /// over a cosmetic field would be a worse failure than the one being
+    /// prevented, which is the same reasoning `run_turn`'s capture-side
+    /// gate already records.
+    ///
+    /// `Ok(None)` = no model recorded (not an error).
+    pub fn display_model(&self) -> Result<Option<&str>, ModelRejection> {
+        match self.model.as_deref() {
+            None => Ok(None),
+            Some(model) => validate_model(model).map(|()| Some(model)),
+        }
+    }
+
+    /// The accessor's own answer, already logged: `Some(name)` when the
+    /// registry holds a usable one, `None` otherwise. THE ONE CALL every
+    /// renderer should use — reading `.model` raw is the bug this exists
+    /// to make avoidable.
+    pub fn model_for_display(&self) -> Option<String> {
+        match self.display_model() {
+            Ok(model) => model.map(str::to_string),
+            Err(rejection) => {
+                println!(
+                    "[nputer] agent: session '{}' in {SESSIONS_REL} records an unusable model name ({rejection}) - showing it as not recorded",
+                    truncate_utf8(&self.id, 32).escape_debug()
+                );
+                None
+            }
         }
     }
 }
@@ -158,6 +203,86 @@ pub fn find_planner(file: &SessionsFile) -> Option<&SessionEntry> {
     file.sessions
         .iter()
         .find(|s| s.roles.iter().any(|r| r == "planner") && s.status != "dead")
+}
+
+/// THE FACT THAT "AN INTERVIEW WAS RUNNING ON <FOLDER>", and the ONE
+/// place it lives (T-029 criterion, folding T-026-s3).
+///
+/// It is derived — never separately written — from the planner entry in
+/// `.nputer/sessions.json`, which is runtime state in the user's own
+/// project directory and losable by charter. **It is never written to
+/// `docs/`**, which stays project truth: a folder whose `.nputer/` is
+/// deleted has lost the ability to RESUME a native session and has lost
+/// no fact about the project.
+///
+/// T-022 (the persisted view-state seam) consumes THIS rather than
+/// inventing a second mechanism — which is the whole of T-026-s3. A
+/// second home for the same fact is a second thing to keep true, and the
+/// two would disagree the first time a user deleted one of them.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GenesisRecord {
+    /// The registry id (`"S1"`), not the CLI's native one.
+    pub registry_id: String,
+    pub turns: u64,
+    pub status: String,
+    pub created: String,
+    /// Through [`SessionEntry::resume_id`] — `None` when there is no id
+    /// or the recorded one is unusable, so a caller cannot resume from a
+    /// value this boundary refused.
+    pub native_session_id: Option<String>,
+    /// Through [`SessionEntry::model_for_display`] — `None` also means
+    /// "recorded, but not a usable name" (T-047-s3).
+    pub model: Option<String>,
+    /// Whether the recorded id was REFUSED, as opposed to absent. The
+    /// difference is the whole of the affordance: "start fresh, your
+    /// saved session is unusable" against "start fresh, there is nothing
+    /// saved".
+    pub session_id_rejected: Option<String>,
+}
+
+/// Read the one place. `None` = no interview was ever running here (or
+/// the session was explicitly abandoned — `status: "dead"`).
+pub fn genesis_record(project_dir: &Path) -> Option<GenesisRecord> {
+    let file = load(project_dir);
+    let entry = find_planner(&file)?;
+    let (native_session_id, session_id_rejected) = match entry.resume_id() {
+        Ok(id) => (id.map(str::to_string), None),
+        Err(rejection) => (None, Some(rejection.to_string())),
+    };
+    Some(GenesisRecord {
+        registry_id: entry.id.clone(),
+        turns: entry.turns,
+        status: entry.status.clone(),
+        created: entry.created.clone(),
+        native_session_id,
+        model: entry.model_for_display(),
+        session_id_rejected,
+    })
+}
+
+/// Mark the recorded planner session ABANDONED — `status: "dead"`, which
+/// `find_planner` skips, so the next start is a fresh one.
+///
+/// The method's own words (`method/runtime/sessions-schema.md`): "Killing
+/// a session = mark status dead; the project resumes from docs/." Nothing
+/// is deleted: the entry stays readable, and `docs/` — the only thing
+/// that was ever project truth — is not touched at all.
+pub fn mark_planner_dead(project_dir: &Path) -> io::Result<Option<String>> {
+    let mut file = load(project_dir);
+    let Some(entry) = file
+        .sessions
+        .iter_mut()
+        .find(|s| s.roles.iter().any(|r| r == "planner") && s.status != "dead")
+    else {
+        return Ok(None);
+    };
+    entry.status = "dead".to_string();
+    let id = entry.id.clone();
+    let json = serde_json::to_vec_pretty(&file)
+        .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
+    write_atomic(&sessions_path(project_dir), &json)?;
+    Ok(Some(id))
 }
 
 /// One protocol half-turn, appended to `transcript.jsonl`.

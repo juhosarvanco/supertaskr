@@ -743,9 +743,11 @@ fn a_second_start_offers_the_recorded_session_rather_than_auto_resuming() {
     settle(&h.agent);
 
     match agent::start_genesis(&h.watch, &h.agent) {
-        StartOutcome::ResumeAvailable { native_session_id, turns } => {
+        StartOutcome::ResumeAvailable { native_session_id, turns, model } => {
             assert_eq!(native_session_id, "fake-session-0001");
             assert_eq!(turns, 1);
+            // T-047-s3: through `model_for_display`, never the raw field.
+            assert_eq!(model.as_deref(), Some("fake-model-1"));
         }
         other => panic!("expected ResumeAvailable, got {other:?}"),
     }
@@ -1100,17 +1102,20 @@ fn a_hostile_session_id_in_the_registry_file_is_refused_at_the_read_boundary() {
         "../../../../etc/passwd",
     ] {
         fs::write(&path, planted(hostile)).expect("plant a hostile registry");
+        // T-029 (T-039-s3): its OWN envelope now. `Error { message }`
+        // carried this next to "the registry could not be written", and
+        // only one of the two has an affordance behind it.
         match agent::start_genesis(&h.watch, &h.agent) {
-            StartOutcome::Error { message } => {
-                assert!(message.contains("refusing to resume session 'S1'"), "{message}");
-                assert!(message.contains(sessions::SESSIONS_REL), "{message}");
+            StartOutcome::SessionIdRejected { registry_path, why } => {
+                assert_eq!(registry_path, sessions::SESSIONS_REL);
+                assert!(why.contains("refusing to resume session 'S1'"), "{why}");
                 assert!(
-                    message.contains("begins with '-'") || message.contains("U+"),
-                    "the outcome names the rejection: {message}"
+                    why.contains("begins with '-'") || why.contains("U+"),
+                    "the outcome names the rejection: {why}"
                 );
-                assert!(!message.contains("dangerously"), "no echo of the id: {message}");
+                assert!(!why.contains("dangerously"), "no echo of the id: {why}");
             }
-            other => panic!("expected a typed refusal for {hostile:?}, got {other:?}"),
+            other => panic!("expected SessionIdRejected for {hostile:?}, got {other:?}"),
         }
         // Nothing spawned, nothing materialized, and the file left alone
         // for the user to look at.
@@ -1122,7 +1127,7 @@ fn a_hostile_session_id_in_the_registry_file_is_refused_at_the_read_boundary() {
     // THE DISCRIMINATING HALF: a well-shaped id is still offered.
     fs::write(&path, planted("e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77")).expect("plant a real id");
     match agent::start_genesis(&h.watch, &h.agent) {
-        StartOutcome::ResumeAvailable { native_session_id, turns } => {
+        StartOutcome::ResumeAvailable { native_session_id, turns, .. } => {
             assert_eq!(native_session_id, "e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77");
             assert_eq!(turns, 3);
         }

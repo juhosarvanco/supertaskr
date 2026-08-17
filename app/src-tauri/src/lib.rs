@@ -322,6 +322,46 @@ fn genesis_cancel(agent: tauri::State<'_, AgentState>) -> CancelOutcome {
     agent::cancel(&agent)
 }
 
+/// T-029 criterion 1: respawn the RECORDED native session. Zero
+/// arguments — the id is read Rust-side out of `.nputer/sessions.json`
+/// through its own gate, so no session id ever crosses the boundary in
+/// either direction. `async` for the same reason `genesis_start` is.
+#[tauri::command]
+async fn genesis_resume(
+    watch: tauri::State<'_, WatchState>,
+    agent: tauri::State<'_, AgentState>,
+) -> Result<StartOutcome, String> {
+    Ok(agent::resume_genesis(&watch, &agent))
+}
+
+/// T-029 criterion 3: continue with a FRESH session when the native one
+/// will not resume. Degraded, never dead — the old entry is marked dead
+/// and the new kickoff carries the method's resume rule.
+#[tauri::command]
+async fn genesis_fresh(
+    watch: tauri::State<'_, WatchState>,
+    agent: tauri::State<'_, AgentState>,
+) -> Result<StartOutcome, String> {
+    Ok(agent::fresh_genesis(&watch, &agent))
+}
+
+/// T-029 criteria 1–2: the chat's rehydration source. Reads the losable
+/// `.nputer/genesis/transcript.jsonl`; an empty answer means "render the
+/// banked-progress summary instead" and is never an error.
+#[tauri::command]
+fn genesis_transcript(watch: tauri::State<'_, WatchState>) -> Vec<agent::sessions::TranscriptLine> {
+    agent::transcript(&watch)
+}
+
+/// T-029 criterion 4: the hand-driven mode's copyable block (ADR-006's
+/// manual-interview instrument). Materializes the kit and returns the same
+/// assembled prompt the spawn would have used — one text, one source of
+/// truth, any model, any CLI.
+#[tauri::command]
+fn genesis_kickoff(watch: tauri::State<'_, WatchState>) -> agent::KickoffOutcome {
+    agent::kickoff(&watch)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -399,7 +439,11 @@ pub fn run() {
             genesis_start,
             genesis_send_turn,
             genesis_status,
-            genesis_cancel
+            genesis_cancel,
+            genesis_resume,
+            genesis_fresh,
+            genesis_transcript,
+            genesis_kickoff
         ])
         // T-025 criterion 1 ("child processes SHALL not outlive the
         // app"): `.build(...).run(|app, event| ...)` instead of
