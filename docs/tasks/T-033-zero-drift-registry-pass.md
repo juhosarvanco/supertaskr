@@ -41,7 +41,40 @@ this file's plan section before dispatch):
     dispatch (integrator observation, 2026-08-16);
 (2) non-code story — a component-file field (`non_code: true` or the
     existing layer vocabulary) downgrading D3 to informational for
-    C-01/C-11, OR accepted permanent amber recorded in their prose.
+    C-01/C-11, OR accepted permanent amber recorded in their prose;
+(3) **the ADR-015 one-implementation question (T-014-s1, folded here
+    at the 2026-08-17 triage; its suggestion file is removed in the
+    same commit as this line).** T-014 shipped a REALITY-SIDE join in
+    Rust (`src/arch/`: file→component mapping, observed component
+    edges including the package.path seam, the three relations,
+    D1–D5) while ADR-015 assigns "the intent⨝reality⨝tasks
+    derivation" to pure TypeScript and
+    `docs/architecture/components/C-07-nputer-index.md` says in as
+    many words "Emitting graph.json is its entire job (parsing and
+    derivation live in TypeScript)". **Both cannot be literally true
+    at once.** T-014 resolved it the narrowest way it could rather
+    than leave a criterion unbuilt — the crate computes only the
+    reality side and REFUSES (exit 3, naming the file) on anything it
+    cannot read exactly — but it is still a second implementation of
+    a documented one-implementation rule, and only the architect can
+    say which way it reconciles. Rule ONE of: **(a)** amend C-07 and
+    ADR-015 to say the crate owns the reality-side join and
+    TypeScript owns the intent⨝tasks half — matches what
+    `--fail-on undeclared|unmapped` already implies (both are reality
+    findings), keeps the binary self-contained for the CI/agent path,
+    and costs one clause in each document; **(b)** move `arch` to the
+    Node CLI (C-02) when it exists — the purest reading of ADR-015
+    and of T-014's plan §7, but C-02 does not exist, the engine lives
+    inside `app/src/lib/architecture/` rather than in a shareable
+    package, and until both are true `nputer arch` cannot exist at
+    all, which is what T-014's criterion was written to prevent;
+    **(c)** keep both and pin their agreement — which is **T-059**,
+    and is worth doing under (a) regardless. NOT available: the crate
+    shelling out to Node for the answer — ADR-003's direction is
+    Node→binary, and inverting it gives the indexer a Node runtime
+    dependency ADR-015 specifically keeps it free of. **T-059 is
+    `blocked_by: [T-033]` and dissolves entirely under (b)**, so this
+    ruling is worth making before that card is dispatched.
 
 ## Acceptance criteria
 - WHEN the umbrella decision applies THE standing D1 findings whose
@@ -67,6 +100,13 @@ this file's plan section before dispatch):
   diff under lib/parser/**"; and the enumerated reconciliation block
   in app/test/architecture-dogfood.test.ts SHALL name its two sibling
   fixtures (T-024-s5).
+- THE ADR-015 / C-07 WORDING SHALL BE RECONCILED per decision (3),
+  in the same change as the registry edits — one clause in each
+  document, so the map and the two engines stop being describable by
+  two incompatible sentences. IF arm (b) is chosen THEN the notes
+  SHALL say so explicitly and name T-059 as dissolved, because a card
+  that quietly stops being needed is worse than one that is closed
+  (T-014-s1).
 
 ## Implementation notes
 

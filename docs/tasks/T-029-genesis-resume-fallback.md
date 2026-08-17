@@ -26,6 +26,18 @@ classification this task routes on, and the "where does 'the shell was
 in genesis on <folder>' live" question that T-022 must not answer
 separately.
 
+Also absorbs: T-027-s2, T-039-s3, T-047-s3 (triage 2026-08-17). All
+three are the same shape as the `AuthFailed` criterion below and as
+each other — **a fact that is known and typed inside the process, and
+then delivered nowhere a user can see it.** T-027-s2 is a refused turn
+subscription that leaves the chat permanently empty while the plan
+visibly assembles beside it; T-039-s3 is two refusals riding blunt
+catch-all arms; T-047-s3 is a registry field validated on the way in
+and never on the way out. This task owns every "the conversation is
+not where you left it" state, and it is the first task with a real
+caller for the third. Their suggestion files are removed in the same
+commit as this line.
+
 GATE: T-039 (session-id injection) must merge before this dispatches —
 this is the task that reads the id off .nputer/sessions.json, which is
 exactly what makes that injection reachable.
@@ -76,6 +88,59 @@ doubles as an ADR-006 manual-interview instrument check).
   written in exactly ONE place — the runtime `.nputer/` registry,
   never docs/, which stays project truth — and T-022 SHALL consume it
   rather than invent a second mechanism (T-026-s3).
+- `GenesisState` SHALL CARRY THE FACT THAT THE TURN CHANNEL IS NOT
+  OPEN. `startInterviewSource` wraps `listen("genesis-turn")` in a
+  try/catch — it must, because an unhandled rejection at the app root
+  is what T-050 spent a task removing — and the whole user-visible
+  response is a `console.error`
+  (`interview-source.ts:134`). The screen renders normally, the input
+  is enabled, "Start the interview" works, `genesis_start` reports
+  `started { turn: 1 }`, the planner really runs and really writes
+  into `docs/`, the RIGHT half shows the files landing — **and the
+  left half stays empty forever with no explanation.** Shape 1 of the
+  two: C-14 gains a `listenerFailed: boolean` (or a new typed
+  `lastOutcome` variant), `startGenesisListener` sets it, and the chat
+  renders the existing inline-notice treatment over it. Shape 2 (a
+  flag private to the source module) is REJECTED in advance: it makes
+  the store and the UI disagree about whether the interview is live,
+  which is the split-brain T-027 §1 spent its length arguing against.
+  Reproduction needs no new machinery: make the `listen` mock reject
+  in `interview-harness.test.ts` (T-027-s2).
+- THE TWO SESSION-ID REFUSALS SHALL GET THEIR OWN TYPED VARIANTS now
+  that this task touches both sides of the wire. Today capture-side
+  rides `TurnError::MalformedStream { why }` and registry-read side
+  rides `StartOutcome::Error { message }` — both correct, both blunt:
+  `MalformedStream` files an attempted argv injection next to a
+  truncated line, and the webview cannot tell "your runtime file holds
+  an unusable id — delete it" from "the registry could not be written"
+  without reading English. Add
+  `StartOutcome::SessionIdRejected { registry_path, why }` and
+  `TurnError::RejectedSessionId { why }` with their `agent-store.ts`
+  mirrors, and route the first to a "your saved session is unusable —
+  start fresh" affordance rather than a generic error toast. The
+  rejection strings already exist and are already escaped; only the
+  envelope changes. **This is the same delivery-not-detection shape as
+  the `AuthFailed` criterion above** — the fact is typed and captured
+  and then routed somewhere nobody reads (T-039-s3).
+- `SessionEntry.model` SHALL GAIN A READ BOUNDARY, mirroring what
+  T-039 gave the id. T-047 validated the model at the CAPTURE boundary
+  (`adapter.rs:402`, 128 bytes, printable ASCII, no space) and left
+  the READ side raw — the exact asymmetry T-039's criterion 3 was
+  written about, and every word of T-039's argument for the id ("a
+  losable runtime file in the user's project directory, writable by
+  anything with disk access") applies to `model` too.
+  `display_model() -> Result<Option<&str>, ModelRejection>` with
+  callers going through the accessor and reading the raw field
+  becoming the bug. **Unlike the id's, a rejection here SHALL NOT
+  refuse to start** — there is nothing to refuse, the session is fine
+  — it renders as "model not recorded" and says so once in a log line.
+  A registry written by a pre-T-047 build can hold ~1 MiB of model
+  (measured: 200,290 bytes of `sessions.json` from a 200,000-byte
+  model) and upgrading does not clean it. **This suggestion's original
+  home was T-027, which has landed and renders nothing off this
+  struct** — verified at triage, the only `.model` under
+  `app/src/genesis/**` is `docs.model.features` — and this task is the
+  first with a real caller (T-047-s3).
 
 ## Implementation notes
 
