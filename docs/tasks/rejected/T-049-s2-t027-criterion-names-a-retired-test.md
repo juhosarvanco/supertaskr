@@ -1,7 +1,7 @@
 ---
 id: T-049-s2
 title: T-027's accelerator criterion names a test T-049 retired — reconcile it at the planning pass, before a builder goes looking
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-049
 ---
 
@@ -52,3 +52,21 @@ Two smaller notes for the same pass, so they are not rediscovered:
 - **The ⌘-vs-Ctrl label and a native Tauri menu are still T-022's**, as
   T-026-s2 said. T-049 changed neither: the matcher accepts either
   modifier, and only the rendered glyphs are macOS-shaped.
+
+Triage 2026-08-17 (architect): REJECTED — DISCHARGED by the event it
+asked for, and checked against T-027's card rather than against the
+baton. This file asked that T-027's last criterion be reconciled "at
+the planning pass, before a builder goes looking". It was. T-027's
+card now reads "T-026's front-door Cmd-O/Cmd-N are ALREADY on it
+(T-049 lifted them to `app/src/components/shell/accelerators.ts`…)" —
+the exact suggested wording — and its planning section records the
+substitution verbatim under "The last criterion's … becomes, per
+T-049-s2". T-027 is `status: done`, APPROVED first pass, with the
+scoped accelerator table built on T-049's ONE listener.
+
+Both smaller notes held too: the table lives in
+`app/src/components/shell/` (C-05's territory, not `app/src/lib/`'s
+unclaimed ground), and the ⌘-vs-Ctrl label plus a native menu remain
+T-022's — now written into T-022's criteria at this same triage,
+together with T-049-s4's non-Latin-layout question. Nothing left to
+schedule.
