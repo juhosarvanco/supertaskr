@@ -38,9 +38,35 @@ vi.mock("@tauri-apps/api/core", () => ({
     return outcome instanceof Error ? Promise.reject(outcome) : Promise.resolve(outcome);
   },
 }));
+/**
+ * T-027 RECONCILE — THE MOCK IS NOW CHANNEL-AWARE, AND THAT IS A
+ * STRENGTHENING RATHER THAN AN ACCOMMODATION.
+ *
+ * This mock parked EVERY `listen` call on one shared deferred and kept
+ * every handler in one shared slot, which was exactly right while the
+ * app subscribed to one channel. T-027 calls `startGenesisListener()` at
+ * the root (App.tsx), so the app now opens TWO subscriptions —
+ * `docs-changed` and `genesis-turn` — and the second call would silently
+ * overwrite the first's resolve/reject pair. Every `refuseListen` below
+ * would then reject the WRONG channel, the startup screen would never
+ * see a failure at all, and seven tests would be asserting against a
+ * subscription nobody was waiting on.
+ *
+ * Naming the channel is what keeps these assertions about
+ * `docs-changed`, which is what T-050's criteria are about. It also lets
+ * the file assert something it previously could not: `listenCalls` now
+ * counts the DOCS subscription specifically instead of counting both.
+ */
 vi.mock("@tauri-apps/api/event", () => ({
   emit: () => Promise.resolve(),
-  listen: (_name: string, handler: (event: { payload: unknown }) => void) => {
+  listen: (name: string, handler: (event: { payload: unknown }) => void) => {
+    if (name !== "docs-changed") {
+      // Not the channel under test. Parked forever and never settled —
+      // which is what a subscription that has not come back looks like,
+      // and which guarantees it is never the promise `refuseListen`
+      // reaches.
+      return new Promise(() => {});
+    }
     ipc.listenCalls += 1;
     ipc.onDocsChanged = handler;
     return new Promise((resolve, reject) => {

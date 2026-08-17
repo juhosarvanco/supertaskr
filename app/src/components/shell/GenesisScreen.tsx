@@ -1,26 +1,45 @@
 import { Component, type ReactNode } from "react";
 import { GenesisPane } from "@/genesis/GenesisPane";
+import { InterviewChat } from "@/genesis/InterviewChat";
 import type { DocsModelState } from "@/lib/docs-model";
 
 /**
- * The genesis screen (T-026 criterion 2): what the shell shows while a
- * folder with no plan is open for an interview. Full-bleed by design —
- * the pane rail stays board|map, which are the panes an OPEN project has;
- * an interview is not a pane.
+ * The genesis screen (T-026 criterion 2, filled by T-027): what the shell
+ * shows while a folder with no plan is open for an interview. Full-bleed
+ * by design — the pane rail stays board|map, which are the panes an OPEN
+ * project has; an interview is not a pane.
  *
- * T-027 still fills the screen proper (the split view: conversation left,
- * the project-so-far right). What T-026 left as a placeholder region is
- * now the real thing: T-037 mounted T-024's lens (C-13) in the marked
- * slot below — the join the first slice owed, since T-024 built the lens
- * against a base predating this screen and T-026 built this screen
- * against a base predating the lens.
+ * THE SPLIT, per the @human composition ruling of 2026-08-17 after seeing
+ * T-024's lens at full width in a real genesis run: 640px of planner chat
+ * on the LEFT, the lens on the RIGHT. The pane earns its half; the
+ * interview is a conversation with the plan assembling beside it.
  *
- * THE SEAM, as T-026 designed it and T-037 used it: everything the lens
- * needs is already in this screen's two props — `projectDir` (the genesis
- * root) and `docs` (the live DocsModelState the watcher feeds, which is
- * exactly what genesis-derive.ts consumes). So the mount is one import
- * and one element; no new IPC, no polling, no prop plumbing — the pane
- * updates through the watcher pipeline that already runs.
+ * WHAT T-027 REMOVED, and why it was always going to go: this screen used
+ * to render an `interview` overline, an `<h2>` naming the project dir, an
+ * explanatory paragraph and a `rounded-lg border bg-card` box around the
+ * pane. Every one of those was an acknowledged T-026 placeholder ("the
+ * genesis screen has no design source in this task — T-027 fills it"),
+ * and T-037's @human item 1 flagged the card frame as a sidebar tone
+ * inside a box the design never draws. The design's split is FLUSH: a
+ * 640px column with a 1px rule on its own right edge, and a `flex:1`
+ * right half with no border and no radius. There is no gap element and no
+ * card frame anywhere between them. The project's name did not vanish
+ * with the heading — it moved to the app's own header (App.tsx), which is
+ * where the design puts it.
+ *
+ * THIS FILE STAYS IPC-FREE AND TIMER-FREE, and the gate that says so is
+ * kept rather than weakened: `genesis-mount.test.tsx` sweeps this file's
+ * SOURCE TEXT for ten names — every way a component could reach the IPC
+ * boundary, a network, a clock, a store on the device, or a raw-markup
+ * sink. This comment deliberately spells none of them, because the sweep
+ * reads comments too and it should. Every scrap of the conversation half
+ * — the store subscription, the send, the auto-start, the scroll — lives
+ * in `app/src/genesis/` instead.
+ *
+ * THE SEAM IS UNCHANGED AND UNWIDENED. Both halves need only this
+ * screen's two existing props: `projectDir` (the genesis root) and `docs`
+ * (the live DocsModelState the watcher feeds). No new IPC, no polling, no
+ * prop plumbing — the chat gets everything else from C-14's store.
  */
 export function GenesisScreen({
   projectDir,
@@ -47,38 +66,52 @@ export function GenesisScreen({
     <section
       data-testid="genesis-screen"
       data-genesis-files={fileCount}
-      className="flex min-h-0 flex-1 flex-col gap-6 px-10 py-9"
+      className="flex min-h-0 flex-1 flex-col"
     >
-      <div className="flex flex-col gap-2">
-        <span className="font-mono text-xs tracking-overline text-muted-foreground uppercase">
-          interview
-        </span>
-        <h2 className="text-2xl font-semibold tracking-heading">
-          Starting a plan in{" "}
-          <span data-testid="genesis-project-dir" className="font-mono text-xl">
-            {projectDir}
-          </span>
-        </h2>
-        <p className="max-w-120 text-sm text-secondary-foreground">
-          The planner writes into{" "}
-          <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span> and this
-          screen renders whatever lands — nothing is copied, nothing is imported.
-        </p>
-      </div>
+      {/* T-048's chain gains one link, by construction rather than by
+          accident: the split is a new flex level between the screen and
+          the slot, so it needs `min-h-0` for exactly the reason every
+          other link does, and a `data-testid` so the chain assertion in
+          shell-frame.test.tsx can name it. Both scroll regions below —
+          the chat's transcript and the lens's own — descend through it. */}
+      <div data-testid="genesis-split" className="flex min-h-0 min-w-0 flex-1">
+        <InterviewChat projectDir={projectDir} docs={docs} />
 
-      {/* ---- T-024's lens, mounted (T-037) ---------------------------- */}
-      {/* The slot frames the pane and clips it to the card radius; the
-          pane brings its own ground (bg-sidebar), header rule, padding
-          and inner scroll region, so the frame adds no styling of its
-          own beyond the border. min-h-0 + flex-1 is what lets the pane's
-          own overflow-y-auto region scroll instead of pushing the page. */}
-      <div
-        data-testid="genesis-pane-slot"
-        className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-card"
-      >
-        <GenesisPaneBoundary resetKey={docs.seq}>
-          <GenesisPane docs={docs} />
-        </GenesisPaneBoundary>
+        {/* ---- T-024's lens, mounted (T-037), now the right half ------- */}
+        {/* THE SPLIT'S BREAKPOINT, and the one consequence worth reading
+            twice. 640px of chat plus the 1px rule leaves the lens W-641:
+            at 1440 -> 799 (the design's own number), at 1280 -> 639, at
+            1024 -> 383, at 800 -> 159. The lens renders at Tailwind's
+            existing `lg` (1024px) and above and is ABSENT below it —
+            one existing default breakpoint, no new token, no config
+            change, which matters because this is the app's first
+            responsive call site and T-038-s1 is still open on whether
+            breakpoints are tokens.
+
+            THE CONSEQUENCE: at the app's OWN configured 800x600 window
+            the lens does not render. The interview is entirely usable —
+            the chat takes the frame and T-048's measurements say the
+            frame holds — but the half @human just ruled "earns its half"
+            is invisible at the size the app opens. T-027 deliberately
+            does NOT change tauri.conf.json: the window size governs every
+            screen, it fires the BOOT GATE, and it sits beside T-048-s5's
+            missing minHeight. A flagship screen's width requirement is a
+            reason to raise the default window, not a licence for this
+            task to do it in passing. Flagged to @human.
+
+            The slot keeps `min-h-0 flex-1` — what lets the pane's own
+            overflow-y-auto region scroll instead of pushing the page —
+            and loses T-037's card frame, radius and border: the design
+            draws the right half as a plain `flex:1` ground with no
+            border and no radius. */}
+        <div
+          data-testid="genesis-pane-slot"
+          className="hidden min-h-0 min-w-0 flex-1 lg:flex lg:flex-col"
+        >
+          <GenesisPaneBoundary resetKey={docs.seq}>
+            <GenesisPane docs={docs} />
+          </GenesisPaneBoundary>
+        </div>
       </div>
     </section>
   );

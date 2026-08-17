@@ -116,7 +116,27 @@ describe("the lens is mounted in the screen's marked slot (criterion 1)", () => 
     expect(q("[data-testid=genesis-docs-count]")).toBeNull();
     // The screen's own chrome is untouched around it.
     expect(q("[data-testid=genesis-screen]")).not.toBeNull();
-    expect(q("[data-testid=genesis-project-dir]")?.textContent).toBe("/tmp/sketchpad");
+    // T-027 RECONCILE — the chrome around the slot is now the CHAT, and
+    // the project's name moved to the app's own header.
+    //
+    // What this line used to assert is that the screen did not consist
+    // of nothing but the pane. T-026's `<h2>Starting a plan in <dir></h2>`
+    // was the only other thing on the screen, so the dir was the way to
+    // say it; the design's split has no such heading (and its chrome bar
+    // reads "nputer — new project", which is a WINDOW title this app
+    // deliberately does not set). The claim keeps its strength and gains
+    // reach: the left half of the split is here, beside the slot, which
+    // is more than a heading ever proved.
+    //
+    // THE DROPPED ASSERTION'S NEW HOME, named rather than lost:
+    // `genesis-entry.test.tsx` renders the REAL App and already asserts
+    // `genesis-project-dir` reads the genesis dir at two points in the
+    // entry flow. Those two lines needed NO edit — the testid moved to
+    // App.tsx's header and they kept passing — so the property is now
+    // asserted through the whole shell instead of through one screen
+    // rendered alone.
+    expect(q("[data-testid=interview-chat]")).not.toBeNull();
+    expect(q("[data-testid=genesis-project-dir]"), "the dir is the header's now").toBeNull();
   });
 
   it("the pane reads the same watched state the screen was handed", () => {
@@ -253,10 +273,21 @@ describe("a throwing pane cannot take the screen down (criterion 5)", () => {
     // The pane throws on the next snapshot.
     renderScreen(hostileState(docsState(fixtureTree("streak"), good)));
 
-    // The app is still standing: the screen, its heading and the slot all
-    // render — only the pane's subtree was replaced.
+    // The app is still standing: the screen, the OTHER HALF OF THE SPLIT
+    // and the slot all render — only the pane's subtree was replaced.
+    //
+    // T-027 RECONCILE, and this one is STRICTLY STRONGER than the line
+    // it replaces. The heading it used to check was a sibling of the
+    // slot with nothing in it; the chat is a live component with its own
+    // subscription, its own state and its own input. Asserting IT
+    // survives the pane's throw is the real claim — the blast radius of
+    // a crash in the right half is the right half — and it is a claim
+    // the old assertion could not make because the conversation did not
+    // exist yet. (The project dir's own home is the app header; see the
+    // note in criterion 1's test above.)
     expect(q("[data-testid=genesis-screen]")).not.toBeNull();
-    expect(q("[data-testid=genesis-project-dir]")?.textContent).toBe("/tmp/sketchpad");
+    expect(q("[data-testid=interview-chat]"), "the conversation is untouched").not.toBeNull();
+    expect(q("[data-testid=interview-input]"), "and still answerable").not.toBeNull();
     expect(q("[data-testid=genesis-pane-slot]")).not.toBeNull();
     expect(q("[data-testid=genesis-pane]")).toBeNull();
 

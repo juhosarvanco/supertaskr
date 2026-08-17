@@ -1,5 +1,6 @@
 import type { DocsModelState } from "@/lib/docs-model";
 import type { GenesisTurn, TurnErrorPayload } from "@/lib/agent-store";
+import { deriveGenesis, EMPTY_CHANGE_LOG } from "./genesis-derive";
 
 /**
  * T-027's pure half: everything the interview decides that does not need
@@ -174,6 +175,44 @@ export function challengeOf(text: string): ChallengeReading {
 }
 
 // ---- the stage strip ---------------------------------------------------
+
+/** What the strip needs from the lens's derivation, and a flag saying
+ * whether the derivation survived reading the tree. */
+export interface StageReading {
+  approxStage: number | null;
+  stageStep: string | null;
+  /** True when `deriveGenesis` threw on this docs tree. */
+  failed: boolean;
+}
+
+/**
+ * The stage, derived from the SAME function the lens uses — and never
+ * able to take the conversation down with it.
+ *
+ * THE REASON THIS IS NOT A PLAIN CALL, found by a test rather than
+ * guessed at: T-037 wrapped the lens in an error boundary precisely
+ * because "a throw inside the pane would otherwise unmount the whole
+ * React tree and leave the user a blank window with their interview in
+ * it". The chat then started calling `deriveGenesis` over the same docs
+ * tree, from OUTSIDE that boundary — so a tree torn badly enough to
+ * break the lens would have taken the interview with it, reintroducing
+ * the exact failure the boundary exists to prevent, one layer up.
+ *
+ * The conversation is the load-bearing half of this screen and the stage
+ * strip is derived decoration over a file tree the app does not control.
+ * So the strip degrades and the chat stands: an unreadable tree reads
+ * `stage —`, all segments future, and says so in the DOM
+ * (`data-stage-derivation="failed"`) rather than silently looking like a
+ * brand-new interview.
+ */
+export function stageOf(docs: DocsModelState): StageReading {
+  try {
+    const model = deriveGenesis(docs, EMPTY_CHANGE_LOG, 0);
+    return { approxStage: model.approxStage, stageStep: model.stageStep, failed: false };
+  } catch {
+    return { approxStage: null, stageStep: null, failed: true };
+  }
+}
 
 export type StageSegmentState = "done" | "current" | "future";
 

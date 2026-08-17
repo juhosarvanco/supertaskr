@@ -4,7 +4,8 @@ import { Board } from "@/components/board/Board";
 import { GenesisScreen } from "@/components/shell/GenesisScreen";
 import { PaneRail, type PaneId } from "@/components/shell/PaneRail";
 import { Button } from "@/components/ui/button";
-import { useAccelerators } from "@/components/shell/accelerators";
+import { acceleratorsFor, useAccelerators } from "@/components/shell/accelerators";
+import { cancelTurn, startInterviewSource } from "@/genesis/interview-source";
 import { skipReasonPhrase } from "@/lib/docs-model";
 import { cn } from "@/lib/utils";
 import {
@@ -382,20 +383,15 @@ function App() {
     void startDocsWatcher();
   }, []);
 
-  // T-049: THE app's accelerators, registered once at the root so ⌘O and
-  // ⌘N reach the same commands from every screen the app can show — the
-  // board, the map, the interview and every empty state — instead of
-  // only while the front door happens to be mounted. There is exactly
-  // one keydown path in this app for these chords (see
-  // components/shell/accelerators.ts, and the enumeration in
-  // test/accelerators.test.tsx that would fail if a second appeared).
-  // Both commands are the store's own single-flight picker entries, so a
-  // chord fired while a native dialog is already open does nothing —
-  // T-021's guard respected, not re-implemented.
-  useAccelerators({
-    openFolder: () => void pickProjectFolder(),
-    startInterview: () => void pickGenesisFolder(),
-  });
+  // T-027: the interview's state source, started beside the watcher and
+  // for the same reason — it is a subscription the whole app shares, not
+  // something a screen should set up when it happens to mount. Under
+  // Tauri this is C-14's `startGenesisListener()` (which nothing called
+  // before today); in a served DEV bundle it installs the interview
+  // harness the lane drives. Idempotent either way.
+  useEffect(() => {
+    void startInterviewSource();
+  }, []);
 
   // T-012 pane state: session-ephemeral by design (defaults each
   // launch — persistence is T-022's charter). The board pane's behavior
@@ -405,6 +401,25 @@ function App() {
 
   const { model, failures, skipped, truncated, fileCount, seq } = shell.docs;
   const screen = selectScreen(shell);
+
+  // T-049 gave the app ONE keydown listener at the root so ⌘O and ⌘N
+  // reach the same commands from every screen — the board, the map, the
+  // interview and every empty state — instead of only while the front
+  // door happens to be mounted. T-027 makes the TABLE screen-scoped,
+  // which `accelerators.ts` already predicted: a change of ARGUMENT, not
+  // of mechanism. Still exactly one keydown path (the enumeration in
+  // test/accelerators.test.tsx fails if a second appears), and a chord
+  // this screen does not claim is left completely alone rather than
+  // swallowed. The picker commands are the store's own single-flight
+  // entries, so a chord fired while a native dialog is open does
+  // nothing — T-021's guard respected, not re-implemented.
+  useAccelerators(
+    acceleratorsFor(screen.screen, {
+      openFolder: () => void pickProjectFolder(),
+      startInterview: () => void pickGenesisFolder(),
+      cancelTurn,
+    }),
+  );
   const milestone = milestoneLine(model);
 
   /**
@@ -460,6 +475,23 @@ function App() {
           <h1 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h1>
           {screen.screen === "board" && (
             <p className="font-mono text-sm text-muted-foreground">{shell.docs.projectDir}</p>
+          )}
+          {/* T-027 criterion 1 — "the app's own header names the new
+              project". The genesis screen used to carry an <h2> saying
+              "Starting a plan in <dir>"; the design's split has no such
+              heading, and the design's own chrome bar reads "nputer —
+              new project", which is a WINDOW TITLE we deliberately do
+              not set (it needs a window grant outside core:default, and
+              the mockup's traffic lights are furniture). So the name
+              lands in the app's own header, in the same slot and the
+              same idiom the board already uses. */}
+          {screen.screen === "genesis" && (
+            <p
+              data-testid="genesis-project-dir"
+              className="font-mono text-sm text-muted-foreground"
+            >
+              {shell.genesisDir ?? ""}
+            </p>
           )}
         </div>
         {/* T-017 (T-005-s3): header controls are app chrome, not board

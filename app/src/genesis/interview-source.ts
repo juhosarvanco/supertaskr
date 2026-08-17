@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import {
+  applyGenesisStatus,
   cancelGenesis,
   emptyGenesisState,
   getGenesisState,
@@ -12,6 +13,7 @@ import {
   subscribeGenesis,
   type GenesisEvent,
   type GenesisState,
+  type GenesisStatusPayload,
   type SendOutcomePayload,
   type StartOutcomePayload,
 } from "@/lib/agent-store";
@@ -78,6 +80,11 @@ declare global {
       push: (event: GenesisEvent) => void;
       /** Push one start/send outcome through the shipped reducer. */
       outcome: (outcome: StartOutcomePayload | SendOutcomePayload) => void;
+      /** Push the mount-time catch-up pull `genesis_status` answers. It
+       * is what tells the screen an interview has NOT started, which is
+       * what the auto-start keys off — so without this door a served
+       * bundle could never reach the first frame at all. */
+      status: (payload: GenesisStatusPayload) => void;
       /** The twin's current state — the same shape the store answers. */
       get: () => GenesisState;
       /**
@@ -105,6 +112,7 @@ export async function startInterviewSource(): Promise<void> {
       window.__nputerInterviewHarness = {
         push: (event) => setTwin(reduceGenesisEvent(twinState, event)),
         outcome: (outcome) => setTwin(reduceGenesisOutcome(twinState, outcome)),
+        status: (payload) => setTwin(applyGenesisStatus(twinState, payload)),
         get: () => twinState,
         sent: () => [...sendLedger],
       };
@@ -112,7 +120,19 @@ export async function startInterviewSource(): Promise<void> {
     }
     return;
   }
-  await startGenesisListener();
+  // NEVER REJECTS, deliberately, and this is the one place it matters:
+  // `startGenesisListener` awaits `listen("genesis-turn")`, and a refused
+  // subscription would otherwise become an unhandled rejection at the
+  // app's root — the shape T-050 spent a whole task removing from
+  // `startDocsWatcher`. A refusal is LOUD (the console line below) and
+  // recoverable rather than fatal: the interview screen simply shows no
+  // turns, and its explicit "Start the interview" affordance is still
+  // there, which is exactly why that affordance is not optional.
+  try {
+    await startGenesisListener();
+  } catch (err) {
+    console.error("[nputer] the interview event subscription was refused", err);
+  }
 }
 
 // ---- the UI's own half --------------------------------------------------

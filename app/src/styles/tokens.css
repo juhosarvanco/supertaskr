@@ -94,6 +94,15 @@
   --review-disc: #1f7a58;
   --review-mark: #ffffff;
 
+  /* ---- the interview's challenge treatment (T-027) -------------------
+     The "pushing back" block's warm paper and its ink, read exactly from
+     the design bundle's `interview` screen (lines 539-541). Its 2px left
+     rule and its label ink are NOT new tokens: they are --chart-4
+     (#b5651d) and --status-verifying-fg (#84501c), both already exact
+     matches in this sheet. Only these two values had no home. */
+  --interview-challenge-bg: #fdf6ee;
+  --interview-challenge-ink: #3f2b1a;
+
   /* ---- measured card/panel inks (app mockups, T-006) --------------- */
   /* Card TITLE ink, one step darker than the id/meta fg — the id/title
      hierarchy on filled cards (board + board·dark tabs). */
@@ -251,6 +260,18 @@
   --shadow-pop: 0 12px 28px -10px rgba(0, 0, 0, 0.7);
   --review-disc: #4ecf9e;
   --review-mark: #06231a;
+
+  /* T-027 — THE ONE PLACE IN THIS SHEET WITH NO DESIGN SOURCE AT ALL.
+     The bundle's `sc-if` list carries `boardDark` and `mapDark` and no
+     `interviewDark`, so there is no dark interview mockup to read. These
+     two are DERIVED BY FAMILY, the way --status-verifying-bg/-fg inverts
+     (#fce6d2/#84501c -> #2c1a0c/#e8a468): the warm paper goes to a deep
+     warm ground and the ink to a warm parchment, keeping the same hue
+     family and roughly the same contrast the light pair has. Flagged to
+     the @human dark pass as the one place the design cannot be followed,
+     only extended. */
+  --interview-challenge-bg: #1d1710;
+  --interview-challenge-ink: #e4d3c0;
 
   /* ---- measured card/panel inks (board·dark tab) --------------------- */
   --status-planned-title: #d4d4d4;

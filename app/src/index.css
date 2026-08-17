@@ -162,6 +162,10 @@
     --color-review-disc: var(--review-disc);
     --color-review-mark: var(--review-mark);
 
+    /* T-027 interview: the challenge block's paper and ink. */
+    --color-interview-challenge: var(--interview-challenge-bg);
+    --color-interview-challenge-ink: var(--interview-challenge-ink);
+
     /* T-006 detail panel: verdict-history block tints */
     --color-verdict-rejected: var(--verdict-rejected-bg);
     --color-verdict-rejected-ink: var(--verdict-rejected-ink);
