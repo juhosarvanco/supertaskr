@@ -135,7 +135,17 @@ describe("a throwing lens does not take the app down (T-037 criterion 5)", () =>
     expect(container.querySelector("main")).not.toBeNull();
     expect(screenOf()).toBe("genesis");
     expect(container.querySelector("h1")?.textContent).toBe("nputer");
-    expect(container.textContent).toContain("Starting a plan in");
+    // T-027 RECONCILE — same claim, better instrument. "Starting a plan
+    // in" was T-026's placeholder <h2> on the genesis screen; the
+    // design's split has no such heading, so T-027 removed it and moved
+    // the project's name to the app's own header. The chrome this line
+    // exists to prove is still standing is now asserted through BOTH
+    // halves: the header's copy of the dir (through a `data-testid`, so
+    // it no longer hangs on a sentence surviving a redesign), and the
+    // chat — a live component with its own subscription and input, which
+    // a heading never was.
+    expect(q('[data-testid="genesis-project-dir"]')?.textContent).toBe(GENESIS_DIR);
+    expect(q('[data-testid="interview-chat"]')).not.toBeNull();
     expect(q('[data-testid="genesis-screen"]')).not.toBeNull();
     // The store kept running underneath — the snapshot was applied.
     expect(container.querySelector("main")?.getAttribute("data-seq")).toBe("21");

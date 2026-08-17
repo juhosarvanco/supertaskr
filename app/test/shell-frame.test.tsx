@@ -234,31 +234,64 @@ describe("T-048 the frame holds — and only where it should", () => {
     );
 
     const { column } = frame();
-    const scroller = container.querySelector<HTMLElement>(
+
+    /** Walk UP from a scroll region to the bounded column. Every link in
+     * between must carry `min-h-0`, or its automatic minimum size (its
+     * content) pins it open and the overflow escapes to the page. */
+    const chainFrom = (scroller: HTMLElement): string[] => {
+      const chain: string[] = [];
+      for (let el = scroller; el !== column; el = el.parentElement as HTMLElement) {
+        expect(el.parentElement, "the scroll region must descend from the column").not.toBeNull();
+        const name =
+          el.getAttribute("data-testid") ??
+          `${el.tagName.toLowerCase()}.${el.className.split(" ")[0]}`;
+        expect(
+          el.classList.contains("min-h-0"),
+          `${name} must be able to shrink below its content`,
+        ).toBe(true);
+        chain.push(name);
+      }
+      return chain;
+    };
+
+    // T-027 RECONCILE — THE CHAIN GREW A LINK, AND IT GREW A SECOND
+    // CHAIN. T-048's own flags said this test "will go red and should be
+    // re-derived, not deleted" the moment the genesis screen was
+    // restructured, and this is that moment.
+    //
+    // The new link is `genesis-split`: the split is a real flex level
+    // between the screen and the two halves, so it needs `min-h-0` for
+    // exactly the reason every other link does, and it needs a
+    // `data-testid` so it has a stable name here. NOTHING WAS LOOSENED —
+    // the loop still requires `min-h-0` on every link it walks, and the
+    // expected array is still a whole-path equality that reds if a link
+    // appears, disappears or is renamed.
+    //
+    // THE STRENGTHENING: there are TWO scroll regions on this screen
+    // now, and a chain that protects one of them protects the frame only
+    // half as well. The chat's transcript gets the identical walk.
+    const paneScroller = container.querySelector<HTMLElement>(
       '[data-testid="genesis-pane"] .overflow-y-auto',
     );
-    expect(scroller, "the pane's own scroll region").not.toBeNull();
-
-    // Walk UP from the scroll region to the bounded column. Every link
-    // in between must carry `min-h-0`, or its automatic minimum size
-    // (its content) pins it open and the overflow escapes to the page.
-    const chain: string[] = [];
-    for (let el = scroller!; el !== column; el = el.parentElement as HTMLElement) {
-      expect(el.parentElement, "the scroll region must descend from the column").not.toBeNull();
-      const name =
-        el.getAttribute("data-testid") ?? `${el.tagName.toLowerCase()}.${el.className.split(" ")[0]}`;
-      expect(
-        el.classList.contains("min-h-0"),
-        `${name} must be able to shrink below its content`,
-      ).toBe(true);
-      chain.push(name);
-    }
-    // The path is short and known; if it grows a link, that link is
-    // covered by the loop above and this pins that it was looked at.
-    expect(chain).toEqual([
+    expect(paneScroller, "the lens's own scroll region").not.toBeNull();
+    expect(chainFrom(paneScroller!)).toEqual([
       "div.flex",
       "genesis-pane",
       "genesis-pane-slot",
+      "genesis-split",
+      "genesis-screen",
+    ]);
+
+    const logScroller = container.querySelector<HTMLElement>('[data-testid="interview-log"]');
+    expect(logScroller, "the chat's own scroll region").not.toBeNull();
+    expect(
+      logScroller!.classList.contains("overflow-y-auto"),
+      "the transcript is the thing asked to scroll, not the page",
+    ).toBe(true);
+    expect(chainFrom(logScroller!)).toEqual([
+      "interview-log",
+      "interview-chat",
+      "genesis-split",
       "genesis-screen",
     ]);
   });

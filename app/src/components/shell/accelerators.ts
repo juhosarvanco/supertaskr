@@ -56,7 +56,7 @@ import { useEffect, useRef } from "react";
  */
 
 /** A chord the app claims. */
-export type AcceleratorId = "openFolder" | "startInterview";
+export type AcceleratorId = "openFolder" | "startInterview" | "cancelTurn";
 
 /** Everything the matcher reads from a keydown event — a plain shape, so
  * the matcher can be exercised without constructing DOM events. */
@@ -73,10 +73,21 @@ export interface AcceleratorChord {
  *
  * The semantics are T-026's, unchanged and deliberately so: Command OR
  * Control (the label renders the design's macOS glyphs, the handler is
- * not that fussy), never with Alt or Shift, and only `o` / `n`.
- * Deliberately makes NO judgment about the event's target — ⌘O and ⌘N
- * are not text-editing keys, so they keep working while an input or
- * textarea has focus (criterion 6).
+ * not that fussy), never with Alt or Shift, and only `o` / `n` / `.`.
+ * Deliberately makes NO judgment about the event's target — none of the
+ * three is a text-editing key, so they keep working while an input or
+ * textarea has focus (criterion 6). ⌘. survives that target-blindness
+ * for a specific reason worth recording: a typed period carries no
+ * modifier, so requiring one is already the whole discrimination.
+ *
+ * T-027 adds `cancelTurn` on ⌘/Ctrl+`.` — the long-established macOS
+ * cancel chord. It earns its place because the interview AUTO-STARTS
+ * turn 1: a screen that spawns a process on arrival owes a way to stop
+ * it. It is claimed by the interview screen's table ALONE, so on every
+ * other screen it matches here and is then left completely untouched by
+ * `useAccelerators` (no preventDefault, nothing swallowed) — the
+ * property T-049-s3 named as one of the two that would bite, pinned for
+ * the first time in test/accelerators.test.tsx.
  */
 export function matchAccelerator(event: AcceleratorChord): AcceleratorId | null {
   if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return null;
@@ -85,6 +96,8 @@ export function matchAccelerator(event: AcceleratorChord): AcceleratorId | null 
       return "openFolder";
     case "n":
       return "startInterview";
+    case ".":
+      return "cancelTurn";
     default:
       return null;
   }
@@ -96,6 +109,54 @@ export function matchAccelerator(event: AcceleratorChord): AcceleratorId | null 
  * untouched rather than swallowed.
  */
 export type AcceleratorTable = Partial<Readonly<Record<AcceleratorId, () => void>>>;
+
+/** Which screen the app is showing — the ids `selectScreen` answers.
+ * Spelled out here rather than imported so this module keeps its single
+ * `react` import and stays a leaf; the two lists are kept in step by
+ * `acceleratorsFor`'s own exhaustive test. */
+export type AcceleratorScreen =
+  | "loading"
+  | "startupFailed"
+  | "browser"
+  | "empty"
+  | "genesis"
+  | "board";
+
+/** Everything any screen's table can be wired to. */
+export interface AcceleratorActions {
+  openFolder: () => void;
+  startInterview: () => void;
+  cancelTurn: () => void;
+}
+
+/**
+ * THE screen-scoped table (T-027's last criterion). A change of
+ * ARGUMENT, not of mechanism — `useAccelerators` is untouched and there
+ * is still exactly one `window` keydown listener in the app.
+ *
+ * `openFolder` / `startInterview` are in EVERY screen's table, unchanged:
+ * T-049's criterion 1 says the chords fire from any screen and its tests
+ * pin it. Narrowing ⌘N on the interview was considered — it opens a
+ * picker that can abandon a live interview — and rejected: T-025 already
+ * types that outcome (`staleProject`, with `genesis_cancel` still
+ * available), the picker's own single-flight bounds it, and silently
+ * removing an advertised chord on one screen is worse than a typed
+ * consequence.
+ *
+ * `cancelTurn` is the interview's alone. On every other screen it is
+ * ABSENT, and an absent entry is left completely alone by the listener.
+ */
+export function acceleratorsFor(
+  screen: AcceleratorScreen,
+  actions: AcceleratorActions,
+): AcceleratorTable {
+  const table: AcceleratorTable = {
+    openFolder: actions.openFolder,
+    startInterview: actions.startInterview,
+  };
+  if (screen === "genesis") return { ...table, cancelTurn: actions.cancelTurn };
+  return table;
+}
 
 /**
  * Register THE app's keydown listener (mount this exactly once, at the

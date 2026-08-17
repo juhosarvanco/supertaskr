@@ -1,0 +1,312 @@
+import type { GenesisTurn, TurnErrorPayload } from "@/lib/agent-store";
+import { Button } from "@/components/ui/button";
+import {
+  challengeOf,
+  chipLabel,
+  failureDetail,
+  failureHeadline,
+  questionFooter,
+  type StageSegmentState,
+} from "./interview-model";
+
+/**
+ * The interview's presentational pieces — one component per thing the
+ * design draws, and nothing that decides anything.
+ *
+ * EVERY MODEL-PRODUCED STRING IN THIS FILE IS A TEXT NODE. Turn text,
+ * activity labels, `stderrTail`, `probed` binary names and chip paths
+ * all arrive as JSX children, which React escapes; there is no
+ * raw-HTML sink anywhere in `app/src/genesis/` and a standing recursive
+ * grep over this directory (`genesis-pane-dom.test.tsx`) fails if one
+ * ever appears. There is deliberately NO markdown rendering: a turn
+ * containing `**bold**`, a fenced block or a link renders those bytes
+ * literally (criterion 6's fence, pinned in the DOM suite).
+ */
+
+/** The design's small uppercase speaker label (10px in the mockup; the
+ * scale's nearest step is `text-xs` at 11px and its only tracking step
+ * is 0.12em — both disclosed deviations). */
+function Overline({ children }: { children: string }) {
+  return (
+    <span className="font-mono text-xs tracking-overline text-muted-foreground uppercase">
+      {children}
+    </span>
+  );
+}
+
+/** 14px checked disc, the same construction as the lens's 12px artifact
+ * mark: the provenance semantic (`--review-disc` / `--review-mark`),
+ * drawn rather than typed so it needs no off-scale font size. */
+function BankedMark() {
+  return (
+    <svg viewBox="0 0 14 14" width={14} height={14} aria-hidden="true" className="shrink-0">
+      <circle cx="7" cy="7" r="7" fill="var(--review-disc)" />
+      <path
+        d="M4 7.4 L6 9.4 L10 5"
+        fill="none"
+        stroke="var(--review-mark)"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** The seven-segment progress strip. The bar is 3px, so the design's 2px
+ * radius is below the radius scale and reads identically as
+ * `rounded-full` (disclosed deviation). */
+export function StageStrip({ segments }: { segments: readonly StageSegmentState[] }) {
+  return (
+    <div data-testid="interview-stage-strip" className="flex gap-1.25">
+      {segments.map((state, index) => (
+        <span
+          // Positional keys are correct here and ADR-009-safe: the index
+          // IS the stage, and nothing in this list is keyed by a string
+          // the app did not author.
+          key={index}
+          data-testid="interview-stage-segment"
+          data-state={state}
+          className={
+            state === "done"
+              ? "h-0.75 flex-1 rounded-full bg-review-disc"
+              : state === "current"
+                ? "h-0.75 flex-1 rounded-full bg-foreground"
+                : "h-0.75 flex-1 rounded-full bg-hairline"
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
+/** The user's own answer: right-aligned, in the design's quiet bubble.
+ * `max-w-114` is 456px — 78% of the 640px pane's 584px content box, so
+ * the design's percentage and this fixed cap coincide at the ruled width
+ * and stay stable when the chat is alone below the split's breakpoint. */
+export function UserTurn({ text }: { text: string }) {
+  return (
+    <div data-testid="interview-user-turn" className="flex flex-col items-end gap-1.25">
+      <Overline>you</Overline>
+      <span className="max-w-114 rounded-lg bg-muted px-3.25 py-2.5 text-base whitespace-pre-wrap break-words text-secondary-foreground">
+        {text}
+      </span>
+    </div>
+  );
+}
+
+/** The pushing-back treatment (criterion 2). The ONLY consumer of
+ * `challengeOf`'s boolean: the prefix reaches this class list and
+ * nothing else in the app, which is what "the hint is never
+ * load-bearing" means as a construction rather than as a claim. */
+function ChallengeTurn({ body, footer }: { body: string; footer: string | null }) {
+  return (
+    <div
+      data-testid="interview-turn-challenge"
+      className="flex flex-col gap-2 rounded-r-lg border-l-2 border-chart-4 bg-interview-challenge px-4 py-3.5"
+    >
+      <span className="font-mono text-xs tracking-overline text-status-verifying-foreground uppercase">
+        planner · pushing back
+      </span>
+      <span
+        data-testid="interview-turn-body"
+        className="text-lg whitespace-pre-wrap break-words text-interview-challenge-ink"
+      >
+        {body}
+      </span>
+      {footer !== null && (
+        <span data-testid="interview-question-footer" className="font-mono text-xs text-muted-foreground">
+          {footer}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** A planner turn that is NOT the current question: quieter, smaller,
+ * and stacked above. The design's three-step recency ink ladder is
+ * collapsed to two — all history at `text-secondary-foreground`, the
+ * current question at `text-foreground` — which is exactly what
+ * criterion 1 asks for (disclosed deviation). */
+function HistoryTurn({ body }: { body: string }) {
+  return (
+    <div data-testid="interview-turn-history" className="flex flex-col gap-1.25">
+      <Overline>planner</Overline>
+      <span
+        data-testid="interview-turn-body"
+        className="text-base whitespace-pre-wrap break-words text-secondary-foreground"
+      >
+        {body}
+      </span>
+    </div>
+  );
+}
+
+/** The one question that is prominent (criterion 1). */
+function CurrentQuestion({ body, footer }: { body: string; footer: string | null }) {
+  return (
+    <div data-testid="interview-turn-current" className="flex flex-col gap-1.75">
+      <Overline>planner</Overline>
+      <span
+        data-testid="interview-turn-body"
+        className="text-xl font-medium tracking-title whitespace-pre-wrap break-words text-foreground"
+      >
+        {body}
+      </span>
+      {footer !== null && (
+        <span data-testid="interview-question-footer" className="font-mono text-xs text-muted-foreground">
+          {footer}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A planner turn, in whichever of the three treatments it earns. The
+ * mid-stream furniture (the pulse dot and the last activity label) rides
+ * the SAME `motion-safe:` mechanism the lens uses, so
+ * prefers-reduced-motion needs no new machinery: the dot is simply
+ * static.
+ */
+export function PlannerTurn({
+  turn,
+  planner,
+  current,
+  approxStage,
+  onRetry,
+}: {
+  turn: number;
+  planner: GenesisTurn;
+  current: boolean;
+  approxStage: number | null;
+  onRetry: (turn: number) => void;
+}) {
+  const reading = challengeOf(planner.text);
+  const footer = current ? questionFooter(approxStage) : null;
+  const running = planner.status === "running";
+  const lastActivity = planner.activity[planner.activity.length - 1];
+
+  return (
+    <div
+      data-testid="interview-planner-turn"
+      data-turn={turn}
+      data-status={planner.status}
+      data-challenge={reading.challenge ? "true" : "false"}
+      className="flex flex-col gap-2"
+    >
+      {reading.challenge ? (
+        <ChallengeTurn body={reading.body} footer={footer} />
+      ) : current ? (
+        <CurrentQuestion body={reading.body} footer={footer} />
+      ) : (
+        <HistoryTurn body={reading.body} />
+      )}
+
+      {running && (
+        <div data-testid="interview-streaming" className="flex items-center gap-2">
+          <span
+            aria-hidden="true"
+            className="h-1.25 w-1.25 rounded-full bg-chart-4 motion-safe:animate-status-pulse"
+          />
+          <span className="font-mono text-xs text-muted-foreground">
+            {lastActivity === undefined ? "planner is thinking…" : lastActivity}
+            {" · ⌘. to stop"}
+          </span>
+        </div>
+      )}
+
+      {planner.truncatedRelay && (
+        <span data-testid="interview-truncated" className="font-mono text-xs text-muted-foreground">
+          the live relay stopped at its 1 MiB cap — the answer above is the
+          planner&apos;s own final text
+        </span>
+      )}
+
+      {planner.status === "cancelled" && (
+        <span data-testid="interview-cancelled" className="font-mono text-xs text-muted-foreground">
+          stopped — the session is still open, answer again to continue
+        </span>
+      )}
+
+      {planner.error !== null && (
+        <FailureBlock error={planner.error} turn={turn} onRetry={onRetry} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * A typed runner failure (criterion 5): calm, inline, in the position of
+ * the turn that failed — never a modal, never a toast, never a screen
+ * replacement. It carries the error's own words and one way forward.
+ *
+ * NOTHING HERE PARSES THE ERROR TEXT. Auth failures are relayed, not
+ * classified: T-025's smoke found the CLI reports 401 in-band on stdout
+ * with an empty stderr and `subtype: "success"`, which is why what
+ * arrives here is `exitNonZero` and why it is rendered verbatim rather
+ * than guessed at. Classification is T-029's.
+ */
+export function FailureBlock({
+  error,
+  turn,
+  onRetry,
+}: {
+  error: TurnErrorPayload;
+  turn: number;
+  onRetry: (turn: number) => void;
+}) {
+  const detail = failureDetail(error);
+  return (
+    <div
+      data-testid="interview-failure"
+      data-error-kind={error.kind}
+      className="flex flex-col gap-2 rounded-lg border border-status-rejected-border bg-status-rejected px-4 py-3.5"
+    >
+      <span className="text-sm font-semibold tracking-heading text-destructive">
+        {failureHeadline(error)}
+      </span>
+      {detail !== null && (
+        <span
+          data-testid="interview-failure-detail"
+          className="font-mono text-sm whitespace-pre-wrap break-words text-status-rejected-foreground"
+        >
+          {detail}
+        </span>
+      )}
+      <span className="text-sm text-secondary-foreground">
+        Nothing was lost — everything already written to{" "}
+        <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span> is on disk,
+        and the conversation can carry on from here.
+      </span>
+      <div className="flex items-center gap-2.25">
+        <Button data-testid="interview-retry" onClick={() => onRetry(turn)}>
+          Try again
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The banked-answer confirmation (criterion 3). PATHS, not the design's
+ * section names: a section-level claim ("banked → north star, person")
+ * is not file evidence, and T-024 made exactly this call already.
+ *
+ * Left-aligned in deliberate contrast to the right-aligned user bubble
+ * above it — the design's own composition.
+ */
+export function BankedChips({ paths }: { paths: readonly string[] }) {
+  return (
+    <div
+      data-testid="interview-banked"
+      data-paths={paths.length}
+      className="flex items-center gap-2 py-0.5"
+    >
+      <BankedMark />
+      <span className="font-mono text-xs break-words text-status-done-foreground">
+        {chipLabel(paths)}
+      </span>
+    </div>
+  );
+}
