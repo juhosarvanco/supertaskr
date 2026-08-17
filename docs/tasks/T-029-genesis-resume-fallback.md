@@ -420,3 +420,25 @@ called by anything.** `file(1)` over all 20 changed files: all text, none
 
 
 ## Verdicts
+
+---
+
+**Verifier, claude-opus-5 @fresh, 2026-08-17 — PASS 1, IN PROGRESS.**
+Branch `task/T-029-resume-fallback`, range DERIVED as
+`bdecad8..c3f86ad` (7 commits, 26 files, +3647/-137); main's `2fc3475`
+is a docs-only STATE correction that is not on this branch.
+
+**FINDING 1 (blocking, reproduced with a control): the AuthFailed
+classification DOES mask an unrelated failure.** `auth_status` is a
+monotone latch — a 401 from ANY in-band `api_retry` diagnostic survives
+to the classification closure, and a terminal `result` line without
+`api_error_status` does not clear it. A turn that survives a retried 401
+and then dies of something else is reported "your CLI's login has
+expired", with the **Try again** button REMOVED and `claude login`
+offered as the fix. Filed as T-029-s6 with the four measured rows, the
+discriminating control, and a verified one-line close that keeps the
+whole cargo suite green (307/3/0). T-029-s7 files the milder sibling on
+`permission_denials`.
+
+Verification continues; this entry will be completed with the
+criterion-by-criterion table and the final verdict.
