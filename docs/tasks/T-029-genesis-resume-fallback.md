@@ -9,10 +9,10 @@ status: building
 blocked_by: [T-027]
 touches: [app-interview, app-agent]
 builder: claude-opus-5 @fresh
-verifier:
+verifier: claude-opus-5 @fresh
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 The succession guarantee applied to the interview: files are the only
@@ -423,22 +423,235 @@ called by anything.** `file(1)` over all 20 changed files: all text, none
 
 ---
 
-**Verifier, claude-opus-5 @fresh, 2026-08-17 — PASS 1, IN PROGRESS.**
-Branch `task/T-029-resume-fallback`, range DERIVED as
-`bdecad8..c3f86ad` (7 commits, 26 files, +3647/-137); main's `2fc3475`
-is a docs-only STATE correction that is not on this branch.
+**Verifier, claude-opus-5 @fresh, 2026-08-17 — REJECTED.** Fresh
+session, adversarial pass, everything below re-derived first-hand in
+`/Users/ujju/Projects/nputer-T-029`. Main was never touched.
 
-**FINDING 1 (blocking, reproduced with a control): the AuthFailed
-classification DOES mask an unrelated failure.** `auth_status` is a
-monotone latch — a 401 from ANY in-band `api_retry` diagnostic survives
-to the classification closure, and a terminal `result` line without
-`api_error_status` does not clear it. A turn that survives a retried 401
-and then dies of something else is reported "your CLI's login has
-expired", with the **Try again** button REMOVED and `claude login`
-offered as the fix. Filed as T-029-s6 with the four measured rows, the
-discriminating control, and a verified one-line close that keeps the
-whole cargo suite green (307/3/0). T-029-s7 files the milder sibling on
-`permission_denials`.
+**Range derived, not accepted.** `git merge-base HEAD main` =
+`bdecad8`; tip `c3f86ad`; `bdecad8..c3f86ad` = **7 commits, 26 files,
++3647/-137**. Main's `2fc3475` is a docs-only STATE correction that is
+NOT on this branch, so `main..HEAD` is the same 7 commits.
 
-Verification continues; this entry will be completed with the
-criterion-by-criterion table and the final verdict.
+**The card carries TEN criterion bullets, not eight** — five original,
+two folded at the 2026-08-16 triage (T-025-s1 → the `AuthFailed`
+criterion, T-026-s3 → the "exactly ONE place" criterion) and three at
+the 2026-08-17 triage. Counted mechanically off the `## Acceptance
+criteria` section. Nine of the ten hold under attack.
+
+### THE BLOCKING FINDING — the auth classification masks unrelated failures
+
+The dispatch brief named this as the sharpest risk in the card, on the
+grounds that "a misclassified ordinary failure would tell a user to
+`claude login` when their login is fine". **It does.** Reproduced
+against the real `run_turn`, driven through
+`RunnerConfig::binary_override` with a scripted CLI, with a control
+that discriminates:
+
+    init · api_retry 401 · text delta · result{is_error:true,
+      terminal_reason:"error_during_execution", result:"Error: ENOSPC…"} · exit 1
+    => AuthFailed { status: Some(401), message: "Error: ENOSPC: no space
+                    left on device, write '/Users/x/docs/NORTH_STAR.md'" }
+
+    CONTROL — byte-identical but with NO 401 line
+    => ExitNonZero { code: Some(1), stderr_tail: "Error: ENOSPC" }
+
+`auth_status` is a MONOTONE LATCH: the `Diagnostic` arm sets it from any
+in-band `error_status`, and the `Result` arm overwrites it only when the
+terminal line carries an `api_error_status` of its own, so a 401 seen
+anywhere survives to the classification closure. The comment above that
+closure asserts the property that fails — *"a transient `api_retry` the
+CLI recovered from classifies nothing"* — which is true for a turn that
+SUCCEEDS and false for the third case: a turn that survives the retry
+and then dies of something else. The fixture's own transcribed line is
+the CLI announcing its retry budget (`"attempt":1,"max_retries":10,
+"retry_delay_ms":508`); a 401 retried ten times exists because some of
+those retries succeed.
+
+**Why this is worse than the blunt failure it replaces.** For
+`authFailed`, `failureAction` returns `retry: false`, so `FailureBlock`
+REMOVES the **Try again** button — the action that would have worked —
+prints `claude login`, and offers the hand-driven route. The rendered
+detail is the failure's own text, so the block contradicts itself:
+"your CLI's login has expired" directly above "Error: ENOSPC: no space
+left on device".
+
+**And it shadows this task's own new classification.** A REAL tool
+denial (`terminal_reason:"refusal"`, `permission_denials:[{tool_name:
+"Bash"}]` — the exact shape `ToolDenied` was added for) behind a
+transient 401 reports as `AuthFailed`. The shipped discriminating test
+`a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code`
+only covers a stream with no prior 401.
+
+**WHAT MUST CHANGE — one line, verified.** In the `Result` arm, drop the
+`is_some()` guard so a terminal result line without `api_error_status`
+CLEARS the stale status:
+
+    auth_status = api_error_status;
+
+Applied on this branch: all four masking rows then classify
+`ExitNonZero` / `ToolDenied { denials: ["Bash"], terminal_reason:
+Some("refusal") }`; a 403 diagnostic with no result line still
+classifies `AuthFailed`; and the **entire shipped cargo suite stays
+green — 307 passed, 3 ignored, 0 failed**, including
+`an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code`,
+because the real transcribed auth failure carries `api_error_status:
+401` on its own result line. A regression pin belongs with it: the
+control row above is the discriminator, and no shipped test currently
+puts a diagnostic 401 in front of an unrelated failure. Filed as
+**T-029-s6**; the milder `permission_denials` sibling (a denial the
+planner routed around, blamed for an unrelated exit) is **T-029-s7**.
+
+### Criterion by criterion — what was verified and HOW
+
+| # | criterion | verdict | how |
+|---|---|---|---|
+| 1 | resume off disk | HOLDS | mutation `resume: Some(id)` → `None` reds `an_app_restart_mid_interview_resumes_the_recorded_session_off_disk`; stage/artifacts read from `docs/`, `stageOf` untouched |
+| 2 | losable transcript cache | HOLDS | `transcript()` blinded → reds `a_lost_or_corrupt_transcript_still_resumes_from_the_registry_and_docs` + the restart test |
+| 3 | fresh session | HOLDS | `mark_planner_dead` no-opped → reds `a_session_that_will_not_resume_continues_as_a_fresh_one_over_the_banked_docs`; PROBE-C3 shows exactly one live entry after a cancelled fresh kickoff (S1 dead, S2 idle) |
+| 4 | hand-driven MODE | HOLDS | `assemble_kickoff_for` pinned to stage-0 → reds `the_hand_driven_kickoff_materializes_a_real_kit_and_names_it` + the fresh-session test |
+| 5 | cancel contract | HOLDS, attacked hard | own probes: cancel DURING RESUME kills child AND grandchild (no orphaned group — the T-046-s1 shape does not fire here), `docs/` never created, 2nd and 3rd cancel → `Idle`, registry stays 1×`idle`, reopen → `ResumeAvailable` → re-resume Started+completed; cancel before any turn and between turns → `Idle` with the latch NOT consumed; two concurrent cancels from two threads → both `Cancelled{turn:1}`, child dead, no panic |
+| 6 | AuthFailed / ToolDenied | **FAILS** | see above. Detection and routing are right; the SCOPE is not |
+| 7 | exactly ONE place (T-026-s3) | HOLDS, converse checked | `genesis_record` reads `load(project_dir)` and nothing else; `git grep` finds no second persisted mechanism — nothing derives eligibility from `.nputer/genesis/` presence, and the only production writes are `.nputer/sessions.json`, `.nputer/genesis/transcript.jsonl`, `.nputer/genesis/kit/**`. No production write under `docs/` (the two in `mod.rs` are past the `#[cfg(test)]` at :834). One log line prints the registry PATH on a corrupt-registry rename — transient stdout, not a persisted second copy |
+| 8 | listenerFailed (T-027-s2) | HOLDS, ex-vacuous test re-proved | shape 1 confirmed: `GenesisState.listenerFailed` on the STORE (`agent-store.ts:206`), no module-private flag anywhere. Removing `if (genesis.listenerFailed) return;` now reds precisely — `expected [ 'genesis_start', …(1) ] to not include 'genesis_start'`. Latch-release and set-at-all mutations red separately |
+| 9 | two typed refusals (T-039-s3) | HOLDS | reverting the init-gate envelope to `MalformedStream` reds `a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded` and `every_hostile_id_class_fails_the_turn_at_capture`; `sessionIdRejected` routed to its own affordance in `InterviewChat.tsx:139/736` |
+| 10 | model read boundary (T-047-s3) | HOLDS | `an_unusable_recorded_model_renders_as_not_recorded_and_never_refuses_a_resume` green; `display_model`/`model_for_display` are the accessors, rejection logs once and renders "(model not recorded)" |
+
+### The executor's refutation of the architect's trace — VERIFIED, and it is right
+
+`stderr_ring` is a DIAGNOSTIC ring with three writers, not a stderr
+ring. `an_in_band_auth_failure_...` asserts `stderr_tail.contains("401")`
+and the pre-fix behaviour was a relayed one-line blob, not an empty
+detail. The executor was correct to refuse to build on the card's
+steps 2–4.
+
+### Attacks that HELD
+
+- **`permission_denials` wrong-shape (the s5 guess).** camelCase
+  `toolName`, `tool_name` of type 42/null/array, an object instead of an
+  array — **every one degrades to `ExitNonZero`, never to a wrong
+  diagnosis**, exactly as claimed. Bounds are real: 40 denials → 16 kept
+  (`MAX_DENIALS`); a 500-byte name → 128 bytes; a blank name filtered;
+  `tool` alias read; extra fields ignored; an escaped ESC survives as
+  the literal `\u{1b}`, control-stripped. The one gap is presence-vs-cause
+  (T-029-s7), not shape.
+- **Four new IPC commands.** 13 registered in `invoke_handler!`, 13
+  `#[tauri::command]`. Counted from the other side: 10 literal
+  `invoke("…")` call sites in `app/src` plus 3 through the `runPicker(name)`
+  indirection = 13. **The two agree.** All four new commands are
+  ZERO-ARGUMENT — `tauri::State` extractors only, no path, no session id,
+  no flag crosses the boundary in either direction.
+- **`genesis_fresh` as `genesis_start` with a flag — judged
+  independently, and the executor is right.** A flag would move a
+  DESTRUCTIVE selector (mark the user's live session dead) across the IPC
+  boundary, which is precisely what ADR-012's "narrowness lives in the app
+  commands' own signatures (zero-argument where possible)" exists to
+  prevent. The two also have opposite preconditions: `genesis_start` must
+  never destroy state and returns `ResumeAvailable` instead.
+- **No ADR needed.** ADR-012's own Consequences section anticipates F-03
+  genesis panes adding app commands and says the justification goes in the
+  TASK FILE and is swept by the verifier — an ADR is for a new SHAPE (a
+  first grant, a first path-taking command). None of the four is one.
+
+### Numbers re-derived first-hand, never piped through `tail`
+
+- **lib/parser 225/225 (11 files)**, `tsc --noEmit` 0.
+- **app 795/795 (42 files)**, `tsc --noEmit` 0.
+- **cargo bare `cargo test` → 307 passed · 0 failed · 3 ignored**,
+  breakdown `108/0/0/40/123/0/7/13/3/7/0/2/4/0/0`, **zero warnings**
+  (re-checked with `touch` + `cargo check --all-targets`, not off a
+  cached build). Every executor figure matches exactly.
+- **tools/e2e `NPUTER_E2E_PORT=15440 npm test` → 74 passed.**
+- **`npm run lint:tokens` → clean, 116 files**; `--selftest` 49 samples +
+  14 walk-policy checks green.
+- **BOOT GATE: FIRED, RAN, GREEN.** Scratch port **15450**, bind-probed
+  free immediately before use. Both `[nputer]` lines detected
+  (`project folder:`, `window "main" created`), **exit 0**. No stray
+  `tauri dev`/vite afterwards; 15440/15450/15451 all free. **Port 1420
+  was read with `lsof` only — never bound, connected to, or signalled;
+  no listener throughout.**
+- **NO MODEL WAS CALLED.** The `#[ignore]`d smoke was never run.
+
+### The poison sweep, re-derived independently
+
+**17 mutations, 17 RED, zero vacuous**, run INLINE (no scratch script).
+Rust: auth classification disabled · tool-denial disabled ·
+`exited_badly` dropped so classification no longer precedes the exit
+code · denial-object form ignored · `RejectedSessionId` reverted ·
+`resume: None` · `mark_planner_dead` no-opped · `transcript()` blinded ·
+`assemble_kickoff_for` pinned to stage-0. TypeScript: auto-start guard
+removed · `machine` flag ignored · rehydration dropped · `retry: false`
+→ `true` · latch never released · `listenerFailed` never set ·
+`failureDetail` stops carrying the auth message. **Restoration proved by
+sha256 against `git show HEAD:<path>` after every single round** — never
+by a clean `git status`.
+
+### Security sweep — clean
+
+Zero dependency or lockfile changes (`package-lock.json`, `Cargo.lock`,
+`package.json`, `Cargo.toml`: 0-file diff). No `innerHTML` /
+`dangerouslySetInnerHTML` / `eval` / `new Function` under `app/src`. No
+`writeTextFile` / `writeFile` / `mkdir` under `app/src` (ADR-017 holds).
+No shell strings — argv-as-data throughout. **`adapter.rs`,
+`acl_pin.rs`, `capabilities/` and `gen/` are all 0-file diffs**, so no
+bypass flag was added and no webview grant moved. **`ENV_ALLOWLIST`
+byte-identical across the two refs — 422 bytes, 16 entries, sha256
+`02d2f26f608416fc…`** — so no API key or token path to a spawned child
+was opened. **Exactly one `#[ignore]`d real-CLI smoke
+(`agent_runner.rs:1635`), not run, not duplicated** — the diff
+adds and removes no `#[ignore]` at all; the other two ignores are the
+pre-existing `nputer-index` perf and self-graph harnesses. `file(1)`
+over all 26 changed files: text/UTF-8, none `data`, and a byte scan
+finds zero C0 controls outside tab/newline.
+
+### `EXPECTED_GRANTS` — the folklore number, settled
+
+Measured at both refs, and **the load-bearing fact holds: byte-identical,
+92 grants, sha256 of the declaration equal at `bdecad8` and `c3f86ad`
+(`7b3d8e1a0705892f…`), with `acl_pin.rs` a 0-file diff.** The convention,
+stated precisely so this stops drifting:
+
+| measurement | bytes |
+|---|---|
+| `const EXPECTED_GRANTS: &[&str] = &[ … ];` — the whole declaration | **6134** |
+| …the same, plus the newline that terminates the `];` line | **6135** |
+| `&[ … ]` / `[ … ]` | 6110 / 6109 |
+| between the brackets, exclusive | 6107 |
+| array lines only, trailing newline dropped | 6106 |
+
+**So both circulating figures are real and neither is wrong — 6134 is
+the declaration, 6135 is the declaration including its terminating
+newline.** The executor's 6134 for the whole declaration reproduces
+exactly. Its **6097 for "the array body" does NOT reproduce** under any
+convention tried (the body measures 6106–6107; there are no comment
+lines inside the array to explain a 10-byte gap). **Recommended
+canonical form: quote `92 grants, sha256 identical at both refs` and
+stop quoting a byte count at all** — the count is what turned into
+folklore; the hash is what carries the meaning.
+
+### Two accuracy notes for the integrator, not defects
+
+1. **The implementation notes' line citations drift.** The typed
+   classification is at `runner.rs:1418-1456`, not the cited
+   `1338-1372`; several others (`runner.rs:100/107/117`,
+   `mod.rs:414/497/601/648`, `sessions.rs:170`) land in the doc comment
+   above the item rather than on it. The substantive claims all check
+   out — only the coordinates are stale.
+2. **`acl_pin.rs`'s command roster still lists only T-025's four.** The
+   four new commands are absent from both the remote-denial loop and
+   `t025_genesis_commands_are_locally_invokable_and_remotely_denied`.
+   Not a hole — the ACL decision is name-agnostic and structural
+   (`has_app_acl == false` gates all app commands identically, and
+   `EXPECTED_GRANTS` is unchanged), and the file's own comment says the
+   loop proves nothing per-name. But T-025 and T-026 both extended the
+   roster, and the pattern lapsed here.
+
+### Verdict
+
+**REJECTED**, narrowly and with one required change: bind the auth
+classification to the terminal result line so a recovered `api_retry`
+401 cannot latch (T-029-s6's one-liner), and add the discriminating
+regression pin. Everything else in this card — nine of ten criteria,
+every suite, the whole security sweep, the cancel contract under five
+distinct attacks, and the `permission_denials` degradation the executor
+asked to be attacked on — stands up. T-029-s7 is a follow-up, not a
+blocker.
