@@ -29,6 +29,41 @@ import {
  * the existing machinery: torn/malformed model inputs keep their
  * last-good content in `effective` while the established parse-chip
  * family reports the failure — never a crash, never a blank pane.
+ *
+ * THE RENDER-PHASE REF STAMP, RATIFIED (T-042 criterion 4, the
+ * architect's ruling on T-024-s3; the write itself is below, in the
+ * component body). `logRef.current = observeDocsChange(logRef.current,
+ * docs, clock())` mutates a ref DURING RENDER, which React's rules
+ * generally forbid. It is legitimate HERE, and the three conditions are
+ * the whole of why — lose any one of them and this stops being the
+ * pattern and starts being the bug it resembles:
+ *
+ *   1. GUARDED. `observeDocsChange` returns `prev` BY IDENTITY for the
+ *      empty state, for an already-observed seq, and for a stale one, so
+ *      a StrictMode double-render and every unrelated re-render are
+ *      no-ops. The fold itself is pure.
+ *   2. BOUNDED. The only thing the stamp feeds is the `writing` pulse
+ *      window. The worst a discarded concurrent render can do is start
+ *      that window a few milliseconds early — cosmetic, self-healing,
+ *      and nothing else in the model reads it.
+ *   3. DERIVED FROM PROPS THE RENDER ALREADY HAS. `docs` is the prop; no
+ *      I/O, no subscription, no second source of truth. This is the
+ *      T-012 precedent (its render-time layout cache), not a new one.
+ *
+ * NOT RELOCATED, and the reason is recorded rather than assumed. The
+ * arm for folding this log into the watcher store existed to serve a
+ * SECOND CONSUMER; T-027's planning pass read both sides and proved
+ * there is none — T-024's log answers "what changed in the last five
+ * seconds" (this pulse window), while T-027's banked chips need "what
+ * changed since this turn began", a per-turn baseline diff over the same
+ * evidence. Different windows, no shared log. Moving state across a
+ * component boundary to serve nobody is cost without benefit.
+ *
+ * IF a second consumer ever appears, the relocation is a change of
+ * SOURCE, not of mechanism: the fold is already pure, so it moves
+ * wholesale and this component drops the ref. Recorded here so that
+ * option stays open rather than lost. The general rule lives beside the
+ * other traps, in docs/CONVENTIONS.md § Gotchas.
  */
 
 const OVERLINE = "font-mono text-xs uppercase tracking-overline text-muted-foreground";
@@ -135,7 +170,9 @@ export function GenesisPane({ docs, now }: { docs: DocsModelState; now?: () => n
   const clock = now ?? Date.now;
   // Render-time ref cache keyed on (seq, projectDir) — the T-012 layout
   // precedent; observeDocsChange returns identity for already-observed
-  // states, so StrictMode double-renders never re-stamp.
+  // states, so StrictMode double-renders never re-stamp. RATIFIED rather
+  // than relocated at T-042 criterion 4 — the header's three conditions
+  // are what make this legitimate, and the log stays here.
   const logRef = useRef<GenesisChangeLog>(EMPTY_CHANGE_LOG);
   logRef.current = observeDocsChange(logRef.current, docs, clock());
   const [, bumpTick] = useReducer((t: number) => t + 1, 0);

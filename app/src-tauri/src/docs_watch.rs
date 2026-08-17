@@ -177,13 +177,22 @@ pub enum PickOutcome {
     /// T-026: opened as a GENESIS project — a folder with no plan yet.
     /// The root is committed and the watcher armed on the root sentinel
     /// (T-018), so the first `mkdir docs` lights the ordinary pipeline
-    /// with no re-pick. There is no snapshot to send (nothing is there),
-    /// so `seq` carries the switch's ordering stamp instead: every emit
-    /// from the PREVIOUS project has a lower seq and drops as stale.
+    /// with no re-pick. `seq` is the switch's ordering stamp: every emit
+    /// from the PREVIOUS project carries a lower seq and drops as stale.
+    ///
+    /// T-042 criterion 1: a genesis folder MAY already hold a plain
+    /// `docs/`, because "no plan" is a weaker condition than "no docs/"
+    /// — a lone `docs/ARCHITECTURE.md`, a `docs/decisions/` tree, any
+    /// repo whose docs/ predates nputer. When it does, the docs watch
+    /// armed normally and `snapshot` carries that tree AT THE SAME `seq`,
+    /// so the pane renders what is actually there instead of claiming
+    /// nothing is written. `None` means the folder genuinely has no
+    /// docs/ yet — the one shape this variant used to assume.
     Genesis {
         project_dir: String,
         seq: u64,
         probe: PlanProbe,
+        snapshot: Option<DocsSnapshot>,
     },
 }
 
@@ -203,9 +212,15 @@ pub enum WatchCtl {
     /// `Rearm` (ack after arming; the previous project untouched on
     /// failure), but the sentinel is the load-bearing watch: there may be
     /// nothing to watch recursively until the interview writes docs/.
+    ///
+    /// T-042: the ack answers `Ok(true)` when a plain `docs/` WAS there
+    /// and the ordinary recursive watch armed over it — the caller then
+    /// owes the switch a snapshot of that tree (criterion 1). The
+    /// arming thread is the only place that knows this for certain, so
+    /// it says so rather than letting the caller re-stat and guess.
     ArmGenesis {
         root: PathBuf,
-        ack: mpsc::Sender<Result<(), String>>,
+        ack: mpsc::Sender<Result<bool, String>>,
     },
 }
 
@@ -754,6 +769,12 @@ fn open_as_project(state: &WatchState, canon: &Path) -> PickOutcome {
 ///    `mkdir docs` re-arms the docs watch and lights the existing
 ///    pipeline with no re-pick (criterion 3, T-018's mechanism);
 /// 4. only then commit the project dir and take the ordering seq.
+///
+/// T-042 criterion 1: step 3's ack also reports whether a plain `docs/`
+/// was already there and armed. When it was, this switch carries a
+/// SNAPSHOT of that tree — the honest answer to "what is written here",
+/// which the genesis screen previously had no way to learn until the
+/// first fs event under a folder nothing was writing to yet.
 pub fn apply_genesis_folder(
     state: &WatchState,
     picked: &Path,
@@ -799,8 +820,8 @@ pub fn apply_genesis_folder(
             message: "watcher thread is not running".into(),
         };
     }
-    match ack_rx.recv_timeout(REARM_TIMEOUT) {
-        Ok(Ok(())) => {}
+    let docs_armed = match ack_rx.recv_timeout(REARM_TIMEOUT) {
+        Ok(Ok(armed)) => armed,
         Ok(Err(message)) => {
             return PickOutcome::Error {
                 path: canon.display().to_string(),
@@ -819,24 +840,36 @@ pub fn apply_genesis_folder(
                 message: "watcher thread dropped the re-arm ack".into(),
             }
         }
-    }
+    };
 
     // The commit — the only mutation, and the only lock window.
     *state.project.lock().expect("project mutex poisoned") = Some(canon.clone());
-    // The switch's ordering stamp: there is no snapshot to send (nothing
-    // is there yet), but every emit still in flight from the PREVIOUS
-    // project carries a lower seq and drops as stale on the frontend —
-    // the T-007 invariant, kept without a snapshot.
+    // The switch's ordering stamp: every emit still in flight from the
+    // PREVIOUS project carries a lower seq and drops as stale on the
+    // frontend — the T-007 invariant, held whether or not a tree rides.
     let seq = state.next_seq();
     state.clear_rejected();
+    // T-042 criterion 1. Collected AFTER the ack, exactly as
+    // `open_as_project` does and for the same load-bearing reason: the
+    // arming thread reset its emit baseline to the tree it saw, so a
+    // snapshot taken from THAT collection could be older than the
+    // baseline and a file written in between would never diff — it would
+    // be suppressed forever. Reading the tree after the ack costs one
+    // extra collect and makes the snapshot never older than the baseline.
+    let snapshot = docs_armed.then(|| build_snapshot(&canon, seq));
     println!(
-        "[nputer] genesis project opened: {} (waiting for docs/ to appear)",
-        canon.display()
+        "[nputer] genesis project opened: {} ({})",
+        canon.display(),
+        match &snapshot {
+            Some(snap) => format!("docs/ already holds {} file(s)", snap.files.len()),
+            None => "waiting for docs/ to appear".to_string(),
+        }
     );
     PickOutcome::Genesis {
         project_dir: canon.display().to_string(),
         seq,
         probe,
+        snapshot,
     }
 }
 
@@ -959,12 +992,21 @@ fn arm_sentinel<T: notify_debouncer_mini::notify::Watcher>(
 /// directory we armed?" does not. Every failure path degrades to "watch
 /// as before, retry on the next batch" — never an error, never a panic.
 ///
-/// Returns TRUE on the (unarmed -> armed) transition and only then
-/// (T-026 criterion 4, folding T-018-s4): that transition is a fact about
-/// the project the frontend cannot learn any other way, because an empty
-/// `docs/` collects EQUAL to the empty baseline and the suppression
-/// invariant would swallow it — leaving the front door claiming "no docs/
-/// found" while an empty docs/ exists. The caller emits once on a true.
+/// Returns TRUE when the docs watch's ARMED STATE CHANGED — unarmed to
+/// armed, or armed to unarmed — and only then. ONE rule, not two special
+/// cases: **a watch-state transition is news the tree cannot carry.**
+///
+/// T-026 criterion 4 (folding T-018-s4) established the appear
+/// direction: an empty `docs/` collects EQUAL to the empty baseline, so
+/// the suppression invariant swallowed it and the front door went on
+/// claiming "no docs/ found" over a directory sitting right there.
+/// T-042 criterion 2 completes the rule with the mirror (T-026-s5): an
+/// EMPTY `docs/` being DELETED collects equal to that same baseline, so
+/// the board outlived the docs/ it described. Both are facts about the
+/// project that are absent from the tree by construction, and both are
+/// now the same fact. A wholesale REPLACEMENT is deliberately not one of
+/// them: the watch stays armed throughout and the content diff is the
+/// news. The caller emits once on a true.
 #[must_use]
 fn ensure_docs_watch<T: notify_debouncer_mini::notify::Watcher>(
     debouncer: &mut Debouncer<T>,
@@ -973,14 +1015,16 @@ fn ensure_docs_watch<T: notify_debouncer_mini::notify::Watcher>(
 ) -> bool {
     let docs = root.join(DOCS_DIR);
     let present = has_plain_docs_dir(root);
-    match (target.docs.is_some(), present) {
+    // The one rule, measured rather than announced from inside the arms:
+    // whatever the arms below do, the answer is whether this changed.
+    let was_armed = target.docs.is_some();
+    match (was_armed, present) {
         // docs/ appeared under a root we could not arm before: arm it.
         (false, true) => match debouncer.watcher().watch(&docs, RecursiveMode::Recursive) {
             Ok(()) => {
                 target.docs = Some(docs.clone());
                 target.docs_id = dir_identity(&docs);
                 println!("[nputer] watch: docs/ appeared - watching {}", docs.display());
-                return true; // the transition the frontend must be told about
             }
             Err(err) => eprintln!(
                 "[nputer] watch: docs/ appeared but watch failed: {err} (will retry on the next event)"
@@ -1018,7 +1062,9 @@ fn ensure_docs_watch<T: notify_debouncer_mini::notify::Watcher>(
         // Armed but gone (deleted, or replaced by something we refuse):
         // drop the stale handle so a later appearance re-arms. The
         // collect below then ships the empty tree — deletion semantics
-        // unchanged, recovery now armed.
+        // unchanged, recovery now armed. T-042: when the docs/ that
+        // vanished was EMPTY, that empty tree is the baseline and the
+        // transition below is the whole of the news.
         (true, false) => {
             if let Some(old) = target.docs.take() {
                 let _ = debouncer.watcher().unwatch(&old);
@@ -1031,7 +1077,7 @@ fn ensure_docs_watch<T: notify_debouncer_mini::notify::Watcher>(
         }
         (false, false) => {}
     }
-    false
+    target.docs.is_some() != was_armed
 }
 
 /// Handle one debounced fs batch: run the sentinel's re-arm check, then
@@ -1053,18 +1099,20 @@ fn handle_fs_batch<T: notify_debouncer_mini::notify::Watcher>(
     };
     // T-018 sentinel check BEFORE collecting, so this same batch ships
     // the re-armed tree's truth. Infallible by construction.
-    let just_armed = ensure_docs_watch(debouncer, target, &root);
+    let watch_state_changed = ensure_docs_watch(debouncer, target, &root);
     let seq = next_seq(seq);
     let outcome = collect_docs_tree(&root);
-    // T-026 criterion 4 (T-018-s4): the (unarmed -> armed) transition
-    // emits even when the tree equals the baseline, because "docs/ exists
-    // now" is not in the tree — an EMPTY docs/ is byte-for-byte the empty
-    // baseline, and without this the front door would keep claiming "no
-    // docs/ found" over a directory that is sitting right there. It fires
-    // at most once per arming (the next batch finds the watch already
-    // armed), so the suppression invariant is untouched for every other
-    // batch — including the very next one over the same empty tree.
-    if outcome == target.last && !just_armed {
+    // ONE RULE (T-026 criterion 4 + T-042 criterion 2): a WATCH-STATE
+    // TRANSITION is news the tree cannot carry. "docs/ exists now" and
+    // "docs/ is gone now" are both absent from the collected tree when
+    // that tree is EMPTY — an empty docs/ is byte-for-byte the empty
+    // baseline in either direction — so without this the front door would
+    // keep claiming "no docs/ found" over a directory sitting right
+    // there, and the board would outlive the docs/ it described. It fires
+    // at most once per transition (the next batch finds the watch in its
+    // new state), so the suppression invariant is untouched for every
+    // other batch — including the very next one over the same tree.
+    if outcome == target.last && !watch_state_changed {
         println!(
             "[nputer] watch: {} fs event(s) coalesced, content unchanged - suppressed",
             events.len()
@@ -1223,13 +1271,19 @@ fn rearm<T: notify_debouncer_mini::notify::Watcher>(
 /// and the previously open project keeps its watch.
 ///
 /// A genesis root that DOES already carry a plain `docs/` (a folder with
-/// docs/ but no plan — an empty docs/, say) is simply the ordinary arm:
-/// `rearm` does everything right for it, including the sentinel.
+/// docs/ but no plan — an empty docs/, or a lone ARCHITECTURE.md) is
+/// simply the ordinary arm: `rearm` does everything right for it,
+/// including the sentinel.
+///
+/// Ok(true) means exactly that case — the recursive docs watch is armed,
+/// so there is a tree here and the caller owes the switch a snapshot of
+/// it (T-042 criterion 1). Ok(false) is the docs-less genesis root the
+/// sentinel alone watches.
 fn arm_genesis<T: notify_debouncer_mini::notify::Watcher>(
     debouncer: &mut Debouncer<T>,
     target: &mut WatchTarget,
     new_root: PathBuf,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     // The T-003 rule family at arm time (defense in depth for the
     // validate -> arm window, exactly as `rearm` re-checks docs/): a
     // symlink swapped in for the root between the pick's check and this
@@ -1238,7 +1292,7 @@ fn arm_genesis<T: notify_debouncer_mini::notify::Watcher>(
         return Err(format!("{} is not a plain directory", new_root.display()));
     }
     if has_plain_docs_dir(&new_root) {
-        return rearm(debouncer, target, new_root);
+        return rearm(debouncer, target, new_root).map(|()| true);
     }
 
     // Arm the sentinel BEFORE dropping the old docs watch (T-007's rule:
@@ -1277,7 +1331,7 @@ fn arm_genesis<T: notify_debouncer_mini::notify::Watcher>(
         "[nputer] watch: genesis root {} (no docs/ yet - the sentinel is the watch)",
         new_root.display()
     );
-    Ok(())
+    Ok(false)
 }
 
 #[cfg(test)]
@@ -2347,10 +2401,18 @@ mod tests {
                 project_dir,
                 seq,
                 probe,
+                snapshot,
             } => {
                 assert_eq!(project_dir, canon.display().to_string());
                 assert!(seq >= 1, "the switch carries an ordering stamp");
                 assert_eq!(probe, PlanProbe::default());
+                // T-042 criterion 1, the OTHER direction: this folder
+                // really has no docs/, so there is nothing to snapshot
+                // and the switch must not invent one.
+                assert!(
+                    snapshot.is_none(),
+                    "a docs-less genesis switch carries no tree"
+                );
             }
             other => panic!("expected Genesis, got {other:?}"),
         }
@@ -2459,6 +2521,185 @@ mod tests {
         // ...and settles back into silence.
         handle_fs_batch(&mut debouncer, &mut target, &seq, &batch, &sink);
         assert!(rx.try_recv().is_err());
+    }
+
+    #[test]
+    fn a_deleted_empty_docs_emits_on_the_armed_to_unarmed_transition() {
+        // T-042 CRITERION 2 (T-026-s5), the mirror of the test above, and
+        // the verifier's five-step sequence with exact counts. Criterion 4
+        // of T-026 made the appear direction emit and thereby made this
+        // state reachable: before it, an empty docs/ never produced a
+        // board to go stale. Driven through T-018's batch seam — exact
+        // counts, no sleeps, no debounce luck.
+        use notify_debouncer_mini::DebouncedEventKind;
+        let t = bare_tree("s5-deleted-empty-docs");
+        let mut debouncer =
+            new_debouncer(DEBOUNCE, |_res: DebounceEventResult| {}).expect("debouncer");
+        let mut target = WatchTarget {
+            root: None,
+            docs: None,
+            docs_id: None,
+            sentinel: None,
+            last: CollectOutcome::default(),
+        };
+        arm_genesis(&mut debouncer, &mut target, t.root().to_path_buf()).expect("genesis arm");
+
+        let seq = AtomicU64::new(0);
+        let (tx, rx) = mpsc::channel::<DocsSnapshot>();
+        let sink = move |snap: &DocsSnapshot| {
+            let _ = tx.send(snap.clone());
+        };
+        let batch = vec![DebouncedEvent::new(
+            t.root().join("docs"),
+            DebouncedEventKind::Any,
+        )];
+        // Every emit this sequence produces, counted rather than sampled.
+        let drain = |debouncer: &mut Debouncer<_>, target: &mut WatchTarget| -> Vec<DocsSnapshot> {
+            handle_fs_batch(debouncer, target, &seq, &batch, &sink);
+            let mut got = Vec::new();
+            while let Ok(snap) = rx.try_recv() {
+                got.push(snap);
+            }
+            got
+        };
+
+        // 1. appears -> exactly 1 (T-026 criterion 4, unchanged).
+        fs::create_dir(t.root().join("docs")).expect("mkdir docs");
+        let emits = drain(&mut debouncer, &mut target);
+        assert_eq!(emits.len(), 1, "the arm transition emits exactly once");
+        assert!(emits[0].files.is_empty());
+        assert!(target.docs.is_some(), "armed");
+
+        // 2. next batch -> 0.
+        assert_eq!(drain(&mut debouncer, &mut target).len(), 0, "then silence");
+
+        // 3. DELETED (while still empty) -> emits. THE FIX: the collected
+        //    tree is byte-for-byte the baseline it has been all along, so
+        //    the ONLY news is the watch state, and before T-042 this batch
+        //    was silent and the empty board outlived its docs/.
+        fs::remove_dir_all(t.root().join("docs")).expect("rm docs");
+        let emits = drain(&mut debouncer, &mut target);
+        assert_eq!(
+            emits.len(),
+            1,
+            "the disarm transition is news the tree cannot carry"
+        );
+        assert!(emits[0].files.is_empty(), "and the tree it ships is empty");
+        assert!(target.docs.is_none(), "the stale handle was dropped");
+
+        // 3b. and it fires ONCE, not per batch, while docs/ stays gone.
+        for _ in 0..5 {
+            assert_eq!(
+                drain(&mut debouncer, &mut target).len(),
+                0,
+                "one transition, one emit"
+            );
+        }
+
+        // 4. recreated -> exactly 1 (the second arming).
+        fs::create_dir(t.root().join("docs")).expect("mkdir docs again");
+        assert_eq!(
+            drain(&mut debouncer, &mut target).len(),
+            1,
+            "the second arming emits once"
+        );
+
+        // 5. next batch -> 0.
+        assert_eq!(drain(&mut debouncer, &mut target).len(), 0);
+
+        // The pipeline is still genuinely live through all of it.
+        t.write("docs/NORTH_STAR.md", "# after the round trip");
+        let emits = drain(&mut debouncer, &mut target);
+        assert_eq!(emits.len(), 1);
+        assert_eq!(emits[0].files.len(), 1);
+        assert_eq!(drain(&mut debouncer, &mut target).len(), 0);
+
+        // The mirror of step 3 for a NON-empty docs/: deleting it is a
+        // transition AND a content change, and it is still ONE emit — the
+        // rule adds a reason to emit, never a second emit.
+        fs::remove_dir_all(t.root().join("docs")).expect("rm docs with a file");
+        let emits = drain(&mut debouncer, &mut target);
+        assert_eq!(emits.len(), 1, "transition + content change is still one");
+        assert!(emits[0].files.is_empty(), "deletion semantics unchanged");
+    }
+
+    #[test]
+    fn the_suppression_invariant_stays_exactly_as_narrow_as_it_was() {
+        // T-042 criterion 2's second clause, as a POSITIVE assertion: with
+        // the watch armed and staying armed, the emit count over a long
+        // batch sequence equals the number of CONTENT CHANGES exactly —
+        // not "no failures", a counted number. This is what would break if
+        // the new transition rule had widened into "ensure_docs_watch did
+        // something" or "a batch arrived".
+        use notify_debouncer_mini::DebouncedEventKind;
+        let t = TempTree::new("suppression-narrow"); // docs/ exists throughout
+        t.write("docs/a.md", "v1");
+        let mut debouncer =
+            new_debouncer(DEBOUNCE, |_res: DebounceEventResult| {}).expect("debouncer");
+        let mut target = WatchTarget {
+            root: None,
+            docs: None,
+            docs_id: None,
+            sentinel: None,
+            last: CollectOutcome::default(),
+        };
+        rearm(&mut debouncer, &mut target, t.root().to_path_buf()).expect("arm");
+
+        let seq = AtomicU64::new(0);
+        let (tx, rx) = mpsc::channel::<DocsSnapshot>();
+        let sink = move |snap: &DocsSnapshot| {
+            let _ = tx.send(snap.clone());
+        };
+        let batch = vec![DebouncedEvent::new(
+            t.root().join("docs/a.md"),
+            DebouncedEventKind::Any,
+        )];
+        let run = |debouncer: &mut Debouncer<_>, target: &mut WatchTarget| -> usize {
+            handle_fs_batch(debouncer, target, &seq, &batch, &sink);
+            let mut n = 0usize;
+            while rx.try_recv().is_ok() {
+                n += 1;
+            }
+            n
+        };
+        let mut emitted = 0usize;
+
+        // 20 batches over an unchanged tree: zero.
+        for _ in 0..20 {
+            emitted += run(&mut debouncer, &mut target);
+        }
+        assert_eq!(emitted, 0, "an unchanged tree never emits, ever");
+
+        // Three real content changes, each with quiet batches around it.
+        for (i, content) in ["v2", "v3", "v4"].iter().enumerate() {
+            t.write("docs/a.md", content);
+            emitted += run(&mut debouncer, &mut target);
+            assert_eq!(emitted, i + 1, "one emit per content change, exactly");
+            for _ in 0..5 {
+                emitted += run(&mut debouncer, &mut target);
+            }
+            assert_eq!(emitted, i + 1, "and the quiet batches stay quiet");
+        }
+        assert_eq!(emitted, 3);
+
+        // A WHOLESALE REPLACEMENT of docs/ with identical content: the
+        // watch is re-armed onto a NEW inode (armed -> armed), which is
+        // NOT a watch-state transition, so equality still suppresses it.
+        // The tree diff is the news for a replacement; the rule stayed
+        // about the armed STATE and did not widen to "we re-armed".
+        let armed_before = target.docs_id;
+        let stage = t.root().join("docs-next");
+        fs::create_dir_all(&stage).expect("stage");
+        fs::write(stage.join("a.md"), "v4").expect("same bytes");
+        fs::remove_dir_all(t.root().join("docs")).expect("rm docs");
+        fs::rename(&stage, t.root().join("docs")).expect("swap in");
+        emitted += run(&mut debouncer, &mut target);
+        assert_eq!(emitted, 3, "a replacement with equal content is silent");
+        assert!(target.docs.is_some(), "and the watch is armed on the new one");
+        #[cfg(unix)]
+        assert_ne!(target.docs_id, armed_before, "provably a different inode");
+        #[cfg(not(unix))]
+        let _ = armed_before;
     }
 
     #[test]
@@ -2625,7 +2866,18 @@ mod tests {
         let t = TempTree::new("genesis-with-empty-docs"); // TempTree makes docs/
         let (state, emits) = live_state(None);
         match apply_genesis_pick(&state, t.root()) {
-            PickOutcome::Genesis { probe, .. } => assert!(!probe.has_plan()),
+            PickOutcome::Genesis {
+                probe, snapshot, ..
+            } => {
+                assert!(!probe.has_plan());
+                // T-042 criterion 1: docs/ is armed, so a tree rides — an
+                // EMPTY one. "nothing is written here" becomes a
+                // MEASUREMENT the switch carried rather than an
+                // assumption the screen made, which is the same ○/✓
+                // discipline T-026 applied to the front-door checklist.
+                let snap = snapshot.expect("an armed docs/ carries its tree, empty or not");
+                assert!(snap.files.is_empty(), "the tree is empty, and says so");
+            }
             other => panic!("expected Genesis, got {other:?}"),
         }
         t.write("docs/NORTH_STAR.md", "written into an existing docs/");
@@ -2638,17 +2890,91 @@ mod tests {
     }
 
     #[test]
+    fn a_genesis_switch_onto_a_folder_whose_docs_holds_files_carries_that_tree() {
+        // T-042 CRITERION 1, on the T-026 verifier's own repro. A folder
+        // with docs/ARCHITECTURE.md + docs/decisions/001-x.md is
+        // genesis-ELIGIBLE (no ROADMAP, no tasks/), and before this task
+        // the switch carried nothing at all: the pane rendered
+        // "docs/ · nothing written yet" over a docs/ that is not empty,
+        // two clicks after the card truthfully showed
+        // "✓ docs/ARCHITECTURE.md". The watch was armed the whole time —
+        // which is exactly why nothing ever emitted: nothing CHANGED.
+        let t = TempTree::new("genesis-existing-docs");
+        t.write("docs/ARCHITECTURE.md", "# the shape of the thing");
+        t.write("docs/decisions/001-x.md", "# 001 - x");
+        let (state, emits) = live_state(None);
+        let canon = t.root().canonicalize().expect("canon");
+
+        let (seq, snapshot) = match apply_genesis_pick(&state, t.root()) {
+            PickOutcome::Genesis {
+                probe,
+                seq,
+                snapshot,
+                ..
+            } => {
+                // The verifier's shape, verbatim: architecture found, no
+                // plan, so genesis is still what this folder gets.
+                assert!(probe.architecture, "the probe sees ARCHITECTURE.md");
+                assert!(!probe.has_plan(), "and it is still not a plan");
+                (seq, snapshot.expect("THE FIX: the tree rides the switch"))
+            }
+            other => panic!("expected Genesis, got {other:?}"),
+        };
+
+        // What rides is the real tree, not a token: both files, in path
+        // order, with their bytes.
+        assert_eq!(
+            snapshot
+                .files
+                .iter()
+                .map(|f| f.path.as_str())
+                .collect::<Vec<_>>(),
+            vec!["docs/ARCHITECTURE.md", "docs/decisions/001-x.md"]
+        );
+        assert!(snapshot.files[0].content.contains("the shape of the thing"));
+        assert_eq!(snapshot.project_dir, canon.display().to_string());
+        // ONE stamp for the switch and its tree: the frontend applies the
+        // snapshot and advances the stale-drop watermark in one step.
+        assert_eq!(snapshot.seq, seq, "the snapshot rides the switch's seq");
+        assert!(snapshot.generated_at_ms > 0, "a real collection made it");
+
+        // THE OTHER HALF OF THE REPRO, kept exactly as it was — and it
+        // still holds, because it was never the bug. Nothing on disk
+        // changed, so nothing emits; what changed is that the truth
+        // arrived WITH the switch instead of never.
+        settle();
+        assert!(
+            emits.recv_timeout(Duration::from_millis(1200)).is_err(),
+            "an unchanged tree emits nothing - the watch is quiet, not dead"
+        );
+
+        // ...and the watch really was armed the whole time: a real edit
+        // emits, carrying both files.
+        t.write("docs/ARCHITECTURE.md", "# the shape, revised");
+        let emit = loop {
+            let emit = recv_emit(&emits);
+            if emit.files.iter().any(|f| f.content.contains("revised")) {
+                break emit;
+            }
+        };
+        assert_eq!(emit.files.len(), 2, "the whole tree, live");
+        assert!(emit.seq > seq, "and ordered after the switch");
+    }
+
+    #[test]
     fn genesis_and_no_docs_wire_shapes_are_pinned() {
         // The webview reads these tags; pin them like T-021 pinned busy.
+        let probe = PlanProbe {
+            roadmap: false,
+            tasks: false,
+            architecture: true,
+            git: true,
+        };
         let genesis = PickOutcome::Genesis {
             project_dir: "/tmp/sketchpad".into(),
             seq: 7,
-            probe: PlanProbe {
-                roadmap: false,
-                tasks: false,
-                architecture: true,
-                git: true,
-            },
+            probe,
+            snapshot: None,
         };
         assert_eq!(
             serde_json::to_value(&genesis).expect("serialize"),
@@ -2661,6 +2987,55 @@ mod tests {
                     "tasks": false,
                     "architecture": true,
                     "git": true
+                },
+                // T-042: the KEY IS ALWAYS PRESENT — a docs-less switch
+                // says "no tree" explicitly rather than by omission, so
+                // the webview never has to read absence as a claim.
+                "snapshot": serde_json::Value::Null
+            })
+        );
+
+        // T-042 criterion 1: the docs-bearing switch, pinned in the same
+        // place. The snapshot is a whole `DocsSnapshot` at the SWITCH'S
+        // OWN seq — that shared stamp is what lets the frontend apply the
+        // tree and advance the stale-drop watermark in one step.
+        let bearing = PickOutcome::Genesis {
+            project_dir: "/tmp/sketchpad".into(),
+            seq: 7,
+            probe,
+            snapshot: Some(DocsSnapshot {
+                seq: 7,
+                project_dir: "/tmp/sketchpad".into(),
+                generated_at_ms: 1_700_000_000_000,
+                files: vec![DocsFile {
+                    path: "docs/ARCHITECTURE.md".into(),
+                    content: "# shape".into(),
+                }],
+                skipped: Vec::new(),
+                skipped_total: 0,
+                truncated: false,
+            }),
+        };
+        assert_eq!(
+            serde_json::to_value(&bearing).expect("serialize"),
+            serde_json::json!({
+                "kind": "genesis",
+                "projectDir": "/tmp/sketchpad",
+                "seq": 7,
+                "probe": {
+                    "roadmap": false,
+                    "tasks": false,
+                    "architecture": true,
+                    "git": true
+                },
+                "snapshot": {
+                    "seq": 7,
+                    "projectDir": "/tmp/sketchpad",
+                    "generatedAtMs": 1_700_000_000_000_u64,
+                    "files": [{ "path": "docs/ARCHITECTURE.md", "content": "# shape" }],
+                    "skipped": [],
+                    "skippedTotal": 0,
+                    "truncated": false
                 }
             })
         );

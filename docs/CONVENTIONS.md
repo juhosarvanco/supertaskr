@@ -178,6 +178,23 @@
   sufficient by design (human ruling 2026-08-16, closing T-020-s1;
   tools/e2e/tests/panel-exempt-controls.spec.ts pins the occlusion as a
   tripwire, so un-occluding it fails loudly).
+- A RENDER-PHASE REF STAMP is legitimate only under three conditions,
+  all three of them (T-042 criterion 4, the architect's ruling on
+  T-024-s3; precedent T-012's render-time layout cache, live example
+  `app/src/genesis/GenesisPane.tsx`'s `logRef` write and the header
+  comment above it). The fold must be GUARDED — returning `prev` BY
+  IDENTITY for the already-observed and stale cases, so a StrictMode
+  double-render and every unrelated re-render are no-ops; BOUNDED —
+  what it feeds must tolerate a discarded concurrent render, here a
+  pulse window whose start moves by a few ms, cosmetic and
+  self-healing; and DERIVED FROM PROPS THE RENDER ALREADY HAS — no I/O,
+  no subscription, no second source of truth. Miss one and lift the
+  state instead. Relocating such a log into a store is a change of
+  SOURCE, not of mechanism, and it earns its cost when a SECOND
+  CONSUMER appears — not before: T-027's planning pass proved there is
+  none (its per-turn baseline diff is a different WINDOW over the same
+  evidence, not the same log), and moving state across a component
+  boundary to serve nobody is cost without benefit.
 - INTERIM integrator rule (T-009-s1, ratified at the 2026-08-16
   triage; retires when T-014's `nputer index --check` becomes the
   gate): at any merge whose diff touches `*.ts/*.tsx/*.js/*.jsx`

@@ -78,9 +78,25 @@ export type PickOutcomePayload =
   | { kind: "picked"; snapshot: DocsSnapshotPayload }
   /** T-026: opened as a genesis project — no plan there yet, the watcher
    * is armed on the root sentinel, and `seq` is the switch's ordering
-   * stamp (there is no snapshot to send, so this is what makes late
-   * emits from the previous project provably stale). */
-  | { kind: "genesis"; projectDir: string; seq: number; probe: PlanProbePayload };
+   * stamp (what makes late emits from the previous project provably
+   * stale).
+   *
+   * T-042 criterion 1: `snapshot` is the folder's CURRENT docs tree when
+   * it already has one — "no plan" is a weaker condition than "no docs/",
+   * so a lone `docs/ARCHITECTURE.md` or a `docs/decisions/` tree is
+   * genesis-eligible and the pane must render what is actually written
+   * there. `null` means the folder genuinely has no docs/ yet. Rust
+   * always sends the key; it is declared OPTIONAL here for the same
+   * reason T-018's `skipped`/`truncated` are — a payload minted before
+   * the field existed stays valid, and absent reads as "no tree", never
+   * as a claim about one. */
+  | {
+      kind: "genesis";
+      projectDir: string;
+      seq: number;
+      probe: PlanProbePayload;
+      snapshot?: DocsSnapshotPayload | null;
+    };
 
 /** Mirror of Rust's `IndexOutcome` (src-tauri/src/index_cmd.rs) —
  * T-012's zero-argument index_repo command. Volatile stats live here,
@@ -366,20 +382,63 @@ export function reducePickOutcome(
         resolvedDir: null,
         resolvedProbe: null,
       };
-    case "genesis":
+    case "genesis": {
+      // The previous project's model is cleared HERE — same-named paths
+      // in the new folder must never fall back to another project's
+      // content — while `resetDocsForProjectSwitch` KEEPS the seq
+      // watermark and the switch's own seq advances it past every
+      // pre-switch emit (the T-007 stale-drop invariant).
+      const switched = resetDocsForProjectSwitch(prev.docs);
+      // T-042 criterion 1: a genesis folder can already HAVE a docs/ (no
+      // plan is weaker than no docs/), and when it does the switch
+      // carries that tree. Rust stamps the snapshot with the switch's own
+      // seq, so applying it advances the watermark to exactly the value
+      // the other branch sets by hand — one stamp either way.
+      const snapshot = outcome.snapshot ?? null;
       return {
         ...prev,
-        // No snapshot rides a genesis switch (there is nothing there
-        // yet), so the previous project's model is cleared HERE and the
-        // seq watermark is advanced past every pre-switch emit — the
-        // T-007 stale-drop invariant, kept without a snapshot.
-        docs: { ...resetDocsForProjectSwitch(prev.docs), seq: outcome.seq },
+        docs:
+          snapshot === null
+            ? { ...switched, seq: outcome.seq }
+            : applySnapshot(switched, snapshot),
         phase: "genesis",
         genesisDir: outcome.projectDir,
         rejectedPick: null,
         resolvedDir: null,
         resolvedProbe: null,
       };
+    }
+  }
+}
+
+/**
+ * T-042 criterion 3: did a REAL SNAPSHOT produce this outcome's model?
+ *
+ * The `model-updated` echo exists to report what the frontend PARSED out
+ * of a snapshot Rust collected. The guard it used to sit behind —
+ * "the docs seq advanced" — reads as provenance and is not: the genesis
+ * case deliberately advances the watermark so late emits from the
+ * previous project are provably stale, Rust's seq counter is global and
+ * monotonic, so a switch seq is ALWAYS greater than the last emit's and
+ * the guard was ALWAYS true. A snapshot-less switch echoed
+ * `{"seq":7,"generatedAtMs":0,…}` — the zero timestamp being the tell
+ * that no collection made it — and the app's own stdout carried a
+ * model-update line for a model nothing produced (T-026-s6).
+ *
+ * Provenance is a property of the OUTCOME, so it is read from the
+ * outcome. Exported because a rule this easy to re-break deserves its
+ * own name and its own test.
+ */
+export function outcomeCarriesSnapshot(outcome: PickOutcomePayload): boolean {
+  switch (outcome.kind) {
+    case "picked":
+      return true;
+    case "genesis":
+      // Exactly the shape that HAS a tree; `?? null` so an older payload
+      // without the field reads as "no tree" rather than throwing.
+      return (outcome.snapshot ?? null) !== null;
+    default:
+      return false;
   }
 }
 
@@ -776,8 +835,12 @@ export async function startGenesisHere(): Promise<void> {
  * The one picker pipeline behind all three commands: single-flight
  * webview-side (the Rust latch is the real gate — T-021), invoke, then
  * the pure `reducePickOutcome`. A snapshot that lands this way is echoed
- * exactly like a watcher push (T-003's round-trip contract); a genesis
- * switch carries no snapshot, so it echoes nothing.
+ * exactly like a watcher push (T-003's round-trip contract) — and only a
+ * snapshot is: a genesis switch onto a folder with no docs/ yet carries
+ * no tree, so there is nothing for it to report and it echoes nothing.
+ * One onto a folder that DOES have a docs/ carries that tree and echoes
+ * it like any other snapshot (T-042 criterion 3; the echo is emitted by
+ * `commitPickOutcome`, which is this function minus the `invoke`).
  */
 async function runPicker(command: string): Promise<void> {
   if (!isTauri || shell.picking) return;
@@ -804,9 +867,15 @@ function commitPickOutcome(outcome: PickOutcomePayload): void {
   if (next === before) return;
   shell = next;
   for (const callback of listeners) callback();
-  // Only a real snapshot advances the docs seq; a project-switch
-  // reset keeps the watermark, so it never fakes an echo.
-  if (next.docs !== before.docs && next.docs.seq > before.docs.seq) {
+  // T-042 criterion 3: the echo reports what the frontend parsed out of a
+  // snapshot, so it fires for a payload A REAL SNAPSHOT PRODUCED — read
+  // from the outcome's own provenance, never from the seq. The seq guard
+  // that used to stand here was always true for a switch (see
+  // `outcomeCarriesSnapshot`), so the app's stdout carried model-update
+  // lines with `generatedAtMs: 0` for models nothing had generated. The
+  // identity check stays: a stale or duplicate snapshot reduces to `prev`
+  // by identity and must not echo twice.
+  if (next.docs !== before.docs && outcomeCarriesSnapshot(outcome)) {
     sendEcho(next.docs);
   }
 }
