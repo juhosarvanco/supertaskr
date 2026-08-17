@@ -203,11 +203,27 @@
   self_graph -- --ignored` — then re-run
   `cargo test -p nputer-index --test self_graph -- --ignored` to
   confirm byte-identity, and commit docs/architecture/graph.json
-  with the merge.
+  with the merge. **"The merge's diff" means
+  `<main-before-the-merge>..HEAD`, never `<merge-base>..HEAD`** — see
+  the BOOT GATE bullet below, which states the reason once for both
+  rules.
 - BOOT GATE (T-046, ratified at the 2026-08-16 triage on T-040-s1 +
   T-020-s3): at any merge whose diff touches `app/src-tauri/**`,
   `app/src/**` or either manifest (app/package.json,
-  app/src-tauri/Cargo.toml), run the boot check —
+  app/src-tauri/Cargo.toml) — **and "the merge's diff" means
+  `<main-before-the-merge>..HEAD`, NEVER `<merge-base>..HEAD`; SIX
+  consecutive integrators have derived this the hard way and every one
+  had to reason it out afresh, so it is written here once.** The
+  merge-base is the branch POINT, so `<merge-base>..HEAD` also contains
+  everything MAIN did in the meantime — work that already passed this
+  gate at its own merge. At T-027 the two derivations returned 9 files
+  and 36; the extra 27 were T-014's indexer crate, already merged and
+  already boot-gated, and the naive figure would have made a
+  frontend-only merge look like it rewrote a Rust crate. It has never
+  yet changed WHETHER the gate fires — both derivations fired all six
+  times — but it changes what you tell the human the merge touched, and
+  a trigger set that is 4× too wide is a checkpoint that lies. Then run
+  the boot check —
   `NPUTER_BOOT_PORT=<free scratch port> npm run boot:check` from
   tools/e2e/ — and RECORD the result (exit code, both `[nputer]` lines)
   in the checkpoint. The four exit codes are legended in the tools/e2e
