@@ -468,5 +468,153 @@ describe("which chords the app claims, and only those (criterion 6)", () => {
     expect(chordOf({ metaKey: true, shiftKey: true })).toBeNull();
     expect(chordOf({ metaKey: true, altKey: true })).toBeNull();
     expect(chordOf({ key: "Escape" })).toBeNull();
+
+    // T-027 adds the third and last one. ⌘. is the long-established
+    // macOS cancel chord; it earns its place because the interview
+    // AUTO-STARTS turn 1, and a screen that spawns a process on arrival
+    // owes a way to stop it.
+    expect(chordOf({ key: ".", metaKey: true })).toBe("cancelTurn");
+    expect(chordOf({ key: ".", ctrlKey: true })).toBe("cancelTurn");
+    // A typed period carries no modifier, which IS the whole
+    // discrimination — so T-049's deliberate target-blindness survives
+    // the addition rather than needing an exception carved for it.
+    expect(chordOf({ key: "." })).toBeNull();
+    expect(chordOf({ key: ".", metaKey: true, shiftKey: true })).toBeNull();
+    expect(chordOf({ key: ".", metaKey: true, altKey: true })).toBeNull();
+    expect(chordOf({ key: ",", metaKey: true }), "⌘, is Preferences, not ours").toBeNull();
+  });
+
+  /**
+   * T-027 — THE WHOLE-SET SWEEP, BUILT RATHER THAN INHERITED.
+   *
+   * T-027's plan expected to find a "26-chord sweep" here asserting a
+   * whole set, and to move it. There was none: the test above is eleven
+   * hand-listed cases — thorough, but not exhaustive, so an unlisted
+   * letter could have been claimed without reddening anything. Recorded
+   * as a correction to the plan's own numbers, and answered by building
+   * the thing it described. Every letter, every digit and every key the
+   * app's UI mentions, with ⌘ and with ⌃, checked against the COMPLETE
+   * expected verdict map: a chord this app has not taken must answer
+   * `null`, or `useAccelerators` would `preventDefault` on somebody
+   * else's key.
+   */
+  it("claims exactly three chords out of the whole modifier keyspace, and nothing else", () => {
+    const keys = [
+      ..."abcdefghijklmnopqrstuvwxyz".split(""),
+      ..."0123456789".split(""),
+      ".",
+      ",",
+      "/",
+      "[",
+      "]",
+      "Enter",
+      "Escape",
+      "Tab",
+      " ",
+      "ArrowDown",
+      "F5",
+    ];
+    const claimed: Record<string, string> = {};
+    for (const key of keys) {
+      for (const modifier of ["metaKey", "ctrlKey"] as const) {
+        const id = matchAccelerator({
+          key,
+          metaKey: modifier === "metaKey",
+          ctrlKey: modifier === "ctrlKey",
+          altKey: false,
+          shiftKey: false,
+        });
+        if (id !== null) claimed[`${modifier === "metaKey" ? "cmd" : "ctrl"}+${key}`] = id;
+      }
+    }
+    // A WHOLE-SET equality: a fourth chord, a moved chord or a renamed
+    // id all red here, and a chord quietly claimed on an unlisted letter
+    // becomes impossible rather than merely unlikely.
+    expect(claimed).toEqual({
+      "cmd+o": "openFolder",
+      "cmd+n": "startInterview",
+      "cmd+.": "cancelTurn",
+      "ctrl+o": "openFolder",
+      "ctrl+n": "startInterview",
+      "ctrl+.": "cancelTurn",
+    });
+  });
+});
+
+/**
+ * T-027 — THE PROPERTY T-049-s3 NAMED, PINNED FOR THE FIRST TIME.
+ *
+ * That suggestion listed two properties as "the ones that would bite",
+ * and this is the sharper of them: an accelerator ABSENT from a screen's
+ * table must be left completely alone — no `preventDefault`, nothing
+ * swallowed. Until today every screen's table was identical, so deleting
+ * `useAccelerators`' absent-entry guard left the whole suite green. It
+ * does not any more: ⌘. exists, and exactly one screen claims it.
+ *
+ * The instrument is T-049's own — the count of `preventDefault` calls on
+ * ONE dispatched event, which is the app's count of handlers that
+ * claimed the chord. Zero means the keypress reached the page untouched,
+ * which is the only honest meaning of "this screen has not taken it".
+ */
+describe("a chord a screen does not claim is left completely alone (T-049-s3)", () => {
+  async function goTo(screen: "board" | "genesis" | "empty"): Promise<void> {
+    if (screen === "board") {
+      ipc.outcomes.set("pick_project_folder", {
+        kind: "picked",
+        snapshot: { seq: 40, projectDir: PROJECT_DIR, generatedAtMs: 40, files: [] },
+      });
+      await chord("o");
+      ipc.outcomes.set("pick_project_folder", { kind: "cancelled" });
+    } else if (screen === "genesis") {
+      ipc.outcomes.set("pick_genesis_folder", {
+        kind: "genesis",
+        projectDir: GENESIS_DIR,
+        seq: 41,
+        probe: PROBE,
+      });
+      await chord("n");
+      ipc.outcomes.set("pick_genesis_folder", { kind: "cancelled" });
+    } else {
+      ipc.outcomes.set("pick_project_folder", {
+        kind: "noDocs",
+        path: "/tmp/elsewhere",
+        probe: PROBE,
+      });
+      await chord("o");
+      ipc.outcomes.set("pick_project_folder", { kind: "cancelled" });
+    }
+    ipc.invoke.mockClear();
+  }
+
+  it("⌘. is claimed EXACTLY ONCE on the interview", async () => {
+    await goTo("genesis");
+    expect(screenOf()).toBe("genesis");
+    expect(await chord("."), "the interview owns the cancel chord").toBe(1);
+    expect(await chord(".", { ctrlKey: true }), "and on Ctrl too").toBe(1);
+  });
+
+  it("⌘. is claimed ZERO times on the board, the map and the front door", async () => {
+    await goTo("board");
+    expect(screenOf()).toBe("board");
+    expect(await chord("."), "the board never claimed a cancel chord").toBe(0);
+
+    // The map is the same screen with the other pane up, and it is the
+    // one with a real text input — a key swallowed there is the worst
+    // version of this bug.
+    await click(q('[data-testid="pane-rail-map"]'));
+    expect(container.querySelector("main")?.getAttribute("data-pane")).toBe("map");
+    expect(await chord("."), "nor the map").toBe(0);
+    const search = q('[data-testid="map-search"]');
+    expect(search, "the map's search field is the app's real text input").not.toBeNull();
+    expect(await chord(".", { metaKey: true }, search), "nor the map's search field").toBe(0);
+
+    await goTo("empty");
+    expect(screenOf()).toBe("empty");
+    expect(await chord("."), "nor the front door").toBe(0);
+  });
+
+  it("…and the two chords every screen DOES claim are unaffected by the addition", async () => {
+    await goTo("genesis");
+    await expectBothChordsWork();
   });
 });

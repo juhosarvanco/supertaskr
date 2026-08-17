@@ -1,0 +1,803 @@
+// @vitest-environment jsdom
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { emptyState, type DocsModelState } from "../src/lib/docs-model";
+import type { GenesisEvent, GenesisStatusPayload } from "../src/lib/agent-store";
+
+/**
+ * T-027's DOM states, through the REAL store and the REAL event channel
+ * - only the IPC boundary is mocked (T-026/T-049's precedent).
+ *
+ * The fixture runs under a TAURI runtime deliberately: that is the path
+ * the shipped app takes, so events arrive through `listen("genesis-turn")`
+ * and answers leave through `invoke`, exactly as on a user's machine.
+ * Nothing here can spawn a process - `invoke` is mocked at the boundary
+ * and this task adds no Rust at all.
+ *
+ * The typed event and failure shapes below are TRANSCRIBED from
+ * `app/src-tauri/src/agent/runner.rs`'s `RunEvent` and `TurnError` (the
+ * source of truth), mirrored in TS by `app/src/lib/agent-store.ts`. The
+ * fake CLI that produces them for real is a Rust [[bin]] driven by
+ * cargo, which no webview test can spawn - so this is a mirror without a
+ * comparison. That is T-041-s2's open gap, widened by one more mirror
+ * and named here rather than quietly inherited.
+ */
+
+const ipc = vi.hoisted(() => ({
+  invoke: vi.fn(),
+  /** The `genesis-turn` handler the store registered. */
+  onGenesisTurn: null as null | ((event: { payload: GenesisEvent }) => void),
+  outcomes: new Map<string, unknown>(),
+  release: null as null | ((value: unknown) => void),
+  parked: new Set<string>(),
+}));
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: (command: string, args?: unknown) => {
+    ipc.invoke(command, args);
+    if (ipc.parked.has(command)) {
+      return new Promise((resolve) => {
+        ipc.release = resolve;
+      });
+    }
+    const outcome = ipc.outcomes.get(command);
+    return outcome instanceof Error ? Promise.reject(outcome) : Promise.resolve(outcome);
+  },
+}));
+vi.mock("@tauri-apps/api/event", () => ({
+  emit: () => Promise.resolve(),
+  listen: (name: string, handler: (event: { payload: GenesisEvent }) => void) => {
+    if (name === "genesis-turn") ipc.onGenesisTurn = handler;
+    return Promise.resolve(() => {});
+  },
+}));
+
+declare global {
+  var IS_REACT_ACT_ENVIRONMENT: boolean | undefined;
+}
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
+// Both modules decide `isTauri` at load - set the flag before importing.
+(window as unknown as { __TAURI_INTERNALS__: unknown }).__TAURI_INTERNALS__ = {};
+const { InterviewChat } = await import("../src/genesis/InterviewChat");
+const store = await import("../src/lib/agent-store");
+const source = await import("../src/genesis/interview-source");
+
+/**
+ * THE HOSTILE PAYLOAD. Nothing in it may reach the DOM as markup or as
+ * an attribute: a script tag, an image with an onerror handler, an HTML
+ * comment, an RTL override (which reverses how a path READS without
+ * changing what it IS), the three C0 control bytes, and a 10 000
+ * character run - the last because a turn is length-checked nowhere and
+ * a renderer that truncated silently would be lying about what the
+ * planner said.
+ *
+ * WRITTEN AS ESCAPES, NEVER AS RAW BYTES, and this file is swept with
+ * `file(1)` before it is committed. A source file carrying a raw NUL is
+ * classified `data` and goes invisible to ugrep (exit 1, no output at
+ * all), to ripgrep used recursively (silent, exit 0) and to
+ * /usr/bin/grep's line output - i.e. to the tooling this repo is audited
+ * with. `git grep` is the one searcher that is never blinded.
+ */
+const HOSTILE =
+  "<script>alert('xss')</script>" +
+  "<img src=x onerror=alert(1)>" +
+  "<!-- swallowed? -->" +
+  "\u202E" +
+  "\u0000\u0007\u001b[31m" +
+  "A".repeat(10_000);
+
+const RTL = "\u202E";
+const C0 = "\u0000\u0007\u001b";
+
+const PROJECT = "/tmp/sketchpad";
+
+function docsWith(seq: number, files: Record<string, string> = {}): DocsModelState {
+  const effective = new Map(Object.entries(files));
+  return { ...emptyState(), seq, projectDir: PROJECT, effective, fileCount: effective.size };
+}
+
+function status(patch: Partial<GenesisStatusPayload> = {}): GenesisStatusPayload {
+  return {
+    phase: "idle",
+    projectDir: PROJECT,
+    turn: 0,
+    nativeSessionId: null,
+    cliVersion: "2.1.226 (Claude Code)",
+    methodVersion: "0.1.5",
+    lastError: null,
+    lastEventAtMs: null,
+    ...patch,
+  };
+}
+
+let container: HTMLDivElement;
+let root: Root;
+
+const q = (selector: string): HTMLElement | null =>
+  container.querySelector<HTMLElement>(selector);
+const qa = (selector: string): HTMLElement[] =>
+  Array.from(container.querySelectorAll<HTMLElement>(selector));
+
+async function flush(fn: () => void | Promise<void>): Promise<void> {
+  await act(async () => {
+    await fn();
+  });
+}
+
+function render(docs: DocsModelState = docsWith(0)): void {
+  act(() => {
+    root.render(<InterviewChat projectDir={PROJECT} docs={docs} />);
+  });
+}
+
+/** Push events down the REAL `genesis-turn` channel the store owns. */
+async function emit(...events: GenesisEvent[]): Promise<void> {
+  await flush(() => {
+    for (const payload of events) ipc.onGenesisTurn?.({ payload });
+  });
+}
+
+async function type(text: string): Promise<void> {
+  const box = q("[data-testid=interview-input]") as HTMLTextAreaElement;
+  await flush(() => {
+    const setter = Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      "value",
+    )!.set!;
+    setter.call(box, text);
+    box.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+
+async function press(key: string, init: KeyboardEventInit = {}): Promise<void> {
+  const box = q("[data-testid=interview-input]")!;
+  await flush(() => {
+    box.dispatchEvent(
+      new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init }),
+    );
+  });
+}
+
+async function click(selector: string): Promise<void> {
+  await flush(() => {
+    q(selector)?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+}
+
+beforeEach(() => {
+  ipc.invoke.mockClear();
+  ipc.outcomes.clear();
+  ipc.parked.clear();
+  ipc.release = null;
+  ipc.onGenesisTurn = null;
+  store.__resetGenesisStoreForTests();
+  source.__resetInterviewSourceForTests();
+  container = document.createElement("div");
+  document.body.appendChild(container);
+  root = createRoot(container);
+});
+
+afterEach(() => {
+  act(() => root.unmount());
+  container.remove();
+});
+
+/** Start the listener with a status answered, so the auto-start's
+ * precondition - that a status was actually OBSERVED - is met. */
+async function withStatus(patch: Partial<GenesisStatusPayload> = {}): Promise<void> {
+  ipc.outcomes.set("genesis_status", status(patch));
+  await flush(() => source.startInterviewSource());
+}
+
+// ---- the first frame ----------------------------------------------------
+
+describe("the first frame (criterion 1)", () => {
+  it("auto-starts once a status has been observed, and still offers the explicit way in", async () => {
+    // Parked, so the screen is held in the frame the user actually sees
+    // first: the command has gone out and nothing has come back.
+    ipc.parked.add("genesis_start");
+    await withStatus();
+    render();
+    await flush(() => Promise.resolve());
+
+    // The @human ruling: the user already clicked "Start an interview"
+    // to get here, so re-asking is the four-step problem T-049 fixed one
+    // screen over.
+    expect(ipc.invoke).toHaveBeenCalledWith("genesis_start", undefined);
+    // ...and the affordance is a CONVENIENCE, never load-bearing: for as
+    // long as nothing has actually started, the explicit way in is on
+    // screen beside it.
+    expect(q("[data-testid=interview-start]")).not.toBeNull();
+
+    // Once a turn really is running there is nothing left to start, so
+    // the button goes rather than sitting there lying.
+    await flush(() => {
+      ipc.release?.({ kind: "started", turn: 1 });
+      ipc.release = null;
+    });
+    expect(q("[data-testid=interview-start]")).toBeNull();
+  });
+
+  it("does NOT auto-start before a status has answered - a spawn is never fired on a guess", async () => {
+    ipc.outcomes.set("genesis_status", new Error("the boundary refused"));
+    await flush(() => source.startInterviewSource());
+    render();
+    await flush(() => Promise.resolve());
+    expect(
+      ipc.invoke.mock.calls.filter(([c]) => c === "genesis_start"),
+      "nothing was spawned",
+    ).toHaveLength(0);
+    // And the explicit way in is present, which is what makes that safe.
+    expect(q("[data-testid=interview-start]")).not.toBeNull();
+  });
+
+  it("the explicit button still works after an auto-start the latch refuses to repeat", async () => {
+    // The auto-start ran and came back with a TYPED outcome that is not
+    // a start, so the screen is still idle - and the per-project latch
+    // will refuse a second AUTOMATIC attempt. That is what stops a
+    // failing boundary from being hammered on every render...
+    ipc.outcomes.set("genesis_start", { kind: "busy" });
+    await withStatus();
+    render();
+    await flush(() => Promise.resolve());
+    expect(
+      ipc.invoke.mock.calls.filter(([c]) => c === "genesis_start"),
+      "the auto-start does not loop",
+    ).toHaveLength(1);
+
+    // ...and this is why the explicit affordance is not optional: it
+    // forces, so the latch can never strand the user.
+    ipc.invoke.mockClear();
+    ipc.outcomes.set("genesis_start", { kind: "started", turn: 1 });
+    await click("[data-testid=interview-start]");
+    expect(ipc.invoke).toHaveBeenCalledWith("genesis_start", undefined);
+  });
+});
+
+// ---- question, history ---------------------------------------------------
+
+describe("one current question, history quieter above (criterion 1)", () => {
+  beforeEach(async () => {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      {
+        kind: "completed",
+        seq: 2,
+        turn: 1,
+        text: "Who feels the pain first?",
+        truncatedRelay: false,
+      },
+      { kind: "started", seq: 3, turn: 2 },
+      {
+        kind: "completed",
+        seq: 4,
+        turn: 2,
+        text: "What must be true about the machine this runs on?",
+        truncatedRelay: false,
+      },
+    );
+  });
+
+  it("renders exactly ONE current question, and it is the last turn", () => {
+    const current = qa("[data-testid=interview-turn-current]");
+    expect(current).toHaveLength(1);
+    expect(current[0]?.textContent).toContain("What must be true about the machine");
+    const history = qa("[data-testid=interview-turn-history]");
+    expect(history).toHaveLength(1);
+    expect(history[0]?.textContent).toContain("Who feels the pain first?");
+  });
+
+  it("gives the current question the design's prominence and history the quieter ink", () => {
+    const current = q("[data-testid=interview-turn-current] [data-testid=interview-turn-body]")!;
+    // 17px / weight 500 / -0.01em - all exact token steps.
+    expect(current.className).toContain("text-xl");
+    expect(current.className).toContain("font-medium");
+    expect(current.className).toContain("tracking-title");
+    expect(current.className).toContain("text-foreground");
+
+    const history = q("[data-testid=interview-turn-history] [data-testid=interview-turn-body]")!;
+    expect(history.className).toContain("text-base");
+    expect(history.className).toContain("text-secondary-foreground");
+    expect(history.className, "history is never the prominent step").not.toContain("text-xl");
+  });
+
+  it("only the current question carries the footer", () => {
+    expect(qa("[data-testid=interview-question-footer]")).toHaveLength(1);
+  });
+
+  it("the stage strip renders seven segments and follows the DERIVED stage", async () => {
+    // Stage 1 comes from the file tree (NORTH_STAR has its Vision and
+    // Users sections), never from the chips and never from the turns.
+    await flush(() =>
+      render(
+        docsWith(2, {
+          "docs/NORTH_STAR.md": "## Vision\n\nA thing.\n\n## Users\n\nSomeone.\n",
+        }),
+      ),
+    );
+    const segments = qa("[data-testid=interview-stage-segment]");
+    expect(segments).toHaveLength(7);
+    expect(segments.map((s) => s.getAttribute("data-state"))).toEqual([
+      "current",
+      "future",
+      "future",
+      "future",
+      "future",
+      "future",
+      "future",
+    ]);
+    expect(q("[data-testid=interview-stage-readout]")?.textContent).toBe(
+      "stage 1 of 7 " + String.fromCharCode(0x00b7) + " problem & person",
+    );
+  });
+});
+
+// ---- the challenge treatment ---------------------------------------------
+
+describe("the challenge treatment (criterion 2)", () => {
+  async function turnWith(text: string): Promise<void> {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "completed", seq: 2, turn: 1, text, truncatedRelay: false },
+    );
+  }
+
+  it("renders the pushing-back block with the design's rule, paper and label", async () => {
+    await turnWith('pushing back: You said "fast". Compared to what?');
+    const block = q("[data-testid=interview-turn-challenge]")!;
+    expect(block).not.toBeNull();
+    // The 2px terracotta rule and the warm paper, both as TOKENS.
+    expect(block.className).toContain("border-l-2");
+    expect(block.className).toContain("border-chart-4");
+    expect(block.className).toContain("bg-interview-challenge");
+    // The design's asymmetric radius: square on the ruled edge.
+    expect(block.className).toContain("rounded-r-lg");
+    expect(block.textContent).toContain("planner");
+    expect(block.textContent).toContain("pushing back");
+    // The marker is CONSUMED - the label carries the semantics.
+    expect(block.textContent).toContain('You said "fast". Compared to what?');
+    expect(block.textContent, "the marker is not shown twice").not.toContain("pushing back:");
+    expect(
+      q("[data-testid=interview-turn-challenge] [data-testid=interview-turn-body]")!.className,
+    ).toContain("text-interview-challenge-ink");
+  });
+
+  it("a turn WITHOUT the marker renders as an ordinary turn", async () => {
+    await turnWith('You said "fast". Compared to what?');
+    expect(q("[data-testid=interview-turn-challenge]")).toBeNull();
+    expect(q("[data-testid=interview-turn-current]")).not.toBeNull();
+    expect(q("[data-testid=interview-planner-turn]")?.getAttribute("data-challenge")).toBe(
+      "false",
+    );
+  });
+
+  it("the challenge carries the footer, so the count is never lost to the treatment", async () => {
+    await turnWith("pushing back: really?");
+    expect(
+      q("[data-testid=interview-turn-challenge] [data-testid=interview-question-footer]"),
+    ).not.toBeNull();
+  });
+});
+
+// ---- banked chips --------------------------------------------------------
+
+describe("banked chips come from the docs tree (criterion 3)", () => {
+  it("a file landing after the turn chips against it, showing the PATH", async () => {
+    await withStatus();
+    render(docsWith(1, { "docs/STATE.md": "scaffold" }));
+    await emit({ kind: "started", seq: 1, turn: 1 });
+    await flush(() => {
+      render(docsWith(2, { "docs/STATE.md": "scaffold", "docs/NORTH_STAR.md": "vision" }));
+    });
+
+    const chip = q("[data-testid=interview-banked]")!;
+    expect(chip).not.toBeNull();
+    // PATHS, not the design's section names: a section-level claim is
+    // not file evidence, and T-024 made the identical call already.
+    expect(chip.textContent).toContain("docs/NORTH_STAR.md");
+    expect(chip.querySelector("svg circle")?.getAttribute("fill")).toBe("var(--review-disc)");
+  });
+
+  it("a turn whose activity labels name docs paths produces ZERO chips", async () => {
+    await withStatus();
+    render(docsWith(1, { "docs/STATE.md": "scaffold" }));
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "activity", seq: 2, turn: 1, label: "Write(docs/NORTH_STAR.md)" },
+      {
+        kind: "completed",
+        seq: 3,
+        turn: 1,
+        text: "I have written docs/NORTH_STAR.md and docs/ROADMAP.md.",
+        truncatedRelay: false,
+      },
+    );
+    // Same tree, a later seq: the disk says nothing changed.
+    await flush(() => render(docsWith(2, { "docs/STATE.md": "scaffold" })));
+    expect(qa("[data-testid=interview-banked]"), "model output banks nothing").toHaveLength(0);
+  });
+
+  it("nothing chips before the interview has started", async () => {
+    await withStatus();
+    render(docsWith(1, { "docs/STATE.md": "a" }));
+    await flush(() => render(docsWith(2, { "docs/STATE.md": "b", "docs/NORTH_STAR.md": "n" })));
+    expect(qa("[data-testid=interview-banked]")).toHaveLength(0);
+  });
+});
+
+// ---- the input row -------------------------------------------------------
+
+describe("the input row (criterion 4)", () => {
+  beforeEach(async () => {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "completed", seq: 2, turn: 1, text: "Q1?", truncatedRelay: false },
+    );
+    ipc.invoke.mockClear();
+  });
+
+  it("carries the design's placeholder verbatim, and the send hint", () => {
+    const box = q("[data-testid=interview-input]") as HTMLTextAreaElement;
+    expect(box.getAttribute("placeholder")).toBe(
+      'Answer, or say "skip" and I' + String.fromCharCode(39) + "ll mark it an assumption" +
+        String.fromCharCode(0x2026),
+    );
+    expect(q("[data-testid=interview-hint]")?.textContent).toBe(
+      String.fromCharCode(0x23ce) + " send " + String.fromCharCode(0x00b7) + " " +
+        String.fromCharCode(0x21e7) + String.fromCharCode(0x23ce) + " newline",
+    );
+  });
+
+  it("Enter sends and Shift+Enter does not", async () => {
+    ipc.outcomes.set("genesis_send_turn", { kind: "accepted", turn: 2 });
+    await type("Solo builders running agent CLIs.");
+    await press("Enter", { shiftKey: true });
+    expect(ipc.invoke, "shift-enter is a newline, not a send").not.toHaveBeenCalled();
+    await press("Enter");
+    expect(ipc.invoke).toHaveBeenCalledWith("genesis_send_turn", {
+      text: "Solo builders running agent CLIs.",
+    });
+  });
+
+  it("the skip convention is TYPED - the app sends the word and nothing else", async () => {
+    ipc.outcomes.set("genesis_send_turn", { kind: "accepted", turn: 2 });
+    await type("skip");
+    await press("Enter");
+    // No Skip button and no rewriting: method/roles/planner.md step 2
+    // says the planner does the rest.
+    expect(ipc.invoke).toHaveBeenCalledWith("genesis_send_turn", { text: "skip" });
+    expect(q("[data-testid=interview-skip]"), "no button types a word for you").toBeNull();
+  });
+
+  it("an empty or whitespace-only send is a no-op", async () => {
+    await type("   ");
+    await press("Enter");
+    expect(ipc.invoke).not.toHaveBeenCalled();
+  });
+
+  it("the accepted answer renders right-aligned, and turn 1 gets no bubble", async () => {
+    ipc.outcomes.set("genesis_send_turn", { kind: "accepted", turn: 2 });
+    await type("my answer");
+    await press("Enter");
+    await flush(() => Promise.resolve());
+    const bubble = q("[data-testid=interview-user-turn]")!;
+    expect(bubble.className).toContain("items-end");
+    expect(bubble.textContent).toContain("my answer");
+    expect(
+      qa("[data-testid=interview-user-turn]"),
+      "turn 1's user half is the kickoff, which no command exposes",
+    ).toHaveLength(1);
+  });
+
+  it("a REFUSED send records no bubble and says what happened", async () => {
+    ipc.outcomes.set("genesis_send_turn", { kind: "busy" });
+    await type("my answer");
+    await press("Enter");
+    await flush(() => Promise.resolve());
+    expect(qa("[data-testid=interview-user-turn]")).toHaveLength(0);
+    expect(q("[data-testid=interview-notice]")?.getAttribute("data-outcome-kind")).toBe("busy");
+  });
+
+  /**
+   * SINGLE-FLIGHT, DRILLED THE WAY T-049's C3 DID IT: a parked `invoke`,
+   * then a burst of Enter presses.
+   *
+   * The store's own `sending` flag cannot carry this alone, and that is
+   * the point - `sendGenesisTurn` sets it only after `invoke` RESOLVES,
+   * so between the keypress and the answer the store still reads idle
+   * and every press in the burst would pass its guard. The synchronous
+   * latch in interview-source.ts is what bounds it. The `disabled`
+   * attribute is not the guard either: a keydown can be delivered
+   * between state updates, which is exactly what this burst simulates.
+   */
+  it("an Enter burst against a parked invoke yields EXACTLY ONE command", async () => {
+    ipc.parked.add("genesis_send_turn");
+    await type("the only answer that should be sent");
+    const before = store.getGenesisState();
+
+    await flush(() => {
+      const box = q("[data-testid=interview-input]")!;
+      for (let i = 0; i < 6; i += 1) {
+        box.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
+        );
+      }
+    });
+
+    const sends = ipc.invoke.mock.calls.filter(([c]) => c === "genesis_send_turn");
+    expect(sends, "six presses, one command").toHaveLength(1);
+    expect(store.getGenesisState(), "and the state is unchanged BY IDENTITY").toBe(before);
+
+    // Released and the turn completed, the next send works - the latch
+    // is a gate, not a wall. The turn must actually LAND first: an
+    // accepted send leaves a turn in flight, and the store's own
+    // `isTurnInFlight` refuses a second answer until it completes, which
+    // is the layer the synchronous latch sits on top of rather than
+    // replaces.
+    await flush(() => {
+      ipc.release?.({ kind: "accepted", turn: 2 });
+      ipc.release = null;
+    });
+    ipc.parked.clear();
+    await emit({ kind: "completed", seq: 3, turn: 2, text: "Q2?", truncatedRelay: false });
+    ipc.outcomes.set("genesis_send_turn", { kind: "accepted", turn: 3 });
+    await type("a second answer");
+    await press("Enter");
+    expect(ipc.invoke.mock.calls.filter(([c]) => c === "genesis_send_turn")).toHaveLength(2);
+  });
+
+  it("disables the box and the button in flight, and advertises the stop chord", async () => {
+    await emit({ kind: "started", seq: 3, turn: 2 });
+    expect((q("[data-testid=interview-input]") as HTMLTextAreaElement).disabled).toBe(true);
+    expect((q("[data-testid=interview-bank]") as HTMLButtonElement).disabled).toBe(true);
+    // A text swap in a slot the design already has, not a new control.
+    expect(q("[data-testid=interview-hint]")?.textContent).toContain("to stop");
+  });
+});
+
+// ---- failure, retry, resumability ----------------------------------------
+
+describe("a failed turn is calm, inline and never a dead end (criterion 5)", () => {
+  async function failWith(error: GenesisEvent & { kind: "failed" }): Promise<void> {
+    await withStatus();
+    render(docsWith(1, { "docs/STATE.md": "a" }));
+    await emit({ kind: "started", seq: 1, turn: 1 });
+    await flush(() => render(docsWith(2, { "docs/STATE.md": "a", "docs/NORTH_STAR.md": "n" })));
+    await emit(error);
+  }
+
+  it("shows the typed variant, its own words and a retry - with no modal anywhere", async () => {
+    await failWith({
+      kind: "failed",
+      seq: 2,
+      turn: 1,
+      error: { kind: "exitNonZero", code: 1, stderrTail: "API Error: 401 OAuth token revoked." },
+    });
+    const block = q("[data-testid=interview-failure]")!;
+    expect(block.getAttribute("data-error-kind")).toBe("exitNonZero");
+    expect(block.textContent).toContain("the planner exited with code 1");
+    expect(block.textContent).toContain("API Error: 401 OAuth token revoked.");
+    expect(q("[data-testid=interview-retry]")).not.toBeNull();
+    expect(container.querySelector("dialog"), "never a modal").toBeNull();
+    expect(container.querySelector('[role="alertdialog"]')).toBeNull();
+  });
+
+  it("NOTHING BANKED IS LOST - chips emitted before the failure survive it", async () => {
+    await failWith({ kind: "failed", seq: 2, turn: 1, error: { kind: "stall" } });
+    // A POSITIVE assertion, because "no lost banked docs" is the
+    // criterion's own phrase and the absence of a crash is not evidence.
+    expect(q("[data-testid=interview-banked]")?.textContent).toContain("docs/NORTH_STAR.md");
+  });
+
+  it("the interview stays RESUMABLE: the input re-enables and the retry re-issues", async () => {
+    await failWith({ kind: "failed", seq: 2, turn: 1, error: { kind: "startTimeout" } });
+    expect((q("[data-testid=interview-input]") as HTMLTextAreaElement).disabled).toBe(false);
+
+    ipc.invoke.mockClear();
+    ipc.outcomes.set("genesis_start", { kind: "started", turn: 1 });
+    await click("[data-testid=interview-retry]");
+    // Turn 1's retry is `genesis_start`, with the same (zero) arguments.
+    expect(ipc.invoke).toHaveBeenCalledWith("genesis_start", undefined);
+  });
+
+  it("a turn N>=2 retry re-sends the SAME stored answer", async () => {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "completed", seq: 2, turn: 1, text: "Q1?", truncatedRelay: false },
+    );
+    ipc.outcomes.set("genesis_send_turn", { kind: "accepted", turn: 2 });
+    await type("the stored answer");
+    await press("Enter");
+    await flush(() => Promise.resolve());
+    await emit({ kind: "failed", seq: 3, turn: 2, error: { kind: "stall" } });
+
+    ipc.invoke.mockClear();
+    await click("[data-testid=interview-retry]");
+    expect(ipc.invoke).toHaveBeenCalledWith("genesis_send_turn", { text: "the stored answer" });
+  });
+});
+
+// ---- the CLI-missing fallback --------------------------------------------
+
+describe("no CLI is a route, never a dead end (criterion 6)", () => {
+  it("names the typed probed binaries and the project path, and offers the hand-driven route", async () => {
+    ipc.outcomes.set("genesis_start", { kind: "cliNotFound", probed: ["claude"] });
+    await withStatus();
+    render();
+    await flush(() => Promise.resolve());
+
+    const card = q("[data-testid=interview-cli-missing]")!;
+    expect(card).not.toBeNull();
+    expect(q("[data-testid=interview-cli-probed]")?.textContent).toBe("claude");
+    expect(q("[data-testid=interview-cli-project]")?.textContent).toBe(PROJECT);
+    expect(card.textContent).toContain("hand-drivable");
+
+    // It does NOT carry the assembled kickoff: `assemble_kickoff` is a
+    // Rust pub fn no command returns, so a copyable block needs a fifth
+    // genesis command and belongs with T-029.
+    expect(card.textContent).not.toContain("KIT ROOT");
+    expect(card.textContent).not.toContain("roles/planner.md");
+  });
+
+  it("renders every other typed outcome as an inline notice carrying its own fields", async () => {
+    ipc.outcomes.set("genesis_start", {
+      kind: "resumeAvailable",
+      nativeSessionId: "abc-123",
+      turns: 4,
+    });
+    await withStatus();
+    render();
+    await flush(() => Promise.resolve());
+    const notice = q("[data-testid=interview-notice]")!;
+    expect(notice.getAttribute("data-outcome-kind")).toBe("resumeAvailable");
+    expect(notice.textContent).toContain("abc-123");
+    expect(notice.textContent).toContain("4 turns");
+    expect(notice.textContent).toContain("T-029");
+  });
+});
+
+// ---- hostile content -----------------------------------------------------
+
+describe("hostile model output renders as text nodes only (criterion 7)", () => {
+  it("injects nothing through turn text, activity labels, stderr tails or chip paths", async () => {
+    await withStatus();
+    render(docsWith(1, {}));
+    await emit({ kind: "started", seq: 1, turn: 1 });
+    // EVERY string channel this screen renders, hostile at once.
+    await flush(() => {
+      render(docsWith(2, { ["docs/" + HOSTILE.slice(0, 76) + ".md"]: "x" }));
+    });
+    await emit(
+      { kind: "activity", seq: 2, turn: 1, label: HOSTILE },
+      { kind: "textDelta", seq: 3, turn: 1, text: HOSTILE },
+      {
+        kind: "failed",
+        seq: 4,
+        turn: 1,
+        error: { kind: "exitNonZero", code: 1, stderrTail: HOSTILE },
+      },
+    );
+
+    // Nothing injected, anywhere on the screen.
+    expect(container.querySelector("script")).toBeNull();
+    expect(container.querySelector("img")).toBeNull();
+    // Nor a comment NODE - one would prove markup had been parsed.
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_COMMENT);
+    expect(walker.nextNode(), "no comment node was ever created").toBeNull();
+    // And no event-handler attribute reached any element at all.
+    for (const el of Array.from(container.querySelectorAll("*"))) {
+      for (const attr of Array.from(el.attributes)) {
+        expect(attr.name.startsWith("on"), attr.name + " on <" + el.tagName + ">").toBe(false);
+      }
+    }
+
+    // The bytes ARE on screen, as text - control characters and the RTL
+    // override included, unmangled.
+    const text = container.textContent ?? "";
+    expect(text).toContain("<script>alert('xss')</script>");
+    expect(text).toContain("<img src=x onerror=alert(1)>");
+    expect(text).toContain("<!-- swallowed? -->");
+    expect(text.includes(RTL), "the RTL override survives as data").toBe(true);
+    expect(text.includes(C0), "the three C0 bytes survive as data").toBe(true);
+  });
+
+  it("renders a 10 000-character turn whole rather than truncating it silently", async () => {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "completed", seq: 2, turn: 1, text: HOSTILE, truncatedRelay: false },
+    );
+    const body = q("[data-testid=interview-turn-body]")!;
+    expect(body.textContent?.length).toBeGreaterThanOrEqual(10_000);
+    expect(body.textContent).toContain("A".repeat(10_000));
+  });
+
+  it("renders markdown as the literal bytes the planner sent (the no-markdown fence)", async () => {
+    await withStatus();
+    render();
+    const markdown = "**bold** and [a link](http://x) and\n```\nfenced\n```";
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "completed", seq: 2, turn: 1, text: markdown, truncatedRelay: false },
+    );
+    const body = q("[data-testid=interview-turn-body]")!;
+    expect(body.textContent).toBe(markdown);
+    expect(body.querySelector("strong"), "no bold").toBeNull();
+    expect(body.querySelector("a"), "no link").toBeNull();
+    expect(body.querySelector("code"), "no code block").toBeNull();
+  });
+
+  it("keeps model-keyed collections off plain objects (ADR-009)", async () => {
+    // Chips are keyed by PATH - a string the app did not author - so the
+    // chip store is a Map and its payload an array, never an object
+    // literal. Driven rather than read off the source: a `__proto__`
+    // path renders as a path and pollutes nothing.
+    await withStatus();
+    render(docsWith(1, {}));
+    await emit({ kind: "started", seq: 1, turn: 1 });
+    await flush(() => {
+      render(docsWith(2, { "docs/__proto__.md": "x", "docs/constructor.md": "y" }));
+    });
+    expect(q("[data-testid=interview-banked]")?.textContent).toContain("docs/__proto__.md");
+    expect(({} as Record<string, unknown>)["polluted"], "no prototype was touched").toBe(
+      undefined,
+    );
+    expect(Object.prototype.hasOwnProperty.call({}, "docs/__proto__.md")).toBe(false);
+  });
+});
+
+// ---- reduced motion ------------------------------------------------------
+
+describe("motion has a static equivalent (criterion 8)", () => {
+  it("the streaming dot is motion-safe, and nothing animates unconditionally", async () => {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "textDelta", seq: 2, turn: 1, text: "thinking" },
+    );
+    const dot = q("[data-testid=interview-streaming] span[aria-hidden=true]")!;
+    expect(dot.className).toContain("motion-safe:animate-status-pulse");
+    // The existing mechanism, unchanged - T-024's exact form. A bare
+    // `animate-status-pulse` anywhere would ignore the OS setting.
+    for (const el of qa("*")) {
+      expect(
+        /(^|\s)animate-status-pulse/.test(el.className ?? ""),
+        "no unconditional pulse",
+      ).toBe(false);
+    }
+  });
+
+  it("the dot and the activity line go when the turn lands", async () => {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "activity", seq: 2, turn: 1, label: "Write" },
+    );
+    expect(q("[data-testid=interview-streaming]")?.textContent).toContain("Write");
+    await emit({ kind: "completed", seq: 3, turn: 1, text: "done", truncatedRelay: false });
+    expect(q("[data-testid=interview-streaming]")).toBeNull();
+  });
+
+  it("a relay that hit its cap says so, without claiming the turn was cut", async () => {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "completed", seq: 2, turn: 1, text: "the whole answer", truncatedRelay: true },
+    );
+    expect(q("[data-testid=interview-truncated]")?.textContent).toContain("1 MiB cap");
+  });
+});
