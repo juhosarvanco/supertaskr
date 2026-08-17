@@ -402,5 +402,5 @@ export function layoutKey(
     .map((x) => `${x.from}\u0001${x.to}\u0001${x.declared ? 1 : 0}`)
     .sort()
     .join("\u0002");
-  return `${c}${e}`;
+  return `${c}\u0003${e}`;
 }
