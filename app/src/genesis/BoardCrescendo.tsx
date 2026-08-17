@@ -131,7 +131,7 @@ export function BoardCrescendo({
           screen and the split above carry `min-h-0`, so this is the link
           that lets the board scroll instead of growing the page. */}
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6.5 py-5.5">
-        <div data-testid="genesis-board-rain" className="motion-safe:board-rain">
+        <div data-testid="genesis-card-rain" className="motion-safe:board-rain">
           <Board model={docs.model} />
         </div>
       </div>

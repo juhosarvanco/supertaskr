@@ -499,7 +499,7 @@ describe("the built bundle carries the lens (criterion 2)", () => {
     // from the shipped JS and this file is where that was caught before.
     for (const probe of [
       "the board, so far",
-      "genesis-board-rain",
+      "genesis-card-rain",
       "genesis-complete",
       "genesis-open-board",
       "The board is ready.",
