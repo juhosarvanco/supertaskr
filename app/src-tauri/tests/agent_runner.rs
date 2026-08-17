@@ -1662,3 +1662,404 @@ fn real_cli_smoke_records_the_stream_schema() {
     );
     let _ = fs::remove_dir_all(&root);
 }
+
+// ==== T-029: the restart simulation =====================================
+//
+// THE SUCCESSION GUARANTEE APPLIED TO THE INTERVIEW. Every test below
+// throws away the whole in-memory `AgentState` — the app process, as far
+// as this module can simulate one — and asks the SAME project directory to
+// carry on. Nothing is passed between the two halves except the files on
+// disk, which is exactly the claim under test.
+
+/// A second app process over the SAME project. Deliberately NOT a
+/// `Harness`: it owns no root and cleans nothing up, so the original's
+/// `Drop` stays the single owner of the temp tree.
+struct Reboot {
+    watch: WatchState,
+    _ctl_rx: mpsc::Receiver<WatchCtl>,
+    agent: agent::AgentState,
+    events: mpsc::Receiver<RunEvent>,
+}
+
+/// Restart the app over `h.project`. The new `AgentState` shares nothing
+/// with the old one: no session id, no turn number, no phase, no registry
+/// id — `Inner::default()` all the way down. If a resume works after this,
+/// it worked off disk.
+fn reboot(h: &Harness, scenario: &str) -> Reboot {
+    let cfg = RunnerConfig {
+        binary_override: Some(fake_agent_bin()),
+        path_override: Some("/nputer-test-path/bin:/nputer-test-path/sbin".into()),
+        extra_env: vec![
+            ("NPUTER_FAKE_SCENARIO".to_string(), scenario.to_string()),
+            ("NPUTER_FAKE_DUMP_DIR".to_string(), h.dump.display().to_string()),
+            ("NPUTER_FAKE_VERSION".to_string(), "2.1.226 (Claude Code)".to_string()),
+        ],
+        probe_login_shell: false,
+        config_dir: Some(h.root.join("config")),
+        start_timeout: Duration::from_millis(1500),
+        stall_timeout: Duration::from_millis(1500),
+        coalesce: Duration::from_millis(40),
+        kill_grace: Duration::from_millis(300),
+        probe_timeout: Duration::from_secs(5),
+    };
+    let (ctl, ctl_rx) = mpsc::channel();
+    let watch = WatchState::new(Some(h.project.clone()), Arc::new(AtomicU64::new(0)), ctl);
+    let (tx, events) = mpsc::channel();
+    let agent = agent::AgentState::new(cfg, move |event| {
+        let _ = tx.send(event);
+    });
+    Reboot { watch, _ctl_rx: ctl_rx, agent, events }
+}
+
+/// CRITERION 1. Reopen a project with an in-flight genesis and the
+/// interview carries on: the adapter's RESUME template, the recorded
+/// native id, and a chat rehydrated from `transcript.jsonl`.
+///
+/// The discriminating assertion is `read_argv(.., 2)`: turn 2 was spawned
+/// by a process that never saw turn 1, so `--resume fake-session-0001` in
+/// its argv can only have come off disk.
+#[test]
+fn an_app_restart_mid_interview_resumes_the_recorded_session_off_disk() {
+    let h = harness("t029resume", Options::default());
+    agent::start_genesis(&h.watch, &h.agent);
+    wait_completed(&h.events);
+    let before = settle(&h.agent);
+    assert_eq!(before.native_session_id.as_deref(), Some("fake-session-0001"));
+
+    // --- the app dies here. Nothing below shares state with anything above.
+    let app = reboot(&h, "happy");
+    assert_eq!(
+        agent::status(&app.agent).native_session_id,
+        None,
+        "the fresh process starts knowing nothing"
+    );
+    assert_eq!(agent::status(&app.agent).turn, 0);
+
+    // The offer, read off `.nputer/sessions.json`.
+    match agent::start_genesis(&app.watch, &app.agent) {
+        StartOutcome::ResumeAvailable { native_session_id, turns, model } => {
+            assert_eq!(native_session_id, "fake-session-0001");
+            assert_eq!(turns, 1);
+            assert_eq!(model.as_deref(), Some("fake-model-1"));
+        }
+        other => panic!("expected ResumeAvailable, got {other:?}"),
+    }
+    assert!(!turn_dump(&h.dump, 2).exists(), "offering a resume spawns nothing");
+
+    // …and taking it.
+    match agent::resume_genesis(&app.watch, &app.agent) {
+        StartOutcome::Started { turn } => assert_eq!(turn, 2, "one past the recorded turn count"),
+        other => panic!("expected Started, got {other:?}"),
+    }
+    wait_completed(&app.events);
+    settle(&app.agent);
+
+    let argv = read_argv(&h.dump, 2);
+    let at = argv.iter().position(|a| a == "--resume").expect("the RESUME template was used");
+    assert_eq!(argv[at + 1], "fake-session-0001", "the id came off disk, as ONE argv element");
+    assert!(
+        !argv.iter().any(|a| a.contains("dangerously")),
+        "the bypass ban survives the resume path: {argv:?}"
+    );
+
+    // THE REHYDRATION. Turn 1's halves are still readable, and the app
+    // wrote nothing under docs/ to get them.
+    let lines = agent::transcript(&app.watch);
+    assert!(lines.len() >= 2, "the transcript rehydrates: {lines:#?}");
+    assert!(lines.iter().any(|l| l.role == "planner" && l.turn == 1));
+    assert!(lines.iter().any(|l| l.role == "user" && l.turn == 1));
+    assert!(!h.project.join("docs").exists(), "the app is a lens; the planner writes docs/");
+}
+
+/// CRITERION 2. The transcript cache is LOSABLE BY CHARTER, and this pins
+/// what that costs: scrollback, and nothing else.
+///
+/// Both losses are driven — the file deleted, and the file replaced with
+/// garbage — because "missing" and "corrupt" reach different code (an
+/// unreadable path against unparseable lines) and only one of them was
+/// ever exercised before.
+#[test]
+fn a_lost_or_corrupt_transcript_still_resumes_from_the_registry_and_docs() {
+    let h = harness("t029losscache", Options::default());
+    agent::start_genesis(&h.watch, &h.agent);
+    wait_completed(&h.events);
+    settle(&h.agent);
+    let path = sessions::transcript_path(&h.project);
+    assert!(path.exists(), "there is a cache to lose");
+
+    for (label, wreck) in [
+        ("deleted", true),
+        ("corrupt", false),
+    ] {
+        if wreck {
+            fs::remove_file(&path).expect("delete the cache");
+        } else {
+            fs::write(&path, "\u{0}not json at all\n{\"turn\": \n\n").expect("corrupt the cache");
+        }
+
+        let app = reboot(&h, "happy");
+        // The rehydration is empty — never an error, never a panic.
+        assert!(agent::transcript(&app.watch).is_empty(), "{label}: no history to render");
+        // …and the resume still works, because the ID is in the REGISTRY
+        // and the banked progress is in `docs/`. Neither is this file.
+        let record = sessions::genesis_record(&h.project)
+            .unwrap_or_else(|| panic!("{label}: the registry is the truth and it survived"));
+        assert_eq!(record.native_session_id.as_deref(), Some("fake-session-0001"), "{label}");
+        assert!(record.turns >= 1, "{label}: {record:?}");
+        let expected = record.turns as u32 + 1;
+        match agent::resume_genesis(&app.watch, &app.agent) {
+            StartOutcome::Started { turn } => assert_eq!(turn, expected, "{label}"),
+            other => panic!("{label}: expected Started, got {other:?}"),
+        }
+        wait_completed(&app.events);
+        settle(&app.agent);
+        // The resumed turn re-appends, so the cache heals on its own.
+        assert!(!agent::transcript(&app.watch).is_empty(), "{label}: the cache refills");
+    }
+}
+
+/// CRITERION 3. The native session will not resume, and the interview is
+/// DEGRADED RATHER THAN DEAD: a fresh session, kicked off with the
+/// method's own resume rule, over the docs the last one banked.
+#[test]
+fn a_session_that_will_not_resume_continues_as_a_fresh_one_over_the_banked_docs() {
+    let h = harness("t029fresh", Options::default());
+    agent::start_genesis(&h.watch, &h.agent);
+    wait_completed(&h.events);
+    settle(&h.agent);
+
+    // The planner banked something before the session went bad. (The fake
+    // writes nothing, so the test stands in for it — which is honest: the
+    // point is that `docs/` is the truth, whoever wrote it.)
+    fs::create_dir_all(h.project.join("docs")).expect("mk docs");
+    fs::write(h.project.join("docs/NORTH_STAR.md"), "# North star\n\nreal content\n")
+        .expect("bank an artifact");
+
+    // The recorded id goes bad under the app — a corrupted runtime file,
+    // exactly the class T-039's read boundary exists for.
+    let raw = fs::read_to_string(sessions::sessions_path(&h.project)).expect("registry");
+    fs::write(
+        sessions::sessions_path(&h.project),
+        raw.replace("fake-session-0001", "--dangerously-skip-permissions"),
+    )
+    .expect("poison the id");
+
+    let app = reboot(&h, "happy");
+    match agent::start_genesis(&app.watch, &app.agent) {
+        StartOutcome::SessionIdRejected { registry_path, why } => {
+            assert_eq!(registry_path, sessions::SESSIONS_REL);
+            assert!(why.contains("begins with '-'"), "{why}");
+        }
+        other => panic!("expected SessionIdRejected, got {other:?}"),
+    }
+    assert!(!turn_dump(&h.dump, 2).exists(), "a refused resume spawns nothing");
+
+    // THE WAY FORWARD.
+    match agent::fresh_genesis(&app.watch, &app.agent) {
+        StartOutcome::Started { turn } => assert_eq!(turn, 1, "a fresh session starts at turn 1"),
+        other => panic!("expected Started, got {other:?}"),
+    }
+    wait_completed(&app.events);
+    settle(&app.agent);
+
+    // A FRESH spawn: no `--resume` anywhere in the argv. (The fake dumps
+    // into the first FREE `turn-N`, so this second spawn is `turn-2`
+    // whatever the runner numbered the turn itself.)
+    let argv = read_argv(&h.dump, 2);
+    assert!(!argv.iter().any(|a| a == "--resume"), "a fresh session resumes nothing: {argv:?}");
+
+    // The kickoff carries the METHOD'S resume rule, because docs/ is not
+    // empty and telling a fresh planner to "scaffold stage 0 first" over
+    // banked artifacts is how real content gets overwritten.
+    let stdin = read_dump(&h.dump, 2, "stdin.txt");
+    assert!(stdin.contains("RESUME RULE"), "{stdin}");
+    assert!(stdin.contains("re-ask nothing that is already on disk"), "{stdin}");
+    assert!(stdin.contains("never overwrite real content"), "{stdin}");
+
+    // The old entry is ABANDONED, not deleted (the method's own word), a
+    // new one is running, and the banked artifact is untouched.
+    let file = sessions::load(&h.project);
+    assert_eq!(file.sessions.len(), 2, "{file:#?}");
+    assert_eq!(file.sessions[0].status, "dead", "the old session is marked, not erased");
+    assert_eq!(file.sessions[1].id, "S2");
+    assert_eq!(
+        fs::read_to_string(h.project.join("docs/NORTH_STAR.md")).expect("still there"),
+        "# North star\n\nreal content\n",
+        "docs/ is project truth and nothing here writes it"
+    );
+}
+
+/// CRITERION 5, FROM THE UI PATH. Cancel, then restart the app: the child
+/// is dead, `docs/` was never touched, and the project is still openable
+/// AND resumable — the three halves of "a mid-interview kill loses
+/// nothing" (ADR-017 clause 3).
+#[test]
+#[cfg(unix)]
+fn a_cancelled_interview_leaves_a_dead_child_an_untouched_docs_and_a_resumable_project() {
+    let h = harness("t029cancel", Options { scenario: "hang", ..Options::default() });
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    let child_pid: i32 = wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt"))
+        .trim()
+        .parse()
+        .expect("child pid");
+
+    // The UI path: exactly what `cancelTurn()` reaches.
+    assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Cancelled { turn: 1 }));
+    settle(&h.agent);
+    let deadline = Instant::now() + Duration::from_secs(15);
+    while Instant::now() < deadline && nputer_lib::agent::runner::pid_alive(child_pid) {
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "the child outlived the cancel");
+    assert!(!h.project.join("docs").exists(), "a cancel never touches docs/");
+
+    // …and the project reopens into a live offer.
+    let app = reboot(&h, "happy");
+    match agent::start_genesis(&app.watch, &app.agent) {
+        StartOutcome::ResumeAvailable { native_session_id, .. } => {
+            assert_eq!(native_session_id, "fake-session-0001")
+        }
+        other => panic!("a cancelled interview must stay resumable, got {other:?}"),
+    }
+    match agent::resume_genesis(&app.watch, &app.agent) {
+        StartOutcome::Started { .. } => {}
+        other => panic!("expected Started, got {other:?}"),
+    }
+    wait_completed(&app.events);
+    settle(&app.agent);
+    assert!(!h.project.join("docs").exists(), "and the app still writes nothing under docs/");
+}
+
+/// THE "EXACTLY ONE PLACE" CRITERION (folding T-026-s3).
+///
+/// The fact that an interview was running on this folder is derived from
+/// `.nputer/sessions.json` and from nothing else. Proved by REMOVING that
+/// one file: the fact goes with it, which is only true if there is no
+/// second copy anywhere — and `docs/`, the project's actual truth, is
+/// unaffected either way.
+#[test]
+fn the_fact_that_an_interview_ran_here_lives_in_exactly_one_file() {
+    let h = harness("t029oneplace", Options::default());
+    agent::start_genesis(&h.watch, &h.agent);
+    wait_completed(&h.events);
+    settle(&h.agent);
+    fs::create_dir_all(h.project.join("docs")).expect("mk docs");
+    fs::write(h.project.join("docs/NORTH_STAR.md"), "# North star\n").expect("bank");
+
+    let record = sessions::genesis_record(&h.project).expect("the fact is recorded");
+    assert_eq!(record.registry_id, "S1");
+    assert_eq!(record.turns, 1);
+    assert_eq!(record.status, "idle");
+    assert_eq!(record.native_session_id.as_deref(), Some("fake-session-0001"));
+    assert_eq!(record.session_id_rejected, None);
+
+    // Nothing under docs/ mentions the session, the registry id, or the
+    // native id — the app never wrote there, and this is the assertion
+    // that says so about the FACT rather than about the directory.
+    let banked = fs::read_to_string(h.project.join("docs/NORTH_STAR.md")).expect("read");
+    assert!(!banked.contains("fake-session-0001") && !banked.contains("S1"), "{banked}");
+
+    // Delete the one file: the fact is gone, and `docs/` still stands.
+    fs::remove_file(sessions::sessions_path(&h.project)).expect("delete the registry");
+    assert!(
+        sessions::genesis_record(&h.project).is_none(),
+        "a second home for this fact would answer here"
+    );
+    assert!(h.project.join("docs/NORTH_STAR.md").exists(), "losing runtime state loses no truth");
+}
+
+/// CRITERION 4, THE RUST HALF. The hand-driven fallback is a MODE, not a
+/// message: the kit is really on disk and the prompt really names it, so
+/// the block a user pastes into their own terminal works.
+#[test]
+fn the_hand_driven_kickoff_materializes_a_real_kit_and_names_it() {
+    let h = harness("t029handdriven", Options::default());
+    assert!(!h.project.join(".nputer/genesis/kit").exists(), "nothing is materialized yet");
+
+    match agent::kickoff(&h.watch) {
+        agent::KickoffOutcome::Ready { prompt, project_dir, kit_root, method_version, resuming } => {
+            assert!(!resuming, "an empty docs/ is a stage-0 start");
+            assert_eq!(project_dir, h.project.display().to_string());
+            assert!(prompt.contains(&kit_root), "the prompt names the kit root: {prompt}");
+            assert!(prompt.contains(&project_dir), "…and the project: {prompt}");
+            assert!(prompt.contains("stage 0"), "{prompt}");
+            assert!(prompt.contains(&method_version), "{prompt}");
+            // The kit root the prompt names EXISTS, with the role file the
+            // prompt tells the planner to read.
+            assert!(Path::new(&kit_root).join("roles/planner.md").is_file(), "{kit_root}");
+        }
+        other => panic!("expected Ready, got {other:?}"),
+    }
+    // Nothing was spawned to produce it, and docs/ is untouched.
+    assert!(!turn_dump(&h.dump, 1).exists(), "the hand-driven mode spawns no child");
+    assert!(!h.project.join("docs").exists());
+
+    // Once work is banked, the SAME command hands over the resume kickoff
+    // instead — one text, chosen from what is on disk.
+    fs::create_dir_all(h.project.join("docs")).expect("mk docs");
+    fs::write(h.project.join("docs/NORTH_STAR.md"), "# North star\n").expect("bank");
+    match agent::kickoff(&h.watch) {
+        agent::KickoffOutcome::Ready { prompt, resuming, .. } => {
+            assert!(resuming, "banked docs make this a resume");
+            assert!(prompt.contains("RESUME RULE"), "{prompt}");
+            assert!(!prompt.contains("stage 0 scaffold first"), "{prompt}");
+        }
+        other => panic!("expected Ready, got {other:?}"),
+    }
+}
+
+/// T-047-s3. An unusable `model` in the registry costs the NAME of what
+/// ran and nothing else — deliberately unlike the id, which refuses the
+/// whole resume, because there is nothing here to refuse.
+#[test]
+fn an_unusable_recorded_model_renders_as_not_recorded_and_never_refuses_a_resume() {
+    let h = harness("t029model", Options::default());
+    agent::start_genesis(&h.watch, &h.agent);
+    wait_completed(&h.events);
+    settle(&h.agent);
+
+    // The pre-T-047 hazard, exactly: a registry written by an older build
+    // holding a model no gate ever saw. Upgrading does not clean it.
+    let path = sessions::sessions_path(&h.project);
+    // Planted through serde, so a control byte lands as an ESCAPE inside
+    // well-formed JSON. Writing the raw byte would make the file
+    // unparseable and `load` would move it aside — which would prove the
+    // corrupt-registry path all over again instead of the model gate.
+    let plant = |model: &str| {
+        let mut value: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(sessions::sessions_path(&h.project)).expect("registry"))
+                .expect("parses");
+        value["sessions"][0]["model"] = serde_json::Value::String(model.to_string());
+        fs::write(sessions::sessions_path(&h.project), value.to_string()).expect("plant a model");
+    };
+    for planted in [
+        "m".repeat(200_000),                       // the ~1 MiB class T-047 measured
+        "claude\u{1b}[2K-opus".to_string(),        // a terminal escape, in a rendered field
+        "claude opus".to_string(),                 // a space
+        "\u{435}laude-opus-5".to_string(),         // a Cyrillic homoglyph
+    ] {
+        plant(&planted);
+        let file = sessions::load(&h.project);
+        let entry = file.sessions.first().expect("the entry survives a bad model");
+        assert!(entry.display_model().is_err(), "the read boundary refuses {:?}", &planted[..8.min(planted.len())]);
+        assert_eq!(entry.model_for_display(), None, "…and renders as not recorded");
+        // THE ASYMMETRY: the session is still perfectly resumable.
+        assert_eq!(entry.resume_id(), Ok(Some("fake-session-0001")));
+        let app = reboot(&h, "happy");
+        match agent::start_genesis(&app.watch, &app.agent) {
+            StartOutcome::ResumeAvailable { model, native_session_id, .. } => {
+                assert_eq!(model, None, "the offer stands, without a name on it");
+                assert_eq!(native_session_id, "fake-session-0001");
+            }
+            other => panic!("a bad model must not cost the resume, got {other:?}"),
+        }
+    }
+
+    // …and a legitimately exotic provider spelling still comes through.
+    let _ = &path;
+    plant("us.anthropic.claude-sonnet-4@20240620:0");
+    assert_eq!(
+        sessions::load(&h.project).sessions[0].model_for_display().as_deref(),
+        Some("us.anthropic.claude-sonnet-4@20240620:0")
+    );
+}
