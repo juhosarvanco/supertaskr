@@ -186,12 +186,48 @@ size the design was drawn for, without touching the window. **What is
 still @human's**: whether 840 or 867 is right depends on the ~28px macOS
 title bar, which is the one number nobody could measure headlessly
 (T-051-s3).
-**The milestone is still NOT complete, and the remainder is not
-cosmetic.** T-028 (the decomposition crescendo) and T-029 (resume plus
-the hand-driven fallback) are both open, and T-029 matters more than its
-position suggests: the user's half of the transcript does not survive a
-remount or an app restart today, so a mid-interview reload shows an empty
-chat over a live session. And the evidence this milestone's claim will
+T-028 merged 2026-08-17 and it is the interview's last act: **the lens
+stops being a lens.** Until tonight the right half of T-027's split
+watched the plan assemble as artifact rows; now, the moment a task file
+under `docs/tasks/` actually PARSES, that half becomes the real board —
+C-08's own components mounted read-only, cards raining in on one
+motion-safe entrance transition as each file lands, with the elapsed
+time running in the chat header. When the last turn has settled, nothing
+is in flight and a parseable board is on disk, a completion panel
+appears with one button that puts the user in the board pane on their
+new project, rail restored. So the arc a user can now walk end to end,
+in one window, without a terminal: **open a folder with no plan in it →
+be asked a question → answer it → watch the answer become a file → watch
+the files become cards → press one button and be standing in the board
+of the project you just planned.** That was the milestone's whole
+promise and it is now a continuous path rather than four screens that
+each work.
+Two things about HOW it decides are worth stating, because both are
+refusals. The switch is on task RECORDS, not filenames and never on what
+the planner SAID — seven unparseable files read as zero cards and the
+view stays honestly in-interview with the parse-error chips, because
+**planning theater is the named failure mode and an empty board must
+never be celebrated**. And the completion signal the card asked for
+turns out not to exist: `method/` defines no closing marker, so
+completion is derived from typed state and file evidence instead
+(highest turn settled · nothing in flight · a parseable board on disk).
+That is stricter than the card, not looser — depending on a
+model-emitted marker would mean believing what the model said, which is
+exactly what ADR-017 and the chip rule forbid. It is reversible too:
+answer again and the panel stands down. The verifier proved it never
+reads turn text by feeding it a turn object that throws on `text` and
+`activity` and still getting a completion.
+It also carries the keyboard fix: the answer box now takes focus back
+when a turn lands, so seven questions can be answered without ever
+reaching for the pointer — and it will not steal focus you deliberately
+moved elsewhere.
+**The milestone is NOT complete, and the remainder is not cosmetic.**
+**T-029 remains** (resume plus the hand-driven fallback), and it matters
+more than its position suggests: the user's half of the transcript does
+not survive a remount or an app restart today, so a mid-interview reload
+shows an empty chat over a live session — and the auth failure that
+every attempt on this machine hits is a dead end with no diagnosis on
+screen. And the evidence this milestone's claim will
 ultimately rest on **still does not exist — not one planner turn has ever
 been observed against a real model.** This machine's `claude` OAuth token
 is revoked, so every attempt 401s and no model call has ever gone through

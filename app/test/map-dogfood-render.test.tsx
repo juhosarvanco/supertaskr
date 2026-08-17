@@ -121,8 +121,18 @@ describe("the nputer repo on its own map", () => {
     // agent-store.ts), so it gains a count of its own beside the three
     // above. C-05 STAYS at 4 — its two grown findings grew their file-edge
     // lists, not their number.
+    // 2 → 4 at the T-028 merge regen, and THIS ONE THE FORECAST MISSED —
+    // recorded rather than quietly fixed. C-13 gains two whole D1
+    // findings (→C-06, →C-08), and a drift COUNT moves when the number of
+    // findings moves, not when their file-edge lists grow. T-051's and
+    // T-053's regens both added edges whose heads were packages, so no
+    // finding was created and every drift count held; that made "the
+    // drift rings do not move" feel like a property when it was a
+    // coincidence of those two merges. C-05 still stays at 4 for the
+    // original reason — its grown findings grew their lists, not their
+    // number — which is exactly why the two behave differently here.
     expect(node("C-13").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
-      "drift 2",
+      "drift 4",
     );
     expect(node("C-05").className).toContain("map-drift-ring");
     expect(node("C-01").className).toContain("map-drift-ring"); // D3, non-code
@@ -164,10 +174,17 @@ describe("the nputer repo on its own map", () => {
     // shared components/ui/button.tsx). So undeclared goes 6 → 8, and
     // that second count is a separate assertion from the first: the row
     // count going right does not make the relation tally right.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(30);
+    // 30 → 32 at the T-028 merge regen, and BOTH new rows leave C-13
+    // again: C-13→C-06 (crescendo.ts imports the parser — the switch
+    // counts task RECORDS) and C-13→C-08 (BoardCrescendo.tsx mounts the
+    // real Board, read-only). So undeclared goes 8 → 10, and this is the
+    // second-assertion-in-the-same-body trap for the third merge running
+    // — both numbers were derived from the indexed added-file list before
+    // the suite ran, because a red on the first hides the second.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(32);
     expect(
       container.querySelectorAll('[data-testid=map-edge][data-relation="undeclared"]'),
-    ).toHaveLength(8);
+    ).toHaveLength(10);
   });
 
   it("opens the C-05 panel on its real findings", () => {
@@ -283,8 +300,16 @@ describe("the nputer repo on its own map", () => {
     // vitest), and an edge whose head is a package can create no component
     // pair, so the relation table, the undeclared count and every drift
     // ring above stay byte-identical.
+    // 110 → 114 at the T-028 merge regen (2026-08-17): FOUR files —
+    // crescendo.ts and BoardCrescendo.tsx to C-13, crescendo.test.ts and
+    // crescendo-dom.test.tsx to C-05. The branch added FIVE .ts/.tsx
+    // files and the hint moves by FOUR: tools/e2e/tests/crescendo.spec.ts
+    // is under .nputerignored `tools/`. Unlike T-051's and T-053's
+    // entries, the node and edge pictures DO move here — the new edges
+    // reach real component heads rather than packages, so the relation
+    // table gains two rows and four observedCounts climb.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 110 files",
+      "committed graph · 114 files",
     );
   });
 });

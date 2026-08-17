@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:f5bbf5720dc274e3a3c3b260ca71e9a7128bf633ade01e9b02d8ea8956df33f5",
-      "loc": 655,
+      "hash": "blake3:1a05bfdb74a87a296991e7ef212427aab1df75a6ddaeb7887e693bda03805a11",
+      "loc": 664,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -18,8 +18,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            373,
-            653
+            374,
+            662
           ]
         },
         {
@@ -28,8 +28,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            96,
-            111
+            97,
+            112
           ]
         },
         {
@@ -38,8 +38,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            134,
-            241
+            135,
+            242
           ]
         },
         {
@@ -48,8 +48,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            42,
-            59
+            43,
+            60
           ]
         },
         {
@@ -58,8 +58,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            68,
-            92
+            69,
+            93
           ]
         },
         {
@@ -68,8 +68,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            265,
-            360
+            266,
+            361
           ]
         },
         {
@@ -78,8 +78,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            364,
-            371
+            365,
+            372
           ]
         },
         {
@@ -88,8 +88,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            248,
-            252
+            249,
+            253
           ]
         }
       ]
@@ -1836,8 +1836,8 @@
       "id": "f:app/src/components/shell/GenesisScreen.tsx",
       "path": "app/src/components/shell/GenesisScreen.tsx",
       "lang": "ts",
-      "hash": "blake3:3f4ac23ef2cdf2796a455b6febee905d4fd1bf7dedf451eb944efe5b928b3c08",
-      "loc": 187,
+      "hash": "blake3:0b6709fa351f14607595e228185e81b466223410aca1e84b4a3b1fad544d122e",
+      "loc": 225,
       "symbols": [
         {
           "id": "s:app/src/components/shell/GenesisScreen.tsx#GenesisPaneBoundary",
@@ -1845,8 +1845,8 @@
           "kind": "class",
           "exported": false,
           "range": [
-            142,
-            187
+            180,
+            225
           ]
         },
         {
@@ -1855,8 +1855,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            44,
-            118
+            46,
+            156
           ]
         }
       ]
@@ -2019,6 +2019,25 @@
       ]
     },
     {
+      "id": "f:app/src/genesis/BoardCrescendo.tsx",
+      "path": "app/src/genesis/BoardCrescendo.tsx",
+      "lang": "ts",
+      "hash": "blake3:b631eb6225bdbf3af93f63d360a4d0b6208257d77ffe929edbd308af6b00190c",
+      "loc": 140,
+      "symbols": [
+        {
+          "id": "s:app/src/genesis/BoardCrescendo.tsx#BoardCrescendo",
+          "name": "BoardCrescendo",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            50,
+            140
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/src/genesis/GenesisPane.tsx",
       "path": "app/src/genesis/GenesisPane.tsx",
       "lang": "ts",
@@ -2101,8 +2120,8 @@
       "id": "f:app/src/genesis/InterviewChat.tsx",
       "path": "app/src/genesis/InterviewChat.tsx",
       "lang": "ts",
-      "hash": "blake3:3d55005c54e22b52e76278819a56b5bb65f73e2f05390afe5498e5f176eb313a",
-      "loc": 379,
+      "hash": "blake3:f19b6c1c52f97c0104d2e556b0c1656b39402d7303b28935f719fbcb9618cbb5",
+      "loc": 467,
       "symbols": [
         {
           "id": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
@@ -2110,8 +2129,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            44,
-            288
+            47,
+            376
           ]
         },
         {
@@ -2120,8 +2139,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            303,
-            355
+            391,
+            443
           ]
         },
         {
@@ -2130,8 +2149,137 @@
           "kind": "function",
           "exported": false,
           "range": [
-            358,
-            379
+            446,
+            467
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/genesis/crescendo.ts",
+      "path": "app/src/genesis/crescendo.ts",
+      "lang": "ts",
+      "hash": "blake3:e320700e9b712ad75c5e7e1969aaf21b55b1b288d7051c179a2d002fbf613b6b",
+      "loc": 232,
+      "symbols": [
+        {
+          "id": "s:app/src/genesis/crescendo.ts#BoardReadiness",
+          "name": "BoardReadiness",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            48,
+            67
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#CompletionBlocker",
+          "name": "CompletionBlocker",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            126,
+            135
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#CompletionReading",
+          "name": "CompletionReading",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            137,
+            139
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#CrescendoModel",
+          "name": "CrescendoModel",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            180,
+            187
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#HOUR_FORM_FROM_MINUTES",
+          "name": "HOUR_FORM_FROM_MINUTES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            208,
+            208
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#MINUTE_MS",
+          "name": "MINUTE_MS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            206,
+            206
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#RightHalf",
+          "name": "RightHalf",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            178,
+            178
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#boardReadiness",
+          "name": "boardReadiness",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            81,
+            94
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#completionOf",
+          "name": "completionOf",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            160,
+            174
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#crescendo",
+          "name": "crescendo",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            189,
+            200
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#elapsedLabel",
+          "name": "elapsedLabel",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            224,
+            232
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/crescendo.ts#showsBoard",
+          "name": "showsBoard",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            113,
+            119
           ]
         }
       ]
@@ -2758,9 +2906,19 @@
       "id": "f:app/src/genesis/interview-source.ts",
       "path": "app/src/genesis/interview-source.ts",
       "lang": "ts",
-      "hash": "blake3:43a2a16a809639909dba27a2845df6748902528c4999d1bc2973a5fdd9a37c56",
-      "loc": 317,
+      "hash": "blake3:c9f12fb6c4e5f9deca7252b6230c8c3d2ac02de2631faafc53939433fc6cb5ad",
+      "loc": 412,
       "symbols": [
+        {
+          "id": "s:app/src/genesis/interview-source.ts#ELAPSED_TICK_MS",
+          "name": "ELAPSED_TICK_MS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            342,
+            342
+          ]
+        },
         {
           "id": "s:app/src/genesis/interview-source.ts#EMPTY_UI",
           "name": "EMPTY_UI",
@@ -2787,8 +2945,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            310,
-            317
+            397,
+            412
           ]
         },
         {
@@ -2809,6 +2967,66 @@
           "range": [
             305,
             307
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#clockListeners",
+          "name": "clockListeners",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            347,
+            347
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#clockNowMs",
+          "name": "clockNowMs",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            346,
+            346
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#clockProject",
+          "name": "clockProject",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            344,
+            344
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#clockStartedAtMs",
+          "name": "clockStartedAtMs",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            345,
+            345
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#clockTimer",
+          "name": "clockTimer",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            348,
+            348
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#getElapsedMs",
+          "name": "getElapsedMs",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            386,
+            389
           ]
         },
         {
@@ -2859,6 +3077,16 @@
           "range": [
             257,
             262
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#notifyClock",
+          "name": "notifyClock",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            350,
+            352
           ]
         },
         {
@@ -2922,6 +3150,16 @@
           ]
         },
         {
+          "id": "s:app/src/genesis/interview-source.ts#startGenesisClock",
+          "name": "startGenesisClock",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            359,
+            365
+          ]
+        },
+        {
           "id": "s:app/src/genesis/interview-source.ts#startInterview",
           "name": "startInterview",
           "kind": "function",
@@ -2939,6 +3177,16 @@
           "range": [
             109,
             136
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#subscribeClock",
+          "name": "subscribeClock",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            367,
+            382
           ]
         },
         {
@@ -3012,6 +3260,16 @@
           ]
         },
         {
+          "id": "s:app/src/genesis/interview-source.ts#useGenesisElapsedMs",
+          "name": "useGenesisElapsedMs",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            392,
+            394
+          ]
+        },
+        {
           "id": "s:app/src/genesis/interview-source.ts#useGenesisState",
           "name": "useGenesisState",
           "kind": "function",
@@ -3037,8 +3295,8 @@
       "id": "f:app/src/genesis/interview-turns.tsx",
       "path": "app/src/genesis/interview-turns.tsx",
       "lang": "ts",
-      "hash": "blake3:e250effac482fa7395fc8579b229fb7abee15c43f3830b83214a281c8557c9b3",
-      "loc": 312,
+      "hash": "blake3:abcf7d43455b89657c9be3ad742112c7f60f099e76d8a9e82e997da4e7ed387c",
+      "loc": 315,
       "symbols": [
         {
           "id": "s:app/src/genesis/interview-turns.tsx#BankedChips",
@@ -3046,18 +3304,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            299,
-            312
+            302,
+            315
           ]
         },
         {
           "id": "s:app/src/genesis/interview-turns.tsx#BankedMark",
           "name": "BankedMark",
           "kind": "function",
-          "exported": false,
+          "exported": true,
           "range": [
-            40,
-            54
+            43,
+            57
           ]
         },
         {
@@ -3066,8 +3324,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            102,
-            124
+            105,
+            127
           ]
         },
         {
@@ -3076,8 +3334,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            146,
-            163
+            149,
+            166
           ]
         },
         {
@@ -3086,8 +3344,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            250,
-            289
+            253,
+            292
           ]
         },
         {
@@ -3096,8 +3354,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            131,
-            143
+            134,
+            146
           ]
         },
         {
@@ -3116,8 +3374,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            172,
-            237
+            175,
+            240
           ]
         },
         {
@@ -3126,8 +3384,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            59,
-            81
+            62,
+            84
           ]
         },
         {
@@ -3136,8 +3394,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            87,
-            96
+            90,
+            99
           ]
         }
       ]
@@ -4577,8 +4835,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:d7d726c6379517d11c97ffe2da345b2062c77f118d3b962786140695f1ebec83",
-      "loc": 910,
+      "hash": "blake3:5c92dff3e5aa11a6b8eedd3a1adec65fb32e3a11ee3b629ad076665c5282965f",
+      "loc": 950,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -4696,8 +4954,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            457,
-            478
+            483,
+            504
           ]
         },
         {
@@ -4746,8 +5004,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            632,
-            645
+            658,
+            671
           ]
         },
         {
@@ -4756,8 +5014,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            660,
-            676
+            686,
+            702
           ]
         },
         {
@@ -4766,8 +5024,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            617,
-            630
+            643,
+            656
           ]
         },
         {
@@ -4776,8 +5034,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            864,
-            881
+            890,
+            907
           ]
         },
         {
@@ -4786,8 +5044,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            576,
-            578
+            602,
+            604
           ]
         },
         {
@@ -4796,8 +5054,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            523,
-            523
+            549,
+            549
           ]
         },
         {
@@ -4806,8 +5064,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            580,
-            582
+            606,
+            608
           ]
         },
         {
@@ -4816,8 +5074,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            884,
-            886
+            924,
+            926
           ]
         },
         {
@@ -4826,8 +5084,28 @@
           "kind": "const",
           "exported": false,
           "range": [
-            538,
-            538
+            564,
+            564
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#openBoardFromGenesis",
+          "name": "openBoardFromGenesis",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            434,
+            438
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#openGenesisBoard",
+          "name": "openGenesisBoard",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            916,
+            921
           ]
         },
         {
@@ -4836,8 +5114,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            432,
-            443
+            458,
+            469
           ]
         },
         {
@@ -4846,8 +5124,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            820,
-            822
+            846,
+            848
           ]
         },
         {
@@ -4856,8 +5134,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            809,
-            811
+            835,
+            837
           ]
         },
         {
@@ -4876,8 +5154,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            684,
-            703
+            710,
+            729
           ]
         },
         {
@@ -4916,8 +5194,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            899,
-            910
+            939,
+            950
           ]
         },
         {
@@ -4926,8 +5204,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            845,
-            855
+            871,
+            881
           ]
         },
         {
@@ -4936,8 +5214,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            713,
-            759
+            739,
+            785
           ]
         },
         {
@@ -4956,8 +5234,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            649,
-            658
+            675,
+            684
           ]
         },
         {
@@ -4966,8 +5244,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            584,
-            587
+            610,
+            613
           ]
         },
         {
@@ -4976,8 +5254,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            525,
-            537
+            551,
+            563
           ]
         },
         {
@@ -4986,8 +5264,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            594,
-            615
+            620,
+            641
           ]
         },
         {
@@ -4996,8 +5274,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            772,
-            801
+            798,
+            827
           ]
         },
         {
@@ -5006,8 +5284,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            830,
-            832
+            856,
+            858
           ]
         },
         {
@@ -5016,8 +5294,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            567,
-            567
+            593,
+            593
           ]
         },
         {
@@ -5026,8 +5304,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            569,
-            569
+            595,
+            595
           ]
         },
         {
@@ -5036,8 +5314,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            571,
-            574
+            597,
+            600
           ]
         }
       ]
@@ -5379,8 +5657,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:5c2b682137fb292e59c671dc812ca5ce899239c4d1cbbd8576e7367bfec64c4c",
-      "loc": 1373,
+      "hash": "blake3:4826b1a82604ba2105bdbbf39c8c8f6acde12132acb00b628dee88a1a92b9b34",
+      "loc": 1508,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -5388,8 +5666,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            856,
-            856
+            902,
+            902
           ]
         },
         {
@@ -5398,8 +5676,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            855,
-            855
+            901,
+            901
           ]
         },
         {
@@ -5408,8 +5686,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            821,
-            821
+            867,
+            867
           ]
         },
         {
@@ -5418,8 +5696,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            827,
-            842
+            873,
+            888
           ]
         },
         {
@@ -5428,8 +5706,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            844,
-            853
+            890,
+            899
           ]
         },
         {
@@ -5438,8 +5716,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            823,
-            825
+            869,
+            871
           ]
         }
       ]
@@ -5715,6 +5993,304 @@
           "range": [
             52,
             64
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/crescendo-dom.test.tsx",
+      "path": "app/test/crescendo-dom.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:0f60538fdf1e644e702917d0566f38f4d9c8aa8e67d8340ca3fc793763d4dc6b",
+      "loc": 548,
+      "symbols": [
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#App",
+          "name": "App",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            61,
+            61
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#DOCS",
+          "name": "DOCS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            66,
+            66
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#NORTH_STAR",
+          "name": "NORTH_STAR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            98,
+            105
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#PROJECT",
+          "name": "PROJECT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            65,
+            65
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            107,
+            116
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#cards",
+          "name": "cards",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            149,
+            149
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#click",
+          "name": "click",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            157,
+            162
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            140,
+            140
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#emitSnapshot",
+          "name": "emitSnapshot",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            165,
+            169
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#emitTurn",
+          "name": "emitTurn",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            172,
+            176
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#flush",
+          "name": "flush",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            151,
+            155
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#ipc",
+          "name": "ipc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            35,
+            39
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#plannerWrites",
+          "name": "plannerWrites",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            75,
+            81
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#q",
+          "name": "q",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            143,
+            143
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#qa",
+          "name": "qa",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            144,
+            146
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            141,
+            141
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#screenOf",
+          "name": "screenOf",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            147,
+            148
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#snapshotFromDisk",
+          "name": "snapshotFromDisk",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            85,
+            96
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo-dom.test.tsx#taskFile",
+          "name": "taskFile",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            118,
+            136
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/crescendo.test.ts",
+      "path": "app/test/crescendo.test.ts",
+      "lang": "ts",
+      "hash": "blake3:cc9b63c526f664d941931b29d55d2038eaf1ae0c23b2c224247347a5f62173c5",
+      "loc": 374,
+      "symbols": [
+        {
+          "id": "s:app/test/crescendo.test.ts#NORTH_STAR",
+          "name": "NORTH_STAR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            38,
+            45
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo.test.ts#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            47,
+            56
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo.test.ts#SCAFFOLD",
+          "name": "SCAFFOLD",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            97,
+            100
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo.test.ts#seq",
+          "name": "seq",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            86,
+            86
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo.test.ts#shellWith",
+          "name": "shellWith",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            321,
+            336
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo.test.ts#taskFile",
+          "name": "taskFile",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            59,
+            77
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo.test.ts#tornTaskFile",
+          "name": "tornTaskFile",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            82,
+            84
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo.test.ts#tree",
+          "name": "tree",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            87,
+            95
+          ]
+        },
+        {
+          "id": "s:app/test/crescendo.test.ts#turn",
+          "name": "turn",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            202,
+            204
           ]
         }
       ]
@@ -6048,8 +6624,8 @@
       "id": "f:app/test/genesis-mount.test.tsx",
       "path": "app/test/genesis-mount.test.tsx",
       "lang": "ts",
-      "hash": "blake3:2b28c7c394f536162827407ffb7e45fbfa5bb52b2a1d58f400f0afc9c9555437",
-      "loc": 399,
+      "hash": "blake3:805c598fe44d8d7e4d2171243aa31e6d9c803b34f1ab8fcb337b731edba94450",
+      "loc": 517,
       "symbols": [
         {
           "id": "s:app/test/genesis-mount.test.tsx#FIXTURES",
@@ -6057,8 +6633,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            64,
-            64
+            65,
+            65
           ]
         },
         {
@@ -6077,8 +6653,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            87,
-            89
+            121,
+            123
           ]
         },
         {
@@ -6087,8 +6663,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            76,
-            77
+            77,
+            78
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-mount.test.tsx#midInterview",
+          "name": "midInterview",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            100,
+            111
           ]
         },
         {
@@ -6097,8 +6683,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            81,
-            81
+            115,
+            115
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-mount.test.tsx#opened",
+          "name": "opened",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            134,
+            134
           ]
         },
         {
@@ -6107,8 +6703,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            82,
-            85
+            116,
+            119
           ]
         },
         {
@@ -6117,8 +6713,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            91,
-            91
+            125,
+            125
           ]
         },
         {
@@ -6127,8 +6723,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            92,
-            94
+            126,
+            128
           ]
         },
         {
@@ -6137,8 +6733,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            96,
-            100
+            136,
+            146
           ]
         },
         {
@@ -6157,8 +6753,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            102,
-            103
+            148,
+            149
           ]
         },
         {
@@ -6167,8 +6763,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            66,
-            74
+            67,
+            75
           ]
         }
       ]
@@ -6634,8 +7230,8 @@
       "id": "f:app/test/interview-chat-dom.test.tsx",
       "path": "app/test/interview-chat-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:b302d102ab8ed89ec74379a160577c4cc685a975703bb0cf6ec9aa3fa048cba6",
-      "loc": 803,
+      "hash": "blake3:d61da1bb08d9c3235c641d957841db7a9678457d94451dfcc39023baa974e155",
+      "loc": 954,
       "symbols": [
         {
           "id": "s:app/test/interview-chat-dom.test.tsx#C0",
@@ -6941,8 +7537,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:cc1da931348b426e98dfc51c88219962898256790f1af5ba5b6d26fbc2c01b3a",
-      "loc": 290,
+      "hash": "blake3:83348dc4c9e12b5bec2d7b06721e4f12c5be830ae3976dbf33330068db381b7a",
+      "loc": 315,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -7453,8 +8049,8 @@
       "id": "f:app/test/node-builtins.d.ts",
       "path": "app/test/node-builtins.d.ts",
       "lang": "ts",
-      "hash": "blake3:c5d26bac9d1540d4f222d41c824a57f18efacb411a885623ebf016c83f331233",
-      "loc": 30,
+      "hash": "blake3:5cfee6d5b6be189644c49eda421fffab91fa5eb96fb4d3158d9867e611b4c84d",
+      "loc": 47,
       "symbols": []
     },
     {
@@ -7846,8 +8442,8 @@
       "id": "f:app/test/shell-frame.test.tsx",
       "path": "app/test/shell-frame.test.tsx",
       "lang": "ts",
-      "hash": "blake3:ce8539bf5d39e0a40034e592ecedc0f923062c039165dcc58622986593be4ae9",
-      "loc": 299,
+      "hash": "blake3:2ee547fb19558520b277f384218013a94e305a1eb3212b98dbd53299dda08a6d",
+      "loc": 342,
       "symbols": [
         {
           "id": "s:app/test/shell-frame.test.tsx#App",
@@ -9763,6 +10359,7 @@
         "getShellState",
         "isTauriRuntime",
         "keepCurrentProject",
+        "openGenesisBoard",
         "pickGenesisFolder",
         "pickProjectFolder",
         "planChecklist",
@@ -10503,6 +11100,14 @@
     },
     {
       "from": "f:app/src/components/shell/GenesisScreen.tsx",
+      "to": "f:app/src/genesis/BoardCrescendo.tsx",
+      "kind": "import",
+      "symbols": [
+        "BoardCrescendo"
+      ]
+    },
+    {
+      "from": "f:app/src/components/shell/GenesisScreen.tsx",
       "to": "f:app/src/genesis/GenesisPane.tsx",
       "kind": "import",
       "symbols": [
@@ -10515,6 +11120,14 @@
       "kind": "import",
       "symbols": [
         "InterviewChat"
+      ]
+    },
+    {
+      "from": "f:app/src/components/shell/GenesisScreen.tsx",
+      "to": "f:app/src/genesis/crescendo.ts",
+      "kind": "import",
+      "symbols": [
+        "showsBoard"
       ]
     },
     {
@@ -10585,6 +11198,58 @@
       ]
     },
     {
+      "from": "f:app/src/genesis/BoardCrescendo.tsx",
+      "to": "f:app/src/components/board/Board.tsx",
+      "kind": "import",
+      "symbols": [
+        "Board"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/BoardCrescendo.tsx",
+      "to": "f:app/src/components/ui/button.tsx",
+      "kind": "import",
+      "symbols": [
+        "Button"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/BoardCrescendo.tsx",
+      "to": "f:app/src/genesis/crescendo.ts",
+      "kind": "import",
+      "symbols": [
+        "crescendo",
+        "elapsedLabel"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/BoardCrescendo.tsx",
+      "to": "f:app/src/genesis/interview-source.ts",
+      "kind": "import",
+      "symbols": [
+        "interviewBusy",
+        "useGenesisElapsedMs",
+        "useGenesisState",
+        "useInterviewUi"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/BoardCrescendo.tsx",
+      "to": "f:app/src/genesis/interview-turns.tsx",
+      "kind": "import",
+      "symbols": [
+        "BankedMark"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/BoardCrescendo.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsModelState"
+      ]
+    },
+    {
       "from": "f:app/src/genesis/GenesisPane.tsx",
       "to": "f:app/src/genesis/genesis-derive.ts",
       "kind": "import",
@@ -10626,6 +11291,14 @@
     },
     {
       "from": "f:app/src/genesis/InterviewChat.tsx",
+      "to": "f:app/src/genesis/crescendo.ts",
+      "kind": "import",
+      "symbols": [
+        "elapsedLabel"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/InterviewChat.tsx",
       "to": "f:app/src/genesis/interview-model.ts",
       "kind": "import",
       "symbols": [
@@ -10649,7 +11322,9 @@
         "interviewBusy",
         "retryTurn",
         "sendAnswer",
+        "startGenesisClock",
         "startInterview",
+        "useGenesisElapsedMs",
         "useGenesisState",
         "useInterviewUi"
       ]
@@ -10691,6 +11366,30 @@
         "useEffect",
         "useRef",
         "useState"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/crescendo.ts",
+      "to": "f:app/src/lib/agent-store.ts",
+      "kind": "import",
+      "symbols": [
+        "GenesisTurn"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/crescendo.ts",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsModelState"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/crescendo.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "isTaskFilePath"
       ]
     },
     {
@@ -11268,6 +11967,163 @@
       "symbols": [
         "afterEach",
         "beforeEach",
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo-dom.test.tsx",
+      "to": "f:app/src/App.tsx",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo-dom.test.tsx",
+      "to": "f:app/src/components/shell/GenesisScreen.tsx",
+      "kind": "import",
+      "symbols": [
+        "GenesisScreen"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo-dom.test.tsx",
+      "to": "f:app/src/lib/agent-store.ts",
+      "kind": "import",
+      "symbols": [
+        "GenesisEvent"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo-dom.test.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsSnapshotPayload",
+        "applySnapshot",
+        "emptyState"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo-dom.test.tsx",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo-dom.test.tsx",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "mkdirSync",
+        "mkdtempSync",
+        "readFileSync",
+        "readdirSync",
+        "rmSync",
+        "statSync",
+        "writeFileSync"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo-dom.test.tsx",
+      "to": "p:node:os",
+      "kind": "import",
+      "symbols": [
+        "tmpdir"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo-dom.test.tsx",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "resolve"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo-dom.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo-dom.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo-dom.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterAll",
+        "beforeAll",
+        "describe",
+        "expect",
+        "it",
+        "vi"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo.test.ts",
+      "to": "f:app/src/genesis/crescendo.ts",
+      "kind": "import",
+      "symbols": [
+        "HOUR_FORM_FROM_MINUTES",
+        "MINUTE_MS",
+        "boardReadiness",
+        "completionOf",
+        "crescendo",
+        "elapsedLabel",
+        "showsBoard"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo.test.ts",
+      "to": "f:app/src/lib/agent-store.ts",
+      "kind": "import",
+      "symbols": [
+        "GenesisTurn"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo.test.ts",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsFilePayload",
+        "DocsModelState",
+        "applySnapshot",
+        "emptyState"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo.test.ts",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "ShellState",
+        "openBoardFromGenesis",
+        "resetDocsForProjectSwitch",
+        "selectScreen"
+      ]
+    },
+    {
+      "from": "f:app/test/crescendo.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
         "describe",
         "expect",
         "it"
@@ -14974,6 +15830,12 @@
     },
     {
       "from": "s:app/src/components/shell/GenesisScreen.tsx#GenesisScreen",
+      "to": "s:app/src/genesis/crescendo.ts#showsBoard",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/shell/GenesisScreen.tsx#GenesisScreen",
       "to": "s:app/src/lib/docs-model.ts#DocsModelState",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -15057,6 +15919,48 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/genesis/BoardCrescendo.tsx#BoardCrescendo",
+      "to": "s:app/src/genesis/crescendo.ts#crescendo",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/BoardCrescendo.tsx#BoardCrescendo",
+      "to": "s:app/src/genesis/crescendo.ts#elapsedLabel",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/BoardCrescendo.tsx#BoardCrescendo",
+      "to": "s:app/src/genesis/interview-source.ts#interviewBusy",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/BoardCrescendo.tsx#BoardCrescendo",
+      "to": "s:app/src/genesis/interview-source.ts#useGenesisElapsedMs",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/BoardCrescendo.tsx#BoardCrescendo",
+      "to": "s:app/src/genesis/interview-source.ts#useGenesisState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/BoardCrescendo.tsx#BoardCrescendo",
+      "to": "s:app/src/genesis/interview-source.ts#useInterviewUi",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/BoardCrescendo.tsx#BoardCrescendo",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/genesis/GenesisPane.tsx#ArtifactRow",
       "to": "s:app/src/genesis/genesis-derive.ts#GenesisArtifact",
       "kind": "type_ref",
@@ -15102,6 +16006,12 @@
       "from": "s:app/src/genesis/GenesisPane.tsx#backboneCells",
       "to": "s:app/src/genesis/genesis-derive.ts#BackboneEntry",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/crescendo.ts#elapsedLabel",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -15178,7 +16088,19 @@
     },
     {
       "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-source.ts#startGenesisClock",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
       "to": "s:app/src/genesis/interview-source.ts#startInterview",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-source.ts#useGenesisElapsedMs",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -15227,6 +16149,108 @@
     {
       "from": "s:app/src/genesis/InterviewChat.tsx#noticeSentence",
       "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#CompletionReading",
+      "to": "s:app/src/genesis/crescendo.ts#CompletionBlocker",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#CrescendoModel",
+      "to": "s:app/src/genesis/crescendo.ts#BoardReadiness",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#CrescendoModel",
+      "to": "s:app/src/genesis/crescendo.ts#CompletionReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#CrescendoModel",
+      "to": "s:app/src/genesis/crescendo.ts#RightHalf",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#boardReadiness",
+      "to": "s:app/src/genesis/crescendo.ts#BoardReadiness",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#boardReadiness",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#completionOf",
+      "to": "s:app/src/genesis/crescendo.ts#CompletionReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#completionOf",
+      "to": "s:app/src/genesis/crescendo.ts#boardReadiness",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#completionOf",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#completionOf",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#crescendo",
+      "to": "s:app/src/genesis/crescendo.ts#CrescendoModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#crescendo",
+      "to": "s:app/src/genesis/crescendo.ts#boardReadiness",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#crescendo",
+      "to": "s:app/src/genesis/crescendo.ts#completionOf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#crescendo",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#crescendo",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#showsBoard",
+      "to": "s:app/src/genesis/crescendo.ts#boardReadiness",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/crescendo.ts#showsBoard",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -15645,6 +16669,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/genesis/interview-source.ts#startGenesisClock",
+      "to": "s:app/src/genesis/interview-source.ts#notifyClock",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/genesis/interview-source.ts#startInterview",
       "to": "s:app/src/genesis/interview-source.ts#setUi",
       "kind": "call",
@@ -15689,6 +16719,12 @@
     {
       "from": "s:app/src/genesis/interview-source.ts#startInterviewSource",
       "to": "s:app/src/lib/agent-store.ts#startGenesisListener",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#subscribeClock",
+      "to": "s:app/src/genesis/interview-source.ts#notifyClock",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -17121,6 +18157,18 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/watcher-store.ts#openBoardFromGenesis",
+      "to": "s:app/src/lib/watcher-store.ts#ShellState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#openGenesisBoard",
+      "to": "s:app/src/lib/watcher-store.ts#openBoardFromGenesis",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/watcher-store.ts#outcomeCarriesSnapshot",
       "to": "s:app/src/lib/watcher-store.ts#PickOutcomePayload",
       "kind": "type_ref",
@@ -17553,6 +18601,114 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/crescendo-dom.test.tsx#cards",
+      "to": "s:app/test/crescendo-dom.test.tsx#qa",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo-dom.test.tsx#click",
+      "to": "s:app/test/crescendo-dom.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo-dom.test.tsx#emitSnapshot",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo-dom.test.tsx#emitSnapshot",
+      "to": "s:app/test/crescendo-dom.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo-dom.test.tsx#emitTurn",
+      "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo-dom.test.tsx#emitTurn",
+      "to": "s:app/test/crescendo-dom.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo-dom.test.tsx#snapshotFromDisk",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo.test.ts#SCAFFOLD",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo.test.ts#shellWith",
+      "to": "s:app/src/lib/watcher-store.ts#ShellState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo.test.ts#shellWith",
+      "to": "s:app/test/crescendo.test.ts#taskFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo.test.ts#shellWith",
+      "to": "s:app/test/crescendo.test.ts#tree",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo.test.ts#taskFile",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo.test.ts#tornTaskFile",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo.test.ts#tree",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo.test.ts#tree",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo.test.ts#tree",
+      "to": "s:app/src/lib/docs-model.ts#applySnapshot",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo.test.ts#tree",
+      "to": "s:app/src/lib/docs-model.ts#emptyState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/crescendo.test.ts#turn",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/docs-model.test.ts#apply",
       "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
       "kind": "type_ref",
@@ -17771,6 +18927,18 @@
     {
       "from": "s:app/test/genesis-mount.test.tsx#fixtureTree",
       "to": "s:app/test/genesis-mount.test.tsx#walk",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-mount.test.tsx#midInterview",
+      "to": "s:app/src/lib/docs-model.ts#DocsFilePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-mount.test.tsx#midInterview",
+      "to": "s:app/test/genesis-mount.test.tsx#fixtureTree",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -19127,8 +20295,8 @@
     }
   ],
   "stats": {
-    "files": 110,
-    "symbols": 860,
-    "edges": 1328
+    "files": 114,
+    "symbols": 916,
+    "edges": 1408
   }
 }

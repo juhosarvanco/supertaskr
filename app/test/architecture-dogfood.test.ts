@@ -818,6 +818,52 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //   · The ceaa949 ordering lesson, EIGHTEENTH hold: this block and the
 //     map fixture are both indexed, so both were edited BEFORE the final
 //     regen and the regen was then run twice for byte-identity.
+//
+// RECONCILED AT THE T-028 MERGE (2026-08-17, integrator — TWENTY-NINTH
+// exercise of the practice, and the LARGEST regen since T-027). The log
+// is unbroken from T-051's block above. Every number derived from the
+// freshly regenerated graph through this file's own `liveModel()`,
+// BEFORE this edit and BEFORE the suite was re-run:
+//   · stats 110→114 files, 860→916 symbols, 1328→1408 edges (import +28,
+//     call +26, type_ref +26), 502350→532485 bytes. Nothing removed.
+//   · FOUR files added and FIVE were in the merge's diff: crescendo.ts
+//     (loc 232, 12 symbols) and BoardCrescendo.tsx (loc 140, 1) to C-13;
+//     crescendo.test.ts (loc 374, 9) and crescendo-dom.test.tsx (loc 548,
+//     19) to C-05. The fifth is tools/e2e/tests/crescendo.spec.ts, and
+//     `tools/` is .nputerignored, so the lane is not territory — the
+//     third merge running where the merge's diff over-counts this row.
+//     THE TOKEN LINT IS THE MIRROR IMAGE and both were derived here: it
+//     walks tools/e2e/**, so that same file counts for the lint (109→114)
+//     and not for the graph. Neither walk is the other's proxy.
+//   · mapping 110→114; TWO counts move, not one — C-05 51→53 and
+//     C-13 6→8. C-13's is the FOURTH assertion in that body, below the
+//     size check and below C-05's row, so two separate reds could hide
+//     it.
+//   · UNLIKE T-051's and T-053's blocks, the component picture MOVES A
+//     LOT, and that was derived rather than discovered: the new edges
+//     reach real component heads rather than packages. TWO new relation
+//     rows, both leaving C-13 — C-13→C-06 (crescendo.ts imports the
+//     PARSER, because the lens→board switch counts task RECORDS and not
+//     filenames) and C-13→C-08 (BoardCrescendo.tsx mounts C-08's real
+//     Board, read-only, with a 0-file diff under
+//     app/src/components/board/). The table goes 30→32 rows and its
+//     tally 13/8/9 → 13/10/9. FOUR observedCounts climb besides
+//     (C-05→C-10 27→31, C-05→C-13 10→13, C-05→C-14 3→5, C-13→C-05 2→3,
+//     C-13→C-10 4→6, C-13→C-14 4→5 — six in all), and FOUR D1 `fileEdges`
+//     lists grow. C-12's `files` array is byte-identical: C-12 is
+//     app/src/architecture/** and no file was added there.
+//   · TEN assertions move across two files plus one `it()` name — the
+//     size check, C-05's row, C-13's row, the findings array, the
+//     relation table here; the edge count, the undeclared tally and the
+//     index hint in map-dogfood-render.test.tsx. The edge count and the
+//     undeclared tally are again TWO assertions in ONE body. Forecast
+//     from the indexed added-file list and the registry globs before the
+//     regen was run — the THIRD complete forecast running.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched, VERIFIED
+//     rather than assumed: T-028 declares no component and
+//     `git diff a6eea36..HEAD -- docs/architecture/components/` is a
+//     0-file diff, so the T-024 three-fixtures rule does not fire.
+//   · The ceaa949 ordering lesson, NINETEENTH hold.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -883,8 +929,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 110 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(110);
+  it("all 114 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(114);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -938,7 +984,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // is under .nputerignored `tools/`, so it never enters the index and
       // cannot be territory. Deriving this row from the MERGE's diff would
       // have over-counted it; derive it from the INDEXED added-file list.
-      ["C-05", 51],
+      // 51 → 53 at the T-028 merge regen (2026-08-17), by TWO and by the
+      // same route a seventh time: crescendo.test.ts and
+      // crescendo-dom.test.tsx are under app/test/**, C-05's alone. The
+      // branch added FIVE .ts/.tsx files and only FOUR are indexed —
+      // tools/e2e/tests/crescendo.spec.ts is under .nputerignored
+      // `tools/`. Of those four, two land here and two land on C-13.
+      ["C-05", 53],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under
@@ -968,7 +1020,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // InterviewChat.tsx, interview-model.ts, interview-source.ts and
       // interview-turns.tsx all land under app/src/genesis/**, C-13's own
       // glob and its only claimant.
-      ["C-13", 6],
+      // 6 → 8 at the T-028 merge regen: crescendo.ts and
+      // BoardCrescendo.tsx, both under app/src/genesis/**. This is the
+      // FOURTH assertion in this body — below the size check and below
+      // C-05's row — so a red in either hides it. It was derived from the
+      // indexed added-file list and the registry glob before the suite
+      // ran, which is the only way this row is ever caught in time.
+      ["C-13", 8],
       // C-14 joins the mapping at the T-025 merge regen with exactly ONE
       // file: agent-store.ts. Its other declared path
       // (app/src-tauri/src/agent/**, five .rs files) is invisible to the
@@ -1067,8 +1125,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         id: "D1:C-05->C-13",
         from: "C-05",
         to: "C-13",
+        // T-028 merge regen: 10 → 13 file edges. GenesisScreen.tsx gains
+        // TWO (BoardCrescendo.tsx and crescendo.ts — the screen now picks
+        // which renderer fills the slot, so it imports both the decision
+        // and the board half) and crescendo.test.ts adds the third.
         fileEdges: [
           { from: "app/src/App.tsx", to: "app/src/genesis/interview-source.ts" },
+          {
+            from: "app/src/components/shell/GenesisScreen.tsx",
+            to: "app/src/genesis/BoardCrescendo.tsx",
+          },
           {
             from: "app/src/components/shell/GenesisScreen.tsx",
             to: "app/src/genesis/GenesisPane.tsx",
@@ -1077,6 +1143,11 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
             from: "app/src/components/shell/GenesisScreen.tsx",
             to: "app/src/genesis/InterviewChat.tsx",
           },
+          {
+            from: "app/src/components/shell/GenesisScreen.tsx",
+            to: "app/src/genesis/crescendo.ts",
+          },
+          { from: "app/test/crescendo.test.ts", to: "app/src/genesis/crescendo.ts" },
           { from: "app/test/genesis-derive.test.ts", to: "app/src/genesis/genesis-derive.ts" },
           {
             from: "app/test/genesis-pane-boundary.test.tsx",
@@ -1113,8 +1184,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         id: "D1:C-05->C-14",
         from: "C-05",
         to: "C-14",
+        // T-028 merge regen: 3 → 5, the same shape a THIRD time — both new
+        // crescendo suites drive the store directly rather than through
+        // C-13.
         fileEdges: [
           { from: "app/test/agent-store.test.ts", to: "app/src/lib/agent-store.ts" },
+          { from: "app/test/crescendo-dom.test.tsx", to: "app/src/lib/agent-store.ts" },
+          { from: "app/test/crescendo.test.ts", to: "app/src/lib/agent-store.ts" },
           { from: "app/test/interview-chat-dom.test.tsx", to: "app/src/lib/agent-store.ts" },
           { from: "app/test/interview-model.test.ts", to: "app/src/lib/agent-store.ts" },
         ],
@@ -1152,9 +1228,46 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         id: "D1:C-13->C-05",
         from: "C-13",
         to: "C-05",
+        // T-028 merge regen: 2 → 3 — BoardCrescendo.tsx's completion CTA
+        // is the same shared primitive, so the row grows by the same
+        // route it was created by.
         fileEdges: [
+          { from: "app/src/genesis/BoardCrescendo.tsx", to: "app/src/components/ui/button.tsx" },
           { from: "app/src/genesis/InterviewChat.tsx", to: "app/src/components/ui/button.tsx" },
           { from: "app/src/genesis/interview-turns.tsx", to: "app/src/components/ui/button.tsx" },
+        ],
+      },
+      {
+        // NEW at the T-028 merge regen, and the FIRST time the genesis
+        // pane reaches the PARSER directly: crescendo.ts counts task
+        // RECORDS rather than files, so the switch is a parse result and
+        // not a filename match. That is criterion 1's whole point showing
+        // up as a component edge.
+        rule: "D1",
+        id: "D1:C-13->C-06",
+        from: "C-13",
+        to: "C-06",
+        fileEdges: [
+          { from: "app/src/genesis/crescendo.ts", to: "lib/parser", package: "p:@nputer/parser" },
+        ],
+      },
+      {
+        // NEW at the T-028 merge regen, and the row that IS the task: the
+        // genesis pane mounts C-08's real Board. One import, read-only —
+        // `git diff` over app/src/components/board/ is a 0-file diff, so
+        // the board was composed rather than copied. Left UNDECLARED on
+        // the standing reasoning: the integrator regenerates, the
+        // ARCHITECT rules on the registry, and draining a finding at the
+        // merge that created it destroys the signal.
+        rule: "D1",
+        id: "D1:C-13->C-08",
+        from: "C-13",
+        to: "C-08",
+        fileEdges: [
+          {
+            from: "app/src/genesis/BoardCrescendo.tsx",
+            to: "app/src/components/board/Board.tsx",
+          },
         ],
       },
       {
@@ -1169,8 +1282,11 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         id: "D1:C-13->C-14",
         from: "C-13",
         to: "C-14",
+        // T-028 merge regen: 4 → 5 — crescendo.ts reads the store too,
+        // which is how it sees turns without ever reading turn TEXT.
         fileEdges: [
           { from: "app/src/genesis/InterviewChat.tsx", to: "app/src/lib/agent-store.ts" },
+          { from: "app/src/genesis/crescendo.ts", to: "app/src/lib/agent-store.ts" },
           { from: "app/src/genesis/interview-model.ts", to: "app/src/lib/agent-store.ts" },
           { from: "app/src/genesis/interview-source.ts", to: "app/src/lib/agent-store.ts" },
           { from: "app/src/genesis/interview-turns.tsx", to: "app/src/lib/agent-store.ts" },
@@ -1225,7 +1341,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // row. Once again the only observedCount that moves.
       // 25 → 27 at the T-027 merge regen: interview-chat-dom.test.tsx and
       // interview-harness.test.ts both reach docs-model / watcher-store.
-      ["C-05", "C-10", "confirmed", 27],
+      // 27 → 31 at the T-028 merge regen: the two new crescendo suites
+      // plus GenesisScreen and BoardCrescendo all read C-10's docs model,
+      // on the already CONFIRMED edge.
+      ["C-05", "C-10", "confirmed", 31],
       ["C-05", "C-11", "planned", 0],
       // 20 → 22 at the T-034 merge regen: map-task-waves.test.ts imports
       // task-waves.ts and map-tasks-lens-dom.test.tsx imports MapView.tsx.
@@ -1237,12 +1356,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // SOURCE edges (App.tsx → interview-source.ts and
       // GenesisScreen.tsx → InterviewChat.tsx). The fileEdges LIST above
       // moves with it, in a different it() body.
-      ["C-05", "C-13", "undeclared", 10],
+      // 10 → 13 at the T-028 merge regen (see the D1 list above).
+      ["C-05", "C-13", "undeclared", 13],
       // NEW at the T-025 merge regen: the sixth undeclared row, one file
       // edge (agent-store.test.ts → agent-store.ts). See the D1 above.
       // 1 → 3 at the T-027 merge regen: two new interview suites drive
       // the store directly. Its fileEdges list moves too.
-      ["C-05", "C-14", "undeclared", 3],
+      // 3 → 5 at the T-028 merge regen: both crescendo suites drive the
+      // store directly.
+      ["C-05", "C-14", "undeclared", 5],
       ["C-06", "C-01", "planned", 0],
       ["C-08", "C-05", "undeclared", 4],
       ["C-08", "C-06", "confirmed", 4],
@@ -1283,16 +1405,29 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // one the branch's forecast missed. C-13 becomes a dependency
       // SOURCE for the first time: both new chat components import the
       // shared components/ui/button.tsx, which is C-05's.
-      ["C-13", "C-05", "undeclared", 2],
+      // 2 → 3 at the T-028 merge regen: BoardCrescendo.tsx's CTA is the
+      // same shared primitive.
+      ["C-13", "C-05", "undeclared", 3],
       // 2 → 4 at the T-027 merge regen: interview-model.ts and
       // interview-source.ts both import docs-model, on the already
       // DECLARED edge.
-      ["C-13", "C-10", "confirmed", 4],
+      // NEW at the T-028 merge regen and the NINTH undeclared row:
+      // crescendo.ts imports the PARSER, because the lens→board switch
+      // counts task RECORDS and not filenames.
+      ["C-13", "C-06", "undeclared", 1],
+      // NEW at the T-028 merge regen and the TENTH — the row that IS this
+      // task: the genesis pane mounts C-08's real Board, read-only, with
+      // a 0-file diff under app/src/components/board/.
+      ["C-13", "C-08", "undeclared", 1],
+      // 4 → 6 at the T-028 merge regen: crescendo.ts and BoardCrescendo.tsx
+      // both read docs-model, on the already DECLARED edge.
+      ["C-13", "C-10", "confirmed", 6],
       ["C-13", "C-11", "planned", 0],
       // NEW at the T-027 merge regen and the EIGHTH undeclared row, this
       // one forecast: all four new genesis modules read C-14's store.
       // T-027 adds no reducer — the store already folds the turns.
-      ["C-13", "C-14", "undeclared", 4],
+      // 4 → 5 at the T-028 merge regen: crescendo.ts reads the store too.
+      ["C-13", "C-14", "undeclared", 5],
       // T-025's declared edge, honestly PLANNED: the runner's Rust half
       // consumes C-10's WatchState, which no TS import can confirm and
       // the indexer cannot see until T-010 extracts Rust — the same
