@@ -44,3 +44,13 @@ is overwritten either way (the app writes nothing; the agent is the
 writer, ADR-017), so this is truthfulness, not data loss. Decide when
 the first Linux run makes the divergence observable rather than
 argued.
+
+Re-affirmed at triage 2026-08-17 (third pass): unchanged —
+`probe_plan` still stats the two paths exactly, and no Linux run has
+made the divergence observable. **One live pointer added**: T-064 was
+created at this triage over the OTHER way the probe and the
+filesystem can disagree (the probe and the snapshot describe different
+moments), and its preferred arm re-derives `has_plan` from the
+snapshot rather than from a separate stat. If that arm is taken, the
+casing rule moves with it — one predicate, one place to decide. Read
+this file before building T-064.

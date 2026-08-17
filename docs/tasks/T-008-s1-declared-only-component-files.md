@@ -23,3 +23,13 @@ decompositions (CLI/runtime/daemon territory; ARCHITECTURE rows still
 planned). The table stays their only home until then; authoring
 earlier would invent paths (ADR-004). Revisit at the F-04 planning
 pass.
+
+Re-affirmed at triage 2026-08-17 (third pass): unchanged and verified
+— C-02, C-03 and C-04 still have no decided layout and no component
+files, and ARCHITECTURE's Components table still stops at C-07, so the
+table remains their only home. Read alongside T-033's decision (3),
+folded there at this triage: that ruling settles where the arch JOIN
+lives, and if it takes arm (b) — move `arch` to the Node CLI when C-02
+exists — then C-02 gains a concrete reason to exist and its layout
+decision arrives with it. Revisit at the F-04 planning pass, or at
+that ruling, whichever lands first.

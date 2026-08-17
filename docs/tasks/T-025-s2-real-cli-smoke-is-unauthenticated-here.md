@@ -66,3 +66,16 @@ forbidden by ADR-003 and would not have helped. The ask is one command
 on an authenticated machine and it is carried in STATE's @human list.
 It GATES T-025-s4, also parked: the Bash allowlist cannot be narrowed
 safely without watching one real stage-0 scaffold.
+
+Re-affirmed at triage 2026-08-17 (third pass): still unbuildable by
+anyone here, and **its stature has grown rather than decayed**. T-027
+merged the interview, so the flagship screen now exists and has never
+once been driven by a real model; with T-028 and T-029 buildable, ONE
+REAL OBSERVED PLANNER TURN is the only thing left between milestone 3
+and an honest claim. Three cards created at this triage now depend on
+it for their measurements rather than their code: T-056 (render volume
+under a long streaming turn — every stream this screen has seen is a
+fixture landing in milliseconds) most directly. The exact command is
+above and in STATE's @human list. Nothing about the park changes; what
+changes is that it is now the project's single highest-value @human
+item.

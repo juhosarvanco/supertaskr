@@ -75,3 +75,13 @@ look avoidable (Read+Write IS cwd-scoped under `acceptEdits`). But
 choosing an arm without one watched real stage-0 scaffold risks the
 first genesis a user ever runs dying on a denied tool. UNPARK WITH s2
 — read them together.
+
+Re-affirmed at triage 2026-08-17 (third pass): unchanged and still
+gated on T-025-s2's observed run, which nobody in this pipeline can
+perform. One adjacency worth recording rather than acting on: T-060
+was created at this triage and reshapes the resolver in the same
+component, but it deliberately does NOT touch the six patterns —
+narrowing the allowlist is a decision about what the planner may do,
+not about what the runner trusts from disk, and folding it into a
+hygiene card would smuggle a product ruling past the human. Read with
+s2.

@@ -55,3 +55,18 @@ and the only arbitrary variants in the tree remain the three vendored
 `[&_svg…]` in ui/button.tsx — so the rule would today guard nothing
 while widening the collision surface T-038 just spent a task
 unpicking. Unpark WITH the first responsive requirement.
+
+Re-affirmed at triage 2026-08-17 (third pass), and this one was
+re-checked HARDER than the others because its trigger looked like it
+had fired: T-027 shipped the project's first genuinely responsive
+screen, the 640px split that appears at 1024. **It uses Tailwind's
+NAMED `lg:` breakpoint throughout** (`InterviewChat.tsx:193`), which
+is exactly the shape this rule would want — arrived at without the
+rule existing. Re-verified mechanically: `app/src` still carries ZERO
+arbitrary breakpoint variants, and the only arbitrary variants in the
+tree remain the three vendored `[&_svg…]` in ui/button.tsx.
+
+So the first real responsive requirement has now LANDED and has still
+not produced a call site, which is stronger evidence for the park than
+the park had when it was written. Unpark at the first
+`min-[…]`/`max-[…]` anyone actually wants to write.

@@ -33,3 +33,9 @@ ReadDirectoryChangesW-adjacent identity blind would be untested code.
 The sketch (volume serial + file index via GetFileInformationByHandle,
 or re-watch when a batch names the docs dir itself) waits for a
 Windows lane; the additive-only pins already cover the degraded shape.
+
+Re-affirmed at triage 2026-08-17 (third pass): unchanged. Still no
+Windows lane, and CI has still never run on ANY platform — the "watch
+the first CI run" launch item is carried forward again. Building
+ReadDirectoryChangesW-adjacent identity blind would be untested code
+on an untested platform reached by an untested pipeline.

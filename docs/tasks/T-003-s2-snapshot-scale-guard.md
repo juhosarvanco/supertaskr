@@ -34,3 +34,12 @@ collection. Numbers and probe scripts reproducible per the T-003
 verdict entry.
 
 Triage 2026-08-15 (architect): PARKED — the truncated-flag/reporting half is absorbed by T-018; the scale work (content-skipping, incremental collection) waits for a real project near the ~25MB knee (100x headroom today).
+
+Re-affirmed at triage 2026-08-17 (third pass): unchanged. docs/ is
+still ~0.25MB against a ~25MB knee and no real project has come near
+it. Worth noting the one thing that COULD move it — T-027 shipped the
+interview, so a genesis project's docs/ is now written by a planner
+rather than by hand — but a generated ROADMAP and task set is
+kilobytes, not megabytes, and the knee is measured in tens of MB.
+Unpark on a real project near the knee, not on a hypothesis about
+one.

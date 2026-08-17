@@ -50,3 +50,9 @@ criterion. The real content is the `runtime/nputer.yaml` decision —
 packaged, reachable, consulted by nobody — and the suggestion's own
 answer is "decide once, when the second adapter lands", which is F-04
 era. Unpark with the second adapter.
+
+Re-affirmed at triage 2026-08-17 (third pass): unchanged on both
+halves. The 13-vs-14 off-by-one still rides T-043 as a criterion and
+T-043 is still planned and undispatched; `runtime/nputer.yaml` is
+still packaged, still reachable, and still consulted by nobody, and no
+second adapter has landed. Unpark with the second adapter.

@@ -32,3 +32,12 @@ diff and a re-pin list if the set moves, so nothing goes silent while
 this waits; choosing between per-platform `#[cfg(target_os)]` consts
 and a platform-normalized projection before seeing the diff would be
 guessing. Unpark at the first CI run.
+
+Re-affirmed at triage 2026-08-17 (third pass): unchanged, and the
+trigger has still not fired — CI remains dormant, so the Linux lane
+has produced no first real diff to decide against. The reason this
+stays parked rather than being guessed at is unaffected by the T-054
+finding that CI has never gated graph currency: this pin does not
+depend on CI catching anything, it depends on CI RUNNING once so the
+diff exists to read. Nothing goes silent meanwhile — the pin fails
+loudly with the full +/- diff and a re-pin list if the set moves.
