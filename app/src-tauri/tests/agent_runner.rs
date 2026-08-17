@@ -518,34 +518,36 @@ fn a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail() {
     assert_eq!(sessions::load(&h.project).sessions[0].status, "idle");
 }
 
-/// THE REGRESSION PIN FOR WHAT THE REAL SMOKE FOUND. Against the live
-/// `claude 2.1.226` this task's first smoke run produced
-/// `exitNonZero { code: 1, stderrTail: "" }` — a typed failure that told
-/// the user NOTHING, because the CLI reports authentication failures in
-/// band on stdout (an `api_retry` system line plus a `result` line whose
-/// `subtype` still reads "success" while `is_error` is true) and leaves
-/// stderr completely empty.
+/// THE REGRESSION PIN FOR WHAT THE REAL SMOKE FOUND, carried one step
+/// further by T-029. Against the live `claude 2.1.226` this task's first
+/// smoke run produced `exitNonZero { code: 1, stderrTail: "" }` — a typed
+/// failure that told the user NOTHING, because the CLI reports
+/// authentication failures in band on stdout (an `api_retry` system line
+/// plus a `result` line whose `subtype` still reads "success" while
+/// `is_error` is true) and leaves stderr completely empty.
 ///
-/// The `auth-error` scenario transcribes those exact lines. The runner
-/// must now surface the CLI's own words, because for this failure they
-/// are the only words there are.
+/// T-025 fixed the SILENCE by routing the in-band lines into the same
+/// ring stderr feeds, so the CLI's words arrived. What still did not
+/// arrive was the MEANING: the screen read "the planner exited with code
+/// 1" over an escaped one-line blob and offered a **Try again** button
+/// that would fail identically forever. T-029 types it, so the screen can
+/// name the one action that helps and route to the hand-driven fallback.
 #[test]
-fn an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail() {
+fn an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code() {
     let h = harness("autherror", Options { scenario: "auth-error", ..Options::default() });
     agent::start_genesis(&h.watch, &h.agent);
     match wait_failed(&h.events) {
-        TurnError::ExitNonZero { code, stderr_tail } => {
-            assert_eq!(code, Some(1));
+        TurnError::AuthFailed { status, message } => {
+            assert_eq!(status, Some(401), "the status the stream named, kept as a number");
             assert!(
-                stderr_tail.contains("401") && stderr_tail.contains("authenticate"),
-                "the failure must carry the CLI's own explanation, got: {stderr_tail:?}"
+                message.contains("authenticate") && message.contains("401"),
+                "the CLI's own sentence is the message, got: {message:?}"
             );
-            assert!(
-                stderr_tail.contains("authentication_failed"),
-                "the in-band api_retry diagnostic rides too, got: {stderr_tail:?}"
-            );
+            // Bounded and control-stripped like every other stream-borne
+            // string: it is rendered, and it reaches log lines.
+            assert!(!message.contains('\n'), "no raw newline survives: {message:?}");
         }
-        other => panic!("expected ExitNonZero, got {other:?}"),
+        other => panic!("expected AuthFailed, got {other:?}"),
     }
     let status = settle(&h.agent);
     assert_eq!(status.phase, Phase::Failed);
@@ -556,6 +558,36 @@ fn an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail() {
     // A failed turn is never banked as if the planner had answered.
     let lines = sessions::read_transcript(&h.project);
     assert!(lines.iter().all(|l| l.role != "planner"), "no planner line for a failed turn");
+}
+
+/// T-029 (T-025-s1): a turn that died because a TOOL was refused says
+/// which tool, by name, instead of showing an exit code.
+///
+/// The discriminating half is the last assertion: this is the same exit
+/// 1 + `is_error: true` shape the auth failure has, and it must NOT
+/// classify as `AuthFailed` — the two are told apart by what the stream
+/// named, not by how the process died.
+#[test]
+fn a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code() {
+    let h = harness("tooldenied", Options { scenario: "tool-denied", ..Options::default() });
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ToolDenied { denials, terminal_reason } => {
+            assert_eq!(denials, vec!["Bash".to_string(), "WebFetch".to_string()]);
+            assert_eq!(terminal_reason.as_deref(), Some("refusal"));
+        }
+        other => panic!("expected ToolDenied, got {other:?}"),
+    }
+    let status = settle(&h.agent);
+    assert_eq!(status.phase, Phase::Failed);
+    // Same failure shape as the auth case, different classification.
+    assert!(
+        !matches!(status.last_error, Some(TurnError::AuthFailed { .. })),
+        "exit 1 + is_error is not evidence of an auth failure: {:?}",
+        status.last_error
+    );
+    // And the project is untouched: a denied tool is not a write.
+    assert!(!h.project.join("docs").exists());
 }
 
 #[test]
@@ -946,13 +978,16 @@ fn a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded() 
         }
     };
     match &error {
-        TurnError::MalformedStream { why } => {
+        // T-029 (T-039-s3): its own envelope now. `MalformedStream` filed
+        // this next to a truncated line; a refused id is a different fact
+        // with a different remedy ("start fresh"), so it is named.
+        TurnError::RejectedSessionId { why } => {
             assert!(why.contains("unusable session id"), "{why}");
             assert!(why.contains("begins with '-'"), "names the rejection: {why}");
             assert!(why.contains("--resume"), "names why it matters: {why}");
             assert!(!why.contains("dangerously"), "the refused id is not echoed back: {why}");
         }
-        other => panic!("expected MalformedStream, got {other:?}"),
+        other => panic!("expected RejectedSessionId, got {other:?}"),
     }
     assert!(
         !seen.iter().any(|e| matches!(e, RunEvent::SessionRegistered { .. })),
@@ -1011,11 +1046,11 @@ fn every_hostile_id_class_fails_the_turn_at_capture() {
         );
         assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
         match wait_failed(&h.events) {
-            TurnError::MalformedStream { why } => assert!(
+            TurnError::RejectedSessionId { why } => assert!(
                 why.contains("unusable session id") && why.contains(fragment),
                 "{tag}: expected {fragment:?} in {why:?}"
             ),
-            other => panic!("{tag}: expected MalformedStream, got {other:?}"),
+            other => panic!("{tag}: expected RejectedSessionId, got {other:?}"),
         }
         settle(&h.agent);
         assert_eq!(sessions::load(&h.project).sessions[0].native_session_id, None, "{tag}");
@@ -1029,10 +1064,10 @@ fn every_hostile_id_class_fails_the_turn_at_capture() {
     );
     assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
     match wait_failed(&h.events) {
-        TurnError::MalformedStream { why } => {
+        TurnError::RejectedSessionId { why } => {
             assert!(why.contains("4096 bytes") && why.contains("128-byte bound"), "{why}")
         }
-        other => panic!("expected MalformedStream, got {other:?}"),
+        other => panic!("expected RejectedSessionId, got {other:?}"),
     }
     settle(&h.agent);
 }
@@ -1146,11 +1181,11 @@ fn a_hostile_resume_id_handed_straight_to_the_runner_spawns_nothing() {
         &cancel,
     );
     match out.error {
-        Some(TurnError::MalformedStream { ref why }) => {
+        Some(TurnError::RejectedSessionId { ref why }) => {
             assert!(why.starts_with("refusing to resume:"), "{why}");
             assert!(why.contains("begins with '-'"), "{why}");
         }
-        other => panic!("expected MalformedStream, got {other:?}"),
+        other => panic!("expected RejectedSessionId, got {other:?}"),
     }
     assert!(out.text.is_none() && !out.cancelled);
     assert!(!turn_dump(&h.dump, 1).exists(), "NOTHING was spawned");

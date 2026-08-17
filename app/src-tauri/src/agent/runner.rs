@@ -57,6 +57,14 @@ pub const MAX_EVENT_TEXT: usize = 32 * 1024;
 pub const MAX_RELAY_BYTES: usize = 1024 * 1024;
 /// Diagnostic stderr ring, kept for error tails only.
 pub const MAX_STDERR_RING: usize = 64 * 1024;
+/// T-029: most `permission_denials` entries a typed failure will carry.
+/// The list is stream-borne, so it is bounded like everything else here.
+pub const MAX_DENIALS: usize = 16;
+/// T-029: byte bound on ONE denied tool name.
+pub const MAX_DENIAL_BYTES: usize = 128;
+/// T-029: byte bound on the message inside [`TurnError::AuthFailed`].
+/// The CLI's real one is ~70 bytes; this is headroom with a hard stop.
+pub const MAX_AUTH_MESSAGE_BYTES: usize = 2048;
 
 pub fn now_ms() -> u64 {
     SystemTime::now()
@@ -79,11 +87,40 @@ pub enum TurnError {
     /// No stream line for the stall timeout, mid-turn.
     Stall,
     /// The CLI exited nonzero. `stderr_tail` is the CLI's own words,
-    /// relayed for T-027 to show — auth expiry has no reliable exit-code
-    /// signature, so classification is a named silence, not a pretense.
+    /// relayed for T-027 to show — the residual class, after T-029's
+    /// classification below has taken the two failures the stream names.
     ExitNonZero { code: Option<i32>, stderr_tail: String },
     /// The stream did not carry what the protocol needs.
     MalformedStream { why: String },
+    /// T-029: THE CLI COULD NOT AUTHENTICATE, and it said so in band.
+    ///
+    /// Before this variant the fact was captured and then thrown into the
+    /// diagnostic ring, so the screen showed `exitNonZero { code: 1 }`
+    /// with an escaped one-line blob of the CLI's own words under it and
+    /// a **Try again** button that would fail identically forever. The
+    /// bytes were delivered; the MEANING was not, and neither was the one
+    /// action that helps (`claude login`).
+    ///
+    /// Measured against claude 2.1.226: the failure arrives on STDOUT as
+    /// a `system`/`api_retry` line with `error_status: 401`, then a
+    /// `result` line whose `subtype` still reads `"success"` while
+    /// `is_error` is true and `api_error_status` is 401; the process
+    /// exits 1 and writes nothing to stderr of its own.
+    AuthFailed { status: Option<u32>, message: String },
+    /// T-029 (T-025-s1): the turn died because a tool it needed was
+    /// REFUSED — `--allowedTools` too narrow, or a permission mode that
+    /// declined. Named rather than relayed, so the screen can say which
+    /// tool instead of showing an exit code.
+    ToolDenied { denials: Vec<String>, terminal_reason: Option<String> },
+    /// T-029 (T-039-s3): a session id was refused, at either gate — the
+    /// stream's init line or the assembled resume argv.
+    ///
+    /// It used to ride [`TurnError::MalformedStream`], which files an
+    /// ATTEMPTED ARGV INJECTION next to a truncated line. Both are
+    /// correct and the shared envelope is blunt: only one of them means
+    /// "the id in your runtime file is unusable — start fresh", and a
+    /// webview could not tell which without reading English.
+    RejectedSessionId { why: String },
 }
 
 // ---- events (§4: one channel, `genesis-turn`) --------------------------
@@ -859,12 +896,24 @@ pub enum StreamLine {
     /// reading this flag is what made the first smoke report
     /// `exitNonZero { code: 1, stderrTail: "" }` and tell the user
     /// nothing at all.
-    Result { text: String, is_error: bool },
+    ///
+    /// T-029 reads the three TYPED fields beside `is_error` rather than
+    /// leaving them to be inferred from the text: `api_error_status`
+    /// (401 on the observed auth failure), `terminal_reason` (`api_error`
+    /// there) and `permission_denials` (the tools the CLI was refused).
+    Result {
+        text: String,
+        is_error: bool,
+        api_error_status: Option<u32>,
+        terminal_reason: Option<String>,
+        permission_denials: Vec<String>,
+    },
     /// A well-formed JSON line carrying an error the CLI is reporting
     /// in-band (e.g. `system`/`api_retry` with `error_status: 401`).
     /// Kept as diagnostics so a failure has the CLI's own words even when
-    /// nothing ever reaches stderr.
-    Diagnostic(String),
+    /// nothing ever reaches stderr — and, since T-029, with the status
+    /// kept as a NUMBER beside the note rather than only inside it.
+    Diagnostic { note: String, error_status: Option<u32> },
     /// A well-formed JSON line of a type we do not act on — ignored, so
     /// the protocol is forward-compatible with new CLI event types.
     Ignored,
@@ -897,9 +946,13 @@ pub fn classify_line(line: &str) -> StreamLine {
             let error = value.get("error");
             if status.is_some() || error.is_some() {
                 let subtype = value.get("subtype").and_then(|v| v.as_str()).unwrap_or("system");
+                let error_status = status.and_then(as_status_u32);
                 let status = status.map(|v| v.to_string()).unwrap_or_default();
                 let error = error.and_then(|v| v.as_str()).unwrap_or("").to_string();
-                StreamLine::Diagnostic(format!("{subtype}: {error} {status}").trim().to_string())
+                StreamLine::Diagnostic {
+                    note: format!("{subtype}: {error} {status}").trim().to_string(),
+                    error_status,
+                }
             } else {
                 StreamLine::Ignored
             }
@@ -963,10 +1016,59 @@ pub fn classify_line(line: &str) -> StreamLine {
             // "success" even on an authentication failure — `is_error` is
             // the field that tells the truth.
             let is_error = value.get("is_error").and_then(|v| v.as_bool()).unwrap_or(false);
-            StreamLine::Result { text, is_error }
+            StreamLine::Result {
+                text,
+                is_error,
+                api_error_status: value.get("api_error_status").and_then(as_status_u32),
+                terminal_reason: value
+                    .get("terminal_reason")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string),
+                permission_denials: denial_names(value.get("permission_denials")),
+            }
         }
         _ => StreamLine::Ignored,
     }
+}
+
+/// An HTTP-ish status off a stream line, whether the CLI wrote it as a
+/// number or as a string. Anything outside 100–599 is not a status and is
+/// dropped rather than coerced — this value routes a classification.
+fn as_status_u32(value: &serde_json::Value) -> Option<u32> {
+    let n = match value {
+        serde_json::Value::Number(n) => n.as_u64()?,
+        serde_json::Value::String(s) => s.trim().parse::<u64>().ok()?,
+        _ => return None,
+    };
+    (100..=599).contains(&n).then_some(n as u32)
+}
+
+/// The tool names off a `permission_denials` array. The CLI writes
+/// objects (`{"tool_name": "Bash", …}`) and could write bare strings; both
+/// are read, everything else is skipped, and each name is BOUNDED and
+/// stripped of control characters before it can reach a log line or the
+/// screen — it is model-adjacent data off a stream, like every other
+/// string in this module.
+fn denial_names(value: Option<&serde_json::Value>) -> Vec<String> {
+    let Some(serde_json::Value::Array(items)) = value else {
+        return Vec::new();
+    };
+    items
+        .iter()
+        .take(MAX_DENIALS)
+        .filter_map(|item| match item {
+            serde_json::Value::String(s) => Some(s.as_str()),
+            serde_json::Value::Object(_) => item
+                .get("tool_name")
+                .or_else(|| item.get("tool"))
+                .and_then(|v| v.as_str()),
+            _ => None,
+        })
+        .filter(|name| !name.trim().is_empty())
+        .map(|name| {
+            crate::docs_watch::sanitize_for_log(&super::sessions::truncate_utf8(name, MAX_DENIAL_BYTES))
+        })
+        .collect()
 }
 
 // ---- the turn ----------------------------------------------------------
@@ -1019,7 +1121,11 @@ pub fn run_turn(
     let argv = match adapter.argv(req.resume.as_deref()) {
         Ok(argv) => argv,
         Err(rejection) => {
-            let error = TurnError::MalformedStream {
+            // T-029 (T-039-s3): the spawn-side gate's own envelope. Same
+            // refusal, same escaped string, a name the webview can route
+            // on — "start fresh" is the affordance this one wants, and it
+            // is not the affordance a truncated stream line wants.
+            let error = TurnError::RejectedSessionId {
                 why: format!("refusing to resume: {rejection}"),
             };
             out.error = Some(error.clone());
@@ -1099,6 +1205,12 @@ pub fn run_turn(
     let mut last_activity: Option<String> = None;
     let mut result_text: Option<String> = None;
     let mut result_is_error = false;
+    // T-029: the facts the stream NAMES, kept typed as they arrive rather
+    // than folded into a diagnostic string and re-read out of it later.
+    let mut auth_status: Option<u32> = None;
+    let mut auth_message: Option<String> = None;
+    let mut terminal_reason: Option<String> = None;
+    let mut permission_denials: Vec<String> = Vec::new();
     let mut oversize = false;
     let mut last_line_at = Instant::now();
     let mut failure: Option<TurnError> = None;
@@ -1125,7 +1237,11 @@ pub fn run_turn(
                             // path writes no id to `.nputer/sessions.json`,
                             // and `send_turn` has nothing to resume from.
                             if let Err(rejection) = validate_session_id(&id) {
-                                failure = Some(TurnError::MalformedStream {
+                                // T-029 (T-039-s3): its OWN envelope, not
+                                // `MalformedStream`. The refusal string is
+                                // unchanged and already escaped; only what
+                                // carries it moved.
+                                failure = Some(TurnError::RejectedSessionId {
                                     why: format!(
                                         "the CLI's init line carried an unusable session id: {rejection}"
                                     ),
@@ -1186,7 +1302,13 @@ pub fn run_turn(
                             last_activity = Some(label);
                         }
                     }
-                    StreamLine::Result { text, is_error } => {
+                    StreamLine::Result {
+                        text,
+                        is_error,
+                        api_error_status,
+                        terminal_reason: reason,
+                        permission_denials: denials,
+                    } => {
                         saw_json_anchor = true;
                         if is_error {
                             // The CLI's own explanation, which may be the
@@ -1196,11 +1318,27 @@ pub fn run_turn(
                                 .expect("stderr ring poisoned")
                                 .push(text.as_bytes());
                             result_is_error = true;
+                            // …and it is the best MESSAGE the auth failure
+                            // has: the `api_retry` note is machine words,
+                            // this line is the sentence a human reads.
+                            auth_message = Some(text.clone());
+                        }
+                        if api_error_status.is_some() {
+                            auth_status = api_error_status;
+                        }
+                        if reason.is_some() {
+                            terminal_reason = reason;
+                        }
+                        if !denials.is_empty() {
+                            permission_denials = denials;
                         }
                         result_text = Some(text);
                     }
-                    StreamLine::Diagnostic(note) => {
+                    StreamLine::Diagnostic { note, error_status } => {
                         saw_json_anchor = true;
+                        if error_status.is_some() {
+                            auth_status = error_status;
+                        }
                         stderr_ring.lock().expect("stderr ring poisoned").push(note.as_bytes());
                         stderr_ring.lock().expect("stderr ring poisoned").push(b"\n");
                     }
@@ -1276,6 +1414,47 @@ pub fn run_turn(
                 why: format!("a stream line exceeded {MAX_LINE_BYTES} bytes"),
             });
         }
+
+        // T-029, THE TYPED CLASSIFICATION, and it runs BEFORE the exit
+        // code is looked at — deliberately, because the exit code is the
+        // least informative thing about either of these failures. The
+        // real CLI exits 1 for an authentication failure and 1 for a
+        // dozen unrelated things; the STREAM is where it says which.
+        //
+        // Scoped to a turn that actually failed, so a transient
+        // `api_retry` the CLI recovered from classifies nothing: a
+        // successful turn never reaches this closure at all.
+        let exited_badly = matches!(status, Some(s) if !s.success());
+        if exited_badly || result_is_error {
+            // 401 (no/expired credentials) and 403 (credentials the API
+            // will not accept). Every other status is somebody else's
+            // problem and stays a relayed tail rather than a guess.
+            if matches!(auth_status, Some(401) | Some(403)) {
+                let message = auth_message
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|m| !m.is_empty())
+                    .unwrap_or("the agent CLI could not authenticate");
+                return Some(TurnError::AuthFailed {
+                    status: auth_status,
+                    message: crate::docs_watch::sanitize_for_log(&super::sessions::truncate_utf8(
+                        message,
+                        MAX_AUTH_MESSAGE_BYTES,
+                    )),
+                });
+            }
+            // T-025-s1: a turn that died because `--allowedTools` was too
+            // narrow says which tool, by name.
+            if !permission_denials.is_empty() {
+                return Some(TurnError::ToolDenied {
+                    denials: permission_denials.clone(),
+                    terminal_reason: terminal_reason
+                        .as_deref()
+                        .map(crate::docs_watch::sanitize_for_log),
+                });
+            }
+        }
+
         match status {
             Some(status) if !status.success() => Some(TurnError::ExitNonZero {
                 code: status.code(),
@@ -1491,23 +1670,38 @@ mod tests {
         );
         assert_eq!(
             classify_line(r#"{"type":"result","subtype":"success","result":"done"}"#),
-            StreamLine::Result { text: "done".into(), is_error: false }
+            StreamLine::Result {
+                text: "done".into(),
+                is_error: false,
+                api_error_status: None,
+                terminal_reason: None,
+                permission_denials: vec![],
+            }
         );
         // The real 2.1.226 auth-failure shape: subtype STILL says
-        // "success" — `is_error` is the field that tells the truth.
+        // "success" — `is_error` is the field that tells the truth, and
+        // since T-029 `api_error_status` is READ rather than skipped past.
         assert_eq!(
             classify_line(
-                r#"{"type":"result","subtype":"success","is_error":true,"api_error_status":401,"result":"Failed to authenticate."}"#
+                r#"{"type":"result","subtype":"success","is_error":true,"api_error_status":401,"terminal_reason":"api_error","result":"Failed to authenticate."}"#
             ),
-            StreamLine::Result { text: "Failed to authenticate.".into(), is_error: true }
+            StreamLine::Result {
+                text: "Failed to authenticate.".into(),
+                is_error: true,
+                api_error_status: Some(401),
+                terminal_reason: Some("api_error".into()),
+                permission_denials: vec![],
+            }
         );
-        // In-band system errors become diagnostics, not silence.
+        // In-band system errors become diagnostics, not silence — and the
+        // status rides as a NUMBER beside the note (T-029).
         match classify_line(
             r#"{"type":"system","subtype":"api_retry","attempt":1,"error_status":401,"error":"authentication_failed"}"#,
         ) {
-            StreamLine::Diagnostic(note) => {
+            StreamLine::Diagnostic { note, error_status } => {
                 assert!(note.contains("api_retry") && note.contains("authentication_failed"));
                 assert!(note.contains("401"));
+                assert_eq!(error_status, Some(401));
             }
             other => panic!("expected Diagnostic, got {other:?}"),
         }

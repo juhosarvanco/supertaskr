@@ -169,6 +169,37 @@ fn main() {
             );
             std::process::exit(1);
         }
+        // T-029 (T-025-s1): THE TOO-NARROW-ALLOWLIST SHAPE. The adapter
+        // passes exactly six `Bash(...)` patterns, so a planner that
+        // reaches for a seventh is refused by the CLI's own permission
+        // layer and the turn dies with the denial named on the result
+        // line.
+        //
+        // HONESTY NOTE, because it is the difference between a
+        // transcription and a construction: unlike `auth-error` above,
+        // this shape was NOT captured from a live 2.1.226 run — this
+        // machine's login is revoked, so no denial could be provoked. The
+        // FIELDS are the CLI's documented ones (`permission_denials`,
+        // `terminal_reason`); their exact population under a real denial
+        // is unverified. The runner reads them defensively (objects or
+        // bare strings, bounded, control-stripped) for that reason.
+        "tool-denied" => {
+            emit_init(&session_id, &model);
+            emit_delta("I need to remove the scaffold I just wrote");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": true,
+                    "terminal_reason": "refusal", "num_turns": 1,
+                    "permission_denials": [
+                        { "tool_name": "Bash", "tool_use_id": "tu_01" },
+                        { "tool_name": "WebFetch", "tool_use_id": "tu_02" }
+                    ],
+                    "result": "I was not permitted to run the tools this stage needs."
+                })
+            );
+            std::process::exit(1);
+        }
         // T-039: an init line carrying a HOSTILE session id — the fixture
         // for the capture-side gate. The id is the test's own choice
         // (`NPUTER_FAKE_SESSION_ID`), defaulting to the exact injection the
