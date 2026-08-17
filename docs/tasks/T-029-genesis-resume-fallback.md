@@ -79,4 +79,43 @@ doubles as an ADR-006 manual-interview instrument check).
 
 ## Implementation notes
 
+**Architect, 2026-08-17 — the auth criterion traced end to end on the
+merged tree, because T-027 made it reachable and the human's token is
+revoked.** This is what the flagship screen does TODAY on a revoked
+login, verified by reading the merged code rather than inferred:
+
+1. The real CLI **exits 1** on this failure — `runner.rs:1299` says so
+   in its own words ("Not observed in the 2.1.226 smoke (it exited 1)").
+   So the turn is typed `ExitNonZero { code: Some(1), stderr_tail }`,
+   NOT the `result_is_error` branch above it.
+2. **`stderr_tail` is empty**, because this failure carries nothing on
+   stderr (the criterion above measured that).
+3. `failureDetail` (`interview-model.ts:390`) returns `null` for an
+   empty trimmed detail, and `FailureBlock`
+   (`interview-turns.tsx:259`) renders the detail span only when it is
+   non-null.
+4. **So the screen says exactly "the planner exited with code 1", with
+   no detail at all**, followed by "Nothing was lost…" and a **Try
+   again** button that fails identically every time. The user is given
+   no reason to suspect their login, and the one affordance offered is
+   the one that cannot work.
+5. **The 401 IS already in the process.** `runner.rs:896–902` parses the
+   in-band `api_retry` line and emits
+   `Diagnostic("api_retry: <error> 401")`. The information that would
+   solve the user's problem is captured, typed, and then routed to a
+   channel the failure block never reads. **The gap is delivery, not
+   detection** — which should make this cheaper than the criterion's
+   wording suggests.
+
+`interview-model.ts:366–370`'s own comment already names this as this
+task's territory ("auth-vs-anything-else is T-029's"), so nothing here
+contradicts T-027; it is the fence T-027 correctly declined to cross.
+
+**Priority consequence**: this is not a degraded-mode nicety. Until it
+lands, the first real run of the flagship screen by a user whose CLI
+login has lapsed is a dead end with a button that lies. Treat criterion
+"AuthFailed" as the task's leading edge rather than its tail, and
+consider landing it before the resume machinery if the two want
+splitting.
+
 ## Verdicts
