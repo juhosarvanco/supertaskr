@@ -1,6 +1,6 @@
 # State
 
-Updated: 2026-08-17 by integrator (T-027 merge), claude-opus-5 @fresh
+Updated: 2026-08-17 by architect (third triage applied), claude-opus-5 @fresh
 Amended: 2026-08-17 ~05:55 by the architect — "In progress" only, to
 stop the baton claiming nothing is building while three worktrees are
 open. Everything above that section is the integrator's and unedited.
@@ -323,11 +323,70 @@ detection, so it wants T-028 landed first, not merged against.
 fourth lane needs a cold tree-sitter build. Dispatch it when a lane
 frees. The card is complete and needs no further ruling.
 
-**The third triage is RUNNING** over the remaining open suggestion
-files — a read-only analyst drafting dispositions; the architect
-reviews and applies. It started at 66 files; four have left its table
-since (two folded/promoted by the architect mid-flight, recorded
-below).
+**THE THIRD TRIAGE IS APPLIED, AND THE SUGGESTED COUNT IS ZERO** —
+the first time in this project's history. It opened at **66 files**
+and closed at **16, every one of them PARKED with a dated trigger to
+unpark**. Nothing is suggested; nothing was silently dropped.
+
+    66 open  →  37 promoted · 12 folded · 16 parked · 1 rejected
+                 1 removed as already-absorbed
+
+**THIRTEEN CARDS WERE CREATED TODAY, and every one is a CLUSTER
+rather than a card per finding** — the first triage went 19→7, the
+second 18→6, this one 37→13. **T-053** (id aliasing, BUILDING) and
+**T-054** (retire the interim graph rule) are the architect's, written
+mid-flight; the analyst authored the other **eleven**: **T-055** one
+answer to what content is · **T-056** the transcript stops
+re-rendering itself · **T-057** assertions that cannot fail ·
+**T-058** the tree stays searchable · **T-059** the two joins cannot
+quietly disagree · **T-060** the resolver trusts nothing it did not
+just prove · **T-061** the boot gate cleans up · **T-062** the frame
+holds everywhere · **T-063** a startup that fails says so ·
+**T-064** the switch tells one story · **T-065** one wire, one shape.
+**None of them is dispatched.** Grant 3 covers applying the triage,
+not dispatching what it creates.
+
+**THE TWELVE FOLDS went where a fence already exists**: T-054 gained
+four (T-014-s3, T-045-s1, T-045-s4, T-049-s1) and grew S→M rather
+than spawning a rival card for the same CONVENTIONS section; T-029
+gained three refusals that share one shape with its own `AuthFailed`
+criterion — *a fact known and typed inside the process, then
+delivered nowhere a user can see it*; T-022 two, T-032 two, T-033 and
+T-044 the rest. **T-032's own layoutKey criterion was AMENDED, not
+extended** — it read as an instruction to type a control byte, which
+is exactly how the byte got into `map-layout.ts` the first time, and
+it was fixed before the card could be dispatched into the same trap.
+
+**THE PATTERN OF THE NIGHT GOT A CARD AND A RULE.** Six assertions
+that cannot fail were caught in one night across three tasks and two
+languages, by builders and verifiers both. T-057 fixes the two in the
+app's suites and T-044 took the Rust one — but the practice that
+CAUGHT them, mutate every test body and require it to red
+(133-for-133 at T-027), **is written down nowhere**: verified at
+triage, zero occurrences of "vacuous" or "mutation" in
+`docs/CONVENTIONS.md` or `method/roles/`. Ratifying it is now a
+criterion of T-054. A discipline that catches six defects a night and
+lives only as oral tradition is one tired session from not existing.
+
+**THE CONTROL-BYTE HAZARD REPRODUCED ITSELF INSIDE THE CARD ABOUT
+IT — the thirteenth instance, and the second time it has happened in
+a document describing the mechanism.** Drafting T-058's explanation
+landed a literal NUL at byte 1058 of the card; `file(1)` immediately
+called it `data`; it was caught only by running the C0 scan on the
+output before staging. The card now spells no escape sequence
+anywhere, which is the only version that has survived contact, and it
+gained two criteria as a result: the selftest sample must be built
+from a character code rather than typed, and **the `docs/**` coverage
+gap is named explicitly** — three of the thirteen instances are
+markdown, and the gate walks source trees only. The habit is now
+eight-for-eight and it earned its keep again tonight.
+
+**TWO PARKS WERE SHARPENED BY THE CI FINDING ABOVE**, because "CI
+would catch it" would have been wrong for both: T-045-s3 is parked on
+asserting over an empty set (still one workflow, still no
+`.github/actions/`), and T-046-s3 on COST — explicitly not on
+something else covering it, *because nothing does*: no gate in this
+repo has ever produced or launched a packaged nputer.
 
 **T-030-s3 IS RESOLVED — promoted to T-053 (`5995ac7`) and building.**
 It had outlived two triages, parked both times on its own closing line:
@@ -470,35 +529,65 @@ not guessed at.**
 
 ## Next up (1–4)
 
-1. **THE THIRD TRIAGE, over a settled tree.** Nothing is building; this
-   is the whole of the next session's work. **66 open files: 9 parked +
-   57 suggested.** Six items should enter it already ranked, because they
-   have been measured rather than supposed:
-   - **T-027-s1 — the answer box loses focus after every send.** Ranked
-     first on the verifier's judgment and this merge's: it is small, it is
-     pinned by a real tripwire, and it is the first thing the human will
-     feel on the flagship screen.
-   - **T-030-s3** — still the correctness-of-record item, deadline passed,
-     now three merges old.
-   - **T-014-s8 — the interim regen rule's retirement, as ONE designed
-     commit** touching CONVENTIONS + `workflow-parity.spec.ts` (+ `ci.yml`
-     if `index --check` becomes a step). The `index --check` disposition
-     is an architect ruling, not a mechanical edit. **The rule was
-     exercised for the twenty-sixth time tonight.**
-   - **"Dispatch lanes from the CHECKPOINT, not the merge"** (T-014-s3) —
-     one line, six-for-six evidence, and **T-027 is the seventh worked
-     example**: cut from `e92056a`, it carried a current graph and
-     inherited no red.
-   - **The `<main-before>..HEAD` clause** in both gate bullets — **six**
-     integrators have now hit it.
-   - **The Tailwind/`app/src-tauri` finding** from T-014's merge — a Rust
-     identifier is in the shipped CSS and no gate can see the directory.
-   - **T-027-s4/s5** (the tautology + the zero-margin assertion) and
-     **T-027-s2/s3** join the untriaged pile.
-2. **@human — THE MORNING'S AGENDA. The app is not running; 1420 is
-   free.** When you restart it you pick up everything at once: T-042's
-   genesis truthfulness, T-014's 23 CSS bytes, and **T-027's entire
-   screen**.
+1. **THE TRIAGE IS DONE; THE QUESTION IS NOW DISPATCH ORDER.** Eleven
+   new cards are planned and undispatched, and three lanes are already
+   building. The analyst's ranking, carried here so it is not lost with
+   the session that made it — **priorities on the new cards were
+   appended to the end of each feature column deliberately, because
+   choosing a dispatch position is the architect's call, not the
+   analyst's**:
+   - **Before T-029 goes out**: its own three folds are already applied
+     to its card (T-027-s2, T-039-s3, T-047-s3) — they had to be, or
+     the findings would have died with their files. **T-054** is the
+     other pre-condition of a quiet week: it closes a gate that has
+     never existed. **T-063** is the only item in the whole backlog
+     with a real user report attached, and the report could not
+     describe itself.
+   - **T-053 is building and cannot beat T-028 to the merge**, which is
+     worth saying plainly: T-028 is the card that makes a PLANNER write
+     task files, so the first model-authored ids this project sees may
+     land before the check that catches an alias. T-053 should be first
+     to merge after it.
+   - **Milestone-4-adjacent**: T-055 (behind T-053 in lib-parser),
+     T-057, T-058, T-059 (`blocked_by: [T-033]`, and it DISSOLVES if
+     that ruling moves `arch` to the Node CLI), T-062
+     (`blocked_by: [T-051]`), T-065.
+   - **Launch-prep**: **T-060** — STATE has recorded NO STANDING
+     SECURITY GATE since T-025-s6 closed at T-039, and this is the
+     sharpest open set: a probe arm that executes a relative path the
+     cache gate refuses, a `$SHELL` that picks which program runs, and
+     a suite where nothing structurally stops a test spawning the real
+     CLI, which already happened once. Then **T-061** (a demonstrated
+     orphaned listener, one forgotten env var from 1420) and **T-064**.
+   - **Still un-homed, and NOT one of the 66**: the
+     **Tailwind/`app/src-tauri` finding** from T-014's merge — a Rust
+     identifier is in the shipped CSS and no gate can see the
+     directory. It has no suggestion file and never did. **T-058 is its
+     natural neighbour** (both are "the walk policy IS the gate"), so
+     fold it there or file it, but do not let a third triage lose it.
+2. **@human — THE MORNING'S AGENDA. The app IS running; the architect
+   relaunched it at ~05:30 out of main.** You pick up everything at
+   once: T-042's genesis truthfulness, T-014's 23 CSS bytes, and
+   **T-027's entire screen**.
+   **READ THIS BEFORE OPENING A GENESIS FOLDER.** The interview now
+   auto-starts on arrival, and on this machine the CLI login is
+   revoked — so the first turn fails, and the failure is a DEAD END
+   rather than a diagnosis. Traced end to end on the merged tree and
+   recorded in T-029's notes: the CLI exits 1, which types as
+   `ExitNonZero`; this failure carries NOTHING on stderr; `failureDetail`
+   returns null on an empty detail and `FailureBlock` renders the detail
+   span only when non-null. **So the screen says exactly "the planner
+   exited with code 1", shows no detail at all, and offers a Try again
+   button that will fail identically forever.** Nothing points at the
+   login. Run `claude login` first. The 401 IS already parsed
+   (`runner.rs:896-902` emits a Diagnostic carrying it) and routed to a
+   channel the failure block never reads — **the gap is delivery, not
+   detection**, which is why T-029's `AuthFailed` criterion should lead
+   that task rather than trail it.
+   To reach the interview at all a folder needs NO `docs/ROADMAP.md`
+   and NO `docs/tasks/*.md` (`PlanProbe::has_plan`, `docs_watch.rs:414`
+   — an `ARCHITECTURE.md` alone is still genesis-eligible). There is no
+   `genesis-demo` folder anywhere on disk; `mkdir` one.
    - **THE SIX T-027 VISUAL JUDGMENTS, none self-answerable, and they are
      the point of this milestone**:
      1. **The one-question-at-a-time feel** — is the current question big
@@ -579,19 +668,23 @@ not guessed at.**
    map-badge half). The standing app-shell queue's next named item is
    **T-022** (M, milestone 4, `blocked_by: []`), which T-034-s3 made
    bigger.
-   **T-027 contributes FIVE suggestions** — **s1** (the focus loss, rank
-   it high), **s2** (a refused turn subscription is invisible on screen —
-   introduced by T-027, honestly named as T-050's shape, half-fixing
-   would have been worse), **s3** (render volume under a streaming turn
-   is unthrottled and unmeasured, with the exact measurement to take),
-   **s4** (VERIFIER-FILED: the sharpest chip test asserts a tautology,
-   plus `bank()` being a drifted hand-copy), **s5** (VERIFIER-FILED: the
-   1440×900 lens-scroll assertion has zero pixels of margin and will
-   flake).
-   **The nine parked, unchanged**: T-003-s2, T-008-s1, T-018-s1,
-   T-021-s1, T-026-s1, T-025-s2 (@human), T-025-s4, T-025-s3, T-038-s1.
+   **T-027's five suggestions are all dispositioned**: s1 folded into
+   T-028 (`e41dd16`), s2 into T-029, s3 → T-056, s4 → T-057, s5 →
+   T-065.
+   **THE SIXTEEN PARKED, every one re-checked against the tree at the
+   third triage rather than re-affirmed from the baton**: the nine
+   standing (T-003-s2, T-008-s1, T-018-s1, T-021-s1, T-025-s2 @human,
+   T-025-s3, T-025-s4, T-026-s1, T-038-s1) plus seven new — T-014-s5,
+   T-030-s1 (@human), T-034-s1 (@human), T-034-s4 (@human), T-045-s3,
+   T-046-s3, T-047-s2. **Each carries a dated trigger to unpark**, and
+   the test applied to all sixteen was the one T-030-s3 failed: *what
+   merged last night that makes this item's "not live yet" clause
+   false?* It moved none of them. **T-038-s1 was the near miss** —
+   T-027 shipped the first genuinely responsive screen, and it uses
+   Tailwind's NAMED `lg:` breakpoint throughout, so the requirement
+   landed and still produced no call site.
    Triage-born tasks standing ready and un-dispatched: **T-043**,
-   **T-044**, **T-051**.
+   **T-044**, and the eleven from this triage.
 
 ## Health of the tree
 
@@ -599,10 +692,30 @@ The t027 worktree is removed and its branch KEPT — **37 task branches
 merged now**. Main tree clean; every suite green; the token lint green
 over 107 files at zero allowlist; the committed graph current and proved
 so **twice, by two independent instruments**. The parser re-parses the
-whole live tree at **0 issues**: **118 tasks**, tally **38 done / 14
-planned / 9 parked / 57 suggested / 0 building**, 6 features, 11
-components. No listener is bound on any port; no `tauri dev`, `vite` or
-boot-check process survives.
+whole live tree at **0 issues**: after the third triage, **81 task
+files**, tally **38 done / 27 planned / 16 parked / 0 suggested /
+0 building** — *as MAIN sees it*; three of those 27 (T-028, T-051,
+T-053) are building in worktrees and flip to `building` only on their
+own branches, so the board on main honestly shows nothing in flight
+while three lanes are. **118 → 81 files is the triage**: 37 promoted
+and 12 folded files removed, 1 moved to rejected/, 1 removed as
+already-absorbed. 6 features, 11
+components.
+
+**PORTS: 1420 IS OCCUPIED AND THAT IS DELIBERATE.** The architect
+relaunched the app out of the MAIN checkout at ~05:30 once T-027's
+merge was through, so the human wakes to the flagship screen running
+(node pid 81894, one listener, `[nputer] window "main" created`, model
+applied at 0 issues). **Every agent tonight has been briefed to probe
+it read-only and never bind, connect to or signal it**, and all three
+lanes plus two verifiers have honoured that — T-051's boot gate took
+scratch port 15131, T-053's e2e took 14653. No OTHER listener is bound;
+no stray `tauri dev`, `vite` or boot-check process survives. **The
+integrator who takes the next merge inherits T-052's problem live**:
+main's `node_modules` is under a running vite, so a fresh install there
+kills the human's app (mechanism B, nine instances). Run installs
+somewhere that is not it, or refuse loudly — a skipped gate is news,
+never silence.
 
 **NO STANDING SECURITY GATE.** T-025-s6 closed at T-039 and nothing
 replaced it. **T-027's security posture is unusually easy to state and
