@@ -570,19 +570,47 @@ no gate; T-058 owns it.
    You pick up everything at once: T-042's genesis truthfulness, T-014's
    23 CSS bytes, T-027's entire screen, and now **the crescendo**.
    **READ THIS BEFORE OPENING A GENESIS FOLDER.** The interview
-   auto-starts on arrival, and on this machine the CLI login is revoked
-   — so the first turn fails, and the failure is a DEAD END rather than
-   a diagnosis. Traced end to end and recorded in T-029's notes: the CLI
-   exits 1, which types as `ExitNonZero`; this failure carries NOTHING
-   on stderr; `failureDetail` returns null on an empty detail and
-   `FailureBlock` renders the detail span only when non-null. **So the
-   screen says exactly "the planner exited with code 1", shows no detail
-   at all, and offers a Try again button that will fail identically
-   forever.** Nothing points at the login. **Run `claude login` first.**
-   The 401 IS already parsed (`runner.rs:896-902` emits a Diagnostic
-   carrying it) and routed to a channel the failure block never reads —
-   **the gap is delivery, not detection**, which is why T-029's
-   `AuthFailed` criterion should lead that task rather than trail it.
+   auto-starts on arrival, and on this machine the CLI login is revoked,
+   so the first turn fails. **Run `claude login` first.**
+
+   **CORRECTED 2026-08-17 by the architect — the version this paragraph
+   carried was WRONG, and it was mine.** I traced the failure and wrote
+   that the screen "says exactly 'the planner exited with code 1', shows
+   no detail at all" and that "nothing points at the login". T-029's
+   executor refused to build on it and re-derived instead. **Three of my
+   five steps do not survive reproduction**, and one command settles it:
+   `an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail`
+   (`app/src-tauri/tests/agent_runner.rs:533`) asserts
+   `stderr_tail.contains("401")` and **passes on main**. The test's own
+   name says what I got wrong.
+
+   The error: I reasoned from "stderr is empty" — which is true, and is
+   what T-029's card measured — to "`stderr_tail` is empty", which is
+   false. **`stderr_ring` is not a stderr ring.** It has THREE writers
+   (`runner.rs:1088` stderr, `:1194` the `result` line's text when
+   `is_error`, `:1204` the `api_retry` diagnostic), and the comment at
+   `:1192` states the reason outright: *"the CLI's own explanation, which
+   may be the ONLY one there is (stderr can be empty)."* T-025 wired the
+   in-band lines in deliberately and named a test after it.
+
+   **What the screen ACTUALLY shows**, measured on `bdecad8`:
+   "the planner exited with code 1", above the CLI's own words as an
+   escaped one-line blob — `api_retry: authentication_failed 401` /
+   `Failed to authenticate. API Error: 401 OAuth access token has been
+   revoked.` (`sanitize_for_log` escapes the newline). So the login IS
+   named, in the CLI's vocabulary rather than in an instruction.
+
+   **The criterion survives and its own wording was the accurate one all
+   along** — "a TYPED outcome rather than a relayed blob". A relayed blob
+   is exactly what this is. And **the real defect is the Try again
+   button**, which fails deterministically forever; that is what T-029
+   removed. Filed as **T-029-s1**.
+
+   The lesson, since this is the second time tonight a confident trace
+   was wrong: **a trace written by reading code is evidence to reproduce,
+   exactly like a number in a card body.** Mine was relayed to the human
+   as fact and written into this file. The executor's refusal to build on
+   it is the behaviour to keep.
    To reach the interview at all a folder needs NO `docs/ROADMAP.md` and
    NO `docs/tasks/*.md` (`PlanProbe::has_plan`, `docs_watch.rs:414` — an
    `ARCHITECTURE.md` alone is still genesis-eligible). There is no
