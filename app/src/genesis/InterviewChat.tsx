@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { DocsModelState } from "@/lib/docs-model";
-import type { SendOutcomePayload, StartOutcomePayload } from "@/lib/agent-store";
+import type {
+  KickoffOutcomePayload,
+  SendOutcomePayload,
+  StartOutcomePayload,
+} from "@/lib/agent-store";
 import { elapsedLabel } from "./crescendo";
 import {
   activeTurn,
   assembleTranscript,
   bankBaseline,
   bankedSince,
+  mergeRehydrated,
   shouldStickToBottom,
   stageOf,
   stageReadout,
@@ -16,7 +21,11 @@ import {
   type BankBaseline,
 } from "./interview-model";
 import {
+  freshInterview,
   interviewBusy,
+  loadKickoff,
+  rehydrateInterview,
+  resumeInterview,
   retryTurn,
   sendAnswer,
   startGenesisClock,
@@ -108,6 +117,15 @@ export function InterviewChat({
   // yet, so this is a convenience and never load-bearing.
   const notStarted = genesis.phase === "idle" && genesis.turns.length === 0;
 
+  // THE RESUME OFFER (criterion 1). `resumeAvailable` is the typed answer
+  // `genesis_start` gives when the registry already remembers a planner
+  // session here; taking it respawns that native session, and declining
+  // it is `freshInterview`. Both are the SAME screen, because "the
+  // conversation is not where you left it" is one situation with two
+  // exits, not two situations.
+  const offer = ui.notice?.kind === "resumeAvailable" ? ui.notice : null;
+  const rejected = ui.notice?.kind === "sessionIdRejected" ? ui.notice : null;
+
   // …but ONLY once the mount-time `genesis_status` has actually
   // answered. `methodVersion` is the honest signal for that and it is
   // already in the store: nothing sets it but `applyGenesisStatus`, so
@@ -118,8 +136,14 @@ export function InterviewChat({
   const statusKnown = genesis.methodVersion !== null;
   useEffect(() => {
     if (!statusKnown || !notStarted) return;
+    // T-029 (T-027-s2): NOT over a dead turn channel. Auto-starting there
+    // spawns a real planner that really writes into `docs/` while this
+    // half of the screen can never show a word of it — which is precisely
+    // the defect, made worse by doing it without being asked. The
+    // explicit affordance below still works, so the user can force it.
+    if (genesis.listenerFailed) return;
     void startInterview(projectDir);
-  }, [statusKnown, notStarted, projectDir]);
+  }, [statusKnown, notStarted, projectDir, genesis.listenerFailed]);
 
   // ---- the elapsed slot (T-028 criterion 3) ---------------------------
   //
@@ -152,7 +176,14 @@ export function InterviewChat({
   // `stageOf`, which is the difference between a torn file breaking a
   // progress bar and a torn file taking the conversation down.
   const stage = stageOf(docs);
-  const transcript = assembleTranscript(genesis.turns, ui.userHalves, chipsByTurn);
+  // THE CONVERSATION IS WHERE YOU LEFT IT (criteria 1-2). Pulled on
+  // arrival rather than at app startup: `genesis_transcript` reads the
+  // OPEN project, and at startup there may not be one.
+  useEffect(() => {
+    void rehydrateInterview();
+  }, [projectDir]);
+  const joined = mergeRehydrated(genesis.rehydrated, genesis.turns, ui.userHalves);
+  const transcript = assembleTranscript(joined.turns, joined.userHalves, chipsByTurn);
   const log = useRef<HTMLDivElement | null>(null);
   const stick = useRef(true);
 
@@ -256,6 +287,28 @@ export function InterviewChat({
     [projectDir],
   );
 
+  // ---- the hand-driven mode (criterion 4) -----------------------------
+  //
+  // ADR-006's manual interview as a FIRST-CLASS MODE rather than a
+  // separate build: the same assembled kickoff the spawn would have used,
+  // in a copyable block, with T-024's lens (now T-028's board) live on the
+  // right and the same completion detection. Zero agent plumbing, any
+  // model, any CLI — and it is the ONE route that works with no login at
+  // all, which is why the auth failure offers it.
+  //
+  // It is opened DELIBERATELY, never automatically: a `cliNotFound`
+  // renders its own card, and an auth failure offers the button. Popping a
+  // wall of prompt text over a recoverable failure would be the screen
+  // deciding the user has given up.
+  const [handDriven, setHandDriven] = useState<KickoffOutcomePayload | null>(null);
+  const onHandDriven = useCallback(() => {
+    void loadKickoff().then((outcome) => {
+      // `null` is the served-bundle case (no Tauri to answer). Nothing to
+      // show, and nothing pretended.
+      if (outcome !== null) setHandDriven(outcome);
+    });
+  }, []);
+
   return (
     <section
       data-testid="interview-chat"
@@ -316,11 +369,113 @@ export function InterviewChat({
               current={entry.current}
               approxStage={stage.approxStage}
               onRetry={onRetry}
+              onHandDriven={onHandDriven}
             />
           ),
         )}
 
-        {notStarted && (
+        {genesis.listenerFailed && (
+          <div
+            data-testid="interview-listener-failed"
+            className="flex flex-col gap-2 rounded-lg border border-status-verifying-border bg-status-verifying px-4 py-3.5"
+          >
+            <span className="text-sm font-semibold tracking-heading text-status-verifying-title">
+              this half of the screen is not receiving
+            </span>
+            <span className="text-sm text-secondary-foreground">
+              nputer could not subscribe to the planner&apos;s turn channel, so no
+              question will appear here even if the interview runs. The plan
+              still assembles beside this, and everything written to{" "}
+              <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span> is
+              real — you are just not being shown the conversation. Reopening the
+              folder re-subscribes; driving it by hand needs no channel at all.
+            </span>
+            <div className="flex items-center gap-2.25">
+              <Button
+                data-testid="interview-listener-hand-driven"
+                variant="outline"
+                onClick={onHandDriven}
+              >
+                Drive it by hand
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {offer !== null && (
+          <div
+            data-testid="interview-resume-offer"
+            data-turns={offer.turns}
+            className="flex flex-col gap-2 rounded-lg border border-border bg-card px-4 py-3.5"
+          >
+            <span className="text-sm font-semibold tracking-heading text-foreground">
+              an interview was already running here
+            </span>
+            <span className="text-sm text-secondary-foreground">
+              {resumeSentence(offer.turns, offer.model)} Everything it banked is in{" "}
+              <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span>{" "}
+              either way — that is the record, and it is what you see on the right.
+            </span>
+            <div className="flex items-center gap-2.25">
+              <Button
+                data-testid="interview-resume"
+                disabled={busy}
+                onClick={() => void resumeInterview(projectDir)}
+              >
+                Pick up where it stopped
+              </Button>
+              <Button
+                data-testid="interview-fresh"
+                variant="outline"
+                disabled={busy}
+                onClick={() => void freshInterview(projectDir)}
+              >
+                Start a fresh session
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {rejected !== null && (
+          <div
+            data-testid="interview-session-unusable"
+            className="flex flex-col gap-2 rounded-lg border border-status-rejected-border bg-status-rejected px-4 py-3.5"
+          >
+            <span className="text-sm font-semibold tracking-heading text-destructive">
+              your saved session is unusable
+            </span>
+            <span
+              data-testid="interview-session-unusable-why"
+              className="font-mono text-sm whitespace-pre-wrap break-words text-status-rejected-foreground"
+            >
+              {rejected.why}
+            </span>
+            <span className="text-sm text-secondary-foreground">
+              <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">
+                {rejected.registryPath}
+              </span>{" "}
+              is runtime state, not project truth. A fresh session reads the banked{" "}
+              <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span>,
+              says which stage is next, and carries on — nothing about the project is
+              lost.
+            </span>
+            <div className="flex items-center gap-2.25">
+              <Button
+                data-testid="interview-fresh"
+                disabled={busy}
+                onClick={() => void freshInterview(projectDir)}
+              >
+                Start a fresh session
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {handDriven !== null && (
+          <HandDrivenBlock outcome={handDriven} onDismiss={() => setHandDriven(null)} />
+        )}
+
+        {notStarted && offer === null && rejected === null && (
           <div data-testid="interview-not-started" className="flex flex-col gap-3">
             <p className="text-base text-secondary-foreground">
               The planner asks one question at a time and writes each answer straight into{" "}
@@ -339,7 +494,13 @@ export function InterviewChat({
           </div>
         )}
 
-        {ui.notice !== null && <OutcomeNotice outcome={ui.notice} projectDir={projectDir} />}
+        {ui.notice !== null && offer === null && rejected === null && (
+          <OutcomeNotice
+            outcome={ui.notice}
+            projectDir={projectDir}
+            onHandDriven={onHandDriven}
+          />
+        )}
       </div>
 
       {/* ---- the input row --------------------------------------------- */}
@@ -375,6 +536,99 @@ export function InterviewChat({
   );
 }
 
+/** How the resume offer reads. The model name comes through the
+ * registry's READ boundary, so `null` means both "no model recorded" and
+ * "recorded, but not a usable name" — the screen says the honest thing
+ * for both rather than printing bytes it just refused (T-047-s3). */
+function resumeSentence(turns: number, model: string | null): string {
+  const count = turns === 1 ? "1 turn" : `${turns} turns`;
+  const ran = model === null ? "(model not recorded)" : `on ${model}`;
+  return `It got ${count} in ${ran}. You can pick that same session up, or start a fresh one that reads what is already banked and continues from the next stage.`;
+}
+
+/**
+ * THE HAND-DRIVEN MODE (criterion 4) — ADR-006's manual interview, as a
+ * mode rather than a message.
+ *
+ * The block is the SAME text `genesis_start` would have put on the
+ * child's stdin, assembled by the same Rust function, over a kit that has
+ * really been materialized by the time this renders. So the split-view
+ * magic survives with zero agent plumbing: paste this into any agent CLI
+ * in any terminal, and the right half keeps rendering what lands, chips
+ * and stage strip and completion detection included — because every one
+ * of those reads FILES rather than the turn stream (T-027's chip rule,
+ * T-028's completion rule).
+ *
+ * NO COPY BUTTON, deliberately. The clipboard is a webview capability
+ * this app does not have and will not add for a convenience: ADR-012 says
+ * a grant is added by the task that genuinely needs it, and "select the
+ * text yourself" is not a need. The block is selectable text.
+ */
+function HandDrivenBlock({
+  outcome,
+  onDismiss,
+}: {
+  outcome: KickoffOutcomePayload;
+  onDismiss: () => void;
+}) {
+  if (outcome.kind !== "ready") {
+    return (
+      <div
+        data-testid="interview-hand-driven-block"
+        data-kind={outcome.kind}
+        className="flex flex-col gap-1.5 rounded-lg border border-border bg-card px-4 py-3.5"
+      >
+        <span className="font-mono text-xs tracking-overline text-muted-foreground uppercase">
+          hand-driven mode
+        </span>
+        <span className="text-sm text-secondary-foreground">
+          {outcome.kind === "noProject"
+            ? "no project is open, so there is nothing to plan."
+            : outcome.kind === "alreadyPlanned"
+              ? `${outcome.path} already holds a plan.`
+              : outcome.message}
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div
+      data-testid="interview-hand-driven-block"
+      data-kind="ready"
+      data-resuming={outcome.resuming ? "true" : "false"}
+      className="flex flex-col gap-2.5 rounded-lg border border-border bg-card px-4 py-3.5"
+    >
+      <span className="font-mono text-xs tracking-overline text-muted-foreground uppercase">
+        hand-driven mode
+      </span>
+      <span className="text-sm text-secondary-foreground">
+        Run this in any agent CLI in your terminal — I&apos;ll render what lands.
+        {outcome.resuming
+          ? " It picks up from what is already banked rather than starting over."
+          : ""}
+      </span>
+      <pre
+        data-testid="interview-kickoff"
+        className="max-h-64 overflow-auto rounded-sm bg-muted px-3 py-2.5 font-mono text-sm whitespace-pre-wrap break-words text-foreground"
+      >
+        {outcome.prompt}
+      </pre>
+      <span className="font-mono text-xs text-muted-foreground">
+        cwd:{" "}
+        <span data-testid="interview-kickoff-cwd" className="break-words">
+          {outcome.projectDir}
+        </span>{" "}
+        · method v{outcome.methodVersion}
+      </span>
+      <div className="flex items-center gap-2.25">
+        <Button data-testid="interview-hand-driven-dismiss" variant="outline" onClick={onDismiss}>
+          Hide this
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * A typed outcome that is not `started`/`accepted`, rendered inline as
  * text. Every field it shows is a TYPED fact from the runner — no error
@@ -391,9 +645,11 @@ export function InterviewChat({
 function OutcomeNotice({
   outcome,
   projectDir,
+  onHandDriven,
 }: {
   outcome: StartOutcomePayload | SendOutcomePayload;
   projectDir: string;
+  onHandDriven: () => void;
 }) {
   if (outcome.kind === "cliNotFound") {
     return (
@@ -419,6 +675,14 @@ function OutcomeNotice({
           and this screen keeps rendering whatever lands in{" "}
           <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span>.
         </span>
+        {/* T-029 criterion 4: the typed not-found becomes the MODE, not
+            just an apology. The prompt is assembled by the same Rust
+            function the spawn uses, over a kit really on disk. */}
+        <div className="flex items-center gap-2.25">
+          <Button data-testid="interview-cli-hand-driven" onClick={onHandDriven}>
+            Show me the prompt
+          </Button>
+        </div>
       </div>
     );
   }
@@ -454,7 +718,13 @@ function noticeSentence(outcome: StartOutcomePayload | SendOutcomePayload): stri
     case "alreadyPlanned":
       return `${outcome.path} already exists — this folder has a plan.`;
     case "resumeAvailable":
-      return `a planner session is already recorded here (${outcome.turns} turns, session ${outcome.nativeSessionId}). Resuming it is T-029's; nothing has been lost.`;
+      // Rendered by its own block above; this arm exists so the switch
+      // stays exhaustive rather than falling through to a bare kind.
+      return `a planner session is already recorded here (${outcome.turns} turns).`;
+    case "sessionIdRejected":
+      return outcome.why;
+    case "nothingToResume":
+      return "there is no saved session to pick up — start the interview instead.";
     case "staleProject":
       return `the running session belongs to ${outcome.sessionProject}, not the folder now open.`;
     case "unsupportedVersion":

@@ -378,7 +378,17 @@ describe("the crescendo, from a scaffold to a board (criteria 1, 2, 3, 5)", () =
     const commandsAfter = ipc.invoke.mock.calls.map((call) => call[0] as string);
     expect(commandsAfter.filter((c) => c.includes("open"))).toEqual([]);
     expect(new Set(commandsAfter)).toEqual(
-      new Set(["docs_snapshot", "genesis_status", "pick_genesis_folder", "genesis_start"]),
+      new Set([
+        "docs_snapshot",
+        "genesis_status",
+        "pick_genesis_folder",
+        "genesis_start",
+        // T-029: the chat pulls its rehydration on arrival, so a restart
+        // mid-interview shows the conversation instead of an empty log.
+        // It is a READ of a losable runtime file — not part of the
+        // handoff, which is still a pure phase move.
+        "genesis_transcript",
+      ]),
     );
   });
 });
@@ -476,22 +486,35 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     return [...found].sort();
   }
 
-  it("the frontend reaches exactly the nine commands it reached before", () => {
-    // The whole set, spelled out: a tenth would fail this line by name,
-    // and so would a rename. `pick_project_folder` / `pick_genesis_folder`
-    // / `start_genesis_here` go through one call site with a variable, so
-    // they are asserted against the Rust handler below instead.
+  it("the frontend reaches exactly the ten commands it is allowed", () => {
+    // The whole set, spelled out: an eleventh would fail this line by
+    // name, and so would a rename. `pick_project_folder` /
+    // `pick_genesis_folder` / `start_genesis_here` go through one call
+    // site with a variable, so they are asserted against the Rust handler
+    // below instead.
+    //
+    // T-029 ADDS FOUR, and they are the reason it needed any: a resume
+    // that respawns the recorded native session, the fresh session that
+    // takes over when it will not, the transcript rehydration, and the
+    // hand-driven mode's assembled prompt. Every one takes ZERO
+    // arguments — the session id they act on is read Rust-side out of
+    // `.nputer/sessions.json` through its own gate and never crosses the
+    // boundary in either direction.
     expect(frontendCommands()).toEqual([
       "docs_snapshot",
       "genesis_cancel",
+      "genesis_fresh",
+      "genesis_kickoff",
+      "genesis_resume",
       "genesis_send_turn",
       "genesis_start",
       "genesis_status",
+      "genesis_transcript",
       "index_repo",
     ]);
   });
 
-  it("Rust exposes exactly nine commands, and T-028 added none", () => {
+  it("Rust exposes exactly thirteen commands, and T-029 added four", () => {
     const lib = readFileSync(resolve("src-tauri/src/lib.rs"), "utf8");
     const handler = /invoke_handler\(tauri::generate_handler!\[([\s\S]*?)\]\)/.exec(lib);
     expect(handler, "the handler list must be findable").not.toBeNull();
@@ -502,9 +525,13 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     expect(names.sort()).toEqual([
       "docs_snapshot",
       "genesis_cancel",
+      "genesis_fresh",
+      "genesis_kickoff",
+      "genesis_resume",
       "genesis_send_turn",
       "genesis_start",
       "genesis_status",
+      "genesis_transcript",
       "index_repo",
       "pick_genesis_folder",
       "pick_project_folder",

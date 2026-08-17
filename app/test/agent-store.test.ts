@@ -195,6 +195,9 @@ describe("single-flight and outcomes", () => {
       kind: "resumeAvailable",
       nativeSessionId: "abc",
       turns: 4,
+      // T-047-s3: through the registry's READ boundary. `null` means both
+      // "no model recorded" and "recorded, but not a usable name".
+      model: "claude-opus-5",
     });
     expect(resume.lastOutcome).toMatchObject({ kind: "resumeAvailable", turns: 4 });
 

@@ -294,6 +294,22 @@ pub struct TranscriptLine {
     pub role: String,
     pub text: String,
     pub at_ms: u64,
+    /// T-029: this half-turn was ASSEMBLED BY THE APP, not typed by the
+    /// human — a kickoff, or a resume nudge.
+    ///
+    /// It rides `role: "user"` because it genuinely is the user half of
+    /// the protocol (the planner is answering it), and the transcript
+    /// stays a complete protocol record. But a rehydrated chat must not
+    /// draw "You are the planner. KIT ROOT: …" in the user's own bubble,
+    /// and the alternative — recognising machine text by reading it — is
+    /// exactly the classify-by-string this project bans everywhere else.
+    /// So it is a TYPED FIELD.
+    ///
+    /// `default` on read, omitted on write when false: a transcript from
+    /// a pre-T-029 build parses unchanged, and its turn-1 kickoff is
+    /// already skipped by the chat's own `turn >= 2` rule.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub machine: bool,
 }
 
 /// Append one half-turn. Deltas are NEVER cached here — only the final
@@ -589,12 +605,24 @@ mod tests {
         let t = TempTree::new("transcript");
         append_transcript(
             &t.0,
-            &TranscriptLine { turn: 1, role: "user".into(), text: "hello".into(), at_ms: 7 },
+            &TranscriptLine {
+                turn: 1,
+                role: "user".into(),
+                text: "hello".into(),
+                at_ms: 7,
+                machine: false,
+            },
         )
         .expect("user line");
         append_transcript(
             &t.0,
-            &TranscriptLine { turn: 1, role: "planner".into(), text: "hi".into(), at_ms: 9 },
+            &TranscriptLine {
+                turn: 1,
+                role: "planner".into(),
+                text: "hi".into(),
+                at_ms: 9,
+                machine: false,
+            },
         )
         .expect("planner line");
 
@@ -612,7 +640,13 @@ mod tests {
         let huge = "x".repeat(TRANSCRIPT_TEXT_CAP + 5_000);
         append_transcript(
             &t.0,
-            &TranscriptLine { turn: 2, role: "planner".into(), text: huge, at_ms: 11 },
+            &TranscriptLine {
+                turn: 2,
+                role: "planner".into(),
+                text: huge,
+                at_ms: 11,
+                machine: false,
+            },
         )
         .expect("huge line");
         let lines = read_transcript(&t.0);

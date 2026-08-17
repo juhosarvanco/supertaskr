@@ -8,11 +8,16 @@
 //! exactly `core:default` — `std::process` is not a plugin, so there is
 //! nothing to grant.
 //!
-//! Four commands, three of them zero-argument:
+//! EIGHT commands since T-029, seven of them zero-argument:
 //! `genesis_start` · `genesis_send_turn(text)` · `genesis_status` ·
-//! `genesis_cancel`. The user's typed answer is the ONLY webview-supplied
-//! datum anywhere in this module, and it travels as data on the child's
-//! stdin — never interpolated into a command line, never in argv.
+//! `genesis_cancel` · `genesis_resume` · `genesis_fresh` ·
+//! `genesis_transcript` · `genesis_kickoff`. The user's typed answer is
+//! STILL the ONLY webview-supplied datum anywhere in this module, and it
+//! travels as data on the child's stdin — never interpolated into a
+//! command line, never in argv. T-029's four additions take no arguments
+//! at all: the session id they resume from is read Rust-side out of
+//! `.nputer/sessions.json` through its own gate, so no id crosses the
+//! boundary in either direction.
 //!
 //! Module layout follows the `index_cmd` seam precedent: everything the
 //! Tauri commands do lives in `pub fn`s minus the Tauri runtime, so cargo
@@ -352,6 +357,7 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
             role: "user".into(),
             text: prompt.clone(),
             at_ms: now_ms(),
+            machine: true,
         },
     );
 
@@ -433,7 +439,13 @@ pub fn resume_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
     let prompt = kit::assemble_resume_nudge(&project_dir);
     let _ = sessions::append_transcript(
         &project_dir,
-        &TranscriptLine { turn, role: "user".into(), text: prompt.clone(), at_ms: now_ms() },
+        &TranscriptLine {
+            turn,
+            role: "user".into(),
+            text: prompt.clone(),
+            at_ms: now_ms(),
+            machine: true,
+        },
     );
     spawn_turn(
         agent,
@@ -529,7 +541,13 @@ pub fn fresh_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
     let prompt = kit::assemble_kickoff_for(&project_dir);
     let _ = sessions::append_transcript(
         &project_dir,
-        &TranscriptLine { turn: 1, role: "user".into(), text: prompt.clone(), at_ms: now_ms() },
+        &TranscriptLine {
+            turn: 1,
+            role: "user".into(),
+            text: prompt.clone(),
+            at_ms: now_ms(),
+            machine: true,
+        },
     );
     spawn_turn(agent, cli, TurnRequest { project_dir, prompt, resume: None, turn: 1 }, flight);
     StartOutcome::Started { turn: 1 }
@@ -673,6 +691,8 @@ pub fn send_turn(watch: &WatchState, agent: &AgentState, text: String) -> SendOu
             role: "user".into(),
             text: text.clone(),
             at_ms: now_ms(),
+            // The human typed this one.
+            machine: false,
         },
     );
 
@@ -760,6 +780,7 @@ fn spawn_turn(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flight: Tu
                     role: "planner".into(),
                     text: text.clone(),
                     at_ms: now_ms(),
+                    machine: false,
                 },
             );
         }

@@ -850,6 +850,7 @@ fn the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not() {
                 role: "user".into(),
                 text: format!("churn {turn}"),
                 at_ms: 0,
+                machine: false,
             },
         )
         .expect("transcript");
@@ -1766,8 +1767,21 @@ fn an_app_restart_mid_interview_resumes_the_recorded_session_off_disk() {
     // wrote nothing under docs/ to get them.
     let lines = agent::transcript(&app.watch);
     assert!(lines.len() >= 2, "the transcript rehydrates: {lines:#?}");
-    assert!(lines.iter().any(|l| l.role == "planner" && l.turn == 1));
-    assert!(lines.iter().any(|l| l.role == "user" && l.turn == 1));
+    let planner = lines.iter().find(|l| l.role == "planner" && l.turn == 1).expect("planner half");
+    assert!(!planner.machine, "the planner's own answer is not app-assembled");
+    // THE APP-ASSEMBLED HALVES ARE MARKED, never recognised by reading
+    // them. Turn 1's kickoff and the resume nudge both ride
+    // `role: "user"` — they genuinely are the user half of the protocol —
+    // so a rehydrated chat needs a TYPED way to keep "You are the
+    // planner. KIT ROOT: …" out of the human's own bubble.
+    let kickoff = lines.iter().find(|l| l.role == "user" && l.turn == 1).expect("user half");
+    assert!(kickoff.machine, "the kickoff is app-assembled: {:?}", kickoff.text);
+    let nudge = lines.iter().find(|l| l.role == "user" && l.turn == 2).expect("resume nudge");
+    assert!(nudge.machine, "so is the resume nudge: {:?}", nudge.text);
+    // …and it survives the round trip through the file, which is where
+    // the serde default has to hold.
+    let raw = fs::read_to_string(sessions::transcript_path(&h.project)).expect("jsonl");
+    assert!(raw.contains("\"machine\":true"), "written, not inferred: {raw}");
     assert!(!h.project.join("docs").exists(), "the app is a lens; the planner writes docs/");
 }
 
