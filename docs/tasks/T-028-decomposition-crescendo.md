@@ -80,4 +80,30 @@ screenshots.
 
 ## Implementation notes
 
+### Confirmation of the task (CLAUDE.md, before anything was touched)
+
+T-028 is the interview's last act, and it is composition rather than new
+capability: when task files start landing under `docs/tasks/` during a
+genesis run the right half of T-027's split stops being T-024's lens and
+becomes the REAL board — the existing `Board` components mounted
+read-only, with one motion-safe entrance transition so cards visibly rain
+in as files land; when the planner's last turn has landed, no turn is in
+flight and a PARSEABLE board is on disk, the right half renders a
+completion state carrying the local, display-only elapsed time and ONE
+CTA that lands the user in the board pane on the new project with the
+rail restored (no dispatch affordance — F-04 is fenced); while genesis
+runs, an elapsed indicator renders with zero new IPC and zero telemetry,
+asserted mechanically rather than claimed; a planner that ends with no
+tasks, or with every task file failing to parse, gets NO completion state
+at all — the view stays in-interview on the honest artifacts state and
+the existing parse-chip family, because planning theater is the named
+failure mode; reduced motion drops the entrance transition; and the
+folded T-027-s1 defect is fixed at its root — the answer box records
+whether it HELD focus at submit time and takes focus back on the falling
+edge of in-flight, never stealing it from somewhere the user moved it,
+with `interview.spec.ts`'s `not.toBeFocused()` tripwire INVERTED and its
+compensating re-click deleted. Board files stay byte-untouched, the
+webview grant set stays at 92, no new dependency is added, and no model
+call happens anywhere.
+
 ## Verdicts

@@ -412,6 +412,32 @@ export function reducePickOutcome(
 }
 
 /**
+ * T-028: the genesis handoff — the interview's own project, on the board.
+ *
+ * A SCREEN CHANGE, NOT A PROJECT CHANGE, and that distinction is the
+ * whole reason this is four lines of local state rather than a command.
+ * The folder the interview has been writing into IS the watched project:
+ * Rust armed the watcher on it at the genesis switch, every snapshot
+ * since has come from it, and `applyDocsPayload` has been feeding the
+ * same model the board renders. So there is nothing to open, nothing to
+ * re-arm, nothing to re-read and nobody to ask. Moving the phase is the
+ * entire operation — which is why criterion 3's "zero new IPC" is a
+ * property of the design here and not a promise about it.
+ *
+ * Pure and exported for its own test (the `reducePickOutcome` idiom):
+ * returns `prev` BY IDENTITY when there is nothing to hand over — a
+ * phase that is not `genesis`, or a genesis project no snapshot has ever
+ * been applied for, which would land the user on a board with nothing on
+ * it. The rail comes back on its own: `App` renders it for screen
+ * `board`, and `selectScreen` gives phase `open` exactly that.
+ */
+export function openBoardFromGenesis(prev: ShellState): ShellState {
+  if (prev.phase !== "genesis") return prev;
+  if (prev.docs.projectDir === "") return prev;
+  return { ...prev, phase: "open", genesisDir: null, rejectedPick: null };
+}
+
+/**
  * T-042 criterion 3: did a REAL SNAPSHOT produce this outcome's model?
  *
  * The `model-updated` echo exists to report what the frontend PARSED out
@@ -878,6 +904,20 @@ function commitPickOutcome(outcome: PickOutcomePayload): void {
   if (next.docs !== before.docs && outcomeCarriesSnapshot(outcome)) {
     sendEcho(next.docs);
   }
+}
+
+/**
+ * T-028's ONE CTA: leave the interview for the board it just produced.
+ * The live half of `openBoardFromGenesis` — the pure reducer, the
+ * identity check, the notify, and nothing else. No `invoke`, no event,
+ * no boundary; a browser can run this, which is why the lane can click
+ * the real button instead of simulating it.
+ */
+export function openGenesisBoard(): void {
+  const next = openBoardFromGenesis(shell);
+  if (next === shell) return;
+  shell = next;
+  for (const callback of listeners) callback();
 }
 
 /** Dismiss a rejected pick and return to whatever was open before. */

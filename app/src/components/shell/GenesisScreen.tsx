@@ -1,4 +1,6 @@
 import { Component, type ReactNode } from "react";
+import { BoardCrescendo } from "@/genesis/BoardCrescendo";
+import { showsBoard } from "@/genesis/crescendo";
 import { GenesisPane } from "@/genesis/GenesisPane";
 import { InterviewChat } from "@/genesis/InterviewChat";
 import type { DocsModelState } from "@/lib/docs-model";
@@ -44,11 +46,35 @@ import type { DocsModelState } from "@/lib/docs-model";
 export function GenesisScreen({
   projectDir,
   docs,
+  onOpenBoard,
 }: {
   projectDir: string;
   docs: DocsModelState;
+  /** T-028: the genesis→board handoff, owned by the shell and passed
+   * through. It is a SCREEN change and not a project change — the
+   * interview's folder is already the watched one — so it is a plain
+   * function call with no boundary crossing of any kind. */
+  onOpenBoard: () => void;
 }) {
   const fileCount = docs.fileCount;
+  // T-028 criterion 1, and the ONE decision this screen makes: which
+  // renderer the right half gets. Derived from the docs tree ALONE
+  // through one pure call, so this file keeps the properties its header
+  // promises — no subscription, no clock, no boundary. Everything that
+  // needs the interview's own state lives inside `BoardCrescendo`.
+  //
+  // FILE EVIDENCE ONLY, and the consequence is deliberate: the board
+  // appears because task files PARSED, never because a turn said so. A
+  // human hand-driving the method in a terminal (ADR-006) gets exactly
+  // the same crescendo as the spawned planner, because the screen is
+  // reading the disk and not the dialogue.
+  //
+  // `showsBoard` rather than `boardReadiness(...).showBoard` because THIS
+  // CALL SITE IS OUTSIDE THE BOUNDARY BELOW — a throw here unmounts the
+  // whole tree, interview included. See the note on `showsBoard`, which
+  // is where that argument lives; it was found by T-037's own hostile
+  // probe rather than by reading this line.
+  const half = showsBoard(docs) ? "board" : "lens";
   return (
     // T-048 — `min-h-0` is the link that makes the chain a chain. The
     // shell bounds this screen's column at `h-screen` (App.tsx), the slot
@@ -106,10 +132,22 @@ export function GenesisScreen({
             border and no radius. */}
         <div
           data-testid="genesis-pane-slot"
+          data-half={half}
           className="hidden min-h-0 min-w-0 flex-1 lg:flex lg:flex-col"
         >
+          {/* T-028: the same slot, the same boundary, one of two
+              renderers. The boundary WIDENS to cover the board half
+              rather than being bypassed by it — mounting the board here
+              puts it on the interview's critical path for the first
+              time, which is the exact condition T-037's guard exists
+              for, and a crash in the right half must still cost the
+              right half only. */}
           <GenesisPaneBoundary resetKey={docs.seq}>
-            <GenesisPane docs={docs} />
+            {half === "board" ? (
+              <BoardCrescendo docs={docs} onOpenBoard={onOpenBoard} />
+            ) : (
+              <GenesisPane docs={docs} />
+            )}
           </GenesisPaneBoundary>
         </div>
       </div>

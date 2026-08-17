@@ -49,6 +49,7 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
+  opened = [];
 });
 
 afterEach(() => {
@@ -76,6 +77,39 @@ function walk(dir: string, prefix: string): DocsFilePayload[] {
 const fixtureTree = (name: string): DocsFilePayload[] =>
   walk(join(FIXTURES, name, "docs"), "docs");
 
+/**
+ * T-028 RECONCILE — WHY MOST OF THIS FILE NOW READS `midInterview()`.
+ *
+ * T-028 makes the right half switch from T-024's lens to the REAL board
+ * the moment task files parse, so the streak tree — a FINISHED plan with
+ * three task files in it — no longer renders the lens at all. That is the
+ * task, not a regression, so the lens's assertions move to the tree they
+ * were always really about: the same harvested tree ONE TURN BEFORE
+ * decomposition, which is the state a mid-interview genesis is actually
+ * in when the lens is on screen.
+ *
+ * NOTHING IS LOOSENED and nothing is dropped. Every assertion below is
+ * the same assertion with its numbers re-derived from the smaller tree
+ * (9 files → 6, 9 artifact rows → 7, stage ~8 → ~7), and the full streak
+ * tree keeps its own coverage in the T-028 block at the bottom of this
+ * file, where it now proves the SWITCH. The subtraction is mechanical —
+ * `docs/tasks/` and nothing else — and it is checked rather than assumed:
+ * a fixture that stops carrying exactly three task files fails loudly
+ * here instead of silently changing what these tests mean.
+ */
+function midInterview(): DocsFilePayload[] {
+  const all = fixtureTree("streak");
+  const kept = all.filter((f) => !f.path.startsWith("docs/tasks/"));
+  if (all.length - kept.length !== 3) {
+    throw new Error(
+      `expected exactly 3 files under docs/tasks/ in the streak fixture, found ` +
+        `${all.length - kept.length} — the fixture moved; reconcile these ` +
+        "numbers rather than loosening them.",
+    );
+  }
+  return kept;
+}
+
 // Distinct seq range from the other suites (vitest isolates files; belt
 // to suspenders, like genesis-pane-dom's 7000 base).
 let nextSeq = 9000;
@@ -93,9 +127,21 @@ const qa = (selector: string): HTMLElement[] => [
   ...container.querySelectorAll<HTMLElement>(selector),
 ];
 
+/** Every CTA press this file records, in order. T-028's handoff is a
+ * plain function the shell owns; the screen only passes it through, so
+ * what a test can prove here is that it reaches the button and nothing
+ * else fires it. */
+let opened: number[] = [];
+
 function renderScreen(docs: DocsModelState): void {
   act(() => {
-    root.render(<GenesisScreen projectDir="/tmp/sketchpad" docs={docs} />);
+    root.render(
+      <GenesisScreen
+        projectDir="/tmp/sketchpad"
+        docs={docs}
+        onOpenBoard={() => opened.push(docs.seq)}
+      />,
+    );
   });
 }
 
@@ -106,7 +152,7 @@ const row = (path: string): HTMLElement | null =>
 
 describe("the lens is mounted in the screen's marked slot (criterion 1)", () => {
   it("the pane renders inside genesis-pane-slot, and the placeholder line is gone", () => {
-    renderScreen(docsState(fixtureTree("streak")));
+    renderScreen(docsState(midInterview()));
 
     const slot = q("[data-testid=genesis-pane-slot]");
     expect(slot).not.toBeNull();
@@ -140,13 +186,16 @@ describe("the lens is mounted in the screen's marked slot (criterion 1)", () => 
   });
 
   it("the pane reads the same watched state the screen was handed", () => {
-    const docs = docsState(fixtureTree("streak"));
+    const docs = docsState(midInterview());
     renderScreen(docs);
     // The screen's own attribute and the pane's own header agree, and
     // both agree with the DocsModelState the shell passed in.
-    expect(docs.fileCount).toBe(9);
-    expect(q("[data-testid=genesis-screen]")?.getAttribute("data-genesis-files")).toBe("9");
-    expect(q("[data-testid=genesis-file-count]")?.textContent).toBe("docs/ · 9 files written");
+    // T-028 RECONCILE: 9 → 6, the three task files subtracted (see
+    // `midInterview`). The claim — screen attribute, pane header and the
+    // handed-in state all agreeing — is untouched.
+    expect(docs.fileCount).toBe(6);
+    expect(q("[data-testid=genesis-screen]")?.getAttribute("data-genesis-files")).toBe("6");
+    expect(q("[data-testid=genesis-file-count]")?.textContent).toBe("docs/ · 6 files written");
 
     // A new snapshot on the same prop path moves the pane — the seam
     // carries updates, it does not snapshot once at mount.
@@ -182,7 +231,7 @@ describe("the lens is mounted in the screen's marked slot (criterion 1)", () => 
 
 describe("the pane's own content renders through the screen (criterion 4)", () => {
   it("docs present: north-star card, backbone grid and artifact rows, not a placeholder", () => {
-    renderScreen(docsState(fixtureTree("streak")));
+    renderScreen(docsState(midInterview()));
 
     // North-star card with its parsed title sentence and chips.
     const card = q("[data-testid=genesis-north-star]")!;
@@ -208,17 +257,34 @@ describe("the pane's own content renders through the screen (criterion 4)", () =
     expect(cells[0]?.textContent).toContain("F-01");
     expect(cells[0]?.textContent).toContain("Log");
 
-    // Artifact rows: every file written, with the ✓ disc on them.
+    // Artifact rows, with the ✓ disc on the written ones.
+    //
+    // T-028 RECONCILE: 9 rows → 7, and the "every row is written" line
+    // becomes a per-row list. Both moves come from the same subtraction:
+    // three written task rows leave, and the banking map's `docs/tasks/
+    // T-*.md` PLACEHOLDER row takes their place — which is the honest
+    // shape of a tree one turn before decomposition, and a strictly more
+    // specific assertion than the boolean it replaces.
     const rows = qa("[data-testid=genesis-artifact]");
-    expect(rows).toHaveLength(9);
-    expect(rows.every((r) => r.getAttribute("data-status") === "written")).toBe(true);
+    expect(rows.map((r) => [r.getAttribute("data-path"), r.getAttribute("data-status")])).toEqual([
+      ["docs/STATE.md", "written"],
+      ["docs/NORTH_STAR.md", "written"],
+      ["docs/decisions/001-stack.md", "written"],
+      ["docs/CONVENTIONS.md", "written"],
+      ["docs/ROADMAP.md", "written"],
+      ["docs/tasks/T-*.md", "expected"],
+      ["docs/ARCHITECTURE.md", "written"],
+    ]);
     expect(row("docs/NORTH_STAR.md")?.querySelector("svg circle")).not.toBeNull();
 
-    // And the footer the banking map drives.
+    // And the footer the banking map drives. T-028 RECONCILE: stage ~8 →
+    // ~7, because decomposition has not happened on this tree — and the
+    // next line is now the design's own crescendo sentence, which is a
+    // pleasing coincidence rather than a new assertion.
     expect(q("[data-testid=genesis-next]")?.textContent).toBe(
-      "Milestone 1 decomposed — the board is live.",
+      "Next: decomposition — cards rain into the board.",
     );
-    expect(q("[data-testid=genesis-stage]")?.textContent).toBe("stage ~8 · decomposition");
+    expect(q("[data-testid=genesis-stage]")?.textContent).toBe("stage ~7 · first slice");
   });
 
   it("a mid-interview tree renders its expected rows as placeholders, not as absence", () => {
@@ -266,12 +332,12 @@ describe("a throwing pane cannot take the screen down (criterion 5)", () => {
     // assert the boundary's own log line at the same time.
     const logged = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    const good = docsState(fixtureTree("streak"));
+    const good = docsState(midInterview());
     renderScreen(good);
     expect(q("[data-testid=genesis-pane]")).not.toBeNull();
 
     // The pane throws on the next snapshot.
-    renderScreen(hostileState(docsState(fixtureTree("streak"), good)));
+    renderScreen(hostileState(docsState(midInterview(), good)));
 
     // The app is still standing: the screen, the OTHER HALF OF THE SPLIT
     // and the slot all render — only the pane's subtree was replaced.
@@ -309,9 +375,44 @@ describe("a throwing pane cannot take the screen down (criterion 5)", () => {
   });
 
   it("the guard is inert on the healthy path", () => {
-    renderScreen(docsState(fixtureTree("streak")));
+    renderScreen(docsState(midInterview()));
     expect(q("[data-testid=genesis-pane-failed]")).toBeNull();
-    expect(q("[data-testid=genesis-file-count]")?.textContent).toBe("docs/ · 9 files written");
+    expect(q("[data-testid=genesis-file-count]")?.textContent).toBe("docs/ · 6 files written");
+  });
+
+  /**
+   * T-028 — THE DEFECT THIS PROBE FOUND, kept where it was found.
+   *
+   * T-028 makes the screen CHOOSE a renderer, and that choice reads the
+   * docs tree from the screen's own render body — which is OUTSIDE the
+   * boundary below. A tree hostile enough to throw on `effective` would
+   * therefore have thrown one level too high and taken the whole React
+   * tree with it, interview included: the exact failure the boundary
+   * exists to prevent, reintroduced by the code deciding what to put
+   * inside it. Found by running this file's existing Proxy against the
+   * new screen, not by reading the diff.
+   *
+   * The fix degrades to the LENS (`showsBoard` catches), so the boundary
+   * gets its usual chance and the fallback renders. What this test adds
+   * beyond the one above is the ORDER: the tree that throws here has task
+   * files in it, so an unguarded screen would have taken the board route
+   * and died before the boundary was ever reached.
+   */
+  it("a tree that throws while the SCREEN is choosing a renderer is still caught", () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    const good = docsState(fixtureTree("streak"));
+    renderScreen(good);
+    // The full streak tree parses three tasks, so the board half is the
+    // one on screen — this is the route the hostile state will take.
+    expect(q("[data-testid=genesis-board]"), "the board half is up").not.toBeNull();
+
+    renderScreen(hostileState(docsState(fixtureTree("streak"), good)));
+
+    expect(q("[data-testid=genesis-screen]"), "the app is still standing").not.toBeNull();
+    expect(q("[data-testid=interview-chat]"), "the conversation is untouched").not.toBeNull();
+    expect(q("[data-testid=genesis-pane-failed]")).not.toBeNull();
+    expect(q("[data-testid=genesis-board]"), "and the board half stood down").toBeNull();
+    expect(logged).toHaveBeenCalled();
   });
 });
 
@@ -338,6 +439,10 @@ describe("the built bundle carries the lens (criterion 2)", () => {
     "src/components/shell/GenesisScreen.tsx",
     "src/genesis/GenesisPane.tsx",
     "src/genesis/genesis-derive.ts",
+    // T-028: the other half of what this slot can render. A bundle older
+    // than the crescendo is stale evidence about the crescendo.
+    "src/genesis/BoardCrescendo.tsx",
+    "src/genesis/crescendo.ts",
   ];
 
   function bundles(): string[] {
@@ -386,6 +491,19 @@ describe("the built bundle carries the lens (criterion 2)", () => {
       "genesis-assumption-badge",
       "grows as you answer",
       "plain markdown, in your repo",
+    ]) {
+      expect(has(probe), `"${probe}" must reach the shipped bundle`).toBe(true);
+    }
+    // T-028: and the OTHER renderer the slot can carry. Same argument,
+    // same failure mode — a crescendo nothing imports would be absent
+    // from the shipped JS and this file is where that was caught before.
+    for (const probe of [
+      "the board, so far",
+      "genesis-board-rain",
+      "genesis-complete",
+      "genesis-open-board",
+      "The board is ready.",
+      "board-rain",
     ]) {
       expect(has(probe), `"${probe}" must reach the shipped bundle`).toBe(true);
     }
