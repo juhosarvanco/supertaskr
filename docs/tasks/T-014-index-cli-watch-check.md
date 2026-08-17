@@ -9,10 +9,10 @@ status: building
 blocked_by: [T-009]
 touches: [crate-index]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: "claude-opus-5 @fresh"
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 Absorbs: T-009-s1 (ratified as the interim integrator rule in
@@ -699,3 +699,305 @@ outside this fence — so the honest reading is:
   during a cargo build; the cheap close.
 
 ## Verdicts
+
+2026-08-17 — claude-opus-5 @fresh (verifier, same-model review):
+**APPROVED**. All four criteria reproduced independently; the fork
+question is RULED (the join stays, narrowed as built — but its safety
+argument is overstated and the exception is reproducible, filed as
+T-014-s6). Three new suggestions: **T-014-s6**, **T-014-s7**,
+**T-014-s8**. Machine: macOS 26.6 (Darwin 25.6.0), rustc/cargo 1.95.0,
+node 22.22.0. Headless. No model call. Port 1420 never bound, contacted
+or signalled; my scratch ports were **14533** (boot gate) and **14534**
+(e2e lane), both released.
+
+**Branch-point truth, verified first.** `git merge-base HEAD main` =
+`5927adc`; main has since moved to `be182ce` (T-030's checkpoint). Every
+number below is measured against `5927adc`, not today's main. The
+dispatch's stated app baseline (507+) is stale: the branch point is
+**535**, as the notes say.
+
+**THE FORK QUESTION, RULED.** I attacked the equivalence rather than
+re-reading the claim. A differential harness ran both engines — Rust
+through `arch::model()`, TypeScript through `parseProjectFromFiles` +
+`deriveArchitecture` — over identical trees, dumping the same fact
+shape and diffing.
+
+- *Against the live registry and the committed 92-file graph:* **252
+  fact lines byte-identical**, which is a strictly stronger claim than
+  the notes make. Not counts — the complete fact set: all **92**
+  file→component assignments, all **28** relation rows in order with
+  every observed count (13 confirmed / 6 undeclared / 9 planned), all
+  **100** observed file edges including every `p:@nputer/parser`
+  annotation, all **9** finding ids in order (6 D1 + 3 D3), all **22**
+  D1 file edges, unmapped `[]` on both sides, 6 drift components. The
+  mapping counts reproduce exactly: C-05 42, C-06 21, C-08 10, C-09 3,
+  C-10 2, C-12 11, C-13 2, C-14 1.
+- *Against ten hostile fixtures built to break it* — overlapping globs,
+  one file claimed by two components, numeric-vs-lexical id order
+  (`C-09` must beat `C-100`), a component owning nothing, a `depends_on`
+  cycle, duplicate and self `depends_on`, negation with last-match-wins,
+  the package.path seam with an unowned package dir, unanchored /
+  dir-only / subtree-claim patterns, unicode and `//` path segments —
+  **eight of ten identical, line for line.**
+
+The two that were not are the ruling:
+
+1. **`f03` empty registry** — Rust exits **3** ("holds no *.md files");
+   TypeScript degrades to inferred mode (`dir:src`). Not a defect: the
+   module header names the inferred mode as explicitly out of scope, and
+   exit 3 is the documented refusal. **Correct as built.**
+2. **Quoted YAML escapes — a genuine silent disagreement.**
+   `registry.rs::unquote` strips quotes without processing escapes;
+   @nputer/parser processes them. `paths: - "app/emoji-\U0001F600/**"`
+   is read as a literal backslash-U by one engine and as `😀` by the
+   other, **both exit 0**, and the file lands in different components. I
+   drove it to the gate: `arch drift --fail-on unmapped` exits **1**
+   with a D2 on a repo the TypeScript engine maps cleanly with **no
+   findings**. Two more of the same family: a duplicate `paths:` key
+   (Rust MERGES the lists, exit 0; @nputer/parser rejects the record)
+   and a tab-indented list item (Rust accepts, exit 0; @nputer/parser
+   rejects). In those two the polarity inverts — the hardened parser
+   refuses and the second reader guesses, and the TS refusal is the loud
+   one (it reds the parser smoke test and lights the board's parse-error
+   badge) while the Rust gate prints a clean table.
+
+   So the notes' load-bearing sentence — "this one either reads the same
+   facts or stops the gate (exit 3)" — **is not exact**. Filed as
+   **T-014-s6** with the reproduction and a three-refusal close that
+   restores the property without implementing YAML (which would be the
+   fork ADR-015 forbids). Checked mechanically: none of the three
+   triggers occurs in any of the eleven live component files, so this is
+   latent, not current.
+
+**The ruling itself.** The narrowing IS genuine and the criterion could
+not be met without something like it: no rollups, no task join, no
+provenance, no ADR-016 marks, no inferred mode, `status=` copied
+verbatim — I confirmed each by reading the join and by the fixtures
+above. `arch` reads the committed graph and never writes (re-verified:
+a source file added after the index does not move the report, and the
+graph's bytes are unchanged). Given criterion 2's plain words and
+ADR-014's own "`nputer arch` greps it", this is the narrowest build that
+leaves no criterion unbuilt, and filing the tension as T-014-s1 rather
+than deciding it unilaterally is the right call. **ADR-015 does need an
+addendum, not an amendment to the criterion** — the ADR's stated fear is
+"a second frontmatter parser in Rust would fork the format", and s6 is
+that fear reproduced in miniature. The addendum should say what the
+reality-side reader may do (mapping, observed edges, D1–D5) and bind it
+to the refusal discipline s6 describes. That is the architect's call on
+s1; my evidence sharpens it rather than pre-empting it.
+
+**C1 — the binary.** `[[bin]] nputer-index`, 19-line shim, all logic in
+the lib. `index` / `index --check` / `index --watch`, and `--check` /
+`--watch` accepted at top level. Zero Node code; zero `.ts/.js/package
+.json/lockfile` outside the two fixture repos (which are indexer input).
+
+**C2 — `arch` / `arch drift`, and the exit-code contract.** One record
+per line, leading keyword, fixed field order; `grep '^component'`,
+`'^edge'`, `'^finding'`, `'^summary'`, `'^verdict'` each yield a clean
+table. **All four codes reached and distinct across 16 probes** (5×0,
+2×1, 5×2, 4×3). The 1-vs-3 separation is real and is the T-046 lesson
+kept: invalid root, no committed graph, no registry, and a registry it
+refuses to guess at are all **3**, never 1 — a deleted `components/`
+directory cannot read as ordinary drift. The legend is in `--help`, in
+`cli.rs`'s module doc, and in the drafted CONVENTIONS block.
+
+**C3 — severity gates its OWN rule.** The builder's two "sharp rows" are
+right, and I widened them to a full matrix on fixtures I built:
+
+| fixture | rules present | undeclared | unmapped | any | none |
+|---|---|---|---|---|---|
+| D1 only | D1 D1 | **1** | 0 | 1 | 0 |
+| D2 only | D2 | 0 | **1** | 1 | 0 |
+| D3 only | D3 | 0 | 0 | **1** | 0 |
+| D5 only | D5 D5 | 0 | 0 | **1** | 0 |
+| no findings | — | 0 | 0 | 0 | 0 |
+| shipped `gate-repo` | D1 D2 D3 D5 | 1 | 1 | 1 | — |
+| shipped `clean-repo` | — | 0 | 0 | 0 | — |
+
+`arch drift` with no `--fail-on` is 0 even with four findings present —
+reporting and gating are different jobs, and that is right.
+
+**C4 — convergence, re-derived and then attacked harder.** My run of
+`tests/watch.rs`: 40 app-side writes (1 reported a byte change) + 40
+binary runs interleaved, **12,018 reads, 0 mismatched, 0 empty**, graph
+1,563 bytes; watcher + app writer **converged 1 ms** after the last app
+write; startup index 427 ms, source change → graph 105 ms at
+`--debounce-ms 100`. Three attacks the task did not run:
+
+- **SIGKILL mid-write, 40 rounds** on the real 396 KB graph: complete-old
+  10, complete-new 30, **torn 0, invalid-JSON 0, stray temp files 0**.
+- **8 concurrent binaries on one root**, in-process reader: **612 reads,
+  0 torn, 0 empty, exactly 2 distinct states observed** (the complete
+  old inode and the complete new one). Final bytes == a fresh index;
+  `--check` after the race exits 0.
+- **`--watch` live while an external writer stamped the OLD bytes back
+  over its output six times**: converged, `--check` exits 0, 0 strays,
+  and the log shows the loop terminating properly (`2 change(s), none
+  indexable - graph untouched`) rather than chasing its own write.
+- A hand-planted leftover temp (`.graph.json.tmp-99999`, invalid JSON) is
+  inert: `index --check` 0, `arch` 0, re-index 0, and it is not indexed.
+
+Debounce default is 250 ms and equals `docs_watch.rs:48` — **but the
+test that claims to pin the equality restates the literal instead of
+comparing the two constants.** Moving the app watcher to 300 ms leaves
+all 296 tests green (reproduced, reverted, `shasum -c` clean). Filed as
+**T-014-s7** with the pin's correct home (the app crate can see both).
+
+**`--check` vs the golden — the retirement condition.** Equivalence
+established two ways. *At source level* they are the same comparison on
+the same bytes: `self_graph_is_current` asserts
+`stable_json(&index(opts)).as_bytes() == fs::read(committed)`;
+`check::check` computes `fs::read(committed) == stable_json(&fresh).as_bytes()`.
+Same serializer (`stable_json` — 2-space pretty, schema-order keys,
+trailing LF), same fresh index, same raw file bytes. No formatting, key
+order or trailing-newline difference is possible, because neither side
+re-serializes the committed file. The only difference is root
+resolution: the golden hard-codes manifest-relative, `--check` takes
+`--root` (default `.`) — identical when run from the repo root, which is
+what the drafted block specifies. *Empirically*, in five tree states I
+planted myself in a `git archive HEAD` copy built with its own
+`CARGO_TARGET_DIR`:
+
+| state | `index --check` | `self_graph_is_current` |
+|---|---|---|
+| as archived (inherits `5927adc`'s graph) | **1** | FAILED |
+| after a regen | **0** | ok |
+| + one planted `.ts` | **1**, names `app/src/zz-planted.ts` | FAILED |
+| re-indexed | **0** | ok |
+| plant removed, re-indexed | **0** | ok |
+
+Plus the two commits: `5927adc` → **1**, `db8da6c` → **0**. Determinism:
+three consecutive `index` runs, sha256
+`6fcfee9b4dcea54432c7c0ab8fc2792a54feb92c63a988a737c3dec6a4506434`
+(396,620 bytes) every time — the builder's exact hash. Committed graph
+still `815412de…` / 385,451 bytes; nothing in this repo's graph.json was
+written at any point.
+
+**Is `--check` trustworthy enough to replace the hand ritual? Yes —
+and it is strictly better than what it replaces.** It makes the same
+comparison on the same bytes; it is a command rather than a
+`#[ignore]`d test that had to be *remembered*; a red prints WHAT moved
+so the integrator acts without a second run (the delta at `5927adc` IS
+the T-050 knock-on list, read straight off the gate); and it separates
+"stale" from "could not run", which the golden cannot do — a missing
+graph.json is `unwrap_or_default()` → empty → a confusing assert, where
+`--check` says MISSING and exits 1 while a broken tree exits 3. The
+mechanism does not retire, only the ritual, and the notes say so.
+
+**The three-bins hazard, re-derived on the REAL manifest.** Confirmed
+three bins across two packages: `fake_agent` + `nputer` (root,
+`default-run = "nputer"`) and `nputer-index` (default-member child).
+Rather than a scratch workspace, I deleted line 13 (`default-run`) from
+`app/src-tauri/Cargo.toml` itself and ran the command `tauri dev` shells
+out to:
+
+    error: `cargo run` could not determine which binary to run. Use the
+    `--bin` option to specify a binary, or the `default-run` manifest key.
+    available binaries: fake_agent, nputer, nputer-index
+
+T-040's exact failure, now listing all three. And **T-014-s4 is
+confirmed directly**: with `default-run` still deleted, `cargo test`
+reports **296 passed, 0 failed, exit 0** — the whole suite is blind to
+it. Restored; tree clean. **Boot gate, run by me on scratch port
+14533**: exit **0**, both `[nputer]` lines (`project folder:`, `window
+"main" created`), one run. After: 14533 released, `pgrep` for
+`tauri-boot-check` and `nputer-t014` empty. **1420 untouched** — node
+pid 64249, fd 18u, device `0x8ae7d2d984f8d016`, identical before and
+after.
+
+**Execution sweep, by name.** I re-poisoned independently: **79** new
+test bodies across 10 files (`glob` 9, `arch/mod` 11, `registry` 8,
+`check` 6, `cli` 11, `diff` 5, `watch` 5, `tests/arch` 7, `tests/cli`
+13, `tests/watch` 4; the bin shim has none). `cargo test -p nputer-index
+--no-fail-fast`: **79 failed, 80 passed, 2 ignored**. Verified as a SET,
+not a count — 79 poisoned function names vs 79 failed names, both
+`comm` differences **empty**. Restored, `shasum -a 256 -c` 11/11 OK.
+
+**Suites, all re-run by me.** cargo from app/src-tauri **296 passed + 3
+ignored**, 0 failed, exit 0, **0 warnings**, 15 test binaries, per-binary
+split 105/0/0/32+1/123/0/7/13/3/7/0+1/2+1/4/0/0 — the builder's exactly.
+lib/parser **159/159** (10 files) + `tsc --noEmit` clean. app
+**535/535** (32 files) + `npm run build` exit 0. tools/e2e **40/40** in
+8.1 s + `typecheck` clean + `lint:tokens` clean (38 files) +
+`--selftest` clean.
+
+**Fence, proved by me.** `git diff --name-only 5927adc..HEAD` under each
+fenced path: `app/src/` 0, `app/src-tauri/src/` 0,
+`docs/architecture/graph.json` 0, `docs/CONVENTIONS.md` 0, `lib/parser/`
+0, `tools/e2e/` 0, `.github/` 0, `docs/architecture/components/` 0,
+`app/test/` 0. 33 files total = 26 under the crate + Cargo.lock + the
+task file + 5 suggestions; the notes' "27 files" was measured before the
+docs commits and is consistent. The only deletions in the whole diff are
+3 lines in the task file itself. **Cargo.lock**: exactly one added line,
+`+ "notify-debouncer-mini",` inside `nputer-index`'s dependency list —
+4955 → 4956 lines, and **zero** `name`/`version`/`checksum` lines moved.
+The crate was already in the lock at `=0.7.0` for the app, so no package
+and no subtree was added. No sibling worktree was entered.
+
+**THE STALE-GRAPH WINDOW (T-014-s3) — the window is REAL, and the
+evidence is stronger than the task claims.** The builder proved it with
+two commits. I proved it with the graph's whole history: **every regen
+of `docs/architecture/graph.json` has landed in a checkpoint, six for
+six** — `be182ce`, `db8da6c`, `b3bfe45`, `6356246`, `e78bfdc`,
+`086614a` — and not once in a merge commit, though CONVENTIONS says
+"with the merge". So this is not an oversight at T-050; the rule has
+never described the practice, and the practice is the one the ceaa949
+ordering discipline forces (the checkpoint edits indexed fixtures, so a
+graph committed at the merge is stale again immediately). The
+inheritance is confirmed independently: `b3bfe45` (T-049's checkpoint)
+and `5927adc` (T-050's merge) carry the **identical** sha
+`815412de…`/385,451 — the merge carried T-049's graph forward untouched,
+which is exactly why this branch inherited a red. The builder's own
+first reading ("the ritual was skipped") was wrong, is recorded as
+wrong, and the correction is the better finding.
+
+**Does the drafted GRAPH GATE fix it? Partly, and correctly so.** Naming
+the CHECKPOINT stops the rule lying and removes the trap where an
+integrator following the wording works against the ordering discipline;
+stating "the merge commit itself is therefore expected to carry a stale
+graph" converts an invisible window into a documented one. It does NOT
+close the window — `main` still points at a stale graph between merge
+and checkpoint. One line would close it for the case that actually bit
+this task: **dispatch new lanes from the CHECKPOINT, not from the merge
+commit** (T-014's dispatch said "branch from main" and predicted green).
+Recommended as an addition to draft (b); ranking the rest is s3's
+question for triage.
+
+**The other suggestions, ruled.** s1 — well-posed, the right call to
+file rather than decide; my s6 evidence belongs with it. s2 — correct
+and now more urgent, but note a live-registry pin would NOT have caught
+s6 (the live registry is clean). s3 — upheld and strengthened, above.
+s4 — **confirmed by direct reproduction** (296 green with `default-run`
+deleted); the ranking is right, since only the boot gate stands between
+the manifest and T-040. s5 — honest, correctly self-ranked as low: I
+confirmed the containment argument holds (a triage miss can only cost a
+byte-identical no-op re-index, never widen what is read or written), and
+that `an_unindexable_change_leaves_the_graph_completely_alone` passes.
+The drafted CONVENTIONS block (a)/(b)/(c) is sound and in the boot
+gate's shape — **but its honest caveat is now inverted**, see below.
+
+**T-045 changed the parity analysis, and the integrator must know.**
+T-045 landed on main and rebuilt `workflow-parity.spec.ts` to DERIVE its
+commands from CONVENTIONS in both directions. So the notes' warning ("a
+CONVENTIONS edit alone will NOT red it and will NOT be caught") is
+history — the hole is closed. But the consequence is the opposite of
+harmless: applying draft (c) alone now REDS the e2e lane. Measured on a
+`git archive main` copy — baseline **11 passed**; with the drafted block
+applied **1 failed / 10 passed**, naming `[app/src-tauri] index
+--check`, `index --watch` and `arch` as commands the spec has no entry
+for. **The retirement must land as one commit touching both
+`docs/CONVENTIONS.md` and `tools/e2e/tests/workflow-parity.spec.ts`** (and
+`.github/workflows/ci.yml` if `index --check` becomes the CI step that
+limb two owes). Filed as **T-014-s8** with the dispositions.
+
+**Not a defect, stated so it is not re-derived as one.**
+`cargo test -p nputer-index --test self_graph -- --ignored` is RED on
+this branch. I reproduced it at `5927adc` before reading it as anything,
+and it is green one commit later at `db8da6c`. The integrator owns regen
+and `docs/architecture/graph.json` is outside this fence. Correct as
+left.
+
+Tree clean at every step; every probe reverted and byte-verified
+(`docs_watch.rs`, `Cargo.toml` ×2, the 11 poisoned crate files, one
+temporary harness under `app/test/` deleted before this commit).
+`status: building` left for the integrator.
