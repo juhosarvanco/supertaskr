@@ -9,10 +9,10 @@ status: building
 blocked_by: [T-027]
 touches: [app-interview, app-shell]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 The interview's last act: when the planner reaches decomposition
@@ -431,3 +431,264 @@ a toy idea, judged live). Five smaller ones this build produced:
    CTA the afterthought.
 
 ## Verdicts
+
+2026-08-17 — claude-opus-5 @fresh, verifier — same-model review:
+**APPROVED** — all six criteria met and re-derived first-hand from
+`2a9d124`. Merge base with main is `e41dd16`, so the diff under review is
+`e41dd16..2a9d124` = **25 files, +2,887 / −62** (`git diff --shortstat`);
+the range quoted in dispatch (`6e898ad..2a9d124`) excludes the first of
+the four commits and understates it at 15 files. **Main has since moved
+to `bd88b87` (T-051 merged), which makes T-028 the branch merging second
+— see the merge hazard below; it is the one thing this card's integrator
+must act on.** Nothing below was taken from the notes.
+
+**Port discipline.** 1420 was observed with read-only `lsof` four times
+(node pid **81894**, `[::1]:1420 (LISTEN)`, still listening at the end)
+and was never bound, connected to or signalled. My own ports, each
+bind-probed free first and each `lsof`-empty afterwards: lane **14901**,
+lane mutations **14902 / 14903**, boot gate **14921**. No `tauri dev` or
+boot-check strays. **No model call was possible:**
+`git diff e41dd16..2a9d124 -- app/src-tauri/**` is empty (zero files), so
+the task adds no Rust; the only webview→CLI path is `invoke`, mocked at
+the module boundary in the vitest fixtures and short-circuited on
+`!isTauri` in the served bundle. Every scripted decomposition wrote into
+`mkdtempSync(tmpdir(), …)`; this repo's own `docs/tasks/` was never
+written by a test.
+
+**SUITES, all run first-hand, never piped through `tail`, every figure
+reproducing the notes exactly:**
+
+| suite | result | exit |
+|---|---|---|
+| `app` `npx vitest run` | **762 passed (762), 40 files** | 0 |
+| `app` `npx tsc --noEmit` | clean | 0 |
+| `app` `npm run build` | 263 modules, `index-DVAVecvn.css` 43.79 kB | 0 |
+| `lib/parser` `npx vitest run` | **197 passed (197), 10 files** | 0 |
+| `lib/parser` `npx tsc --noEmit` | clean | 0 |
+| `app/src-tauri` `cargo test` | **299 passed + 3 ignored, 0 failed**, 15 binaries, zero warnings | 0 |
+| `tools/e2e` `NPUTER_E2E_PORT=14901 npm test` | **65 passed**, 1 worker, retries 0, no skips | 0 |
+| `tools/e2e` `npm run typecheck` | clean | 0 |
+| `lint:tokens` | `clean (112 files scanned under app/src, app/test, tools/e2e)` | 0 |
+| `lint:tokens -- --selftest` | 49 samples green, 14 walk-policy green | 0 |
+
+**BOOT GATE (T-046): FIRED, RAN, GREEN.** The diff touches `app/src/**`.
+Scratch port **14921**, probed free first, verbatim:
+
+    [boot-check] port 14921 free — spawning `npm run tauri dev -- --config {…}`
+    [boot-check] app: [nputer] project folder: /Users/ujju/Projects/nputer-T-028
+    [boot-check] detected startup line 1/2: [nputer] project folder:
+    [boot-check] app: [nputer] window "main" created
+    [boot-check] detected startup line 2/2: [nputer] window "main" created
+    [boot-check] process tree stopped (exit=null signal=SIGTERM)
+    BOOT_EXIT=0
+
+**CRITERION BY CRITERION.**
+
+**1 — the lens becomes the real board as files land: MET.** The switch is
+`parsedTasks > 0` (`crescendo.ts:91`), i.e. task files the PARSER
+established records from, never a turn's text. `git diff --numstat
+e41dd16..2a9d124 -- app/src/components/board/` is **empty — zero files,
+zero bytes**, verified with `--numstat` and not from the summary; so are
+`app/src-tauri/`, `capabilities/`, `lib/`, and every manifest and
+lockfile. **No behaviour is duplicated into `BoardCrescendo.tsx`:** it is
+140 lines of which the board is one JSX element, `<Board model={docs.model} />`
+at `:135` — no column logic, no card, no panel, no ghost, no parked row.
+The only new chrome is the overline/count header and the completion
+panel, and the mark on the panel is `BankedMark` *exported* from
+`interview-turns.tsx` rather than re-drawn. In the lane the mounted board
+is the real one: three `task-card`s carrying `data-task-id`
+`["T-001","T-002","T-003"]` read off the files.
+
+**2 — completion state, elapsed, one CTA: MET.** The derived signal
+(highest turn settled `completed` · nothing in flight · parseable board)
+is reversible and is **not** a latch, confirmed both pure and live:
+`completionOf(docs,[T1 completed],true)` → `turnInFlight`;
+`[T1 completed, T2 running]` → `lastTurnUnsettled`; `[T1, T2 completed]`
+→ `{complete:true,turns:2}` — it comes back, so it is not one-shot. The
+live path retracts **synchronously**: `interviewBusy = ui.busy || isTurnInFlight(genesis)`
+and `sendAnswer` sets `ui.busy` before any await, so the panel stands
+down on the keypress, ahead of IPC. **It never reads model output**,
+proven rather than read: `completionOf` fed a `GenesisTurn` Proxy that
+THROWS on `text`, `activity` and `error` returns `{complete:true,turns:1}`
+unharmed. The handoff crosses no boundary — `openBoardFromGenesis` is a
+pure `ShellState → ShellState` phase move guarded on `phase !== "genesis"`
+and `docs.projectDir === ""`, and after the lane's real click
+`shell.docs.projectDir` is unchanged and `genesisDir` is null.
+
+**3 — elapsed indicator, zero new IPC, zero telemetry: MET, re-derived
+independently.** The nine-command set derived twice by me: from `app/src`
+call sites — six `invoke<T>("…")` literals (`docs_snapshot`,
+`genesis_cancel`, `genesis_send_turn`, `genesis_start`, `genesis_status`,
+`index_repo`) plus three through `runPicker(command)` at
+`watcher-store.ts:836/847/857` (`pick_project_folder`,
+`pick_genesis_folder`, `start_genesis_here`) — and from
+`invoke_handler!` at `lib.rs:391-403`, which lists the identical nine.
+Union = 9, intersection = 9. `agent-store.ts` is a **0-byte diff**, so
+the crescendo reaches the runner through C-14's existing exports. The
+clock is a module-local number with no channel out; my own sweep of
+`app/src` (not just `app/src/genesis/`) for `fetch(`, `XMLHttpRequest`,
+`WebSocket`, `sendBeacon`, `localStorage`, `sessionStorage`, `indexedDB`,
+`EventSource`, `writeTextFile`, `writeFile`, `mkdir` returns nothing. The
+timer's move from the design's lens footer to the chat header is
+**correct and disclosed** (notes finding 3): T-028 replaces the lens at
+decomposition, so the footer slot would take the elapsed time off screen
+at the moment being timed. The restart re-base rule is recorded on
+`startGenesisClock` and filed as **T-028-s1**.
+
+**4 — planning theater refused: MET, and this is the one I attacked
+hardest.** Seven independent shapes, each through the real parser on real
+bytes: zero task files → `noBoard`; seven files, none parsing →
+`taskFiles 7 / parsedTasks 0 / failing 7 / showBoard false / allFailing
+true`, completion `noBoard`; one good beside three torn → board with **1**
+card and an honest header (`1 card · 4 task files · 3 not parsing`);
+`docs/tasks/README.md`, `docs/tasks/notes.txt` and
+`docs/tasks/archive/T-999-old.md` → `taskFiles 0`, no board (the
+predicate is flat + `T-*.md`); a failed or cancelled tail →
+`lastTurnUnsettled`. Through the real screen: `data-half="lens"`, no
+board, no panel, zero cards, chip reading `3 parse errors`, and the torn
+files still ROWS on the lens. **A board that tears AFTER completion
+renders** keeps its cards by the last-good contract and the header says
+`3 cards · 3 task files · 3 not parsing` — honest, and consistent with
+the rest of the app rather than a hole. **A folder that already has a
+plan can never reach this screen at all:** `apply_genesis_folder` refuses
+genesis when `probe.has_plan()` (`roadmap || tasks`) and opens it as a
+project, so "celebrate a plan the interview did not write" is closed at
+the Rust gate. **The executor's residual worry reproduces exactly** —
+one settled turn plus one card on disk reads `{complete:true,turns:1}` —
+and I judge it **ACCEPTABLE**: task files land only at decomposition, the
+window opens only after that turn settles, the reading retracts the
+instant the user answers again, and the alternative (waiting for a
+model-emitted closing marker) is the thing ADR-017 forbids. It is
+disclosed in `crescendo.ts`'s header and in the notes.
+
+**5 — reduced motion: MET.** One `motion-safe:` variant and no second
+mechanism; the only ungated occurrence of `board-rain` anywhere under
+`app/src` is the `@utility board-rain {` declaration itself. In a real
+browser: `animation-name: card-rain`, `0.26s`, iteration `1`, fill-mode
+`none`; under `emulateMedia({reducedMotion:"reduce"})` the name becomes
+`none` **and the three cards are still there**. **s4 is outside this
+card's fence and correctly so:** the bare `.board-rain [data-testid=task-card]{…}`
+rule IS in the shipped sheet (`app/dist/assets/index-DVAVecvn.css`),
+because Tailwind emits a bare rule for every `@utility` — the same is
+true of `animate-status-pulse`. Nothing in this card USES it, and the
+general closer is a fifth pattern in `tools/e2e/scripts/lint-tokens.mjs`,
+which is T-038/T-045's file and another task's gate.
+
+**6 — the answer box keeps the keyboard: MET, and the tripwire
+DISCRIMINATES.** I deleted the entire refocus effect from
+`InterviewChat.tsx` and re-ran the lane:
+
+    ✘ 6 [chromium] › tests/interview.spec.ts:486:1 › Enter is input-local…
+      Error: expect(locator).toBeFocused() failed
+      Expected: focused
+      Received: inactive
+        > 517 |   await expect(page.getByTestId("interview-input")).toBeFocused();
+
+RED, at exactly the inverted line, with the compensating `.click()` gone.
+The jsdom halves are not vacuous either: deleting the anti-theft clause
+reds `focus moved elsewhere DURING the turn is not stolen back`, and
+recording the flag unconditionally (`heldFocusAtSubmit.current = true`)
+reds `a send from the BANK BUTTON leaves the focus on the button`. The
+guard is genuine — focus deliberately moved away is not stolen back.
+
+**THE ERROR-BOUNDARY DEFECT — I drove T-037's Proxy myself, four ways,
+all survived.** Lens phase → hostile: screen, chat and honest fallback
+all present. Board phase → hostile: same, and the board half stands down.
+The full transition in one mount (lens → hostile → board → hostile →
+recovered board) survives every step and retries on the next honest
+snapshot. And a tree that poisons **`model` rather than `effective`** —
+past `showsBoard`'s catch, so the throw happens *inside* `BoardCrescendo`
+— is caught by the boundary with the screen still standing. Mutating
+`showsBoard(docs)` back to the unguarded `boardReadiness(docs).showBoard`
+reds both `genesis-mount.test.tsx` boundary bodies. The defect was real
+and the fix is real.
+
+**T-027-s5: the split assertion is a GENUINE STRENGTHENING.** I measured
+the lens region myself in the real browser with `streakMidInterview`:
+1024×768 → `scrollHeight 876 / clientHeight 648` (margin **228**);
+1280×720 → `792 / 600` (margin **192**); 1440×900 → **`780 / 780`,
+margin 0**. The executor's "780 against 780" is exact. The old line
+asserted `scrollHeight > clientHeight` at all three cells; at 1440×900 it
+fails against CORRECT code, so it had zero discriminating power there —
+it was measuring the fixture's height. The new set adds
+`overflowY === "auto"` and `clientHeight < viewport.height` at **all**
+three cells (the old line asserted neither) and retains
+`scrollHeight > clientHeight` at the two where content genuinely
+overflows with 192–228px of margin. The retained half is provably
+falsifiable rather than tautological: the same expression on the same
+locator evaluates **false** one cell over. Coverage strictly increases;
+the only thing dropped is a cell where the assertion could not
+distinguish working from broken. Not a way of making a failing test pass.
+
+**MY OWN POISON SWEEP — 18 bodies, all RED, all restored and sha-verified
+against `git show HEAD:`.** Namespaced, run inline rather than from a
+script (the shared scratchpad clobber hazard was avoided by never writing
+one). Source mutations only, never a test. Every one reddened a
+criterion-relevant body: `showBoard` on files instead of records (reds
+criterion 4 in unit AND DOM); `allFailing` constant; each of
+`completionOf`'s four conditions removed separately; highest-turn →
+`turns[0]`; `showsBoard` losing its catch (reds both boundary bodies);
+`<1 min` → `~0 min`; the gate dropped from `motion-safe:board-rain` (reds
+the jsdom sweep AND, in a real browser, `animation-name` staying
+`card-rain` under `reduce`); a second button on the panel (reds the F-04
+fence); each elapsed slot removed; the screen calling the unguarded
+derivation; `genesisDir` left set by the handoff; the clock's idempotence
+removed; the rain token moved to 400ms; the entrance utility painting
+nothing. `git status --porcelain` empty after every restore, per-file
+sha256 equal to `git show HEAD:` in all 18 cases.
+
+**SECURITY SWEEP: CLEAN.** No new dependency — **no manifest or lockfile
+appears in the diff at all** (`package.json`, `package-lock.json`,
+`Cargo.toml`, `Cargo.lock`: 0 files). No `innerHTML`,
+`dangerouslySetInnerHTML`, `outerHTML` or `insertAdjacentHTML` anywhere
+in `app/src` or `tools/e2e`. No shell string, no `child_process`, no
+`new Function`. No API key, token or bypass-permissions flag (the only
+"token" hits are the design-token vocabulary). `EXPECTED_GRANTS` is
+**byte-unchanged, proven by sha256**: `app/src-tauri/src/acl_pin.rs` is
+`8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e` at
+both `e41dd16` and `2a9d124`; `app/src-tauri/**` and `capabilities/**`
+are 0-file diffs and the 92-grant pin re-runs green inside the 299.
+**ADR-017 holds: the app still only renders what lands** — no
+`writeTextFile`, `writeFile` or `mkdir` anywhere under `app/src`.
+`file(1)` over all 25 changed files classifies none as `data` (all
+`UTF-8 text`); `git grep` was used wherever a result mattered.
+
+**TWO NEW SUGGESTIONS, filed at s5 and s6.**
+
+**T-028-s5 — THE MERGE HAZARD, REPRODUCED, AND THIS CARD'S INTEGRATOR
+OWNS IT.** T-051 merged first (`bd88b87`), and its new
+`tools/e2e/tests/window-contract.spec.ts` will go red when T-028 lands.
+Its `genesis()` helper at `:104` applies the FULL `streakFixture` at
+`:112`; under T-028 three parsed tasks means the right half is
+`BoardCrescendo` and `genesis-artifact` does not exist. I simulated the
+merge inside this worktree (T-028's code + T-051's manifest + T-051's
+spec, port 14903): **3 of 5 specs fail — `:206` and `:318`×2 —
+`Expected: "40/40" / Received: "absent"`**; the breakpoint and minHeight
+specs are unaffected. The reconcile is one line, repointing `genesis()`
+at the `streakMidInterview` this task adds, with `reach()`'s `"40/40"`
+re-derived for a seven-row tree. T-051's own verifier predicted this as
+**T-051-s6**; s5 is the measurement and the fix.
+
+**T-028-s6 — the ambient node surface now lets `app/src` write files and
+still typecheck.** `app/tsconfig.json` includes both `src` and `test`, so
+`app/test/node-builtins.d.ts`'s declarations reach production code. T-028
+extends it 30 → 47 lines with `mkdirSync`/`writeFileSync`/`rmSync`/
+`mkdtempSync`. Measured: a probe at `app/src/verify-t028-probe.ts` that
+imports and calls both write functions passes `tsc --noEmit` at exit 0 on
+this branch, and fails with TS2305/TS2724 with only that `.d.ts` reverted.
+Nothing does this today and T-028 introduces no write, but ADR-017's
+free typecheck-level guard is gone and the sink sweep that would replace
+it walks `app/src/genesis/` only. Not a blocker; the closers are cheap.
+
+**Two non-defects confirmed as the dispatch said.** `status: building` is
+correct — `built` is not one of TASK-FORMAT's eight statuses. And
+`touches:` under-declaring `tools/e2e/` is the correct reading of the
+lifecycle lock (fields freeze at `status: building`); it is flagged in
+the notes, and the integrator should record `[app-interview, app-shell,
+tools/e2e/]` as T-027's card does. Noted against the process, not the
+builder.
+
+**Not verified, and correctly listed as @human:** the timed end-to-end
+genesis on a toy idea (criterion 2's ≤30 min), the light/dark completion
+screenshots, and the five smaller judgment calls in the notes. Headless
+only, per the standing rule; the boot check is not screen control.
