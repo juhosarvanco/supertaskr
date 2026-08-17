@@ -672,6 +672,50 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //   · The ceaa949 ordering lesson, FIFTEENTH hold: this block and the
 //     map fixture are both indexed, so both were edited BEFORE the final
 //     regen and the regen was then run twice for byte-identity.
+//
+// RECONCILED AT THE T-042 MERGE (2026-08-17, integrator — TWENTY-FOURTH
+// exercise of the practice). Every number re-derived from the raw graph
+// against `git show 9cd4ee3:docs/architecture/graph.json`, with the
+// file→component mapping and every cross-component import pair
+// re-derived in my own script written against the registry globs rather
+// than run through this app's derive.ts — all of it BEFORE this edit and
+// BEFORE the suite was re-run:
+//   · stats 99→100 files, 738→757 symbols, 1158→1170 edges (import +5,
+//     call +5, type_ref +2). Only the 5 imports can move anything here.
+//   · ONE file added, NOTHING removed: app/test/genesis-switch-truth.
+//     test.tsx (C-05). Content-changed: app/src/genesis/GenesisPane.tsx
+//     (comment only — T-042 criterion 4's ratification header),
+//     app/src/lib/watcher-store.ts (the new exported
+//     `outcomeCarriesSnapshot`), app/test/watcher-store.test.ts, and
+//     app/test/startup-screen.test.tsx — the last is the ARCHITECT-
+//     INSTRUCTED out-of-fence control-byte fix (T-050's file carried raw
+//     NUL+BEL+ESC twice; replaced by \u0000/\u0007/\u001b escapes). It is
+//     hash-visible and STRUCTURALLY INERT: loc 328 and 13 symbols both
+//     unchanged, so it moves no assertion in this file. Stated because a
+//     reader who did not know why would read it as an unexplained edit.
+//   · mapping 99→100; C-05 46→47 is the ONLY count that moves —
+//     app/test/** has exactly one claimant (C-05), swept again here.
+//     D2 empty, unmapped node still gone, derived.issues still [].
+//   · relation table: same 28 rows, same tally, and exactly ONE
+//     observedCount moves — C-05→C-10 24→25, from the single new file
+//     edge `genesis-switch-truth.test.tsx => app/src/lib/docs-model.ts`
+//     (docs-model.ts is C-10's by name). No new component PAIR appears,
+//     so no drift ring moves: C-05 declares C-10 already.
+//   · NO LIST MOVES, and that was DERIVED rather than hoped. The trap the
+//     T-034 block records (lists behind counts) was swept for directly:
+//     this fixture enumerates a `files` array for C-12 ONLY, never for
+//     C-05; the six D1 `fileEdges` lists are all for undeclared pairs and
+//     C-05→C-10 is CONFIRMED, so it has no D1 row; and the `fileEdges`
+//     list at the C-0x→C-06 seam test is C-10→C-06, a different edge that
+//     the one new import does not touch. Four assertions move here plus
+//     one in the map fixture — three numbers, one `it()` name, one hint
+//     string — and the sweep for lists is what proves that is all.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched: T-042
+//     declares no component and changes no registry file, so the T-024
+//     three-fixtures rule does not fire in its registry form.
+//   · The ceaa949 ordering lesson, SIXTEENTH hold: this block and the map
+//     fixture are both indexed, so both were edited BEFORE the final
+//     regen and the regen was then run twice for byte-identity.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -737,8 +781,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 99 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(99);
+  it("all 100 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(100);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -773,7 +817,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // third time: map-task-waves.test.ts and map-tasks-lens-dom.test.tsx
       // are both under app/test/**. Derived from the added-file list
       // before the suite ran — third merge running.
-      ["C-05", 46],
+      // 46 → 47 at the T-042 merge regen, by ONE and by the same route a
+      // fourth time: genesis-switch-truth.test.tsx is under app/test/**,
+      // still C-05's alone. The out-of-fence control-byte repair to
+      // startup-screen.test.tsx moves NOTHING here — same file, same loc,
+      // same symbol count, only its content hash.
+      ["C-05", 47],
       ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
@@ -973,7 +1022,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // reaches watcher-store through a DYNAMIC import — the indexer
       // resolves it to the same file edge, which is worth knowing and
       // was checked rather than assumed. Again the only one that moves.
-      ["C-05", "C-10", "confirmed", 24],
+      // 24 → 25 at the T-042 merge regen: genesis-switch-truth.test.tsx
+      // type-imports DocsSnapshotPayload from app/src/lib/docs-model.ts,
+      // which is C-10's by name. Its other module reference is
+      // ../src/App, which is C-05's own — intra-component, so it adds no
+      // row. Once again the only observedCount that moves.
+      ["C-05", "C-10", "confirmed", 25],
       ["C-05", "C-11", "planned", 0],
       // 20 → 22 at the T-034 merge regen: map-task-waves.test.ts imports
       // task-waves.ts and map-tasks-lens-dom.test.tsx imports MapView.tsx.

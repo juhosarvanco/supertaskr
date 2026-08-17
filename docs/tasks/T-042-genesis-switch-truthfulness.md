@@ -5,7 +5,7 @@ feature: F-03
 milestone: 3
 priority: 5
 size: M
-status: building
+status: done
 blocked_by: []
 touches: [app-shell, app-interview]
 builder: claude-opus-5

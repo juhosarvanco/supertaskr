@@ -90,6 +90,20 @@ have it genuinely re-subscribe onto a live board, or leave by the same
 "Open a folder…" / "Start an interview" route every other screen
 offers. **No reachable screen leaves the user with only the theme
 toggle.**
+T-042 merged 2026-08-17 and widened the entry a second way, this time
+by weakening a condition rather than adding a control: "start an
+interview here" no longer means "a folder with no `docs/` in it", it
+means **a folder with no PLAN in it**. A repo whose `docs/` predates
+nputer — a lone ARCHITECTURE.md, a decisions/ tree, anything — used to
+land on a pane that said `docs/ · nothing written yet` over files that
+were plainly there, because the switch carried no tree and the watch,
+though armed the whole time, had nothing to report until the next
+write. The switch now carries the tree it found, so **the first frame
+of an interview tells the truth about what is already on disk**. Two
+smaller truths landed with it: an armed `docs/` that DISAPPEARS is now
+news the same way one that appears is (one measured rule, not two
+special cases), and the `model-updated` echo fires on provenance
+instead of a guard that was always true.
 T-025 (the agent runner, the milestone's hard core) merged 2026-08-16
 and the honest reading of it is narrow. The MECHANISM exists: four app
 commands spawn the user's own `claude` headless once per turn, resume

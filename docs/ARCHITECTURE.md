@@ -19,7 +19,7 @@ graph TD
 | C-02 | CLI | Plumbing + power/CI path (ADR-008): genesis, dispatch; shells out to agent CLIs | C-01, C-06 | planned |
 | C-03 | Runtime | nputer.yaml role defaults; sessions.json registry | C-02 | planned |
 | C-04 | Daemon | Sidecar: watcher, websocket, @mention → headless turns | C-02, C-03 | planned |
-| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06; C-07 when F-06 lands | building (board + map panes complete T-001…T-012; T-026 landed the genesis front door and the full-bleed `genesis` screen, and T-037 mounted C-13's lens inside it — the screen renders the pane on the watched `DocsModelState`, behind an error boundary, so hand-driven genesis renders live; T-025 registered C-14's four genesis commands + the exit-reap hook in lib.rs, so the shell can now spawn the planner although nothing in the UI calls it yet; T-049 moved the app's keyboard surface out of a component and up to the root — `components/shell/accelerators.ts` holds a pure chord table and ONE window listener mounted by `App`, replacing the front-door-scoped one, so ⌘O/⌘N fire from every screen — and gave the board header its own "Start an interview", so genesis is reachable from an open project and not only from the front door; T-050 made the startup handshake RECOVERABLE — the `docs-changed` subscribe + `docs_snapshot` pull that C-10 delivers is latched on the in-flight PROMISE rather than a boolean set before the awaits, so a refused boundary call no longer strands the app permanently, the rejection becomes shell state and is rendered as text, and the startup screen carries retry + the front door's own two ways in, which means no reachable screen is a dead end; T-034 gave the map pane its SECOND lens — a segmented control (architecture · tasks) where tasks lays the board's cards out in dependency waves over `blocked_by`, with a critical path, and the architecture lens is proven byte-unchanged beside it (the whole `map-view` delta is the 472-byte control element); T-027 still owes the split view's left half; rooms/sessions pending F-05) |
+| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06; C-07 when F-06 lands | building (board + map panes complete T-001…T-012; T-026 landed the genesis front door and the full-bleed `genesis` screen, and T-037 mounted C-13's lens inside it — the screen renders the pane on the watched `DocsModelState`, behind an error boundary, so hand-driven genesis renders live; T-025 registered C-14's four genesis commands + the exit-reap hook in lib.rs, so the shell can now spawn the planner although nothing in the UI calls it yet; T-049 moved the app's keyboard surface out of a component and up to the root — `components/shell/accelerators.ts` holds a pure chord table and ONE window listener mounted by `App`, replacing the front-door-scoped one, so ⌘O/⌘N fire from every screen — and gave the board header its own "Start an interview", so genesis is reachable from an open project and not only from the front door; T-050 made the startup handshake RECOVERABLE — the `docs-changed` subscribe + `docs_snapshot` pull that C-10 delivers is latched on the in-flight PROMISE rather than a boolean set before the awaits, so a refused boundary call no longer strands the app permanently, the rejection becomes shell state and is rendered as text, and the startup screen carries retry + the front door's own two ways in, which means no reachable screen is a dead end; T-034 gave the map pane its SECOND lens — a segmented control (architecture · tasks) where tasks lays the board's cards out in dependency waves over `blocked_by`, with a critical path, and the architecture lens is proven byte-unchanged beside it (the whole `map-view` delta is the 472-byte control element); T-042 made the genesis switch TRUTHFUL at the three places it was claiming more than it knew — the outcome now carries the docs tree it found (so the screen stops saying "nothing written yet" over a non-empty docs/), a watch-state transition is ONE measured rule covering armed→unarmed as well as unarmed→armed instead of two special cases, and the `model-updated` echo reads PROVENANCE (`outcomeCarriesSnapshot`) instead of a seq guard that was always true; T-027 still owes the split view's left half; rooms/sessions pending F-05) |
 | C-06 | lib-parser | Pure library: docs/tasks/ + ROADMAP backbone → typed model (T-002); browser-safe pure exports (T-003); component files (T-008); cross-ref validation (T-019); strictness pass (T-030 — the backbone scanner strips HTML comments before matching, so a commented row is neither a phantom feature nor a dropped one; blocked_by cycles reported once per SCC; three new issue kinds, additive, consumed generically) | C-01 | verified |
 | C-07 | nputer-index | Rust crate + small binary: code → docs/architecture/graph.json (tree-sitter TS/JS/Rust); deterministic, no tauri dependency (ADR-014/015); F-06 | — | building (TS/JS extraction + committed graph done T-009; Rust lang T-010, binary T-014 — milestone 4) |
 
@@ -44,7 +44,28 @@ ADR-014/015).
   files. Entry is two zero-argument Tauri commands (T-026, the ADR-012
   pattern — the native dialog opens Rust-side and no path crosses IPC
   in either direction); a folder that already holds a plan is routed to
-  the ordinary open, so no overwrite path exists by construction. The
+  the ordinary open, so no overwrite path exists by construction. "No
+  plan" is a WEAKER condition than "no docs/", and since T-042 the
+  switch says so rather than assuming the strong one: a genesis folder
+  may already hold a plain `docs/` — a lone `docs/ARCHITECTURE.md`, a
+  `docs/decisions/` tree, any repo whose docs/ predates nputer — and
+  when it does the ordinary recursive watch arms over it and the
+  outcome CARRIES that tree, as an optional `DocsSnapshot` stamped with
+  the switch's own `seq`, so the pane renders what is actually there
+  instead of claiming nothing is written. `None` means the folder
+  genuinely has no docs/ yet — the one shape the variant used to
+  assume. Nothing new crosses the boundary: it is the same snapshot
+  type, collector and containment rules the `docs-changed` channel has
+  carried since T-003, on a second carrier. The tree is collected AFTER
+  the arming rendezvous acks, and that ORDER is load-bearing rather
+  than incidental (`open_as_project`'s own rule since T-007): arming
+  resets the emit baseline to the tree it saw, so a snapshot read
+  before the arm would miss a file written in the gap, and that file —
+  present in the baseline, absent from the snapshot — would collect
+  equal and stay suppressed until the next unrelated change. The
+  arming thread reports whether a plain `docs/` armed, because it is
+  the only place that knows for certain; the caller does not re-stat
+  and guess across the validate→arm window. The
   rendering half is real since T-037: the `genesis` screen hands its
   live `DocsModelState` straight to C-13's pane, so the lens updates on
   C-10's existing watcher path — no new IPC, no polling, no prop

@@ -1992,8 +1992,8 @@
       "id": "f:app/src/genesis/GenesisPane.tsx",
       "path": "app/src/genesis/GenesisPane.tsx",
       "lang": "ts",
-      "hash": "blake3:527ee34b0b311c274e20f32b2bd7c57d9e25f86257765c637feb14dd191cdad7",
-      "loc": 295,
+      "hash": "blake3:6e0c06a84ea3c1b92a927b5ce9a768f245ff27f08251aadd5035d46c25533f4b",
+      "loc": 332,
       "symbols": [
         {
           "id": "s:app/src/genesis/GenesisPane.tsx#ArtifactRow",
@@ -2001,8 +2001,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            59,
-            116
+            94,
+            151
           ]
         },
         {
@@ -2011,8 +2011,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            37,
-            38
+            72,
+            73
           ]
         },
         {
@@ -2021,8 +2021,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            134,
-            295
+            169,
+            332
           ]
         },
         {
@@ -2031,8 +2031,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            35,
-            35
+            70,
+            70
           ]
         },
         {
@@ -2041,8 +2041,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            34,
-            34
+            69,
+            69
           ]
         },
         {
@@ -2051,8 +2051,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            43,
-            57
+            78,
+            92
           ]
         },
         {
@@ -2061,8 +2061,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            120,
-            132
+            155,
+            167
           ]
         }
       ]
@@ -3861,8 +3861,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:540416acabfaf000a914229c2213ec269aea5aa79c4e3b7b8443ec14b42f77d7",
-      "loc": 841,
+      "hash": "blake3:d7d726c6379517d11c97ffe2da345b2062c77f118d3b962786140695f1ebec83",
+      "loc": 910,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -3870,8 +3870,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            218,
-            219
+            234,
+            235
           ]
         },
         {
@@ -3890,8 +3890,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            252,
-            254
+            268,
+            270
           ]
         },
         {
@@ -3900,8 +3900,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            88,
-            102
+            104,
+            118
           ]
         },
         {
@@ -3921,7 +3921,7 @@
           "exported": true,
           "range": [
             73,
-            83
+            99
           ]
         },
         {
@@ -3930,8 +3930,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            223,
-            228
+            239,
+            244
           ]
         },
         {
@@ -3960,8 +3960,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            146,
-            150
+            162,
+            166
           ]
         },
         {
@@ -3970,8 +3970,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            258,
-            269
+            274,
+            285
           ]
         },
         {
@@ -3980,8 +3980,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            398,
-            419
+            457,
+            478
           ]
         },
         {
@@ -3990,8 +3990,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            115,
-            121
+            131,
+            137
           ]
         },
         {
@@ -4000,8 +4000,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            152,
-            181
+            168,
+            197
           ]
         },
         {
@@ -4010,8 +4010,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            135,
-            141
+            151,
+            157
           ]
         },
         {
@@ -4020,8 +4020,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            131,
-            131
+            147,
+            147
           ]
         },
         {
@@ -4030,8 +4030,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            573,
-            586
+            632,
+            645
           ]
         },
         {
@@ -4040,8 +4040,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            601,
-            617
+            660,
+            676
           ]
         },
         {
@@ -4050,8 +4050,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            558,
-            571
+            617,
+            630
           ]
         },
         {
@@ -4060,8 +4060,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            801,
-            812
+            864,
+            881
           ]
         },
         {
@@ -4070,8 +4070,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            517,
-            519
+            576,
+            578
           ]
         },
         {
@@ -4080,8 +4080,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            464,
-            464
+            523,
+            523
           ]
         },
         {
@@ -4090,8 +4090,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            521,
-            523
+            580,
+            582
           ]
         },
         {
@@ -4100,8 +4100,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            815,
-            817
+            884,
+            886
           ]
         },
         {
@@ -4110,8 +4110,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            479,
-            479
+            538,
+            538
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#outcomeCarriesSnapshot",
+          "name": "outcomeCarriesSnapshot",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            432,
+            443
           ]
         },
         {
@@ -4120,8 +4130,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            761,
-            763
+            820,
+            822
           ]
         },
         {
@@ -4130,8 +4140,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            750,
-            752
+            809,
+            811
           ]
         },
         {
@@ -4140,8 +4150,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            233,
-            243
+            249,
+            259
           ]
         },
         {
@@ -4150,8 +4160,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            625,
-            644
+            684,
+            703
           ]
         },
         {
@@ -4160,8 +4170,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            203,
-            213
+            219,
+            229
           ]
         },
         {
@@ -4170,8 +4180,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            340,
-            384
+            356,
+            412
           ]
         },
         {
@@ -4180,8 +4190,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            193,
-            195
+            209,
+            211
           ]
         },
         {
@@ -4190,8 +4200,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            830,
-            841
+            899,
+            910
           ]
         },
         {
@@ -4200,8 +4210,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            782,
-            792
+            845,
+            855
           ]
         },
         {
@@ -4210,8 +4220,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            654,
-            700
+            713,
+            759
           ]
         },
         {
@@ -4220,8 +4230,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            271,
-            331
+            287,
+            347
           ]
         },
         {
@@ -4230,8 +4240,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            590,
-            599
+            649,
+            658
           ]
         },
         {
@@ -4240,8 +4250,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            525,
-            528
+            584,
+            587
           ]
         },
         {
@@ -4250,8 +4260,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            466,
-            478
+            525,
+            537
           ]
         },
         {
@@ -4260,8 +4270,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            535,
-            556
+            594,
+            615
           ]
         },
         {
@@ -4270,8 +4280,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            713,
-            742
+            772,
+            801
           ]
         },
         {
@@ -4280,8 +4290,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            771,
-            773
+            830,
+            832
           ]
         },
         {
@@ -4290,8 +4300,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            508,
-            508
+            567,
+            567
           ]
         },
         {
@@ -4300,8 +4310,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            510,
-            510
+            569,
+            569
           ]
         },
         {
@@ -4310,8 +4320,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            512,
-            515
+            571,
+            574
           ]
         }
       ]
@@ -4653,8 +4663,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:f36df2d40281da5cbeaa52d600e08064e8874bc4505a03e65dda5d1ef095cd9a",
-      "loc": 1098,
+      "hash": "blake3:675aee4efe55a1b54d1e3ddaeea8ece450ca60467f3a0523234f6d656f9ae581",
+      "loc": 1152,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -4662,8 +4672,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            710,
-            710
+            754,
+            754
           ]
         },
         {
@@ -4672,8 +4682,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            709,
-            709
+            753,
+            753
           ]
         },
         {
@@ -4682,8 +4692,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            675,
-            675
+            719,
+            719
           ]
         },
         {
@@ -4692,8 +4702,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            681,
-            696
+            725,
+            740
           ]
         },
         {
@@ -4702,8 +4712,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            698,
-            707
+            742,
+            751
           ]
         },
         {
@@ -4712,8 +4722,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            677,
-            679
+            721,
+            723
           ]
         }
       ]
@@ -5716,11 +5726,200 @@
       ]
     },
     {
+      "id": "f:app/test/genesis-switch-truth.test.tsx",
+      "path": "app/test/genesis-switch-truth.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:9a57a2e1352e18c6f5cb67e14905c74aca7c179d8fb4726bfb4af7b41dc5d67e",
+      "loc": 373,
+      "symbols": [
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#ARCHITECTURE",
+          "name": "ARCHITECTURE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            78,
+            78
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#App",
+          "name": "App",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            96,
+            96
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#DECISION",
+          "name": "DECISION",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            79,
+            79
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#GENESIS_DIR",
+          "name": "GENESIS_DIR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            72,
+            72
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#OTHER_DIR",
+          "name": "OTHER_DIR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            73,
+            73
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#OTHER_TASK",
+          "name": "OTHER_TASK",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            80,
+            81
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#PROBE",
+          "name": "PROBE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            76,
+            76
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            94,
+            94
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#existingDocs",
+          "name": "existingDocs",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            84,
+            92
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#fileCount",
+          "name": "fileCount",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            102,
+            103
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#flush",
+          "name": "flush",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            112,
+            116
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#ipc",
+          "name": "ipc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            41,
+            48
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#mountFreshApp",
+          "name": "mountFreshApp",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            124,
+            139
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#q",
+          "name": "q",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            98,
+            99
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            95,
+            95
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#screenOf",
+          "name": "screenOf",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            100,
+            101
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#startInterview",
+          "name": "startInterview",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            148,
+            159
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#writtenPaths",
+          "name": "writtenPaths",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            107,
+            110
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:e637397bb67996092387d7bd1e27eaa56ee77514735ba18ef0d0242e0c404078",
-      "loc": 236,
+      "hash": "blake3:5643893188f5ca0bf6e92bcc92abc0a72bc2fb21a4a7d9f85b57243f20a3e321",
+      "loc": 247,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -6881,7 +7080,7 @@
       "id": "f:app/test/startup-screen.test.tsx",
       "path": "app/test/startup-screen.test.tsx",
       "lang": "ts",
-      "hash": "blake3:9ac2e4d7997361204b5ea7e3b78a5218f35a248c71710615ba3f77858b5f75ea",
+      "hash": "blake3:0fc45d8ba44d09ddf60135ece853e7ac25e3813a75a631fa6c150c2bee7690ab",
       "loc": 328,
       "symbols": [
         {
@@ -7020,8 +7219,8 @@
       "id": "f:app/test/watcher-store.test.ts",
       "path": "app/test/watcher-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:a86b8d7a29b982f65e8f8b0a2b60c764eac77fdff5d13da89b5730daf108d707",
-      "loc": 383,
+      "hash": "blake3:4bb74f492c53882a986775c177589499bdcecc6be9806292022c6b0d60bccc85",
+      "loc": 466,
       "symbols": [
         {
           "id": "s:app/test/watcher-store.test.ts#BROKEN_ROADMAP",
@@ -7029,8 +7228,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            30,
-            30
+            31,
+            31
           ]
         },
         {
@@ -7039,8 +7238,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            28,
-            28
+            29,
+            29
           ]
         },
         {
@@ -7049,8 +7248,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            29,
-            29
+            30,
+            30
           ]
         },
         {
@@ -7059,8 +7258,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            48,
-            49
+            49,
+            50
           ]
         },
         {
@@ -7069,8 +7268,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            32,
-            41
+            33,
+            42
           ]
         },
         {
@@ -7079,8 +7278,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            43,
-            46
+            44,
+            47
           ]
         },
         {
@@ -7089,8 +7288,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            168,
-            187
+            169,
+            188
           ]
         },
         {
@@ -7099,8 +7298,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            26,
-            27
+            27,
+            28
           ]
         }
       ]
@@ -10151,6 +10350,49 @@
       ]
     },
     {
+      "from": "f:app/test/genesis-switch-truth.test.tsx",
+      "to": "f:app/src/App.tsx",
+      "kind": "import"
+    },
+    {
+      "from": "f:app/test/genesis-switch-truth.test.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsSnapshotPayload"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-switch-truth.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-switch-truth.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/genesis-switch-truth.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it",
+        "vi"
+      ]
+    },
+    {
       "from": "f:app/test/map-dogfood-render.test.tsx",
       "to": "f:app/src/architecture/MapView.tsx",
       "kind": "import",
@@ -10924,6 +11166,7 @@
         "EMPTY_PROBE",
         "PlanProbePayload",
         "ShellState",
+        "outcomeCarriesSnapshot",
         "planChecklist",
         "reduceDocs",
         "reducePickOutcome",
@@ -14790,6 +15033,12 @@
     },
     {
       "from": "s:app/src/lib/watcher-store.ts#commitPickOutcome",
+      "to": "s:app/src/lib/watcher-store.ts#outcomeCarriesSnapshot",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#commitPickOutcome",
       "to": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
       "kind": "call",
       "confidence": "resolved"
@@ -14810,6 +15059,12 @@
       "from": "s:app/src/lib/watcher-store.ts#keepCurrentProject",
       "to": "s:app/src/lib/watcher-store.ts#setShell",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#outcomeCarriesSnapshot",
+      "to": "s:app/src/lib/watcher-store.ts#PickOutcomePayload",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -14869,6 +15124,12 @@
     {
       "from": "s:app/src/lib/watcher-store.ts#reduceDocs",
       "to": "s:app/src/lib/watcher-store.ts#resetDocsForProjectSwitch",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
+      "to": "s:app/src/lib/docs-model.ts#applySnapshot",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -15583,6 +15844,30 @@
     {
       "from": "s:app/test/genesis-pane-dom.test.tsx#walk",
       "to": "s:app/test/genesis-pane-dom.test.tsx#walk",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-switch-truth.test.tsx#existingDocs",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-switch-truth.test.tsx#fileCount",
+      "to": "s:app/test/genesis-switch-truth.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-switch-truth.test.tsx#startInterview",
+      "to": "s:app/test/genesis-switch-truth.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-switch-truth.test.tsx#startInterview",
+      "to": "s:app/test/genesis-switch-truth.test.tsx#q",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -16603,8 +16888,8 @@
     }
   ],
   "stats": {
-    "files": 99,
-    "symbols": 738,
-    "edges": 1158
+    "files": 100,
+    "symbols": 757,
+    "edges": 1170
   }
 }

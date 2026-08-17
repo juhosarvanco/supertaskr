@@ -229,8 +229,19 @@ describe("the nputer repo on its own map", () => {
     // import edges, and every one lands on a component pair the
     // 28-row table already carries, so the picture gains detail and no
     // shape.
+    // 99 → 100 at the T-042 merge regen (2026-08-17): ONE file,
+    // app/test/genesis-switch-truth.test.tsx, under C-05's app/test/**
+    // umbrella. T-042's SOURCE edits add no node — GenesisPane.tsx moves
+    // by a comment only (criterion 4's ratification header) and
+    // watcher-store.ts gains one exported symbol. The node and edge
+    // counts above are again UNCHANGED: the single new cross-component
+    // import edge lands on C-05→C-10, a pair the 28-row table already
+    // carries. A fourth file moves hash without moving anything else —
+    // app/test/startup-screen.test.tsx, the architect-instructed
+    // control-byte repair (raw NUL+BEL+ESC → escapes), the same shape as
+    // map-layout.ts's one-byte correction two entries above.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 99 files",
+      "committed graph · 100 files",
     );
   });
 });
