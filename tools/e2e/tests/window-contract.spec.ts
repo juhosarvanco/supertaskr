@@ -1,10 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { repoRoot } from "../preflight";
+import type { DocsSnapshotPayload } from "../fixtures/board";
 import { ARCHITECTURE_AND_GIT, NOTHING_FOUND, streakFixture } from "../fixtures/shell";
 import { applyDocs, applyPick, applyStatus, expectPhase, openShell } from "./shell-harness";
-import { openBoard } from "./helpers";
+import { openApp, openBoard } from "./helpers";
 
 /**
  * T-051 — THE WINDOW THE SPLIT FITS IN, measured against the SHIPPED
@@ -70,6 +71,33 @@ const DEFAULT = { width: WINDOW.width, height: WINDOW.height };
 const MINIMUM = { width: WINDOW.minWidth, height: WINDOW.minHeight };
 
 const GENESIS_DIR = "/e2e/streak";
+
+/**
+ * THIS repo's own `docs/` tree as one snapshot payload — T-048's board
+ * instrument, and the tallest real board available. The lane's own
+ * `boardFixture` fits inside the window at every size this spec
+ * measures, which would make a reachability claim about the board pass
+ * without anything ever scrolling.
+ *
+ * Reading files is not importing a package: tools/e2e still imports
+ * neither app nor parser (ADR-011 addendum), exactly as `streakFixture`
+ * reads T-024's tree from where it landed.
+ */
+function repoBoard(seq: number): DocsSnapshotPayload {
+  const walk = (dir: string, prefix: string): { path: string; content: string }[] => {
+    const out: { path: string; content: string }[] = [];
+    for (const name of readdirSync(dir).sort()) {
+      const full = path.join(dir, name);
+      if (statSync(full).isDirectory()) out.push(...walk(full, `${prefix}/${name}`));
+      else if (name.endsWith(".md")) {
+        out.push({ path: `${prefix}/${name}`, content: readFileSync(full, "utf8") });
+      }
+    }
+    return out;
+  };
+  const files = walk(path.join(repoRoot, "docs"), "docs");
+  return { seq, projectDir: repoRoot, generatedAtMs: 1_755_400_000_000 + seq, files };
+}
 
 /** The interview screen with T-024's streak tree rendered — the screen
  * whose width requirement raised the window. */
@@ -249,13 +277,15 @@ test("the declared minHeight sits above every fitting screen's natural content",
   await expect(page.getByTestId("map-view")).toBeVisible();
   natural.map = await naturalHeight(page, MINIMUM.width);
 
-  const tallest = Object.entries(natural).sort((a, b) => b[1] - a[1])[0];
+  const ranked = Object.entries(natural).sort((a, b) => b[1] - a[1]);
+  expect(ranked.length, "four screens were measured").toBe(4);
+  const [name, tallest] = ranked[0]!;
   expect(
     MINIMUM.height,
-    `the tallest screen that must fit is the ${tallest[0]} at ${tallest[1]}px ` +
+    `the tallest screen that must fit is the ${name} at ${tallest}px ` +
       `(all of them: ${JSON.stringify(natural)}). A minHeight below that puts a ` +
       "screen's own overflow back inside the window's legal range.",
-  ).toBeGreaterThanOrEqual(tallest[1]);
+  ).toBeGreaterThanOrEqual(tallest);
 
   // And far above T-048-s5's floor, where the genesis pane's scroll
   // region collapsed and its last row could not be brought into view.
@@ -319,9 +349,24 @@ for (const [label, size] of [
     // board — a scrolling page BY DESIGN, so the claim is not that it
     // fits but that it stays reachable: the rail runs the full height of
     // the document and the last card can be scrolled to in full.
-    await openBoard(page);
+    //
+    // Driven with THIS REPO'S OWN docs/ tree rather than the lane's
+    // fixture, because the lane's fixture fits inside the window at both
+    // sizes and "the last card is reachable" would then be true without
+    // anything scrolling — a pass that measures nothing. T-048's
+    // criterion-4 row used the repo tree for exactly this reason: it is
+    // the tallest real board available. The guard below says so out loud.
+    await openApp(page);
+    await page.evaluate((payload) => {
+      window.__nputerDocsHarness!.apply(payload);
+    }, repoBoard(1));
+    await expect(page.getByTestId("docs-model")).toHaveAttribute("data-screen", "board");
     await page.setViewportSize(size);
     f = await frame(page);
+    expect(
+      f.page,
+      "board: the repo's own tree really is taller than the window (else this proves nothing)",
+    ).toBeGreaterThan(size.height * 2);
     const rail = (await page.getByTestId("pane-rail").boundingBox())!;
     expect(Math.round(rail.height), "board: the rail runs the whole page").toBe(f.main);
     const card = await reach(page, '[data-testid="task-card"]');
