@@ -1,6 +1,6 @@
 ---
 id: T-029-s7
-title: A permission denial the planner ROUTED AROUND is blamed for an unrelated failure — `terminal_reason: "end_turn"` is read and then ignored
+title: A permission denial the planner ROUTED AROUND is blamed for an unrelated failure — the turn's own normal-completion terminal_reason is read and then ignored
 status: suggested
 suggested_by: verifier claude-opus-5 @T-029
 ---
