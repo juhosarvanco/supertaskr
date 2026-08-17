@@ -5,12 +5,12 @@ feature: F-03
 milestone: 3
 priority: 5
 size: L
-status: planned
+status: building
 blocked_by: [T-024, T-025, T-026, T-037, T-041, T-048, T-049]
 touches: [app-interview, app-shell, tools/e2e/]
-builder:
+builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @fresh
 verified_by:
 review:
 ---
@@ -370,5 +370,527 @@ All other criteria stand unchanged.
 **Genuine silences, left open deliberately.** The user's half of the transcript does not survive a remount (T-029's rehydration) · the T-026-s4 false-chip case, tripwired here and closed by T-042 · `textDelta`-after-`completed` (pinned, not fixed — C-14's) · no dark interview mockup exists, so two tokens are family-derived and unchecked · the design's line heights are looser than every token pair and the tokens win, pending @human · the three-step recency ink ladder collapsed to two · the lens is absent at the app's own 800×600 window, and the window size is not this task's to change · T-048-s1's global scroll unification decided but not built · T-041-s2's wire mirror widened by one and not closed · T-049-s4's `event.key` layout limitation inherited unchanged, now with a fifth chord riding it · render volume under a long streaming turn is unthrottled and unmeasured (the measurement to take: renders per turn under T-025's `happy` scenario) · **T-047-s3 has no caller here** — no command exposes `model`, and T-027 renders neither `model` nor `cliVersion` · the packaged wkwebview is still not what the lane drives (T-020's standing limit) · Windows remains the repo-wide standing silence.
 
 ## Implementation notes
+
+Built by `claude-opus-5 @fresh` on branch `t027-split-view`, cut from the
+**checkpoint** `e92056a` (`Checkpoint: T-042 done`) and not from the
+merge — every graph regen in this project's history has landed in a
+checkpoint, six for six, and T-014 is the worked example of what a lane
+cut from a merge inherits. Worktree-only; nothing committed to main.
+
+**No model was called anywhere.** T-027 adds no Rust, and the only path
+from the webview to a CLI is `invoke`, which is mocked at the boundary in
+vitest and returns before `invoke` in a browser. Nothing in this task can
+spawn a process. **Port 1420 was never bound, connected to or signalled**
+— see the note at the end of this section, which the human should read.
+
+### Suites — before → after, all re-derived first-hand at the branch point
+
+| Suite | Branch point `e92056a` | After |
+|---|---|---|
+| lib/parser (`npm ci` + build + `vitest run`) | 197/197, 10 files | **197/197, unmoved** (0-byte parser diff) |
+| app (`npm install` + `npm run build` + `vitest run`) | 625/625, 35 files | **718/718, 38 files** (+93, +3 files) |
+| app/src-tauri bare `cargo test` | 220 passed + 3 ignored, 11 binaries, 0 warnings | **unmoved — zero Rust in this task** |
+| tools/e2e (`npm ci` + `npm test`) | 54 passed | **60 passed** (+6) |
+| `npm run lint:tokens` | clean, 99 files, zero allowlist | **clean, 107 files, zero allowlist** |
+| `npm run lint:tokens -- --selftest` | 49 samples + 14 walk-policy | **unmoved, green** |
+
+`npx tsc --noEmit` clean in app and in tools/e2e; `npm run build` exit 0.
+Ports: the lane ran on **14601**, the boot gate on **14602**, both probed
+free first and both `lsof`-empty afterwards. 1420 was never touched.
+
+**The cargo baseline was taken twice**, because the first attempt piped
+`cargo test` through `tail` and lost eight of the eleven test binaries —
+the CONVENTIONS gotcha, reproduced and then obeyed: the real run wrote to
+a file with the exit code from `$?` and summed 11 binaries to 220 + 3.
+
+### Criteria → evidence
+
+**Criterion 1 — 640px chat + the lens, one question at a time, history
+quieter, tokens-only, both schemes.**
+`GenesisScreen.tsx` renders `genesis-split` → `InterviewChat` (640) +
+`genesis-pane-slot` (`hidden … lg:flex`). Geometry MEASURED against the
+served sheet in `tools/e2e/tests/interview.spec.ts` ("the split is 640 +
+the lens at >=1024"): the chat is exactly 640 at 1440/1280/1024, its
+`border-right-width` is 1px, the slot's `border-left-width` is 0px, the
+two boxes ABUT (gap 0), and the lens takes W−640. Prominence in
+`interview-chat-dom.test.tsx`: exactly one `interview-turn-current` and
+it is the last turn; the current body carries `text-xl font-medium
+tracking-title text-foreground` and history carries `text-base
+text-secondary-foreground`. The project's name is in the app's own
+header (`genesis-project-dir` moved to `App.tsx`) — the OS window title
+is not set, per the applied criterion.
+
+**Criterion 2 — the challenge treatment, and the hint never
+load-bearing.** `challengeOf` is read by one function and consumed by one
+class list. Rendering pinned in the DOM suite (rule, paper, asymmetric
+radius, label, marker consumed) and in the lane against the SERVED sheet
+(`--interview-challenge-bg`, `--chart-4`, `border-left-width: 2px`,
+`border-top-left-radius: 0px`), **in both schemes**. Inertness pinned as
+a property, not a claim: `interview-model.test.ts`'s "the same script
+with and without the marker is deep-equal but for one boolean" runs one
+event script twice and requires the two states equal after normalising
+ONLY the turn text — same turn count, same statuses, same activity, same
+phase, same `sending`, same footer.
+
+**Criterion 3 — banked chips from file evidence only; the strip follows
+the derived stage.** `bankedSince` takes `(BankBaseline, DocsModelState)`
+and nothing else — no event stream crosses its signature, so "never from
+parsing model output" is a property of the TYPE. Driven anyway, because
+an argument from types is not evidence: a turn whose `activity` labels
+and whose `completed.text` both name real docs paths produces **zero**
+chips, in the unit AND in the DOM suite. The sharpest one:
+**a file a human writes in a terminal produces an IDENTICAL chip** —
+ADR-006's hand-driven mode rendering correctly, and the proof no
+causation was inferred. The strip calls the exported `deriveGenesis`
+(via `stageOf`) and reads only `approxStage`/`stageStep`;
+`genesis-derive.ts` is a **0-byte diff** and `BANKING_MAP` is not read,
+edited or transcribed anywhere.
+
+**Criterion 4 — ⏎ / ⇧⏎ / skip, single-flight, right-aligned.** All in
+the DOM suite plus a real-keyboard walk in the lane. Single-flight is
+drilled with a parked `invoke`: six ⏎ presses yield **exactly one**
+command and `getGenesisState()` is unchanged **by identity**; released,
+the next send works. The skip convention is TYPED — there is no Skip
+button, and a test asserts there is none.
+
+**Criterion 5 — a calm inline failure, retry, resumable, nothing banked
+lost.** Per-variant headline + the error's own words, capped, as text
+nodes; no modal and no `alertdialog` anywhere. "No lost banked docs" is
+asserted POSITIVELY in both the DOM suite and the lane: a chip emitted
+before the failure is still on screen after it. Retry re-issues the same
+command with the same argument — `genesis_start` for turn 1,
+`sendGenesisTurn(storedText)` for N≥2, with the lane asserting the third
+send is byte-identical to the second.
+
+**Criterion 6 — the CLI-missing route.** The card names the typed
+`cliNotFound { probed }` binaries, the project path and the hand-driven
+route. It deliberately carries **no kickoff block** — asserted by
+absence: `not.toContain("KIT ROOT")`, `not.toContain("roles/planner.md")`.
+
+**Criterion 7 — hostile content.** Every string channel at once: turn
+text, `activity` labels, `stderrTail`, and a chip PATH. Asserted by the
+absence of the elements (`script`, `img`), by a TreeWalker proving **no
+comment node was ever created** (a comment node is proof markup was
+parsed), and by sweeping **every attribute of every element** for an
+`on*` name — plus the literal bytes present as text, control characters
+and RTL override intact. A 10 000-character turn renders whole. Markdown
+renders as its own bytes (`**bold**`, a link, a fenced block — no
+`strong`, no `a`, no `code`). ADR-009 driven rather than asserted from
+source: a `docs/__proto__.md` path renders as a path and pollutes
+nothing.
+
+**Criterion 8 — reduced motion.** The streaming dot carries
+`motion-safe:animate-status-pulse` (T-024's exact form) and a sweep over
+every rendered element asserts **no unconditional** `animate-status-pulse`
+exists.
+
+**Last criterion — ONE screen-scoped accelerator table.**
+`useAccelerators(acceleratorsFor(screen, actions))` — a change of
+ARGUMENT; `useAccelerators` itself is untouched and there is still
+exactly one `window` keydown listener. T-049's three instruments stay
+green unchanged. See obligation 7.
+
+### §10's fourteen proof obligations
+
+1. **Suites green at branch-point truth** — table above; every figure
+   re-derived first-hand, none inherited. The plan's own figures (parser
+   159 · app 507 · cargo 217 · lane 36 · tokens 38 files) all predate
+   T-030/T-045/T-034/T-042; branch-point truth governs, per T-023.
+2. **Execution sweep** — `expect("PROBE").toBe("EXECUTED")` inserted as
+   the first statement of **every** `it()` body in all eight
+   new-or-changed test files by a script: **132 bodies poisoned, 132
+   failed.** Not one body is vacuous. Reverted from pre-probe copies and
+   **sha256-verified identical for all eight files**; `git diff` empty
+   afterwards; suite back to 718/718.
+3. **`textDelta`-after-`completed`, ANSWERED FROM `runner.rs` — the
+   answer is (a): UNREACHABLE BY CONSTRUCTION, so NO suggestion is filed
+   against C-14.** Every emit happens on one thread inside `run_turn`.
+   `flush_pending` is the ONLY producer of `TextDelta`
+   (`runner.rs:1341`), called from three places, all inside `run_turn`:
+   `runner.rs:1183`, `runner.rs:1231`, and — the load-bearing one —
+   **`runner.rs:1246`, unconditionally, immediately after the read loop
+   exits and BEFORE the reap-and-decide block**. `emitter.completed` is
+   at **`runner.rs:1320`** and `emitter.failed` at **`runner.rs:1316`**,
+   both strictly after that flush with no emit path in between.
+   `Emitter::next` (`runner.rs:129-131`) stamps `seq` from one
+   `AtomicU64` at the moment of emission, so the final flush's delta
+   necessarily carries a LOWER seq than the completion that follows it.
+   Pinned BOTH ways in `interview-model.test.ts`: the reachable shape (a
+   late-DELIVERED delta, which carries its lower seq and is dropped by
+   identity — the canonical text stands) and the counterfactual (what
+   the store WOULD do with a higher-seq delta), so the claim is
+   falsifiable rather than merely asserted, and if the emit ordering
+   ever changes the second test says exactly what the user would see.
+4. **Banked-chip semantics drilled** — human-writes-the-file (identical
+   chip); change-twice → one chip; delete → no chip; `activity` labels
+   naming docs paths → zero chips; a non-markdown file under `docs/` is
+   not an artifact; a stale/equal/zero seq → nothing; a project switch →
+   nothing. **The T-026-s4 tripwire was DELETED, not written**: T-042's
+   criterion 1 removed the case by construction, and the test now
+   asserts the FIXED behaviour (pre-existing docs do not chip on turn 1)
+   — which is what STATE.md predicted this task would get to do.
+5. **The challenge inertness pin** — see criterion 2.
+6. **Single-flight drilled with a parked `invoke`** — see criterion 4.
+7. **Accelerators** — ⌘. is claimed **exactly once** on the interview
+   (and on Ctrl too) and **zero** times on the board, the map, the map's
+   own search field and the front door. **T-049-s3's property (2) is
+   pinned for the first time**, and three drills prove the pin
+   discriminates: (a) make `useAccelerators` `preventDefault` on an
+   absent entry → the zero-claims test reds; (b) put `cancelTurn` in
+   every screen's table → the same test reds; (c) drop `cancelTurn` from
+   `matchAccelerator` → three tests red. All reverted, `git diff` clean
+   each time. T-049's three instruments (per-chord `preventDefault`
+   count, live-path enumeration, `EmptyState`'s zero registrations) are
+   green **unchanged**.
+8. **The DEV gate proved AND drilled both ways** — `interview-harness.test.ts`
+   mirrors T-041's protocol: runtime half with a POSITIVE CONTROL first
+   (`listen("genesis-turn")` and `invoke("genesis_status")` both called,
+   so "absent" cannot pass for the boring reason that nothing ran); an
+   EXACT five-door key set with every door required to BE a function; a
+   source-level assertion that **both** harnesses sit behind
+   `!isTauri` → `import.meta.env.DEV` → install, in that nesting,
+   searching BACKWARDS from each install site (searching forwards found
+   an unrelated earlier `import.meta.env.DEV` in `watcher-store.ts` —
+   the first version of this test was wrong and said so); and a
+   zero-bytes bundle grep with **four in-bundle controls** and T-037's
+   staleness guard. Drills: force `DEV` → **2 red** (bundle grep + gate
+   shape); drop `!isTauri` → **4 red** (both runtime tests + gate shape
+   + the staleness guard firing, which incidentally proves the guard
+   works). Both reverted, `git diff` clean.
+9. **Geometry measured at 800×600 / 1024×768 / 1280×720 / 1440×900** —
+   at every one: page `scrollHeight` equals the viewport, the column is
+   bounded to the window, and the chat's own region has more content
+   than box. The lens's region is additionally asserted wherever the
+   lens renders. The split is present at ≥1024 and absent at 1023 and at
+   800. A real `page.mouse.wheel` scrolls the transcript and `scrollY`
+   stays 0. **T-048's four other screens re-measured** at 800×600 and
+   1280×720 (front door, no-plan card, board, map): all four still
+   scrolling pages, `h-screen` absent on the column at every one.
+10. **Tokens** — both new tokens carry light AND dark values, both
+    present in the built sheet (`interview-challenge-bg: #fdf6ee` /
+    `#1d1710`, `interview-challenge-ink: #3f2b1a` / `#e4d3c0`). Every new
+    utility confirmed to EMIT into `dist/assets/index-*.css` (32 of 33
+    checked; the 33rd, bare `.w-160`, is legitimately absent because only
+    `lg:w-160` is used and that one IS emitted — proven live by the
+    lane's 640px measurement). `lint:tokens` clean over 107 files at zero
+    allowlist.
+11. **Reconciled tests** — six, each declared in place. See the table
+    below.
+12. **Fence audit** — `git diff --stat e92056a HEAD` is **20 files**, all
+    inside §7's list. **Zero diff** to `app/src-tauri/**`,
+    `app/src/lib/**`, `GenesisPane.tsx`, `genesis-derive.ts`, `method/**`,
+    `lib/parser/**` (so `smoke.test.ts` is untouched — no component
+    declared), `capabilities/**`, `tauri.conf.json`,
+    `docs/architecture/graph.json`, every manifest and every lockfile.
+    **Zero Rust ⇒ the ACL surface cannot have moved, and that is proven
+    by the empty diff rather than by a regen.**
+13. **BOOT GATE: FIRED, RAN, GREEN.** Scratch port **14602**, probed free
+    first, deliberately avoiding 1420 and the ports used tonight
+    (14520/14534/14535/14542/14555/14570/14571/14580/14581) and my own
+    lane port 14601.
+
+        [boot-check] port 14602 free — spawning `npm run tauri dev …`
+        [boot-check] app: [nputer] project folder: /Users/ujju/Projects/nputer-t027
+        [boot-check] detected startup line 1/2: [nputer] project folder:
+        [boot-check] app: [nputer] window "main" created
+        [boot-check] detected startup line 2/2: [nputer] window "main" created
+        [boot-check] process tree stopped (exit=null signal=SIGTERM)
+        BOOT_EXIT=0
+
+    **Exit 0, both `[nputer]` lines.** Afterwards: `lsof` on 14602
+    empty, `pgrep -fl tauri-boot-check` empty, no `tauri dev` strays.
+14. **Graph delta measured IN-BRANCH and restored byte-exact** — below.
+
+### The reconciled tests — six, each with its diff and its strength argued
+
+The plan named five. The sixth (`startup-screen.test.tsx`) was
+discovered by running the suite, and it is the one that mattered most.
+
+| File | What changed | Why it is not a loosening |
+|---|---|---|
+| `shell-frame.test.tsx` | the `min-h-0` chain gains `genesis-split`; a **second** chain added for the chat's scroll region | The loop still requires `min-h-0` on every link and the expected array is still a whole-path equality. **Strengthened**: there are two scroll regions now, and a chain protecting one protects the frame half as well. T-048's own flags said this test "will go red and should be re-derived, not deleted". |
+| `genesis-mount.test.tsx` (criterion 1) | `genesis-project-dir` → `interview-chat` present + the dir asserted ABSENT from the screen | The line existed to prove the screen was not just the pane; T-026's `<h2>` was the only other thing there. **New home named**: `genesis-entry.test.tsx` renders the real App and already asserts the dir at two points — those two lines needed NO edit and kept passing, so the property moved from one screen rendered alone to the whole shell. |
+| `genesis-mount.test.tsx` (criterion 5) | same swap in the boundary test, plus `interview-input` | **Strictly stronger.** The heading was an empty sibling; the chat is a live component with its own subscription, state and input. "A crash in the right half stays in the right half" is a claim the old assertion could not make. |
+| `genesis-pane-boundary.test.tsx` | `toContain("Starting a plan in")` → the header's `genesis-project-dir` **plus** `interview-chat` | Same claim, better instrument: a `data-testid` instead of a sentence that a redesign can move, and both halves of the split asserted instead of one heading. |
+| `accelerators.test.tsx` | +5 ⌘. cases in the existing verdict test; +1 whole-set sweep; +3 screen-scoping tests | **Every pre-existing assertion is byte-unchanged.** See the plan correction below. |
+| `startup-screen.test.tsx` | the `listen` mock is now channel-aware | **A strengthening, not an accommodation.** The mock parked EVERY `listen` on one shared deferred. T-027 opens a second subscription, so the second call silently overwrote the first's resolve/reject pair — every `refuseListen` would then have rejected the WRONG channel and **seven tests would have been asserting against a subscription nobody was awaiting**. Naming the channel is what keeps them about `docs-changed`. |
+
+Nothing was deleted; nothing became `toContain`, `arrayContaining`,
+`toHaveLength` or `.skip`.
+
+### THE PLAN'S OWN NUMBERS — one claim did not reproduce
+
+§4 says "`accelerators.test.tsx`'s **26-chord sweep** moves — the app now
+declares five chords, not four. Changed, never loosened: the assertion
+stays a **whole-set equality**." **There is no 26-chord sweep in that
+file and there is no whole-set equality.** What is there is one `it()`
+with **eleven** hand-listed `chordOf(...)` cases — thorough, but not
+exhaustive: an unlisted letter could have been claimed silently and
+nothing would have gone red.
+
+This is the fourth-instance pattern STATE.md flags ("a card's own numbers
+are a claim to verify"), now a fifth. It was answered by **building the
+thing the plan described**: a sweep over every letter, every digit and
+every named key the app's UI mentions, with ⌘ and with ⌃, against a
+COMPLETE expected verdict map — so a fourth chord, a moved chord, a
+renamed id or a chord quietly claimed on an unlisted letter all red.
+The eleven original cases are kept, byte-unchanged, beside it.
+
+Two more numbers were re-measured rather than restated:
+
+- **The lens gets W−640, not W−641.** The plan computed 799 at 1440 by
+  adding the 1px rule to the 640. The app's box model is **border-box**,
+  so the rule is INSIDE the 640 and the lens gets **800 at 1440, 640 at
+  1280, 384 at 1024**. One pixel wider than forecast at every size.
+- **`watcher-store.ts:533-534`** (the plan's citation for the gate
+  expression) no longer points at the gate, and the gate is a NESTED
+  `if (!isTauri) { if (import.meta.env.DEV) { … } }` rather than a
+  single `&&`. The new module uses the same nesting, and a test asserts
+  the two are the same shape rather than trusting a line number.
+
+### THREE DEFECTS FOUND BY THE TESTS AND FIXED IN THE DESIGN
+
+Each was found by something going red, and each was fixed by changing
+the code rather than the assertion.
+
+1. **`stageOf` — the chat could be taken down by a file on disk.**
+   `genesis-mount.test.tsx`'s hostile-tree probe (a Proxy that throws on
+   any read) reds the CHAT, because the chat calls `deriveGenesis` over
+   the same docs tree the lens does — from **outside T-037's error
+   boundary**. A tree torn badly enough to break the lens would have
+   taken the whole interview with it: exactly the failure that boundary
+   exists to prevent, one layer up. The conversation is the load-bearing
+   half and the stage strip is derived decoration, so the strip now
+   degrades to `stage —` / all-future and **says so in the DOM**
+   (`data-stage-derivation="failed"`) while the chat stands.
+2. **`startInterviewSource` could reject at the app's root.** A refused
+   `listen("genesis-turn")` was becoming an unhandled rejection — T-050's
+   exact shape. Now caught and logged loudly. The residual (nothing on
+   SCREEN says so) is filed as **T-027-s2** rather than half-fixed here,
+   because the honest fix wants a field on C-14's state.
+3. **`bankedSince` refused the first snapshot of the whole interview.**
+   Found by the lane. `resetDocsForProjectSwitch` returns
+   `{ ...emptyState(), seq }`, so a genesis switch carrying no tree
+   leaves `{ seq: 10, projectDir: "" }` — a real watermark over **no
+   project** — and the project-switch guard read that as a switch and
+   silently dropped every chip. The guard now asks whether the baseline
+   **knew** a project, testing `docs-model.ts`'s own sentinel. Both
+   halves pinned so neither can be loosened alone.
+
+### Design values — what was followed, and the disclosed deviations
+
+Read directly from the bundle's `interview` screen (lines 499–617).
+
+| Design | Token / utility | Exact? |
+|---|---|---|
+| chat 640px, `flex:none`, `border-right:1px` | `lg:w-160` + `lg:border-r border-hairline` | ✓ (640px; hairline is deviation 5) |
+| right half `flex:1; min-width:0` | `flex-1 min-w-0`, no border, no radius | ✓ |
+| `#b5651d` challenge rule | `--chart-4` | ✓ exact |
+| `#84501c` pushing-back label | `--status-verifying-fg` | ✓ exact |
+| `#fdf6ee` warm paper | `--interview-challenge-bg` | ✓ exact (NEW) |
+| `#3f2b1a` challenge ink | `--interview-challenge-ink` | ✓ exact (NEW) |
+| `#1f7a58` / `#fff` banked disc | `--review-disc` / `--review-mark` | ✓ exact |
+| `#2f7256` banked text | `--status-done-fg` | ✓ exact |
+| `#f5f5f5` bubble | `--muted` | ✓ exact |
+| `#e2e2e2` input border | `--input` | ✓ exact |
+| `#171717` current question | `--foreground` | ✓ exact |
+| 17px / 500 / −0.01em question | `text-xl font-medium tracking-title` | ✓ size + tracking exact |
+| radius 10px | `rounded-lg` (`--radius`) | ✓ exact |
+| `0 1px 2px rgba(0,0,0,0.04)` input | `shadow-card` (0.05) | near |
+| all padding/gap values | the 4px spacing scale | ✓ exact |
+
+**Disclosed deviations, each with its reason.**
+1. **Line heights.** Design 1.55 / 1.6 / 1.5 against the token pairs'
+   1.43 / 1.45 / 1.41 — the largest systematic gap in the pane. The
+   tokens are taken and the deviation is flagged: chat prose wanting
+   more air is a judgment @human should make once, not a token this task
+   should invent. **@human, at real size.**
+2. **10px overlines → `text-xs` (11px)**, ls 0.1em → `tracking-overline`
+   (0.12em). No 10px step and no second tracking step exist.
+3. **The three-step recency ink ladder collapses to two** — all history
+   at `text-secondary-foreground`, the current question at
+   `text-foreground`. That is exactly what criterion 1 asks for; a
+   positional gradient across a live transcript is a nuance the
+   criterion does not ask for.
+4. **The bubble's `max-width:78%` → `max-w-114`** (456px) — 78% of the
+   640px pane's 584px content box, so the two coincide at the ruled
+   width and stay stable when the chat is alone.
+5. **Hairlines `#ededed` → `border-hairline` (`#e5e5e5`)** — the
+   identical call T-024 disclosed.
+6. **Strip segment radius 2px → `rounded-full`** (1.5px effective on a
+   3px bar); 2px is below the radius scale and `rounded-[2px]` is a
+   token-lint P1 violation.
+7. **The stage readout.** The strip's 7 segments are interview stages
+   1–7 while `approxStage` is 0–8 (or null). Stage 0 reads `scaffold`
+   with all segments future; stage 8 reads `stage 7 of 7 · decomposition`
+   with all done; null reads `stage —`. The chat writes `stage N of 7`
+   where T-024's pane writes `stage ~N` — **the two halves phrase the
+   same approximation differently, and that is flagged rather than
+   silently unified.**
+8. **The empty, failed and CLI-missing states have no design source** —
+   built from the nearest precedent in the existing vocabulary (T-024's
+   deviation-3 pattern).
+9. **Paths, not section names, on the chips.** The design reads
+   `banked → north star, person`; a section-level claim is not file
+   evidence. T-024 made the identical call (its deviation 2).
+10. **NO DARK SOURCE AT ALL for the two new tokens.** The bundle's
+    `sc-if` list carries `boardDark` and `mapDark` and no
+    `interviewDark`. The two dark values are **derived by family** the
+    way `--status-verifying-bg/-fg` inverts. **This is the one place the
+    design cannot be followed, only extended, and it is @human's.**
+
+### The expected graph delta — MEASURED in-branch, then restored byte-exact
+
+Regenerated with the ratified ritual, the delta recorded, then
+`docs/architecture/graph.json` **restored from a pre-regen copy and
+verified byte-identical**: sha256
+`88e1daf69645e5734acf43a910e36e03faeb9dca8464bc10f527a144b9a0a289`,
+441,937 bytes, `git status` clean on that path, and both dogfood fixtures
+green again (17/17). The integrator's ritual is the integrator's.
+
+**The graph itself:** **100 → 107 files** (7 added, none removed),
+**757 → 853 symbols**, **1170 → 1315 edges** (import +32, call +58,
+type_ref +55). Languages still `["ts"]`; zero `.rs` indexed.
+
+Added: `app/src/genesis/{InterviewChat.tsx, interview-model.ts,
+interview-source.ts, interview-turns.tsx}` (C-13) and
+`app/test/{interview-chat-dom.test.tsx, interview-harness.test.ts,
+interview-model.test.ts}` (C-05's `app/test/**` umbrella).
+**Deviation from the plan's forecast: `app/test/` gains THREE, not two.**
+The DEV-gate proofs need module resetting and bundle reads, which do not
+compose with the DOM suite's fixture; the third file is
+`interview-harness.test.ts`.
+
+**Per-component:** `C-05` 47 → **50**, `C-13` 2 → **6**; every other
+component unmoved. `unmappedFiles` stays `[]` and `derived.issues` stays
+`[]` (the per-component counts sum to exactly 107).
+
+**The relation table: 28 → 30 rows** — `13 confirmed, 6 undeclared, 9
+planned` becomes **`13 confirmed, 8 undeclared, 9 planned`**. Two new
+rows, and **the plan predicted only one of them**:
+
+- `["C-13","C-14","undeclared",4]` — forecast (`interview-source.ts` →
+  `agent-store.ts`, plus three more).
+- `["C-13","C-05","undeclared",2]` — **NOT forecast**: both
+  `InterviewChat.tsx` and `interview-turns.tsx` import
+  `components/ui/button.tsx`, which is C-05's. The first genesis-side
+  use of a shared UI primitive.
+
+**Four EXISTING rows move their counts** — the thing a "two new rows"
+forecast would miss: `C-05→C-13` 5 → **10**, `C-05→C-14` 1 → **3**,
+`C-05→C-10` → **27**, `C-13→C-10` → **4**.
+
+**Findings: 9 → 11** (six D1 + three D3 becomes eight D1 + three D3),
+adding `D1:C-13->C-05` and `D1:C-13->C-14`. **AND TWO EXISTING FINDINGS
+GROW THEIR `fileEdges` LISTS** — the trap that cost the last integrator
+three assertions: `D1:C-05->C-13` grows 5 → **10** entries and
+`D1:C-05->C-14` grows 1 → **3**. Swept for directly: no OTHER list
+moves, because no other component pair gained a file edge.
+
+**Drift: 6 → 7 flagged nodes** — **C-13 joins the drift set** (it is now
+the SOURCE of two D1s, where before it was only a target).
+
+**The moved fixture assertions, enumerated — 9 `expect()` statements and
+4 `it()` names:**
+
+`app/test/architecture-dogfood.test.ts`
+1. `fileComponent.size` `toBe(100)` → **107** (+ the `it()` name "all
+   100 files map")
+2. the per-component array: `["C-05", 47]` → **50** and `["C-13", 2]` →
+   **6** (one `expect`, two cells)
+3. `derived.findings` `toEqual` → +2 rows **and 2 grown lists** (+ the
+   `it()` name "six undeclared dependencies" → eight)
+4. the relation table `toEqual` → +2 rows **and 4 changed counts** (+ the
+   `it()` name "13 confirmed, 6 undeclared, 9 planned")
+5. the drift-flag `toEqual` → 6 → 7
+
+`app/test/map-dogfood-render.test.tsx`
+6. `expect(node("C-13").className).not.toContain("map-drift-ring")` —
+   **this one INVERTS**, and it is invisible to any count check
+7. `toHaveLength(28)` → **30** (+ the `it()` name "draws the full
+   28-edge relation table")
+8. `"committed graph · 100 files"` → **107**
+9. C-13's node gains a `map-drift-count` of **2** (an assertion to ADD,
+   beside the existing C-05/C-08/C-09 ones)
+
+`lib/parser/test/smoke.test.ts` is **deliberately NOT touched**: T-027
+declares no component and changes no registry file, so the T-024
+three-fixtures rule does not fire. Confirmed by re-running lib/parser
+after the regen: **197/197**.
+
+**The architect's call, flagged not taken:** `C-13→C-14` is real and
+undeclared. Declaring `C-14` in `C-13`'s `depends_on` would move the
+relation table and the map's edge count but **not**
+`lib/parser/test/smoke.test.ts` (which pins only the id array). T-027
+did not edit the registry — that is the architect's territory and
+editing a registry file is the one thing that fires the three-fixtures
+rule.
+
+### Genuine silences, left open deliberately
+
+The user's half of the transcript does not survive a remount or an app
+restart — `refreshGenesisStatus` rebuilds phase/turn/session but never
+`turns`, so a remount mid-interview shows an empty transcript over a
+live session (**T-029's rehydration**, named here so nobody builds half
+of it) · `textDelta`-after-`completed` is **pinned, and unreachable**,
+so nothing is owed · the two new tokens have **no dark design source**
+and are family-derived · the design's line heights are looser than every
+token pair and the tokens win, pending @human · the three-step recency
+ink ladder is collapsed to two · **the lens is absent at the app's own
+800×600 window**, and the window size is not this task's to change ·
+T-048-s1's global scroll unification is ruled but not built · **T-041-s2's
+wire mirror is now THREE copies compared nowhere** — runner.rs, agent-store.ts
+and `tools/e2e/tests/shell-harness.ts`, the third added by this task and
+named in its own header · T-049-s4's `event.key` layout limitation is
+inherited unchanged, now with a fifth chord riding it · render volume
+under a long streaming turn is unthrottled and unmeasured (**T-027-s3**) ·
+a refused turn subscription is invisible on screen (**T-027-s2**) · the
+answer box loses focus after every send (**T-027-s1**) · **T-047-s3 has
+no caller here** — no command exposes `model`, and T-027 renders neither
+`model` nor `cliVersion` · the packaged wkwebview is still not what the
+lane drives (T-020's standing limit) · Windows remains the repo-wide
+standing silence.
+
+### The control-byte discipline — a TWELFTH reproduction, caught by the tool layer
+
+Writing the hostile-content fixture, the first attempt to create
+`app/test/interview-chat-dom.test.tsx` through a shell heredoc was
+**refused outright by the tool layer**: "command contains control
+characters that would be hidden in the approval dialog". The escape text
+I typed had become the CHARACTERS, exactly as STATE.md's rule predicts.
+
+The rule was then obeyed rather than worked around: the file is generated
+by a script that **constructs** the escapes from `chr(92)`, and the
+script **verifies its own output** — zero bytes in the C0/DEL ranges, and
+all four `\uXXXX` sequences present as six-character text — before it
+exits. `file(1)` reports it as `HTML document text, ASCII text`.
+
+**`file(1)` was run over every file this task created or changed** and
+every one reads as text; none is `data`. The habit is now six-for-six.
+
+### 1420 — never bound, never contacted, never signalled, AND AN OBSERVATION THE HUMAN SHOULD SEE
+
+Nothing in this session bound, connected to or signalled port 1420. It
+was **observed** with `lsof` only.
+
+**At the start of this session** 1420 was held by `node` **pid 64249**
+with one established connection to the human's webview — the same pid
+five checkpoints have recorded. **By the time the boot gate ran, 1420 had
+no listener and pid 64249 was gone**, and `pgrep -f "tauri dev"` returns
+nothing at all.
+
+**This session did not do it, and that is argued rather than asserted:**
+1420 was ALREADY free when probed immediately BEFORE the boot check, so
+the boot check cannot be the cause; and the boot check kills by
+`process.kill(-child.pid, …)` against a process group it created with
+`detached: true` (`scripts/tauri-boot-check.mjs:128-176`), which cannot
+reach a process in another group. Everything else this session ran was
+`npm`/`cargo`/`vitest`/`playwright`/`git` inside the worktree, none of
+which kills by name or by port. **What actually stopped it is not
+established, and is not guessed at here.**
+
+The practical consequence for the morning: **the human's dev server on
+1420 is down**, so the app window they left open is no longer being
+served. If they were relying on it still running, that is news.
 
 ## Verdicts
