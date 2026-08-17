@@ -1,4 +1,5 @@
 import { extractFrontmatter } from './frontmatter.js';
+import { aliasedIdSlots } from './id-slot.js';
 import {
   COMPONENT_STATUSES,
   type ComponentParseResult,
@@ -328,26 +329,20 @@ export function parseComponentSet(files: readonly ComponentSourceFile[]): Compon
   //    resolves by an accident of zero-padding). ONE issue per slot, in
   //    comparator order; both records are kept.
   //
-  //    The slot key strips leading zeros as TEXT rather than going
-  //    through Number(): an id may carry arbitrarily many digits, and two
-  //    genuinely different ids past 2^53 must not collide into a false
-  //    alias just because floating point ran out of room.
-  const bySlot = new Map<string, string[]>();
-  for (const id of byId.keys()) {
-    const digits = ID_PATTERN.exec(id)?.[1];
-    if (digits === undefined) continue; // unreachable: the identity gate pins the pattern
-    const slot = digits.replace(/^0+(?=\d)/, '');
-    const ids = bySlot.get(slot) ?? [];
-    ids.push(id);
-    bySlot.set(slot, ids);
-  }
-  for (const slotIds of bySlot.values()) {
-    if (slotIds.length < 2) continue;
-    const ids = [...slotIds].sort(compareComponentIds);
+  //    The grouping itself lives in id-slot.ts since T-053 — the same
+  //    aliasing is legal in the task and feature spaces, and three copies
+  //    of a slot key are three chances to disagree about what an id is.
+  //    Its doc carries T-030's reason the strip is TEXT and never
+  //    Number(): two genuinely different ids past 2^53 must not collide
+  //    into a false alias because floating point ran out of room.
+  //    compareComponentIds is passed rather than defaulted because the
+  //    tie this message reports IS that comparator's tie.
+  for (const ids of aliasedIdSlots(byId.keys(), compareComponentIds)) {
     const files = ids.map((id) => byId.get(id) ?? '');
     const named = ids.map((id, i) => `'${id}' (${files[i] ?? ''})`).join(', ');
     issues.push({
       kind: 'aliased-id',
+      space: 'component',
       ids,
       files,
       message: `numerically equal component ids ${named} — zero-padding aliases one registry slot; component id order cannot separate them, so which one wins file mapping falls to string comparison`,

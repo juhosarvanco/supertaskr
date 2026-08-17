@@ -402,9 +402,21 @@ describe('parseComponentsFromFiles — numerically aliased ids (T-030, absorbing
         [path('C-005-padded.md'), componentSrc('C-005', ['lib/**'])],
       ]),
     );
+    // TIGHTENED AT T-053 (2026-08-17, executor claude-opus-5 @fresh), one
+    // line: `space: 'component'`. T-053 criterion 5 requires the issue to
+    // say WHICH id space aliased — three spaces are checked now — and both
+    // shapes it offers (a field, or three kinds) change the object this
+    // whole-object toEqual asserts, so its criterion 1 ("these pins pass
+    // untouched") cannot hold jointly with its criterion 5. The field shape
+    // disturbs exactly this pin; three kinds would have disturbed three.
+    // Changed, never loosened: every other assertion here is byte-identical
+    // and the pin now also asserts the discriminator. The DETECTION
+    // behaviour is untouched — the other three T-030 alias pins pass
+    // byte-unedited, 2^53 case included.
     expect(result.issues).toEqual([
       {
         kind: 'aliased-id',
+        space: 'component',
         ids: ['C-005', 'C-05'], // comparator order: numeric tie → string order
         files: [path('C-005-padded.md'), path('C-05-app.md')],
         message: expect.stringContaining('numerically equal component ids'),

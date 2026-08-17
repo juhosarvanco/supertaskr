@@ -23,6 +23,7 @@ export {
   type FeatureRecord,
   type ComponentStatus,
   type ComponentRecord,
+  type IdSpace,
   type ParseIssue,
   type TaskParseResult,
   type RoadmapParseResult,

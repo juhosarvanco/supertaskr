@@ -1,3 +1,4 @@
+import { aliasedIdSlots } from './id-slot.js';
 import type { FeatureRecord, ParseIssue, RoadmapParseResult } from './types.js';
 
 /**
@@ -95,6 +96,31 @@ export function parseRoadmap(content: string, file: string): RoadmapParseResult 
       kind: 'roadmap-error',
       file,
       message: `${file}: no '## Backbone' section found — cannot extract feature records`,
+    });
+  }
+
+  // Numerically equal feature ids spelled differently — `F-1` beside
+  // `F-01` (T-053, promoting T-030-s3). A whole-file check, so it runs
+  // after the scan; with no backbone there are no features and it is
+  // vacuous. The board renders a COLUMN per spelling and a task's
+  // `feature` lands in whichever column matches its exact string, so one
+  // feature becomes two and half its cards go to the wrong one.
+  //
+  // Both declarations live in this one file, which is why `files` cannot
+  // locate them (it is this path twice, index-aligned by contract) and
+  // the message names each spelling WITH ITS LINE — the record already
+  // tracks lines, and a diagnostic a human cannot act on is not a
+  // diagnostic. `seen` holds each id's FIRST line, exactly as the
+  // duplicate-id message above uses it.
+  for (const ids of aliasedIdSlots(seen.keys())) {
+    const lines = ids.map((id) => seen.get(id) ?? 0);
+    const named = ids.map((id, i) => `'${id}' (line ${lines[i] ?? 0})`).join(', ');
+    issues.push({
+      kind: 'aliased-id',
+      space: 'feature',
+      ids,
+      files: ids.map(() => file),
+      message: `${file}: numerically equal backbone feature ids ${named} — zero-padding aliases one backbone slot; the board renders a column per spelling and a task's feature field lands in whichever column matches its exact string`,
     });
   }
 

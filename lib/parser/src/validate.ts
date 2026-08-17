@@ -1,3 +1,4 @@
+import { aliasedIdSlots } from './id-slot.js';
 import type { ParseIssue, ProjectParseResult, TaskRecord } from './types.js';
 
 /**
@@ -45,6 +46,19 @@ import type { ParseIssue, ProjectParseResult, TaskRecord } from './types.js';
  *    the architect has not numbered yet, and TASK-FORMAT.md leaves those
  *    free-form beyond the `T-` prefix the glob already demands — flagging
  *    them would make the convention stricter than it is written.
+ * 5a. numerically equal task ids spelled differently (`aliased-id`,
+ *    space `task` — T-053 promoting T-030-s3): `T-01` beside `T-001` is
+ *    one slot spelled twice. Nothing rejected the pair before, because
+ *    every rule here compares id strings exactly: `duplicate-id` sees two
+ *    different strings, the filename rule is satisfied (each file encodes
+ *    its own spelling), and a `blocked_by: [T-01]` that USED to be a loud
+ *    dangling-reference silently starts resolving the moment an unpadded
+ *    sibling appears — a dependency quietly meaning something other than
+ *    its author meant, in the graph T-034 renders as waves and a critical
+ *    path. The `-sN` suffix is part of the identity: its digits alias
+ *    (`T-01-s1` / `T-001-s1`, `T-01-s01` / `T-01-s1`) while a suggestion
+ *    never aliases its parent (`T-01` is NOT `T-01-s1`). ONE issue per
+ *    slot; both records kept.
  * 5. `blocked_by` cycles (`dependency-cycle`, T-030 absorbing T-019-s3):
  *    a self-reference or any ring of tasks blocking each other is
  *    unsatisfiable — no member can ever start — yet it resolved silently,
@@ -88,8 +102,13 @@ export function validateProject(
   const issues: ParseIssue[] = [];
 
   const taskIds = new Set<string>();
+  // id -> first file declaring it, in model order (ADR-009: a Map, so an
+  // id literally named `__proto__` cannot resolve against inherited state).
+  const fileOfTask = new Map<string, string>();
   for (const task of project.tasks) {
-    if (task.id !== undefined) taskIds.add(task.id);
+    if (task.id === undefined) continue;
+    taskIds.add(task.id);
+    if (!fileOfTask.has(task.id)) fileOfTask.set(task.id, task.file);
   }
   const featureIds = new Set<string>();
   for (const feature of project.features) featureIds.add(feature.id);
@@ -141,8 +160,22 @@ export function validateProject(
     }
   }
 
-  // Cycles are project-shaped, not task-shaped: they come after every
-  // per-task finding so the pinned per-task issue order is untouched.
+  // The two project-shaped checks follow every per-task finding, so the
+  // pinned per-task issue order is untouched. Aliases precede cycles
+  // deliberately: an aliased slot makes every blocked_by edge below it
+  // ambiguous, so it is the root cause a reader wants first.
+  for (const ids of aliasedIdSlots(fileOfTask.keys())) {
+    const files = ids.map((id) => fileOfTask.get(id) ?? '');
+    const named = ids.map((id, i) => `'${id}' (${files[i] ?? ''})`).join(', ');
+    issues.push({
+      kind: 'aliased-id',
+      space: 'task',
+      ids,
+      files,
+      message: `numerically equal task ids ${named} — zero-padding aliases one task slot; every reference resolves by exact string, so a blocked_by naming one spelling silently means that record alone and the board reads the pair as two tasks`,
+    });
+  }
+
   issues.push(...blockedByCycles(project.tasks, taskIds));
 
   return issues;
