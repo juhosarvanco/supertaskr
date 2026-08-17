@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [app-shell, app-interview]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: "claude-opus-5 @fresh"
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 Absorbs: T-024-s3, T-026-s4, T-026-s5, T-026-s6. Triage 2026-08-16:
@@ -463,3 +463,308 @@ the ignored self-check is red on-branch exactly as it should be).
   they disagree.
 
 ## Verdicts
+
+2026-08-17 — claude-opus-5 @fresh, verifier — same-model review (the
+builder was claude-opus-5 too; recorded so this is not read as an
+independent-model check): **APPROVED**, with four CORRECTIONS to the
+notes recorded below and one suggestion filed (s3). Every criterion was
+re-derived on the branch — the ordering argument re-constructed rather
+than read, both mutation directions re-run, the graph regenerated. The
+numbers below are mine.
+
+**Merge base re-derived, not accepted.** `git merge-base HEAD main` =
+`8dadb59` — matching the notes. Main has since taken T-030 at `59558de`;
+its changed set is `lib/parser/` + `docs/tasks/T-030*` and this branch's
+nine files touch neither, so the overlap is empty.
+
+**Suites (macOS 15/Darwin 25.6, from the branch worktree, ADR-011
+order).** lib/parser `npx vitest run` **159/159 (10 files)**,
+`npx tsc --noEmit` clean, and the diff to `lib/parser/` is **0 bytes**.
+app: `npm run build` exit 0 then `npx vitest run` **546/546 (33 files)**
+— the build first is genuinely required, and the emitted assets match
+the notes exactly (`index-RXeeD2qB.css` **41.30 kB**, unchanged from
+T-049/T-050; only `index-qJOlkERM.js` **445.29 kB** moved). src-tauri
+bare `cargo test` **220 passed + 3 ignored, 0 failed — three consecutive
+full runs, identical counts**; `cargo clean -p nputer && cargo build`
+→ **zero warnings**, exit 0 (and a from-scratch build in a clean
+`CARGO_TARGET_DIR` also emitted zero). tools/e2e **40/40 in 7.9 s** on
+my own scratch port **14542** (1420 was OBSERVED with `lsof` only —
+node pid 64249 — never bound, contacted or signalled; 14520 left to
+T-045); `npm run typecheck` clean; `lint:tokens` **clean, 38 files**.
+No `fake_agent` or `tauri-boot-check` process afterwards; 14542
+released.
+
+**THE BOOT CHECK WAS NOT RUN.** The trigger is present — the diff
+touches `app/src-tauri/**` and `app/src/**` — and the dispatch fences
+1420 and this session is headless. The builder declined correctly and
+said so loudly; I decline for the same reason. **The merge owes it.**
+Exit code: not obtained.
+
+**C1 — the snapshot, and the ORDERING, re-constructed rather than
+read.** I built the race in an isolated copy of the worktree (a
+`#[cfg(test)]` hook that writes a file into each ordering's own window
+between the two tree reads) and measured both:
+
+&nbsp;&nbsp;&nbsp;&nbsp;A collect AFTER the ack (production)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ snapshot `["docs/ARCHITECTURE.md","docs/GAP.md"]` — the gap file rides
+&nbsp;&nbsp;&nbsp;&nbsp;B collect BEFORE the arm
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ snapshot `["docs/ARCHITECTURE.md"]`, file on disk, and
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**no emit at all** in a 1.5 s window after `settle()`
+
+**Ordering B loses it**, and the mechanism is the one
+`open_as_project`'s own comment states verbatim ("the snapshot is never
+older than the baseline — post-pick changes always diff"): `rearm` sets
+`target.last` to the tree it saw, so anything written before that
+baseline but after an earlier snapshot read is in the baseline, absent
+from the snapshot, and its batch collects EQUAL and suppresses. The
+double collect is therefore load-bearing, and the ordering the builder
+chose is the one that survives. Reusing the arm-time collection loses
+the same file by the other route: its tree would ride at the switch's
+seq, which is HIGHER than the overtaken emit's, so it clobbers it.
+
+T-026's verifier's own repro reproduced BOTH WAYS on the real folder
+(`docs/ARCHITECTURE.md` + `docs/decisions/001-x.md`):
+
+&nbsp;&nbsp;&nbsp;&nbsp;before &nbsp;`Genesis(probe.architecture=true, has_plan=false)`, snapshot=**NONE**,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;no emit in a 1.2 s window, later edit emits **2 files** at seq 2 > 1
+&nbsp;&nbsp;&nbsp;&nbsp;after &nbsp;&nbsp;same outcome, snapshot=**SOME** `["docs/ARCHITECTURE.md","docs/decisions/001-x.md"]`,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`snapshot.seq == outcome.seq` (**1 == 1**), `generated_at_ms > 0`,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and the 1.2 s quiet window and the 2-file edit BOTH still hold
+
+So the watch really was armed throughout and nothing was loosened to
+buy the fix. MUTATION DRILL re-derived: substituting
+`let snapshot: Option<DocsSnapshot> = None;` → **106 passed; 2 FAILED**,
+at `docs_watch.rs:2920` *"THE FIX: the tree rides the switch"* and
+`:2879` *"an armed docs/ carries its tree, empty or not"* — the exact
+lines and messages the notes claim.
+
+**C2 — one rule, both directions, and ten attacks.** The five-step
+sequence reproduces with the exact counts (appear 1 / quiet 0 / DELETE
+1 / five further batches 0 / recreate 1 / quiet 0). I then attacked the
+boundary with my own sequence through the same seam, counting every
+emit — looking for a double emit or a silent transition:
+
+&nbsp;&nbsp;&nbsp;&nbsp;plain docs/ appears &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-> 1, then 0 &nbsp;(armed)
+&nbsp;&nbsp;&nbsp;&nbsp;docs/ REPLACED BY A SYMLINK &nbsp;-> 1, then 0 &nbsp;(refused, reads as gone)
+&nbsp;&nbsp;&nbsp;&nbsp;symlink -> plain dir &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-> 1, then 0
+&nbsp;&nbsp;&nbsp;&nbsp;docs/ REPLACED BY A FILE &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-> 1, then 0
+&nbsp;&nbsp;&nbsp;&nbsp;file -> dir WITH content &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-> 1, then 0 &nbsp;(transition AND content: still one)
+&nbsp;&nbsp;&nbsp;&nbsp;chmod 000 on an armed docs/ &nbsp;-> 1, then 0 &nbsp;(no transition; the tree emptied)
+&nbsp;&nbsp;&nbsp;&nbsp;chmod back to 755 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-> 1, then 0
+&nbsp;&nbsp;&nbsp;&nbsp;create/delete/create in ONE batch -> 1, then 0
+&nbsp;&nbsp;&nbsp;&nbsp;create/delete NETTING TO NOTHING &nbsp;-> **0** (nothing net changed)
+&nbsp;&nbsp;&nbsp;&nbsp;swap-in, IDENTICAL bytes, new inode -> **0** (a replacement is not a transition)
+
+Nothing double-emits, and nothing that should be news is silent. The
+symlink and regular-file cases are the ADR-010 posture the notes flag:
+the app refuses to follow them, so from its view docs/ is gone, and it
+now says so — correct, and new. MUTATION DRILL, narrowing side:
+`!was_armed && target.docs.is_some()` reds **exactly one** test,
+`a_deleted_empty_docs_emits_on_the_armed_to_unarmed_transition` at
+`docs_watch.rs:2582`, *left: 0, right: 1*.
+
+**The suppression invariant, counted independently.** Driving the seam
+myself rather than trusting the committed test: 20 batches over an
+unchanged tree → **0**; three content changes each followed by five
+quiet batches → **exactly 1 per change, 3 total** (asserted after each);
+a wholesale replacement carrying IDENTICAL bytes on a provably different
+inode → still **3**. OVER-WIDENING DRILL: forcing the return to `true`
+reds **5 tests** — `the_suppression_invariant_stays_exactly_as_narrow_as_it_was`,
+`an_empty_docs_dir_emits_exactly_once_on_the_unarmed_to_armed_transition`,
+`a_deleted_empty_docs_emits_on_the_armed_to_unarmed_transition`, and
+BOTH of T-018's additive-only pins
+(`a_dead_sentinel_leaves_the_existing_watch_fully_working`,
+`a_vanished_root_never_panics_the_batch_handler`). Fenced from both
+sides, exactly as claimed.
+
+**C3 — provenance, not seq.** Both directions verified off the
+`model-updated` channel captured where Rust would receive it, through
+the real App by real clicks: snapshot-less switch → `[]`; docs-bearing
+switch → exactly 1 echo at `seq: 7`, `generatedAtMs: 1700000000007`;
+ordinary `picked` → still echoes (`seq: 4, taskCount: 1`); `cancelled` /
+`busy` / `noDocs` / `error` → nothing, all four. THE TELL, REPRODUCED:
+restoring `next.docs.seq > before.docs.seq` reds **exactly one** case
+and the received payload is T-026-s6's, field for field —
+`{"seq":7,"generatedAtMs":0,"taskCount":0,"featureCount":0,"issueCount":0,"taskIds":[],"parseFailures":[],"skippedTotal":0,"truncated":false}`
+(plus an `appliedAtMs` wall stamp s6 did not record). Reverted;
+`git diff --quiet` clean. **The third comment is confirmed**: the card
+named two, and `reducePickOutcome`'s genesis-case comment ("No snapshot
+rides a genesis switch (there is nothing there yet)") was a third,
+false for exactly the docs-bearing shape and absent from s6. All three
+now describe what the code does, and the note that the guard moved to
+`commitPickOutcome` at T-041 is correct.
+
+**C4 — ratified, and nothing moved, proven not asserted.**
+`ShellState` **1424 bytes** and `ShellHarnessSnapshot` **612 bytes**
+extracted from both revisions and `diff`ed → **ZERO DIFF** (2036 bytes
+combined, matching the notes); `DocsModelState` **2455 bytes** → **ZERO
+DIFF**; `app/src/lib/docs-model.ts` and
+`app/src/genesis/genesis-derive.ts` are **0-byte diffs**; both store
+modules contain **0** occurrences of `ChangeLog`, `observeDocsChange`
+and `changedAtMs`. The three identity pins pass BY NAME (my first `-t`
+run missed the third only because `(no false pulse wall)` is read as a
+regex — escaped, it passes), and `genesis-derive.test.ts` is 24/24. The
+three stated conditions hold of the code they describe:
+GUARDED — `genesis-derive.ts:206-208`, two `return prev` covering the
+empty, already-observed and stale cases (the project-switch branch
+returns a new object, but it is a baseline that records and stamps
+nothing, so a doubled render produces a deep-equal log);
+BOUNDED — `log.changedAtMs` is read at exactly ONE place,
+`writingSince` (`:347`), which feeds only `isWriting` and the transition
+horizon, both inside `WRITING_WINDOW_MS`;
+DERIVED FROM PROPS — `docs` is the prop and the only state input; the
+one non-prop read is `clock()`, which is injectable and which the
+wording ("no I/O, no subscription, no second source of truth") covers
+in substance. The CONVENTIONS gotcha lands in § Gotchas in the
+established shape and says the same three things.
+
+**C5 — changed, never loosened.** 217→220 cargo and 535→546 app with
+every pre-existing assertion intact; the three strengthened ones are
+additions inside existing bodies. Both mutation directions above are
+what proves it rather than the counts.
+
+**Fence.** `git diff 8dadb59..HEAD --name-only` is **exactly nine
+files** — six code/docs plus the card and two suggestions. ZERO bytes
+under every sibling lane and fenced surface, checked as one command:
+`crates/`, `app/src-tauri/crates/` (T-014), `lib/parser/` (T-030),
+`tools/e2e/` and `.github/` (T-045), `app/src/architecture/` (T-034),
+`App.tsx`, `components/`, `lib.rs`, `acl_pin.rs`, `capabilities/`,
+`tauri.conf.json`, `Cargo.toml`, `docs/architecture/`, `method/`,
+`app/src/styles/`, `index.css`, `docs-model.ts`, `genesis-derive.ts`,
+and **every lockfile and manifest**. The whole diff over
+`app/src-tauri/src` and `app/src` adds or removes **zero**
+`#[tauri::command]`, `invoke_handler`, `invoke(`, `listen(` or `emit(`
+call sites (the single grep hit is a test-local `let emit`).
+
+**ACL — re-derived independently, not accepted.** `gen/schemas` is
+gitignored, so I rsynced the worktree to a scratch copy and built BOTH
+ENDS there with separate `CARGO_TARGET_DIR`s — HEAD, then again with
+`8dadb59`'s `docs_watch.rs` swapped in — `rm -rf gen/schemas` before
+each. `diff -r` across the two regenerations: **ZERO DIFF, all four
+artifacts byte-identical**, at the same three sha256 the notes and
+T-026's verifier record: `capabilities.json`
+`4fca70b5437f720b9a72c727c0663349aa9e8b31917dcc0a870012de02406b07`
+(146 B), `acl-manifests.json`
+`d3eace193b1e453756736eaf27bb156df62c7a41b2fe101403ee92ef93e69699`
+(68210 B), `desktop-schema.json` = `macOS-schema.json`
+`2a16f62c90a059a1b67e4501216bb3476f402087e99ba659dd38c9d0521f3b07`
+(120083 B). `acl_pin.rs` is a **0-byte diff**, which subsumes the grant
+claim entirely; all 6 acl_pin tests pass on every run.
+
+**Execution sweep.** `panic!("VERIFIER-CANARY")` into all **3** new
+cargo test bodies → **3 failed**, canary in the output;
+`throw new Error("VERIFIER-CANARY")` into all **11** new frontend
+`it()`s (7 in `genesis-switch-truth.test.tsx`, 4 in
+`watcher-store.test.ts`) → **11 failed / 28 passed (39)**. **14
+poisoned bodies, 14 red.** Every revert verified with
+`git diff --quiet`. No `.only`, `.skip` or `.todo` in the diff.
+
+**Graph forecast — regenerated and CONFIRMED, including the hidden
+row.** `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test
+self_graph -- --ignored`: files **94 → 95** (adds exactly
+`app/test/genesis-switch-truth.test.tsx`, **nothing removed**), symbols
+**667 → 686**, edges **1063 → 1075**. Running the dogfood suites
+against it reds three assertions — `:608`, `:790` and
+`map-dogfood-render.test.tsx:220` — and the fourth is the trap: I
+patched ONLY the file count at `:607`/`:608` and re-ran, at which point
+`:613` went red and the received value at `:639` was
+`["C-05", 44]` → **45**, exactly as forecast and derived from the
+added-file list rather than from a failure. A registry sweep confirms
+`docs/architecture/components/C-05-app.md` (`- app/test/**`) is that
+glob's only claimant. The relation row at `:815` is
+`["C-05","C-10","confirmed",24]` → **25**. Across BOTH arrays those are
+the **only two numbers that move** — no other row, no new component
+pair, no renumbering. `docs/architecture/graph.json` restored to the
+committed bytes (sha256
+`a6ede920c34beb867c6e856fbcdf9099a458de766d22e6fa066220b68236933e`),
+the patched fixture reverted, and both dogfood files green again
+(17/17).
+
+**The TS/Rust asymmetry — RULED SOUND, on one of its two reasons.**
+Rust always sends the key: the wire test pins BOTH shapes, `"snapshot":
+null` and a full object, so Rust's emitted set is {null, object} and TS
+accepts {absent, null, object}. The one extra shape is the absent key,
+it is defined to mean exactly what `null` means (`?? null` in both
+`reducePickOutcome` and `outcomeCarriesSnapshot`), and it has its own
+test. The looseness runs in the SAFE direction — TS accepting more than
+Rust sends; the dangerous direction, Rust sending a shape TS rejects, is
+impossible here. So: no shape TS accepts is one Rust can never send in a
+way that can mislead, and the T-018 additive-payload precedent is
+correctly applied. It DOES widen T-041-s2's mirror problem, and now
+asymmetrically — the third copy is missing a field the other two have,
+so the lane can no longer express the shape criterion 1 introduced.
+Saying that plainly, as the dispatch asks: **the mirror problem is
+widened again**, s1 names it, and the deeper fix stays T-041-s2's.
+
+**CORRECTIONS to the notes** (none of them a criterion failure):
+
+1. **`EXPECTED_GRANTS` is 6135 bytes / 92 grants, not 7728.** The
+   notes carry T-026's figure ("7728 bytes, 129 grant lines") forward
+   as if re-measured. The const spans `acl_pin.rs:54-147` at BOTH
+   revisions and is byte-identical (sha256 `721174b1…f0c7`), so the
+   load-bearing claim holds absolutely — `acl_pin.rs` is a 0-byte diff
+   — but the number is inherited, not derived.
+2. **"Suppressed forever" overstates it.** Measured, ordering B's lost
+   file self-heals on the next UNRELATED content change: after the gap
+   file was invisible for the whole 1.5 s window, writing
+   `docs/OTHER.md` produced an emit carrying all three files. The loss
+   is indefinite, not eternal — and T-007's own card already uses the
+   accurate wording, "can be suppressed until the next change"
+   (T-007:245-249). The ordering is still load-bearing; the pane still
+   lies for as long as nothing else moves.
+3. **The second reason for the optional TS field is false.** The notes
+   say a required field "would have forced me to edit T-045's lane". It
+   would not: `tools/e2e/fixtures/shell.ts` is a structural copy that
+   imports only `DocsSnapshotPayload` from `./board` and never
+   `PickOutcomePayload` from the app. Making the field required and
+   running `tools/e2e`'s typecheck: **clean, exit 0**. The real cost is
+   **5 sites in the app's OWN tests** (`shell-harness.test.ts` ×3,
+   `watcher-store.test.ts` ×2). The FIRST reason — T-018's additive
+   precedent, an older payload staying valid — is sound and sufficient
+   on its own, and the ruling above rests on it.
+4. **The canary count in the dispatch brief undercounts.** The notes'
+   own 3 cargo + 11 vitest is right; 14 bodies were poisoned and 14 went
+   red.
+
+**Suggestions assessed.** **s1 — REAL, correctly scoped, not blocking.**
+Every citation checks out: `shell.ts:51` declares the genesis variant
+with no `snapshot`; the four `kind: "genesis"` literals are at
+`genesis-screen.spec.ts:46, :71, :171, :276` and one at
+`accelerators.spec.ts:135`; and `genesis-screen.spec.ts:165` really does
+assert `not.toContainText("nothing written yet")` — passing today only
+via the pre-T-042 `docs-changed` route, so the route criterion 1 added
+has never been rendered by a real browser. Correctly deferred to T-045
+or whoever next holds the lane, and correctly declining to re-file
+T-041-s2. Its one imprecision is the same as correction 3: the field
+was made optional to avoid an edit that was never required. **s2 —
+REAL, and the right shape for a ruling rather than a patch.** Verified:
+`probe_plan` runs before the rendezvous (`:798`), `build_snapshot` after
+the commit (`:859`), `REARM_TIMEOUT` is 10 s, and option (c) is
+factually available — the genesis case sets `resolvedProbe: null` and
+never reads `outcome.probe`, so the field has no live consumer on that
+path. Low urgency (ADR-017 keeps the app out of docs/), correctly
+flagged as not a regression.
+
+**NEW: s3 filed** — the tree the switch carries is dropped by its own
+watermark when a `docs-changed` emit overtakes the switch. Measured
+through the real reducers: in-order `switch@7` → fileCount 2; overtaken
+by `emit@8` → the switch reduces to **fileCount 0** at seq 8, which is
+the T-026-s4 symptom one layer down. NOT a regression (the branch point
+produced the same empty model and additionally regressed the watermark)
+and NOT a criterion-1 failure (the outcome demonstrably carries the
+tree); filed because criterion 1 is what makes a fix cheap for the first
+time. Explicitly not blocking T-027, whose turn-1 baseline is taken
+before anything is writing.
+
+**Nothing here makes T-027 unsafe to dispatch on this merge.** The case
+it planned to tripwire — a genesis switch onto a non-empty docs/
+carrying no tree — is removed by construction, verified on T-026's own
+repro at the wire, at the reducer and on screen. The one residual (s3)
+needs an emit to overtake the switch, which cannot happen at the moment
+T-027's turn-1 baseline is taken. What the merge still owes is the boot
+check, which no one has run.
+
+All probes reverted; every revert proven with `git diff --quiet` or a
+sha256, not by inspection. Mutation and race work was done in an
+isolated rsync copy under the scratchpad so the worktree was never the
+laboratory. Working tree clean apart from this verdict and s3.
