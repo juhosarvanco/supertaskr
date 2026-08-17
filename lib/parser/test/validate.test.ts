@@ -357,6 +357,234 @@ describe('validateProject — an id-bearing file whose name encodes no id (T-030
   });
 });
 
+describe('validateProject — numerically aliased task ids (T-053, promoting T-030-s3)', () => {
+  const aliases = (issues: ParseIssue[]): ParseIssue[] =>
+    issues.filter((i) => i.kind === 'aliased-id');
+
+  it('T-01 beside T-001 is one slot spelled twice: one issue, both records kept', () => {
+    // Used to parse with ZERO issues: duplicate-id compares strings
+    // exactly, and each filename encodes its own declared spelling.
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-01-a.md', task('T-01')],
+        ['docs/tasks/T-001-b.md', task('T-001')],
+      ]),
+    );
+    expect(result.issues).toEqual([
+      {
+        kind: 'aliased-id',
+        space: 'task',
+        ids: ['T-001', 'T-01'],
+        files: ['docs/tasks/T-001-b.md', 'docs/tasks/T-01-a.md'],
+        message: expect.stringContaining('numerically equal task ids'),
+      },
+    ]);
+    expect(result.issues[0]?.message).toContain("'T-001' (docs/tasks/T-001-b.md)");
+    expect(result.issues[0]?.message).toContain("'T-01' (docs/tasks/T-01-a.md)");
+    expect(result.issues[0]?.message).toContain('zero-padding aliases one task slot');
+    // Flagging, not hiding: both cards stay on the board.
+    expect(result.tasks.map((t) => t.id)).toEqual(['T-001', 'T-01']);
+  });
+
+  it('the space field discriminates without reading the prose', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', '# R\n\n## Backbone\n- F-1: One — a\n- F-01: One padded — b\n'],
+        ['docs/tasks/T-01-a.md', task('T-01', [['feature', 'F-1']])],
+        ['docs/tasks/T-001-b.md', task('T-001', [['feature', 'F-1']])],
+      ]),
+    );
+    expect(aliases(result.issues).map((i) => (i.kind === 'aliased-id' ? i.space : null))).toEqual([
+      'feature',
+      'task',
+    ]);
+  });
+
+  it('THE FOUR SUFFIX CASES: -sN digits alias, but a suggestion never merges into its parent', () => {
+    // The suffix is part of task identity. A suffix-blind slot key would
+    // put all five ids in ONE slot and report a single issue naming a
+    // suggestion and its parent as the same task — worse than the bug
+    // this rule exists to catch.
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-01-a.md', task('T-01')],
+        ['docs/tasks/T-001-b.md', task('T-001')],
+        ['docs/tasks/T-01-s1-c.md', task('T-01-s1')],
+        ['docs/tasks/T-001-s1-d.md', task('T-001-s1')],
+        ['docs/tasks/T-01-s01-e.md', task('T-01-s01')],
+      ]),
+    );
+    expect(aliases(result.issues).map((i) => (i.kind === 'aliased-id' ? i.ids : []))).toEqual([
+      ['T-001', 'T-01'], // T-01 / T-001 alias
+      ['T-001-s1', 'T-01-s01', 'T-01-s1'], // T-01-s1 / T-001-s1 and T-01-s01 / T-01-s1 alias
+    ]);
+    // …and NOT a single slot holding a parent and its suggestion.
+    for (const issue of aliases(result.issues)) {
+      if (issue.kind !== 'aliased-id') continue;
+      const suffixed = issue.ids.filter((id) => id.includes('-s'));
+      expect(suffixed.length === 0 || suffixed.length === issue.ids.length).toBe(true);
+    }
+  });
+
+  it('T-01 and T-01-s1 alone are NOT an alias — zero issues (the case a blind key breaks)', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-01-parent.md', task('T-01')],
+        ['docs/tasks/T-01-s1-idea.md', task('T-01-s1')],
+      ]),
+    );
+    expect(result.issues).toEqual([]);
+  });
+
+  it('slot equality is textual, so task ids past 2^53 do not collide by floating point', () => {
+    const big = '9007199254740993'; // 2^53 + 1 — Number() cannot tell these apart
+    const other = '9007199254740992';
+    expect(Number(big)).toBe(Number(other));
+
+    const distinct = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        [`docs/tasks/T-${big}-a.md`, task(`T-${big}`)],
+        [`docs/tasks/T-${other}-b.md`, task(`T-${other}`)],
+      ]),
+    );
+    expect(distinct.issues).toEqual([]);
+
+    // …while a zero-padded spelling of the same huge id still aliases.
+    const padded = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        [`docs/tasks/T-${big}-a.md`, task(`T-${big}`)],
+        [`docs/tasks/T-0${big}-b.md`, task(`T-0${big}`)],
+      ]),
+    );
+    expect(aliases(padded.issues).map((i) => (i.kind === 'aliased-id' ? i.ids : []))).toEqual([
+      [`T-0${big}`, `T-${big}`],
+    ]);
+
+    // The suffix digits are just as unbounded, and just as textual.
+    const suffix = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        [`docs/tasks/T-01-s${big}-a.md`, task(`T-01-s${big}`)],
+        [`docs/tasks/T-01-s${other}-b.md`, task(`T-01-s${other}`)],
+      ]),
+    );
+    expect(suffix.issues).toEqual([]);
+  });
+
+  it('THE HARM, reproduced: an unpadded sibling silently re-points a blocked_by edge', () => {
+    // Before the sibling exists the reference is LOUD.
+    const alone = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-001-b.md', task('T-001', [['blocked_by', '[T-01]']])],
+      ]),
+    );
+    expect(kinds(alone.issues)).toEqual(['dangling-reference']);
+
+    // Adding T-01 resolves that very edge to a different task — which used
+    // to happen in SILENCE. The dangling-reference disappears (correctly:
+    // the reference now resolves) and the aliasing is what says so.
+    const both = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-01-a.md', task('T-01')],
+        ['docs/tasks/T-001-b.md', task('T-001', [['blocked_by', '[T-01]']])],
+      ]),
+    );
+    expect(kinds(both.issues)).toEqual(['aliased-id']);
+    expect(both.tasks.find((t) => t.id === 'T-001')?.blockedBy).toEqual(['T-01']);
+  });
+
+  it('ONE issue per slot, not one per pair — three spellings report once', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-01-a.md', task('T-01')],
+        ['docs/tasks/T-001-b.md', task('T-001')],
+        ['docs/tasks/T-0001-c.md', task('T-0001')],
+      ]),
+    );
+    const aliased = aliases(result.issues);
+    expect(aliased).toHaveLength(1);
+    expect(aliased[0]).toMatchObject({ space: 'task', ids: ['T-0001', 'T-001', 'T-01'] });
+  });
+
+  it('distinct slots, exact duplicates and id-less suggestions stay out of it', () => {
+    const distinct = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-01-a.md', task('T-01')],
+        ['docs/tasks/T-10-b.md', task('T-10')],
+        ['docs/tasks/T-100-c.md', task('T-100')],
+      ]),
+    );
+    expect(distinct.issues).toEqual([]);
+
+    // The same id twice is duplicate-id's business, never aliased-id's.
+    const dup = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-01-a.md', task('T-01')],
+        ['docs/tasks/T-01-b.md', task('T-01')],
+      ]),
+    );
+    expect(kinds(dup.issues)).toEqual(['duplicate-id']);
+
+    // An id-less suggestion has no slot to occupy.
+    const idless = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-01-a.md', task('T-01')],
+        [
+          'docs/tasks/T-an-idea.md',
+          src([
+            ['title', 'An idea'],
+            ['status', 'suggested'],
+            ['suggested_by', 'executor'],
+          ]),
+        ],
+      ]),
+    );
+    expect(idless.issues).toEqual([]);
+  });
+
+  it('comes after every per-task finding and before cycles', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-01-a.md', task('T-01', [['blocked_by', '[T-777]']])],
+        ['docs/tasks/T-001-b.md', task('T-001', [['blocked_by', '[T-001]']])],
+      ]),
+    );
+    expect(kinds(result.issues)).toEqual(['dangling-reference', 'aliased-id', 'dependency-cycle']);
+  });
+
+  it('fires identically through the disk layer', () => {
+    const root = mkdtempSync(join(tmpdir(), 'nputer-alias-'));
+    const tasks = join(root, 'docs', 'tasks');
+    mkdirSync(tasks, { recursive: true });
+    writeFileSync(join(root, 'docs', 'ROADMAP.md'), ROADMAP);
+    writeFileSync(join(tasks, 'T-01-a.md'), task('T-01'));
+    writeFileSync(join(tasks, 'T-001-b.md'), task('T-001'));
+    const result = parseProject(root);
+    expect(result.issues).toEqual([
+      {
+        kind: 'aliased-id',
+        space: 'task',
+        ids: ['T-001', 'T-01'],
+        files: [join(tasks, 'T-001-b.md'), join(tasks, 'T-01-a.md')],
+        message: expect.stringContaining('numerically equal task ids'),
+      },
+    ]);
+    rmSync(root, { recursive: true, force: true });
+  });
+});
+
 describe('validateProject — blocked_by cycles (T-030, absorbing T-019-s3)', () => {
   const cycleIssues = (issues: ParseIssue[]): ParseIssue[] =>
     issues.filter((i) => i.kind === 'dependency-cycle');

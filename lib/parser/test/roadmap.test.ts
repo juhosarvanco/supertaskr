@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseRoadmap } from '../src/index.js';
+import { parseProjectFromFiles, parseRoadmap } from '../src/index.js';
 
 const FILE = 'docs/ROADMAP.md';
 
@@ -230,5 +230,99 @@ describe('parseRoadmap — backbone lines', () => {
         message: expect.stringContaining('lines 2 and 3'),
       }),
     ]);
+  });
+});
+
+describe('parseRoadmap — numerically aliased feature ids (T-053, promoting T-030-s3)', () => {
+  it('F-1 beside F-01 is one slot spelled twice, and the message LOCATES both', () => {
+    // Used to parse with ZERO issues, and the board then renders two
+    // columns for what a human reads as one feature.
+    const content = '# Roadmap\n\n## Backbone\n- F-1:  One — a\n- F-01: One padded — b\n';
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(issues).toEqual([
+      {
+        kind: 'aliased-id',
+        space: 'feature',
+        ids: ['F-01', 'F-1'],
+        files: [FILE, FILE],
+        message: expect.stringContaining('numerically equal backbone feature ids'),
+      },
+    ]);
+    // Both declarations live in ONE file, so `files` is that path twice and
+    // cannot locate anything: the LINES are what a human acts on.
+    expect(issues[0]?.message).toContain("'F-01' (line 5)");
+    expect(issues[0]?.message).toContain("'F-1' (line 4)");
+    expect(issues[0]?.message).toContain(FILE);
+    // Flagging, not hiding: both columns still parse, in backbone order.
+    expect(features.map((f) => f.id)).toEqual(['F-1', 'F-01']);
+    expect(features.map((f) => f.line)).toEqual([4, 5]);
+  });
+
+  it('ONE issue per slot, not one per pair — three spellings report once', () => {
+    const content = '## Backbone\n- F-1: a — a\n- F-01: b — b\n- F-001: c — c\n';
+    const { issues } = parseRoadmap(content, FILE);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({
+      kind: 'aliased-id',
+      space: 'feature',
+      ids: ['F-001', 'F-01', 'F-1'],
+    });
+    expect(issues[0]?.message).toContain("'F-001' (line 4)");
+  });
+
+  it('the live backbone shape stays silent — distinct slots are not aliases', () => {
+    const content =
+      '## Backbone\n- F-01: a — a\n- F-02: b — b\n- F-10: c — c\n- F-100: d — d\n- F-11: e — e\n';
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(issues).toEqual([]);
+    expect(features).toHaveLength(5);
+  });
+
+  it('an exact duplicate stays duplicate-id business, never an alias', () => {
+    const content = '## Backbone\n- F-01: One — first\n- F-01: One again — second\n';
+    const { issues } = parseRoadmap(content, FILE);
+    expect(issues.map((i) => i.kind)).toEqual(['duplicate-id']);
+  });
+
+  it('slot equality is textual, so feature ids past 2^53 do not collide by floating point', () => {
+    const big = '9007199254740993'; // 2^53 + 1 — Number() cannot tell these apart
+    const other = '9007199254740992';
+    expect(Number(big)).toBe(Number(other));
+
+    const distinct = parseRoadmap(`## Backbone\n- F-${big}: a — a\n- F-${other}: b — b\n`, FILE);
+    expect(distinct.issues).toEqual([]);
+
+    const padded = parseRoadmap(`## Backbone\n- F-${big}: a — a\n- F-0${big}: b — b\n`, FILE);
+    expect(padded.issues).toHaveLength(1);
+    expect(padded.issues[0]).toMatchObject({ kind: 'aliased-id', ids: [`F-0${big}`, `F-${big}`] });
+  });
+
+  it('a commented-out spelling is not a declaration, so it cannot alias', () => {
+    // The comment strip runs first (T-030): a phantom F-01 inside a
+    // comment must not turn a lone F-1 into an aliased slot.
+    const content = '## Backbone\n- F-1: One — a\n<!--\n- F-01: Example — b\n-->\n';
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect(issues).toEqual([]);
+    expect(features.map((f) => f.id)).toEqual(['F-1']);
+  });
+
+  it('a roadmap with no backbone reports only its structural error', () => {
+    const { issues } = parseRoadmap('# Roadmap\n\n## Milestones\n- F-1: x — y\n', FILE);
+    expect(issues.map((i) => i.kind)).toEqual(['roadmap-error']);
+  });
+
+  it('surfaces through both project assemblers, after the task layer', () => {
+    const content = '## Backbone\n- F-1: One — a\n- F-01: One padded — b\n';
+    const result = parseProjectFromFiles(new Map([['docs/ROADMAP.md', content]]));
+    expect(result.issues).toEqual([
+      {
+        kind: 'aliased-id',
+        space: 'feature',
+        ids: ['F-01', 'F-1'],
+        files: ['docs/ROADMAP.md', 'docs/ROADMAP.md'],
+        message: expect.stringContaining('numerically equal backbone feature ids'),
+      },
+    ]);
+    expect(result.features.map((f) => f.id)).toEqual(['F-1', 'F-01']);
   });
 });

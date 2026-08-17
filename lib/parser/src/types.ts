@@ -191,6 +191,17 @@ export interface FeatureRecord {
 }
 
 /**
+ * Which id space an issue is about (T-053). The three spaces this
+ * convention numbers independently: the component registry
+ * (`docs/architecture/components/C-*.md`), task files
+ * (`docs/tasks/T-*.md`, `-sN` suffix included) and the ROADMAP backbone
+ * (`- F-NN:` bullets). Carried as a FIELD rather than split into three
+ * issue kinds so a consumer can tell them apart without parsing prose —
+ * see the `aliased-id` member for the reasoning.
+ */
+export type IdSpace = 'component' | 'task' | 'feature';
+
+/**
  * Structured validation issues. Parsing never throws on bad input:
  * issues are collected and parsing continues with the remaining files.
  */
@@ -218,8 +229,22 @@ export type ParseIssue =
    * many spellings share it (the T-019 one-root-cause discipline).
    * `ids`/`files` are index-aligned, in comparator order. Every record is
    * kept — flagging, not hiding.
+   *
+   * `space` says WHICH id space aliased (T-053, promoting T-030-s3): all
+   * three are checked now — components, tasks (`-sN` suffix included, its
+   * digits aliasing like any others) and backbone features. It is a field
+   * rather than three kinds for the reason `dangling-reference` carries a
+   * `field` and `duplicate-id` spans all three spaces already: the root
+   * cause is ONE concept, and a consumer that wants only task aliases
+   * filters on a value instead of learning three kind names. Prose is
+   * never the discriminator.
+   *
+   * `files` is index-aligned but NOT always distinct: both backbone
+   * declarations live in `docs/ROADMAP.md`, so for `space: 'feature'` it
+   * is the same path twice and the MESSAGE carries the line numbers that
+   * actually locate them.
    */
-  | { kind: 'aliased-id'; ids: string[]; files: string[]; message: string }
+  | { kind: 'aliased-id'; space: IdSpace; ids: string[]; files: string[]; message: string }
   /** Roadmap structure problem (no backbone section, malformed F-line). */
   | { kind: 'roadmap-error'; file: string; message: string }
   /** A file or directory could not be read. */
