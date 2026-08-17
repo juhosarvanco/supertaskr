@@ -140,3 +140,132 @@ export function computed(locator: Locator, property: string): Promise<string> {
     property,
   );
 }
+
+/* ---- T-027: the interview harness ------------------------------------
+ *
+ * A SECOND dev-gated window property, and therefore a second gate to
+ * audit. It exists because a served bundle has no Tauri — hence no
+ * runner, no CLI and no watcher — so the ONLY way this lane can walk a
+ * scripted interview against the real bundle and the real CSS is to hand
+ * the shipped reducers the events Rust would have emitted. The gate is
+ * proved and drilled in `app/test/interview-harness.test.ts`; what this
+ * module adds is the driving.
+ *
+ * THE TYPES BELOW ARE A HAND MIRROR, and it is named rather than quietly
+ * inherited. The source of truth is `app/src-tauri/src/agent/runner.rs`'s
+ * `RunEvent` / `TurnError` / `GenesisStatus`; `app/src/lib/agent-store.ts`
+ * mirrors them in TS, and this is the THIRD copy. Nothing compares the
+ * three. That is T-041-s2's exact gap, widened by one — the honest
+ * closer is a cargo test dumping real emitted JSON into a committed
+ * fixture both TS sides read, which needs `app-agent`'s lane.
+ */
+
+export type GenesisEventPayload =
+  | { kind: "started"; seq: number; turn: number }
+  | { kind: "textDelta"; seq: number; turn: number; text: string }
+  | { kind: "activity"; seq: number; turn: number; label: string }
+  | { kind: "completed"; seq: number; turn: number; text: string; truncatedRelay: boolean }
+  | { kind: "failed"; seq: number; turn: number; error: TurnErrorPayload }
+  | { kind: "sessionRegistered"; seq: number; nativeSessionId: string };
+
+export type TurnErrorPayload =
+  | { kind: "spawnFailed"; os: string }
+  | { kind: "startTimeout" }
+  | { kind: "stall" }
+  | { kind: "exitNonZero"; code: number | null; stderrTail: string }
+  | { kind: "malformedStream"; why: string };
+
+export type GenesisOutcomePayload =
+  | { kind: "started"; turn: number }
+  | { kind: "accepted"; turn: number }
+  | { kind: "busy" }
+  | { kind: "noProject" }
+  | { kind: "noSession" }
+  | { kind: "alreadyPlanned"; path: string }
+  | { kind: "resumeAvailable"; nativeSessionId: string; turns: number }
+  | { kind: "staleProject"; sessionProject: string }
+  | { kind: "cliNotFound"; probed: string[] }
+  | { kind: "unsupportedVersion"; found: string }
+  | { kind: "error"; message: string };
+
+export interface GenesisStatusPayload {
+  phase: "idle" | "running" | "failed";
+  projectDir: string | null;
+  turn: number;
+  nativeSessionId: string | null;
+  cliVersion: string | null;
+  methodVersion: string;
+  lastError: TurnErrorPayload | null;
+  lastEventAtMs: number | null;
+}
+
+declare global {
+  interface Window {
+    __nputerInterviewHarness?: {
+      push: (event: GenesisEventPayload) => void;
+      outcome: (outcome: GenesisOutcomePayload) => void;
+      status: (payload: GenesisStatusPayload) => void;
+      get: () => { phase: string; seq: number; turns: unknown[] };
+      sent: () => readonly string[];
+    };
+  }
+}
+
+/** Open the dev bundle and wait for ALL THREE harnesses. Fails loudly
+ * naming the cause: the interview harness is dev-only and non-Tauri. */
+export async function openInterview(page: Page): Promise<void> {
+  await openShell(page);
+  try {
+    await page.waitForFunction(() => window.__nputerInterviewHarness !== undefined, undefined, {
+      timeout: 15_000,
+    });
+  } catch {
+    throw new Error(
+      "window.__nputerInterviewHarness never appeared — the interview " +
+        "harness is dev-only and non-Tauri (T-027, genesis/interview-source.ts). " +
+        "Are you serving a prod build? Without it a browser can only ever " +
+        "reach the interview's empty frame.",
+    );
+  }
+}
+
+/** Push one `genesis-turn` payload through the SHIPPED reducer. */
+export async function pushTurnEvent(page: Page, event: GenesisEventPayload): Promise<void> {
+  await page.evaluate((e) => {
+    window.__nputerInterviewHarness!.push(e);
+  }, event);
+}
+
+/** Push a start/send outcome through the shipped reducer. */
+export async function pushOutcome(page: Page, outcome: GenesisOutcomePayload): Promise<void> {
+  await page.evaluate((o) => {
+    window.__nputerInterviewHarness!.outcome(o);
+  }, outcome);
+}
+
+/** Hand the screen the mount-time status `genesis_status` would answer. */
+export async function pushStatus(
+  page: Page,
+  patch: Partial<GenesisStatusPayload> = {},
+): Promise<void> {
+  await page.evaluate((p) => {
+    window.__nputerInterviewHarness!.status({
+      phase: "idle",
+      projectDir: null,
+      turn: 0,
+      nativeSessionId: null,
+      cliVersion: "2.1.226 (Claude Code)",
+      methodVersion: "0.1.5",
+      lastError: null,
+      lastEventAtMs: null,
+      ...p,
+    });
+  }, patch);
+}
+
+/** What the UI ASKED to send, in order. `sendGenesisTurn` returns before
+ * `invoke` on a non-Tauri runtime, so without this a served bundle can
+ * prove a keystroke was claimed but never that it reached a command. */
+export function sentAnswers(page: Page): Promise<readonly string[]> {
+  return page.evaluate(() => window.__nputerInterviewHarness!.sent());
+}

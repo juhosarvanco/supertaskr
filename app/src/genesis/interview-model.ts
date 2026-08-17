@@ -102,6 +102,19 @@ function isDocsArtifact(path: string): boolean {
  *    under the interview, the files in front of us are not answers to
  *    the questions behind us. The chat re-baselines instead of claiming
  *    a whole tree was just banked.
+ *
+ *    …BUT ONLY WHEN THERE WAS A PROJECT TO DIFFER FROM. `emptyState()`
+ *    uses `projectDir: ""` for "no snapshot has been applied", and a
+ *    genesis switch that carries no tree resets to exactly that while
+ *    KEEPING the seq watermark (`resetDocsForProjectSwitch`). So a
+ *    baseline can perfectly well read `{ seq: 10, projectDir: "" }` —
+ *    a real ordering stamp over no project at all. Comparing project
+ *    dirs there would refuse the first snapshot of the interview and
+ *    silently drop every chip it should have produced.
+ *
+ *    FOUND BY THE LANE, which drives exactly that shape. The guard now
+ *    asks "did the baseline know a project?" rather than "has anything
+ *    happened?", and the sentinel it tests is `docs-model.ts`'s own.
  */
 export function bankedSince(
   baseline: BankBaseline,
@@ -109,7 +122,7 @@ export function bankedSince(
 ): readonly string[] {
   if (!baseline.primed) return [];
   if (docs.seq === 0 || docs.seq <= baseline.seq) return [];
-  if (docs.projectDir !== baseline.projectDir) return [];
+  if (baseline.projectDir !== "" && docs.projectDir !== baseline.projectDir) return [];
   const banked: string[] = [];
   for (const [path, content] of docs.effective) {
     if (!isDocsArtifact(path)) continue;

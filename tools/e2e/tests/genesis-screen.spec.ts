@@ -179,11 +179,27 @@ test("the pane is laid out and painted by the real sheet, inside the slot", asyn
   const slot = page.getByTestId("genesis-pane-slot");
   const pane = slot.getByTestId("genesis-pane");
 
-  // The pane brings its own ground (bg-sidebar) inside the card frame —
-  // the composition the @human screenshot pass is judging.
+  // T-027 RECONCILE — THE SLOT LOST ITS CARD FRAME, DELIBERATELY.
+  // T-037 framed the pane in `rounded-lg border bg-card shadow-card`
+  // while the screen was still a placeholder, and its own @human item 1
+  // flagged that frame as a box the design never draws. The design's
+  // split is FLUSH: a 640px chat with the 1px rule on ITS edge, and a
+  // plain `flex:1` right half with no border, no radius and no ground of
+  // its own. So the slot is now transparent and the pane's own ground is
+  // what paints — which is what the assertion below says, and it is
+  // strictly more specific than "the slot is --card" ever was.
   expect(await computed(pane, "background-color")).toBe(await tokenColor(page, "--sidebar"));
-  expect(await computed(slot, "background-color")).toBe(await tokenColor(page, "--card"));
-  expect(await computed(slot, "overflow-x"), "the slot clips to its radius").toBe("hidden");
+  expect(
+    await computed(slot, "background-color"),
+    "the slot paints nothing of its own; the pane brings its ground",
+  ).toBe("rgba(0, 0, 0, 0)");
+  expect(await computed(slot, "border-left-width"), "no frame between the halves").toBe("0px");
+  expect(await computed(slot, "border-top-left-radius"), "and no radius").toBe("0px");
+  // The rule that IS there belongs to the chat side, exactly as the
+  // design draws it.
+  expect(
+    await computed(page.getByTestId("interview-chat"), "border-right-width"),
+  ).toBe("1px");
 
   // The pane really is INSIDE the slot's box, not merely a descendant in
   // the DOM: the served CSS puts it there.
@@ -284,8 +300,25 @@ test("the frame holds and the pane scrolls at 800x600, 1024x768 and 1280x720", a
   const slot = page.getByTestId("genesis-pane-slot");
   const scroller = slot.getByTestId("genesis-pane").locator("div.overflow-y-auto").first();
 
+  // T-027 RECONCILE — 800x600 MOVES, AND ONLY 800x600.
+  //
+  // The lens renders at `lg` (1024px) and above; below it the split
+  // degrades to the chat alone, because 640 of chat leaves the lens 159px
+  // at 800 and a 159px lens is not a lens. So at 800x600 — the app's OWN
+  // configured window — `genesis-pane-slot` is `display: none` and it has
+  // no scroll region to measure. The FRAME half of T-048's claim still
+  // holds there and is still asserted, by the loop below; the PANE half
+  // moves to the two sizes where a pane exists.
+  //
+  // The 800x600 case is not dropped, it is RE-HOMED and widened:
+  // `interview.spec.ts` measures the frame at FOUR viewports (800x600,
+  // 1024x768, 1280x720, 1440x900), asserts the chat's own region scrolls
+  // at every one, and asserts the lens's region scrolls wherever the lens
+  // renders. Nothing that was measured here stopped being measured.
+  const slotVisible = async (): Promise<boolean> => slot.isVisible();
+  expect(await slotVisible(), "the lens is up at the lane's 1280x720").toBe(true);
+
   for (const viewport of [
-    { width: 800, height: 600 },
     { width: 1024, height: 768 },
     { width: 1280, height: 720 },
   ]) {
@@ -312,6 +345,22 @@ test("the frame holds and the pane scrolls at 800x600, 1024x768 and 1280x720", a
       `the pane's own region is the one asked to scroll at ${at}`,
     ).toBeGreaterThan(layout.clientHeight);
   }
+
+  // 800x600, where the lens is deliberately absent: the FRAME must still
+  // hold. This is the size the whole of T-048 was about, so it keeps an
+  // assertion here rather than only in the new spec.
+  await page.setViewportSize({ width: 800, height: 600 });
+  expect(await slotVisible(), "the lens is not rendered at 800x600 (T-027)").toBe(false);
+  const narrow = await page.evaluate(() => ({
+    pageScroll: document.documentElement.scrollHeight,
+    viewport: document.documentElement.clientHeight,
+    columnHeight: (
+      document.querySelector('[data-testid="docs-model"] > div') as HTMLElement
+    ).getBoundingClientRect().height,
+  }));
+  expect(narrow.viewport).toBe(600);
+  expect(narrow.columnHeight, "the column is still bounded at 800x600").toBe(600);
+  expect(narrow.pageScroll, "and the page still does not grow past it").toBe(600);
 
   // And the same claim as BEHAVIOUR, with the trusted input this lane
   // exists for: a real wheel over the pane scrolls the PANE, the page

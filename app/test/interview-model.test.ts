@@ -370,6 +370,30 @@ describe("bankedSince diffs the tree and claims nothing else", () => {
     ).toEqual([]);
   });
 
+  it("…but a baseline that knows NO project is not a switch, however high its seq", () => {
+    // FOUND BY THE LANE, not by reasoning, and the shape is specific:
+    // `resetDocsForProjectSwitch` returns `{ ...emptyState(), seq }`, so
+    // a genesis switch that carries no tree leaves the docs state at a
+    // real ordering stamp over `projectDir: ""` — no project at all. A
+    // guard keyed on "has anything happened" refuses the first snapshot
+    // of the whole interview and silently drops every chip it should
+    // have produced. The guard asks "did the baseline KNOW a project?"
+    // instead, testing docs-model.ts's own sentinel.
+    const noProjectYet = bankBaseline({ ...docs(10, {}, ""), seq: 10 });
+    expect(noProjectYet.seq, "a real watermark…").toBe(10);
+    expect(noProjectYet.projectDir, "…over no project").toBe("");
+    expect(
+      bankedSince(noProjectYet, docs(11, { "docs/NORTH_STAR.md": "x" }, "/e2e/streak")),
+    ).toEqual(["docs/NORTH_STAR.md"]);
+
+    // …and once there IS a project on the baseline, a switch still
+    // yields nothing. Both halves, so neither can be loosened alone.
+    const settled = bankBaseline(docs(11, { "docs/NORTH_STAR.md": "x" }, "/e2e/streak"));
+    expect(bankedSince(settled, docs(12, { "docs/ROADMAP.md": "r" }, "/e2e/elsewhere"))).toEqual(
+      [],
+    );
+  });
+
   it("the result is sorted and deduped", () => {
     const banked = bankedSince(
       base,
