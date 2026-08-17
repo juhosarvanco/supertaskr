@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { ARCHITECTURE_AND_GIT, NOTHING_FOUND, streakFixture } from "../fixtures/shell";
+import {
+  ARCHITECTURE_AND_GIT,
+  NOTHING_FOUND,
+  streakMidInterview,
+} from "../fixtures/shell";
 import {
   applyDocs,
   applyPick,
@@ -65,6 +69,22 @@ test("phase genesis renders the interview screen full-bleed", async ({ page }) =
   await expect(slot.getByTestId("genesis-north-star")).toContainText("forming…");
 });
 
+/**
+ * T-028 RECONCILE — THE TREE LOST ITS TASK FILES, AND THAT IS THE TASK.
+ *
+ * T-028 switches the interview's right half from T-024's lens to the REAL
+ * board the moment a task file parses. The full streak tree is a FINISHED
+ * plan, so it renders the BOARD now — which means the lens's own specs
+ * must describe the tree the lens is actually for: the same harvested
+ * tree ONE TURN BEFORE decomposition (`streakMidInterview`, six files).
+ *
+ * NOTHING WAS LOOSENED. Every count below is re-derived from the smaller
+ * tree — 9 files → 6, 9 artifact rows → 7 (the three written task rows
+ * are replaced by the banking map's `docs/tasks/T-*.md` PLACEHOLDER row),
+ * stage ~8 → ~7 — and the full tree keeps its own coverage in
+ * `crescendo.spec.ts`, where it now proves the switch, the completion
+ * state and the handoff.
+ */
 test("T-024's streak tree renders through the lens, inside the slot", async ({ page }) => {
   await openShell(page);
   await applyPick(page, {
@@ -76,12 +96,12 @@ test("T-024's streak tree renders through the lens, inside the slot", async ({ p
   await expectPhase(page, "genesis", "genesis");
 
   // docs/ lands under the genesis project — the watcher's own path.
-  await applyDocs(page, streakFixture(11, GENESIS_DIR));
+  await applyDocs(page, streakMidInterview(11, GENESIS_DIR));
 
   // The phase does NOT move (T-026: the pipeline lighting up must not
   // yank the interview away), and the model underneath it advanced.
   const shell = await expectPhase(page, "genesis", "genesis");
-  expect(shell.docs).toMatchObject({ seq: 11, projectDir: GENESIS_DIR, fileCount: 9 });
+  expect(shell.docs).toMatchObject({ seq: 11, projectDir: GENESIS_DIR, fileCount: 6 });
   expect(shell.docs.failureCount, "the harvested tree parses clean").toBe(0);
 
   const slot = page.getByTestId("genesis-pane-slot");
@@ -92,7 +112,7 @@ test("T-024's streak tree renders through the lens, inside the slot", async ({ p
 
   // header: the design's overline and the live count
   await expect(pane).toContainText("the project, so far");
-  await expect(slot.getByTestId("genesis-file-count")).toHaveText("docs/ · 9 files written");
+  await expect(slot.getByTestId("genesis-file-count")).toHaveText("docs/ · 6 files written");
 
   // north star: the first Vision sentence and the three chips
   const northStar = slot.getByTestId("genesis-north-star");
@@ -121,9 +141,11 @@ test("T-024's streak tree renders through the lens, inside the slot", async ({ p
     ["slot", "F-05—"],
   ]);
 
-  // artifacts: nine rows in banking-map order, every one written
+  // artifacts: seven rows in banking-map order — six written, and the
+  // task row still a PLACEHOLDER, which is the honest shape of a tree one
+  // turn before decomposition (T-028 reconcile).
   const artifacts = slot.getByTestId("genesis-artifact");
-  await expect(artifacts).toHaveCount(9);
+  await expect(artifacts).toHaveCount(7);
   expect(
     await artifacts.evaluateAll((els) =>
       els.map((el) => [el.getAttribute("data-path"), el.getAttribute("data-status")]),
@@ -134,9 +156,7 @@ test("T-024's streak tree renders through the lens, inside the slot", async ({ p
     ["docs/decisions/001-stack.md", "written"],
     ["docs/CONVENTIONS.md", "written"],
     ["docs/ROADMAP.md", "written"],
-    ["docs/tasks/T-001-store-and-done.md", "written"],
-    ["docs/tasks/T-002-week-view.md", "written"],
-    ["docs/tasks/T-003-malformed-store-resilience.md", "written"],
+    ["docs/tasks/T-*.md", "expected"],
     ["docs/ARCHITECTURE.md", "written"],
   ]);
 
@@ -153,11 +173,11 @@ test("T-024's streak tree renders through the lens, inside the slot", async ({ p
   ).toHaveCount(0);
 
   // footer: the approximate stage and the banking map's next line
-  await expect(slot.getByTestId("genesis-stage")).toHaveText("stage ~8 · decomposition");
+  await expect(slot.getByTestId("genesis-stage")).toHaveText("stage ~7 · first slice");
   await expect(slot.getByTestId("genesis-next")).toHaveText(
-    "Milestone 1 decomposed — the board is live.",
+    "Next: decomposition — cards rain into the board.",
   );
-  await expect(pane).toHaveAttribute("data-stage", "8");
+  await expect(pane).toHaveAttribute("data-stage", "7");
 
   // Never blank, and never the placeholder T-026 shipped: the pane is
   // rendering, not a fallback (T-037's error boundary is silent).
@@ -173,7 +193,7 @@ test("the pane is laid out and painted by the real sheet, inside the slot", asyn
     seq: 10,
     probe: NOTHING_FOUND,
   });
-  await applyDocs(page, streakFixture(11, GENESIS_DIR));
+  await applyDocs(page, streakMidInterview(11, GENESIS_DIR));
   await expectPhase(page, "genesis", "genesis");
 
   const slot = page.getByTestId("genesis-pane-slot");
@@ -294,7 +314,7 @@ test("the frame holds and the pane scrolls at 800x600, 1024x768 and 1280x720", a
     seq: 10,
     probe: NOTHING_FOUND,
   });
-  await applyDocs(page, streakFixture(11, GENESIS_DIR));
+  await applyDocs(page, streakMidInterview(11, GENESIS_DIR));
   await expectPhase(page, "genesis", "genesis");
 
   const slot = page.getByTestId("genesis-pane-slot");

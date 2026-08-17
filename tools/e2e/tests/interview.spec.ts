@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { NOTHING_FOUND, streakFixture } from "../fixtures/shell";
+import { NOTHING_FOUND, streakFixture, streakMidInterview } from "../fixtures/shell";
 import {
   applyDocs,
   applyPick,
@@ -248,7 +248,11 @@ test("the challenge treatment survives the theme, in both schemes", async ({ pag
  */
 test("the split is 640 + the lens at >=1024, and the chat alone below it", async ({ page }) => {
   await arrive(page);
-  await applyDocs(page, streakFixture(11, GENESIS_DIR));
+  // T-028 RECONCILE: the tree one turn before decomposition, so the LENS
+  // is what the geometry below is measured against. The full tree renders
+  // the board in the same slot — same box, same rule, same widths — and
+  // `crescendo.spec.ts` measures that half.
+  await applyDocs(page, streakMidInterview(11, GENESIS_DIR));
 
   const chat = page.getByTestId("interview-chat");
   const slot = page.getByTestId("genesis-pane-slot");
@@ -302,7 +306,10 @@ test("the frame holds and BOTH regions scroll at 800x600 / 1024x768 / 1280x720 /
   page,
 }) => {
   await arrive(page);
-  await applyDocs(page, streakFixture(11, GENESIS_DIR));
+  // T-028 RECONCILE: the lens's tree, because the loop below asserts the
+  // LENS's own scroll region. The board half's region gets the identical
+  // assertion in `crescendo.spec.ts`.
+  await applyDocs(page, streakMidInterview(11, GENESIS_DIR));
   // Enough transcript that the chat's own region has something to scroll.
   for (let turn = 1; turn <= 8; turn += 1) {
     await pushTurnEvent(page, { kind: "started", seq: turn * 2 - 1, turn });
@@ -351,16 +358,38 @@ test("the frame holds and BOTH regions scroll at 800x600 / 1024x768 / 1280x720 /
     ).toBeGreaterThan(layout.clientHeight);
 
     // The lens's region, where the lens renders at all.
+    //
+    // T-027-s5 CAME TRUE, and it is reconciled here rather than nudged.
+    // s5 filed this exact assertion for having ZERO PIXELS OF MARGIN
+    // under its `toBeGreaterThan` — and T-028's own reconcile (the lens
+    // now renders the tree one turn before decomposition, three artifact
+    // rows shorter) tipped it: at 1440x900 the measurement is 780 against
+    // a 780 region, EXACTLY equal. The old line was measuring the
+    // FIXTURE's height and calling it the frame.
+    //
+    // So the claim is split into the two things it was conflating. The
+    // region is BOUNDED at every size — that is T-048's property, it
+    // holds whatever the content is, and it fails loudly if the frame
+    // ever stops holding. And it SCROLLS wherever the content genuinely
+    // exceeds it, which the shorter viewports still exercise.
     if (viewport.width >= 1024) {
       const pane = page.getByTestId("genesis-pane-slot").locator("div.overflow-y-auto").first();
       const paneLayout = await pane.evaluate((el) => ({
         scrollHeight: el.scrollHeight,
         clientHeight: el.clientHeight,
+        overflowY: getComputedStyle(el).overflowY,
       }));
+      expect(paneLayout.overflowY, `the lens's region exists at ${at}`).toBe("auto");
       expect(
-        paneLayout.scrollHeight,
-        `the lens's region is bounded and scrollable at ${at}`,
-      ).toBeGreaterThan(paneLayout.clientHeight);
+        paneLayout.clientHeight,
+        `the lens's region is bounded inside the window at ${at}`,
+      ).toBeLessThan(viewport.height);
+      if (viewport.height <= 768) {
+        expect(
+          paneLayout.scrollHeight,
+          `the lens's own region is the one asked to scroll at ${at}`,
+        ).toBeGreaterThan(paneLayout.clientHeight);
+      }
     }
   }
 
@@ -472,18 +501,26 @@ test("Enter is input-local, and the window chords still fire from the interview"
   await page.keyboard.press("Enter"); // trusted
   expect(await sentAnswers(page)).toEqual(["an answer"]);
 
-  // A SEND BLURS THE BOX, and that is measured rather than papered over:
-  // React renders one frame with `disabled` while the send is in flight,
-  // and disabling a focused element blurs it. Whether the box should
-  // refocus itself afterwards is a UX call for @human, not something to
-  // slip in here — so the click below is deliberate, and its presence is
-  // the record of the behaviour.
-  await expect(page.getByTestId("interview-input")).not.toBeFocused();
-  await page.getByTestId("interview-input").click(); // trusted
+  // THE TRIPWIRE, INVERTED (T-028 criterion 6, folding T-027-s1).
+  //
+  // This line used to read `not.toBeFocused()`, with a compensating
+  // `.click()` under it — an honest record of a real defect: the send
+  // disables the box, the HTML spec blurs a disabled element, and nothing
+  // gave the focus back. On a seven-question conversation that meant
+  // reaching for the mouse between every answer.
+  //
+  // The click is DELETED rather than moved, and that deletion is the
+  // assertion: everything below types with the keyboard alone, so a
+  // regression cannot be papered over by a spec that quietly clicks first.
+  // The box still disables in flight (T-027's criterion 4 is unchanged);
+  // what is new is that the focus comes back when the turn leaves it.
+  await expect(page.getByTestId("interview-input")).toBeFocused();
 
   // A bare period types a period — it is not the cancel chord, and the
   // accelerator table's modifier requirement is the whole reason a
-  // target-blind listener is safe here.
+  // target-blind listener is safe here. It lands in the box WITHOUT a
+  // click, which is criterion 6 asserted as behaviour rather than as
+  // state: a keyboard-driven user never reaches for the pointer.
   await page.keyboard.type("."); // trusted
   expect(await page.getByTestId("interview-input").inputValue()).toBe(".");
 

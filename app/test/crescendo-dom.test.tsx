@@ -396,7 +396,7 @@ describe("a planner that ends without a parseable board (criterion 4)", () => {
     const { GenesisScreen } = await import("../src/components/shell/GenesisScreen");
     const { applySnapshot, emptyState } = await import("../src/lib/docs-model");
 
-    const failed = join(PROJECT, "..", `t028-theater-${process.pid}`);
+    const failed = mkdtempSync(join(tmpdir(), "nputer-t028-theater-"));
     mkdirSync(join(failed, "docs", "tasks"), { recursive: true });
     writeFileSync(join(failed, "docs", "NORTH_STAR.md"), NORTH_STAR, "utf8");
     writeFileSync(join(failed, "docs", "ROADMAP.md"), ROADMAP, "utf8");

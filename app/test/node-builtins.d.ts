@@ -18,6 +18,23 @@ declare module "node:fs" {
    * plus, since T-037, mtimeMs, so the built-bundle assertion can refuse
    * a dist/ older than the sources it claims to be evidence about. */
   export function statSync(path: string): { isDirectory(): boolean; mtimeMs: number };
+  /** T-028: writing a REAL decomposition into a TEMP project. The whole
+   * surface a scripted planner needs and not one call more — create the
+   * temp root, create directories, write files, remove the tree. Nothing
+   * here can reach the repo unless a test hands it a path inside it,
+   * which is exactly the property `crescendo-dom.test.tsx` guards by
+   * building every path from `mkdtempSync(tmpdir(), …)`. */
+  export function mkdtempSync(prefix: string): string;
+  export function mkdirSync(path: string, options?: { recursive?: boolean }): void;
+  export function writeFileSync(path: string, data: string, encoding: "utf8"): void;
+  export function rmSync(path: string, options?: { recursive?: boolean; force?: boolean }): void;
+}
+
+declare module "node:os" {
+  /** The system temp root — where T-028's scripted decomposition lands.
+   * Declared here rather than reached for generally: this is the one
+   * import that keeps real test files OUT of the repo's own docs/tasks/. */
+  export function tmpdir(): string;
 }
 
 declare module "node:path" {
