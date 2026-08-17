@@ -1,7 +1,7 @@
 ---
 id: T-047-s2
 title: The CLI flag/subcommand table is a snapshot of one version and will drift
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-047
 ---
 
@@ -53,3 +53,22 @@ Do it whenever a second substituted slot lands (F-04 assembles argv from
 worktree paths, branch names, task ids and `model@session` strings — all
 file-borne), or the first time someone notices the tables are a version
 behind.
+
+Triage 2026-08-17 (architect): PARKED — the suggestion's own trigger
+has not fired. `validate_session_id` is still the only substituted
+value, so the second slot F-04 will bring does not exist yet. The
+honest exposure is one-sided and small, and this file states it more
+carefully than a triage could: `classify_arg_shape` refuses anything
+leading with a dash whether the table knows it or not, so a new
+dangerous FLAG is still covered and only SUBCOMMANDS are table-only.
+
+Two notes for whoever unparks. Option 3 (require substituted values to
+match a positive shape rather than to miss a denylist) is the
+structurally right answer and is what `validate_session_id` already
+does for the one value that exists — prefer it. Option 2 (scrape
+`--help` at resolve time) is recorded here as the WRONG trade
+specifically so it is not re-proposed silently; do not let it come
+back as a fresh idea. Unpark with the second substituted slot, which
+is F-04's argv assembly. **The resolver is being reshaped by T-060
+meanwhile — if that card is open and this is cheap while it is, take
+it there rather than waiting.**

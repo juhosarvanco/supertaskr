@@ -1,7 +1,7 @@
 ---
 id: T-030-s1
 title: A trailing `@human` note makes the representative model literally `+`
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-030
 ---
 
@@ -51,3 +51,17 @@ Arms, none free:
 Worth deciding when something starts CONSUMING `policy`/`model` — the
 dispatcher is the first candidate. Until then the wart is visible in a
 test rather than surprising in a badge.
+
+Triage 2026-08-17 (architect): PARKED — @HUMAN, and the judgment is
+already recorded in STATE in the human's own terms: `+` is honest but
+ugly. RE-VERIFIED at triage: `docs/tasks/T-001-app-shell.md` still
+holds `verified_by: "claude-fable-5 @fresh (2 passes) + @human
+(visual)"`, so the representative model is still literally the
+separator. Nothing is lost — `raw` carries the full stamp, T-031 and
+T-032 bound and title the badges, and the wart is PINNED in
+`lib/parser/test/model-session.test.ts` rather than papered over, so
+it cannot regress into a surprise. Arm (d) is one truthful line and
+arm (c) is a method version bump; both are the human's to pick, and
+the suggestion's own answer is "worth deciding when something starts
+CONSUMING policy/model". Unpark with the dispatcher, or on the
+human's ruling — whichever comes first.

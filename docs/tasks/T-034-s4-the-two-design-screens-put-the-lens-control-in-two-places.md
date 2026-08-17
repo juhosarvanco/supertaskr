@@ -1,7 +1,7 @@
 ---
 id: T-034-s4
 title: The two design screens put the lens control in two places — T-034 picked one, and it is an @human call
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-034
 ---
 
@@ -46,3 +46,16 @@ architecture lens.
 
 Related: the deviation table in T-034's notes records this alongside the
 value-level deviations, so a verifier reading only the notes sees it.
+
+Triage 2026-08-17 (architect): PARKED — @HUMAN, one of the six T-034
+judgments STATE carries. The design bundle draws the control in two
+homes and it cannot be both; the builder picked one on two arguments
+that are good and are not decisive (a segmented control that jumps
+900px across the header the instant you use it is a defect rather
+than a design, and the README writes the left placement down as the
+spec). The counter-arguments are equally real and are recorded above
+in the builder's own words, which is why this is a look and not a
+measurement. Cheapest alternative if the human prefers the mock is
+three lines — identical markup, right group on the tasks lens only —
+and the round-trip DOM-identity test still holds, because it measures
+the architecture lens. Unpark on the human's look.

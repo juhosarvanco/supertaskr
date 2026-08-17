@@ -1,7 +1,7 @@
 ---
 id: T-045-s3
 title: Composite actions and reusable workflows escape the permissions rules
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-045
 ---
 
@@ -41,3 +41,20 @@ this would assert over an empty set, which is why it is a suggestion and
 not a criterion: the fixtures in workflow-permissions.spec.ts are the
 place to grow it, since they already prove rules over workflows that do
 not exist on disk.
+
+Triage 2026-08-17 (architect): PARKED on the suggestion's own terms —
+"today all of this would assert over an empty set, which is why it is
+a suggestion and not a criterion". RE-VERIFIED at triage:
+`.github/workflows/` still holds exactly ONE workflow and
+`.github/actions/` does not exist, so both named shapes have zero
+instances. T-045 already closed the hole T-036-s1 named — the three
+least-privilege rules run over every workflow file and a second
+workflow with no `permissions:` block fails by name — and this file is
+the residue, written down at the cheapest moment, which was the point.
+
+Noted while checking, because it cuts the other way and belongs on
+this file: the same single workflow turned out to have **no graph
+currency gate at all** (T-054's finding). A rule asserting over an
+empty set is a fair reason to park; "CI would catch it" is not, and
+was not used here. Unpark when a second workflow or the first
+composite action lands.

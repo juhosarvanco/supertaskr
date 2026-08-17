@@ -1,7 +1,7 @@
 ---
 id: T-034-s1
 title: Wave 0 is a wall — 32 of this repo's 50 drawn tasks declare no blockers, and the canvas clips
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-034
 ---
 
@@ -44,3 +44,23 @@ scrolling`). The tasks lens inherits that canvas verbatim —
 shell's column, wave 0's bottom is not merely long, it is gone with no
 scrollbar. T-048-s2's option 1 (`overflow-auto`) fixes both lenses at
 once and is two classes.
+
+Triage 2026-08-17 (architect): PARKED — @HUMAN, one of the six T-034
+judgments STATE already carries. The question is whether the lens is
+USEFUL at this ratio, not whether it is correct; correct it
+demonstrably is, and no measurement settles the rest.
+
+RE-MEASURED at triage, and it has grown: **50 drawn cards → 52**, with
+19 tasks now declaring a non-empty `blocked_by`. **And applying this
+triage makes it measurably worse** — thirteen new cards, most of them
+`blocked_by: []`, so wave 0 gains roughly ten more. That is recorded
+here rather than left for the human to discover on screen.
+
+**The mechanical half is NOT parked.** This file's own "read this WITH
+T-048-s2" is now **T-062**, which gives the shared canvas
+`overflow-auto` so a bounded frame scrolls the graph instead of
+truncating it — the "gone with no scrollbar" half of this finding is
+scheduled. What stays with the human is only the picture: nothing (it
+pans and zooms, defensible), wrap wave 0 (reads better, undesigned,
+breaks the append-only property), or draw only the connected sub-graph
+(smallest picture, biggest honesty cost against T-004 criterion 4).

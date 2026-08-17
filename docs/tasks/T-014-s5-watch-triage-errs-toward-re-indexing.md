@@ -1,7 +1,7 @@
 ---
 id: T-014-s5
 title: Watch mode re-indexes on any extensionless change, so a cargo build makes it spin
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-014
 ---
 
@@ -39,3 +39,15 @@ Worth ranking against the ordinary triage list rather than treating as
 urgent: nobody runs `--watch` and `cargo build` in the same tree today,
 because nothing outside this crate runs `--watch` at all yet. The day
 that changes is the day it bites.
+
+Triage 2026-08-17 (architect): PARKED on the suggestion's own closing
+line, re-verified rather than taken on trust — `--watch` appears in no
+CONVENTIONS command, no CI step and no npm script, so nothing outside
+this crate runs it. The cost is real but bounded (a full re-index per
+debounce window during a cargo build; each 15–40 ms, none of them
+writing, because `write_graph`'s read-compare-skip sees identical
+bytes) and the fix needs the walked set threaded out of `index()`, a
+new public seam. **The unpark trigger is now dated and specific**:
+T-054 documents `index --watch` as a LOCAL_ONLY command, which is the
+first time the wider pipeline learns it exists. Unpark when anything
+outside the crate actually runs it.

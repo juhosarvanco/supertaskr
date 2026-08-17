@@ -1,7 +1,7 @@
 ---
 id: T-046-s3
 title: The boot gate proves `tauri dev`; nothing proves the packaged build
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-046
 ---
 
@@ -43,3 +43,21 @@ not screen control); (3) full bundling, which is a launch-prep decision
 tangled with signing, not a gate.
 
 A named growth step, not a hole to leave unwritten.
+
+Triage 2026-08-17 (architect): PARKED — LAUNCH-PREP, on cost and reach
+rather than on doubt. The argument transplants exactly and the failure
+class is the T-040 one: a one-line config edit that leaves `cargo
+test`, `cargo build`, `npm run build` and the boot check all green and
+is discovered by a human trying to ship. What parks it is that a
+release build plus bundling is minutes against the boot check's 6–8
+seconds, which makes it wrong for the per-merge BOOT GATE bullet;
+macOS bundling may want a signing identity the pipeline does not have;
+and the packaged app's startup lines have never been checked to appear
+at all.
+
+Note this is parked on COST, not on "something else already covers
+it" — nothing does, and that was verified rather than assumed: no
+gate in this repo has ever produced or launched a packaged nputer.
+Step (1) — the `--no-bundle` sibling asserting the binary exists and
+is executable — is the cheap arm and the one to take FIRST, at launch
+prep, beside the standing "watch the first CI run" item.
