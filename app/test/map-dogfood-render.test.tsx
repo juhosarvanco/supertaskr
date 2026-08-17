@@ -217,8 +217,20 @@ describe("the nputer repo on its own map", () => {
     // and they RETIRE four intra-file edges — the work moved out of
     // startDocsWatcher into the extracted runStartup, so the latch's
     // own outgoing calls and type_refs went with it.
+    // 94 → 99 at the T-034 merge regen (2026-08-17): FIVE files, the
+    // largest single jump this log records. Three are C-12's own —
+    // app/src/architecture/TasksLens.tsx, map-lens.ts and task-waves.ts
+    // — and two are C-05's under the app/test/** umbrella,
+    // map-task-waves.test.ts and map-tasks-lens-dom.test.tsx. T-034's
+    // two SOURCE edits to existing files add no node: MapView.tsx gains
+    // the lens control, and map-layout.ts changes by ONE BYTE (a literal
+    // U+0003 replaced by its escape — behaviour-identical, hash-visible).
+    // The node and edge counts above are deliberately UNCHANGED: 19 new
+    // import edges, and every one lands on a component pair the
+    // 28-row table already carries, so the picture gains detail and no
+    // shape.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 94 files",
+      "committed graph · 99 files",
     );
   });
 });

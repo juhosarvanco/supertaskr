@@ -596,6 +596,82 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //   · The ceaa949 ordering lesson, FOURTEENTH hold: this block is itself
 //     indexed, so it was written BEFORE the final regen and the regen
 //     was then run twice for byte-identity.
+//
+// RECONCILED AT THE T-034 MERGE (2026-08-17, integrator — TWENTY-THIRD
+// exercise of the practice; the twenty-second was T-045's, which fired
+// and was a verified no-op, so it left no block here). Every number
+// re-derived from the raw graph against
+// `git show 8857e7c:docs/architecture/graph.json`, plus an INDEPENDENT
+// re-derivation of the file→component mapping and every cross-component
+// import pair, written against the registry globs in my own script
+// rather than run through this app's derive.ts — all of it BEFORE this
+// edit and BEFORE the suite was re-run:
+//   · stats 94→99 files, 670→738 symbols, 1069→1158 edges. The edge
+//     total moves by +89 and the split matters: import +19, call +29,
+//     type_ref +41. The branch's notes forecast "edges → 1082" by
+//     adding only the 19 IMPORT edges to the total, which is a category
+//     error the verifier caught. Only the 19 imports can move anything
+//     in this file (derive.ts line 392 skips every non-import edge), so
+//     the other 70 are real graph movement with zero fixture reach —
+//     worth stating, because "edges grew by 89 and four counts moved"
+//     otherwise reads as an under-reconciliation.
+//   · FIVE files added, NOTHING removed: app/src/architecture/
+//     TasksLens.tsx, map-lens.ts and task-waves.ts (C-12), and
+//     app/test/map-task-waves.test.ts and map-tasks-lens-dom.test.tsx
+//     (C-05). Content-changed: app/src/architecture/MapView.tsx (the
+//     lens control) and app/src/architecture/map-layout.ts — the second
+//     is the ONE-BYTE control-character correction (a literal U+0003
+//     that T-012 shipped, replaced by its escape), behaviour-identical
+//     and hash-visible. The branch's notes forecast only MapView.tsx as
+//     content-changed; map-layout.ts moves too, and a reader who did
+//     not know why would read it as an unexplained edit.
+//   · mapping 94→99; C-05 44→46 and C-12 11→14, and the registry was
+//     swept so both are derivable before any test runs — app/test/** has
+//     exactly one claimant (C-05) and app/src/architecture/** exactly
+//     one (C-12). D2 empty, unmapped node still gone, nothing ambiguous,
+//     derived.issues still [].
+//   · THE C-12 FILE LIST MOVES TOO, and this is the assertion neither
+//     branch role forecast. The builder enumerated eight moving
+//     assertions and the verifier corrected it to nine; the real count
+//     is TWELVE, and the three they both missed are all LISTS rather
+//     than counts — C-12's own `files` array (11→14 entries), which
+//     sits in the SAME `it()` body as the file count and the per-
+//     component counts, and the D1:C-05→C-06 `fileEdges` list (8→10),
+//     which the verifier did catch. This is the fixture's standing trap
+//     firing for the SIXTH merge running: a count assertion masks a list
+//     assertion below it in the same body, and vitest never reaches the
+//     second while the first is red. THE RULE, restated because it keeps
+//     paying: read every `expect` in the body you are about to touch and
+//     derive it from the added-file list; never let the failure output
+//     enumerate the work for you. Extended form for whoever is next:
+//     the trap is not only counts-behind-counts, it is LISTS behind
+//     counts, and a list can move while every count in the same body is
+//     already correct.
+//   · findings: NOTHING added, removed or renumbered — six D1 rows and
+//     three D3s. Only the D1:C-05→C-06 fileEdges LIST grows, 8→10, both
+//     new suites importing @nputer/parser. No new component PAIR
+//     appears, which is derivable: C-12 declares C-05, C-06 and C-09,
+//     and C-05 declares C-12, so every one of the 19 new import edges
+//     lands on a pair the table already carries.
+//   · relation table: same 28 rows, same 13 confirmed / 6 undeclared /
+//     9 planned tally. FIVE observedCounts move — C-05→C-06 8→10,
+//     C-05→C-12 20→22, C-12→C-05 4→6, C-12→C-06 4→6, C-12→C-09 4→5.
+//     TWO of those five are the verifier's corrections to the builder's
+//     forecast and both were re-derived here from scratch: C-12→C-05 is
+//     6 and NOT the forecast 7, and C-12→C-09 was not forecast at all.
+//     One root cause for both — app/src/lib/task-detail.ts belongs to
+//     C-09 (C-09-detail-panel.md names it explicitly), not to C-05, so
+//     of TasksLens.tsx's three new edges into app/src/lib/** two go to
+//     C-05 (utils.ts, verdicts.ts) and one goes to C-09. C-12 gains no
+//     drift ring from any of it: all three targets are in its declared
+//     depends_on.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched: T-034
+//     declares no component and changes no registry file, so the T-024
+//     three-fixtures rule does not fire in its registry form. Confirmed
+//     rather than assumed by re-running lib/parser: 197/197.
+//   · The ceaa949 ordering lesson, FIFTEENTH hold: this block and the
+//     map fixture are both indexed, so both were edited BEFORE the final
+//     regen and the regen was then run twice for byte-identity.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -661,8 +737,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 94 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(94);
+  it("all 99 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(99);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -693,12 +769,20 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // both under app/test/**, and the registry sweep confirms C-05 is
       // that glob's only claimant. Derived from the added-file list
       // BEFORE the suite was run, for the second merge in a row.
-      ["C-05", 44],
+      // 44 → 46 at the T-034 merge regen, by TWO and by the same route a
+      // third time: map-task-waves.test.ts and map-tasks-lens-dom.test.tsx
+      // are both under app/test/**. Derived from the added-file list
+      // before the suite ran — third merge running.
+      ["C-05", 46],
       ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
       ["C-10", 2],
-      ["C-12", 11],
+      // 11 → 14 at the T-034 merge regen: TasksLens.tsx, map-lens.ts and
+      // task-waves.ts all land under app/src/architecture/**, C-12's own
+      // glob and its only claimant. The FILE LIST below moves with it —
+      // same body, same merge, and it is the half that gets missed.
+      ["C-12", 14],
       // The genesis pane joined the index at the T-024 merge regen, and
       // STAYS 2 at T-037's: the mount gave the lens a consumer, not a
       // file.
@@ -712,15 +796,26 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
     // The map pane joined its engine at the T-012 merge regen
     // (T-011-s1 option a keeps the trio in place under lib/).
+    // T-034 merge regen: 11 → 14, the pane's second lens. Ordering is
+    // the graph's own file order, which is a plain codepoint sort of the
+    // full path — so TasksLens.tsx sorts among the capitalised
+    // components and map-lens.ts / task-waves.ts among the lowercase
+    // modules, and app/src/architecture/** still precedes
+    // app/src/lib/architecture/**. Derived from the added-file list and
+    // checked against the regenerated graph's ordering, not copied out
+    // of a failure diff.
     expect(derived.components.find((c) => c.id === "C-12")?.files).toEqual([
       "app/src/architecture/MapEdge.tsx",
       "app/src/architecture/MapNode.tsx",
       "app/src/architecture/MapPanel.tsx",
       "app/src/architecture/MapProvenanceMark.tsx",
       "app/src/architecture/MapView.tsx",
+      "app/src/architecture/TasksLens.tsx",
       "app/src/architecture/map-layout.ts",
+      "app/src/architecture/map-lens.ts",
       "app/src/architecture/map-search.ts",
       "app/src/architecture/map-visuals.ts",
+      "app/src/architecture/task-waves.ts",
       "app/src/lib/architecture/derive.ts",
       "app/src/lib/architecture/glob.ts",
       "app/src/lib/architecture/graph.ts",
@@ -744,6 +839,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           { from: "app/test/board-truth.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/map-dogfood-render.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/map-search.test.ts", to: LIB_PARSER, package: PARSER_PKG },
+          // Both NEW at the T-034 merge regen: 8 → 10 file edges. This
+          // LIST is a separate assertion from the relation table's
+          // observedCount below and lives in a different it() body — the
+          // count going right does not make the list right.
+          { from: "app/test/map-task-waves.test.ts", to: LIB_PARSER, package: PARSER_PKG },
+          { from: "app/test/map-tasks-lens-dom.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/map-view-dom.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/select-board.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/select-task-detail.test.ts", to: LIB_PARSER, package: PARSER_PKG },
@@ -846,7 +947,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
   it("the full relation table: 13 confirmed, 6 undeclared, 9 planned", () => {
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
-      ["C-05", "C-06", "undeclared", 8],
+      // 8 → 10 at the T-034 merge regen: both new map suites import
+      // @nputer/parser, riding the T-009 package.path seam like the
+      // eight before them. The fileEdges LIST above moves with it.
+      ["C-05", "C-06", "undeclared", 10],
       ["C-05", "C-08", "confirmed", 4],
       ["C-05", "C-09", "undeclared", 3],
       // 10 → 13 at the T-024 merge regen: both genesis suites import
@@ -871,7 +975,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // was checked rather than assumed. Again the only one that moves.
       ["C-05", "C-10", "confirmed", 24],
       ["C-05", "C-11", "planned", 0],
-      ["C-05", "C-12", "confirmed", 20],
+      // 20 → 22 at the T-034 merge regen: map-task-waves.test.ts imports
+      // task-waves.ts and map-tasks-lens-dom.test.tsx imports MapView.tsx.
+      ["C-05", "C-12", "confirmed", 22],
       // 2 → 4 at the T-037 merge regen, and one of the two additions is
       // the shell's own SOURCE import of the lens — the mount. Still
       // undeclared: the integrator's reasoning is in the dated addendum.
@@ -889,10 +995,25 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["C-09", "C-08", "confirmed", 3],
       ["C-09", "C-11", "planned", 0],
       ["C-10", "C-06", "confirmed", 1],
-      ["C-12", "C-05", "confirmed", 4],
-      ["C-12", "C-06", "confirmed", 4],
+      // 4 → 6 at the T-034 merge regen: task-waves.ts imports
+      // lib/verdicts.ts and TasksLens.tsx imports lib/utils.ts — both
+      // C-05's by NAME in the registry, not by umbrella. SIX and not the
+      // seven the branch forecast: the third new app/src/lib/** edge
+      // (TasksLens.tsx → lib/task-detail.ts) belongs to C-09, which
+      // declares that file explicitly. See C-12→C-09 below.
+      ["C-12", "C-05", "confirmed", 6],
+      // 4 → 6: task-waves.ts and TasksLens.tsx both import
+      // @nputer/parser, the package.path seam again.
+      ["C-12", "C-06", "confirmed", 6],
       ["C-12", "C-07", "planned", 0],
-      ["C-12", "C-09", "confirmed", 4],
+      // 4 → 5 at the T-034 merge regen, and this is the assertion the
+      // branch did not forecast at all: TasksLens.tsx imports
+      // app/src/lib/task-detail.ts, which C-09-detail-panel.md names.
+      // The notes cite MapPanel.tsx → task-detail.ts as the precedent
+      // proving type-only imports create edges — the right file, the
+      // wrong component. Already DECLARED (C-12 depends_on C-09), so it
+      // is a bigger count on a confirmed row, not a new finding.
+      ["C-12", "C-09", "confirmed", 5],
       ["C-12", "C-10", "confirmed", 1],
       ["C-12", "C-11", "planned", 0],
       // T-024's declared edges, met by reality at the merge regen: the

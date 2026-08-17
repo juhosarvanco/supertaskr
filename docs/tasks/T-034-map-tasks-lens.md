@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 18
 size: M
-status: building
+status: done
 blocked_by: []
 touches: [app-map]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-012-s1. Triage 2026-08-16: the design bundle's fully-drawn

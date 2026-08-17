@@ -12,7 +12,13 @@
   registry pane
 - F-06: Architecture map — intent + reality overlaid, drift as a
   first-class signal (docs/design/map-technical-plan.md, ADR-013/014/
-  015; added 2026-08-15, sequencing open in rooms/map-sequencing.md)
+  015; added 2026-08-15, sequencing open in rooms/map-sequencing.md).
+  Since T-034 the pane is TWO lenses behind one control, and the
+  second is not about architecture at all: the tasks lens lays the
+  board's cards out in dependency waves over `blocked_by`, with a
+  critical path (the longest chain, CPM sense) and a worst blocker —
+  so F-06 now answers "what is holding the release" as well as "what
+  is drifting"
 
 ## Milestones
 ### Milestone 0 — planning (current)
