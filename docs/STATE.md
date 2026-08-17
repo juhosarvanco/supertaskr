@@ -1,6 +1,9 @@
 # State
 
 Updated: 2026-08-17 by integrator (T-027 merge), claude-opus-5 @fresh
+Amended: 2026-08-17 ~05:55 by the architect — "In progress" only, to
+stop the baton claiming nothing is building while three worktrees are
+open. Everything above that section is the integrator's and unedited.
 
 ## Just completed
 
@@ -296,17 +299,59 @@ after the regen: **197/197**.
 
 ## In progress / broken right now
 
-**NOTHING IS BUILDING.** No lane is active, no worktree is open, the tree
-is settled. Next is **the third triage over a settled tree** — 66 open
-suggestion files (**9 parked + 57 suggested**).
+**THREE LANES ARE BUILDING** (architect, 2026-08-17 ~05:30, after the
+T-027 merge). Worktrees are open — if this session dies, they are the
+first thing to look at:
 
-**T-030-s3 IS STILL THE CORRECTNESS-OF-RECORD ITEM AND ITS DEADLINE HAS
-PASSED**, now three merges older. `blocked_by` edges can silently
-RE-POINT when an unpadded sibling id appears, and T-034 shipped the
-waves, the critical path and the worst blocker — all computed from
-`blocked_by`. A silently re-pointing edge is a wrong picture in a pane
-the human is about to look at. Unchanged by this merge, and it has now
-outlived two triages.
+    ../nputer-T-028   task/T-028-crescendo      from e41dd16
+    ../nputer-T-051   task/T-051-window         from e41dd16
+    ../nputer-T-053   task/T-053-id-aliasing    from 5995ac7
+
+- **T-028** — milestone 3's closer (lens→board handoff, timed
+  completion, the rain). **Now carries a sixth criterion**: T-027-s1
+  folded in (`e41dd16`), the answer box refocusing after every send.
+- **T-051** — the window the split fits in (~1280×840 + minimums).
+  Human-approved. Confined to `tauri.conf.json`'s window block.
+- **T-053** — id aliasing across all three id spaces (see below).
+
+**T-029 is deliberately NOT dispatched**: it shares `app/src/genesis/`
+with T-028 and its hand-driven mode reuses T-028's completion
+detection, so it wants T-028 landed first, not merged against.
+
+**T-054 is written and deliberately NOT dispatched**: load average was
+**10.17 on 10 CPUs** with three executors and the triage running, and a
+fourth lane needs a cold tree-sitter build. Dispatch it when a lane
+frees. The card is complete and needs no further ruling.
+
+**The third triage is RUNNING** over the remaining open suggestion
+files — a read-only analyst drafting dispositions; the architect
+reviews and applies. It started at 66 files; four have left its table
+since (two folded/promoted by the architect mid-flight, recorded
+below).
+
+**T-030-s3 IS RESOLVED — promoted to T-053 (`5995ac7`) and building.**
+It had outlived two triages, parked both times on its own closing line:
+"a trap for the next hand-numbered task or an interview-written
+backbone, not a live bug." **T-027 shipped the interview last night, so
+an interview-written backbone is now a real path with a language model
+choosing the id spellings** — `F-1` beside `F-01` in one generated
+backbone is a plausible Tuesday. The premise that parked it expired.
+That test is worth applying generally at triage: *what merged recently
+that makes this item's "not live yet" clause false?*
+
+**A GATE THAT DOES NOT EXIST, found while ruling on T-014-s8 and
+recorded here because it is the kind of thing that rots quietly.**
+**CI has never checked that `docs/architecture/graph.json` is current.**
+`ci.yml:127` runs bare `cargo test`, which skips `#[ignore]`d tests;
+`self_graph_is_current` is `#[ignore]`d and is the only byte-comparison
+against the committed graph; `git grep nputer-index -- .github/`
+returns **zero** against the single workflow file. A stale graph passes
+CI green — the dogfood fixtures assert against the committed graph, so
+a stale graph and fixtures matching it agree perfectly. **Twenty-six
+regens have been held up by a written ritual and conscientious
+integrators, nothing else.** T-054 closes it; until T-054 lands, the
+T-009-s1 ritual is not a formality and skipping it is not caught by
+anything.
 
 ## INTEGRATOR JUDGMENT CALLS, recorded
 
