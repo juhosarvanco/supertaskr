@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: "claude-opus-5 @fresh"
-verified_by:
-review:
+verified_by: "claude-opus-5 @fresh"
+review: same-model
 ---
 
 Absorbs: T-048-s5. Human-ruled 2026-08-17, after T-027's planning pass
@@ -393,3 +393,131 @@ not annoying on your machine, because it is the number that decides
 whether the app can be tucked into a corner of the screen.
 
 ## Verdicts
+
+2026-08-17 — claude-opus-5 @fresh (verifier, same-model as builder): **APPROVED**
+
+Everything measured first-hand on `task/T-051-window` at f60b3e8, base
+`e41dd16`. Scratch ports **15188** (lane) and **15189** (boot gate), both
+bind-probed free. **1420 was never bound, contacted or signalled** — a
+read-only `lsof` before, between and after shows exactly the human's one
+listener (node pid 81894, `[::1]:1420`). No screen control; no model
+calls. Worktree left clean, `git status --porcelain` empty at every
+checkpoint.
+
+### Criterion by criterion, and how
+
+| # | criterion | verdict | how I checked it |
+|---|---|---|---|
+| 1 | default renders both halves | **holds** | Own probe, dev bundle, headless Chromium: at 1280×840 chat **640**, lens **640**, halves **abut** (slot.x − chat.right = 0), page **840/840**, reach **40/40**. Breakpoint walk reproduces: lens ABSENT 1022/1023, **384** at 1024, **385** at 1025, **640** at 1280, **800** at 1440 — so `lens = W − 640` and the floor is **1279**, exactly as the notes correct the card. 1280 is the unique equal-halves width. |
+| 2 | minWidth / minHeight declared and justified | **holds, guard weaker than claimed** | 1024 is the measured breakpoint, not a read-off constant (`lg` walk above). Natural heights re-derived: genesis **302**, front door **475**, no-plan card **663** (threshold exact: 663/662 at 662, 663/663 at 663), map **692** on the repo tree. 700 clears all four. But `:249` measures the map through the LANE fixture (**320**, one node) — the test's own failure message prints `{"genesis":302,"front door":475,"no-plan card":663,"map":320}`. Real headroom is **8px**, not the card's "37px to spare"; `map ≤600` is not a measurement of the map the table renders. **T-051-s5.** |
+| 3 | every screen usable at the minimum, measured | **holds — table reproduced cell for cell** | All five screens at 800×600, 1024×700, 1280×840. Every published cell reproduces exactly, including `lens-region 970/580` and `886/720`, `log 342/442/582`, `card 67+533/633/773`, and the map's `canvas 446/446 · 454/454 · 594/594`. Both overflow cells are OLD-column only and both pre-filed — the no-plan card 663/600 is **T-048-s4**, and the map 726/600 is recorded in **T-048's own criterion-4 table** and in **T-048-s2**. Neither re-filed: correct. One divergence, benign: the board row is **7494/7010** because `repoBoard` walks this repo's `docs/`, which grew by the four suggestion cards the executor filed after measuring. |
+| 4 | confined to the window block, grants byte-unchanged | **holds** | `git diff --stat e41dd16..HEAD` run, not read: manifest **4+/2−**, all four keys inside `app.windows[0]`, **no other key introduced**. Path counts all **0**: `app/src-tauri/src`, `capabilities`, `gen`, `Cargo.toml`, `Cargo.lock`, `app/src`, `app/package.json`, `lib`, `method`, `docs/architecture/graph.json`, and **every one of the four lockfiles**. `EXPECTED_GRANTS` extracted from base and HEAD: **6135 bytes, 92 grant lines, sha256 `721174b12a00b382cad6e9edb853ae1723f4dd1351e3bfa4380020a0d2e7f0c7`** on both, `cmp` exit 0; whole `acl_pin.rs` sha256 `8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e` and git blob `53aa795b` identical across **base, main and HEAD**. Rebuilt bundle byte-identical: `index-GxM6iwW9.js` (483426 B) and `index-DSR1ACex.css` (**43304 B**). |
+| 5 | criteria held against T-027 as landed | **holds** | T-027 merged at `dc3ef5b`; the split is real in every measurement above. |
+
+### Suites, re-run first-hand, exit codes unpiped
+
+lib/parser **197/197 (10 files)** + `tsc` clean · app `tsc` **exit 0** ·
+app `npm run build` **exit 0**, hashes above · app `npx vitest run`
+**724/724 (39 files)** · `cargo test` **299 passed + 3 ignored, 0
+failed**, exit 0, **zero warnings**, **15 test binaries** counted from
+`test result:` lines · tools/e2e `typecheck` **exit 0** · tools/e2e
+`NPUTER_E2E_PORT=15188 npm test` **65 passed, exit 0**, no skips, no
+retries, no flakes · `lint:tokens` **clean (109 files), exit 0** ·
+`--selftest` **49 samples + 14 walk-policy checks green**.
+
+**BOOT GATE re-fired on a DIFFERENT scratch port (15189): `BOOT_EXIT=0`,
+both `[nputer]` lines present**, tree stopped on SIGTERM, 15189 and 15188
+empty afterwards, 1420 still exactly one listener, no stray process out
+of this worktree. The schema claim is verified at the source AND
+empirically: `min_width`/`min_height` are logical px on `WindowConfig`
+(tauri-utils 2.9.3 `config.rs:1961-1965`) and reach
+`with_min_inner_size(TaoLogicalSize)` (tauri-runtime-wry 2.11.4
+`lib.rs:1015-1018`) — **inner, not outer**, so every measurement is in
+the right coordinate space.
+
+### Anti-vacuity: re-derived, not read
+
+**Poison drill.** 6 vitest `it()` bodies → **6 failed**, each on its
+PROBE line (48, 58, 69, 122, …); 4 lane `test()` bodies → **5 cases
+failed**, all on the PROBE line (173, 215, 254, 312×2). Both files
+restored **sha256-identical** (`7148c949…`, `365cff8a…`).
+
+**Mutation drills against the thing under test — all seven reproduce.**
+`minWidth:1023` → **3** (vitest breakpoint + lane breakpoint + lane
+minimum-table) · `minHeight:600` → **2**, vitest correctly green ·
+`800×600` → **4** · kebab `min-width` → vitest **4** *and* the lane
+refuses to collect · `minWidth` deleted → vitest **4**, lane refuses to
+collect with its named message, does not skip · `minWidth:1024.5` →
+vitest **1** (the lane also reds 3 on Playwright's float rejection, which
+the card's table omits) · frontend `lg:`→`xl:` + rebuild → the vitest
+breakpoint test reds on *"the built sheet has no `.lg\:flex{display:flex}`
+rule — the lens's gate moved"*, and `GenesisScreen.tsx` restored to
+sha256 `b2e72ae7…` with the bundle back to `index-GxM6iwW9.js`.
+Manifest restored to sha256 `52eb5e69…` after every case, checked each
+time.
+
+### Security sweep — clean
+
+No dependency moved (all four lockfiles 0 files changed). No `innerHTML`,
+no `dangerouslySetInnerHTML`, no `eval`, no `new Function`. No
+`child_process`, no shell string (the only `exec(` is `RegExp.exec`). No
+bypass-permissions flag. No key, token or secret. Grant set byte-identical
+above. The manifest edit introduces no key other than `minWidth` and
+`minHeight`. tools/e2e still imports neither app nor parser.
+
+### The 229px discrepancy — RESOLVED, and it changes what T-065 should say
+
+The lens region's content height is a function of the fixture's **artifact
+row count** and the lens's width; the project dir is irrelevant. Measured
+in the frame test's exact scenario, both dirs, both fixtures:
+
+    streakFixture      (9 files, 9 rows): 970/648 · 886/600 · 858/780  margin 78 → PASS
+    streakMidInterview (6 files, 7 rows): 876/648 · 792/600 · 780/780  margin  0 → FAIL
+
+`/e2e/streak` (11 chars) and `/e2e/genesis` (12) measure **identically at
+every cell**, so T-027-s5's stated lever is falsified — but its
+CONCLUSION is vindicated: dropping `docs/tasks/` lands exactly on the
+**780/780** T-028 reports going red. T-051's 858/780 reproduces exactly
+and is right for the tree the committed spec drives. Filed as
+**T-051-s8**, which also corrects T-051-s2's framing.
+
+### The 1024 boundary — attacked, and it holds
+
+Root-font override is **dead**: media-query `rem` uses the initial value,
+measured (`html{font-size:32px}` makes an element's `64rem` 2048px while
+`(min-width: 64rem)` still matches at 1024). Fractional viewports
+quantize up. DPR is irrelevant — the numbers are logical inner px,
+verified at the source. The one residual I could not test headlessly (a
+layout-consuming scrollbar; `innerWidth − clientWidth` stayed 0 under
+every technique I tried) is **not armed**: no `lg:`-gated screen produces
+a document scrollbar at the floor. Filed as **T-051-s9** with the
+invariant named.
+
+### Blemishes recorded, none blocking
+
+- `git diff --stat e41dd16..HEAD` is **8 files** today (3 code + 5 docs),
+  not the "three files" criterion 4 quotes — true when written, before
+  the notes commit; it does not reproduce as printed.
+- `index-DSR1ACex.css` is **43,304 B**, not the "43,300 B" criterion 4
+  states; STATE.md itself records 43,304.
+- The board's reach check compares `card.split("/")[0]` to `[1]`, so a
+  hypothetical `0/0` would pass. Guarded in practice by the height and
+  rail assertions; not filed.
+- The vitest breakpoint probe finds the FIRST `.lg\:flex{display:flex}`
+  in the concatenated sheet, so a gate moved DOWN while another component
+  still emits `lg:flex` would read the wrong media query. The lane
+  measures the real breakpoint in a browser, which covers it.
+
+### Filed
+
+**T-051-s5** the minHeight guard measures a one-node map; real headroom
+is 8px · **T-051-s6** T-028 will red this spec — the full streak tree
+renders the board half · **T-051-s7** `min-width`/`min-height` are
+accepted serde aliases, so the kebab launch-failure claim is false in the
+notes and in the shipped comment · **T-051-s8** the lens-region lever is
+row count, not path length · **T-051-s9** the floor sits exactly on the
+breakpoint, on an invariant nothing asserts.
+
+Nothing found touches the shipped change. The manifest is four correct
+numbers, each derived and each measured; the fence holds to the byte; the
+guards fail when the thing they guard moves. **APPROVED.**
