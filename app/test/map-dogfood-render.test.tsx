@@ -262,8 +262,20 @@ describe("the nputer repo on its own map", () => {
     // umbrella. Unlike the four merges above, the edge and node picture
     // DOES move here — the relation table goes 28 → 30 and C-13 lights a
     // drift ring — so the two assertions above move with this one.
+    // 107 → 109 at the T-053 merge regen (2026-08-17): TWO files, and
+    // for the first time in this log neither belongs to C-05 or C-13 —
+    // lib/parser/src/id-slot.ts and lib/parser/test/id-slot.test.ts,
+    // both C-06's. This is the OPPOSITE of the T-027 entry above: the
+    // node and edge pictures do NOT move. All ten new edges are
+    // C-06-INTERNAL by construction (three src imports of id-slot.ts,
+    // the suite's two imports, four call edges into aliasedIdSlots /
+    // idSlotKey, and one type_ref ParseIssue → IdSpace), so no
+    // component PAIR is created or grown: the 30-edge table, the 8
+    // undeclared and every drift count above stay byte-identical. A
+    // lift that keeps its blast radius inside one component is what
+    // that looks like on the map.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 107 files",
+      "committed graph · 109 files",
     );
   });
 });

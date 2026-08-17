@@ -716,6 +716,62 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //   · The ceaa949 ordering lesson, SIXTEENTH hold: this block and the map
 //     fixture are both indexed, so both were edited BEFORE the final
 //     regen and the regen was then run twice for byte-identity.
+//
+// RECONCILED AT THE T-053 MERGE (2026-08-17, integrator — TWENTY-SEVENTH
+// exercise of the practice). TWO exercises are missing from this log
+// between T-042's block and this one, and they are missing for OPPOSITE
+// reasons — stated so the numbering is not read as a gap in the ritual.
+// The twenty-fifth was T-014's merge: it fired and was a verified no-op
+// (a Rust-only crate against `languages: ["ts"]`; graph.json unmoved at
+// 88e1daf6), so it left no block here for the same reason T-045's did.
+// The twenty-sixth was T-027's, and that one is an OMISSION: it moved
+// the graph 100→107 files and ten assertions with it, but recorded the
+// whole reconciliation inline at the assertion sites and in its commit
+// message rather than here. Both halves of that record are intact and
+// nothing was lost — but the top-of-file log is the instrument the next
+// integrator actually reads before touching a body, so it is restored
+// here rather than left to rot. Every number below re-derived from the
+// raw graph against `git show 2dd9ea5:docs/architecture/graph.json` with
+// my own diff script, BEFORE this edit and BEFORE the suite was re-run:
+//   · stats 107→109 files, 853→857 symbols, 1315→1325 edges (import +5,
+//     call +4, type_ref +1). Nothing removed: 10 added, 0 retired.
+//   · TWO files added, both C-06's — lib/parser/src/id-slot.ts (loc 99,
+//     3 symbols: idSlotKey, aliasedIdSlots and the unexported
+//     compareIdSpellings) and lib/parser/test/id-slot.test.ts (loc 110,
+//     0 symbols). THE FIRST TIME SINCE T-008 THAT C-06 MOVES AT ALL, and
+//     the first entry in this log whose moving component is neither C-05
+//     nor C-12 nor C-13. Content-changed (hash only): the six other
+//     lib/parser/src files and the three lib/parser/test suites. Only
+//     types.ts moves a symbol count, 20→21 — the new `IdSpace`.
+//   · mapping 107→109; C-06 21→23 is the ONLY count that moves, and it
+//     is derivable before anything runs: `lib/parser/**` is C-06's
+//     single glob and its only claimant, swept again here. D2 empty,
+//     unmapped node still gone, derived.issues still [].
+//   · NOTHING ELSE MOVES, and that was DERIVED rather than hoped. All
+//     ten new edges are C-06-INTERNAL or C-06→package: three src imports
+//     of id-slot.ts, the suite's two imports (id-slot.ts and p:vitest),
+//     four call edges into aliasedIdSlots/idSlotKey, one type_ref
+//     ParseIssue→IdSpace. No new component PAIR can appear from edges
+//     that never leave a component, so the findings list, all six D1
+//     `fileEdges` lists, the 30-row relation table with its 13/8/9
+//     tally, every observedCount, every drift ring and the C-12 `files`
+//     array are byte-identical. The T-034 block's trap was swept for
+//     directly anyway: the two LISTS in this file that could move
+//     (C-12's `files`, the D1:C-05→C-06 `fileEdges`) are both app→parser
+//     or app-internal, and no app file was added.
+//   · THREE assertions move plus one `it()` name — the size check and
+//     the C-06 row here (SECOND in the same body as the size check, so a
+//     red hides it), and the index hint in map-dogfood-render.test.tsx.
+//     Forecast from the added-file list and the registry glob before the
+//     regen was run, and the measurement matched it exactly.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched: T-053
+//     declares no component and changes no registry file, so the T-024
+//     three-fixtures rule does not fire in its registry form — VERIFIED
+//     rather than assumed, since this is a lib-parser branch and that
+//     pin lives in the package it edits.
+//   · The ceaa949 ordering lesson, SEVENTEENTH hold: this block and the
+//     map fixture are both indexed, so both were edited BEFORE the final
+//     regen and the regen was then run twice for byte-identity.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -781,8 +837,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 107 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(107);
+  it("all 109 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(109);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -830,7 +886,19 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // third file. Derived from the added-file list before the suite ran,
       // which is the rule above being used for the fifth merge running.
       ["C-05", 50],
-      ["C-06", 21],
+      // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
+      // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
+      // id-slot.ts and lib/parser/test/id-slot.test.ts, both under
+      // `lib/parser/**`, C-06's single glob and its only claimant. It is
+      // also the first regen in this log where the moving component is
+      // NOT C-05 — the umbrella row above is byte-unchanged, because a
+      // lib-parser branch with a 0-byte app diff cannot move it.
+      // Derived from the added-file list and the registry glob BEFORE
+      // anything was run, and it is the SECOND assertion in this body:
+      // it sits below the size check above, so vitest never reaches it
+      // while that one is red. Same shape as the row T-048 and T-049
+      // each missed once.
+      ["C-06", 23],
       ["C-08", 10],
       ["C-09", 3],
       ["C-10", 2],

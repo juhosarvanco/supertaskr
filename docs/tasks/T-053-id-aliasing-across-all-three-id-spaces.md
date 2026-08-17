@@ -5,14 +5,14 @@ feature: F-02
 milestone: 4
 priority: 2
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [lib-parser]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-030-s3 (architect, 2026-08-17), promoted after surviving two
@@ -441,3 +441,70 @@ regen concern, not a registry one.
   grouped without opting in.
 
 ## Verdicts
+
+2026-08-17 — claude-opus-5 @fresh (verifier, same-model as builder):
+**APPROVED**
+
+**Transcribed by the integrator at the merge, and that is itself worth
+recording.** The verifier's session ended without committing to this
+branch, so `## Verdicts` was EMPTY at merge time and the four stamps
+were unset — the branch tip (`05046ef`) is the executor's last commit.
+TASK-FORMAT makes this section the verifier's to append, so this entry
+is a transcription of a verdict delivered out-of-band, not a verdict the
+integrator formed. It is marked as such rather than passed off as a
+first-hand signature, and the integrator's own reproductions are kept
+separate below and in the checkpoint. ADR-016's two-mark set is now
+complete on this card; it was not before this commit.
+
+**The verifier re-derived rather than trusted, and that is the reason
+this verdict is worth anything.** It did not read the executor's
+evidence and agree with it — it built its own. Its own **28-body poison
+sweep** over every `it()` this branch adds: 28 red, **zero collateral
+assertion failures**, and all three touched suites restored
+**sha256-verified**. Its own **four discriminating mutants** against
+`idSlotKey`, because a poison sweep proves a body RUNS and this card's
+traps are about a body being WRONG. Its own **fixtures for all four
+`-sN` suffix cases** — the subtlety the card correctly calls the one
+most likely to be got wrong, since a suffix-blind key silently merges a
+suggestion into its parent task. Its own suite runs, **unpiped**: it
+caught the executor piping through `tail`, which hides an exit code
+behind a pipeline's status, and re-ran everything itself rather than
+accept the numbers.
+
+**Two things the verifier asked be carried forward, both now done.**
+(1) The NaN comparator of T-053-s2 also governs the ordering of this
+task's own `aliased-id.ids` array in the component space, so for ids
+past 309 digits the reported spelling order is implementation-defined
+too — **not a regression**, being byte-identical to T-030's pre-existing
+`sort(compareComponentIds)` at that site. Appended to **T-053-s2**
+rather than filed as a near-duplicate. Reproduced first-hand at the
+merge (`Infinity - Infinity` is NaN and `NaN !== 0` returns before the
+string fallback), which turned up one more thing now recorded there:
+`aliasedIdSlots`'s doc comment defends its `compare` argument by
+claiming any numeric-first comparator "has already degenerated to"
+string order, and that claim is false in exactly this range.
+(2) **Do not cite the live-tree smoke test as the reason the suffix case
+is safe.** Its power as a control is contingent on tree contents that
+have just swung hard — 58 suffixed ids on the branch against 16 on main
+after the third triage — so mutant (b)'s "and the smoke test reds" is a
+true observation about one tree and not a standing guarantee. **The unit
+pins are the actual guard**, and the implementation notes' §"Obligation"
+should be read with that caveat.
+
+**The card's own internal contradiction was ruled, not absorbed.**
+Criterion 1 ("T-030's four pins SHALL pass untouched") and criterion 5
+("the issue SHALL say which id space it is about") cannot both be obeyed
+literally: either shape of discriminator changes the object
+`component.test.ts:395` asserts with a whole-object `toEqual`. The
+executor took the field, tightened that one pin by one line, left the
+three behaviour pins byte-untouched, and **said so out loud** rather
+than quietly reconciling a fixture. That is the right disposition and
+the verdict endorses it.
+
+**Also endorsed: the status stamp the card refused to write.** The
+hand-off asked for `status: built`, which is not one of TASK-FORMAT's
+eight — and this card's own control caught it, producing an
+`invalid-field` on THIS FILE, reddening the live-tree smoke test and
+taking the tree from 0 issues to 1. The exact failure mode this task
+exists to prevent, arriving through the task's own stamp. Left at
+`building` for the integrator, correctly.

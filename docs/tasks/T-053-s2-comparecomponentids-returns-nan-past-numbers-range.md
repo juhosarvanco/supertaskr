@@ -36,3 +36,22 @@ lexicographic), which is the same primitive `idSlotKey` already uses and
 would make the comparator total for every input. Wants its own pins:
 the existing `compareComponentIds` pin (`component.test.ts:310`) only
 covers small ids.
+
+**Carried forward by the verifier at T-053's merge (integrator,
+2026-08-17): the same NaN also governs T-053's OWN output.**
+`component.ts:340` passes `compareComponentIds` into `aliasedIdSlots`,
+which sorts each slot's spellings with it, so for ids past 309 digits
+the order of the `ids` array on a component-space `aliased-id` issue —
+and therefore the order the spellings are named in its message — is
+implementation-defined too. This is **NOT a regression**: it is
+byte-identical to the `sort(compareComponentIds)` T-030 already shipped
+at that site, and the fix is the same one-function change described
+above. One thing to repair with it, found while reproducing this:
+`aliasedIdSlots`'s doc comment argues the `compare` argument is safe
+because "any numeric-first comparator … has already degenerated to
+exactly this" string order — every numeric part inside a slot being
+equal by construction. That reasoning is sound for every id the
+comparator can weigh and FALSE in exactly this range, because
+`Infinity - Infinity` is NaN and `NaN !== 0` returns before the string
+fallback is ever reached. So the comment currently states as a
+guarantee the one thing this suggestion says is not guaranteed.

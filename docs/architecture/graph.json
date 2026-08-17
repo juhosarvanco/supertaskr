@@ -5379,8 +5379,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:75ad68014fc327e11429eff3c22d84fe1dd535c87bb0e7b075d71790588d6608",
-      "loc": 1252,
+      "hash": "blake3:c8902fce73c67fa6585f2a93fa8438816575e5699900038f0a3c865a4b663fbd",
+      "loc": 1320,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -5388,8 +5388,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            754,
-            754
+            810,
+            810
           ]
         },
         {
@@ -5398,8 +5398,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            753,
-            753
+            809,
+            809
           ]
         },
         {
@@ -5408,8 +5408,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            719,
-            719
+            775,
+            775
           ]
         },
         {
@@ -5418,8 +5418,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            725,
-            740
+            781,
+            796
           ]
         },
         {
@@ -5428,8 +5428,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            742,
-            751
+            798,
+            807
           ]
         },
         {
@@ -5438,8 +5438,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            721,
-            723
+            777,
+            779
           ]
         }
       ]
@@ -6941,8 +6941,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:9f22468485b8b3864c1bb89f8b0523ebe28aa71c1052514006cf267974b0107b",
-      "loc": 269,
+      "hash": "blake3:76aa8720ca4e2abd6d2e5f76889e49f32c9a0c1fa278b47ca4c47dc909b7de8b",
+      "loc": 281,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -8467,8 +8467,8 @@
       "id": "f:lib/parser/src/component.ts",
       "path": "lib/parser/src/component.ts",
       "lang": "ts",
-      "hash": "blake3:c3cc346b885d7f367d77377d4b6a29c041fa9c33e6de5f4732734f0053c6dfc2",
-      "loc": 404,
+      "hash": "blake3:845dc2eb5d62f93d11f23674f82eebdbfea113387f082aeacb159dabdf897419",
+      "loc": 399,
       "symbols": [
         {
           "id": "s:lib/parser/src/component.ts#ComponentSourceFile",
@@ -8476,8 +8476,8 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            247,
-            250
+            248,
+            251
           ]
         },
         {
@@ -8486,8 +8486,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            32,
-            32
+            33,
+            33
           ]
         },
         {
@@ -8496,8 +8496,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            21,
-            30
+            22,
+            31
           ]
         },
         {
@@ -8506,8 +8506,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            236,
-            244
+            237,
+            245
           ]
         },
         {
@@ -8516,8 +8516,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            50,
-            58
+            51,
+            59
           ]
         },
         {
@@ -8526,8 +8526,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            35,
-            37
+            36,
+            38
           ]
         },
         {
@@ -8536,8 +8536,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            39,
-            41
+            40,
+            42
           ]
         },
         {
@@ -8546,8 +8546,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            253,
-            258
+            254,
+            259
           ]
         },
         {
@@ -8556,8 +8556,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            74,
-            221
+            75,
+            222
           ]
         },
         {
@@ -8566,8 +8566,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            296,
-            404
+            297,
+            399
           ]
         },
         {
@@ -8576,8 +8576,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            272,
-            280
+            273,
+            281
           ]
         }
       ]
@@ -8711,11 +8711,50 @@
       ]
     },
     {
+      "id": "f:lib/parser/src/id-slot.ts",
+      "path": "lib/parser/src/id-slot.ts",
+      "lang": "ts",
+      "hash": "blake3:309aca8fa0239d1ff07a4dd2ac8695177de72070084a0d8e85f6ab2e1654ee69",
+      "loc": 99,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/id-slot.ts#aliasedIdSlots",
+          "name": "aliasedIdSlots",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            78,
+            99
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/id-slot.ts#compareIdSpellings",
+          "name": "compareIdSpellings",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            54,
+            56
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/id-slot.ts#idSlotKey",
+          "name": "idSlotKey",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            49,
+            51
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:lib/parser/src/index.ts",
       "path": "lib/parser/src/index.ts",
       "lang": "ts",
-      "hash": "blake3:514f535a23d947c85732b4e455b1bf5aadc79674a268b8e66db727fd0a434bd4",
-      "loc": 55,
+      "hash": "blake3:b5bcec39524dd2e7e56cd5a8bd37b7fee231fb28aa738a95c87c14b0f6dbb329",
+      "loc": 56,
       "symbols": []
     },
     {
@@ -8810,16 +8849,16 @@
       "id": "f:lib/parser/src/pure.ts",
       "path": "lib/parser/src/pure.ts",
       "lang": "ts",
-      "hash": "blake3:bc03b9f9dd1e4ade854e7f6884e8dd8b6efaee735aa5f8f88bf95ea284dce7d7",
-      "loc": 48,
+      "hash": "blake3:e6a8dca1389b6b52472f2da2d9f9b14549515867dc0224e845bf74500813ac84",
+      "loc": 49,
       "symbols": []
     },
     {
       "id": "f:lib/parser/src/roadmap.ts",
       "path": "lib/parser/src/roadmap.ts",
       "lang": "ts",
-      "hash": "blake3:1851c8106b1ca4f8e011dcc39ae628c5b2dd33bc5978a8498b9964c9b8509ffb",
-      "loc": 144,
+      "hash": "blake3:74e5b929f5b68e6a9ca3a2f362fe4776fead89fcde4e312652a6c17bf1bbb272",
+      "loc": 170,
       "symbols": [
         {
           "id": "s:lib/parser/src/roadmap.ts#parseRoadmap",
@@ -8827,8 +8866,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            27,
-            102
+            28,
+            128
           ]
         },
         {
@@ -8837,8 +8876,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            121,
-            144
+            147,
+            170
           ]
         }
       ]
@@ -8906,8 +8945,8 @@
       "id": "f:lib/parser/src/types.ts",
       "path": "lib/parser/src/types.ts",
       "lang": "ts",
-      "hash": "blake3:ec8ec3fade30d4bcee5fceb90e0409b52800e4a70cce5c86d1a5f8bbc59b5278",
-      "loc": 320,
+      "hash": "blake3:73092efe4d27cceb827a3a494779975c480a4777b9c65cfab280169810863669",
+      "loc": 345,
       "symbols": [
         {
           "id": "s:lib/parser/src/types.ts#COMPONENT_STATUSES",
@@ -8925,8 +8964,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            296,
-            299
+            321,
+            324
           ]
         },
         {
@@ -8945,8 +8984,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            302,
-            305
+            327,
+            330
           ]
         },
         {
@@ -8970,6 +9009,16 @@
           ]
         },
         {
+          "id": "s:lib/parser/src/types.ts#IdSpace",
+          "name": "IdSpace",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            202,
+            202
+          ]
+        },
+        {
           "id": "s:lib/parser/src/types.ts#ModelSession",
           "name": "ModelSession",
           "kind": "interface",
@@ -8985,8 +9034,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            197,
-            277
+            208,
+            302
           ]
         },
         {
@@ -8995,8 +9044,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            309,
-            320
+            334,
+            345
           ]
         },
         {
@@ -9025,8 +9074,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            288,
-            291
+            313,
+            316
           ]
         },
         {
@@ -9065,8 +9114,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            282,
-            285
+            307,
+            310
           ]
         },
         {
@@ -9115,8 +9164,8 @@
       "id": "f:lib/parser/src/validate.ts",
       "path": "lib/parser/src/validate.ts",
       "lang": "ts",
-      "hash": "blake3:f935906ea16c74ba3ae17beb373544b41b3c66c654c03f5118b7dd3e85103b2d",
-      "loc": 287,
+      "hash": "blake3:1ccb56889bc26401c890dc276184ef17cff5ea15a7488f95de960fe412d8bcdc",
+      "loc": 320,
       "symbols": [
         {
           "id": "s:lib/parser/src/validate.ts#ValidateProjectOptions",
@@ -9124,8 +9173,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            69,
-            82
+            83,
+            96
           ]
         },
         {
@@ -9134,8 +9183,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            168,
-            271
+            201,
+            304
           ]
         },
         {
@@ -9144,8 +9193,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            283,
-            287
+            316,
+            320
           ]
         },
         {
@@ -9154,8 +9203,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            84,
-            149
+            98,
+            182
           ]
         }
       ]
@@ -9164,8 +9213,8 @@
       "id": "f:lib/parser/test/component.test.ts",
       "path": "lib/parser/test/component.test.ts",
       "lang": "ts",
-      "hash": "blake3:8d5a21433a0f5280d08b662e3e1c8014917f75a0d82817ba7976340c77d261df",
-      "loc": 734,
+      "hash": "blake3:a61ff1762b93b3ad386242bb138f94d34d26ef631e5d03be0e6998d8e320f467",
+      "loc": 746,
       "symbols": [
         {
           "id": "s:lib/parser/test/component.test.ts#FILE",
@@ -9249,6 +9298,14 @@
       ]
     },
     {
+      "id": "f:lib/parser/test/id-slot.test.ts",
+      "path": "lib/parser/test/id-slot.test.ts",
+      "lang": "ts",
+      "hash": "blake3:e340bc6ba0878118fb647aea0e880a1f2e4ac89cadb3fa003d287920ab06be1e",
+      "loc": 110,
+      "symbols": []
+    },
+    {
       "id": "f:lib/parser/test/model-session.test.ts",
       "path": "lib/parser/test/model-session.test.ts",
       "lang": "ts",
@@ -9318,8 +9375,8 @@
       "id": "f:lib/parser/test/roadmap.test.ts",
       "path": "lib/parser/test/roadmap.test.ts",
       "lang": "ts",
-      "hash": "blake3:cad859c9dff956e2c238c0ec56588111b6209ee3cb164a0fd6e111f5b1a1af2d",
-      "loc": 234,
+      "hash": "blake3:5afdb66629251c3e3c56c58f0f082860ee9e03b65dd61a424fcb579efb88e666",
+      "loc": 328,
       "symbols": [
         {
           "id": "s:lib/parser/test/roadmap.test.ts#FILE",
@@ -9395,8 +9452,8 @@
       "id": "f:lib/parser/test/validate.test.ts",
       "path": "lib/parser/test/validate.test.ts",
       "lang": "ts",
-      "hash": "blake3:dace4bb084f9bf0f9c7a9183e05d9212a67131aeac1190498401730e66006935",
-      "loc": 640,
+      "hash": "blake3:5b49edb5f4820eb6e0ac0251b6d8efac138f146bf56a5e8453af61ab904ed2ea",
+      "loc": 868,
       "symbols": [
         {
           "id": "s:lib/parser/test/validate.test.ts#Field",
@@ -12647,6 +12704,14 @@
     },
     {
       "from": "f:lib/parser/src/component.ts",
+      "to": "f:lib/parser/src/id-slot.ts",
+      "kind": "import",
+      "symbols": [
+        "aliasedIdSlots"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/component.ts",
       "to": "f:lib/parser/src/types.ts",
       "kind": "import",
       "symbols": [
@@ -12805,6 +12870,7 @@
         "ComponentSetResult",
         "ComponentStatus",
         "FeatureRecord",
+        "IdSpace",
         "ModelSession",
         "ParseIssue",
         "ProjectParseResult",
@@ -12976,6 +13042,7 @@
         "ComponentSetResult",
         "ComponentStatus",
         "FeatureRecord",
+        "IdSpace",
         "ModelSession",
         "ParseIssue",
         "ProjectParseResult",
@@ -13002,6 +13069,14 @@
         "validateProject"
       ],
       "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/roadmap.ts",
+      "to": "f:lib/parser/src/id-slot.ts",
+      "kind": "import",
+      "symbols": [
+        "aliasedIdSlots"
+      ]
     },
     {
       "from": "f:lib/parser/src/roadmap.ts",
@@ -13045,6 +13120,14 @@
         "TaskSections",
         "TaskSize",
         "TaskStatus"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/validate.ts",
+      "to": "f:lib/parser/src/id-slot.ts",
+      "kind": "import",
+      "symbols": [
+        "aliasedIdSlots"
       ]
     },
     {
@@ -13143,6 +13226,25 @@
     },
     {
       "from": "f:lib/parser/test/files.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/id-slot.test.ts",
+      "to": "f:lib/parser/src/id-slot.ts",
+      "kind": "import",
+      "symbols": [
+        "aliasedIdSlots",
+        "idSlotKey"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/id-slot.test.ts",
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
@@ -13257,6 +13359,7 @@
       "to": "f:lib/parser/src/index.ts",
       "kind": "import",
       "symbols": [
+        "parseProjectFromFiles",
         "parseRoadmap"
       ]
     },
@@ -18373,6 +18476,12 @@
     },
     {
       "from": "s:lib/parser/src/component.ts#parseComponentSet",
+      "to": "s:lib/parser/src/id-slot.ts#aliasedIdSlots",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/component.ts#parseComponentSet",
       "to": "s:lib/parser/src/types.ts#ComponentRecord",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -18516,6 +18625,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/id-slot.ts#aliasedIdSlots",
+      "to": "s:lib/parser/src/id-slot.ts#idSlotKey",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/model-session.ts#parseModelSession",
       "to": "s:lib/parser/src/types.ts#ModelSession",
       "kind": "type_ref",
@@ -18627,6 +18742,12 @@
       "from": "s:lib/parser/src/project.ts#parseTaskDirectory",
       "to": "s:lib/parser/src/types.ts#TaskRecord",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/roadmap.ts#parseRoadmap",
+      "to": "s:lib/parser/src/id-slot.ts#aliasedIdSlots",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -18774,6 +18895,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/types.ts#ParseIssue",
+      "to": "s:lib/parser/src/types.ts#IdSpace",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/types.ts#ProjectParseResult",
       "to": "s:lib/parser/src/types.ts#ComponentRecord",
       "kind": "type_ref",
@@ -18865,6 +18992,12 @@
     },
     {
       "from": "s:lib/parser/src/validate.ts#validateProject",
+      "to": "s:lib/parser/src/id-slot.ts#aliasedIdSlots",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/validate.ts#validateProject",
       "to": "s:lib/parser/src/types.ts#ParseIssue",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -18926,8 +19059,8 @@
     }
   ],
   "stats": {
-    "files": 107,
-    "symbols": 853,
-    "edges": 1315
+    "files": 109,
+    "symbols": 857,
+    "edges": 1325
   }
 }
