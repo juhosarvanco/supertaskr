@@ -40,7 +40,7 @@ export type TurnErrorPayload =
   | { kind: "authFailed"; status: number | null; message: string }
   /** T-029 (T-025-s1): a tool the planner needed was refused. Named, so
    * the screen can say WHICH instead of showing an exit code. */
-  | { kind: "toolDenied"; denials: string[]; terminalReason: string | null }
+  | { kind: "toolDenied"; denials: readonly string[]; terminalReason: string | null }
   /** T-029 (T-039-s3): a session id was refused at either gate. Its own
    * envelope, because "start fresh" is its remedy and is not the remedy
    * for a truncated stream line. */
