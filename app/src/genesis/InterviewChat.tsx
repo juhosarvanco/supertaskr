@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { DocsModelState } from "@/lib/docs-model";
 import type { SendOutcomePayload, StartOutcomePayload } from "@/lib/agent-store";
+import { elapsedLabel } from "./crescendo";
 import {
   activeTurn,
   assembleTranscript,
@@ -18,7 +19,9 @@ import {
   interviewBusy,
   retryTurn,
   sendAnswer,
+  startGenesisClock,
   startInterview,
+  useGenesisElapsedMs,
   useGenesisState,
   useInterviewUi,
 } from "./interview-source";
@@ -118,6 +121,28 @@ export function InterviewChat({
     void startInterview(projectDir);
   }, [statusKnown, notStarted, projectDir]);
 
+  // ---- the elapsed slot (T-028 criterion 3) ---------------------------
+  //
+  // Started HERE because this component IS the interview being on screen,
+  // which is exactly what the clock claims to measure. The origin lives
+  // in the module rather than in a ref, so a remount keeps it and only a
+  // different genesis project re-bases it; the whole rule, including what
+  // an app restart does to it, is written on `startGenesisClock`.
+  //
+  // WHERE THE DESIGN PUTS THIS SLOT, and why it is not there: the mockup
+  // reads `~9 min elapsed` in the LENS's footer-right, which T-024
+  // substituted with `stage ~N · <step>` for a stated reason. T-028 can
+  // no longer put it back there even if it wanted to — the lens is
+  // REPLACED by the board at decomposition, so a footer slot would take
+  // the elapsed time off screen at exactly the moment the run is being
+  // timed. It lives in the conversation's own header instead, which is
+  // the one piece of chrome that survives the whole genesis. Disclosed
+  // deviation; the number and its phrasing are the design's.
+  useEffect(() => {
+    startGenesisClock(projectDir, Date.now());
+  }, [projectDir]);
+  const elapsed = elapsedLabel(useGenesisElapsedMs());
+
   // ---- the transcript, and who scrolls -------------------------------
   //
   // `stageOf` calls the lens's own exported `deriveGenesis` with the
@@ -149,6 +174,26 @@ export function InterviewChat({
   // ---- the input ------------------------------------------------------
   const [draft, setDraft] = useState("");
   const box = useRef<HTMLTextAreaElement | null>(null);
+  /**
+   * T-028 criterion 6 (folding T-027-s1): did the answer box HOLD FOCUS
+   * at the moment this turn was sent?
+   *
+   * THE DEFECT, stated exactly, because the fix only makes sense against
+   * it: the box disables itself while a turn is in flight, and the HTML
+   * spec blurs a focused element when it becomes disabled. Nothing gave
+   * the focus back — so on a seven-question conversation you reached for
+   * the mouse between every single answer. The blur is correct and stays;
+   * what was missing was the other half.
+   *
+   * RECORDED AT SUBMIT, NEVER INFERRED ON LANDING, and that is the whole
+   * of why this is a ref rather than a check inside the effect. By the
+   * time the turn lands the box has already been blurred by the disable,
+   * so "did it have focus?" is unanswerable then — and a "Bank answer"
+   * click, where focus is on the BUTTON, would be indistinguishable from
+   * an ⏎ send. Two different intentions, one observable state: the flag
+   * separates them at the only moment they are still distinguishable.
+   */
+  const heldFocusAtSubmit = useRef(false);
 
   useEffect(() => {
     const el = box.current;
@@ -166,10 +211,43 @@ export function InterviewChat({
     // can be delivered between state updates. The latch inside
     // `sendAnswer` is the one that actually bounds a burst.
     if (draft.trim().length === 0) return;
+    heldFocusAtSubmit.current = box.current !== null && document.activeElement === box.current;
     const text = draft;
     setDraft("");
     void sendAnswer(text);
   }, [draft]);
+
+  /**
+   * Give the focus back when the turn leaves flight — and only then, and
+   * only if it was ours to give back.
+   *
+   * NO DEPENDENCY ARRAY, deliberately: keying this on the falling edge of
+   * `busy` would make it depend on React observing a RISING edge, and the
+   * rising edge is not guaranteed to survive batching when a send
+   * resolves inside one microtask (the served DEV bundle's twin does
+   * exactly that — there is no `invoke` to wait for). The ref guard makes
+   * every other render a no-op, so running unconditionally costs one
+   * boolean read and cannot miss a transition. The lens uses the same
+   * shape for its one timer.
+   *
+   * THE ANTI-THEFT CLAUSE is the second condition, and it is the half a
+   * naive fix gets wrong: if the user moved focus somewhere else while
+   * the planner was thinking — tabbed to the retry button, clicked into
+   * the lens, focused the theme toggle — that focus is THEIRS and yanking
+   * it back into the box mid-keystroke would be a worse bug than the one
+   * being fixed. So the box only takes focus back from the state the
+   * disable left behind: nothing focused at all (`document.body`, which
+   * is where a blurred element's focus goes), or the box itself.
+   */
+  useEffect(() => {
+    if (busy || !heldFocusAtSubmit.current) return;
+    heldFocusAtSubmit.current = false;
+    const el = box.current;
+    if (el === null) return;
+    const active = document.activeElement;
+    if (active !== null && active !== document.body && active !== el) return;
+    el.focus();
+  });
 
   const onRetry = useCallback(
     (turn: number) => {
@@ -198,11 +276,21 @@ export function InterviewChat({
           <span className="font-mono text-xs tracking-overline text-muted-foreground uppercase">
             planning interview
           </span>
-          <span
-            data-testid="interview-stage-readout"
-            className="font-mono text-xs text-secondary-foreground"
-          >
-            {stageReadout(stage.approxStage, stage.stageStep)}
+          <span className="flex items-baseline gap-2.5">
+            {elapsed !== null && (
+              <span
+                data-testid="interview-elapsed"
+                className="font-mono text-xs text-muted-foreground"
+              >
+                {elapsed} elapsed
+              </span>
+            )}
+            <span
+              data-testid="interview-stage-readout"
+              className="font-mono text-xs text-secondary-foreground"
+            >
+              {stageReadout(stage.approxStage, stage.stageStep)}
+            </span>
           </span>
         </div>
         <StageStrip segments={stageStrip(stage.approxStage)} />

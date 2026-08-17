@@ -220,14 +220,20 @@ describe("T-048 the frame holds — and only where it should", () => {
   it("4. every link from the bounded column to the pane's scroll region can shrink", async () => {
     // Real content, so the chain is walked over the tree the pane
     // actually renders rather than an empty state.
+    //
+    // T-028 RECONCILE — THE TASK FILE MOVED DOWN, and it had to. T-028
+    // switches the right half from the lens to the REAL BOARD the moment
+    // a task file parses, so leaving `T-001` in this snapshot would have
+    // unmounted the very scroll region this walk is about. The lens's
+    // chain is walked over a tree one turn before decomposition; the
+    // BOARD's chain is walked below, over the same tree WITH the card in
+    // it. Nothing was dropped — the file gained a second chain, which is
+    // the only honest response to a screen that now has two right halves.
     await emitSnapshot({
       seq: 6,
       projectDir: GENESIS_DIR,
       generatedAtMs: 6,
-      files: [
-        { path: "docs/ROADMAP.md", content: ROADMAP },
-        { path: "docs/tasks/T-001-a-task.md", content: TASK },
-      ],
+      files: [{ path: "docs/ROADMAP.md", content: ROADMAP }],
     });
     expect(screenOf(), "the pipeline lighting up must not yank the interview away").toBe(
       "genesis",
@@ -294,6 +300,43 @@ describe("T-048 the frame holds — and only where it should", () => {
       "genesis-split",
       "genesis-screen",
     ]);
+
+    // T-028 — THE THIRD CHAIN, and the reason the walk is a walk rather
+    // than a class assertion: the right half is now TWO renderers, and a
+    // frame that holds for the lens proves nothing about the board. One
+    // task file lands, the board takes over, and its own scroll region
+    // gets the identical walk to the identical column.
+    await emitSnapshot({
+      seq: 7,
+      projectDir: GENESIS_DIR,
+      generatedAtMs: 7,
+      files: [
+        { path: "docs/ROADMAP.md", content: ROADMAP },
+        { path: "docs/tasks/T-001-a-task.md", content: TASK },
+      ],
+    });
+    expect(screenOf(), "still the interview — the board is its right half now").toBe("genesis");
+    expect(
+      container.querySelector('[data-testid="genesis-pane"]'),
+      "the lens handed over",
+    ).toBeNull();
+    const boardScroller = container.querySelector<HTMLElement>(
+      '[data-testid="genesis-board"] .overflow-y-auto',
+    );
+    expect(boardScroller, "the board half's own scroll region").not.toBeNull();
+    expect(chainFrom(boardScroller!)).toEqual([
+      "div.flex",
+      "genesis-board",
+      "genesis-pane-slot",
+      "genesis-split",
+      "genesis-screen",
+    ]);
+    // And the card really is inside it — the walk is over the tree the
+    // board actually rendered, not an empty frame.
+    expect(
+      boardScroller!.querySelectorAll('[data-testid="task-card"]'),
+      "one file, one card",
+    ).toHaveLength(1);
   });
 
 });

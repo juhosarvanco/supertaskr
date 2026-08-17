@@ -157,3 +157,33 @@ export function streakFixture(seq: number, projectDir = "/e2e/streak"): DocsSnap
   }
   return { seq, projectDir, generatedAtMs: 1_755_400_000_000 + seq, files };
 }
+
+/**
+ * The same tree ONE TURN BEFORE DECOMPOSITION — everything except
+ * `docs/tasks/`. Six files.
+ *
+ * T-028 needs it because the crescendo switches the interview's right
+ * half from T-024's lens to the REAL board the moment a task file
+ * parses: the full streak tree is a FINISHED plan, so it no longer
+ * renders the lens at all. Specs whose subject is the LENS take this
+ * tree; specs whose subject is the BOARD take `streakFixture`. Nothing
+ * is lost either way — the state each spec describes is now nameable,
+ * which it was not while one tree had to stand for both.
+ *
+ * The subtraction is CHECKED rather than assumed, in the same spirit as
+ * the file-count guard above: a fixture that stops carrying exactly
+ * three task files fails LOUDLY here instead of quietly changing what
+ * the lens specs mean.
+ */
+export function streakMidInterview(seq: number, projectDir = "/e2e/streak"): DocsSnapshotPayload {
+  const full = streakFixture(seq, projectDir);
+  const files = full.files.filter((f) => !f.path.startsWith("docs/tasks/"));
+  if (full.files.length - files.length !== 3) {
+    throw new Error(
+      `expected exactly 3 files under docs/tasks/ in the streak fixture, found ` +
+        `${full.files.length - files.length} — reconcile the lens specs' counts ` +
+        "rather than loosening them.",
+    );
+  }
+  return { ...full, files };
+}

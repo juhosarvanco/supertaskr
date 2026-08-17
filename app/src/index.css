@@ -245,6 +245,29 @@
         transform: scaleX(0);
       }
     }
+
+    /* The decomposition crescendo (T-028): a card's ONE entrance
+       transition, played as it lands on the genesis board. Duration and
+       rise are tokens; the consumer is the utility below, applied as
+       `motion-safe:board-rain`, so reduced motion gets the cards with no
+       entrance at all.
+
+       NO FILL MODE, and that is deliberate rather than an omission:
+       `forwards`/`both` would leave the final keyframe's
+       `transform: translateY(0)` winning the cascade forever, which
+       silently kills the card's own `hover:-translate-y-px` lift. There
+       is no delay, so there is nothing for a fill mode to cover. */
+    --animate-card-rain: card-rain var(--card-rain-duration) ease-out;
+    @keyframes card-rain {
+      from {
+        opacity: 0;
+        transform: translateY(var(--card-rain-rise));
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 }
 
 /* T-012 map utilities: gradients and outline composites are not
@@ -273,6 +296,21 @@
 /* The measured 1.5px stroke for CSS-shape icons (rail glyphs). */
 @utility icon-stroke {
   border-width: 1.5px;
+}
+/* T-028's crescendo: every card on the genesis board plays the entrance
+   transition once, as it lands. It is expressed HERE, as a descendant
+   rule keyed on the card's existing `data-testid`, for one reason worth
+   writing down: T-028 is COMPOSITION ONLY — the board components are
+   mounted read-only and not one file under `src/components/board/`
+   changes, so there is nowhere on the card itself to put a class. React
+   creates a fresh element per newly parsed task, so a card that lands
+   ten seconds later plays its own entrance then, which is what "cards
+   rain in AS FILES LAND" means. Applied `motion-safe:`, so
+   prefers-reduced-motion needs no second mechanism. */
+@utility board-rain {
+  & [data-testid="task-card"] {
+    animation: var(--animate-card-rain);
+  }
 }
 
 @layer base {

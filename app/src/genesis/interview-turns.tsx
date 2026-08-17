@@ -36,8 +36,11 @@ function Overline({ children }: { children: string }) {
 
 /** 14px checked disc, the same construction as the lens's 12px artifact
  * mark: the provenance semantic (`--review-disc` / `--review-mark`),
- * drawn rather than typed so it needs no off-scale font size. */
-function BankedMark() {
+ * drawn rather than typed so it needs no off-scale font size.
+ *
+ * Exported since T-028 so the completion panel reuses this mark instead
+ * of becoming a third hand-drawn copy of it. */
+export function BankedMark() {
   return (
     <svg viewBox="0 0 14 14" width={14} height={14} aria-hidden="true" className="shrink-0">
       <circle cx="7" cy="7" r="7" fill="var(--review-disc)" />

@@ -13,6 +13,7 @@ import {
   getShellState,
   isTauriRuntime,
   keepCurrentProject,
+  openGenesisBoard,
   pickGenesisFolder,
   pickProjectFolder,
   planChecklist,
@@ -591,7 +592,15 @@ function App() {
           condition above). T-027 fills this screen; T-024's lens mounts
           inside GenesisScreen's marked slot. */}
       {screen.screen === "genesis" && (
-        <GenesisScreen projectDir={shell.genesisDir ?? ""} docs={shell.docs} />
+        <GenesisScreen
+          projectDir={shell.genesisDir ?? ""}
+          docs={shell.docs}
+          // T-028: the completion state's one CTA. The store action is
+          // local state only — the interview's folder is already the
+          // watched project — so the handoff is a phase move and the
+          // rail above comes back with it (screen `board`).
+          onOpenBoard={openGenesisBoard}
+        />
       )}
 
       {screen.screen === "board" && pane === "board" && (

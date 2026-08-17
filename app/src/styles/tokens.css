@@ -399,4 +399,14 @@
 
   /* The turn to teal — the map's one delight moment (400ms, once). */
   --map-wipe-duration: 400ms;
+
+  /* The decomposition crescendo (T-028): "cards rain into the board".
+     ONE entrance transition per card, inside the established motion
+     budget — shorter than the map's 400ms wipe deliberately, because a
+     whole milestone's worth of cards lands at once and a slow entrance
+     on fifty of them reads as lag rather than as delight. The rise is
+     8px: the card's own hover lift is 1px, and eight times that is the
+     smallest distance that still reads as arrival at card scale. */
+  --card-rain-duration: 260ms;
+  --card-rain-rise: 8px;
 }

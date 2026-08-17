@@ -306,6 +306,93 @@ export function cancelTurn(): void {
   void cancelGenesis();
 }
 
+// ---- the local genesis clock (T-028, criteria 2 and 3) ------------------
+
+/**
+ * THE ELAPSED CLOCK IS DISPLAY-ONLY, EPHEMERAL, AND LOCAL. It exists in
+ * this module and nowhere else: nothing writes it to disk, nothing sends
+ * it anywhere, no command carries it, and no file records it. That is the
+ * NORTH_STAR non-goal ("no telemetry home-phoning") held as a
+ * construction rather than as a promise — there is simply no channel out
+ * of this module for the number to take.
+ *
+ * THE ORIGIN, and its re-base rule, stated because a timer that lies
+ * about what it measures is worse than no timer:
+ *
+ *   The origin is WHEN THIS APP SESSION FIRST PUT THE INTERVIEW ON SCREEN
+ *   FOR THIS PROJECT — not when the planner process started, and not when
+ *   the genesis folder was first opened on some earlier day.
+ *
+ *   So: an app RESTART re-bases the clock to zero, and a genesis resumed
+ *   tomorrow reads the time since the app was reopened. That is a real
+ *   limitation and it is deliberate — the only durable origin available
+ *   would be a timestamp in `.nputer/`, which is state this task is
+ *   fenced out of writing (ADR-017: the app renders what lands, the
+ *   planner writes), and `genesis_status` carries `lastEventAtMs` but no
+ *   first-event stamp. A REMOUNT inside one session does NOT re-base,
+ *   because the origin lives here rather than in a component. A switch to
+ *   a DIFFERENT genesis project DOES re-base, because the elapsed time of
+ *   one interview is not a fact about another.
+ *
+ * The tick is one shared interval for however many subscribers there are,
+ * started on the first subscribe and cleared on the last — the label's
+ * granularity is a minute, so the interval is display refresh and not
+ * polling: nothing is fetched, nothing is asked, no boundary is touched.
+ */
+export const ELAPSED_TICK_MS = 15_000;
+
+let clockProject: string | null = null;
+let clockStartedAtMs: number | null = null;
+let clockNowMs = 0;
+const clockListeners = new Set<() => void>();
+let clockTimer: ReturnType<typeof setInterval> | null = null;
+
+function notifyClock(): void {
+  for (const listener of clockListeners) listener();
+}
+
+/**
+ * Start (or re-base) the clock for `projectDir`. Idempotent for the same
+ * project: the FIRST stamp wins, so a remount keeps the original origin
+ * and only a different project moves it.
+ */
+export function startGenesisClock(projectDir: string, atMs: number): void {
+  if (clockStartedAtMs !== null && clockProject === projectDir) return;
+  clockProject = projectDir;
+  clockStartedAtMs = atMs;
+  clockNowMs = atMs;
+  notifyClock();
+}
+
+function subscribeClock(callback: () => void): () => void {
+  clockListeners.add(callback);
+  if (clockTimer === null) {
+    clockTimer = setInterval(() => {
+      clockNowMs = Date.now();
+      notifyClock();
+    }, ELAPSED_TICK_MS);
+  }
+  return () => {
+    clockListeners.delete(callback);
+    if (clockListeners.size === 0 && clockTimer !== null) {
+      clearInterval(clockTimer);
+      clockTimer = null;
+    }
+  };
+}
+
+/** Milliseconds since the origin, or `null` when no clock has started.
+ * Stable between ticks, which is what `useSyncExternalStore` requires. */
+function getElapsedMs(): number | null {
+  if (clockStartedAtMs === null) return null;
+  return Math.max(clockNowMs - clockStartedAtMs, 0);
+}
+
+/** The elapsed slot's source. `null` until a clock starts. */
+export function useGenesisElapsedMs(): number | null {
+  return useSyncExternalStore(subscribeClock, getElapsedMs, getElapsedMs);
+}
+
 /** Test-only reset (this module is a singleton, like the store). */
 export function __resetInterviewSourceForTests(): void {
   twinState = emptyGenesisState();
@@ -314,4 +401,12 @@ export function __resetInterviewSourceForTests(): void {
   uiListeners.clear();
   sendLedger.length = 0;
   autoStarted.clear();
+  clockProject = null;
+  clockStartedAtMs = null;
+  clockNowMs = 0;
+  clockListeners.clear();
+  if (clockTimer !== null) {
+    clearInterval(clockTimer);
+    clockTimer = null;
+  }
 }

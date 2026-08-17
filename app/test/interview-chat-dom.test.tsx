@@ -801,3 +801,154 @@ describe("motion has a static equivalent (criterion 8)", () => {
     expect(q("[data-testid=interview-truncated]")?.textContent).toContain("1 MiB cap");
   });
 });
+
+// ---- the answer box keeps the keyboard (criterion 6, folding T-027-s1) ---
+
+/**
+ * THE DEFECT: `disabled` blurs a focused element (HTML spec), and nothing
+ * gave the focus back — so answering seven questions in a row meant
+ * reaching for the mouse seven times, on the one screen whose whole
+ * premise is a conversation.
+ *
+ * WHAT JSDOM CANNOT DO, measured rather than assumed, because it is the
+ * difference between these tests and vacuous ones: **jsdom does not
+ * implement the disable→blur rule at all**. A textarea focused here stays
+ * `document.activeElement` after `disabled = true`, so a test that merely
+ * typed, pressed ⏎ and asserted "still focused" would pass against the
+ * BROKEN code and prove nothing. So the browser's blur is performed
+ * EXPLICITLY below (`box.blur()`, marked at each site), which puts jsdom
+ * in the state a real browser reaches on its own — and the real thing,
+ * with real trusted keys and a real browser, is asserted in the lane
+ * (`tools/e2e/tests/interview.spec.ts`, where T-027's `not.toBeFocused()`
+ * tripwire is INVERTED and its compensating re-click deleted).
+ */
+describe("the answer box takes the focus back (criterion 6)", () => {
+  const boxOf = (): HTMLTextAreaElement =>
+    q("[data-testid=interview-input]") as HTMLTextAreaElement;
+
+  /**
+   * The state a real browser reaches when the focused answer box is
+   * disabled: focus falls back to `document.body`.
+   *
+   * MEASURED, because jsdom offers no straight road to it: `blur()` on a
+   * DISABLED element is refused (it is no longer a focusable area) and
+   * `document.body.focus()` is a no-op. Focusing a throwaway element and
+   * removing it is the one route that lands on `BODY`, which is the exact
+   * end state under test — and reaching it deliberately is what keeps
+   * these assertions from passing against the broken code.
+   */
+  const dropFocusToBody = async (): Promise<void> => {
+    await flush(() => {
+      const sink = document.createElement("input");
+      container.appendChild(sink);
+      sink.focus();
+      sink.remove();
+    });
+    expect(document.activeElement, "the browser's disable-blur, simulated").toBe(document.body);
+  };
+
+  beforeEach(async () => {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "completed", seq: 2, turn: 1, text: "Q1?", truncatedRelay: false },
+    );
+    ipc.invoke.mockClear();
+  });
+
+  it("a turn sent from the box gives the box its focus back when the turn lands", async () => {
+    ipc.parked.add("genesis_send_turn");
+    boxOf().focus();
+    expect(document.activeElement, "the user is typing in the box").toBe(boxOf());
+    await type("Solo builders running agent CLIs.");
+    await press("Enter");
+
+    // In flight: the box is disabled and — in a real browser — blurred,
+    // with the focus falling back to the document body. jsdom refuses
+    // `blur()` on a disabled element (it is no longer a focusable area),
+    // so the fallback is performed directly, which is the state a browser
+    // arrives at on its own.
+    expect(boxOf().disabled, "the box still disables in flight (T-027 c4)").toBe(true);
+    await dropFocusToBody();
+    expect(document.activeElement, "the send blurred the box").not.toBe(boxOf());
+
+    // The turn lands.
+    await flush(() => {
+      ipc.release?.({ kind: "accepted", turn: 2 });
+      ipc.release = null;
+    });
+    ipc.parked.clear();
+    await emit({ kind: "completed", seq: 3, turn: 2, text: "Q2?", truncatedRelay: false });
+
+    expect(boxOf().disabled, "the box is answerable again").toBe(false);
+    expect(document.activeElement, "…and the keyboard is back in it").toBe(boxOf());
+  });
+
+  it("focus moved elsewhere DURING the turn is not stolen back", async () => {
+    // Anything else in the app the user might have tabbed to.
+    const elsewhere = document.createElement("button");
+    elsewhere.setAttribute("data-testid", "somewhere-else");
+    container.appendChild(elsewhere);
+
+    ipc.parked.add("genesis_send_turn");
+    boxOf().focus();
+    await type("an answer");
+    await press("Enter");
+    await dropFocusToBody(); // the browser's own disable→blur
+    await flush(() => {
+      elsewhere.focus(); // …and then the user goes somewhere else
+    });
+    expect(document.activeElement).toBe(elsewhere);
+
+    await flush(() => {
+      ipc.release?.({ kind: "accepted", turn: 2 });
+      ipc.release = null;
+    });
+    ipc.parked.clear();
+    await emit({ kind: "completed", seq: 3, turn: 2, text: "Q2?", truncatedRelay: false });
+
+    expect(
+      document.activeElement,
+      "the focus the user moved is theirs; the box must not yank it back",
+    ).toBe(elsewhere);
+    expect(document.activeElement).not.toBe(boxOf());
+    elsewhere.remove();
+  });
+
+  it("a send from the BANK BUTTON leaves the focus on the button", async () => {
+    ipc.parked.add("genesis_send_turn");
+    await type("an answer");
+    const bank = q("[data-testid=interview-bank]") as HTMLButtonElement;
+    // A real click focuses the control it hits; a synthetic MouseEvent
+    // does not, so the focus is placed the way the browser would.
+    bank.focus();
+    expect(document.activeElement).toBe(bank);
+    await click("[data-testid=interview-bank]");
+
+    await dropFocusToBody(); // in flight the button disables too, and blurs
+    await flush(() => {
+      ipc.release?.({ kind: "accepted", turn: 2 });
+      ipc.release = null;
+    });
+    ipc.parked.clear();
+    await emit({ kind: "completed", seq: 3, turn: 2, text: "Q2?", truncatedRelay: false });
+
+    expect(
+      document.activeElement,
+      "the box was never focused, so there is nothing to give back",
+    ).not.toBe(boxOf());
+  });
+
+  it("an empty send arms nothing — the box does not grab focus off a no-op", async () => {
+    const elsewhere = document.createElement("button");
+    container.appendChild(elsewhere);
+    elsewhere.focus();
+    await type("   ");
+    await press("Enter");
+    await flush(() => Promise.resolve());
+    expect(ipc.invoke, "nothing was sent").not.toHaveBeenCalled();
+    expect(document.activeElement, "…so nothing moved").toBe(elsewhere);
+    elsewhere.remove();
+  });
+});

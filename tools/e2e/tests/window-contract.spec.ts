@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { repoRoot } from "../preflight";
 import type { DocsSnapshotPayload } from "../fixtures/board";
-import { ARCHITECTURE_AND_GIT, NOTHING_FOUND, streakFixture } from "../fixtures/shell";
+import { ARCHITECTURE_AND_GIT, NOTHING_FOUND, streakMidInterview } from "../fixtures/shell";
 import { applyDocs, applyPick, applyStatus, expectPhase, openShell } from "./shell-harness";
 import { openApp, openBoard } from "./helpers";
 
@@ -100,7 +100,17 @@ function repoBoard(seq: number): DocsSnapshotPayload {
 }
 
 /** The interview screen with T-024's streak tree rendered — the screen
- * whose width requirement raised the window. */
+ * whose width requirement raised the window.
+ *
+ * The tree is `streakMidInterview`, NOT the full `streakFixture`. T-028's
+ * crescendo switches the right half from T-024's lens to the real board
+ * the moment a task file parses, and the full streak tree is a FINISHED
+ * plan — so under it `genesis-artifact` does not exist and every
+ * assertion here about the lens's last row measures nothing. The subject
+ * of this file is the WINDOW, and the lens is the half whose width
+ * requirement raised it, so the lens's own tree is the honest driver.
+ * The board half has its own size questions and they are T-028-s2's, not
+ * this spec's. (T-051-s6 predicted the collision; T-028-s5 measured it.) */
 async function genesis(page: Page): Promise<void> {
   await openShell(page);
   await applyPick(page, {
@@ -109,7 +119,7 @@ async function genesis(page: Page): Promise<void> {
     seq: 10,
     probe: NOTHING_FOUND,
   });
-  await applyDocs(page, streakFixture(11, GENESIS_DIR));
+  await applyDocs(page, streakMidInterview(11, GENESIS_DIR));
   await expectPhase(page, "genesis", "genesis");
 }
 
