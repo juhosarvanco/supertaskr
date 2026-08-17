@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:a6bbf6727692fb2e2d6f9a2af1554a131ef71a9e4a59bb13d3dcc6a693a5add1",
-      "loc": 623,
+      "hash": "blake3:f5bbf5720dc274e3a3c3b260ca71e9a7128bf633ade01e9b02d8ea8956df33f5",
+      "loc": 655,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -18,8 +18,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            372,
-            621
+            373,
+            653
           ]
         },
         {
@@ -28,8 +28,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            95,
-            110
+            96,
+            111
           ]
         },
         {
@@ -38,8 +38,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            133,
-            240
+            134,
+            241
           ]
         },
         {
@@ -48,8 +48,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            41,
-            58
+            42,
+            59
           ]
         },
         {
@@ -58,8 +58,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            67,
-            91
+            68,
+            92
           ]
         },
         {
@@ -68,8 +68,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            264,
-            359
+            265,
+            360
           ]
         },
         {
@@ -78,8 +78,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            363,
-            370
+            364,
+            371
           ]
         },
         {
@@ -88,8 +88,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            247,
-            251
+            248,
+            252
           ]
         }
       ]
@@ -1836,8 +1836,8 @@
       "id": "f:app/src/components/shell/GenesisScreen.tsx",
       "path": "app/src/components/shell/GenesisScreen.tsx",
       "lang": "ts",
-      "hash": "blake3:b04ecd6061b59f7728f656beb4935378326c4a43cbcaf3e1df62f077d095178e",
-      "loc": 154,
+      "hash": "blake3:3f4ac23ef2cdf2796a455b6febee905d4fd1bf7dedf451eb944efe5b928b3c08",
+      "loc": 187,
       "symbols": [
         {
           "id": "s:app/src/components/shell/GenesisScreen.tsx#GenesisPaneBoundary",
@@ -1845,8 +1845,8 @@
           "kind": "class",
           "exported": false,
           "range": [
-            109,
-            154
+            142,
+            187
           ]
         },
         {
@@ -1855,8 +1855,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            25,
-            85
+            44,
+            118
           ]
         }
       ]
@@ -1904,9 +1904,19 @@
       "id": "f:app/src/components/shell/accelerators.ts",
       "path": "app/src/components/shell/accelerators.ts",
       "lang": "ts",
-      "hash": "blake3:d8f2253d8588a22d1cf6bc1624e81362c90e487b7c44cc7af3b981fdd95e82fa",
-      "loc": 129,
+      "hash": "blake3:4878d78a9b3fa26211e26c40d645e28fdbf5c48884e3376a1fc9df313b65d156",
+      "loc": 190,
       "symbols": [
+        {
+          "id": "s:app/src/components/shell/accelerators.ts#AcceleratorActions",
+          "name": "AcceleratorActions",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            126,
+            130
+          ]
+        },
         {
           "id": "s:app/src/components/shell/accelerators.ts#AcceleratorChord",
           "name": "AcceleratorChord",
@@ -1928,13 +1938,33 @@
           ]
         },
         {
+          "id": "s:app/src/components/shell/accelerators.ts#AcceleratorScreen",
+          "name": "AcceleratorScreen",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            117,
+            123
+          ]
+        },
+        {
           "id": "s:app/src/components/shell/accelerators.ts#AcceleratorTable",
           "name": "AcceleratorTable",
           "kind": "type",
           "exported": true,
           "range": [
-            98,
-            98
+            111,
+            111
+          ]
+        },
+        {
+          "id": "s:app/src/components/shell/accelerators.ts#acceleratorsFor",
+          "name": "acceleratorsFor",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            149,
+            159
           ]
         },
         {
@@ -1943,8 +1973,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            81,
-            91
+            92,
+            104
           ]
         },
         {
@@ -1953,8 +1983,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            108,
-            129
+            169,
+            190
           ]
         }
       ]
@@ -2063,6 +2093,45 @@
           "range": [
             155,
             167
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/genesis/InterviewChat.tsx",
+      "path": "app/src/genesis/InterviewChat.tsx",
+      "lang": "ts",
+      "hash": "blake3:3d55005c54e22b52e76278819a56b5bb65f73e2f05390afe5498e5f176eb313a",
+      "loc": 379,
+      "symbols": [
+        {
+          "id": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+          "name": "InterviewChat",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            44,
+            288
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/InterviewChat.tsx#OutcomeNotice",
+          "name": "OutcomeNotice",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            303,
+            355
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/InterviewChat.tsx#noticeSentence",
+          "name": "noticeSentence",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            358,
+            379
           ]
         }
       ]
@@ -2422,6 +2491,653 @@
           "range": [
             230,
             232
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/genesis/interview-model.ts",
+      "path": "app/src/genesis/interview-model.ts",
+      "lang": "ts",
+      "hash": "blake3:159ee1113f296fe82184ed8fb875b6a02c2488b1015aa2eee30c3d1aefdc9a66",
+      "loc": 427,
+      "symbols": [
+        {
+          "id": "s:app/src/genesis/interview-model.ts#BankBaseline",
+          "name": "BankBaseline",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            46,
+            55
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#CHALLENGE_PREFIX",
+          "name": "CHALLENGE_PREFIX",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            153,
+            153
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#ChallengeReading",
+          "name": "ChallengeReading",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            155,
+            162
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#INTERVIEW_STAGES",
+          "name": "INTERVIEW_STAGES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            233,
+            233
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#MAX_CHIP_PATHS",
+          "name": "MAX_CHIP_PATHS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            138,
+            138
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#MAX_ERROR_CHARS",
+          "name": "MAX_ERROR_CHARS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            364,
+            364
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#STICK_THRESHOLD_PX",
+          "name": "STICK_THRESHOLD_PX",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            409,
+            409
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#StageReading",
+          "name": "StageReading",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            194,
+            199
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#StageSegmentState",
+          "name": "StageSegmentState",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            230,
+            230
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#TranscriptEntry",
+          "name": "TranscriptEntry",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            287,
+            290
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#UNPRIMED_BASELINE",
+          "name": "UNPRIMED_BASELINE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            57,
+            62
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#activeTurn",
+          "name": "activeTurn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            301,
+            307
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#assembleTranscript",
+          "name": "assembleTranscript",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            324,
+            357
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#bankBaseline",
+          "name": "bankBaseline",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            71,
+            78
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#bankedSince",
+          "name": "bankedSince",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            119,
+            134
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#challengeOf",
+          "name": "challengeOf",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            179,
+            188
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#chipLabel",
+          "name": "chipLabel",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            142,
+            146
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#failureDetail",
+          "name": "failureDetail",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            390,
+            404
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#failureHeadline",
+          "name": "failureHeadline",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            371,
+            386
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#isDocsArtifact",
+          "name": "isDocsArtifact",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            84,
+            86
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#questionFooter",
+          "name": "questionFooter",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            273,
+            276
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#shouldStickToBottom",
+          "name": "shouldStickToBottom",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            420,
+            427
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#stageOf",
+          "name": "stageOf",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            221,
+            228
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#stageReadout",
+          "name": "stageReadout",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            264,
+            269
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#stageStrip",
+          "name": "stageStrip",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            244,
+            251
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/genesis/interview-source.ts",
+      "path": "app/src/genesis/interview-source.ts",
+      "lang": "ts",
+      "hash": "blake3:43a2a16a809639909dba27a2845df6748902528c4999d1bc2973a5fdd9a37c56",
+      "loc": 317,
+      "symbols": [
+        {
+          "id": "s:app/src/genesis/interview-source.ts#EMPTY_UI",
+          "name": "EMPTY_UI",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            150,
+            154
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#InterviewUiState",
+          "name": "InterviewUiState",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            141,
+            148
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#__resetInterviewSourceForTests",
+          "name": "__resetInterviewSourceForTests",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            310,
+            317
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#autoStarted",
+          "name": "autoStarted",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            167,
+            167
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#cancelTurn",
+          "name": "cancelTurn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            305,
+            307
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#getState",
+          "name": "getState",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            193,
+            193
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#getUi",
+          "name": "getUi",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            180,
+            182
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#interviewBusy",
+          "name": "interviewBusy",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            218,
+            220
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#isTauri",
+          "name": "isTauri",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            54,
+            55
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#nextTurnNumber",
+          "name": "nextTurnNumber",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            257,
+            262
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#recordUserHalf",
+          "name": "recordUserHalf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            184,
+            188
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#retryTurn",
+          "name": "retryTurn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            293,
+            301
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#sendAnswer",
+          "name": "sendAnswer",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            230,
+            254
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#sendLedger",
+          "name": "sendLedger",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            159,
+            159
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#setTwin",
+          "name": "setTwin",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            62,
+            69
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#setUi",
+          "name": "setUi",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            169,
+            173
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#startInterview",
+          "name": "startInterview",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            272,
+            290
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#startInterviewSource",
+          "name": "startInterviewSource",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            109,
+            136
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#subscribeState",
+          "name": "subscribeState",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            192,
+            192
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#subscribeTwin",
+          "name": "subscribeTwin",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            71,
+            74
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#subscribeUi",
+          "name": "subscribeUi",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            175,
+            178
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#twinListeners",
+          "name": "twinListeners",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            60,
+            60
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#twinState",
+          "name": "twinState",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            59,
+            59
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#uiListeners",
+          "name": "uiListeners",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            157,
+            157
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#uiState",
+          "name": "uiState",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            156,
+            156
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#useGenesisState",
+          "name": "useGenesisState",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            196,
+            198
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-source.ts#useInterviewUi",
+          "name": "useInterviewUi",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            201,
+            203
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/genesis/interview-turns.tsx",
+      "path": "app/src/genesis/interview-turns.tsx",
+      "lang": "ts",
+      "hash": "blake3:e250effac482fa7395fc8579b229fb7abee15c43f3830b83214a281c8557c9b3",
+      "loc": 312,
+      "symbols": [
+        {
+          "id": "s:app/src/genesis/interview-turns.tsx#BankedChips",
+          "name": "BankedChips",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            299,
+            312
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-turns.tsx#BankedMark",
+          "name": "BankedMark",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            40,
+            54
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-turns.tsx#ChallengeTurn",
+          "name": "ChallengeTurn",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            102,
+            124
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-turns.tsx#CurrentQuestion",
+          "name": "CurrentQuestion",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            146,
+            163
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-turns.tsx#FailureBlock",
+          "name": "FailureBlock",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            250,
+            289
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-turns.tsx#HistoryTurn",
+          "name": "HistoryTurn",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            131,
+            143
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-turns.tsx#Overline",
+          "name": "Overline",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            29,
+            35
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-turns.tsx#PlannerTurn",
+          "name": "PlannerTurn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            172,
+            237
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-turns.tsx#StageStrip",
+          "name": "StageStrip",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            59,
+            81
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-turns.tsx#UserTurn",
+          "name": "UserTurn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            87,
+            96
           ]
         }
       ]
@@ -4346,8 +5062,8 @@
       "id": "f:app/test/accelerators.test.tsx",
       "path": "app/test/accelerators.test.tsx",
       "lang": "ts",
-      "hash": "blake3:dbadc4c888f665bfdd589fc238eb8a41b23e56e5cdbbad8408742b7f1773b828",
-      "loc": 472,
+      "hash": "blake3:edd38a0c5f02d5eb45fc152af27811c88a94d21db3a2f9c374bdae2ff1de2fcb",
+      "loc": 620,
       "symbols": [
         {
           "id": "s:app/test/accelerators.test.tsx#App",
@@ -4663,8 +5379,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:675aee4efe55a1b54d1e3ddaeea8ece450ca60467f3a0523234f6d656f9ae581",
-      "loc": 1152,
+      "hash": "blake3:75ad68014fc327e11429eff3c22d84fe1dd535c87bb0e7b075d71790588d6608",
+      "loc": 1252,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -5332,8 +6048,8 @@
       "id": "f:app/test/genesis-mount.test.tsx",
       "path": "app/test/genesis-mount.test.tsx",
       "lang": "ts",
-      "hash": "blake3:869ef021f79a138c692df86809d3372b324decfd06305391cd177a0c3ae568d9",
-      "loc": 368,
+      "hash": "blake3:2b28c7c394f536162827407ffb7e45fbfa5bb52b2a1d58f400f0afc9c9555437",
+      "loc": 399,
       "symbols": [
         {
           "id": "s:app/test/genesis-mount.test.tsx#FIXTURES",
@@ -5461,8 +6177,8 @@
       "id": "f:app/test/genesis-pane-boundary.test.tsx",
       "path": "app/test/genesis-pane-boundary.test.tsx",
       "lang": "ts",
-      "hash": "blake3:ccd3822c83b8a11890efafd66da1dcb9afd13fc84ef114a02a93574217d31d12",
-      "loc": 171,
+      "hash": "blake3:c8e9beda39845653e9cf4fa2913a2920e70f6e7966977e13d8e57770015f5654",
+      "loc": 181,
       "symbols": [
         {
           "id": "s:app/test/genesis-pane-boundary.test.tsx#App",
@@ -5915,11 +6631,318 @@
       ]
     },
     {
+      "id": "f:app/test/interview-chat-dom.test.tsx",
+      "path": "app/test/interview-chat-dom.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:b302d102ab8ed89ec74379a160577c4cc685a975703bb0cf6ec9aa3fa048cba6",
+      "loc": 803,
+      "symbols": [
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#C0",
+          "name": "C0",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            92,
+            92
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#HOSTILE",
+          "name": "HOSTILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            83,
+            89
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#InterviewChat",
+          "name": "InterviewChat",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            63,
+            63
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#PROJECT",
+          "name": "PROJECT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            94,
+            94
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#RTL",
+          "name": "RTL",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            91,
+            91
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#click",
+          "name": "click",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            163,
+            167
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            115,
+            115
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#docsWith",
+          "name": "docsWith",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            96,
+            99
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#emit",
+          "name": "emit",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            136,
+            140
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#flush",
+          "name": "flush",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            123,
+            127
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#ipc",
+          "name": "ipc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            27,
+            34
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#press",
+          "name": "press",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            154,
+            161
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#q",
+          "name": "q",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            118,
+            119
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#qa",
+          "name": "qa",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            120,
+            121
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#render",
+          "name": "render",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            129,
+            133
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            116,
+            116
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#source",
+          "name": "source",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            65,
+            65
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#status",
+          "name": "status",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            101,
+            113
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#store",
+          "name": "store",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            64,
+            64
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#type",
+          "name": "type",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            142,
+            152
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#withStatus",
+          "name": "withStatus",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            189,
+            192
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/interview-harness.test.ts",
+      "path": "app/test/interview-harness.test.ts",
+      "lang": "ts",
+      "hash": "blake3:6be749b9b1ee5edd19c6dfd4ebaa0bf3b904530eb43565f38a190f06081cb612",
+      "loc": 318,
+      "symbols": [
+        {
+          "id": "s:app/test/interview-harness.test.ts#SourceModule",
+          "name": "SourceModule",
+          "kind": "type",
+          "exported": false,
+          "range": [
+            62,
+            62
+          ]
+        },
+        {
+          "id": "s:app/test/interview-harness.test.ts#TAURI",
+          "name": "TAURI",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            64,
+            64
+          ]
+        },
+        {
+          "id": "s:app/test/interview-harness.test.ts#ipc",
+          "name": "ipc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            34,
+            37
+          ]
+        },
+        {
+          "id": "s:app/test/interview-harness.test.ts#loadSource",
+          "name": "loadSource",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            69,
+            75
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/interview-model.test.ts",
+      "path": "app/test/interview-model.test.ts",
+      "lang": "ts",
+      "hash": "blake3:502cbdb79183b4e118390b8151f8202ba0bc1547ad20a914c025a3b10ee422e2",
+      "loc": 698,
+      "symbols": [
+        {
+          "id": "s:app/test/interview-model.test.ts#docs",
+          "name": "docs",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            39,
+            48
+          ]
+        },
+        {
+          "id": "s:app/test/interview-model.test.ts#play",
+          "name": "play",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            51,
+            53
+          ]
+        },
+        {
+          "id": "s:app/test/interview-model.test.ts#turn",
+          "name": "turn",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            56,
+            65
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:5643893188f5ca0bf6e92bcc92abc0a72bc2fb21a4a7d9f85b57243f20a3e321",
-      "loc": 247,
+      "hash": "blake3:9f22468485b8b3864c1bb89f8b0523ebe28aa71c1052514006cf267974b0107b",
+      "loc": 269,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -6823,8 +7846,8 @@
       "id": "f:app/test/shell-frame.test.tsx",
       "path": "app/test/shell-frame.test.tsx",
       "lang": "ts",
-      "hash": "blake3:bfe95c0eb5101e117b0e31e19147988d182d22abe5194cf16fa710781481b5fc",
-      "loc": 266,
+      "hash": "blake3:ce8539bf5d39e0a40034e592ecedc0f923062c039165dcc58622986593be4ae9",
+      "loc": 299,
       "symbols": [
         {
           "id": "s:app/test/shell-frame.test.tsx#App",
@@ -7080,8 +8103,8 @@
       "id": "f:app/test/startup-screen.test.tsx",
       "path": "app/test/startup-screen.test.tsx",
       "lang": "ts",
-      "hash": "blake3:0fc45d8ba44d09ddf60135ece853e7ac25e3813a75a631fa6c150c2bee7690ab",
-      "loc": 328,
+      "hash": "blake3:8a67e9a9249e2cf23dd62c334235538e720fecbe8213e1c73652bb20605238cc",
+      "loc": 354,
       "symbols": [
         {
           "id": "s:app/test/startup-screen.test.tsx#App",
@@ -7089,8 +8112,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            60,
-            60
+            86,
+            86
           ]
         },
         {
@@ -7099,8 +8122,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            69,
-            74
+            95,
+            100
           ]
         },
         {
@@ -7109,8 +8132,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            104,
-            113
+            130,
+            139
           ]
         },
         {
@@ -7119,8 +8142,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            93,
-            99
+            119,
+            125
           ]
         },
         {
@@ -7129,8 +8152,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            76,
-            76
+            102,
+            102
           ]
         },
         {
@@ -7139,8 +8162,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            117,
-            118
+            143,
+            144
           ]
         },
         {
@@ -7149,8 +8172,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            78,
-            78
+            104,
+            104
           ]
         },
         {
@@ -7159,8 +8182,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            87,
-            91
+            113,
+            117
           ]
         },
         {
@@ -7179,8 +8202,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            80,
-            81
+            106,
+            107
           ]
         },
         {
@@ -7189,8 +8212,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            77,
-            77
+            103,
+            103
           ]
         },
         {
@@ -7199,8 +8222,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            82,
-            83
+            108,
+            109
           ]
         },
         {
@@ -7209,8 +8232,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            84,
-            85
+            110,
+            111
           ]
         }
       ]
@@ -8594,6 +9617,7 @@
       "to": "f:app/src/components/shell/accelerators.ts",
       "kind": "import",
       "symbols": [
+        "acceleratorsFor",
         "useAccelerators"
       ]
     },
@@ -8603,6 +9627,15 @@
       "kind": "import",
       "symbols": [
         "Button"
+      ]
+    },
+    {
+      "from": "f:app/src/App.tsx",
+      "to": "f:app/src/genesis/interview-source.ts",
+      "kind": "import",
+      "symbols": [
+        "cancelTurn",
+        "startInterviewSource"
       ]
     },
     {
@@ -9382,6 +10415,14 @@
     },
     {
       "from": "f:app/src/components/shell/GenesisScreen.tsx",
+      "to": "f:app/src/genesis/InterviewChat.tsx",
+      "kind": "import",
+      "symbols": [
+        "InterviewChat"
+      ]
+    },
+    {
+      "from": "f:app/src/components/shell/GenesisScreen.tsx",
       "to": "f:app/src/lib/docs-model.ts",
       "kind": "import",
       "symbols": [
@@ -9480,11 +10521,175 @@
       ]
     },
     {
+      "from": "f:app/src/genesis/InterviewChat.tsx",
+      "to": "f:app/src/components/ui/button.tsx",
+      "kind": "import",
+      "symbols": [
+        "Button"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/InterviewChat.tsx",
+      "to": "f:app/src/genesis/interview-model.ts",
+      "kind": "import",
+      "symbols": [
+        "BankBaseline",
+        "UNPRIMED_BASELINE",
+        "activeTurn",
+        "assembleTranscript",
+        "bankBaseline",
+        "bankedSince",
+        "shouldStickToBottom",
+        "stageOf",
+        "stageReadout",
+        "stageStrip"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/InterviewChat.tsx",
+      "to": "f:app/src/genesis/interview-source.ts",
+      "kind": "import",
+      "symbols": [
+        "interviewBusy",
+        "retryTurn",
+        "sendAnswer",
+        "startInterview",
+        "useGenesisState",
+        "useInterviewUi"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/InterviewChat.tsx",
+      "to": "f:app/src/genesis/interview-turns.tsx",
+      "kind": "import",
+      "symbols": [
+        "BankedChips",
+        "PlannerTurn",
+        "StageStrip",
+        "UserTurn"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/InterviewChat.tsx",
+      "to": "f:app/src/lib/agent-store.ts",
+      "kind": "import",
+      "symbols": [
+        "SendOutcomePayload",
+        "StartOutcomePayload"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/InterviewChat.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsModelState"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/InterviewChat.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "useCallback",
+        "useEffect",
+        "useRef",
+        "useState"
+      ]
+    },
+    {
       "from": "f:app/src/genesis/genesis-derive.ts",
       "to": "f:app/src/lib/docs-model.ts",
       "kind": "import",
       "symbols": [
         "DocsModelState"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/interview-model.ts",
+      "to": "f:app/src/genesis/genesis-derive.ts",
+      "kind": "import",
+      "symbols": [
+        "EMPTY_CHANGE_LOG",
+        "deriveGenesis"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/interview-model.ts",
+      "to": "f:app/src/lib/agent-store.ts",
+      "kind": "import",
+      "symbols": [
+        "GenesisTurn",
+        "TurnErrorPayload"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/interview-model.ts",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsModelState"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/interview-source.ts",
+      "to": "f:app/src/lib/agent-store.ts",
+      "kind": "import",
+      "symbols": [
+        "GenesisEvent",
+        "GenesisState",
+        "GenesisStatusPayload",
+        "SendOutcomePayload",
+        "StartOutcomePayload",
+        "applyGenesisStatus",
+        "cancelGenesis",
+        "emptyGenesisState",
+        "getGenesisState",
+        "isTurnInFlight",
+        "reduceGenesisEvent",
+        "reduceGenesisOutcome",
+        "sendGenesisTurn",
+        "startGenesis",
+        "startGenesisListener",
+        "subscribeGenesis"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/interview-source.ts",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "useSyncExternalStore"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/interview-turns.tsx",
+      "to": "f:app/src/components/ui/button.tsx",
+      "kind": "import",
+      "symbols": [
+        "Button"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/interview-turns.tsx",
+      "to": "f:app/src/genesis/interview-model.ts",
+      "kind": "import",
+      "symbols": [
+        "StageSegmentState",
+        "challengeOf",
+        "chipLabel",
+        "failureDetail",
+        "failureHeadline",
+        "questionFooter"
+      ]
+    },
+    {
+      "from": "f:app/src/genesis/interview-turns.tsx",
+      "to": "f:app/src/lib/agent-store.ts",
+      "kind": "import",
+      "symbols": [
+        "GenesisTurn",
+        "TurnErrorPayload"
       ]
     },
     {
@@ -10390,6 +11595,161 @@
         "expect",
         "it",
         "vi"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-chat-dom.test.tsx",
+      "to": "f:app/src/genesis/InterviewChat.tsx",
+      "kind": "import",
+      "symbols": [
+        "InterviewChat"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-chat-dom.test.tsx",
+      "to": "f:app/src/genesis/interview-source.ts",
+      "kind": "import",
+      "symbols": [
+        "*"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-chat-dom.test.tsx",
+      "to": "f:app/src/lib/agent-store.ts",
+      "kind": "import",
+      "symbols": [
+        "*",
+        "GenesisEvent",
+        "GenesisStatusPayload"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-chat-dom.test.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsModelState",
+        "emptyState"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-chat-dom.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-chat-dom.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-chat-dom.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it",
+        "vi"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-harness.test.ts",
+      "to": "f:app/src/genesis/interview-source.ts",
+      "kind": "import"
+    },
+    {
+      "from": "f:app/test/interview-harness.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync",
+        "statSync"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-harness.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "resolve"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-harness.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it",
+        "vi"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-model.test.ts",
+      "to": "f:app/src/genesis/interview-model.ts",
+      "kind": "import",
+      "symbols": [
+        "MAX_CHIP_PATHS",
+        "UNPRIMED_BASELINE",
+        "activeTurn",
+        "assembleTranscript",
+        "bankBaseline",
+        "bankedSince",
+        "challengeOf",
+        "chipLabel",
+        "failureDetail",
+        "failureHeadline",
+        "questionFooter",
+        "shouldStickToBottom",
+        "stageOf",
+        "stageReadout",
+        "stageStrip"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-model.test.ts",
+      "to": "f:app/src/lib/agent-store.ts",
+      "kind": "import",
+      "symbols": [
+        "GenesisEvent",
+        "GenesisState",
+        "GenesisTurn",
+        "emptyGenesisState",
+        "reduceGenesisEvent"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-model.test.ts",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsModelState",
+        "emptyState"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-model.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
       ]
     },
     {
@@ -12075,7 +13435,19 @@
     },
     {
       "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/components/shell/accelerators.ts#acceleratorsFor",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
       "to": "s:app/src/components/shell/accelerators.ts#useAccelerators",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/genesis/interview-source.ts#startInterviewSource",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -13460,6 +14832,24 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/components/shell/accelerators.ts#acceleratorsFor",
+      "to": "s:app/src/components/shell/accelerators.ts#AcceleratorActions",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/shell/accelerators.ts#acceleratorsFor",
+      "to": "s:app/src/components/shell/accelerators.ts#AcceleratorScreen",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/components/shell/accelerators.ts#acceleratorsFor",
+      "to": "s:app/src/components/shell/accelerators.ts#AcceleratorTable",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/components/shell/accelerators.ts#matchAccelerator",
       "to": "s:app/src/components/shell/accelerators.ts#AcceleratorChord",
       "kind": "type_ref",
@@ -13540,6 +14930,132 @@
     {
       "from": "s:app/src/genesis/GenesisPane.tsx#backboneCells",
       "to": "s:app/src/genesis/genesis-derive.ts#BackboneEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-model.ts#BankBaseline",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-model.ts#activeTurn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-model.ts#assembleTranscript",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-model.ts#bankBaseline",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-model.ts#bankedSince",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-model.ts#shouldStickToBottom",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-model.ts#stageOf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-model.ts#stageReadout",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-model.ts#stageStrip",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-source.ts#interviewBusy",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-source.ts#retryTurn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-source.ts#sendAnswer",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-source.ts#startInterview",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-source.ts#useGenesisState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-source.ts#useInterviewUi",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#OutcomeNotice",
+      "to": "s:app/src/genesis/InterviewChat.tsx#noticeSentence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#OutcomeNotice",
+      "to": "s:app/src/lib/agent-store.ts#SendOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#OutcomeNotice",
+      "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#noticeSentence",
+      "to": "s:app/src/lib/agent-store.ts#SendOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#noticeSentence",
+      "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -13709,6 +15225,378 @@
       "from": "s:app/src/genesis/genesis-derive.ts#sectionText",
       "to": "s:app/src/genesis/genesis-derive.ts#stripHtmlComments",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#TranscriptEntry",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#UNPRIMED_BASELINE",
+      "to": "s:app/src/genesis/interview-model.ts#BankBaseline",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#activeTurn",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#assembleTranscript",
+      "to": "s:app/src/genesis/interview-model.ts#TranscriptEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#assembleTranscript",
+      "to": "s:app/src/genesis/interview-model.ts#activeTurn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#assembleTranscript",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#bankBaseline",
+      "to": "s:app/src/genesis/interview-model.ts#BankBaseline",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#bankBaseline",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#bankedSince",
+      "to": "s:app/src/genesis/interview-model.ts#BankBaseline",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#bankedSince",
+      "to": "s:app/src/genesis/interview-model.ts#isDocsArtifact",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#bankedSince",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#challengeOf",
+      "to": "s:app/src/genesis/interview-model.ts#ChallengeReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#failureDetail",
+      "to": "s:app/src/lib/agent-store.ts#TurnErrorPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#failureHeadline",
+      "to": "s:app/src/lib/agent-store.ts#TurnErrorPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#stageOf",
+      "to": "s:app/src/genesis/genesis-derive.ts#deriveGenesis",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#stageOf",
+      "to": "s:app/src/genesis/interview-model.ts#StageReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#stageOf",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#stageStrip",
+      "to": "s:app/src/genesis/interview-model.ts#StageSegmentState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#EMPTY_UI",
+      "to": "s:app/src/genesis/interview-source.ts#InterviewUiState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#InterviewUiState",
+      "to": "s:app/src/lib/agent-store.ts#SendOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#InterviewUiState",
+      "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#__resetInterviewSourceForTests",
+      "to": "s:app/src/lib/agent-store.ts#emptyGenesisState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#cancelTurn",
+      "to": "s:app/src/lib/agent-store.ts#cancelGenesis",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#getState",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#getUi",
+      "to": "s:app/src/genesis/interview-source.ts#InterviewUiState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#interviewBusy",
+      "to": "s:app/src/genesis/interview-source.ts#InterviewUiState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#interviewBusy",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#interviewBusy",
+      "to": "s:app/src/lib/agent-store.ts#isTurnInFlight",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#nextTurnNumber",
+      "to": "s:app/src/genesis/interview-source.ts#getState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#recordUserHalf",
+      "to": "s:app/src/genesis/interview-source.ts#setUi",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#retryTurn",
+      "to": "s:app/src/genesis/interview-source.ts#sendAnswer",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#retryTurn",
+      "to": "s:app/src/genesis/interview-source.ts#startInterview",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#retryTurn",
+      "to": "s:app/src/lib/agent-store.ts#SendOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#retryTurn",
+      "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#sendAnswer",
+      "to": "s:app/src/genesis/interview-source.ts#nextTurnNumber",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#sendAnswer",
+      "to": "s:app/src/genesis/interview-source.ts#recordUserHalf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#sendAnswer",
+      "to": "s:app/src/genesis/interview-source.ts#setUi",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#sendAnswer",
+      "to": "s:app/src/lib/agent-store.ts#SendOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#sendAnswer",
+      "to": "s:app/src/lib/agent-store.ts#sendGenesisTurn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#setTwin",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#setUi",
+      "to": "s:app/src/genesis/interview-source.ts#InterviewUiState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#startInterview",
+      "to": "s:app/src/genesis/interview-source.ts#setUi",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#startInterview",
+      "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#startInterview",
+      "to": "s:app/src/lib/agent-store.ts#startGenesis",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#startInterviewSource",
+      "to": "s:app/src/genesis/interview-source.ts#setTwin",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#startInterviewSource",
+      "to": "s:app/src/lib/agent-store.ts#applyGenesisStatus",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#startInterviewSource",
+      "to": "s:app/src/lib/agent-store.ts#reduceGenesisEvent",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#startInterviewSource",
+      "to": "s:app/src/lib/agent-store.ts#reduceGenesisOutcome",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#startInterviewSource",
+      "to": "s:app/src/lib/agent-store.ts#startGenesisListener",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#twinState",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#twinState",
+      "to": "s:app/src/lib/agent-store.ts#emptyGenesisState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#uiState",
+      "to": "s:app/src/genesis/interview-source.ts#InterviewUiState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#useGenesisState",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-source.ts#useInterviewUi",
+      "to": "s:app/src/genesis/interview-source.ts#InterviewUiState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-turns.tsx#BankedChips",
+      "to": "s:app/src/genesis/interview-model.ts#chipLabel",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-turns.tsx#FailureBlock",
+      "to": "s:app/src/genesis/interview-model.ts#failureDetail",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-turns.tsx#FailureBlock",
+      "to": "s:app/src/genesis/interview-model.ts#failureHeadline",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-turns.tsx#FailureBlock",
+      "to": "s:app/src/lib/agent-store.ts#TurnErrorPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-turns.tsx#PlannerTurn",
+      "to": "s:app/src/genesis/interview-model.ts#challengeOf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-turns.tsx#PlannerTurn",
+      "to": "s:app/src/genesis/interview-model.ts#questionFooter",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-turns.tsx#PlannerTurn",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-turns.tsx#StageStrip",
+      "to": "s:app/src/genesis/interview-model.ts#StageSegmentState",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -15872,6 +17760,156 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/interview-chat-dom.test.tsx#click",
+      "to": "s:app/test/interview-chat-dom.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#click",
+      "to": "s:app/test/interview-chat-dom.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#docsWith",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#docsWith",
+      "to": "s:app/src/lib/docs-model.ts#emptyState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#emit",
+      "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#emit",
+      "to": "s:app/test/interview-chat-dom.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#ipc",
+      "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#press",
+      "to": "s:app/test/interview-chat-dom.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#press",
+      "to": "s:app/test/interview-chat-dom.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#render",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#render",
+      "to": "s:app/test/interview-chat-dom.test.tsx#docsWith",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#status",
+      "to": "s:app/src/lib/agent-store.ts#GenesisStatusPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#type",
+      "to": "s:app/test/interview-chat-dom.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#type",
+      "to": "s:app/test/interview-chat-dom.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#withStatus",
+      "to": "s:app/src/lib/agent-store.ts#GenesisStatusPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#withStatus",
+      "to": "s:app/test/interview-chat-dom.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-chat-dom.test.tsx#withStatus",
+      "to": "s:app/test/interview-chat-dom.test.tsx#status",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-harness.test.ts#loadSource",
+      "to": "s:app/test/interview-harness.test.ts#SourceModule",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-model.test.ts#docs",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-model.test.ts#docs",
+      "to": "s:app/src/lib/docs-model.ts#emptyState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-model.test.ts#play",
+      "to": "s:app/src/lib/agent-store.ts#GenesisEvent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-model.test.ts#play",
+      "to": "s:app/src/lib/agent-store.ts#GenesisState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-model.test.ts#play",
+      "to": "s:app/src/lib/agent-store.ts#emptyGenesisState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-model.test.ts#play",
+      "to": "s:app/src/lib/agent-store.ts#reduceGenesisEvent",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/interview-model.test.ts#turn",
+      "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/map-dogfood-render.test.tsx#liveFiles",
       "to": "s:app/test/map-dogfood-render.test.tsx#read",
       "kind": "call",
@@ -16888,8 +18926,8 @@
     }
   ],
   "stats": {
-    "files": 100,
-    "symbols": 757,
-    "edges": 1170
+    "files": 107,
+    "symbols": 853,
+    "edges": 1315
   }
 }

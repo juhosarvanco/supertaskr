@@ -781,8 +781,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 100 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(100);
+  it("all 107 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(107);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -822,7 +822,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // still C-05's alone. The out-of-fence control-byte repair to
       // startup-screen.test.tsx moves NOTHING here — same file, same loc,
       // same symbol count, only its content hash.
-      ["C-05", 47],
+      // 47 → 50 at the T-027 merge regen, by THREE and by the same route a
+      // fifth time: interview-chat-dom.test.tsx, interview-harness.test.ts
+      // and interview-model.test.ts are all under app/test/**, C-05's alone.
+      // THREE and not the two the plan forecast — the DEV-gate proofs would
+      // not compose with the DOM fixture, so the branch split them into a
+      // third file. Derived from the added-file list before the suite ran,
+      // which is the rule above being used for the fifth merge running.
+      ["C-05", 50],
       ["C-06", 21],
       ["C-08", 10],
       ["C-09", 3],
@@ -835,7 +842,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // The genesis pane joined the index at the T-024 merge regen, and
       // STAYS 2 at T-037's: the mount gave the lens a consumer, not a
       // file.
-      ["C-13", 2],
+      // 2 → 6 at the T-027 merge regen — the largest single move this
+      // component has made, and the first time C-13 grows by FOUR:
+      // InterviewChat.tsx, interview-model.ts, interview-source.ts and
+      // interview-turns.tsx all land under app/src/genesis/**, C-13's own
+      // glob and its only claimant.
+      ["C-13", 6],
       // C-14 joins the mapping at the T-025 merge regen with exactly ONE
       // file: agent-store.ts. Its other declared path
       // (app/src-tauri/src/agent/**, five .rs files) is invisible to the
@@ -875,7 +887,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: six undeclared dependencies, three declared-only components, no unclaimed territory", () => {
+  it("THE FINDINGS: eight undeclared dependencies, three declared-only components, no unclaimed territory", () => {
     expect(derived.findings).toEqual([
       {
         rule: "D1",
@@ -923,14 +935,26 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         // T-037 addendum above for the integrator's reasoning); this row
         // is the drift signal the architect is meant to rule on, not a
         // blemish to drain at the merge that created it.
+        // T-027 merge regen: 4 → 10 file edges, the largest growth this
+        // list has taken, and it is a LIST that moves — the relation
+        // table's observedCount below is a different assertion in a
+        // different it() body, so the count going right does not make
+        // this right. Two of the six additions are SOURCE edges, not
+        // suite edges: App.tsx now starts the interview subscription and
+        // GenesisScreen.tsx mounts the chat beside the lens.
         rule: "D1",
         id: "D1:C-05->C-13",
         from: "C-05",
         to: "C-13",
         fileEdges: [
+          { from: "app/src/App.tsx", to: "app/src/genesis/interview-source.ts" },
           {
             from: "app/src/components/shell/GenesisScreen.tsx",
             to: "app/src/genesis/GenesisPane.tsx",
+          },
+          {
+            from: "app/src/components/shell/GenesisScreen.tsx",
+            to: "app/src/genesis/InterviewChat.tsx",
           },
           { from: "app/test/genesis-derive.test.ts", to: "app/src/genesis/genesis-derive.ts" },
           {
@@ -938,6 +962,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
             to: "app/src/genesis/GenesisPane.tsx",
           },
           { from: "app/test/genesis-pane-dom.test.tsx", to: "app/src/genesis/GenesisPane.tsx" },
+          {
+            from: "app/test/interview-chat-dom.test.tsx",
+            to: "app/src/genesis/InterviewChat.tsx",
+          },
+          {
+            from: "app/test/interview-chat-dom.test.tsx",
+            to: "app/src/genesis/interview-source.ts",
+          },
+          { from: "app/test/interview-harness.test.ts", to: "app/src/genesis/interview-source.ts" },
+          { from: "app/test/interview-model.test.ts", to: "app/src/genesis/interview-model.ts" },
         ],
       },
       {
@@ -950,12 +984,18 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         // the integrator regenerates, the ARCHITECT rules on the
         // registry, and draining a finding at the merge that created it
         // destroys the signal. Filed for triage.
+        // T-027 merge regen: 1 → 3 file edges, the SECOND grown list at
+        // this merge and the one most easily missed — both additions are
+        // new interview suites reaching the store directly rather than
+        // through C-13.
         rule: "D1",
         id: "D1:C-05->C-14",
         from: "C-05",
         to: "C-14",
         fileEdges: [
           { from: "app/test/agent-store.test.ts", to: "app/src/lib/agent-store.ts" },
+          { from: "app/test/interview-chat-dom.test.tsx", to: "app/src/lib/agent-store.ts" },
+          { from: "app/test/interview-model.test.ts", to: "app/src/lib/agent-store.ts" },
         ],
       },
       {
@@ -980,6 +1020,41 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           { from: "app/src/components/board/TaskDetailPanel.tsx", to: "app/src/lib/verdicts.ts" },
         ],
       },
+      {
+        // NEW at the T-027 merge regen, and the row the branch's own
+        // forecast did NOT predict: the first genesis-side use of a
+        // SHARED UI PRIMITIVE. Both new chat components import
+        // components/ui/button.tsx, which is C-05's by umbrella — so
+        // C-13 becomes a D1 SOURCE for the first time, which is also why
+        // it joins the drift set below.
+        rule: "D1",
+        id: "D1:C-13->C-05",
+        from: "C-13",
+        to: "C-05",
+        fileEdges: [
+          { from: "app/src/genesis/InterviewChat.tsx", to: "app/src/components/ui/button.tsx" },
+          { from: "app/src/genesis/interview-turns.tsx", to: "app/src/components/ui/button.tsx" },
+        ],
+      },
+      {
+        // NEW at the T-027 merge regen and forecast: all four new genesis
+        // modules read C-14's store, because T-027 adds no reducer of its
+        // own — the store already folds the genesis-turn channel and the
+        // chat renders turn.text as given. Left UNDECLARED on the
+        // standing reasoning: the integrator regenerates, the ARCHITECT
+        // rules on the registry, and draining a finding at the merge that
+        // created it destroys the signal. Flagged for triage.
+        rule: "D1",
+        id: "D1:C-13->C-14",
+        from: "C-13",
+        to: "C-14",
+        fileEdges: [
+          { from: "app/src/genesis/InterviewChat.tsx", to: "app/src/lib/agent-store.ts" },
+          { from: "app/src/genesis/interview-model.ts", to: "app/src/lib/agent-store.ts" },
+          { from: "app/src/genesis/interview-source.ts", to: "app/src/lib/agent-store.ts" },
+          { from: "app/src/genesis/interview-turns.tsx", to: "app/src/lib/agent-store.ts" },
+        ],
+      },
       // D3:C-13 cleared at the T-024 merge regen exactly as predicted,
       // and D3:C-14 cleared at the T-025 one on the same arc and inside
       // a single merge: the branch declared C-14 with no indexed file
@@ -993,7 +1068,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
   });
 
-  it("the full relation table: 13 confirmed, 6 undeclared, 9 planned", () => {
+  it("the full relation table: 13 confirmed, 8 undeclared, 9 planned", () => {
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
       // 8 → 10 at the T-034 merge regen: both new map suites import
@@ -1027,7 +1102,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // which is C-10's by name. Its other module reference is
       // ../src/App, which is C-05's own — intra-component, so it adds no
       // row. Once again the only observedCount that moves.
-      ["C-05", "C-10", "confirmed", 25],
+      // 25 → 27 at the T-027 merge regen: interview-chat-dom.test.tsx and
+      // interview-harness.test.ts both reach docs-model / watcher-store.
+      ["C-05", "C-10", "confirmed", 27],
       ["C-05", "C-11", "planned", 0],
       // 20 → 22 at the T-034 merge regen: map-task-waves.test.ts imports
       // task-waves.ts and map-tasks-lens-dom.test.tsx imports MapView.tsx.
@@ -1035,10 +1112,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 2 → 4 at the T-037 merge regen, and one of the two additions is
       // the shell's own SOURCE import of the lens — the mount. Still
       // undeclared: the integrator's reasoning is in the dated addendum.
-      ["C-05", "C-13", "undeclared", 4],
+      // 4 → 10 at the T-027 merge regen — six new file edges, two of them
+      // SOURCE edges (App.tsx → interview-source.ts and
+      // GenesisScreen.tsx → InterviewChat.tsx). The fileEdges LIST above
+      // moves with it, in a different it() body.
+      ["C-05", "C-13", "undeclared", 10],
       // NEW at the T-025 merge regen: the sixth undeclared row, one file
       // edge (agent-store.test.ts → agent-store.ts). See the D1 above.
-      ["C-05", "C-14", "undeclared", 1],
+      // 1 → 3 at the T-027 merge regen: two new interview suites drive
+      // the store directly. Its fileEdges list moves too.
+      ["C-05", "C-14", "undeclared", 3],
       ["C-06", "C-01", "planned", 0],
       ["C-08", "C-05", "undeclared", 4],
       ["C-08", "C-06", "confirmed", 4],
@@ -1075,8 +1158,20 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // CONFIRMED by both genesis sources. C-13→C-11 stays planned —
       // no TS import can confirm a token stylesheet, the same honest
       // state C-12→C-11 carries.
-      ["C-13", "C-10", "confirmed", 2],
+      // NEW at the T-027 merge regen and the SEVENTH undeclared row — the
+      // one the branch's forecast missed. C-13 becomes a dependency
+      // SOURCE for the first time: both new chat components import the
+      // shared components/ui/button.tsx, which is C-05's.
+      ["C-13", "C-05", "undeclared", 2],
+      // 2 → 4 at the T-027 merge regen: interview-model.ts and
+      // interview-source.ts both import docs-model, on the already
+      // DECLARED edge.
+      ["C-13", "C-10", "confirmed", 4],
       ["C-13", "C-11", "planned", 0],
+      // NEW at the T-027 merge regen and the EIGHTH undeclared row, this
+      // one forecast: all four new genesis modules read C-14's store.
+      // T-027 adds no reducer — the store already folds the turns.
+      ["C-13", "C-14", "undeclared", 4],
       // T-025's declared edge, honestly PLANNED: the runner's Rust half
       // consumes C-10's WatchState, which no TS import can confirm and
       // the indexer cannot see until T-010 extracts Rust — the same
@@ -1123,7 +1218,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // files now, and both are the TARGET of a D1 from C-05, never its
     // source. C-14 was in this list on the branch, before the regen it
     // could not run; it comes back out here, which is the ritual working.
-    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11"]);
+    // C-13 REJOINS at the T-027 merge regen, and by the opposite route
+    // to the one that took it out: it left T-024's set because it gained
+    // FILES, and it comes back because it gained OUTGOING undeclared
+    // edges — the first time it is a D1 source rather than only a target
+    // (→C-05 via components/ui/button.tsx, →C-14 via agent-store.ts).
+    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11", "C-13"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
     expect(declaredOnly).toEqual(["C-01", "C-07", "C-11"]);
   });

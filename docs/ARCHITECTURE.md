@@ -19,7 +19,7 @@ graph TD
 | C-02 | CLI | Plumbing + power/CI path (ADR-008): genesis, dispatch; shells out to agent CLIs | C-01, C-06 | planned |
 | C-03 | Runtime | nputer.yaml role defaults; sessions.json registry | C-02 | planned |
 | C-04 | Daemon | Sidecar: watcher, websocket, @mention → headless turns | C-02, C-03 | planned |
-| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06; C-07 when F-06 lands | building (board + map panes complete T-001…T-012; T-026 landed the genesis front door and the full-bleed `genesis` screen, and T-037 mounted C-13's lens inside it — the screen renders the pane on the watched `DocsModelState`, behind an error boundary, so hand-driven genesis renders live; T-025 registered C-14's four genesis commands + the exit-reap hook in lib.rs, so the shell can now spawn the planner although nothing in the UI calls it yet; T-049 moved the app's keyboard surface out of a component and up to the root — `components/shell/accelerators.ts` holds a pure chord table and ONE window listener mounted by `App`, replacing the front-door-scoped one, so ⌘O/⌘N fire from every screen — and gave the board header its own "Start an interview", so genesis is reachable from an open project and not only from the front door; T-050 made the startup handshake RECOVERABLE — the `docs-changed` subscribe + `docs_snapshot` pull that C-10 delivers is latched on the in-flight PROMISE rather than a boolean set before the awaits, so a refused boundary call no longer strands the app permanently, the rejection becomes shell state and is rendered as text, and the startup screen carries retry + the front door's own two ways in, which means no reachable screen is a dead end; T-034 gave the map pane its SECOND lens — a segmented control (architecture · tasks) where tasks lays the board's cards out in dependency waves over `blocked_by`, with a critical path, and the architecture lens is proven byte-unchanged beside it (the whole `map-view` delta is the 472-byte control element); T-042 made the genesis switch TRUTHFUL at the three places it was claiming more than it knew — the outcome now carries the docs tree it found (so the screen stops saying "nothing written yet" over a non-empty docs/), a watch-state transition is ONE measured rule covering armed→unarmed as well as unarmed→armed instead of two special cases, and the `model-updated` echo reads PROVENANCE (`outcomeCarriesSnapshot`) instead of a seq guard that was always true; T-027 still owes the split view's left half; rooms/sessions pending F-05) |
+| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06; C-07 when F-06 lands | building (board + map panes complete T-001…T-012; T-026 landed the genesis front door and the full-bleed `genesis` screen, and T-037 mounted C-13's lens inside it — the screen renders the pane on the watched `DocsModelState`, behind an error boundary, so hand-driven genesis renders live; T-025 registered C-14's four genesis commands + the exit-reap hook in lib.rs, so the shell can now spawn the planner although nothing in the UI calls it yet; T-049 moved the app's keyboard surface out of a component and up to the root — `components/shell/accelerators.ts` holds a pure chord table and ONE window listener mounted by `App`, replacing the front-door-scoped one, so ⌘O/⌘N fire from every screen — and gave the board header its own "Start an interview", so genesis is reachable from an open project and not only from the front door; T-050 made the startup handshake RECOVERABLE — the `docs-changed` subscribe + `docs_snapshot` pull that C-10 delivers is latched on the in-flight PROMISE rather than a boolean set before the awaits, so a refused boundary call no longer strands the app permanently, the rejection becomes shell state and is rendered as text, and the startup screen carries retry + the front door's own two ways in, which means no reachable screen is a dead end; T-034 gave the map pane its SECOND lens — a segmented control (architecture · tasks) where tasks lays the board's cards out in dependency waves over `blocked_by`, with a critical path, and the architecture lens is proven byte-unchanged beside it (the whole `map-view` delta is the 472-byte control element); T-042 made the genesis switch TRUTHFUL at the three places it was claiming more than it knew — the outcome now carries the docs tree it found (so the screen stops saying "nothing written yet" over a non-empty docs/), a watch-state transition is ONE measured rule covering armed→unarmed as well as unarmed→armed instead of two special cases, and the `model-updated` echo reads PROVENANCE (`outcomeCarriesSnapshot`) instead of a seq guard that was always true; T-027 turned the `genesis` SCREEN into a SPLIT VIEW and made C-05 the first caller of C-14 — `GenesisScreen.tsx` now lays a 640px chat column (C-13's `InterviewChat`) beside the lens above 1024px CSS px and centres the chat alone below it, `App.tsx` starts C-13's turn subscription at the root, and the screen owns a scoped accelerator table entry (⌘. cancels) on T-049's single window listener rather than a second one. The shell adds no reducer: the turn stream stays C-14's and the chat renders `turn.text` as the store folds it; rooms/sessions pending F-05) |
 | C-06 | lib-parser | Pure library: docs/tasks/ + ROADMAP backbone → typed model (T-002); browser-safe pure exports (T-003); component files (T-008); cross-ref validation (T-019); strictness pass (T-030 — the backbone scanner strips HTML comments before matching, so a commented row is neither a phantom feature nor a dropped one; blocked_by cycles reported once per SCC; three new issue kinds, additive, consumed generically) | C-01 | verified |
 | C-07 | nputer-index | Rust crate + a REAL binary since T-014: code → docs/architecture/graph.json (tree-sitter TS/JS/Rust); deterministic, no tauri dependency (ADR-014/015). The binary now gates and reads as well as writes — `index [--root .]`, `index --check` (writes nothing; exits non-zero on a stale graph and prints WHAT moved), `index --watch` (headless, debounced 250 ms), `arch` and `arch drift [--fail-on undeclared\|unmapped\|any]` (read the COMMITTED graph, one record per line) — on ONE exit-code contract shared with `npm run boot:check`: 0 clean · 1 the gate's verdict · 2 called wrong · 3 could not run, so "stale" and "could not tell you" are never the same number. `arch`/`arch drift` carry a NARROW reality-side join in Rust; see ADR-015's dated addendum for what that may do and where it can still disagree. F-06 | — | building (TS/JS extraction + committed graph done T-009; the binary, `--check`, `--watch` and the arch reports done T-014; Rust language extraction T-010 still open — milestone 4) |
 
@@ -86,9 +86,26 @@ ADR-014/015).
   `sessions.json`, `genesis/transcript.jsonl`, and the compiled-in
   method snapshot materialized per genesis into `genesis/kit/` so the
   CLI reads it inside its own cwd scope — all outside the docs watch
-  root, so they raise no snapshots. What is NOT yet true: no UI calls
-  any of it (T-027), and the loop has never run against a real model —
-  it is proven against a fake CLI fixture only.
+  root, so they raise no snapshots. **Since T-027 the UI calls all of
+  it**, and the shape of that call is the part worth recording: C-13's
+  chat subscribes to the `genesis-turn` channel and invokes the four
+  commands, and it adds NO second reduction — `reduceGenesisEvent`
+  already coalesces deltas into `turn.text` and replaces the buffer with
+  the canonical `result` on `completed`, so the chat renders what the
+  store gives it and there is exactly one fold of that channel in the
+  app. The BANKED CHIPS are the other half of the contract and they do
+  not ride this channel at all: they are derived by diffing the docs
+  snapshot C-10's watcher delivers across turn boundaries, so a chip is
+  evidence that a FILE changed and can never be evidence that a model
+  said so — driven with 24 hostile probes at T-027's verification,
+  including turn text and activity labels naming real paths over an
+  unchanged disk (zero chips) and a human writing a file mid-interview
+  (an identical chip, which is ADR-006's hand-driven mode rendering
+  correctly). What is STILL not true: the loop has never run against a
+  real model — it is proven against a fake CLI fixture and a scripted
+  lane only — and the user's half of the transcript does not survive a
+  remount, because `refreshGenesisStatus` rebuilds phase/turn/session but
+  never `turns` (T-029's rehydration).
 - Resolving the agent CLI (disk → `execve`) — the boundary the Genesis
   bullet above does not describe, and since T-047 the one with a gate
   on it. Before any turn can spawn, `resolve_cli` decides WHICH
@@ -127,8 +144,17 @@ ADR-014/015).
   from the gate the cached one must pass, which leaves two doors
   holding one standard between them (T-047-s5).
 - Test surfaces (DEV, browser-only) — part of what the app exposes, so
-  named here rather than left to be discovered in the source. Two
-  harnesses hang off `window` in a browser DEV build:
+  named here rather than left to be discovered in the source. THREE
+  harnesses hang off `window` in a browser DEV build since T-027 added
+  `__nputerInterviewHarness` (it feeds `genesis-turn` events to the chat,
+  which a served bundle cannot otherwise reach because there is no Tauri,
+  therefore no runner and no CLI). It sits behind the SAME single gate as
+  the two below — `!isTauri && import.meta.env.DEV` — and T-027's
+  verification re-derived both halves of that gate against a DEV-flipped
+  build: `NODE_ENV=development npm run build` does put all three names in
+  the bundle (T-041-s4's known, already-filed lever, not a T-027
+  regression), and the runtime `isTauri` half still holds inside that very
+  bundle, checked at the minified install site. The two older ones:
   `__nputerDocsHarness` (pre-existing — feeds docs snapshots, which in a
   browser always land on phase `open`) and, since T-041,
   `__nputerShellHarness` (`applyProjectStatus` / `applyPickOutcome` /
@@ -143,9 +169,11 @@ ADR-014/015).
   and it closes a hole only this harness can close, because a browser
   awaits neither boundary call and so cannot fail a real startup. It
   hands out the shell's OWN reducers by reference, so the E2E lane
-  drives shipped code instead of a parallel implementation. Both sit behind ONE
-  gate, not two that can drift: `!isTauri && import.meta.env.DEV`, the
-  same block in `watcher-store.ts`. Keeping them in that module rather
+  drives shipped code instead of a parallel implementation. Those two sit
+  behind ONE gate, not two that can drift: `!isTauri && import.meta.env.DEV`,
+  the same block in `watcher-store.ts`; T-027's third installs itself from
+  C-13 under the same two conditions, so the property is still one rule
+  and not three. Keeping them in that module rather
   than a test-only one is deliberate and is the SMALLER surface — a
   separate module could only reach the module-private reducers and the
   live shell through NEW PRODUCTION EXPORTS on the store, which would
@@ -173,7 +201,18 @@ ADR-014/015).
   source edge, both of which were measured absent before that merge.
   That import is a source dependency of the shell on a child component
   and is still UNDECLARED in the registry — deliberate, live drift the
-  map shows and the architect rules on; area app-agent since T-025,
+  map shows and the architect rules on, and since T-027 it is no longer
+  the only one on that pair: the shell also imports `InterviewChat` and
+  `App.tsx` imports `interview-source.ts`, so C-05→C-13 carries ten file
+  edges where it carried four. **T-027 also made C-13 a drift SOURCE for
+  the first time** — it had been only a target — by adding two undeclared
+  directions OUT of the genesis pane: C-13→C-14 (all four new modules
+  read `agent-store.ts`, which is the runner's store and not the pane's)
+  and C-13→C-05 (both chat components import `components/ui/button.tsx`,
+  the first genesis-side use of a shared UI primitive). Neither was
+  drained at the merge — an integrator regenerates, the ARCHITECT rules
+  on the registry — and both are the architect's to declare or refuse;
+  area app-agent since T-025,
   where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
   `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and
   `lib.rs` keeps only the four thin command wrappers and the exit hook,

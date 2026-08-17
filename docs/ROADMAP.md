@@ -137,13 +137,43 @@ accepts the whole adapter argv, that the session id and model are
 captured, and — by failing — that the CLI reports auth failure in band
 on stdout, which was a wrong assumption in the plan and is now fixed.
 It established nothing about the conversation. So: "by hand" is NOT
-removed yet. Nothing in the UI calls the runner (T-027 owns that), and
-the kickoff has never landed a real planner in stage 0. The honest
-remainder: T-027 (the split view's conversation half — the pane is
-currently full-width where it was drawn as the right half, and the
-first consumer of the runner's store), T-028, T-029 — plus one
-observed real turn on an authenticated machine (T-025-s2, @human),
-which is the evidence this milestone's claim will ultimately rest on.
+removed yet, and the kickoff has never landed a real planner in stage 0.
+The UI half of that gap closed at T-027, immediately below; the
+authentication half has not moved.
+T-027 merged 2026-08-17 and it is the one that changes what this app IS.
+Until tonight the genesis screen was a lens: you hand-drove the method in
+a terminal and watched the plan materialize beside you. **Now the screen
+is a conversation.** A 640px planner chat sits to the left of T-024's
+lens, driven by T-025's `genesis-turn` channel, and the interview starts
+itself on arrival — no button to find first. One question is prominent
+with the history quieter above it; you answer in a box that takes ⏎ to
+send and ⇧⏎ for a newline and disables itself while a turn is in flight;
+a planner turn that opens with the T-023 challenge prefix renders in the
+"pushing back" treatment; ⌘. cancels. And when the planner writes a file,
+a `banked → <artifact>` chip appears in the transcript — **from the
+watcher seeing the file, never from reading what the model claimed.**
+That last rule is the one worth stating plainly, because it is the
+difference between a transcript and a record: a planner turn that names
+three real docs paths while writing nothing produces **zero** chips, and
+a human who writes the file by hand mid-interview produces an identical
+one. The chat is a view of the disk, not of the dialogue. End to end,
+what a user can do that they could not this morning: open a folder with
+no plan in it, be asked a question, answer it in the app, watch the
+answer become a file, and see the file confirmed back — with the plan
+assembling in the pane beside the conversation that produced it.
+**The milestone is still NOT complete, and the remainder is not
+cosmetic.** T-028 (the decomposition crescendo) and T-029 (resume plus
+the hand-driven fallback) are both open, and T-029 matters more than its
+position suggests: the user's half of the transcript does not survive a
+remount or an app restart today, so a mid-interview reload shows an empty
+chat over a live session. And the evidence this milestone's claim will
+ultimately rest on **still does not exist — not one planner turn has ever
+been observed against a real model.** This machine's `claude` OAuth token
+is revoked, so every attempt 401s and no model call has ever gone through
+the runner. Everything above is proven against a fake CLI fixture and a
+scripted lane. It is a real conversation with a real event channel and a
+real file-evidence join; whether it is a GOOD interview is unknown, and
+one authenticated run (T-025-s2, @human) is what would answer it.
 
 ## Parked
 The staged future lives in docs/future.md (two expert-room batches:

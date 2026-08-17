@@ -116,14 +116,24 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-09").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
       "drift 1",
     );
+    // NEW at the T-027 merge regen: C-13 is a D1 SOURCE for the first
+    // time (→C-05 via components/ui/button.tsx, →C-14 via
+    // agent-store.ts), so it gains a count of its own beside the three
+    // above. C-05 STAYS at 4 — its two grown findings grew their file-edge
+    // lists, not their number.
+    expect(node("C-13").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
+      "drift 2",
+    );
     expect(node("C-05").className).toContain("map-drift-ring");
     expect(node("C-01").className).toContain("map-drift-ring"); // D3, non-code
     expect(node("C-11").className).toContain("map-drift-ring"); // D3, non-code
-    // The map pane itself is clean after the §2 amendments, and the
-    // genesis pane is clean now that it has code: it is the target of
-    // C-05's undeclared edge, never its source.
+    // The map pane itself is clean after the §2 amendments.
     expect(node("C-12").className).not.toContain("map-drift-ring");
-    expect(node("C-13").className).not.toContain("map-drift-ring");
+    // THE ASSERTION THAT INVERTS at the T-027 merge regen, and the one no
+    // count check can see: the genesis pane was clean while it was only
+    // the TARGET of C-05's undeclared edge. T-027 gives it outgoing
+    // undeclared edges of its own, so the ring lights.
+    expect(node("C-13").className).toContain("map-drift-ring");
   });
 
   it("C-12 renders its LIVE rollup — this task, on its own map (churn-proof)", () => {
@@ -142,16 +152,22 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 28-edge relation table", () => {
+  it("draws the full 30-edge relation table", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
     // dependency until T-010 extracts Rust) + the undeclared C-05→C-14
-    // the T-025 merge regen surfaced, which is why undeclared is 6.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(28);
+    // the T-025 merge regen surfaced, which is why undeclared was 6.
+    // 28 → 30 at the T-027 merge regen, and BOTH new rows leave C-13:
+    // C-13→C-14 (forecast — every new genesis module reads the store)
+    // and C-13→C-05 (NOT forecast — both new chat components import the
+    // shared components/ui/button.tsx). So undeclared goes 6 → 8, and
+    // that second count is a separate assertion from the first: the row
+    // count going right does not make the relation tally right.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(30);
     expect(
       container.querySelectorAll('[data-testid=map-edge][data-relation="undeclared"]'),
-    ).toHaveLength(6);
+    ).toHaveLength(8);
   });
 
   it("opens the C-05 panel on its real findings", () => {
@@ -240,8 +256,14 @@ describe("the nputer repo on its own map", () => {
     // app/test/startup-screen.test.tsx, the architect-instructed
     // control-byte repair (raw NUL+BEL+ESC → escapes), the same shape as
     // map-layout.ts's one-byte correction two entries above.
+    // 100 → 107 at the T-027 merge regen (2026-08-17), the largest single
+    // jump this hint has taken: four new C-13 modules under
+    // app/src/genesis/** and three new suites under C-05's app/test/**
+    // umbrella. Unlike the four merges above, the edge and node picture
+    // DOES move here — the relation table goes 28 → 30 and C-13 lights a
+    // drift ring — so the two assertions above move with this one.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 100 files",
+      "committed graph · 107 files",
     );
   });
 });

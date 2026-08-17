@@ -5,7 +5,7 @@ feature: F-03
 milestone: 3
 priority: 5
 size: L
-status: building
+status: done
 blocked_by: [T-024, T-025, T-026, T-037, T-041, T-048, T-049]
 touches: [app-interview, app-shell, tools/e2e/]
 builder: claude-opus-5
