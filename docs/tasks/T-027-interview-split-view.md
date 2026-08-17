@@ -9,10 +9,10 @@ status: building
 blocked_by: [T-024, T-025, T-026, T-037, T-041, T-048, T-049]
 touches: [app-interview, app-shell, tools/e2e/]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Size L: planning pass required before dispatch (chat-state machine ×
@@ -894,3 +894,262 @@ The practical consequence for the morning: **the human's dev server on
 served. If they were relying on it still running, that is news.
 
 ## Verdicts
+
+2026-08-17 — claude-opus-5 @fresh, verifier — same-model review:
+**APPROVED** — all eight criteria plus the accelerator criterion met and
+re-derived first-hand from `7d3520c`. Merge-base with main confirmed
+`e92056a` (the T-042 checkpoint); main has since moved to `8120e0d`
+(T-014's `bdada11`+`d77a33e` and T-052's filing), so **every number below
+is branch-point truth and none of it is main's.** Nothing was taken from
+the notes. Port **1420 was never bound, connected to or signalled** — I
+observed it with `lsof` only and it still has no listener, a fourth
+independent sighting of the state three sessions have now recorded. My
+own ports: lane **14733**, geometry probe **14734**, boot gate **14735**,
+each probed free first and each `lsof`-empty afterwards; no `tauri dev`
+or boot-check strays. **NO MODEL CALL WAS POSSIBLE**, proven rather than
+assumed: `git diff e92056a..HEAD -- app/src-tauri/**` is empty, so the
+task adds no Rust; the only webview→CLI path is `invoke`, which is mocked
+at the module boundary in every vitest fixture and returns before `invoke`
+on `!isTauri` in a browser.
+
+**SUITES, all re-derived: app 718/718 (38 files) after `npm run build`
+(exit 0) · lib/parser 197/197 (10 files) · cargo 220 passed + 3 ignored
+across 11 binaries, exit 0 · tools/e2e 60 passed · `lint:tokens` clean
+over 107 files at zero allowlist · selftest 49 samples + 14 walk-policy ·
+`tsc --noEmit` clean in app AND in tools/e2e.** Every figure in the
+notes' table reproduces exactly.
+
+**THE `textDelta`-AFTER-`completed` RULING — every citation verified, and
+the claim survives attack.** `flush_pending` is at `runner.rs:1327` and
+its `emitter.text_delta` at **:1341**; that is the ONLY `TextDelta`
+producer reachable from production code — the only other `text_delta`
+caller in the tree is `agent/mod.rs:657`, inside the `#[cfg(test)]` block
+opening at `mod.rs:535`. It is called from exactly three sites, all in
+`run_turn`: **:1183** (Activity), **:1231** (coalesce timeout) and
+**:1246**, unconditional, immediately after the read loop's closing brace
+at :1245. `emitter.failed` is at **:1316** and `emitter.completed` at
+**:1320**. `Emitter::next` is **:129-131**, `fetch_add(1, SeqCst) + 1` on
+one `AtomicU64` created once per Agent (`mod.rs:183`). **The attack:** I
+enumerated every exit from the read loop — cancel (:1109), Oversize
+(:1222), EOF (:1224), StartTimeout (:1237), Stall (:1241) — and every one
+falls through to :1246. There is **no `return`, no `?` and no early exit**
+between loop entry and :1246 (grepped; the only `.expect()`s are mutex
+locks, whose poison-panic aborts the turn thread and emits nothing at
+all). Between :1246 and the terminal emit there is only the cancel
+re-read, terminate/reap and pure error classification — no emit. **No
+second emitter:** the two threads `run_turn` spawns capture `tx`
+(:1074) and `ring` (:1081), not the emitter; the only emitter clone is
+`spawn_turn`'s single thread (`mod.rs:454-457`), serialized by
+`begin_turn`'s `TurnInFlight` compare-exchange latch. So the runner
+cannot stamp a delta above a completion for the same turn. **The
+counterfactual discriminates:** `interview-model.test.ts:209` feeds a
+seq-3 delta after a seq-2 completion and asserts `"canonical tail"` — if
+the emit ordering ever moved, that test is the one that says what the
+user would see, and it is not vacuous because it exercises the append
+branch the reachable test can never reach. No suggestion against C-14 is
+owed.
+
+**BANKED CHIPS — attacked with my own payloads through the REAL chat, 24
+probes, all green.** `bankedSince`'s signature admits no event stream, so
+"never from parsing model output" is a property of the type; I drove it
+anyway. **A `completed.text` naming three real docs paths with the disk
+unchanged produces ZERO chips. `activity` labels naming docs paths
+produce ZERO chips.** A **deletion** produces no chip. A file changed in
+two different turns chips in both (one row per turn); changed twice
+inside one turn, one chip. **A snapshot arriving BEFORE `started` primes
+rather than chips** — the effect returns early while `activeTurn` is
+null, then baselines over whatever is on disk at the first turn.
+**Pre-existing docs do not chip on turn 1**, and deleting the T-026-s4
+tripwire was CORRECT rather than convenient: I read the fix myself —
+`watcher-store.ts:391-403` applies the genesis outcome's snapshot in the
+SAME state update as the switch (`applySnapshot(switched, snapshot)`), so
+the tree is present before the screen can mount, let alone start a turn.
+**Hostile chip paths** (`docs/__proto__.md`, `docs/constructor.md`,
+`docs/<img src=x onerror=alert(1)>.md`) render as text: zero `img`
+elements, zero prototype pollution, and a sweep of every attribute of
+every element found **zero `on*` names**.
+
+**CHALLENGE INERTNESS AND THE MATCHER — 15 of my own cases.** Matching:
+plain, uppercase, mixed case, and a leading run of spaces/newline/tab all
+match; **mid-word extension** (`pushing backwards:`), **prefixed word**
+(`notpushing back:`), **mid-sentence**, **no colon**, **double space
+inside**, **NBSP inside the phrase**, **zero-width-space lead** and **RTL
+override lead** all do not. A **dotted capital İ** (whose lowercase is
+two characters) does not widen the match, and because `slice` runs on the
+original before `toLowerCase`, it cannot shift the body index — verified
+directly. Both directions of the completion rule reproduce: **deltas
+lacked the prefix and `completed.text` carried it → challenge; deltas
+carried it and `completed.text` dropped it → ordinary; split across three
+deltas → settles.** The inertness pin at `interview-model.test.ts:287` is
+a real deep-equal over the same script ± the marker.
+
+**THE DEV GATE — defeated on the build half, exactly as T-041-s4 predicts,
+and the runtime half holds.** `NODE_ENV=development npm run build` DOES
+flip `import.meta.env.DEV`: all three harness names appear in the bundle
+(`__nputerInterviewHarness`, `__nputerShellHarness`, `__nputerDocsHarness`
+— so this is T-041-s4's known, already-filed lever and not a T-027
+regression). **The runtime gate survives it**: in that very bundle the
+minified install site reads `const dp = typeof window<"u" &&
+"__TAURI_INTERNALS__" in window;` … `async function jM(){ if(!dp){
+window.__nputerInterviewHarness={…}`, so under Tauri the harness is never
+installed even from a DEV-flipped build. Restored production build is
+byte-identical (`index-GxM6iwW9.js`) and I re-derived the zero-bytes
+claim independently: all three names absent, in-bundle controls
+(`interview-chat`, `interview-input`, `genesis-split`) present.
+
+**GEOMETRY — my own probe, six viewports including the 1023/1024/1025
+boundary:**
+
+    800x600  | page 600/600 | col 600 | chat 640 @ x80  | lens ABSENT | log 1077/342 | lens-region —
+    1023x768 | page 768/768 | col 768 | chat 640 @ x192 | lens ABSENT | log 1077/510 | lens-region —
+    1024x768 | page 768/768 | col 768 | chat 640 @ x0   | lens 384    | log 1077/510 | lens-region 673/648
+    1025x768 | page 768/768 | col 768 | chat 640 @ x0   | lens 385    | log 1077/510 | lens-region 673/648
+    1280x720 | page 720/720 | col 720 | chat 640 @ x0   | lens 640    | log 1077/462 | lens-region 657/600
+    1440x900 | page 900/900 | col 900 | chat 640 @ x0   | lens 800    | log 1077/642 | lens-region 780/780
+
+Page height equals the viewport at every one; the column is bounded at
+every one; the chat's own region engages at every one; the split is
+present at exactly ≥1024 and absent at 1023 and 800; the chat is 640 and
+centres (x80) when alone. **The lens is W−640 — 384 / 640 / 800 — which
+confirms the notes' correction of the plan's W−641: the app is
+border-box, so the rule is inside the 640.** The one soft spot: at
+1440x900 the lens region measured **780/780** in my variant, zero margin
+under the spec's `toBeGreaterThan` — filed as **T-027-s5**.
+
+**T-048's CRITERION-4 TABLE, re-run by me at 800x600 and 1280x720:**
+front door, no-plan card, board and map are all still scrolling pages
+(`h-screen` absent on the column at all eight cells), page==viewport
+everywhere except the no-plan card at 800x600 (**663/600**, which is
+T-048-s4's pre-existing, already-filed overflow and unmoved by T-027).
+Nothing regressed.
+
+**ACCELERATORS — the pin discriminates, drilled twice by me.** (a)
+Deleting `useAccelerators`' absent-entry guard (`if (run === undefined)
+return;`) reds **exactly** "⌘. is claimed ZERO times on the board, the
+map and the front door". (b) Putting `cancelTurn` in every screen's table
+reds the same test. Both restored, `accelerators.ts` sha256-identical,
+`git diff` clean. **T-049-s3's property (2) is genuinely pinned for the
+first time.** The chord sweep the builder BUILT (`accelerators.test.tsx:501`)
+is a real complete verdict map — 26 letters + 10 digits + 11 named keys ×
+{⌘, ⌃}, collected into an object and compared with a whole-set `toEqual`
+— so an unlisted letter can no longer be claimed silently.
+
+**THE PLAN'S THREE FAILED NUMBERS — all three confirmed, and no fourth
+found.** (1) At `e92056a`, `accelerators.test.tsx` had **11**
+`chordOf(...)` cases in one `it()` and no whole-set equality: there was
+never a 26-chord sweep. (2) The lens is W−640, measured above. (3)
+`watcher-store.ts:533-534` at the branch point is inside an object
+literal (`docs: emptyState()`), not the gate; both gates are the nested
+`if (!isTauri) { if (import.meta.env.DEV) { … } }` shape, which I
+compared directly.
+
+**THE THREE DEFECTS FIXED IN DESIGN — each verified with a pin that
+discriminates.** `stageOf` now catches (`interview-model.ts:221-228`) and
+its pin drives a Proxy that throws on every read, asserting `failed`,
+`stage —` and seven future segments — the chat stands where a torn tree
+would previously have taken the whole interview down from outside T-037's
+boundary. `startInterviewSource` catches the refused `listen` and logs
+loudly (residual correctly filed as T-027-s2 rather than half-fixed,
+since the honest fix wants a field on C-14). `bankedSince`'s guard now
+asks whether the baseline KNEW a project (`baseline.projectDir !== ""`),
+which is `docs-model.ts`'s own sentinel, and both halves are pinned
+(`:367` and `:373`).
+
+**EXECUTION SWEEP — re-derived: 133 bodies, 133 red.** I poisoned the
+first statement of every `it()` body in all eight new-or-changed vitest
+files with `expect("PROBE").toBe("EXECUTED")` by script: 16 + 10 + 3 + 34
++ 9 + 46 + 4 + 11 = **133 poisoned, 133 failed, 8 files failed**. Not one
+body is vacuous. Restored from pre-probe copies, **all eight sha256-
+identical**, `git status` clean, suite back to 718/718. **The notes say
+132; the count is 133.** Off by one, conclusion unchanged and slightly
+stronger.
+
+**RECONCILED TESTS — six checked for a sixth vacuity, and the shipped
+reconciliations are clean.** `shell-frame.test.tsx` refactors the walk
+into `chainFrom` and applies it to BOTH regions with whole-path equality
+— strengthened. `genesis-mount.test.tsx` (criterion 1) swaps the dir for
+`interview-chat` present **plus the dir asserted ABSENT**, a positive
+claim about the new structure; **I verified the named new home is real** —
+`genesis-entry.test.tsx` is untouched by this branch and asserts
+`genesis-project-dir` at lines **173 and 233** through the real App, so
+the property moved rather than being dropped. Criterion 5's swap adds
+`interview-input` and is strictly stronger. `genesis-pane-boundary.test.tsx`
+trades a sentence for a `data-testid` plus both halves. The
+forbidden-strings source gate in `genesis-mount.test.tsx` is **byte-
+unchanged** with all ten strings. `startup-screen.test.tsx`'s
+channel-aware mock is a strengthening, not an accommodation: the
+non-`docs-changed` branch parks forever and `listenCalls` now counts the
+docs subscription specifically, so it still reds if the channel is
+renamed. **The sixth instance is in a NEW test, not a reconciled one** —
+`interview-model.test.ts:468`'s marquee `expect(byHuman).toEqual(byPlanner)`
+compares `f(x)` with `f(x)` for byte-identical arguments and is deletable
+with the suite green. Criterion 3 is still proven (the second assertion,
+and the DOM suite's real-chat tests), so this is not a rejection — filed
+as **T-027-s4**, together with the `bank()` helper being a hand-copy of
+the chat's effect that has already drifted by the project-switch clause.
+
+**FENCE — proven.** `git diff --name-status e92056a..HEAD` is 24 paths:
+**20 code files** (the notes' figure, accurate for code, written before
+the four docs files landed) plus the card and three suggestions. **Zero
+diff** to `app/src-tauri/**`, `app/src/lib/**`, `GenesisPane.tsx`,
+`genesis-derive.ts`, `method/**`, `lib/parser/**`, `capabilities/**`,
+`tauri.conf.json`, `docs/architecture/graph.json` and every manifest and
+lockfile — checked as one pathspec'd diff that returned empty. Zero Rust
+⇒ the ACL surface cannot have moved.
+
+**GRAPH FORECAST — regenerated by me with the ratified ritual and
+restored byte-exact. The forecast is CORRECT, including its two traps.**
+`100 → 107 files` (7 added — the four `app/src/genesis/**` and three
+`app/test/**` — none removed), `757 → 853 symbols`, `1170 → 1315 edges`
+(**import +32, call +58, type_ref +55**), languages still `["ts"]`.
+Derived: **drift 6 → 7 with C-13 joining**; relation table gains
+**`["C-13","C-14","undeclared",4]`** and **`["C-13","C-05","undeclared",2]`
+— the row the plan did NOT forecast, and it is real: both `InterviewChat.tsx`
+and `interview-turns.tsx` import `components/ui/button.tsx`**; the
+existing `["C-13","C-10","confirmed"]` row moves **2 → 4**; findings gain
+**`D1:C-13->C-05`** and **`D1:C-13->C-14`** (4 file edges, all four
+genesis modules → `agent-store.ts`). **Both traps confirmed:** two
+EXISTING findings grow their `fileEdges` lists (`D1:C-05->C-13` and
+`D1:C-05->C-14`), invisible to any count check; and
+`map-dogfood-render.test.tsx`'s
+`expect(node("C-13").className).not.toContain("map-drift-ring")`
+**INVERTS** — it reds with the ring now present. `graph.json` restored to
+sha256 `88e1daf6…`, **441,937 bytes**, `git status` clean on that path,
+both dogfood fixtures green again (17/17), lib/parser still 197/197.
+
+**BOOT GATE: FIRED, RAN, GREEN — my own run, port 14735.** Both
+`[nputer]` lines (`project folder:` and `window "main" created`),
+`BOOT_EXIT=0`, process tree stopped by SIGTERM, port empty afterwards.
+
+**THE THREE SUGGESTIONS, ruled: all three correctly filed rather than
+fixed.** **T-027-s1** (the answer box loses focus after every send) is
+measured, mechanism-explained, and pinned in the lane by
+`not.toBeFocused()` at `interview.spec.ts:481` — a real tripwire rather
+than a claim. It is the one the human will feel within ten seconds of
+using this screen, so it should be triaged high even though filing was
+right. **T-027-s2** (a refused turn subscription is invisible) is
+introduced by T-027 and honestly named as T-050's shape; the fence on
+C-14 is real and half-fixing would have been worse. **T-027-s3** (render
+volume unmeasured) carries the plan's silence forward with the exact
+measurement to take. I add **T-027-s4** and **T-027-s5** above.
+
+**THE SIX @human VISUAL JUDGMENTS CARRY FORWARD INTACT** and are the
+morning's agenda: (1) the one-question-at-a-time feel and whether the
+current question is big enough to be the only thing on the left; (2) the
+challenge treatment's judgment **in light AND dark** — the two new tokens
+have no dark source in the bundle at all and are family-derived, the one
+place the design could only be extended; (3) the eight disclosed
+deviations, especially the **line-height gap** (design 1.55/1.6/1.5
+against the tokens' 1.43/1.45/1.41) read at real size; (4) the 640/lens
+balance at 1280 and 1440; (5) **the 800x600 consequence — the lens does
+not render at the app's own configured window**, and whether the default
+window should move (it sits beside T-048-s5's missing `minHeight`); (6)
+whether the header's "nputer + project path" reads as the design's
+"nputer — new project".
+
+Everything I touched was reverted and verified: accelerators.ts by
+sha256, all eight test files by sha256, `graph.json` by sha256 and byte
+count, the production bundle by filename hash, and three probe files
+deleted. `file(1)` reports every file I created as text, never `data`.
+Tree clean at verdict time.
+
