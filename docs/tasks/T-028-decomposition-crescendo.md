@@ -23,6 +23,14 @@ renders live task files for free (watcher); this task is the
 transition, the completion state, and the local timer (criterion 2 is
 TIMED; display-only, no telemetry — NORTH_STAR non-goal).
 
+Absorbs: T-027-s1 (architect, 2026-08-17). The answer box loses focus
+after every send, so answering twice in a row needs the mouse — on a
+screen whose whole premise is a seven-question conversation. Its
+suggestion file names its home as "T-027's own lane
+(`app/src/genesis/`)", which is this task's lane, and the fix is three
+lines plus a guard. Folded rather than given a lane of its own; the
+suggestion file is removed in the same commit as this line.
+
 ## Acceptance criteria
 - WHEN task files begin landing under docs/tasks/ during genesis THE
   right pane SHALL switch to the real board renderer (existing board
@@ -47,6 +55,20 @@ TIMED; display-only, no telemetry — NORTH_STAR non-goal).
   mode; an empty board must never be celebrated).
 - IF prefers-reduced-motion is set THEN cards appear without the
   entrance transition.
+- WHEN a turn the user sent from the answer box leaves flight THE
+  focus SHALL return to that box, so a keyboard-driven user can answer
+  seven questions without ever reaching for the pointer. IF focus had
+  been moved elsewhere while the turn was in flight THEN it SHALL NOT
+  be stolen back — the box refocuses only when it HELD focus at submit
+  time, recorded at submit rather than inferred on landing. The box
+  stays `disabled` in flight (T-027's criterion 4 is unchanged; the
+  blur is the HTML spec's, and the defect is that nothing gave focus
+  back). `tools/e2e/tests/interview.spec.ts`'s tripwire, which today
+  asserts `not.toBeFocused()` after a real ⏎ send and then has to
+  `.click()` the box before typing again, SHALL be INVERTED and the
+  re-click deleted — a spec that still needs the click has not fixed
+  this. (T-027-s1, option 1 of three; options 2 and 3 change what "in
+  flight" LOOKS like and are @human's, so they are not taken here.)
 
 Verification: headless — jsdom + served-bundle probe: scripted
 fake-CLI decomposition writing real task files into a temp project,
