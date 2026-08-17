@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 7
 size: M
-status: building
+status: done
 blocked_by: [T-009]
 touches: [crate-index]
 builder: claude-opus-5

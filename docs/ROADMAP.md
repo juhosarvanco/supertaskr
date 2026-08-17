@@ -18,7 +18,15 @@
   board's cards out in dependency waves over `blocked_by`, with a
   critical path (the longest chain, CPM sense) and a worst blocker —
   so F-06 now answers "what is holding the release" as well as "what
-  is drifting"
+  is drifting". Since T-014 it also has a SECOND SURFACE that is not a
+  pane at all: the `nputer-index` binary reads the same committed
+  graph from a shell and prints components, edges and drift findings
+  as one greppable record per line, `index --check` says whether the
+  map still matches the code (and names what moved when it does not),
+  and `arch drift --fail-on` turns drift into something a build can
+  FAIL on rather than only something a human can look at — so "drift
+  as a first-class signal" now reaches the command line and CI, not
+  only the map pane
 
 ## Milestones
 ### Milestone 0 — planning (current)
