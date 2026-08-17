@@ -5,12 +5,12 @@ feature: F-03
 milestone: 3
 priority: 7
 size: M
-status: planned
+status: building
 blocked_by: [T-027]
 touches: [app-interview, app-agent]
-builder:
+builder: claude-opus-5 @fresh
 verifier:
-built_by:
+built_by: claude-opus-5 @fresh
 verified_by:
 review:
 ---
@@ -182,5 +182,241 @@ login has lapsed is a dead end with a button that lies. Treat criterion
 "AuthFailed" as the task's leading edge rather than its tail, and
 consider landing it before the resume machinery if the two want
 splitting.
+
+---
+
+**Executor, claude-opus-5 @fresh, 2026-08-17.** Built on `bdecad8`
+(T-028's checkpoint), branch `task/T-029-resume-fallback`, worktree
+`/Users/ujju/Projects/nputer-T-029`.
+
+### THE ARCHITECT'S AUTH TRACE IS WRONG ON THREE OF ITS FIVE STEPS — verify this first
+
+Steps 1 and 5 hold. Steps 2, 3 and 4 do not, and the correction matters
+because it changes what the criterion is actually for.
+
+**Step 2 says `stderr_tail` is EMPTY. It is not.** The
+`stderr_ring` is not a stderr ring — it is a DIAGNOSTIC ring with THREE
+writers, and only one of them is stderr (`runner.rs:1078` creates it;
+`:1088` is the stderr thread; `:1194` pushes the `result` line's text on
+`is_error`; `:1204` pushes the `api_retry` diagnostic; `:1211` pushes
+non-JSON lines). T-025 wired the in-band lines into it on purpose, and
+said so in its own test name. Measured on the pre-fix tree, verbatim from
+`cargo test --test agent_runner an_in_band_auth_failure -- --nocapture`:
+
+    ExitNonZero { code: Some(1), stderr_tail:
+      "api_retry: authentication_failed 401\nFailed to authenticate.
+       API Error: 401 OAuth access token has been revoked." }
+
+**So steps 3 and 4 fall with it.** `failureDetail` returns that string
+(non-empty), `FailureBlock` renders the span, and the screen did NOT say
+"the planner exited with code 1" with no detail at all. **It said "the
+planner exited with code 1" over an escaped ONE-LINE BLOB of the CLI's
+own words** — `sanitize_for_log` escapes control characters, so the `\n`
+renders as two literal characters rather than a line break.
+
+**The criterion still stands, and its own wording is the accurate one:**
+"a TYPED outcome rather than a RELAYED BLOB". The bytes were being
+delivered; the MEANING was not, and neither was the one action that
+helps. **The real defect is the Try again button**, which fails
+identically forever because nothing about a revoked login changes between
+two presses. That is what this build removes.
+
+**The pre-existing regression pin `agent_runner.rs:533` is what proves
+all of this** — it asserted `stderr_tail.contains("401")` and passed on
+main. Anyone re-deriving the trace hits it in one command.
+
+**One other citation was checked before being built on** — the habit
+T-028's missing "completion signal" earned. Criterion 3 cites "T-023's
+resume rule". It **EXISTS**: `method/roles/planner.md:79`, § Resume rule,
+and `assemble_resume_kickoff` transcribes its substance. So this card's
+citations are one-for-one worse than T-028's and one-for-one better.
+
+### Criteria → evidence
+
+**AuthFailed (led, as instructed).** `TurnError::AuthFailed { status,
+message }` at `runner.rs:100`. Detection: `classify_line` now reads the
+result line's `api_error_status` / `terminal_reason` /
+`permission_denials` as TYPED fields (`runner.rs:1005-1017`) and
+`StreamLine::Diagnostic` keeps the status as a NUMBER beside the note
+(`runner.rs:915-923`); the relay loop tracks them (`runner.rs:1156-1160`,
+`:1249-1276`); classification runs **before the exit code is looked at**
+(`runner.rs:1338-1372`) because exit 1 means a dozen things and the
+stream says which. Routed: `failureHeadline`/`failureAction`
+(`interview-model.ts:388-460`), rendered `interview-turns.tsx:266-346`.
+Tests: `agent_runner.rs:533`, `interview-model.test.ts:707`,
+`interview-resume-dom.test.tsx:160`, `resume-fallback.spec.ts:48`.
+`terminal_reason` + `permission_denials` read alongside as
+`TurnError::ToolDenied` (T-025-s1) — `runner.rs:107`, fixture
+`fake_agent.rs:172-201`, test `agent_runner.rs:590`.
+
+**Criterion 1 — resume.** `agent::resume_genesis` (`mod.rs:414`) reads
+the id through `SessionEntry::resume_id`, respawns on the adapter's
+`resume_args`, and the chat rehydrates from `transcript.jsonl`
+(`mergeRehydrated`, `interview-model.ts:311-397`). The stage and the
+banked artifacts come from `docs/`, never the cache — `stageOf(docs)` is
+unchanged. Test: `agent_runner.rs:1723` asserts `--resume
+fake-session-0001` in turn 2's argv, spawned by an `AgentState` that
+never saw turn 1.
+
+**Criterion 2 — losable cache.** `agent::transcript` (`mod.rs:601`)
+answers an empty vector for missing, corrupt and unreadable alike;
+`refreshGenesisTranscript` does the same for a refused invoke
+(`agent-store.ts:479`). Tests: `agent_runner.rs:1793` drills deleted AND
+corrupted (they reach different code and only one was exercised before);
+`interview-resume-dom.test.tsx:378` drills empty / `undefined` /
+rejected.
+
+**Criterion 3 — fresh session.** `agent::fresh_genesis` (`mod.rs:497`)
+marks the old entry `dead` (the method's own word,
+`method/runtime/sessions-schema.md:27`) and kicks off with
+`kit::assemble_resume_kickoff` (`kit.rs:249`). Test:
+`agent_runner.rs:1849` — no `--resume` in argv, the kickoff carries
+"RESUME RULE" and "never overwrite real content", the old entry is
+`dead` not deleted, and `docs/NORTH_STAR.md` is byte-identical after.
+
+**Criterion 4 — hand-driven MODE.** `agent::kickoff` (`mod.rs:648`)
+MATERIALIZES the kit before answering, so the prompt names a kit that
+exists; `assemble_kickoff_for` picks stage-0 or resume from FILE
+EVIDENCE (`kit.rs:218`). Rendered `InterviewChat.tsx:HandDrivenBlock`,
+reachable from the `cliNotFound` card, from an auth failure and from the
+listener notice. Tests: `agent_runner.rs:1975`,
+`interview-resume-dom.test.tsx:497`, `resume-fallback.spec.ts:48`.
+
+**Criterion 5 — cancel.** `agent_runner.rs:1919`: the UI path
+(`agent::cancel`), the child dead by `pid_alive`, `docs/` never created,
+then a REBOOT into a live `ResumeAvailable` and a working resume.
+
+**Criterion "exactly ONE place" (T-026-s3).** `sessions::genesis_record`
+(`sessions.rs:245`) derives the fact from `.nputer/sessions.json` and
+nothing else; `GenesisRecord` is the type T-022 consumes. Test
+`agent_runner.rs:1943` proves it by DELETING that one file — the fact
+goes with it, which is only true if there is no second copy, and
+`docs/` is unaffected either way.
+
+**T-027-s2 — listenerFailed.** `GenesisState.listenerFailed`
+(`agent-store.ts:186`), set by `startGenesisListener`
+(`agent-store.ts:395`), rendered `InterviewChat.tsx:~430`. **Shape 2 was
+respected: the flag is on the STORE.** Two things beyond the card: the
+latch is RELEASED on failure so a retry genuinely re-subscribes, and
+**the auto-start refuses a dead channel** — spawning a planner that
+really writes into `docs/` while this half can never show a word of it is
+the defect made worse by doing it unasked. The explicit button still
+works. Tests: `interview-resume-dom.test.tsx:~430`,
+`resume-fallback.spec.ts:90`.
+
+**T-039-s3 — two typed refusals.** `StartOutcome::SessionIdRejected {
+registry_path, why }` (`mod.rs:80`) and `TurnError::RejectedSessionId {
+why }` (`runner.rs:117`), both routed. The rejection strings are
+unchanged and still escaped; only the envelopes moved. Four pre-existing
+cargo tests were updated to the new envelopes.
+
+**T-047-s3 — the model's read boundary.** `SessionEntry::display_model`
++ `model_for_display` (`sessions.rs:98-120`), with a REAL CALLER:
+`StartOutcome::ResumeAvailable.model`. A rejection refuses nothing — it
+renders "model not recorded" and logs once. Test `agent_runner.rs:2013`
+drills the ~1 MiB class, a terminal escape, a space and a homoglyph, and
+proves the resume still stands for every one; the exotic-but-real
+`us.anthropic.claude-sonnet-4@20240620:0` still comes through.
+
+### One design decision the card did not ask for
+
+`TranscriptLine` gained `machine: bool` (`sessions.rs:170`). The kickoff
+and the resume nudge ride `role: "user"` because they genuinely are the
+user half of the protocol — but the human did not type them, and a
+rehydrated chat drawing "You are the planner. KIT ROOT: …" in their own
+bubble would be the chat claiming they said it. The alternative was
+recognising machine text by READING it, which is the classify-by-string
+this project bans everywhere else. `#[serde(default,
+skip_serializing_if)]`, so a pre-T-029 transcript parses unchanged.
+
+### Suites, first-hand in this worktree, never piped through `tail`
+
+- **lib/parser** build 0 · `tsc --noEmit` 0 · **225/225 (11 files)** —
+  unchanged, zero parser files touched.
+- **app** `tsc --noEmit` 0 · build 0 · **795/795 (42 files)** (main 768/41
+  → +27 tests, +1 file: `interview-resume-dom.test.tsx` 16 and
+  `interview-model.test.ts` +11). Bundle `index-Bf-QNmtC.js` 497.86 kB /
+  `index-CryMc_lw.css` 43.90 kB (main: 488.81 / 43.79).
+- **app/src-tauri** bare `cargo test` → **307 passed + 3 ignored, 0
+  failed, ZERO warnings** (main 299+3 → +8). Breakdown
+  108/0/0/40/123/0/7/13/3/7/0/2/4/0/0.
+- **tools/e2e** typecheck 0 · `NPUTER_E2E_PORT=15420 npm test` → **74
+  passed** (main 70 → +4, `resume-fallback.spec.ts`).
+- **`npm run lint:tokens`** → clean, **116 files** (main 114 → +2), zero
+  allowlist; `--selftest` 49 samples + 14 walk-policy checks green.
+- **BOOT GATE (T-046 criterion 6): FIRED, RAN, GREEN.** Trigger:
+  `app/src/**` and `app/src-tauri/**` both touched. Scratch port
+  **15430**, bind-probed free immediately before use. Both `[nputer]`
+  lines detected, `BOOT_EXIT=0`, run twice. Ports 15420/15430/15431 empty
+  afterwards; no stray `tauri dev`; **1420 read-only `lsof` only, one
+  listener throughout, never bound, connected to or signalled.**
+
+### The poison sweep — 40 bodies, 100%, and ONE vacuous assertion caught
+
+Run **inline, no scratch script** (T-028's better pattern). Six rounds,
+**36 source mutations** across ten files; every new or changed test body
+was shown RED under a mutation of the thing it tests.
+
+- **Rust: 9 bodies** (2 rounds, 11 mutations) — auth classification
+  disabled, tool-denial disabled, `RejectedSessionId` reverted to
+  `MalformedStream`, `resume: None`, `display_model` made infallible,
+  `transcript` emptied, `mark_planner_dead` no-opped,
+  `assemble_kickoff_for` pinned to stage-0, `find_planner` blinded,
+  `machine: true` flipped.
+- **TypeScript: 27 bodies** (3 rounds, 19 mutations).
+- **E2E: 4 specs** (2 rounds, 5 mutations) — the listener spec needed a
+  RENDER mutation rather than a store one, because a browser has no
+  `listen` to refuse and the door sets the twin directly.
+
+**THE VACUOUS ONE, found and fixed rather than reported.** "REFUSES TO
+AUTO-START over a dead channel" stayed GREEN with the guard removed: the
+refused `listen` also skips the status pull, so `methodVersion` stayed
+null and the auto-start's OTHER gate was doing the work. The test now
+lands the status explicitly and asserts that gate is open first
+(`interview-resume-dom.test.tsx:~487`); it reds correctly.
+
+**RESTORATION PROVED BY sha256 against `git show HEAD:<path>`, not by a
+clean `git status`** — all ten source files byte-identical after every
+round.
+
+### The security sweep
+
+`EXPECTED_GRANTS` **byte-identical at `bdecad8` and HEAD: 92 grants,
+identical sha256 at both refs** (6134 bytes over the whole `const …
+&[…];` declaration, 6097 over the array body alone — the brief's 6135
+is one of those two off by a newline; the load-bearing fact is that the
+two refs MATCH, and `acl_pin.rs` itself is a 0-file diff). `acl_pin.rs`, `capabilities/` and `gen/`
+are 0-file diffs. **`adapter.rs` is a 0-file diff** — no flag added, the
+bypass ban untouched, the six-pattern allowlist unchanged. Child env
+allowlist untouched (`env_clear()` + allowlist). **Zero new
+dependencies, zero lockfile lines.** No `innerHTML` /
+`dangerouslySetInnerHTML` / `eval` / `new Function` under `app/src`. **No
+`writeTextFile` / `writeFile` / `mkdir` under `app/src`** (ADR-017
+holds — every new write is Rust-side and inside `.nputer/`). **Exactly
+one `#[ignore]`d real-CLI smoke, not run, not duplicated. No model was
+called by anything.** `file(1)` over all 20 changed files: all text, none
+`data`, zero C0 bytes outside tab/newline.
+
+### What I deliberately did NOT do
+
+- **No clipboard button on the hand-driven block.** A copy button needs a
+  webview capability this app does not have, and ADR-012 says a grant is
+  added by the task that genuinely needs it. The block is selectable
+  text; asserted absent in the lane.
+- **`docs/architecture/graph.json` NOT regenerated** — integrator's
+  ritual. It WILL need regenerating: 8 `.ts/.tsx` files outside `docs/`
+  moved, and `interview-model.ts` gained exported symbols.
+- **`touches:` left as dispatched** (`[app-interview, app-agent]`),
+  though this build also edits `app-shell` (`agent-store.ts`,
+  `lib.rs`) and `tools/e2e/`. Fields lock at `status: building`
+  (TASK-FORMAT § Lifecycle); a process note, not a builder error —
+  the same shape T-028 hit.
+- **No ADR.** The four new commands are the ADR-012 pattern already
+  ruled (app-defined, zero-argument, no grant); the typed variants are
+  ADR-017's existing discipline. Nothing here is a new SHAPE.
+- **The @human item in the card's Verification is untouched**: one real
+  hand-driven run in the fallback mode. It needs a human and, for the
+  spawned half, a `claude login`.
+
 
 ## Verdicts

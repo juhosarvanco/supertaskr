@@ -480,6 +480,17 @@ describe("a refused turn subscription says so instead of staying empty forever",
 
   it("REFUSES TO AUTO-START over a dead channel, while the explicit way in still works", async () => {
     await refuseTheChannel();
+    // THE STATUS MUST LAND ANYWAY, and this line is load-bearing: the
+    // auto-start keys off `methodVersion !== null`, which only
+    // `applyGenesisStatus` sets. Without this the refused `listen` also
+    // skips the status pull, `statusKnown` stays false, and the
+    // assertion below would pass for a reason that has nothing to do
+    // with the listener — a vacuous green. Found by poisoning the guard
+    // and watching this test stay green.
+    await flush(async () => {
+      await store.refreshGenesisStatus();
+    });
+    expect(store.getGenesisState().methodVersion, "the auto-start's gate is open").not.toBeNull();
     ipc.outcomes.set("genesis_start", { kind: "started", turn: 1 });
     ipc.invoke.mockClear();
     render();
