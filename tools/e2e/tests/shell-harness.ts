@@ -173,7 +173,12 @@ export type TurnErrorPayload =
   | { kind: "startTimeout" }
   | { kind: "stall" }
   | { kind: "exitNonZero"; code: number | null; stderrTail: string }
-  | { kind: "malformedStream"; why: string };
+  | { kind: "malformedStream"; why: string }
+  // T-029: the two failures the STREAM names, told apart in Rust off
+  // typed fields rather than guessed at from an exit code.
+  | { kind: "authFailed"; status: number | null; message: string }
+  | { kind: "toolDenied"; denials: readonly string[]; terminalReason: string | null }
+  | { kind: "rejectedSessionId"; why: string };
 
 export type GenesisOutcomePayload =
   | { kind: "started"; turn: number }
@@ -182,7 +187,16 @@ export type GenesisOutcomePayload =
   | { kind: "noProject" }
   | { kind: "noSession" }
   | { kind: "alreadyPlanned"; path: string }
-  | { kind: "resumeAvailable"; nativeSessionId: string; turns: number }
+  | {
+      kind: "resumeAvailable";
+      nativeSessionId: string;
+      turns: number;
+      // Through the registry's READ boundary: `null` means both "no
+      // model recorded" and "recorded, but not a usable name" (T-047-s3).
+      model: string | null;
+    }
+  | { kind: "sessionIdRejected"; registryPath: string; why: string }
+  | { kind: "nothingToResume" }
   | { kind: "staleProject"; sessionProject: string }
   | { kind: "cliNotFound"; probed: string[] }
   | { kind: "unsupportedVersion"; found: string }
@@ -207,8 +221,21 @@ declare global {
       status: (payload: GenesisStatusPayload) => void;
       get: () => { phase: string; seq: number; turns: unknown[] };
       sent: () => readonly string[];
+      listenerFailed: (failed: boolean) => void;
+      rehydrate: (lines: readonly TranscriptLinePayload[]) => void;
     };
   }
+}
+
+/** One banked protocol half-turn, as `.nputer/genesis/transcript.jsonl`
+ * holds it (T-029). `machine` marks an APP-ASSEMBLED half — a kickoff or
+ * a resume nudge — which the chat must not draw in the user's bubble. */
+export interface TranscriptLinePayload {
+  turn: number;
+  role: "user" | "planner";
+  text: string;
+  atMs: number;
+  machine?: boolean;
 }
 
 /** Open the dev bundle and wait for ALL THREE harnesses. Fails loudly
@@ -261,6 +288,31 @@ export async function pushStatus(
       ...p,
     });
   }, patch);
+}
+
+/**
+ * T-029 (T-027-s2): the turn subscription was REFUSED.
+ *
+ * A browser has no `listen` to refuse, so this door is the only way a
+ * served bundle reaches the state where the plan visibly assembles on the
+ * right and the chat stays empty on the left. It sets the SHIPPED field
+ * on the shipped state.
+ */
+export async function pushListenerFailed(page: Page, failed = true): Promise<void> {
+  await page.evaluate((f) => {
+    window.__nputerInterviewHarness!.listenerFailed(f);
+  }, failed);
+}
+
+/** T-029 criteria 1-2: the banked transcript a restart rehydrates from.
+ * A served bundle has no `.nputer/` to read. */
+export async function pushRehydration(
+  page: Page,
+  lines: readonly TranscriptLinePayload[],
+): Promise<void> {
+  await page.evaluate((l) => {
+    window.__nputerInterviewHarness!.rehydrate(l);
+  }, lines);
 }
 
 /** What the UI ASKED to send, in order. `sendGenesisTurn` returns before

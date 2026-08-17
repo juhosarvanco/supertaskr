@@ -123,8 +123,20 @@ export function InterviewChat({
   // it is `freshInterview`. Both are the SAME screen, because "the
   // conversation is not where you left it" is one situation with two
   // exits, not two situations.
-  const offer = ui.notice?.kind === "resumeAvailable" ? ui.notice : null;
-  const rejected = ui.notice?.kind === "sessionIdRejected" ? ui.notice : null;
+  //
+  // ONE VALUE, TWO SOURCES, IN A FIXED ORDER — and that order is the
+  // T-027-s2 argument applied a second time. This module's `notice` is
+  // the LIVE answer to a call this screen just made; the store's
+  // `lastOutcome` is the DURABLE one, folded by `reduceGenesisOutcome`
+  // and cleared only by a `started`/`accepted`. Reading just the first
+  // loses the offer across a remount (module state outlives a component,
+  // but a caller that never ran leaves it null); reading just the second
+  // ignores the answer in hand. Deriving every block below from ONE
+  // expression is what stops the store and the UI disagreeing about
+  // whether there is a session to pick up.
+  const outcome = ui.notice ?? genesis.lastOutcome;
+  const offer = outcome?.kind === "resumeAvailable" ? outcome : null;
+  const rejected = outcome?.kind === "sessionIdRejected" ? outcome : null;
 
   // …but ONLY once the mount-time `genesis_status` has actually
   // answered. `methodVersion` is the honest signal for that and it is
@@ -494,9 +506,9 @@ export function InterviewChat({
           </div>
         )}
 
-        {ui.notice !== null && offer === null && rejected === null && (
+        {outcome !== null && offer === null && rejected === null && (
           <OutcomeNotice
-            outcome={ui.notice}
+            outcome={outcome}
             projectDir={projectDir}
             onHandDriven={onHandDriven}
           />
