@@ -144,9 +144,10 @@ New module `lib/parser/src/id-slot.ts`: `idSlotKey` (:49) and
 in `parseComponentSet` is GONE from component.ts; what remains there is
 the component-specific message. T-030's four pins (branch-point
 :395/:420/:433/:453, now :395/:432/:445/:465): the three that assert
-BEHAVIOUR pass BYTE-UNTOUCHED, and :395 took a ONE-LINE tightening — see "What contradicts
-the card" below, this is the one place the card cannot be obeyed as
-written. Detection behaviour is unchanged, proved by the mutant sweep
+BEHAVIOUR pass BYTE-UNTOUCHED (proved by
+`git diff 5995ac7..HEAD -- lib/parser/test/component.test.ts`, one hunk),
+and :395 took a ONE-LINE tightening — see "What contradicts the card"
+below; this is the one place the card cannot be obeyed as written. Detection behaviour is unchanged, proved by the mutant sweep
 (the component 2^53 pin still reds against a `Number()` key).
 
 **C2 — the strip is TEXTUAL, pinned with ids a `Number()` build fails
