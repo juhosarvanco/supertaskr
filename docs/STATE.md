@@ -452,8 +452,52 @@ refs — and its pins re-run green inside the 299.
 
 ## In progress / broken right now
 
-**NO LANE IS LIVE.** T-028's worktree is removed and its branch KEPT.
-**Nothing is in flight and nothing is blocked on a merge.**
+**THREE LANES ARE LIVE** (architect, 2026-08-17 evening). Worktrees are
+open — if this session dies, these are the first thing to look at:
+
+    ../nputer-T-029   task/T-029-resume-fallback   307319b  REJECTED, fix in flight
+    ../nputer-T-054   task/T-054-retire-graph-rule 2fc3475
+    ../nputer-T-063   task/T-063-startup-says-so   2fc3475
+
+**T-029 WAS REJECTED AND A FRESH EXECUTOR IS CLOSING IT** — the method's
+rule, exercised for the fifth time. Nine of its TEN criterion bullets
+hold (the card has ten, not the eight an architect brief claimed). The
+blocking finding is **T-029-s6**: `auth_status` is a MONOTONE LATCH, so
+a 401 the CLI retried and RECOVERED from survives to the classifier, and
+a turn that then dies of anything else reports as `AuthFailed`. Because
+`failureAction` returns `retry: false` for that variant, the screen
+**removes the Try again button** — the one action that would have
+worked — and prints `claude login` at a user whose login is fine. A real
+tool denial behind a stale 401 is shadowed too, so **this task's own new
+`ToolDenied` classification loses to the bug.** One-line close, verified
+by the verifier: drop the `is_some()` guard in the `Result` arm.
+**T-029-s7** is the same defect once more in the same closure —
+`permission_denials` treated as CAUSE when merely PRESENT — and only its
+CONSERVATIVE arm is being taken, because the wider guard depends on the
+`terminal_reason` set that T-029-s5 records as still unverified.
+
+**THE OVERNIGHT GRANTS (human, 2026-08-17, before sleeping).** Recorded
+here because a successor session must not re-ask:
+- **Four lanes approved**: **T-054**, **T-063**, **T-060**, **T-062**.
+- **Triage-born cards may dispatch from the ranked queue WITHOUT further
+  approval.** Every card still goes executor → adversarial verifier →
+  integrator; a second rejection on the same card PARKS that lane with
+  the record intact.
+- **Three parallel lanes**, matching the load that held last night
+  (~10 on 10 cores).
+- **QUEUE, and the reason each waits**: **T-060** after T-029 (both
+  `[app-agent]`, both own `runner.rs`), **T-062** after T-063 (both
+  declare `app-shell`). The method forbids parallelizing overlapping
+  `touches` and this is the live application of it.
+
+**THE HUMAN'S APP IS RUNNING ON 1420** (node pid 82549), relaunched
+DETACHED this time — an earlier launch died when its background task was
+torn down, taking the app with it. Every agent is briefed to probe it
+read-only and never bind, connect to or signal it. **The integrator who
+takes the next merge inherits T-052's hazard live**: main's
+`node_modules` sits under a running vite, so a fresh install there kills
+the app (mechanism B). Run installs in a scratch worktree at the merged
+commit, or refuse loudly.
 
 **T-029 IS THE NEXT CARD AND IT IS NOW UNBLOCKED.** It shares
 `app/src/genesis/` with T-028 and reuses T-028's completion detection,
