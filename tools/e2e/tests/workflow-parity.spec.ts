@@ -22,10 +22,33 @@ import { repoRoot } from "../preflight";
  * agree with each other while both drifted from the doc that governs them
  * — and did (the doc listed `npm run typecheck` for tools/e2e, which no
  * CI step ran). The list is now PARSED out of that section, so the doc is
- * the only place a command is written down, and the four deliberate
+ * the only place a command is written down, and the deliberate
  * divergences are an explicit, argued mapping (CI_SEQUENCE below) rather
  * than an untracked difference. Reword a command in CONVENTIONS and this
  * spec goes red naming both sides — pinned by the fixtures at the end.
+ *
+ * ── WHAT T-054 CHANGED ───────────────────────────────────────────────
+ * 1. `nputer-index index --check` joins CI_SEQUENCE after the cargo
+ *    suite. CI had NEVER gated graph currency: ci.yml runs bare `cargo
+ *    test`, which skips `#[ignore]`d tests, and `self_graph_is_current`
+ *    — the one byte-comparison against the committed graph.json — is
+ *    `#[ignore]`d. A stale graph passed green, because the dogfood
+ *    fixtures assert against the committed graph and a stale graph
+ *    agrees with fixtures that match it. `index --watch` and `arch` are
+ *    LOCAL_ONLY: a watcher runs until stopped, and `arch` reports from
+ *    the committed graph rather than gating.
+ * 2. Two of the four divergences CLOSED — the lint and the boot check
+ *    were only CI spelling a documented command a second way, so both
+ *    now invoke the documented command (the xvfb wrapper stays real).
+ *    What remains are the two ENVIRONMENT differences the doc always
+ *    claimed: `npm ci` for app/, and playwright's `--with-deps`.
+ * 3. The derivation stopped being SILENT about structure. T-045's
+ *    verifier attacked it twenty-four ways; 18 red loudly, 3 are
+ *    correctly tolerated, and 3 were invisible (problems=0, steps=17) —
+ *    all one shape, a command ARRIVING somewhere `commandBullets` does
+ *    not look, because it splits on a newline followed by "- " at
+ *    COLUMN 0. Indented bullets and fenced blocks inside "Build & test"
+ *    now push a problem naming the structure (structuralProblems).
  */
 
 interface WorkflowStep {
@@ -106,6 +129,56 @@ export function commandBullets(section: string): { dir: string; commands: string
 }
 
 /**
+ * The structures `commandBullets` CANNOT see, named out loud (T-045-s4).
+ *
+ * The splitter is `\n(?=- )` — a newline followed by "- " at COLUMN 0 —
+ * so anything INDENTED is glued to the preceding bullet's chunk and read
+ * as that bullet's prose, and a fenced block is just more prose. T-045's
+ * verifier measured the consequence: of twenty-four attacks on the
+ * derivation, 18 red loudly and 3 are correctly tolerated, but 3 were
+ * SILENT — an indented sub-bullet, an indented sub-bullet carrying its
+ * own `run from <dir>/:` marker, and a fenced block after a bullet. Each
+ * derived `problems=0` with the step list unchanged: the doc grew a
+ * command and the lane said nothing. That asymmetry is the dangerous
+ * one, because writing NEW commands into that section is exactly how
+ * this mechanism is maintained — a command that ARRIVES in an unread
+ * shape is the one that stays invisible.
+ *
+ * This teaches the parser no markdown. It flags the two SHAPES and says
+ * what to do, the way a fifth `run from` bullet already does.
+ *
+ * The rule is the splitter's own, not markdown's: only a leading "- " is
+ * a bullet here. `+` and `*` are deliberately NOT flagged — the section
+ * legitimately wraps prose onto a line beginning "  + nputer-index crate
+ * suite", and a rule that reds on real prose teaches editors to route
+ * around it.
+ */
+export function structuralProblems(section: string): string[] {
+  const problems: string[] = [];
+  section.split("\n").forEach((line, i) => {
+    const where = `docs/CONVENTIONS.md "Build & test" line ${i + 1} (of the section)`;
+    if (/^[ \t]+- /.test(line)) {
+      problems.push(
+        `${where} is an INDENTED BULLET: ${JSON.stringify(line.trim().slice(0, 48))}. ` +
+          'The derivation splits on a newline followed by "- " at COLUMN 0, so an ' +
+          "indented bullet is glued to the preceding bullet's prose — every command " +
+          "on it is INVISIBLE to CI parity, and so is a `run from <dir>/:` marker of " +
+          "its own. Unindent it, or fold it into its parent bullet.",
+      );
+    }
+    if (/^[ \t]*```/.test(line)) {
+      problems.push(
+        `${where} carries a CODE FENCE. The derivation reads \`·\`-separated ` +
+          "backticked commands out of bullet prose and never looks inside a fence, " +
+          "so commands in one are INVISIBLE to CI parity. Put them in a " +
+          "`run from <dir>/:` bullet instead.",
+      );
+    }
+  });
+  return problems;
+}
+
+/**
  * The section's CI bullet — where a reader goes to learn how CI differs
  * from local. Every disposition that is not "verbatim" has to be written
  * down THERE, not merely somewhere in the doc: a divergence buried in
@@ -144,13 +217,17 @@ const CI_SEQUENCE: Correspondence[] = [
     dir: "tools/e2e",
     cmd: "npm run lint:tokens",
     steps: [
-      { dir: "tools/e2e", run: "node scripts/lint-tokens.mjs --selftest" },
-      { dir: "tools/e2e", run: "node scripts/lint-tokens.mjs" },
+      { dir: "tools/e2e", run: "npm run lint:tokens -- --selftest" },
+      { dir: "tools/e2e", run: "npm run lint:tokens" },
     ],
     why:
-      "DIVERGENCE 3: the lint is the job's FIRST step, ahead of every `npm ci`, " +
-      "so CI invokes the zero-dep script directly rather than through npm — as " +
-      "two steps, because `--selftest` short-circuits the walk.",
+      "NOT a divergence since T-054 (T-045-s1) — CI used to spell this as a " +
+      "direct `node scripts/lint-tokens.mjs`, which was the same command " +
+      "written a second way. It is still the job's FIRST step, ahead of every " +
+      "`npm ci`, because `npm run` needs no installed node_modules (it only " +
+      "extends PATH), and still TWO steps, because `--selftest` short-circuits " +
+      "the walk. The `--` is load-bearing: npm eats a bare flag after a script " +
+      "name (T-046, measured on npm 11.12.1).",
   },
   { kind: "verbatim", dir: "lib/parser", cmd: "npm ci" },
   { kind: "verbatim", dir: "lib/parser", cmd: "npx vitest run" },
@@ -166,6 +243,18 @@ const CI_SEQUENCE: Correspondence[] = [
   { kind: "verbatim", dir: "app", cmd: "npm run build" },
   { kind: "verbatim", dir: "app", cmd: "npm test" },
   { kind: "verbatim", dir: "app/src-tauri", cmd: "cargo test" },
+  // THE GRAPH-CURRENCY GATE (T-054), placed immediately after the cargo
+  // suite: the suite is what builds the crate, and a stale graph is news
+  // before the audit spends a minute installing a tool. It is VERBATIM on
+  // purpose — the `--root ../..` is part of the documented command, not a
+  // CI adaptation, because without it the default root is the current
+  // directory and the check reports the graph MISSING and exits 1, which
+  // is a FALSE RED that reads exactly like staleness.
+  {
+    kind: "verbatim",
+    dir: "app/src-tauri",
+    cmd: "cargo run -p nputer-index -- index --check --root ../..",
+  },
   {
     kind: "ci-only",
     step: { dir: "app/src-tauri", run: "cargo install cargo-audit --locked" },
@@ -188,10 +277,15 @@ const CI_SEQUENCE: Correspondence[] = [
     kind: "mapped",
     dir: "tools/e2e",
     cmd: "npm run boot:check",
-    steps: [{ dir: undefined, run: "xvfb-run -a node tools/e2e/scripts/tauri-boot-check.mjs" }],
+    steps: [{ dir: "tools/e2e", run: "xvfb-run -a npm run boot:check" }],
     why:
-      "DIVERGENCE 4: a headless runner has no display, so the check runs under " +
-      "xvfb, invoked from the repo root. LAST, so the cargo cache warms its build.",
+      "NOT a divergence since T-054 (T-045-s1) — CI used to spell this as " +
+      "`xvfb-run -a node tools/e2e/scripts/tauri-boot-check.mjs` from the repo " +
+      "root, a second spelling of the documented command. The xvfb WRAPPER is " +
+      "real and stays: a headless runner has no display. Both scripts resolve " +
+      "the repo root from import.meta.url rather than process.cwd(), so " +
+      "invoking them through npm from tools/e2e is behaviourally identical. " +
+      "LAST, so the cargo cache warms its build.",
   },
 ];
 
@@ -211,6 +305,23 @@ const LOCAL_ONLY: { dir: string; cmd: string; why: string }[] = [
     dir: "app",
     cmd: "npm run tauri build",
     why: "packages a bundle — minutes of work no gate reads (T-046-s3).",
+  },
+  {
+    dir: "app/src-tauri",
+    cmd: "cargo run -p nputer-index -- index --watch --root ../..",
+    why:
+      "a watcher: it blocks until stopped, so a CI step invoking it would hang " +
+      "until the job timeout. `index --check` is the one-shot form and IS a " +
+      "step (T-054).",
+  },
+  {
+    dir: "app/src-tauri",
+    cmd: "cargo run -p nputer-index -- arch --root ../..",
+    why:
+      "a REPORTER, not a gate: it reads the COMMITTED graph and always exits 0 " +
+      "(ADR-014). Its gating form is `arch drift --fail-on <sev>`, deliberately " +
+      "unwired while the registry carries live undeclared edges — wiring it " +
+      "would red CI on drift the architect is holding open on purpose (T-054).",
   },
 ];
 
@@ -258,6 +369,10 @@ export function deriveExpectedSteps(md: string): { steps: Step[]; problems: stri
   // 0. The parse is not vacuous. Four bullets, in order, each with
   //    commands — a restructured section must fail loudly here rather
   //    than quietly derive an empty expectation every workflow satisfies.
+  //    FIRST the shapes the parse cannot see at all (T-045-s4): those
+  //    three attacks were the only silent ones, and silence is worse
+  //    than a wrong expectation because nothing points at it.
+  problems.push(...structuralProblems(section));
   const dirs = commandBullets(section).map((b) => b.dir);
   if (JSON.stringify(dirs) !== JSON.stringify(DOC_DIRS)) {
     problems.push(
@@ -411,9 +526,11 @@ test("the expected commands derive cleanly from docs/CONVENTIONS.md", () => {
     "the workflow's expected commands are PARSED out of docs/CONVENTIONS.md " +
       '"Build & test" — these are the ways the doc and this spec disagree',
   ).toEqual([]);
-  // A floor on the derivation itself: sixteen documented commands today,
-  // fourteen of them CI steps (three via a mapping) plus two CI-only ones.
-  expect(steps.length, "derived step count").toBeGreaterThanOrEqual(15);
+  // A floor on the derivation itself: NINETEEN documented commands today
+  // (T-054 added three nputer-index ones), fifteen of them CI commands —
+  // three of those via a mapping, one of which expands to two steps —
+  // plus two CI-only steps, so eighteen expected steps.
+  expect(steps.length, "derived step count").toBeGreaterThanOrEqual(18);
 });
 
 test("every CONVENTIONS command is a step, verbatim and in CI order", () => {
@@ -468,11 +585,13 @@ test("every `uses:` is pinned by a full 40-hex commit SHA", () => {
   }
 });
 
-test("the xvfb boot step runs tauri-boot-check.mjs with the webkit workaround", () => {
+test("the xvfb boot step runs the documented boot check with the webkit workaround", () => {
   const { steps } = loadWorkflow();
-  const boot = steps.find((s) => s.run?.includes("tauri-boot-check.mjs"));
+  const boot = steps.find((s) => s.run?.includes("boot:check"));
   expect(boot, "boot step present").toBeDefined();
-  expect(boot!.run).toBe("xvfb-run -a node tools/e2e/scripts/tauri-boot-check.mjs");
+  // T-054: the wrapper is real, what it wraps is the documented command.
+  expect(boot!.run).toBe("xvfb-run -a npm run boot:check");
+  expect(boot!["working-directory"], "npm resolves the script from tools/e2e").toBe("tools/e2e");
   expect(boot!.env?.WEBKIT_DISABLE_DMABUF_RENDERER).toBe("1");
   // LAST step — the cargo cache from the test step warms its build.
   expect(steps[steps.length - 1]).toBe(boot);
@@ -553,12 +672,86 @@ test("FIXTURE: a restructured section fails loudly, never with an empty expectat
   const unmarked = md.replace(/run from\s+([A-Za-z0-9._/-]+)\/:/g, "run in $1 like so —");
   const { steps, problems } = deriveExpectedSteps(unmarked);
   expect(problems.join("\n")).toContain("no longer carries exactly the four");
-  // Every command the spec claims is now missing from the doc — sixteen
-  // complaints, not silence — and nothing derived from a doc command
-  // survives into the expectation.
-  expect(problems.filter((p) => p.startsWith("this spec expects")).length).toBe(16);
+  // Every command the spec claims is now missing from the doc —
+  // NINETEEN complaints, not silence — and nothing derived from a doc
+  // command survives into the expectation.
+  expect(problems.filter((p) => p.startsWith("this spec expects")).length).toBe(19);
   expect(steps.map(stepKey)).toEqual([
     "[app/src-tauri] cargo install cargo-audit --locked",
     "[tools/e2e] npx playwright install --with-deps chromium",
   ]);
+});
+
+// ── fixtures: the SILENT structures now speak (T-045-s4, taken at T-054) ─
+//
+// T-045's verifier attacked the derivation twenty-four ways. Eighteen red
+// loudly, three are correctly tolerated, and THREE were invisible — each
+// one a real command arriving in a shape `commandBullets` does not look
+// at, each reporting `problems=0` with the step list unchanged. These
+// three fixtures are those three attacks, kept. Each asserts BOTH halves:
+// the command really is invisible (the derived steps do not move), and
+// the lane now says so by NAME.
+
+/** Splice an attack in just after the app/src-tauri bullet. */
+const AUDIT_BULLET = "- AUDIT GATE POLICY";
+const spliceIntoBuildAndTest = (md: string, attack: string): string =>
+  md.replace(AUDIT_BULLET, attack + AUDIT_BULLET);
+
+test("FIXTURE: an indented sub-bullet is named, not silently swallowed", () => {
+  const md = readConventions();
+  const attacked = spliceIntoBuildAndTest(md, "  - `cargo clippy -- -D warnings` (indented)\n");
+  expect(attacked, "the fixture must actually change the doc").not.toBe(md);
+
+  const before = deriveExpectedSteps(md);
+  const after = deriveExpectedSteps(attacked);
+
+  // The invisibility itself, pinned: the doc grew a command and the
+  // expectation did not move by one step. THAT is why silence was wrong.
+  expect(after.steps.map(stepKey), "the smuggled command is genuinely unread").toEqual(
+    before.steps.map(stepKey),
+  );
+  expect(after.problems.join("\n")).toContain("is an INDENTED BULLET");
+  expect(after.problems.join("\n")).toContain("cargo clippy -- -D warnings");
+});
+
+test("FIXTURE: an indented sub-bullet with its OWN `run from` marker is named", () => {
+  const md = readConventions();
+  const attacked = spliceIntoBuildAndTest(
+    md,
+    "  - extras (T-054 fixture), run from tools/extra/: `npm run smuggled`\n",
+  );
+  expect(attacked, "the fixture must actually change the doc").not.toBe(md);
+
+  const before = deriveExpectedSteps(md);
+  const after = deriveExpectedSteps(attacked);
+
+  expect(after.steps.map(stepKey), "the smuggled bullet is genuinely unread").toEqual(
+    before.steps.map(stepKey),
+  );
+  // The nastiest of the three: a whole PACKAGE bullet arrives and the
+  // four-bullet guard cannot see it either, so the loudest check in the
+  // derivation stays quiet. Assert that quiet, so this fixture cannot
+  // pass for the wrong reason.
+  expect(
+    after.problems.filter((p) => p.includes("no longer carries exactly the four")),
+    "the four-bullet guard is blind to an indented marker — that is the point",
+  ).toEqual([]);
+  expect(after.problems.join("\n")).toContain("is an INDENTED BULLET");
+  expect(after.problems.join("\n")).toContain("run from <dir>/:` marker of its own");
+});
+
+test("FIXTURE: a fenced block after a bullet is named, not read as prose", () => {
+  const md = readConventions();
+  const attacked = spliceIntoBuildAndTest(md, "  ```\n  cargo clippy -- -D warnings\n  ```\n");
+  expect(attacked, "the fixture must actually change the doc").not.toBe(md);
+
+  const before = deriveExpectedSteps(md);
+  const after = deriveExpectedSteps(attacked);
+
+  expect(after.steps.map(stepKey), "the fenced command is genuinely unread").toEqual(
+    before.steps.map(stepKey),
+  );
+  const fenceProblems = after.problems.filter((p) => p.includes("carries a CODE FENCE"));
+  expect(fenceProblems.length, "both fence lines are flagged").toBe(2);
+  expect(fenceProblems[0]).toContain("never looks inside a fence");
 });

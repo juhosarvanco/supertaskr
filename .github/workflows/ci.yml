@@ -89,12 +89,18 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('tools/e2e/package-lock.json') }}
 
       # ---- token lint (zero-dep; runs before any install) --------------
+      # T-054 (T-045-s1): the DOCUMENTED command, not a second spelling of
+      # it. `npm run` needs no installed node_modules — it only extends
+      # PATH — so this still runs ahead of every `npm ci`, and the script
+      # is plain node with no deps. Still two steps, because `--selftest`
+      # short-circuits the walk. The `--` is load-bearing: npm eats a bare
+      # flag after a script name (T-046, measured on npm 11.12.1).
       - name: Token lint selftest
         working-directory: tools/e2e
-        run: node scripts/lint-tokens.mjs --selftest
+        run: npm run lint:tokens -- --selftest
       - name: Token lint
         working-directory: tools/e2e
-        run: node scripts/lint-tokens.mjs
+        run: npm run lint:tokens
 
       # ---- lib/parser (ADR-011 order: parser before app) ---------------
       - name: parser install
@@ -125,6 +131,26 @@ jobs:
       - name: cargo suite (both workspace crates; incl. the T-018 sentinel live tests)
         working-directory: app/src-tauri
         run: cargo test
+
+      # ---- graph currency (T-054) --------------------------------------
+      # THE GATE THIS JOB NEVER HAD. Bare `cargo test` above SKIPS
+      # `#[ignore]`d tests, and `self_graph_is_current` — the only
+      # byte-comparison against the committed docs/architecture/graph.json
+      # — is `#[ignore]`d on purpose, so local `cargo test` stays hermetic
+      # to unrelated TypeScript edits. Until this step existed a stale
+      # graph passed CI green: the dogfood fixtures assert against the
+      # COMMITTED graph, and a stale graph agrees perfectly with fixtures
+      # that match it. Twenty-nine regens were held up by a written ritual
+      # and conscientious integrators, nothing else.
+      #
+      # Exit 1 = STALE (regenerate: NPUTER_UPDATE_GOLDEN=1 cargo test -p
+      # nputer-index --test self_graph -- --ignored). 3 = the gate could
+      # not run. `--root ../..` is NOT a CI adaptation: without it the
+      # root defaults to the current directory and the check reports the
+      # graph MISSING and exits 1, a false red that reads like staleness.
+      - name: graph currency (nputer-index index --check)
+        working-directory: app/src-tauri
+        run: cargo run -p nputer-index -- index --check --root ../..
 
       # ---- advisory audit (T-009-s3): dev tool, never a repo dep -------
       # HARD fail on an advisory against the exact pins — a red run with
@@ -160,7 +186,14 @@ jobs:
       # ---- xvfb tauri boot (LAST — the cargo cache above warms it) -----
       # WEBKIT_DISABLE_DMABUF_RENDERER: known webkit2gtk-in-headless-CI
       # rendering workaround; the check asserts startup lines, not pixels.
+      # T-054 (T-045-s1): the xvfb WRAPPER is a real environment need — a
+      # headless runner has no display — but what it wraps is now the
+      # documented command rather than a second spelling of it. The script
+      # resolves the repo root from import.meta.url, never process.cwd(),
+      # so running it through npm from tools/e2e is behaviourally
+      # identical to the old repo-root `node tools/e2e/scripts/…` form.
       - name: xvfb tauri boot
+        working-directory: tools/e2e
         env:
           WEBKIT_DISABLE_DMABUF_RENDERER: "1"
-        run: xvfb-run -a node tools/e2e/scripts/tauri-boot-check.mjs
+        run: xvfb-run -a npm run boot:check
