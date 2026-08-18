@@ -10,15 +10,13 @@ import { elapsedLabel } from "./crescendo";
 import {
   activeTurn,
   assembleTranscript,
-  bankBaseline,
-  bankedSince,
+  EMPTY_BANKING_OBSERVATION,
   mergeRehydrated,
+  observeBanking,
   shouldStickToBottom,
   stageOf,
   stageReadout,
   stageStrip,
-  UNPRIMED_BASELINE,
-  type BankBaseline,
 } from "./interview-model";
 import {
   freshInterview,
@@ -70,42 +68,11 @@ export function InterviewChat({
   // NOTHING else — not `activity` labels (those are tool-use markers off
   // the model's own stream, i.e. model output, which criterion 3 bans),
   // not `completed.text`, not the banking map's expectations.
-  const baseline = useRef<BankBaseline>(UNPRIMED_BASELINE);
-  const [chipsByTurn, setChipsByTurn] = useState<ReadonlyMap<number, readonly string[]>>(
-    () => new Map(),
-  );
+  const [banking, setBanking] = useState(EMPTY_BANKING_OBSERVATION);
 
   useEffect(() => {
     const active = activeTurn(genesis.turns);
-    // Before the interview has started there is nothing to attribute a
-    // file to, so there are no chips and no baseline.
-    if (active === null) return;
-    if (!baseline.current.primed) {
-      // PRIMED AT THE FIRST TURN, over whatever is already on disk.
-      // T-042 made this honest by construction: a genesis switch onto a
-      // folder whose docs/ already holds files now carries that tree at
-      // the switch's own seq, so the baseline is the real tree and
-      // pre-existing files do NOT chip as if the planner had just
-      // written them.
-      baseline.current = bankBaseline(docs);
-      return;
-    }
-    const banked = bankedSince(baseline.current, docs);
-    if (docs.seq > baseline.current.seq || docs.projectDir !== baseline.current.projectDir) {
-      baseline.current = bankBaseline(docs);
-    }
-    if (banked.length === 0) return;
-    setChipsByTurn((previous) => {
-      const existing = previous.get(active) ?? [];
-      const merged = [...new Set([...existing, ...banked])].sort();
-      // A file that changes twice between turns is ONE chip: the diff is
-      // a set, the files cannot prove two bankings, so the chat does not
-      // claim two. Identity back when nothing was added.
-      if (merged.length === existing.length) return previous;
-      const next = new Map(previous);
-      next.set(active, merged);
-      return next;
-    });
+    setBanking((previous) => observeBanking(previous, docs, active));
   }, [docs, genesis.turns]);
 
   // ---- the first frame ------------------------------------------------
@@ -195,7 +162,7 @@ export function InterviewChat({
     void rehydrateInterview();
   }, [projectDir]);
   const joined = mergeRehydrated(genesis.rehydrated, genesis.turns, ui.userHalves);
-  const transcript = assembleTranscript(joined.turns, joined.userHalves, chipsByTurn);
+  const transcript = assembleTranscript(joined.turns, joined.userHalves, banking.chipsByTurn);
   const log = useRef<HTMLDivElement | null>(null);
   const stick = useRef(true);
 

@@ -14,12 +14,14 @@ import {
   bankedSince,
   challengeOf,
   chipLabel,
+  EMPTY_BANKING_OBSERVATION,
   failureAction,
   failureDetail,
   failureHeadline,
   listOf,
   MAX_CHIP_PATHS,
   mergeRehydrated,
+  observeBanking,
   questionFooter,
   rehydrate,
   shouldStickToBottom,
@@ -413,18 +415,12 @@ describe("chip attribution across turn boundaries", () => {
   function bank(
     steps: readonly { seq: number; files: Record<string, string>; at: number }[],
     primeAt: DocsModelState,
-  ): Map<number, readonly string[]> {
-    let baseline = bankBaseline(primeAt);
-    const chips = new Map<number, readonly string[]>();
-    for (const step of steps) {
-      const state = docs(step.seq, step.files);
-      const banked = bankedSince(baseline, state);
-      if (state.seq > baseline.seq) baseline = bankBaseline(state);
-      if (banked.length === 0) continue;
-      const existing = chips.get(step.at) ?? [];
-      chips.set(step.at, [...new Set([...existing, ...banked])].sort());
-    }
-    return chips;
+  ): ReadonlyMap<number, readonly string[]> {
+    const primed = observeBanking(EMPTY_BANKING_OBSERVATION, primeAt, 1);
+    return steps.reduce(
+      (observation, step) => observeBanking(observation, docs(step.seq, step.files), step.at),
+      primed,
+    ).chipsByTurn;
   }
 
   it("a file that lands AFTER completed still belongs to that turn", () => {
@@ -460,23 +456,37 @@ describe("chip attribution across turn boundaries", () => {
     expect(chips.get(2)).toEqual(["docs/ROADMAP.md"]);
   });
 
-  /**
-   * THE SHARPEST TEST IN THIS FILE, and the proof that no causation was
-   * inferred: a file a HUMAN writes in a terminal, mid-interview, with
-   * the planner idle, produces an IDENTICAL chip to one the planner
-   * wrote. That is not a bug — it is ADR-006's hand-driven mode
-   * rendering correctly, and it is what "file evidence only" means. The
-   * chip's claim is "this file changed on disk at this point in the
-   * conversation", never "this turn caused it".
-   */
-  it("a human writing the file in a terminal produces an IDENTICAL chip", () => {
-    const byPlanner = bank([{ seq: 2, files: { "docs/NORTH_STAR.md": "written" }, at: 1 }], docs(1, {}));
-    // Same tree, same seq, same turn — nothing in the inputs says WHO.
-    // There is no channel through which it could: the only input is the
-    // watcher's snapshot.
-    const byHuman = bank([{ seq: 2, files: { "docs/NORTH_STAR.md": "written" }, at: 1 }], docs(1, {}));
-    expect(byHuman).toEqual(byPlanner);
-    expect(byHuman.get(1)).toEqual(["docs/NORTH_STAR.md"]);
+  it("a docs snapshot during an active turn produces a chip", () => {
+    const observed = bank(
+      [{ seq: 2, files: { "docs/NORTH_STAR.md": "written" }, at: 1 }],
+      docs(1, {}),
+    );
+    expect(observed.get(1)).toEqual(["docs/NORTH_STAR.md"]);
+  });
+
+  it("rebaselines a project switch before banking the next change", () => {
+    const switchAt = (seq: number) => {
+      const projectA = observeBanking(
+        EMPTY_BANKING_OBSERVATION,
+        docs(8, { "docs/STATE.md": "A" }, "/tmp/a"),
+        1,
+      );
+      const switched = observeBanking(
+        projectA,
+        docs(seq, { "docs/STATE.md": "B" }, "/tmp/b"),
+        1,
+      );
+      const changed = observeBanking(
+        switched,
+        docs(seq + 1, { "docs/STATE.md": "B2" }, "/tmp/b"),
+        1,
+      );
+      return { switched: switched.chipsByTurn.get(1), changed: changed.chipsByTurn.get(1) };
+    };
+    expect({ equal: switchAt(8), lower: switchAt(3) }).toEqual({
+      equal: { switched: undefined, changed: ["docs/STATE.md"] },
+      lower: { switched: undefined, changed: ["docs/STATE.md"] },
+    });
   });
 
   /**

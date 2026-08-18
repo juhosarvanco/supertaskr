@@ -8,9 +8,9 @@ size: M
 status: planned
 blocked_by: []
 touches: [app-shell, app-interview]
-builder:
+builder: codex/gpt-5.6
 verifier:
-built_by:
+built_by: codex/gpt-5.6 @fresh
 verified_by:
 review:
 ---
@@ -88,5 +88,83 @@ poison. Boot and graph gates fire because shipped TypeScript moves. @human:
 none.
 
 ## Implementation notes
+
+Built 2026-08-18 by `codex/gpt-5.6 @fresh` from checkpoint `71fa546`.
+
+`observeBanking` is now the one pure observation transition over a
+`BankingObservation`. It owns first-turn priming, newer-snapshot baseline
+advancement, unconditional project-directory rebaselining, the docs diff,
+and sorted/deduplicated per-turn accumulation. `InterviewChat` updates that
+state directly, and the scripted banking tests reduce their observations
+through the same export; the hand-copied second loop is gone. The switch
+probe covers project A at seq 8 moving to project B at both seq 8 and seq 3:
+the switch produces no chip, while B's next snapshot produces exactly
+`docs/STATE.md`.
+
+The causation tautology and its "sharpest" claim are gone. The honest
+positive now says only that an active-turn docs snapshot produces a chip;
+the existing hostile reducer script remains the negative, proving activity
+labels and completed text naming docs paths produce none over an unchanged
+tree. The accelerator lane has isolated hook mounts for cleanup and
+registration lifetime: a post-unmount chord cannot call its action, and two
+fresh table identities still produce one add plus one remove. Its listener
+tracker comment now names its real `window`/`document` scope. The stale-pull
+assertion is one exact observation containing `listenCalls: 2`,
+`invokeCalls: 1`, seq 9, the surviving T-901 tree and one echo. The startup
+screen dynamically imports and checks `isTauriRuntime()` only after installing
+`__TAURI_INTERNALS__`.
+
+### Mutation and poison evidence
+
+All seven requested mechanism mutants were applied one at a time and restored:
+
+- removed project-directory rebaselining: the finalized equal/lower switch
+  test failed, with both later B changes missing;
+- deleted accelerator cleanup: the cleanup test observed two calls instead
+  of one;
+- changed registration dependencies from `[]` to `[table]`: the lifetime
+  test observed 2 adds / 2 removes instead of 1 / 1;
+- moved `preventDefault` above the absent-entry return: the existing scoped
+  command suite failed because the board claimed the cancel chord once;
+- deleted the latest-table refresh: the existing scoped command suite failed
+  because the interview claimed the cancel chord zero times;
+- deleted post-pick startup re-arming: the stale-pull test observed
+  `listenCalls: 1`, `invokeCalls: 0` instead of 2 / 1;
+- added an observably used premature top-level watcher-store value import:
+  the runtime tripwire failed `false` versus `true` before any test rendered.
+
+Poison discipline is **6/6 red**. Every added or changed assertion had only
+its expected value changed while its actual expression and matcher stayed
+fixed: active-turn chip, equal/lower project switch, accelerator cleanup,
+accelerator registration lifetime, stale-pull aggregate, and the runtime
+tripwire. The combined run reported five failed tests plus the expected
+top-level failed suite, one red per assertion; the finalized switch assertion
+was poisoned once more after its equal-watermark arm was added. After restore,
+the focused suite passed **130/130**. Final restored test SHA-256 values are
+`2019421b...f3409` (interview model), `d9736c5e...df5238`
+(accelerators), `668c5cc8...134ff6` (startup recovery), and
+`da3226ad...195c33` (startup screen). Temporary mutant surfaces
+`accelerators.ts` and `watcher-store.ts` have empty diffs.
+
+### Gates and fence
+
+- documented fresh setup used the local cache: parser `npm ci --offline` and
+  build; app `npm install --offline`, both with zero audit vulnerabilities;
+- focused T-057 Vitest: **130/130**;
+- explicit app `npx tsc --noEmit`: green;
+- app `npm run build`: green, 265 modules transformed;
+- full app Vitest: **825/825 tests in 42 files**;
+- boot gate on scratch port 17657: exit 0, observed
+  `[nputer] project folder: /Users/ujju/Projects/nputer-T-057` and
+  `[nputer] window "main" created`, then stopped by SIGTERM;
+- permanent fence is exactly the two shipped genesis files, four test files,
+  and this card. No App.tsx, watcher-store, production accelerator, parser,
+  Rust, tools/e2e, manifest, token, registry, fixture, IPC, capability,
+  filesystem-write, network, real-CLI or model surface moved. Graph
+  regeneration is intentionally deferred to the integrator's checkpoint.
+
+No suggestion was filed; the unused premature import being optimized away
+was handled inside the required temporary mutant by making its value
+observably used, so the module necessarily loaded early.
 
 ## Verdicts
