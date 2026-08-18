@@ -1,4 +1,5 @@
 import { extractFrontmatter } from './frontmatter.js';
+import { blankInertSpans } from './inert-spans.js';
 import { parseModelSession } from './model-session.js';
 import {
   REVIEW_MODES,
@@ -63,6 +64,7 @@ export function splitSections(body: string): TaskSections {
   });
   const sections: TaskSections = {};
   const lines = body.split(/\r?\n/);
+  const structuralLines = blankInertSpans(body).content.split(/\r?\n/);
   // Before any `##` heading is seen, lines accumulate as the preamble
   // (`current` starts there); after one, headingless stretches under
   // UNKNOWN headings stay dropped (current = undefined), as before.
@@ -80,8 +82,10 @@ export function splitSections(body: string): TaskSections {
         : `${sections[current]}\n\n${text}`.trim();
   };
 
-  for (const line of lines) {
-    const heading = /^##\s+(.+?)\s*$/.exec(line);
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index] ?? '';
+    const structuralLine = structuralLines[index] ?? '';
+    const heading = /^##\s+(.+?)\s*$/.exec(structuralLine);
     if (heading && heading[1] !== undefined) {
       flush();
       sawHeading = true;
