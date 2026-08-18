@@ -5,6 +5,13 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+// TYPE-ONLY, and that matters: the store decides `isTauri` at module
+// load, so a VALUE import here would load it before the line below sets
+// `__TAURI_INTERNALS__` and every assertion in this file would be about
+// a browser. `import type` is erased and loads nothing. (Measured: a
+// value import turned 10 of these 23 tests red with phase "browser".)
+import type { StartupFailure } from "../src/lib/watcher-store";
+
 /**
  * T-050 through the REAL shell: the real App, the real store, only the
  * IPC boundary mocked (T-026's and T-049's precedent).
@@ -83,7 +90,8 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 // The store decides `isTauri` at import time — set before App is loaded.
 (window as unknown as { __TAURI_INTERNALS__: unknown }).__TAURI_INTERNALS__ = {};
-const { default: App } = await import("../src/App");
+const { default: App, StartupScreen } = await import("../src/App");
+const { STARTUP_DEADLINE_MS } = await import("../src/lib/watcher-store");
 
 /**
  * The hostile rejection. Nothing in it may reach the DOM as markup: a
@@ -350,5 +358,91 @@ describe("5. the standing no-innerHTML gate, over the whole frontend", () => {
         /innerHTML|dangerouslySetInnerHTML|insertAdjacentHTML|document\.write/,
       );
     }
+  });
+});
+
+describe("6. T-063: the DEADLINE case, rendered", () => {
+  /**
+   * The screen for the failure @human's screenshot actually showed. The
+   * narrative above is one long-lived root, so this renders the exported
+   * `StartupScreen` on its own — a shape assertion about copy, with no
+   * shell state to disturb.
+   *
+   * Why it is worth a test of its own: "startup failed at deadline" and
+   * "was refused" would both be WRONG here. Nothing was refused. The
+   * copy has to say that the call has not come back, that it still may,
+   * and how long it waited — otherwise the deadline just replaces one
+   * unactionable sentence with another.
+   */
+  let box: HTMLDivElement;
+  let boxRoot: Root;
+
+  const render = async (failure: StartupFailure | null, starting = false): Promise<void> => {
+    await act(async () => {
+      boxRoot.render(
+        <StartupScreen
+          failure={failure}
+          starting={starting}
+          picking={false}
+          onRetry={() => {}}
+          onPick={() => {}}
+          onStartInterview={() => {}}
+        />,
+      );
+    });
+  };
+  const text = (selector: string): string =>
+    box.querySelector<HTMLElement>(selector)?.textContent ?? "";
+
+  beforeAll(() => {
+    box = document.createElement("div");
+    document.body.appendChild(box);
+    boxRoot = createRoot(box);
+  });
+  afterAll(() => {
+    act(() => boxRoot.unmount());
+    box.remove();
+  });
+
+  it("says how long it waited, and that nothing was refused", async () => {
+    await render({ step: "deadline", message: "no answer from the docs watcher within 8000 ms", attempt: 2 });
+
+    expect(box.querySelector("[data-testid=startup-screen]")?.getAttribute("data-startup")).toBe(
+      "failed",
+    );
+    const message = text("[data-testid=startup-message]");
+    expect(message).toContain("nputer could not start");
+    // N, in the copy, derived from the one constant rather than typed
+    // twice — a deadline the screen and the store disagree about is a
+    // worse bug than the one this card is fixing.
+    expect(message).toContain(`${Math.round(STARTUP_DEADLINE_MS / 1000)} seconds`);
+    expect(message, "and it does not claim a refusal").not.toContain("was refused");
+    expect(message).toContain("may still answer");
+    expect(message).not.toContain("waiting for the first docs snapshot");
+  });
+
+  it("the heading says TIMED OUT, not 'failed at deadline'", async () => {
+    await render({ step: "deadline", message: "…", attempt: 2 });
+    expect(text("h3")).toBe("startup timed out · attempt 2");
+    // The other two keep T-050's wording exactly.
+    await render({ step: "subscribe", message: "…", attempt: 1 });
+    expect(text("h3")).toBe("startup failed at subscribe · attempt 1");
+    await render({ step: "snapshot", message: "…", attempt: 3 });
+    expect(text("h3")).toBe("startup failed at snapshot · attempt 3");
+  });
+
+  it("carries the same three ways out as every other failure", async () => {
+    await render({ step: "deadline", message: "…", attempt: 1 });
+    expect([...box.querySelectorAll("button")].map((b) => b.textContent)).toEqual([
+      "Try again",
+      "Open a folder…",
+      "Start an interview",
+    ]);
+  });
+
+  it("the WAITING screen is unchanged — a deadline adds no copy before it fires", async () => {
+    await render(null, true);
+    expect(text("[data-testid=startup-message]")).toBe("waiting for the first docs snapshot…");
+    expect(box.querySelector("[data-testid=startup-failure-detail]")).toBeNull();
   });
 });

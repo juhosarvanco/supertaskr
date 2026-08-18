@@ -319,6 +319,32 @@ describe("the gate, build half: the harness is absent from the shipped bundle", 
     // line is the block's own fingerprint.
     expect(has("browser dev harness active"), "the DEV block itself is dropped").toBe(false);
 
+    /**
+     * T-063 (folding T-041-s4 arm 2): THE MECHANISM, not only the
+     * outcome. Everything above says the harness is ABSENT; this says
+     * WHY it is absent — vite statically replaced `import.meta.env.DEV`
+     * before Rollup ran, so the gate was resolved at BUILD time and the
+     * block was eliminated rather than left for a runtime read to skip.
+     *
+     * What it discriminates, stated plainly because a gate whose reach is
+     * unclear gets trusted for the wrong things. It CATCHES a build that
+     * stopped folding the flag — a `define` removed, a bundler swapped, a
+     * shim that turns `import.meta.env` into a runtime object — after
+     * which the harness would be present-but-gated rather than gone. It
+     * does NOT catch the one lever T-041-s4 names: measured 2026-08-18, a
+     * `NODE_ENV=development npm run build` bundle carries
+     * `__nputerShellHarness` and STILL contains zero `import.meta.env`,
+     * because the flag was folded to `true` rather than left unfolded.
+     * That lever is the assertion four lines up, which is exactly why the
+     * two belong side by side. `import.meta.env` rather than bare
+     * `import.meta`: `import.meta.url` is legitimate and a dependency may
+     * ship it, so the narrower needle is the one that cannot false-red.
+     */
+    expect(
+      has("import.meta.env"),
+      "vite folded every DEV flag at build time — none was left to a runtime read",
+    ).toBe(false);
+
     // Control: this IS the bundle that contains the store, so the two
     // absences above are about the gate and not about a bundle that
     // happens to be missing the module entirely.

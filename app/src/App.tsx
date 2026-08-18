@@ -19,6 +19,7 @@ import {
   planChecklist,
   runIndexRepo,
   selectScreen,
+  STARTUP_DEADLINE_MS,
   startDocsWatcher,
   startGenesisHere,
   subscribeShell,
@@ -242,14 +243,35 @@ export function EmptyState({
 }
 
 /** What the failed step MEANS, in the user's terms rather than the
- * store's (T-050). The two are different situations and the sentence
- * says which: a refused subscribe leaves no live watcher at all, while
- * a refused snapshot leaves one up — so that one can still come alive
- * on its own the next time a file changes. */
+ * store's (T-050). The three are different situations and the sentence
+ * says which: a refused subscribe leaves no live watcher at all, a
+ * refused snapshot leaves one up — so that one can still come alive on
+ * its own the next time a file changes — and a DEADLINE (T-063) is
+ * neither, because nothing was refused. It is the case @human's
+ * screenshot actually showed, where the old copy said "waiting for the
+ * first docs snapshot…" truthfully and forever. The wording is
+ * deliberately about TIME rather than blame: the call may still land,
+ * and if it does the app comes up underneath this screen. */
 function startupStepPhrase(step: StartupStep): string {
-  return step === "subscribe"
-    ? "the watcher subscription was refused, so no file change can reach the board."
-    : "the first docs snapshot was refused, so there is nothing to render yet.";
+  switch (step) {
+    case "subscribe":
+      return "the watcher subscription was refused, so no file change can reach the board.";
+    case "snapshot":
+      return "the first docs snapshot was refused, so there is nothing to render yet.";
+    case "deadline":
+      return (
+        `the watcher did not answer within ${Math.round(STARTUP_DEADLINE_MS / 1000)} seconds. ` +
+        "It has not been refused — it may still answer, and the app will come up if it does."
+      );
+  }
+}
+
+/** The failure card's heading. "failed at deadline" would be the wrong
+ * word for the one case where nothing was refused (T-063). */
+function startupFailureHeading(failure: StartupFailure): string {
+  return failure.step === "deadline"
+    ? `startup timed out · attempt ${failure.attempt}`
+    : `startup failed at ${failure.step} · attempt ${failure.attempt}`;
 }
 
 /**
@@ -300,7 +322,7 @@ export function StartupScreen({
         {failure !== null && (
           <div className="flex flex-col gap-2 rounded-lg border border-status-rejected-border bg-status-rejected p-6">
             <h3 className="text-sm font-semibold tracking-heading text-destructive">
-              startup failed at {failure.step} · attempt {failure.attempt}
+              {startupFailureHeading(failure)}
             </h3>
             {/* The rejection, verbatim and as a TEXT NODE — React escapes
                 it, and this app owns no raw-HTML sink at all (the
