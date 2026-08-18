@@ -176,13 +176,22 @@ ADR-014/015).
   `resolve_cli` refuses the login-shell and `which_on_path` arms whenever
   `real_cli_arms_forbidden()` says so — `NPUTER_NO_REAL_CLI=1` forbids,
   `=0` permits, and UNSET is DERIVED: forbidden iff the process is a
-  cargo test binary, which cargo runs out of `<target>/<profile>/deps/`.
+  cargo test binary, which cargo runs out of `<target>/<profile>/deps/`
+  — or a rustdoc DOCTEST, which runs out of a `rustdoctest<random>` temp
+  dir with `cfg!(test)` false and used to fail OPEN (T-060-s4, closed).
   Nothing has to be set, exported or wrapped, so a test file written next
-  year inherits the refusal. A `.cargo/config.toml` `[env]` entry was
-  considered and rejected: cargo applies `[env]` to `cargo run` too, and
-  `tauri dev` IS `cargo run` from `app/src-tauri`, so the human's
-  development app would have stopped finding their CLI. The one
-  `#[ignore]`d, env-gated real smoke opts out in one line.
+  year inherits the refusal, doctests included. A `.cargo/config.toml`
+  `[env]` entry was considered and rejected because it would have reached
+  the human's DEVELOPMENT APP, which would then have stopped finding their
+  CLI — and the mechanism is not the obvious one (T-060-s5): `tauri dev`
+  is NOT `cargo run`, it is `cargo build` plus a direct spawn with no
+  cargo process in the tree, but the tauri CLI reconstructs cargo's run
+  environment for the binary it spawns and `[env]` rides along, measured
+  reaching the dev app against a no-cargo control. The one `#[ignore]`d,
+  env-gated real smoke opts out in one line. **The proof that the guard
+  refuses runs in CHILD PROCESSES** rather than by lifting the variable
+  in-process (T-060-s3): a lift window in a binary libtest runs on many
+  threads made the guard's own tripwire red at CI's thread count.
   A turn is still not one process: the turn's own child is exactly one,
   and the resolve ahead of it spawns a login shell and a version probe.
   **ONE honest residual remains**, recorded in the validator's own

@@ -153,6 +153,12 @@ shape. The conclusion is unchanged and slightly stronger.
 
 ### What was built, criterion by criterion
 
+**Numbered as the card numbers them.** [Second executor's correction: this
+list ran 1–8 for a card that carries NINE criterion bullets — it silently
+folded criterion 2 (the measurement) into the section above, which shifted
+every number after it and is where the code's wrong `criterion N`
+references came from.]
+
 1. **The cache is RETIRED.** `CacheFile`, `CacheEntry`, `read_cache`,
    `write_cache`, `invalidate_cache`, `cache_path`,
    `RunnerConfig::config_dir` and resolution step (1) are deleted, and
@@ -161,37 +167,39 @@ shape. The conclusion is unchanged and slightly stronger.
    caller was the cache-hit arm, so retiring the file also removed a
    resolve path that could spawn the user's login shell TWICE, and took
    the resolver's `$SHELL` read sites from two to one.
-2. **One gate, every door.** `validate_cached_binary` →
+2. **The measurement was taken, and it inverted the worry** — the section
+   above. No memo, no file.
+3. **One gate, every door.** `validate_cached_binary` →
    `validate_resolved_binary` (the old name was a lie once the cache
    went), applied inside `which_in` to every candidate a search path
    produces and again to whatever `command -v` printed, before
    `probe_version`'s `Command::new`.
-3. **`$SHELL` is name-checked** in the new `login_shell()` against
+4. **`$SHELL` is name-checked** in the new `login_shell()` against
    `zsh`/`bash`/`sh`, `/bin/zsh` otherwise, with fish's differing
    `-l -c` named as the reason.
-4. **`RunnerConfig`'s doc comment is scoped honestly** and lists the
+5. **`RunnerConfig`'s doc comment is scoped honestly** and lists the
    resolver's three environment reads, with a companion pin that
    re-derives that list from the source so the comment cannot silently
    go stale.
-5. **`NPUTER_NO_REAL_CLI`**, and it is stronger than the criterion
+6. **`NPUTER_NO_REAL_CLI`**, and it is stronger than the criterion
    asked. `=1` forbids the two real-CLI arms, `=0` permits them, and
    **UNSET is DERIVED**: forbidden iff the process is a cargo test
    binary, which cargo runs out of `<target>/<profile>/deps/`. Nothing
    is set, exported, wrapped or remembered, so a test file written next
    year inherits the refusal.
-6. **The guard is proven by the attack that found it** —
+7. **The guard is proven by the attack that found it** —
    `the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found`
    reconstructs T-047's verifier's config verbatim, with a TATTLING
    `$SHELL` so "the shell never spawned" is measured rather than
    inferred.
-7. **The pins that guarded deleted code are rewritten, not dropped.**
+8. **The pins that guarded deleted code are rewritten, not dropped.**
    `the_resolution_cache_stores_a_path_and_never_a_login_path` →
    `there_is_no_cache_to_poison`; the poisoned-cache integration tests →
    `there_is_no_agent_paths_json_to_poison_at_any_door`, which plants the
    entry T-047's gate **accepted** rather than one it refused, and
    asserts no `agent-paths.json` is ever written by walking the whole
    temp tree.
-8. **Blast radius held**: `acl_pin.rs` a 0-file diff, `ENV_ALLOWLIST`
+9. **Blast radius held**: `acl_pin.rs` a 0-file diff, `ENV_ALLOWLIST`
    byte-identical, no new grant, no new IPC command, no new dependency,
    no bypass-permissions flag, no lockfile line.
 
@@ -199,12 +207,35 @@ shape. The conclusion is unchanged and slightly stronger.
 
 The criterion says the guard is "set once for the whole suite", and
 `[env]` is the obvious mechanism. **It would have broken the human's
-app.** Cargo applies `[env]` to `cargo run` as well as `cargo test`, and
-`tauri dev` IS `cargo run` from `app/src-tauri` — so the development app
-would have inherited `NPUTER_NO_REAL_CLI=1` and rendered the hand-driven
-fallback forever, three days before the milestone-closing genesis run.
-The derived default reaches the same property without touching anything
-outside the crate.
+app**: the development app would have inherited `NPUTER_NO_REAL_CLI=1`
+and rendered the hand-driven fallback forever, three days before the
+milestone-closing genesis run. The derived default reaches the same
+property without touching anything outside the crate.
+
+**[CORRECTED by the second executor — T-060-s5. The conclusion above is
+right; the mechanism first recorded for it was not.]** The original
+sentence read "cargo applies `[env]` to `cargo run` as well as
+`cargo test`, and `tauri dev` IS `cargo run` from `app/src-tauri`". The
+first half is true and the second is false, and the verifier measured
+both halves: the tauri v2 CLI binary contains no `cargo run` string at
+all (only `` Failed to run `cargo build` ``), and the live process tree
+is `tauri dev` → `target/debug/nputer` with **no cargo process between
+them** — `cargo run` would still be sitting there waiting on its child.
+The CLI runs `cargo build` and spawns the produced binary itself.
+
+**The conclusion survives for a better reason.** With
+`[env] NPUTER_VERIFIER_PROBE = "reached"` in
+`app/src-tauri/.cargo/config.toml`, the app the boot check spawned
+carried `NPUTER_VERIFIER_PROBE=reached` **plus the full `CARGO_*` runtime
+set** — the tauri CLI reconstructs cargo's run environment for the binary
+it spawns, and `[env]` rides along with it. The control is the plain case:
+a binary `cargo build`-ed and exec'd with no cargo anywhere sees
+`Err(NotPresent)`. So the dev app DOES inherit `[env]`, by the CLI's doing
+rather than cargo's, and the rejection stands. A right conclusion resting
+on a wrong mechanism is how a future reader checks the mechanism, finds it
+false, and concludes the decision was unfounded — the verifier nearly did.
+The corrected sentence is now in `runner.rs` and `docs/ARCHITECTURE.md`
+as well as here.
 
 ### FOR THE VERIFIER — the two things a drill caught, and the one I hit
 
@@ -234,7 +265,7 @@ outside the crate.
 
 **T-029-s8 is NOT folded, deliberately.** It is one `push` in the same
 file and the same lane, and it is the right fix — but it is not one
-change with this card. None of the eight acceptance criteria covers it;
+change with this card. None of the nine acceptance criteria covers it;
 it changes user-visible failure TEXT rather than what the resolver
 trusts; and mixing a behavioural change to turn classification into a
 security card means a rejection on either blocks both. The card's own
@@ -244,6 +275,281 @@ its claim re-read against the code and confirmed live: the `result`
 line's text is pushed into the diagnostic ring only under `if is_error`
 (`runner.rs:1420-1426` after this card's edits), so a terminal line with
 `is_error: false` contributes nothing to `stderr_tail`.
+
+### SECOND EXECUTOR, claude-opus-5 @fresh, 2026-08-18 — closing the rejection
+
+Fresh session, briefed with the verifier's findings and none of the first
+executor's assumptions. Built on **`33b249a`** (the verifier's own verdict
+commit) in `/Users/ujju/Projects/nputer-T-060`; two commits on top, no
+rebase, no squash, no history rewritten. `## Verdicts` below is
+**byte-identical** to `33b249a` (317 lines, sha256 `005ae7a2908b8086…`) —
+the REJECTED verdict is the record of what happened and it stays. `##
+Acceptance criteria` is byte-identical too (**75 lines, sha256
+`baeb738d92b9a236…`, nine bullets counted mechanically**); `status:`,
+`builder:`, `built_by:`, `verifier:`, `verified_by:` and `review:`
+untouched. **Main was never touched** — read-only `lsof`/`ps` only, and
+1420 carried the same one healthy listener (`node` pid 82549) before and
+after every step. `../nputer-T-062` was never entered.
+
+**The blocker reproduced before I changed a line**, on the verifier's own
+protocol (the built binary, run from `app/src-tauri`, counting process
+exit codes): **`--test-threads=8` → 15/15 red, `--test-threads=4` → 9/15**,
+every failure the same assertion at `:1829` with `left: Some("0")`. The
+verifier measured 13/15 at 4 and I measured 9/15; same band, and a race's
+rate is not a constant. Nothing in T-060-s3 failed to reproduce.
+
+#### The fix is the race, not the assertion
+
+The assertion is the point of the card, so it does not move. What moves is
+the lift.
+
+**`the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found`
+now runs each of its two arms in a CHILD PROCESS** — this same test binary,
+re-invoked with `--exact` on its own name, with `NPUTER_NO_REAL_CLI`,
+`$SHELL` and `PATH` **composed by the parent rather than mutated in it**.
+The parent body ends by asserting its own environment is untouched
+(`NPUTER_NO_REAL_CLI` still unset, `$SHELL` still what it was), so "nothing
+global moved" is measured rather than promised. There is no window at any
+thread count, because there is no window.
+
+Two properties the in-process version could not have, and they are why this
+close was worth more than a `Mutex`:
+
+- **Each child's `PATH` is an EMPTY DIRECTORY.** `which_on_path` reads the
+  process's own `PATH`, so the lifted arm — the one that deliberately runs
+  with the guard OFF — now *cannot* reach the developer's real `claude`
+  even if every fixture in it were broken. That is exactly how T-060-s1
+  happened. It is structurally unreachable now instead of argued away by
+  the fixture shell, and both halves are still in place.
+- **The guarded arm's evidence is an ABSENCE** (no tattle, no session
+  file), and a child that never ran satisfies every absence. So it writes a
+  receipt, and `t060_run_arm` refuses a run it cannot see: child exit
+  status, `"1 passed"` in the child's own output, and `guarded-ran.txt`.
+  An `--exact` filter that matches nothing exits **0** with `0 passed`, and
+  that is precisely the vacuity this project keeps catching.
+
+**The lib had the same shape and takes the finding's other close.**
+`src/agent/runner.rs`'s `the_real_cli_arms_are_forbidden_from_a_test_binary`
+set the variable process-wide too. It was harmless only because no other
+lib unit test happens to read it — which is the argument that failed in the
+integration binary. `guard_decision(setting, is_cargo_test_binary)` is now
+a pure function, so both directions of the override are pinned without any
+process changing, and the pin is **wider** than what it replaced (it now
+covers `None` + not-a-test-binary, the shipped app's case, which nothing
+covered before). That the WRAPPER still reads the variable is not
+assertable without a mutation, so it is pinned behaviourally instead, by
+the lifted child — and drill D3 proves that pin bites.
+
+**Rate after the fix, same binary, same protocol, 130 runs:**
+
+| `--test-threads` | before | after |
+|---|---|---|
+| 1 | 0 / 6 (verifier) | **0 / 15** |
+| 2 | 3 / 15 (verifier) | **0 / 15** |
+| 4 | **9 / 15** (mine) / 13 / 15 (verifier) | **0 / 15** |
+| 5 | 10 / 10 (verifier) | **0 / 15** |
+| 6 | 10 / 10 (verifier) | **0 / 15** |
+| 8 | **15 / 15** (mine and verifier) | **0 / 15** |
+| 10 (this box's default) | 0 / 15 (verifier) | **0 / 15** |
+| default, no flag | 0 / 25 (verifier) | **0 / 25** |
+
+Every one of the 130 runs read `48 passed; 0 failed; 1 ignored`. The two
+loud bands — 4, which is `ubuntu-24.04`'s vCPU count, and 8 — are the two I
+re-measured myself before the fix, so the after-column is a comparison
+against numbers I derived rather than accepted.
+
+**The residual, stated rather than buried.** Two process-global mutations
+remain in the crate's tests, both in the LIB binary: `$SHELL` in
+`the_login_shell_is_name_checked_not_merely_executable`, and three
+`NPUTER_*` seam variables in `default_config_reads_nothing_from_the_
+environment`. Neither can be observed today, and the reason is worth
+writing down because it is the guard's own doing: `login_shell()` has
+exactly two callers, this test and `login_shell_probe`, and the probe is
+unreachable from any test in that binary *because the guard forbids it*.
+Measured, not argued: the lib binary at `--test-threads` 8 and 4, **0/10
+each**. I did not convert them — "no other test reads it" is the argument
+that failed once already, but the honest way to retire it is to make the
+whole suite's env handling a decision, not to smuggle a second refactor
+into a rejection fix.
+
+#### T-060-s4 — CLOSED, and it closed itself on me
+
+**Judgement: close it now, and it is not a judgement call once you read
+criterion 6.** The criterion is that no test can resolve the user's real
+CLI *structurally rather than by discipline*. A doctest is a test. A hole
+that only a doctest falls through is still inside the criterion the card
+claims to satisfy, so "latent" was a statement about today's file list, not
+about the property.
+
+`is_test_harness_dir` now covers `deps` and `rustdoctest*`. Widening only
+ever forbids MORE, so the failure mode of a false positive is a resolve
+that says "not found", never a spawn.
+
+**And then the finding happened to its own fix.** Writing s4 up, I put the
+measured `current_exe` output in an indented block in a doc comment — which
+is a **doctest** — and `cargo test` went red with `unknown start of token:
+\u{2026}`. The crate's "zero doctests today" was never a property of the
+crate; it was a property of what nobody had written yet, and it survived
+about forty minutes of somebody writing documentation about doctests. That
+block is now fenced ```` ```text ````.
+
+So the fix is pinned twice, and the second pin is the one that matters:
+
+- `is_test_harness_dir` is unit-tested on both spellings and on seven names
+  that must NOT match (`debug`, `release`, `MacOS`, `bin`, `target`,
+  `rustdoc`, `dep`, and `None`);
+- **the crate's one doctest asserts `real_cli_arms_forbidden()` from inside
+  a doctest** — the exact environment s4 measured as failing open. It is
+  written like the `deps` tripwire beside it: if rustdoc stops naming its
+  temp dir `rustdoctest*`, a test reds and names the mechanism, instead of
+  every future doctest quietly getting the developer's real CLI.
+
+**`cargo nextest` remains UNMEASURED.** It is still not installed here and
+I did not install one to close a latent arm of a latent finding. The
+reasoning in s4 stands and is reasoning, not measurement: `nextest run`
+executes the same binaries in place out of `<target>/<profile>/deps/`, so
+the derivation should hold; `nextest archive` extracts elsewhere and nobody
+has looked. Nothing in this repo runs nextest.
+
+#### T-060-s5 — TAKEN, and the correction is in all three places
+
+Corrected in `runner.rs`'s `real_cli_arms_forbidden` header, in
+`docs/ARCHITECTURE.md`, and in this card's own "WHY A `.cargo/config.toml`
+`[env]` ENTRY WAS REJECTED" section above. **The decision was right; the
+mechanism recorded for it was wrong**, and the verifier's measurement is
+the better reason: `tauri dev` is `cargo build` plus a direct spawn with no
+cargo process in the tree, and the spawned app inherits `[env]` anyway
+because the tauri CLI reconstructs cargo's run environment for it —
+measured against a no-cargo control. I did not re-run that measurement: it
+would mean putting a `.cargo/config.toml` into a tree with the human's app
+running, and the verifier's evidence is specific, controlled and internally
+consistent. **Flagged as accepted rather than re-derived.**
+
+#### The count — one literal, one implicit, both fixed
+
+The card carries **NINE** criterion bullets. The implementation notes said
+"eight" **once** literally (in "WHAT I DID NOT DO", now corrected), and
+once implicitly: the "criterion by criterion" list ran **1–8**, having
+folded criterion 2 (the measurement) into its own section above without
+renumbering. That list now runs 1–9 in the card's own order.
+
+**That implicit miscount had a consequence nobody had noticed**: the code's
+`criterion N` references were numbered off the notes' list rather than the
+card's. `runner.rs`'s guard banner, `RunnerConfig::probe_login_shell`'s doc
+and `resolve_cli`'s refusal comment all said "T-060 criterion 4" for a
+property that is the card's criterion **6**; the attack-proof test said
+"criterion 6" for the card's **7**. Corrected in all five places. (T-025's
+and T-039's own `criterion N` citations in the same files are theirs and
+were left alone.)
+
+#### Poison drills — 8 mutations, 8 RED, run inline
+
+No scratch script. Each was a `perl -0pi` edit, the affected body run, then
+`git checkout --` and **sha256 against `git show HEAD:<path>`**, where HEAD
+is the fix commit `3fbb04b`:
+
+| # | mutation | body | result |
+|---|---|---|---|
+| D1 | `guard_decision`'s derived arm returns `false` | `the_no_real_cli_guard_is_on…` **and** the lib's `the_real_cli_arms_are_forbidden…` | RED ×2 |
+| D2 | `resolve_cli`'s probe arm stops refusing | guarded child arm | RED |
+| D3 | `real_cli_arms_forbidden` stops reading the variable | **lifted** child arm | RED |
+| D4a | `is_test_harness_dir` drops the `rustdoctest` arm | the **doctest** and the lib pin | RED ×2 |
+| D4b | `is_test_harness_dir` returns `true` for everything | the lib pin's negative loop (`debug` is not a harness) | RED (the control) |
+| D5 | `T060_TEST_NAME` gains a suffix, so `--exact` matches nothing | the parent's "did not run" guard | RED |
+| D6 | the guarded arm stops writing its receipt | the parent's proof-of-run | RED |
+| D7 | the children's `PATH` points at the fixture `bin/` instead of the empty dir | the lifted arm's "must really be empty" | RED |
+
+D4a/D4b are a pair on purpose: one proves the predicate matches what it
+must, the other proves it does not match everything, which is the shape a
+constant-true predicate would sail through. D5/D6 exist because moving a
+body into a child process **creates** a vacuity channel that did not exist
+before — a filter miss is exit 0 — so the drills are aimed at the new
+mechanism rather than only at the old property.
+
+**One drill I deliberately did NOT run**: pointing a lifted arm at the
+machine's real `PATH`. That is T-060-s1's accident with the safety removed,
+and reconstructing it to watch it fail is not evidence worth a spawn of the
+developer's `claude`. D7 is the same assertion driven with the FIXTURE's
+`bin/` — inside the temp tree, never the machine. Related, and it fell out
+of D2: with the probe arm's guard removed, the guarded child still reached
+no binary, because `which_on_path`'s own guard and the empty `PATH` both
+held. The verifier's "defence in depth, measured" reproduces under a
+harsher mutation than the one that first showed it.
+
+#### Suites — first-hand in this worktree, exits read unpiped
+
+- **lib/parser** `npm run build` 0 + `npx tsc --noEmit` 0 + `npx vitest
+  run` → **225/225 (11 files)**, exit 0.
+- **app** `npx tsc --noEmit` 0, `npm run build` 0, `npx vitest run` →
+  **795/795 (42 files)**, exit 0. Bundle **`index-Bf-QNmtC.js` 497.86 kB /
+  `index-CryMc_lw.css` 43.90 kB** — the same content hashes STATE records,
+  which is what a zero-frontend-file diff must produce.
+- **app/src-tauri** bare `cargo test` → **320 passed / 0 failed / 3
+  ignored**, exit 0 read from `echo $?` on an unpiped run. Slots
+  `112/0/0/48/123/0/7/13/3/7/0/2/4/1/0`. **The delta from the branch's 319
+  is exactly one, and it is the doctest** — the 14th slot goes 0 → 1.
+  Every other slot is unchanged, `agent_runner` included: the child-process
+  rewrite added no test NAME, because the arms are the same test.
+  **Zero warnings off a forced recompile**: `cargo clean -p nputer`
+  (removed 14143 files, 3.6 GiB) then `cargo check --all-targets`, exit 0,
+  no `warning` line — **and the control discriminates**: an unused
+  variable planted in `tests/agent_runner.rs` produces `warning: unused
+  variable` from the same command, so the zero is a measurement of the test
+  target and not of cargo skipping it. (My first attempt at that control
+  named the variable `_drill_unused` and saw nothing, which is the lint
+  behaving correctly and the control being wrong.)
+- **tools/e2e** `npm run typecheck` 0 + `NPUTER_E2E_PORT=17494 npm test` →
+  **74 passed in 13.8 s**, exit 0. `lint:tokens` → **clean, 116 files**.
+
+**BOOT GATE: FIRED** (`app/src-tauri/**` in the range), **RAN, GREEN.**
+Scratch port **17496**, bind-probed free on both `127.0.0.1` and `::1`
+immediately before use. Both startup lines detected, tree stopped by
+SIGTERM. **`BOOT_EXIT=0` is my own `echo $?` — the script does not print
+it**; the line is mine and the exit code is real. 17494 and 17496 were both
+empty afterwards, no `target/debug/nputer` from this worktree survived, and
+**1420 was never bound, connected to or signalled** — the same `node` pid
+82549 held it before and after.
+
+#### The standing invariants, re-derived rather than carried
+
+- **`ENV_ALLOWLIST` byte-identical**: 16 entries, **423 bytes, sha256
+  `cf80f850b96a6f03…`**, and `diff` against `33b249a`'s copy is empty.
+  **Its anchored range MOVED — it is lines 891–910 now, not 831–850** —
+  because this fix adds 60 lines above it. The range is a location, the
+  hash is the invariant; quoting the old range at the new file would be a
+  false negative.
+- **`acl_pin.rs`**: 0-file diff, whole-file sha256 `8d24cbad706d9e6f…`,
+  **92 grants**.
+- **Zero new IPC commands**: `lib.rs` is a 0-file diff over my range, so
+  the `generate_handler!` block is byte-identical by construction (mine
+  hashes `64db2075f664e6dd…` by my own extraction at both refs; the
+  verifier's `4e062a2e…` is a different span of the same bytes).
+- **Exactly THREE `#[ignore = "…"]` attributes repo-wide**, the same three
+  (`perf.rs:53`, `self_graph.rs:58`, `agent_runner.rs:2279`). The
+  child-process design was chosen partly *because* the obvious alternative
+  — an `#[ignore]`d helper the parent runs explicitly — would have added a
+  fourth.
+- **No new dependency, no lockfile line, no new grant, no bypass flag.**
+- **NO MODEL WAS CALLED.** The `#[ignore]`d smoke never ran (`1 ignored` on
+  every `agent_runner` line) and `NPUTER_REAL_CLI` was never set. The one
+  thing this branch now executes more of is the FAKE agent, in a temp tree,
+  on an empty `PATH`. **Disclosure**: unlike the verifier I did not run
+  `claude --version` at all — the timing criterion was not mine to re-derive
+  and re-running it would have been a spawn for a number already twice
+  measured.
+
+#### What I am not confident about
+
+- **The doctest is a new CI surface.** It passes here and its mechanism is
+  a literal `rustdoctest` prefix in rustdoc's own source, which is
+  platform-independent — but I have measured it on macOS only. If it ever
+  reds on `ubuntu-24.04`, the message says what to look at, and that is the
+  trade I chose deliberately over leaving the hole silent.
+- **`cargo nextest`**: unmeasured, as above.
+- **The two remaining lib-binary env mutations**: measured clean at 0/10
+  on both loud thread counts, and safe today only because of a property of
+  the guard. That is the same *kind* of argument that failed, even though
+  this instance has a mechanism behind it rather than an absence.
 
 ## Verdicts
 
