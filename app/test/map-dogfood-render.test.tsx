@@ -330,8 +330,13 @@ describe("the nputer repo on its own map", () => {
     // Like T-051's and T-053's entries and unlike T-027's and T-028's,
     // the node and edge pictures do NOT move: all the new cross-component
     // edges land on pairs the 32-row table already carries.
+    // 115 → 117 at the T-055 merge regen (2026-08-18):
+    // lib/parser/src/inert-spans.ts and its suite join C-06. All new
+    // non-package edges stay inside C-06, so the 32 rendered component
+    // edges, ten undeclared relations and every drift count above remain
+    // unchanged. Architecture-dogfood records the full 117/982/1502 delta.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 115 files",
+      "committed graph · 117 files",
     );
   });
 });

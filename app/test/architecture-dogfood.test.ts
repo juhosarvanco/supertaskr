@@ -864,6 +864,27 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     `git diff a6eea36..HEAD -- docs/architecture/components/` is a
 //     0-file diff, so the T-024 three-fixtures rule does not fire.
 //   · The ceaa949 ordering lesson, NINETEENTH hold.
+//
+// RECONCILED AT THE T-055 MERGE (2026-08-18, integrator). Derived from
+// the regenerated graph against `git show b0dd4de:docs/architecture/graph.json`
+// before changing either fixture:
+//   · stats 115→117 files, 970→982 symbols, 1484→1502 edges
+//     (import +7, call +11, type_ref unchanged).
+//   · TWO files join C-06: lib/parser/src/inert-spans.ts (161 loc,
+//     10 symbols) and lib/parser/test/inert-spans.test.ts (55 loc,
+//     1 symbol). roadmap.ts retires stripHtmlComments (-1 symbol) while
+//     task.test.ts adds two helpers, for the measured +12 total.
+//   · mapping 115→117 and C-06 23→25 are the only rollup moves.
+//     The 21 added / 3 removed edge records are C-06-internal or lead to
+//     packages; no component pair can be created or grown. The 32-row
+//     relation table, ten findings, every observedCount and every drift
+//     flag remain byte-identical, as the focused 17-test run confirmed.
+//   · THREE expectations move across the two app fixtures: this body's
+//     size and C-06 row, plus map-dogfood-render's header hint. The live
+//     registry did not move, so lib/parser/test/smoke.test.ts's exact
+//     component-ID pin deliberately remains unchanged.
+//   · Both fixture edits precede the final regeneration; the generated
+//     graph is regenerated again afterwards and checked for identity.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -929,8 +950,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 115 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(115);
+  it("all 117 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(117);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -1011,7 +1032,11 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // it sits below the size check above, so vitest never reaches it
       // while that one is red. Same shape as the row T-048 and T-049
       // each missed once.
-      ["C-06", 23],
+      // 23 → 25 at the T-055 merge regen (2026-08-18): inert-spans.ts
+      // and inert-spans.test.ts are both new and both match only C-06's
+      // `lib/parser/**` glob. The four other parser files are modifications,
+      // so they can move hash/loc/symbols but cannot move this count.
+      ["C-06", 25],
       ["C-08", 10],
       ["C-09", 3],
       ["C-10", 2],

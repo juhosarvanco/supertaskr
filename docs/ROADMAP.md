@@ -263,6 +263,16 @@ its own 192px border box, and the board keeps 524/384/284px of independent
 scrolling room. T-062 is a milestone 4 card; it
 sits here because it continues T-048's and T-051's story rather than
 F-03's.
+T-055 merged 2026-08-18 and gives the parser one answer to "is this
+content?" Roadmap bullets and task section headings now read the same
+position-preserving structural view: fenced blocks, HTML comments and
+single-backtick inline spans are inert before either consumer matches its
+own syntax. A fenced example can no longer create a phantom feature or a
+parse error, and a commented-out `##` can no longer open or close a live task
+section. The deliberately narrow boundary is explicit: inline spans are
+physical-line-local, top-level unclosed fences run through EOF, and Markdown
+container/list de-indentation remains out rather than being half-parsed. All
+127 live task section objects stayed byte-identical through the change.
 T-028 merged 2026-08-17 and it is the interview's last act: **the lens
 stops being a lens.** Until tonight the right half of T-027's split
 watched the plan assemble as artifact rows; now, the moment a task file

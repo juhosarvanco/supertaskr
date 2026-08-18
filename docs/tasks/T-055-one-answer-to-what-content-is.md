@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 24
 size: M
-status: verifying
+status: done
 blocked_by: [T-053]
 touches: [lib-parser]
 builder: codex/gpt-5.6

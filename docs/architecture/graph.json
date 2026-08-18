@@ -5937,8 +5937,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:f06c96a54800671581e4b32a6d1294a6b45b0fe9d6927a659562e4e03635611c",
-      "loc": 1574,
+      "hash": "blake3:2a41fed8bbc4969b78ad1a5e4ddf97999a49619861f88427989d122a61722738",
+      "loc": 1599,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -5946,8 +5946,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            902,
-            902
+            923,
+            923
           ]
         },
         {
@@ -5956,8 +5956,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            901,
-            901
+            922,
+            922
           ]
         },
         {
@@ -5966,8 +5966,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            867,
-            867
+            888,
+            888
           ]
         },
         {
@@ -5976,8 +5976,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            873,
-            888
+            894,
+            909
           ]
         },
         {
@@ -5986,8 +5986,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            890,
-            899
+            911,
+            920
           ]
         },
         {
@@ -5996,8 +5996,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            869,
-            871
+            890,
+            892
           ]
         }
       ]
@@ -8026,8 +8026,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:a9d1d39093b389b57e35680039d6f4612b82df23d4a4ea8a5fd4bf7cbfac1991",
-      "loc": 337,
+      "hash": "blake3:5e4ef8ba2776ffbde908e7cfb5164028956b2e2b480f7080de8eb84b3e2164de",
+      "loc": 342,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -9942,6 +9942,115 @@
       "symbols": []
     },
     {
+      "id": "f:lib/parser/src/inert-spans.ts",
+      "path": "lib/parser/src/inert-spans.ts",
+      "lang": "ts",
+      "hash": "blake3:bd485ac6addbc001e214eaa27a8cb60f95c00706b80dd1b2e2b2bc8712f9c01c",
+      "loc": 161,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/inert-spans.ts#InertSpanResult",
+          "name": "InertSpanResult",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            20,
+            23
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/inert-spans.ts#blankInertSpans",
+          "name": "blankInertSpans",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            25,
+            84
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/inert-spans.ts#fencedBlockEnd",
+          "name": "fencedBlockEnd",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            109,
+            131
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/inert-spans.ts#findClosingSingleBacktick",
+          "name": "findClosingSingleBacktick",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            99,
+            107
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/inert-spans.ts#isClosingFence",
+          "name": "isClosingFence",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            133,
+            143
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/inert-spans.ts#isLineStart",
+          "name": "isLineStart",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            86,
+            91
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/inert-spans.ts#isSingleBacktick",
+          "name": "isSingleBacktick",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            93,
+            97
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/inert-spans.ts#lineEndAt",
+          "name": "lineEndAt",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            145,
+            151
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/inert-spans.ts#lineNumberAt",
+          "name": "lineNumberAt",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            159,
+            161
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/inert-spans.ts#nextLineStart",
+          "name": "nextLineStart",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            153,
+            157
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:lib/parser/src/model-session.ts",
       "path": "lib/parser/src/model-session.ts",
       "lang": "ts",
@@ -10041,8 +10150,8 @@
       "id": "f:lib/parser/src/roadmap.ts",
       "path": "lib/parser/src/roadmap.ts",
       "lang": "ts",
-      "hash": "blake3:74e5b929f5b68e6a9ca3a2f362fe4776fead89fcde4e312652a6c17bf1bbb272",
-      "loc": 170,
+      "hash": "blake3:3f14c5b4221777856e0d5af0b95fc004bbe4830ddc2053b958134643fc8ada3e",
+      "loc": 132,
       "symbols": [
         {
           "id": "s:lib/parser/src/roadmap.ts#parseRoadmap",
@@ -10050,18 +10159,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            28,
-            128
-          ]
-        },
-        {
-          "id": "s:lib/parser/src/roadmap.ts#stripHtmlComments",
-          "name": "stripHtmlComments",
-          "kind": "function",
-          "exported": false,
-          "range": [
-            147,
-            170
+            24,
+            132
           ]
         }
       ]
@@ -10070,8 +10169,8 @@
       "id": "f:lib/parser/src/task.ts",
       "path": "lib/parser/src/task.ts",
       "lang": "ts",
-      "hash": "blake3:b790dbdbdeadaa5123209d13e19f833a2a622a11dd8d89fb989bd518ecbd20b6",
-      "loc": 330,
+      "hash": "blake3:e2187d05e051eaabfef906814bfe4c154687bc6a0161018ca7355d64e9e7430f",
+      "loc": 334,
       "symbols": [
         {
           "id": "s:lib/parser/src/task.ts#KNOWN_FIELDS",
@@ -10079,8 +10178,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            18,
-            34
+            19,
+            35
           ]
         },
         {
@@ -10089,8 +10188,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            37,
-            39
+            38,
+            40
           ]
         },
         {
@@ -10099,8 +10198,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            41,
-            43
+            42,
+            44
           ]
         },
         {
@@ -10109,8 +10208,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            112,
-            330
+            116,
+            334
           ]
         },
         {
@@ -10119,8 +10218,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            54,
-            96
+            55,
+            100
           ]
         }
       ]
@@ -10490,6 +10589,25 @@
       "symbols": []
     },
     {
+      "id": "f:lib/parser/test/inert-spans.test.ts",
+      "path": "lib/parser/test/inert-spans.test.ts",
+      "lang": "ts",
+      "hash": "blake3:dbdc53f2d9fdee3c42e257b48e93ff23881315c6504820071a6bc52ae5c774bd",
+      "loc": 55,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/inert-spans.test.ts#blank",
+          "name": "blank",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            4,
+            4
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:lib/parser/test/model-session.test.ts",
       "path": "lib/parser/test/model-session.test.ts",
       "lang": "ts",
@@ -10559,8 +10677,8 @@
       "id": "f:lib/parser/test/roadmap.test.ts",
       "path": "lib/parser/test/roadmap.test.ts",
       "lang": "ts",
-      "hash": "blake3:5afdb66629251c3e3c56c58f0f082860ee9e03b65dd61a424fcb579efb88e666",
-      "loc": 328,
+      "hash": "blake3:019b5bb5a0d91e69a60c685e957fa3ab4bd317fe84c601373a9fc735f2545a53",
+      "loc": 374,
       "symbols": [
         {
           "id": "s:lib/parser/test/roadmap.test.ts#FILE",
@@ -10607,8 +10725,8 @@
       "id": "f:lib/parser/test/task.test.ts",
       "path": "lib/parser/test/task.test.ts",
       "lang": "ts",
-      "hash": "blake3:b38e099d5dc1b8f2157f0aaaff51e180724ccc588e2494135cde6a3da734d76e",
-      "loc": 406,
+      "hash": "blake3:85304e4e028a8e73bf4ed9e5e7a5b8b5e1561b216041ee138deb627cbf8fe332",
+      "loc": 514,
       "symbols": [
         {
           "id": "s:lib/parser/test/task.test.ts#FILE",
@@ -10616,8 +10734,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            4,
-            4
+            7,
+            7
           ]
         },
         {
@@ -10626,8 +10744,28 @@
           "kind": "const",
           "exported": false,
           "range": [
-            6,
-            32
+            48,
+            74
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/task.test.ts#repoRoot",
+          "name": "repoRoot",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            8,
+            8
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/task.test.ts#splitSectionsBeforeInertPass",
+          "name": "splitSectionsBeforeInertPass",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            11,
+            46
           ]
         }
       ]
@@ -14661,6 +14799,14 @@
     },
     {
       "from": "f:lib/parser/src/roadmap.ts",
+      "to": "f:lib/parser/src/inert-spans.ts",
+      "kind": "import",
+      "symbols": [
+        "blankInertSpans"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/roadmap.ts",
       "to": "f:lib/parser/src/types.ts",
       "kind": "import",
       "symbols": [
@@ -14675,6 +14821,14 @@
       "kind": "import",
       "symbols": [
         "extractFrontmatter"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/task.ts",
+      "to": "f:lib/parser/src/inert-spans.ts",
+      "kind": "import",
+      "symbols": [
+        "blankInertSpans"
       ]
     },
     {
@@ -14835,6 +14989,24 @@
       ]
     },
     {
+      "from": "f:lib/parser/test/inert-spans.test.ts",
+      "to": "f:lib/parser/src/inert-spans.ts",
+      "kind": "import",
+      "symbols": [
+        "blankInertSpans"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/inert-spans.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
       "from": "f:lib/parser/test/model-session.test.ts",
       "to": "f:lib/parser/src/index.ts",
       "kind": "import",
@@ -14985,7 +15157,35 @@
       "to": "f:lib/parser/src/index.ts",
       "kind": "import",
       "symbols": [
-        "parseTaskFile"
+        "TaskSections",
+        "extractFrontmatter",
+        "parseTaskFile",
+        "splitSections"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/task.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/task.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/task.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
       ]
     },
     {
@@ -20920,6 +21120,72 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/inert-spans.ts#blankInertSpans",
+      "to": "s:lib/parser/src/inert-spans.ts#InertSpanResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/inert-spans.ts#blankInertSpans",
+      "to": "s:lib/parser/src/inert-spans.ts#fencedBlockEnd",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/inert-spans.ts#blankInertSpans",
+      "to": "s:lib/parser/src/inert-spans.ts#findClosingSingleBacktick",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/inert-spans.ts#blankInertSpans",
+      "to": "s:lib/parser/src/inert-spans.ts#isLineStart",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/inert-spans.ts#blankInertSpans",
+      "to": "s:lib/parser/src/inert-spans.ts#isSingleBacktick",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/inert-spans.ts#blankInertSpans",
+      "to": "s:lib/parser/src/inert-spans.ts#lineNumberAt",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/inert-spans.ts#fencedBlockEnd",
+      "to": "s:lib/parser/src/inert-spans.ts#isClosingFence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/inert-spans.ts#fencedBlockEnd",
+      "to": "s:lib/parser/src/inert-spans.ts#lineEndAt",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/inert-spans.ts#fencedBlockEnd",
+      "to": "s:lib/parser/src/inert-spans.ts#nextLineStart",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/inert-spans.ts#findClosingSingleBacktick",
+      "to": "s:lib/parser/src/inert-spans.ts#isSingleBacktick",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/inert-spans.ts#findClosingSingleBacktick",
+      "to": "s:lib/parser/src/inert-spans.ts#lineEndAt",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/model-session.ts#parseModelSession",
       "to": "s:lib/parser/src/types.ts#ModelSession",
       "kind": "type_ref",
@@ -21041,7 +21307,7 @@
     },
     {
       "from": "s:lib/parser/src/roadmap.ts#parseRoadmap",
-      "to": "s:lib/parser/src/roadmap.ts#stripHtmlComments",
+      "to": "s:lib/parser/src/inert-spans.ts#blankInertSpans",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -21060,12 +21326,6 @@
     {
       "from": "s:lib/parser/src/roadmap.ts#parseRoadmap",
       "to": "s:lib/parser/src/types.ts#RoadmapParseResult",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:lib/parser/src/roadmap.ts#stripHtmlComments",
-      "to": "s:lib/parser/src/types.ts#ParseIssue",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -21139,6 +21399,12 @@
       "from": "s:lib/parser/src/task.ts#parseTaskFile",
       "to": "s:lib/parser/src/types.ts#TaskStatus",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task.ts#splitSections",
+      "to": "s:lib/parser/src/inert-spans.ts#blankInertSpans",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -21348,8 +21614,8 @@
     }
   ],
   "stats": {
-    "files": 115,
-    "symbols": 970,
-    "edges": 1484
+    "files": 117,
+    "symbols": 982,
+    "edges": 1502
   }
 }
