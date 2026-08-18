@@ -143,8 +143,70 @@ export type ShellPhase =
  * SUBSCRIBE leaves no live watcher at all, while a refused SNAPSHOT
  * leaves the subscription up, so the next file change can still bring
  * the app to life on its own.
+ *
+ * T-063 adds a THIRD, and it is not a refusal at all: `"deadline"` is a
+ * boundary call that has not come back. A HANG and a REJECTION looked
+ * identical to the user and are opposite in mechanism — the latch hands
+ * the SAME promise to every later caller (rightly: that is what keeps
+ * React's double-effect from opening two subscriptions), so "Try again"
+ * during an in-flight attempt is a no-op BY CONSTRUCTION and the screen
+ * goes on saying "waiting for the first docs snapshot…", which is TRUE
+ * and is exactly what @human's screenshot showed. A deadline is what
+ * turns that true sentence into an actionable one.
  */
-export type StartupStep = "subscribe" | "snapshot";
+export type StartupStep = "subscribe" | "snapshot" | "deadline";
+
+/**
+ * T-063 criterion 4: how long a startup attempt may take before the app
+ * says so. MEASURED, NOT GUESSED — the figures and the margin are in
+ * T-063's implementation notes; the short version is here, because a
+ * constant a reader cannot defend is a constant the next reader changes
+ * for the wrong reason.
+ *
+ * MEASURED 2026-08-18 on this machine, five `npm run tauri dev` launches
+ * out of a worktree of this repo (docs/ = 159 files / 2.9 MB), the first
+ * of them immediately after a cold cargo build. Two figures, because
+ * only one of them is the thing this constant governs:
+ *
+ *   THE WINDOW THIS DEADLINE COVERS — `listen("docs-changed")` plus
+ *   `invoke("docs_snapshot")`, the latter including Rust's walk and read
+ *   of the whole docs/ tree: 72 / 66 / 68 / 70 / 69 ms. Worst 72 ms.
+ *
+ *   A PADDED UPPER BOUND that additionally swallows webview boot — the
+ *   `[nputer] window "main" created` line to the applied snapshot, which
+ *   strictly CONTAINS the window above and is therefore the conservative
+ *   number: 778 / 657 / 601 / 710 / 607 ms. Worst 778 ms.
+ *
+ * 8 s is 111x the worst measured window and 10x the worst padded bound.
+ * BOTH halves of the criterion's warning are respected, and the margin
+ * is deliberately lopsided towards "too long", because the two errors do
+ * not cost the same: a premature failure screen is a claim the user has
+ * no way to check and no way to act on, while a late one merely arrives
+ * after they have already started wondering. What bounds the worst
+ * HONEST case is Rust-side and known — the collector caps at 2 000 files
+ * and 1 MiB each (`docs_watch.rs`) — so a repo at the file cap is ~13x
+ * this one's tree, which even on a machine several times slower than
+ * this one leaves single-digit seconds of headroom rather than none.
+ *
+ * AND THE FALSE POSITIVE IS NOT FATAL, which is what makes a bounded
+ * figure acceptable at all: the raced-out attempt is NOT cancelled. It
+ * keeps running behind the failure screen, and if it answers, the app
+ * comes up and the failure clears itself (see `runHandshake`). So the
+ * cost of erring in the "too short" direction is a screen that was
+ * pessimistic for a moment, not a user who has to do anything.
+ */
+export const STARTUP_DEADLINE_MS = 8_000;
+
+/**
+ * T-063: the event that carries a startup failure to the Tauri process's
+ * stdio, where a WKWebView `console.error` provably cannot reach. The
+ * listener is `app.listen(STARTUP_FAILED_EVENT, …)` in
+ * `app/src-tauri/src/lib.rs`, and the two strings are pinned against
+ * each other by an exact-literal assertion on each side. An EVENT, not a
+ * command: no new IPC surface, no new grant, and nothing here is
+ * invokable.
+ */
+const STARTUP_FAILED_EVENT = "startup-failed";
 
 /** A startup attempt that did not finish. `message` is a stringified
  * rejection — rendered as a TEXT NODE, never as markup. */
@@ -594,6 +656,36 @@ let startup: Promise<void> | null = null;
 /** Attempts made this session — the failure card's honest count. */
 let startupAttempts = 0;
 
+/**
+ * T-063 criterion 1, AND THE PREREQUISITE FOR THE OTHER TWO HALVES OF
+ * THIS CARD. `await listen(…)` resolves to an UNLISTEN FUNCTION, and the
+ * store used to throw it away. Holding it is what makes a retry a
+ * REPLACEMENT rather than an addition:
+ *
+ *  - after a refused SNAPSHOT the subscription is LIVE (that asymmetry
+ *    is the whole of T-050's finding), so a retry that subscribes again
+ *    without tearing the first one down leaves two handlers on one
+ *    channel, and every `docs-changed` event is then reduced twice.
+ *    Downstream identity guards HIDE that — the second reduction returns
+ *    `prev` by seq — so it is invisible from outside and can only be
+ *    caught by counting, which is what the test does.
+ *  - and a raced-out attempt (criterion 5) is still running when a newer
+ *    one starts. When its `listen` finally answers, its handle has to go
+ *    somewhere, and "somewhere" is this variable or a leak.
+ */
+let unlistenDocs: (() => void) | null = null;
+
+/**
+ * Which attempt is the CURRENT one. Bumped once per `runStartup`, and
+ * read by the handshake after every await to answer one question: "am I
+ * still the attempt whose answers matter?" A deadline lets `runStartup`
+ * settle while its boundary calls are still outstanding, so from that
+ * moment on this is the only thing that separates a live attempt from a
+ * ghost — and a ghost may neither write shell state nor keep a
+ * subscription.
+ */
+let startupToken = 0;
+
 export function subscribeShell(callback: () => void): () => void {
   listeners.add(callback);
   return () => listeners.delete(callback);
@@ -684,6 +776,18 @@ function sendEcho(next: DocsModelState): void {
 }
 
 function applyProjectStatus(status: ProjectStatusPayload): void {
+  // T-063: A STATUS PULL MUST NOT YANK AN INTERVIEW AWAY, and until this
+  // card nothing had to say so, because `docs_snapshot` was only ever
+  // pulled at startup — when the phase is `loading` or `browser` and
+  // there is no interview to lose. Criterion 2 pulls it again AFTER a
+  // pick, and a genesis folder legitimately has no `docs/` YET, so Rust
+  // answers `noDocs` about the very folder the user is interviewing in;
+  // applying that would drop them on the front door's "No plan in
+  // <folder>" card mid-interview. `applyDocsPayload` has held the same
+  // rule since T-026 for the same reason ("the pipeline lighting up must
+  // not yank the interview away"); this is that rule on the other two
+  // arms of the same payload.
+  if (shell.phase === "genesis" && status.kind !== "open") return;
   switch (status.kind) {
     case "open":
       applyDocsPayload(status.snapshot);
@@ -715,29 +819,116 @@ function recordStartupFailure(step: StartupStep, reason: unknown): void {
   // Starting a fresh attempt in that window is safe: the catch releases
   // by IDENTITY, so a late rejection cannot unlatch the newer attempt.
   startup = null;
-  setShell({
-    starting: false,
-    // `String(reason)` is the store's existing idiom for a rejected
-    // boundary call (runPicker, runIndexRepo). It is put on screen as a
-    // text node; nothing from it is ever interpreted as markup.
-    startupFailure: { step, message: String(reason), attempt: startupAttempts },
-  });
+  // `String(reason)` is the store's existing idiom for a rejected
+  // boundary call (runPicker, runIndexRepo). It is put on screen as a
+  // text node; nothing from it is ever interpreted as markup.
+  const failure: StartupFailure = {
+    step,
+    message: String(reason),
+    attempt: startupAttempts,
+  };
+  setShell({ starting: false, startupFailure: failure });
   // The message is an ARGUMENT, never interpolated into the line — the
-  // same discipline as the `model-updated` echo's error log, and the
-  // webview console is as far as it goes (no stdout path from here).
+  // same discipline as the `model-updated` echo's error log.
   console.error("[nputer] startup failed at", step, reason);
+  // T-063: AND THE LINE ABOVE IS WHERE THIS USED TO END, which is the
+  // defect the only real user report in this backlog is about. A
+  // WKWebView `console.error` never reaches the Tauri process's stdout,
+  // so on 2026-08-16 @human hit a startup dead end, sent a screenshot
+  // AND their log, and the log was healthy through seq 22 — because the
+  // one thing that broke had no way to write to it.
+  //
+  // The same `emit` the `model-updated` echo has used since T-003, on a
+  // second channel, caught the same way: a failed emit must not become a
+  // second unhandled rejection on the path whose whole subject is
+  // unhandled rejections.
+  if (isTauri) {
+    emit(STARTUP_FAILED_EVENT, failure).catch((err) => {
+      console.error("[nputer] startup-failed emit failed", err);
+    });
+  }
 }
 
 /**
- * One startup attempt: subscribe to `docs-changed` first, then pull the
- * startup status (the seq guard settles any ordering race between the
- * two — that order is deliberate and unchanged). Rejects if either
- * await does, having first recorded WHICH one and why; the latch above
- * turns that rejection into a retryable state rather than an unhandled
- * promise.
+ * THE BOUNDARY WORK OF ONE ATTEMPT: subscribe to `docs-changed` first,
+ * then pull the startup status (the seq guard settles any ordering race
+ * between the two — that order is deliberate and unchanged).
+ *
+ * NEVER REJECTS and never throws: every exit records what happened, or
+ * deliberately records nothing because a newer attempt owns the screen.
+ * It is separated from `runStartup` (T-063) because the two now have
+ * different lifetimes — `runStartup` settles at the deadline, and THIS
+ * keeps running afterwards. Which is the honest thing for it to do: the
+ * boundary call was never cancelled, so pretending it was would be a
+ * second lie on the screen that exists to stop the first one.
+ *
+ * `attempt` is the token this run was started with. It is re-read
+ * against `startupToken` after EVERY await, and the two answers it can
+ * give are both load-bearing:
+ *   - still current  -> write shell state, keep the subscription;
+ *   - superseded     -> write NOTHING, and unlisten anything acquired,
+ *                       which is criterion 5: a raced-out attempt is
+ *                       still running and must not leak a subscription.
+ */
+async function runHandshake(attempt: number): Promise<void> {
+  let unlisten: () => void;
+  try {
+    unlisten = await listen<DocsSnapshotPayload>("docs-changed", (event) =>
+      applyDocsPayload(event.payload),
+    );
+  } catch (err) {
+    if (attempt === startupToken) recordStartupFailure("subscribe", err);
+    return;
+  }
+  if (attempt !== startupToken) {
+    // Superseded while the subscribe was in flight. The channel really
+    // was opened — dropping the handle here is precisely the leak
+    // criterion 1 exists to make answerable.
+    unlisten();
+    return;
+  }
+  // A RETRY REPLACES, IT DOES NOT STACK. After a refused SNAPSHOT the
+  // previous attempt's subscription is still live, so without this the
+  // second attempt would leave two handlers on one channel.
+  unlistenDocs?.();
+  unlistenDocs = unlisten;
+
+  let status: ProjectStatusPayload;
+  try {
+    status = await invoke<ProjectStatusPayload>("docs_snapshot");
+  } catch (err) {
+    if (attempt === startupToken) recordStartupFailure("snapshot", err);
+    return;
+  }
+  if (attempt !== startupToken) return;
+  // `startupFailure: null` matters for exactly one interleaving: this
+  // attempt already blew its deadline, the screen said so, and then the
+  // boundary answered anyway. The app HAS started; saying otherwise
+  // would be the same class of untruth in the opposite direction.
+  setShell({ starting: false, startupFailure: null });
+  applyProjectStatus(status);
+}
+
+/**
+ * One startup attempt. Settles when the handshake settles OR when the
+ * deadline expires, whichever is first — and the second case is the
+ * whole of T-063 criterion 3.
+ *
+ * WHY A DEADLINE RATHER THAN A CANCELLATION. Nothing here can cancel a
+ * Tauri boundary call, and nothing should pretend to: the subscribe may
+ * still land. What the deadline changes is the app's ACCOUNT of itself.
+ * Before it, an attempt that hung and an attempt that was refused looked
+ * identical from the screen — "waiting for the first docs snapshot…",
+ * true in both cases and actionable in neither — while "Try again"
+ * silently did nothing, because the latch correctly hands every later
+ * caller the promise already in flight. After it, the latch is released,
+ * the button does what its label says, and the raced-out attempt is
+ * still allowed to heal the app behind the failure screen if it comes
+ * back.
  */
 async function runStartup(): Promise<void> {
   startupAttempts += 1;
+  const attempt = (startupToken += 1);
   // A fresh attempt: the previous failure is no longer the current
   // truth, so the screen goes back to waiting while this one runs.
   setShell({ starting: true, startupFailure: null });
@@ -756,6 +947,26 @@ async function runStartup(): Promise<void> {
       // `import.meta.env.DEV` fences the build (vite replaces it with
       // `false` for `npm run build`, so Rollup drops the whole block —
       // asserted against the built bundle in test/shell-harness.test.ts).
+      //
+      // T-063 (folding T-041-s4): WHY `DEV` IS FALSE FOR A BUILD, written
+      // down here so the next reader does not measure it a third time.
+      // Vite forces `NODE_ENV=production` for `vite build` BEFORE the
+      // config loads, whenever NODE_ENV is unset — so the flag is a
+      // property of the COMMAND, not of the mode. `--mode development`
+      // does NOT change it: measured 2026-08-18 on this tree,
+      // `npm run build` and `npx vite build --mode development` produce a
+      // sha-IDENTICAL asset (index-ByWKsUIt.js, 488 805 B, sha256
+      // 3aec41b1…). The ONE lever that does change it is an INHERITED
+      // `NODE_ENV=development`, which yields a visibly larger bundle
+      // carrying `__nputerShellHarness` — and `tauri.conf.json`'s
+      // `beforeBuildCommand` IS `npm run build`, so a packaging run that
+      // inherits it embeds this block. That is the case for having TWO
+      // layers rather than one: the runtime `isTauri` guard above still
+      // prevents installation inside that very bundle, and
+      // test/shell-harness.test.ts reds on the next `npm test`. The
+      // ci.yml arm of this (a step asserting NODE_ENV before the build)
+      // is deliberately NOT here — it belongs to T-054, which owns that
+      // file.
       window.__nputerShellHarness = {
         applyProjectStatus,
         applyPickOutcome: commitPickOutcome,
@@ -768,20 +979,30 @@ async function runStartup(): Promise<void> {
     return;
   }
 
-  try {
-    await listen<DocsSnapshotPayload>("docs-changed", (event) => applyDocsPayload(event.payload));
-  } catch (err) {
-    recordStartupFailure("subscribe", err);
-    throw err;
-  }
-  try {
-    const status = await invoke<ProjectStatusPayload>("docs_snapshot");
-    setShell({ starting: false });
-    applyProjectStatus(status);
-  } catch (err) {
-    recordStartupFailure("snapshot", err);
-    throw err;
-  }
+  // THE RACE, written out rather than expressed as `Promise.race`,
+  // because the losing side here is not discarded — it keeps running,
+  // and `runHandshake`'s token checks are what govern it afterwards.
+  return new Promise<void>((resolve) => {
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const settle = (): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve();
+    };
+    timer = setTimeout(() => {
+      // The boundary has not answered. Record it — which releases the
+      // latch, so the retry the screen offers is real — and let the
+      // caller go. The handshake below is untouched and still running.
+      recordStartupFailure(
+        "deadline",
+        `no answer from the docs watcher within ${STARTUP_DEADLINE_MS} ms`,
+      );
+      settle();
+    }, STARTUP_DEADLINE_MS);
+    void runHandshake(attempt).finally(settle);
+  });
 }
 
 /**
@@ -903,6 +1124,35 @@ function commitPickOutcome(outcome: PickOutcomePayload): void {
   // by identity and must not echo twice.
   if (next.docs !== before.docs && outcomeCarriesSnapshot(outcome)) {
     sendEcho(next.docs);
+  }
+  // T-063 criterion 2: AFTER A REFUSED SUBSCRIBE, THIS BOARD IS A
+  // PHOTOGRAPH. T-050 put "Open a folder…" and "Start an interview" on
+  // the failure screen and they work — `pick_project_folder` re-arms the
+  // RUST watcher and answers a snapshot, so a real project appears. But
+  // the webview never subscribed, so no `docs-changed` event has anywhere
+  // to land: the user is looking at a working app that has silently
+  // stopped tracking their files, which is WORSE than the honest error
+  // screen they escaped from, precisely because it looks fine.
+  //
+  // Only after a SUBSCRIBE failure. A refused `snapshot` left the
+  // subscription live (T-050's asymmetry), so that case is already
+  // self-healing and re-running startup would buy nothing. The latch is
+  // open because recording a failure releases it, so this is a real
+  // attempt and not a no-op.
+  //
+  // It cannot fight the pick's own snapshot: `docs_snapshot` mints a
+  // fresh seq from the same global monotonic counter the pick just used,
+  // so the pull is either strictly newer (applies, one extra echo of a
+  // genuinely newer tree) or — if anything ever reordered them — dropped
+  // by `reduceDocs`'s seq guard BY IDENTITY, with no re-render and no
+  // echo. That is the same guard that settles the subscribe-then-pull
+  // race today, and the interleaving is pinned in
+  // test/startup-recovery.test.ts rather than argued here.
+  if (
+    before.startupFailure?.step === "subscribe" &&
+    (outcome.kind === "picked" || outcome.kind === "genesis")
+  ) {
+    void startDocsWatcher();
   }
 }
 

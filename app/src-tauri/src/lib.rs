@@ -78,6 +78,39 @@ fn canonical_or(path: PathBuf) -> PathBuf {
     path.canonicalize().unwrap_or(path)
 }
 
+/// T-063: the event the frontend raises when a startup attempt does not
+/// finish. An EVENT, not a command — nothing new is invokable, the
+/// `invoke_handler!` list below is unchanged, and `EXPECTED_GRANTS` does
+/// not move. The webview already owns `emit`: it is how `model-updated`
+/// has reached this process since T-003.
+const STARTUP_FAILED_EVENT: &str = "startup-failed";
+
+/// T-063: build the `startup-failed` log line.
+///
+/// A PURE FUNCTION so the sanitising half is testable without a Tauri
+/// runtime; the listener in `run()` is then one `eprintln!` of what this
+/// returns, so the thing under test is the thing that ships.
+///
+/// WHY THE SANITISE IS MANDATORY rather than tidy. `payload` is the
+/// serialized `{step, message, attempt}` object, and `message` is
+/// `String(reason)` over an arbitrary rejection from the IPC boundary —
+/// so a NUL, a BEL, an `ESC [ 31 m` run, or ten thousand characters can
+/// all be inside it. The DOM renders that safely and T-050's
+/// verification proved it does (a text node, no markup, the whole 10 000
+/// on screen). A TERMINAL does not: ESC sequences repaint it, BEL rings
+/// it, and an unbroken 10 000-character line is not an entry a human can
+/// read. The same string is therefore handled differently at the two
+/// sinks BY DESIGN, and `sanitize_for_log` is what makes the stdio sink
+/// safe — control characters escaped, the payload capped at
+/// `MAX_ECHO_LOG_CHARS` with an explicit truncation marker so the cap
+/// never lies by omission.
+fn startup_failed_line(payload: &str, recv_at_ms: u64) -> String {
+    format!(
+        "[nputer] startup-failed: recv_at_ms={recv_at_ms} payload={}",
+        docs_watch::sanitize_for_log(payload)
+    )
+}
+
 /// T-003/T-007: the frontend's one pull at startup — which project is open
 /// and, when one is, the current docs tree as a snapshot. Narrow by
 /// construction (ADR-010): no arguments, reads only
@@ -420,6 +453,25 @@ pub fn run() {
                 );
             });
 
+            // T-063: THE ONE FAILURE A USER REPORTS IS THE ONE THE LOG
+            // COULD NOT DESCRIBE. `recordStartupFailure` ended at a
+            // webview `console.error`, and a WKWebView console never
+            // reaches this process's stdout — so on 2026-08-16 @human hit
+            // a startup dead end, sent a screenshot AND their log, and the
+            // log was healthy through seq 22 because the thing that broke
+            // had no way to write to it. This listener is that way.
+            //
+            // stdERR, deliberately, where `model-updated` uses stdout: one
+            // is the healthy round trip and the other is a failure, and a
+            // reader filtering a long session's log should be able to
+            // separate them without parsing.
+            app.listen(STARTUP_FAILED_EVENT, |event| {
+                eprintln!(
+                    "{}",
+                    startup_failed_line(event.payload(), docs_watch::now_ms())
+                );
+            });
+
             // Startup evidence that the main window actually exists.
             if let Some(window) = app.get_webview_window("main") {
                 println!("[nputer] window \"{}\" created", window.label());
@@ -485,6 +537,135 @@ mod tests {
         assert_eq!(git_walk_up(&nested), Some(repo.clone()));
         assert_eq!(git_walk_up(&repo), Some(repo.clone()));
         let _ = fs::remove_dir_all(&base);
+    }
+
+    // ---- T-063: the startup-failed log line ----------------------------
+
+    /// The payload the frontend really sends, built the way `serde_json`
+    /// would render `{step, message, attempt}` — a JSON object with the
+    /// message already JSON-escaped. Only `message` is hostile; the other
+    /// two fields are a closed set and a number.
+    fn payload(step: &str, message: &str, attempt: u32) -> String {
+        format!(
+            "{{\"step\":\"{step}\",\"message\":{},\"attempt\":{attempt}}}",
+            serde_json::to_string(message).expect("a string always serializes")
+        )
+    }
+
+    #[test]
+    fn startup_failed_line_is_prefixed_stamped_and_carries_the_payload() {
+        let line = startup_failed_line(
+            &payload("subscribe", "listen: the event channel refused", 1),
+            1_700_000_000_123,
+        );
+        // The shape a log reader greps for, and the same shape
+        // `model-updated` uses one listener up.
+        assert!(line.starts_with("[nputer] startup-failed: recv_at_ms=1700000000123 payload="));
+        assert!(line.contains("\"step\":\"subscribe\""));
+        assert!(line.contains("the event channel refused"));
+        assert!(line.contains("\"attempt\":1"));
+        // One line, always: a multi-line log entry is a log entry that
+        // can be forged by whatever wrote the message.
+        assert_eq!(line.lines().count(), 1);
+    }
+
+    /// T-063's MANDATORY sanitise, driven with T-050's own hostile string:
+    /// a NUL + BEL + ESC run and 10 000 characters, which is what the
+    /// verification of the DOM sink put through it. The DOM renders that
+    /// safely; a terminal would not.
+    ///
+    /// ONE THING MEASURED HERE THAT THE CARD DOES NOT SAY, and it changes
+    /// which half of the sanitise is load-bearing on the live path: by the
+    /// time a payload reaches this function it has been through JSON, and
+    /// JSON strings cannot carry raw control bytes — the frontend's
+    /// serializer has already turned the ESC into the six ASCII characters
+    /// `\u001b`. So on the live path the CAP is what the sanitise adds,
+    /// and the escaping is defence in depth. That is worth having anyway:
+    /// this function's argument is a `&str` and nothing in its type says a
+    /// serializer stands in front of it — see the test below, which passes
+    /// raw control bytes straight in.
+    #[test]
+    fn startup_failed_line_survives_a_10k_hostile_message_from_the_boundary() {
+        let hostile = format!("\u{0}\u{7}\u{1b}[31m{}", "A".repeat(10_000));
+        let line = startup_failed_line(&payload("snapshot", &hostile, 4), 7);
+
+        // NOT ONE RAW CONTROL BYTE reaches the terminal — asserted over
+        // the whole line rather than over the three characters we happen
+        // to have thought of.
+        assert!(
+            !line.chars().any(char::is_control),
+            "a raw control character survived into the log line"
+        );
+        // The escape survives as EVIDENCE rather than being dropped: an
+        // absent ESC is a lie about what the boundary sent. JSON wrote
+        // `\u001b` as six ASCII characters, none of them control, so
+        // `sanitize_for_log` passes them straight through.
+        assert!(
+            line.contains("\\u001b[31m"),
+            "the escaped ESC is not legible in the line: {line}"
+        );
+        // The 10 000 characters are capped, and the cap SAYS SO.
+        assert!(line.ends_with("…(truncated)"));
+        assert!(
+            line.chars().count() < 1_000,
+            "10 000 characters reached the terminal unclipped: {} chars",
+            line.chars().count()
+        );
+    }
+
+    /// The same hostile run with NO serializer in front of it — raw NUL,
+    /// BEL and ESC bytes handed straight to the line builder. This is the
+    /// card's claim taken literally ("the message is an arbitrary string
+    /// from the boundary"), and it is the test that would still hold if
+    /// the payload ever stopped being JSON.
+    #[test]
+    fn startup_failed_line_escapes_raw_control_bytes_too() {
+        let raw = "{\"step\":\"subscribe\",\"message\":\"\u{0}\u{7}\u{1b}[31mred\",\"attempt\":1}";
+        let line = startup_failed_line(raw, 3);
+        assert!(
+            !line.chars().any(char::is_control),
+            "a raw control character survived into the log line"
+        );
+        assert!(line.contains("\\u{1b}[31mred"), "{line}");
+        assert!(line.contains("\\u{0}\\u{7}"), "{line}");
+        assert_eq!(line.lines().count(), 1);
+    }
+
+    /// The evidence a diagnosis needs, and the whole of what is discarded
+    /// today: four attempts are four DISTINCT lines carrying four attempt
+    /// numbers. The frontend half of this proof (four presses really do
+    /// emit four payloads, numbered 1..4) is in
+    /// `app/test/startup-recovery.test.ts`; this is the half that turns
+    /// each payload into a log line.
+    #[test]
+    fn four_attempts_are_four_distinct_lines_with_four_attempt_numbers() {
+        let lines: Vec<String> = (1..=4)
+            .map(|n| startup_failed_line(&payload("subscribe", "refused", n), 1_000 + n as u64))
+            .collect();
+        for (i, line) in lines.iter().enumerate() {
+            assert!(
+                line.contains(&format!("\"attempt\":{}", i + 1)),
+                "line {i} does not carry attempt {}: {line}",
+                i + 1
+            );
+        }
+        let unique: std::collections::BTreeSet<&String> = lines.iter().collect();
+        assert_eq!(unique.len(), 4, "four attempts must not collapse into one line");
+    }
+
+    /// A deadline is a THIRD failure the log has to be able to describe —
+    /// and the one that was previously indistinguishable from "still
+    /// waiting", because the latch made "Try again" a no-op while an
+    /// attempt was in flight. Nothing in the line builder is
+    /// step-specific; this pins that it stays that way.
+    #[test]
+    fn the_deadline_step_reaches_the_log_like_any_other() {
+        let line = startup_failed_line(
+            &payload("deadline", "no answer from the docs watcher within 8000 ms", 2),
+            9,
+        );
+        assert!(line.contains("\"step\":\"deadline\""));
+        assert!(line.contains("within 8000 ms"));
     }
 
     #[test]
