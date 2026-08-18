@@ -73,13 +73,15 @@ and hashes `e65478b2…`, `7d265392…`, `6f128974…`; the restored suite passe
 
 ## In progress / broken right now
 
-No task is building. T-055's approved branch is retained.
+The architect is cutting the T-057 / T-058 parallel wave from this clean
+checkpoint. T-055's approved branch is retained.
 
 ## Next up
 
-1. Triage T-062-s4 and T-063-s2.
-2. Dispatch T-057 and T-058 concurrently from this checkpoint; corrected
+1. Dispatch T-057 and T-058 concurrently from this checkpoint; corrected
    T-043 overlaps shell and waits for that wave boundary.
+2. T-067 absorbs T-062-s2/s4 and waits for T-058's `tools/e2e` surface;
+   T-068 absorbs T-063-s2 and waits for T-057's shell surface.
 3. Run the human-owned authenticated genesis below.
 
 ## Human-owned evidence and decisions
@@ -113,9 +115,6 @@ real CLI or model surface moved.
 
 ## Open questions
 
-- Should map wheel input pan, natively scroll, or choose one by axis?
-- What gate owns event names spelled independently across Rust and
-  TypeScript?
 - Does the shared main worktree need a formal rule for what reaches a
   human's running app before a relaunch?
 - Should the T-043 exit observer own a richer child handle, or coordinate

@@ -74,18 +74,19 @@ moment T-034-s5 named to add the gate: before the next one.
   and would itself be unsearchable — T-034 hit exactly this writing
   its own gate.
 - THE extracted module SHALL expose TWO explicit corpora. The TOKEN corpus
-  keeps the current UI-relevant roots and adds `lib/parser/src/**`; P1–P4 run
-  only over that masked source. The CONTROL corpus SHALL cover all tracked
-  first-party text and P5 alone SHALL read its raw bytes. Tailwind/token rules
-  SHALL NOT be applied to prose, parser or Rust files.
+  keeps the current UI-relevant roots exactly as they are; P1–P4 run only over
+  that masked source. The CONTROL corpus SHALL cover all tracked first-party
+  text — including `lib/parser/src/**` — and P5 alone SHALL read its raw bytes.
+  Tailwind/token rules SHALL NOT be applied to prose, parser or Rust files.
 - ARCHITECT RULING (2026-08-18): the CONTROL corpus SHALL include `docs/**`,
   `method/**`, root records, `.github`, app/parser Rust and TypeScript,
   scripts, JSON/TOML/YAML, HTML/CSS/text and lockfiles, while excluding binary
   assets and generated/dependency directories. Leaving records out would omit
   the highest-incidence surface and violate succession: these are the files
-  agents search to recover the project. At checkpoint `7d94043` the proposed
-  tracked-text whitelist is 518 files (app 221, docs 189, lib 49, tools 32,
-  method 22, root 4, `.github` 1); re-derive rather than pin those counts.
+  agents search to recover the project. At checkpoint `ae8833c` the current
+  corpora are TOKEN **117** and CONTROL **520**; the executor SHALL re-derive
+  rather than pin either count. The extracted module itself belongs to CONTROL
+  but is excluded only from TOKEN, whose rules it implements.
 - P5 SHALL report a true BYTE offset derived from a `Buffer`, not a JavaScript
   UTF-16 string index. The lint SHALL report TOKEN and CONTROL corpus counts
   separately so a green token scan cannot be mistaken for whole-tree control
