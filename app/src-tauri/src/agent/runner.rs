@@ -231,7 +231,7 @@ pub struct RunnerConfig {
     /// remember, `..RunnerConfig::default()` is the idiom, and the
     /// default is `true` — so T-047's verifier spawned the developer's
     /// real `claude` from `cargo test`. The structural guard is
-    /// [`real_cli_arms_forbidden`] (T-060 criterion 4).
+    /// [`real_cli_arms_forbidden`] (T-060 criterion 6).
     pub probe_login_shell: bool,
     /// No first stream line within this → `StartTimeout`.
     pub start_timeout: Duration,
@@ -285,7 +285,7 @@ pub struct ResolvedCli {
     pub login_path: Option<String>,
 }
 
-// ---- T-060 criterion 4: no test may resolve the user's real CLI --------
+// ---- T-060 criterion 6: no test may resolve the user's real CLI --------
 
 /// The guard variable. `NPUTER_NO_REAL_CLI=1` forbids the two arms that
 /// could reach the developer's own `claude`; `=0` permits them.
@@ -309,24 +309,75 @@ pub const NO_REAL_CLI_VAR: &str = "NPUTER_NO_REAL_CLI";
 /// iff this process is a cargo TEST binary — see
 /// [`running_as_cargo_test_binary`]. Nothing has to be set, exported,
 /// wrapped or configured, so a test file added next year inherits the
-/// refusal without knowing this function exists.
+/// refusal without knowing this function exists. **Every kind of test
+/// cargo builds is covered, doctests included** — that was not true when
+/// T-060 was first built, and the exception is recorded in
+/// [`is_test_harness_dir`] rather than left for the next reader to find
+/// (T-060-s4).
 ///
 /// **Why not a `.cargo/config.toml` `[env]` entry**, which is the obvious
-/// "set once for the whole suite": cargo applies `[env]` to `cargo run`
-/// too, and `tauri dev` IS `cargo run` from this directory — so the
-/// human's development app would stop finding their CLI. Measured
-/// consequence, not a taste: the dev app would render the hand-driven
-/// fallback forever.
+/// "set once for the whole suite": it would reach the human's DEVELOPMENT
+/// APP, which would then stop finding their CLI and render the
+/// hand-driven fallback forever. Measured, because the obvious mechanism
+/// sentence for this is wrong and was believed here for a while
+/// (T-060-s5): `tauri dev` is NOT `cargo run` — the tauri v2 CLI runs
+/// `cargo build` and spawns the produced binary itself, with no cargo
+/// process between them — but it reconstructs cargo's run environment for
+/// that binary, and `[env]` rides along with it. An
+/// `[env] NPUTER_VERIFIER_PROBE = "reached"` in
+/// `app/src-tauri/.cargo/config.toml` was measured reaching the spawned
+/// dev app, alongside the full `CARGO_*` set; the control — a binary
+/// `cargo build`-ed and exec'd with no cargo anywhere — sees nothing.
+/// Right conclusion, checkable mechanism.
 ///
 /// The escape is explicit and one-way: the `#[ignore]`d real smoke sets
 /// `NPUTER_NO_REAL_CLI=0` before it resolves anything. It is the only
 /// test in the repo that may, and it is additionally `#[ignore]`d and
 /// gated on `NPUTER_REAL_CLI=1`.
+///
+/// **THIS DOCTEST IS THE PROOF FOR THE ONE KIND OF TEST THE DERIVATION
+/// USED TO MISS** (T-060-s4). It is the crate's only doctest and it runs
+/// in the environment that used to fail OPEN: `cfg!(test)` is false here
+/// and rustdoc does not run this binary out of `deps/`. It is written the
+/// same way as the `deps` tripwire in `tests/agent_runner.rs` — pin the
+/// mechanism you depend on, loudly, so a rustdoc that stops naming its
+/// temp directory `rustdoctest*` reds a test instead of quietly handing
+/// every future doctest the developer's real CLI.
+///
+/// ```
+/// assert!(
+///     nputer_lib::agent::runner::real_cli_arms_forbidden(),
+///     "a DOCTEST must not be able to reach the real CLI - if this red, \
+///      rustdoc's temp dir is no longer named `rustdoctest*` and the \
+///      derivation needs a new mechanism"
+/// );
+/// ```
 pub fn real_cli_arms_forbidden() -> bool {
-    match std::env::var(NO_REAL_CLI_VAR).ok().as_deref() {
+    guard_decision(
+        std::env::var(NO_REAL_CLI_VAR).ok().as_deref(),
+        running_as_cargo_test_binary(),
+    )
+}
+
+/// The guard's whole decision, as a function of its INPUTS rather than of
+/// the process it runs in.
+///
+/// **This split is T-060-s3's fix in the direction the finding called
+/// "removing the need to mutate it at all".** The pins on "an explicit
+/// `0` is the smoke's deliberate opt-out" and "an explicit `1` forbids"
+/// used to be written by setting the variable process-wide inside a test
+/// body — in a binary libtest runs on many threads, where a sibling body
+/// asserting the variable is UNSET reads the mutation and goes red. Both
+/// directions are properties of this function, so both can be pinned
+/// without any process ever changing. That the WRAPPER really consults
+/// the variable is pinned the only way it honestly can be: behaviourally,
+/// by a test that runs a resolve in a child process born with it set
+/// (`the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found`).
+fn guard_decision(setting: Option<&str>, is_cargo_test_binary: bool) -> bool {
+    match setting {
         Some("1") => true,
         Some("0") => false,
-        _ => running_as_cargo_test_binary(),
+        _ => is_cargo_test_binary,
     }
 }
 
@@ -350,10 +401,43 @@ fn running_as_cargo_test_binary() -> bool {
     if cfg!(test) {
         return true;
     }
-    std::env::current_exe()
-        .ok()
-        .and_then(|exe| exe.parent().map(|dir| dir.file_name() == Some(std::ffi::OsStr::new("deps"))))
-        .unwrap_or(false)
+    let Ok(exe) = std::env::current_exe() else {
+        return false;
+    };
+    is_test_harness_dir(exe.parent().and_then(|dir| dir.file_name()).and_then(|n| n.to_str()))
+}
+
+/// Does this directory NAME belong to a test harness cargo or rustdoc
+/// built? Two spellings, and the second one is T-060-s4.
+///
+/// `deps` is cargo's, and covers unit tests and integration tests. The
+/// other is rustdoc's: a DOCTEST is compiled to a temporary directory
+/// named `rustdoctest<random>` and run from there, and `cfg!(test)` is
+/// FALSE inside it because a doctest links the crate exactly as an
+/// integration test does. Measured in T-060-s4:
+///
+/// ```text
+/// current_exe = /var/folders/…/T/rustdoctestTieiwm/rust_out
+/// parent      = Some("rustdoctestTieiwm")
+/// cfg_test    = false
+/// ```
+///
+/// (`text`, not Rust, and deliberately — an INDENTED block here becomes a
+/// doctest, which is how the second executor turned this crate's zero
+/// doctests into one broken one while documenting the hole. The
+/// zero-doctest state was never a property of the crate, only of what
+/// nobody had written yet.)
+///
+/// So before this arm, a doctest on [`resolve_cli`] — the most natural
+/// thing in the world to write for a public resolver — would have run
+/// with the guard OFF, spawned the developer's login shell and executed
+/// their real `claude`. T-047-s6's accident, reachable by writing
+/// documentation.
+///
+/// Widening only ever forbids MORE, so a false positive costs a resolve
+/// and never a spawn.
+fn is_test_harness_dir(name: Option<&str>) -> bool {
+    matches!(name, Some("deps")) || matches!(name, Some(dir) if dir.starts_with("rustdoctest"))
 }
 
 // ---- T-047/T-060: what a resolved binary path has to survive -----------
@@ -508,7 +592,7 @@ pub fn resolve_cli(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Result<Resolve
     // `-c` argument is a compile-time constant.
     let probe = if cfg.probe_login_shell {
         if real_cli_arms_forbidden() {
-            // T-060 criterion 4. Not "no shell was found": the arm is
+            // T-060 criterion 6. Not "no shell was found": the arm is
             // REFUSED, and the refusal is named in `probed` so a test
             // that reaches here reads why instead of wondering.
             return Err(ResolveError::NotFound {
@@ -2195,14 +2279,35 @@ mod tests {
         );
         assert!(running_as_cargo_test_binary());
 
-        // The variable overrides in both directions, which is what makes
-        // the one `#[ignore]`d real smoke able to opt out deliberately.
-        std::env::set_var(NO_REAL_CLI_VAR, "0");
-        assert!(!real_cli_arms_forbidden(), "an explicit 0 is the smoke's deliberate opt-out");
-        std::env::set_var(NO_REAL_CLI_VAR, "1");
-        assert!(real_cli_arms_forbidden());
-        std::env::remove_var(NO_REAL_CLI_VAR);
-        assert!(real_cli_arms_forbidden(), "unset falls back to the derived answer");
+        // **THE OVERRIDE, PINNED WITHOUT MUTATING THIS PROCESS
+        // (T-060-s3).** This body used to `set_var` the guard variable and
+        // put it back. libtest runs these bodies on threads of ONE
+        // process, so that window was visible to every sibling — the shape
+        // that made the INTEGRATION tripwire red 15 times in 15 at
+        // `--test-threads=8`. It was harmless here only because no other
+        // lib unit test happens to read the variable, which is precisely
+        // the argument that failed over there. The decision is a pure
+        // function of (setting, is-test-binary), so both directions of the
+        // override are assertable and nothing global moves.
+        assert!(!guard_decision(Some("0"), true), "an explicit 0 is the smoke's deliberate opt-out");
+        assert!(guard_decision(Some("1"), true));
+        assert!(
+            guard_decision(Some("1"), false),
+            "an explicit 1 forbids even where the derivation would not"
+        );
+        assert!(guard_decision(None, true), "unset falls back to the derived answer");
+        assert!(
+            !guard_decision(None, false),
+            "…and the derived answer is what the shipped APP gets: nothing forbidden"
+        );
+        assert!(
+            guard_decision(Some("true"), true),
+            "an unrecognised value is not a way to lift the guard - only a literal 0 is"
+        );
+        // That the wrapper really reads the VARIABLE rather than deriving
+        // and ignoring it is not assertable here without mutating this
+        // process, so it is pinned behaviourally instead, in a process of
+        // its own, by the integration test's lifted arm.
 
         // And the derivation is not accidentally true of the shipped app:
         // a binary run from `<profile>/` or from a bundle is NOT a test.
@@ -2219,6 +2324,25 @@ mod tests {
             Some(std::ffi::OsStr::new("deps")),
             "…and a real cargo test binary path must"
         );
+
+        // **THE DIRECTORY NAMES THAT MEAN "A TEST HARNESS BUILT THIS"
+        // (T-060-s4).** `deps` is cargo's; `rustdoctest<random>` is
+        // rustdoc's, and inside it `cfg!(test)` is FALSE — measured — so
+        // the derivation used to fail OPEN for the one kind of test nobody
+        // would think to check.
+        assert!(is_test_harness_dir(Some("deps")));
+        assert!(
+            is_test_harness_dir(Some("rustdoctestTieiwm")),
+            "a doctest runs out of a `rustdoctest<random>` dir with cfg!(test) false - \
+             a doctest on `resolve_cli` would otherwise reach the developer's own CLI"
+        );
+        for not_a_harness in ["debug", "release", "MacOS", "bin", "target", "rustdoc", "dep", ""] {
+            assert!(
+                !is_test_harness_dir(Some(not_a_harness)),
+                "`{not_a_harness}` is not a test harness directory"
+            );
+        }
+        assert!(!is_test_harness_dir(None), "an unnameable parent is not a test harness");
     }
 
     /// **A RELATIVE SEARCH-PATH ELEMENT YIELDS NO CANDIDATE (T-060,

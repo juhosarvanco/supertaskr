@@ -1813,7 +1813,7 @@ fn no_login_path_ever_comes_from_a_file() {
     let _ = fs::remove_dir_all(&root);
 }
 
-/// **THE GUARD IS ON IN THIS TEST BINARY (T-060 criterion 4).**
+/// **THE GUARD IS ON IN THIS TEST BINARY (T-060 criterion 6).**
 ///
 /// The lib's own `the_real_cli_arms_are_forbidden_from_a_test_binary`
 /// cannot prove this case: inside the lib's unit-test build `cfg!(test)`
@@ -1824,6 +1824,16 @@ fn no_login_path_ever_comes_from_a_file() {
 ///
 /// Nothing sets anything: no `[env]` entry, no wrapper, no shared setup,
 /// no field on a struct. That is the whole claim.
+///
+/// **AND NOTHING IN THIS BINARY CAN RACE IT (T-060-s3).** This body used
+/// to red 15 times in 15 at `--test-threads=8` and 9 in 15 at 4 —
+/// `ubuntu-24.04`'s vCPU count, and `ci.yml` runs a bare `cargo test` —
+/// because the guard's own proof test lifted `NPUTER_NO_REAL_CLI`
+/// process-wide for the width of one resolve, and this assertion landed
+/// in the window. That lift now happens in a CHILD PROCESS. A tripwire
+/// that reds on CI is one an integrator learns to re-run until green,
+/// which is exactly the channel a real guard failure would arrive
+/// through, so a flake HERE is worse than a flake anywhere else.
 #[test]
 fn the_no_real_cli_guard_is_on_without_anything_being_set() {
     assert_eq!(
@@ -1848,8 +1858,20 @@ fn the_no_real_cli_guard_is_on_without_anything_being_set() {
     );
 }
 
-/// **THE GUARD PROVEN BY THE ATTACK THAT FOUND IT (T-060 criterion 6,
-/// T-047-s6).**
+/// The child-arm marker. **Absent means this process is the PARENT** and
+/// drives the two arms below; present means this process IS one arm,
+/// re-invoked by the parent with an environment the parent composed.
+const T060_ARM_VAR: &str = "NPUTER_T060_ARM";
+/// Where the parent put the fixtures, handed to each child.
+const T060_ROOT_VAR: &str = "NPUTER_T060_ROOT";
+/// The `--exact` filter the parent re-invokes itself with. It is the name
+/// of the test below; a filter that matches NOTHING exits 0 with
+/// "0 passed", so `t060_run_arm` refuses to accept a run it cannot see.
+const T060_TEST_NAME: &str =
+    "the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found";
+
+/// **THE GUARD PROVEN BY THE ATTACK THAT FOUND IT (T-060 criterion 7,
+/// T-047-s6) — IN CHILD PROCESSES, WHICH IS T-060-s3's FIX.**
 ///
 /// T-047's verifier reconstructed a resolve with `probe_login_shell: true`
 /// — the `..RunnerConfig::default()` idiom, and the default IS `true` —
@@ -1863,9 +1885,82 @@ fn the_no_real_cli_guard_is_on_without_anything_being_set() {
 /// developer's machine — **and the controlled `$SHELL` is a TATTLER, so
 /// "the shell was never spawned" is measured rather than inferred.**
 ///
+/// **WHY THIS BODY SPAWNS ITSELF.** The discriminating half has to run
+/// with the guard LIFTED, and the first version lifted it by setting
+/// `NPUTER_NO_REAL_CLI` in THIS process. libtest runs these bodies on
+/// threads of one process, so the window was visible to every sibling:
+/// `the_no_real_cli_guard_is_on_without_anything_being_set` — the tripwire
+/// whose entire job is "nothing has to be set" — read the lift and went
+/// red. Measured before the fix: **15/15 at `--test-threads=8`, 9/15 at
+/// 4**, and 4 is the vCPU count of the `ubuntu-24.04` runner `ci.yml`
+/// runs a bare `cargo test` on (T-060-s3). A tripwire that reds on CI is
+/// one an integrator learns to re-run until green, which is exactly the
+/// channel a REAL guard failure would arrive through.
+///
+/// So each arm is a CHILD PROCESS: this same test binary, re-invoked with
+/// `--exact` on this test's own name, with the guard, `$SHELL` and `PATH`
+/// composed by the parent. **Nothing process-global is mutated here** —
+/// the parent asserts as much about its own environment at the end — so
+/// there is no window for any sibling to observe, at any thread count.
+///
+/// It also buys a property the in-process version could not have: each
+/// child's `PATH` is an EMPTY DIRECTORY. The lifted arm therefore cannot
+/// reach the developer's real `claude` even if every fixture in it were
+/// broken, which is how T-060-s1's accident happened. That accident is
+/// now structurally unreachable rather than argued away.
+///
 /// A guard nobody has watched refuse is a guard nobody has watched.
 #[test]
 fn the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found() {
+    match std::env::var(T060_ARM_VAR).ok().as_deref() {
+        None => t060_parent_drives_both_arms(),
+        Some("guarded") => t060_child_guarded_arm(),
+        Some("lifted") => t060_child_lifted_arm(),
+        Some(other) => panic!("unknown {T060_ARM_VAR} value {other:?} - the parent sets this"),
+    }
+}
+
+/// Re-invoke THIS test binary, running only the test above, with an
+/// environment this process composes rather than mutates.
+fn t060_run_arm(arm: &str, root: &Path, shell: &Path, guard: Option<&str>) -> String {
+    let exe = std::env::current_exe().expect("current_exe");
+    let mut command = std::process::Command::new(exe);
+    command
+        .arg(T060_TEST_NAME)
+        .args(["--exact", "--test-threads=1", "--nocapture"])
+        .env(T060_ARM_VAR, arm)
+        .env(T060_ROOT_VAR, root)
+        .env("SHELL", shell)
+        // THE EMPTY SEARCH PATH. `which_on_path` reads the process's own
+        // `PATH`; a directory with nothing in it means no arm of this test
+        // can reach a real binary, guard or no guard.
+        .env("PATH", root.join("nopath"));
+    match guard {
+        Some(value) => command.env(nputer_lib::agent::runner::NO_REAL_CLI_VAR, value),
+        None => command.env_remove(nputer_lib::agent::runner::NO_REAL_CLI_VAR),
+    };
+    let out = command.output().expect("re-invoke this test binary");
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(out.status.success(), "the `{arm}` arm FAILED in its own process:\n{text}");
+    // …and it RAN. An `--exact` filter that matches nothing exits 0 with
+    // "0 passed", which would make every assertion about this arm vacuous
+    // — including the negative ones, which is the dangerous direction.
+    assert!(
+        text.contains("1 passed"),
+        "the `{arm}` arm did not run - has {T060_TEST_NAME} been renamed?:\n{text}"
+    );
+    text
+}
+
+fn t060_child_root() -> PathBuf {
+    PathBuf::from(std::env::var(T060_ROOT_VAR).expect("the parent sets the fixture root"))
+}
+
+fn t060_parent_drives_both_arms() {
     use std::os::unix::fs::PermissionsExt;
 
     let root = std::env::temp_dir().join(format!(
@@ -1875,6 +1970,7 @@ fn the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found()
     ));
     let project = root.join("project");
     fs::create_dir_all(&project).expect("mk project");
+    fs::create_dir_all(root.join("nopath")).expect("mk the empty search path");
     let tattle = root.join("shell-ran.txt");
     let lifted_tattle = root.join("shell-ran-lifted.txt");
     let binary_tattle = root.join("binary-ran.txt");
@@ -1887,32 +1983,130 @@ fn the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found()
     // tattles if it is executed at all — T-047's verifier's exact shape.
     // Named `zsh` so it passes T-060's own name check: this test must not
     // pass for the wrong reason.
-    let shell = root.join("fail/zsh");
+    let fail_shell = root.join("fail/zsh");
     fs::create_dir_all(root.join("fail")).expect("mk fail");
     fs::write(
-        &shell,
+        &fail_shell,
         format!(
             "#!/bin/sh\necho ran > {}\necho NPUTER_LOGIN_PATH=/nputer-t060/bin\nexit 1\n",
             tattle.display()
         ),
     )
     .expect("write shell");
-    fs::set_permissions(&shell, fs::Permissions::from_mode(0o755)).expect("chmod");
+    fs::set_permissions(&fail_shell, fs::Permissions::from_mode(0o755)).expect("chmod");
+
+    // The shell for the discriminating half, whose `command -v` NAMES the
+    // planted fixture — see T-060-s1: the first version of that arm left
+    // `command -v` failing, so a lifted resolve fell through to
+    // `which_on_path`, read the developer's own `PATH` and executed their
+    // real `claude`. Both halves of the fix are here now: this shell, and
+    // the empty `PATH` every arm runs on.
+    let ok_shell = root.join("ok/zsh");
+    fs::create_dir_all(root.join("ok")).expect("mk ok");
+    fs::write(
+        &ok_shell,
+        format!(
+            "#!/bin/sh\necho ran > {}\necho {}\necho NPUTER_LOGIN_PATH=/nputer-t060/bin\nexit 0\n",
+            lifted_tattle.display(),
+            root.join("bin/claude").display()
+        ),
+    )
+    .expect("write ok shell");
+    fs::set_permissions(&ok_shell, fs::Permissions::from_mode(0o755)).expect("chmod");
 
     // **PRE-FLIGHT, AND IT IS LOAD-BEARING RATHER THAN DECORATIVE.**
-    // Everything below resolves with `probe_login_shell: true`, so if the
+    // Both children resolve with `probe_login_shell: true`, so if the
     // guard is broken this body is a way to reach the developer's machine
     // — which is how T-060-s1 was found. Asserting the guard BEFORE the
-    // first resolve makes a broken guard fail here, harmlessly, instead
-    // of two statements later on somebody's real `claude`. It is also
-    // what makes this test safe to poison-drill.
+    // first spawn makes a broken guard fail here, harmlessly. Each child
+    // asserts its own expected guard state again on the far side of the
+    // fork, because that is the process the resolve actually runs in.
     assert!(
         nputer_lib::agent::runner::real_cli_arms_forbidden(),
         "the guard is already off before this test does anything - refusing to resolve"
     );
+    let shell_before = std::env::var("SHELL").ok();
 
-    let restore = std::env::var("SHELL").ok();
-    std::env::set_var("SHELL", &shell);
+    // ---- ARM ONE: the accident, refused -----------------------------
+    //
+    // The guard variable is REMOVED for this child, so what refuses is the
+    // DERIVED default — the property the card claims — and not an explicit
+    // `1` this test handed itself.
+    t060_run_arm("guarded", &root, &fail_shell, None);
+    assert!(
+        root.join("guarded-ran.txt").exists(),
+        "the guarded arm's evidence is a NEGATIVE (no tattle), so it has to prove it ran"
+    );
+    // The whole point, measured: no shell was spawned, at either door.
+    assert!(
+        !tattle.exists(),
+        "THE LOGIN SHELL RAN - the guard fires after the spawn, not before"
+    );
+    assert!(!sessions::sessions_path(&project).exists(), "a session was registered");
+
+    // ---- ARM TWO: THE DISCRIMINATING HALF ----------------------------
+    //
+    // Without it, "not found" could just mean the fixture was broken. So
+    // the guard is lifted — by the environment this child is BORN with,
+    // never by a mutation — and the same configuration must reach the same
+    // shell and the same planted binary.
+    t060_run_arm("lifted", &root, &ok_shell, Some("0"));
+    assert!(
+        lifted_tattle.exists(),
+        "with the guard lifted the shell must run - otherwise the refusal above was \
+         not the guard's doing"
+    );
+    assert!(binary_tattle.exists(), "…and it is that fixture binary the version probe ran");
+    let recorded = fs::read_to_string(root.join("resolved.txt"))
+        .expect("the lifted arm records what it resolved");
+    let want = root.join("bin/claude").display().to_string();
+    let mut lines = recorded.lines();
+    assert_eq!(
+        lines.next(),
+        Some(want.as_str()),
+        "the lifted resolve must land on the FIXTURE and never on the machine"
+    );
+    assert_eq!(lines.next(), Some("/nputer-t060/bin"));
+
+    // **AND NOTHING GLOBAL MOVED.** This is T-060-s3 itself, asserted:
+    // the guard variable is still unset in this process and `$SHELL` is
+    // whatever it was, so no sibling body can observe this test at any
+    // thread count. The tripwire above is what would notice if it did.
+    assert_eq!(
+        std::env::var(nputer_lib::agent::runner::NO_REAL_CLI_VAR).ok(),
+        None,
+        "this body must leave the guard variable UNSET - a lift window in a threaded \
+         test binary is what T-060-s3 was"
+    );
+    assert_eq!(std::env::var("SHELL").ok(), shell_before, "…and $SHELL untouched too");
+    assert!(
+        nputer_lib::agent::runner::real_cli_arms_forbidden(),
+        "the guard must be on for every test that runs after this one"
+    );
+    let _ = fs::remove_dir_all(&root);
+}
+
+/// ARM ONE, in its own process: the accidental configuration, refused by
+/// the DERIVED guard, at the resolver door and at the app door.
+fn t060_child_guarded_arm() {
+    let root = t060_child_root();
+    let project = root.join("project");
+    let tattle = root.join("shell-ran.txt");
+
+    assert!(
+        nputer_lib::agent::runner::real_cli_arms_forbidden(),
+        "the guard is already off before this arm does anything - refusing to resolve"
+    );
+    assert_eq!(
+        std::env::var(nputer_lib::agent::runner::NO_REAL_CLI_VAR).ok(),
+        None,
+        "this arm must run on the DERIVED default - an explicit value would prove less"
+    );
+    assert_eq!(
+        std::env::var("SHELL").ok(),
+        Some(root.join("fail/zsh").display().to_string()),
+        "the parent's tattling fixture shell is the only $SHELL this arm may see"
+    );
 
     // THE ACCIDENTAL CONFIGURATION, verbatim: the default idiom, with
     // nothing turned off.
@@ -1931,7 +2125,6 @@ fn the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found()
         ),
         other => panic!("THE GUARD DID NOT HOLD: {other:?}"),
     }
-    // The whole point, measured: no shell was spawned.
     assert!(
         !tattle.exists(),
         "THE LOGIN SHELL RAN - the guard fires after the spawn, not before"
@@ -1945,77 +2138,59 @@ fn the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found()
     assert!(!tattle.exists(), "start_genesis spawned the login shell");
     assert!(!sessions::sessions_path(&project).exists(), "a session was registered");
 
-    // ---- THE DISCRIMINATING HALF ------------------------------------
-    //
-    // Without it, "not found" could just mean the fixture was broken. So
-    // the guard is lifted and the SAME configuration must reach the SAME
-    // shell.
-    //
-    // **THE FIXTURE SHELL CHANGES FOR THIS ARM, AND THE REASON IS THE
-    // FINDING ITSELF.** The first draft of this test lifted the guard
-    // while `$SHELL` still failed `command -v` — so resolution fell
-    // through to `which_on_path`, read the DEVELOPER'S OWN `PATH`, found
-    // their real `/opt/homebrew/bin/claude` and executed it with
-    // `--version`. **The discriminating half of the guard's own test was
-    // a way to defeat the guard**, which is T-047-s6's accident happening
-    // inside the proof that it cannot. Filed as T-060-s1.
-    //
-    // The fix is to make the lifted arm SUCCEED: a shell whose
-    // `command -v` names the planted fixture, so the whole resolve stays
-    // inside this temp tree and `which_on_path` is never reached. It also
-    // makes the lift window safe for any test running concurrently — the
-    // only `$SHELL` visible during it answers with a fixture path.
-    let ok_shell = root.join("ok/zsh");
-    fs::create_dir_all(root.join("ok")).expect("mk ok");
-    fs::write(
-        &ok_shell,
-        format!(
-            "#!/bin/sh\necho ran > {}\necho {}\necho NPUTER_LOGIN_PATH=/nputer-t060/bin\nexit 0\n",
-            lifted_tattle.display(),
-            root.join("bin/claude").display()
-        ),
-    )
-    .expect("write ok shell");
-    fs::set_permissions(&ok_shell, fs::Permissions::from_mode(0o755)).expect("chmod");
-    std::env::set_var("SHELL", &ok_shell);
+    // THE RECEIPT. Everything this arm proves is an ABSENCE, and a child
+    // that never ran leaves every absence intact. The parent asserts this
+    // file exists before it believes any of it.
+    fs::write(root.join("guarded-ran.txt"), "the guarded arm ran to the end").expect("receipt");
+}
+
+/// ARM TWO, in its own process: the same configuration with the guard
+/// lifted by the environment this process was BORN with. Nothing here
+/// mutates anything — and the search path is empty, so the only binary
+/// this arm can possibly reach is the parent's planted fixture.
+fn t060_child_lifted_arm() {
+    let root = t060_child_root();
+    assert_eq!(
+        std::env::var(nputer_lib::agent::runner::NO_REAL_CLI_VAR).ok().as_deref(),
+        Some("0"),
+        "the parent lifts the guard by BIRTH, not by set_var"
+    );
+    assert!(
+        !nputer_lib::agent::runner::real_cli_arms_forbidden(),
+        "this arm exists to run with the guard OFF - and it is the variable that lifts it"
+    );
+    // With the guard off, the one thing that MUST hold is that the machine
+    // is out of reach.
+    let search_path = std::env::var("PATH").expect("PATH");
+    assert_eq!(
+        search_path,
+        root.join("nopath").display().to_string(),
+        "a guard-off arm may only run on the parent's empty search path"
+    );
+    assert_eq!(
+        fs::read_dir(&search_path).expect("read the search path").count(),
+        0,
+        "…and it must really be empty, or this arm could reach a real binary"
+    );
 
     let cfg = RunnerConfig {
         extra_env: vec![(
             "NPUTER_FAKE_TATTLE".to_string(),
-            binary_tattle.display().to_string(),
+            root.join("binary-ran.txt").display().to_string(),
         )],
         ..RunnerConfig::default()
     };
-    std::env::set_var("NPUTER_NO_REAL_CLI", "0");
-    let lifted = nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter());
-    std::env::set_var("NPUTER_NO_REAL_CLI", "1");
-
-    assert!(
-        lifted_tattle.exists(),
-        "with the guard lifted the shell must run - otherwise the refusal above was \
-         not the guard's doing. resolve returned {lifted:?}"
-    );
-    let resolved = lifted.expect("the fixture shell names a real, absolute, correctly named file");
-    assert_eq!(
-        resolved.path,
-        root.join("bin/claude"),
-        "the lifted resolve must land on the FIXTURE and never on the machine"
-    );
-    assert!(binary_tattle.exists(), "…and it is that fixture binary the version probe ran");
-    assert_eq!(resolved.login_path.as_deref(), Some("/nputer-t060/bin"));
-
-    // Restored, and the restoration ASSERTED: every test that runs after
-    // this one must find the guard back on.
-    std::env::remove_var("NPUTER_NO_REAL_CLI");
-    match restore {
-        Some(value) => std::env::set_var("SHELL", value),
-        None => std::env::remove_var("SHELL"),
-    }
-    assert!(
-        nputer_lib::agent::runner::real_cli_arms_forbidden(),
-        "the guard must be back on for every test that runs after this one"
-    );
-    let _ = fs::remove_dir_all(&root);
+    let resolved = nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter())
+        .expect("the fixture shell names a real, absolute, correctly named file");
+    fs::write(
+        root.join("resolved.txt"),
+        format!(
+            "{}\n{}\n",
+            resolved.path.display(),
+            resolved.login_path.as_deref().unwrap_or("<none>")
+        ),
+    )
+    .expect("record what was resolved");
 }
 
 /// **CRITERION 4 (T-039-s2): THE `model` OFF THE INIT LINE IS BOUNDED.**
