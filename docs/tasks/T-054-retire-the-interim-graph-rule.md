@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 3
 size: M
-status: building
+status: done
 blocked_by: []
 touches: [docs, method, tools/e2e, ci]
 builder: claude-opus-5 @T-054

@@ -238,7 +238,14 @@
   RETIRE is the
   regen — `--check` DETECTS a stale graph, it never produces a fresh
   one, so the integrator still regenerates and still commits the result;
-  a green CI is now what proves they did. WHY THE CHECKPOINT AND NOT THE
+  a green CI is now what proves they did. UNTIL THE FIRST PUSH THAT GATE
+  IS WRITTEN BUT DORMANT (T-054-s4, closed here): `git remote` returns
+  nothing and ci.yml has never run once, so "held by a gate" is true in
+  the FUTURE TENSE only. Until a runner exists, RUN IT YOURSELF at the
+  checkpoint — `cargo run -p nputer-index -- index --check --root ../..`
+  from app/src-tauri — and record the verdict there. That is the same
+  command the CI step runs; the integrator is still the one holding the
+  property. WHY THE CHECKPOINT AND NOT THE
   MERGE: the checkpoint edits INDEXED fixture files
   (app/test/architecture-dogfood.test.ts and
   app/test/map-dogfood-render.test.tsx), so a graph regenerated into the
