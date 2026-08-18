@@ -9,10 +9,10 @@ status: verifying
 blocked_by: [T-051]
 touches: [app-shell, app-map]
 builder: claude-opus-5 @fresh
-verifier:
+verifier: claude-opus-5 @fresh
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-048-s1, T-048-s2, T-048-s3, T-048-s4 (triage 2026-08-17).
@@ -537,3 +537,265 @@ rather than trusting this paragraph.
   app reports, and there isn't one.
 
 ## Verdicts
+
+2026-08-18 — claude-opus-5 @fresh (verifier, same-model as builder): **APPROVED**
+
+Range **derived, not quoted**: `git merge-base HEAD main` =
+`f94dd9c372f720c81b9c7707114169cc2da18f9a`, so `f94dd9c..HEAD` = **two**
+commits `09127fa`, `d40d76a` — **10 files, 1290+/146−** (not the eight the
+Fence claims; see the corrections below). Worktree `nputer-T-062`. Scratch
+ports **16400** (lane + every measurement run) and **16401** (boot gate),
+both bind-probed free before use and both `lsof`-empty afterwards. **1420
+was never bound, connected to or signalled** — read-only `lsof` at session
+start and at the end shows exactly the human's one listener, node pid
+**82549**, `[::1]:1420`, unchanged. `../nputer-T-060` untouched. No model
+calls, no screen control (the boot gate opens the app's own window; it
+injects no input and takes no screenshot).
+
+**THE DISCLOSURE CHECKS OUT.** All ten files in the range are byte-identical
+to `git show HEAD:<path>` by sha256, and `git status --porcelain -uall` is
+empty. Nothing is lost or half-restored. I made the same hazard visible
+from the other side: my own drills used `git checkout f94dd9c -- …`, which
+**stages**, and left six paths reading `MM` even with the worktree back to
+HEAD — a clean-looking `git diff` and a dirty index. Only `git reset` cleared
+it. Every one of my restores was proved by sha256 against
+`git show HEAD:<path>`, never by a clean `git status`.
+
+### Criterion by criterion, and how
+
+| # | criterion | verdict | how I checked it |
+|---|---|---|---|
+| 1 | ONE SCROLL MODEL — `main` and the column bounded unconditionally, the scoping pin rewritten | **holds** | `main` is `flex h-screen`; the column is `flex h-screen min-w-0 flex-1 flex-col`; `boundedFrame` and the `cn` import are gone (`tsc --noEmit` exit 0 on all three packages). The pin is rewritten to `expectBoundedFrame`, asserting BOTH `h-screen` present and `min-h-screen` absent on both elements. R1 (`main` back to `min-h-screen`) → **3 of 4 jsdom RED**; R2 is the column's half. Measured on the served bundle: `page == viewport` on all five screens at all three viewports (front door / no-plan / board / map / genesis at 1280x840, 1024x700, 800x600) — **15 of 15**. The BEFORE column reproduces too: board **4989/840, 4989/700, 4989/600**, no-plan **663/600**, map **654/600**. |
+| 2 | `PaneRail` survives the bound with its own `h-screen` | **holds** | `h-screen` on the `<nav>`. Measured: rail **4989** before (the whole document) → **840/700/600** after, and `toBeInViewport` after a 3000px wheel. R4 (rail loses `h-screen`) → **1 jsdom RED**. |
+| 3 | THE BOARD OWNS A SCROLL REGION | **holds, with a reachable exception — T-062-s3** | `board-scroll` carries `min-h-0 flex-1 overflow-y-auto`; measured **5139/730, 5139/590, 5139/490** over this repo's own tree, page stays 840/700/600, wordmark and rail stay in viewport after a real wheel. R5 is the executor's; I confirmed the region and the chrome first-hand. **The exception is filed, not waved**: see T-062-s3 below. |
+| 4 | THE MAP CANVAS SCROLLS RATHER THAN CLIPS | **holds** | `overflow-auto`. Measured **446/392 `auto`** at 800x600 and the last pixel reachable with the page not moving. I reproduced the TRAP first-hand on the pre-task tree (`boundedFrame = true`, T-048's rejected variant): the sweep picks up `map-canvas 446/392` with `overflow-y: hidden` at 800x600 and nowhere else. |
+| 5 | A LANE ASSERTION CONVERTS THE SILENT FAILURE INTO A LOUD ONE | **holds** | R3 (canvas back to `overflow-hidden`) → **6 lane RED**, and the sweep's message is verbatim what the criterion asked for: `Error: map: a box is hiding content with no way to scroll to it`. The premise assertion is real (`scrollHeight > clientHeight` before the overflow check), so it cannot pass on a canvas that never had to scroll. **Two honest limits, both filed**: the sweep's exactness is one matcher away from vacuity (T-062-s5) and its five-screen menu misses the board state in T-062-s3. |
+| 6 | THE NO-PLAN CARD FITS, and T-048-s4's correction is recorded | **holds — reproduced to the pixel** | Pre-task tree at 800x600: page **663/600**; `.max-w-150` **115..615** (500 tall); `start-interview-here` **524..556**; convention footnote bottom **590**; panels **115+104 / 251+44 / 327+288**. So 615..663 is the section's **48px** `py-12` bottom padding and 600..615 is **15px** of painted panel — **48 + 15 = 63**, and nothing readable or clickable is below the fold. **T-048-s3's prose does not reproduce; s4 is right.** Every one of those figures is byte-identical on the post-task tree, so the front door was not redesigned in passing. |
+| 7 | IF the new default makes it fit THEN the trim SHALL STILL be evaluated AT THE MINIMUM and the notes record whether it was needed | **holds — "evaluated and declined" satisfies it, and I checked the number** | The criterion's verb is *evaluated* and *recorded whether it was needed*, not *taken*; "remedy 1 first" ranks remedies, it does not mandate one. Measured at 1024x700 myself: page **700/700**, card **345.5+288**, button **542.5..574.5**, footnote bottom **608.5** — **91.5px of clearance**, and the section reads `633/633 auto`, not engaged. The card fits at the declared minimum before this task changes anything, so the trim would have been a design change with no measurement behind it. The 663/600 figure is a fact about 800x600, which is below the declared minimum. **Criterion met; had the notes said only "the bigger window hides it", it would not be.** |
+| 8 | THE MEASUREMENT TABLE IS THE FORM OF THE PROOF | **holds, with one drift the integrator should expect** | I re-measured every cell independently with my own probe against the same rig. Every BEFORE and AFTER field reproduces, **including the genesis row byte-identical on both sides** (792/720 at 1280x840, 876/580 at 1024x700, lens absent below `lg`). **The board figures are the one exception and the cause is the card itself**: the table's `4879`/`4989` were measured at commit `09127fa`, and commit `d40d76a` added 588 lines of docs to the tree the board renders. On today's tree the same probe reads **5139** and **5249**. Re-measured against `f94dd9c`'s docs tree (extracted with `git archive`) it is **4989 exactly**. The number is right for the tree it was taken on; it is not reproducible from the final tree, and that is worth one sentence for whoever re-runs it. |
+| 9 | ZERO new tokens, tokens-only, both schemes | **holds** | `lint:tokens` → `clean (117 files scanned)`, exit 0, **zero allowlist** (the script has none by design). Every added `className` in the diff is layout-only: `h-screen`, `min-h-0`, `flex-1`, `overflow-y-auto`, `overflow-auto`, `my-auto`, `flex-col`, `justify-center`, `px-10 py-12`. **Zero** CSS custom properties added anywhere in the diff, zero arbitrary values, no colour utility moved — so light and dark are structurally unaffected, and the token lint is what says so. `lint:tokens -- --selftest` unchanged. |
+
+### The centring change — REPRODUCED, and the reasoning is exactly right
+
+This was the claim most likely to be subtly wrong, so I tested it the way
+the brief asked: shrink the viewport under the card and try to reach its
+top. Shipped (`my-auto`), front door and no-plan, 800x{600,420,320,240,200}:
+at `scrollTop = 0` the card's top is **+48px inside** the section on every
+size, and scrolling to the end lands exactly on its bottom padding. The
+whole card is reachable at every size.
+
+Then I mutated the SAME live page to `items-center justify-center` and
+re-measured. Front door at 800x320: the card's top sits at **−29.5px** —
+*above* the scroll origin — and after scrolling to the maximum it is at
+**−107.5**. At 800x200 it is **−89.5** and **−227.5**. No-plan at 800x420:
+**−73.5**. The scroll extent shrinks with the mutation (408 → 331 at
+800x320) precisely because overflow above the origin is not scrollable.
+**The claim is not merely defensible, it is demonstrable: with
+`justify-center` the top of an oversized card cannot be reached at any
+scroll position.** The three-level structure (scroll container / `my-auto`
+padded middle / border-box card) is measured, not styled: the card's own
+geometry is byte-identical before and after.
+
+### T-062-s1 — verified exactly, and the 700 question ANSWERED
+
+I reproduced the whole finding on the pre-T-062 tree, both probes side by
+side at 1024 wide and 200 tall:
+
+| screen | old probe (`documentElement.scrollHeight`) | new probe (content) |
+|---|---|---|
+| front door | **475** | **475** |
+| no-plan | **663** | **663** |
+| board | **4989** | **4989** |
+| map | **620** | **620** |
+| **genesis** | **302** | **1082** |
+
+Four screens agree to the pixel; genesis is off by **780**. The probe did
+read the document, it did report 302 for a screen whose content is 1082,
+and the one screen T-051 raised the window FOR was the one its floor probe
+could not see. **Confirmed.**
+
+**DOES 700 STILL HOLD? Yes — but NOT for the reason T-051 gave, and the
+reason it gave is now demonstrably false.** T-051 justified 700 as "the
+tallest natural content is the no-plan card at 663, so 700 clears it by
+37px". That was never true: genesis wanted ~1082 at the time it was
+written, and the board 4989. The premise "700 clears the tallest screen"
+is false by 382px on one screen and by 4289 on another. What makes 700
+defensible TODAY is the property T-062 created and `window-contract.spec.ts`
+now asserts: every screen owns a scroll region, so "fits" stopped being
+the requirement and "the leftover region is usable" replaced it. Measured
+at the declared minimum, the tightest non-form region on any screen is
+**580px** (the genesis lens, 876/580) with `board-scroll` at 590 — both far
+above T-048-s5's 250px floor. **So: the number survives, its justification
+does not, and the reconciled test is the first thing in the repo that
+checks the property the number actually has.** Two caveats for whoever
+takes s1: (a) the new probe SUMS side-by-side regions, so genesis's 1082 is
+84px of chat log plus 796px of lens plus 2px of textarea — the honest
+"nothing needs to scroll" height is ~996, still 296 above the floor;
+(b) the same probe does not exclude form controls while its neighbour
+`tightestRegion` does, on a measured false-alarm argument — 2 of the 1082
+is a `<textarea>`. Both are small; both make 1082 a ceiling rather than a
+figure. Also: s1 says three lane helpers read `documentElement.scrollHeight`;
+`git grep` **from the repo root** finds them in **four** files —
+`crescendo.spec.ts:224` is the one not named.
+
+### T-062-s2 — mechanism right, BOUND wrong, and I filed the correction
+
+354px on one 300px wheel reproduces exactly (transform −300, `scrollTop`
+54, max 54). But s2's "a small constant added to the pan, not a doubling"
+and "at 1280x840 and 1024x700 the wheel behaves exactly as before" are
+**Y-axis-only claims**. Measured on both axes: max `scrollLeft` is **0 /
+152 / 376** at the three viewports, and `wheel(300, 0)` at 800x600 produced
+`scrollLeft` **300** on top of a −300px pan — **an exact doubling**, capped
+at +376, seven times the 54px s2 cites. At the DECLARED MINIMUM a
+horizontal wheel moves the graph 452px instead of 300. Filed as
+**T-062-s4**. It does not change s2's trade (deleting graph is worse) and
+I do not disagree with shipping it — the alternative is a non-passive
+wheel listener, which is outside this fence. It changes what the reader is
+told the cost is.
+
+### The three non-reproducing numbers — all three confirmed, and the half-reproduction explained
+
+- **`App.tsx:472` → `:495`**: on the pre-task tree, line **495** is
+  `cn("flex min-w-0 flex-1 flex-col", boundedFrame ? "h-screen" : "min-h-screen")`
+  and `boundedFrame` is declared at **478**. Both figures exact.
+  `MapView.tsx:552` reproduces exactly as the card says.
+- **446/392, not 446/320**: reproduced by rebuilding the trap on the
+  pre-task tree. **54px hidden, not 126.** The half-reproduction is not a
+  curiosity, it has a cause worth stating: `scrollHeight` **446** is the
+  graph's content height, and T-012's layout is deterministic and pinned,
+  so it cannot drift; `clientHeight` is the canvas box, i.e. the viewport
+  minus whatever chrome sits above and below it, and **nothing pins that**.
+  The map's pane header moved 72px since T-048. **The two halves of
+  "446/320" have different provenance — one is pinned by a spec, the other
+  is a free variable — which is exactly why one held and one did not.**
+- **2202 → 4989**: the rail measures 4989 on the pre-task tree with
+  `f94dd9c`'s docs; 5139/5249 on today's, for the reason in criterion 8.
+
+### The drills — re-derived, plus a correction and a fourth shape
+
+- **R3 lands.** 6 lane RED, the sweep names it in the criterion's own
+  words. **The invisibility claim also lands, with a correction to its
+  count.** I rebuilt the trap (pre-task tree, `boundedFrame = true`) and
+  ran both suites: **app 818/821 and lane 76/77 — not the "app 821/821,
+  lane 77/77" the notes claim.** The reds are `T-048 the frame holds — and
+  only where it should` (2, jsdom) and `the other screens are untouched by
+  the restructure` (1, lane, message: *"the front door stays a scrolling
+  page at 800x600"*), plus one build-staleness guard tripped by my own
+  drill. **Every one of them is a "you bounded the wrong screen" red; not
+  one is about the canvas.** So the load-bearing half — nothing anywhere
+  catches 54px of graph disappearing — is exactly true, and the "whole
+  suite stayed green" phrasing is not. Recorded rather than counted
+  against: the claim it supports is unaffected.
+- **R1 and R4 produce zero lane movement — confirmed, and I ran the FULL
+  lane rather than a subset: 82 passed, 0 red, both times.** I judge the
+  reasoning sound. Geometry cannot distinguish "bounded because it says
+  so" from "bounded because its sibling is", and the honest statement of
+  what R4's pin buys is narrow but real: the rail is correct today by
+  flex stretch, which is a property of `main`, not of the rail. Any change
+  that stops stretch applying — `items-start`, a wrapper, a shell offset —
+  silently collapses the strip, and no measurement in the repo would see
+  it. A pin geometry cannot see is worth having **when the property it
+  pins is intent rather than outcome**, which is the case for both. What
+  I would not accept is the same argument used to keep a pin whose
+  property IS an outcome; it is not used that way here.
+- **The `REGION_FLOOR` overclaim is corrected and the new wording is
+  accurate.** It now says there is no independent runtime source, that
+  `expect(REGION_FLOOR).toBe(250)` does not make it independently derived,
+  and states exactly what it buys (a second, visible edit). I re-derived
+  B1: moving both together is green. The comment no longer says anything
+  I can falsify.
+- **A FOURTH SHAPE — filed as T-062-s5.** `toEqual(exactSet)` →
+  `toEqual(expect.arrayContaining(exactSet))`: one substitution, assertion
+  side only, entirely plausible-looking, relation-preserving. Run with **R3
+  live underneath it**, all three sweep executions go **GREEN** — the
+  assertion that reds in 3.3s on the unmutated file no longer sees the
+  clipping canvas at all. For the four screens whose expected set is `[]`
+  it is not loosened but total: `arrayContaining([])` matches any array.
+  The pattern across all four known shapes is worth the one line in s5:
+  every one is a widening of the MATCHER, never a change to the value.
+
+### Suites — first-hand in this worktree, every exit unpiped
+
+| suite | result | exit |
+|---|---|---|
+| lib/parser | **225 passed (11 files)**, `tsc --noEmit` clean | 0 |
+| app | **821 passed (42 files)**, `tsc --noEmit` clean, `npm run build` clean | 0 |
+| app/src-tauri | bare `cargo test` → **318 passed + 3 ignored, 0 failed**, **15 targets**, per-target **113/0/0/46/123/0/7/13/3/7/0/2/4/0/0** — identical to the card's in all fifteen slots | 0 |
+| tools/e2e | **82 passed in 17.4s**, one worker, retries 0, no skips, no flakes; **5** from `shell-frame.spec.ts` (3 loop-wrapped + 2 at column 0), 77 elsewhere | 0 |
+| `lint:tokens` | `clean (117 files scanned)`, zero allowlist | 0 |
+
+`grep -c warning` on the cargo log returns **1** and it is the test NAME
+`warnings_and_unknown_event_types_do_not_fail_the_turn` — **zero compiler
+warnings**, as the card says. The bundle reproduces byte-for-byte:
+`index-tsWZtfZi.js` **498.88 kB**, `index-BeT5MY7f.css` **43.90 kB**.
+`acl_pin.rs` sha256 **8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e**, **92**
+grants counted in `EXPECTED_GRANTS`. **Zero diff** under `app/src-tauri/**`,
+`lib/parser/**`, `method/**`, `docs/architecture/graph.json`,
+`docs/CONVENTIONS.md`, `.github/**` and every manifest and lockfile. No new
+IPC command, no new grant, no new dependency, no `innerHTML`.
+
+**BOOT GATE: FIRES AND PASSES**, re-run on scratch port **16401**,
+bind-probed free first. Both `[nputer]` lines detected, same nine lines
+verbatim. **The script prints no exit code** — the 0 is my own `echo $?`,
+appended to the log by me and labelled as such, exactly as the card labels
+its own. No listener survived on 16400 or 16401.
+
+**`git grep` from a subdirectory returns nothing and reads like a
+contradiction** — I confirmed the trap on this very tree: from the root,
+`documentElement.scrollHeight` has 8 hits across 6 files; from `docs/`,
+zero.
+
+### THREE NEW FINDINGS, filed from s3
+
+- **T-062-s3 — the parse-error strip reopens the page scroll.** The only
+  one I would call a real hole. `parse-error-details` sits outside
+  `board-scroll` deliberately, has no `min-h-0` and no `overflow`, so it
+  cannot shrink; `flex-1` starves the board first and then the `<ul>`
+  pushes through the bottom of the `h-screen` column, whose overflow is
+  `visible`. Measured: at **20** unparsable task files the page reads
+  **896/840 at the shipped 1280x840 default** and `window.scrollY` reaches
+  56 — the header scrolls away again. At 800x600 with 60 it is **3296/600**.
+  And `board-scroll` collapses to **30px**, an eighth of the same task's
+  own `REGION_FLOOR`, already at 142px with SIX errors. **This is not a
+  regression** — the board's page always scrolled before — and no
+  criterion states the invariant universally, which is why it is a filing
+  and not a rejection. But the card's "AFTER, every screen and every
+  viewport: `page == viewport`" is a five-screen claim, not a property,
+  and the new sweep cannot see the difference.
+- **T-062-s4** — the wheel double-move on the X axis (above).
+- **T-062-s5** — the fourth mutation shape (above).
+
+### Corrections to the record — small, but the fence is for checking
+
+- **The Fence says "eight files: three source, four test, and this card".
+  `git diff f94dd9c..HEAD --stat` is TEN** — the two suggestion files
+  landed in `d40d76a`. Eight was true of commit 1; it is not true of the
+  range, and the Fence is the paragraph an integrator runs verbatim.
+- **`App.tsx:504` names the wrong file.** The comment says
+  "`genesis-screen.spec.ts` reds if any bounded region ever hides content
+  again". It does not — the sweep is in `shell-frame.spec.ts`, and R3
+  confirms it: `genesis-screen.spec.ts` is not among the six reds. A future
+  reader sent to that file will not find the assertion.
+- The eleven `map-node` clippers are **ten at 92/64 and one at 116/64**,
+  not eleven at 92/64.
+- Under T-062 the old probe does not report the viewport on all five
+  screens — genesis still reads **302** and the map **214** at a 200px
+  viewport. The test would still have been vacuous (both are far under
+  the 700 floor), so the conclusion stands; "all five would have reported
+  the viewport" is the overstatement.
+
+### NOT MINE TO JUDGE — for the morning list
+
+**Whether one bounded frame FEELS right is @human's, and the card says so.**
+Everything below the fold on the board now lives in a region with its own
+scrollbar; that is a daily-visible change to a screen @human uses, in light
+and dark, at 1280x840 and 1024x700, and no measurement settles it. I neither
+approved nor rejected on it. Paired with it: **T-062-s1's live question —
+the interview wants ~1000-1082px at a declared floor of 700**, so at the
+minimum the genesis screen is permanently scrolling. Legal under one scroll
+model, and still a judgment someone should make with the app open.
+
+**Verdict: APPROVED.** Nine criteria re-derived first-hand, the trap and
+the centring claim reproduced from the other side, all three declared
+non-reproductions confirmed, the disclosure independently checked to
+sha256, three findings filed. `status: verifying` left for the integrator.
