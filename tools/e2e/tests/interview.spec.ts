@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { NOTHING_FOUND, streakFixture, streakMidInterview } from "../fixtures/shell";
 import {
   applyDocs,
@@ -408,16 +408,46 @@ test("the frame holds and BOTH regions scroll at 800x600 / 1024x768 / 1280x720 /
 });
 
 /**
- * The four screens T-048 bounded that T-027 must NOT have moved. T-027
- * restructured the genesis screen; this re-runs T-048's criterion-4
- * table so "byte-identical elsewhere" is measured rather than assumed.
+ * The four screens T-027 must NOT have moved. T-027 restructured the
+ * genesis screen; this re-runs T-048's criterion-4 table so
+ * "byte-identical elsewhere" is measured rather than assumed.
+ *
+ * T-062 RECONCILE — THE CLAIM CHANGED BECAUSE THE SHELL DID, and the
+ * assertions were STRENGTHENED rather than inverted. Each of the three
+ * reads below used to require `false`: that was T-048's deliberate
+ * scoping, where the interview was the ONE bounded screen and everything
+ * else was a growing page. T-062 closed that fork — one scroll model,
+ * bounded, on every screen — so the same three reads have to be `true`
+ * now. A bare `false` → `true` flip would leave a test that no longer
+ * says anything, so each screen is additionally asked for the thing the
+ * bound MAKES NECESSARY: its own scroll region. A bounded screen that
+ * owns no scroll region is content nobody can reach, which is the exact
+ * failure T-062 exists to prevent, and it is a state this loop would
+ * otherwise pass straight through.
  */
-test("the other screens are untouched by the restructure", async ({ page }) => {
+test("the other screens follow the shell's one scroll model", async ({ page }) => {
   await openInterview(page);
 
   // 1. the front door
   await expectPhase(page, "browser", "browser");
   await applyDocs(page, { seq: 1, projectDir: "/e2e/p", generatedAtMs: 1, files: [] });
+
+  /** The shell's content column, and whether it is bounded. */
+  const bounded = (page: Page): Promise<boolean> =>
+    page.evaluate(() =>
+      (
+        document.querySelector('[data-testid="docs-model"] > div') as HTMLElement
+      ).classList.contains("h-screen"),
+    );
+
+  /** Does `testId` actually hand its overflow to a scrollbar? Read off
+   * COMPUTED style, so it holds whatever the class is spelled. */
+  const scrolls = (page: Page, testId: string): Promise<string> =>
+    page.evaluate((id) => {
+      const el = document.querySelector(`[data-testid="${id}"]`);
+      if (el === null) return "absent";
+      return getComputedStyle(el as HTMLElement).overflowY;
+    }, testId);
 
   for (const viewport of [
     { width: 800, height: 600 },
@@ -430,15 +460,14 @@ test("the other screens are untouched by the restructure", async ({ page }) => {
       window.__nputerShellHarness!.applyProjectStatus({ kind: "noProject" });
     });
     await expect(page.getByTestId("empty-state")).toBeVisible();
-    let column = await page.evaluate(
-      () =>
-        (
-          document.querySelector('[data-testid="docs-model"] > div') as HTMLElement
-        ).classList.contains("h-screen"),
+    expect(await bounded(page), `the front door is bounded at ${at}`).toBe(true);
+    expect(await scrolls(page, "empty-state"), `…and owns its scroll region at ${at}`).toBe(
+      "auto",
     );
-    expect(column, `the front door stays a scrolling page at ${at}`).toBe(false);
 
-    // 2. the no-plan card
+    // 2. the no-plan card — the tallest thing the front door renders
+    // (663px at every width, T-048-s4), so it is the one that has to be
+    // reachable inside the frame rather than below it.
     await page.evaluate(() => {
       window.__nputerShellHarness!.applyPickOutcome({
         kind: "noDocs",
@@ -447,6 +476,7 @@ test("the other screens are untouched by the restructure", async ({ page }) => {
       });
     });
     await expect(page.getByTestId("no-plan-heading")).toBeVisible();
+    expect(await scrolls(page, "empty-state"), `the no-plan card scrolls at ${at}`).toBe("auto");
 
     // 3. the board
     await page.evaluate((s) => {
@@ -454,24 +484,16 @@ test("the other screens are untouched by the restructure", async ({ page }) => {
     }, streakFixture(20, "/e2e/board"));
     await expectPhase(page, "open", "board");
     await expect(page.getByTestId("pane-rail")).toBeVisible();
-    column = await page.evaluate(
-      () =>
-        (
-          document.querySelector('[data-testid="docs-model"] > div') as HTMLElement
-        ).classList.contains("h-screen"),
+    expect(await bounded(page), `the board is bounded at ${at}`).toBe(true);
+    expect(await scrolls(page, "board-scroll"), `…and owns its scroll region at ${at}`).toBe(
+      "auto",
     );
-    expect(column, `the board stays a scrolling page at ${at}`).toBe(false);
 
     // 4. the map
     await page.getByTestId("pane-rail-map").click(); // trusted
     await expect(page.getByTestId("map-view")).toBeVisible();
-    column = await page.evaluate(
-      () =>
-        (
-          document.querySelector('[data-testid="docs-model"] > div') as HTMLElement
-        ).classList.contains("h-screen"),
-    );
-    expect(column, `the map stays a scrolling page at ${at}`).toBe(false);
+    expect(await bounded(page), `the map is bounded at ${at}`).toBe(true);
+    expect(await scrolls(page, "map-canvas"), `…and the canvas scrolls at ${at}`).toBe("auto");
     await page.getByTestId("pane-rail-board").click(); // trusted
   }
 });

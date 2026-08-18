@@ -5,23 +5,32 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { DocsSnapshotPayload } from "../src/lib/docs-model";
 
 /**
- * T-048 — WHICH screens are bounded, and the chain that makes bounding
- * work. The MEASUREMENT (page scrollHeight vs viewport, the pane's own
- * region scrolling) lives where layout is real: `tools/e2e/tests/
- * genesis-screen.spec.ts`, at 800x600 / 1024x768 / 1280x720. jsdom has
- * no layout engine, so this file pins the two things a served-bundle
- * probe cannot cheaply pin instead:
+ * T-062 — ONE SCROLL MODEL, and the chain that makes bounding work.
+ * (T-048 wrote this file to pin the OPPOSITE: which screens were bounded
+ * and which were not. T-062 collapsed that fork, so the scoping pin is
+ * rewritten to pin the single model instead of the conditional.)
  *
- *   THE SCOPING. The bound belongs to the genesis screen ALONE. Every
- *   other screen here is a scrolling PAGE, and bounding this column
- *   bounds `main` with it — which moves the board (its rail is a
- *   stretch-height sibling, 2202px over the dogfood tree, and a bounded
- *   frame stops the sidebar strip at the fold) and the map (its canvas
- *   is `overflow-hidden`, so at 800x600 a bounded frame clips it to
- *   446/320 with no scrollbar anywhere). Both measured in T-048's notes.
- *   Nothing in the lane asserts the rail's height, so without this test
- *   the scoping could be flattened to an unconditional `h-screen` and
- *   every existing suite would stay green.
+ * The MEASUREMENT — page scrollHeight against the viewport, each
+ * screen's own region scrolling — lives where layout is real:
+ * `tools/e2e/tests/shell-frame.spec.ts` (every screen, three viewports)
+ * and `genesis-screen.spec.ts`. jsdom has no layout engine, so this file
+ * pins the three things a served-bundle probe cannot cheaply pin:
+ *
+ *   THE MODEL. `main` and the column are bounded UNCONDITIONALLY, on
+ *   every screen, and neither carries `min-h-screen` any more — a floor
+ *   is not a ceiling, and having both models in one shell is the fork
+ *   this task closed. Nothing in the lane can tell "bounded because
+ *   `h-screen`" from "bounded because this screen's content happens to
+ *   fit", so the class itself is asserted here.
+ *
+ *   WHAT THE BOUND COSTS, pinned so it cannot be silently un-paid. Each
+ *   of these was MEASURED going wrong before it was fixed (T-062 notes):
+ *   the rail collapsed from the document's height to the fold (4989 to
+ *   840/700/600) until it got its own `h-screen`; the board had no
+ *   scroll region at all, so the page was its scroll region and the
+ *   header went with it; and the map canvas HID what it clipped —
+ *   446/392 with `overflow-y: hidden` at 800x600, 54px of graph gone
+ *   with no scrollbar and nothing red anywhere.
  *
  *   THE CHAIN. A bounded box only hands its overflow down if every link
  *   between it and the scroll region can shrink: a flex item's automatic
@@ -142,16 +151,38 @@ afterAll(() => {
   container.remove();
 });
 
-describe("T-048 the frame holds — and only where it should", () => {
-  it("1. the front door is a scrolling page: the column is not bounded", () => {
+/** The single scroll model, asserted as LITERAL classes on both frame
+ * elements. Deliberately not derived from anything the component also
+ * derives from: a helper that read the expected class off the element
+ * would pass for any class at all (T-063's drill — a test parametrised
+ * by the constant it claims to pin, pins nothing). */
+function expectBoundedFrame(where: string): void {
+  const { main, column } = frame();
+  expect(main.classList.contains("h-screen"), `${where}: main is bounded`).toBe(true);
+  expect(
+    main.classList.contains("min-h-screen"),
+    `${where}: a floor is not a ceiling — \`min-h-screen\` is what let the page grow`,
+  ).toBe(false);
+  expect(column.classList.contains("h-screen"), `${where}: the column is bounded`).toBe(true);
+  expect(column.classList.contains("min-h-screen"), `${where}: and only bounded`).toBe(false);
+}
+
+describe("T-062 the frame holds EVERYWHERE — one scroll model", () => {
+  it("1. the front door is bounded, and its card owns a scroll region", () => {
     expect(screenOf()).toBe("empty");
-    const { main, column } = frame();
-    expect(column.classList.contains("min-h-screen")).toBe(true);
-    expect(column.classList.contains("h-screen")).toBe(false);
-    expect(main.classList.contains("min-h-screen")).toBe(true);
+    expectBoundedFrame("front door");
+
+    // A bounded frame makes a centred card that outgrows it UNREACHABLE
+    // unless the screen itself scrolls — the no-plan card is 663px tall
+    // at 800x600 against a 600px window (T-048-s4, re-measured at T-062).
+    const card = q('[data-testid="empty-state"]');
+    expect(card, "the front door's section").not.toBeNull();
+    expect(card!.classList.contains("overflow-y-auto"), "it scrolls").toBe(true);
+    expect(card!.classList.contains("min-h-0"), "and it can shrink to do so").toBe(true);
+    expect(card!.classList.contains("flex-1")).toBe(true);
   });
 
-  it("2. the board and the map are scrolling pages too, and the rail rides main's floor", async () => {
+  it("2. the board is bounded, owns a scroll region, and the rail carries its OWN h-screen", async () => {
     ipc.outcomes.set("pick_project_folder", {
       kind: "picked",
       snapshot: {
@@ -166,24 +197,52 @@ describe("T-048 the frame holds — and only where it should", () => {
     });
     await click(q('[data-testid="pick-folder"]'));
     expect(screenOf()).toBe("board");
+    expectBoundedFrame("board");
 
-    const board = frame();
-    expect(board.column.classList.contains("min-h-screen")).toBe(true);
-    expect(board.column.classList.contains("h-screen")).toBe(false);
-    // The rail is a sibling of the column inside `main`, stretched by
-    // `align-items: stretch` — so `main`'s floor is what makes the
-    // sidebar strip run the whole document, not just the first screenful.
-    expect(q('[data-testid="pane-rail"]')).not.toBeNull();
-    expect(board.main.classList.contains("min-h-screen")).toBe(true);
+    // THE BOARD'S OWN SCROLL REGION — the whole point of bounding it.
+    // Before T-062 the PAGE was the board's scroll region, so reaching
+    // the last card took the header, the project path, the parse chips
+    // and the theme toggle off-screen with it.
+    const scroller = q('[data-testid="board-scroll"]');
+    expect(scroller, "the board's scroll region").not.toBeNull();
+    expect(scroller!.classList.contains("overflow-y-auto")).toBe(true);
+    expect(scroller!.classList.contains("min-h-0")).toBe(true);
+    expect(scroller!.classList.contains("flex-1")).toBe(true);
+    expect(
+      scroller!.querySelectorAll('[data-testid="task-card"]').length,
+      "and the board really is inside it",
+    ).toBe(1);
+
+    // THE RAIL. It is a stretch-height sibling of the column, so it used
+    // to inherit the DOCUMENT's height (4989px over this repo's own
+    // docs/ tree). Under the bound it would collapse to the fold by
+    // inheritance — right answer, wrong reason. Its own `h-screen` is
+    // what makes the strip the window by construction, and this is the
+    // only assertion anywhere that says so.
+    const rail = q('[data-testid="pane-rail"]');
+    expect(rail, "the rail renders on the board").not.toBeNull();
+    expect(rail!.classList.contains("h-screen"), "the rail survives the bound").toBe(true);
 
     await click(q('[data-testid="pane-rail-map"]'));
     expect(container.querySelector("main")?.getAttribute("data-pane")).toBe("map");
-    const map = frame();
-    expect(map.column.classList.contains("min-h-screen")).toBe(true);
-    expect(map.column.classList.contains("h-screen")).toBe(false);
+    expectBoundedFrame("map");
+
+    // THE TRAP T-048 MEASURED AND THIS TASK PAID. `overflow-hidden` on a
+    // `min-h-0 flex-1` box does not merely fail to scroll — it DELETES
+    // what it clips: 446/392 at 800x600 under a bound, 54px of graph
+    // gone with no scrollbar anywhere. jsdom cannot see the geometry, so
+    // it pins the class; `tools/e2e/tests/shell-frame.spec.ts` measures
+    // the consequence where layout is real.
+    const canvas = q('[data-testid="map-canvas"]');
+    expect(canvas, "the map canvas").not.toBeNull();
+    expect(canvas!.classList.contains("overflow-auto"), "the canvas scrolls").toBe(true);
+    expect(
+      canvas!.classList.contains("overflow-hidden"),
+      "it must never go back to hiding what it clips",
+    ).toBe(false);
   });
 
-  it("3. the genesis screen bounds its column to the window", async () => {
+  it("3. the genesis screen is bounded by the same rule, not by a special case", async () => {
     // Back out through a folder the app refuses (no plan in it), which
     // is how the card that offers "Start an interview here" appears.
     ipc.outcomes.set("pick_project_folder", {
@@ -203,18 +262,12 @@ describe("T-048 the frame holds — and only where it should", () => {
     await click(q('[data-testid="start-interview-here"]'));
     expect(screenOf()).toBe("genesis");
 
-    const { main, column } = frame();
-    expect(column.classList.contains("h-screen"), "the interview's column is bounded").toBe(
-      true,
-    );
-    expect(
-      column.classList.contains("min-h-screen"),
-      "a floor is not a ceiling — `min-h-screen` is what let the page grow",
-    ).toBe(false);
-    // `main` keeps its floor: it is the row the rail stretches inside,
-    // and on this screen there is no rail to stretch. Bounding it too
-    // changes nothing here and breaks the board — measured, T-048.
-    expect(main.classList.contains("min-h-screen")).toBe(true);
+    // T-048 bounded THIS screen and only this one. The interview's
+    // geometry is byte-identical before and after T-062 at all three
+    // viewports (T-062's table) — what changed is that it is no longer
+    // the exception. `main` is bounded here too, which T-048 measured as
+    // costless on this screen and which is now what every screen does.
+    expectBoundedFrame("genesis");
   });
 
   it("4. every link from the bounded column to the pane's scroll region can shrink", async () => {

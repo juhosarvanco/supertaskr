@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { acceleratorsFor, useAccelerators } from "@/components/shell/accelerators";
 import { cancelTurn, startInterviewSource } from "@/genesis/interview-source";
 import { skipReasonPhrase } from "@/lib/docs-model";
-import { cn } from "@/lib/utils";
 import {
   CONVENTION_HINT,
   getShellState,
@@ -153,8 +152,20 @@ export function EmptyState({
   return (
     <section
       data-testid="empty-state"
-      className="flex flex-1 items-center justify-center px-10 py-12"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto"
     >
+      {/* T-062: `my-auto`, not `justify-center`. Under a bounded frame a
+          centred child that outgrows its box is cut off at BOTH ends and
+          the top half is unreachable by scrolling; auto margins resolve
+          to zero the moment free space runs out, so the card centres
+          when it fits and scrolls from its first pixel when it does not.
+          The padding rides this middle level rather than the scroll
+          container (a scroll container's trailing padding is not
+          reliably part of its scrollable area) and rather than the
+          `max-w-150` card (which is border-box, so padding there would
+          narrow the text to 520px and reflow the screen — measured:
+          the card grew 100px to 118px before this level was added). */}
+      <div className="my-auto flex justify-center px-10 py-12">
       <div className="flex w-full max-w-150 flex-col gap-8">
         <div className="flex flex-col gap-3">
           <h2 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h2>
@@ -238,6 +249,7 @@ export function EmptyState({
           </div>
         )}
       </div>
+      </div>
     </section>
   );
 }
@@ -304,8 +316,14 @@ export function StartupScreen({
     <section
       data-testid="startup-screen"
       data-startup={failure === null ? "waiting" : "failed"}
-      className="flex flex-1 items-center justify-center px-10 py-12"
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto"
     >
+      {/* T-062: the same scroll region and the same auto-margin
+          centring as the front door, three levels for the same measured
+          reason — a failure detail is the one text on this screen that
+          can be arbitrarily long, so it is the worst thing on any screen
+          to make unreachable. */}
+      <div className="my-auto flex justify-center px-10 py-12">
       <div className="flex w-full max-w-150 flex-col gap-8">
         <div className="flex flex-col gap-3">
           <h2 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h2>
@@ -378,6 +396,7 @@ export function StartupScreen({
           </span>
         </div>
       </div>
+      </div>
     </section>
   );
 }
@@ -446,40 +465,61 @@ function App() {
   const milestone = milestoneLine(model);
 
   /**
-   * T-048: the interview is the one screen whose frame must HOLD.
+   * T-062 — ONE SCROLL MODEL, and it is the bounded one.
    *
-   * The genesis pane owns an `overflow-y-auto` region, and a scroll
-   * region can only engage inside a BOUNDED box. `min-h-screen` sets a
-   * floor, never a ceiling, so this column grew with the content and
-   * the PAGE took the scroll — at 800x600 (the app's own configured
-   * window) you scrolled the header and the interview heading
-   * off-screen to reach the artifact list, while the pane's own region
-   * sat at 858/858 and never moved. Bounding the column at `h-screen`
-   * is half the fix; the other half is `min-h-0` on the genesis
-   * screen's own section (GenesisScreen.tsx) — without it that
-   * section's automatic minimum holds it at content height and
-   * `overflow: visible` spills the page open anyway. Both halves are
-   * needed and neither is sufficient; measured, not assumed.
+   * T-048 bounded the genesis column (`h-screen`) and left every other
+   * screen a growing page (`min-h-screen`), naming T-027 as the owner
+   * of the choice. T-027 came and went without settling it, so the
+   * shell carried two scroll models that nobody had chosen: on a tall
+   * board the wordmark, the project path, the parse chips and the theme
+   * toggle all scrolled away, while the interview one screen over did
+   * the opposite. This is the fork closed — `main` and the column are
+   * bounded UNCONDITIONALLY, the page never grows, and every screen
+   * owns its own scroll region instead.
    *
-   * Scoped to genesis DELIBERATELY, also measured: every other screen
-   * here is a scrolling PAGE, and bounding this column bounds `main`
-   * with it (its only sized child), which moves two of them. The
-   * board's rail is a stretch-height sibling of this column — over the
-   * dogfood tree it measures 2202px, the whole document, and a bounded
-   * frame stops the sidebar strip and its border at the fold. The map's
-   * canvas is `min-h-0 flex-1 overflow-hidden` (MapView.tsx), so at
-   * 800x600 a bounded frame clips it to 446/320 with NO scrollbar
-   * anywhere — 126px of graph unreachable. The tables for all of it are
-   * in T-048's notes. Whether the whole shell should be bounded with
-   * every screen owning its own scroll is a real question, but it is a
-   * composition one — it needs a sticky rail and a board scroll region
-   * — and it belongs with T-027, not with a frame that does not hold.
+   * WHAT BOUNDING COSTS, and why each cost has a fix in this same diff
+   * rather than a note (T-048 measured all three while ruling the
+   * unconditional version out, and each figure was re-measured here):
+   *
+   *   THE RAIL is a stretch-height sibling of this column, so it used
+   *   to run the whole document (4989px over this repo's own docs/
+   *   tree; 2202 when T-048 measured it) and a bound stops it at the
+   *   fold with its right border. It now carries its OWN `h-screen`
+   *   (PaneRail.tsx), so the strip is the window by construction and
+   *   not by inheritance.
+   *
+   *   THE BOARD had no scroll region at all — the page was its scroll
+   *   region. It now owns the `min-h-0 flex-1 overflow-y-auto` idiom
+   *   the pane and the map already used, which is what keeps the header
+   *   above it still.
+   *
+   *   THE MAP CANVAS was `min-h-0 flex-1 overflow-hidden`: it can
+   *   shrink, and when it did it HID what it clipped. Re-measured at
+   *   800x600 under a bound and before the fix: `map-canvas` 446/392
+   *   with `overflow-y: hidden` — 54px of graph gone with no scrollbar
+   *   anywhere and nothing red, because jsdom has no layout and the
+   *   lane had no assertion about it. (T-048 recorded 446/320 for the
+   *   same cell; the clientHeight moved with the pane header since,
+   *   the mechanism did not.) It is `overflow-auto` now, and
+   *   `genesis-screen.spec.ts` reds if any bounded region ever hides
+   *   content again.
+   *
+   * The front door and the startup screen take the same treatment for
+   * the same reason: a centred card taller than a bounded frame is
+   * content you cannot reach, so each is a scroll region whose card is
+   * centred with AUTO MARGINS rather than `justify-center` — auto
+   * margins collapse to zero when free space runs out, so the card
+   * stays fully scrollable instead of being cut off at the top.
+   *
+   * Fit-to-frame is deliberately NOT taken: T-012's layout is
+   * deterministic and pinned, and rescaling is a design decision
+   * (T-048-s2). @human owns whether one bounded frame FEELS right —
+   * a desktop app whose header never scrolls away is the intent, and
+   * no measurement settles it.
    */
-  const boundedFrame = screen.screen === "genesis";
-
   return (
     <main
-      className="flex min-h-screen"
+      className="flex h-screen"
       data-testid="docs-model"
       data-screen={screen.screen}
       data-pane={pane}
@@ -492,7 +532,7 @@ function App() {
       {/* The rail renders only when a project is open; front door /
           loading / browser screens stay full-bleed. */}
       {screen.screen === "board" && <PaneRail active={pane} onSelect={setPane} />}
-      <div className={cn("flex min-w-0 flex-1 flex-col", boundedFrame ? "h-screen" : "min-h-screen")}>
+      <div className="flex h-screen min-w-0 flex-1 flex-col">
       <header className="flex items-center justify-between gap-4 border-b border-hairline px-6 pt-4.5 pb-3.5">
         <div className="flex items-baseline gap-3.5">
           <h1 className="font-mono text-3xl font-bold tracking-wordmark">nputer</h1>
@@ -661,7 +701,16 @@ function App() {
             </ul>
           )}
 
-          <div className="px-6 pb-7.5">
+          {/* T-062: the board's OWN scroll region — the same
+              `min-h-0 flex-1 overflow-y-auto` idiom T-024's pane and the
+              map canvas already use. Before this the page was the
+              board's scroll region, so reaching the bottom of a tall
+              board took the header, the project path, the parse chips
+              and the theme toggle off-screen with it. The counts strip
+              and the parse-error list stay OUTSIDE it deliberately:
+              both are answers about the board, and an answer you have
+              to scroll back up for is not much of one. */}
+          <div data-testid="board-scroll" className="min-h-0 flex-1 overflow-y-auto px-6 pb-7.5">
             <Board model={model} />
           </div>
         </>
