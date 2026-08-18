@@ -1642,8 +1642,32 @@ fn a_relative_search_path_element_reaches_no_process() {
         ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
     ];
 
+    // **THE RELATIVE ELEMENT MUST RESOLVE TO A REAL FILE**, or arm one
+    // asserts nothing. A poison drill proved that: with `which_in`
+    // reverted to its pre-T-060 `is_executable_file` check, an earlier
+    // version of this body stayed GREEN, because `relbin/claude` did not
+    // exist relative to the test's CWD and the old check refused it for
+    // the wrong reason. So the tattling binary is ALSO planted under the
+    // test's own working directory, where a relative lookup finds it.
+    //
+    // cargo runs test binaries with cwd = the package root, and `target/`
+    // is inside it and gitignored. Asserted, not assumed.
+    let cwd = std::env::current_dir().expect("cwd");
+    assert_eq!(
+        cwd.file_name().and_then(|n| n.to_str()),
+        Some("src-tauri"),
+        "cargo no longer runs tests from the package root - the relative fixture below \
+         would not resolve and this test would pass for the wrong reason"
+    );
+    let rel_dir = format!("target/nputer-t060-relbin-{}-{}", std::process::id(), now_ms());
+    plant_binary(&cwd.join(&rel_dir).join("claude"));
+    assert!(
+        Path::new(&format!("{rel_dir}/claude")).is_file(),
+        "the relative fixture must be reachable through a relative path"
+    );
+
     // ARM ONE: the relative element. Refused, and nothing executed.
-    for hostile in ["relbin", ".", "", "relbin:.", ".:relbin"] {
+    for hostile in [rel_dir.as_str(), ".", "", "relbin:.", ".:relbin"] {
         let cfg = resolving_cfg(extra.clone(), Some(hostile));
         match nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter()) {
             Err(nputer_lib::agent::runner::ResolveError::NotFound { .. }) => {}
@@ -1674,6 +1698,7 @@ fn a_relative_search_path_element_reaches_no_process() {
         "the tattler never fires at all - arm one proved nothing"
     );
 
+    let _ = fs::remove_dir_all(cwd.join(&rel_dir));
     let _ = fs::remove_dir_all(&root);
 }
 

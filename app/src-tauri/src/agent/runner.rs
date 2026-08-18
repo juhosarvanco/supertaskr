@@ -2254,16 +2254,51 @@ mod tests {
              relative case below proves nothing"
         );
 
-        // …and every relative spelling of a search path finds nothing,
-        // including the two that are easy to miss: `.` and the EMPTY
-        // element, which POSIX defines as the current directory.
-        for hostile in ["relbin", ".", "", "relbin:.", ":/nonexistent-t060"] {
+        // …and every relative spelling of a search path finds nothing.
+        //
+        // **THE RELATIVE ELEMENT HAS TO RESOLVE TO A REAL FILE OR THIS
+        // ASSERTS NOTHING.** A poison drill caught exactly that: with
+        // `which_in` reverted to its pre-T-060 `is_executable_file`
+        // check, an earlier version of this body stayed GREEN, because
+        // `relbin/claude` did not exist relative to the test's CWD and
+        // the old check refused it for the wrong reason. So the fixture
+        // is planted UNDER THE TEST'S OWN WORKING DIRECTORY, where a
+        // relative lookup genuinely finds it.
+        //
+        // cargo runs test binaries with cwd = the package root, and
+        // `target/` is inside it and gitignored. The assumption is
+        // ASSERTED rather than relied on: if cargo ever changes it, this
+        // test says so instead of quietly going vacuous again.
+        let cwd = std::env::current_dir().expect("cwd");
+        assert_eq!(
+            cwd.file_name().and_then(|n| n.to_str()),
+            Some("src-tauri"),
+            "cargo no longer runs tests from the package root - the relative fixture \
+             below would not resolve and this test would pass for the wrong reason"
+        );
+        let rel_dir = format!("target/nputer-t060-rel-{}-{}", std::process::id(), now_ms());
+        let rel_planted = cwd.join(&rel_dir).join(adapter.binary);
+        std::fs::create_dir_all(cwd.join(&rel_dir)).expect("mk rel dir");
+        std::fs::write(&rel_planted, "#!/bin/sh\nexit 0\n").expect("write");
+        std::fs::set_permissions(&rel_planted, std::fs::Permissions::from_mode(0o755))
+            .expect("chmod");
+        // The bug this pins, stated as a fact about the fixture: reached
+        // as a FILE the planted binary is executable, so the only thing
+        // refusing it below is its relative SHAPE.
+        assert!(
+            is_executable_file(Path::new(&format!("{rel_dir}/{}", adapter.binary))),
+            "the relative fixture must be executable through a relative path - \
+             otherwise `is_executable_file` refuses it and the gate is untested"
+        );
+
+        for hostile in [rel_dir.as_str(), ".", "", "relbin:.", ":/nonexistent-t060"] {
             assert_eq!(
                 which_in(hostile, adapter),
                 None,
                 "search path {hostile:?} produced a candidate; a relative element must not"
             );
         }
+        let _ = std::fs::remove_dir_all(cwd.join(&rel_dir));
         // A hostile element must not poison an otherwise good search
         // path either — the search CONTINUES past a refusal.
         assert_eq!(
