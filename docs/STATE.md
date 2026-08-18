@@ -178,10 +178,21 @@ with the SECOND instrument: `nputer-index index --check --root <repo>` →
 edges)`, exit 0. **Two independent instruments, both green.**
 
 **Operational note, RE-CONFIRMED first-hand a THIRD time**: run from
-`app/src-tauri/`, `index --check` WITHOUT `--root` exits **1** and
-reports the committed graph MISSING. Reproduced deliberately here beside
-the green run. **That is a false red, not a stale graph.** Three-for-three
-and it should be believed.
+`app/src-tauri/`, `index --check` WITHOUT `--root` exits **1**.
+Reproduced deliberately beside the green run, three-for-three. **That is
+a false red, not a stale graph.**
+
+**CORRECTED 2026-08-17 by T-054's executor — and the correction is the
+part that matters.** Three checkpoints in a row (mine included) recorded
+that this failure "reports the graph MISSING", which reads as *you can
+tell it apart at a glance*. **You cannot.** It prints the **STALE
+headline, byte-identical to a real red**; `committed: MISSING` appears
+only on the SECOND line. So a tired integrator who greps the headline,
+or reads the first line of a long transcript, cannot distinguish a
+missing `--root` from a genuinely stale graph — and the two want opposite
+responses. Always read the second line. The measured transcript is in
+T-054's notes, and `docs/CONVENTIONS.md` now says the measured thing
+rather than the remembered one.
 
 **THE COMPONENT PICTURE MOVED A LOT, and unlike the last two merges that
 was the POINT.** T-051's and T-053's regens both added edges whose heads
