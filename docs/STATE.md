@@ -1,282 +1,127 @@
 # State
 
-Updated: 2026-08-18 by integrator (T-060 merged and checkpointed),
-gpt-5.6 @fresh
+Updated: 2026-08-18 by architect/integrator (T-056 merged),
+codex/gpt-5 @fresh
 
 ## Just completed
 
-**T-060 — the resolver trusts nothing it did not just prove.** F-03,
-milestone 3, size M, nine acceptance criteria, absorbing T-047-s1,
-T-047-s4, T-047-s5 and T-047-s6. `touches: [app-agent]`. Built by
-`claude-opus-5 @fresh`, independently verified by `codex/gpt-5 @fresh`,
-`review: independent`. Approved branch tip **`a5f31f2`**. Merge
-**`91ab46e`**.
+**T-056 — the transcript stops re-rendering itself.** F-03, milestone 3,
+size S, `touches: [app-interview]`. Built and self-verified under the S-task
+path by `codex/gpt-5 @fresh`. Branch tip **`cde8c13`**; merge **`bac62d7`**.
 
-T-060 removes the resolver's disk cache rather than trying to make a
-poisonable file slightly safer. `agent-paths.json`, its serde types,
-reader, writer, invalidator, path helper and `RunnerConfig::config_dir`
-are gone. Resolution is now the Rust test seam, then one fresh probe,
-then typed `cliNotFound`. A future performance cache, if measurement
-ever justifies one, is constrained in the source to a process-lifetime
-memo and never a file.
+The optimization holds BOTH histories T-056 now has. Live `GenesisTurn`
+objects already preserved identity through `upsertTurn`; T-029's rehydrated
+history did not, because `rehydrate` rebuilt every banked turn during render.
+The merged code caches that projection by the immutable transcript payload
+array's identity, memoises `PlannerTurn` on the turn object, and sends stage
+state only to the current turn. A new turn still moves the former current
+turn into history once, and changed text/status/activity/error/truncation or
+callbacks still render.
 
-Every path produced by `PATH` search or login-shell `command -v` passes
-one gate before `Command::new`: absolute, no raw or component `.`/`..`,
-file name equal to the adapter binary, executable. Relative, empty and
-dot PATH entries can no longer turn the app's launch directory into an
-execution source. `$SHELL` must be an absolute executable named `zsh`,
-`bash` or `sh`; other values fall back to `/bin/zsh`. The docs now state
-the exact boundary: `RunnerConfig` reads no environment, the resolver
-reads `SHELL`, `PATH` and `NPUTER_NO_REAL_CLI`, and the spawned child is
-still built with `env_clear()` plus the unchanged 16-entry allowlist.
+The measurement was corrected before it became record. The same 21-update,
+10k-character script ran with six completed live turns and with six
+rehydrated turns, five warmups plus 30 measured StrictMode runs. Before, each
+historical turn executed **42 times** in both cases; after, each executed
+**zero**, while the current seventh stayed at 42. Summed React Profiler
+`actualDuration` median moved **4.442→0.791 ms** live and **4.522→0.665 ms**
+rehydrated. Temporary instrumentation and its file are absent from the merge.
 
-No ordinary Rust test can resolve the user's real CLI. With
-`NPUTER_NO_REAL_CLI` unset, the refusal is derived from Cargo's `deps`
-test-binary directory and rustdoc's `rustdoctest*` directory; the one
-ignored, explicitly gated real smoke opts out with `=0`. The doctest is
-itself the pin for the environment the first implementation missed.
+The task fence held: three C-13 source files, three existing app tests and the
+card. No new test file, no `agent-store.ts`, tools/e2e, shell, Rust or parser
+task diff. The task's three changed test bodies were each poisoned red and
+restored byte-identically.
 
-### The rejection is part of the result
+## Integration truth
 
-The approved branch preserves the first verifier's **REJECTED** verdict
-at `33b249a`. The initial proof temporarily set a process-global guard in
-a multithreaded libtest binary. Its sibling tripwire, whose purpose was
-to prove nothing needed setting, observed that lift and flaked at
-realistic thread counts. The rejection reproduced before repair: 5/5
-failures at 4 threads and 5/5 at 8 on the historical binary; the quiet
-10-thread control was 0/5.
+T-056 was cut from architect checkpoint **`59763f3`** and merged no-ff with a
+clean preflight tree **`27bc9aff…`**. Its indexed TypeScript triggered graph
+regeneration. The existing `interview-resume-dom.test.tsx` gained two direct
+C-05→C-13 file edges (`interview-model.ts`, `interview-turns.tsx`), so the
+dogfood relation moved **15→17** without a new file, component or finding.
+The fixture was reconciled, then the graph regenerated again as required.
 
-Fix `3fbb04b` moves the guarded and lifted arms into child processes.
-Each child receives a composed environment and an empty PATH; the parent
-requires a successful child, exactly one passed test, and the guarded
-arm's separate receipt. The final verifier ran the repaired binary 10/10
-green at 4, 8 and 10 threads and approved it in `a5f31f2`. The pre-approval
-acceptance section and prior verdict were preserved; the approved verdict
-records their hashes.
+Merged-main gates:
 
-## Integration evidence
+- parser build/types/full suite: **225/225**;
+- app typecheck/build/full suite: **822/822**;
+- Rust, rerun alone: **325 passed + 3 intentional ignores**;
+- E2E: **82/82**, one worker, retries zero;
+- token lint: **117 files**, selftest **49 samples + 14 policy checks**;
+- boot gate: scratch port **17671**, both startup lines, exit 0;
+- audit: **0 vulnerabilities / unchanged 17 allowed warnings**;
+- graph current: **115 files / 970 symbols / 1484 edges**, `index --check`
+  exit 0.
 
-### Preflight and semantic merge
-
-Main was clean at checkpoint `1288d8d`; the approved worktree was clean
-at `a5f31f2`; their real merge base is `6404a43`. The two sides intersect
-in exactly two files:
-
-- `app/src-tauri/src/lib.rs`
-- `docs/ARCHITECTURE.md`
-
-`git merge-tree --write-tree --messages 1288d8d a5f31f2` completed with
-no conflict and produced simulated tree **`f02d789a`**. The actual no-ff
-merge auto-merged the same two files and produced **`91ab46e`**.
-
-The `lib.rs` result keeps all of T-063: `STARTUP_FAILED_EVENT`, the
-`startup-failed` stderr listener, `startup_failed_line`, and all five of
-its unit tests. T-060 changes only the runner setup, deleting the
-`config_dir` override and supplying `RunnerConfig::default()`. The
-generated-handler block is byte-identical at the base, main-before,
-approved tip and simulated result:
-
-    sha256 4e062a2e898297c96601daa078e5960285df5e4b1117514e4a9e0d2c04ebbdc3
-
-All thirteen handler entries remain. The architecture auto-merge keeps
-T-063's startup-failure channel and T-062's one-scroll-model history,
-while replacing T-047's obsolete cache description with T-060's actual
-probe, gate and test-refusal contract.
-
-### Full suite on merged main
-
-ADR-011 order was respected. Existing lockfile-resolved installations
-were used; no model, real-CLI smoke, dependency install or network call
-was made.
-
-- `lib/parser`: build and `tsc --noEmit` green; **225/225 tests in 11
-  files**.
-- `app`: `tsc --noEmit` and production build green; **821/821 tests in
-  42 files**. Bundle: `index-tsWZtfZi.js` 498.88 kB and
-  `index-BeT5MY7f.css` 43.90 kB.
-- `app/src-tauri`: bare `cargo test` green; **325 passed + 3 intentional
-  ignores**, zero failures. This is the approved branch's 320 plus five
-  preserved T-063 startup tests. The one T-060 doctest ran and passed;
-  the ignored real-model smoke did not run.
-- `tools/e2e`: typecheck green; **82/82 Playwright executions**, one
-  worker, retries 0, no skips. The sandbox first refused the local bind
-  with `EPERM`; the exact lane passed with local-port permission on
-  scratch port 17650.
-- token lint: **clean over 117 files**, zero allowlist; `--selftest`
-  **49 samples + 14 walk-policy checks** green.
-- `cargo audit --no-fetch`: exit 0 over **472 locked crates**, **0
-  vulnerabilities / 17 allowed informational warnings**, the unchanged
-  baseline. It loaded the existing 1,216-advisory local database; failure
-  to take Cargo's package-cache lock was informational and did not change
-  the scan or verdict.
-
-### Boot gate — fired and passed
-
-The trigger is the merge range `1288d8d..91ab46e`, not the old branch
-point. It contains three files under `app/src-tauri/**`, zero under
-`app/src/**`, and neither manifest. `NPUTER_BOOT_PORT=17651 npm run
-boot:check` exited **0** and detected both required lines:
-
-    [nputer] project folder: /Users/ujju/Projects/nputer
-    [nputer] window "main" created
-
-The gate stopped its process tree. Port 1420 was never selected or
-borrowed.
-
-### Graph gate — did not fire; graph remains current
-
-The merge contains no `*.ts`, `*.tsx`, `*.js` or `*.jsx` outside docs,
-so graph regeneration correctly did not fire. The currentness gate was
-still run from merged main and exited 0:
-
-    graph.json is CURRENT
-    558780 bytes · 115 files · 965 symbols · 1476 edges
-
-The committed SHA-256 remains
-`4bd19d87732e999a6b697ee42829d30a8033cb9d06cea4117262d174761852f1`.
-The repository still has no remote, so this written CI gate remains
-dormant; the checkpoint does not rely on it having run elsewhere.
-
-### Poison discipline — all twelve changed/new bodies discriminated
-
-The integrator independently made one relation-breaking mutation in
-each of the seven changed/new unit-test bodies in `runner.rs` and five
-changed/new integration-test bodies in `tests/agent_runner.rs`. Every
-exact-body run failed: **12 red out of 12 bodies**. The mutations broke
-the config/environment boundaries, resolved-path expectations, deleted-
-cache pin, shell-name gate, test guard, relative-path refusal, disk-cache
-absence, child PATH provenance, integration guard and child-process
-non-vacuity receipt/filter path.
-
-Restoration is byte-proven and the two files have an empty diff from the
-merge commit:
-
-    runner.rs        fe6faf86c3466e91fd4979f5e5e40532d078afdd6eef8a6ad066a53757d62da1
-    agent_runner.rs  9eb4261986316bcb1d2e05a583828eda0e70c0b621d1c4e9bccbab866614bdef
-
-The final bare Rust suite was rerun after restoration and stayed green.
-
-## Documentation and decision judgment
-
-- **ROADMAP edited.** T-060 changes the trust boundary between disk,
-  environment and `execve`, records the preserved rejection, and makes
-  clear that this hardening does not supply the still-missing real-model
-  genesis evidence.
-- **ARCHITECTURE edited.** The resolver interface now records no disk
-  cache, one gate on both probe sources, the three environment reads,
-  name-checked shell, structural test/doctest refusal and the remaining
-  shape-not-identity residual.
-- **Registry not edited.** No component, ownership path or relation
-  changed. The Rust resolver remains under C-14; the current graph does
-  not index Rust.
-- **No ADR.** This closes filed defects inside the existing ADR-003 and
-  ADR-017 boundaries. No dependency, IPC command, capability grant,
-  manifest, lockfile, method contract or cross-component interface moved.
-- **Task stamped done.** Builder/verifier stamps and `review:
-  independent` were already committed on the approved branch. The prior
-  rejection and later approved verdict remain intact. Checkpoint changes
-  only `status: verifying` to `status: done` plus two confirmed prose
-  corrections: the parent owns the guarded receipt check and `3fbb04b` is
-  described as the then-HEAD. The suspected EOF issue was checked but not
-  changed: the task ends in exactly one LF, matching the neighbouring
-  completed task cards rather than carrying an extra blank line.
+The first Rust run overlapped Playwright and boot and produced twelve watcher
+timeouts. It was not hidden: the exact unmodified suite reran alone and all
+325 tests passed. T-056 changes no Rust or watcher file; this is scheduling
+evidence for future integrators, not a product failure.
 
 ## In progress / broken right now
 
-No task is building or verifying at this architect checkpoint. T-060's five
-finding cards remain `status: suggested` as historical records of its first
-build and verification; s1 through s5 are closed in the parent task and do
-not need separate implementation lanes.
+**T-066** is independently APPROVED at **`0e925dd`** after executor tip
+`13b3f22`. It caps the parse-error details list at the existing `max-h-48`
+token and gives it vertical auto overflow. The verifier reproduced the old
+1376px page / 30px board at all three viewports, then measured page==viewport,
+details 1220/190 and board clients 524/384/284 after the fix. Integration and
+graph regeneration are next.
 
-T-062-s3 is no longer a ghost. Architect triage promoted it to **T-066**:
-the parse-error list remains an unbounded sibling above `board-scroll`, and
-an independent current-head browser reproduction still reopens page scroll
-and collapses the board. The count is message-wrap dependent; the invariant
-is not. T-066 keeps short diagnostics outside the board and gives the list a
-token-backed ceiling plus its own scroll.
+**T-055** executor tip **`d5509cd`** is under fresh verification. Its parser
+suite is 234/234 and all 127 live task section objects were byte-identical.
+The build found a real ambiguity in T-055's own prose: a bare tilde-fence
+marker inside a list is live CommonMark. Architect ruling wrapped the literal
+as inline code, kept top-level unclosed-fence behavior, made inline spans
+physical-line-local, and explicitly left Markdown container semantics out.
 
-T-043, T-056, T-057 and T-058 were re-derived before dispatch rather than
-trusted from older line numbers. T-056 now covers both live and T-029
-rehydrated turn identity. T-057 absorbed T-063-s7, T-063-s4 and T-062-s5 and
-corrected two stale premises. T-058's P5 control-byte corpus now includes the
-docs/method/root records succession depends on. T-043 remains planned but is
-not in the immediate wave: an early direct-child reap must not abandon a
-resistant same-group grandchild, the old card claimed a fixture that does not
-exist, and its honest touch set includes app-shell.
-
-Still untriaged after this bounded pass: T-062-s4, the map's horizontal
-wheel/native-scroll double movement, and T-063-s2, the four cross-language
-event names with no mechanical join.
+No other task is building. T-056's worktree remains only until this checkpoint
+is committed, then is removed with its branch retained.
 
 ## Next up
 
-1. Dispatch one conflict-free wave from the checkpoint that follows this
-   triage: T-066 (`app-shell`, `tools/e2e`), T-055 (`lib-parser`) and T-056
-   (`app-interview`). T-057/T-058 wait because each overlaps T-066; T-043
-   waits because its corrected touch set includes app-shell.
-2. Integrate serially after fresh verification, regenerating the graph for
-   each indexed TypeScript merge and firing boot for shipped app changes.
-3. Triage T-062-s4 and T-063-s2 before selecting the following wave. T-057
-   and T-058 can then run together once T-066 releases their components.
-4. Run the human-owned authenticated genesis below. Milestone 3's task
-   work, including resolver hardening, is through the pipeline; the
-   product evidence is not.
+1. Commit this T-056 checkpoint and remove its clean worktree.
+2. Integrate approved T-066 from the checkpoint, run full merged-main gates,
+   regenerate graph/fixtures, rewrite this snapshot, remove its worktree.
+3. If T-055 is approved, integrate it next. It is `lib-parser` only and does
+   not collide with T-056 or T-066, but its live-tree smoke must be re-derived
+   against the newest checkpoint.
+4. Triage T-062-s4 and T-063-s2. Once T-066 releases shell/e2e, corrected
+   T-057 and T-058 can run concurrently. Corrected T-043 overlaps shell and
+   waits for that wave boundary.
+5. Run the human-owned authenticated genesis below.
 
 ## Human-owned evidence and decisions
 
 - **Real genesis run:** authenticate the supported CLI, then perform one
-  timed end-to-end genesis on a toy idea, target <=30 minutes, with light
-  and dark completion screenshots. No planner turn has yet succeeded
-  against a real model on this machine.
-- **Relaunch the desktop app.** A long-running process may predate
-  T-051, T-063, T-062 and T-060. Relaunch is required to load the current
-  Rust resolver, startup listener and window contract together.
-- **T-062 visual judgment:** decide whether the bounded shell and its
-  internal board/map scrollbars feel right in both schemes.
-- **Stray real-smoke directories:** the two pre-existing
-  `nputer-t025-realsmoke-*` session directories remain a human
-  delete-or-keep decision; this integration did not touch them.
-- **Repository remote:** there is still no remote. CI, including graph
-  currency and xvfb boot, has never run on a real runner.
+  timed end-to-end genesis on a toy idea, target <=30 minutes, with light and
+  dark completion screenshots. No planner turn has succeeded against a real
+  model on this machine.
+- **Relaunch the desktop app.** A long-running process may predate T-051,
+  T-063, T-062, T-060 and this wave.
+- **Visual judgment:** decide whether the bounded shell and its internal
+  board/map/error scrollbars feel right in both schemes.
+- **Stray real-smoke directories:** the pre-existing
+  `nputer-t025-realsmoke-*` directories remain a human delete-or-keep choice.
+- **Repository remote:** there is still no remote. CI has never run on a real
+  runner.
 
 Milestone 3's implementation list is complete, but the milestone is not
-claimed until the real timed genesis exists. T-060 proves the resolver
-cannot accidentally call the developer's CLI from the test suite; it
-does not prove an interview with a model that can misunderstand the user.
+claimed until the real timed genesis exists. Test safety and render efficiency
+do not prove an interview with a model that can misunderstand the user.
 
 ## Health of the tree
 
-At the T-060 checkpoint:
-
-- main has T-060 merge `91ab46e` plus this checkpoint;
-- parser, app, Rust, E2E, token lint, audit, boot and graph-currentness
-  gates are green;
-- committed graph: **115 files / 965 symbols / 1476 edges**, SHA-256
-  `4bd19d87732e999a6b697ee42829d30a8033cb9d06cea4117262d174761852f1`;
-- board on main: **130 task files — 46 done / 19 planned / 16 parked /
-  49 suggested / 0 building / 0 verifying**, plus **9** files under
-  `docs/tasks/rejected/`;
-- **45** merge commits match `^Merge T-`, representing **45 distinct
-  task IDs**; there are 46 done cards because T-040 is done without a
-  matching task merge;
-- the clean approved T-060 worktree is removed after this checkpoint;
-  branch `task/T-060-resolver` is retained at `a5f31f2`.
-
-Security movement for T-060: zero dependencies, zero manifest or
-lockfile lines, zero new IPC commands, zero capability grants, zero
-allowlist entries, zero model calls. `acl_pin.rs` remains SHA-256
-`8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`
-with 92 grants. `ENV_ALLOWLIST` remains 16 entries and byte-identical to
-base.
+At this checkpoint main contains T-056 merge `bac62d7` plus the pending
+checkpoint changes. Parser, app, isolated Rust, E2E, token lint, audit, boot
+and graph-currentness gates are green. Security movement for T-056 is zero:
+no dependency, manifest, lockfile, IPC command, grant, environment allowlist,
+real CLI or model movement.
 
 ## Open questions
 
-- Should resolver identity ever be stronger than path shape, and what
-  install identity could be verified without trusting another writable
-  file?
-- Should T-062's frame invariant cover parse-error states universally?
 - Should map wheel input pan, natively scroll, or choose one by axis?
-- What gate owns a contract spelled independently across Rust and
-  TypeScript? T-063's `startup-failed` event remains the live example.
-- Does the shared main worktree need a formal rule for what reaches a
-  human's running app before a relaunch?
+- What gate owns event names spelled independently across Rust and TypeScript?
+- Does the shared main worktree need a formal rule for what reaches a human's
+  running app before a relaunch?
+- Should the T-043 exit observer own a richer child handle, or coordinate with
+  the worker that alone owns `Child`, to reap early without abandoning a
+  resistant same-group descendant?

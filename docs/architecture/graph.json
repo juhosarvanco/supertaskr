@@ -2130,7 +2130,7 @@
       "id": "f:app/src/genesis/InterviewChat.tsx",
       "path": "app/src/genesis/InterviewChat.tsx",
       "lang": "ts",
-      "hash": "blake3:dd5178e5ea8e33143677adc23392aafe962024f4590dfbcf4db50923448b734b",
+      "hash": "blake3:595d378c8f7faf315c21564b597a4cbd2143350c5c34ca60360760414e3c1bd8",
       "loc": 749,
       "symbols": [
         {
@@ -2677,8 +2677,8 @@
       "id": "f:app/src/genesis/interview-model.ts",
       "path": "app/src/genesis/interview-model.ts",
       "lang": "ts",
-      "hash": "blake3:54559b8079d240b53e3a17968d2d07124ce52db10546ca5d5c0de81407c47d94",
-      "loc": 583,
+      "hash": "blake3:ff380f5379e60d80551b2bff5a62717fb0d1bd56767f3535b4bd0237628b6a68",
+      "loc": 607,
       "symbols": [
         {
           "id": "s:app/src/genesis/interview-model.ts#BankBaseline",
@@ -2716,8 +2716,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            494,
-            499
+            518,
+            523
           ]
         },
         {
@@ -2746,8 +2746,18 @@
           "kind": "const",
           "exported": true,
           "range": [
-            447,
-            447
+            471,
+            471
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#RehydratedTranscript",
+          "name": "RehydratedTranscript",
+          "kind": "type",
+          "exported": false,
+          "range": [
+            368,
+            368
           ]
         },
         {
@@ -2756,8 +2766,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            565,
-            565
+            589,
+            589
           ]
         },
         {
@@ -2816,8 +2826,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            407,
-            440
+            431,
+            464
           ]
         },
         {
@@ -2866,8 +2876,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            501,
-            531
+            525,
+            555
           ]
         },
         {
@@ -2876,8 +2886,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            542,
-            560
+            566,
+            584
           ]
         },
         {
@@ -2886,8 +2896,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            454,
-            475
+            478,
+            499
           ]
         },
         {
@@ -2906,8 +2916,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            534,
-            538
+            558,
+            562
           ]
         },
         {
@@ -2916,8 +2926,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            371,
-            390
+            395,
+            414
           ]
         },
         {
@@ -2941,13 +2951,33 @@
           ]
         },
         {
+          "id": "s:app/src/genesis/interview-model.ts#rehydrateByPayload",
+          "name": "rehydrateByPayload",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            382,
+            390
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#rehydratedByPayload",
+          "name": "rehydratedByPayload",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            377,
+            380
+          ]
+        },
+        {
           "id": "s:app/src/genesis/interview-model.ts#shouldStickToBottom",
           "name": "shouldStickToBottom",
           "kind": "function",
           "exported": true,
           "range": [
-            576,
-            583
+            600,
+            607
           ]
         },
         {
@@ -3425,8 +3455,8 @@
       "id": "f:app/src/genesis/interview-turns.tsx",
       "path": "app/src/genesis/interview-turns.tsx",
       "lang": "ts",
-      "hash": "blake3:b397d34077f5d1aebd1d71dbaefbf0ab238a48c1fd0ca94846e86f414c336eba",
-      "loc": 362,
+      "hash": "blake3:565f5e58d820baf3e1377af0cd12f595302a4c818673b88a53d79d81852179c2",
+      "loc": 363,
       "symbols": [
         {
           "id": "s:app/src/genesis/interview-turns.tsx#BankedChips",
@@ -3434,8 +3464,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            349,
-            362
+            350,
+            363
           ]
         },
         {
@@ -3444,8 +3474,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            44,
-            58
+            45,
+            59
           ]
         },
         {
@@ -3454,8 +3484,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            106,
-            128
+            107,
+            129
           ]
         },
         {
@@ -3464,8 +3494,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            150,
-            167
+            151,
+            168
           ]
         },
         {
@@ -3474,8 +3504,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            270,
-            339
+            271,
+            340
           ]
         },
         {
@@ -3484,8 +3514,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            135,
-            147
+            136,
+            148
           ]
         },
         {
@@ -3494,18 +3524,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            30,
-            36
+            31,
+            37
           ]
         },
         {
           "id": "s:app/src/genesis/interview-turns.tsx#PlannerTurn",
           "name": "PlannerTurn",
-          "kind": "function",
+          "kind": "const",
           "exported": true,
           "range": [
-            176,
-            248
+            177,
+            249
           ]
         },
         {
@@ -3514,8 +3544,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            63,
-            85
+            64,
+            86
           ]
         },
         {
@@ -3524,8 +3554,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            91,
-            100
+            92,
+            101
           ]
         }
       ]
@@ -5779,8 +5809,8 @@
       "id": "f:app/test/agent-store.test.ts",
       "path": "app/test/agent-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:80671d1efb5c03be7dd2b8ed9eb4726fc348374bd8b33c71a122e7a88cb64114",
-      "loc": 254,
+      "hash": "blake3:2dc7474570b2439141e193ae43b0af8071aefcb63ffadf66f1c0d34217ec57bf",
+      "loc": 261,
       "symbols": [
         {
           "id": "s:app/test/agent-store.test.ts#ev",
@@ -5907,8 +5937,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:2c91257d735fea9cb6d22b91df5d7860c2af9979193d82f5579f70b357c176c3",
-      "loc": 1559,
+      "hash": "blake3:f06c96a54800671581e4b32a6d1294a6b45b0fe9d6927a659562e4e03635611c",
+      "loc": 1574,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -7748,8 +7778,8 @@
       "id": "f:app/test/interview-model.test.ts",
       "path": "app/test/interview-model.test.ts",
       "lang": "ts",
-      "hash": "blake3:10a453e70c844cef1fd8f4510438853e13b4003bfb82c70acda899255dce3185",
-      "loc": 870,
+      "hash": "blake3:7d8240362e4268d97a0839e15521d7464c4f9b30c84cd650190419dbcf27ff7e",
+      "loc": 879,
       "symbols": [
         {
           "id": "s:app/test/interview-model.test.ts#docs",
@@ -7787,8 +7817,8 @@
       "id": "f:app/test/interview-resume-dom.test.tsx",
       "path": "app/test/interview-resume-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:b5166ee4ccaac0470f12a79752c6c73331dab82c2d39629fcf29364cdecd0611",
-      "loc": 585,
+      "hash": "blake3:5249607a060770265db78f65b9c87582b05b97fcfcf73a56396c04a6d437ff31",
+      "loc": 739,
       "symbols": [
         {
           "id": "s:app/test/interview-resume-dom.test.tsx#InterviewChat",
@@ -7796,8 +7826,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            64,
-            64
+            80,
+            80
           ]
         },
         {
@@ -7806,8 +7836,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            68,
-            68
+            85,
+            85
+          ]
+        },
+        {
+          "id": "s:app/test/interview-resume-dom.test.tsx#PlannerTurn",
+          "name": "PlannerTurn",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            81,
+            81
           ]
         },
         {
@@ -7816,8 +7856,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            124,
-            128
+            141,
+            145
           ]
         },
         {
@@ -7826,8 +7866,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            98,
-            98
+            115,
+            115
           ]
         },
         {
@@ -7836,8 +7876,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            70,
-            73
+            87,
+            90
           ]
         },
         {
@@ -7846,8 +7886,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            118,
-            122
+            135,
+            139
           ]
         },
         {
@@ -7856,8 +7896,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            106,
-            110
+            123,
+            127
           ]
         },
         {
@@ -7876,8 +7916,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            137,
-            137
+            154,
+            154
           ]
         },
         {
@@ -7886,8 +7926,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            89,
-            96
+            106,
+            113
+          ]
+        },
+        {
+          "id": "s:app/test/interview-resume-dom.test.tsx#plannerRenderCounts",
+          "name": "plannerRenderCounts",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            42,
+            42
           ]
         },
         {
@@ -7896,8 +7946,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            101,
-            102
+            118,
+            119
           ]
         },
         {
@@ -7906,8 +7956,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            103,
-            104
+            120,
+            121
           ]
         },
         {
@@ -7916,8 +7966,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            112,
-            116
+            129,
+            133
           ]
         },
         {
@@ -7926,8 +7976,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            99,
-            99
+            116,
+            116
           ]
         },
         {
@@ -7936,8 +7986,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            66,
-            66
+            83,
+            83
           ]
         },
         {
@@ -7946,8 +7996,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            75,
-            87
+            92,
+            104
           ]
         },
         {
@@ -7956,8 +8006,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            65,
-            65
+            82,
+            82
           ]
         },
         {
@@ -7966,8 +8016,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            131,
-            134
+            148,
+            151
           ]
         }
       ]
@@ -11994,6 +12044,14 @@
       ]
     },
     {
+      "from": "f:app/src/genesis/interview-turns.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "memo"
+      ]
+    },
+    {
       "from": "f:app/src/lib/agent-store.ts",
       "to": "p:@tauri-apps/api",
       "kind": "import",
@@ -13224,10 +13282,23 @@
     },
     {
       "from": "f:app/test/interview-resume-dom.test.tsx",
+      "to": "f:app/src/genesis/interview-model.ts",
+      "kind": "import"
+    },
+    {
+      "from": "f:app/test/interview-resume-dom.test.tsx",
       "to": "f:app/src/genesis/interview-source.ts",
       "kind": "import",
       "symbols": [
         "*"
+      ]
+    },
+    {
+      "from": "f:app/test/interview-resume-dom.test.tsx",
+      "to": "f:app/src/genesis/interview-turns.tsx",
+      "kind": "import",
+      "symbols": [
+        "PlannerTurn"
       ]
     },
     {
@@ -17166,7 +17237,7 @@
     },
     {
       "from": "s:app/src/genesis/interview-model.ts#mergeRehydrated",
-      "to": "s:app/src/genesis/interview-model.ts#rehydrate",
+      "to": "s:app/src/genesis/interview-model.ts#rehydrateByPayload",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -17190,6 +17261,36 @@
     },
     {
       "from": "s:app/src/genesis/interview-model.ts#rehydrate",
+      "to": "s:app/src/lib/agent-store.ts#TranscriptLinePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#rehydrateByPayload",
+      "to": "s:app/src/genesis/interview-model.ts#RehydratedTranscript",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#rehydrateByPayload",
+      "to": "s:app/src/genesis/interview-model.ts#rehydrate",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#rehydrateByPayload",
+      "to": "s:app/src/lib/agent-store.ts#TranscriptLinePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#rehydratedByPayload",
+      "to": "s:app/src/genesis/interview-model.ts#RehydratedTranscript",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#rehydratedByPayload",
       "to": "s:app/src/lib/agent-store.ts#TranscriptLinePayload",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -21248,7 +21349,7 @@
   ],
   "stats": {
     "files": 115,
-    "symbols": 965,
-    "edges": 1476
+    "symbols": 970,
+    "edges": 1484
   }
 }

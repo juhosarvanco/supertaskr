@@ -336,6 +336,15 @@ would have helped) and printed a login instruction at a user whose login
 was fine. It was caught in adversarial verification, the card was
 REJECTED, and it is closed by binding the diagnosis to the turn's
 terminal line. Both verdicts are on the card.
+T-056 merged 2026-08-18 and makes the long interview cost proportional to
+the turn that is moving, not the transcript already banked above it. Before,
+each of six historical turns executed 42 times during 21 StrictMode stream
+updates to turn seven, both for live history and T-029's rehydrated history.
+After, all six execute zero times while the current turn remains live. The
+median summed Profiler work moved 4.442→0.791 ms live and 4.522→0.665 ms
+rehydrated on the fixed 10k-character script. No throttle or second
+coalescing window was added: identity and a memo boundary remove wasted
+work without adding dead air.
 T-060 merged 2026-08-18 and closes the resolver trust debt T-047 left
 behind. The app no longer reads or writes `agent-paths.json`: a path to
 the user's CLI comes from one fresh probe, passes the same absolute /

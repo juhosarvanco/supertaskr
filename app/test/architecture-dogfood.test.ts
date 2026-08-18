@@ -1143,6 +1143,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         // ordinary file edges, the same thing T-050 established for
         // startup-recovery.test.ts. The list GROWS but the FINDING COUNT
         // does not, which is why no drift ring moves at this merge.
+        // T-056 merge regen: 15 → 17. The existing resume DOM suite now
+        // imports interview-model and interview-turns directly to pin
+        // stable live + rehydrated turn identity without adding a new
+        // indexed test file. The finding count still does not move.
         fileEdges: [
           { from: "app/src/App.tsx", to: "app/src/genesis/interview-source.ts" },
           {
@@ -1184,7 +1188,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           },
           {
             from: "app/test/interview-resume-dom.test.tsx",
+            to: "app/src/genesis/interview-model.ts",
+          },
+          {
+            from: "app/test/interview-resume-dom.test.tsx",
             to: "app/src/genesis/interview-source.ts",
+          },
+          {
+            from: "app/test/interview-resume-dom.test.tsx",
+            to: "app/src/genesis/interview-turns.tsx",
           },
         ],
       },
@@ -1404,7 +1416,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 13 → 15 at the T-029 merge regen: the one new suite reaches
       // InterviewChat.tsx and interview-source.ts. The fileEdges LIST
       // above moves with it, in a different it() body.
-      ["C-05", "C-13", "undeclared", 15],
+      // 15 → 17 at the T-056 merge regen: the same suite reaches
+      // interview-model.ts and interview-turns.ts to pin both identity
+      // paths. No new test file, component or finding.
+      ["C-05", "C-13", "undeclared", 17],
       // NEW at the T-025 merge regen: the sixth undeclared row, one file
       // edge (agent-store.test.ts → agent-store.ts). See the D1 above.
       // 1 → 3 at the T-027 merge regen: two new interview suites drive

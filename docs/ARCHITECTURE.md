@@ -306,6 +306,14 @@ ADR-014/015).
   is visible on the map — `languages: ["ts"]` still hides
   `app/src-tauri/src/agent/**`, so C-14 renders as its one TS file — which
   is the sharpest live argument for T-010 the registry has produced;
+  **T-056 changes C-13's render cost, not its source of truth.** Completed
+  live turns already keep object identity through the reducer; rehydrated
+  turns now keep it through a projection cached by the immutable transcript
+  payload array's identity. `PlannerTurn` is memoised on that turn object and
+  historical turns receive no moving stage prop. No throttle, timer, second
+  fold or store source was added. The existing resume DOM suite reaches two
+  more C-13 modules directly, so observed C-05→C-13 file edges move 15→17;
+  no component relation or finding changes.
   area app-agent since T-025,
   where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
   `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and
