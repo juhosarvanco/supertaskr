@@ -215,6 +215,84 @@ project directory. Turns are plain text. Method v{version}.",
     )
 }
 
+/// Does `docs/` already hold banked work?
+///
+/// FILE EVIDENCE, not registry state, and deliberately so: it is what a
+/// human hand-driving the method would see, and ADR-017's whole rule is
+/// that `docs/` is the truth and `.nputer/` is a convenience. A genesis
+/// with an intact registry and an empty `docs/` is a stage-0 start; a
+/// genesis whose registry was deleted and whose `docs/` is full is a
+/// resume.
+pub fn has_banked_docs(project_dir: &Path) -> bool {
+    fs::read_dir(project_dir.join("docs"))
+        .map(|mut entries| entries.any(|entry| entry.is_ok()))
+        .unwrap_or(false)
+}
+
+/// THE RESUME KICKOFF (T-029 criterion 3), for a FRESH session over a
+/// project that already holds banked artifacts.
+///
+/// It is the plain kickoff with the planner role's own Resume rule stated
+/// in the prompt rather than left to be found — `method/roles/planner.md`
+/// § Resume rule, whose words this transcribes: *"A fresh session given
+/// only this kit and the project folder must state which stage is next,
+/// then continue the interview from there. Derive it from disk… On
+/// disagreement the artifacts win… Re-ask nothing that is already on
+/// disk."*
+///
+/// **THAT CITATION WAS VERIFIED AGAINST THE REPO BEFORE IT WAS BUILT ON**
+/// (`method/roles/planner.md:79`) — the habit T-028's missing "completion
+/// signal" earned.
+pub fn assemble_resume_kickoff(project_dir: &Path) -> String {
+    let root = kit_root(project_dir);
+    format!(
+        "You are the planner. KIT ROOT: {kit} - PROJECT DIRECTORY: {project}. \
+Read roles/planner.md at the kit root now and follow it exactly. THIS \
+GENESIS IS ALREADY UNDER WAY: docs/ holds banked artifacts from earlier \
+turns. Apply the RESUME RULE - derive the next stage from disk (the first \
+row of the banking map whose artifacts are missing or still \
+template-empty), state which stage is next, then continue the interview \
+from there, one question at a time. The banked files are ground truth; \
+re-ask nothing that is already on disk, and never overwrite real content. \
+Kit-internal paths resolve against the kit root; every docs/ path resolves \
+inside the project directory. Turns are plain text. Method v{version}.",
+        kit = root.display(),
+        project = project_dir.display(),
+        version = METHOD_SNAPSHOT_VERSION,
+    )
+}
+
+/// The kickoff this project wants — stage-0 or resume — chosen from what
+/// is on disk. ONE call site for both, so the spawned path and the
+/// hand-driven path cannot drift apart.
+pub fn assemble_kickoff_for(project_dir: &Path) -> String {
+    if has_banked_docs(project_dir) {
+        assemble_resume_kickoff(project_dir)
+    } else {
+        assemble_kickoff(project_dir)
+    }
+}
+
+/// The nudge sent into a RESUMED NATIVE session (T-029 criterion 1).
+///
+/// Short on purpose: the CLI's own session already carries the whole
+/// conversation, so re-sending the kickoff would re-brief a planner that
+/// is already briefed. The resume-rule fallback is named anyway, because
+/// a long session may have been compacted and "derive it from disk" is
+/// the recovery the method already defines.
+pub fn assemble_resume_nudge(project_dir: &Path) -> String {
+    let root = kit_root(project_dir);
+    format!(
+        "Continue the interview from where it stopped - the next question, \
+one question at a time. IF you have lost the thread, apply the resume rule \
+in roles/planner.md at KIT ROOT: {kit} - derive the next stage from disk \
+under PROJECT DIRECTORY: {project}, state which stage is next, and \
+continue. Re-ask nothing that is already on disk. Turns are plain text.",
+        kit = root.display(),
+        project = project_dir.display(),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

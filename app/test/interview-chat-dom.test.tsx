@@ -642,27 +642,25 @@ describe("no CLI is a route, never a dead end (criterion 6)", () => {
     expect(q("[data-testid=interview-cli-project]")?.textContent).toBe(PROJECT);
     expect(card.textContent).toContain("hand-drivable");
 
-    // It does NOT carry the assembled kickoff: `assemble_kickoff` is a
-    // Rust pub fn no command returns, so a copyable block needs a fifth
-    // genesis command and belongs with T-029.
+    // The card does not SHOW the kickoff until it is asked for — a wall
+    // of prompt text over a recoverable failure would be the screen
+    // deciding the user has given up. T-029 puts it behind the button
+    // below, and `interview-chat-handdriven.test.tsx` drives that route.
     expect(card.textContent).not.toContain("KIT ROOT");
     expect(card.textContent).not.toContain("roles/planner.md");
+    // …but the route EXISTS now, which is criterion 4's whole point: a
+    // missing CLI is a mode, not an apology.
+    expect(q("[data-testid=interview-cli-hand-driven]")).not.toBeNull();
   });
 
   it("renders every other typed outcome as an inline notice carrying its own fields", async () => {
-    ipc.outcomes.set("genesis_start", {
-      kind: "resumeAvailable",
-      nativeSessionId: "abc-123",
-      turns: 4,
-    });
+    ipc.outcomes.set("genesis_start", { kind: "staleProject", sessionProject: "/elsewhere" });
     await withStatus();
     render();
     await flush(() => Promise.resolve());
     const notice = q("[data-testid=interview-notice]")!;
-    expect(notice.getAttribute("data-outcome-kind")).toBe("resumeAvailable");
-    expect(notice.textContent).toContain("abc-123");
-    expect(notice.textContent).toContain("4 turns");
-    expect(notice.textContent).toContain("T-029");
+    expect(notice.getAttribute("data-outcome-kind")).toBe("staleProject");
+    expect(notice.textContent).toContain("/elsewhere");
   });
 });
 

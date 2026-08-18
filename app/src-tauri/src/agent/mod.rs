@@ -8,11 +8,16 @@
 //! exactly `core:default` — `std::process` is not a plugin, so there is
 //! nothing to grant.
 //!
-//! Four commands, three of them zero-argument:
+//! EIGHT commands since T-029, seven of them zero-argument:
 //! `genesis_start` · `genesis_send_turn(text)` · `genesis_status` ·
-//! `genesis_cancel`. The user's typed answer is the ONLY webview-supplied
-//! datum anywhere in this module, and it travels as data on the child's
-//! stdin — never interpolated into a command line, never in argv.
+//! `genesis_cancel` · `genesis_resume` · `genesis_fresh` ·
+//! `genesis_transcript` · `genesis_kickoff`. The user's typed answer is
+//! STILL the ONLY webview-supplied datum anywhere in this module, and it
+//! travels as data on the child's stdin — never interpolated into a
+//! command line, never in argv. T-029's four additions take no arguments
+//! at all: the session id they resume from is read Rust-side out of
+//! `.nputer/sessions.json` through its own gate, so no id crosses the
+//! boundary in either direction.
 //!
 //! Module layout follows the `index_cmd` seam precedent: everything the
 //! Tauri commands do lives in `pub fn`s minus the Tauri runtime, so cargo
@@ -56,14 +61,26 @@ pub enum StartOutcome {
     /// it (T-026's predicate, re-checked Rust-side: defense in depth
     /// against an out-of-order webview call).
     AlreadyPlanned { path: String },
-    /// The registry already remembers a planner session here. This task
-    /// does NOT auto-resume at start; T-029 renders the choice.
-    ResumeAvailable { native_session_id: String, turns: u64 },
+    /// The registry already remembers a planner session here. Start does
+    /// NOT auto-resume; T-029 renders the choice and `resume_genesis`
+    /// takes it. `model` comes through [`SessionEntry::model_for_display`]
+    /// — the read boundary, never the raw field (T-047-s3).
+    ResumeAvailable { native_session_id: String, turns: u64, model: Option<String> },
     /// The agent CLI could not be found. Never a dead end — T-029 renders
     /// the hand-driven fallback from exactly this.
     CliNotFound { probed: Vec<String> },
     /// Found, but too old to trust the flag semantics against.
     UnsupportedVersion { found: String },
+    /// T-029 (T-039-s3): the recorded session id is UNUSABLE. It used to
+    /// ride `Error { message }` beside "the registry could not be
+    /// written", and a webview could not tell the two apart without
+    /// reading English — though only one of them has an affordance
+    /// ("start fresh"). The refusal string is unchanged and already
+    /// escaped; only the envelope is new.
+    SessionIdRejected { registry_path: String, why: String },
+    /// T-029: asked to resume, and there is nothing recorded to resume
+    /// from. A race (the registry moved under the offer), not an error.
+    NothingToResume,
     Error { message: String },
 }
 
@@ -251,6 +268,10 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
                 return StartOutcome::ResumeAvailable {
                     native_session_id: id.to_string(),
                     turns: existing.turns,
+                    // THE READ BOUNDARY, not the raw field (T-047-s3). A
+                    // registry written by a pre-T-047 build can hold ~1 MiB
+                    // of `model`; upgrading does not clean it.
+                    model: existing.model_for_display(),
                 }
             }
             // A planner entry with no id recorded: nothing to resume from,
@@ -259,15 +280,20 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
             // LOUD, never silent: refusing to resume is the safe half, but
             // starting a fresh interview while a poisoned entry sits on
             // disk would hide the fact that something wrote it.
+            //
+            // T-029 (T-039-s3): TYPED now. The webview routes this to
+            // "your saved session is unusable — start fresh" rather than
+            // to a generic error toast, which it could not do while this
+            // shared an envelope with "the registry could not be written".
             Err(rejection) => {
-                return StartOutcome::Error {
-                    message: format!(
-                        "refusing to resume session '{}' from {}: {rejection}. \
-                         That file is runtime state, losable by charter - delete it to start over.",
+                return StartOutcome::SessionIdRejected {
+                    registry_path: sessions::SESSIONS_REL.to_string(),
+                    why: format!(
+                        "refusing to resume session '{}': {rejection}. \
+                         That file is runtime state, losable by charter - starting fresh loses nothing about the project.",
                         // The entry's own id is file-borne data too: bounded
                         // and escaped, like everything else that came off disk.
                         sessions::truncate_utf8(&existing.id, 32).escape_debug(),
-                        sessions::SESSIONS_REL
                     ),
                 }
             }
@@ -331,11 +357,281 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
             role: "user".into(),
             text: prompt.clone(),
             at_ms: now_ms(),
+            machine: true,
         },
     );
 
     spawn_turn(agent, cli, TurnRequest { project_dir, prompt, resume: None, turn: 1 }, flight);
     StartOutcome::Started { turn: 1 }
+}
+
+/// `genesis_resume()` — zero-argument. Respawn the RECORDED native
+/// session through the adapter's resume template (T-029 criterion 1).
+///
+/// THE SUCCESSION GUARANTEE APPLIED TO THE INTERVIEW. Everything this
+/// needs is on disk: the id comes from `.nputer/sessions.json` through
+/// [`SessionEntry::resume_id`]'s gate, and the STAGE and the banked
+/// artifacts come from `docs/` — never from a cache, because `docs/` is
+/// the only project truth (ADR-017 clause 4). The transcript is a
+/// rendering convenience and its loss costs nothing but scrollback.
+pub fn resume_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
+    let Some(flight) = agent.begin_turn() else {
+        return StartOutcome::Busy;
+    };
+    let Some(project_dir) = watch.project_dir() else {
+        return StartOutcome::NoProject;
+    };
+    // Same defense in depth as `start_genesis`: the answer must not depend
+    // on which screen the user is looking at.
+    let probe = probe_plan(&project_dir);
+    if probe.has_plan() {
+        return StartOutcome::AlreadyPlanned { path: project_dir.display().to_string() };
+    }
+
+    // THE ONE PLACE the fact lives (criterion "exactly ONE place").
+    let Some(record) = sessions::genesis_record(&project_dir) else {
+        return StartOutcome::NothingToResume;
+    };
+    if let Some(why) = record.session_id_rejected {
+        return StartOutcome::SessionIdRejected {
+            registry_path: sessions::SESSIONS_REL.to_string(),
+            why: format!(
+                "refusing to resume session '{}': {why}. \
+                 That file is runtime state, losable by charter - starting fresh loses nothing about the project.",
+                sessions::truncate_utf8(&record.registry_id, 32).escape_debug()
+            ),
+        };
+    }
+    let Some(native_session_id) = record.native_session_id else {
+        return StartOutcome::NothingToResume;
+    };
+
+    let adapter = planner_adapter();
+    let cli = match runner::resolve_cli(&agent.cfg, adapter) {
+        Ok(cli) => cli,
+        Err(ResolveError::NotFound { probed }) => return StartOutcome::CliNotFound { probed },
+        Err(ResolveError::Unsupported { found }) => {
+            return StartOutcome::UnsupportedVersion { found }
+        }
+    };
+    // The kit is re-materialized rather than assumed: `.nputer/` is
+    // losable by charter, so a resume must survive its own kit having
+    // been deleted between sessions.
+    if let Err(err) = kit::materialize(&project_dir) {
+        return StartOutcome::Error {
+            message: format!("could not write the method kit: {err}"),
+        };
+    }
+
+    let turn = record.turns.saturating_add(1).min(u32::MAX as u64) as u32;
+    {
+        let mut guard = agent.inner.lock().expect("agent state poisoned");
+        guard.phase = Phase::Running;
+        guard.project_dir = Some(project_dir.clone());
+        guard.turn = turn;
+        guard.native_session_id = Some(native_session_id.clone());
+        guard.model = record.model.clone();
+        guard.cli_version = cli.version.clone();
+        guard.registry_id = Some(record.registry_id);
+        guard.last_error = None;
+    }
+
+    let prompt = kit::assemble_resume_nudge(&project_dir);
+    let _ = sessions::append_transcript(
+        &project_dir,
+        &TranscriptLine {
+            turn,
+            role: "user".into(),
+            text: prompt.clone(),
+            at_ms: now_ms(),
+            machine: true,
+        },
+    );
+    spawn_turn(
+        agent,
+        cli,
+        TurnRequest { project_dir, prompt, resume: Some(native_session_id), turn },
+        flight,
+    );
+    StartOutcome::Started { turn }
+}
+
+/// `genesis_fresh()` — zero-argument. CONTINUE WITH A FRESH SESSION
+/// (T-029 criterion 3): degraded, never dead.
+///
+/// The native session would not resume — a CLI error, a refused id, an
+/// expired server-side session — so the conversation restarts while the
+/// PROJECT does not. The old registry entry is marked `dead`, which is
+/// the method's own word for it (`method/runtime/sessions-schema.md`:
+/// "Killing a session = mark status dead; the project resumes from
+/// docs/"), and the kickoff carries the planner role's RESUME RULE
+/// (`method/roles/planner.md` § Resume rule) so the new session derives
+/// the next stage from disk instead of re-asking what is already banked.
+///
+/// `docs/` is untouched by any of this. Nothing the user answered is lost.
+pub fn fresh_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
+    let Some(flight) = agent.begin_turn() else {
+        return StartOutcome::Busy;
+    };
+    let Some(project_dir) = watch.project_dir() else {
+        return StartOutcome::NoProject;
+    };
+    let probe = probe_plan(&project_dir);
+    if probe.has_plan() {
+        return StartOutcome::AlreadyPlanned { path: project_dir.display().to_string() };
+    }
+
+    let adapter = planner_adapter();
+    let cli = match runner::resolve_cli(&agent.cfg, adapter) {
+        Ok(cli) => cli,
+        Err(ResolveError::NotFound { probed }) => return StartOutcome::CliNotFound { probed },
+        Err(ResolveError::Unsupported { found }) => {
+            return StartOutcome::UnsupportedVersion { found }
+        }
+    };
+    if let Err(err) = kit::materialize(&project_dir) {
+        return StartOutcome::Error {
+            message: format!("could not write the method kit: {err}"),
+        };
+    }
+
+    // Abandon the old session BEFORE minting the new one, so `next_id`
+    // sees the settled file and `find_planner` cannot pick the dead entry.
+    match sessions::mark_planner_dead(&project_dir) {
+        Ok(Some(id)) => println!("[nputer] agent: abandoning planner session {id} - starting fresh"),
+        Ok(None) => {}
+        Err(err) => {
+            return StartOutcome::Error {
+                message: format!("could not update the session registry: {err}"),
+            }
+        }
+    }
+
+    let registry = sessions::load(&project_dir);
+    let id = sessions::next_id(&registry);
+    let entry = SessionEntry {
+        id: id.clone(),
+        agent: adapter.key.to_string(),
+        model: None,
+        native_session_id: None,
+        created: sessions::iso8601_utc(now_ms()),
+        turns: 0,
+        tasks: Vec::new(),
+        roles: vec!["planner".to_string()],
+        status: "running".to_string(),
+    };
+    if let Err(err) = sessions::upsert(&project_dir, entry) {
+        return StartOutcome::Error {
+            message: format!("could not write the session registry: {err}"),
+        };
+    }
+
+    {
+        let mut guard = agent.inner.lock().expect("agent state poisoned");
+        guard.phase = Phase::Running;
+        guard.project_dir = Some(project_dir.clone());
+        guard.turn = 1;
+        guard.native_session_id = None;
+        guard.model = None;
+        guard.cli_version = cli.version.clone();
+        guard.registry_id = Some(id);
+        guard.last_error = None;
+    }
+
+    let prompt = kit::assemble_kickoff_for(&project_dir);
+    let _ = sessions::append_transcript(
+        &project_dir,
+        &TranscriptLine {
+            turn: 1,
+            role: "user".into(),
+            text: prompt.clone(),
+            at_ms: now_ms(),
+            machine: true,
+        },
+    );
+    spawn_turn(agent, cli, TurnRequest { project_dir, prompt, resume: None, turn: 1 }, flight);
+    StartOutcome::Started { turn: 1 }
+}
+
+/// Most transcript half-turns one rehydration will carry. The TAIL is
+/// kept — a mid-interview reload wants the recent conversation, and the
+/// early turns are banked in `docs/` anyway.
+pub const MAX_REHYDRATED_LINES: usize = 200;
+
+/// `genesis_transcript()` — zero-argument. The chat's rehydration source
+/// (T-029 criteria 1 and 2).
+///
+/// LOSABLE BY CHARTER, and the caller must treat it that way: an empty
+/// answer is not an error and never blocks a resume. A missing file, a
+/// corrupt file, a file of nothing but garbage lines — all three answer
+/// the same empty vector, and the screen renders banked-progress from
+/// `docs/` instead. That is the whole of criterion 2.
+pub fn transcript(watch: &WatchState) -> Vec<TranscriptLine> {
+    let Some(project_dir) = watch.project_dir() else {
+        return Vec::new();
+    };
+    let mut lines = sessions::read_transcript(&project_dir);
+    if lines.len() > MAX_REHYDRATED_LINES {
+        lines.drain(..lines.len() - MAX_REHYDRATED_LINES);
+    }
+    for line in &mut lines {
+        // A second, independent bound at the boundary the webview reads:
+        // the file's own cap is 256 KiB per line and this channel is a
+        // chat, not a file viewer.
+        line.text = sessions::truncate_utf8(&line.text, runner::MAX_EVENT_TEXT);
+    }
+    lines
+}
+
+/// What the hand-driven fallback needs (T-029 criterion 4).
+#[derive(Clone, Debug, Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+pub enum KickoffOutcome {
+    /// The prompt, ready to copy. `kitRoot` really exists on disk by the
+    /// time this answers — a prompt naming a kit that was never written
+    /// would send the user's own CLI looking for nothing.
+    Ready {
+        prompt: String,
+        project_dir: String,
+        kit_root: String,
+        method_version: String,
+        /// True when `docs/` already holds banked work, so the prompt is
+        /// the RESUME kickoff rather than the stage-0 one.
+        resuming: bool,
+    },
+    NoProject,
+    AlreadyPlanned { path: String },
+    Error { message: String },
+}
+
+/// `genesis_kickoff()` — zero-argument. ADR-006's hand-driven mode as a
+/// FIRST-CLASS MODE rather than a separate build: the same kit, the same
+/// prompt, the same lens, the same completion detection — the user's own
+/// terminal in place of the spawn.
+///
+/// It MATERIALIZES the kit, which is the difference between a copyable
+/// block and a working one: `assemble_kickoff` names a kit root, and
+/// nothing else in the hand-driven path would ever write it.
+pub fn kickoff(watch: &WatchState) -> KickoffOutcome {
+    let Some(project_dir) = watch.project_dir() else {
+        return KickoffOutcome::NoProject;
+    };
+    let probe = probe_plan(&project_dir);
+    if probe.has_plan() {
+        return KickoffOutcome::AlreadyPlanned { path: project_dir.display().to_string() };
+    }
+    if let Err(err) = kit::materialize(&project_dir) {
+        return KickoffOutcome::Error {
+            message: format!("could not write the method kit: {err}"),
+        };
+    }
+    KickoffOutcome::Ready {
+        prompt: kit::assemble_kickoff_for(&project_dir),
+        project_dir: project_dir.display().to_string(),
+        kit_root: kit::kit_root(&project_dir).display().to_string(),
+        method_version: kit::METHOD_SNAPSHOT_VERSION.to_string(),
+        resuming: kit::has_banked_docs(&project_dir),
+    }
 }
 
 /// `genesis_send_turn(text)` — the user's own typed answer, the only
@@ -395,6 +691,8 @@ pub fn send_turn(watch: &WatchState, agent: &AgentState, text: String) -> SendOu
             role: "user".into(),
             text: text.clone(),
             at_ms: now_ms(),
+            // The human typed this one.
+            machine: false,
         },
     );
 
@@ -482,6 +780,7 @@ fn spawn_turn(agent: &AgentState, cli: ResolvedCli, req: TurnRequest, flight: Tu
                     role: "planner".into(),
                     text: text.clone(),
                     at_ms: now_ms(),
+                    machine: false,
                 },
             );
         }
@@ -608,11 +907,51 @@ mod tests {
         let json = serde_json::to_value(StartOutcome::ResumeAvailable {
             native_session_id: "abc".into(),
             turns: 3,
+            model: Some("claude-opus-5".into()),
         })
         .expect("serialize");
         assert_eq!(
             json,
-            serde_json::json!({ "kind": "resumeAvailable", "nativeSessionId": "abc", "turns": 3 })
+            serde_json::json!({
+                "kind": "resumeAvailable", "nativeSessionId": "abc", "turns": 3,
+                "model": "claude-opus-5"
+            })
+        );
+        // T-029's new envelopes, in the same shape (T-039-s3).
+        let json = serde_json::to_value(StartOutcome::SessionIdRejected {
+            registry_path: ".nputer/sessions.json".into(),
+            why: "it begins with '-'".into(),
+        })
+        .expect("serialize");
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "kind": "sessionIdRejected",
+                "registryPath": ".nputer/sessions.json",
+                "why": "it begins with '-'"
+            })
+        );
+        let json = serde_json::to_value(TurnError::AuthFailed {
+            status: Some(401),
+            message: "Failed to authenticate.".into(),
+        })
+        .expect("serialize");
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "kind": "authFailed", "status": 401, "message": "Failed to authenticate."
+            })
+        );
+        let json = serde_json::to_value(TurnError::ToolDenied {
+            denials: vec!["Bash".into()],
+            terminal_reason: Some("refusal".into()),
+        })
+        .expect("serialize");
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "kind": "toolDenied", "denials": ["Bash"], "terminalReason": "refusal"
+            })
         );
         let json = serde_json::to_value(SendOutcome::StaleProject {
             session_project: "/p".into(),

@@ -116,25 +116,33 @@ describe("the gate, runtime half: a Tauri runtime never defines the harness", ()
 });
 
 describe("the gate, positive half: the browser DEV path installs it", () => {
-  it("exposes exactly push / outcome / status / get / sent, every one callable", async () => {
+  it("exposes exactly seven doors, every one callable", async () => {
     const source = await loadSource("browser");
     await source.startInterviewSource();
 
     const harness = window.__nputerInterviewHarness;
     expect(harness, "the browser DEV bundle must expose the interview harness").toBeDefined();
-    // An EXACT key set, so a sixth door reds here — the shape
+    // An EXACT key set, so an eighth door reds here — the shape
     // `shell-harness.test.ts` settled on after T-050 added a fourth.
+    //
+    // T-029 adds two, and both reach states a browser CANNOT otherwise
+    // produce: `listenerFailed` (there is no `listen` to refuse) and
+    // `rehydrate` (there is no `.nputer/` to read). Same argument
+    // `recordStartupFailure` made for T-050's screen — the lane drives
+    // the shipped field on the shipped state rather than an imitation.
     expect(Object.keys(harness ?? {}).sort()).toEqual([
       "get",
+      "listenerFailed",
       "outcome",
       "push",
+      "rehydrate",
       "sent",
       "status",
     ]);
     expect(
       Object.values(harness ?? {}).map((door) => typeof door),
       "every door is callable — a key that is not a function is not a door",
-    ).toEqual(["function", "function", "function", "function", "function"]);
+    ).toEqual(Array(7).fill("function"));
     // The browser path never reaches the boundary at all.
     expect(ipc.listen).not.toHaveBeenCalled();
     expect(ipc.invoke).not.toHaveBeenCalled();

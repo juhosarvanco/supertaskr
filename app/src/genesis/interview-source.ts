@@ -3,10 +3,14 @@ import {
   applyGenesisStatus,
   cancelGenesis,
   emptyGenesisState,
+  freshGenesis,
+  genesisKickoff,
   getGenesisState,
   isTurnInFlight,
   reduceGenesisEvent,
   reduceGenesisOutcome,
+  refreshGenesisTranscript,
+  resumeGenesis,
   sendGenesisTurn,
   startGenesis,
   startGenesisListener,
@@ -14,8 +18,10 @@ import {
   type GenesisEvent,
   type GenesisState,
   type GenesisStatusPayload,
+  type KickoffOutcomePayload,
   type SendOutcomePayload,
   type StartOutcomePayload,
+  type TranscriptLinePayload,
 } from "@/lib/agent-store";
 
 /**
@@ -39,16 +45,24 @@ import {
  * contributes zero bytes to `dist/`). Both halves are proved, and
  * drilled in both directions, in `app/test/interview-harness.test.ts`.
  *
- * THIS MODULE OWNS THE USER'S HALF OF THE TRANSCRIPT, and the store
+ * THIS MODULE OWNS THE LIVE SESSION'S USER HALVES, and the store
  * deliberately does not: `sendGenesisTurn(text)` passes `text` to
  * `invoke` and records nothing anywhere the webview can read. So the
  * transcript is a JOIN — planner halves from the store, user halves
- * from here. The consequence, stated rather than discovered: THE USER'S
- * HALF DOES NOT SURVIVE A REMOUNT OR AN APP RESTART.
- * `refreshGenesisStatus` rebuilds `phase`/`turn`/`nativeSessionId` but
- * never `turns`, so a remount mid-interview shows an empty transcript
- * over a live session. That is T-029's rehydration, named here so
- * nobody builds half of it.
+ * from here.
+ *
+ * THAT JOIN USED TO END AT THE PROCESS BOUNDARY, and T-029 is where it
+ * stops doing so. `refreshGenesisStatus` rebuilds
+ * `phase`/`turn`/`nativeSessionId` but never `turns`, and these maps live
+ * in module state, so a remount or an app restart mid-interview showed an
+ * EMPTY CHAT over a LIVE SESSION. The third source is now
+ * `.nputer/genesis/transcript.jsonl`, pulled by `rehydrateInterview` and
+ * folded by `mergeRehydrated` — live state wins wherever both exist,
+ * because a memory of a turn must never overwrite the turn.
+ *
+ * The cache is LOSABLE BY CHARTER and nothing here pretends otherwise: an
+ * empty pull is the ordinary case AND the cache-is-gone case, and neither
+ * blocks a resume. `docs/` is the record.
  */
 
 const isTauri =
@@ -94,6 +108,17 @@ declare global {
        * cheapest of T-049-s1's three remedies, scoped to this screen.
        */
       sent: () => readonly string[];
+      /**
+       * T-029 (T-027-s2): the refused turn subscription. A browser has no
+       * `listen` to refuse, so this is the ONLY door to the state where
+       * the plan assembles on the right and the chat stays empty on the
+       * left. It sets the SHIPPED field on the shipped state — the same
+       * argument `recordStartupFailure` made for T-050's screen.
+       */
+      listenerFailed: (failed: boolean) => void;
+      /** T-029 criteria 1–2: the banked transcript a restart rehydrates
+       * from. A served bundle has no `.nputer/` to read. */
+      rehydrate: (lines: readonly TranscriptLinePayload[]) => void;
     };
   }
 }
@@ -115,6 +140,8 @@ export async function startInterviewSource(): Promise<void> {
         status: (payload) => setTwin(applyGenesisStatus(twinState, payload)),
         get: () => twinState,
         sent: () => [...sendLedger],
+        listenerFailed: (failed) => setTwin({ ...twinState, listenerFailed: failed }),
+        rehydrate: (lines) => setTwin({ ...twinState, rehydrated: [...lines] }),
       };
       console.info("[nputer] no Tauri IPC detected — interview harness active");
     }
@@ -287,6 +314,60 @@ export async function startInterview(
   } finally {
     setUi({ busy: false });
   }
+}
+
+/**
+ * T-029 criterion 1: take the resume the registry offered.
+ *
+ * Shares `startInterview`'s latch and its `autoStarted` bookkeeping, so
+ * the auto-start cannot fire on top of a resume the user just took.
+ */
+export async function resumeInterview(
+  projectDir: string,
+): Promise<StartOutcomePayload | null> {
+  return takeStart(projectDir, resumeGenesis);
+}
+
+/** T-029 criterion 3: continue with a fresh session — degraded, never
+ * dead. The banked docs are the record; only the conversation restarts. */
+export async function freshInterview(
+  projectDir: string,
+): Promise<StartOutcomePayload | null> {
+  return takeStart(projectDir, freshGenesis);
+}
+
+async function takeStart(
+  projectDir: string,
+  command: () => Promise<StartOutcomePayload | null>,
+): Promise<StartOutcomePayload | null> {
+  if (uiState.busy) return null;
+  setUi({ busy: true, notice: null });
+  try {
+    const outcome = await command();
+    if (outcome === null) return null;
+    autoStarted.add(projectDir);
+    if (outcome.kind !== "started") setUi({ notice: outcome });
+    else void refreshGenesisTranscript();
+    return outcome;
+  } finally {
+    setUi({ busy: false });
+  }
+}
+
+/**
+ * T-029 criteria 1–2: pull the banked transcript into the store.
+ *
+ * Called on arrival rather than at app startup: this module is loaded
+ * before a project is necessarily open, and `genesis_transcript` reads
+ * the OPEN project. Asking early would ask about nothing.
+ */
+export async function rehydrateInterview(): Promise<void> {
+  await refreshGenesisTranscript();
+}
+
+/** T-029 criterion 4: the hand-driven mode's assembled prompt. */
+export async function loadKickoff(): Promise<KickoffOutcomePayload | null> {
+  return genesisKickoff();
 }
 
 /** Retry the command that produced a failure, with the same argument. */

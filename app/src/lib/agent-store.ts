@@ -30,10 +30,21 @@ export type TurnErrorPayload =
   | { kind: "spawnFailed"; os: string }
   | { kind: "startTimeout" }
   | { kind: "stall" }
-  /** The CLI's own stderr tail — auth expiry has no reliable exit-code
-   * signature, so it is surfaced verbatim rather than classified. */
+  /** The CLI's own stderr tail — the residual class, after T-029's
+   * classification has taken the two failures the stream NAMES. */
   | { kind: "exitNonZero"; code: number | null; stderrTail: string }
-  | { kind: "malformedStream"; why: string };
+  | { kind: "malformedStream"; why: string }
+  /** T-029: the CLI could not authenticate, and said so in band. The one
+   * action that helps is `claude login`, and the hand-driven fallback
+   * works right now with no login at all. */
+  | { kind: "authFailed"; status: number | null; message: string }
+  /** T-029 (T-025-s1): a tool the planner needed was refused. Named, so
+   * the screen can say WHICH instead of showing an exit code. */
+  | { kind: "toolDenied"; denials: readonly string[]; terminalReason: string | null }
+  /** T-029 (T-039-s3): a session id was refused at either gate. Its own
+   * envelope, because "start fresh" is its remedy and is not the remedy
+   * for a truncated stream line. */
+  | { kind: "rejectedSessionId"; why: string };
 
 /** Mirror of Rust's `RunEvent` — the `genesis-turn` channel's payloads.
  * Every one carries `seq` from one runner-owned counter, so the store
@@ -58,13 +69,57 @@ export type StartOutcomePayload =
   | { kind: "busy" }
   | { kind: "noProject" }
   | { kind: "alreadyPlanned"; path: string }
-  /** A planner session is already recorded for this project. T-029
-   * renders the choice; this task never auto-resumes at start. */
-  | { kind: "resumeAvailable"; nativeSessionId: string; turns: number }
+  /** A planner session is already recorded for this project. Start never
+   * auto-resumes; the screen renders the choice and `resumeGenesis`
+   * takes it. `model` comes through the registry's READ boundary, so
+   * `null` also means "recorded, but not a usable name" (T-047-s3). */
+  | {
+      kind: "resumeAvailable";
+      nativeSessionId: string;
+      turns: number;
+      model: string | null;
+    }
   /** Never a dead end — T-029 renders the hand-driven fallback. */
   | { kind: "cliNotFound"; probed: string[] }
   | { kind: "unsupportedVersion"; found: string }
+  /** T-029 (T-039-s3): the recorded id is unusable. Routed to "your
+   * saved session is unusable — start fresh", which it could not be
+   * while it shared `error` with "the registry could not be written". */
+  | { kind: "sessionIdRejected"; registryPath: string; why: string }
+  /** T-029: asked to resume with nothing recorded to resume from. */
+  | { kind: "nothingToResume" }
   | { kind: "error"; message: string };
+
+/** Mirror of Rust's `KickoffOutcome` — ADR-006's hand-driven mode. */
+export type KickoffOutcomePayload =
+  | {
+      kind: "ready";
+      prompt: string;
+      projectDir: string;
+      kitRoot: string;
+      methodVersion: string;
+      resuming: boolean;
+    }
+  | { kind: "noProject" }
+  | { kind: "alreadyPlanned"; path: string }
+  | { kind: "error"; message: string };
+
+/** Mirror of Rust's `TranscriptLine` — one banked protocol half-turn.
+ * LOSABLE BY CHARTER: an empty list is not an error. */
+export interface TranscriptLinePayload {
+  turn: number;
+  /** `"user"` or `"planner"`. */
+  role: string;
+  text: string;
+  atMs: number;
+  /**
+   * This half-turn was ASSEMBLED BY THE APP — a kickoff, or a resume
+   * nudge — not typed by the human. Omitted on the wire when false, so a
+   * transcript written by a pre-T-029 build parses with it absent, which
+   * is why the type is optional and every read compares against `true`.
+   */
+  machine?: boolean;
+}
 
 /** Mirror of Rust's `SendOutcome`. */
 export type SendOutcomePayload =
@@ -128,6 +183,31 @@ export interface GenesisState {
   methodVersion: string | null;
   cliVersion: string | null;
   projectDir: string | null;
+  /**
+   * T-029 (T-027-s2): THE TURN CHANNEL IS NOT OPEN.
+   *
+   * `startGenesisListener` awaits `listen("genesis-turn")`, and
+   * `startInterviewSource` wraps that in a try/catch — it must, because
+   * an unhandled rejection at the app root is what T-050 spent a task
+   * removing. But the whole user-visible response was a `console.error`:
+   * the screen rendered normally, the input was enabled, "Start the
+   * interview" worked, `genesis_start` reported `started { turn: 1 }`,
+   * the planner really ran and really wrote into `docs/`, the RIGHT half
+   * showed the files landing — **and the left half stayed empty forever
+   * with no explanation.**
+   *
+   * IT LIVES ON THE STORE, not in the source module, and that placement
+   * is the point. A flag private to `interview-source.ts` would let the
+   * store and the UI disagree about whether the interview is live, which
+   * is the split-brain T-027 §1 spent its length arguing against.
+   *
+   * The chat renders it as the existing inline-notice treatment.
+   */
+  listenerFailed: boolean;
+  /** Rehydrated planner/user halves from `.nputer/genesis/transcript.jsonl`
+   * (T-029 criteria 1–2). Empty is the ordinary case AND the
+   * cache-is-gone case: the chat renders banked progress instead. */
+  rehydrated: readonly TranscriptLinePayload[];
 }
 
 export function emptyGenesisState(): GenesisState {
@@ -143,6 +223,8 @@ export function emptyGenesisState(): GenesisState {
     methodVersion: null,
     cliVersion: null,
     projectDir: null,
+    listenerFailed: false,
+    rehydrated: [],
   };
 }
 
@@ -318,13 +400,30 @@ function setState(next: GenesisState): void {
  * Subscribe to `genesis-turn` and pull the current status once. Safe to
  * call repeatedly (StrictMode double-effects); the seq guard settles any
  * ordering race between the subscription and the pull.
+ *
+ * A REFUSED SUBSCRIPTION BECOMES STATE, then rethrows (T-029, T-027-s2).
+ * Both halves matter: the flag is what the chat renders, and the rethrow
+ * keeps `startInterviewSource`'s existing `console.error` — the caller's
+ * catch is still the thing that stops an unhandled rejection reaching the
+ * app root, which is not this function's job to take over.
+ *
+ * The latch is RELEASED on failure, so a later call genuinely re-tries
+ * instead of returning early over a channel that was never opened —
+ * T-050's stranding lesson, applied to this door.
  */
 export async function startGenesisListener(): Promise<void> {
   if (started || !isTauri) return;
   started = true;
-  await listen<GenesisEvent>("genesis-turn", (event) => {
-    setState(reduceGenesisEvent(state, event.payload));
-  });
+  try {
+    await listen<GenesisEvent>("genesis-turn", (event) => {
+      setState(reduceGenesisEvent(state, event.payload));
+    });
+  } catch (err) {
+    started = false;
+    setState({ ...state, listenerFailed: true });
+    throw err;
+  }
+  if (state.listenerFailed) setState({ ...state, listenerFailed: false });
   await refreshGenesisStatus();
 }
 
@@ -384,6 +483,92 @@ export async function cancelGenesis(): Promise<CancelOutcomePayload | null> {
     return outcome;
   } catch {
     return null;
+  }
+}
+
+/**
+ * T-029 criterion 1: respawn the RECORDED native session. Zero arguments
+ * — the id lives in `.nputer/sessions.json` and is read Rust-side through
+ * its own gate, so no session id crosses the boundary in either
+ * direction. Same shape as `startGenesis`, deliberately: the two are one
+ * choice on the same screen and their outcomes are the same type.
+ */
+export async function resumeGenesis(): Promise<StartOutcomePayload | null> {
+  return startLike(() => invoke<StartOutcomePayload>("genesis_resume"));
+}
+
+/** T-029 criterion 3: continue with a fresh session — degraded, never
+ * dead. The recorded session is marked abandoned Rust-side and the new
+ * kickoff carries the method's resume rule. */
+export async function freshGenesis(): Promise<StartOutcomePayload | null> {
+  return startLike(() => invoke<StartOutcomePayload>("genesis_fresh"));
+}
+
+/**
+ * The guard + fold both start-like commands share.
+ *
+ * IT TAKES A THUNK RATHER THAN A COMMAND NAME, and that is a deliberate
+ * concession to a GATE rather than a style preference: passing the name
+ * as a variable would hide both commands from the frontend command scan
+ * in `crescendo-dom.test.tsx`, which greps for a command name spelled
+ * out at an invoke call site. `runPicker`'s three are already invisible
+ * to it for exactly that reason and have to be asserted Rust-side
+ * instead. Spelling the names at the call sites above keeps the scan
+ * able to see an eleventh command appear.
+ */
+async function startLike(
+  run: () => Promise<StartOutcomePayload>,
+): Promise<StartOutcomePayload | null> {
+  if (!isTauri || isTurnInFlight(state)) return null;
+  try {
+    const outcome = await run();
+    setState(reduceGenesisOutcome(state, outcome));
+    return outcome;
+  } catch (err) {
+    const outcome: StartOutcomePayload = { kind: "error", message: String(err) };
+    setState(reduceGenesisOutcome(state, outcome));
+    return outcome;
+  }
+}
+
+/**
+ * T-029 criteria 1–2: pull the banked transcript and fold it into the
+ * state the chat renders.
+ *
+ * LOSABLE BY CHARTER, and this is where that is honoured: a refused
+ * invoke, a missing file and a file of pure garbage all land the same
+ * empty list, and none of them is an error. The chat renders
+ * banked-progress from `docs/` in its place, which is the only source
+ * that was ever project truth.
+ */
+export async function refreshGenesisTranscript(): Promise<
+  readonly TranscriptLinePayload[]
+> {
+  if (!isTauri) return [];
+  try {
+    const lines = await invoke<TranscriptLinePayload[]>("genesis_transcript");
+    // The boundary answered with something that is not a list. Same
+    // discipline as every other outcome in this file: what comes back
+    // over IPC is checked before it becomes state, so a command that
+    // answers `undefined` degrades to "no history" rather than to a
+    // TypeError inside a render.
+    const safe = Array.isArray(lines) ? lines : [];
+    setState({ ...state, rehydrated: safe });
+    return safe;
+  } catch {
+    return [];
+  }
+}
+
+/** T-029 criterion 4: the hand-driven mode's assembled kickoff. Not
+ * stored — it is read once, when the fallback renders, and it is a
+ * prompt rather than interview state. */
+export async function genesisKickoff(): Promise<KickoffOutcomePayload | null> {
+  if (!isTauri) return null;
+  try {
+    return await invoke<KickoffOutcomePayload>("genesis_kickoff");
+  } catch (err) {
+    return { kind: "error", message: String(err) };
   }
 }
 

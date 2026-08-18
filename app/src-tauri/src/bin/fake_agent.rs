@@ -169,6 +169,92 @@ fn main() {
             );
             std::process::exit(1);
         }
+        // T-029 (T-025-s1): THE TOO-NARROW-ALLOWLIST SHAPE. The adapter
+        // passes exactly six `Bash(...)` patterns, so a planner that
+        // reaches for a seventh is refused by the CLI's own permission
+        // layer and the turn dies with the denial named on the result
+        // line.
+        //
+        // HONESTY NOTE, because it is the difference between a
+        // transcription and a construction: unlike `auth-error` above,
+        // this shape was NOT captured from a live 2.1.226 run — this
+        // machine's login is revoked, so no denial could be provoked. The
+        // FIELDS are the CLI's documented ones (`permission_denials`,
+        // `terminal_reason`); their exact population under a real denial
+        // is unverified. The runner reads them defensively (objects or
+        // bare strings, bounded, control-stripped) for that reason.
+        "tool-denied" => {
+            emit_init(&session_id, &model);
+            emit_delta("I need to remove the scaffold I just wrote");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": true,
+                    "terminal_reason": "refusal", "num_turns": 1,
+                    "permission_denials": [
+                        { "tool_name": "Bash", "tool_use_id": "tu_01" },
+                        { "tool_name": "WebFetch", "tool_use_id": "tu_02" }
+                    ],
+                    "result": "I was not permitted to run the tools this stage needs."
+                })
+            );
+            std::process::exit(1);
+        }
+        // T-029-s6: THE RECOVERED RETRY — the third case the first build
+        // did not have a fixture for. `auth-error` above is a turn that
+        // DIED of the 401; `happy` is a turn that never saw one. These
+        // four are the turn in between: an `api_retry` 401 the CLI
+        // retried and got PAST — its own line says `max_retries: 10`, and
+        // a budget of ten exists because some of them succeed — followed
+        // by a failure that has nothing to do with authentication.
+        //
+        // THE CONTROL SHARES THE CODE PATH. `retry_then(with_retry: bool)`
+        // is one emitter, so `enospc-no-retry` is `retry-401-then-enospc`
+        // MINUS EXACTLY ONE LINE by construction rather than by two
+        // scenarios agreeing to stay in step. That single line is the
+        // whole discriminator these pins turn on.
+        "retry-401-then-enospc" => retry_then(&session_id, &model, true, Ending::Enospc),
+        "enospc-no-retry" => retry_then(&session_id, &model, false, Ending::Enospc),
+        "retry-401-then-clean-result" => retry_then(&session_id, &model, true, Ending::CleanResult),
+        "retry-401-then-tool-denied" => retry_then(&session_id, &model, true, Ending::ToolDenied),
+        // T-029-s7: a denial the planner ROUTED AROUND. The turn finished
+        // normally — `is_error: false`, `terminal_reason: "end_turn"` —
+        // and `permission_denials` is the cumulative record of what was
+        // refused along the way, not a statement that a refusal ended it.
+        // The process then exits nonzero for its own reasons.
+        "denied-then-end-turn" => {
+            emit_init(&session_id, &model);
+            emit_delta("I could not fetch that, so I will ask you instead.");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": false,
+                    "terminal_reason": "end_turn", "num_turns": 1,
+                    "permission_denials": [
+                        { "tool_name": "WebFetch", "tool_use_id": "tu_07" }
+                    ],
+                    "result": "Here is your first question."
+                })
+            );
+            std::process::exit(1);
+        }
+        // T-029-s6's counter-pin: the case the fix must NOT break. A
+        // diagnostic-only auth failure — status 403, and the CLI dies
+        // before it writes any `result` line at all, so there is no
+        // terminal line to clear the status. This must stay `AuthFailed`.
+        "auth-403-no-result" => {
+            emit_init(&session_id, &model);
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "system", "subtype": "api_retry", "attempt": 1,
+                    "max_retries": 10, "retry_delay_ms": 508,
+                    "error_status": 403, "error": "permission_error",
+                    "session_id": session_id
+                })
+            );
+            std::process::exit(1);
+        }
         // T-039: an init line carrying a HOSTILE session id — the fixture
         // for the capture-side gate. The id is the test's own choice
         // (`NPUTER_FAKE_SESSION_ID`), defaulting to the exact injection the
@@ -296,6 +382,82 @@ fn emit_tool_use(name: &str) {
             ]}
         })
     );
+}
+
+/// How a `retry_then` stream ENDS — the part that is the turn's actual
+/// cause of death, none of which is authentication.
+enum Ending {
+    /// A full disk, reported the way the CLI reports its own errors:
+    /// `is_error: true` with the message on the `result` line.
+    Enospc,
+    /// A turn that ANSWERED — `is_error: false`, a real question in the
+    /// result — whose process then exits 1 anyway.
+    CleanResult,
+    /// A REAL tool denial, the exact shape `ToolDenied` exists for,
+    /// standing behind the recovered 401.
+    ToolDenied,
+}
+
+/// T-029-s6's stream: init · [the recovered `api_retry` 401] · a text
+/// delta · a terminal `result` line that names the REAL cause · exit 1.
+///
+/// `with_retry` is the ONE line that separates the masking rows from the
+/// control. Both go through this function on purpose: a control that is
+/// "the same stream minus one line" has to be the same code minus one
+/// line, or it decays into a second fixture that drifts.
+fn retry_then(session_id: &str, model: &str, with_retry: bool, ending: Ending) {
+    emit_init(session_id, model);
+    if with_retry {
+        // Byte-for-byte the `auth-error` scenario's line — the CLI
+        // announcing its retry machinery, budget and all.
+        println!(
+            "{}",
+            serde_json::json!({
+                "type": "system", "subtype": "api_retry", "attempt": 1,
+                "max_retries": 10, "retry_delay_ms": 508,
+                "error_status": 401, "error": "authentication_failed",
+                "session_id": session_id
+            })
+        );
+    }
+    match ending {
+        Ending::Enospc => {
+            emit_delta("Let me write the north star.");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": true,
+                    "terminal_reason": "error_during_execution", "num_turns": 1,
+                    "result": "Error: ENOSPC: no space left on device, write '/Users/x/docs/NORTH_STAR.md'"
+                })
+            );
+        }
+        Ending::CleanResult => {
+            emit_delta("Here is your first question.");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": false,
+                    "num_turns": 1,
+                    "result": "Here is your first question."
+                })
+            );
+        }
+        Ending::ToolDenied => {
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": true,
+                    "terminal_reason": "refusal", "num_turns": 1,
+                    "permission_denials": [
+                        { "tool_name": "Bash", "tool_use_id": "tu_01" }
+                    ],
+                    "result": "I was not permitted to run the tools this stage needs."
+                })
+            );
+        }
+    }
+    std::process::exit(1);
 }
 
 fn emit_result(text: &str) {

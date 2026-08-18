@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   challengeOf,
   chipLabel,
+  failureAction,
   failureDetail,
   failureHeadline,
   questionFooter,
@@ -178,12 +179,14 @@ export function PlannerTurn({
   current,
   approxStage,
   onRetry,
+  onHandDriven,
 }: {
   turn: number;
   planner: GenesisTurn;
   current: boolean;
   approxStage: number | null;
   onRetry: (turn: number) => void;
+  onHandDriven?: () => void;
 }) {
   const reading = challengeOf(planner.text);
   const footer = current ? questionFooter(approxStage) : null;
@@ -233,7 +236,12 @@ export function PlannerTurn({
       )}
 
       {planner.error !== null && (
-        <FailureBlock error={planner.error} turn={turn} onRetry={onRetry} />
+        <FailureBlock
+          error={planner.error}
+          turn={turn}
+          onRetry={onRetry}
+          onHandDriven={onHandDriven}
+        />
       )}
     </div>
   );
@@ -244,31 +252,59 @@ export function PlannerTurn({
  * the turn that failed — never a modal, never a toast, never a screen
  * replacement. It carries the error's own words and one way forward.
  *
- * NOTHING HERE PARSES THE ERROR TEXT. Auth failures are relayed, not
- * classified: T-025's smoke found the CLI reports 401 in-band on stdout
- * with an empty stderr and `subtype: "success"`, which is why what
- * arrives here is `exitNonZero` and why it is rendered verbatim rather
- * than guessed at. Classification is T-029's.
+ * NOTHING HERE PARSES THE ERROR TEXT — and since T-029 it does not have
+ * to. T-025's smoke found the CLI reports 401 IN BAND on stdout with an
+ * empty stderr and `subtype: "success"`; T-025 routed those words into
+ * the tail so they at least ARRIVED, and this block rendered them as an
+ * escaped one-line blob under "the planner exited with code 1", with
+ * **Try again** below. The words were delivered and the MEANING was not,
+ * and Try again is the single thing that cannot work against a login that
+ * has not changed.
+ *
+ * So the classification is done in Rust, off TYPED stream fields, and
+ * what reaches here is already named. `failureAction` turns the name into
+ * the one action that helps — and, for the deterministic failures, TAKES
+ * THE RETRY AWAY, because a button that reruns a failure verbatim is a
+ * lie with an affordance on it.
  */
 export function FailureBlock({
   error,
   turn,
   onRetry,
+  onHandDriven,
 }: {
   error: TurnErrorPayload;
   turn: number;
   onRetry: (turn: number) => void;
+  /** Absent when the caller has nowhere to route the fallback to; the
+   * block then simply does not offer it. */
+  onHandDriven?: () => void;
 }) {
   const detail = failureDetail(error);
+  const action = failureAction(error);
   return (
     <div
       data-testid="interview-failure"
       data-error-kind={error.kind}
+      data-retryable={action === null || action.retry ? "true" : "false"}
       className="flex flex-col gap-2 rounded-lg border border-status-rejected-border bg-status-rejected px-4 py-3.5"
     >
       <span className="text-sm font-semibold tracking-heading text-destructive">
         {failureHeadline(error)}
       </span>
+      {action !== null && (
+        <span data-testid="interview-failure-action" className="text-sm text-secondary-foreground">
+          {action.hint}
+        </span>
+      )}
+      {action?.command != null && (
+        <code
+          data-testid="interview-failure-command"
+          className="w-fit rounded-sm bg-muted px-1.5 py-0.5 font-mono text-sm text-foreground"
+        >
+          {action.command}
+        </code>
+      )}
       {detail !== null && (
         <span
           data-testid="interview-failure-detail"
@@ -283,9 +319,20 @@ export function FailureBlock({
         and the conversation can carry on from here.
       </span>
       <div className="flex items-center gap-2.25">
-        <Button data-testid="interview-retry" onClick={() => onRetry(turn)}>
-          Try again
-        </Button>
+        {(action === null || action.retry) && (
+          <Button data-testid="interview-retry" onClick={() => onRetry(turn)}>
+            Try again
+          </Button>
+        )}
+        {action?.fallback === true && onHandDriven !== undefined && (
+          <Button
+            data-testid="interview-hand-driven"
+            variant="outline"
+            onClick={onHandDriven}
+          >
+            Drive it by hand
+          </Button>
+        )}
       </div>
     </div>
   );

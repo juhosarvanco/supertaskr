@@ -14,10 +14,14 @@ import {
   bankedSince,
   challengeOf,
   chipLabel,
+  failureAction,
   failureDetail,
   failureHeadline,
+  listOf,
   MAX_CHIP_PATHS,
+  mergeRehydrated,
   questionFooter,
+  rehydrate,
   shouldStickToBottom,
   stageOf,
   stageReadout,
@@ -694,5 +698,173 @@ describe("shouldStickToBottom", () => {
 
   it("a region with nothing to scroll is always at the bottom", () => {
     expect(shouldStickToBottom(0, 100, 100)).toBe(true);
+  });
+});
+
+// ---- T-029: the typed failures, and the action each one earns ------------
+
+describe("a typed failure carries the ONE action that helps (T-029)", () => {
+  it("names the login and REFUSES the retry, because the retry cannot work", () => {
+    const error = {
+      kind: "authFailed",
+      status: 401,
+      message: "Failed to authenticate. API Error: 401 OAuth access token has been revoked.",
+    } as const;
+    expect(failureHeadline(error)).toBe("your CLI's login has expired");
+    const action = failureAction(error)!;
+    expect(action.command).toBe("claude login");
+    // THE DISCRIMINATING PROPERTY of the whole criterion. Nothing about
+    // an expired login changes between two presses of Try again, so
+    // offering it is offering the one thing that cannot work.
+    expect(action.retry).toBe(false);
+    expect(action.fallback).toBe(true);
+    // The CLI's own words survive as the detail — evidence, not a
+    // diagnosis, and dropping them would trade one silence for another.
+    expect(failureDetail(error)).toContain("401");
+  });
+
+  it("names the denied tools, and KEEPS the retry, because a denial may not repeat", () => {
+    const error = {
+      kind: "toolDenied",
+      denials: ["Bash", "WebFetch"],
+      terminalReason: "refusal",
+    } as const;
+    expect(failureHeadline(error)).toBe("the planner was refused a tool it needed");
+    const action = failureAction(error)!;
+    expect(action.hint).toContain("Bash and WebFetch");
+    expect(action.retry).toBe(true);
+    expect(action.command).toBeNull();
+  });
+
+  it("routes a refused session id to 'start fresh' rather than to a generic toast", () => {
+    const error = { kind: "rejectedSessionId", why: "refusing to resume: it begins with '-'" } as const;
+    expect(failureHeadline(error)).toBe("the saved session id is unusable");
+    const action = failureAction(error)!;
+    expect(action.retry).toBe(false);
+    expect(action.fallback).toBe(false);
+    expect(failureDetail(error)).toContain("begins with '-'");
+  });
+
+  it("leaves the pre-existing variants exactly as they were", () => {
+    // The residual class keeps its generic Try again — for these the
+    // retry genuinely is the right and only offer.
+    for (const error of [
+      { kind: "spawnFailed", os: "No such file" },
+      { kind: "startTimeout" },
+      { kind: "stall" },
+      { kind: "exitNonZero", code: 1, stderrTail: "boom" },
+      { kind: "malformedStream", why: "no session init line in the stream" },
+    ] as const) {
+      expect(failureAction(error), error.kind).toBeNull();
+    }
+    expect(failureHeadline({ kind: "exitNonZero", code: 1, stderrTail: "" })).toBe(
+      "the planner exited with code 1",
+    );
+  });
+
+  it("lists names the way a sentence does", () => {
+    expect(listOf([])).toBe("a tool");
+    expect(listOf(["Bash"])).toBe("Bash");
+    expect(listOf(["Bash", "WebFetch"])).toBe("Bash and WebFetch");
+    expect(listOf(["Bash", "WebFetch", "Write"])).toBe("Bash, WebFetch and Write");
+  });
+});
+
+// ---- T-029: the rehydration ---------------------------------------------
+
+describe("the conversation is where you left it (T-029 criteria 1-2)", () => {
+  const at = (turn: number) => 1_700_000_000_000 + turn;
+
+  it("folds a banked transcript into the two shapes the chat renders", () => {
+    const { turns, userHalves } = rehydrate([
+      { turn: 1, role: "user", text: "You are the planner. KIT ROOT: /k", atMs: at(1), machine: true },
+      { turn: 1, role: "planner", text: "who is it for?", atMs: at(1) },
+      { turn: 2, role: "user", text: "solo founders", atMs: at(2) },
+      { turn: 2, role: "planner", text: "what is observable?", atMs: at(2) },
+    ]);
+    expect(turns.map((t) => t.turn)).toEqual([1, 2]);
+    // ON DISK MEANS FINISHED. A rehydrated turn is never `running`: a
+    // pulse dot over a turn nothing is generating would be the screen
+    // claiming work is happening.
+    expect(turns.every((t) => t.status === "completed")).toBe(true);
+    expect(turns.every((t) => t.error === null && t.activity.length === 0)).toBe(true);
+    // THE APP-ASSEMBLED HALF IS DROPPED ON THE TYPED FLAG. Recognising
+    // machine text by READING it is the classify-by-string this project
+    // bans everywhere else.
+    expect([...userHalves.keys()]).toEqual([2]);
+    expect(userHalves.get(2)).toBe("solo founders");
+  });
+
+  it("keeps a pre-T-029 transcript readable — `machine` absent is not `machine` true", () => {
+    const { userHalves } = rehydrate([
+      { turn: 2, role: "user", text: "an older build wrote this", atMs: at(2) },
+    ]);
+    expect(userHalves.get(2)).toBe("an older build wrote this");
+  });
+
+  it("skips a line whose turn number is not a number at all", () => {
+    const { turns, userHalves } = rehydrate([
+      { turn: Number.NaN, role: "planner", text: "junk", atMs: 0 },
+      { turn: 3, role: "planner", text: "real", atMs: at(3) },
+    ]);
+    expect(turns.map((t) => t.text)).toEqual(["real"]);
+    expect(userHalves.size).toBe(0);
+  });
+
+  it("LIVE STATE WINS: a memory of a turn never overwrites the turn", () => {
+    const live: GenesisTurn[] = [
+      {
+        turn: 2,
+        text: "the live turn, mid-stream",
+        activity: ["Write"],
+        status: "running",
+        truncatedRelay: false,
+        error: null,
+      },
+    ];
+    const merged = mergeRehydrated(
+      [
+        { turn: 1, role: "planner", text: "banked turn 1", atMs: at(1) },
+        { turn: 2, role: "planner", text: "the stale copy on disk", atMs: at(2) },
+      ],
+      live,
+      new Map([[2, "my live answer"]]),
+    );
+    expect(merged.turns.map((t) => [t.turn, t.text, t.status])).toEqual([
+      [1, "banked turn 1", "completed"],
+      [2, "the live turn, mid-stream", "running"],
+    ]);
+    expect(merged.userHalves.get(2)).toBe("my live answer");
+  });
+
+  it("returns the live arguments BY IDENTITY when there is nothing banked", () => {
+    const turns: GenesisTurn[] = [];
+    const halves = new Map<number, string>();
+    const merged = mergeRehydrated([], turns, halves);
+    // The ordinary in-session render allocates nothing, so the store's
+    // identity discipline reaches all the way to this join.
+    expect(merged.turns).toBe(turns);
+    expect(merged.userHalves).toBe(halves);
+  });
+
+  it("renders end to end: a rehydrated conversation assembles in order", () => {
+    const merged = mergeRehydrated(
+      [
+        { turn: 1, role: "user", text: "KICKOFF", atMs: at(1), machine: true },
+        { turn: 1, role: "planner", text: "q1", atMs: at(1) },
+        { turn: 2, role: "user", text: "a1", atMs: at(2) },
+        { turn: 2, role: "planner", text: "q2", atMs: at(2) },
+      ],
+      [],
+      new Map(),
+    );
+    const entries = assembleTranscript(merged.turns, merged.userHalves, new Map());
+    expect(entries.map((e) => `${e.kind}:${e.turn}`)).toEqual([
+      "planner:1",
+      "user:2",
+      "planner:2",
+    ]);
+    // The last planner turn is the current question, as ever.
+    expect(entries.filter((e) => e.kind === "planner" && e.current)).toHaveLength(1);
   });
 });

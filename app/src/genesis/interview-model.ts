@@ -1,5 +1,9 @@
 import type { DocsModelState } from "@/lib/docs-model";
-import type { GenesisTurn, TurnErrorPayload } from "@/lib/agent-store";
+import type {
+  GenesisTurn,
+  TranscriptLinePayload,
+  TurnErrorPayload,
+} from "@/lib/agent-store";
 import { deriveGenesis, EMPTY_CHANGE_LOG } from "./genesis-derive";
 
 /**
@@ -307,6 +311,85 @@ export function activeTurn(turns: readonly GenesisTurn[]): number | null {
 }
 
 /**
+ * REHYDRATION (T-029 criteria 1–2): the banked transcript, folded into
+ * the two shapes the chat already renders.
+ *
+ * WHAT THIS FIXES, stated because it is invisible from the outside:
+ * `refreshGenesisStatus` rebuilds `phase`/`turn`/`nativeSessionId` but
+ * never `turns`, and the user's half lives only in
+ * `interview-source.ts`'s module state — so an app restart or a remount
+ * mid-interview showed an EMPTY CHAT over a live session. The conversation
+ * was not where you left it, and nothing said so.
+ *
+ * THREE RULES, each one a place this could have lied:
+ *
+ *  1. **Live turns WIN.** A rehydrated turn is a memory of a completed
+ *     exchange; a live turn is the exchange. Where both exist for the
+ *     same number, the store's is kept — so a resumed turn streaming
+ *     right now is never overwritten by the copy of it that was on disk.
+ *  2. **App-assembled halves are dropped, on a TYPED FLAG.** The kickoff
+ *     and the resume nudge ride `role: "user"` because they are the user
+ *     half of the protocol, but the human did not type them, and
+ *     rendering "You are the planner. KIT ROOT: …" in their own bubble
+ *     would be the chat claiming they said it. Recognising machine text
+ *     by READING it is the classify-by-string this project bans; the
+ *     runner marks it instead (`TranscriptLine.machine`).
+ *  3. **A rehydrated planner turn is `completed`, never `running`.** It
+ *     is on disk, so it finished; giving it a live status would put a
+ *     pulse dot on a turn nothing is generating.
+ */
+export function rehydrate(lines: readonly TranscriptLinePayload[]): {
+  turns: readonly GenesisTurn[];
+  userHalves: ReadonlyMap<number, string>;
+} {
+  const turns = new Map<number, GenesisTurn>();
+  const userHalves = new Map<number, string>();
+  for (const line of lines) {
+    if (!Number.isFinite(line.turn)) continue;
+    if (line.role === "planner") {
+      turns.set(line.turn, {
+        turn: line.turn,
+        text: line.text,
+        activity: [],
+        status: "completed",
+        truncatedRelay: false,
+        error: null,
+      });
+    } else if (line.role === "user" && line.machine !== true) {
+      userHalves.set(line.turn, line.text);
+    }
+  }
+  return {
+    turns: [...turns.values()].sort((a, b) => a.turn - b.turn),
+    userHalves,
+  };
+}
+
+/** Live state over rehydrated state, per rule 1 above. Returns the live
+ * arguments BY IDENTITY when there is nothing banked to add, so the
+ * ordinary in-session render allocates nothing. */
+export function mergeRehydrated(
+  banked: readonly TranscriptLinePayload[],
+  liveTurns: readonly GenesisTurn[],
+  liveUserHalves: ReadonlyMap<number, string>,
+): {
+  turns: readonly GenesisTurn[];
+  userHalves: ReadonlyMap<number, string>;
+} {
+  if (banked.length === 0) return { turns: liveTurns, userHalves: liveUserHalves };
+  const old = rehydrate(banked);
+  const turns = new Map<number, GenesisTurn>();
+  for (const turn of old.turns) turns.set(turn.turn, turn);
+  for (const turn of liveTurns) turns.set(turn.turn, turn);
+  const userHalves = new Map(old.userHalves);
+  for (const [number, text] of liveUserHalves) userHalves.set(number, text);
+  return {
+    turns: [...turns.values()].sort((a, b) => a.turn - b.turn),
+    userHalves,
+  };
+}
+
+/**
  * Interleave the three sources into render order: for turn N, the user
  * bubble (N ≥ 2) comes first, then the planner's turn, then the chips
  * banked against it.
@@ -364,10 +447,10 @@ export function assembleTranscript(
 export const MAX_ERROR_CHARS = 2000;
 
 /** One calm sentence per typed failure variant, in the runner's own
- * vocabulary. NOTHING here parses an error's text to classify it —
- * auth-vs-anything-else is T-029's, and `exitNonZero` is relayed
- * verbatim precisely because the CLI reports authentication failure
- * in-band (T-025's smoke). */
+ * vocabulary. NOTHING here parses an error's text to classify it — that
+ * was true before T-029 and it is MORE true now: the two failures that
+ * used to be indistinguishable inside `exitNonZero` are told apart in
+ * Rust, off typed stream fields, and arrive here already named. */
 export function failureHeadline(error: TurnErrorPayload): string {
   switch (error.kind) {
     case "spawnFailed":
@@ -382,7 +465,76 @@ export function failureHeadline(error: TurnErrorPayload): string {
         : `the planner exited with code ${error.code}`;
     case "malformedStream":
       return "the planner's output could not be read";
+    case "authFailed":
+      return "your CLI's login has expired";
+    case "toolDenied":
+      return "the planner was refused a tool it needed";
+    case "rejectedSessionId":
+      return "the saved session id is unusable";
   }
+}
+
+/**
+ * THE ONE ACTION THAT HELPS, per typed failure — or `null` when the
+ * generic "Try again" is genuinely the right and only offer.
+ *
+ * THIS IS THE WHOLE POINT OF THE CLASSIFICATION, and it is worth saying
+ * why rather than leaving it to be inferred. Before T-029 an expired
+ * login reached this screen as `exitNonZero { code: 1 }` with the CLI's
+ * own words underneath and **Try again** below them — and Try again is
+ * the one thing that cannot work, because nothing about the login has
+ * changed between the two presses. A retry affordance over a failure that
+ * is deterministic is not a courtesy; it is a lie with a button on it.
+ *
+ * `retry` says whether the existing Try again button stands. `hint` is
+ * the sentence, `command` the literal the user runs, and `fallback`
+ * whether the hand-driven route (which needs no login and no CLI at all)
+ * is worth offering right there.
+ */
+export interface FailureAction {
+  hint: string;
+  command: string | null;
+  retry: boolean;
+  fallback: boolean;
+}
+
+export function failureAction(error: TurnErrorPayload): FailureAction | null {
+  switch (error.kind) {
+    case "authFailed":
+      return {
+        hint: "Log in to your agent CLI and the interview carries on from here — nothing is lost. Or drive it by hand right now, which needs no login at all.",
+        command: "claude login",
+        // Deterministic until the login changes. Offering a retry would
+        // be offering the one thing that cannot work.
+        retry: false,
+        fallback: true,
+      };
+    case "toolDenied":
+      return {
+        hint: `The planner asked for ${listOf(error.denials)} and nputer's allowlist does not carry it. Driving the interview by hand runs under your own CLI's permissions instead.`,
+        command: null,
+        // A denial is not deterministic across turns: the planner may
+        // reach for something narrower next time.
+        retry: true,
+        fallback: true,
+      };
+    case "rejectedSessionId":
+      return {
+        hint: "The saved session in .nputer/ cannot be resumed. That file is runtime state — starting a fresh session loses nothing about the project, because docs/ is the record.",
+        command: null,
+        retry: false,
+        fallback: false,
+      };
+    default:
+      return null;
+  }
+}
+
+/** "Bash", "Bash and WebFetch", "Bash, WebFetch and Write". */
+export function listOf(names: readonly string[]): string {
+  if (names.length === 0) return "a tool";
+  if (names.length === 1) return names[0]!;
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]!}`;
 }
 
 /** The variant's own words, capped, or `null` when the variant carries
@@ -393,9 +545,13 @@ export function failureDetail(error: TurnErrorPayload): string | null {
       ? error.os
       : error.kind === "exitNonZero"
         ? error.stderrTail
-        : error.kind === "malformedStream"
+        : error.kind === "malformedStream" || error.kind === "rejectedSessionId"
           ? error.why
-          : "";
+          : error.kind === "authFailed"
+            ? error.message
+            : error.kind === "toolDenied"
+              ? error.denials.join(", ")
+              : "";
   const trimmed = raw.trim();
   if (trimmed.length === 0) return null;
   return trimmed.length > MAX_ERROR_CHARS
