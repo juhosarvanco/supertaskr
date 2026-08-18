@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:dc8d76e524cbdd8ebbbb655b172124ca9ecdfc9c41a27f484dccf740c89f97b2",
-      "loc": 686,
+      "hash": "blake3:634c157151bcb13e7bc61ebcfc8d4bf105946364a60d965fe0cca5219f271584",
+      "loc": 735,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -18,8 +18,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            396,
-            684
+            415,
+            733
           ]
         },
         {
@@ -28,8 +28,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            98,
-            113
+            97,
+            112
           ]
         },
         {
@@ -38,8 +38,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            136,
-            243
+            135,
+            255
           ]
         },
         {
@@ -48,8 +48,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            44,
-            61
+            43,
+            60
           ]
         },
         {
@@ -58,8 +58,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            70,
-            94
+            69,
+            93
           ]
         },
         {
@@ -68,8 +68,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            288,
-            383
+            300,
+            402
           ]
         },
         {
@@ -78,8 +78,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            387,
-            394
+            406,
+            413
           ]
         },
         {
@@ -88,8 +88,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            271,
-            275
+            283,
+            287
           ]
         },
         {
@@ -98,8 +98,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            255,
-            267
+            267,
+            279
           ]
         }
       ]
@@ -274,8 +274,8 @@
       "id": "f:app/src/architecture/MapView.tsx",
       "path": "app/src/architecture/MapView.tsx",
       "lang": "ts",
-      "hash": "blake3:c8242db7475f19f75c389bd5140e387741adda522f9bc5cdf6d9d7ae5c8fe470",
-      "loc": 788,
+      "hash": "blake3:a645588d5738144476eea752b51e55eb7c63c8fab4807ddc957eea0d11a0ecd5",
+      "loc": 800,
       "symbols": [
         {
           "id": "s:app/src/architecture/MapView.tsx#COLLECTOR_CAP_BYTES",
@@ -293,8 +293,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            781,
-            788
+            793,
+            800
           ]
         },
         {
@@ -324,7 +324,7 @@
           "exported": true,
           "range": [
             105,
-            779
+            791
           ]
         },
         {
@@ -1875,8 +1875,8 @@
       "id": "f:app/src/components/shell/PaneRail.tsx",
       "path": "app/src/components/shell/PaneRail.tsx",
       "lang": "ts",
-      "hash": "blake3:4a958802f21b30a6707987c61ecd27a054851316c0ce16a49a5b13942db80667",
-      "loc": 77,
+      "hash": "blake3:add184d792348f9520d80654781f646ab7e008bddef076c91a506a2944ad2f6b",
+      "loc": 88,
       "symbols": [
         {
           "id": "s:app/src/components/shell/PaneRail.tsx#ITEMS",
@@ -1884,8 +1884,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            22,
-            25
+            33,
+            36
           ]
         },
         {
@@ -1894,8 +1894,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            20,
-            20
+            31,
+            31
           ]
         },
         {
@@ -1904,8 +1904,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            27,
-            77
+            38,
+            88
           ]
         }
       ]
@@ -8881,8 +8881,8 @@
       "id": "f:app/test/shell-frame.test.tsx",
       "path": "app/test/shell-frame.test.tsx",
       "lang": "ts",
-      "hash": "blake3:2ee547fb19558520b277f384218013a94e305a1eb3212b98dbd53299dda08a6d",
-      "loc": 342,
+      "hash": "blake3:0870d8d08b9c5044b9d55df65af6a2c0f786166ef7095916ed65039982387a4b",
+      "loc": 395,
       "symbols": [
         {
           "id": "s:app/test/shell-frame.test.tsx#App",
@@ -8890,8 +8890,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            62,
-            62
+            71,
+            71
           ]
         },
         {
@@ -8900,8 +8900,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            64,
-            64
+            73,
+            73
           ]
         },
         {
@@ -8910,8 +8910,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            65,
-            65
+            74,
+            74
           ]
         },
         {
@@ -8920,8 +8920,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            104,
-            108
+            113,
+            117
           ]
         },
         {
@@ -8930,8 +8930,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            110,
-            124
+            119,
+            133
           ]
         },
         {
@@ -8940,8 +8940,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            91,
-            96
+            100,
+            105
           ]
         },
         {
@@ -8950,8 +8950,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            67,
-            67
+            76,
+            76
           ]
         },
         {
@@ -8960,8 +8960,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            98,
-            102
+            107,
+            111
+          ]
+        },
+        {
+          "id": "s:app/test/shell-frame.test.tsx#expectBoundedFrame",
+          "name": "expectBoundedFrame",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            159,
+            168
           ]
         },
         {
@@ -8970,8 +8980,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            85,
-            89
+            94,
+            98
           ]
         },
         {
@@ -8980,8 +8990,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            77,
-            83
+            86,
+            92
           ]
         },
         {
@@ -8990,8 +9000,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            39,
-            42
+            48,
+            51
           ]
         },
         {
@@ -9000,8 +9010,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            70,
-            71
+            79,
+            80
           ]
         },
         {
@@ -9010,8 +9020,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            68,
-            68
+            77,
+            77
           ]
         },
         {
@@ -9020,8 +9030,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            72,
-            73
+            81,
+            82
           ]
         }
       ]
@@ -10825,14 +10835,6 @@
       "kind": "import",
       "symbols": [
         "skipReasonPhrase"
-      ]
-    },
-    {
-      "from": "f:app/src/App.tsx",
-      "to": "f:app/src/lib/utils.ts",
-      "kind": "import",
-      "symbols": [
-        "cn"
       ]
     },
     {
@@ -15065,12 +15067,6 @@
     {
       "from": "s:app/src/App.tsx#App",
       "to": "s:app/src/lib/docs-model.ts#skipReasonPhrase",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/App.tsx#App",
-      "to": "s:app/src/lib/utils.ts#cn",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -20469,6 +20465,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/shell-frame.test.tsx#expectBoundedFrame",
+      "to": "s:app/test/shell-frame.test.tsx#frame",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/shell-harness.test.ts#loadStore",
       "to": "s:app/test/shell-harness.test.ts#StoreModule",
       "kind": "type_ref",
@@ -21246,7 +21248,7 @@
   ],
   "stats": {
     "files": 115,
-    "symbols": 964,
-    "edges": 1477
+    "symbols": 965,
+    "edges": 1476
   }
 }

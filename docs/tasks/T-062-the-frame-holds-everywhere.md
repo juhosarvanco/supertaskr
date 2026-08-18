@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 28
 size: M
-status: verifying
+status: done
 blocked_by: [T-051]
 touches: [app-shell, app-map]
 builder: claude-opus-5 @fresh
@@ -440,12 +440,30 @@ changes Tailwind utility usage (`overflow-auto`, `h-screen`, `min-h-0`,
 
 ### Fence
 
-`git diff f94dd9c --stat` is **eight files**: three source, four test,
-and this card. **Zero diff** under `app/src-tauri/**` (`acl_pin.rs`
+`git diff f94dd9c --stat` is **13 files**: three source, four test, this
+card and **five findings**. **CORRECTED BY THE INTEGRATOR (2026-08-18),
+because an integrator runs this paragraph verbatim.** "Eight files" was
+never true of any range: it is three source + four test + this card, and
+it counted the card while the commit that carried it (`d40d76a`) also
+carried T-062-s1 and T-062-s2. The three measurable ranges are
+`f94dd9c..09127fa` = **7 files** (code only, no card), `f94dd9c..d40d76a`
+= **10 files, 1290+/146−** (the executor's two commits — the figure the
+VERDICT quotes, correctly, because that was HEAD when it was written),
+and `f94dd9c..HEAD` = **13 files, 1780+/149−**, HEAD being the verifier's
+own verdict commit `09b9af3`, which added T-062-s3, s4 and s5. **The
+seven CODE files are unchanged across all three ranges**, so every
+measurement in this card stands; only the count moved. **Zero diff**
+under `app/src-tauri/**` (`acl_pin.rs`
 whole-file sha identical, `generate_handler!` untouched, no new IPC
 command, no new grant), `lib/parser/**`, `method/**`,
 `docs/architecture/graph.json` (**deliberately not regenerated — the
-integrator's ritual**), `docs/CONVENTIONS.md`, `tauri.conf.json`,
+integrator's ritual, performed at the checkpoint: 115 files unchanged,
+964→965 symbols, 1477→1476 edges**). **The branch forecast was incomplete
+in one place:** `expectBoundedFrame` is a new function symbol and adds
+one call edge; removing `cn` from `App.tsx` removes its file import edge
+and its symbol call edge, so the measured net is **+1 symbol / −1 edge**.
+No component relation row moves and no dogfood fixture needs editing.
+`docs/CONVENTIONS.md`, `tauri.conf.json`,
 `capabilities/**`, `.github/**`, and every lockfile and manifest. **Zero
 new tokens, zero arbitrary values, no `innerHTML`, no new dependency, no
 model call.** Both schemes: this diff touches no colour, so light and

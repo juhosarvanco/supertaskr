@@ -198,16 +198,68 @@ rather than its default. 1280 is not a round number chosen for taste: it
 is the unique width at which the two halves are equal (the chat is 640
 with its 1px rule inside it, so the lens is width − 640), and 1279 is
 the measured floor where the lens still clears the 639px T-027's plan
-calls the design's geometry. The floor of 700 clears every screen's
-natural content at the minimum — genesis 302, the front door 475, the
-no-plan card 663 and the repo map 692 — with **8px to spare, not the
-37px the card claimed**, because the card's guard measured a one-node
-map (T-051-s5). What a user can do that they could not this morning:
+calls the design's geometry. The floor of 700 was
+justified as clearing every screen's natural content at the minimum —
+genesis 302, the front door 475, the no-plan card 663 and the repo map
+692 — with 8px to spare, not the 37px the card claimed, because the
+card's guard measured a one-node map (T-051-s5). **THAT JUSTIFICATION IS
+FALSE, IT ALWAYS WAS, AND T-062 IS WHAT MEASURED IT (T-062-s1).** The
+probe read the DOCUMENT, and a document only reports content height for a
+screen that can push the page open. **The genesis screen has been bounded
+since T-048, so it never could**: its real content at 1024 wide is
+**1082**, not 302 — off by **780** — and the board's is **4989**, which
+the same probe could not see either. The four screens that CAN push the
+page open agreed to the pixel; the one screen the window was raised FOR
+was the one screen its floor probe was blind to. **700 still holds — but
+only on a property T-062 itself creates.** Every screen now owns a scroll
+region, so "every screen fits in the window" stopped being the
+requirement and "the region left over is usable" replaced it; the
+tightest non-form region at the declared minimum is **580px** (the
+genesis lens), far above T-048-s5's measured 250px collapse floor. Two
+caveats travel with the new number: it **sums side-by-side regions**, so
+genesis's 1082 is 84px of chat log plus 796px of lens plus 2px of
+textarea and the honest "nothing needs to scroll" height is **~996**; and
+unlike its neighbour `tightestRegion` it does not exclude form controls.
+**The number survives. Its reason does not** — and the reason is what was
+written down. What a user can do that they could not this morning:
 launch the app and see the interview and the plan side by side, at the
 size the design was drawn for, without touching the window. **What is
 still @human's**: whether 840 or 867 is right depends on the ~28px macOS
 title bar, which is the one number nobody could measure headlessly
 (T-051-s3).
+T-062 merged 2026-08-18 and it is the card that decides what the shell
+IS, on every screen at once. T-048 bounded the genesis column and left
+every other screen a growing page, and wrote down that the fork was
+T-027's to make; T-027 came and went, and `App.tsx` still read
+`boundedFrame ? "h-screen" : "min-h-screen"` — **two scroll models in one
+app, which is the kind of thing a user feels without being able to name
+it.** On a tall board at 800×600 the wordmark, the project path, the
+parse chips and the theme toggle all scrolled away, while the interview
+next door behaved the opposite way. The fork is closed the bounded way:
+`main` and the column are `h-screen` unconditionally, the pane rail
+carries its own, and **every screen now owns a scroll region instead of
+handing its overflow to the page.** What a user can do that they could
+not this morning: scroll to the bottom of a fifty-card board, or to the
+far corner of the architecture graph, **and still have the header, the
+rail and the theme toggle where they left them** — and on the map, reach
+graph that used to be unreachable at all. That last one is not a
+metaphor: the canvas was `min-h-0 flex-1 overflow-hidden`, a box that
+could shrink and, when it did, HID what no longer fit. It was harmless
+only for as long as the column could grow. **Bounding the frame without
+touching that line would have deleted 54px of graph at 800×600 with every
+suite still green** — the trap was reproduced on purpose before anything
+was built, and the lane now asserts the class rather than the instance:
+no box anywhere may clip content it gives no way to reach. **What is
+still @human's**: whether one bounded frame FEELS right. Everything below
+the fold on the board now lives in a region with its own scrollbar, in
+light and dark, on a screen used every day — and no measurement settles
+that. **A known limit, filed rather than waved (T-062-s3)**: the
+parse-error strip sits OUTSIDE the board's scroll region and cannot
+shrink, so at 20 unparsable files the page grows again at the shipped
+1280×840 default and the header scrolls off — the very thing this card
+fixed, reachable by a different door. T-062 is a milestone 4 card; it
+sits here because it continues T-048's and T-051's story rather than
+F-03's.
 T-028 merged 2026-08-17 and it is the interview's last act: **the lens
 stops being a lens.** Until tonight the right half of T-027's split
 watched the plan assemble as artifact rows; now, the moment a task file
