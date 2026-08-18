@@ -9,10 +9,10 @@ status: verifying
 blocked_by: [T-062]
 touches: [app-shell, tools/e2e]
 builder: codex/gpt-5 @fresh
-verifier:
+verifier: codex/gpt-5 @fresh
 built_by: codex/gpt-5 @fresh
-verified_by:
-review:
+verified_by: codex/gpt-5 @fresh
+review: independent
 ---
 
 Absorbs: T-062-s3 (architect triage 2026-08-18). The suggestion file is
@@ -138,3 +138,66 @@ and board `scrollHeight/clientHeight`. @human: none.
   integrator.
 
 ## Verdicts
+
+2026-08-18 — codex/gpt-5 @fresh (independent verifier): **APPROVED**
+
+The pre-fix class reproduced first-hand after removing only
+`max-h-48 overflow-y-auto`: at 1280x840, 1024x700 and 800x600 the page
+and bounded column grew to 1376px, the sixty-row details list was
+1220/1220 with `overflow-y: visible`, and `board-scroll` collapsed to
+30px. The focused criterion failed at the document boundary. Restoration
+was byte-proven (`App.tsx` SHA-256 `d3d61ed0c9d3aa3d38e30da41d446d9f4f0786c09bf0a98fa8c4cbcbf92dfbb4`).
+
+All nine criteria hold independently. The production delta adds only the
+existing spacing utility `max-h-48` and `overflow-y-auto` to the unchanged
+details-list sibling; both render loops, badge counts, issue text, skip
+reason phrases and last-valid-state wording are unchanged. The real
+parse-failure unit proves the list remains outside `board-scroll` and owns
+the ceiling/overflow. The pre-existing skipped-file truth suite remains
+green, including its exact reason and last-valid wording. An additional
+verifier-only browser probe exercised one-row and five-row natural lists
+at all three viewports: each remained below the ceiling with
+`scrollHeight === clientHeight`, a fixed page, a visible final row and a
+board region above 250px. It was removed after the run and the E2E file
+restored by hash.
+
+The pathological sixty-row measurements were, respectively: page/column
+840/840, 700/700 and 600/600 with `window.scrollY === 0`; details
+1220/190 with a 192px border box and `overflow-y: auto`; board
+5695/524, 5695/384 and 5695/284. The final diagnostic was fully reachable
+after scrolling the details region, the tall board remained independently
+scrollable, and subsequent board scrolling left the wordmark and pane rail
+visible. The every-screen sweep includes the many-errors board at all three
+viewports and reports no unowned clipper.
+
+Security and scope are clean: four branch files only; no dependency,
+lockfile, manifest, parser, Rust, IPC, command, capability, grant, token
+definition, arbitrary value, URL, credential or secret movement.
+`acl_pin.rs` remains SHA-256
+`8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`
+with the pinned 92-grant surface. The acceptance payload itself is
+byte-identical to the planned card, SHA-256
+`b266794c5556029f0252ce29758c43ba6f4809605d46a7fe647c7be1fc5bcbee`.
+
+Poison discipline is **3/3 red** with one-sided relation breaks: the
+changed unit body required nonexistent `max-h-47`; the added pathological
+arm in the existing viewport sweep required page height `viewport + 1`;
+the new geometry/reachability body required a 191px border box. Exact
+focused runs failed at those assertions. Restoration matches HEAD:
+`shell-frame.test.tsx`
+`6f58482a0d9f95af5a15a96cb85e8b739da8206d727704d43dacb6b95db981cf`
+and `shell-frame.spec.ts`
+`34af2ed23b17084a2df193d575a6b8c4861d3cc3054d39abcaeaec834da69f94`.
+
+Required offline gates passed first-hand with no model, real CLI or network:
+parser build/types/Vitest **225/225**; app typecheck, production build and
+Vitest **821/821**; bare Rust **325 passed + 3 intentional ignores**;
+E2E typecheck and Playwright **83/83** (one worker, retries 0, no skips);
+token lint clean over **117 files** and selftest **49 samples + 14 walk
+checks**; `cargo audit --no-fetch` **0 vulnerabilities / 17 allowed
+informational warnings**. Boot on scratch port 17674 detected both
+`[nputer] project folder:` and `[nputer] window "main" created`, then
+stopped its process tree. The graph-currentness gate reports only the
+expected two changed indexed files as stale; regeneration remains the
+task card's explicit integrator checkpoint duty. T-066 is ready for
+integration.
