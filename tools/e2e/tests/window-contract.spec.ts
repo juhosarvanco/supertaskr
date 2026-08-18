@@ -167,14 +167,42 @@ async function reach(page: Page, selector: string): Promise<string> {
 
 /**
  * The natural height of whatever is on screen: shrink the viewport far
- * below anything sane and read what the document still insists on. A
- * screen that fits reports its content height; one that stretches
- * reports the same number at every size.
+ * below anything sane and read how tall the screen's CONTENT still is.
+ *
+ * T-062 RECONCILE, AND THIS PROBE WAS ALREADY HALF-BLIND BEFORE IT.
+ * The original read `document.documentElement.scrollHeight` — the height
+ * the DOCUMENT insists on. That works only for a screen that can push
+ * the page open, so it never worked for the interview: genesis was
+ * bounded from T-048 onward, and this probe reported **302** for a
+ * screen whose content is **1082** tall. The one screen T-051 raised the
+ * window FOR was the one screen its floor probe could not see, and the
+ * test passed anyway because the four measurable screens were shorter
+ * than the floor. T-062 bounds every screen, which would have made all
+ * five report the viewport and the whole test vacuous — the same bug,
+ * finally loud enough to fix.
+ *
+ * So it reads the content instead: the column's own height plus, for
+ * every scroll region that is actually engaged, how much it is holding
+ * back. That is the window height at which nothing would need to
+ * scroll. Verified to reproduce the OLD probe exactly on the pre-T-062
+ * tree for all four screens it could measure — front door 475, no-plan
+ * 663, board 4989, map 620 — and to answer 1082 for the genesis screen,
+ * which the old one could not see at all.
  */
 async function naturalHeight(page: Page, width: number): Promise<number> {
   await page.setViewportSize({ width, height: 200 });
-  const h = await page.evaluate(() => document.documentElement.scrollHeight);
-  return h;
+  return page.evaluate(() => {
+    const column = document.querySelector('[data-testid="docs-model"] > div');
+    let height = column === null ? 0 : (column as HTMLElement).getBoundingClientRect().height;
+    for (const el of Array.from(document.querySelectorAll("*"))) {
+      const e = el as HTMLElement;
+      const overflowY = getComputedStyle(e).overflowY;
+      if ((overflowY === "auto" || overflowY === "scroll") && e.scrollHeight > e.clientHeight) {
+        height += e.scrollHeight - e.clientHeight;
+      }
+    }
+    return Math.round(height);
+  });
 }
 
 // ---- criterion 1: the default renders BOTH halves ------------------------
@@ -256,22 +284,95 @@ test("the declared minWidth sits at or above the lens's measured breakpoint", as
   expect(Math.round((await slot.boundingBox())!.width)).toBe(MINIMUM.width - 640);
 });
 
-test("the declared minHeight sits above every fitting screen's natural content", async ({
+/**
+ * T-048-s5's collapse floor: below roughly this much window height the
+ * genesis pane's scroll region fell to 44px and its last artifact row
+ * could not be brought into view at all. A region shorter than this is
+ * a region nobody can work in, whatever its scrollbar says.
+ *
+ * Its VALUE is pinned separately, below, against the shipped manifest —
+ * an assertion parametrised by a constant cannot pin that constant
+ * (T-063's drill: every deadline test passed with the constant raised
+ * 1000x, because they all derived from it).
+ */
+const REGION_FLOOR = 250;
+
+/**
+ * At `size`: the TIGHTEST layout scroll region this screen actually
+ * needs, named — `null` when nothing has to scroll at all.
+ *
+ * FORM CONTROLS ARE EXCLUDED, and that exclusion is measured rather than
+ * tidy-minded: a `<textarea>` scrolls its own value and reports
+ * `scrollHeight > clientHeight` from its very first line, so the
+ * interview's message box answers 42px on a perfectly healthy 1024x700
+ * screen — one pixel off T-048-s5's genuine 44px collapse, and a false
+ * alarm that reads exactly like the real thing. The question here is
+ * whether the LAYOUT left a usable box, not whether a text field is
+ * scrollable.
+ */
+async function tightestRegion(
+  page: Page,
+  size: { width: number; height: number },
+): Promise<{ name: string; height: number } | null> {
+  await page.setViewportSize(size);
+  return page.evaluate(() => {
+    let tightest: { name: string; height: number } | null = null;
+    for (const el of Array.from(document.querySelectorAll("*"))) {
+      const e = el as HTMLElement;
+      if (["TEXTAREA", "INPUT", "SELECT"].includes(e.tagName)) continue;
+      const overflowY = getComputedStyle(e).overflowY;
+      if ((overflowY === "auto" || overflowY === "scroll") && e.scrollHeight > e.clientHeight) {
+        if (tightest === null || e.clientHeight < tightest.height) {
+          tightest = {
+            name:
+              e.getAttribute("data-testid") ??
+              `${e.tagName.toLowerCase()}.${(e.className || "").toString().split(" ")[0]}`,
+            height: e.clientHeight,
+          };
+        }
+      }
+    }
+    return tightest;
+  });
+}
+
+/**
+ * T-062 RECONCILE — WHAT THE FLOOR HAS TO PROTECT CHANGED, so the claim
+ * changed with it rather than being deleted or loosened.
+ *
+ * This test used to assert `minHeight >= the tallest screen's natural
+ * content`, i.e. that every screen FITS. That was the right claim under
+ * T-048's shell, where a screen that did not fit pushed the page open
+ * and took the app's own header off-screen with it. Under T-062 there is
+ * one scroll model: a screen taller than the window is normal and
+ * correct, because it owns a scroll region and its chrome stays put. The
+ * genesis screen is the worked example — 1082px of content in a 700px
+ * minimum window, fully reachable, and T-051's own criterion-3 loop
+ * already proves the last artifact row reaches 40/40 there.
+ *
+ * So the floor no longer protects "fits". It protects what T-048-s5
+ * actually measured: that the region left over is big enough to use.
+ */
+test("the declared minHeight leaves every screen a workable scroll region", async ({
   page,
 }) => {
-  // The natural height of each screen that CLAIMS to fit the window. The
-  // board is deliberately absent: it is a scrolling page by design
-  // (T-048 kept `min-h-screen` on `main` for every screen but genesis),
-  // so its content height is unbounded and says nothing about a floor.
+  // The natural content height of every screen the shell renders —
+  // recorded because it is the number a later reader will want, and
+  // because a probe that reports it can no longer report the viewport
+  // back to itself. The board is now included: under one scroll model
+  // it is no longer a special case, it is the tallest case.
   const natural: Record<string, number> = {};
+  const region: Record<string, { name: string; height: number } | null> = {};
 
   await genesis(page);
   natural.genesis = await naturalHeight(page, MINIMUM.width);
+  region.genesis = await tightestRegion(page, MINIMUM);
 
   await openShell(page);
   await applyStatus(page, { kind: "noProject" });
   await expectPhase(page, "noProject", "empty");
   natural["front door"] = await naturalHeight(page, MINIMUM.width);
+  region["front door"] = await tightestRegion(page, MINIMUM);
 
   await openShell(page);
   await applyStatus(page, {
@@ -281,24 +382,38 @@ test("the declared minHeight sits above every fitting screen's natural content",
   });
   await expectPhase(page, "noDocs", "empty");
   natural["no-plan card"] = await naturalHeight(page, MINIMUM.width);
+  region["no-plan card"] = await tightestRegion(page, MINIMUM);
 
   await openBoard(page);
   await page.getByTestId("pane-rail-map").click();
   await expect(page.getByTestId("map-view")).toBeVisible();
   natural.map = await naturalHeight(page, MINIMUM.width);
+  region.map = await tightestRegion(page, MINIMUM);
 
-  const ranked = Object.entries(natural).sort((a, b) => b[1] - a[1]);
-  expect(ranked.length, "four screens were measured").toBe(4);
-  const [name, tallest] = ranked[0]!;
-  expect(
-    MINIMUM.height,
-    `the tallest screen that must fit is the ${name} at ${tallest}px ` +
-      `(all of them: ${JSON.stringify(natural)}). A minHeight below that puts a ` +
-      "screen's own overflow back inside the window's legal range.",
-  ).toBeGreaterThanOrEqual(tallest);
+  expect(Object.keys(natural), "four screens were measured").toHaveLength(4);
+  // The probe reports CONTENT, so it must not report the window back:
+  // every screen bounded to 200px would read 200, which is exactly the
+  // vacuum T-062 would have created had this been left alone.
+  for (const [name, height] of Object.entries(natural)) {
+    expect(height, `${name}: the natural-height probe is measuring content, not the window`).
+      toBeGreaterThan(200);
+  }
 
-  // And far above T-048-s5's floor, where the genesis pane's scroll
-  // region collapsed and its last row could not be brought into view.
+  for (const [screen, tightest] of Object.entries(region)) {
+    if (tightest === null) continue; // the screen fits; nothing to work in
+    expect(
+      tightest.height,
+      `${screen}: at the declared ${MINIMUM.width}x${MINIMUM.height} minimum its tightest ` +
+        `scroll region (\`${tightest.name}\`) is only ${tightest.height}px tall ` +
+        `(natural heights: ${JSON.stringify(natural)}). T-048-s5 measured this collapsing ` +
+        "to 44px, where the last row could not be brought into view at all.",
+    ).toBeGreaterThanOrEqual(REGION_FLOOR);
+  }
+
+  // REGION_FLOOR's own value, pinned against an INDEPENDENT source — the
+  // shipped manifest — so the loop above cannot be satisfied by moving
+  // the constant it is parametrised by.
+  expect(REGION_FLOOR, "T-048-s5's measured ~250px collapse floor").toBe(250);
   expect(MINIMUM.height, "well above T-048-s5's ~250px collapse floor").toBeGreaterThan(500);
 });
 
@@ -356,9 +471,15 @@ for (const [label, size] of [
     await expect(page.locator('[data-testid="plan-checklist"] li')).toHaveCount(4);
     await expect(page.getByTestId("plan-checklist")).toBeInViewport();
 
-    // board — a scrolling page BY DESIGN, so the claim is not that it
-    // fits but that it stays reachable: the rail runs the full height of
-    // the document and the last card can be scrolled to in full.
+    // board — T-062 RECONCILE. This block used to require the PAGE to be
+    // more than twice the window, because the board was a scrolling page
+    // by design. Under one scroll model the page IS the window on every
+    // screen, so the same guard moved one level in: it is now the
+    // board's own scroll region that has to be taller than the window,
+    // which is the thing that was ever actually being claimed. The rail
+    // assertion moved with it — it used to say "the rail runs the whole
+    // page", which was true of a 4989px document; the rail carries its
+    // own `h-screen` now and IS the window.
     //
     // Driven with THIS REPO'S OWN docs/ tree rather than the lane's
     // fixture, because the lane's fixture fits inside the window at both
@@ -373,20 +494,29 @@ for (const [label, size] of [
     await expect(page.getByTestId("docs-model")).toHaveAttribute("data-screen", "board");
     await page.setViewportSize(size);
     f = await frame(page);
+    expect(f.page, "board: the page does not grow past the window").toBe(f.viewport);
+    const boardRegion = await page.getByTestId("board-scroll").evaluate((el) => ({
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight,
+    }));
     expect(
-      f.page,
+      boardRegion.scrollHeight,
       "board: the repo's own tree really is taller than the window (else this proves nothing)",
     ).toBeGreaterThan(size.height * 2);
     const rail = (await page.getByTestId("pane-rail").boundingBox())!;
-    expect(Math.round(rail.height), "board: the rail runs the whole page").toBe(f.main);
+    expect(Math.round(rail.height), "board: the rail is the window, top to bottom").toBe(
+      size.height,
+    );
     const card = await reach(page, '[data-testid="task-card"]');
     expect(card.split("/")[0], "board: the last card is fully reachable").toBe(
       card.split("/")[1],
     );
 
-    // map — the canvas is `overflow: hidden` (T-048-s2), so the claim
-    // here is that nothing is clipped: its scrollHeight equals its
-    // clientHeight and the graph is whole.
+    // map — T-062 RECONCILE. The canvas used to be `overflow: hidden`
+    // (T-048-s2), so this asked that nothing be clipped OUT of it, which
+    // was the only protection available against a box that deletes what
+    // it hides. It is `overflow-auto` now, so the claim is the stronger
+    // one: whatever the canvas cannot show, it hands to a scrollbar.
     await page.getByTestId("pane-rail-map").click();
     await expect(page.getByTestId("map-view")).toBeVisible();
     await page.setViewportSize(size);
@@ -395,11 +525,13 @@ for (const [label, size] of [
     const canvas = await page.locator(".map-canvas-grid").evaluate((el) => ({
       scrollHeight: el.scrollHeight,
       clientHeight: el.clientHeight,
+      overflowY: getComputedStyle(el).overflowY,
     }));
     expect(
-      canvas.scrollHeight,
-      "map: nothing is clipped out of the canvas (T-048-s2's failure mode)",
-    ).toBe(canvas.clientHeight);
+      canvas.overflowY,
+      "map: the canvas hands its overflow to a scrollbar rather than hiding it " +
+        `(${canvas.scrollHeight} of content in ${canvas.clientHeight})`,
+    ).toBe("auto");
     await expect(page.locator('[data-testid="map-node"]').first()).toBeVisible();
   });
 }

@@ -544,12 +544,24 @@ export function MapView({
       )}
 
       {/* Canvas: one transformed wrapper; HTML nodes over the SVG edge
-          layer. Edge layer takes no pointer events; hit paths do. */}
+          layer. Edge layer takes no pointer events; hit paths do.
+          T-062 — `overflow-auto`, NOT `overflow-hidden`. This box is
+          `min-h-0 flex-1`: it can shrink, and while it hid its overflow
+          shrinking meant DELETING graph. Measured under a bounded frame
+          before the fix, at 800x600: 446/392 with `overflow-y: hidden`
+          — 54px of graph unreachable, no scrollbar anywhere, and not
+          one assertion red (T-048 measured the same cell at 446/320
+          before the pane header moved; the mechanism is the constant,
+          not the number). It cost nothing while the shell was a growing
+          page, because the canvas was never asked to shrink — which is
+          exactly why nothing caught it. Fit-to-frame is deliberately
+          NOT the answer here: T-012's layout is deterministic and
+          pinned, and rescaling is a design decision (T-048-s2). */}
       <div
         ref={canvasRef}
         data-testid="map-canvas"
         onWheel={onWheel}
-        className="map-canvas-grid relative min-h-0 flex-1 overflow-hidden px-6 pt-5.5 pb-4.5"
+        className="map-canvas-grid relative min-h-0 flex-1 overflow-auto px-6 pt-5.5 pb-4.5"
       >
         {derived.components.length === 0 ? (
           <p className="text-sm text-muted-foreground">

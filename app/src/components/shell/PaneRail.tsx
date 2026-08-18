@@ -15,6 +15,17 @@ import { cn } from "@/lib/utils";
  * inactive icon/label ride --muted-foreground (label mock-exact in
  * light; icon ink one step from #a3a3a3); item radius maps to the 10px
  * scale step for the mock's 9px pill.
+ *
+ * T-062 — `h-screen` IS LOAD-BEARING, and it is the rail's own. The
+ * rail is a stretch-height sibling of the shell's content column, so it
+ * used to inherit the DOCUMENT's height: over this repo's own docs/
+ * tree it measured 4989px (2202 when T-048 measured it), the strip and
+ * its right border running the whole scrolling page. Bounding the shell
+ * would have collapsed that to the viewport by inheritance — right
+ * answer, wrong reason, and silently wrong again the day `main` moves.
+ * Saying it here makes the strip the WINDOW by construction, and
+ * `app/test/shell-frame.test.tsx` pins it so it cannot be dropped as
+ * redundant.
  */
 
 export type PaneId = "board" | "map";
@@ -35,7 +46,7 @@ export function PaneRail({
     <nav
       data-testid="pane-rail"
       aria-label="panes"
-      className="flex w-18 shrink-0 flex-col items-center gap-1.5 border-r border-sidebar-border bg-sidebar py-4"
+      className="flex h-screen w-18 shrink-0 flex-col items-center gap-1.5 border-r border-sidebar-border bg-sidebar py-4"
     >
       {ITEMS.map((item) => {
         const isActive = item.id === active;
