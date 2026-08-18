@@ -365,6 +365,30 @@ export function rehydrate(lines: readonly TranscriptLinePayload[]): {
   };
 }
 
+type RehydratedTranscript = ReturnType<typeof rehydrate>;
+
+/**
+ * A transcript pull is an immutable snapshot in `GenesisState`. Keep its
+ * projection for exactly as long as that payload object stays alive, so a
+ * live delta does not manufacture six new historical `GenesisTurn`s while
+ * changing only the seventh. A refreshed pull has a new array identity and
+ * therefore earns a fresh projection.
+ */
+const rehydratedByPayload = new WeakMap<
+  readonly TranscriptLinePayload[],
+  RehydratedTranscript
+>();
+
+function rehydrateByPayload(
+  lines: readonly TranscriptLinePayload[],
+): RehydratedTranscript {
+  const existing = rehydratedByPayload.get(lines);
+  if (existing !== undefined) return existing;
+  const hydrated = rehydrate(lines);
+  rehydratedByPayload.set(lines, hydrated);
+  return hydrated;
+}
+
 /** Live state over rehydrated state, per rule 1 above. Returns the live
  * arguments BY IDENTITY when there is nothing banked to add, so the
  * ordinary in-session render allocates nothing. */
@@ -377,7 +401,7 @@ export function mergeRehydrated(
   userHalves: ReadonlyMap<number, string>;
 } {
   if (banked.length === 0) return { turns: liveTurns, userHalves: liveUserHalves };
-  const old = rehydrate(banked);
+  const old = rehydrateByPayload(banked);
   const turns = new Map<number, GenesisTurn>();
   for (const turn of old.turns) turns.set(turn.turn, turn);
   for (const turn of liveTurns) turns.set(turn.turn, turn);

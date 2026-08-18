@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { GenesisTurn, TurnErrorPayload } from "@/lib/agent-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -173,7 +174,7 @@ function CurrentQuestion({ body, footer }: { body: string; footer: string | null
  * prefers-reduced-motion needs no new machinery: the dot is simply
  * static.
  */
-export function PlannerTurn({
+export const PlannerTurn = memo(function PlannerTurn({
   turn,
   planner,
   current,
@@ -245,7 +246,7 @@ export function PlannerTurn({
       )}
     </div>
   );
-}
+});
 
 /**
  * A typed runner failure (criterion 5): calm, inline, in the position of

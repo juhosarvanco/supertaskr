@@ -5,12 +5,12 @@ feature: F-03
 milestone: 3
 priority: 9
 size: S
-status: planned
+status: done
 blocked_by: [T-028, T-029]
 touches: [app-interview]
-builder:
+builder: codex/gpt-5 @fresh
 verifier:
-built_by:
+built_by: codex/gpt-5 @fresh
 verified_by:
 review:
 ---
@@ -90,5 +90,73 @@ gates at integration because shipped TypeScript moves. No model call.
 (T-025-s2) can answer.
 
 ## Implementation notes
+
+Built by `codex/gpt-5 @fresh` from architect checkpoint `59763f3`.
+
+- `PlannerTurn` is a plain React `memo` boundary. Its shallow props keep the
+  `GenesisTurn` object as the principal identity while still observing
+  `current`, current-only `approxStage`, `onRetry` and `onHandDriven`. The
+  store already replaces a turn object for changed text, activity, status,
+  relay truncation or error; a new identity therefore renders every visible
+  change. Historical turns receive `approxStage: null`, while starting the
+  next turn flips the former current turn to history and renders it once.
+- Rehydration now holds a `WeakMap` projection by the immutable transcript
+  payload array's identity. An unchanged pull reuses its completed
+  `GenesisTurn` objects while live state continues to win by turn number; a
+  refreshed pull has a new array identity and is hydrated afresh.
+- The reducer itself was not changed. Its existing live identity contract is
+  now pinned with `Object.is`, the rehydrated identity is pinned across a live
+  update, and the existing resume DOM suite counts actual `PlannerTurn`
+  function calls for live and rehydrated history, docs-stage movement,
+  current-to-history movement, visible turn-field changes, and both callback
+  identities.
+
+### Measurement
+
+The temporary benchmark used the same fixed reducer script before and after:
+six completed planner turns plus a streaming seventh, and six rehydrated
+planner turns plus the same streaming seventh. The stream was twenty 500-char
+`textDelta`s followed by the canonical 10,000-char `completed` text: 21 update
+commits. Each case had five warmups and 30 measured runs under `StrictMode`.
+Function invocations were counted per turn; React Profiler `actualDuration`
+was summed across the 21 updates per run, then median/p95 were taken. Mount
+work was recorded separately. `commitTime` was not treated as elapsed work.
+
+| case | update invocations, turns 1–6 / turn 7 | update `actualDuration` median / p95 | StrictMode mount invocations per turn | mount `actualDuration` median / p95 |
+|---|---:|---:|---:|---:|
+| live before | 42 each / 42 | 4.442 / 5.318 ms | 2 | 1.088 / 1.418 ms |
+| live after | 0 each / 42 | 0.791 / 4.928 ms | 2 | 0.434 / 1.173 ms |
+| rehydrated before | 42 each / 42 | 4.522 / 5.439 ms | 2 | 0.798 / 0.974 ms |
+| rehydrated after | 0 each / 42 | 0.665 / 0.905 ms | 2 | 0.291 / 0.364 ms |
+
+The deterministic count shows the transcript-size multiplier was real and is
+removed. The live p95 retained one noisy slow run, while its median and the
+rehydrated distribution moved materially. StrictMode mount counts are
+unchanged, as expected: this boundary optimizes updates, not first paint.
+
+Temporary instrumentation was removed: the benchmark file is absent and a
+recursive source/test grep finds no `Profiler`, `T-056-measurement` or
+`__t056PlannerTurnProbe`. The final `interview-turns.tsx` SHA-256 is
+`f221cda44dacb94f0581c801dcffee165e92c21e111188e8a7dcb85f4a1c9fe6`.
+
+### Verification
+
+- App production build (including `tsc`) green; explicit `tsc --noEmit`
+  green; full Vitest **822/822 in 42 files**.
+- Focused identity/render suite **89/89** after restoration.
+- Poison drill **3/3 changed test bodies red**. Restored SHA-256:
+  `agent-store.test.ts` `18cd86b0…`, `interview-model.test.ts`
+  `599ce963…`, `interview-resume-dom.test.tsx` `6da720e4…`.
+- E2E package typecheck green. Token lint clean over 117 files; self-test
+  49 samples + 14 walk-policy checks green.
+- Executor boot gate on scratch port 17660 exited 0 and detected both
+  `[nputer] project folder: /Users/ujju/Projects/nputer-T-056` and
+  `[nputer] window "main" created`; it stopped its own process tree.
+- Graph regeneration/currentness remains the integrator's gate, as the task
+  card requires for shipped TypeScript. No model or real CLI was called.
+- Blast radius is the three `app/src/genesis/**` implementation files, three
+  existing app tests, and this card. `tools/e2e/**`,
+  `app/src/lib/agent-store.ts`, app-shell, Rust and parser have zero-byte
+  task diffs.
 
 ## Verdicts

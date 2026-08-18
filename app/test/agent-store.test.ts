@@ -118,6 +118,13 @@ describe("reduceGenesisEvent — one turn's life", () => {
     expect(state.turns.map((t) => t.turn)).toEqual([1, 2]);
     expect(state.turns[0]?.status).toBe("completed");
     expect(state.turns[1]?.status).toBe("running");
+
+    const previous = state.turns[0];
+    const streamed = reduceGenesisEvent(
+      state,
+      ev({ kind: "textDelta", seq: 5, turn: 2, text: " again" }),
+    );
+    expect(Object.is(streamed.turns[0], previous)).toBe(true);
   });
 });
 

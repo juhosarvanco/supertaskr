@@ -379,7 +379,7 @@ export function InterviewChat({
               turn={entry.turn}
               planner={entry.planner}
               current={entry.current}
-              approxStage={stage.approxStage}
+              approxStage={entry.current ? stage.approxStage : null}
               onRetry={onRetry}
               onHandDriven={onHandDriven}
             />
