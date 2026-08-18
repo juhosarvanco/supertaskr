@@ -5,12 +5,12 @@ feature: F-03
 milestone: 3
 priority: 10
 size: M
-status: planned
+status: verifying
 blocked_by: []
 touches: [app-agent]
-builder:
+builder: claude-opus-5 @fresh
 verifier:
-built_by:
+built_by: claude-opus-5 @fresh
 verified_by:
 review:
 ---
@@ -114,5 +114,135 @@ directories T-047-s6 left outside the repo are a delete-or-keep
 decision and are on STATE's list — there are now several, not one.
 
 ## Implementation notes
+
+Built by `claude-opus-5 @fresh` in `../nputer-T-060` on
+`task/T-060-resolver`, based on `6404a43`. **Five commits**, all four
+suites green first-hand, `cargo test` **319 passed / 0 failed / 3
+ignored**, exit 0, **zero warnings** (baseline 313/0/3).
+
+### The measurement criterion 2 demanded, and it inverts the worry
+
+Taken by hand at the shell, medians of 8–15 runs, this machine,
+2026-08-18:
+
+| what | ms |
+|---|---|
+| `zsh -l -c 'command -v claude && echo …$PATH'` — this machine | 3.7–7.8, **median 4.0** |
+| the same with a 4000-line `~/.zshrc` + `compinit` | **unchanged — the file is never read** |
+| the same with a conda/pyenv/rbenv-shaped `~/.zprofile` (3 interpreter spawns) | 41–47, **median 41** |
+| `claude --version` — run unconditionally by the same resolve | 39–42, **median 40** |
+
+**THE INPUT THE SUGGESTION DID NOT HAVE.** `zsh -l -c` is a
+NON-INTERACTIVE login shell: it reads `.zshenv`, `.zprofile` and
+`.zlogin` and **does not read `.zshrc` at all**. Verified with marker
+files in each of the four (`bash -l -c` behaves the same way, reading
+`.bash_profile` and not `.bashrc`). nvm, rbenv, pyenv and conda all
+install their init into `~/.zshrc` by default — the one file this probe
+never sources. The feared "hundreds of ms" case therefore needs a user
+who hand-moved that init into `.zprofile`, and even that measures at
+PARITY with the `--version` probe already being paid.
+
+**VERDICT: no memo, no file.** Criterion 1's plain
+probe-then-typed-not-found stands, and the ruling on what a future cache
+may look like (a process-lifetime memo, never a file) is written into
+`runner.rs` where the cache used to be.
+
+**One correction to the card**: the `--version` probe is **~40 ms** here,
+not 47–50. The login-shell figure (~4 ms vs the card's ~7) reproduces in
+shape. The conclusion is unchanged and slightly stronger.
+
+### What was built, criterion by criterion
+
+1. **The cache is RETIRED.** `CacheFile`, `CacheEntry`, `read_cache`,
+   `write_cache`, `invalidate_cache`, `cache_path`,
+   `RunnerConfig::config_dir` and resolution step (1) are deleted, and
+   so is `lib.rs`'s `config_dir:` — the app now hands the runner a bare
+   `RunnerConfig::default()`. **`probe_login_path` went too**: its only
+   caller was the cache-hit arm, so retiring the file also removed a
+   resolve path that could spawn the user's login shell TWICE, and took
+   the resolver's `$SHELL` read sites from two to one.
+2. **One gate, every door.** `validate_cached_binary` →
+   `validate_resolved_binary` (the old name was a lie once the cache
+   went), applied inside `which_in` to every candidate a search path
+   produces and again to whatever `command -v` printed, before
+   `probe_version`'s `Command::new`.
+3. **`$SHELL` is name-checked** in the new `login_shell()` against
+   `zsh`/`bash`/`sh`, `/bin/zsh` otherwise, with fish's differing
+   `-l -c` named as the reason.
+4. **`RunnerConfig`'s doc comment is scoped honestly** and lists the
+   resolver's three environment reads, with a companion pin that
+   re-derives that list from the source so the comment cannot silently
+   go stale.
+5. **`NPUTER_NO_REAL_CLI`**, and it is stronger than the criterion
+   asked. `=1` forbids the two real-CLI arms, `=0` permits them, and
+   **UNSET is DERIVED**: forbidden iff the process is a cargo test
+   binary, which cargo runs out of `<target>/<profile>/deps/`. Nothing
+   is set, exported, wrapped or remembered, so a test file written next
+   year inherits the refusal.
+6. **The guard is proven by the attack that found it** —
+   `the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found`
+   reconstructs T-047's verifier's config verbatim, with a TATTLING
+   `$SHELL` so "the shell never spawned" is measured rather than
+   inferred.
+7. **The pins that guarded deleted code are rewritten, not dropped.**
+   `the_resolution_cache_stores_a_path_and_never_a_login_path` →
+   `there_is_no_cache_to_poison`; the poisoned-cache integration tests →
+   `there_is_no_agent_paths_json_to_poison_at_any_door`, which plants the
+   entry T-047's gate **accepted** rather than one it refused, and
+   asserts no `agent-paths.json` is ever written by walking the whole
+   temp tree.
+8. **Blast radius held**: `acl_pin.rs` a 0-file diff, `ENV_ALLOWLIST`
+   byte-identical, no new grant, no new IPC command, no new dependency,
+   no bypass-permissions flag, no lockfile line.
+
+### WHY A `.cargo/config.toml` `[env]` ENTRY WAS REJECTED
+
+The criterion says the guard is "set once for the whole suite", and
+`[env]` is the obvious mechanism. **It would have broken the human's
+app.** Cargo applies `[env]` to `cargo run` as well as `cargo test`, and
+`tauri dev` IS `cargo run` from `app/src-tauri` — so the development app
+would have inherited `NPUTER_NO_REAL_CLI=1` and rendered the hand-driven
+fallback forever, three days before the milestone-closing genesis run.
+The derived default reaches the same property without touching anything
+outside the crate.
+
+### FOR THE VERIFIER — the two things a drill caught, and the one I hit
+
+- **A poison drill caught both relative-PATH tests passing for the wrong
+  reason.** Reverting `which_in` to `is_executable_file` left them
+  GREEN, because `relbin/claude` did not exist relative to the test's
+  CWD and the old check refused it too. Both now plant their fixture
+  under the test's own working directory (`target/`, gitignored, unique
+  per pid+ms, removed after) and ASSERT the fixture is reachable
+  relatively before relying on it. Re-drilled: the unit body goes RED.
+- **The integration body stays green on that single mutation and reds
+  only when BOTH gates go.** That is defence in depth measured, not a
+  gap — `which_in` gates each candidate and `resolve_cli` gates the
+  probe's answer.
+- **T-060-s1 — I reproduced T-047-s6's accident myself, inside the test
+  meant to prove it cannot happen.** The first draft of the guard's
+  discriminating half lifted the guard while `$SHELL` still failed
+  `command -v`, so resolution fell through to `which_on_path`, read my
+  own `PATH`, found the real `/opt/homebrew/bin/claude` and executed it
+  with `--version`. No model ran and no tokens were spent — it is a
+  version banner — but it is the same class of accident. Fixed twice
+  over: the lifted arm now uses a shell whose `command -v` names the
+  planted fixture, and a PRE-FLIGHT assert at the top of that body fails
+  before the first resolve if the guard is already off.
+
+### WHAT I DID NOT DO
+
+**T-029-s8 is NOT folded, deliberately.** It is one `push` in the same
+file and the same lane, and it is the right fix — but it is not one
+change with this card. None of the eight acceptance criteria covers it;
+it changes user-visible failure TEXT rather than what the resolver
+trusts; and mixing a behavioural change to turn classification into a
+security card means a rejection on either blocks both. The card's own
+blast radius is "`runner.rs` and the suites' shared setup" for the
+RESOLVER. Left filed and unchanged for the next `app-agent` lane, with
+its claim re-read against the code and confirmed live: the `result`
+line's text is pushed into the diagnostic ring only under `if is_error`
+(`runner.rs:1420-1426` after this card's edits), so a terminal line with
+`is_error: false` contributes nothing to `stderr_tail`.
 
 ## Verdicts
