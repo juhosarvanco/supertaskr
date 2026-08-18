@@ -5,12 +5,12 @@ feature: F-02
 milestone: 3
 priority: 29
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [app-shell]
-builder:
+builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @fresh
 verified_by:
 review:
 ---
@@ -121,5 +121,158 @@ event reaches `eprintln!` sanitised. @human: the copy for the timeout
 case, and whether "Try again" now does what its label says.
 
 ## Implementation notes
+
+Built by `claude-opus-5 @fresh` in worktree `nputer-T-063` off `2fc3475`.
+Two commits: the Rust half, then the frontend seam.
+
+**CONFIRMED BEFORE TOUCHING ANYTHING** (CLAUDE.md): one seam in
+`watcher-store.ts`, four moves in the order they depend on each other —
+hold the unlisten handle (the prerequisite), re-subscribe after a
+successful pick, deadline the hang, emit the failure to the log — plus
+the DEV-gate comment and one bundle assertion.
+
+### The asymmetry REPRODUCED, not assumed
+
+The card's central claim holds exactly as written and is now enforced
+rather than described. `startup-recovery.test.ts` measures both halves:
+after a refused `invoke`, `liveSubscriptions === 1` and a `docs-changed`
+push still reaches the board with no retry; after a refused `listen`,
+`liveSubscriptions === 0`. Every cited line reproduced too —
+`recordStartupFailure` did end at `console.error`, `sendEcho` was the
+only `emit(` site, `await listen<…>(…)` did discard its handle.
+
+### N = 8 000 ms, MEASURED
+
+Five `npm run tauri dev` launches out of this worktree on a scratch port
+(17630, bind-probed free), the first immediately after a cold cargo
+build. Instrumented with a TEMPORARY probe on the success path that
+emitted through the very `startup-failed` channel this card adds; the
+probe was removed afterwards and its removal proved by sha256 against
+the pre-probe copy (`3dab2f72…` both sides). Two figures:
+
+| run | the window the deadline covers | padded upper bound | applied − generated |
+|-----|-------------------------------|--------------------|---------------------|
+| 1 (cold) | 72.0 ms | 778 ms | 93 ms |
+| 2 | 66.0 ms | 657 ms | 87 ms |
+| 3 | 68.0 ms | 601 ms | 87 ms |
+| 4 | 70.0 ms | 710 ms | 96 ms |
+| 5 | 69.0 ms | 607 ms | 92 ms |
+
+The **window** is `listen("docs-changed")` + `invoke("docs_snapshot")`,
+the latter including Rust's walk and read of docs/ (159 files, 2.9 MB) —
+i.e. exactly what the deadline times. The **padded upper bound** is the
+`[nputer] window "main" created` line to the applied snapshot; it
+strictly CONTAINS the window, so it is the conservative number.
+
+**8 000 ms is 111× the worst window and 10× the worst padded bound.** The
+margin is deliberately lopsided towards "too long": a premature failure
+screen is a claim the user cannot check, while a late one merely arrives
+after they have started wondering. And the false positive is not fatal —
+the raced-out attempt is NOT cancelled, so if it answers with nobody
+behind it the app comes up and the failure clears itself (pinned).
+`STARTUP_DEADLINE_MS`'s own header carries the figures so the next reader
+does not re-measure, and one test pins the VALUE (see the drill below for
+why that test had to exist).
+
+### A hazard criterion 2 creates, found by reproducing rather than reading
+
+`apply_genesis_folder` sets Rust's project dir to the interview's folder,
+and a genesis folder legitimately has no `docs/` YET — so the re-run's
+`docs_snapshot` answers `NoDocs` about the very folder being interviewed
+in, and `applyProjectStatus` would have dropped the user on the front
+door's "No plan in <folder>" card mid-interview. A criterion meant to
+close a silent failure would have opened a loud one. `applyProjectStatus`
+now holds the rule `applyDocsPayload` has held since T-026. An interview
+needs the live watcher MORE than a board does: the banked chips ARE a
+docs-snapshot diff, so a dead subscription is an interview that banks
+nothing.
+
+### The four-presses proof, in two halves and how they join
+
+Frontend: four `startDocsWatcher()` calls against a refusing boundary
+produce four `emit("startup-failed", …)` calls with attempts `[1,2,3,4]`
+and `listenCalls === 4`. Rust: `startup_failed_line` turns four such
+payloads into four distinct lines each carrying its attempt number. The
+join is the event name and the payload shape, asserted as an exact
+literal on the TS side — and the Rust side has no equivalent, which is
+filed as **T-063-s2**.
+
+### The sanitise, proved END TO END on a real app
+
+Not only in tests. During the measurement run the temporary probe emitted
+a message containing `<script>`, a NUL + BEL + ESC run and 10 000
+characters. The real `app.listen` wrote, to the real process's stderr:
+
+    [nputer] startup-failed: recv_at_ms=1787015863821 payload={"attempt":1,
+    "message":"TEMPPROBE window_ms=72.0 HOSTILE=<script>\u0000\u0007\u001b[31mAAA…(truncated)
+
+**887 characters, zero raw control bytes, the cap's own marker present.**
+
+**And it corrects the card's mental model.** By the time a payload
+reaches the sink it has been through JSON, so the ESC is already six
+ASCII characters and `escape_default` finds no raw control byte to
+escape. On the live path the **CAP** is what the sanitise adds; the
+escaping is defence in depth. That is still worth having — the function
+takes a `&str` and nothing in its type says a serializer stands in front
+of it — so there is a second cargo test that hands it raw control bytes
+directly.
+
+### The DEV gate: re-measured, and one figure was stale
+
+`npm run build` and `npx vite build --mode development` produce a
+**sha-IDENTICAL** asset (`index-ByWKsUIt.js`, 488,805 B, sha256
+`3aec41b1…`). `NODE_ENV=development npm run build` produces
+`index-D2WWdpHl.js` carrying all three harnesses. The card's **696,302 B
+is stale — measured today at 764,391 B** (filed as **T-063-s1**), so the
+comment states the mechanism and the sha-identical pair and describes the
+DEV-flipped bundle qualitatively rather than by a byte count that will
+rot again. The ci.yml arm is declined and belongs to **T-054**.
+
+The build-half assertion is `has("import.meta.env") === false`, and its
+reach is stated honestly in the test: it catches a build that stopped
+FOLDING the flag, and it does NOT catch the NODE_ENV lever — measured, a
+DEV-flipped bundle carries `__nputerShellHarness` and still contains zero
+`import.meta.env`. That is why the two assertions sit side by side.
+
+### The poison drill, and the gap it found
+
+**32 poisons, 32 RED.** 5 Rust bodies + 26 TS bodies/assertions + 1 late
+addition, each restored and proved by sha256 rather than by a clean
+`git status`. Implementation poisons were run too, and they discriminate
+rather than blanket: removing `sanitize_for_log` reds exactly the two
+tests whose subject is the sanitise; discarding the unlisten handle reds
+2; removing the pick re-subscribe reds 4; deleting the deadline timer
+reds 5; dropping the emit reds 4; removing the genesis guard reds 1.
+
+**One poison came back GREEN and that is the most useful thing the drill
+did.** Raising `STARTUP_DEADLINE_MS` to 8 000 000 — which would make the
+deadline effectively never fire — left every deadline test passing,
+because they all advance the clock BY the constant. *A test parametrised
+by a constant cannot pin that constant.* A test now pins the value and
+its two bounds, and the same poison reds it.
+
+### Not done, and why
+
+- **No new IPC command and no new grant.** `invoke_handler!` unchanged;
+  `acl_pin.rs` byte-identical (whole-file sha256 `8d24cbad706d9e6f…`,
+  92 grants) and 0-file diffs across `capabilities/`, `gen/`,
+  `Cargo.toml`, `Cargo.lock`, `app/package.json`, `package-lock.json`,
+  `.github/`, `lib/`, `method/`, `tauri.conf.json` and `graph.json`.
+- **No new dependency**, no lockfile line, no `innerHTML`, no
+  `writeTextFile`/`writeFile`/`mkdir` under `app/src` (ADR-017 —
+  `startup-screen.test.tsx`'s whole-of-`app/src` sweep re-runs green).
+- **No model call, no screen control.** The app opened and closed its own
+  window for the boot gate and the measurement, per the @human ruling;
+  nothing was clicked, typed into or screenshotted.
+- **`graph.json` NOT regenerated** — the integrator's ritual.
+
+### Five suggestions filed
+
+T-063-s1 (stale bundle figure), s2 (the event name is two literals with
+no join — the sharpest of the set, because a Rust-side rename passes
+every suite), s3 (the subscribe copy overclaims after a refused
+re-subscribe), s4 (a value import silently debased 10 of 15 tests — it
+happened during this build), s5 (the deadline arms a real 8 s timer
+inside a parked test narrative).
 
 ## Verdicts
