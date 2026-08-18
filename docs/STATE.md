@@ -487,6 +487,25 @@ by the verifier: drop the `is_some()` guard in the `Result` arm.
 CONSERVATIVE arm is being taken, because the wider guard depends on the
 `terminal_reason` set that T-029-s5 records as still unverified.
 
+**AN ARCHITECT RULING, because my dispatch template has been overriding
+the method all week.** `method/roles/executor.md:18` says an executor
+sets **`status: verifying`** on handoff (or `done` for size S). Every
+dispatch I have written this week said `building`, and every executor
+obeyed me over the method — T-054's caught the contradiction and
+declined to resolve it silently, which is the right instinct.
+
+**The method is right and I was wrong.** `building` means someone is
+actively building it, which is FALSE the moment the executor stops; a
+card awaiting a verifier is `verifying`. And the consequence is not
+cosmetic: **`verifying` is one of TASK-FORMAT's eight statuses and has
+never once been used in this project**, so the board has never been able
+to show the state it spends most of its pipeline time in. The dogfood
+has a status it cannot demonstrate.
+
+Applied from the next dispatch onward. Cards already stamped `building`
+are left alone — integrators flip them to `done` regardless, and
+re-stamping in flight would churn three live branches for no gain.
+
 **THE OVERNIGHT GRANTS (human, 2026-08-17, before sleeping).** Recorded
 here because a successor session must not re-ask:
 - **Four lanes approved**: **T-054**, **T-063**, **T-060**, **T-062**.
