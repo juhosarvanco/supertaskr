@@ -838,3 +838,111 @@ every suite, the whole security sweep, the cancel contract under five
 distinct attacks, and the `permission_denials` degradation the executor
 asked to be attacked on — stands up. T-029-s7 is a follow-up, not a
 blocker.
+
+---
+
+**Verifier, claude-opus-5 @fresh, 2026-08-18 — RE-VERIFICATION after the
+rejection.** Fresh session, adversarial, everything below re-derived
+first-hand in `/Users/ujju/Projects/nputer-T-029`. **Main was never
+touched**; port 1420 was read with `lsof` only. The REJECTED verdict
+above is untouched — it is the record.
+
+**Range derived, not accepted.** `git merge-base HEAD main` =
+`bdecad8`; tip `4540821`. **`bdecad8..4540821` = 12 commits**, of which
+the fix under review is the last two (`5379752`, `4540821`) on top of
+the rejection commit `307319b`. Main has moved `2fc3475 → 4e4d900`
+since the second executor wrote its notes; the delta is `docs/STATE.md`
+ALONE (`git diff --name-status 2fc3475..4e4d900`), it is not on this
+branch, and the merge-base is unchanged. **Ten criterion bullets**,
+counted mechanically off `## Acceptance criteria` (`awk` section slice,
+`grep -c '^- '` = 10).
+
+### CARD INTEGRITY — the check nobody would think to run
+
+Both claims verified **by hash**, not by reading:
+
+    ## Verdicts           236 lines  sha256 1d180a1898e32830…
+    ## Acceptance criteria  99 lines  sha256 149083f2a5edb28b…
+
+identical at `307319b`, `5379752` AND `4540821`. **The record of the
+rejection was not softened, shortened, or edited in any byte.** The
+card's only change is +185/-2, all of it new second-executor notes plus
+one corrected citation. No criterion moved. `status: building` stands;
+no stamp fields were touched by the executor.
+
+### THE FIX REDS AND GREENS AS CLAIMED — six rounds, re-run, not accepted
+
+Run in this worktree by mutating the tree in place and restoring with
+`git checkout` + **sha256 proof** after every round (all three files
+byte-identical to `4540821` at the end: `a043f954…`, `e2442af8…`,
+`cac9deda…`).
+
+| round | mutation | reds I measured | claimed |
+|---|---|---|---|
+| A | `runner.rs` taken straight from `307319b` (the true pre-fix code) | rows 1, 2, 4, 6 — **4 failed / 42 passed** | 4 |
+| B | s6 assignment alone reverted to the `is_some()` latch | rows 1, 2, 4 — **3 failed** | same |
+| C | s7 `result_is_error` guard alone dropped | row 6 — **1 failed** | same |
+| D | the OVER-BROAD fix: `result_is_error &&` added to the AuthFailed arm | **row 5 ONLY — 1 failed / 45 passed** | same |
+| E | the `result` line's text no longer pushed into the ring | rows 1 **and 3 (the control)** — **2 failed** | same |
+
+**Round D is the one that justifies the counter-pin, and it holds.**
+Under the over-broad fix `a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed`
+is the *only* red in the whole 46-test binary — the shipped
+`an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code`
+stays GREEN. Nothing that shipped was watching that case, so the
+counter-pin is load-bearing rather than decorative.
+
+**Round E settles the question the executor raised against itself.**
+Row 3 (the control) is green either way post-fix — but it is NOT a test
+that cannot fail: dropping the result-line relay reds it. The executor
+disclosed this limit rather than being caught at it, and the disclosure
+is accurate. B and C isolate the two fixes cleanly: neither reds the
+other's row.
+
+### THE NUMBERS — re-derived, none accepted
+
+- **cargo**, bare `cargo test` in `app/src-tauri`: **313 passed / 0
+  failed / 3 ignored**, summed by `awk` over the 15 `test result:`
+  lines. Per-binary **`108/0/0/46/123/0/7/13/3/7/0/2/4/0/0`** — every
+  slot identical to the rejection's except `40 → 46`, exactly the six
+  new pins. **Zero warnings**: the single `-i warning` hit in the whole
+  log is a test *name*
+  (`warnings_and_unknown_event_types_do_not_fail_the_turn`), and
+  `touch src/lib.rs src/agent/runner.rs && cargo check --all-targets`
+  recompiled clean with no diagnostic line at all.
+- **Exactly three `#[ignore]` attributes repo-wide**, the same three
+  files and the same three at `307319b` (`perf.rs:53`,
+  `self_graph.rs:58`, `agent_runner.rs:1802` / `:1635` pre-fix — the
+  line moved because tests were inserted above it, the attribute did
+  not). None added, none removed. **The real-CLI smoke was not run and
+  no model was called.**
+
+### SECURITY SWEEP — clean
+
+- **Zero dependency/lockfile lines**: `git diff --name-only
+  307319b..4540821 -- '*package.json' '*package-lock.json'
+  '*Cargo.toml' '*Cargo.lock'` is EMPTY.
+- `adapter.rs`, `acl_pin.rs`, `capabilities/`, `gen/` — **0-file
+  diffs**. `acl_pin.rs` whole-file **sha256
+  `8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`
+  identical at `bdecad8`, `307319b`, `5379752` and `4540821`** — so the
+  grant set cannot have moved. **92 grants** (counted off
+  `EXPECTED_GRANTS`); per the standing instruction no byte count is
+  quoted, the whole-file hash is the reproducible form.
+- `ENV_ALLOWLIST` **sha256
+  `cf80f850b96a6f03661c2f0871a54b5199ab82eeefb39da29e76c13ef1e7245e`
+  identical at both refs**, **16 entries** listed out. (My extraction
+  measures the block at 423 bytes where the notes say 422 — a
+  one-byte range boundary, and precisely why the hash is the form to
+  quote.)
+- **No `innerHTML` / `dangerouslySetInnerHTML` / `eval` / `new
+  Function` and no shell string added anywhere in the diff** — grep for
+  added lines matching `Command::new|/bin/sh|sh -c|eval\(` over
+  `307319b..4540821` returns nothing. The three pre-existing `/bin/sh`
+  hits are a test fixture, a comment, and an assertion that the source
+  does NOT contain `Command::new("/bin/sh")`.
+- **ADR-017 holds trivially**: `git diff --name-only 307319b..4540821 --
+  app/src` is EMPTY — nothing under `app/src` changed at all.
+- `file(1)` over the three changed code files: all **Unicode text,
+  UTF-8**, none `data`.
+
