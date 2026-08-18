@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [app-agent]
 builder: claude-opus-5 @fresh
-verifier: claude-opus-5 @fresh
+verifier: codex/gpt-5 @fresh
 built_by: claude-opus-5 @fresh
-verified_by: claude-opus-5 @fresh
-review: same-model
+verified_by: codex/gpt-5 @fresh
+review: independent
 ---
 
 Absorbs: T-047-s1, T-047-s4, T-047-s5, T-047-s6 (triage 2026-08-17).
@@ -868,3 +868,93 @@ but neither blocks. Nothing else on this branch needs to change: the
 resolver itself is correct, the gate holds at every door I could reach,
 and the measurement that overturned the card's own premise is sound.
 
+---
+
+**Re-verifier, codex/gpt-5 @fresh, 2026-08-18 — APPROVED.** Clean-room
+pass from the task, project rules and `6404a43..99bfc49` only. The prior
+REJECTED verdict remains byte-identical to `33b249a`: its 317-line
+`## Verdicts` payload hashes to
+`005ae7a2908b8086807317409321f0bc339acfa934bd8c61e7e5c445e2cefca6`
+before this entry. The 75-line acceptance section likewise remains
+byte-identical at `baeb738d92b9a236b73f041c7b287c2a466dd78dbf1888bd322a6a1e1a515d23`.
+
+**The rejection reproduces, and the fix removes its class.** I built the
+rejected revision `9c40da7` from an immutable `git archive`, offline and
+with its own target directory, then ran its integration-test binary
+directly. With only the unrelated filesystem-watcher body skipped (the
+sandbox made that body time out when a binary was run directly), the
+historical binary produced the exact rejected assertion — guard variable
+`left: Some("0")`, expected `None` — **5/5 at `--test-threads=4` and 5/5
+at 8**; the quiet-band control at 10 was **0/5**. The tip binary under the
+identical protocol was **10/10 green at 4, 10/10 at 8 and 10/10 at 10**,
+with zero race signatures in all 30 runs. Bare `cargo test`, including the
+watcher body, is independently green below.
+
+**The child-process proof is non-vacuous and cannot fall through to an
+ambient CLI.** The exact parent body passes and reports `1 passed`; the
+control proves why that check is load-bearing — an intentionally missing
+`--exact` filter exits **0** with `0 passed`. The parent additionally
+requires the guarded receipt. I placed an executable `claude` tattler on
+the PARENT's only PATH entry and reran the proof: it stayed green and the
+tattle marker remained absent, while the lifted child still resolved the
+fixture path it records. Thus the child-composed empty PATH, not ambient
+machine state, bounds the guard-off arm. `NPUTER_NO_REAL_CLI` was unset for
+the derived-default runs; the ignored real-CLI smoke remained ignored and
+`NPUTER_REAL_CLI` was never set. No real CLI or model was called.
+
+**The resolver attacks discriminate.** Both relative-PATH pins pass: the
+unit body first proves the absolute spelling resolves, then refuses the
+same executable through bare, dot and empty elements; the integration body
+proves no process/tattle for the relative spellings and a process for the
+absolute control. The shell-name pin honours only absolute executable
+`zsh`/`bash`/`sh` names and refuses the arbitrary-executable/fish/relative
+shapes. The accidental default configuration resolves to typed not-found
+without spawning its tattling shell or registering a session. The guard's
+pure decision pin covers explicit `0`, explicit `1`, derived test/app
+answers and an unrecognised-value control.
+
+**The doctest hole is closed with a biting pin.** The shipped doctest
+passes from rustdoc's real `rustdoctest*` directory. In an archived tip
+copy I removed only the `rustdoctest` predicate and reran `cargo test
+--doc`: exit **101**, the doctest failed with “a DOCTEST must not be able
+to reach the real CLI”. Restoring the real tip returns **1/1 green**. This
+is the previously fail-open environment itself, not a unit-only restatement.
+
+**All nine criteria hold.** Cache types/functions/config path and
+`probe_login_path` are absent; resolution is seam → one fresh probe →
+typed not-found. The recorded measurement supports no memo/file. The same
+resolved-path validator gates PATH candidates and shell output before
+`probe_version`. `$SHELL` is name-checked. `RunnerConfig` documentation now
+scopes its claim and names the resolver's exactly three environment reads.
+The real-CLI refusal is structural across cargo tests and doctests. The
+attack that found the lapse is the child-process proof above. Deleted-cache
+pins are stronger replacements rather than removals. Blast radius holds.
+
+**Security and architecture sweep: clean.** No dependency, manifest or
+lockfile line; no new IPC command or grant; `acl_pin.rs`, capabilities and
+generated schemas are outside the diff; `ENV_ALLOWLIST` remains 16 entries
+and byte-identical; no credential family was added to child inheritance;
+argv stays data and the branch adds no shell command line. The only
+production `lib.rs` change removes `config_dir` and supplies
+`RunnerConfig::default()`. The task's documentation corrections agree with
+the code: `tauri dev` is described as build plus direct spawn with cargo's
+run environment reconstructed, test detection covers both `deps` and
+`rustdoctest*`, and the remaining shape-not-identity residual is disclosed.
+
+**Required suites and gates, first-hand:** parser build + types + Vitest
+**225/225 (11 files)**; app types + build + Vitest **795/795 (42 files)**;
+bare offline Rust suite **320 passed / 3 ignored / 0 failed**, including
+**48 passed / 1 ignored** in `agent_runner` and **1/1** doctest; headless
+E2E **74/74**, one worker, retries 0; token lint clean over **116 files**
+and selftest **49 samples + 14 walk-policy checks**. The first E2E run,
+contending with three parallel build/test jobs, timed out one locator at
+30 s (73/74); that exact body reran alone in **320 ms**, and the full lane
+then reran alone **74/74 in 14.5 s**. Boot gate on scratch port **17523**
+detected both startup lines — `[nputer] project folder:` and
+`[nputer] window "main" created` — then stopped its tree, exit 0.
+`cargo audit --no-fetch` used the existing local advisory database and
+exited 0 over 472 crates: **0 vulnerabilities / 17 allowed warnings**, the
+recorded baseline. It made no network request; every Cargo manifest and
+lockfile is also a zero-line branch diff.
+
+No blocker or new suggestion remains. T-060 is ready for integration.
