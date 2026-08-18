@@ -188,27 +188,51 @@ impl Emitter {
 
 // ---- configuration + the test seam -------------------------------------
 
-/// Runner tunables. **Production reads NOTHING from the environment**:
+/// Runner tunables. **THIS STRUCT reads nothing from the environment**:
 /// `Default` is a pure constant, and the three override fields below are
 /// filled only by a test constructing this struct in Rust. A hostile env
-/// var therefore cannot redirect the production spawn (pinned by
-/// `default_config_reads_nothing_from_the_environment`).
+/// var therefore cannot redirect the production spawn THROUGH THIS
+/// STRUCT (pinned by `default_config_reads_nothing_from_the_environment`).
+///
+/// **T-060 (T-047-s4): SCOPED HONESTLY, because the older wording said
+/// "production reads NOTHING from the environment" and a reader of that
+/// pin would not guess that `$SHELL` picks which program runs.** The
+/// claim is true of the CONFIG and false of the RESOLVER two functions
+/// away, which reads three variables of the app's own environment:
+///
+/// - **`SHELL`** — [`login_shell`] picks the program spawned with
+///   `-l -c`. Since T-060 it must also be NAMED `zsh`, `bash` or `sh`;
+///   anything else falls back to `/bin/zsh`.
+/// - **`PATH`** — [`which_on_path`]'s search list, when no login shell
+///   answered. Every candidate it produces now passes
+///   [`validate_resolved_binary`], so a relative PATH entry can no longer
+///   yield a relative binary that gets executed.
+/// - **`NPUTER_NO_REAL_CLI`** — the guard (see [`real_cli_arms_forbidden`]).
+///
+/// The CHILD's environment is a different question and is unchanged:
+/// `env_clear()` plus [`ENV_ALLOWLIST`] (ADR-003).
 #[derive(Clone, Debug)]
 pub struct RunnerConfig {
     /// TEST SEAM: the binary to spawn instead of resolving one.
     pub binary_override: Option<PathBuf>,
-    /// TEST SEAM: the PATH handed to the child.
+    /// TEST SEAM: the PATH handed to the child, and — with
+    /// `probe_login_shell: false` — the search path resolution uses in
+    /// place of a login shell.
     pub path_override: Option<String>,
     /// TEST SEAM: extra env pairs on the child (fake-agent scenario
     /// selection). Always empty in production.
     pub extra_env: Vec<(String, String)>,
-    /// TEST SEAM: `false` forbids the login-shell probe entirely, so no
-    /// suite can spawn the user's shell or accidentally RESOLVE THE REAL
-    /// CLI. Production is `true` — that probe is criterion 4's whole
-    /// point (GUI-launch PATH poverty).
+    /// TEST SEAM: `false` forbids the login-shell probe entirely.
+    /// Production is `true` — that probe is criterion 4's whole point
+    /// (GUI-launch PATH poverty).
+    ///
+    /// **This field is no longer what keeps a test off the real CLI.**
+    /// It was, and it FAILED: it lives in a struct every test must
+    /// remember, `..RunnerConfig::default()` is the idiom, and the
+    /// default is `true` — so T-047's verifier spawned the developer's
+    /// real `claude` from `cargo test`. The structural guard is
+    /// [`real_cli_arms_forbidden`] (T-060 criterion 6).
     pub probe_login_shell: bool,
-    /// Where the resolution cache lives (the app's config dir).
-    pub config_dir: Option<PathBuf>,
     /// No first stream line within this → `StartTimeout`.
     pub start_timeout: Duration,
     /// No stream line for this, mid-turn → `Stall`. Generous on purpose:
@@ -229,7 +253,6 @@ impl Default for RunnerConfig {
             path_override: None,
             extra_env: Vec::new(),
             probe_login_shell: true,
-            config_dir: None,
             start_timeout: Duration::from_secs(30),
             stall_timeout: Duration::from_secs(300),
             coalesce: Duration::from_millis(150),
@@ -262,17 +285,166 @@ pub struct ResolvedCli {
     pub login_path: Option<String>,
 }
 
-/// The cache file beside the app config, so the login-shell probe's
-/// `command -v` runs once per install rather than once per turn.
-fn cache_path(cfg: &RunnerConfig) -> Option<PathBuf> {
-    cfg.config_dir.as_ref().map(|dir| dir.join("agent-paths.json"))
+// ---- T-060 criterion 6: no test may resolve the user's real CLI --------
+
+/// The guard variable. `NPUTER_NO_REAL_CLI=1` forbids the two arms that
+/// could reach the developer's own `claude`; `=0` permits them.
+pub const NO_REAL_CLI_VAR: &str = "NPUTER_NO_REAL_CLI";
+
+/// **THE ACCIDENT THIS PREVENTS ALREADY HAPPENED.** T-047's verifier
+/// built a `RunnerConfig` with `..RunnerConfig::default()`, whose
+/// `probe_login_shell` is `true`, and `cargo test` spawned the
+/// developer's real `claude` with the genesis planner prompt. No model
+/// ran and no tokens were spent **only because the token is revoked —
+/// that is luck, not a control.**
+///
+/// So the property stops living in a field every test must remember.
+/// `resolve_cli` refuses the login-shell arm and the `which_on_path` arm
+/// whenever this returns true, and falls through to typed `cliNotFound`
+/// exactly as a machine with no CLI would.
+///
+/// **The default is DERIVED, not remembered** (this is the part the
+/// criterion's "set once for the whole suite" was reaching for, and a
+/// stronger form of it): with the variable unset, the arms are forbidden
+/// iff this process is a cargo TEST binary — see
+/// [`running_as_cargo_test_binary`]. Nothing has to be set, exported,
+/// wrapped or configured, so a test file added next year inherits the
+/// refusal without knowing this function exists. **Every kind of test
+/// cargo builds is covered, doctests included** — that was not true when
+/// T-060 was first built, and the exception is recorded in
+/// [`is_test_harness_dir`] rather than left for the next reader to find
+/// (T-060-s4).
+///
+/// **Why not a `.cargo/config.toml` `[env]` entry**, which is the obvious
+/// "set once for the whole suite": it would reach the human's DEVELOPMENT
+/// APP, which would then stop finding their CLI and render the
+/// hand-driven fallback forever. Measured, because the obvious mechanism
+/// sentence for this is wrong and was believed here for a while
+/// (T-060-s5): `tauri dev` is NOT `cargo run` — the tauri v2 CLI runs
+/// `cargo build` and spawns the produced binary itself, with no cargo
+/// process between them — but it reconstructs cargo's run environment for
+/// that binary, and `[env]` rides along with it. An
+/// `[env] NPUTER_VERIFIER_PROBE = "reached"` in
+/// `app/src-tauri/.cargo/config.toml` was measured reaching the spawned
+/// dev app, alongside the full `CARGO_*` set; the control — a binary
+/// `cargo build`-ed and exec'd with no cargo anywhere — sees nothing.
+/// Right conclusion, checkable mechanism.
+///
+/// The escape is explicit and one-way: the `#[ignore]`d real smoke sets
+/// `NPUTER_NO_REAL_CLI=0` before it resolves anything. It is the only
+/// test in the repo that may, and it is additionally `#[ignore]`d and
+/// gated on `NPUTER_REAL_CLI=1`.
+///
+/// **THIS DOCTEST IS THE PROOF FOR THE ONE KIND OF TEST THE DERIVATION
+/// USED TO MISS** (T-060-s4). It is the crate's only doctest and it runs
+/// in the environment that used to fail OPEN: `cfg!(test)` is false here
+/// and rustdoc does not run this binary out of `deps/`. It is written the
+/// same way as the `deps` tripwire in `tests/agent_runner.rs` — pin the
+/// mechanism you depend on, loudly, so a rustdoc that stops naming its
+/// temp directory `rustdoctest*` reds a test instead of quietly handing
+/// every future doctest the developer's real CLI.
+///
+/// ```
+/// assert!(
+///     nputer_lib::agent::runner::real_cli_arms_forbidden(),
+///     "a DOCTEST must not be able to reach the real CLI - if this red, \
+///      rustdoc's temp dir is no longer named `rustdoctest*` and the \
+///      derivation needs a new mechanism"
+/// );
+/// ```
+pub fn real_cli_arms_forbidden() -> bool {
+    guard_decision(
+        std::env::var(NO_REAL_CLI_VAR).ok().as_deref(),
+        running_as_cargo_test_binary(),
+    )
 }
 
-// ---- T-047: what the cached binary path has to survive -----------------
+/// The guard's whole decision, as a function of its INPUTS rather than of
+/// the process it runs in.
+///
+/// **This split is T-060-s3's fix in the direction the finding called
+/// "removing the need to mutate it at all".** The pins on "an explicit
+/// `0` is the smoke's deliberate opt-out" and "an explicit `1` forbids"
+/// used to be written by setting the variable process-wide inside a test
+/// body — in a binary libtest runs on many threads, where a sibling body
+/// asserting the variable is UNSET reads the mutation and goes red. Both
+/// directions are properties of this function, so both can be pinned
+/// without any process ever changing. That the WRAPPER really consults
+/// the variable is pinned the only way it honestly can be: behaviourally,
+/// by a test that runs a resolve in a child process born with it set
+/// (`the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found`).
+fn guard_decision(setting: Option<&str>, is_cargo_test_binary: bool) -> bool {
+    match setting {
+        Some("1") => true,
+        Some("0") => false,
+        _ => is_cargo_test_binary,
+    }
+}
 
-/// Why a cached binary path was refused before anything executed it.
+/// Is this process a cargo-built TEST binary?
+///
+/// Cargo puts unit-test and integration-test executables in
+/// `<target-dir>/<profile>/deps/` and runs them from there; it runs
+/// `cargo run` binaries from `<target-dir>/<profile>/` and a packaged
+/// app from `…/Contents/MacOS/`. The parent directory's NAME is
+/// therefore the discriminator, and it is one cargo controls rather than
+/// one we chose: `deps` is where test harnesses live and nothing else
+/// executes from.
+///
+/// `<target-dir>` itself is deliberately not checked — `CARGO_TARGET_DIR`
+/// can point anywhere, so "an ancestor named `target`" is an assumption
+/// and `deps` is not.
+fn running_as_cargo_test_binary() -> bool {
+    // `cfg!(test)` is true for the LIB's own unit tests and false for an
+    // integration test linking the lib, so it is a corroborator, never
+    // the whole answer.
+    if cfg!(test) {
+        return true;
+    }
+    let Ok(exe) = std::env::current_exe() else {
+        return false;
+    };
+    is_test_harness_dir(exe.parent().and_then(|dir| dir.file_name()).and_then(|n| n.to_str()))
+}
+
+/// Does this directory NAME belong to a test harness cargo or rustdoc
+/// built? Two spellings, and the second one is T-060-s4.
+///
+/// `deps` is cargo's, and covers unit tests and integration tests. The
+/// other is rustdoc's: a DOCTEST is compiled to a temporary directory
+/// named `rustdoctest<random>` and run from there, and `cfg!(test)` is
+/// FALSE inside it because a doctest links the crate exactly as an
+/// integration test does. Measured in T-060-s4:
+///
+/// ```text
+/// current_exe = /var/folders/…/T/rustdoctestTieiwm/rust_out
+/// parent      = Some("rustdoctestTieiwm")
+/// cfg_test    = false
+/// ```
+///
+/// (`text`, not Rust, and deliberately — an INDENTED block here becomes a
+/// doctest, which is how the second executor turned this crate's zero
+/// doctests into one broken one while documenting the hole. The
+/// zero-doctest state was never a property of the crate, only of what
+/// nobody had written yet.)
+///
+/// So before this arm, a doctest on [`resolve_cli`] — the most natural
+/// thing in the world to write for a public resolver — would have run
+/// with the guard OFF, spawned the developer's login shell and executed
+/// their real `claude`. T-047-s6's accident, reachable by writing
+/// documentation.
+///
+/// Widening only ever forbids MORE, so a false positive costs a resolve
+/// and never a spawn.
+fn is_test_harness_dir(name: Option<&str>) -> bool {
+    matches!(name, Some("deps")) || matches!(name, Some(dir) if dir.starts_with("rustdoctest"))
+}
+
+// ---- T-047/T-060: what a resolved binary path has to survive -----------
+
+/// Why a resolved binary path was refused before anything executed it.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum CachedPathRejection {
+pub enum ResolvedPathRejection {
     Empty,
     /// Not absolute. A relative path resolves against the app's CWD, which
     /// is whatever the OS handed the process — not a location anyone chose.
@@ -288,7 +460,7 @@ pub enum CachedPathRejection {
     NotExecutable,
 }
 
-impl std::fmt::Display for CachedPathRejection {
+impl std::fmt::Display for ResolvedPathRejection {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Empty => write!(f, "it is empty"),
@@ -302,40 +474,46 @@ impl std::fmt::Display for CachedPathRejection {
     }
 }
 
-/// THE CACHED-PATH GATE (T-047, absorbing T-039-s1's first half).
+/// THE RESOLVED-PATH GATE — **one standard, applied at every door**
+/// (T-060, absorbing T-047-s5; T-047 built it, for the cache only).
 ///
-/// `agent-paths.json` lives in the app config dir and was, before this,
-/// believed entirely: `read_cache` deserialized a string into a `PathBuf`
-/// and `resolve_cli` gated it on `is_executable_file` alone before handing
-/// it to `Command::new` — so a poisoned entry executed its binary AT
-/// RESOLVE TIME, before any turn, on every `start_genesis` AND every
-/// `send_turn`. This task's pre-fix probe measured exactly that, twice
-/// (a `--version` probe and a full spawn).
+/// T-047 wrote this gate for `agent-paths.json` and left the FRESHLY
+/// PROBED path exempt from it, which is two doors holding one standard
+/// between them. The unifying sentence of T-060 is that gap: **the code
+/// already knew which values it would not trust from a file, and ran them
+/// anyway.** `which_on_path` reads the app's inherited `PATH` and hands
+/// each entry to `which_in`, which does `dir.join(binary)` — so a
+/// RELATIVE PATH entry (`.`, an empty element meaning CWD, a bare
+/// `relbin`) produced a relative binary path that WAS EXECUTED, while
+/// this same function called it `NotAbsolute` and discarded it.
 ///
-/// The rule is "what a fresh probe could have produced", because that is
-/// the only honest bar for a value whose whole justification is "we
-/// already probed this once". A login-shell probe resolves the NAME
-/// `claude` — `command -v claude`, or `dir.join("claude")` over PATH — so
-/// whatever it returns is absolute, traversal-free, and named `claude`.
-/// A cached entry that is none of those is not a probe result.
+/// T-060 retires the cache entirely, so the file half of that story is
+/// gone; what survives is this function, now applied to the only paths
+/// that remain — the ones a probe just produced.
+///
+/// The rule is "what an HONEST probe could have produced". A login-shell
+/// probe resolves the NAME `claude` — `command -v claude`, or
+/// `dir.join("claude")` over PATH — so whatever it returns SHOULD be
+/// absolute, traversal-free, and named `claude`. A candidate that is none
+/// of those did not come from the shell answering the question we asked;
+/// it came from the search list being hostile.
 ///
 /// **The honest residual, recorded rather than implied**: an absolute,
 /// traversal-free path named `claude` pointing at an attacker's binary
-/// still passes. Closing THAT needs the cache bound to a probe signature
-/// or dropped entirely, and the precondition for reaching it is write
-/// access to the user's own config dir — which also buys `~/.zshrc`. What
-/// this closes is the gap between "an executable file" and "something a
-/// probe could have said", which is where the traversal and misnamed
-/// shapes lived.
-pub fn validate_cached_binary(
+/// still passes. The gate checks SHAPE and never IDENTITY — there is no
+/// `canonicalize` here, so a symlink or a swapped file is enough, and no
+/// race is needed. Closing that needs a signature or a pinned install
+/// location, and its precondition is write access to a directory already
+/// on the user's PATH.
+pub fn validate_resolved_binary(
     path: &Path,
     adapter: &AgentAdapter,
-) -> Result<(), CachedPathRejection> {
+) -> Result<(), ResolvedPathRejection> {
     if path.as_os_str().is_empty() {
-        return Err(CachedPathRejection::Empty);
+        return Err(ResolvedPathRejection::Empty);
     }
     if !path.is_absolute() {
-        return Err(CachedPathRejection::NotAbsolute);
+        return Err(ResolvedPathRejection::NotAbsolute);
     }
     // Both halves, because they catch different things. `Components`
     // is authoritative for `..` — it preserves `ParentDir` — but it
@@ -352,158 +530,190 @@ pub fn validate_cached_binary(
             .components()
             .any(|c| matches!(c, std::path::Component::ParentDir | std::path::Component::CurDir))
     {
-        return Err(CachedPathRejection::Traversal);
+        return Err(ResolvedPathRejection::Traversal);
     }
     if path.file_name().and_then(|n| n.to_str()) != Some(adapter.binary) {
-        return Err(CachedPathRejection::WrongName { expected: adapter.binary });
+        return Err(ResolvedPathRejection::WrongName { expected: adapter.binary });
     }
     if !is_executable_file(path) {
-        return Err(CachedPathRejection::NotExecutable);
+        return Err(ResolvedPathRejection::NotExecutable);
     }
     Ok(())
 }
 
-/// Resolve the adapter's binary (§6 order): the test seam, then the
-/// cached path, then a login-shell probe, then a typed not-found.
+/// Resolve the adapter's binary (§6 order, as T-060 leaves it): the test
+/// seam, then a probe, then a typed not-found. **There is no third
+/// source, and in particular there is no file.**
 ///
 /// GUI-launch PATH poverty is the whole problem being solved: a packaged
 /// .app launched from Finder inherits a minimal PATH that has never seen
 /// the user's `~/.local/bin`, homebrew, nvm, or asdf shims.
 ///
-/// **T-047 changes two things about what this function believes.** The
-/// cached PATH is gone — the login PATH is never stored and is re-probed
-/// when needed (see [`probe_login_path`]) — and the cached binary path now
-/// has to pass [`validate_cached_binary`] before `probe_version` (which is
-/// a `Command::new`) ever sees it. A cache entry that fails is discarded
-/// from the file and the resolution falls through to a FRESH probe, ending
-/// at typed `cliNotFound` if that also fails: never a silent fallback to
-/// the poisoned value.
+/// **T-060 RETIRES THE RESOLVED-BINARY CACHE** (T-047-s1). `agent-paths.json`
+/// is not read, not written and not invalidated; `CacheFile`, `CacheEntry`,
+/// `read_cache`, `write_cache`, `invalidate_cache`, `cache_path` and
+/// `RunnerConfig::config_dir` are gone. **The whole file→exec class stops
+/// existing rather than being narrowed.** Three reasons, in the order they
+/// were established:
+///
+/// 1. **Its stated justification was already false.** The file existed
+///    "so the login-shell probe runs once per install rather than once
+///    per turn" — but T-047 stopped caching the login PATH, so
+///    `probe_login_path` spawned the login shell on EVERY resolve
+///    regardless, cache hit or not. The cache saved nothing it claimed
+///    to save.
+/// 2. **The probe already returns the binary path in the same spawn.**
+///    `command -v claude && echo NPUTER_LOGIN_PATH=$PATH` is one process
+///    for both answers.
+/// 3. **The cost of not caching was measured, on this machine, by this
+///    task** (see [`login_shell`] for the full table): the login-shell
+///    probe is **3.7–7.8 ms, median 4.0**, against **39–42 ms, median
+///    40** for the `claude --version` probe the same resolve runs
+///    unconditionally. The card's ~7 ms / 47–50 ms figures reproduce in
+///    shape; the version probe is ~40 ms here, not 47–50.
+///
+/// **THE FRESHLY-PROBED PATH NOW PASSES THE SAME GATE THE CACHED ONE HAD
+/// TO** (T-047-s5) — [`validate_resolved_binary`], applied inside
+/// [`which_in`] and again to whatever the probe returned. A failure is
+/// treated as "this probe found nothing": fall through, then to typed
+/// `cliNotFound`. Nothing is executed on the way to refusing.
 pub fn resolve_cli(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Result<ResolvedCli, ResolveError> {
     // (0) Test seam: an injected binary is used verbatim, version probe
-    // included, so fixture scenarios exercise the same code path.
+    // included, so fixture scenarios exercise the same code path. This is
+    // a Rust-only field — no environment variable can fill it (pinned by
+    // `default_config_reads_nothing_from_the_environment`) — so it is not
+    // a door the gate has to hold.
     if let Some(path) = &cfg.binary_override {
         let version = probe_version(cfg, path, adapter);
         return finish(cfg, path.clone(), version, cfg.path_override.clone(), adapter);
     }
 
-    let mut probed: Vec<String> = Vec::new();
-
-    // (1) Cached path from a previous probe — validated first, executed
-    // second. The order is the whole point: `probe_version` spawns.
-    if let Some(cache) = cache_path(cfg) {
-        if let Some(path) = read_cache(&cache, adapter.key) {
-            match validate_cached_binary(&path, adapter) {
-                Ok(()) => {
-                    // The login PATH is NOT cached (T-047): a fresh probe,
-                    // now, or nothing.
-                    let login_path = probe_login_path(cfg);
-                    let version = probe_version(cfg, &path, adapter);
-                    return finish(cfg, path, version, login_path, adapter);
-                }
-                Err(rejection) => {
-                    // Loud, discarded, and re-probed. `sanitize_for_log`
-                    // because the refused path is file-borne data and this
-                    // line goes to a terminal.
-                    eprintln!(
-                        "[nputer] agent: refusing the cached {} path in agent-paths.json: {rejection} - discarding it and re-probing. Refused: {}",
-                        adapter.key,
-                        crate::docs_watch::sanitize_for_log(&path.display().to_string())
-                    );
-                    invalidate_cache(cfg, adapter.key);
-                    probed.push(format!("cached path (refused: {rejection})"));
-                }
-            }
-        }
-    }
-
-    // (2) The login-shell probe, once. Fixed argv, no user data anywhere
-    // in it — the `-c` argument is a compile-time constant. Suites turn
-    // it off so no test can spawn a shell or resolve the real CLI.
+    // (1) The probe, once. Fixed argv, no user data anywhere in it — the
+    // `-c` argument is a compile-time constant.
     let probe = if cfg.probe_login_shell {
-        login_shell_probe(cfg, adapter.binary)
+        if real_cli_arms_forbidden() {
+            // T-060 criterion 6. Not "no shell was found": the arm is
+            // REFUSED, and the refusal is named in `probed` so a test
+            // that reaches here reads why instead of wondering.
+            return Err(ResolveError::NotFound {
+                probed: vec![format!(
+                    "the login-shell and PATH arms are refused: {NO_REAL_CLI_VAR} forbids resolving a real `{}`",
+                    adapter.binary
+                )],
+            });
+        }
+        login_shell_probe(cfg, adapter)
     } else {
+        // The seam's own search path. `path_override` is a Rust field,
+        // never the machine's `PATH`, so this arm cannot reach the user's
+        // real CLI and is not guarded.
         cfg.path_override
             .as_ref()
-            .and_then(|path| which_in(path, adapter.binary))
+            .and_then(|path| which_in(path, adapter))
             .map(|found| (found, cfg.path_override.clone()))
     };
     match probe {
         Some((path, login_path)) => {
-            // The gate is closed on the WRITE side too, so the cache can
-            // never hold something the read side would refuse — otherwise
-            // an unusual (but working) probe result would be re-written and
-            // re-refused on every single turn. A probe result that fails is
-            // still USED for this resolve: it came from the user's own login
-            // shell, not from a file, which is the whole distinction this
-            // task is drawing.
-            if let Some(cache) = cache_path(cfg) {
-                if validate_cached_binary(&path, adapter).is_ok() {
-                    write_cache(&cache, adapter.key, &path);
-                }
+            // THE GATE, on the last value before `probe_version` — which
+            // is a `Command::new`. `which_in` gates its own candidates
+            // too; this catches the OTHER producer, the path a login
+            // shell's `command -v` printed on stdout.
+            if let Err(rejection) = validate_resolved_binary(&path, adapter) {
+                eprintln!(
+                    "[nputer] agent: refusing the probed {} path: {rejection} - treating this probe as having found nothing. Refused: {}",
+                    adapter.key,
+                    crate::docs_watch::sanitize_for_log(&path.display().to_string())
+                );
+                return Err(ResolveError::NotFound {
+                    probed: vec![
+                        format!("probed path (refused: {rejection})"),
+                        format!("login shell `command -v {}`", adapter.binary),
+                        format!("PATH lookup for `{}`", adapter.binary),
+                    ],
+                });
             }
             let version = probe_version(cfg, &path, adapter);
             finish(cfg, path, version, login_path, adapter)
         }
-        None => {
-            probed.push(format!("login shell `command -v {}`", adapter.binary));
-            probed.push(format!("PATH lookup for `{}`", adapter.binary));
-            Err(ResolveError::NotFound { probed })
-        }
+        None => Err(ResolveError::NotFound {
+            probed: vec![
+                format!("login shell `command -v {}`", adapter.binary),
+                format!("PATH lookup for `{}`", adapter.binary),
+            ],
+        }),
     }
 }
 
-/// THE LOGIN PATH, FRESHLY PROBED (T-047, absorbing T-039-s1's second and
-/// completely ungated half).
+/// THE PROGRAM RUN WITH `-l -c` (T-060, absorbing T-047-s4).
 ///
-/// `cli.login_path` becomes the child's `PATH` — which decides which `git`
-/// and which `cp` the planner's own Bash resolves to, and therefore what
-/// nputer's advertised six-pattern Bash allowlist actually contains
-/// (T-025-s4: those patterns match the command STRING and carry no path
-/// scope). Before this it was read out of `agent-paths.json` with no gate
-/// whatsoever — not even an executable bit, because it is a string.
+/// `$SHELL` is read from the APP's own environment — it is the user's
+/// shell, not an agent-binary override — and **before T-060 any absolute
+/// executable named anything was run with `-l -c <script>`.** That is a
+/// wide door for a value the app does not control: `SHELL` is on
+/// [`ENV_ALLOWLIST`] and is whatever the launching environment said.
 ///
-/// **The arm taken is "not cached at all", and the cost was measured
-/// rather than assumed**: `zsh -l -c 'echo …$PATH'` is **6–8 ms** on this
-/// machine, against the **47–50 ms** `claude --version` probe that already
-/// runs on every single resolve. Re-probing is ~15% of a cost the resolve
-/// path already pays, on a path that runs once per interview TURN. There
-/// was nothing to trade.
+/// The name check is not cosmetic. The script this runner passes relies
+/// on POSIX-ish `-l -c` semantics — `command -v`, `$PATH`, `&&`. **fish
+/// accepts `-l -c` and means something different by it** (`command -v` is
+/// not its builtin spelling and `$PATH` is a list), so a fish user would
+/// get a silently wrong answer rather than a loud one; and an arbitrary
+/// executable named neither gets a script it never agreed to parse.
 ///
-/// The script is narrower than [`login_shell_probe`]'s on purpose: this
-/// asks only for the PATH, so it is a compile-time constant with no
-/// interpolation and no `command -v`.
-fn probe_login_path(cfg: &RunnerConfig) -> Option<String> {
-    // The seam: suites never spawn a shell, and their `path_override` is
-    // the PATH the child is asserted against byte for byte.
-    if !cfg.probe_login_shell {
-        return cfg.path_override.clone();
-    }
-    if cfg!(not(unix)) {
-        return None;
-    }
-    let shell = std::env::var("SHELL")
+/// So `$SHELL` must be absolute, executable, AND named one of the three
+/// whose `-l -c` this script is actually written for. Anything else falls
+/// back to `/bin/zsh` — macOS's default login shell and a program that is
+/// present by construction on the only platform this runner ships on.
+///
+/// **MEASURED, because criterion 2 required the measurement either way**
+/// (this machine, 2026-08-18, medians of 8–15 runs):
+///
+/// | what | ms |
+/// |---|---|
+/// | `zsh -l -c 'command -v claude && echo …$PATH'`, this machine | 3.7–7.8, **median 4.0** |
+/// | the same with a 4000-line `~/.zshrc` + `compinit` | **unchanged — see below** |
+/// | the same with a conda/pyenv/rbenv-shaped `~/.zprofile` (3 interpreter spawns) | 41–47, **median 41** |
+/// | `claude --version`, which the same resolve runs unconditionally | 39–42, **median 40** |
+///
+/// **THE INPUT THE SUGGESTION DID NOT HAVE, and it inverts the worry:**
+/// `zsh -l -c` is a NON-INTERACTIVE login shell, so it reads `.zshenv`,
+/// `.zprofile` and `.zlogin` and **does not read `.zshrc` at all**
+/// (`bash -l -c` likewise reads `.bash_profile`, not `.bashrc`) —
+/// verified by marker files in each. nvm, rbenv, pyenv and conda all
+/// install their init into `~/.zshrc` by default, which is exactly the
+/// file this probe never sources. The feared "hundreds of ms" case needs
+/// a user who hand-moved that init into `.zprofile`, and even then it
+/// measures at parity with the `--version` probe already being paid.
+///
+/// **Verdict: no memo, no file.** Criterion 1's plain
+/// probe-then-typed-not-found stands.
+fn login_shell() -> PathBuf {
+    /// The shells whose `-l -c` semantics the script actually relies on.
+    const SUPPORTED: [&str; 3] = ["zsh", "bash", "sh"];
+    std::env::var("SHELL")
         .ok()
         .map(PathBuf::from)
-        .filter(|p| p.is_absolute() && is_executable_file(p))
-        .unwrap_or_else(|| PathBuf::from("/bin/zsh"));
-    let mut command = Command::new(&shell);
-    command
-        .arg("-l")
-        .arg("-c")
-        .arg("echo NPUTER_LOGIN_PATH=$PATH")
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null());
-    let output = run_with_timeout(command, cfg.probe_timeout)?;
-    if !output.status_ok {
-        return None;
-    }
-    output
-        .stdout
-        .lines()
-        .find_map(|line| line.trim().strip_prefix("NPUTER_LOGIN_PATH=").map(str::to_string))
-        .filter(|path| !path.is_empty())
+        .filter(|p| {
+            p.is_absolute()
+                && p.file_name()
+                    .and_then(|n| n.to_str())
+                    .is_some_and(|name| SUPPORTED.contains(&name))
+                && is_executable_file(p)
+        })
+        .unwrap_or_else(|| PathBuf::from("/bin/zsh"))
 }
+
+// **THE SECOND LOGIN-SHELL SPAWN IS GONE TOO (T-060).**
+//
+// T-047 added `probe_login_path` — a whole second `$SHELL -l -c` spawn
+// asking only for `$PATH` — for exactly one caller: the CACHE-HIT arm,
+// which had a binary path from the file and no PATH to go with it. With
+// the cache retired that caller does not exist, and the one remaining
+// probe answers both questions in one spawn (`command -v claude && echo
+// NPUTER_LOGIN_PATH=$PATH`). So retiring the file did not merely remove
+// a file: it removed a resolve path that could spawn the user's login
+// shell TWICE, and the resolver's `$SHELL` read sites went from two to
+// one — which is also the only reason the T-047-s4 name check has a
+// single place to live.
 
 fn finish(
     _cfg: &RunnerConfig,
@@ -528,28 +738,25 @@ fn finish(
 /// `[$SHELL -l -c "command -v <bin> && echo NPUTER_LOGIN_PATH=$PATH"]`.
 ///
 /// One spawn, both answers: where the binary is, and the PATH a login
-/// shell would have given it. `$SHELL` is read from the APP's own
-/// environment (it is the user's shell, not an agent-binary override) and
-/// is accepted only if it is an absolute path to an executable file;
-/// anything else falls back to `/bin/zsh`.
-fn login_shell_probe(cfg: &RunnerConfig, binary: &str) -> Option<(PathBuf, Option<String>)> {
+/// shell would have given it. Which program that is, and why it is
+/// name-checked since T-060, is [`login_shell`].
+///
+/// The path this returns is NOT trusted here — `resolve_cli` puts it
+/// through [`validate_resolved_binary`] before `probe_version` can spawn
+/// it. `command -v` prints whatever the shell resolved, and a shell whose
+/// PATH holds a relative entry resolves to a relative path.
+fn login_shell_probe(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Option<(PathBuf, Option<String>)> {
     if cfg!(not(unix)) {
-        return which_on_path(binary).map(|p| (p, None));
+        return which_on_path(adapter).map(|p| (p, None));
     }
-    let shell = std::env::var("SHELL")
-        .ok()
-        .map(PathBuf::from)
-        .filter(|p| p.is_absolute() && is_executable_file(p))
-        .unwrap_or_else(|| PathBuf::from("/bin/zsh"));
-
-    // Compile-time constant script; `binary` is the adapter's own
+    // Compile-time constant script; the binary name is the adapter's own
     // `&'static str`, never user input. No interpolation of anything the
     // webview or the filesystem supplied.
-    let script = match binary {
+    let script = match adapter.binary {
         "claude" => "command -v claude && echo NPUTER_LOGIN_PATH=$PATH",
-        _ => return which_on_path(binary).map(|p| (p, None)),
+        _ => return which_on_path(adapter).map(|p| (p, None)),
     };
-    let mut command = Command::new(&shell);
+    let mut command = Command::new(login_shell());
     command
         .arg("-l")
         .arg("-c")
@@ -559,7 +766,7 @@ fn login_shell_probe(cfg: &RunnerConfig, binary: &str) -> Option<(PathBuf, Optio
         .stderr(Stdio::null());
     let output = run_with_timeout(command, cfg.probe_timeout)?;
     if !output.status_ok {
-        return which_on_path(binary).map(|p| (p, None));
+        return which_on_path(adapter).map(|p| (p, None));
     }
     let mut found: Option<PathBuf> = None;
     let mut login_path: Option<String> = None;
@@ -576,20 +783,39 @@ fn login_shell_probe(cfg: &RunnerConfig, binary: &str) -> Option<(PathBuf, Optio
     }
     match found {
         Some(path) => Some((path, login_path)),
-        None => which_on_path(binary).map(|p| (p, login_path)),
+        None => which_on_path(adapter).map(|p| (p, login_path)),
     }
 }
 
-/// Plain PATH lookup — the fallback when there is no usable login shell.
-fn which_on_path(binary: &str) -> Option<PathBuf> {
-    which_in(&std::env::var("PATH").ok()?, binary)
+/// Plain PATH lookup over the APP'S OWN inherited `PATH` — the fallback
+/// when there is no usable login shell.
+///
+/// **This is the arm T-047-s5 was about.** The app's `PATH` is whatever
+/// the launching environment said, and a PATH entry may be relative: `.`,
+/// an EMPTY element (which POSIX defines as the current directory), or a
+/// bare `relbin`. `which_in`'s `dir.join(binary)` then yields a relative
+/// binary path, and before T-060 it was executed. It is guarded twice
+/// now — by [`real_cli_arms_forbidden`] against ever reaching a real CLI
+/// from a test, and by [`validate_resolved_binary`] inside `which_in`
+/// against the shape.
+fn which_on_path(adapter: &AgentAdapter) -> Option<PathBuf> {
+    if real_cli_arms_forbidden() {
+        return None;
+    }
+    which_in(&std::env::var("PATH").ok()?, adapter)
 }
 
 /// PATH lookup over an explicit search path.
-fn which_in(path: &str, binary: &str) -> Option<PathBuf> {
+///
+/// Every candidate passes [`validate_resolved_binary`], not merely
+/// `is_executable_file` — so a relative search-path element produces NO
+/// candidate rather than a relative binary that `Command::new` would hand
+/// to the OS. A refused entry is simply not found, and the search
+/// continues to the next element: this is a lookup, not a verdict.
+fn which_in(path: &str, adapter: &AgentAdapter) -> Option<PathBuf> {
     std::env::split_paths(path)
-        .map(|dir| dir.join(binary))
-        .find(|candidate| is_executable_file(candidate))
+        .map(|dir| dir.join(adapter.binary))
+        .find(|candidate| validate_resolved_binary(candidate, adapter).is_ok())
 }
 
 fn probe_version(cfg: &RunnerConfig, path: &Path, adapter: &AgentAdapter) -> Option<String> {
@@ -655,60 +881,25 @@ fn run_with_timeout(mut command: Command, timeout: Duration) -> Option<SimpleOut
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Default)]
-struct CacheFile {
-    #[serde(default)]
-    entries: std::collections::BTreeMap<String, CacheEntry>,
-}
-
-/// **T-047: `login_path` is GONE from this struct, and its absence is the
-/// fix.** serde ignores unknown fields, so an `agent-paths.json` written
-/// by an older build — or planted by an attacker — still parses, and its
-/// `login_path` is simply never read by anything. That is the "not cached
-/// at all" arm stated structurally: there is no field to trust, so no code
-/// path can be added later that trusts it by accident. The login PATH is
-/// re-probed by `probe_login_path` when it is needed.
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
-struct CacheEntry {
-    path: String,
-}
-
-fn read_cache(path: &Path, key: &str) -> Option<PathBuf> {
-    let raw = std::fs::read_to_string(path).ok()?;
-    let parsed: CacheFile = serde_json::from_str(&raw).ok()?;
-    let entry = parsed.entries.get(key)?.clone();
-    Some(PathBuf::from(entry.path))
-}
-
-fn write_cache(path: &Path, key: &str, binary: &Path) {
-    let mut file: CacheFile = std::fs::read_to_string(path)
-        .ok()
-        .and_then(|raw| serde_json::from_str(&raw).ok())
-        .unwrap_or_default();
-    file.entries.insert(
-        key.to_string(),
-        CacheEntry {
-            path: binary.display().to_string(),
-        },
-    );
-    if let Ok(bytes) = serde_json::to_vec_pretty(&file) {
-        if let Err(err) = super::kit::write_atomic(path, &bytes) {
-            eprintln!("[nputer] agent: could not cache the resolved binary: {err}");
-        }
-    }
-}
-
-/// Invalidate the cached path for `key` (called on a spawn ENOENT, so the
-/// next start re-probes once).
-pub fn invalidate_cache(cfg: &RunnerConfig, key: &str) {
-    let Some(path) = cache_path(cfg) else { return };
-    let Some(raw) = std::fs::read_to_string(&path).ok() else { return };
-    let Ok(mut file) = serde_json::from_str::<CacheFile>(&raw) else { return };
-    file.entries.remove(key);
-    if let Ok(bytes) = serde_json::to_vec_pretty(&file) {
-        let _ = super::kit::write_atomic(&path, &bytes);
-    }
-}
+// **THE RESOLVED-BINARY CACHE USED TO LIVE HERE (T-060 retired it).**
+//
+// `CacheFile`, `CacheEntry`, `read_cache`, `write_cache` and
+// `invalidate_cache` are deleted, along with `cache_path` and
+// `RunnerConfig::config_dir`. `agent-paths.json` is no longer read,
+// written or invalidated by anything, at any door.
+//
+// **This comment is the only thing left, and it is here so the next
+// reader does not reintroduce it.** T-047 narrowed the file — validating
+// the cached path before executing it — and T-047-s1 then observed that
+// the narrowing left the whole class alive for no benefit: the file's own
+// justification ("so the login-shell probe runs once per install rather
+// than once per turn") had already been falsified by T-047's other half,
+// which re-probes the login PATH on every resolve regardless. See
+// [`resolve_cli`] for the three reasons and [`login_shell`] for the
+// measurements. A cache here would have to earn back a cost measured at
+// **4 ms against a 40 ms probe the same resolve pays unconditionally** —
+// and if it ever does, criterion 2 already ruled the shape: a
+// PROCESS-LIFETIME memo, never a file.
 
 // ---- the environment allowlist (§1) ------------------------------------
 
@@ -1154,9 +1345,9 @@ pub fn run_turn(
     let mut child: Child = match command.spawn() {
         Ok(child) => child,
         Err(err) => {
-            if err.kind() == std::io::ErrorKind::NotFound {
-                invalidate_cache(cfg, adapter.key);
-            }
+            // T-060: there is no cache to invalidate here any more. A
+            // spawn ENOENT simply fails the turn; the NEXT resolve probes
+            // from scratch because every resolve does.
             let error = TurnError::SpawnFailed { os: err.to_string() };
             out.error = Some(error.clone());
             emitter.failed(req.turn, error);
@@ -1638,11 +1829,18 @@ impl Ring {
 mod tests {
     use super::*;
 
+    /// **THIS PIN IS ABOUT THE STRUCT, AND SINCE T-060 IT SAYS SO.**
+    ///
+    /// Its name has always been true of `RunnerConfig` and a reader
+    /// generalised it to the runner — which is T-047-s4's finding, and
+    /// the reason the companion test below exists. Keeping the two apart
+    /// is deliberate: one property, one body, so neither can hide behind
+    /// the other.
     #[test]
     fn default_config_reads_nothing_from_the_environment() {
-        // A hostile env cannot redirect the production spawn: the three
-        // seam fields are Rust-only, filled by a test constructing the
-        // struct — never by any variable.
+        // A hostile env cannot redirect the production spawn THROUGH THIS
+        // STRUCT: the three seam fields are Rust-only, filled by a test
+        // constructing the struct — never by any variable.
         std::env::set_var("NPUTER_AGENT_BIN", "/tmp/evil");
         std::env::set_var("NPUTER_FAKE_SCENARIO", "happy");
         std::env::set_var("NPUTER_AGENT_PATH", "/tmp/evil/bin");
@@ -1650,14 +1848,58 @@ mod tests {
         assert_eq!(cfg.binary_override, None);
         assert_eq!(cfg.path_override, None);
         assert!(cfg.extra_env.is_empty());
-        assert_eq!(cfg.config_dir, None);
         assert!(
             cfg.probe_login_shell,
-            "production DOES probe the login shell - that is criterion 4"
+            "production DOES probe the login shell - that is T-025 criterion 4"
         );
         std::env::remove_var("NPUTER_AGENT_BIN");
         std::env::remove_var("NPUTER_FAKE_SCENARIO");
         std::env::remove_var("NPUTER_AGENT_PATH");
+    }
+
+    /// **THE COMPANION THE PIN ABOVE NEEDED (T-060, T-047-s4).**
+    ///
+    /// "Production reads nothing from the environment" was true of the
+    /// CONFIG and false of the RESOLVER two functions away. This body
+    /// names the three variables the resolver actually reads, so the next
+    /// reader meets the exception beside the rule instead of inferring it
+    /// is not there.
+    ///
+    /// It is a SOURCE assertion, not a behavioural one, on purpose: the
+    /// behaviour of each read is pinned by its own test below, and what
+    /// was missing was a list nobody had to go looking for.
+    #[test]
+    fn the_resolver_does_read_the_environment_and_here_is_every_variable() {
+        let source = include_str!("runner.rs");
+        // Everything between the resolution banner and the child-env
+        // banner: the resolver, and nothing else in the file.
+        let from = source.find("// ---- binary resolution").expect("resolution banner");
+        let to = source.find("// ---- the environment allowlist").expect("allowlist banner");
+        let resolver = &source[from..to];
+
+        let mut read: Vec<&str> = resolver
+            .match_indices("std::env::var")
+            .map(|(idx, _)| {
+                let rest = &resolver[idx..];
+                let open = rest.find('(').expect("call parens");
+                let close = rest.find(')').expect("call parens");
+                rest[open + 1..close].trim().trim_matches('"')
+            })
+            .collect();
+        read.sort_unstable();
+        read.dedup();
+
+        assert_eq!(
+            read,
+            vec!["NO_REAL_CLI_VAR", "PATH", "SHELL"],
+            "the resolver's environment reads moved - update RunnerConfig's doc comment \
+             and this list together, because the doc comment is the only place a reader \
+             is told the config pin does not cover them"
+        );
+        // …and the one read by constant is the guard, spelled out. A test
+        // parametrised by a constant cannot pin that constant, so the
+        // VALUE is pinned here, separately from every use of it.
+        assert_eq!(NO_REAL_CLI_VAR, "NPUTER_NO_REAL_CLI");
     }
 
     #[test]
@@ -1800,37 +2042,59 @@ mod tests {
         assert_eq!(cap_text("small"), "small");
     }
 
-    /// T-047 (T-039-s1, first half): what a cached binary path has to
-    /// survive before anything executes it.
+    /// T-047 (T-039-s1, first half), **now the gate at EVERY door**
+    /// (T-060, T-047-s5): what a resolved binary path has to survive
+    /// before anything executes it.
     ///
-    /// Each refused shape here is one this task MEASURED executing against
+    /// Each refused shape here is one T-047 MEASURED executing against
     /// the unfixed code — the traversal and misnamed rows both ran their
     /// binary at resolve time, through `probe_version`'s `Command::new`,
-    /// before any turn existed.
+    /// before any turn existed. The three `relbin` rows are T-060's
+    /// addition and they are the shapes a RELATIVE PATH ENTRY produces:
+    /// `dir.join("claude")` over `.`, over an empty element and over a
+    /// bare directory name.
     #[test]
-    fn a_cached_binary_path_must_look_like_something_a_probe_could_have_said() {
+    fn a_resolved_binary_path_must_look_like_something_a_probe_could_have_said() {
         let adapter = super::super::adapter::planner_adapter();
         for (path, expected) in [
-            ("", CachedPathRejection::Empty),
-            ("claude", CachedPathRejection::NotAbsolute),
-            ("bin/claude", CachedPathRejection::NotAbsolute),
-            ("./bin/claude", CachedPathRejection::NotAbsolute),
-            ("/opt/bin/../evil/claude", CachedPathRejection::Traversal),
-            ("/opt/./claude", CachedPathRejection::Traversal),
-            ("/../claude", CachedPathRejection::Traversal),
+            ("", ResolvedPathRejection::Empty),
+            ("claude", ResolvedPathRejection::NotAbsolute),
+            ("bin/claude", ResolvedPathRejection::NotAbsolute),
+            ("./bin/claude", ResolvedPathRejection::NotAbsolute),
+            // T-060: exactly what `which_in` builds from a relative PATH
+            // element. The middle row is the EMPTY element — POSIX says
+            // it means the current directory, and `PathBuf::from("")
+            // .join("claude")` is `"claude"`.
+            ("relbin/claude", ResolvedPathRejection::NotAbsolute),
+            ("claude", ResolvedPathRejection::NotAbsolute),
+            ("./claude", ResolvedPathRejection::NotAbsolute),
+            ("/opt/bin/../evil/claude", ResolvedPathRejection::Traversal),
+            ("/opt/./claude", ResolvedPathRejection::Traversal),
+            ("/../claude", ResolvedPathRejection::Traversal),
             (
                 "/opt/homebrew/bin/tattler",
-                CachedPathRejection::WrongName { expected: "claude" },
+                ResolvedPathRejection::WrongName { expected: "claude" },
             ),
-            ("/opt/homebrew/bin/", CachedPathRejection::WrongName { expected: "claude" }),
+            ("/opt/homebrew/bin/", ResolvedPathRejection::WrongName { expected: "claude" }),
             // Absolute, traversal-free, correctly named — and nothing
             // there. The file check is KEPT, not replaced.
-            ("/nonexistent-t047/bin/claude", CachedPathRejection::NotExecutable),
+            ("/nonexistent-t047/bin/claude", ResolvedPathRejection::NotExecutable),
         ] {
             assert_eq!(
-                validate_cached_binary(Path::new(path), adapter),
+                validate_resolved_binary(Path::new(path), adapter),
                 Err(expected.clone()),
-                "cached path {path:?} must be refused as {expected:?}"
+                "resolved path {path:?} must be refused as {expected:?}"
+            );
+        }
+
+        // The joins above are asserted to BE what `which_in` produces,
+        // rather than assumed to look like it — the bug was in the join.
+        for element in [".", "", "relbin"] {
+            let built = PathBuf::from(element).join(adapter.binary);
+            assert_eq!(
+                validate_resolved_binary(&built, adapter),
+                Err(ResolvedPathRejection::NotAbsolute),
+                "a relative PATH element {element:?} joins to {built:?}, which must be refused"
             );
         }
 
@@ -1849,83 +2113,340 @@ mod tests {
             std::fs::write(&good, "#!/bin/sh\nexit 0\n").expect("write");
             std::fs::set_permissions(&good, std::fs::Permissions::from_mode(0o755))
                 .expect("chmod");
-            assert_eq!(validate_cached_binary(&good, adapter), Ok(()));
+            assert_eq!(validate_resolved_binary(&good, adapter), Ok(()));
             // …and the same file with the bit cleared is not.
             std::fs::set_permissions(&good, std::fs::Permissions::from_mode(0o644))
                 .expect("chmod");
             assert_eq!(
-                validate_cached_binary(&good, adapter),
-                Err(CachedPathRejection::NotExecutable)
+                validate_resolved_binary(&good, adapter),
+                Err(ResolvedPathRejection::NotExecutable)
             );
             let _ = std::fs::remove_dir_all(&dir);
         }
     }
 
-    /// T-047 (T-039-s1, second half): THE LOGIN PATH IS NOT CACHED.
+    /// **THERE IS NO CACHE TO POISON (T-060, retiring T-047's).**
     ///
-    /// It used to be written into `agent-paths.json` and read back
-    /// verbatim into the child's `PATH` with no gate whatsoever — not even
-    /// an executable bit, because it is a string — which decides which
-    /// `git` and which `cp` the planner's own Bash resolves to. The arm
-    /// taken is "not cached at all": the field is gone from the struct, so
-    /// there is nothing to trust and nothing a later change can trust by
-    /// accident, and the PATH is re-probed instead (6-8 ms measured,
-    /// against the 47-50 ms `--version` probe the same resolve already
-    /// pays).
+    /// This body replaces `the_resolution_cache_stores_a_path_and_never_a
+    /// _login_path`, and it is a strictly stronger assertion: that test
+    /// pinned WHAT the cache stored, which only matters while a cache
+    /// exists. What is pinned now is that the whole file→exec class is
+    /// gone — no reader, no writer, no invalidator, no config field, no
+    /// serde types, and no mention of the filename anywhere in the
+    /// resolver.
+    ///
+    /// It is a SOURCE assertion because that is the only form that can
+    /// fail for the right reason. A behavioural test ("planting
+    /// `agent-paths.json` changes nothing") passes vacuously against a
+    /// build that reintroduced the cache under a different filename; this
+    /// one fails the moment a reader appears.
     #[test]
-    fn the_resolution_cache_stores_a_path_and_never_a_login_path() {
-        let dir = std::env::temp_dir().join(format!(
-            "nputer-t047-cachefile-{}-{}",
+    fn there_is_no_cache_to_poison() {
+        let source = include_str!("runner.rs");
+        // Everything except this test module, MINUS every comment line.
+        // The retirement is DOCUMENTED in the file it removed the code
+        // from — deliberately, so the next reader does not reintroduce
+        // it — so the words below are expected in prose and forbidden in
+        // code, and only stripping comments can tell the two apart.
+        let code: String = source[..source.find("#[cfg(test)]\nmod tests {").expect("test module")]
+            .lines()
+            .filter(|line| !line.trim_start().starts_with("//"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let code = code.as_str();
+        // The strip is proved to WORK, not assumed: a marker that exists
+        // only inside a comment must be gone, and one that exists only in
+        // code must survive.
+        assert!(!code.contains("PROCESS-LIFETIME memo, never a file"), "comments were not stripped");
+        assert!(code.contains("pub fn resolve_cli"), "the strip ate the code as well");
+
+        for banned in [
+            "agent-paths.json",
+            "fn read_cache",
+            "fn write_cache",
+            "fn invalidate_cache",
+            "fn cache_path",
+            "struct CacheFile",
+            "struct CacheEntry",
+            "config_dir",
+        ] {
+            assert!(
+                !code.contains(banned),
+                "{banned:?} is back in the resolver - T-060 retired the resolved-binary \
+                 cache so that a hostile file has NO path to `Command::new` at all. If a \
+                 cache is genuinely needed again, criterion 2 already ruled its shape: a \
+                 PROCESS-LIFETIME memo, never a file."
+            );
+        }
+
+        // The ruling on what a future cache may look like must stay
+        // WRITTEN DOWN in this file — in prose, which is why it is
+        // asserted against the unstripped source.
+        assert!(
+            source.contains("PROCESS-LIFETIME memo, never a file"),
+            "the ruling on what a future cache may look like must stay in the file"
+        );
+        // `serde_json` survives elsewhere in the crate; what must not is
+        // any serde type in the RESOLVER, which existed only to give the
+        // cache file a shape. Bounded by CODE landmarks, because the
+        // banner comments are exactly what the strip above removed.
+        let from = code.find("pub enum ResolveError").expect("resolver start");
+        let to = code.find("pub const ENV_ALLOWLIST").expect("allowlist");
+        assert!(from < to, "the resolver landmarks are out of order");
+        assert!(
+            !code[from..to].contains("serde"),
+            "the resolver deserializes something again - the cache was the only reason it ever did"
+        );
+    }
+
+    /// **`$SHELL` DECIDES WHICH PROGRAM RUNS (T-060, T-047-s4).**
+    ///
+    /// Before this, ANY absolute executable named anything was run with
+    /// `-l -c <script>` — and `SHELL` is on `ENV_ALLOWLIST`, so it is
+    /// whatever the launching environment said. The script relies on
+    /// `command -v`, `$PATH` and `&&` behaving the POSIX way, which fish
+    /// does not do for `-l -c`.
+    #[test]
+    fn the_login_shell_is_name_checked_not_merely_executable() {
+        let restore = std::env::var("SHELL").ok();
+
+        // A real, absolute, executable file that is NOT a supported
+        // shell. `/bin/ls` qualifies on every macOS and Linux box and is
+        // exactly the "absolute executable named anything" case.
+        for hostile in ["/bin/ls", "/usr/bin/true", "/bin/cat"] {
+            if !is_executable_file(Path::new(hostile)) {
+                continue;
+            }
+            std::env::set_var("SHELL", hostile);
+            assert_eq!(
+                login_shell(),
+                PathBuf::from("/bin/zsh"),
+                "{hostile} is absolute and executable and must STILL not be run with -l -c"
+            );
+        }
+        // fish is the named case: its `-l -c` differs, so even a real
+        // shell that is not one of the three falls back.
+        std::env::set_var("SHELL", "/opt/homebrew/bin/fish");
+        assert_eq!(login_shell(), PathBuf::from("/bin/zsh"), "fish's -l -c is not ours");
+        // Relative, empty and absent all fall back too.
+        std::env::set_var("SHELL", "zsh");
+        assert_eq!(login_shell(), PathBuf::from("/bin/zsh"), "a relative SHELL is not a program");
+        std::env::set_var("SHELL", "");
+        assert_eq!(login_shell(), PathBuf::from("/bin/zsh"));
+        std::env::remove_var("SHELL");
+        assert_eq!(login_shell(), PathBuf::from("/bin/zsh"));
+
+        // THE DISCRIMINATING HALF: a gate nobody can pass is not a gate.
+        // Each of the three supported names, at a real absolute path, is
+        // honoured rather than overridden.
+        let mut honoured = 0;
+        for good in ["/bin/zsh", "/bin/bash", "/bin/sh"] {
+            if !is_executable_file(Path::new(good)) {
+                continue;
+            }
+            std::env::set_var("SHELL", good);
+            assert_eq!(login_shell(), PathBuf::from(good), "{good} is a shell we support");
+            honoured += 1;
+        }
+        assert!(honoured >= 2, "the discriminating half did not run: {honoured} shells found");
+        // …and it is not passing merely because the fallback IS /bin/zsh:
+        // /bin/bash and /bin/sh are honoured as themselves.
+        assert!(
+            is_executable_file(Path::new("/bin/bash")) || is_executable_file(Path::new("/bin/sh")),
+            "no non-zsh supported shell on this box - the check above cannot discriminate"
+        );
+
+        match restore {
+            Some(value) => std::env::set_var("SHELL", value),
+            None => std::env::remove_var("SHELL"),
+        }
+    }
+
+    /// **NO TEST CAN RESOLVE THE USER'S REAL CLI (T-060, T-047-s6).**
+    ///
+    /// This is the tripwire on the guard itself: `cargo test` runs its
+    /// binaries out of `<target>/<profile>/deps/`, so
+    /// `real_cli_arms_forbidden()` is true for every test in the repo
+    /// with nothing set, exported or remembered. If that ever stops being
+    /// true, THIS test goes red — before some other test quietly spawns
+    /// the developer's `claude` with a planner prompt, which is what
+    /// happened to T-047's verifier.
+    #[test]
+    fn the_real_cli_arms_are_forbidden_from_a_test_binary() {
+        assert!(
+            real_cli_arms_forbidden(),
+            "a test process must never be able to reach the real CLI"
+        );
+        assert!(running_as_cargo_test_binary());
+
+        // **THE OVERRIDE, PINNED WITHOUT MUTATING THIS PROCESS
+        // (T-060-s3).** This body used to `set_var` the guard variable and
+        // put it back. libtest runs these bodies on threads of ONE
+        // process, so that window was visible to every sibling — the shape
+        // that made the INTEGRATION tripwire red 15 times in 15 at
+        // `--test-threads=8`. It was harmless here only because no other
+        // lib unit test happens to read the variable, which is precisely
+        // the argument that failed over there. The decision is a pure
+        // function of (setting, is-test-binary), so both directions of the
+        // override are assertable and nothing global moves.
+        assert!(!guard_decision(Some("0"), true), "an explicit 0 is the smoke's deliberate opt-out");
+        assert!(guard_decision(Some("1"), true));
+        assert!(
+            guard_decision(Some("1"), false),
+            "an explicit 1 forbids even where the derivation would not"
+        );
+        assert!(guard_decision(None, true), "unset falls back to the derived answer");
+        assert!(
+            !guard_decision(None, false),
+            "…and the derived answer is what the shipped APP gets: nothing forbidden"
+        );
+        assert!(
+            guard_decision(Some("true"), true),
+            "an unrecognised value is not a way to lift the guard - only a literal 0 is"
+        );
+        // That the wrapper really reads the VARIABLE rather than deriving
+        // and ignoring it is not assertable here without mutating this
+        // process, so it is pinned behaviourally instead, in a process of
+        // its own, by the integration test's lifted arm.
+
+        // And the derivation is not accidentally true of the shipped app:
+        // a binary run from `<profile>/` or from a bundle is NOT a test.
+        for not_a_test in ["/x/target/debug/nputer", "/A.app/Contents/MacOS/nputer", "/usr/bin/x"] {
+            let parent = Path::new(not_a_test).parent().and_then(|p| p.file_name());
+            assert_ne!(
+                parent,
+                Some(std::ffi::OsStr::new("deps")),
+                "{not_a_test} must not look like a test binary"
+            );
+        }
+        assert_eq!(
+            Path::new("/x/target/debug/deps/agent_runner-1a2b").parent().and_then(|p| p.file_name()),
+            Some(std::ffi::OsStr::new("deps")),
+            "…and a real cargo test binary path must"
+        );
+
+        // **THE DIRECTORY NAMES THAT MEAN "A TEST HARNESS BUILT THIS"
+        // (T-060-s4).** `deps` is cargo's; `rustdoctest<random>` is
+        // rustdoc's, and inside it `cfg!(test)` is FALSE — measured — so
+        // the derivation used to fail OPEN for the one kind of test nobody
+        // would think to check.
+        assert!(is_test_harness_dir(Some("deps")));
+        assert!(
+            is_test_harness_dir(Some("rustdoctestTieiwm")),
+            "a doctest runs out of a `rustdoctest<random>` dir with cfg!(test) false - \
+             a doctest on `resolve_cli` would otherwise reach the developer's own CLI"
+        );
+        for not_a_harness in ["debug", "release", "MacOS", "bin", "target", "rustdoc", "dep", ""] {
+            assert!(
+                !is_test_harness_dir(Some(not_a_harness)),
+                "`{not_a_harness}` is not a test harness directory"
+            );
+        }
+        assert!(!is_test_harness_dir(None), "an unnameable parent is not a test harness");
+    }
+
+    /// **A RELATIVE SEARCH-PATH ELEMENT YIELDS NO CANDIDATE (T-060,
+    /// T-047-s5).**
+    ///
+    /// The lookup is the vulnerable step: `dir.join(binary)` over a
+    /// relative `dir` builds a relative binary path, and `Command::new`
+    /// hands that to the OS, which resolves it against whatever CWD the
+    /// app was launched with. T-047's verifier reproduced the executed
+    /// end of it with a tattler; this pins the refusal at the join.
+    #[test]
+    fn a_relative_search_path_element_finds_nothing() {
+        use std::os::unix::fs::PermissionsExt;
+        let adapter = super::super::adapter::planner_adapter();
+        let root = std::env::temp_dir().join(format!(
+            "nputer-t060-relpath-{}-{}",
             std::process::id(),
             now_ms()
         ));
-        std::fs::create_dir_all(&dir).expect("mk dir");
-        let cache = dir.join("agent-paths.json");
+        let relbin = root.join("relbin");
+        std::fs::create_dir_all(&relbin).expect("mk relbin");
+        let planted = relbin.join("claude");
+        std::fs::write(&planted, "#!/bin/sh\nexit 0\n").expect("write");
+        std::fs::set_permissions(&planted, std::fs::Permissions::from_mode(0o755)).expect("chmod");
 
-        // What we WRITE carries a path and nothing else.
-        write_cache(&cache, "claude", Path::new("/opt/homebrew/bin/claude"));
-        let raw = std::fs::read_to_string(&cache).expect("cache file");
-        let parsed: serde_json::Value = serde_json::from_str(&raw).expect("parses");
-        let entry = &parsed["entries"]["claude"];
-        let keys: Vec<&String> = entry.as_object().expect("object").keys().collect();
-        assert_eq!(keys, vec!["path"], "the written entry carries a path and nothing else");
-        assert!(!raw.contains("login_path"), "no login PATH is ever written: {raw}");
-        assert_eq!(read_cache(&cache, "claude"), Some(PathBuf::from("/opt/homebrew/bin/claude")));
-
-        // What we READ ignores a `login_path` an older build — or an
-        // attacker — left behind. It parses; it is simply unreachable.
-        std::fs::write(
-            &cache,
-            r#"{"entries":{"claude":{"path":"/opt/homebrew/bin/claude","login_path":"/nputer-hostile/bin"}}}"#,
-        )
-        .expect("plant");
+        // THE DISCRIMINATING HALF FIRST, so a `None` below cannot mean
+        // "there was nothing to find": reached ABSOLUTELY, the very same
+        // file IS found.
         assert_eq!(
-            read_cache(&cache, "claude"),
-            Some(PathBuf::from("/opt/homebrew/bin/claude")),
-            "a planted login_path must not stop the entry parsing…"
+            which_in(&relbin.display().to_string(), adapter),
+            Some(planted.clone()),
+            "the absolute spelling of this directory must resolve - otherwise the \
+             relative case below proves nothing"
         );
-        // …and there is no accessor that could return it: `CacheEntry` has
-        // one field. Re-derived from the type rather than asserted about
-        // it — a round trip through the struct drops the planted value.
-        write_cache(&cache, "claude", Path::new("/opt/homebrew/bin/claude"));
+
+        // …and every relative spelling of a search path finds nothing.
+        //
+        // **THE RELATIVE ELEMENT HAS TO RESOLVE TO A REAL FILE OR THIS
+        // ASSERTS NOTHING.** A poison drill caught exactly that: with
+        // `which_in` reverted to its pre-T-060 `is_executable_file`
+        // check, an earlier version of this body stayed GREEN, because
+        // `relbin/claude` did not exist relative to the test's CWD and
+        // the old check refused it for the wrong reason. So the fixture
+        // is planted UNDER THE TEST'S OWN WORKING DIRECTORY, where a
+        // relative lookup genuinely finds it.
+        //
+        // cargo runs test binaries with cwd = the package root, and
+        // `target/` is inside it and gitignored. The assumption is
+        // ASSERTED rather than relied on: if cargo ever changes it, this
+        // test says so instead of quietly going vacuous again.
+        let cwd = std::env::current_dir().expect("cwd");
+        assert_eq!(
+            cwd.file_name().and_then(|n| n.to_str()),
+            Some("src-tauri"),
+            "cargo no longer runs tests from the package root - the relative fixture \
+             below would not resolve and this test would pass for the wrong reason"
+        );
+        let rel_dir = format!("target/nputer-t060-rel-{}-{}", std::process::id(), now_ms());
+        let rel_planted = cwd.join(&rel_dir).join(adapter.binary);
+        std::fs::create_dir_all(cwd.join(&rel_dir)).expect("mk rel dir");
+        std::fs::write(&rel_planted, "#!/bin/sh\nexit 0\n").expect("write");
+        std::fs::set_permissions(&rel_planted, std::fs::Permissions::from_mode(0o755))
+            .expect("chmod");
+        // The bug this pins, stated as a fact about the fixture: reached
+        // as a FILE the planted binary is executable, so the only thing
+        // refusing it below is its relative SHAPE.
         assert!(
-            !std::fs::read_to_string(&cache).expect("re-read").contains("nputer-hostile"),
-            "the planted login_path survived a read-modify-write"
+            is_executable_file(Path::new(&format!("{rel_dir}/{}", adapter.binary))),
+            "the relative fixture must be executable through a relative path - \
+             otherwise `is_executable_file` refuses it and the gate is untested"
         );
 
-        // The PATH's source is the probe channel, not the file. Under the
-        // seam (`probe_login_shell: false`, which every suite sets so no
-        // test can spawn a shell) that channel is `path_override`.
-        let cfg = RunnerConfig {
-            probe_login_shell: false,
-            path_override: Some("/t047-fresh/bin".into()),
-            ..RunnerConfig::default()
-        };
-        assert_eq!(probe_login_path(&cfg), Some("/t047-fresh/bin".to_string()));
-        let cfg = RunnerConfig { probe_login_shell: false, ..RunnerConfig::default() };
-        assert_eq!(probe_login_path(&cfg), None, "no seam, no shell, no PATH");
+        for hostile in [rel_dir.as_str(), ".", "", "relbin:.", ":/nonexistent-t060"] {
+            assert_eq!(
+                which_in(hostile, adapter),
+                None,
+                "search path {hostile:?} produced a candidate; a relative element must not"
+            );
+        }
+        let _ = std::fs::remove_dir_all(cwd.join(&rel_dir));
+        // A hostile element must not poison an otherwise good search
+        // path either — the search CONTINUES past a refusal.
+        assert_eq!(
+            which_in(&format!(".:relbin:{}", relbin.display()), adapter),
+            Some(planted.clone()),
+            "a refused element must be skipped, not fatal"
+        );
 
-        let _ = std::fs::remove_dir_all(&dir);
+        // `which_on_path` is the SAME lookup over the app's own `PATH` —
+        // asserted from the source rather than argued, because the whole
+        // finding is that these two producers held different standards.
+        let source = include_str!("runner.rs");
+        let body_start = source.find("fn which_on_path(").expect("which_on_path");
+        let body = &source[body_start..source.find("fn which_in(").expect("which_in")];
+        assert!(
+            body.contains("which_in(&std::env::var(\"PATH\").ok()?, adapter)"),
+            "which_on_path must delegate to the gated which_in: {body}"
+        );
+        assert!(
+            body.contains("real_cli_arms_forbidden()"),
+            "…and must be behind the no-real-CLI guard"
+        );
+
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]

@@ -426,14 +426,18 @@ pub fn run() {
             app.manage(WatchState::new(project_dir, seq, ctl));
 
             // T-025: the agent runner. Its one event channel is
-            // `genesis-turn` (the `docs-changed` precedent); the app's
-            // config dir is where the resolved-binary cache lives — the
-            // webview never learns or supplies either.
+            // `genesis-turn` (the `docs-changed` precedent); the webview
+            // never learns or supplies it.
+            //
+            // **T-060: the config is now the DEFAULT, with nothing
+            // overridden.** It used to carry `config_dir` — the app
+            // config dir, which is where the resolved-binary cache lived.
+            // That cache is retired, so the runner holds no durable state
+            // outside `.nputer/` at all and there is nothing for the
+            // shell to hand it. Resolution is a probe or a typed
+            // not-found.
             let agent_emit = app.handle().clone();
-            let agent_cfg = agent::runner::RunnerConfig {
-                config_dir: app.path().app_config_dir().ok(),
-                ..agent::runner::RunnerConfig::default()
-            };
+            let agent_cfg = agent::runner::RunnerConfig::default();
             app.manage(AgentState::new(agent_cfg, move |event| {
                 if let Err(err) = agent_emit.emit(agent::GENESIS_EVENT, event) {
                     eprintln!("[nputer] agent: emit failed: {err}");

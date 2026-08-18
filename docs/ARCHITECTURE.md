@@ -117,42 +117,90 @@ ADR-014/015).
   remount, because `refreshGenesisStatus` rebuilds phase/turn/session but
   never `turns` (T-029's rehydration).
 - Resolving the agent CLI (disk → `execve`) — the boundary the Genesis
-  bullet above does not describe, and since T-047 the one with a gate
-  on it. Before any turn can spawn, `resolve_cli` decides WHICH
-  `claude` runs, and it reads that from a file OUTSIDE the project:
-  `agent-paths.json` in the app config dir — the app's only durable
-  state that is not under `.nputer/`, so the `.nputer/` list above is
-  not the whole disk footprint. It is read live at both doors
-  (`start_genesis` and `send_turn`), i.e. re-judged before EVERY turn
-  rather than trusted once. What T-047 changed is that its contents
-  are no longer believed: a cached path is validated — absolute, no
-  `.`/`..` component, file name == the adapter's binary, executable —
-  BEFORE `Command::new` and before the `--version` probe, and a
-  failure discards the entry, says so on stdout with the refused path
-  sanitized, then falls through to a fresh probe and to typed
-  `cliNotFound`; never a silent fallback to the poisoned value. The
-  cached login `PATH` is GONE rather than gated: the field no longer
-  exists on the struct, so a planted value still parses and is
-  structurally unreachable, and the child's PATH is re-probed per
-  resolve instead. That arm was chosen by measurement, not taste (a
-  login-shell probe is 4.8–7.7 ms against the 41–57 ms
-  `claude --version` the same resolve already paid), and it means a
-  turn is not one process: the turn's own child is still exactly one,
-  and the resolve ahead of it spawns a login shell and a version
-  probe. Note what that probe reads: the CHILD's environment is still
-  built rather than inherited (the `env_clear()` claim above is
-  unchanged and still true), but the RESOLVER reads the app's own
-  environment — `$SHELL` picks the program run with `-l -c`, and the
-  fallback arm reads `PATH` — so "nothing is read from the
-  environment" is true of `RunnerConfig` and false of the two
-  functions beside it (T-047-s4). TWO honest residuals, both filed and
-  both recorded in the validator's own header: the gate checks SHAPE
-  and never identity, so an absolute traversal-free file named
-  `claude` still passes (there is no `canonicalize`, so a symlink or a
-  swapped file is enough, and no race is needed — T-047-s1), and the
-  FRESHLY-PROBED path is exempt
-  from the gate the cached one must pass, which leaves two doors
-  holding one standard between them (T-047-s5).
+  bullet above does not describe. Before any turn can spawn,
+  `resolve_cli` decides WHICH `claude` runs. **Since T-060 it decides
+  that from a PROBE it just ran, and from nothing else.** The order is
+  the test seam, then one probe, then typed `cliNotFound`; there is no
+  third source and in particular there is no file.
+  **`agent-paths.json` IS GONE** — T-047 gated that cache, T-060 RETIRED
+  it: `CacheFile`, `CacheEntry`, `read_cache`, `write_cache`,
+  `invalidate_cache`, `cache_path` and `RunnerConfig::config_dir` are
+  all deleted, so the app now holds NO durable state outside `.nputer/`
+  at all and the whole file→exec class stops existing rather than being
+  narrowed. Three reasons, in the order established: the file's stated
+  justification was already false (it existed "so the login-shell probe
+  runs once per install rather than once per turn", but T-047 stopped
+  caching the login PATH, so the shell was spawned on every resolve
+  regardless — the cache saved nothing it claimed to); the probe returns
+  the binary path and the login PATH in the SAME spawn; and the cost was
+  measured — **3.7–7.8 ms, median 4.0** for the login-shell probe against
+  **39–42 ms, median 40** for the `claude --version` probe the same
+  resolve runs unconditionally. Retiring it also deleted
+  `probe_login_path`, whose only caller was the cache-hit arm, so a
+  resolve can no longer spawn the user's login shell twice.
+  **ONE GATE NOW HOLDS EVERY DOOR** (T-047-s5). `validate_resolved_binary`
+  — absolute, no `.`/`..` component, file name == the adapter's binary,
+  executable — is applied inside `which_in` to every candidate a search
+  path produces AND again to whatever the login shell's `command -v`
+  printed, BEFORE `Command::new` and before the `--version` probe. T-047
+  applied it only to the cached path, so the same function called
+  `relbin/claude` `NotAbsolute` and discarded it while the probe arm
+  EXECUTED it: `which_on_path` reads the app's inherited `PATH` and hands
+  each element to `which_in`, which does `dir.join(binary)`, so a
+  relative element (`.`, an empty element meaning CWD, a bare directory
+  name) produced a relative binary path that the OS resolved against
+  whatever CWD the app was launched with. A failure is now treated as
+  "this probe found nothing": the search continues past a refused
+  element, and a refused final answer falls to typed `cliNotFound` with
+  a sanitized line on stderr. Nothing is executed on the way to
+  refusing.
+  **THE RESOLVER DOES READ THE ENVIRONMENT, and the docs now say so**
+  (T-047-s4). The CHILD's environment is still built rather than
+  inherited (`env_clear()` plus the allowlist — that claim is unchanged
+  and still true), but the resolver reads exactly three variables of the
+  APP's own environment, listed in `RunnerConfig`'s doc comment and
+  pinned by a test that re-derives them from the source: `SHELL` picks
+  the program run with `-l -c`, `PATH` is the fallback search list, and
+  `NPUTER_NO_REAL_CLI` is the guard below. "Production reads nothing
+  from the environment" was true of the CONFIG and false of the RESOLVER
+  two functions away, and a reader of that pin would not have guessed
+  it. **`$SHELL` is also NAME-CHECKED now** against `zsh`, `bash` and
+  `sh` — the three whose `-l -c` semantics the script actually relies on,
+  fish's differing — falling back to `/bin/zsh`; before T-060 any
+  absolute executable named anything was run with `-l -c <script>`.
+  **NO TEST CAN RESOLVE THE USER'S REAL CLI, STRUCTURALLY** (T-047-s6).
+  The property used to live in a `RunnerConfig` field every test had to
+  remember, with `..RunnerConfig::default()` as the idiom and the default
+  `true`, **and it failed**: T-047's verifier spawned the developer's
+  real `claude` with the genesis planner prompt from `cargo test`. Now
+  `resolve_cli` refuses the login-shell and `which_on_path` arms whenever
+  `real_cli_arms_forbidden()` says so — `NPUTER_NO_REAL_CLI=1` forbids,
+  `=0` permits, and UNSET is DERIVED: forbidden iff the process is a
+  cargo test binary, which cargo runs out of `<target>/<profile>/deps/`
+  — or a rustdoc DOCTEST, which runs out of a `rustdoctest<random>` temp
+  dir with `cfg!(test)` false and used to fail OPEN (T-060-s4, closed).
+  Nothing has to be set, exported or wrapped, so a test file written next
+  year inherits the refusal, doctests included. A `.cargo/config.toml`
+  `[env]` entry was considered and rejected because it would have reached
+  the human's DEVELOPMENT APP, which would then have stopped finding their
+  CLI — and the mechanism is not the obvious one (T-060-s5): `tauri dev`
+  is NOT `cargo run`, it is `cargo build` plus a direct spawn with no
+  cargo process in the tree, but the tauri CLI reconstructs cargo's run
+  environment for the binary it spawns and `[env]` rides along, measured
+  reaching the dev app against a no-cargo control. The one `#[ignore]`d,
+  env-gated real smoke opts out in one line. **The proof that the guard
+  refuses runs in CHILD PROCESSES** rather than by lifting the variable
+  in-process (T-060-s3): a lift window in a binary libtest runs on many
+  threads made the guard's own tripwire red at CI's thread count.
+  A turn is still not one process: the turn's own child is exactly one,
+  and the resolve ahead of it spawns a login shell and a version probe.
+  **ONE honest residual remains**, recorded in the validator's own
+  header: the gate checks SHAPE and never IDENTITY, so an absolute,
+  traversal-free file named `claude` pointing at an attacker's binary
+  still passes — there is no `canonicalize`, so a symlink or a swapped
+  file is enough and no race is needed. Its precondition is write access
+  to a directory already on the user's PATH. T-047's second residual —
+  the freshly-probed path being exempt from the gate — is CLOSED.
 - Test surfaces (DEV, browser-only) — part of what the app exposes, so
   named here rather than left to be discovered in the source. THREE
   harnesses hang off `window` in a browser DEV build since T-027 added
