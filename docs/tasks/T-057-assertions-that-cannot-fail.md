@@ -15,8 +15,9 @@ verified_by:
 review:
 ---
 
-Absorbs: T-027-s4, T-049-s3 (triage 2026-08-17). The suggestion files
-are removed in the same commit as this card.
+Absorbs: T-027-s4, T-049-s3 (triage 2026-08-17), T-063-s7, T-063-s4
+and T-062-s5 (architect triage 2026-08-18). The suggestion files are
+removed in the corresponding triage commits.
 
 THIS IS A PATTERN, NOT TWO FINDINGS. In one night the pipeline caught
 SIX assertions that cannot fail — T-049's retired "stops listening
@@ -35,51 +36,56 @@ to red (133-for-133 at T-027) — and is written down nowhere. Ratifying
 that practice is **T-054's** criterion; this card fixes what it found.
 
 ## Acceptance criteria
-- THE `interview-model.test.ts` marquee test SHALL compare two
-  genuinely different inputs: `byPlanner` built from a script that
-  DOES carry planner events (a `started` + `completed` whose text
-  names the file) and `byHuman` from one that carries none, asserting
-  the two chip maps are equal. Today both sides are the same pure
-  function called with byte-identical arguments, so the line asserts
-  determinism and is deletable with the suite green (T-027-s4).
-- THE `bank()` helper SHALL stop being a hand-copy of
-  `InterviewChat`'s effect: either export the observation step from
-  `interview-model.ts` as a pure `observeBanking(baseline, docs,
-  active, chips) -> { baseline, chips }` called by BOTH, or drop
-  `bank()` and drive its eight cases through the real effect in the
-  DOM suite. It has ALREADY drifted by the project-switch clause
-  (`state.seq > baseline.seq` against the chat's
-  `docs.seq > baseline.current.seq || docs.projectDir !== …`)
-  (T-027-s4).
-- THE accelerator hook's four advertised properties SHALL each gain a
-  test that KILLS its mutant — verified by performing the deletion
-  and watching it red, with the four mutants recorded in notes:
-  (1) the unmount cleanup (`removeEventListener` in the effect's
-  return, `accelerators.ts:188`); (2) "an absent entry is left
-  completely alone" (`preventDefault` must stay BELOW the
-  `run === undefined` return, :182–184); (3) the table is re-read on
-  every render (the `latest.current = table` effect, :174–175);
-  (4) "added once, removed once" (the registration effect's `[]`
-  deps). Every one is deletable today with the suite green
-  (T-049-s3).
-- (2) IS THE LOAD-BEARING ONE and the notes SHALL say why: today
-  `App` always supplies both entries so the mutant is unobservable —
-  the moment a screen is handed a PARTIAL table, this is the
-  difference between politely declining a chord and silently
-  swallowing a key the app does not handle. T-027 already hands the
-  interview screen a scoped table.
+- THE test-only banking replay SHALL stop hand-copying `InterviewChat`'s
+  effect. Export one pure observation transition from `interview-model.ts`
+  that owns baseline advancement, project-switch rebaselining, per-turn
+  merge, sorting and deduplication; BOTH the shipped chat and tests SHALL use
+  it. No second banking loop may remain.
+- THE transition SHALL pin the missing project-switch sequence: switch from
+  project A to B without producing chips, then change B and produce chips
+  only for the later B change. Removing project-directory rebaselining SHALL
+  fail this test.
+- THE `byPlanner === byHuman` tautology and its "sharpest proof" wording SHALL
+  be removed. The app has no authorship signal. The honest disk-only property
+  is the conjunction of a positive (a docs snapshot during an active turn
+  produces a chip) and the existing negative (model activity/text over an
+  unchanged tree produces none).
+- THE accelerator hook SHALL gain the two mechanism pins still missing:
+  unmount then dispatching its chord does not call the action; and rerendering
+  with fresh table identities registers exactly once while mounted and removes
+  exactly once on unmount. Deleting cleanup or changing `[]` to `[table]`
+  SHALL red those tests.
+- THE two accelerator properties already closed by T-027 SHALL stay pinned,
+  not gain duplicate tests: moving `preventDefault` above the absent-entry
+  return and deleting the latest-table refresh each already red the scoped
+  command tests.
 - THE `trackKeydownPaths` comment in `accelerators.test.tsx` SHALL be
   corrected: it says it records "every live keydown listener in the
   app, whichever target it is on" and it patches `window` and
   `document` only. A comment correction, not a test (T-049-s3's
   closing note).
-- EVERY test this task adds SHALL be poisoned and shown red before it
-  is shown green, and the poison/restore evidence SHALL be in the
-  notes — a card about assertions that cannot fail may not ship one.
+- THE stale-pull test in `startup-recovery.test.ts` SHALL prove the re-arm
+  occurred with exact `listenCalls === 2`, `invokeCalls === 1`, plus its
+  existing one-echo outcome. A rejected initial subscribe never invokes
+  `docs_snapshot`; the suggestion's proposed two invokes was false. Deleting
+  the post-pick re-arm block SHALL red this exact test.
+- `startup-screen.test.tsx` SHALL dynamically import `isTauriRuntime` beside
+  its other store value import and assert it is true before rendering. A
+  temporary top-level value import of the store SHALL red this legible
+  tripwire rather than silently changing the file's runtime.
+- EVERY test this task adds or changes SHALL be poisoned and shown red before
+  green, with restore evidence in the notes. Prefer changing only the expected
+  value while the actual expression and matcher stay fixed. A matcher change
+  counts only if the observed value cannot satisfy the new relation;
+  widenings such as `arrayContaining`, `.not` and loosened inequalities are
+  not evidence.
 
-Verification: headless — `npx vitest run` + `npx tsc --noEmit` from
-app/, with the six mutants (four hook + the tautology + the drifted
-helper) each demonstrated red. @human: none.
+Verification: headless — app build/types/full vitest, with seven mechanism
+mutants demonstrated red: project rebaseline, cleanup, registration deps,
+absent-entry ordering, latest-table refresh, post-pick re-arm, and premature
+store value import. Every changed assertion also gets an expected-value-only
+poison. Boot and graph gates fire because shipped TypeScript moves. @human:
+none.
 
 ## Implementation notes
 

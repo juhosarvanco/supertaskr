@@ -183,25 +183,42 @@ The final bare Rust suite was rerun after restoration and stayed green.
 
 ## In progress / broken right now
 
-No task is building or verifying after this checkpoint. T-060's five
-finding cards remain `status: suggested` as historical records of the
-first build and verification; s1 through s5 are closed in the parent
-task and do not need separate implementation lanes.
+No task is building or verifying at this architect checkpoint. T-060's five
+finding cards remain `status: suggested` as historical records of its first
+build and verification; s1 through s5 are closed in the parent task and do
+not need separate implementation lanes.
 
-T-062's five suggestions remain untriaged. The sharpest functional item
-is T-062-s3: enough parse errors outside `board-scroll` can grow the page
-and scroll the shell chrome away again. T-062-s4 is the adjacent map
-interaction question: native overflow and wheel panning can double-move
-on the X axis. T-063-s2 remains the cross-language event-name gap:
-`startup-failed` is still two literals with no join.
+T-062-s3 is no longer a ghost. Architect triage promoted it to **T-066**:
+the parse-error list remains an unbounded sibling above `board-scroll`, and
+an independent current-head browser reproduction still reopens page scroll
+and collapses the board. The count is message-wrap dependent; the invariant
+is not. T-066 keeps short diagnostics outside the board and gives the list a
+token-backed ceiling plus its own scroll.
+
+T-043, T-056, T-057 and T-058 were re-derived before dispatch rather than
+trusted from older line numbers. T-056 now covers both live and T-029
+rehydrated turn identity. T-057 absorbed T-063-s7, T-063-s4 and T-062-s5 and
+corrected two stale premises. T-058's P5 control-byte corpus now includes the
+docs/method/root records succession depends on. T-043 remains planned but is
+not in the immediate wave: an early direct-child reap must not abandon a
+resistant same-group grandchild, the old card claimed a fixture that does not
+exist, and its honest touch set includes app-shell.
+
+Still untriaged after this bounded pass: T-062-s4, the map's horizontal
+wheel/native-scroll double movement, and T-063-s2, the four cross-language
+event names with no mechanical join.
 
 ## Next up
 
-1. Triage T-062-s3 and T-062-s4, then T-063-s2. Promote only from this
-   checkpoint so new lanes inherit a current graph.
-2. Select a non-overlapping planned lane. The standing queue still
-   favours T-055 in `lib-parser`, with T-057/T-058 and T-065 nearby.
-3. Run the human-owned authenticated genesis below. Milestone 3's task
+1. Dispatch one conflict-free wave from the checkpoint that follows this
+   triage: T-066 (`app-shell`, `tools/e2e`), T-055 (`lib-parser`) and T-056
+   (`app-interview`). T-057/T-058 wait because each overlaps T-066; T-043
+   waits because its corrected touch set includes app-shell.
+2. Integrate serially after fresh verification, regenerating the graph for
+   each indexed TypeScript merge and firing boot for shipped app changes.
+3. Triage T-062-s4 and T-063-s2 before selecting the following wave. T-057
+   and T-058 can then run together once T-066 releases their components.
+4. Run the human-owned authenticated genesis below. Milestone 3's task
    work, including resolver hardening, is through the pipeline; the
    product evidence is not.
 

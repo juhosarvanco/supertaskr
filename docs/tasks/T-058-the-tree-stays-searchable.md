@@ -73,18 +73,23 @@ moment T-034-s5 named to add the gate: before the next one.
   containing a literal control byte would trip the gate it is testing
   and would itself be unsearchable — T-034 hit exactly this writing
   its own gate.
-- THE walk SHALL cover the whole searchable corpus the lint already
-  reaches (`app/src/**`, `app/test/**`, `tools/e2e/**`) and SHALL be
-  widened to `lib/parser/src/**`; all four trees are clean today, so
-  it lands green and the notes SHALL record the scanned file count
-  before and after.
-- THE COVERAGE GAP SHALL BE NAMED even though it is out of scope:
-  this gate walks source trees, and the reproduction rate is highest
-  in `docs/**` — STATE.md, task cards and suggestion files, written by
-  agents quoting escapes as prose. Three of the thirteen instances are
-  markdown. Whether `docs/**` joins the walk is a scope call for the
-  architect; the notes SHALL state which trees are covered and which
-  are knowingly not, so nobody reads a green lint as a clean repo.
+- THE extracted module SHALL expose TWO explicit corpora. The TOKEN corpus
+  keeps the current UI-relevant roots and adds `lib/parser/src/**`; P1–P4 run
+  only over that masked source. The CONTROL corpus SHALL cover all tracked
+  first-party text and P5 alone SHALL read its raw bytes. Tailwind/token rules
+  SHALL NOT be applied to prose, parser or Rust files.
+- ARCHITECT RULING (2026-08-18): the CONTROL corpus SHALL include `docs/**`,
+  `method/**`, root records, `.github`, app/parser Rust and TypeScript,
+  scripts, JSON/TOML/YAML, HTML/CSS/text and lockfiles, while excluding binary
+  assets and generated/dependency directories. Leaving records out would omit
+  the highest-incidence surface and violate succession: these are the files
+  agents search to recover the project. At checkpoint `7d94043` the proposed
+  tracked-text whitelist is 518 files (app 221, docs 189, lib 49, tools 32,
+  method 22, root 4, `.github` 1); re-derive rather than pin those counts.
+- P5 SHALL report a true BYTE offset derived from a `Buffer`, not a JavaScript
+  UTF-16 string index. The lint SHALL report TOKEN and CONTROL corpus counts
+  separately so a green token scan cannot be mistaken for whole-tree control
+  coverage.
 - THE standing C0 check T-034 added over `app/src/architecture/**`
   (`map-tasks-lens-dom.test.tsx:573`) SHALL be kept exactly as it is —
   it works, it names codepoint and offset, and it is proven by
@@ -109,9 +114,11 @@ moment T-034-s5 named to add the gate: before the next one.
   sentence replaced by T-034-s6's measured table, so the durable
   record names the mechanism that actually failed.
 
-Verification: headless — `npm run lint:tokens`, `-- --selftest`, and
-a PLANTED literal control byte in each covered tree shown red then
-reverted (`shasum -c` clean). @human: none.
+Verification: headless — `npm run lint:tokens`, `-- --selftest`, and a
+runtime-constructed planted control byte in every CONTROL-corpus root shown
+red then reverted (`shasum -c` clean). Plant representative non-ASCII text
+before it to prove the reported byte offset is not a UTF-16 index. @human:
+none.
 
 ## Implementation notes
 

@@ -4,10 +4,10 @@ title: The kill path — an honest grace and an honest scope
 feature: F-03
 milestone: 3
 priority: 6
-size: S
+size: M
 status: planned
 blocked_by: []
-touches: [app-agent]
+touches: [app-agent, app-shell]
 builder:
 verifier:
 built_by:
@@ -20,61 +20,60 @@ properties of the same twenty lines (`terminate_group`/`pid_alive`,
 runner.rs:573-630) and both were re-derived by T-025's verifier rather
 than argued. One is latency the user feels on two paths; the other is
 a sentence in the plan that is wider than the mechanism can be.
-Serialize app-agent BEHIND T-039, which is building on the same
-component.
-
-Verified despite the S size: the kill contract is what ADR-002's
-"killing anything is safe" cashes out to, and a poll that cannot exit
-early is the kind of defect that reads as correct. Executor +
-adversarial verifier.
+Re-derived after T-060 at checkpoint `7d94043` (architect triage
+2026-08-18). The defect remains, but the original S card under-scoped the
+proof: T-060 moved lines rather than kill semantics; the app-exit claim also
+lives in `lib.rs`; and no permanent SIGTERM-resistant fixture exists. This is
+M ceremony: executor, fresh adversarial verifier, integrator.
 
 ## Acceptance criteria
-- WHEN a turn's child dies promptly after SIGTERM THE grace SHALL end
-  when the child is REAPED, not when the grace expires: the poll
-  learns the reap (`child.try_wait()` in the escalation loop, or a
-  reaped-predicate passed into `terminate_group`), leaving the
-  pid-only `kill(pid, 0)` form where it is the right probe. Today
-  `pid_alive` is true for a ZOMBIE and `run_turn` only calls
-  `child.wait()` AFTER `terminate_group` returns, so the full grace is
-  always paid. The verifier's measurement is the failing→passing pin:
-  `VGRACE: grace=3s latch free after 3.035s (child dies on first
-  SIGTERM)` — after the fix the latch SHALL free well inside the
-  grace (T-025-s7).
-- WHEN the app quits mid-turn THE main thread SHALL NOT hold for the
-  full grace when the child is already dead: `reap_for_exit`'s path
-  exercises the same reaped-aware poll, pinned through its existing
-  seam. Production `kill_grace` is 5 s and this is ~5 s of dead app on
-  every quit-mid-turn (T-025-s7).
-- THE SIGTERM→SIGKILL escalation SHALL be unchanged for a child that
-  ignores SIGTERM — still SIGKILLed after the full grace and reaped
-  with no zombie — and `terminate_group_async`'s background thread
-  SHALL keep its current semantics; the existing kill tests stay
-  green.
-- THE kill guarantee SHALL be stated at its true scope: T-025 §5's
-  sentence SHALL read "no orphaned grandchildren THAT STAY IN THE
-  GROUP", and its silences list SHALL name the `setsid()` escapee
-  beside the SIGKILL-of-app orphan already there, with the verifier's
-  measurement transcribed (`child_alive=false escapee_alive=true
-  child_pid=72417 escapee_pid=72418 escapee_pgid=72418`) so the next
-  reader gets evidence rather than a claim. Documentation only — no
-  descendant sweep is built (T-025-s5).
-- A DESCENDANT SWEEP SHALL be recorded as a deliberate non-goal: the
-  only reliable window is BEFORE the kill (after the direct child dies
-  the escapee is reparented and the chain is gone), and exposure is
-  nil while no allowlisted verb daemonizes. Revisited by whichever
-  task first widens the Bash allowlist (T-025-s4, parked).
-- THE T-025 plan-text off-by-one SHALL be corrected in the same sweep:
-  §3's "(13 files, ~60 KB)" parenthetical SHALL read 14, matching the
-  enumeration the snapshot actually ships and the parity walk pins —
-  no test encodes the wrong number, so this is truth maintenance, not
-  a fix (T-025-s3, first half).
+- WHEN a turn's direct child cooperates with SIGTERM THE child-owning path
+  SHALL reap it DURING the grace poll rather than after `terminate_group`
+  returns, and the turn latch SHALL release well inside the configured grace.
+- EARLY release SHALL require BOTH the direct child reaped and its process
+  group empty. If the child exits but a same-group grandchild ignores SIGTERM,
+  the poll SHALL continue through the full grace and SIGKILL the survivor; a
+  naive `child.try_wait()` followed by return is a regression.
+- WHEN the direct child itself ignores SIGTERM THE system SHALL wait the full
+  grace, SIGKILL it, reap it and leave no zombie.
+- WHEN the app exits mid-turn with a cooperative group `reap_for_exit` SHALL
+  complete well inside the grace through coordination with the worker that
+  owns `Child`; production grace remains five seconds.
+- `genesis_cancel` SHALL still return promptly, send SIGTERM synchronously,
+  and retain background escalation. Concurrent cancel, exit and Drop
+  observations SHALL remain idempotent.
+- PERMANENT fake-agent scenarios and timing pins SHALL cover cooperative
+  child/group, resistant direct child, and cooperative child plus resistant
+  same-group grandchild. Tests SHALL own exact PIDs/process groups and SHALL
+  guarantee cleanup even when an assertion or poison drill fails. The notes
+  SHALL NOT claim the pre-task suite already covered resistant processes.
+- THE kill guarantee SHALL be corrected everywhere it is live, not only in
+  T-025 §5: T-025's acceptance/§5/silences, `agent/mod.rs`, `runner.rs` and
+  `lib.rs` SHALL all say no orphaned descendants THAT STAY IN THE GROUP.
+  Record the existing `setsid()` escapee measurement
+  (`child_alive=false escapee_alive=true child_pid=72417
+  escapee_pid=72418 escapee_pgid=72418`).
+- A DESCENDANT sweep SHALL remain a deliberate non-goal. The selected CLI can
+  create a new session and ancestry becomes undiscoverable after reparenting;
+  the narrower current fact is that no planner-granted Bash pattern
+  intentionally daemonizes. Revisit when that allowlist widens.
+- THE T-025 plan-text off-by-one SHALL be corrected: §3's `(13 files, ~60 KB)`
+  SHALL read 14, matching `KIT_FILES` and the parity walk.
+- T-060's safety boundary SHALL hold during every test: no process-global
+  mutation of `NPUTER_NO_REAL_CLI`, no ignored real smoke, no real CLI/model
+  call, and no network. Use `binary_override`, the fake CLI and structural
+  guard.
+- EVERY new/changed test body SHALL be poisoned and shown red; process cleanup
+  SHALL happen before deliberate failure or through an RAII guard, and all
+  recorded PIDs SHALL be proven gone afterwards without broad `pkill`.
 
-Verification: headless — cargo tests against the fake CLI, including a
-timing assertion on the prompt-death path. No real model calls, no
-network. @human: the `tauri dev` quit-the-app orphan check already on
-the visual list gains its answer here — after this task the ~5 s hang
-should be gone, and the human's check becomes a confirmation rather
-than a tolerance.
+Verification: headless — bare cargo tests against the fake CLI plus repeated
+timing bodies at test-thread counts 1, 4 and 8. Use a comfortably large grace
+and broad relative bounds; prove old terminate-before-wait ordering reds the
+prompt-death pins. Run offline audit and the boot gate because Rust app files
+move. Graph regen does not fire unless an indexed TS/JS file moves. No real
+model call or network. @human: the quit-mid-turn check becomes confirmation
+rather than tolerance.
 
 ## Implementation notes
 
