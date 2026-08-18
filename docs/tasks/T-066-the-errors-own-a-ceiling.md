@@ -5,12 +5,12 @@ feature: F-02
 milestone: 4
 priority: 23
 size: M
-status: planned
+status: verifying
 blocked_by: [T-062]
 touches: [app-shell, tools/e2e]
-builder:
+builder: codex/gpt-5 @fresh
 verifier:
-built_by:
+built_by: codex/gpt-5 @fresh
 verified_by:
 review:
 ---
@@ -83,5 +83,58 @@ three viewport measurements before and after, including page, column, details
 and board `scrollHeight/clientHeight`. @human: none.
 
 ## Implementation notes
+
+2026-08-18 — codex/gpt-5 @fresh
+
+- Kept `parse-error-details` exactly where it was, as a sibling before
+  `board-scroll`, and added only `max-h-48 overflow-y-auto` to its existing
+  class list. The same `failures` and `skipped` maps still render every row;
+  no issue text, counts, last-valid wording, parser path, token, IPC surface,
+  capability, Rust file or manifest moved.
+- Reproduced before the production edit with this repository's normal board
+  plus sixty task files that the real parser rejects for missing frontmatter.
+  At 1280x840 / 1024x700 / 800x600 respectively: page and bounded-column
+  scroll heights were **1376 / 1376 / 1376** against client heights
+  **840 / 700 / 600**; details were **1220/1220** (`scrollHeight/clientHeight`),
+  `overflow-y: visible`; board was **5695/30** at all three viewports. The
+  focused shell-frame unit probe also failed on the absent `max-h-48`.
+- After the edit, the same three measurements were: page **840/840 · 700/700
+  · 600/600**; column **840/840 · 700/700 · 600/600**; details
+  **1220/190** at each size, with a **192px border box** (the two 1px borders
+  explain the 190px client area) and `overflow-y: auto`; board **5695/524 ·
+  5695/384 · 5695/284**. `window.scrollY` stayed 0, the final diagnostic row
+  was fully reachable after scrolling the details list, and subsequent board
+  scrolling left the wordmark and pane rail in view. A one-error control is
+  below 192px with `scrollHeight === clientHeight`, proving `auto` adds no
+  inner overflow below the ceiling.
+- Extended the shell-frame unit's real parse-failure state to pin the token
+  class, overflow owner and sibling relationship. Extended the E2E
+  every-screen matrix from five clean screens to include a board with sixty
+  real parse failures, and added the full three-viewport geometry,
+  reachability and independent-scroll probe. The full lane is now **83/83**.
+- Poison discipline: **3/3 affected test behaviors red** under one-sided
+  relation breaks — unit `max-h-48` ownership changed to nonexistent
+  `max-h-47`; the every-screen pathological arm required page height
+  `viewport + 1`; the browser token pin required 191px instead of 192px.
+  Restoration SHA-256 matched the pre-drill files exactly:
+  `shell-frame.test.tsx` =
+  `6f58482a0d9f95af5a15a96cb85e8b739da8206d727704d43dacb6b95db981cf`,
+  `shell-frame.spec.ts` =
+  `34af2ed23b17084a2df193d575a6b8c4861d3cc3054d39abcaeaec834da69f94`.
+- Verification gates: app `npx tsc --noEmit` green; production build green
+  (264 modules, CSS 43.95 kB, JS 498.90 kB); sequential post-build Vitest
+  **821/821** green in 42 files. An earlier parallel build/suite attempt was
+  invalid because the bundle-pin tests observed `dist/assets` while Vite was
+  replacing it (12 `no build output` failures); rerunning in the documented
+  build-before-suite order resolved all 12 without a source change.
+  `tools/e2e` typecheck green; token lint clean over 117 files; token selftest
+  **49 samples + 14 walk-policy checks** green; full Playwright **83/83**
+  green with one worker, retries 0 and no skips on scratch port 17665.
+- Boot gate fired because `app/src/**` moved. With scratch port 17666 it
+  exited 0, detected `[nputer] project folder:
+  /Users/ujju/Projects/nputer-T-066` and `[nputer] window "main" created`,
+  then stopped its process tree. The executor did not regenerate the graph;
+  the task card assigns that indexed-TypeScript checkpoint work to the
+  integrator.
 
 ## Verdicts

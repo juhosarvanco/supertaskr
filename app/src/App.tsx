@@ -681,7 +681,7 @@ function App() {
           {(failures.length > 0 || skipped.length > 0) && (
             <ul
               data-testid="parse-error-details"
-              className="mx-6 mb-3.5 flex flex-col gap-1 rounded-lg border border-status-rejected-border bg-status-rejected p-3 text-xs"
+              className="mx-6 mb-3.5 flex max-h-48 flex-col gap-1 overflow-y-auto rounded-lg border border-status-rejected-border bg-status-rejected p-3 text-xs"
             >
               {failures.map((f) => (
                 <li key={f.path} className="font-mono text-status-rejected-foreground">
@@ -709,7 +709,9 @@ function App() {
               and the theme toggle off-screen with it. The counts strip
               and the parse-error list stay OUTSIDE it deliberately:
               both are answers about the board, and an answer you have
-              to scroll back up for is not much of one. */}
+              to scroll back up for is not much of one. T-066 keeps that
+              relationship while giving the details list a token-backed
+              ceiling and its own overflow. */}
           <div data-testid="board-scroll" className="min-h-0 flex-1 overflow-y-auto px-6 pb-7.5">
             <Board model={model} />
           </div>
