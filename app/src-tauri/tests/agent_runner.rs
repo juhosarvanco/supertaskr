@@ -1788,6 +1788,41 @@ fn no_login_path_ever_comes_from_a_file() {
     let _ = fs::remove_dir_all(&root);
 }
 
+/// **THE GUARD IS ON IN THIS TEST BINARY (T-060 criterion 4).**
+///
+/// The lib's own `the_real_cli_arms_are_forbidden_from_a_test_binary`
+/// cannot prove this case: inside the lib's unit-test build `cfg!(test)`
+/// is true and short-circuits the derivation, so the `deps` check — the
+/// mechanism every INTEGRATION test actually relies on — is never
+/// exercised there. Here `cfg!(test)` is false, so this body is the only
+/// place the real mechanism is pinned.
+///
+/// Nothing sets anything: no `[env]` entry, no wrapper, no shared setup,
+/// no field on a struct. That is the whole claim.
+#[test]
+fn the_no_real_cli_guard_is_on_without_anything_being_set() {
+    assert_eq!(
+        std::env::var(nputer_lib::agent::runner::NO_REAL_CLI_VAR).ok(),
+        None,
+        "the guard must hold with the variable UNSET - if a suite has to set it, \
+         a suite can forget it"
+    );
+    assert!(
+        nputer_lib::agent::runner::real_cli_arms_forbidden(),
+        "an integration test binary must not be able to reach the real CLI"
+    );
+    // And the mechanism is the one documented, not an accident of this
+    // machine: this executable really does live in `deps/`.
+    let exe = std::env::current_exe().expect("current_exe");
+    assert_eq!(
+        exe.parent().and_then(|p| p.file_name()).and_then(|n| n.to_str()),
+        Some("deps"),
+        "cargo stopped running test binaries out of deps/ - the derivation in \
+         `running_as_cargo_test_binary` needs a new mechanism, and until it has one \
+         every test in this repo can reach the user's real CLI"
+    );
+}
+
 /// **THE GUARD PROVEN BY THE ATTACK THAT FOUND IT (T-060 criterion 6,
 /// T-047-s6).**
 ///
@@ -1838,6 +1873,18 @@ fn the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found()
     )
     .expect("write shell");
     fs::set_permissions(&shell, fs::Permissions::from_mode(0o755)).expect("chmod");
+
+    // **PRE-FLIGHT, AND IT IS LOAD-BEARING RATHER THAN DECORATIVE.**
+    // Everything below resolves with `probe_login_shell: true`, so if the
+    // guard is broken this body is a way to reach the developer's machine
+    // — which is how T-060-s1 was found. Asserting the guard BEFORE the
+    // first resolve makes a broken guard fail here, harmlessly, instead
+    // of two statements later on somebody's real `claude`. It is also
+    // what makes this test safe to poison-drill.
+    assert!(
+        nputer_lib::agent::runner::real_cli_arms_forbidden(),
+        "the guard is already off before this test does anything - refusing to resolve"
+    );
 
     let restore = std::env::var("SHELL").ok();
     std::env::set_var("SHELL", &shell);
