@@ -290,10 +290,18 @@ test("the declared minWidth sits at or above the lens's measured breakpoint", as
  * could not be brought into view at all. A region shorter than this is
  * a region nobody can work in, whatever its scrollbar says.
  *
- * Its VALUE is pinned separately, below, against the shipped manifest —
- * an assertion parametrised by a constant cannot pin that constant
- * (T-063's drill: every deadline test passed with the constant raised
- * 1000x, because they all derived from it).
+ * Its VALUE is pinned separately below, and the pin's worth is stated
+ * exactly rather than overclaimed. An assertion parametrised by a
+ * constant cannot pin that constant (T-063's drill: every deadline test
+ * passed with the constant raised 1000x, because they all derived from
+ * it), so the loop below could be satisfied for ever by lowering this
+ * number. There is no independent runtime source for it — T-048-s5's
+ * ~250px is a historical measurement, not something the app reports —
+ * so `expect(REGION_FLOOR).toBe(250)` does NOT make it independently
+ * derived. What it buys is that moving the constant takes a SECOND,
+ * VISIBLE edit to a line that says the number out loud, instead of one
+ * silent character. Measured, T-062's drill B: moving both together goes
+ * green (the poison), moving the constant alone reds the pin.
  */
 const REGION_FLOOR = 250;
 
@@ -410,9 +418,10 @@ test("the declared minHeight leaves every screen a workable scroll region", asyn
     ).toBeGreaterThanOrEqual(REGION_FLOOR);
   }
 
-  // REGION_FLOOR's own value, pinned against an INDEPENDENT source — the
-  // shipped manifest — so the loop above cannot be satisfied by moving
-  // the constant it is parametrised by.
+  // REGION_FLOOR's own value, said out loud, so that satisfying the loop
+  // above by moving its threshold takes a second and visible edit here
+  // (see the constant's comment — this is not independence, and it does
+  // not pretend to be).
   expect(REGION_FLOOR, "T-048-s5's measured ~250px collapse floor").toBe(250);
   expect(MINIMUM.height, "well above T-048-s5's ~250px collapse floor").toBeGreaterThan(500);
 });
