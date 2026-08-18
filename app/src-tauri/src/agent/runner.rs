@@ -1323,9 +1323,19 @@ pub fn run_turn(
                             // this line is the sentence a human reads.
                             auth_message = Some(text.clone());
                         }
-                        if api_error_status.is_some() {
-                            auth_status = api_error_status;
-                        }
+                        // T-029-s6: ASSIGNED, NEVER MERGED. The terminal
+                        // line is the turn's own verdict, so a `result`
+                        // WITHOUT an `api_error_status` CLEARS a status
+                        // an earlier `api_retry` left behind. Guarding
+                        // this with `is_some()` made `auth_status` a
+                        // MONOTONE LATCH: a 401 the CLI retried and got
+                        // PAST survived to the classification below and
+                        // relabelled whatever actually killed the turn —
+                        // a full disk, a refused tool — as an auth
+                        // failure, which then REMOVES the retry
+                        // affordance and sends the user to `claude
+                        // login` with a login that is fine.
+                        auth_status = api_error_status;
                         if reason.is_some() {
                             terminal_reason = reason;
                         }
@@ -1421,9 +1431,15 @@ pub fn run_turn(
         // real CLI exits 1 for an authentication failure and 1 for a
         // dozen unrelated things; the STREAM is where it says which.
         //
-        // Scoped to a turn that actually failed, so a transient
-        // `api_retry` the CLI recovered from classifies nothing: a
-        // successful turn never reaches this closure at all.
+        // Scoped to a turn that actually failed. That scope is NOT
+        // enough on its own, and T-029-s6/s7 are the two ways it was
+        // not: a turn can reach here having SURVIVED the evidence it is
+        // about to be classified on. So each arm below is bound to the
+        // turn's TERMINAL state rather than to anything merely SEEN —
+        // the auth status by the assignment above, the denials by the
+        // `result_is_error` guard below. A classification is a claim
+        // about what killed the turn; evidence the turn walked away from
+        // does not support one.
         let exited_badly = matches!(status, Some(s) if !s.success());
         if exited_badly || result_is_error {
             // 401 (no/expired credentials) and 403 (credentials the API
@@ -1445,7 +1461,26 @@ pub fn run_turn(
             }
             // T-025-s1: a turn that died because `--allowedTools` was too
             // narrow says which tool, by name.
-            if !permission_denials.is_empty() {
+            //
+            // T-029-s7: …and `result_is_error` is what makes "died
+            // because" true. `permission_denials` is a CUMULATIVE RECORD
+            // of everything refused during the turn, not a statement
+            // that a refusal ended it: a planner denied `WebFetch`, that
+            // routed around it and finished with `terminal_reason:
+            // "end_turn"`, whose process then exits nonzero, was being
+            // told it died of the refusal while its own terminal reason
+            // said otherwise.
+            //
+            // THE NARROW GUARD IS DELIBERATE. The wider form — "or a
+            // `terminal_reason` outside the CLI's normal-completion set"
+            // — needs the set of reasons a REAL denial produces, and
+            // that set is exactly what T-029-s5 records as still
+            // unverified: the `tool-denied` fixture's `"refusal"` is
+            // constructed, not transcribed, because no live denial could
+            // be provoked from a revoked login. `result_is_error` is a
+            // field the CLI demonstrably sets, so the guard rests on
+            // observation rather than on a guess about a vocabulary.
+            if result_is_error && !permission_denials.is_empty() {
                 return Some(TurnError::ToolDenied {
                     denials: permission_denials.clone(),
                     terminal_reason: terminal_reason

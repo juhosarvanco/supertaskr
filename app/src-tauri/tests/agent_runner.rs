@@ -590,6 +590,173 @@ fn a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code() {
     assert!(!h.project.join("docs").exists());
 }
 
+// ---- T-029-s6/s7: THE RECOVERED RETRY, AND THE DENIAL THAT WAS NOT THE
+//      CAUSE ---------------------------------------------------------
+//
+// The first build classified off a MONOTONE LATCH: an `api_retry` 401
+// seen anywhere in a turn survived to the classification closure, and
+// `permission_denials` was read as the CAUSE whenever it was merely
+// PRESENT. Both fabricate a cause for a turn that died of something
+// else, and the auth one is worse than the blunt failure it replaced —
+// `failureAction` returns `retry: false` for `authFailed`, so the screen
+// REMOVES the Try again button (the action that would have worked) and
+// prints `claude login` at a user whose login is fine.
+//
+// These six pins are the specification, and the two that discriminate
+// are as load-bearing as the four that red: `the_same_stream_without…`
+// is the control (only the 401 line differs), and `…403…no result line`
+// is the counter-pin that catches an over-broad fix.
+
+/// ROW 1. A recovered `api_retry` 401 in front of a full disk. The turn
+/// died of ENOSPC and the screen must offer the one action that fixes a
+/// full disk, which is trying again after clearing space.
+#[test]
+fn a_recovered_auth_retry_does_not_relabel_a_disk_full_failure_as_an_auth_failure() {
+    let h = harness(
+        "retryenospc",
+        Options { scenario: "retry-401-then-enospc", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ExitNonZero { code, stderr_tail } => {
+            assert_eq!(code, Some(1));
+            // The CLI's own words still arrive — the fix narrows the
+            // CLASSIFICATION, it does not silence the relay.
+            assert!(stderr_tail.contains("ENOSPC"), "{stderr_tail}");
+        }
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+    let status = settle(&h.agent);
+    assert_eq!(status.phase, Phase::Failed);
+    assert!(
+        !matches!(status.last_error, Some(TurnError::AuthFailed { .. })),
+        "a 401 the CLI RECOVERED from is not this turn's cause: {:?}",
+        status.last_error
+    );
+}
+
+/// THE CONTROL. Byte-identical to row 1 except that the `api_retry` line
+/// is not emitted — same fixture function, one `bool` apart. It is green
+/// on both sides of the fix by design: its job is to prove that the 401
+/// line ALONE is what flipped the classification, which is what makes
+/// row 1's red mean what it says.
+#[test]
+fn the_same_stream_without_the_retry_line_classifies_the_same_way() {
+    let h = harness(
+        "enospcctl",
+        Options { scenario: "enospc-no-retry", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ExitNonZero { code, stderr_tail } => {
+            assert_eq!(code, Some(1));
+            assert!(stderr_tail.contains("ENOSPC"), "{stderr_tail}");
+        }
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+    settle(&h.agent);
+}
+
+/// ROW 2. The 401 recovered, the planner ANSWERED (`is_error: false`,
+/// a real question on the result line) and the process exited 1 anyway.
+/// Nothing about this turn is an authentication failure.
+#[test]
+fn a_recovered_auth_retry_does_not_survive_a_result_line_that_is_not_an_error() {
+    let h = harness(
+        "retryclean",
+        Options { scenario: "retry-401-then-clean-result", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ExitNonZero { code, .. } => assert_eq!(code, Some(1)),
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+    let status = settle(&h.agent);
+    assert!(
+        !matches!(status.last_error, Some(TurnError::AuthFailed { .. })),
+        "a turn that answered did not fail to authenticate: {:?}",
+        status.last_error
+    );
+}
+
+/// ROW 3, the sharpest. A REAL tool denial — the exact shape this task
+/// added `ToolDenied` for — standing behind a recovered 401. The latch
+/// shadowed this task's own new classification with a stale one.
+#[test]
+fn a_real_tool_denial_behind_a_recovered_auth_retry_is_still_a_tool_denial() {
+    let h = harness(
+        "retrydenied",
+        Options { scenario: "retry-401-then-tool-denied", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ToolDenied { denials, terminal_reason } => {
+            assert_eq!(denials, vec!["Bash".to_string()]);
+            assert_eq!(terminal_reason.as_deref(), Some("refusal"));
+        }
+        other => panic!("expected ToolDenied, got {other:?}"),
+    }
+    settle(&h.agent);
+}
+
+/// THE COUNTER-PIN — the case the fix must NOT break, and the reason the
+/// close is "a terminal result line clears the status" rather than "a
+/// diagnostic status never classifies". Here the CLI dies of a 403
+/// BEFORE writing any `result` line, so there is no terminal line to
+/// clear anything, and the diagnostic is the only evidence there is.
+/// This is a genuine authentication failure and must stay typed.
+#[test]
+fn a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed() {
+    let h = harness(
+        "auth403",
+        Options { scenario: "auth-403-no-result", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::AuthFailed { status, message } => {
+            assert_eq!(status, Some(403));
+            // No result line means no sentence from the CLI, so the
+            // runner's own fallback wording is what is rendered.
+            assert!(message.contains("authenticate"), "{message}");
+        }
+        other => panic!("expected AuthFailed, got {other:?}"),
+    }
+    settle(&h.agent);
+}
+
+/// T-029-s7. `permission_denials` on the `result` line is a CUMULATIVE
+/// RECORD of everything refused during the turn, not a statement that a
+/// refusal ended it. A planner denied `WebFetch`, that routed around it
+/// and finished normally (`is_error: false`, `terminal_reason:
+/// "end_turn"`), whose process then exits 1, did not die of the denial —
+/// and its own terminal reason, sitting in the same typed struct the
+/// denials came from, says so.
+///
+/// THE GUARD TAKEN IS THE NARROW ONE: `result_is_error`. The wider form
+/// — "or a `terminal_reason` outside the CLI's normal-completion set" —
+/// needs the set of reasons a REAL denial produces, and that set is
+/// exactly what T-029-s5 records as still unverified (this machine's
+/// login is revoked, so no denial can be provoked). Building the guard
+/// on a guessed set is the mistake that earned this card its rejection.
+#[test]
+fn a_denial_the_planner_routed_around_is_not_blamed_for_an_unrelated_exit() {
+    let h = harness(
+        "deniedendturn",
+        Options { scenario: "denied-then-end-turn", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ExitNonZero { code, .. } => assert_eq!(code, Some(1)),
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+    let status = settle(&h.agent);
+    assert!(
+        !matches!(status.last_error, Some(TurnError::ToolDenied { .. })),
+        "a denial the turn survived is not the cause of its death: {:?}",
+        status.last_error
+    );
+}
+
 #[test]
 fn a_first_turn_with_no_init_line_is_malformed() {
     let h = harness("noinit", Options { scenario: "no-init", ..Options::default() });
