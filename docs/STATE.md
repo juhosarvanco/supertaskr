@@ -80,9 +80,11 @@ checkpoint. T-055's approved branch is retained.
 
 1. Dispatch T-057 and T-058 concurrently from this checkpoint; corrected
    T-043 overlaps shell and waits for that wave boundary.
-2. T-067 absorbs T-062-s2/s4 and waits for T-058's `tools/e2e` surface;
-   T-068 absorbs T-063-s2 and waits for T-057's shell surface.
-3. Run the human-owned authenticated genesis below.
+2. Run corrected T-043 after the wave; it is the remaining milestone-3
+   process-lifecycle task and overlaps the shell surface.
+3. Run corrected T-065 as the solo wire-contract bridge, then T-067 and
+   T-068 concurrently from its checkpoint.
+4. Run the human-owned authenticated genesis below.
 
 ## Human-owned evidence and decisions
 

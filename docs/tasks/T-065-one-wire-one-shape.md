@@ -6,7 +6,7 @@ milestone: 4
 priority: 30
 size: M
 status: planned
-blocked_by: []
+blocked_by: [T-057, T-058]
 touches: [app-shell, tools/e2e]
 builder:
 verifier:
@@ -15,91 +15,61 @@ verified_by:
 review:
 ---
 
-Absorbs: T-041-s2, T-042-s1, T-027-s5 (triage 2026-08-17). The
-suggestion files are removed in the same commit as this card.
-T-042-s1 is the shallow half of T-041-s2 (it says so itself — "the
-deeper problem is T-041-s2's and is not re-filed here"), and T-027-s5
-is a three-line fix in the same spec file the lane work opens.
+Absorbs T-041-s2 and T-042-s1 (triage 2026-08-17). T-042-s1 names the
+shallow symptom of T-041-s2's missing comparison. T-027-s5 is no longer
+absorbed: T-028 implemented its scroll-property assertion at `286fd2c`, and
+T-065 only preserves that gate.
 
-`PickOutcome` and `ProjectStatus` cross IPC as JSON and are mirrored
-by hand THREE times: Rust emits them and
-`genesis_and_no_docs_wire_shapes_are_pinned` asserts the serialized
-JSON literally (now at `docs_watch.rs:2965` — the file grew; it was
-cited at :2641 when filed); `app/src/lib/watcher-store.ts` declares
-the TS mirror; and `tools/e2e/fixtures/shell.ts` mirrors the mirror,
-because tools/e2e imports neither package. **Each end is pinned.
-Nothing compares them.** Rename a field in the TS mirror or the lane's
-copy and every suite stays green while the shipped app silently stops
-understanding what Rust sends. The board path has partial cover by
-accident; the picker/status path has none — no test in the repo feeds
-a byte of Rust-produced JSON into the TS reducers.
+`PickOutcome` and `ProjectStatus` cross IPC as JSON and are mirrored by hand
+three times. Rust owns the native enums; its current test fully pins three
+specimens but checks only the `ProjectStatus::NoDocs` tag, not that status's
+complete shape. `app/src/lib/watcher-store.ts` declares the shipped TS mirror.
+`tools/e2e/fixtures/shell.ts` declares a third unchecked mirror. Rename one
+field coherently at any one end and all local suites can stay green while the
+real boundary quietly stops understanding it.
 
-AND THE LANE IS ALREADY BLIND BECAUSE OF IT. Re-verified at triage:
-`shell.ts:51`'s genesis variant is still
-`{ kind, projectDir, seq, probe }` with **no `snapshot` field**, and
-there are now **SIX** `kind: "genesis"` literals across four spec
-files (T-027 added `interview.spec.ts:45` — it was five when filed).
-So T-042's whole criterion-1 route, the tree arriving ON the switch
-with no fs event at all, has never been rendered by a real browser at
-any viewport. `genesis-screen.spec.ts:165` passes via the pre-T-042
-`docs-changed` route, so the lane is green and silent about the change.
+The lane is already blind because of that drift. Re-derived at 2026-08-18
+preflight: its genesis variant is still `{ kind, projectDir, seq, probe }`
+with no `snapshot`, and **ten** genesis literals across **seven** E2E specs
+therefore omit the tree Rust now carries. The browser's genesis-screen route
+still obtains artifact rows through a later `docs-changed` push, so it does not
+prove T-042's switch-time snapshot path.
 
 ## Acceptance criteria
-- THE RUST PIN SHALL EMIT ITS SHAPES to a committed fixture (or a
-  `#[test]` comparing against a committed `wire-shapes.json`), and
-  ONE vitest test SHALL feed those exact bytes to
-  `reducePickOutcome` / `applyProjectStatus`. One file, two readers,
-  red at whichever end moved (T-041-s2 option 1).
-- `tools/e2e/fixtures/shell.ts` SHALL READ THAT SAME FIXTURE rather
-  than hand-declare a third mirror, or — if the lane genuinely cannot
-  import it (ADR-011 addendum) — the fixture SHALL be copied by a
-  checked step that fails when the copy drifts. A third hand-mirror
-  with nothing comparing it is what this card exists to end.
-- THE GENESIS VARIANT SHALL CARRY `snapshot?: DocsSnapshotPayload |
-  null`, and ONE lane spec SHALL `applyPickOutcome` a genesis outcome
-  CARRYING the `streak` fixture's tree and assert the pane's artifact
-  rows render with **no `docs-changed` push at all**. The fixture
-  already exists (`app/test/fixtures/genesis/streak/docs`, already
-  loaded by `genesis-screen.spec.ts`) (T-042-s1).
-- THE LENS-SCROLL ASSERTION SHALL ASSERT THE PROPERTY IT MEANS.
-  `interview.spec.ts:363` reads
-  `expect(paneLayout.scrollHeight).toBeGreaterThan(paneLayout.clientHeight)`
-  at every viewport at or above 1024, and at 1440x900 the margin is
-  thin enough that a content change tips it. **THE LEVER IS THE
-  FIXTURE'S ARTIFACT ROW COUNT, NOT THE PROJECT DIR PATH LENGTH** —
-  corrected at the T-051 merge (2026-08-17) from **T-051-s8**, which
-  measured both dirs against both fixtures at all three viewports and
-  found *every cell identical*. T-027-s5's "a project dir one
-  character longer" is FALSIFIED and must not be carried into the
-  build: one extra character in the path moves nothing. What moves it
-  is rows — artifact rows are 40px tall on a 47px pitch, so two rows
-  out of the lens is 78px out of the content, which is the whole
-  margin. Measured at 1440x900: `streakFixture` (9 rows) → **858/780**,
-  78px of margin, strict `>` PASSES; T-028's `streakMidInterview`
-  (7 rows) → **780/780**, zero margin, strict `>` FAILS. The three
-  older per-viewport figures (1024x768: 25px; 1280x720: 57px;
-  1440x900: 0) came from a probe rendering fewer rows still, so
-  RE-MEASURE them rather than trusting them.
-  T-027-s5's CONCLUSION stands and is vindicated: an assertion with no
-  headroom at the widest lens is unsafe. Assert `overflow-y: auto` AND
-  a `clientHeight` bounded by the column, keeping the strict
-  comparison only where headroom is guaranteed. "This region scrolls
-  when there is something to scroll" is the claim; a region with
-  nothing to scroll is not a failure of the frame (T-027-s5, as
-  corrected by T-051-s8).
-- THE FRAGILITY SHALL BE NAMED IN A COMMENT so the next person to add
-  a row to `streak` or change a line-height does not spend a session
-  bisecting a frame that is fine. **Read this beside T-062**, which
-  changes the shell's scroll model and will move these numbers: if
-  T-062 lands first, re-measure the table rather than trusting these
-  three rows.
-- NO new IPC, no new command, no wire-shape CHANGE — this card
-  compares what exists.
+- ONE committed `app/test/fixtures/picker-status-wire.json` corpus SHALL carry
+  ten deterministic specimens and every emitted key: all three
+  `ProjectStatus` variants (`noProject`, `noDocs`, `open`) and all seven
+  `PickOutcome` variants (`cancelled`, `busy`, `noDocs`, `error`, `picked`,
+  genesis with a null snapshot, genesis with a full snapshot). Nested probes
+  and snapshots SHALL include `skipped`, `skippedTotal` and `truncated`.
+- THE Rust test SHALL compile-time-embed that fixture, serialize all ten native
+  variants and compare semantic JSON values. One vitest SHALL JSON-round-trip
+  the same fixture and feed its exact picker/status values to
+  `reducePickOutcome` and the shipped DEV harness's `applyProjectStatus`.
+  Production SHALL perform no fixture or checkout read.
+- `tools/e2e/fixtures/shell.ts` SHALL statically import the same fixture rather
+  than hand-declare a third mirror. Add `resolveJsonModule` only to the tools
+  tsconfig. The fixture is a test asset, never a served-app/runtime read.
+- THE tools genesis variant SHALL carry `snapshot?: DocsSnapshotPayload |
+  null`. One lane spec SHALL apply a genesis outcome carrying
+  `streakMidInterview(10, GENESIS_DIR)` and assert its artifact rows render
+  with **no `docs-changed` push at all**. Outcome and snapshot SHALL share seq
+  10; the full streak tree is not used because it now contains tasks and
+  correctly renders the board.
+- T-028's existing lens-scroll property and fragility comment SHALL remain:
+  overflow is auto, client height is bounded, and strict overflow is required
+  only where the fixture has headroom. T-065 adds no duplicate scroll test.
+- NO new IPC, command or wire-shape change may occur. This card compares what
+  exists; it does not generalize the separate `DocsSnapshotPayload` mirror.
+- EVERY new/changed assertion SHALL be poisoned red. Mutants SHALL include a
+  Rust field rename, Rust tag rename, omitted genesis snapshot, coherent app
+  picker/status field renames, a tools adapter field rename, a null carried
+  snapshot, and a canonical-fixture add/remove/rename. Restore exact bytes.
 
-Verification: headless — bare `cargo test` from app/src-tauri/,
-`npx vitest run` from app/, `npm test` from tools/e2e, plus a
-deliberate field rename at EACH of the three ends shown red and
-reverted. @human: none.
+Verification: headless — bare Rust, app build/types/full vitest, tools
+typecheck/full E2E, token lint/selftest, the mutation matrix above, graph
+regeneration/currentness and boot gate. The new JSON SHALL be staged before
+T-058's CONTROL corpus is counted. @human: none.
 
 ## Implementation notes
 

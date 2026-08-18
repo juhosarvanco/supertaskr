@@ -6,7 +6,7 @@ milestone: 4
 priority: 31
 size: M
 status: planned
-blocked_by: []
+blocked_by: [T-057, T-065]
 touches: [app-shell, app-agent]
 builder:
 verifier:
@@ -45,6 +45,10 @@ sites with the same record.
   `app/src/lib/event-names.ts`; Rust SHALL expose them from one production
   module at `app/src-tauri/src/event_names.rs`. Transport endpoints SHALL use
   those constants, not repeat string literals.
+- BOTH new shared modules SHALL be mapped explicitly to C-10 in
+  `docs/architecture/components/C-10-docs-watcher.md`. C-05 and C-14 already
+  depend on C-10, so the imports SHALL add no new component relation or drift;
+  creating an unmapped file or a new component is a regression.
 - TESTS in both languages SHALL parse the same committed contract and prove
   exact membership, exact direction and exact count. Renaming, adding,
   removing or swapping the direction of any one row SHALL red.
