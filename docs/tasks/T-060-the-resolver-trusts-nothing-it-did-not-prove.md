@@ -5,7 +5,7 @@ feature: F-03
 milestone: 3
 priority: 10
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-agent]
 builder: claude-opus-5 @fresh
@@ -323,8 +323,9 @@ close was worth more than a `Mutex`:
   the fixture shell, and both halves are still in place.
 - **The guarded arm's evidence is an ABSENCE** (no tattle, no session
   file), and a child that never ran satisfies every absence. So it writes a
-  receipt, and `t060_run_arm` refuses a run it cannot see: child exit
-  status, `"1 passed"` in the child's own output, and `guarded-ran.txt`.
+  receipt. `t060_run_arm` refuses a child whose exit status is red or whose
+  own output lacks `"1 passed"`; the parent separately refuses the run if
+  `guarded-ran.txt` is absent.
   An `--exact` filter that matches nothing exits **0** with `0 passed`, and
   that is precisely the vacuity this project keeps catching.
 
@@ -445,8 +446,8 @@ were left alone.)
 #### Poison drills — 8 mutations, 8 RED, run inline
 
 No scratch script. Each was a `perl -0pi` edit, the affected body run, then
-`git checkout --` and **sha256 against `git show HEAD:<path>`**, where HEAD
-is the fix commit `3fbb04b`:
+`git checkout --` and **sha256 against `git show HEAD:<path>`**, where the
+then-HEAD was the fix commit `3fbb04b`:
 
 | # | mutation | body | result |
 |---|---|---|---|

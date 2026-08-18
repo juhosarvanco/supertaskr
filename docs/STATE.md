@@ -1,338 +1,265 @@
 # State
 
-Updated: 2026-08-18 by integrator (T-062 recovered and checkpointed),
+Updated: 2026-08-18 by integrator (T-060 merged and checkpointed),
 gpt-5.6 @fresh
 
 ## Just completed
 
-**T-062 — the frame holds everywhere: one scroll model, a canvas that
-scrolls, a card that fits.** F-02, milestone 4, size M, nine acceptance
-criteria, absorbing T-048-s1 through T-048-s4. `touches: [app-shell,
-app-map]`. Built by `claude-opus-5 @fresh`, APPROVED by
-`claude-opus-5 @fresh`, `review: same-model`, no rejection. Approved
-branch tip **`09b9af3`**. Merge **`149ce47`**.
+**T-060 — the resolver trusts nothing it did not just prove.** F-03,
+milestone 3, size M, nine acceptance criteria, absorbing T-047-s1,
+T-047-s4, T-047-s5 and T-047-s6. `touches: [app-agent]`. Built by
+`claude-opus-5 @fresh`, independently verified by `codex/gpt-5 @fresh`,
+`review: independent`. Approved branch tip **`a5f31f2`**. Merge
+**`91ab46e`**.
 
-T-062 settles what the shell is. T-048 had bounded the genesis column
-with `h-screen` while every other screen stayed a growing
-`min-h-screen` page. The conditional is gone: `main` and the content
-column are bounded on every screen, `PaneRail` carries its own
-`h-screen`, and each screen owns its overflow. The board scrolls inside
-`board-scroll`; the front door and startup card scroll inside their own
-regions; the genesis pane retains its existing scroll region; the map
-canvas is `overflow-auto` instead of `overflow-hidden`.
+T-060 removes the resolver's disk cache rather than trying to make a
+poisonable file slightly safer. `agent-paths.json`, its serde types,
+reader, writer, invalidator, path helper and `RunnerConfig::config_dir`
+are gone. Resolution is now the Rust test seam, then one fresh probe,
+then typed `cliNotFound`. A future performance cache, if measurement
+ever justifies one, is constrained in the source to a process-lifetime
+memo and never a file.
 
-The map change is load-bearing, not cosmetic. Bounding the old canvas at
-800x600 produced **446px of graph inside a 392px box with
-`overflow-y: hidden`**: 54px was unreachable, and no pre-T-062 test named
-the loss. The new lane asserts the class of failure across all five
-screens and separately proves that the last pixel of the map is
-reachable. The frame is measured on the served bundle at 1280x840,
-1024x700 and 800x600: **15 of 15 screen/viewport pairs have page height
-equal to viewport height**.
+Every path produced by `PATH` search or login-shell `command -v` passes
+one gate before `Command::new`: absolute, no raw or component `.`/`..`,
+file name equal to the adapter binary, executable. Relative, empty and
+dot PATH entries can no longer turn the app's launch directory into an
+execution source. `$SHELL` must be an absolute executable named `zsh`,
+`bash` or `sh`; other values fall back to `/bin/zsh`. The docs now state
+the exact boundary: `RunnerConfig` reads no environment, the resolver
+reads `SHELL`, `PATH` and `NPUTER_NO_REAL_CLI`, and the spawned child is
+still built with `env_clear()` plus the unchanged 16-entry allowlist.
 
-T-062 also corrected T-051's min-height story. The old floor probe read
-document height and therefore reported **302px** for the already-bounded
-genesis screen even though its content was **1082px**; it could not see
-the board's 4989px content either. The **700px** minimum survives, but
-not because every screen fits. It survives because every screen now owns
-a scroll region, and the tightest non-form region at 1024x700 is 580px,
-well above T-048-s5's measured 250px collapse floor. ROADMAP and
-ARCHITECTURE now state that correction rather than carrying the false
-premise forward.
+No ordinary Rust test can resolve the user's real CLI. With
+`NPUTER_NO_REAL_CLI` unset, the refusal is derived from Cargo's `deps`
+test-binary directory and rustdoc's `rustdoctest*` directory; the one
+ignored, explicitly gated real smoke opts out with `=0`. The doctest is
+itself the pin for the environment the first implementation missed.
 
-### The interrupted integration, recovered without re-merging
+### The rejection is part of the result
 
-The previous background integrator did not fail at the merge. It merged
-T-062 successfully as **`149ce47`** and then stopped during checkpoint
-work, leaving four intended files dirty:
+The approved branch preserves the first verifier's **REJECTED** verdict
+at `33b249a`. The initial proof temporarily set a process-global guard in
+a multithreaded libtest binary. Its sibling tripwire, whose purpose was
+to prove nothing needed setting, observed that lift and flaked at
+realistic thread counts. The rejection reproduced before repair: 5/5
+failures at 4 threads and 5/5 at 8 on the historical binary; the quiet
+10-thread control was 0/5.
 
-- `docs/ARCHITECTURE.md`
-- `docs/ROADMAP.md`
-- `docs/architecture/graph.json`
-- `docs/tasks/T-062-the-frame-holds-everywhere.md`
-
-The recovery preserved those edits, audited them against the task and
-verdict, completed the missing integration gates, corrected the task's
-fence and graph forecast, rewrote this snapshot, and committed one
-checkpoint. **T-062 was not merged twice.**
-
-The task fence now names the real ranges. `f94dd9c..09127fa` is seven
-code files; `f94dd9c..d40d76a` is ten files including the card and two
-findings; `f94dd9c..09b9af3` is **13 files, +1780 / -149**, including all
-five findings. The old “eight files” sentence was false for every range
-that included the card and is retired.
+Fix `3fbb04b` moves the guarded and lifted arms into child processes.
+Each child receives a composed environment and an empty PATH; the parent
+requires a successful child, exactly one passed test, and the guarded
+arm's separate receipt. The final verifier ran the repaired binary 10/10
+green at 4, 8 and 10 threads and approved it in `a5f31f2`. The pre-approval
+acceptance section and prior verdict were preserved; the approved verdict
+records their hashes.
 
 ## Integration evidence
 
-### Graph gate — fired, regenerated, deterministic, current
+### Preflight and semantic merge
 
-The merge diff touches seven TypeScript/TSX files outside `docs/`, four
-of which the indexer walks. The committed graph was regenerated twice
-from merged main. Both runs produced byte-identical output:
+Main was clean at checkpoint `1288d8d`; the approved worktree was clean
+at `a5f31f2`; their real merge base is `6404a43`. The two sides intersect
+in exactly two files:
 
-    sha256 4bd19d87732e999a6b697ee42829d30a8033cb9d06cea4117262d174761852f1
+- `app/src-tauri/src/lib.rs`
+- `docs/ARCHITECTURE.md`
 
-`cargo run -p nputer-index -- index --check --root ../..` from
-`app/src-tauri` exits **0**:
+`git merge-tree --write-tree --messages 1288d8d a5f31f2` completed with
+no conflict and produced simulated tree **`f02d789a`**. The actual no-ff
+merge auto-merged the same two files and produced **`91ab46e`**.
 
-    graph.json is CURRENT
-    558780 bytes · 115 files · 965 symbols · 1476 edges
+The `lib.rs` result keeps all of T-063: `STARTUP_FAILED_EVENT`, the
+`startup-failed` stderr listener, `startup_failed_line`, and all five of
+its unit tests. T-060 changes only the runner setup, deleting the
+`config_dir` override and supplying `RunnerConfig::default()`. The
+generated-handler block is byte-identical at the base, main-before,
+approved tip and simulated result:
 
-The graph moved from 115 / 964 / 1477 to **115 / 965 / 1476**. The
-branch forecast got the file count and component-level result right but
-missed one source symbol: `expectBoundedFrame` is a new function and
-adds one call edge. Removing `cn` from `App.tsx` removes one file import
-edge and one symbol call edge, so the measured net is **+1 symbol / -1
-edge**. No component relation row moved and none of the three dogfood
-fixtures required an edit.
+    sha256 4e062a2e898297c96601daa078e5960285df5e4b1117514e4a9e0d2c04ebbdc3
 
-The repository still has **no remote**, so the graph-currency CI step is
-written but dormant. The integrator ran the exact CI command locally;
-the currentness claim does not depend on a runner that has never existed.
+All thirteen handler entries remain. The architecture auto-merge keeps
+T-063's startup-failure channel and T-062's one-scroll-model history,
+while replacing T-047's obsolete cache description with T-060's actual
+probe, gate and test-refusal contract.
 
 ### Full suite on merged main
 
-ADR-011 order was respected. No model was called. No `npm install` or
-`npm ci` was run in the main checkout; existing lockfile-resolved
-installations were used, and the branch's executor had already performed
-the cold-install proof in its isolated worktree.
+ADR-011 order was respected. Existing lockfile-resolved installations
+were used; no model, real-CLI smoke, dependency install or network call
+was made.
 
 - `lib/parser`: build and `tsc --noEmit` green; **225/225 tests in 11
   files**.
 - `app`: `tsc --noEmit` and production build green; **821/821 tests in
   42 files**. Bundle: `index-tsWZtfZi.js` 498.88 kB and
   `index-BeT5MY7f.css` 43.90 kB.
-- `app/src-tauri`: bare `cargo test` green; **318 passed + 3 intentional
-  ignores**, zero failures. The real-model smoke remains ignored.
+- `app/src-tauri`: bare `cargo test` green; **325 passed + 3 intentional
+  ignores**, zero failures. This is the approved branch's 320 plus five
+  preserved T-063 startup tests. The one T-060 doctest ran and passed;
+  the ignored real-model smoke did not run.
 - `tools/e2e`: typecheck green; **82/82 Playwright executions**, one
-  worker, retries 0, no skips. Scratch port 17640 was used; the sandbox
-  initially refused the bind with `EPERM`, then the same lane passed
-  with local-port permission.
-- token lint: **clean over 117 files**, zero allowlist;
-  `--selftest` **49 samples + 14 walk-policy checks** green.
-
-The graph check was re-run after all suites and remained current.
+  worker, retries 0, no skips. The sandbox first refused the local bind
+  with `EPERM`; the exact lane passed with local-port permission on
+  scratch port 17650.
+- token lint: **clean over 117 files**, zero allowlist; `--selftest`
+  **49 samples + 14 walk-policy checks** green.
+- `cargo audit --no-fetch`: exit 0 over **472 locked crates**, **0
+  vulnerabilities / 17 allowed informational warnings**, the unchanged
+  baseline. It loaded the existing 1,216-advisory local database; failure
+  to take Cargo's package-cache lock was informational and did not change
+  the scan or verdict.
 
 ### Boot gate — fired and passed
 
-The trigger was derived against the merge range
-`f94dd9c..149ce47`, never against the branch point plus unrelated main
-history:
-
-    app/src/** = 3
-    app/src-tauri/** = 0
-    app/package.json = 0
-    app/src-tauri/Cargo.toml = 0
-
-`NPUTER_BOOT_PORT=17641 npm run boot:check` exited **0** and detected both
-required lines:
+The trigger is the merge range `1288d8d..91ab46e`, not the old branch
+point. It contains three files under `app/src-tauri/**`, zero under
+`app/src/**`, and neither manifest. `NPUTER_BOOT_PORT=17651 npm run
+boot:check` exited **0** and detected both required lines:
 
     [nputer] project folder: /Users/ujju/Projects/nputer
     [nputer] window "main" created
 
-The gate stopped its process tree. Scratch ports 17640 through 17644
-were empty after their runs. Port **1420** was only observed read-only;
-the human's existing node pid 82549 remained its sole listener and was
-never connected to, signalled or reused.
+The gate stopped its process tree. Port 1420 was never selected or
+borrowed.
 
-### Poison discipline — all nine changed/new bodies discriminated
+### Graph gate — did not fire; graph remains current
 
-Six independent, one-sided source reverts were run inline against merged
-main. Each mutation changed only the producer and every run was restored
-before the next:
+The merge contains no `*.ts`, `*.tsx`, `*.js` or `*.jsx` outside docs,
+so graph regeneration correctly did not fire. The currentness gate was
+still run from merged main and exited 0:
 
-| revert | red evidence |
-|---|---|
-| `main`: `h-screen` back to `min-h-screen` | **3 of 4 app frame tests red** |
-| column: `h-screen` back to `min-h-screen` | **3 of 4 app frame tests red** |
-| map canvas: `overflow-auto` back to `overflow-hidden` | **1 app + 2 focused E2E red**; the lane named `map-canvas` as hidden content and read `hidden` instead of `auto` |
-| rail loses its own `h-screen` | **1 app frame test red** |
-| board loses `min-h-0 flex-1 overflow-y-auto` | **1 app + 7 focused E2E red** across `interview`, `shell-frame` and `window-contract` |
-| front door loses its scroll region | **1 app + 3 focused E2E red** across the same three files |
+    graph.json is CURRENT
+    558780 bytes · 115 files · 965 symbols · 1476 edges
 
-Together those reverts observed all **nine** changed or new test bodies
-red: three app frame bodies, three shell-frame lane bodies, one
-interview reconcile and two window-contract reconciles. The unchanged
-chain-walk body was not owed a drill.
+The committed SHA-256 remains
+`4bd19d87732e999a6b697ee42829d30a8033cb9d06cea4117262d174761852f1`.
+The repository still has no remote, so this written CI gate remains
+dormant; the checkpoint does not rely on it having run elsewhere.
 
-Restoration was proved by SHA-256 on all seven code/test files and an
-empty `git diff HEAD -- <seven files>`. The hashes matched their
-pre-drill values; the focused app frame file then returned **4/4 green**.
-Only the checkpoint documentation and graph remained modified.
+### Poison discipline — all twelve changed/new bodies discriminated
+
+The integrator independently made one relation-breaking mutation in
+each of the seven changed/new unit-test bodies in `runner.rs` and five
+changed/new integration-test bodies in `tests/agent_runner.rs`. Every
+exact-body run failed: **12 red out of 12 bodies**. The mutations broke
+the config/environment boundaries, resolved-path expectations, deleted-
+cache pin, shell-name gate, test guard, relative-path refusal, disk-cache
+absence, child PATH provenance, integration guard and child-process
+non-vacuity receipt/filter path.
+
+Restoration is byte-proven and the two files have an empty diff from the
+merge commit:
+
+    runner.rs        fe6faf86c3466e91fd4979f5e5e40532d078afdd6eef8a6ad066a53757d62da1
+    agent_runner.rs  9eb4261986316bcb1d2e05a583828eda0e70c0b621d1c4e9bccbab866614bdef
+
+The final bare Rust suite was rerun after restoration and stayed green.
 
 ## Documentation and decision judgment
 
-- **ROADMAP edited.** T-062 changes a user capability: a user can reach
-  the bottom of a tall board or map while the application chrome remains
-  present. It also corrects T-051's false min-height premise in the same
-  narrative where that premise was recorded.
-- **ARCHITECTURE edited.** C-05 changed its shell-wide overflow model.
-  The component row now records the unconditional bounded frame, per-
-  screen scroll ownership, the map clipping trap, zero IPC/grant
-  movement, and the filed parse-error exception.
-- **Registry not edited.** No component, ownership path or component
-  relation changed.
-- **No ADR.** The scroll-model choice is an implementation decision
-  inside C-05 under existing architecture. No dependency, IPC command,
-  capability grant, manifest, lockfile, method contract or cross-
-  component interface moved.
-- **Task stamped done.** Builder/verifier stamps and the APPROVED verdict
-  were already committed on the branch and were preserved. The only
-  lifecycle edit is `status: verifying` to `status: done`.
-- **No token or colour movement.** The stylesheet hash changes because
-  Tailwind emits a different layout-utility set, not because a new token
-  or arbitrary value was introduced. Both schemes are structurally
-  unaffected.
+- **ROADMAP edited.** T-060 changes the trust boundary between disk,
+  environment and `execve`, records the preserved rejection, and makes
+  clear that this hardening does not supply the still-missing real-model
+  genesis evidence.
+- **ARCHITECTURE edited.** The resolver interface now records no disk
+  cache, one gate on both probe sources, the three environment reads,
+  name-checked shell, structural test/doctest refusal and the remaining
+  shape-not-identity residual.
+- **Registry not edited.** No component, ownership path or relation
+  changed. The Rust resolver remains under C-14; the current graph does
+  not index Rust.
+- **No ADR.** This closes filed defects inside the existing ADR-003 and
+  ADR-017 boundaries. No dependency, IPC command, capability grant,
+  manifest, lockfile, method contract or cross-component interface moved.
+- **Task stamped done.** Builder/verifier stamps and `review:
+  independent` were already committed on the approved branch. The prior
+  rejection and later approved verdict remain intact. Checkpoint changes
+  only `status: verifying` to `status: done` plus two confirmed prose
+  corrections: the parent owns the guarded receipt check and `3fbb04b` is
+  described as the then-HEAD. The suspected EOF issue was checked but not
+  changed: the task ends in exactly one LF, matching the neighbouring
+  completed task cards rather than carrying an extra blank line.
 
 ## In progress / broken right now
 
-### T-060 is still the one live lane
+No task is building or verifying after this checkpoint. T-060's five
+finding cards remain `status: suggested` as historical records of the
+first build and verification; s1 through s5 are closed in the parent
+task and do not need separate implementation lanes.
 
-`../nputer-T-060`, branch `task/T-060-resolver`, is clean at
-**`99bfc49`** (`T-060: complete second-executor rejection handoff`) and
-its card remains `status: verifying`.
-
-Its history matters:
-
-- **`33b249a`** records the first verifier's REJECTED verdict. The
-  process-global `NPUTER_NO_REAL_CLI` mutation flaked the guard's own
-  parallel tripwire at realistic Rust test thread counts.
-- **`3fbb04b`** moves the guard-lift proof into a child process with an
-  explicit receipt, adds the doctest-directory arm, and reports repeated
-  green runs across thread counts.
-- **`99bfc49`** commits the previously stranded documentation handoff.
-
-A fresh adversarial verifier is active against `99bfc49`. The rejected
-record must remain intact. Do not merge T-060 on the first verifier's
-old approval fields or rebuild it from scratch; the next state change is
-a new verdict on the rejection fix. `app-agent` remains held until that
-verdict and integration complete.
-
-### T-062 worktree
-
-`../nputer-T-062` remains at approved tip `09b9af3`. The branch is kept.
-This recovery was explicitly restricted to the main worktree, so sibling
-worktree removal is left to the architect after the checkpoint rather
-than performed from this lane.
-
-## Findings created by T-062
-
-Five suggestions remain `status: suggested`; the integrator did not
-triage them:
-
-- **T-062-s1:** T-051's min-height criterion was never capable of
-  measuring genesis. The false justification is corrected in durable
-  docs; any further floor/design decision remains open.
-- **T-062-s2:** vertical wheel input now both pans the graph and consumes
-  the canvas's small native overflow.
-- **T-062-s3:** the parse-error strip is outside `board-scroll`; with 20
-  unparsable files it pushes the page to 896/840 and reopens the exact
-  chrome-scroll failure by another door. This is the sharpest functional
-  hole in the set.
-- **T-062-s4:** the wheel double-move is not small on the X axis; at
-  800x600 horizontal overflow can add a full 300px native scroll to a
-  300px pan.
-- **T-062-s5:** widening exact-array equality to `arrayContaining`
-  makes the clipping sweep vacuous, a fourth relation-preserving poison
-  shape.
-
-T-063-s2 remains a high-value adjacent item: `startup-failed` is still
-two independent cross-language string literals with no join, and a
-one-sided rename remains invisible to the current suites.
+T-062's five suggestions remain untriaged. The sharpest functional item
+is T-062-s3: enough parse errors outside `board-scroll` can grow the page
+and scroll the shell chrome away again. T-062-s4 is the adjacent map
+interaction question: native overflow and wheel panning can double-move
+on the X axis. T-063-s2 remains the cross-language event-name gap:
+`startup-failed` is still two literals with no join.
 
 ## Next up
 
-1. **Finish T-060's fresh verification.** Reproduce the original failure
-   at realistic thread counts, prove the child-process receipt prevents
-   a vacuous zero-test pass, run the complete Rust suite, preserve the
-   rejection record, and append a new verdict. A second rejection parks
-   the lane for the human.
-2. **Integrate T-060 only after approval.** Enumerate both sides and run
-   `merge-tree` before touching main. Its base predates T-063 and T-062;
-   T-063 changed `lib.rs`, and T-060 is a security-sensitive resolver
-   change. Its merge fires the boot gate and, if still Rust/docs only,
-   does not fire graph regeneration.
-3. **Triage T-062's five findings.** Start with s3 (the frame invariant
-   can still fail) and s4 (the actual horizontal interaction cost), then
-   fold s1's durable correction rather than reopening the now-correct
-   700px rationale.
-4. **Select new non-overlapping lanes only from this checkpoint.** The
-   standing queue still favours T-055 in `lib-parser`, with T-057/T-058,
-   T-065 and the promoted cross-language event-name contract as nearby
-   candidates. Do not dispatch from merge `149ce47`; dispatch from this
-   checkpoint so the branch inherits the current graph.
+1. Triage T-062-s3 and T-062-s4, then T-063-s2. Promote only from this
+   checkpoint so new lanes inherit a current graph.
+2. Select a non-overlapping planned lane. The standing queue still
+   favours T-055 in `lib-parser`, with T-057/T-058 and T-065 nearby.
+3. Run the human-owned authenticated genesis below. Milestone 3's task
+   work, including resolver hardening, is through the pipeline; the
+   product evidence is not.
 
 ## Human-owned evidence and decisions
 
-The task pipeline cannot supply these:
-
-- **T-062 visual judgment:** whether one bounded frame feels right in
-  light and dark at 1280x840 and 1024x700. The board now has an internal
-  scrollbar and keeps the header/rail fixed; that is intentional and
-  daily-visible.
-- **Relaunch the desktop app.** The long-running process on 1420 predates
-  T-051, T-063 and T-062's Rust/frontend checkpoint history. A relaunch
-  is required to load the current Rust binary and the declared 1280x840
-  window contract together.
-- **Real genesis run:** run `claude login`, then perform one timed,
-  end-to-end genesis on a toy idea, target <=30 minutes, with light and
-  dark completion screenshots. No real planner turn has yet succeeded
-  on this machine; all runner evidence is fixture-driven.
-- **Startup-failure judgment:** after relaunch, provoke one failure and
-  judge whether the stderr line is useful and whether the first silent
-  eight seconds are acceptable.
+- **Real genesis run:** authenticate the supported CLI, then perform one
+  timed end-to-end genesis on a toy idea, target <=30 minutes, with light
+  and dark completion screenshots. No planner turn has yet succeeded
+  against a real model on this machine.
+- **Relaunch the desktop app.** A long-running process may predate
+  T-051, T-063, T-062 and T-060. Relaunch is required to load the current
+  Rust resolver, startup listener and window contract together.
+- **T-062 visual judgment:** decide whether the bounded shell and its
+  internal board/map scrollbars feel right in both schemes.
+- **Stray real-smoke directories:** the two pre-existing
+  `nputer-t025-realsmoke-*` session directories remain a human
+  delete-or-keep decision; this integration did not touch them.
 - **Repository remote:** there is still no remote. CI, including graph
-  currency and xvfb boot, has never run on a real runner. Only the human
-  can choose where to push.
+  currency and xvfb boot, has never run on a real runner.
 
-Milestone 3's named task list is complete, but the milestone is **not
-claimed** until the real timed genesis run exists. The product has a real
-conversation surface, file-evidence join, board handoff, recovery path
-and honest startup failure; whether it is a good interview with a model
-that can misunderstand the user remains unknown.
+Milestone 3's implementation list is complete, but the milestone is not
+claimed until the real timed genesis exists. T-060 proves the resolver
+cannot accidentally call the developer's CLI from the test suite; it
+does not prove an interview with a model that can misunderstand the user.
 
 ## Health of the tree
 
-At the T-062 checkpoint:
+At the T-060 checkpoint:
 
-- main has T-062 merge `149ce47` plus this checkpoint;
-- parser, app, Rust, E2E, token lint, boot and graph-currency gates are
-  green;
-- committed graph: **115 files / 965 symbols / 1476 edges**, deterministic
-  SHA-256 `4bd19d87732e999a6b697ee42829d30a8033cb9d06cea4117262d174761852f1`;
-- board on main: **125 task files — 45 done / 20 planned / 16 parked /
-  44 suggested / 0 building / 0 verifying**, plus **9** files under
+- main has T-060 merge `91ab46e` plus this checkpoint;
+- parser, app, Rust, E2E, token lint, audit, boot and graph-currentness
+  gates are green;
+- committed graph: **115 files / 965 symbols / 1476 edges**, SHA-256
+  `4bd19d87732e999a6b697ee42829d30a8033cb9d06cea4117262d174761852f1`;
+- board on main: **130 task files — 46 done / 19 planned / 16 parked /
+  49 suggested / 0 building / 0 verifying**, plus **9** files under
   `docs/tasks/rejected/`;
-- branch work is not reflected in that board count: T-060 is verifying
-  in its own worktree;
-- **44** merge commits match `^Merge T-`, representing **44 distinct
-  task IDs**; there are **45 done cards** because T-040 is done without a
-  matching task merge. The prior “T-014 merged twice” count does not
-  reproduce on current main and is withdrawn rather than carried.
+- **45** merge commits match `^Merge T-`, representing **45 distinct
+  task IDs**; there are 46 done cards because T-040 is done without a
+  matching task merge;
+- the clean approved T-060 worktree is removed after this checkpoint;
+  branch `task/T-060-resolver` is retained at `a5f31f2`.
 
-Security posture for T-062 is unchanged: zero dependencies, zero
-lockfile lines, zero Rust files, zero IPC commands, zero capability
-grants, zero model calls. The open resolver-security work is T-060 and
-remains in verification.
+Security movement for T-060: zero dependencies, zero manifest or
+lockfile lines, zero new IPC commands, zero capability grants, zero
+allowlist entries, zero model calls. `acl_pin.rs` remains SHA-256
+`8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`
+with 92 grants. `ENV_ALLOWLIST` remains 16 entries and byte-identical to
+base.
 
 ## Open questions
 
-- Should the shell-frame invariant be universal over failure states, and
-  should T-062-s3 become the immediate repair card?
+- Should resolver identity ever be stronger than path shape, and what
+  install identity could be verified without trusting another writable
+  file?
+- Should T-062's frame invariant cover parse-error states universally?
 - Should map wheel input pan, natively scroll, or choose one by axis?
-  T-062 made hidden graph reachable but now the two mechanisms compose.
 - What gate owns a contract spelled independently across Rust and
   TypeScript? T-063's `startup-failed` event remains the live example.
-- Should graph regen be written as an explicit measure -> fixture edit ->
-  final regen procedure? This checkpoint needed no fixture edit, but the
-  ordering remains oral tradition.
-- Should poison guidance say explicitly that one-sidedness is necessary
-  but insufficient, and require the mutation to break the asserted
-  relation? T-062-s5 is the fourth observed widening shape.
 - Does the shared main worktree need a formal rule for what reaches a
-  human's running app before a relaunch? T-063 demonstrated a split
-  frontend/backend state; T-062 is frontend-only and hot-reloadable.
-- What does the pipeline require when a builder or integrator disappears
-  mid-flight? T-062 recovery shows the durable answer in practice:
-  inspect the commit graph and dirty tree, resume from evidence, and do
-  not repeat an operation that already succeeded.
+  human's running app before a relaunch?

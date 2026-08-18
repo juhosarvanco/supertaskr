@@ -333,10 +333,30 @@ would have helped) and printed a login instruction at a user whose login
 was fine. It was caught in adversarial verification, the card was
 REJECTED, and it is closed by binding the diagnosis to the turn's
 terminal line. Both verdicts are on the card.
+T-060 merged 2026-08-18 and closes the resolver trust debt T-047 left
+behind. The app no longer reads or writes `agent-paths.json`: a path to
+the user's CLI comes from one fresh probe, passes the same absolute /
+traversal-free / correctly-named / executable gate at every door, and
+otherwise becomes typed `cliNotFound`. `$SHELL` is accepted only when it
+is an absolute executable named `zsh`, `bash` or `sh`; relative PATH
+entries cannot become executable candidates. The resolver still reads
+the app's `SHELL` and `PATH`, and now says so plainly; the child remains
+`env_clear()` plus the 16-entry allowlist. Most importantly, an ordinary
+test or doctest cannot resolve the developer's real CLI: the guard is
+derived from Cargo's `deps` and rustdoc's `rustdoctest*` harness shapes,
+with the one ignored real smoke opting out explicitly. The first version
+of that proof was REJECTED because it lifted the process-global guard in
+a parallel test binary and made the guard's own tripwire flaky. The fix
+runs the two proof arms in child processes with an empty PATH, a positive
+receipt and an exact one-test count; both verdicts remain on the card.
+This is security hardening rather than the missing real-model evidence:
+no model was called, no command or grant moved, and the human's first
+authenticated interview remains the milestone gate below.
 **The milestone is NOT complete, and what it waits on is not a task.**
 Every card on milestone 3's list — T-023 → T-024 → T-026 → T-037 →
 T-025 → T-039 → T-041 → T-042 → T-048 → T-049 → T-050 → T-027 → T-051 →
-T-028 → T-029 — is through the pipeline. The evidence the claim rests on
+T-028 → T-029 — plus T-060's resolver hardening is through the pipeline.
+The evidence the claim rests on
 **still does not exist: not one planner turn has ever been observed
 against a real model.** This machine's `claude` OAuth token is revoked,
 so every attempt 401s and no model call has ever gone through the
