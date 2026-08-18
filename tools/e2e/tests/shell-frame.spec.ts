@@ -73,6 +73,24 @@ function repoDocs(seq: number): DocsSnapshotPayload {
   return { seq, projectDir: repoRoot, generatedAtMs: 1_755_400_000_000 + seq, files };
 }
 
+/** The same real board plus parser failures supplied through the docs
+ * harness. Each malformed file lacks frontmatter, so the shipped parser
+ * owns both the failure count and the diagnostic text; the lane only
+ * supplies user-controlled bytes. */
+function repoDocsWithErrors(seq: number, count = 60): DocsSnapshotPayload {
+  const snapshot = repoDocs(seq);
+  return {
+    ...snapshot,
+    files: [
+      ...snapshot.files,
+      ...Array.from({ length: count }, (_, index) => ({
+        path: `docs/tasks/T-${900 + index}-malformed-diagnostic.md`,
+        content: "# no frontmatter",
+      })),
+    ],
+  };
+}
+
 /** Every element that HIDES content it cannot scroll to, deduped by name.
  * A count would be coupled to the graph's component count and would red
  * on an unrelated regen; the NAMES are what say whether a new kind of
@@ -126,6 +144,17 @@ async function board(page: Page, seq = 1): Promise<void> {
   await expect(page.getByTestId("task-card").first()).toBeVisible();
 }
 
+async function boardWithErrors(page: Page, seq = 20, count = 60): Promise<void> {
+  await openShell(page);
+  await applyStatus(page, { kind: "open", snapshot: repoDocsWithErrors(seq, count) });
+  await expectPhase(page, "open", "board");
+  await expect(page.getByTestId("docs-model")).toHaveAttribute(
+    "data-failure-count",
+    String(count),
+  );
+  await expect(page.getByTestId("parse-error-details").locator("li")).toHaveCount(count);
+}
+
 async function map(page: Page): Promise<void> {
   await board(page, 2);
   await page.getByTestId("pane-rail-map").click();
@@ -148,9 +177,54 @@ const SCREENS = [
   { name: "front door", open: frontDoor },
   { name: "no-plan card", open: noPlan },
   { name: "board", open: board },
+  { name: "board with many errors", open: boardWithErrors },
   { name: "map", open: map },
   { name: "genesis", open: genesis },
 ] as const;
+
+interface ErrorBoardMeasurement {
+  viewport: string;
+  page: { scrollHeight: number; clientHeight: number; scrollY: number };
+  column: { scrollHeight: number; clientHeight: number };
+  details: {
+    scrollHeight: number;
+    clientHeight: number;
+    borderBoxHeight: number;
+    overflowY: string;
+    finalRowReachable: boolean;
+  };
+  board: { scrollHeight: number; clientHeight: number };
+}
+
+async function measureErrorBoard(page: Page, label: string): Promise<ErrorBoardMeasurement> {
+  return page.evaluate((viewport) => {
+    const main = document.querySelector<HTMLElement>('[data-testid="docs-model"]')!;
+    const column = main.querySelector<HTMLElement>(":scope > div")!;
+    const details = document.querySelector<HTMLElement>('[data-testid="parse-error-details"]')!;
+    const board = document.querySelector<HTMLElement>('[data-testid="board-scroll"]')!;
+    details.scrollTop = details.scrollHeight;
+    const detailsBox = details.getBoundingClientRect();
+    const finalBox = details.lastElementChild!.getBoundingClientRect();
+    return {
+      viewport,
+      page: {
+        scrollHeight: document.documentElement.scrollHeight,
+        clientHeight: document.documentElement.clientHeight,
+        scrollY: window.scrollY,
+      },
+      column: { scrollHeight: column.scrollHeight, clientHeight: column.clientHeight },
+      details: {
+        scrollHeight: details.scrollHeight,
+        clientHeight: details.clientHeight,
+        borderBoxHeight: detailsBox.height,
+        overflowY: getComputedStyle(details).overflowY,
+        finalRowReachable:
+          finalBox.top >= detailsBox.top - 1 && finalBox.bottom <= detailsBox.bottom + 1,
+      },
+      board: { scrollHeight: board.scrollHeight, clientHeight: board.clientHeight },
+    };
+  }, label);
+}
 
 // ---- one scroll model, every screen, every viewport ----------------------
 
@@ -185,6 +259,79 @@ for (const vp of VIEWPORTS) {
     }
   });
 }
+
+test("the error strip owns a ceiling while every diagnostic and the board remain reachable", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+
+  // The small state is deliberately measured before the pathological
+  // one: `overflow-y-auto` must not manufacture overflow below the cap.
+  await page.setViewportSize({ width: 1280, height: 840 });
+  await boardWithErrors(page, 30, 1);
+  const short = await measureErrorBoard(page, "one error at 1280x840");
+  expect(short.details.clientHeight, "one error stays below the 192px ceiling").toBeLessThan(192);
+  expect(short.details.scrollHeight, "one error remains at natural height").toBe(
+    short.details.clientHeight,
+  );
+
+  const measurements: ErrorBoardMeasurement[] = [];
+  for (const vp of VIEWPORTS) {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    await boardWithErrors(page, 40 + vp.height);
+    measurements.push(await measureErrorBoard(page, `${vp.width}x${vp.height}`));
+  }
+  console.info("T-066 error-board measurements", JSON.stringify(measurements));
+
+  for (const measurement of measurements) {
+    expect(
+      measurement.page.scrollHeight,
+      `${measurement.viewport}: the document equals the viewport`,
+    ).toBe(measurement.page.clientHeight);
+    expect(measurement.page.scrollY, `${measurement.viewport}: details never move the page`).toBe(
+      0,
+    );
+    expect(
+      measurement.column.scrollHeight,
+      `${measurement.viewport}: the bounded column does not overflow`,
+    ).toBe(measurement.column.clientHeight);
+    expect(
+      measurement.details.borderBoxHeight,
+      `${measurement.viewport}: max-h-48 caps the border box at its 192px token`,
+    ).toBe(192);
+    expect(
+      measurement.details.clientHeight,
+      `${measurement.viewport}: the scrollport stays within the token ceiling`,
+    ).toBeLessThanOrEqual(192);
+    expect(measurement.details.overflowY, `${measurement.viewport}: details own vertical scroll`).toBe(
+      "auto",
+    );
+    expect(
+      measurement.details.scrollHeight,
+      `${measurement.viewport}: all sixty rows remain in the details region`,
+    ).toBeGreaterThan(measurement.details.clientHeight);
+    expect(
+      measurement.details.finalRowReachable,
+      `${measurement.viewport}: the final diagnostic is fully reachable`,
+    ).toBe(true);
+    expect(
+      measurement.board.clientHeight,
+      `${measurement.viewport}: the board keeps the standing region floor`,
+    ).toBeGreaterThanOrEqual(250);
+    expect(
+      measurement.board.scrollHeight,
+      `${measurement.viewport}: the normal repository board still scrolls independently`,
+    ).toBeGreaterThan(measurement.board.clientHeight * 2);
+  }
+
+  const boardScroller = page.getByTestId("board-scroll");
+  await boardScroller.evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+  expect(await page.evaluate(() => window.scrollY), "board scrolling leaves the page fixed").toBe(0);
+  await expect(page.locator("header h1"), "the wordmark stays visible").toBeInViewport();
+  await expect(page.getByTestId("pane-rail"), "the pane rail stays visible").toBeInViewport();
+});
 
 // ---- the canvas, at the small viewport, in the criterion's own terms -----
 
