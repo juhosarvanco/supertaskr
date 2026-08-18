@@ -98,6 +98,28 @@ have it genuinely re-subscribe onto a live board, or leave by the same
 "Open a folder…" / "Start an interview" route every other screen
 offers. **No reachable screen leaves the user with only the theme
 toggle.**
+T-063 merged 2026-08-18 on the THIRD report in that same thread, and it
+is the only card in this backlog with a real user bug report attached.
+On 2026-08-16 @human hit the "waiting for the first docs snapshot…"
+dead end again, and sent a screenshot AND their log — **and the log was
+healthy through seq 22**, because the thing that broke had no way to
+write to it: `recordStartupFailure` ended at a webview `console.error`,
+and a WKWebView console never reaches the process's stdout. So the one
+failure a user actually reports was the one failure the log could not
+describe. What a user can do now that they could not: hand over a log
+that CONTAINS the failure — a `startup-failed` event crosses to Rust
+and lands on **stderr**, deliberately beside `model-updated`'s stdout so
+a reader can separate a failure from a healthy round trip without
+parsing — and get an answer when nothing rejects at all, because a
+**deadline** now distinguishes a HANG from a REJECTION. Two quieter
+repairs ride with it: the unlisten handle is held, so a failed
+`subscribe` can no longer leave a board that looks fine and has silently
+stopped tracking their files (the worse failure mode T-050 left behind,
+a photograph of a project), and the webview re-arms after a pick.
+**THE HONEST LIMIT, and it is the part of the report this card does not
+answer: the first 8 seconds are unchanged.** Until the deadline fires
+the user sees exactly the sentence from the screenshot; what changed is
+that the wait now ENDS.
 T-042 merged 2026-08-17 and widened the entry a second way, this time
 by weakening a condition rather than adding a control: "start an
 interview here" no longer means "a folder with no `docs/` in it", it

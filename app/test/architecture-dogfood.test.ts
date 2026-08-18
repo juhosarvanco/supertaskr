@@ -1375,7 +1375,20 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // on the already CONFIRMED edge.
       // 31 → 32 at the T-029 merge regen: interview-resume-dom.test.tsx
       // imports docs-model, on the already CONFIRMED edge.
-      ["C-05", "C-10", "confirmed", 32],
+      // 32 → 33 at the T-063 merge regen: startup-screen.test.tsx now
+      // reaches watcher-store TWICE — a type import of StartupFailure and
+      // a dynamic `await import` of STARTUP_DEADLINE_MS — and the indexer
+      // folds both into the one file edge, so the count moves by one and
+      // not by two. The dynamic arm is the CONSTANT PIN the executor added
+      // to close the green poison (raising STARTUP_DEADLINE_MS 1000× left
+      // every deadline test passing, because they all advance the fake
+      // clock BY the constant): the guard against a test that cannot pin
+      // its own constant is the very import that moves this number.
+      // THE ONLY observedCount this merge moves, forecast before the regen
+      // and confirmed by a throwaway probe against the fresh graph — the
+      // node picture, the 32-row edge table, the ten D1 findings, the three
+      // D3s and all eight per-component file counts are unchanged.
+      ["C-05", "C-10", "confirmed", 33],
       ["C-05", "C-11", "planned", 0],
       // 20 → 22 at the T-034 merge regen: map-task-waves.test.ts imports
       // task-waves.ts and map-tasks-lens-dom.test.tsx imports MapView.tsx.

@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:1a05bfdb74a87a296991e7ef212427aab1df75a6ddaeb7887e693bda03805a11",
-      "loc": 664,
+      "hash": "blake3:dc8d76e524cbdd8ebbbb655b172124ca9ecdfc9c41a27f484dccf740c89f97b2",
+      "loc": 686,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -18,8 +18,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            374,
-            662
+            396,
+            684
           ]
         },
         {
@@ -28,8 +28,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            97,
-            112
+            98,
+            113
           ]
         },
         {
@@ -38,8 +38,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            135,
-            242
+            136,
+            243
           ]
         },
         {
@@ -48,8 +48,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            43,
-            60
+            44,
+            61
           ]
         },
         {
@@ -58,8 +58,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            69,
-            93
+            70,
+            94
           ]
         },
         {
@@ -68,8 +68,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            266,
-            361
+            288,
+            383
           ]
         },
         {
@@ -78,8 +78,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            365,
-            372
+            387,
+            394
+          ]
+        },
+        {
+          "id": "s:app/src/App.tsx#startupFailureHeading",
+          "name": "startupFailureHeading",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            271,
+            275
           ]
         },
         {
@@ -88,8 +98,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            249,
-            253
+            255,
+            267
           ]
         }
       ]
@@ -5025,8 +5035,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:5c92dff3e5aa11a6b8eedd3a1adec65fb32e3a11ee3b629ad076665c5282965f",
-      "loc": 950,
+      "hash": "blake3:de7fb9453f4cb8a585b3501b96ef2c3e624b9454e0f4338c8e1e8cbb574db03d",
+      "loc": 1200,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -5034,8 +5044,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            234,
-            235
+            296,
+            297
           ]
         },
         {
@@ -5054,8 +5064,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            268,
-            270
+            330,
+            332
           ]
         },
         {
@@ -5094,8 +5104,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            239,
-            244
+            301,
+            306
           ]
         },
         {
@@ -5124,8 +5134,28 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            162,
-            166
+            224,
+            228
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#STARTUP_DEADLINE_MS",
+          "name": "STARTUP_DEADLINE_MS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            198,
+            198
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#STARTUP_FAILED_EVENT",
+          "name": "STARTUP_FAILED_EVENT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            209,
+            209
           ]
         },
         {
@@ -5134,8 +5164,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            274,
-            285
+            336,
+            347
           ]
         },
         {
@@ -5144,8 +5174,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            483,
-            504
+            545,
+            566
           ]
         },
         {
@@ -5164,8 +5194,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            168,
-            197
+            230,
+            259
           ]
         },
         {
@@ -5174,8 +5204,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            151,
-            157
+            213,
+            219
           ]
         },
         {
@@ -5184,8 +5214,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            147,
-            147
+            157,
+            157
           ]
         },
         {
@@ -5194,8 +5224,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            658,
-            671
+            750,
+            763
           ]
         },
         {
@@ -5204,8 +5234,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            686,
-            702
+            778,
+            806
           ]
         },
         {
@@ -5214,8 +5244,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            643,
-            656
+            735,
+            748
           ]
         },
         {
@@ -5224,8 +5254,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            890,
-            907
+            1111,
+            1157
           ]
         },
         {
@@ -5234,8 +5264,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            602,
-            604
+            694,
+            696
           ]
         },
         {
@@ -5244,8 +5274,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            549,
-            549
+            611,
+            611
           ]
         },
         {
@@ -5254,8 +5284,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            606,
-            608
+            698,
+            700
           ]
         },
         {
@@ -5264,8 +5294,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            924,
-            926
+            1174,
+            1176
           ]
         },
         {
@@ -5274,8 +5304,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            564,
-            564
+            626,
+            626
           ]
         },
         {
@@ -5284,8 +5314,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            434,
-            438
+            496,
+            500
           ]
         },
         {
@@ -5294,8 +5324,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            916,
-            921
+            1166,
+            1171
           ]
         },
         {
@@ -5304,8 +5334,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            458,
-            469
+            520,
+            531
           ]
         },
         {
@@ -5314,8 +5344,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            846,
-            848
+            1067,
+            1069
           ]
         },
         {
@@ -5324,8 +5354,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            835,
-            837
+            1056,
+            1058
           ]
         },
         {
@@ -5334,8 +5364,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            249,
-            259
+            311,
+            321
           ]
         },
         {
@@ -5344,8 +5374,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            710,
-            729
+            814,
+            850
           ]
         },
         {
@@ -5354,8 +5384,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            219,
-            229
+            281,
+            291
           ]
         },
         {
@@ -5364,8 +5394,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            356,
-            412
+            418,
+            474
           ]
         },
         {
@@ -5374,8 +5404,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            209,
-            211
+            271,
+            273
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#runHandshake",
+          "name": "runHandshake",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            873,
+            910
           ]
         },
         {
@@ -5384,8 +5424,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            939,
-            950
+            1189,
+            1200
           ]
         },
         {
@@ -5394,8 +5434,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            871,
-            881
+            1092,
+            1102
           ]
         },
         {
@@ -5404,8 +5444,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            739,
-            785
+            929,
+            1006
           ]
         },
         {
@@ -5414,8 +5454,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            287,
-            347
+            349,
+            409
           ]
         },
         {
@@ -5424,8 +5464,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            675,
-            684
+            767,
+            776
           ]
         },
         {
@@ -5434,8 +5474,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            610,
-            613
+            702,
+            705
           ]
         },
         {
@@ -5444,8 +5484,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            551,
-            563
+            613,
+            625
           ]
         },
         {
@@ -5454,8 +5494,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            620,
-            641
+            712,
+            733
           ]
         },
         {
@@ -5464,8 +5504,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            798,
-            827
+            1019,
+            1048
           ]
         },
         {
@@ -5474,8 +5514,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            856,
-            858
+            1077,
+            1079
           ]
         },
         {
@@ -5484,8 +5524,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            593,
-            593
+            655,
+            655
           ]
         },
         {
@@ -5494,8 +5534,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            595,
-            595
+            657,
+            657
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#startupToken",
+          "name": "startupToken",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            687,
+            687
           ]
         },
         {
@@ -5504,8 +5554,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            597,
-            600
+            689,
+            692
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#unlistenDocs",
+          "name": "unlistenDocs",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            676,
+            676
           ]
         }
       ]
@@ -5847,8 +5907,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:55dffddd44b7797c688243026d83fe37b5e4610ccf463772b0dab71665ae0126",
-      "loc": 1546,
+      "hash": "blake3:2c91257d735fea9cb6d22b91df5d7860c2af9979193d82f5579f70b357c176c3",
+      "loc": 1559,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -8970,8 +9030,8 @@
       "id": "f:app/test/shell-harness.test.ts",
       "path": "app/test/shell-harness.test.ts",
       "lang": "ts",
-      "hash": "blake3:da89344c0f5783657b74a096e5ce246a12b5921ab37bd7a6d3029617aecb7a03",
-      "loc": 328,
+      "hash": "blake3:5dbd329cc9029446d3cd013fc566b4905e48050024a0458eb41d8a51e5ad132c",
+      "loc": 354,
       "symbols": [
         {
           "id": "s:app/test/shell-harness.test.ts#StoreModule",
@@ -9019,17 +9079,27 @@
       "id": "f:app/test/startup-recovery.test.ts",
       "path": "app/test/startup-recovery.test.ts",
       "lang": "ts",
-      "hash": "blake3:446d2b5a34ffb2352ffec409e911be81ca0da3c3115a48392fea53ff4aa3c21e",
-      "loc": 469,
+      "hash": "blake3:b11923df5294f03922ed732a9229ed49e33717a1d7df74db1eb5e777dd85cb73",
+      "loc": 1024,
       "symbols": [
+        {
+          "id": "s:app/test/startup-recovery.test.ts#PROBE",
+          "name": "PROBE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            154,
+            154
+          ]
+        },
         {
           "id": "s:app/test/startup-recovery.test.ts#SNAPSHOT",
           "name": "SNAPSHOT",
           "kind": "const",
           "exported": false,
           "range": [
-            71,
-            82
+            109,
+            120
           ]
         },
         {
@@ -9038,8 +9108,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            69,
-            69
+            107,
+            107
           ]
         },
         {
@@ -9048,8 +9118,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            100,
-            100
+            156,
+            156
+          ]
+        },
+        {
+          "id": "s:app/test/startup-recovery.test.ts#failureEvents",
+          "name": "failureEvents",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            149,
+            152
           ]
         },
         {
@@ -9058,8 +9138,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            87,
-            98
+            125,
+            141
           ]
         },
         {
@@ -9069,7 +9149,17 @@
           "exported": false,
           "range": [
             34,
-            46
+            62
+          ]
+        },
+        {
+          "id": "s:app/test/startup-recovery.test.ts#settle",
+          "name": "settle",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            146,
+            146
           ]
         }
       ]
@@ -9078,8 +9168,8 @@
       "id": "f:app/test/startup-screen.test.tsx",
       "path": "app/test/startup-screen.test.tsx",
       "lang": "ts",
-      "hash": "blake3:8a67e9a9249e2cf23dd62c334235538e720fecbe8213e1c73652bb20605238cc",
-      "loc": 354,
+      "hash": "blake3:864a9484d2cc048fa087d9978e1afb16c449b04a7d00d967920fa56aa8cb83b4",
+      "loc": 448,
       "symbols": [
         {
           "id": "s:app/test/startup-screen.test.tsx#App",
@@ -9087,8 +9177,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            86,
-            86
+            93,
+            93
           ]
         },
         {
@@ -9097,8 +9187,28 @@
           "kind": "const",
           "exported": false,
           "range": [
-            95,
-            100
+            103,
+            108
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#STARTUP_DEADLINE_MS",
+          "name": "STARTUP_DEADLINE_MS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            94,
+            94
+          ]
+        },
+        {
+          "id": "s:app/test/startup-screen.test.tsx#StartupScreen",
+          "name": "StartupScreen",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            93,
+            93
           ]
         },
         {
@@ -9107,8 +9217,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            130,
-            139
+            138,
+            147
           ]
         },
         {
@@ -9117,8 +9227,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            119,
-            125
+            127,
+            133
           ]
         },
         {
@@ -9127,8 +9237,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            102,
-            102
+            110,
+            110
           ]
         },
         {
@@ -9137,8 +9247,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            143,
-            144
+            151,
+            152
           ]
         },
         {
@@ -9147,8 +9257,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            104,
-            104
+            112,
+            112
           ]
         },
         {
@@ -9157,8 +9267,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            113,
-            117
+            121,
+            125
           ]
         },
         {
@@ -9167,8 +9277,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            23,
-            32
+            30,
+            39
           ]
         },
         {
@@ -9177,8 +9287,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            106,
-            107
+            114,
+            115
           ]
         },
         {
@@ -9187,8 +9297,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            103,
-            103
+            111,
+            111
           ]
         },
         {
@@ -9197,8 +9307,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            108,
-            109
+            116,
+            117
           ]
         },
         {
@@ -9207,8 +9317,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            110,
-            111
+            118,
+            119
           ]
         }
       ]
@@ -10733,6 +10843,7 @@
         "CONVENTION_HINT",
         "FrontDoorNotice",
         "PlanChecklistRow",
+        "STARTUP_DEADLINE_MS",
         "StartupFailure",
         "StartupStep",
         "getShellState",
@@ -13867,7 +13978,17 @@
       "to": "f:app/src/App.tsx",
       "kind": "import",
       "symbols": [
+        "StartupScreen",
         "default"
+      ]
+    },
+    {
+      "from": "f:app/test/startup-screen.test.tsx",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "STARTUP_DEADLINE_MS",
+        "StartupFailure"
       ]
     },
     {
@@ -15021,12 +15142,24 @@
     },
     {
       "from": "s:app/src/App.tsx#StartupScreen",
+      "to": "s:app/src/App.tsx#startupFailureHeading",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#StartupScreen",
       "to": "s:app/src/App.tsx#startupStepPhrase",
       "kind": "call",
       "confidence": "resolved"
     },
     {
       "from": "s:app/src/App.tsx#StartupScreen",
+      "to": "s:app/src/lib/watcher-store.ts#StartupFailure",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#startupFailureHeading",
       "to": "s:app/src/lib/watcher-store.ts#StartupFailure",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -18842,6 +18975,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/watcher-store.ts#commitPickOutcome",
+      "to": "s:app/src/lib/watcher-store.ts#startDocsWatcher",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/watcher-store.ts#getShellState",
       "to": "s:app/src/lib/watcher-store.ts#ShellState",
       "kind": "type_ref",
@@ -18892,6 +19031,12 @@
     {
       "from": "s:app/src/lib/watcher-store.ts#planChecklist",
       "to": "s:app/src/lib/watcher-store.ts#PlanProbePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#recordStartupFailure",
+      "to": "s:app/src/lib/watcher-store.ts#StartupFailure",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -18974,6 +19119,48 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/watcher-store.ts#runHandshake",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runHandshake",
+      "to": "s:app/src/lib/watcher-store.ts#ProjectStatusPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runHandshake",
+      "to": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runHandshake",
+      "to": "s:app/src/lib/watcher-store.ts#applyProjectStatus",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runHandshake",
+      "to": "s:app/src/lib/watcher-store.ts#recordStartupFailure",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runHandshake",
+      "to": "s:app/src/lib/watcher-store.ts#setShell",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runHandshake",
+      "to": "s:app/src/lib/watcher-store.ts#unlistenDocs",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/watcher-store.ts#runIndexRepo",
       "to": "s:app/src/lib/watcher-store.ts#IndexOutcomePayload",
       "kind": "type_ref",
@@ -19005,31 +19192,13 @@
     },
     {
       "from": "s:app/src/lib/watcher-store.ts#runStartup",
-      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/lib/watcher-store.ts#runStartup",
-      "to": "s:app/src/lib/watcher-store.ts#ProjectStatusPayload",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/lib/watcher-store.ts#runStartup",
-      "to": "s:app/src/lib/watcher-store.ts#applyDocsPayload",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/lib/watcher-store.ts#runStartup",
-      "to": "s:app/src/lib/watcher-store.ts#applyProjectStatus",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/lib/watcher-store.ts#runStartup",
       "to": "s:app/src/lib/watcher-store.ts#recordStartupFailure",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#runStartup",
+      "to": "s:app/src/lib/watcher-store.ts#runHandshake",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -21077,7 +21246,7 @@
   ],
   "stats": {
     "files": 115,
-    "symbols": 953,
-    "edges": 1468
+    "symbols": 964,
+    "edges": 1477
   }
 }
