@@ -1,11 +1,23 @@
 //! T-025 §7: the agent runner's lifecycle matrix, driven against the
 //! FAKE agent CLI. **No model is called by anything in this file** — the
 //! binary under `CARGO_BIN_EXE_fake_agent` is a canned stream emitter
-//! built by cargo, and every config here sets `probe_login_shell: false`,
-//! so no test can spawn a login shell or resolve the user's real CLI even
-//! by accident.
+//! built by cargo.
 //!
-//! The one env-gated real smoke lives at the bottom, `#[ignore]`d.
+//! **T-060 CHANGED WHY THAT IS TRUE, and the difference is the point.**
+//! It used to rest on "every config here sets `probe_login_shell: false`"
+//! — a property held by DISCIPLINE, in a field every test had to
+//! remember, with `..RunnerConfig::default()` as the idiom and the
+//! default `true`. **It failed**: T-047's verifier spawned the
+//! developer's real `claude` with the genesis planner prompt from
+//! `cargo test`, and no tokens were spent only because the token is
+//! revoked. Since T-060 the runner refuses the login-shell and PATH arms
+//! from any cargo TEST binary on its own
+//! (`runner::real_cli_arms_forbidden`), so a test that forgets the field
+//! — or a test file written next year that never heard of it — gets a
+//! typed `cliNotFound` rather than the user's machine.
+//!
+//! The one env-gated real smoke lives at the bottom, `#[ignore]`d. It is
+//! the only test in the repo that opts out, and it does so explicitly.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -123,7 +135,6 @@ fn harness(tag: &str, opts: Options<'_>) -> Harness {
         path_override: Some("/nputer-test-path/bin:/nputer-test-path/sbin".into()),
         extra_env,
         probe_login_shell: false,
-        config_dir: Some(config),
         start_timeout: opts.start_timeout,
         stall_timeout: opts.stall_timeout,
         coalesce: Duration::from_millis(40),
@@ -1388,13 +1399,22 @@ fn a_hostile_resume_id_handed_straight_to_the_runner_spawns_nothing() {
     assert_eq!(argv[idx + 1], "e7954de6-2ac1-4b62-9f0b-8c0d5b3a1e77");
 }
 
-// ==== T-047: what the runner trusts from disk ===========================
+// ==== T-060: what the runner trusts from disk — NOTHING =================
+//
+// T-047 wrote this section about a cache it had just GATED. T-060 retired
+// that cache, so every test below asserts the strictly stronger property:
+// not "a poisoned `agent-paths.json` is refused" but **there is no
+// `agent-paths.json` to poison** — no reader, no writer, no invalidator,
+// and no config path for one to live at.
 
 /// Plant `agent-paths.json` BY HAND — a `format!` template, with no runner
 /// code involved in producing it. This is what an attacker with write
-/// access to the app config dir leaves behind, and it is deliberately not
-/// built through `write_cache`: a test that can only produce files the
-/// code already writes cannot test what the code refuses to read.
+/// access to the app config dir leaves behind.
+///
+/// **T-060 keeps this helper deliberately.** The runner can no longer
+/// write such a file, so a test that could only produce files the code
+/// writes could no longer produce one at all — and then "the file is
+/// ignored" would be unfalsifiable.
 fn plant_agent_paths(config: &Path, path: &str, login_path: Option<&str>) {
     fs::create_dir_all(config).expect("mk config");
     let entry = match login_path {
@@ -1414,22 +1434,19 @@ fn plant_binary(dest: &Path) {
     fs::copy(fake_agent_bin(), dest).expect("copy the fake agent");
 }
 
-/// A cfg that resolves through the CACHE rather than through the seam:
-/// `binary_override` is None, so `resolve_cli` reads `agent-paths.json`.
-/// `probe_login_shell` stays false, so no test can spawn a login shell.
-fn cache_cfg(root: &Path, extra: Vec<(String, String)>, path_override: Option<&str>) -> RunnerConfig {
+/// A cfg that RESOLVES rather than taking the seam: `binary_override` is
+/// None, so resolution has to find the binary for itself.
+fn resolving_cfg(extra: Vec<(String, String)>, path_override: Option<&str>) -> RunnerConfig {
     RunnerConfig {
         binary_override: None,
         path_override: path_override.map(str::to_string),
         extra_env: extra,
         probe_login_shell: false,
-        config_dir: Some(root.join("config")),
         start_timeout: Duration::from_millis(1500),
         stall_timeout: Duration::from_millis(1500),
         coalesce: Duration::from_millis(40),
         kill_grace: Duration::from_millis(300),
         probe_timeout: Duration::from_secs(5),
-        ..RunnerConfig::default()
     }
 }
 
@@ -1444,200 +1461,245 @@ fn wired(project: &Path, cfg: RunnerConfig) -> (WatchState, agent::AgentState, m
     (watch, agent, events)
 }
 
-/// **THE T-047 HEADLINE (criterion 2, T-039-s1): A POISONED
-/// `agent-paths.json` EXECUTES NOTHING.**
+/// **THE T-060 HEADLINE (criterion 1, absorbing T-047-s1): THERE IS NO
+/// CACHE TO POISON.**
 ///
-/// What the pre-fix code did, measured before the fix was written — the
-/// cached path was gated on `is_executable_file` alone and then handed
-/// straight to `probe_version`, which is a `Command::new`:
+/// This replaces `a_poisoned_agent_paths_json_executes_nothing_at_any_door`
+/// and `the_cache_is_re_read_and_re_judged_before_every_turn`, and it is
+/// stronger than both. Those asserted that a REFUSABLE entry was refused,
+/// which leaves the question "what about an entry the gate accepts?" —
+/// and T-047's own header answered it honestly: an absolute,
+/// traversal-free file named `claude` pointing at an attacker's binary
+/// still passed.
 ///
-///     [t047-probe-b/traversal] resolve_cli -> Ok(ResolvedCli { path: "…/bin/../evil/claude", … })
-///     [t047-probe-b/traversal] TATTLE FILE EXISTS: true
-///     [t047-probe-b/traversal] tattle says: EXECUTED ["…/bin/../evil/claude", "--version"]
-///
-/// …and through `start_genesis`, a whole turn:
-///
-///     [t047-probe-b2] start_genesis -> Started { turn: 1 }
-///     [t047-probe-b2] TATTLE FILE EXISTS: true
-///     [t047-probe-b2] tattle says: EXECUTED ["…/bin/../evil/claude", "-p", "--output-format", …]
-///
-/// The tattle-file's ABSENCE is the whole assertion: a refused path is a
-/// path that never became a process. Driven at all three doors, because
-/// `resolve_cli` runs from every one of them.
+/// So the entry planted here is the one T-047's gate ACCEPTED: absolute,
+/// traversal-free, named `claude`, and genuinely executable. Under T-047
+/// this resolved and ran; under T-060 the file is not a source of
+/// anything, so it resolves to typed not-found and the binary never
+/// becomes a process. The tattle file's ABSENCE is the whole assertion.
 #[test]
-fn a_poisoned_agent_paths_json_executes_nothing_at_any_door() {
-    for (label, planted) in [
-        // Traversal: absolute, correctly named, and pointing somewhere
-        // else entirely. The OS resolves `..` at exec time.
-        ("traversal", "bin/../evil/claude"),
-        // Absolute, real, executable — and not the adapter's binary name,
-        // so no probe could ever have produced it.
-        ("misnamed", "evil/tattler"),
-        // Relative: resolves against whatever CWD the OS handed the app.
-        ("relative", "evil/claude"),
-    ] {
-        let root = std::env::temp_dir().join(format!(
-            "nputer-t047-poison-{}-{}-{}",
-            label,
-            std::process::id(),
-            now_ms()
-        ));
-        let project = root.join("project");
-        let tattle = root.join("tattle.txt");
-        fs::create_dir_all(&project).expect("mk project");
-        fs::create_dir_all(root.join("bin")).expect("mk bin");
-        plant_binary(&root.join("evil/claude"));
-        plant_binary(&root.join("evil/tattler"));
-
-        let planted_abs = if label == "relative" {
-            planted.to_string()
-        } else {
-            root.join(planted).display().to_string()
-        };
-        plant_agent_paths(&root.join("config"), &planted_abs, None);
-
-        let extra = vec![
-            ("NPUTER_FAKE_TATTLE".to_string(), tattle.display().to_string()),
-            ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
-        ];
-
-        // DOOR 1 — `resolve_cli` itself, where `probe_version` spawns.
-        let cfg = cache_cfg(&root, extra.clone(), Some("/nputer-test-path/bin"));
-        match nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter()) {
-            Err(nputer_lib::agent::runner::ResolveError::NotFound { probed }) => {
-                assert!(
-                    probed.iter().any(|p| p.starts_with("cached path (refused:")),
-                    "the refusal must NAME the cached entry it discarded: {probed:?}"
-                );
-                assert!(
-                    !probed.iter().any(|p| p.contains("evil")),
-                    "…without a silent fallback to the poisoned value: {probed:?}"
-                );
-            }
-            other => panic!("[{label}] expected a typed NotFound, got {other:?}"),
-        }
-        assert!(
-            !tattle.exists(),
-            "[{label}] THE POISONED BINARY RAN AT RESOLVE TIME: {}",
-            fs::read_to_string(&tattle).unwrap_or_default()
-        );
-
-        // DOOR 2 — `start_genesis`, which resolves live on every start.
-        plant_agent_paths(&root.join("config"), &planted_abs, None);
-        let (watch, agent, _events) = wired(&project, cache_cfg(&root, extra.clone(), Some("/nputer-test-path/bin")));
-        match agent::start_genesis(&watch, &agent) {
-            StartOutcome::CliNotFound { probed } => assert!(
-                probed.iter().any(|p| p.starts_with("cached path (refused:")),
-                "[{label}] {probed:?}"
-            ),
-            other => panic!("[{label}] expected CliNotFound, got {other:?}"),
-        }
-        std::thread::sleep(Duration::from_millis(200));
-        assert!(!tattle.exists(), "[{label}] start_genesis executed the poisoned binary");
-        // Nothing was written on the way to refusing, either.
-        assert!(!sessions::sessions_path(&project).exists(), "[{label}] registry written");
-        assert!(!project.join(".nputer/genesis/kit").exists(), "[{label}] kit materialized");
-
-        let _ = fs::remove_dir_all(&root);
-    }
-}
-
-/// The same poison, planted BETWEEN TURNS — because `resolve_cli` runs on
-/// `send_turn` too, so a file that was clean at start is read again, live,
-/// before every single turn. Turn 1 goes through a LEGITIMATE cache entry,
-/// which is the discriminating half: the gate is one a real probe result
-/// passes.
-#[test]
-fn the_cache_is_re_read_and_re_judged_before_every_turn() {
+fn there_is_no_agent_paths_json_to_poison_at_any_door() {
     let root = std::env::temp_dir().join(format!(
-        "nputer-t047-betweenturns-{}-{}",
+        "nputer-t060-nocache-{}-{}",
         std::process::id(),
         now_ms()
     ));
     let project = root.join("project");
-    let dump = root.join("dump");
-    fs::create_dir_all(&project).expect("mk project");
-    fs::create_dir_all(&dump).expect("mk dump");
     let tattle = root.join("tattle.txt");
+    fs::create_dir_all(&project).expect("mk project");
+    // The entry T-047's gate would have ACCEPTED, not one it refused.
     plant_binary(&root.join("bin/claude"));
-    plant_binary(&root.join("evil/claude"));
+    let planted = root.join("bin/claude").display().to_string();
+    plant_agent_paths(&root.join("config"), &planted, None);
+    assert_eq!(
+        nputer_lib::agent::runner::validate_resolved_binary(
+            Path::new(&planted),
+            adapter::planner_adapter()
+        ),
+        Ok(()),
+        "the planted entry must be one T-047's gate ACCEPTED - otherwise this test \
+         only re-proves T-047"
+    );
 
     let extra = vec![
+        ("NPUTER_FAKE_TATTLE".to_string(), tattle.display().to_string()),
         ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
-        ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
     ];
-    // Turn 1: a cache entry a fresh probe could genuinely have produced.
-    plant_agent_paths(
-        &root.join("config"),
-        &root.join("bin/claude").display().to_string(),
-        None,
-    );
-    let (watch, agent, events) = wired(&project, cache_cfg(&root, extra, Some("/nputer-test-path/bin")));
-    assert!(
-        matches!(agent::start_genesis(&watch, &agent), StartOutcome::Started { .. }),
-        "a VALID cached entry must still resolve - a gate nobody can pass is not a gate"
-    );
-    wait_completed(&events);
-    let status = loop {
-        let s = agent::status(&agent);
-        if s.phase != Phase::Running {
-            break s;
-        }
-        std::thread::sleep(Duration::from_millis(20));
-    };
-    assert_eq!(status.native_session_id.as_deref(), Some("fake-session-0001"));
 
-    // Now poison it, mid-session, and send turn 2.
-    plant_agent_paths(
-        &root.join("config"),
-        &root.join("bin/../evil/claude").display().to_string(),
-        None,
-    );
-    fs::write(&root.join("config/tattle-marker"), "x").expect("marker");
-    // The tattle only becomes meaningful from here: turn 1 legitimately
-    // ran the copy at bin/claude, which had no tattle variable set.
-    match agent::send_turn(&watch, &agent, "answer two".into()) {
-        SendOutcome::CliNotFound { probed } => assert!(
-            probed.iter().any(|p| p.starts_with("cached path (refused:")),
-            "{probed:?}"
-        ),
-        other => panic!("expected CliNotFound on turn 2, got {other:?}"),
+    // DOOR 1 — `resolve_cli` itself, where `probe_version` spawned.
+    let cfg = resolving_cfg(extra.clone(), Some("/nputer-test-path/bin"));
+    match nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter()) {
+        Err(nputer_lib::agent::runner::ResolveError::NotFound { probed }) => {
+            assert!(
+                !probed.iter().any(|p| p.contains("cached")),
+                "nothing may report having consulted a cache: {probed:?}"
+            );
+            assert!(
+                !probed.iter().any(|p| p.contains("agent-paths")),
+                "the file is not even named as something that was looked at: {probed:?}"
+            );
+        }
+        other => panic!("expected a typed NotFound, got {other:?}"),
+    }
+    assert!(!tattle.exists(), "THE PLANTED BINARY RAN AT RESOLVE TIME");
+
+    // DOOR 2 — `start_genesis`, which resolves live on every start.
+    let (watch, agent, _events) =
+        wired(&project, resolving_cfg(extra.clone(), Some("/nputer-test-path/bin")));
+    match agent::start_genesis(&watch, &agent) {
+        StartOutcome::CliNotFound { probed } => {
+            assert!(!probed.iter().any(|p| p.contains("cached")), "{probed:?}")
+        }
+        other => panic!("expected CliNotFound, got {other:?}"),
     }
     std::thread::sleep(Duration::from_millis(200));
-    assert!(!tattle.exists(), "the poisoned binary ran on send_turn");
-    assert!(!turn_dump(&dump, 2).exists(), "a second child was spawned at all");
-    // The single-flight latch was released on the typed refusal.
-    assert!(matches!(
-        agent::send_turn(&watch, &agent, "again".into()),
-        SendOutcome::CliNotFound { .. }
-    ));
+    assert!(!tattle.exists(), "start_genesis executed the planted binary");
+    // Nothing was written on the way to refusing, either.
+    assert!(!sessions::sessions_path(&project).exists(), "registry written");
+    assert!(!project.join(".nputer/genesis/kit").exists(), "kit materialized");
+
+    // DOOR 3 — `send_turn`, which resolves again before every turn. Turn 1
+    // goes through the SEAM so a live session exists; the file is planted
+    // fresh underneath it and must still reach nothing.
+    let dump = root.join("dump");
+    fs::create_dir_all(&dump).expect("mk dump");
+    let seam = RunnerConfig {
+        binary_override: Some(fake_agent_bin()),
+        extra_env: vec![
+            ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
+            ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
+        ],
+        ..resolving_cfg(vec![], Some("/nputer-test-path/bin"))
+    };
+    let (watch, agent, events) = wired(&project, seam);
+    assert!(matches!(agent::start_genesis(&watch, &agent), StartOutcome::Started { .. }));
+    wait_completed(&events);
+    while agent::status(&agent).phase == Phase::Running {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    plant_agent_paths(&root.join("config"), &planted, None);
+    match agent::send_turn(&watch, &agent, "answer two".into()) {
+        SendOutcome::Accepted { turn } => assert_eq!(turn, 2),
+        other => panic!("expected the turn to be accepted, got {other:?}"),
+    }
+    wait_completed(&events);
+    while agent::status(&agent).phase == Phase::Running {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    // The turn ran the SEAM's binary, not the file's — and the file's copy
+    // is the one carrying the tattle variable.
+    assert!(turn_dump(&dump, 2).exists(), "turn 2 did not spawn at all");
+    assert!(!tattle.exists(), "send_turn resolved through the planted file");
+
+    // …AND NOTHING EVER WROTE ONE. `config_dir` is gone from the struct,
+    // so there is no path for a cache to be written to; the only
+    // `agent-paths.json` under this tree is the one this test planted.
+    let mut found: Vec<PathBuf> = Vec::new();
+    find_named(&root, "agent-paths.json", &mut found);
+    assert_eq!(
+        found,
+        vec![root.join("config/agent-paths.json")],
+        "the runner wrote an agent-paths.json of its own"
+    );
 
     let _ = fs::remove_dir_all(&root);
 }
 
-/// **CRITERION 1 (T-039-s1's completely ungated half): THE CACHED LOGIN
-/// PATH NEVER REACHES THE CHILD.**
+/// Every file named `name` under `dir`, recursively. Small and local: the
+/// alternative is asserting a cache is absent at ONE path we chose, which
+/// is exactly the assumption a reintroduced cache would break.
+fn find_named(dir: &Path, name: &str, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            find_named(&path, name, out);
+        } else if path.file_name().and_then(|n| n.to_str()) == Some(name) {
+            out.push(path);
+        }
+    }
+    out.sort();
+}
+
+/// **THE RELATIVE-PATH ATTACK, REFUSED (T-060 criterion 3, T-047-s5).**
+///
+/// T-047's verifier reproduced this with a tattler and recorded it
+/// verbatim in the finding:
+///
+///     resolve_cli -> Ok(ResolvedCli { path: "relbin/claude", … })
+///     TATTLE EXISTS: true
+///     would the CACHE gate have accepted it? Err(NotAbsolute)
+///
+/// One gate, two doors, two answers: `validate_cached_binary` called the
+/// path `NotAbsolute` and discarded it, and the probe arm executed it.
+///
+/// `which_on_path` reads the app's inherited `PATH` and hands each element
+/// to `which_in`, which does `dir.join(binary)`. The element here is a
+/// relative directory name — the same shape as `.`, as an empty element
+/// (POSIX's spelling of the current directory) and as any unrooted entry a
+/// dotfile appended without realising. This drives `which_in` through
+/// `resolve_cli`'s search-path arm, which is the identical lookup and the
+/// identical join; only the string's origin differs, and the finding was
+/// never about its origin.
+///
+/// **BOTH HALVES RUN AGAINST THE SAME FIXTURE, IN ORDER.** The relative
+/// spelling must reach no process; the ABSOLUTE spelling of the very same
+/// directory must then reach one. A tattle file that never appears proves
+/// nothing unless the tattler is shown to work.
+#[test]
+fn a_relative_search_path_element_reaches_no_process() {
+    let root = std::env::temp_dir().join(format!(
+        "nputer-t060-relpath-{}-{}",
+        std::process::id(),
+        now_ms()
+    ));
+    let project = root.join("project");
+    let tattle = root.join("tattle.txt");
+    fs::create_dir_all(&project).expect("mk project");
+    plant_binary(&root.join("relbin/claude"));
+    let extra = vec![
+        ("NPUTER_FAKE_TATTLE".to_string(), tattle.display().to_string()),
+        ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
+    ];
+
+    // ARM ONE: the relative element. Refused, and nothing executed.
+    for hostile in ["relbin", ".", "", "relbin:.", ".:relbin"] {
+        let cfg = resolving_cfg(extra.clone(), Some(hostile));
+        match nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter()) {
+            Err(nputer_lib::agent::runner::ResolveError::NotFound { .. }) => {}
+            other => panic!("[{hostile}] expected NotFound, got {other:?}"),
+        }
+        assert!(
+            !tattle.exists(),
+            "[{hostile}] A RELATIVE PATH ELEMENT REACHED `Command::new`: {}",
+            fs::read_to_string(&tattle).unwrap_or_default()
+        );
+        // …and through the app door too, which is where a real user is.
+        let (watch, agent, _events) = wired(&project, resolving_cfg(extra.clone(), Some(hostile)));
+        assert!(matches!(agent::start_genesis(&watch, &agent), StartOutcome::CliNotFound { .. }));
+        std::thread::sleep(Duration::from_millis(150));
+        assert!(!tattle.exists(), "[{hostile}] start_genesis executed it");
+    }
+
+    // ARM TWO, THE DISCRIMINATOR: the SAME directory, spelled absolutely.
+    // Same binary, same fixture, same tattle file — only the spelling of
+    // the search path differs, which is precisely the variable under test.
+    let absolute = root.join("relbin").display().to_string();
+    let cfg = resolving_cfg(extra.clone(), Some(&absolute));
+    let resolved = nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter())
+        .expect("the absolute spelling of the same directory must resolve");
+    assert_eq!(resolved.path, root.join("relbin/claude"));
+    assert!(
+        tattle.exists(),
+        "the tattler never fires at all - arm one proved nothing"
+    );
+
+    let _ = fs::remove_dir_all(&root);
+}
+
+/// **NO LOGIN PATH COMES OFF DISK, BECAUSE NOTHING DOES** (T-060,
+/// completing T-047's second half).
 ///
 /// `cli.login_path` becomes the child's `PATH`, which decides which `git`
 /// and which `cp` the planner's own Bash resolves to — and it used to come
 /// out of `agent-paths.json` verbatim, with no gate at all. Measured
-/// pre-fix, with the hostile element planted in the cache file:
+/// pre-T-047, with the hostile element planted in the cache file:
 ///
 ///     [t047-probe-c] CHILD PATH: /nputer-hostile/bin:/tmp/nputer-attacker-shims
 ///     [t047-probe-c] child PATH carries the planted hostile element: true
 ///
-/// The arm taken is NOT CACHED AT ALL, so the assertion is that the
-/// planted value reaches nothing, and that what the child does get came
-/// through the probe channel instead.
+/// T-047 removed the FIELD; T-060 removed the file. What is asserted is
+/// unchanged in shape and stronger in premise: the planted value reaches
+/// nothing, and what the child does get came through the probe channel.
 #[test]
-fn the_cached_login_path_never_reaches_the_child() {
+fn no_login_path_ever_comes_from_a_file() {
     const HOSTILE: &str = "/nputer-hostile/bin:/tmp/nputer-attacker-shims";
 
-    // ARM ONE, the discriminating one: NO `path_override`, so if the cache
+    // ARM ONE, the discriminating one: NO `path_override`, so if a file
     // were still trusted its `login_path` is exactly what `apply_child_env`
-    // would reach for — as it did, pre-fix.
+    // would reach for — as it did, pre-T-047.
     let root = std::env::temp_dir().join(format!(
-        "nputer-t047-cachedpath-{}-{}",
+        "nputer-t060-loginpath-{}-{}",
         std::process::id(),
         now_ms()
     ));
@@ -1656,7 +1718,14 @@ fn the_cached_login_path_never_reaches_the_child() {
         ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
         ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
     ];
-    let (watch, agent, events) = wired(&project, cache_cfg(&root, extra.clone(), None));
+    // The binary comes through the SEAM here: with the cache retired the
+    // file cannot supply one, and the question this test asks is about the
+    // PATH, not about the binary.
+    let cfg = RunnerConfig {
+        binary_override: Some(root.join("bin/claude")),
+        ..resolving_cfg(extra.clone(), None)
+    };
+    let (watch, agent, events) = wired(&project, cfg);
     assert!(matches!(agent::start_genesis(&watch, &agent), StartOutcome::Started { .. }));
     wait_completed(&events);
     while agent::status(&agent).phase == Phase::Running {
@@ -1666,7 +1735,7 @@ fn the_cached_login_path_never_reaches_the_child() {
     let child_path = read_env(&dump, 1).get("PATH").cloned().unwrap_or_default();
     assert!(
         !child_path.contains("nputer-hostile") && !child_path.contains("nputer-attacker-shims"),
-        "THE CACHED login_path REACHED THE CHILD'S PATH: {child_path}"
+        "A FILE'S login_path REACHED THE CHILD'S PATH: {child_path}"
     );
     // What it DID get is the live environment's PATH — the documented
     // fallback when no probe answered — never the file's.
@@ -1679,9 +1748,9 @@ fn the_cached_login_path_never_reaches_the_child() {
 
     // ARM TWO: with the probe channel answering (under the seam, that is
     // `path_override`), the child's PATH is the FRESH value, byte for
-    // byte, while the same hostile element sits in the cache file unread.
+    // byte, while the same hostile element sits in the file unread.
     let root = std::env::temp_dir().join(format!(
-        "nputer-t047-freshpath-{}-{}",
+        "nputer-t060-freshpath-{}-{}",
         std::process::id(),
         now_ms()
     ));
@@ -1699,19 +1768,180 @@ fn the_cached_login_path_never_reaches_the_child() {
         ("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string()),
         ("NPUTER_FAKE_DUMP_DIR".to_string(), dump.display().to_string()),
     ];
-    let (watch, agent, events) = wired(&project, cache_cfg(&root, extra, Some("/t047-freshly-probed/bin")));
+    // Here the binary IS resolved rather than injected, over an absolute
+    // search path — the one shape resolution still accepts.
+    let cfg = resolving_cfg(extra, Some(&root.join("bin").display().to_string()));
+    let (watch, agent, events) = wired(&project, cfg);
     assert!(matches!(agent::start_genesis(&watch, &agent), StartOutcome::Started { .. }));
     wait_completed(&events);
     while agent::status(&agent).phase == Phase::Running {
         std::thread::sleep(Duration::from_millis(20));
     }
     let child_path = read_env(&dump, 1).get("PATH").cloned().unwrap_or_default();
-    assert_eq!(child_path, "/t047-freshly-probed/bin");
+    assert_eq!(child_path, root.join("bin").display().to_string());
     assert!(
         fs::read_to_string(root.join("config/agent-paths.json"))
-            .expect("the cache file is still there")
+            .expect("the file is still there")
             .contains("nputer-hostile"),
         "the planted login_path is still ON DISK - it is simply never read"
+    );
+    let _ = fs::remove_dir_all(&root);
+}
+
+/// **THE GUARD PROVEN BY THE ATTACK THAT FOUND IT (T-060 criterion 6,
+/// T-047-s6).**
+///
+/// T-047's verifier reconstructed a resolve with `probe_login_shell: true`
+/// — the `..RunnerConfig::default()` idiom, and the default IS `true` —
+/// and `cargo test` spawned the developer's own `claude` with the genesis
+/// planner prompt. **No model ran and no tokens were spent only because
+/// this machine's token is revoked. That is luck, not a control.**
+///
+/// This body is that exact configuration: `probe_login_shell: true`,
+/// `binary_override: None`, no planted entry, and a controlled `$SHELL`.
+/// It must now resolve to typed not-found instead of reaching the
+/// developer's machine — **and the controlled `$SHELL` is a TATTLER, so
+/// "the shell was never spawned" is measured rather than inferred.**
+///
+/// A guard nobody has watched refuse is a guard nobody has watched.
+#[test]
+fn the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = std::env::temp_dir().join(format!(
+        "nputer-t060-accident-{}-{}",
+        std::process::id(),
+        now_ms()
+    ));
+    let project = root.join("project");
+    fs::create_dir_all(&project).expect("mk project");
+    let tattle = root.join("shell-ran.txt");
+    let lifted_tattle = root.join("shell-ran-lifted.txt");
+    let binary_tattle = root.join("binary-ran.txt");
+
+    // The binary the FIXTURE shell will point at, so that the lifted arm
+    // below resolves inside this temp tree and never near the machine.
+    plant_binary(&root.join("bin/claude"));
+
+    // A "shell" that answers the PATH question, FAILS `command -v`, and
+    // tattles if it is executed at all — T-047's verifier's exact shape.
+    // Named `zsh` so it passes T-060's own name check: this test must not
+    // pass for the wrong reason.
+    let shell = root.join("fail/zsh");
+    fs::create_dir_all(root.join("fail")).expect("mk fail");
+    fs::write(
+        &shell,
+        format!(
+            "#!/bin/sh\necho ran > {}\necho NPUTER_LOGIN_PATH=/nputer-t060/bin\nexit 1\n",
+            tattle.display()
+        ),
+    )
+    .expect("write shell");
+    fs::set_permissions(&shell, fs::Permissions::from_mode(0o755)).expect("chmod");
+
+    let restore = std::env::var("SHELL").ok();
+    std::env::set_var("SHELL", &shell);
+
+    // THE ACCIDENTAL CONFIGURATION, verbatim: the default idiom, with
+    // nothing turned off.
+    let cfg = RunnerConfig {
+        extra_env: vec![("NPUTER_FAKE_SCENARIO".to_string(), "happy".to_string())],
+        ..RunnerConfig::default()
+    };
+    assert!(cfg.probe_login_shell, "the default MUST still be true - that is the trap");
+    assert_eq!(cfg.binary_override, None, "…and no seam is set");
+
+    let outcome = nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter());
+    match &outcome {
+        Err(nputer_lib::agent::runner::ResolveError::NotFound { probed }) => assert!(
+            probed.iter().any(|p| p.contains("NPUTER_NO_REAL_CLI")),
+            "the refusal must NAME the guard that refused: {probed:?}"
+        ),
+        other => panic!("THE GUARD DID NOT HOLD: {other:?}"),
+    }
+    // The whole point, measured: no shell was spawned.
+    assert!(
+        !tattle.exists(),
+        "THE LOGIN SHELL RAN - the guard fires after the spawn, not before"
+    );
+
+    // Through the app door too, which is where the accident happened: a
+    // `start_genesis` on a default config.
+    let (watch, agent, _events) = wired(&project, cfg);
+    assert!(matches!(agent::start_genesis(&watch, &agent), StartOutcome::CliNotFound { .. }));
+    std::thread::sleep(Duration::from_millis(150));
+    assert!(!tattle.exists(), "start_genesis spawned the login shell");
+    assert!(!sessions::sessions_path(&project).exists(), "a session was registered");
+
+    // ---- THE DISCRIMINATING HALF ------------------------------------
+    //
+    // Without it, "not found" could just mean the fixture was broken. So
+    // the guard is lifted and the SAME configuration must reach the SAME
+    // shell.
+    //
+    // **THE FIXTURE SHELL CHANGES FOR THIS ARM, AND THE REASON IS THE
+    // FINDING ITSELF.** The first draft of this test lifted the guard
+    // while `$SHELL` still failed `command -v` — so resolution fell
+    // through to `which_on_path`, read the DEVELOPER'S OWN `PATH`, found
+    // their real `/opt/homebrew/bin/claude` and executed it with
+    // `--version`. **The discriminating half of the guard's own test was
+    // a way to defeat the guard**, which is T-047-s6's accident happening
+    // inside the proof that it cannot. Filed as T-060-s1.
+    //
+    // The fix is to make the lifted arm SUCCEED: a shell whose
+    // `command -v` names the planted fixture, so the whole resolve stays
+    // inside this temp tree and `which_on_path` is never reached. It also
+    // makes the lift window safe for any test running concurrently — the
+    // only `$SHELL` visible during it answers with a fixture path.
+    let ok_shell = root.join("ok/zsh");
+    fs::create_dir_all(root.join("ok")).expect("mk ok");
+    fs::write(
+        &ok_shell,
+        format!(
+            "#!/bin/sh\necho ran > {}\necho {}\necho NPUTER_LOGIN_PATH=/nputer-t060/bin\nexit 0\n",
+            lifted_tattle.display(),
+            root.join("bin/claude").display()
+        ),
+    )
+    .expect("write ok shell");
+    fs::set_permissions(&ok_shell, fs::Permissions::from_mode(0o755)).expect("chmod");
+    std::env::set_var("SHELL", &ok_shell);
+
+    let cfg = RunnerConfig {
+        extra_env: vec![(
+            "NPUTER_FAKE_TATTLE".to_string(),
+            binary_tattle.display().to_string(),
+        )],
+        ..RunnerConfig::default()
+    };
+    std::env::set_var("NPUTER_NO_REAL_CLI", "0");
+    let lifted = nputer_lib::agent::runner::resolve_cli(&cfg, adapter::planner_adapter());
+    std::env::set_var("NPUTER_NO_REAL_CLI", "1");
+
+    assert!(
+        lifted_tattle.exists(),
+        "with the guard lifted the shell must run - otherwise the refusal above was \
+         not the guard's doing. resolve returned {lifted:?}"
+    );
+    let resolved = lifted.expect("the fixture shell names a real, absolute, correctly named file");
+    assert_eq!(
+        resolved.path,
+        root.join("bin/claude"),
+        "the lifted resolve must land on the FIXTURE and never on the machine"
+    );
+    assert!(binary_tattle.exists(), "…and it is that fixture binary the version probe ran");
+    assert_eq!(resolved.login_path.as_deref(), Some("/nputer-t060/bin"));
+
+    // Restored, and the restoration ASSERTED: every test that runs after
+    // this one must find the guard back on.
+    std::env::remove_var("NPUTER_NO_REAL_CLI");
+    match restore {
+        Some(value) => std::env::set_var("SHELL", value),
+        None => std::env::remove_var("SHELL"),
+    }
+    assert!(
+        nputer_lib::agent::runner::real_cli_arms_forbidden(),
+        "the guard must be back on for every test that runs after this one"
     );
     let _ = fs::remove_dir_all(&root);
 }
@@ -1805,11 +2035,18 @@ fn real_cli_smoke_records_the_stream_schema() {
         eprintln!("NPUTER_REAL_CLI=1 not set - refusing to call a real model");
         return;
     }
+    // T-060: THE ONE DELIBERATE OPT-OUT. Every other test in the repo is
+    // refused the login-shell and PATH arms because it runs from a cargo
+    // test binary; this one asks for them, in one line, after two gates
+    // (`#[ignore]` and `NPUTER_REAL_CLI=1`) have already been passed by
+    // hand. Explicit `0` rather than an unset, because unset means
+    // "derive it" and the derivation would forbid it again.
+    std::env::set_var(nputer_lib::agent::runner::NO_REAL_CLI_VAR, "0");
     let root = std::env::temp_dir().join(format!("nputer-t025-realsmoke-{}", now_ms()));
     let project = root.join("project");
     fs::create_dir_all(&project).expect("mk project");
 
-    let cfg = RunnerConfig { config_dir: Some(root.join("config")), ..RunnerConfig::default() };
+    let cfg = RunnerConfig::default();
     let (tx, events) = mpsc::channel();
     let agent = agent::AgentState::new(cfg, move |event| {
         println!("[real-smoke] {}", serde_json::to_string(&event).unwrap_or_default());
@@ -1863,7 +2100,6 @@ fn reboot(h: &Harness, scenario: &str) -> Reboot {
             ("NPUTER_FAKE_VERSION".to_string(), "2.1.226 (Claude Code)".to_string()),
         ],
         probe_login_shell: false,
-        config_dir: Some(h.root.join("config")),
         start_timeout: Duration::from_millis(1500),
         stall_timeout: Duration::from_millis(1500),
         coalesce: Duration::from_millis(40),
