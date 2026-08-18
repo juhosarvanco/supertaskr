@@ -19,8 +19,27 @@
 - app/src-tauri (C-05 Rust half + the C-07 workspace), run from
   app/src-tauri/: `cargo test` (watcher/collector unit tests, T-003;
   + nputer-index crate suite, T-009 — bare `cargo test` runs both
-  workspace crates via default-members) · `cargo audit` (T-020 —
-  RUSTSEC advisories against the exact `=` pins).
+  workspace crates via default-members) ·
+  `cargo run -p nputer-index -- index --check --root ../..` (T-014's
+  GRAPH-CURRENCY GATE, and a CI step since T-054 — exit 0 current, 1
+  STALE, 2 usage, 3 the gate could not run) · `cargo audit` (T-020 —
+  RUSTSEC advisories against the exact `=` pins) ·
+  `cargo run -p nputer-index -- index --watch --root ../..` (keeps the
+  graph current headless at the app watcher's 250 ms debounce; it runs
+  until stopped, so it is LOCAL ONLY and never a CI step) ·
+  `cargo run -p nputer-index -- arch --root ../..` (components, observed
+  edges and drift flags, read from the COMMITTED graph — a REPORTER
+  rather than a gate, so LOCAL ONLY too; `arch drift --fail-on
+  undeclared|unmapped|any` is its gating form and stays unwired while
+  the registry carries live undeclared edges by design). THE `--root` IS
+  LOAD-BEARING on all three: the default root is the CURRENT DIRECTORY,
+  so without it they look for app/src-tauri/docs/architecture/graph.json,
+  and `index --check` then exits 1 — a FALSE RED, now reproduced
+  deliberately by four sessions running. IT IS NOT DISTINGUISHABLE BY THE
+  HEADLINE, which says STALE either way; read the SECOND line. A false
+  red says `committed: MISSING at docs/architecture/graph.json`; a real
+  one prints both byte/file/symbol/edge counts and a `+`/`-`/`~` file
+  diff naming what moved.
 - AUDIT GATE POLICY (human ruling 2026-08-16, closing T-020-s2): the
   gate is VULNERABILITIES — they exit non-zero and stop the lane
   (proven: a crafted lock pinning `time 0.1.44` → exit 1,
@@ -71,25 +90,32 @@
   commands — dormant until the repo's first GitHub push.
   tools/e2e/tests/workflow-parity.spec.ts DERIVES its expectations from
   the bullets above (T-045): every command they list is a workflow step
-  VERBATIM, except the FOUR deliberate divergences below — each one a
+  VERBATIM, except the TWO deliberate divergences below — each one a
   commented mapping in that spec, and a lane failure if either side
   drifts. (1) `npm ci` for app/ where local setup says `npm install` —
   lockfile-exact installs in CI, everywhere. (2) `npx playwright install
   --with-deps chromium` in place of the one-time local `npx playwright
   install chromium` — the Linux system libs a fresh runner lacks.
-  (3) `node scripts/lint-tokens.mjs --selftest` and
-  `node scripts/lint-tokens.mjs` where local says `npm run lint:tokens`
-  (+ `-- --selftest`) — the lint is the job's FIRST step, ahead of every
-  `npm ci`, so CI invokes the zero-dep script directly, as two steps
-  because `--selftest` short-circuits the walk. (4) `xvfb-run -a node
-  tools/e2e/scripts/tauri-boot-check.mjs` from the repo root where local
-  says `npm run boot:check` — a headless runner has no display. CI also
-  runs `cargo install cargo-audit --locked` (the one-time dev-tool setup
-  above, per run because a fresh runner has no ~/.cargo/bin), and it
-  deliberately does NOT run `npm run tauri dev` or `npm run tauri build`
-  — one opens a window and the other packages a bundle; the xvfb boot
-  step covers the dev path. Change a command here, change it there, or
-  the lane fails.
+  BOTH ARE ENVIRONMENT DIFFERENCES, and that is now the whole list:
+  T-054 closed the two that were only CI spelling a documented command a
+  second way (T-045-s1). The token lint runs as
+  `npm run lint:tokens -- --selftest` then `npm run lint:tokens` from
+  tools/e2e — still the job's FIRST step, ahead of every `npm ci`,
+  because `npm run` needs no installed node_modules (it only extends
+  PATH; measured on npm 11.12.1 against an uninstalled tools/e2e) — and
+  still two steps, because `--selftest` short-circuits the walk. The
+  boot check runs as `xvfb-run -a npm run boot:check` from tools/e2e:
+  the wrapper is real, since a headless runner has no display, but what
+  it wraps is now the documented command rather than a second spelling
+  of it. CI also runs `cargo install cargo-audit --locked` (the one-time
+  dev-tool setup above, per run because a fresh runner has no
+  ~/.cargo/bin), and it deliberately does NOT run `npm run tauri dev` or
+  `npm run tauri build` — one opens a window and the other packages a
+  bundle; the xvfb boot step covers the dev path — nor
+  `cargo run -p nputer-index -- index --watch --root ../..`, which runs
+  until stopped, nor `cargo run -p nputer-index -- arch --root ../..`,
+  which reports rather than gates. Change a command here, change it
+  there, or the lane fails.
 
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
@@ -195,18 +221,45 @@
   none (its per-turn baseline diff is a different WINDOW over the same
   evidence, not the same log), and moving state across a component
   boundary to serve nobody is cost without benefit.
-- INTERIM integrator rule (T-009-s1, ratified at the 2026-08-16
-  triage; retires when T-014's `nputer index --check` becomes the
-  gate): at any merge whose diff touches `*.ts/*.tsx/*.js/*.jsx`
-  outside docs/, regenerate the committed graph —
-  `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test
-  self_graph -- --ignored` — then re-run
-  `cargo test -p nputer-index --test self_graph -- --ignored` to
-  confirm byte-identity, and commit docs/architecture/graph.json
-  with the merge. **"The merge's diff" means
+- GRAPH REGEN (T-009-s1's INTERIM rule, RETIRED at T-054 and replaced
+  by this bullet — the retirement condition it carried, "when T-014's
+  `index --check` becomes the gate", is met in the same commit that
+  makes `index --check` a CI step): at any merge whose diff touches
+  `*.ts/*.tsx/*.js/*.jsx` outside docs/, regenerate the committed
+  graph — `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test
+  self_graph -- --ignored` — and commit docs/architecture/graph.json
+  **with the CHECKPOINT**. **"The merge's diff" means
   `<main-before-the-merge>..HEAD`, never `<merge-base>..HEAD`** — see
   the BOOT GATE bullet below, which states the reason once for both
-  rules.
+  rules. WHAT RETIRED is the obligation to hand-run the byte-comparison
+  afterwards: CI now runs `cargo run -p nputer-index -- index --check
+  --root ../..`, so the property is held by a gate instead of by a
+  written ritual and twenty-nine conscientious regens. WHAT DID NOT
+  RETIRE is the
+  regen — `--check` DETECTS a stale graph, it never produces a fresh
+  one, so the integrator still regenerates and still commits the result;
+  a green CI is now what proves they did. WHY THE CHECKPOINT AND NOT THE
+  MERGE: the checkpoint edits INDEXED fixture files
+  (app/test/architecture-dogfood.test.ts and
+  app/test/map-dogfood-render.test.tsx), so a graph regenerated into the
+  merge commit is stale again the moment those are reconciled — measured
+  at T-050, where `index --check` exits 1 at the merge and 0 at the
+  checkpoint. The rule read "with the merge" for twenty-nine regens
+  while every integrator did the other thing; this is the practice,
+  written down (T-014-s3). IF the regen cannot run THEN say so LOUDLY in
+  the checkpoint, naming the reason — a skipped gate is news, never
+  silence.
+- DISPATCH FROM THE LAST CHECKPOINT, never from a merge commit
+  (T-014-s3, seven-for-seven): cut a task branch from the newest
+  `Checkpoint:` commit on main. A merge commit carries a graph the
+  checkpoint has not regenerated yet (see GRAPH REGEN above), so a lane
+  cut from one inherits a stale graph and a red `index --check` through
+  no fault of its own. T-014 is the counter-example — cut from the merge
+  `5927adc`, it inherited exactly that, and four sibling lanes were
+  dispatched into the same window; T-027 is the seventh worked example
+  the other way, cut from the checkpoint `e92056a` with a current graph
+  and no inherited red. This rule is what makes the window HARMLESS; the
+  CI gate above is what makes it VISIBLE. Both, not either.
 - BOOT GATE (T-046, ratified at the 2026-08-16 triage on T-040-s1 +
   T-020-s3): at any merge whose diff touches `app/src-tauri/**`,
   `app/src/**` or either manifest (app/package.json,
@@ -243,3 +296,39 @@
   in the notes. Running it is NOT screen control (@human ruling
   2026-08-16): the app opens and closes its own window; nothing is
   clicked, typed into, screenshotted, or read off the screen.
+- POISON DRILL (ratified at T-054; until then it was pure oral
+  tradition — "poison", "vacuous" and "mutation" appeared nowhere in
+  this file or in method/roles/, verified at the 2026-08-17 triage): at
+  any task that ADDS OR CHANGES a test body — the executor before
+  handing off, the verifier before a verdict, the integrator before a
+  checkpoint — MUTATE every new or changed assertion so that it ought to
+  fail, RUN its suite, and require the RED. Then restore, and PROVE the
+  restoration rather than asserting it: `git show HEAD:<path> | shasum
+  -a 256` against the working file, or an empty `git diff -- <path>`.
+  RECORD the count and the restoration proof in the notes, the verdict
+  or the checkpoint — "133-for-133" is the shape (T-027), "drills run"
+  is not. IF a body cannot be poisoned — it asserts a constant, or every
+  mutation is one the test already makes — THEN say so and name it,
+  because a body that cannot red is the finding. WHY: an assertion that
+  cannot fail is indistinguishable from one that passes, and this
+  practice caught SIX vacuous assertions in a single night (T-057 fixes
+  what it found; this is the rule that found it). It stays a DISCIPLINE
+  rather than a gate because nothing can automate "would this have
+  failed" — which is precisely why it has to be written where a verifier
+  reads it instead of remembered.
+- THE E2E LANE'S HONEST SCOPE (T-049-s1, recorded rather than coded —
+  arms 1 and 2 below stay available and were deliberately not taken):
+  tools/e2e covers what a BROWSER can reach, and Tauri-gated
+  affordances are jsdom-plus-@human territory. Two live instances,
+  neither a defect and both correct about what a browser can do:
+  `runPicker` opens with a not-Tauri early return, so an accelerator's
+  ACTION is unobservable in the served bundle — the lane can prove a
+  chord was CLAIMED, never that it was OBEYED — and both header buttons
+  are gated behind `isTauriRuntime()`, so the one screen where they live
+  is the one screen the lane cannot show. T-027 and T-028 made this
+  bigger by adding whole screens whose actions are all IPC. So do not
+  read a green lane as coverage of an IPC path: the Rust suite, the boot
+  gate and @human's eye are what cover those. The two unused arms are a
+  DEV-only attempt counter and rendering the gated pair disabled in
+  browser mode; the recorded sentence was preferred over a second
+  DEV-gated surface, which T-041's single-gate argument disfavours.
