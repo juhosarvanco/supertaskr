@@ -131,6 +131,14 @@ describe("the nputer repo on its own map", () => {
     // coincidence of those two merges. C-05 still stays at 4 for the
     // original reason — its grown findings grew their lists, not their
     // number — which is exactly why the two behave differently here.
+    // T-029 merge regen: EVERY drift count above holds, and the reason is
+    // the T-028 lesson used rather than the coincidence it replaced. A
+    // count moves when the NUMBER of a component's D1 findings moves. This
+    // merge creates no finding — it adds one indexed file whose three
+    // cross-component edges all land on pairs that already had one
+    // (C-05→C-10, C-05→C-13, C-05→C-14), so two fileEdges LISTS grow and
+    // no ring does. Derived by re-running the live derivation and diffing
+    // against this fixture BEFORE anything was run, not by reading counts.
     expect(node("C-13").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
       "drift 4",
     );
@@ -162,7 +170,7 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 30-edge relation table", () => {
+  it("draws the full 32-edge relation table", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
@@ -181,6 +189,10 @@ describe("the nputer repo on its own map", () => {
     // second-assertion-in-the-same-body trap for the third merge running
     // — both numbers were derived from the indexed added-file list before
     // the suite ran, because a red on the first hides the second.
+    // T-029 merge regen: 32 and 10 both HOLD. The trap in this body is
+    // unchanged (two assertions, one it()), so both were forecast rather
+    // than read off a red: a row is created only by a component PAIR that
+    // had none, and every new edge here lands on an existing pair.
     expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(32);
     expect(
       container.querySelectorAll('[data-testid=map-edge][data-relation="undeclared"]'),
@@ -308,8 +320,18 @@ describe("the nputer repo on its own map", () => {
     // entries, the node and edge pictures DO move here — the new edges
     // reach real component heads rather than packages, so the relation
     // table gains two rows and four observedCounts climb.
+    // 114 → 115 at the T-029 merge regen (2026-08-18): ONE file,
+    // app/test/interview-resume-dom.test.tsx, under C-05's app/test/**
+    // umbrella. The merge changed ELEVEN indexed .ts/.tsx files and only
+    // this one is NEW; the other ten are modifications, which move hash,
+    // loc and symbols and add no node. Its sibling
+    // tools/e2e/tests/resume-fallback.spec.ts is .nputerignored under
+    // `tools/`, so a lane that grew by four specs adds nothing here.
+    // Like T-051's and T-053's entries and unlike T-027's and T-028's,
+    // the node and edge pictures do NOT move: all the new cross-component
+    // edges land on pairs the 32-row table already carries.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 114 files",
+      "committed graph · 115 files",
     );
   });
 });

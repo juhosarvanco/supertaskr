@@ -5,7 +5,7 @@ feature: F-03
 milestone: 3
 priority: 7
 size: M
-status: building
+status: done
 blocked_by: [T-027]
 touches: [app-interview, app-agent]
 builder: claude-opus-5 @fresh

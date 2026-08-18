@@ -221,20 +221,59 @@ It also carries the keyboard fix: the answer box now takes focus back
 when a turn lands, so seven questions can be answered without ever
 reaching for the pointer — and it will not steal focus you deliberately
 moved elsewhere.
-**The milestone is NOT complete, and the remainder is not cosmetic.**
-**T-029 remains** (resume plus the hand-driven fallback), and it matters
-more than its position suggests: the user's half of the transcript does
-not survive a remount or an app restart today, so a mid-interview reload
-shows an empty chat over a live session — and the auth failure that
-every attempt on this machine hits is a dead end with no diagnosis on
-screen. And the evidence this milestone's claim will
-ultimately rest on **still does not exist — not one planner turn has ever
-been observed against a real model.** This machine's `claude` OAuth token
-is revoked, so every attempt 401s and no model call has ever gone through
-the runner. Everything above is proven against a fake CLI fixture and a
-scripted lane. It is a real conversation with a real event channel and a
-real file-evidence join; whether it is a GOOD interview is unknown, and
-one authenticated run (T-025-s2, @human) is what would answer it.
+T-029 merged 2026-08-18 and it is the milestone's last card: **the
+interview stops being something you can only do once, in one sitting, on
+a machine that has the right CLI.** Three dead ends closed, and they are
+different kinds of dead end.
+**The app restart.** Until tonight, closing the app or reloading the
+window mid-interview showed an EMPTY chat over a session that was still
+alive — the shell rebuilt phase, turn and session id but never the
+turns. Now reopening a project with an interview in flight offers to
+resume it: the same native session, the conversation rehydrated from the
+transcript on disk, and — the part that matters for trust — **the stage
+and the banked artifacts read from `docs/`, never from the cache.** If
+the cache is missing or corrupt the resume still works and shows banked
+progress instead of history, because the cache is losable by charter and
+the files are the record. If the session itself will not resume, the app
+does not stop there either: it continues with a FRESH session over the
+banked docs, assembled with the method's own resume rule (read what is
+written, name the next stage, carry on).
+**The missing CLI.** A user with no supported agent CLI used to have no
+genesis at all. They now get the same screen with the assembled kickoff
+in a copyable block — "run this in any agent CLI in your terminal, I'll
+render what lands" — with the live right half and the same completion
+detection behind it. **Any model, any CLI, zero agent plumbing**, which
+is ADR-006's manual-interview instrument delivered as a first-class mode
+rather than a fallback nobody built.
+**The expired login.** This is the one a real user hits first. A failure
+the CLI reports in band is now a TYPED outcome instead of a relayed
+blob: an expired login says so and offers `claude login` plus the
+hand-driven route, and a turn killed because `--allowedTools` was too
+narrow names the tool that was denied. **The verification of this card
+is worth one sentence in a roadmap**, because the first attempt got it
+backwards in a way a user would have felt: the auth status latched, so a
+401 the CLI had already RECOVERED from could survive to the end and
+relabel an unrelated failure — a full disk — as an authentication
+problem, which then REMOVED the Try again button (the only thing that
+would have helped) and printed a login instruction at a user whose login
+was fine. It was caught in adversarial verification, the card was
+REJECTED, and it is closed by binding the diagnosis to the turn's
+terminal line. Both verdicts are on the card.
+**The milestone is NOT complete, and what it waits on is not a task.**
+Every card on milestone 3's list — T-023 → T-024 → T-026 → T-037 →
+T-025 → T-039 → T-041 → T-042 → T-048 → T-049 → T-050 → T-027 → T-051 →
+T-028 → T-029 — is through the pipeline. The evidence the claim rests on
+**still does not exist: not one planner turn has ever been observed
+against a real model.** This machine's `claude` OAuth token is revoked,
+so every attempt 401s and no model call has ever gone through the
+runner. Every stream this app has ever seen is a scripted fixture that
+lands in milliseconds — which means nothing above has been tested at the
+one thing an interview is: a conversation that takes time, with a model
+that can misunderstand you. It is a real conversation with a real event
+channel and a real file-evidence join; whether it is a GOOD interview is
+unknown. **One real, timed, end-to-end genesis on an authenticated
+machine (T-025-s2, @human) is the whole remaining gate**, and it is
+@human's to run.
 
 ## Parked
 The staged future lives in docs/future.md (two expert-room batches:

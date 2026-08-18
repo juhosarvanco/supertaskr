@@ -929,8 +929,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 114 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(114);
+  it("all 115 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(115);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -990,7 +990,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // branch added FIVE .ts/.tsx files and only FOUR are indexed —
       // tools/e2e/tests/crescendo.spec.ts is under .nputerignored
       // `tools/`. Of those four, two land here and two land on C-13.
-      ["C-05", 53],
+      // 53 → 54 at the T-029 merge regen (2026-08-18), by ONE and by the
+      // same route an eighth time: interview-resume-dom.test.tsx is under
+      // app/test/**, C-05's alone. The branch changed ELEVEN indexed
+      // .ts/.tsx files and only ONE of them is NEW — the other ten are
+      // modifications, which move hash, loc and symbols and can never move
+      // a mapping count. tools/e2e/tests/resume-fallback.spec.ts is under
+      // .nputerignored `tools/` and is invisible here (it counts for the
+      // token lint, which walks tools/e2e — two walks, two answers).
+      ["C-05", 54],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under
@@ -1066,7 +1074,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: eight undeclared dependencies, three declared-only components, no unclaimed territory", () => {
+  it("THE FINDINGS: ten undeclared dependencies, three declared-only components, no unclaimed territory", () => {
     expect(derived.findings).toEqual([
       {
         rule: "D1",
@@ -1129,6 +1137,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         // TWO (BoardCrescendo.tsx and crescendo.ts — the screen now picks
         // which renderer fills the slot, so it imports both the decision
         // and the board half) and crescendo.test.ts adds the third.
+        // T-029 merge regen: 13 → 15. Both additions are the ONE new
+        // indexed file reaching two C-13 modules, and both are DYNAMIC
+        // `await import(...)` references — the indexer resolves them to
+        // ordinary file edges, the same thing T-050 established for
+        // startup-recovery.test.ts. The list GROWS but the FINDING COUNT
+        // does not, which is why no drift ring moves at this merge.
         fileEdges: [
           { from: "app/src/App.tsx", to: "app/src/genesis/interview-source.ts" },
           {
@@ -1164,6 +1178,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           },
           { from: "app/test/interview-harness.test.ts", to: "app/src/genesis/interview-source.ts" },
           { from: "app/test/interview-model.test.ts", to: "app/src/genesis/interview-model.ts" },
+          {
+            from: "app/test/interview-resume-dom.test.tsx",
+            to: "app/src/genesis/InterviewChat.tsx",
+          },
+          {
+            from: "app/test/interview-resume-dom.test.tsx",
+            to: "app/src/genesis/interview-source.ts",
+          },
         ],
       },
       {
@@ -1187,12 +1209,19 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         // T-028 merge regen: 3 → 5, the same shape a THIRD time — both new
         // crescendo suites drive the store directly rather than through
         // C-13.
+        // T-029 merge regen: 5 → 6, a FOURTH time, and this entry is worth
+        // a sentence because it settles how observedCount is counted:
+        // interview-resume-dom.test.tsx imports agent-store BOTH statically
+        // (line 5) and dynamically (line 65) and contributes exactly ONE
+        // file edge. observedCount is the number of DISTINCT (from,to) file
+        // pairs, not the number of import statements.
         fileEdges: [
           { from: "app/test/agent-store.test.ts", to: "app/src/lib/agent-store.ts" },
           { from: "app/test/crescendo-dom.test.tsx", to: "app/src/lib/agent-store.ts" },
           { from: "app/test/crescendo.test.ts", to: "app/src/lib/agent-store.ts" },
           { from: "app/test/interview-chat-dom.test.tsx", to: "app/src/lib/agent-store.ts" },
           { from: "app/test/interview-model.test.ts", to: "app/src/lib/agent-store.ts" },
+          { from: "app/test/interview-resume-dom.test.tsx", to: "app/src/lib/agent-store.ts" },
         ],
       },
       {
@@ -1305,7 +1334,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
   });
 
-  it("the full relation table: 13 confirmed, 8 undeclared, 9 planned", () => {
+  it("the full relation table: 13 confirmed, 10 undeclared, 9 planned", () => {
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
       // 8 → 10 at the T-034 merge regen: both new map suites import
@@ -1344,7 +1373,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 27 → 31 at the T-028 merge regen: the two new crescendo suites
       // plus GenesisScreen and BoardCrescendo all read C-10's docs model,
       // on the already CONFIRMED edge.
-      ["C-05", "C-10", "confirmed", 31],
+      // 31 → 32 at the T-029 merge regen: interview-resume-dom.test.tsx
+      // imports docs-model, on the already CONFIRMED edge.
+      ["C-05", "C-10", "confirmed", 32],
       ["C-05", "C-11", "planned", 0],
       // 20 → 22 at the T-034 merge regen: map-task-waves.test.ts imports
       // task-waves.ts and map-tasks-lens-dom.test.tsx imports MapView.tsx.
@@ -1357,14 +1388,21 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // GenesisScreen.tsx → InterviewChat.tsx). The fileEdges LIST above
       // moves with it, in a different it() body.
       // 10 → 13 at the T-028 merge regen (see the D1 list above).
-      ["C-05", "C-13", "undeclared", 13],
+      // 13 → 15 at the T-029 merge regen: the one new suite reaches
+      // InterviewChat.tsx and interview-source.ts. The fileEdges LIST
+      // above moves with it, in a different it() body.
+      ["C-05", "C-13", "undeclared", 15],
       // NEW at the T-025 merge regen: the sixth undeclared row, one file
       // edge (agent-store.test.ts → agent-store.ts). See the D1 above.
       // 1 → 3 at the T-027 merge regen: two new interview suites drive
       // the store directly. Its fileEdges list moves too.
       // 3 → 5 at the T-028 merge regen: both crescendo suites drive the
       // store directly.
-      ["C-05", "C-14", "undeclared", 5],
+      // 5 → 6 at the T-029 merge regen: the same new suite drives the
+      // store directly. THREE observedCounts move in this one toEqual and
+      // no row is created — the whole merge is eleven MODIFIED indexed
+      // files and one NEW one, and only a new file can move a row.
+      ["C-05", "C-14", "undeclared", 6],
       ["C-06", "C-01", "planned", 0],
       ["C-08", "C-05", "undeclared", 4],
       ["C-08", "C-06", "confirmed", 4],
