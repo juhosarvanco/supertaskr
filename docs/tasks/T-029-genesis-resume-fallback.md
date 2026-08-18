@@ -9,9 +9,9 @@ status: building
 blocked_by: [T-027]
 touches: [app-interview, app-agent]
 builder: claude-opus-5 @fresh
-verifier: claude-opus-5 @fresh
+verifier: claude-opus-5 @fresh (re-verification 2026-08-18)
 built_by: claude-opus-5 @fresh
-verified_by: claude-opus-5 @fresh
+verified_by: claude-opus-5 @fresh (re-verification 2026-08-18)
 review: same-model
 ---
 
@@ -946,3 +946,162 @@ other's row.
 - `file(1)` over the three changed code files: all **Unicode text,
   UTF-8**, none `data`.
 
+### THE TWO FINDINGS — closed, and the closes judged rather than accepted
+
+**T-029-s6 — CLOSED.** The one line does what the finding asked, and I
+attacked it as an over-correction rather than reading it. Every stream I
+could think of that the NEW behaviour might get wrong, driven through
+the real `run_turn`:
+
+| stream | post-fix |
+|---|---|
+| `result` line arrives TWICE, 401 on the first, none on the second | `ExitNonZero{1}` — tail keeps the auth sentence |
+| `api_retry` 401 · `result{is_error:true, api_error_status:429}` | `ExitNonZero{1}` — 429 is not an auth code, correctly not guessed |
+| `api_retry` 401 · delta · exit 1, **NO result line** | `AuthFailed{401}` — the counter-pin's rule, filed as **s9 edge 1** |
+| auth status ONLY in the diagnostic, `result` line without it | `ExitNonZero{1}` — filed as **s9 edge 2**, measured against `307319b` too |
+| **the TRANSCRIBED `auth-error` scenario** | **`AuthFailed{401, "…401 OAuth access token has been revoked."}`** |
+
+The last row is the one that matters: **the real 2.1.226 shape is
+untouched**, at both refs. The flagship affordance still fires on the
+failure it exists for. Two edges are real and I filed them (s9); neither
+is a regression against main and both degrade in the safe direction —
+one is pre-existing and unreached, the other trades a true positive for
+the pre-T-029 relayed blob, with the 401 still legible in the tail and
+Try again restored. **Losing a diagnosis to a blob is strictly better
+than the false positive it replaced**, which took the retry away from a
+user whose login was fine.
+
+**T-029-s7 — CLOSED, narrow arm, and the trade is right.** The
+reasoning holds on its own terms: `result_is_error` is a field the CLI
+demonstrably sets, the wider `terminal_reason` guard needs the set
+T-029-s5 records as unverified, and building on a guessed vocabulary is
+what earned the rejection. **Refusing to build the wider guard was the
+correct call and it is disclosed in the code, not only in the notes** —
+fourteen lines at `runner.rs:1461-1480`, sitting on the guard itself,
+where the next reader meets it before they meet the narrowness. That is
+the right place; the disclosure obligation is met.
+
+The accepted blind spot is real and I measured what it actually costs:
+`ExitNonZero { code: Some(1), stderr_tail: "" }` — **empty**, because
+the ring push is gated on `is_error`. So "a relayed exit code keeps Try
+again" is half true: Try again is kept, nothing is relayed. **Filed as
+s8** with a close that needs no unverified vocabulary. Not blocking — an
+honest bare exit code beats a confident false cause.
+
+### THE JUDGEMENT ON ROW 3 — the pin the executor flagged against itself
+
+**It is still earning its place, and the executor's reasoning is
+sound.** Post-fix row 3 cannot discriminate on the retry line, and the
+executor is right that this is not a defect but the fix's definition:
+rows 1 and 3 becoming indistinguishable IS what "the terminal line is
+the verdict" means. Disclosing that rather than being caught at it is
+the correct behaviour, and **the claim that it reds under a different
+mutation is TRUE — I ran it.** Round E (result-line text no longer
+pushed into the ring) reds rows 1 AND 3, and the shipped auth test stays
+green through it, so row 3 is watching something nothing else watches.
+It is a relay pin, not a classification pin, and it is not vacuous. This
+is not the "test that cannot fail" defect this project caught six times.
+
+### THE NINE CRITERIA THAT HELD — re-driven, not taken on the record
+
+- **CANCEL CONTRACT.** Re-driven under two attacks no shipped pin
+  covers. Cancel DURING A RESUMED turn (turn 2, `hang` scenario after a
+  completed turn 1): `Cancelled { turn: 2 }`, **child AND grandchild
+  both dead**, `docs/` never created, **zero `Failed` events**, and the
+  project reopens `ResumeAvailable { native_session_id:
+  "fake-session-0001", turns: 1 }`. **Double cancel while the turn is
+  still live**: both calls return `Cancelled { turn: 2 }` — idempotent,
+  no panic, no double-kill — and a third after settle returns `Idle`.
+  The shipped grandchild pin (`agent_runner.rs:414`) proves the signal
+  reaches the GROUP.
+- **`permission_denials` malformed shapes.** Thirteen shapes driven
+  through the real classifier. Every unrecognised shape degrades to
+  `ExitNonZero`, **never to a wrong `ToolDenied`**: non-array (string,
+  object), arrays of numbers, of nulls, of nested arrays, objects
+  without `tool_name`, and whitespace-only names all fall through. The
+  recognised ones are bounded exactly as documented — a 400-byte name
+  truncates to **128**, 40 entries cap at **16**, and a name carrying
+  `ESC[31m`, `\n` and `BEL` renders **escaped** (`Ba\u{1b}[31msh\nEVIL\u{7}`),
+  so no terminal-control sequence reaches a log or the UI. Unaffected by
+  the s7 guard, which sits after the shape parse.
+- **"Exactly ONE place".** `the_fact_that_an_interview_ran_here_lives_in_exactly_one_file`
+  is a real discriminator, not an existence check: it deletes
+  `.nputer/sessions.json` and asserts the fact is GONE while
+  `docs/NORTH_STAR.md` still stands — which only passes if no second
+  copy exists — and separately asserts nothing under `docs/` carries the
+  registry id or the native id.
+- **`listenerFailed` store-owned, and its test still discriminates.**
+  Shape 1, correctly: the field is declared on `GenesisState`
+  (`agent-store.ts:206`), written by `startGenesisListener`'s catch
+  (`:423`) and released on a successful retry (`:426`); the
+  `interview-source.ts:143` setter is the DEV-only browser twin writing
+  **the same shipped field**, not a module-private flag. **Proved
+  non-vacuous by poisoning it**: dropping `listenerFailed: true` from
+  the catch reds all THREE tests, including the one whose comment
+  records an earlier vacuous green — and it reds for the meaningful
+  reason (`expected [ 'genesis_start', …(1) ] to not include
+  'genesis_start'`: it really would spawn a planner over a dead
+  channel).
+
+### THE REMAINING NUMBERS — all re-derived first-hand
+
+- **app**: `tsc --noEmit` 0 · **795 passed (795), 42 files**.
+- **lib/parser**: `tsc --noEmit` 0 · **225 passed (225), 11 files**.
+- **tools/e2e**: `NPUTER_E2E_PORT=15480 npm test` → **74 passed
+  (14.8s)**, "Running 74 tests using 1 worker".
+- **lint:tokens**: `lint-tokens: clean (116 files scanned under
+  app/src, app/test, tools/e2e)`.
+- **BUNDLE HASHES REPRODUCE EXACTLY** — my own `npm run build` emits
+  `dist/assets/index-Bf-QNmtC.js` **497.86 kB** and
+  `dist/assets/index-CryMc_lw.css` **43.90 kB**, the same content-hashed
+  names the executor recorded. Vite hashes filenames by content, so
+  identical names mean a byte-identical bundle, independently
+  corroborating the empty `app/src` diff. **The fix is Rust-only.**
+- **BOOT GATE: FIRED, RAN, GREEN.** The diff touches
+  `app/src-tauri/**`, so the gate applies. `NPUTER_BOOT_PORT=15490 npm
+  run boot:check` (15490 bind-probed free first): both startup lines
+  detected — `[nputer] project folder:
+  /Users/ujju/Projects/nputer-T-029` and `[nputer] window "main"
+  created` — tree stopped on SIGTERM, **exit 0**. Scratch ports 15480
+  and 15490 free afterwards, zero stray `tauri dev` from this worktree.
+  **Port 1420 was read with `lsof` only, never bound, connected to or
+  signalled — one listener (the human's app, pid 82549) throughout.**
+- **NO MODEL WAS CALLED.** Every drill ran against
+  `CARGO_BIN_EXE_fake_agent`; the `#[ignore]`d smoke was never run.
+
+### Two new findings, and one correction to the record
+
+**T-029-s8** — the declined s7 diagnosis relays nothing
+(`stderr_tail: ""`), so the screen reads "the planner exited with code
+1" with no detail; close is one `push`, no unverified vocabulary.
+**T-029-s9** — the terminal-line rule's two measured edges, one
+pre-existing false positive and one new-but-safe false negative; the ask
+is one sentence of disclosure, not a change. Neither blocks.
+
+**One correction, offered as fact not fault**: the second executor's
+notes say main "is still clean at `2fc3475`". Main has since moved to
+`4e4d900`; the delta is `docs/STATE.md` alone and is not on this branch,
+so nothing downstream changes. Its `ENV_ALLOWLIST` figure of 422 bytes
+measures 423 by my extraction — a range-boundary byte, and exactly why
+the standing instruction says to quote the hash.
+
+### Verdict
+
+**APPROVED.** Both findings are genuinely closed, by the closes their
+findings specified, with the reasoning stated where the next reader
+meets it. The nine criteria that held were re-driven rather than
+inherited, and all nine still hold — the cancel contract survives two
+attacks no shipped pin covers, the denial parser degrades under thirteen
+malformed shapes, the one-place fact has one place, and the
+`listenerFailed` pins red when poisoned. The fix is three files and two
+behavioural lines; the bundle is byte-identical, so nothing moved that
+was not meant to. **The record of the rejection is intact to the byte,
+proven by hash at three refs** — the check that mattered most here, and
+it is clean.
+
+Six poison rounds re-run and all six reproduce, including the two the
+executor flagged against itself: the counter-pin genuinely reds under an
+over-broad fix while nothing shipped notices, and the control genuinely
+reds under a real mutation. Neither is a test that cannot fail.
+
+`status: building` stands; the @human hand-driven run is still owed.
