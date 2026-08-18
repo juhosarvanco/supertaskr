@@ -812,6 +812,10 @@ describe("the conversation is where you left it (T-029 criteria 1-2)", () => {
   });
 
   it("LIVE STATE WINS: a memory of a turn never overwrites the turn", () => {
+    const banked = [
+      { turn: 1, role: "planner" as const, text: "banked turn 1", atMs: at(1) },
+      { turn: 2, role: "planner" as const, text: "the stale copy on disk", atMs: at(2) },
+    ];
     const live: GenesisTurn[] = [
       {
         turn: 2,
@@ -823,10 +827,7 @@ describe("the conversation is where you left it (T-029 criteria 1-2)", () => {
       },
     ];
     const merged = mergeRehydrated(
-      [
-        { turn: 1, role: "planner", text: "banked turn 1", atMs: at(1) },
-        { turn: 2, role: "planner", text: "the stale copy on disk", atMs: at(2) },
-      ],
+      banked,
       live,
       new Map([[2, "my live answer"]]),
     );
@@ -835,6 +836,14 @@ describe("the conversation is where you left it (T-029 criteria 1-2)", () => {
       [2, "the live turn, mid-stream", "running"],
     ]);
     expect(merged.userHalves.get(2)).toBe("my live answer");
+
+    const streamed = mergeRehydrated(
+      banked,
+      [{ ...live[0]!, text: `${live[0]!.text}!` }],
+      new Map([[2, "my live answer"]]),
+    );
+    expect(Object.is(streamed.turns[0], merged.turns[0])).toBe(true);
+    expect(Object.is(streamed.turns[1], merged.turns[1])).toBe(false);
   });
 
   it("returns the live arguments BY IDENTITY when there is nothing banked", () => {

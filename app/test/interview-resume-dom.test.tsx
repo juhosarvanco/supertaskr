@@ -39,6 +39,8 @@ const ipc = vi.hoisted(() => ({
   refuse: new Set<string>(),
 }));
 
+const plannerRenderCounts = vi.hoisted(() => new Map<number, number>());
+
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: (command: string, args?: unknown) => {
     ipc.invoke(command, args);
@@ -54,6 +56,20 @@ vi.mock("@tauri-apps/api/event", () => ({
     return Promise.resolve(() => {});
   },
 }));
+vi.mock("../src/genesis/interview-model", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/genesis/interview-model")>();
+  return {
+    ...actual,
+    challengeOf: (text: string) => {
+      const turn = /^turn (\d+)/.exec(text)?.[1];
+      if (turn !== undefined) {
+        const number = Number(turn);
+        plannerRenderCounts.set(number, (plannerRenderCounts.get(number) ?? 0) + 1);
+      }
+      return actual.challengeOf(text);
+    },
+  };
+});
 
 declare global {
   var IS_REACT_ACT_ENVIRONMENT: boolean | undefined;
@@ -62,6 +78,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 (window as unknown as { __TAURI_INTERNALS__: unknown }).__TAURI_INTERNALS__ = {};
 const { InterviewChat } = await import("../src/genesis/InterviewChat");
+const { PlannerTurn } = await import("../src/genesis/interview-turns");
 const store = await import("../src/lib/agent-store");
 const source = await import("../src/genesis/interview-source");
 
@@ -337,6 +354,143 @@ describe("reopening a project mid-interview (criteria 1-3)", () => {
 // ---- criteria 1-2: the rehydration --------------------------------------
 
 describe("the transcript survives a restart, and its loss costs only scrollback", () => {
+  it("invokes only the live turn across live and rehydrated streams", async () => {
+    await withStatus({ phase: "running", turn: 7 });
+    render();
+    await emit(
+      ...Array.from({ length: 6 }, (_, index) => [
+        { kind: "started" as const, seq: index * 2 + 1, turn: index + 1 },
+        {
+          kind: "completed" as const,
+          seq: index * 2 + 2,
+          turn: index + 1,
+          text: `turn ${index + 1}`,
+          truncatedRelay: false,
+        },
+      ]).flat(),
+      { kind: "started", seq: 13, turn: 7 },
+    );
+    plannerRenderCounts.clear();
+    await emit({ kind: "textDelta", seq: 14, turn: 7, text: "turn 7" });
+    expect(
+      Array.from({ length: 7 }, (_, index) => plannerRenderCounts.get(index + 1) ?? 0),
+      "a live delta invokes only its own turn",
+    ).toEqual([0, 0, 0, 0, 0, 0, 1]);
+
+    plannerRenderCounts.clear();
+    await flush(() => render(docsWith(2, {
+      "docs/NORTH_STAR.md": "## Vision\n\nA thing.\n\n## Users\n\nSomeone.\n",
+    })));
+    expect(
+      Array.from({ length: 7 }, (_, index) => plannerRenderCounts.get(index + 1) ?? 0),
+      "a docs-stage change invokes only the current footer",
+    ).toEqual([0, 0, 0, 0, 0, 0, 1]);
+
+    for (const event of [
+      { kind: "activity" as const, seq: 15, turn: 7, label: "Write" },
+      {
+        kind: "completed" as const,
+        seq: 16,
+        turn: 7,
+        text: "turn 7 complete",
+        truncatedRelay: true,
+      },
+      {
+        kind: "failed" as const,
+        seq: 17,
+        turn: 7,
+        error: { kind: "startTimeout" as const },
+      },
+    ]) {
+      plannerRenderCounts.clear();
+      await emit(event);
+      expect(plannerRenderCounts.get(7), `${event.kind} changes visible turn state`).toBe(1);
+    }
+
+    plannerRenderCounts.clear();
+    await emit({ kind: "started", seq: 18, turn: 8 });
+    expect(plannerRenderCounts.get(7), "the old current turn becomes history once").toBe(1);
+
+    act(() => root.unmount());
+    container.remove();
+    store.__resetGenesisStoreForTests();
+    source.__resetInterviewSourceForTests();
+    ipc.invoke.mockClear();
+    ipc.outcomes.clear();
+    ipc.onGenesisTurn = null;
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+
+    ipc.outcomes.set(
+      "genesis_transcript",
+      Array.from({ length: 6 }, (_, index) =>
+        line(index + 1, "planner", `turn ${index + 1}`),
+      ),
+    );
+    await withStatus({ phase: "running", turn: 7 });
+    render();
+    await flush(() => Promise.resolve());
+    await emit({ kind: "started", seq: 13, turn: 7 });
+    plannerRenderCounts.clear();
+    await emit({ kind: "textDelta", seq: 14, turn: 7, text: "turn 7" });
+    expect(
+      Array.from({ length: 7 }, (_, index) => plannerRenderCounts.get(index + 1) ?? 0),
+      "a rehydrated delta invokes only its own turn",
+    ).toEqual([0, 0, 0, 0, 0, 0, 1]);
+
+    act(() => root.unmount());
+    container.remove();
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+    const planner = {
+      turn: 1,
+      text: "turn 1",
+      activity: [],
+      status: "completed" as const,
+      truncatedRelay: false,
+      error: null,
+    };
+    const firstRetry = () => {};
+    const firstHandDriven = () => {};
+    act(() => root.render(
+      <PlannerTurn
+        turn={1}
+        planner={planner}
+        current={false}
+        approxStage={null}
+        onRetry={firstRetry}
+        onHandDriven={firstHandDriven}
+      />,
+    ));
+    plannerRenderCounts.clear();
+    const secondRetry = () => {};
+    act(() => root.render(
+      <PlannerTurn
+        turn={1}
+        planner={planner}
+        current={false}
+        approxStage={null}
+        onRetry={secondRetry}
+        onHandDriven={firstHandDriven}
+      />,
+    ));
+    expect(plannerRenderCounts.get(1), "a changed retry callback renders").toBe(1);
+    plannerRenderCounts.clear();
+    act(() => root.render(
+      <PlannerTurn
+        turn={1}
+        planner={planner}
+        current={false}
+        approxStage={null}
+        onRetry={secondRetry}
+        onHandDriven={() => {}}
+      />,
+    ));
+    expect(plannerRenderCounts.get(1), "a changed hand-driven callback renders").toBe(1);
+  });
+
   it("rehydrates both halves of the conversation from the banked cache", async () => {
     ipc.outcomes.set("genesis_transcript", [
       line(1, "user", "You are the planner. KIT ROOT: /tmp/… stage 0 scaffold first.", true),
