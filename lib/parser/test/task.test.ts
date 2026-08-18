@@ -1,7 +1,49 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { parseTaskFile } from '../src/index.js';
+import { extractFrontmatter, parseTaskFile, splitSections, type TaskSections } from '../src/index.js';
 
 const FILE = 'docs/tasks/T-016-audit-log.md';
+const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
+
+/** The pre-T-055 splitter, retained only to prove live-fixture equivalence. */
+function splitSectionsBeforeInertPass(body: string): TaskSections {
+  const keys: Record<string, keyof TaskSections> = Object.assign(Object.create(null), {
+    'acceptance criteria': 'acceptanceCriteria',
+    'implementation notes': 'implementationNotes',
+    verdicts: 'verdicts',
+  });
+  const sections: TaskSections = {};
+  const lines = body.split(/\r?\n/);
+  let sawHeading = false;
+  let current: keyof TaskSections | undefined = 'preamble';
+  let buffer: string[] = [];
+
+  const flush = (): void => {
+    if (current === undefined) return;
+    const text = buffer.join('\n').trim();
+    if (current === 'preamble' && text === '') return;
+    sections[current] =
+      sections[current] === undefined || sections[current] === ''
+        ? text
+        : `${sections[current]}\n\n${text}`.trim();
+  };
+
+  for (const line of lines) {
+    const heading = /^##\s+(.+?)\s*$/.exec(line);
+    if (heading && heading[1] !== undefined) {
+      flush();
+      sawHeading = true;
+      current = keys[heading[1].toLowerCase().replace(/\s+/g, ' ')];
+      buffer = [];
+      continue;
+    }
+    if (!sawHeading || current !== undefined) buffer.push(line);
+  }
+  flush();
+  return sections;
+}
 
 const VALID = `---
 id: T-016
@@ -161,6 +203,72 @@ clean
     const { task, issues } = parseTaskFile(withExtra, FILE);
     expect(issues).toEqual([]);
     expect(task?.extra).toEqual({ future_field: 'kept' });
+  });
+});
+
+describe('splitSections — shared inert-span view (T-055)', () => {
+  it('a commented-out heading neither opens nor closes a section', () => {
+    const body = [
+      'context',
+      '',
+      '## Acceptance criteria',
+      'real before',
+      '<!--',
+      '## Verdicts',
+      'not a verdict',
+      '-->',
+      'real after',
+      '',
+      '## Verdicts',
+      'real verdict',
+    ].join('\n');
+    expect(splitSections(body)).toEqual({
+      preamble: 'context',
+      acceptanceCriteria: 'real before\n<!--\n## Verdicts\nnot a verdict\n-->\nreal after',
+      verdicts: 'real verdict',
+    });
+  });
+
+  it('keeps T-020, T-030, and T-055 as committed section-key regression fixtures', () => {
+    const files = [
+      'docs/tasks/T-020-ci-real-input-lane.md',
+      'docs/tasks/T-030-parser-strictness-pass.md',
+      'docs/tasks/T-055-one-answer-to-what-content-is.md',
+    ];
+    const sectionKeys = files.map((file) => {
+      const source = readFileSync(join(repoRoot, file), 'utf8');
+      const body = extractFrontmatter(source, file).body;
+      return {
+        file,
+        before: Object.keys(splitSectionsBeforeInertPass(body)),
+        after: Object.keys(splitSections(body)),
+      };
+    });
+    expect(sectionKeys).toEqual(
+      files.map((file) => ({
+        file,
+        before: ['preamble', 'acceptanceCriteria', 'implementationNotes', 'verdicts'],
+        after: ['preamble', 'acceptanceCriteria', 'implementationNotes', 'verdicts'],
+      })),
+    );
+  });
+
+  it('keeps every live task section split byte-identical to the pre-pass result', () => {
+    const taskDir = join(repoRoot, 'docs/tasks');
+    const moved = readdirSync(taskDir, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+      .map((entry) => {
+        const file = `docs/tasks/${entry.name}`;
+        const source = readFileSync(join(taskDir, entry.name), 'utf8');
+        const body = extractFrontmatter(source, file).body;
+        return {
+          file,
+          before: splitSectionsBeforeInertPass(body),
+          after: splitSections(body),
+        };
+      })
+      .filter(({ before, after }) => JSON.stringify(before) !== JSON.stringify(after));
+    expect(moved).toEqual([]);
   });
 });
 

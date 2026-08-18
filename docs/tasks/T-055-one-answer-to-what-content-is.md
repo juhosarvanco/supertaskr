@@ -5,14 +5,14 @@ feature: F-02
 milestone: 4
 priority: 24
 size: M
-status: planned
+status: verifying
 blocked_by: [T-053]
 touches: [lib-parser]
-builder:
-verifier:
-built_by:
-verified_by:
-review:
+builder: codex/gpt-5.6
+verifier: codex/gpt-5.6
+built_by: codex/gpt-5.6 @fresh
+verified_by: codex/gpt-5.6 @fresh
+review: independent
 ---
 
 Absorbs: T-030-s2, T-030-s4, T-030-s5 (triage 2026-08-17). The
@@ -41,7 +41,7 @@ was never markup decides the rest of the pass.
 
 ## Acceptance criteria
 - THE parser SHALL gain ONE inert-span pass — fenced blocks (``` and
-  ~~~, with the closing-fence and info-string rules), HTML comments,
+  `~~~`, with the closing-fence and info-string rules), HTML comments,
   and INLINE CODE (single backticks) — and BOTH `parseRoadmap` and
   `splitSections` SHALL use it, so the two can no longer disagree
   about what counts as content.
@@ -81,4 +81,126 @@ section keys proving zero movement. @human: none.
 
 ## Implementation notes
 
+Implemented by **codex/gpt-5.6 @fresh** on
+`task/T-055-inert-spans` from architect checkpoint `59763f3`.
+
+### One structural view, two consumers
+
+Added `lib/parser/src/inert-spans.ts`. `blankInertSpans` makes one
+same-position structural view by blanking non-newline characters in
+exactly three shapes: single-backtick spans on one physical line,
+backtick/tilde fenced blocks, and HTML comments. It also returns the
+line receipt for a genuinely unterminated comment. `parseRoadmap` uses
+that one view for its whole scan and converts the receipt into the
+existing loud `roadmap-error`; its private `stripHtmlComments` copy is
+gone. `splitSections` recognizes headings from the same view while
+buffering the original lines, so inert syntax cannot open or close a
+section and section values keep their original bytes.
+
+Fence handling pins the chosen boundary: zero-to-three-space openers;
+backtick info strings cannot contain a backtick; closers use the same
+marker, at least the opener's run length, and only trailing spaces or
+tabs; a top-level unclosed fence runs through EOF. Inline recognition
+is physical-line-local. The module header explicitly leaves indented
+code, other HTML blocks, link definitions, Markdown list/container
+de-indentation, and nested-container fence boundaries out rather than
+quietly approximating them.
+
+### The live-corpus contradiction and ruling
+
+The first live-equivalence run failed on two records and did useful
+work. T-020 had no fence: a global backtick pairing incorrectly joined
+same-line code delimiters across blank lines and section headings.
+Making the deliberately narrow inline recognizer physical-line-local
+fixed it and still protects all six T-030 comment-looking byte strings.
+
+T-055 itself had two leading spaces followed by a raw tilde fence marker
+in criterion 1. A flat unclosed-fence scan therefore blanked this card's
+own Implementation notes and Verdicts headings. The architect ruled to
+keep the non-container parser boundary and authorized the formatting-only
+correction that wraps that literal marker in inline code. The criterion's
+meaning is unchanged; the correction is the one acceptance-text byte
+change in this implementation.
+
+Explicit regressions now pin T-020, T-030 and T-055 section keys; the
+requested T-030 committed fixture remains
+`preamble, acceptanceCriteria, implementationNotes, verdicts` before
+and after. A dynamically enumerated smoke compares every live task's
+complete pre-pass and post-pass section object, not just its keys.
+
+### Evidence
+
+- Lockfile-exact parser setup: `npm ci` installed 55 packages; audit
+  reported zero vulnerabilities.
+- `npm run build`: green.
+- `npx tsc --noEmit`: green.
+- `npx vitest run`: **234/234 tests in 12 files**, including the live
+  project smoke at zero issues.
+- Independent before/after dump over the flat live task directory:
+  **127 files, 0 moved**, every full section object byte-identical. The
+  HTML-comment list was re-derived rather than copied: T-023, T-030,
+  T-038 and T-055 — four files.
+- Poison discipline: each of the **9 new assertion bodies** received a
+  relation-breaking expected-value mutation in one combined run;
+  Vitest reported exactly **9 failed bodies** (4 inert-span, 2 roadmap,
+  3 task). Restoration was byte-proven before the green rerun:
+  `inert-spans.test.ts` `e65478b2...45ec2`, `roadmap.test.ts`
+  `7d265392...bf10`, `task.test.ts` `6f128974...dfe19`.
+- Fence held: task card plus `lib/parser/**` only. No app, tools/e2e,
+  manifest, dependency, IPC, capability, model, network, or boot-gate
+  movement. The TypeScript graph regen belongs to the integration
+  checkpoint under the standing rule.
+
+No suggestion was filed: the only discovery was the locked-card/live-
+corpus contradiction above, resolved directly by the architect before
+any semantic or fixture change.
+
 ## Verdicts
+
+### 2026-08-18 — APPROVED (codex/gpt-5.6 @fresh)
+
+Verified clean executor tip
+`d5509cd0f550ab455df55c625d4e40839d5b264d` independently against
+its parent `59763f3`; no executor reasoning was consulted.
+
+All seven criteria hold. There is one position-preserving inert-span
+implementation and both consumers call it. Independent attacks covered
+isolated same-line single-backtick spans and unmatched backticks; zero-
+through-three-space backtick and tilde openers; valid, invalid, longer,
+shorter, wrong-marker and trailing-text closers; the backtick/tilde info-
+string difference; closed and EOF-running fences; normal, abrupt and
+unterminated comments; recognition precedence; headings and valid or
+malformed feature rows inside every inert shape; and original-byte section
+payloads. An eight-body verifier-only Vitest probe passed 8/8 and was then
+removed. The explicit flat-parser boundary was also attacked: list- and
+blockquote-prefixed fence markers remain live, matching the module header's
+named container/list non-goal rather than silently approximating CommonMark.
+
+The committed T-020, T-030 and T-055 traps retain
+`preamble, acceptanceCriteria, implementationNotes, verdicts`. An
+independent before/after dump dynamically enumerated all **127** flat live
+task files and compared each complete section object: **127 byte-identical,
+0 moved**. The HTML-comment corpus was re-derived as exactly T-023, T-030,
+T-038 and T-055. The live project smoke stayed at zero issues.
+
+Required parser gates passed after lockfile-exact setup: `npm ci` installed
+55 packages with zero vulnerabilities; `npm run build` and
+`npx tsc --noEmit` exited zero; `npx vitest run` passed **234/234 tests in
+12 files**. The nine changed/new assertion bodies were independently
+poisoned with relation-breaking expectations in one run and produced
+exactly **9 failed bodies** (4 inert-span, 2 roadmap, 3 task). Restoration
+was byte-proven against HEAD and the final hashes are
+`e65478b2ca73cfcb416922a8f3fbb3e6ce3a3270f70d0a699c64c91b2df45ec2`,
+`7d265392585dbb71d2a973d4cf354eb932a676ba84d1a5b06b7cb2af9079bf10`
+and
+`6f12897494bedd7b0e1e48c2a6e1c7c707591fcfc2bced937d2a5eeb4c3dfe19`.
+
+Scope and security are clean: the executor diff is the task card plus six
+files under `lib/parser/**`; no manifest, lockfile, dependency, endpoint,
+auth, secret, filesystem-write, network, IPC, capability or unsafe execution
+surface moved. The scanner only derives an in-memory structural view from an
+existing string input. Boot does not fire for this scope; graph regeneration
+remains the integration checkpoint's standing responsibility. The
+architect-authorized acceptance formatting correction and the executor's
+acceptance/implementation record were preserved byte-for-byte during this
+verification.

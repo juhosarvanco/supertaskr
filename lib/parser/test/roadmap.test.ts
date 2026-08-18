@@ -110,6 +110,28 @@ describe('parseRoadmap — backbone lines', () => {
     expect(features.map((f) => f.id)).toEqual(['F-01']);
   });
 
+  it('is fence-blind to valid and malformed bullets in backtick and tilde blocks', () => {
+    const content = [
+      '## Backbone',
+      '``` roadmap-example',
+      '- F-99: Phantom — inside backticks',
+      '- F-XX: malformed but inert',
+      '````',
+      '- F-01: Real — first',
+      '~~~ info ` is legal on a tilde fence',
+      '- F-98: Phantom — inside tildes',
+      '- F-YY: malformed but inert',
+      '   ~~~',
+      '- F-02: Real — second',
+      '',
+    ].join('\n');
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect({ issues, ids: features.map((feature) => `${feature.id}@${feature.line}`) }).toEqual({
+      issues: [],
+      ids: ['F-01@6', 'F-02@11'],
+    });
+  });
+
   it('a live bullet adjacent to a comment is unchanged, and line numbers survive the strip', () => {
     const commented = [
       '# Roadmap', // 1
@@ -187,6 +209,30 @@ describe('parseRoadmap — backbone lines', () => {
         message: expect.stringContaining(`${FILE}:3: unterminated HTML comment`),
       }),
     ]);
+  });
+
+  it('treats abrupt empty comments as complete but a genuine unterminated opener as running to EOF', () => {
+    const content = [
+      '## Backbone',
+      '<!-->',
+      '- F-01: Real — after the first abrupt close',
+      '<!--->',
+      '- F-02: Real — after the second abrupt close',
+      '<!-- genuinely open',
+      '- F-99: Lost — swallowed',
+      '',
+    ].join('\n');
+    const { features, issues } = parseRoadmap(content, FILE);
+    expect({ ids: features.map((feature) => feature.id), issues }).toEqual({
+      ids: ['F-01', 'F-02'],
+      issues: [
+        expect.objectContaining({
+          kind: 'roadmap-error',
+          file: FILE,
+          message: expect.stringContaining(`${FILE}:6: unterminated HTML comment`),
+        }),
+      ],
+    });
   });
 
   it('the scaffolded template shape parses to zero features and zero issues', () => {
