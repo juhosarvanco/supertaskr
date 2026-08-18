@@ -9,10 +9,10 @@ status: building
 blocked_by: []
 touches: [docs, method, tools/e2e, ci]
 builder: claude-opus-5 @T-054
-verifier:
+verifier: claude-opus-5 @T-054-verify
 built_by: claude-opus-5 @T-054
-verified_by:
-review:
+verified_by: claude-opus-5 @T-054-verify
+review: same-model
 ---
 
 Absorbs: T-014-s8 (architect, 2026-08-17). The suggestion file is
@@ -562,3 +562,315 @@ patch. It was split into R7 with an explicit multiline regex.
   `grep`/`rg` wherever a result mattered.
 
 ## Verdicts
+
+2026-08-18 — claude-opus-5 @T-054-verify, verifier — same-model review:
+**APPROVED**, all six criteria plus the five merged-in ones re-derived
+first-hand in worktree `nputer-T-054`. Nothing below was taken from the
+notes; every figure was re-measured, every exit code read from `$?`
+unpiped.
+
+**RANGE, DERIVED NOT QUOTED.** `git merge-base HEAD main` = `2fc3475`,
+so the range is `2fc3475..HEAD` = **2 commits** (`f7e60c7`, `5991375`),
+**5 files, +760 / −51**. The IMPLEMENTATION is one commit, `f7e60c7`,
+touching exactly the three files the card names; `5991375` adds only
+the card and `T-054-s1`. Main has moved to `4e4d900` (docs-only) and is
+not in the range.
+
+**Port discipline.** 1420 observed twice with read-only `lsof` (node pid
+**82549**, `[::1]:1420 (LISTEN)`, the same pid at start and end), never
+bound, connected to or signalled. My lane port **17540** was probed free
+first and is `lsof`-empty afterwards. No strays.
+
+**1. ONE COMMIT, AND THE RED REPRODUCED BEFORE IT WAS CLOSED — met.**
+Per-commit state proves there is NO retirement window: at `2fc3475` the
+INTERIM rule is present (1) and the CI step absent (0); at `f7e60c7` the
+INTERIM rule is gone (0), GRAPH REGEN is present (1) and the CI step is
+present (1). Same commit, not before. I then rebuilt the pre-fix state
+myself — spec and `ci.yml` at `2fc3475`, only the `app/src-tauri`
+command bullet spliced forward from HEAD:
+
+    baseline (all three at 2fc3475)          11 passed          exit 0
+    CONVENTIONS command block ALONE           1 failed, 10 passed  exit 1
+
+naming all three, verbatim from my run:
+
+    lists [app/src-tauri] cargo run -p nputer-index -- index --check --root ../.., which this spec has no entry for
+    lists [app/src-tauri] cargo run -p nputer-index -- index --watch --root ../.., which this spec has no entry for
+    lists [app/src-tauri] cargo run -p nputer-index -- arch --root ../.., which this spec has no entry for
+
+**11 → 1 failed, 10 passed, the three names.** The commit closes a red I
+have seen open.
+
+**2. THE CI STEP WORKS AS WRITTEN, AND NEVER SILENTLY PASSES — met.**
+Run exactly as `ci.yml` spells it, from its declared `working-directory:
+app/src-tauri`, no `-q`:
+
+    cargo run -p nputer-index -- index --check --root ../..
+    [nputer-index] graph.json is CURRENT - ../../docs/architecture/graph.json matches a fresh index (532485 bytes, 114 files, 916 symbols, 1408 edges)
+    EXIT=0
+
+`--root ../..` attacked four ways, and **every misdirection is loud**:
+from a symlinked checkout (`pwd` under /private/tmp, `pwd -P` the real
+worktree) → CURRENT at the identical **532485** bytes, exit 0; from
+`crates/nputer-index` (`../..` = `app/src-tauri`) → exit **1**; from the
+repo root → cargo exit **101**, `could not find Cargo.toml`; with no
+`--root` → exit **1**. There is no path on which the gate passes because
+it cannot find the graph.
+
+**3. THE `--root` FALSE RED — the executor's correction is right, the
+originals were wrong. Reproduced:**
+
+    [nputer-index] graph.json is STALE - the committed graph does not match a fresh index of this tree
+    [nputer-index]   committed:   MISSING at docs/architecture/graph.json
+    [nputer-index]   regenerate: nputer-index index --root .
+    EXIT=1
+
+The **headline is STALE**, identical to a real red; `MISSING` is on the
+SECOND line. CONVENTIONS now says exactly that ("IT IS NOT
+DISTINGUISHABLE BY THE HEADLINE … read the SECOND line"), and it is the
+measured thing. The documented legend is also true against source:
+`cli.rs:47-50` defines `EXIT_OK 0 / EXIT_FINDINGS 1 / EXIT_USAGE 2 /
+EXIT_FAILED 3`.
+
+**4. THE EXPOSED-COMMAND ENUMERATION — 19, and the instrument is
+faithful — met.** I re-implemented the derivation inline from the doc's
+own typography rules and calibrated it exactly as the card claims: on
+`2fc3475` it returns **16**, and the independent ground truth agrees —
+that spec's `CI_SEQUENCE` is 11 verbatim + 3 mapped + 2 ci-only and
+`LOCAL_ONLY` is 2, so 14 + 2 = **16** claimed keys. Against HEAD it
+returns **19**, in the card's exact order, `index --check` at 11 between
+`cargo test` and `cargo audit`. **The trap reproduced:** re-legending the
+`index --check` parenthetical with `·` drops the list to **16**, losing
+`cargo audit`, `index --watch` and `arch` — the three the card names.
+One correction, filed as **T-054-s2**: that loss is *not* silent (see
+below).
+
+**5. THE GATE WATCHED FAILING, with my own probe — met.** rsync'd scratch
+copy (no `node_modules` anywhere, confirmed by `find`), control first:
+CURRENT at **532485 bytes / 114 files / 916 symbols / 1408 edges**, exit
+0 — which also re-proves the incidental claim that the gate is
+insensitive to installed dependencies. Then, my file, my name:
+
+    files  +1  -0  ~0
+    | + app/src/s2-verifier-probe.ts        EXIT=1
+
+removed → CURRENT again, exit 0; then an edit to an existing indexed
+file:
+
+    files  +0  -0  ~1
+    | ~ app/src/lib/docs-model.ts  (content, loc 297 -> 299, symbols 14 -> 15)   EXIT=1
+
+**AND THE PREMISE PROVED BY EXPERIMENT, NOT INFERENCE.** I made the real
+worktree stale (`app/src/s2-gate-probe.ts`) and ran both CI steps on the
+same tree: `index --check` **exit 1** naming the file, bare `cargo test`
+**exit 0, 299 passed / 3 ignored**, and the two dogfood suites
+(`architecture-dogfood`, `map-dogfood-render`) **17 passed, exit 0**. A
+stale graph really does pass CI green today, and the new step really is
+the only thing that catches it. Probe removed, `git status` empty.
+Premises re-verified: bare `cargo test` lists
+`self_graph_is_current … ignored`; `.github/` at `2fc3475` mentions
+`nputer-index` **zero** times (`git grep -c` exits 1, one file under
+`.github/`); at `2fc3475`, over `docs/CONVENTIONS.md` + the five
+`method/roles/*.md`, "poison" **0**, "mutation" **0**, `vacuous*` **1**
+— `CONVENTIONS.md:107`, about ACL grants.
+
+**AND THE GATE IS PINNED SO IT CANNOT BE DROPPED.** Deleting the graph
+currency step from `ci.yml` reds the lane by name:
+
+    missing verbatim step: [app/src-tauri] cargo run -p nputer-index -- index --check --root ../..
+
+Deleting the boot step's `working-directory: tools/e2e` reds tests 3, 4
+and 6, the last at the new assertion `:594`.
+
+**6. THE THREE NEW CONVENTIONS BULLETS — met.** DISPATCH FROM THE LAST
+CHECKPOINT, POISON DRILL and THE E2E LANE'S HONEST SCOPE all sit beside
+the other gate rules and all carry the standing shape. The POISON DRILL
+bullet's premise is verified above. **Is it actionable?** I executed it
+against this branch using nothing but its own text — trigger, actors,
+mutate-every-assertion, require the RED, restore, PROVE the restoration
+by `git show HEAD:<path> | shasum -a 256`, record the count — and it was
+sufficient without interpretation. One gap, filed as **T-054-s3**: it
+does not say the mutation must be ONE-SIDED, and that is not a
+hypothetical (below).
+
+**7. `structuralProblems()` — each fixture reds for the reason its name
+claims. Re-derived, and the discrimination drills reproduce exactly:**
+
+| drill | mutation | RED |
+|---|---|---|
+| R1 | the splice neutered (`md.replace(…)` → `md`) | 12, 13, 14 — all three at `.not.toBe(md)` (`:703`, `:723`, `:746`) |
+| R2 | producer-only `is an INDENTED BULLET: ` | **12, 13 only; 14 green** |
+| R3 | producer-only `carries a CODE FENCE. ` | **14 only** |
+| R4 | the indented rule made to fire on EVERY line | **2 only** — the wiring into `deriveExpectedSteps` is live |
+| s2-D1 | `structuralProblems` neutered to return `[]` | 12, 13, 14 — **at the NAMING assertions (`:714`, `:740`, `:756`), never at the step-equality ones**, and 2 stays GREEN |
+
+D1 is mine and it settles two things at once: the step-equality halves
+still pass without the new rule, so the smuggled commands really are
+invisible (T-045's `steps` unchanged, first-hand); and with R4 it
+mechanically confirms the live section carries **zero** indented bullets
+and **zero** fences, so the new rule does not false-positive on the
+executor's own wording. **A caution on R2:** the card's phrasing "the
+message text changed" is under-specified — my first attempt substituted
+the literal globally, `SUBS=3`, hitting the producer AND both
+assertions, and **14 passed**. See T-054-s3.
+
+**8. THE POISON SWEEP — 18/18, count re-derived independently.** The diff
+adds **17** lines containing `expect(` and removes **3** (so 14 new + 3
+changed), plus the pre-existing `expect(problems, …).toEqual([])` in the
+derivation test = **18**. I proved every one of the 18 individually red,
+each as the first failing assertion in its test, across eight rounds
+(R1–R4 and s2-D1 above; Round A: floor `>=18`→`>=19` RED 2 `:533`,
+restructured `19`→`20` RED 11 `:678`, the three step-equality flips RED
+12/13/14 `:710`/`:728`/`:751`; Round B: the `cargo clippy` needle RED 12
+`:714`, the four-bullet-guard SILENCE assertion flipped RED 13 `:738`,
+the `fenceProblems[0]` needle RED 14 `:756`; Round C: the "marker of its
+own" needle RED 13 `:740` and, via `ci.yml`, `boot!.run` RED 6 `:593`;
+plus the `working-directory` deletion RED 6 `:594`). Round A's floor
+mutation failing at `>=19` proves the derived step count is exactly
+**18**, and `toBe(20)` failing proves the restructured complaint count is
+exactly **19**. Every round ran inline, no scratch script. **RESTORATION
+PROVED, and my hashes are the executor's:**
+
+    MATCH  100257c931657c32119d1dc1b2d19d4322f55bf1b382a02c941f6428933a40fa  tools/e2e/tests/workflow-parity.spec.ts
+    MATCH  4fb144f78aa9fcb8a16452040c0ca26b3d8dda702e088dc203d76442efa7c3cd  docs/CONVENTIONS.md
+    MATCH  5598c3ebd8a5191f8f909dc02e1dd4f6139458c9bf76ce0870ef3b04a272ac68  .github/workflows/ci.yml
+
+with `git status --short` and `git diff --stat` empty, and the spec green
+at **14 passed** afterwards.
+
+**SUITES — all first-hand, exit codes from `$?`, never through `tail`:**
+
+| suite | result | exit |
+|---|---|---|
+| `lib/parser` `npx tsc --noEmit` · `npm run build` · `npx vitest run` | **225 passed (225), 11 files** | 0 · 0 · 0 |
+| `app` `npx tsc --noEmit` · `npx vitest run` | **768 passed (768), 41 files** | 0 · 0 |
+| `app` `npm run build` | `index-ByWKsUIt.js` **488.81 kB**, `index-DVAVecvn.css` **43.79 kB** — hash-identical to the notes, and identical to main by construction (the diff carries zero `app/` files) | 0 |
+| `app/src-tauri` bare `cargo test` | **299 passed / 0 failed / 3 ignored**, 15 targets, **0 warning lines** | 0 |
+| `tools/e2e` `npm run typecheck` | clean | 0 |
+| `tools/e2e` `NPUTER_E2E_PORT=17540 npm test` | **73 passed (13.3 s)**, 73 `✓` lines, no skips, no flakes, no retries | 0 |
+| `lint:tokens` | `clean (114 files scanned under app/src, app/test, tools/e2e)` | 0 |
+| `lint:tokens -- --selftest` | **49 samples green, 14 walk-policy checks green** | 0 |
+
+**THE E2E COUNT, DERIVED STRUCTURALLY AND THE MOVED TRAP CONFIRMED.**
+Raw `test(` lines across `tools/e2e/tests/*.ts` = **73**; false positives
+= **THREE**, all in `workflow-parity.spec.ts` — `:160` and `:169`
+(`structuralProblems`' two `/regex/.test(line)` calls) and the
+pre-existing `:559` `i.match.test(s.run)`; three two-iteration loops
+(`keyboard-activation:33`, `panel-real-keys:39`, `window-contract:314`,
+each wrapping one `test(`) add 3. **73 − 3 + 3 = 73.** STATE:354-359
+still says "minus ONE false positive", so STATE's recipe applied to this
+branch lands on **75**. The card's warning is exact; the integrator must
+carry it into STATE.
+
+**THE npm ARGV FINDING — confirmed, on npm 11.12.1:**
+
+    npm run lint:tokens -- --selftest  →  node scripts/lint-tokens.mjs --selftest
+                                          49 samples green, 14 walk-policy green   exit 0
+    npm run lint:tokens --selftest     →  npm warn Unknown cli config "--selftest".
+                                          node scripts/lint-tokens.mjs
+                                          clean (114 files scanned …)              exit 0
+
+The bare form is a **wrong command at exit 0**, not an error. The `--` in
+the workflow is load-bearing. The no-`node_modules` claim is measured,
+not argued: both forms were run from the rsync'd copy's `tools/e2e`,
+which has no `node_modules` anywhere, and both were green. Both scripts
+resolve the repo root from `import.meta.url` (`lint-tokens.mjs:91/93`,
+`tauri-boot-check.mjs:57/58`), never `process.cwd()`.
+
+**AND ONE THING THE NOTES ARGUED THAT I MEASURED: exit-code fidelity
+through the new `npm` layer.** The boot gate's whole value is its four
+exit codes, and `ci.yml` now puts `npm` between `xvfb-run` and `node`. On
+the refusal path (`resolveBootPort` throws before anything is probed or
+spawned):
+
+    tools/e2e $  NPUTER_BOOT_PORT=notaport npm run boot:check                          → exit 3
+    repo root $  NPUTER_BOOT_PORT=notaport node tools/e2e/scripts/tauri-boot-check.mjs → exit 3
+
+Identical message, identical code, nothing probed, nothing spawned. The
+npm layer does not flatten a non-zero code.
+
+**BOOT GATE: DOES NOT FIRE — trigger genuinely unmet, not unrun.**
+`git diff --name-only 2fc3475..HEAD` is five files —
+`.github/workflows/ci.yml`, `docs/CONVENTIONS.md`, the two `docs/tasks/`
+files and `tools/e2e/tests/workflow-parity.spec.ts`. Matched against the
+trigger set (`app/src-tauri/**`, `app/src/**`, `app/package.json`,
+`app/src-tauri/Cargo.toml`) the grep exits **1** with no output. Not run
+because there is nothing to run it on. (The card's own sentence names
+three files; at HEAD the range is five, its own commit having added the
+card and its s1. The conclusion is unchanged.)
+
+**GRAPH REGEN: fires on the literal wording, and the graph is provably
+unchanged** — `index --check` reads CURRENT at 532485 bytes before and
+after all work, `git diff --stat` on `docs/architecture/graph.json` is
+empty, and `--check` was observed to write nothing (`git status` empty
+after every run, including the failing ones). Correctly filed as
+**T-054-s1**.
+
+**SECURITY SWEEP — clean.** No dependency or lockfile lines in the diff.
+No new grant: `permissions: contents: read` at workflow level, unchanged,
+and the diff contains no permission, token or secret line. All four
+`uses:` still pinned by full 40-hex SHA (`checkout@3d3c42e5…`,
+`setup-node@82076278…`, `cache@55cc8345…` ×2) — and the lane's own pin
+test passes. The one new step runs a workspace-local crate through the
+existing lockfile, fetches nothing, downloads nothing, writes nothing;
+the two rewritten steps invoke repo-local npm scripts. `file(1)` over all
+five files returns text, none classified `data`; a C0 scan excluding tab
+and newline returns **0 bytes** in each. `git grep` used throughout.
+
+**NOT COUNTED AGAINST THE BUILDER:** `status: building` (dispatcher's
+instruction; `method/roles/executor.md:18` says `verifying` and the
+method is right — a template question for the integrator, not a
+re-stamp), and `touches:` left alone (fields lock at `building`).
+
+### Findings filed from s2
+
+- **T-054-s2** — the `·` trap is LOUD, not silent, for a command the spec
+  already claims. Measured: with the draft's `·` legend the exposed list
+  drops 19 → 16 and the lane REDS (tests 2 and 4), naming all three by
+  key (`this spec expects [app/src-tauri] cargo audit …`, `… arch …`,
+  `… index --watch …`). The hazard is silent only for a command the DOC
+  adds that the spec does not claim. The rule the notes write down is
+  right and worth keeping; only the risk framing is off — and the rule
+  lives solely in these notes, not in CONVENTIONS or in
+  `commandBullets`' docstring where the next editor will look.
+- **T-054-s3** — the POISON DRILL bullet does not say a mutation must be
+  ONE-SIDED, and the omission bit me first. Substituting the literal
+  `is an INDENTED BULLET` globally reported `SUBS=3` — producer plus both
+  assertions — and the suite went **14 passed**: a green indistinguishable
+  from a vacuous assertion, which "count your substitutions" would NOT
+  have caught, because the count was correct. Same failure one level
+  deeper a second time: a `perl -pe 's/…/… \x{00B7} …/'` reported
+  `SUBS=1` while emitting a raw `0xB7` byte, so the doc mutation
+  "applied" and changed nothing. One clause closes both: mutate the code
+  under test OR the assertion, never a literal they share, and confirm
+  the mutated TEXT is what you intended, not merely that a count was
+  non-zero.
+- **T-054-s4** — the gate is written but cannot execute yet, and the
+  bullet reads as though it already does. `git remote` returns **zero
+  remotes**; `docs/CONVENTIONS.md:90` says the workflow is "dormant until
+  the repo's first GitHub push". So between this commit and that push,
+  the hand-run byte-comparison is retired while the CI step cannot run,
+  and GRAPH REGEN's "CI now runs … so the property is held by a gate
+  instead of by a written ritual" is true in the future tense only. **Not
+  a rejection, and I looked hard at whether it should be:** what retired
+  is the confirming re-run, not the regen; a failed regen reds
+  `cargo test` on its own; `index --check` is now documented one section
+  above as the GRAPH-CURRENCY GATE; and the lane pins the CI step so it
+  cannot be dropped before the push. The property is enforced by less
+  than the bullet claims but by more than nothing. One-line closer: have
+  GRAPH REGEN tell the integrator to confirm with
+  `cargo run -p nputer-index -- index --check --root ../..` from
+  `app/src-tauri` at the checkpoint — which is what the gate will run
+  anyway.
+
+### For the integrator
+
+- **STATE:181-182** still says `index --check` without `--root` "reports
+  the committed graph MISSING", omitting that the HEADLINE says STALE.
+  The branch correctly does not touch STATE (0 files); the correction
+  belongs in the checkpoint, alongside the e2e arithmetic fix above.
+- The xvfb boot step's new `npm` layer is as verified as it can be
+  headlessly: exit-code fidelity measured (above), repo-root resolution
+  read from source. What remains unprovable here is a real GitHub runner.
+  It belongs on T-020's "watch the first CI run" list — and so, now, does
+  the graph currency step.
