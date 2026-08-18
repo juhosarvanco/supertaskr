@@ -5,12 +5,12 @@ feature: F-02
 milestone: 4
 priority: 26
 size: M
-status: planned
+status: done
 blocked_by: []
 touches: [tools/e2e]
-builder:
+builder: codex/gpt-5.6
 verifier:
-built_by:
+built_by: codex/gpt-5.6 @fresh
 verified_by:
 review:
 ---
@@ -122,5 +122,92 @@ before it to prove the reported byte offset is not a UTF-16 index. @human:
 none.
 
 ## Implementation notes
+
+Implemented by **codex/gpt-5.6 @fresh** on
+`task/T-058-searchable-tree` from architect checkpoint `71fa546`.
+
+### Two corpora, one unconditional gate
+
+`tools/e2e/scripts/token-scan.mjs` now owns the side-effect-free scanner.
+It exports the P1–P4 definitions, P5, `maskSource`, both scan functions,
+the walk policy, `corpus()`, `lintTree()` and `selftest()`. A direct import
+defines those values and does nothing else. `lint-tokens.mjs` is the small
+command wrapper and still calls `lintTree()` or `selftest()` unconditionally.
+It deliberately has no `import.meta.url === process.argv[1]` guard: a
+symlinked checkout or wrapper script can make those paths disagree and turn
+CI's first gate into a silent exit 0.
+
+TOKEN retains exactly `app/src`, `app/test` and `tools/e2e`, the existing
+TS/TSX/MJS suffixes, the same mask and unchanged P1–P4 semantics. Both lint
+implementation scripts are excluded by name from TOKEN and remain included
+in CONTROL; the new test file is ordinary TOKEN input. CONTROL derives its
+authority from `git ls-files -z`, then excludes generated/dependency
+directories and a named set of binary-asset suffixes. Everything else is
+raw input, including docs, method, root records, `.github`, app/parser
+TypeScript and Rust, scripts, dotfiles, extensionless fixtures, JSON, TOML,
+YAML, HTML, CSS, text and lockfiles. There is no hit allowlist.
+
+The card's 520 CONTROL baseline belonged to `ae8833c`. This branch's
+checkpoint contains three later suggestion-record removals and two promoted
+cards, so the same policy re-derived **519** before T-058. The committed
+post-change corpora derive as **TOKEN 118 / CONTROL 521**: TOKEN's 117 grows
+only by the test, and CONTROL grows by the scanner plus its test. No count is
+pinned in implementation or test.
+
+### P5 and the seven-root plant
+
+P5 reads a `Buffer`, permits byte 09, 0A and 0D, and rejects 00–08, 0B, 0C,
+0E–1F and 7F. Each finding names `P5`, U+XXXX and the zero-based raw byte
+offset. The positive selftest constructs its forbidden byte at runtime; the
+negative sample contains only the three allowed bytes. The focused suite
+also checks every forbidden byte and proves a non-ASCII prefix has more bytes
+than JavaScript string units before asserting the reported offset.
+
+The standing architecture check was preserved byte-identical at SHA-256
+`b6995559...740b1`. The new plant test appends one runtime-built byte after a
+24-byte prefix containing `é` to seven tracked files simultaneously and gets
+exactly seven CONTROL reds at these byte offsets:
+
+- `app/package.json` 940
+- `docs/NORTH_STAR.md` 3720
+- `lib/parser/package.json` 835
+- `tools/e2e/package.json` 751
+- `method/README.md` 3462
+- `AGENTS.md` 525
+- `.github/workflows/ci.yml` 9141
+
+Restoration runs in `finally`; the test compares all seven post-restore
+SHA-256 values to the saved original Buffers and requires `git diff --quiet`
+over all seven paths. The restored focused run passed **5/5**. T-034's
+durable implementation note now replaces the false “every gate is blind”
+sentence with T-034-s6's measured table: Node readers still catch violations,
+CI has no shell greps, `/usr/bin/grep` matches but suppresses line text, and
+binary-skipping `ripgrep` / `ugrep -I` miss the file entirely.
+
+### Evidence
+
+- `npm run lint:tokens -- --selftest`: **49 TOKEN samples + 2 CONTROL
+  samples, 37 walk-policy checks**, all green.
+- `npm run lint:tokens`: clean, **TOKEN 118 / CONTROL 521**.
+- Direct `await import("./tools/e2e/scripts/token-scan.mjs")`: exit 0,
+  emitted only the caller's post-import marker.
+- `npm run typecheck` from `tools/e2e`: green.
+- Focused scanner suite: **5/5** green.
+- Full headless E2E lane: **88/88**, one worker, no skips.
+- Fresh-worktree prerequisites were lockfile-exact: parser `npm ci` + build,
+  app `npm ci`, tools/e2e `npm ci`; all three installs reported zero
+  vulnerabilities.
+- Poison discipline: one relation-breaking expectation in each of the five
+  new test bodies produced exactly **5/5 named reds**. Restoration returned
+  `token-scan.spec.ts` to SHA-256
+  `ee9852b60df312c6730ab8106aac29ceafd2f46b70b56e07965bf13e316bb551`
+  before the green focused and full reruns.
+
+The permanent diff is confined to the lint wrapper/scanner, its test and
+typecheck entry, T-034's durable correction, and this card. No app source,
+parser source, Rust, manifest, lockfile, workflow, architecture fixture or
+graph moved. Graph regeneration and the boot gate therefore do not trigger.
+No suggestion was filed: the checkpoint-count difference was fully explained
+by the already-recorded task-triage wave and required no policy change.
 
 ## Verdicts

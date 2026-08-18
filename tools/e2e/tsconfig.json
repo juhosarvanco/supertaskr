@@ -23,6 +23,7 @@
     "preflight.ts",
     "fixtures/**/*.ts",
     "tests/**/*.ts",
-    "scripts/boot-port.mjs"
+    "scripts/boot-port.mjs",
+    "scripts/token-scan.mjs"
   ]
 }

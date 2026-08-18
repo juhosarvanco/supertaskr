@@ -142,11 +142,22 @@ turned up `app/src/architecture/task-waves.ts: **data**`. It carried
 **two literal NUL bytes** in the two template literals that key the
 critical-path edge set, where `map-layout.ts`'s separator idiom wants
 the six-character escape. It compiled, bundled, typechecked, and passed
-586 tests. But `file(1)` calls such a source *data* and **`grep(1)`
-treats it as BINARY** — which means the no-innerHTML gate I had just
-written, `lint:tokens`, and every CI grep **silently stop seeing that
-file**. A gate that cannot read its subject is not a gate, and this is
-the exact failure mode that a green suite cannot tell you about.
+586 tests. But `file(1)` calls such a source *data*. T-034-s6 then
+measured the actual consumers rather than carrying the first diagnosis
+forward:
+
+| consumer with a planted U+0000 | measured result |
+|---|---|
+| both no-innerHTML gates (`readFileSync(…, "utf8")`) | catch the planted sink |
+| `lint:tokens` (`readFileSync(…, "utf8")`) | catches planted token violations |
+| `.github/workflows/ci.yml` shell greps | none exist |
+| `/usr/bin/grep` | matches (exit 0), but suppresses line text as binary |
+| `ripgrep` / `ugrep` with `-I` | no match at all (exit 1) |
+
+The gates are not blinded. The **binary-skipping searcher** is — including
+the search mode agents use to recover and audit this repository. One byte
+can therefore make a file unfindable to a future session while every gate
+and suite remains green.
 
 Mechanism, worth recording because it will recur: writing a backslash-u escape into
 a tool-authored source file can land the CHARACTER rather than the
@@ -581,9 +592,9 @@ the judgments are against the design bundle's `map · tasks` screen.
   separate on purpose.
 - **T-034-s4** — the two design screens put the lens control in two
   places; T-034 picked one, and it is an @human call.
-- **T-034-s5** — a control byte in a source file blinds every grep gate
-  in the repo; T-034's check covers one pane, `lint:tokens` is where it
-  belongs.
+- **T-034-s5 / s6** — a control byte makes a source file invisible to
+  binary-skipping searchers, not to this repo's Node-based gates; T-034's
+  check covers one pane, `lint:tokens` is where the whole-tree gate belongs.
 
 ## Verdicts
 
