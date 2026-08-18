@@ -253,14 +253,14 @@ no box anywhere may clip content it gives no way to reach. **What is
 still @human's**: whether one bounded frame FEELS right. Everything below
 the fold on the board now lives in a region with its own scrollbar, in
 light and dark, on a screen used every day — and no measurement settles
-that. **A known limit, now promoted as T-066 (from T-062-s3)**: the
-parse-error strip sits OUTSIDE the board's scroll region and cannot
-shrink, so at 20 unparsable files the page grows again at the shipped
-1280×840 default and the header scrolls off — the very thing this card
-fixed, reachable by a different door. A current-head remeasurement showed
-the threshold moves with message wrapping and still reaches all supported
-viewports; T-066 caps the strip as a layout invariant rather than pinning a
-magic file count. T-062 is a milestone 4 card; it
+that. T-066 merged 2026-08-18 and closes the remaining T-062-s3 door without
+moving diagnostics into the board. `parse-error-details` stays above and
+outside `board-scroll`, so short failures remain visible while the board
+moves, but it now owns a token-backed `max-h-48` ceiling and vertical auto
+overflow. With sixty real parser failures the page stays exactly 840/700/600
+at the three measured viewports, the details list remains fully reachable in
+its own 192px border box, and the board keeps 524/384/284px of independent
+scrolling room. T-062 is a milestone 4 card; it
 sits here because it continues T-048's and T-051's story rather than
 F-03's.
 T-028 merged 2026-08-17 and it is the interview's last act: **the lens

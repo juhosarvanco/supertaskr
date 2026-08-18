@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:634c157151bcb13e7bc61ebcfc8d4bf105946364a60d965fe0cca5219f271584",
-      "loc": 735,
+      "hash": "blake3:86abfb24993dd27a0162fedb80aaabcd84b9e8d08b65b4859cb0cb28b066dfa3",
+      "loc": 737,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -19,7 +19,7 @@
           "exported": true,
           "range": [
             415,
-            733
+            735
           ]
         },
         {
@@ -8931,8 +8931,8 @@
       "id": "f:app/test/shell-frame.test.tsx",
       "path": "app/test/shell-frame.test.tsx",
       "lang": "ts",
-      "hash": "blake3:0870d8d08b9c5044b9d55df65af6a2c0f786166ef7095916ed65039982387a4b",
-      "loc": 395,
+      "hash": "blake3:7b1cc62885ee4dc57fa6955127dd6a6d7fadb0831c5d25a6ec9d5b2448306c66",
+      "loc": 418,
       "symbols": [
         {
           "id": "s:app/test/shell-frame.test.tsx#App",

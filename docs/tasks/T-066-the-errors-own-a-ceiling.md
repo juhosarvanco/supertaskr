@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 23
 size: M
-status: verifying
+status: done
 blocked_by: [T-062]
 touches: [app-shell, tools/e2e]
 builder: codex/gpt-5 @fresh
