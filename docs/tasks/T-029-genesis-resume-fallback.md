@@ -240,8 +240,12 @@ result line's `api_error_status` / `terminal_reason` /
 `StreamLine::Diagnostic` keeps the status as a NUMBER beside the note
 (`runner.rs:915-923`); the relay loop tracks them (`runner.rs:1156-1160`,
 `:1249-1276`); classification runs **before the exit code is looked at**
-(`runner.rs:1338-1372`) because exit 1 means a dozen things and the
-stream says which. Routed: `failureHeadline`/`failureAction`
+(`runner.rs:1428-1491` — the cited `1338-1372` was wrong when written;
+corrected in place by the SECOND EXECUTOR rather than left standing.
+The verifier measured `1418-1456` at `307319b` and was right; the fix
+below adds fourteen lines of comment inside the block, so the live
+range is the one quoted here) because exit 1 means a dozen things and
+the stream says which. Routed: `failureHeadline`/`failureAction`
 (`interview-model.ts:388-460`), rendered `interview-turns.tsx:266-346`.
 Tests: `agent_runner.rs:533`, `interview-model.test.ts:707`,
 `interview-resume-dom.test.tsx:160`, `resume-fallback.spec.ts:48`.
@@ -417,6 +421,185 @@ called by anything.** `file(1)` over all 20 changed files: all text, none
 - **The @human item in the card's Verification is untouched**: one real
   hand-driven run in the fallback mode. It needs a human and, for the
   spawned half, a `claude login`.
+
+---
+
+### SECOND EXECUTOR, claude-opus-5 @fresh, 2026-08-18 — closing the rejection
+
+Fresh session, briefed with the verifier's findings and nothing of the
+first executor's assumptions. Built on **`307319b`** (the verifier's own
+verdict commit) in `/Users/ujju/Projects/nputer-T-029`; two commits on
+top, no rebase, no squash, no history rewritten. **Main was never
+touched** and is still clean at `2fc3475`. The `## Verdicts` section
+below is untouched: the REJECTED verdict is the record of what happened.
+
+**Both findings closed, because they are the same defect twice.** The
+verifier's evidence reproduced EXACTLY — every row, every message
+string, including the control that discriminates. Nothing in s6 or s7
+failed to reproduce.
+
+**T-029-s6 (blocking).** `auth_status` was a MONOTONE LATCH: the
+`Result` arm overwrote it only when the terminal line carried an
+`api_error_status` of its own, so a 401 the CLI **retried and got past**
+survived to the classification closure and relabelled whatever actually
+killed the turn. The close is one line — **assign, never merge**
+(`runner.rs:1338`), so a terminal `result` WITHOUT an `api_error_status`
+CLEARS a status an earlier `api_retry` left behind. The terminal line is
+the turn's own verdict.
+
+**T-029-s7, the CONSERVATIVE arm ONLY** (`runner.rs:1483`):
+`permission_denials` is a cumulative record of what was refused, not a
+statement that a refusal ended the turn, so `ToolDenied` now requires
+`result_is_error`. **The wider `terminal_reason`-set guard was
+DELIBERATELY NOT BUILT**, and the reason is written into the code beside
+the guard: the set of `terminal_reason` values a real denial produces is
+exactly what **T-029-s5 records as still unverified** — the
+`tool-denied` fixture's `"refusal"` is constructed, not transcribed,
+because a revoked login cannot provoke a live denial — and building a
+guard on an unverified set is how this card earned its rejection in the
+first place. `result_is_error` is a field the CLI demonstrably sets.
+
+Both live in the same `if exited_badly || result_is_error` block, now
+**`runner.rs:1428-1491`**. The block's header comment no longer claims
+the property that failed ("a transient `api_retry` the CLI recovered
+from classifies nothing"); it states the rule that replaced it — each
+arm binds to the turn's TERMINAL state, never to evidence the turn
+walked away from.
+
+**The whole change is 3 files, +340/-7, and TWO behavioural lines.** No
+TypeScript changed: `failureAction`'s `retry: false` for `authFailed` was
+never the bug — it is right for a REAL auth failure, and the bug was
+that ordinary failures were being called one.
+
+#### The six pins — four RED against the pre-fix code, two green by design
+
+The fixture scenarios are in `fake_agent.rs`; **the control shares the
+emitter** (`retry_then(…, with_retry: bool, …)`), so `enospc-no-retry`
+is `retry-401-then-enospc` minus **exactly one line** by construction
+rather than by two fixtures agreeing to stay in step.
+
+| # | stream | pre-fix | post-fix |
+|---|---|---|---|
+| 1 | 401 · delta · `result{is_error:true, error_during_execution, "…ENOSPC…"}` · exit 1 | `AuthFailed{401, "Error: ENOSPC: no space left on device, write '/Users/x/docs/NORTH_STAR.md'"}` **RED** | `ExitNonZero{1}`, ENOSPC still in the tail |
+| 2 | 401 · delta · `result{is_error:false, "Here is your first question."}` · exit 1 | `AuthFailed{401, "the agent CLI could not authenticate"}` **RED** | `ExitNonZero{1}` |
+| 3 | **CONTROL** — row 1 minus the 401 line | `ExitNonZero{1}` (green) | `ExitNonZero{1}` |
+| 4 | 401 · `result{is_error:true, refusal, denials:[Bash]}` · exit 1 | `AuthFailed{401, "I was not permitted to run the tools this stage needs."}` **RED** | `ToolDenied{["Bash"], Some("refusal")}` |
+| 5 | **COUNTER-PIN** — 403 diagnostic, NO result line at all · exit 1 | `AuthFailed{403}` (green) | `AuthFailed{403}` |
+| 6 | delta · `result{is_error:false, end_turn, denials:[WebFetch]}` · exit 1 (s7) | `ToolDenied{["WebFetch"], Some("end_turn")}` **RED** | `ExitNonZero{1}` |
+
+Rows 3 and 5 are green on both sides **and that is their job**. Row 3 is
+the discriminator: pre-fix it classified `ExitNonZero` while row 1 —
+the same stream plus one line — classified `AuthFailed`, which is what
+makes row 1's red mean what it says. Row 5 is the counter-pin an
+over-broad fix breaks, and it is not redundant: gating the auth arm on
+`result_is_error` reds row 5 while
+`an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code`
+stays GREEN, so nothing shipped was watching that case.
+
+**Honest limit of row 3, stated rather than discovered later.** Post-fix
+the control can no longer discriminate on the retry line — flipping its
+`with_retry` to `true` leaves it green, because making those two streams
+indistinguishable IS the fix. Its live value is the pre-fix comparison
+above plus the pin that a plain ENOSPC stream still relays the CLI's
+words; it reds under a real mutation (round E below).
+
+#### The poison sweep — 6 rounds, run INLINE, no scratch script
+
+| round | mutation | red |
+|---|---|---|
+| A | both fixes reverted (the pre-fix code) | rows 1, 2, 4, 6 |
+| B | the s6 assignment alone reverted | rows 1, 2, 4 |
+| C | the s7 `result_is_error` guard alone dropped | row 6 |
+| D | the OVER-BROAD fix — `result_is_error` required for `AuthFailed` too | row 5 |
+| E | the `result` line's text no longer pushed into the ring | rows 1, 3 |
+| F | the control's `with_retry` flipped ON | **nothing — expected, see above** |
+
+B and C isolate the two fixes cleanly: neither reds the other's row.
+**Restoration proved by sha256 against `git show HEAD:<path>` after
+every round**, never by a clean `git status` — all three files
+byte-identical each time.
+
+#### Suites, first-hand in this worktree, never piped through `tail`
+
+- **lib/parser** `tsc --noEmit` 0 · **225/225 (11 files)** — zero parser
+  files touched.
+- **app** `tsc --noEmit` 0 · build 0 · **795/795 (42 files)** — unchanged,
+  and the bundle is byte-for-byte the same build: `index-Bf-QNmtC.js`
+  497.86 kB / `index-CryMc_lw.css` 43.90 kB, identical hashes to the
+  first build's, which is the check that no frontend file moved.
+- **app/src-tauri** bare `cargo test` → **313 passed + 3 ignored, 0
+  failed, ZERO warnings**. Derivation: 307 (the verified figure) **+6**,
+  the six new pins, all in `agent_runner`. Breakdown
+  `108/0/0/46/123/0/7/13/3/7/0/2/4/0/0` — every slot identical to the
+  verifier's except `40 → 46`. Warnings re-checked with `touch` +
+  `cargo check --all-targets`, not off a cached build.
+- **tools/e2e** typecheck 0 · `NPUTER_E2E_PORT=15460 npm test` → **74
+  passed**.
+- **`npm run lint:tokens`** → clean, **116 files**; `--selftest` 49
+  samples + 14 walk-policy checks green.
+- **BOOT GATE (T-046 criterion 6): FIRED, RAN, GREEN, twice.** Trigger
+  derived as `2fc3475..HEAD` (main-before-the-merge, per CONVENTIONS —
+  never the merge-base): 12 files under `app/src/**` + `app/src-tauri/**`.
+  This session's own two commits touch `app/src-tauri/**` alone, so the
+  gate fires on either derivation. Scratch ports **15470** and **15471**,
+  each `lsof`-checked AND bind-probed free immediately before use. Both
+  `[nputer]` lines detected (`project folder:`, `window "main" created`),
+  **`BOOT_EXIT=0`**. All scratch ports free afterwards, no stray
+  `tauri dev` or vite from this worktree. **Port 1420 was read with
+  `lsof` only — never bound, connected to, or signalled; one listener
+  (the human's app, in `/Users/ujju/Projects/nputer`) throughout.**
+- **NO MODEL WAS CALLED.** The one `#[ignore]`d real-CLI smoke was not
+  run, not duplicated, and the diff adds and removes no `#[ignore]`.
+
+#### Security sweep — a 3-file diff, and the three files are the point
+
+`git diff --name-only 307319b..HEAD` is exactly `runner.rs`,
+`fake_agent.rs`, `tests/agent_runner.rs`. **Zero dependency or lockfile
+lines** — `package.json`, `package-lock.json`, `Cargo.toml`,
+`Cargo.lock` are 0-file diffs. `adapter.rs`, `acl_pin.rs`,
+`capabilities/` and `gen/` are 0-file diffs, so no bypass flag was added
+and **no webview grant moved: 92 grants, `acl_pin.rs` whole-file sha256
+`8d24cbad706d9e6f…`, identical at `307319b` and HEAD.** (Quoting the
+whole-file hash and not an `EXPECTED_GRANTS` byte count is deliberate —
+three agents produced three different figures from three different byte
+ranges; the hash is the only reproducible form.) **`ENV_ALLOWLIST`
+byte-identical across both refs — 422 bytes, 16 entries, sha256
+`cf80f850b96a6f03…`.** No `innerHTML` / `dangerouslySetInnerHTML` /
+`eval` / `new Function` and no `writeTextFile` / `writeFile` / `mkdir`
+under `app/src` (nothing under `app/src` changed at all, so ADR-017
+holds trivially). `file(1)` over all three changed files: text/UTF-8,
+none `data`, zero C0 bytes outside tab/newline.
+
+#### For the integrator, not defects and not mine to fix
+
+1. **`acl_pin.rs`'s command roster still lists only T-025's four
+   commands**, though T-025 and T-026 both extended it — the verifier's
+   accuracy note 2, re-confirmed here as a **0-file diff**. It is a
+   comment and a name-agnostic loop, not a pin: `has_app_acl == false`
+   gates all app commands identically and `EXPECTED_GRANTS` is
+   unchanged. Structurally harmless, outside this card's fence, and
+   flagged rather than silently fixed.
+2. **`docs/architecture/graph.json` NOT regenerated** — integrator's
+   ritual, unchanged from the first executor's note. This session moved
+   no `.ts/.tsx` file, so it adds nothing to what was already owed.
+3. **The verifier's accuracy note 1 is only PARTLY closed.** The
+   classification-block citation is corrected in place above, because
+   this session touched that block. The others it named
+   (`runner.rs:100/107/117`, `mod.rs:414/497/601/648`,
+   `sessions.rs:170`) land in the doc comment above the item rather
+   than on it; left alone deliberately — the substantive claims check
+   out and rewriting citations this session did not touch would be
+   editing another executor's record for cosmetics.
+
+#### What I deliberately did NOT do
+
+- **Not the wider s7 guard.** Argued above and in the code; the narrow
+  arm is the whole of what T-029-s7 asks for as safe today.
+- **No TypeScript change.** The affordance logic was never wrong.
+- **No criteria touched, no `status` change, no
+  `builder:`/`built_by:`/`verifier:`/`verified_by:` touched** — the next
+  verifier restamps. `status: building` stands.
+- **s1–s5 stay filed as suggestions.** Scope not widened.
 
 
 ## Verdicts
