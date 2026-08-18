@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [app-agent]
 builder: claude-opus-5 @fresh
-verifier:
+verifier: claude-opus-5 @fresh
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-047-s1, T-047-s4, T-047-s5, T-047-s6 (triage 2026-08-17).
@@ -246,3 +246,319 @@ line's text is pushed into the diagnostic ring only under `if is_error`
 `is_error: false` contributes nothing to `stderr_tail`.
 
 ## Verdicts
+
+---
+
+**Verifier, claude-opus-5 @fresh, 2026-08-18 — REJECTED.** Fresh
+session, adversarial pass, every number below re-derived first-hand in
+`/Users/ujju/Projects/nputer-T-060`. Main was never touched: the only
+interaction with it at any point was read-only `lsof`/`ps`, and 1420
+carried one healthy listener (`node` pid 82549) at start and at end.
+`../nputer-T-063` was never entered.
+
+**Eight of the nine criteria hold, several of them better than the card
+claims. One test defect blocks, and it is in the guard's own tripwire.**
+
+**Range derived, not accepted.** `git merge-base HEAD main` =
+`6404a43`; tip `9c40da7`; `6404a43..9c40da7` = **5 commits, 7 files,
++1553 / −534**. The brief's figures reproduce exactly.
+
+**The card carries NINE criterion bullets, not eight.** Counted
+mechanically off `## Acceptance criteria`; the implementation notes say
+"eight" twice. `## Acceptance criteria` is **75 lines, sha256
+`baeb738d92b9a236…`, byte-identical at all five branch refs** — no
+criterion moved on the branch.
+
+### THE BLOCKING FINDING — the guard's lift window races the guard's own pin
+
+Filed as **T-060-s3**. The executor recorded the parallel-mutation
+hazard honestly and argued it survivable because no other test asserts
+on `$SHELL`. That is true, and it is the wrong variable. The race is on
+**`NPUTER_NO_REAL_CLI`**, between two bodies this card introduces:
+`the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found`
+sets it process-wide across `tests/agent_runner.rs:1989-2009`, and
+`the_no_real_cli_guard_is_on_without_anything_being_set` asserts at
+`:1829` that it is unset — which is the entire property that body
+exists to pin.
+
+Verbatim, `--test-threads=8`, same binary, same tree:
+
+    thread 'the_no_real_cli_guard_is_on_without_anything_being_set'
+      panicked at tests/agent_runner.rs:1829:5:
+    assertion `left == right` failed: the guard must hold with the
+      variable UNSET - if a suite has to set it, a suite can forget it
+      left: Some("0")
+     right: None
+
+    test result: FAILED. 47 passed; 1 failed; 1 ignored; 0 measured;
+      0 filtered out; finished in 3.45s
+
+Rate by thread count, run from `app/src-tauri` (cargo's own cwd):
+**1 → 0/6 · 2 → 3/15 · 3 → 0/10 · 4 → 13/15 · 5 → 10/10 · 6 → 10/10 ·
+8 → 15/15 · 10 → 0/15 · 16 → 0/15 · 32 → 0/15 · default → 0/25.**
+
+**Why it was missed, and why that is the point.** libtest's default is
+the core count; this box has 10, which sits in a quiet band. `ci.yml:55`
+runs `ubuntu-24.04` and `ci.yml:127` runs a bare `cargo test` — four
+vCPUs, the loudest band but one. The card's "319 passed, exit 0" is real
+and reproduces here; it is a property of this hardware, not of the test.
+
+It blocks because the body it breaks is the card's **tripwire** — the
+one assertion whose job is to notice if the guard ever stops holding. A
+tripwire that reds on a 4-core box is one an integrator learns to re-run
+until green, which is exactly the channel a real guard failure would
+come through. T-060-s3 names three closes; the one that removes the
+class is running the lifted arm in a **child process**, which also
+retires the `set_var`-in-a-threaded-program hazard entirely.
+
+### Criterion by criterion
+
+**1. The cache is retired — HOLDS, and the residual the executor flagged
+is now closed.** `CacheFile`, `CacheEntry`, `read_cache`, `write_cache`,
+`invalidate_cache`, `cache_path`, `RunnerConfig::config_dir` and
+`probe_login_path` are all gone; `lib.rs` hands the runner a bare
+`RunnerConfig::default()` and no longer calls `app_config_dir()` at all,
+so the process never learns a config dir path. The executor's own caveat
+— that `find_named` scans only the temp tree — I closed at the source:
+**`runner.rs` contains ZERO filesystem writes outside `#[cfg(test)]`**
+(`grep` for `fs::write|create_dir|File::create|OpenOptions|rename|copy`
+hits only test-module lines and `stdin.write_all`). And behaviourally,
+no `agent-paths.json` exists anywhere under `~/Library/Application
+Support` on this machine after a full suite run.
+
+**2. The measurement — HOLDS, and the inversion reproduces with a
+positive control.** Marker files in a scratch `HOME`:
+
+    zsh -l -c   → .zshenv, .zprofile, .zlogin        (NO .zshrc)
+    zsh -i -c   → .zshenv, .zshrc                    ← the control
+    bash -l -c  → .bash_profile                      (NO .bashrc)
+
+The interactive control is what makes the absence evidence rather than a
+broken fixture. Timings, medians of 15, this machine: login-shell probe
+**3.6 ms**; the same with a 4000-line `.zshrc` + `compinit` **3.6 ms,
+unchanged**; `claude --version` **36.7 ms**. The card's 4.0 / 40 both
+reproduce in shape and slightly low. My pathological `.zprofile` measured
+19.4 ms rather than 41 — a lighter fixture than the executor's, same
+conclusion. **"No memo, no file" is justified**: the probe costs a tenth
+of the version probe the same resolve already pays, and the one file
+nvm/rbenv/pyenv/conda write into is the one file it never reads.
+
+**3. One gate, every door — HOLDS.** Re-drove the attack. All five
+relative spellings reach no process and the tattler stays absent; the
+same directory spelled absolutely resolves AND fires the tattler, so the
+absence is evidence. With **both** gates removed the T-047 accident
+reconstructs verbatim:
+
+    [target/nputer-t060-relbin-…] expected NotFound, got
+      Ok(ResolvedCli { path: "target/nputer-t060-relbin-…/claude",
+                       version: Some("2.1.226 (Claude Code)"), … })
+
+— and that version string is the FAKE agent's default banner
+(`fake_agent.rs:54`), so the drill executed the fixture, never the
+machine. With only `which_in` reverted the body stays green: the
+executor's "defence in depth, measured" is exactly right, reproduced.
+
+**4. `$SHELL` name-checked — HOLDS.** `/bin/ls`, `/usr/bin/true`,
+`/bin/cat`, fish, a relative `zsh`, empty and absent all fall back to
+`/bin/zsh`; `/bin/zsh`, `/bin/bash`, `/bin/sh` are honoured as
+themselves, so the gate has a discriminating half. One `$SHELL` read
+site remains, down from two.
+
+**5. The `RunnerConfig` comment scoped honestly — HOLDS, and the
+companion pin is better than the criterion asked.** It re-derives the
+list from the source rather than restating it, and it pins
+`NO_REAL_CLI_VAR`'s VALUE separately — T-063's "a test parametrised by a
+constant cannot pin that constant", applied unprompted.
+
+**6. No test can resolve the real CLI — HOLDS in every environment I
+could reach except one, filed as T-060-s4.** The `deps` derivation
+survived relative invocation from inside `deps/` (macOS resolves
+`current_exe` absolutely), a renamed target dir, and `CARGO_TARGET_DIR`.
+A binary copied OUT of `deps/` fails **loudly** rather than silently.
+It fails OPEN in a **rustdoc doctest** — measured, `parent =
+Some("rustdoctestTieiwm")`, `cfg!(test) = false` — which falsifies the
+card's and `ARCHITECTURE.md`'s "a test file written next year inherits
+the refusal". Latent only: the crate has zero doctests today
+(`Doc-tests nputer_lib … running 0 tests`). `cargo nextest` is NOT
+installed here and is therefore unmeasured. Two-line fix in s4.
+
+**7. The guard proven by the attack that found it — HOLDS; both T-060-s1
+fixes verified against a genuinely guard-off binary.** Running the guard
+test from a copy of the test binary outside `deps/`:
+
+    thread 'the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found'
+      panicked at tests/agent_runner.rs:1909:5:
+    the guard is already off before this test does anything - refusing to resolve
+
+`:1909` is the pre-flight; the first `resolve_cli` in that body is
+`:1926`. The pre-flight is load-bearing, measured, not argued. The
+lifted arm's fixture shell is the only `$SHELL` visible during the
+window and it names the planted binary, and the body asserts
+`resolved.path == root/bin/claude` plus a binary tattle, so a lifted
+resolve that wandered onto the machine could not pass. **Every other
+site that weakens the guard was swept**: exactly two exist
+(`tests/agent_runner.rs:1989-2009` and the `#[ignore]`d smoke at
+`:2116`), plus `src/agent/runner.rs:2200-2204` in the lib binary, where
+no other body resolves. None has s1's shape. The lift window's OTHER
+consequence is the blocker above.
+
+**8. The pins that guarded deleted code rewritten — HOLDS.**
+`there_is_no_cache_to_poison` is a source assertion that proves its own
+comment-strip works before relying on it, and
+`there_is_no_agent_paths_json_to_poison_at_any_door` plants the entry
+T-047's gate ACCEPTED rather than one it refused, at three doors, and
+walks the tree for a written file. Strictly stronger than what it
+replaced, as claimed.
+
+**9. Blast radius — HOLDS, every element re-measured.** See the sweep.
+
+### The security sweep — this card IS the sweep
+
+- **Zero dependency or lockfile lines.** `git diff 6404a43 9c40da7 --
+  '*Cargo.toml' '*Cargo.lock' '*package.json' '*package-lock.json'` is
+  empty.
+- **Zero new IPC commands.** The `generate_handler!` block hashes
+  `4e062a2e898297c9…` at the base AND at the tip — byte-identical. The
+  only `lib.rs` change is dropping `config_dir:`.
+- **No bypass-permissions flag in any adapter table.** Every hit for
+  `dangerously`/`bypassPermissions` is a test asserting their ABSENCE or
+  a hostile fixture.
+- **No API key or token can reach a spawned child — proven, both
+  directions.** With `ANTHROPIC_API_KEY=sk-ant-…` genuinely set in the
+  parent process, `the_child_gets_the_allowlist_and_never_a_secret`
+  passes (the key does not reach the child); add `ANTHROPIC_API_KEY` to
+  `ENV_ALLOWLIST` and the same body reds behaviourally:
+  `ANTHROPIC_API_KEY must not reach the spawned CLI`. `apply_child_env`
+  is `env_clear()` → allowlist → forced `TERM=dumb` → explicit PATH →
+  the Rust-only seam (ADR-003).
+- **`acl_pin.rs`**: 0-file diff over the range; whole-file sha256
+  **`8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`**;
+  **92 grants** in `EXPECTED_GRANTS`.
+- **`ENV_ALLOWLIST`**: **16 entries**; **lines 831–850 of
+  `src/agent/runner.rs`, 423 bytes, sha256 `cf80f850b96a6f03…`** (stating
+  the range, per the standing lesson — 831–849 gives 420 bytes and a
+  different hash). Byte-identical to the base by `diff`.
+- **Exactly THREE `#[ignore]` attributes repo-wide**, the same three:
+  `perf.rs:53`, `self_graph.rs:58`, `agent_runner.rs:2104`. All spelled
+  `#[ignore = "…"]`, which a bare `#[ignore]` grep misses.
+- **NO MODEL WAS CALLED.** The `#[ignore]`d smoke never ran — every
+  `agent_runner` result line reads `1 ignored`, and `NPUTER_REAL_CLI`
+  was never set. No `~/.claude/projects` directory was created in the
+  last three hours and none exists under any `nputer-T-060` name; the
+  only strays are the two pre-existing `nputer-t025-realsmoke-*` that
+  STATE already lists. **Disclosure**: I did execute
+  `/opt/homebrew/bin/claude --version` fifteen times to re-derive
+  criterion 2's timing. That is a version banner and cannot call a
+  model; it is the same call the resolver makes at resolve time.
+
+### Suites, all first-hand, exits read unpiped
+
+- **lib/parser** `npm run build` 0 + `npx tsc --noEmit` 0 + `npx vitest
+  run` → **225/225 (11 files)**, exit 0.
+- **app** `npx tsc --noEmit` 0, `npm run build` 0, `npx vitest run` →
+  **795/795 (42 files)**, exit 0. Bundle **`index-Bf-QNmtC.js`
+  497.86 kB / `index-CryMc_lw.css` 43.90 kB** — the same content hashes
+  STATE records for main, which is what a zero-frontend-file diff must
+  produce.
+- **app/src-tauri** bare `cargo test` → **319 passed / 0 failed / 3
+  ignored**, exit 0 (`echo $?` on an UNPIPED run — my first attempt
+  piped through `tail` and read tail's exit code, which is the trap the
+  brief names). Slots `112/0/0/48/123/0/7/13/3/7/0/2/4/0/0`; main's
+  baseline was `108/…/46/…` = 313, so +4 lib and +2 integration. **Zero
+  warnings off a genuinely forced recompile**: `cargo clean -p nputer`
+  (removed 13102 files, 3.1 GiB) then `cargo check --all-targets`, exit
+  0, no `warning` line. Re-run green after every poison drill was
+  restored.
+- **tools/e2e** `npm run typecheck` 0 + `NPUTER_E2E_PORT=17470 npm test`
+  → **74 passed in 14.2 s**, exit 0. `lint:tokens` → **clean, 116 files**.
+
+**BOOT GATE: FIRED** (`app/src-tauri/**` = 3 files in the range),
+**RAN, GREEN.** Scratch port **17480**, bind-probed free on both `::1`
+and `127.0.0.1` immediately before use. Both startup lines detected,
+tree stopped. **`BOOT_EXIT=0` is my own `echo $?` — the script does not
+print it**; the line is mine and the exit code is real. 17470 and 17480
+were both empty afterwards and 1420 was never bound, connected to or
+signalled.
+
+**Not mine, but worth the integrator's eyes**: five orphaned
+`target/debug/nputer` processes with ppid 1 are live from
+`/Users/ujju/Projects/nputer-T-063`, started 04:17–04:21 — T-061's
+hazard recurring in that lane, hours before this session.
+
+### Poison drills — 12 red, 2 designed-green controls, run inline
+
+No scratch script; each was a `perl -0pi` edit followed by
+`git checkout --` and a dirty-file count of 0. Every mutation one-sided
+AND relation-breaking.
+
+| # | mutation | body | result |
+|---|---|---|---|
+| P1 | `which_in` reverted to `is_executable_file` | `a_relative_search_path_element_finds_nothing` | RED |
+| P2 | drop `is_absolute` in `validate_resolved_binary` | `a_resolved_binary_path_must_look_like…` | RED |
+| P3 | drop the guard in `resolve_cli`'s probe arm | `the_configuration_that_reached…` | RED |
+| P4 | drop `which_on_path`'s own guard | `a_relative_search_path_element_finds_nothing` | RED |
+| P5 | `login_shell` drops the name check | `the_login_shell_is_name_checked…` | RED |
+| P6 | derived default returns `false` when unset | `the_no_real_cli_guard_is_on…` | RED |
+| P7 | drop the RAW `.`-segment scan | `a_resolved_binary_path…` | RED |
+| P8 | reintroduce `fn read_cache` | `there_is_no_cache_to_poison` | RED |
+| P9a | **one** gate down (`which_in` only) | `a_relative_search_path_element_reaches_no_process` | GREEN (by design) |
+| P9b | **both** gates down | same body | RED |
+| P10 | a 4th `std::env::var` in the resolver | `the_resolver_does_read_the_environment…` | RED |
+| P11 | `ANTHROPIC_API_KEY` onto `ENV_ALLOWLIST` | `the_env_allowlist_carries_no_credential_family` | RED |
+| P12 | same, with the key really set in the parent env | `the_child_gets_the_allowlist_and_never_a_secret` | RED (control GREEN) |
+
+P1 is the re-derivation the brief asked for: it reds on the **planted
+relative fixture** (`left: Some("target/nputer-t060-rel-…/claude")`) and
+on none of the other four spellings — so the T-060-s2 fix is what makes
+the body discriminate, and the positive control is genuine. P9a/P9b
+reproduce the executor's honest "defence in depth" claim exactly.
+
+### The `.cargo/config.toml` rejection — the decision is RIGHT, the mechanism sentence is wrong
+
+Filed as **T-060-s5**, docs-only. `tauri dev` is **not** `cargo run`:
+the tauri v2 CLI binary contains no `cargo run` string at all (only
+`` Failed to run `cargo build` ``) and the live process tree is
+`tauri dev` → `target/debug/nputer` with **no cargo process between
+them**. I nearly concluded the rejection was unfounded, then measured
+it: with `[env] NPUTER_VERIFIER_PROBE = "reached"` in
+`app/src-tauri/.cargo/config.toml`, the app the boot check spawned
+carried `NPUTER_VERIFIER_PROBE=reached` plus the full `CARGO_*` runtime
+set. The control — a binary `cargo build`-ed and exec'd with no cargo
+anywhere — sees `Err(NotPresent)`. **So the dev app DOES inherit
+`[env]`, the human's app would have rendered the hand-driven fallback
+forever, and the derived default is justified.** Config removed, tree
+verified clean before this verdict was written.
+
+### The `verifying` stamp — legal, and correctly rendered
+
+`method/tasks/TASK-FORMAT.md:15` lists it in the status enum and
+`method/roles/executor.md:18` instructs it; `9d30d0e` is the ruling.
+The parser accepts it (`lib/parser/src/types.ts:13,128`) and the live
+smoke re-parses the whole tree at 0 issues with this card in it.
+`statusVisual("verifying")` returns `{ token: "verifying", pulse: true }`
+(`app/src/lib/board-model.ts:57-58`) — its own token pair, distinct from
+`building`'s, plus the motion-safe 5px pulsing dot
+(`TaskCard.tsx:59,67,73`). Correct, not a defect. Whether the two ambers
+read as distinct to a human eye is @human's call, not mine.
+
+### T-029-s8 not folded — the right call, and this rejection proves it
+
+Confirmed live: the `result` line's text enters the diagnostic ring only
+under `if is_error` (`runner.rs:1420`), so `is_error: false` contributes
+nothing to `stderr_tail`. The claim is true. Leaving it filed is
+correct — no criterion covers it, it changes user-visible failure TEXT
+rather than what the resolver trusts, and it lives in `run_turn`'s
+classification closure, a different lane of the same file. **And the
+argument is now demonstrated rather than argued**: this card is being
+rejected, so a folded s8 would have had its correct fix blocked by a
+defect it has nothing to do with.
+
+### What the executor must do
+
+Close **T-060-s3** — the tripwire cannot be allowed to red at CI's
+thread count. T-060-s4 (two lines) and T-060-s5 (one sentence in three
+places) are cheap enough to take in the same pass and I would take them,
+but neither blocks. Nothing else on this branch needs to change: the
+resolver itself is correct, the gate holds at every door I could reach,
+and the measurement that overturned the card's own premise is sound.
+
