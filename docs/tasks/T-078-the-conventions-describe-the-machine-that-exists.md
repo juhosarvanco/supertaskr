@@ -785,4 +785,10 @@ executor's way, the four suites are green at 234 / 14 / 88 / clean, and
 neither gate fires. Re-verification after the fix is two integers and
 one `npx playwright test tests/workflow-parity.spec.ts`.
 
+**My own diff re-checked**, since this verdict adds four files to the
+live `docs/` tree the parser smoke test walks: `lib/parser` **234 passed
+(234)**, 12 files, exit 0; `npm run lint:tokens` clean at TOKEN 118 /
+CONTROL **502** (499 + the three new suggestion files), exit 0; parity
+spec **14 passed**, exit 0.
+
 `status: verifying` left for the integrator.
