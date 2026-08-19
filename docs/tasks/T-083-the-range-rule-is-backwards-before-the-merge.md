@@ -11,8 +11,8 @@ touches: [docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @T-083-verify
+review: same-model
 ---
 
 Absorbs: T-078-s9 (fifth triage, 2026-08-19). The suggestion file is
@@ -409,3 +409,300 @@ that breaks it, and a sibling lane merging first is all it takes.
    read once with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and never probed.
 
 ## Verdicts
+
+### 2026-08-19 — REJECTED (claude-opus-5 @T-083-verify, review: same-model)
+
+**One defect, one phrase wide, and it is in the one place this card
+cannot afford one: a figure that does not survive its own stated
+derivation.** Everything else — every commit, every count, the
+recommendation itself — re-derived cleanly and independently. This is a
+narrow rejection with a one-line fix, not a rebuild.
+
+**Range derived, not quoted, and the lane is its own worked example.**
+Main moved under this review (T-082 merged at `7a37b37`), so the two
+forms stopped agreeing exactly as the bullet predicts. Measured at
+`7a37b37`: `git diff --name-only main 886e64e` returns **20** paths,
+six of them Rust and TypeScript this lane never opened
+(`app/src-tauri/src/agent/runner.rs`, `app/src/lib/agent-store.ts`,
+`tools/e2e/tests/resume-fallback.spec.ts` among them) — a docs-only lane
+reported as firing BOTH gates. `main...886e64e` and
+`git merge-tree --write-tree main 886e64e` (exit **0**) each return the
+correct **6**, all under `docs/`. The fence `[docs/CONVENTIONS.md]`
+holds; the rule this card writes is the reason I can say so.
+
+### THE DEFECT — "byte-for-byte **30**" is a name-only score wearing a byte-level label
+
+The bullet reads: *"the merge-tree forecast reproduces the merge's later
+diff byte-for-byte **29** times, three dots **30**, and the pre-merge
+two-dot form **3**."* Re-derived at `94ee306^..ddcc8bb`, 31 merges, both
+metrics, comparing each forecast against `git diff M^1 M`:
+
+| metric | merge-tree | three dots | pre-merge two-dot |
+|---|---|---|---|
+| `--name-only` sets identical | **29** | **30** | **3** |
+| full patch identical (`cmp`) | **29** | **24** | **3** |
+
+**29 and 3 are metric-independent; only the 30 moves.** Under the metric
+the sentence names, three dots scores **24**, not 30 — and forgiving
+blob-hash `index` lines only lifts it to **25**, because six of its seven
+patch losses carry real content divergence (`91ab46e`, `827511e`,
+`634c405`, `bdada11`, `64469dd`, `f4b38c8`; only `3b0d974` is metadata
+alone). The bullet uses "byte" precisely eleven lines earlier —
+*"BYTE-IDENTICAL under `cmp`"* — so a reader is entitled to read it
+precisely here, and a reader who re-derives as the same paragraph
+instructs (*"DERIVE THE LIST, NEVER QUOTE IT"*) gets 24 and concludes
+the doc is wrong. **That is this file going stale inside the document
+correcting it — T-078-s7's shape, reproduced by the card that cites it.**
+
+**The recommendation is right and must not change.** The brief's worry —
+that recommending merge-tree at 29 over three dots at 30 prefers an
+argument over a measurement — is the opposite of the truth. Under the
+stated metric merge-tree wins outright, **29 to 24**, and the card's own
+prose reason ("three dots answers a proxy question") is exactly what the
+byte-level number measures: same path set, different content, because
+the merge combines both sides' hunks in one file. **The mislabel hides
+the card's strongest evidence and makes its central recommendation look
+unsupported by its own table.** That is why this is a rejection and not
+a nit.
+
+**FIX (in-fence, one line):** say which metric. Either *"reproduces the
+merge's later diff path-for-path 29 / 30 / 3, and byte-for-byte
+29 / 24 / 3"*, or drop "byte-for-byte" for "path-for-path". Both merge-
+tree losses are already named correctly and neither figure moves.
+
+The two merge-tree losses, confirmed exactly as written: `bdada11`
+(T-014) where `merge-tree --write-tree` exits **1** with a conflict
+report, and `634c405` (T-028) where no pre-merge form can predict —
+verified independently at 27 forecast against 28 actual, the odd path
+being `tools/e2e/tests/window-contract.spec.ts`, which differs from
+main-before by 13 insertions / 3 deletions and from the branch tip by
+405 insertions, with `merge-tree` exiting **0**. T-083-s4 is correct in
+every particular.
+
+### The falsification list, derived from the graph rather than read
+
+Independently, from `git rev-list --first-parent --merges 94ee306^..ddcc8bb`,
+matching each side against each gate's own trigger:
+
+**31 merges. 15 chances. 13 flips over 12 distinct merges. Zero reverse
+flips.** BOOT GATE is not owed **10** times and the naive range fires on
+**8**; GRAPH REGEN is not owed **5** times and it fires on **5 of 5**.
+
+- BOOT (8, chronological): `59558de` T-030 · `3b0d974` T-045 ·
+  `f58fc2b` T-054 · `20c45d4` T-055 · `7c6c5aa` T-058 · `79ae34a` T-076
+  (0/5) · `fed70a2` T-078 (0/6) · `4683566` T-080 (0/4)
+- GRAPH (5, chronological): `3f2eb1e` T-047 · `91ab46e` T-060 ·
+  `38886d3` T-043 · `7e3e8b5` T-069 (0/18) · `fed70a2` T-078 (0/18)
+
+**Every hash, every task id, every parenthesised pair and the
+chronological-and-by-gate ordering match the merged text exactly.** The
+universal holds too: **zero** merges where the naive range says a gate
+is not owed while the prescribed one says it is, and the pre-merge
+two-dot set is a **superset of the merge's path set at all 31 of 31**
+merges — so "only ever adds paths" is measured, not asserted.
+
+Also re-derived and exact: T-027 at `dc3ef5b` — **9 / 36 / 27**, and all
+27 extras really are `nputer-index` under
+`app/src-tauri/crates/nputer-index/**` plus `Cargo.lock` (criterion 6:
+the example is re-measured and RETAINED, not deleted or softened).
+T-078's lane at `d92dceb`/`d219482` — **76 / 16 / 16**, and `fed70a2`
+itself **16**. T-080 — `--is-ancestor` exit **0**, then **12 / 12 /
+60 / 12**, a 48-path swing off the right-hand ref alone.
+
+**T-083-s1 is confirmed against the committed archive.** `cb3aa31` says
+*"T-076 (GRAPH REGEN 0 vs 5)"*. At `79ae34a` GRAPH is **13 against 13**
+and it is BOOT GATE that is **0 against 5**. The figure is right and the
+gate is wrong. The error is older than that checkpoint — the same
+attribution appears in the text `cb3aa31` replaced — so it has stood
+across two checkpoints, and s1 is the right place for it.
+
+### THE RULING: is a card whose product is unfalsifiable an acceptable card?
+
+**Yes — but not for the reason offered, and "s2 is filed" is not the
+answer.** The defence in the notes is that prose in a conventions file
+has no mechanical reader. **That defence is false for this bullet's
+factual half, and I can show it rather than argue it.**
+
+I derived **ten mutants from the acceptance criteria**, not from the
+executor's pins, applied them together, read every one back out of the
+file, and ran every gate:
+
+| # | criterion attacked | mutation | tree |
+|---|---|---|---|
+| M1 | c1 correct before the merge too | table's executor row → `<main tip>..HEAD` | GREEN |
+| M2 | c2 a COMMAND not prose | "build the tree" → "just reason about it" | GREEN |
+| M3 | c3 trap named correctly | `merge-base(A,B)..B` → `..A` (now false) | GREEN |
+| M4 | c4 SHALL NOT be softened | `Not "rarely"` → `Rarely … sometimes` | GREEN |
+| M5 | c5 two costs distinguished | whole paragraph deleted | GREEN |
+| M6 | c6 T-027 still correct | 9/36/27 → 7/12/5 | GREEN |
+| M7 | c7 figures carry their ref | `dc3ef5b` stripped | GREEN |
+| M8 | s1's own defect | T-076 relabelled GRAPH REGEN | GREEN |
+| M9 | the headline count | THIRTEEN/TWELVE → FOUR/FOUR | GREEN |
+| M10 | the zero-reverse universal | "NO merge" → "THREE merges" | GREEN |
+
+`cargo test` **343 passed / 0 failed / 3 ignored, exit 0** (unchanged,
+including `snapshot_version_matches_the_live_method_stamps`);
+`npm test` in tools/e2e **91 passed, exit 0**, workflow-parity **14/14**;
+`lint:tokens` clean exit **0**; `index --check` CURRENT exit **0**;
+parser **263 passed** exit **0**. **Ten mutants, zero survivors killed.**
+The executor's rounds 3 and 4 reproduce, from a mutant set it never saw.
+
+**Then I built the reader, to find out whether "no mechanical reader" is
+a property of the claim or of the fence.** Ninety lines of Node: it
+DERIVES the flip lists, the counts, T-027's figures and the reverse-flip
+universal from `git`, PARSES what the bullet claims, executes the
+three-dot identity rather than trusting it, and compares. The two sides
+share no constant — `git` is one side, the doc is the other, which is
+the one-sidedness the POISON DRILL bullet requires.
+
+**It is GREEN on the merged file** — *"31 merges re-derived; doc agrees
+on every figure"* — **and RED on the poisoned one, with 12 findings
+covering all ten mutants**, naming each by name (*"T-027 prescribed: doc
+says 7, git says 9"*, *"BOOT segment names another gate: GRAPH REGEN"*,
+*"reverse-flip claim: doc says some, git finds 0"*). Not committed; it
+is evidence for the ruling, and it belongs to whoever takes s2.
+
+So the ruling, in three parts:
+
+1. **The card DID owe a reader, and s2's "size-M card of its own" is an
+   understatement of what is available and an overstatement of what it
+   costs.** Every figure in the bullet is a `git` derivation over commits
+   that are immutable once merged. I wrote a working one in a single
+   pass. What it should assert is exactly what I asserted: the flip
+   lists BY GATE (M8 is the mutant that matters — it is s1's error, and
+   only a gate-aware parse catches it), the four headline counts, T-027
+   at its ref, the reverse-flip universal, the three-dot identity by
+   EXECUTION, and the presence of the merge-tree command and the
+   `Not "rarely"` correction.
+2. **It was NOT buildable inside this fence, and that is why the card is
+   still acceptable.** `touches: [docs/CONVENTIONS.md]`. A reader must
+   live in `tools/e2e/tests/`. The executor could not write it without
+   breaching the fence, and this file's own BOOT GATE bullet prescribes
+   precisely what it did: *"a red the executor's own fence forbids fixing
+   is still news … file it as a suggestion and say so in the notes."*
+   Filing s2 is the method's own answer, not an evasion.
+3. **But the unfalsifiability is an artefact of the FENCE, not of the
+   content, and s2 should say so in those words.** "Some claims have no
+   mechanical reader" is true only of this bullet's judgement half — *the
+   ban has to name the PAIR, not the punctuation*; *the two costs deserve
+   different weight*. Its factual half is not merely checkable, it is
+   checkable more cheaply than the CI-command derivation `workflow-parity`
+   already runs. The card is *"reproducing the very failure it
+   documents"* only if that distinction goes unrecorded. **Record it and
+   the card is honest; leave it and the archive learns the wrong
+   lesson** — that prose is inherently undefendable, when what actually
+   happened is that a one-file fence was drawn around a claim whose
+   defence lives in another tree. That is a dispatch observation, not an
+   executor failure: the executor cannot widen its own fence.
+
+### Criteria, each attacked literally
+
+1. **MET.** Two labelled rows, two readers, two commands. The bullet
+   leads with *"it is the RIGHT-HAND endpoint that decides the left one"*,
+   which is the actual mechanism and survives both cases.
+2. **MET.** `merge-tree --write-tree` is given as a runnable command and
+   named as the recommendation, with the reason stated. The exit-code
+   warning (*"a command substitution that swallows it hands you an EMPTY
+   forecast wearing the costume of a clean gate"*) is right and I
+   reproduced it: `bdada11` exits **1**.
+3. **MET, and the naming is correct** — verified by execution, not
+   reading: at `ddcc8bb`/`886e64e`, `A...B` and
+   `$(git merge-base A B)..B` return identical sets. **It cannot be read
+   as forbidding three dots everywhere**: the paragraph turns on
+   *"What makes three dots harmless before the merge is not the notation
+   but the right-hand endpoint"*, and the ban two paragraphs up is scoped
+   to `<merge-base>..<the merge commit>`. The bold opener taken alone is
+   over-broad, but the misreading **fails safe** — a reader who concludes
+   "never three dots" reaches for the table and gets merge-tree, which is
+   correct. Left as a readability note for the @human question the card
+   already raises.
+4. **MET.** Three counterexamples by task id, mechanism named, and
+   `Not "rarely"` explicitly refuses the forbidden softening — the
+   measured rate is stated as more-often-than-not, which my derivation
+   confirms (13 of 15).
+5. **MET.** Presentation and correctness separated, with the executor's
+   false red named as the worse of the two.
+6. **MET.** Re-measured at `dc3ef5b`, retained, and explicitly framed as
+   right *at the merge* — the distinction the card exists to draw.
+7. **MET.** Every count in the merged text carries its ref. Swept all
+   123 lines: T-027→`dc3ef5b`, 76/16/16→`d92dceb`/`d219482`/`fed70a2`,
+   T-080's four→`99791ea`/`4683566`/`72bc98a`, 31/29/30/3 and the flip
+   list→`94ee306`/`ddcc8bb`, s1's 13-vs-13→`79ae34a`. **One exception,
+   recorded not charged:** *"a trigger set 4x too wide"* carries no ref
+   of its own, but it is 36/9 from the T-027 measurement reffed in the
+   same bullet, and it is inherited wording.
+
+### Adjacent-feature and security sweep
+
+Docs-only: **zero** non-`docs/` paths in the diff, no manifest, lockfile,
+workflow or dependency change, no secret-shaped or executable content in
+the added lines. The only `1420` in the diff is the card recording the
+PORT RULE observance, which I confirmed independently — `lsof -nP
+-iTCP:1420 -sTCP:LISTEN` and nothing else; `node` pid **82549** on
+`[::1]:1420`, exactly as written. Scratch ports bind-probed on both
+stacks (14520 free on IPv4 and IPv6).
+
+**The two readers claim reproduces, re-derived rather than taken.**
+Grepping every `.rs`/`.ts`/`.tsx`/`.mjs` for a real read: exactly two
+files open `docs/CONVENTIONS.md` — `kit.rs:448` and
+`workflow-parity.spec.ts:75`. `genesis-derive.ts:313` names the path as
+an artifact constant and performs no filesystem read at all. **And
+`workflow-parity` really does read only `## Build & test`**: I checked
+all seven `readConventions()` call sites, and every one funnels through
+`buildAndTestSection`, whose `split(/^## /m)` discards everything else.
+The new bullet lands in `## Gotchas` at lines **372–494**, well after
+that section, and introduces no collision with the fixtures' first-
+occurrence `replace` anchors (`## Build & test`, `npm run typecheck`,
+`npx vitest run` each still occur exactly once). Both gate bullets'
+cross-references resolve — the RANGE RULE is physically above both, and
+its own "the two gate bullets below" is correct.
+
+**One correction to the notes, immaterial to the verdict:** the section
+digest is given as `18583f85…`. I cannot reproduce that value by any
+extraction I tried; the spec-identical extraction hashes to
+`0662c279efb209f8341d39fa9df5f5ab0e0976157352718058e099a4d8feefb9` and
+the heading-inclusive one to `c677cf4d…`. **The claim the digest
+supports is nonetheless TRUE and independently confirmed**: the section
+is byte-identical at `ddcc8bb`, `886e64e` and `7a37b37`, 12817 bytes,
+same hash at all three. Only the quoted digit string is unreproducible.
+The U+00B7 count of 21-before-21-after reproduces exactly.
+
+### Gate results — every exit code, read unpiped
+
+| gate | result | exit |
+|---|---|---|
+| `cargo test` (plain, incl. doc-tests) | 343 passed, 0 failed, 3 ignored, 15 result lines | **0** |
+| `cargo run -p nputer-index -- index --check --root ../..` | graph.json CURRENT | **0** |
+| lib/parser `npx vitest run` | 263 passed (12 files) | **0** |
+| lib/parser `npx tsc --noEmit` | — | **0** |
+| tools/e2e `npm test` | 91 passed, workflow-parity 14/14 | **0** |
+| tools/e2e `npm run typecheck` | — | **0** |
+| tools/e2e `npm run lint:tokens` | clean, TOKEN 119 / CONTROL 546 | **0** |
+| tools/e2e `npm run lint:tokens -- --selftest` | — | **0** |
+
+Run in the worktree with `node_modules` symlinked from the main checkout
+and `CARGO_TARGET_DIR` pointed at scratch — **no `npm ci`, no
+`npm install`, nothing written to the main checkout**, and the symlinks
+removed afterwards (`git status` clean). No gate failed to run; had one,
+it would be reported here as news.
+
+**Restoration proved three ways** after the drill: working file
+`a2aed330d5e81c6ed018fdfb3099d36d78a0ba168645f77b270aa91a817adf26`,
+`git show HEAD:docs/CONVENTIONS.md | shasum -a 256` identical, and
+`git diff -- docs/CONVENTIONS.md` empty at exit **0**.
+
+### Not blocking
+
+- The `4×` of the old sentence became an ASCII `4x` in the new one. No
+  gate covers it and it is outside `## Build & test`, but this file's
+  typography is load-bearing elsewhere and the drift was silent.
+- T-083-s3's non-emptiness floor is a real and well-drawn shape; I hit
+  the same class in my own instrument (my first parse threw on a missing
+  anchor rather than passing vacuously, which is the behaviour s3 asks
+  for). Worth the ordinal.
+- `Absorbs: T-078-s9` checks out: the file was removed at `99791ea`, the
+  commit that filed this card, and is absent at both `ddcc8bb` and
+  `886e64e`.
+
+**To clear this verdict:** name the metric on the 29/30/3 sentence. That
+is the whole of it.
