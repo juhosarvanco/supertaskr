@@ -65,6 +65,33 @@ be checked while someone is here: `boot-check-guard.spec.ts:118`'s
 and any future message containing "free" — "freed", "port is free" —
 reds a passing run for the same reason.
 
-Whoever takes this should sweep the e2e suite for `not.toContain` over
-values the test does not author; that is the general shape, and two
-instances in one file suggests it is a habit rather than an accident.
+**THE SWEEP WAS RUN, AND IT DID NOT FIND A HABIT — recorded because a
+negative result is the finding here.** At `22e3786`: **53** string-literal
+`not.toContain` assertions across `tools/e2e/tests` and `app/test`.
+Exactly **one** has a haystack carrying a value the test does not author
+— this one. Every other haystack is a class string, a DOM subtree or a
+process output that the repository itself produces.
+
+Two prefix-collision candidates were checked against live code and both
+are **defensible, not defects**:
+
+- `map-tasks-lens-dom.test.tsx:421` — `not.toContain("map-lens")` where
+  `map-lens-control` and `map-lens-subtitle` both exist
+  (`MapView.tsx:331,353`). The needle is a **deliberate family prefix**:
+  the test removes the control and asserts the header retains no trace
+  of T-034, so matching the whole `map-lens-*` family is the intent, not
+  an accident. Leave it.
+- `map-visuals.test.ts:147` — `not.toContain("border-warning")` where
+  `border-warning-chip-border` exists. That class lives in
+  `MapPanel.tsx`, a different component; the haystack is `nodeVisual()`'s
+  own output and cannot contain it. Fragile only if `nodeVisual` ever
+  emits a `border-warning-*` variant, at which point line 147 fails and
+  line 149 passes spuriously. Worth a comment, not a change.
+
+Two in the same file as the defect are lower-risk relatives worth a
+glance while someone is here — `boot-check-guard.spec.ts:118`'s
+`not.toContain("free")` and `:119`'s `not.toContain("ABORT")` are
+substring tests over prose, but the prose is the repository's own and a
+change to it is a change someone makes deliberately. The distinguishing
+property of the real defect is that **the value came from outside the
+repository**, and the OS is the only such source in the suite.
