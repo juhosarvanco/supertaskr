@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [app-agent, app-shell]
 builder: claude-opus-5 @fresh
-verifier:
+verifier: claude-opus-5 @fresh
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-025-s5, T-025-s7. Triage 2026-08-16: both are measured
@@ -361,3 +361,115 @@ Every pid this session created is proven gone; the two orphaned
    catch.
 
 ## Verdicts
+
+### Adversarial verification — `claude-opus-5 @fresh`, in progress
+
+Worktree `nputer-T-043`, branch `task/T-043-kill-path`, tip `677b46a`,
+**six** commits from `adb32c3` (`git rev-list --count adb32c3..HEAD` = 6),
+working tree clean. Fence re-derived from `git diff --name-only`: ten
+files, all under `app/src-tauri/**` or `docs/tasks/**`. Zero bytes under
+`app/src/**`, `app/test/**`, `lib/**`, `tools/**` — confirmed, not
+accepted.
+
+**Every drill below was run inline, restoration proved by `sha256`
+against `git show HEAD:<path>` and `git status --porcelain` clean.**
+
+#### Gates, re-derived
+
+- Bare `cargo test`, unpiped to a file, `echo $?` = **0**. Summed from
+  the fifteen `test result:` lines: **337 passed / 0 failed / 3 ignored**.
+  Per target reproduces the card exactly: lib 117 · fake_agent 0 ·
+  nputer 0 · agent_runner **60 + 1 ignored** · nputer_index lib 123 ·
+  nputer-index bin 0 · arch 7 · cli 13 · containment 3 · golden 7 ·
+  perf **0 + 1** · self_graph **2 + 1** · watch 4 · doctests 1 / 0.
+- `#[ignore]` ATTRIBUTES repo-wide: exactly **three**
+  (`crates/nputer-index/tests/perf.rs:53`,
+  `crates/nputer-index/tests/self_graph.rs:58`,
+  `tests/agent_runner.rs:3037`). The other eight `git grep` hits are
+  prose in doc comments. The real smoke was not run.
+- `acl_pin.rs` sha256 `8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`,
+  byte-identical to `adb32c3`. **92** entries in `EXPECTED_GRANTS`,
+  counted from the array body, not from a byte range.
+- `ENV_ALLOWLIST` over its anchored range: **423 bytes / 16 entries**,
+  `diff` against `adb32c3` empty.
+
+#### The measurement the card rests on — re-measured first-hand, not read
+
+Own probe (perl, `setpgrp(0,0)` leader + SIGTERM-immune same-group
+grandchild), darwin 25.6.0 arm64:
+
+```
+child=34606 gc=34607 pgid=34606
+ROW1 both running:            kill(child,0)=0(alive)  kill(gc,0)=0(alive)  killpg(pgid,0)=0(alive)
+ROW2 child TERMed NOT waited: kill(child,0)=0(alive)  kill(gc,0)=0(alive)  killpg(pgid,0)=0(alive)
+     ps state of child        = "Z"
+ROW3 after wait(), gc alive:  kill(child,0)=-1/errno3(ESRCH)  kill(gc,0)=0(alive)  killpg(pgid,0)=0(alive)
+ROW4 group empty:             kill(child,0)=-1/errno3(ESRCH)  kill(gc,0)=-1/errno3(ESRCH)  killpg(pgid,0)=-1/errno3(ESRCH)
+LEAK CHECK: gc alive? no   child alive? no
+```
+
+All four rows reproduce, `ps` independently confirms row two is state
+`Z`, and ESRCH is numerically 3. The card's table is honest.
+
+#### P7 — re-run, and the happy-path body is real
+
+Deleted `run_turn`'s trailing `handle.mark_reaped()` (`runner.rs:1847`)
+inline. Result: **exactly one** body red, and it is the new one —
+
+```
+failures:
+    a_happy_turn_still_publishes_its_reap_to_whoever_holds_the_handle
+test result: FAILED. 59 passed; 1 failed; 1 ignored
+panicked at tests/agent_runner.rs:1251:5:
+a turn that ended HAPPILY never published its reap, so an exit observer holding
+this handle would poll the full grace for a child that is already gone
+```
+
+The body exists at `:1194`, it reds, and it kills a mutant no other body
+kills. Restored, `runner.rs` sha256 `cc06dd93…` == `git show HEAD:`.
+
+#### P11 — it reds where it moved, and I measured that it would NOT have red where it was
+
+Two-part drill: (a) `terminate_group_async` made blocking
+(`std::thread::spawn(move || terminate_group_observing(…))` →
+`terminate_group_observing(…)`), AND (b) the promptness assertion
+RE-INSERTED into `a_cancel_releases_the_turn_latch_well_inside_the_grace`
+at exactly the line it used to occupy (`:952`).
+
+```
+failures:
+    a_turn_whose_child_ignores_sigterm_pays_the_full_grace_and_leaves_no_zombie
+test result: FAILED. 59 passed; 1 failed; 1 ignored
+panicked at tests/agent_runner.rs:1103:5:
+genesis_cancel held the caller for 918 ms of a 900 ms grace - the SIGTERM is
+synchronous but the escalation must not be
+```
+
+**59 passed** — the re-inserted assertion in the cooperative body stayed
+GREEN under the very mutation it claimed to catch. The counterfactual is
+therefore measured, not argued: the promptness claim was vacuous where it
+sat and has teeth where it moved. Both files restored and sha-verified.
+
+#### P3 — re-run, and NOTHING leaked
+
+Early release stripped of its group limb (`if is_reaped && empty` →
+`if is_reaped`, with `group_empty: empty` so the struct stays honest —
+the naive `try_wait()`-then-return the card names).
+
+```
+failures:
+    a_reaped_child_with_a_resistant_grandchild_pays_the_full_grace_and_kills_the_survivor
+    the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists
+test result: FAILED. 58 passed; 2 failed; 1 ignored
+the survivor must have been SIGKILLed: GroupExit { reaped: true, group_empty: false,
+    escalated: false, waited: 25.510083ms }
+the exit reap returned after 31 ms of a 900 ms grace while a resistant same-group
+    descendant was still running - it abandoned it
+```
+
+Census immediately afterwards, by full `ps -eo pid,ppid,lstart,command`
+and by worktree-path match, **no broad `pkill` anywhere**: zero
+`nputer-T-043` processes alive. The only surviving `fake_agent`s are
+`52504`/`52505` from `nputer-T-060`, `ppid 1`, start time `Tue Aug 18
+16:21:18` unchanged before and after — not this branch's, not touched.
+`GroupGuard` closes the gap the card says it closes.
