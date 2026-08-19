@@ -5,12 +5,12 @@ feature: F-03
 milestone: 3
 priority: 6
 size: M
-status: planned
+status: verifying
 blocked_by: []
 touches: [app-agent, app-shell]
-builder:
+builder: claude-opus-5 @fresh
 verifier:
-built_by:
+built_by: claude-opus-5 @fresh
 verified_by:
 review:
 ---
@@ -76,5 +76,288 @@ model call or network. @human: the quit-mid-turn check becomes confirmation
 rather than tolerance.
 
 ## Implementation notes
+
+Executor `claude-opus-5 @fresh`; worktree `nputer-T-043`, branch
+`task/T-043-kill-path`, based on `adb32c3`. Fence held: `app/src-tauri/**`
+plus the task cards. **Zero bytes** under `app/src/**`, `app/test/**`,
+`lib/**` or `tools/**`.
+
+**Understanding, confirmed before anything was touched (CLAUDE.md).** The
+grace poll asked one question — `kill(pid, 0)` — and that question is TRUE
+FOR A ZOMBIE, so the turn's own unreaped child kept answering "alive" and
+every cancel and every app quit paid the whole five-second grace even when
+the CLI died on the first SIGTERM. The fix makes early release require TWO
+facts, the direct child reaped AND its process group empty, so a
+cooperative group leaves in milliseconds while a cooperative child with a
+SIGTERM-ignoring same-group grandchild still runs the poll to the deadline
+and still gets its survivor SIGKILLed — the regression a bare
+`child.try_wait()` followed by `return` would introduce. The observers
+(`genesis_cancel`, the exit hook, `Drop`) do not own the `Child` and may
+not `waitpid`, so the coordination rides the shared `ChildHandle` the one
+owning worker publishes to. Alongside the mechanism, the kill GUARANTEE is
+corrected everywhere it is live to "no orphaned descendant that stays in
+the group", with the `setsid()` escapee measurement recorded and a
+descendant sweep named as a deliberate non-goal, and T-025 §3's kit count
+goes from 13 to 14.
+
+### The measurement the card rests on, taken first-hand
+
+Before writing anything, on this machine (darwin 25.6.0, arm64), with a
+`/bin/sleep` in its own process group plus a same-group grandchild:
+
+| state | `kill(child,0)` | `kill(gc,0)` | `killpg(pgid,0)` |
+|---|---|---|---|
+| both running | 0 (alive) | 0 (alive) | 0 |
+| child SIGTERMed, **not** waited — a ZOMBIE | **0 (alive)** | 0 | 0 |
+| after `wait()`, grandchild still up | −1 | 0 | **0** |
+| grandchild SIGKILLed, group empty | −1 | −1 | **−1, errno 3 (ESRCH)** |
+
+Row two is the defect: `pid_alive` cannot distinguish "running" from "dead
+and unreaped", and the turn's child is always our own unreaped child. Row
+three is why the reap must come FIRST and the group question SECOND. Row
+four is the ESRCH arm the new predicate turns on.
+
+### What changed
+
+- `runner.rs:1032` `signals::group_has_members` — `killpg(pgid, 0)`, with
+  ESRCH (`runner.rs:1007`) as the ONLY "empty" answer; EPERM means somebody
+  is there. Exported at `runner.rs:1058` so a test can ask about survivors
+  directly instead of inferring them from one pid.
+- `runner.rs:1092` `ChildHandle` is the coordination channel — `Clone`, not
+  `Copy`, carrying an `Arc<AtomicBool>` the owner sets and the observers
+  read. This is STATE.md's open question answered the second way it offered:
+  coordinate with the worker rather than hand a second `Child` around.
+- `runner.rs:1167` `terminate_group_polling` — the two-limb poll, returning
+  `GroupExit { reaped, group_empty, escalated, waited }` (`runner.rs:1118`)
+  so a test asserts the SHAPE of a kill and not only its aftermath. The
+  escalation is guarded by group membership, never by the clock alone: once
+  the direct child is reaped its pid is free for reuse and the pgid IS that
+  pid, so SIGKILLing unconditionally at the deadline is a use-after-free of
+  a pid number.
+- `runner.rs:1214` `terminate_group_owning` (reaps via `try_wait` as it
+  polls, publishes), `runner.rs:1256` `terminate_group_observing` (reads the
+  flag), `runner.rs:1274` `terminate_group_async` (synchronous SIGTERM,
+  observer poll on a background thread).
+- `runner.rs:1829` the turn path uses the owning form; `runner.rs:1847`
+  publishes after EVERY wait, happy path included.
+- `mod.rs:243` `reap_for_exit` uses the observer form and logs the outcome;
+  `mod.rs:774` `cancel` hands the handle to the async form.
+- `bin/fake_agent.rs` — the permanent resistant fixtures: `sleeper` (92),
+  `sleeper-resistant` (84), `hang-resistant` (157),
+  `hang-resistant-grandchild` (169), `spawn_grandchild` (388),
+  `announce_ready` (421), `ignore_sigterm` (438).
+
+### Evidence per criterion
+
+1. **Reap DURING the grace, latch released well inside it.**
+   `tests/agent_runner.rs:758` (owner poll: `reaped`, `group_empty`,
+   `!escalated`, `waited < 1000 ms` of a 3000 ms grace) and
+   `tests/agent_runner.rs:930` (the latch, through `agent::cancel` +
+   `settle`, `< 1000 ms` of 3000). Observed `waited` on the primitive body
+   is 25–50 ms. Poison P1 restores the old terminate-before-wait ordering
+   and both red.
+2. **Early release needs BOTH limbs.** `runner.rs:1177`
+   (`if is_reaped && empty`). The grandchild direction is
+   `tests/agent_runner.rs:792` — the direct child cooperates and is reaped
+   inside the poll, its grandchild ignores SIGTERM, and the body asserts
+   `reaped && !group_empty && escalated && waited >= 800 ms`. Poison P3
+   (`if is_reaped {` — the naive shape the card names) reds it and
+   `tests/agent_runner.rs:1024`. The reaped direction is
+   `tests/agent_runner.rs:879` arm two: the child IS reaped by somebody who
+   does not publish, so the group is genuinely empty while the flag stays
+   false, and the observer must still pay the full grace. Poison P4
+   (`if empty {`) reds exactly that arm.
+3. **A resistant DIRECT child: full grace, SIGKILL, reaped, no zombie.**
+   `tests/agent_runner.rs:835` at the primitive level (asserts the reaped
+   child's status is signal-killed and its pid is gone AFTER the wait) and
+   `tests/agent_runner.rs:1073` end to end through `genesis_cancel`.
+4. **App exit completes well inside the grace, by coordination.**
+   `tests/agent_runner.rs:981` times `reap_for_exit` itself at
+   `< 1000 ms` of a 3000 ms grace. Its counterweight is
+   `tests/agent_runner.rs:1024`: the same quit against a resistant
+   same-group descendant must NOT return early (`>= 900 ms`) and must leave
+   it dead. Production grace pinned BY VALUE and alone at
+   `tests/agent_runner.rs:1266`.
+5. **`genesis_cancel` prompt, SIGTERM synchronous, escalation in the
+   background; observations idempotent.** `tests/agent_runner.rs:1073`
+   (`cancel` returns in `< 300 ms` while the latch is held `>= 900 ms`) and
+   `tests/agent_runner.rs:1134` (cancel + two exits + a settled cancel +
+   `Drop`, all on one turn).
+6. **Permanent fixtures, exact pids, cleanup on failure.** The scenarios
+   above; `OwnedGroup` (`tests/agent_runner.rs:556`) owns what it spawns;
+   `GroupGuard` (`tests/agent_runner.rs:668`) owns what the runner spawns.
+   Both SIGKILL exactly the pids and groups they registered — no `pkill`,
+   no name match — on the unwinding path too.
+7. **The guarantee corrected everywhere it is live.** T-025 acceptance
+   (`:47`), §3 count (`:130`), §5 (`:185`), §10 obligation (`:329`),
+   silences (`:244`); `runner.rs:5`; `mod.rs:216`; `lib.rs:512`. The
+   escapee measurement is recorded verbatim in all four code sites and in
+   T-025 §5.
+8. **Descendant sweep stays a non-goal**, with the narrower true bound
+   stated: the six granted patterns are `Bash(git init:*)`,
+   `Bash(git add:*)`, `Bash(git commit:*)`, `Bash(git status:*)`,
+   `Bash(mkdir:*)`, `Bash(cp:*)` (`adapter.rs:108`) and none daemonizes.
+9. **The off-by-one.** Verified before changing: `KIT_FILES` has fourteen
+   entries and §3's own enumeration lists fourteen. `13` → `14`.
+10. **T-060's boundary held.** No test sets, clears or reads
+    `NPUTER_NO_REAL_CLI`; every new config carries `binary_override` +
+    `probe_login_shell: false`, and the structural guard is what actually
+    holds it. Exactly **three** `#[ignore = "…"]` attributes repo-wide,
+    unchanged; the real smoke did not run. No network, no real CLI, no
+    model call.
+
+### Timing, at test-thread counts 1, 4 and 8
+
+Ten runs of the whole `agent_runner` binary at each count, then five bare
+`cargo test`, then three more at four threads under deliberate load.
+
+| `--test-threads` | runs | failures | wall clock per run |
+|---|---|---|---|
+| 1 | 10 | **0** | 15.0–16.4 s |
+| 4 | 10 | **0** | 5.1–5.5 s |
+| 8 | 10 | **0** | 3.7–3.8 s |
+| default (10 cores) | 5 | **0** | 11–14 s, whole workspace |
+| 4, under 12 busy loops on 10 cores | 3 | **0** | 5.3–5.4 s |
+
+**Read this the way T-060's table has to be read: it is 38-for-38 on a
+quiet ten-core machine and that is weak evidence about `ubuntu-24.04`.**
+Four threads is the closest proxy for a four-core runner and it is
+10-for-10 clean, but the load probe is honestly weak — twelve shell busy
+loops barely moved the wall clock, so it did not reach the regime that
+matters. What I can say structurally rather than statistically: every
+timing assertion is a literal against a grace at least three times larger
+(1000 vs 3000; 800/900 as FLOORS, which can only fail if the code returns
+early — the direction a slow machine cannot cause), and the observed
+release is 25–50 ms, a 20–40× margin. The floors are load-immune by
+construction; the three ceilings are the ones a genuinely starved runner
+could still move.
+
+### Poison drills — 14 mutations, every one moving a VALUE or a BEHAVIOUR
+
+| # | mutation (one-sided) | red |
+|---|---|---|
+| P1 | the turn path stops reaping during the grace (**the old terminate-before-wait ordering**) | cancel-latch, exit-reap-latency |
+| P2 | the owner's poll never reports its reap | cooperative-poll, resistant-grandchild, cancel-latch, exit-latency |
+| P3 | early release drops the GROUP limb (**the naive `try_wait()`-then-return**) | resistant-grandchild, exit-reap-resistant |
+| P4 | early release drops the REAPED limb | observer control arm |
+| P5 | escalate at the deadline regardless of membership | observer control arm |
+| P6 | `group_has_members` reads ESRCH as "somebody is there" | 8 bodies |
+| P7 | the worker never publishes the reap | happy-path publish |
+| P8 | production grace 5 s → 4 s | grace-by-value |
+| P9 | the resistant LEAF fixture stops resisting | resistant-direct, resistant-grandchild, exit-reap-resistant |
+| P10 | the resistant TURN fixture stops resisting | resistant-turn |
+| P11 | `genesis_cancel` escalates on the caller's thread | resistant-turn |
+| P12 | the poll sends no initial SIGTERM | 5 bodies, incl. the pre-existing exit hook |
+| P13 | `pid_alive` always answers "gone" | 5 bodies, incl. the pre-existing group kill |
+| P14 | the child slot is never cleared | happy-path publish, idempotence, two pre-existing |
+
+**Twelve new bodies, every one red under at least one drill.** Restoration
+proved by sha256 against `git show HEAD:<path>` after every drill, never by
+a clean `git status`: `runner.rs` `fb1f3b61…`, `agent/mod.rs`
+`080107fe…`, `fake_agent.rs` `63b8a9bf…`.
+
+**TWO DRILLS STAYED GREEN, AND BOTH WERE FINDINGS — that is the drill
+working, not the drill failing.**
+
+- **P7 green.** Deleting `run_turn`'s trailing `handle.mark_reaped()` red
+  nothing, because the cancel path publishes from inside the poll. The line
+  is load-bearing only on the HAPPY path, which had no body. Covered now by
+  `a_happy_turn_still_publishes_its_reap_to_whoever_holds_the_handle`
+  (`tests/agent_runner.rs:1194`), which observes the slot deterministically
+  off the `started` event — the slot is written before the event is
+  emitted, the same ordering `reap_for_exit` depends on. P7 now reds it.
+- **P11 green.** Making `genesis_cancel` escalate on the caller's thread
+  red nothing, because against a COOPERATIVE group the blocking form ALSO
+  returns in milliseconds once the poll releases early. The promptness
+  assertion could not fail where it sat. It moved to the resistant-child
+  body, where a blocking escalation costs the whole grace, and it reds
+  there. A note at `tests/agent_runner.rs:938` records why it is absent
+  from the cooperative body.
+
+### The leak this card caused, found and closed
+
+Poison drill P3 failed `the_exit_reap_pays_the_full_grace_…` exactly as
+intended and **LEAKED its SIGTERM-immune grandchild** — pid 6373, ppid 1,
+`nputer-T-043/…/fake_agent`, alive for sixteen minutes until it was found
+by hand. It ignored SIGTERM and died on SIGKILL, confirming which fixture
+it was. `OwnedGroup` covered the processes the tests spawn themselves; the
+harness-driven bodies got theirs from the runner and their only cleanup was
+the code under test doing its job — which is precisely what a poison drill
+removes. `GroupGuard` (`tests/agent_runner.rs:668`) closes it: register the
+pid the moment the body learns it, SIGKILL exactly those pids and groups on
+Drop. **Re-running P3 and P9 after the guard reds the same bodies with zero
+processes left.** Eight further repeat runs at 1/4/7 threads: zero leaked.
+Every pid this session created is proven gone; the two orphaned
+`fake_agent`s from `nputer-T-060` are not mine and are filed as T-043-s1.
+
+### Gates
+
+- bare `cargo test`, unpiped, exit **0**: **337 passed / 0 failed / 3
+  ignored** (baseline `adb32c3` was 325 + 3; +12 bodies). Per target:
+  `nputer_lib` unit **117**, `tests/agent_runner.rs` **60 + 1 ignored**,
+  `nputer_index` lib **123**, `arch` **7**, `cli` **13**, `containment`
+  **3**, `golden` **7**, `perf` **0 + 1 ignored**, `self_graph` **2 + 1
+  ignored**, `watch` **4**, doctests `nputer_lib` **1** / `nputer_index`
+  **0**, three zero-test bins.
+- **BOOT GATE fired** (`app/src-tauri/**` moved) and passed, offline npm
+  setup, scratch port **18443** bind-probed free first, 1420 never
+  contacted. Both startup lines detected — `[nputer] project folder:` and
+  `[nputer] window "main" created` — and the tree stopped on SIGTERM. **The
+  script prints no exit code; the 0 is my own `echo $?`.** Nothing was left
+  holding 18443.
+- graph currency `index --check --root ../..` exit **0**, CURRENT —
+  **568,598 bytes / 117 files / 982 symbols / 1,502 edges**, byte-unchanged.
+  I did NOT regenerate `graph.json`; no indexed TS/JS file moved.
+- `cargo audit -n` (no fetch) exit **0**: **0 vulnerabilities / 17 allowed
+  warnings** over 472 locked crates against the existing 1,216-advisory DB.
+- Security movement zero: `acl_pin.rs` sha256 `8d24cbad…`, identical to
+  `adb32c3`, **92** grants. `ENV_ALLOWLIST` byte-identical over its anchored
+  range — **423 bytes, 16 entries**. No dependency, manifest, lockfile, IPC
+  command, capability grant or network surface moved.
+
+### For the verifier
+
+- **The two-limb release is the whole claim.** If you take one thing apart,
+  take apart `terminate_group_polling`: P3 and P4 are the mutations that
+  matter, and they must red `…resistant_grandchild…` and the observer
+  control arm respectively.
+- **`GroupExit.waited` is measured inside the poll.** It is a wall-clock
+  number and therefore the flake surface. The floors cannot fail from
+  slowness; the ceilings can, in principle, on a starved runner.
+- **The ready-handshake is not decoration.** `Command::spawn` returns at
+  fork and the disposition is installed after `exec`; the first run of the
+  resistant body reaped its "resistant" child in 27 ms because the SIGTERM
+  landed in that window. Removing `announce_ready` reintroduces a rare
+  false green, not a red.
+- **T-025-s3's count half is discharged here** (its `runtime/nputer.yaml`
+  half is untouched and still parked). The parenthetical's byte figure is
+  measurably wrong too — 23,890 bytes, not "~60 KB" — and is deliberately
+  NOT changed; see T-043-s2 for why deleting it beats correcting it.
+- **Filed:** T-043-s1 (the briefing's five orphaned `nputer` binaries did
+  not reproduce; two orphaned `fake_agent` turn children from
+  `nputer-T-060` are alive), T-043-s2 (the kit byte figure), T-043-s3
+  (`run_with_timeout` SIGTERMs a probe without escalating, then waits
+  unbounded, stranding the single-flight latch — same file, different code
+  path, deliberately not fixed here).
+
+### What I am not confident about
+
+1. **`killpg` and zombies on Linux.** The ordering (reap, then ask about
+   the group) makes the predicate correct whether or not a kernel counts a
+   zombie as a group member, and it is measured on darwin. It is NOT
+   measured on Linux, and CI has never run on a real runner.
+2. **The timing ceilings on a four-core runner.** 10-for-10 at four threads
+   here is not the same machine. Margins are 20–40×, but the load probe was
+   too weak to claim more.
+3. **Whether the two orphaned `nputer-T-060` `fake_agent`s came from
+   committed code or from a hand-run probe.** I did not attribute them and
+   deliberately say so in T-043-s1.
+4. **The `Err(_)` arm of the owner's `try_wait`** treats an error as "the
+   child is gone". That is right for ECHILD and unreachable in practice
+   here, but it is an assumption no test exercises.
+5. **The idempotence body proves no panic and a settled `Idle`; it does not
+   prove the absence of a deadlock** under an adversarial interleaving. A
+   deadlock would hang the suite rather than red it, which no assertion can
+   catch.
 
 ## Verdicts
