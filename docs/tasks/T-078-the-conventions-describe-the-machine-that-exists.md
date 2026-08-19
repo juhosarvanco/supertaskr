@@ -5,12 +5,12 @@ feature: F-01
 milestone: 4
 priority: 2
 size: M
-status: planned
+status: verifying
 blocked_by: []
 touches: [docs/CONVENTIONS.md, method/]
-builder:
+builder: claude-opus-5 @T-078
 verifier:
-built_by:
+built_by: claude-opus-5 @T-078
 verified_by:
 review:
 ---
@@ -187,5 +187,231 @@ collide with no code lane**, which is why this card is dispatchable
 beside anything.
 
 ## Implementation notes
+
+Built by `claude-opus-5 @T-078`, fresh session, in worktree
+`nputer-T-078` off **`e4a5ae7`** (a STATE checkpoint, per DISPATCH FROM
+THE LAST CHECKPOINT). Main was never touched. Port 1420 was read-only
+`lsof`-probed at session start and again at the end — one healthy
+listener, node pid **82549**, `[::1]:1420 (LISTEN)`, the same pid both
+times — and was never bound, connected to or signalled. This lane used
+scratch port **17851**, bind-probed free first (alongside 17853 and
+17855) and empty afterwards. `npm ci` ran only in this worktree, in the
+fresh-clone order the doc specifies: lib/parser (55 packages) + build,
+app (499), tools/e2e (8), all `found 0 vulnerabilities`.
+
+**Understanding, confirmed before anything was touched** (CLAUDE.md):
+this card is about TEXT, not behaviour. Every criterion exists because a
+rule this project relies on daily is written nowhere, or because a
+bullet describes a machine that differs from the one that runs. I read
+`docs/STATE.md`, `docs/CONVENTIONS.md` in full, `method/roles/*` and
+`method/tasks/TASK-FORMAT.md`, this card, and the six absorbed findings
+(recovered from git where their files were removed) before the first
+edit. The one trap I had to plan around: `tools/e2e/tests/workflow-parity.spec.ts`
+DERIVES its expectations from the "Build & test" section, so two of these
+criteria land inside a live test's input while the rest land in
+`## Gotchas`, which is a different `## ` section and outside the parse.
+
+### WHERE EACH EDIT LANDED RELATIVE TO THE PARSED REGION
+
+`buildAndTestSection()` splits on `^## ` and keeps the "Build & test"
+chunk, so `## Gotchas` is outside the derivation entirely. Verified per
+edit rather than assumed.
+
+**INSIDE the parsed region — two edits, both re-enumerated before and
+after:**
+
+1. **`lint:tokens` gains an exit-code legend.** Short legend inline in
+   its own parenthetical (`exit 0 clean, 1 EITHER a violation OR a gate
+   that could not run`), commas only and no separator character, exactly
+   the shape `index --check`'s legend uses; the collapse itself and the
+   T-080 pointer are trailing prose at the END of the tools/e2e bullet,
+   past the point where the command list already broke. The legend
+   describes the gate as it behaves TODAY, names the collapse as a known
+   gap, and says it gains its second row when T-080 lands — so neither
+   card blocks the other and this one stays docs-only.
+2. **The CI bullet gains the MIDDLE-DOT rule.** Preferred home taken;
+   `tools/e2e` was NOT widened. The clause names U+00B7 MIDDLE DOT
+   without typing it, keeping the card's own discipline, and states the
+   rule as "between commands, or after the last one — never inside a
+   command's parenthetical".
+
+**OUTSIDE the parsed region — five edits in `## Gotchas`:**
+
+3. **POISON DRILL gains the ONE-SIDEDNESS clause** in the "MUTATE every
+   new or changed assertion" sentence, plus the WHY with both
+   measurements (the symmetric substitution, and the `perl -0777`
+   mutation whose count was right and whose text was wrong).
+4. **The same bullet numbers SHAPE FIVE and SHAPE SIX**, five first
+   because it has a mechanical remedy, both cited to the files they were
+   measured on and to the cards that absorb them. The old "deliberately
+   NOT given an ordinal" parenthetical is replaced.
+5. **A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL** (T-060-s2), with
+   T-063's constant-parametrisation rule stated beside it as its
+   companion — see the finding below; that rule did not exist either, so
+   "beside" had to be made true rather than found true.
+6. **LIFTING A SAFETY GUARD TO DISCRIMINATE** (T-060-s1), both halves
+   required: the lifted arm proven to terminate in a fixture, and the
+   guard's state asserted before anything is exercised.
+7. **A CITATION NAMES A SYMBOL, NOT A LINE**, placed with the other
+   record-keeping conventions near the top of Gotchas.
+8. **THE FOUR WALKS**, a table placed immediately before GRAPH REGEN so
+   a reader meets it before the trigger. It cross-references the
+   authorities (`.nputerignore`, `Lang::for_extension`, `walk_root`, the
+   four scanner constants, `project.ts`) rather than restating them, and
+   accommodates T-058's CONTROL corpus as the fourth walk.
+9. **GRAPH REGEN keeps its WIDE trigger** and gains the preferred arm:
+   the regen is a NO-OP unless an INDEXED file moved, with
+   `index --check` as the one-second way to ask instead of predicting.
+   Its "held by a gate" sentence now reads in the future tense, names
+   the integrator's hand run as the confirmation the property actually
+   has today, and is fair about the three tripwires that do hold it
+   (retained regen obligation, a failing regen reds on its own, deleting
+   the CI step reds the parity spec).
+
+**One edit outside `docs/CONVENTIONS.md`:** the criterion "AND T-054'S
+NOTES SHALL BE CORRECTED WITH IT" required
+`docs/tasks/T-054-retire-the-interim-graph-rule.md`. Corrected IN PLACE
+with a dated attribution, following the T-034 precedent from T-058's
+merge rather than appending a footnote. It is documentation, no lane
+holds it, and the card names it — but it is outside the literal fence
+`[docs/CONVENTIONS.md, method/]` and is flagged here rather than
+buried.
+
+**`method/` was deliberately NOT touched.** Every criterion names this
+file or a bullet in it, and a `method/` FORMAT change is a three-file
+commit whose third file is Rust — see T-078-s3.
+
+### THE DERIVATION, ENUMERATED (the T-054 discipline, re-run here)
+
+The derivation was re-implemented inline and CALIBRATED against
+`git show e4a5ae7:docs/CONVENTIONS.md`, where the right answer is known
+independently: **19 exposed commands, `structuralProblems` empty, dirs
+exactly the four, and every CI-bullet needle present** — byte-for-byte
+T-054's recorded enumeration. Against the final wording it returns the
+SAME 19, the same four dirs, zero structural problems and zero missing
+needles. Nothing entered or left the parsed list.
+
+### THE MIDDLE-DOT DRILL — the claim reproduced, and T-054's notes corrected
+
+Applied to the WORKING file, one substitution, and the mutated text read
+back with `git diff` before the suite was run (this card's own
+one-sidedness clause, applied to itself). **The first attempt asserted
+`count == 1` and got 0** — my pattern assumed a line break in the wrong
+place — which is exactly the failure the clause exists to catch, caught
+by the assert rather than by a missing red.
+
+    exposed commands   19 → 16   (cargo audit, index --watch, arch)
+    parity spec        2 failed, 12 passed, exit 1
+    named by key       "this spec expects [app/src-tauri] cargo audit,
+                        which docs/CONVENTIONS.md "Build & test" no
+                        longer lists" — and the same for the other two
+
+**So "three commands would have silently vanished" is wrong in its most
+important word**, and T-054's notes now say the measured thing: the
+derivation's second direction catches every truncated command the spec
+CLAIMS, and the truncation is silent in exactly ONE case — a command the
+DOC gains that the spec does not yet claim.
+
+**RESTORATION PROVED, not asserted**: after the drill the working file
+was restored and `shasum -a 256` matched the pre-drill copy exactly
+(`ec5b2148…`), with `cmp` reporting identical and the enumerator back to
+19.
+
+### SUITES — first-hand in this worktree, every exit code read from `$?` unpiped
+
+| suite | baseline at `e4a5ae7` | after |
+|---|---|---|
+| lib/parser `npx vitest run` | **234/234**, 12 files, exit 0 | **234/234**, 12 files, exit 0 |
+| tools/e2e parity spec alone | **14 passed**, exit 0 | **14 passed**, exit 0 |
+| tools/e2e full lane (port 17851) | **88 passed**, exit 0 | **88 passed**, exit 0 |
+| `npm run lint:tokens` | TOKEN 118 / CONTROL **496**, exit 0 | see below |
+| `npm run lint:tokens -- --selftest` | 49 TOKEN + 2 CONTROL samples, 37 walk checks, exit 0 | unchanged |
+
+The parser suite's smoke test parses the live `docs/` tree and requires
+zero issues, so the three new suggestion files below are covered by it.
+No suite output was piped through `tail`, `head` or `grep` before its
+exit code was read; every run wrote to a file and `$?` was read directly.
+
+### GATE TRIGGERS, COMPUTED RATHER THAN SKIPPED
+
+- **BOOT GATE: DOES NOT FIRE.** The trigger set is `app/src-tauri/**`,
+  `app/src/**`, `app/package.json`, `app/src-tauri/Cargo.toml`. Over
+  this branch's whole diff plus untracked files it matches **zero
+  paths** — the diff is `docs/` only. `boot:check` was not run and there
+  is no exit code to record.
+- **GRAPH REGEN: DOES NOT FIRE EITHER.** The trigger is
+  `*.ts/*.tsx/*.js/*.jsx` outside `docs/`; this diff contains **zero**
+  such paths, every file being a `.md` under `docs/`. This is the
+  cleaner half of the T-054-s1 story: the wide trigger over-fires on
+  `tools/**`, and on a docs-only diff it does not fire at all.
+  `docs/architecture/graph.json` was NOT regenerated and is a 0-file
+  diff, confirmed by `git diff --name-only` on it.
+- **The graph cannot have moved regardless**, and this is ENTAILED
+  rather than sampled: `docs/` is `.nputerignore`d, so no file in this
+  diff is in the indexer's walk at all.
+
+### CLAIMS THAT DID NOT REPRODUCE
+
+Four, all measured, none of them a defect in the build:
+
+1. **CONTROL is 496 at `e4a5ae7`, not 529.** The dispatch baseline and
+   several documents carry 529, which is the count at T-058's merge
+   `7c6c5aa`. TOKEN 118 reproduces exactly.
+2. **STATE attributes 529 to `9b15f7d`; that ref is 521** — the eight
+   files that commit removed. Filed as **T-078-s2**.
+3. **"the constant-parametrisation rule T-063 produced" is not in
+   `docs/CONVENTIONS.md` or `method/`.** Zero hits for
+   `parametris|parametriz` and zero for `T-063` in either. It lives only
+   in T-063's implementation notes. Filed as **T-078-s1**; the rule is
+   now stated as a companion sentence so the criterion's purpose ("a
+   reader meeting one should meet the other") is true rather than
+   assumed.
+4. **STATE does not carry "which walk sees this file" as an open
+   question** at `e4a5ae7`. The card says it does. The question is real
+   and the table is worth writing — every integrator has been
+   re-deriving it — but it is not in STATE's Open questions section, so
+   nothing there needs striking out.
+
+**One hypothesis of my OWN that did not reproduce, recorded because a
+near-miss is news:** I believed `docs/CONVENTIONS.md` was pinned at
+exactly one `[?]` marker by `app/test/genesis-pane-dom.test.tsx` and
+`genesis-derive.test.ts`, and wrote every edit avoiding that character
+on that basis. Checked rather than trusted: both tests read
+`fixtureTree("streak")`, a fixture repo under
+`app/test/fixtures/genesis/`, not the live tree. The constraint is
+imaginary. **The live coupling that IS real** is the Rust test
+`snapshot_version_matches_the_live_method_stamps` in
+`app/src-tauri/src/agent/kit.rs`, which reads the real
+`docs/CONVENTIONS.md` and requires the literal `currently v0.1.5` —
+verified present and unchanged. That is T-078-s3.
+
+### SUGGESTIONS FILED
+
+- **T-078-s1** — the rule this card was told to write "beside" does not
+  exist either; the ask is a sweep of done-card notes for lessons that
+  live nowhere else.
+- **T-078-s2** — STATE's CONTROL 529 belongs to `7c6c5aa`, not
+  `9b15f7d`; a table of the count at four refs.
+- **T-078-s3** — a `[docs/CONVENTIONS.md, method/]` fence cannot change
+  `method/` formats, because the version bump lands in a Rust constant.
+
+### FOR THE VERIFIER
+
+- **The parsed region is where to attack this.** Re-run the enumeration
+  against the final wording and confirm 19 / four dirs / no structural
+  problems / no missing CI needle; then re-run the middle-dot drill and
+  confirm 19 → 16 with `2 failed, 12 passed`. Both are one command.
+- **The E2E lane needs `app/node_modules`** even for the parity spec,
+  because playwright.config starts the app's vite server for the whole
+  run. The spec itself opens no browser.
+- **`docs/tasks/T-054-*.md` is edited** and is outside the literal
+  fence; see above for why, and reject that half if the architect reads
+  the fence strictly — nothing else depends on it.
+- **What I am least confident about**: the walk table's row for the
+  GRAPH walk compresses three authorities into one cell
+  (`.nputerignore`, `Lang::for_extension`, `walk_root`), and a reader
+  could take the row as normative despite the sentence telling them not
+  to. It is a signpost by design, but it is the row most likely to be
+  quoted as if it were the policy.
 
 ## Verdicts

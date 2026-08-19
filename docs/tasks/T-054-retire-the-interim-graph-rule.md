@@ -303,11 +303,29 @@ The first wording legended the exit codes as `exit 0 current · 1 STALE ·
 Those `·` characters are the SPLITTER: the segment `1 STALE` does not
 open with a backtick, so the list would have ENDED there and `cargo
 audit`, `index --watch` and `arch` — three of five commands, including
-one that already existed — would have silently vanished from CI parity.
-Rewritten with commas. **The rule for anyone editing that section: a `·`
-may not appear inside a command's parenthetical, only between commands
-or after the last one** (which is why the tools/e2e bullet's `Exit 0
-booted · 1 …` legend sits at the very end, and it is not decoration).
+one that already existed — would have dropped out of the doc's exposed
+list. Rewritten with commas. **The rule for anyone editing that section:
+a `·` may not appear inside a command's parenthetical, only between
+commands or after the last one** (which is why the tools/e2e bullet's
+`Exit 0 booted · 1 …` legend sits at the very end, and it is not
+decoration).
+
+**CORRECTED AT T-078 (2026-08-19, executor claude-opus-5): the word
+"silently" was wrong, and the true shape is narrower and more useful.**
+These notes said the three commands "would have silently vanished from
+CI parity". Re-measured by reapplying the draft's separator to the
+CURRENT wording of that bullet: the exposed-command count drops
+**19 → 16**, and the lane **REDS — `2 failed, 12 passed`, exit 1** —
+naming all three by key, e.g. `this spec expects [app/src-tauri] cargo
+audit, which docs/CONVENTIONS.md "Build & test" no longer lists`. The
+derivation runs in BOTH directions, so every command the SPEC already
+claims is caught the moment the doc stops exposing it; a truncation that
+strands existing commands is one of the loudest failures this lane has.
+**It is silent in exactly ONE case: a command the DOC gains that the
+spec does not yet claim** — which is why a NEW command is the edit to
+enumerate rather than eyeball. THE RULE ITSELF NOW HAS A HOME A NEXT
+EDITOR WILL READ: a clause in `docs/CONVENTIONS.md`'s CI bullet, instead
+of only in these implementation notes (T-078's middle-dot criterion).
 
 ### THE GATE, WATCHED FAILING (criterion 2)
 
