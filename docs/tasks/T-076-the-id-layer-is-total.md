@@ -687,3 +687,192 @@ the declared space is itself aliased`) — model order IS pinned. (s)
 (`'component'` -> `'task'`) rather than a dropped one -> 2 red. Every mutant
 restored; `shasum -a 256 lib/parser/src/*.ts` is byte-identical to the
 pre-drill capture, `git status` clean, and `lib/parser` rebuilt afterwards.
+
+### 2026-08-19 — APPROVED (claude-opus-5 @fresh, same-model)
+
+**C1 — APPROVED.** Total, and unchanged proved beyond what the card
+claims. Attacks and counts above. The one behaviour change is real,
+declared, and pinned with BOTH bodies so the direction is in the pin
+(`component.test.ts:410`, `id-slot.test.ts:139`).
+
+**C1's brief-flagged weakness, ruled.** The 484-pair sweep covering only
+single-digit-run ids does NOT undercut the totality claim, and the reason is
+structural rather than charitable: `ID_PATTERN` is `/^C-(\d{2,})$/`, anchored
+at both ends, so a conforming component id has EXACTLY one digit run by
+construction and a multi-run string like `C-01-02` never reaches the digit
+arm on either body — it falls to the identical string fallback on both.
+There is nothing there to cover. `compareDigitRuns` takes one run by
+contract (its argument is the captured group), and `idSlotKey`, which is the
+function that does span multiple runs, is separately pinned for it. What IS
+thin is the sample: 22 hand-picked ids is a statement of the property with a
+cardinality floor, not a proof of "every id the tree can hold". I ran the
+proof — 1,210,000 exhaustive ordered pairs, zero disagreements — and it
+holds, so the criterion is met on the evidence rather than on the pin.
+
+**C2 — APPROVED.** `id-slot.ts:180-195` inside the `aliasedIdSlots` doc
+block declares the fall-through a property of the comparator PASSED, names
+what was false and in which range, dates the change to T-076, and warns that
+a caller passing its own `Number()`-based comparator puts the NaN back. It
+does not claim the new guarantee as pre-existing. Pinned at
+`component.test.ts:422`, which asserts the property AND that the old body
+returns `NaN` on the same pair.
+
+**C3 — APPROVED.** Exactly four emit sites exist repo-wide and all four
+carry `space`; the type is required, not optional (`types.ts:238`), and both
+`tsc --noEmit` gates exit 0. All four moved pins read as tightenings, each
+dated and reasoned in place, **none loosened**: `component.test.ts:449` and
+`project.test.ts:89` add one line to a whole-object `toEqual` with every
+other assertion byte-identical; `files.test.ts:48` adds `space: 'task'` to a
+`toMatchObject` that previously could not have caught its own site's
+regression; `roadmap.test.ts:267` tightens `objectContaining` to a
+whole-object `toEqual`, adds four message assertions and a
+`not.toContain('lines 2 and 3')` that asserts the OLD shape is gone. The
+fifth moved body (finding above) is additive-only. Mutant (t) — the WRONG
+space value rather than a dropped one — reds 2, so the discriminator is
+pinned by value and not merely by presence.
+
+**C4 — APPROVED.** `roadmap.ts:65` names each declaration as
+`'<id>' (line N)`, matching the feature `aliased-id` shape at
+`roadmap.ts:137`; `files: [file, file]` was already there at the branch
+point, as the notes correctly report. The consequence clause is MEASURED,
+not plausible: `app/src/lib/board-model.ts:248-249` reads
+`if (byFeature.has(feature.id)) continue; // duplicate backbone id: first
+wins, issue already flagged`, and routing at `:273-274` is an exact-string
+`byFeature.get(task.feature) ?? unmapped`. Read first-hand in the app
+source.
+
+**C5 — APPROVED.** Three emit sites, all three carrying the hint; the kind
+LIST is unchanged, so it is a hint and never a new kind. Driven directly
+against the built parser on a hostile model:
+
+    id="__proto__"    nearMiss=(absent)             hasOwn=false
+    id="constructor"  nearMiss=(absent)             hasOwn=false
+    id="toString"     nearMiss=(absent)             hasOwn=false
+    id="T-01"         nearMiss=["T-0001","T-001"]   hasOwn=true
+    id="T-03-s1"      nearMiss=["T-003-s1"]         hasOwn=true
+    id="T-003-s2"     nearMiss=(absent)             hasOwn=false
+    id="T-0003-s01"   nearMiss=["T-003-s1"]         hasOwn=true
+
+ADR-009 holds — the three inherited-property names acquire nothing, and
+absence is real absence (`hasOwnProperty` false), not an empty array. The
+`-sN` suffix is part of the slot in both directions: a padded BASE and a
+padded SUFFIX each get a hint, a different suggestion number gets none.
+Plural agreement is correct ("are declared and differ" vs "is declared and
+differs"), order is model order (mutant (r) reds when it is sorted), and the
+`aliased-id` is still reported alongside. Identical behaviour on the
+`feature` and component `depends_on` sites. Both indexes are built once
+outside their loops, so a hostile 10k-long `blocked_by` cannot make this
+quadratic.
+
+**C6 — APPROVED**, and the discipline is the best thing in this card after
+the second mechanism. Verified in `git log`, not accepted from prose.
+
+**Gates.** BOOT GATE: `git diff --name-only e4a5ae7..HEAD` over
+`app/src/**`, `app/src-tauri/**`, `app/package.json`,
+`app/src-tauri/Cargo.toml` returns **zero paths** — it does NOT fire, and
+there is correctly no `BOOT_EXIT`. GRAPH REGEN: the trigger is any
+`*.ts/*.tsx/*.js/*.jsx` outside `docs/`, and there are **13**, so it FIRES
+and the graph was correctly left for the integrator. I did not regenerate
+it. I ran the read-only gate instead, which writes nothing and validates the
+expected-delta note line by line:
+
+    INDEX_CHECK_EXIT=1   graph.json is STALE
+      committed:   117 files · 989 symbols · 1508 edges
+      fresh index: 117 files · 995 symbols · 1518 edges
+      files  +0  -0  ~13
+      | ~ lib/parser/src/id-slot.ts  (content, loc 99 -> 207, symbols 3 -> 8)
+      edges  +14  -4
+
+**`files +0 -0` confirms the note's load-bearing claim**: no new file node,
+so C-06's dogfood file count does not move. `symbols 3 -> 8` on `id-slot.ts`
+is exactly the four new exports plus `canonicalDigits`. T-024's three-fixture
+rule does not fire — its trigger is DECLARING A COMPONENT
+(`docs/CONVENTIONS.md:145`), and no component was declared; the note reaches
+the right conclusion by a slightly wrong route. **One correction: the notes
+say "Twelve `.ts` files outside `docs/`". It is thirteen** — seven source,
+six test — and the gate's own `~13` says so.
+
+**Lanes the executor declared rather than ran — I ran them.** `cargo test`
+from `app/src-tauri/`: **exit 0, 325 passed + 3 ignored** across 15 result
+lines, no movement, as `app/src-tauri/**` is a 0-path diff. (The dispatch's
+"337 + 3 ignored" is MAIN's count, not this branch point's: `#[test]`
+attributes under `app/src-tauri` number 327 at `e4a5ae7` and 339 at `main`,
+a +12 from sibling agent-runner work merged since. 325 is the correct
+baseline here and it is what this tip produces.) The E2E lane's conclusion
+is sound but its stated reason is too narrow: nothing under `tools/e2e`
+IMPORTS the parser, true, but `tools/e2e/scripts/token-scan.mjs` does read
+the tree — and `lib/parser` is a declared `TOKEN_ROOTS_OUT` asserted to walk
+zero files (`:147`, `:794`), while the CONTROL assertions name
+`lib/parser/src/index.ts` and `lib/parser/tsconfig.json`, neither of which
+this card moves. The lane cannot see this change; the reason is the
+exclusion, not the import graph.
+
+**Live tree — re-derived, three trees, still zero.** Driven through the
+freshly built parser: this worktree **103 tasks · 6 features · 11 components
+· ISSUES 0**; `/Users/ujju/Projects/nputer` (read-only) **106 · 6 · 11 ·
+ISSUES 0**; and at `c3560a8`, before the suggestion files, the tree is
+**100 files, 51 done / 29 planned / 20 parked / 0 suggested** — the fourth
+triage exactly, as claimed. After this verdict's two suggestion files the
+tree is 105 tasks, still ISSUES 0.
+
+**Suggestion rulings.** **s1 is correct to file and outside the fence, but
+its central sentence is wrong in the card's favour.** It says T-076 "did not
+create the divergence and did not close it". It closed part of it. Rust's
+`numeric_id` parses to `u64`, exact to 19 digits; the pre-T-076 TypeScript
+used `Number`, exact only to 15. In the 16–19-digit band the two therefore
+disagreed and now agree — the worked pair is
+`C-99999999999999999` vs `C-100000000000000000`, where `u64` orders Less,
+the branch-point TypeScript returned `1` (Greater, via the string fallback
+after `Number` fused them) and HEAD returns `-1`. So T-076 **narrowed** the
+divergence to 20+ digits and changed the remainder from "two engines wrong
+differently" to "one right, one that gives up safely at `u64::MAX`". It
+widens nothing and creates nothing. On ADR-015: this is a SECOND latent
+instance of the addendum's admitted class, alongside `registry.rs::unquote`,
+and it does not trip any of the addendum's three revisit triggers — not a
+third join, not a consumer needing an unanswered question, and not "the
+first live divergence", since the registry's longest id is `C-14`. It
+belongs as an ADR-015-family follow-up card, not a new decision. **s2 and s3
+check out on every factual claim I tested**: zero `idSlotKey` under
+`app/src`, the two `board-model.ts` line citations resolve exactly, no app
+test carries an `F-1`-beside-`F-01` case, and `dangling-reference` is indeed
+the last union member spanning three spaces without `space` (every other
+multi-id member is single-space by construction).
+
+**Endorsed but not filed separately**: the executor's own note that
+`aliasedIdSlots`'s `compare` parameter is now a hazard with exactly one
+caller passing exactly one value, whose doc has to warn that a different
+caller could reintroduce the NaN. That reasoning is right and the option to
+delete the parameter is real; it is already written down where an integrator
+will read it.
+
+**New suggestions filed by this verification** (the executor filed s1–s3):
+
+- **T-076-s4** — the `ambiguous-mapping` winner past 309 digits is
+  unpinned; mutant (q) survives 263/263 and restores the defect. Elevates
+  the executor's own flag from a question to a measurement, and carries the
+  drill-discipline note about deriving at least one mutant from a CRITERION
+  with the test file closed.
+- **T-076-s5** — the disk/pure deep-equal contract is pinned against
+  `broken-project`, a fixture with no roadmap or component issue, so mutant
+  (v) (swapping `project.ts:202`'s layer order) survives 263/263 while
+  making the two layers genuinely disagree. Pre-existing; visible only
+  because T-076 wrote the first assertion that the order is a contract.
+
+**Verdict: APPROVED.** All six criteria hold on evidence I generated
+myself. The comparator is total and provably order-preserving over the whole
+range the tree can reach; the second, unnamed degradation was real,
+deterministic, reproduced at the branch point and closed at HEAD; `space` is
+required at all four sites with four pins tightened and none loosened; the
+near-miss hint is a hint and behaves correctly against ADR-009-hostile
+input at all three sites; and the two rulings were genuinely committed
+before the first source byte. The defects found are two accuracy slips in
+the notes (a fifth moved body denied, and "twelve" for thirteen), one
+over-stated characterisation of the (i)/(k) pair, one misclassification that
+UNDERSELLS the work (`files.test.ts:192` is not shape six — it is the only
+test in the suite that pins issue layer order, and it stays), and two
+coverage holes now filed as s4 and s5, neither of which is a criterion
+failure. `git status` clean, every drilled file sha256-identical to
+`git show HEAD:<path>`, `lib/parser` rebuilt, parser 263/263 and app 825/825
+green at the end as at the start. No process of mine survives; the two
+`fake_agent` orphans (52504/52505, ppid 1, from `nputer-T-060`) were alive
+before I started and were left alone.
