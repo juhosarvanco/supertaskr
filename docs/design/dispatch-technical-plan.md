@@ -219,3 +219,67 @@ succession guarantee is built on the judgment. The poison drill already
 states the general principle: *"It stays a DISCIPLINE rather than a gate
 because nothing can automate 'would this have failed'."* The same test
 applied to the checkpoint gives the same answer.
+
+## 7. Rulings and revisions — added 2026-08-19 after the cross-harness pass
+
+### D1 is RULED by the human: milestone 4, backlog rides alongside
+
+F-04 is **milestone 4**. ROADMAP gains a section naming the dispatch
+slice as its goal, plus one sentence recording that the 42 inherited
+cards carrying `milestone: 4` are standing backlog rather than the
+milestone's content. No re-stamping. Cards written under this plan
+carry `milestone: 4`.
+
+**D2 the architect takes**: declare C-15 with touch slug `app-dispatch`,
+on the plan's own reasoning — it is the cheapest it will ever be, and
+the alternative fences every dispatch card against every genesis card
+for the life of the feature.
+
+**D3 remains open** and gates only the selector card, not the slice.
+**D5 is superseded in part** — see below.
+
+### The card ids in §2 are stale
+
+The plan drafted `T-081`…`T-090`. **T-081, T-082 and T-083 were claimed
+by other work on 2026-08-19** (the denial relay, the auth command, and
+the range rule). The block starts at **T-084**. Re-derive the maximum id
+before writing rather than trusting either figure.
+
+### What `docs/design/cross-harness-plan.md` changes about T-086
+
+The adapter card was drafted before anything was known about a second
+CLI. Three things now bear on it, and two make it **easier** than the
+plan assumed:
+
+1. **The seam already exists.** `AgentAdapter` is fully declarative and
+   its `parse` field is already a `ParseMode` enum with a single
+   variant. A second adapter does not need the struct redesigned; it
+   needs a second `ParseMode` and its parser. ADR-003's "one adapter
+   entry" promise is more credible than §4 of this plan implied.
+2. **The argv shape fits.** A subcommand is just the first element of
+   `spawn_args`, and a resume id is one argv element, which is exactly
+   what `SESSION_ID_SLOT` already requires.
+3. **THE REAL WORK IS NOT IN THE TABLE. IT IS IN THE RUNNER'S ERROR
+   TAXONOMY.** `TurnError::ToolDenied`'s own doc comment states the turn
+   "DIED because a tool it needed was REFUSED". The 2026-08-19
+   observation falsifies that for Claude — two denials, agent recovered,
+   `is_error: false`, exit 0 — and the published Codex docs assert it
+   *is* true for `codex exec`, where an approval request terminates the
+   turn unless pre-authorised. **On the same event one harness degrades
+   and the other terminates.** A permission policy therefore cannot be a
+   shared constant across adapters, and T-086 must carry per-adapter
+   denial semantics as an explicit field or an explicit ruling — not as
+   the unstated assumption it is today.
+
+**D5 (`model@session`) gains an asymmetry it did not have.** Codex's
+`exec` accepts `--model`; nputer deliberately never passes one to
+Claude, on stated ADR-003 grounds. So the rule cannot stay global: it
+becomes per-adapter, or ADR-003's reasoning is revisited. Rule it before
+T-086, not inside it.
+
+**A caution that governs all of the above.** Every Codex claim here is
+read from published documentation. **The binary is not installed on this
+machine**, so none of it has been executed. `codex --help` is three
+seconds of work and supersedes the lot — and T-082 landed this same
+afternoon precisely because a command nobody ran got shipped.
+
