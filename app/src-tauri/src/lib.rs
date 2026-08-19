@@ -508,6 +508,27 @@ pub fn run() {
         // cleanup; that orphan is bounded to one turn by the
         // spawn-per-turn topology, and `AgentState::drop` covers the
         // ordinary teardown.
+        //
+        // **THE CLAIM AT ITS REAL WIDTH, AND IT IS LIVE HERE TOO**
+        // (T-043, absorbing T-025-s5): no orphaned descendant THAT STAYS
+        // IN THE GROUP. `killpg` reaches the CLI and every tool
+        // subprocess it forked; a descendant that calls `setsid()` leaves
+        // the group and survives — measured by the T-025 verifier as
+        // `child_alive=false escapee_alive=true child_pid=72417
+        // escapee_pid=72418 escapee_pgid=72418`. A descendant sweep stays
+        // a deliberate NON-GOAL: the selected CLI can create a new
+        // session and ancestry is undiscoverable after reparenting. What
+        // bounds the exposure is narrower and true — no Bash pattern the
+        // planner is granted intentionally daemonizes.
+        //
+        // T-043 also made this hook CHEAP in the ordinary case. It blocks
+        // the thread that quits the app, and it holds no `Child`, so it
+        // used to poll `kill(pid, 0)` — true for a zombie — and pay the
+        // whole five-second grace even when the CLI had already gone. It
+        // now reads the reap the turn worker publishes on the shared
+        // `ChildHandle` and lets go in milliseconds, while a resistant
+        // same-group descendant still costs the full grace and still gets
+        // SIGKILLed. See `AgentState::reap_for_exit`.
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {

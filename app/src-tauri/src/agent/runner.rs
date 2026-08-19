@@ -2,6 +2,20 @@
 //! turn, its stream relayed as events, every failure typed, the child
 //! never outliving the app.
 //!
+//! **THE KILL GUARANTEE, STATED AT ITS REAL WIDTH** (T-043, absorbing
+//! T-025-s5): no orphaned descendant THAT STAYS IN THE GROUP. The signal
+//! is `killpg`, so it reaches the CLI and every tool subprocess it
+//! forked; a descendant that calls `setsid()` leaves the group and
+//! survives, which is a property of process groups rather than a defect
+//! here. Measured, not argued — the T-025 verifier's escapee probe
+//! recorded `child_alive=false escapee_alive=true child_pid=72417
+//! escapee_pid=72418 escapee_pgid=72418`. A descendant SWEEP is a
+//! deliberate NON-GOAL: the selected CLI can create a new session, and
+//! after reparenting the ancestry is undiscoverable, so a sweep would
+//! have to guess. What bounds the exposure is narrower and true — no
+//! `Bash(...)` pattern the planner is granted intentionally daemonizes
+//! (see [`super::adapter`]). Revisit when that allowlist widens.
+//!
 //! Topology (§1): turn 1 spawns the adapter's spawn template and captures
 //! the CLI's NATIVE session id from the stream's init line; every turn
 //! N≥2 spawns the resume template with that id. Process lifetime = turn
