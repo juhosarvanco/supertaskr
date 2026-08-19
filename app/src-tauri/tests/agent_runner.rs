@@ -1631,6 +1631,41 @@ fn the_transcribed_auth_shape_carries_its_status_on_its_own_result_line() {
     settle(&h.agent);
 }
 
+/// T-069: A TERMINAL LINE OUTRANKS THE TEXT THAT CAME BEFORE IT — and
+/// this body exists because, without it, the line that says so could be
+/// deleted with the whole suite still green.
+///
+/// T-069's discriminator reads model text as evidence the CLI got past a
+/// status. A CLI that streams a few words and THEN has its credentials
+/// refused produces exactly that evidence in front of a genuine auth
+/// failure, and its `result` line names the status again. The terminal
+/// line is the turn's own verdict (T-029's rule) so it wins, which the
+/// runner implements by clearing the flag wherever a status is written.
+///
+/// No other stream in this file puts a delta between an auth diagnostic
+/// and an auth result line, so no other body can tell that clearing from
+/// its absence. That is the shape T-043-s4 named — a mechanism with no
+/// falsifying body — and this is the body.
+#[test]
+fn an_auth_failure_that_streamed_text_before_it_failed_is_still_typed() {
+    let h = harness(
+        "authaftertext",
+        Options { scenario: "auth-error-after-text", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::AuthFailed { status, message } => {
+            assert_eq!(status, Some(401));
+            assert!(message.contains("revoked"), "the CLI's own sentence: {message:?}");
+        }
+        other => panic!(
+            "the terminal line named the status again, so the text before it is not \
+             evidence the CLI got past anything: {other:?}"
+        ),
+    }
+    settle(&h.agent);
+}
+
 /// T-069's RULING, built: the residual false positive is closed on
 /// evidence the stream already carries.
 ///

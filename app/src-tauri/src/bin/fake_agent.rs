@@ -183,7 +183,16 @@ fn main() {
         // "success" while `is_error` is true — exits 1, and writes
         // NOTHING to stderr. A runner that only tails stderr shows the
         // user an empty explanation.
-        "auth-error" => auth_error(&session_id, &model, true),
+        "auth-error" => auth_error(&session_id, &model, true, false),
+        // T-069: THE AUTH FAILURE THAT SPOKE FIRST. Same transcribed
+        // ending, with a text delta between the diagnostic and the
+        // terminal line — a CLI that streamed a few words before its
+        // credentials were refused. It exists to hold T-069's own
+        // discriminator honest: model text is evidence the CLI got past
+        // a status, but a TERMINAL LINE naming the status again
+        // outranks it, and without this stream the line that says so
+        // has nothing that would fail if it were deleted.
+        "auth-error-after-text" => auth_error(&session_id, &model, true, true),
         // T-069: THE TRANSCRIBED TURN MINUS ITS `api_retry` LINE, so the
         // `result` line is the ONLY carrier of the status. This is the
         // pin for the false NEGATIVE T-029's terminal-line rule
@@ -195,7 +204,7 @@ fn main() {
         // typed `AuthFailed` — silently, since `auth-error` above would
         // still classify off its diagnostic. This stream has no
         // diagnostic to fall back on, so moving the status REDS here.
-        "auth-error-result-only" => auth_error(&session_id, &model, false),
+        "auth-error-result-only" => auth_error(&session_id, &model, false, false),
         // T-029 (T-025-s1): THE TOO-NARROW-ALLOWLIST SHAPE. The adapter
         // passes exactly six `Bash(...)` patterns, so a planner that
         // reaches for a seventh is refused by the CLI's own permission
@@ -600,14 +609,15 @@ fn retry_then(session_id: &str, model: &str, with_retry: bool, ending: Ending) {
 /// carries an `api_error_status` OF ITS OWN · exit 1, stderr empty.
 ///
 /// `with_retry_line` is the one line between `auth-error` and
-/// `auth-error-result-only`, and both go through this emitter for the
-/// same reason `retry_then` exists: a stream that is "the other stream
-/// minus one line" has to be the same code minus one line, or the
-/// transcription can move on one side and not the other. **What the
-/// second scenario watches is precisely that the `result` line still
-/// carries the status**, because that is the whole reason T-029's
-/// terminal-line rule costs 2.1.226 nothing.
-fn auth_error(session_id: &str, model: &str, with_retry_line: bool) {
+/// `auth-error-result-only`, and `with_text` the one line between
+/// `auth-error` and `auth-error-after-text`. All three go through this
+/// emitter for the same reason `retry_then` exists: a stream that is
+/// "the other stream minus one line" has to be the same code minus one
+/// line, or the transcription can move on one side and not the other.
+/// **What `auth-error-result-only` watches is precisely that the
+/// `result` line still carries the status**, because that is the whole
+/// reason T-029's terminal-line rule costs 2.1.226 nothing.
+fn auth_error(session_id: &str, model: &str, with_retry_line: bool, with_text: bool) {
     emit_init(session_id, model);
     if with_retry_line {
         println!(
@@ -619,6 +629,9 @@ fn auth_error(session_id: &str, model: &str, with_retry_line: bool) {
                 "session_id": session_id
             })
         );
+    }
+    if with_text {
+        emit_delta("Let me get started on that.");
     }
     println!(
         "{}",
