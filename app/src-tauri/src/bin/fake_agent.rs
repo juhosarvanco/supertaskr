@@ -183,28 +183,28 @@ fn main() {
         // "success" while `is_error` is true — exits 1, and writes
         // NOTHING to stderr. A runner that only tails stderr shows the
         // user an empty explanation.
-        "auth-error" => {
-            emit_init(&session_id, &model);
-            println!(
-                "{}",
-                serde_json::json!({
-                    "type": "system", "subtype": "api_retry", "attempt": 1,
-                    "max_retries": 10, "retry_delay_ms": 508,
-                    "error_status": 401, "error": "authentication_failed",
-                    "session_id": session_id
-                })
-            );
-            println!(
-                "{}",
-                serde_json::json!({
-                    "type": "result", "subtype": "success", "is_error": true,
-                    "api_error_status": 401, "terminal_reason": "api_error",
-                    "num_turns": 1,
-                    "result": "Failed to authenticate. API Error: 401 OAuth access token has been revoked."
-                })
-            );
-            std::process::exit(1);
-        }
+        "auth-error" => auth_error(&session_id, &model, true, false),
+        // T-069: THE AUTH FAILURE THAT SPOKE FIRST. Same transcribed
+        // ending, with a text delta between the diagnostic and the
+        // terminal line — a CLI that streamed a few words before its
+        // credentials were refused. It exists to hold T-069's own
+        // discriminator honest: model text is evidence the CLI got past
+        // a status, but a TERMINAL LINE naming the status again
+        // outranks it, and without this stream the line that says so
+        // has nothing that would fail if it were deleted.
+        "auth-error-after-text" => auth_error(&session_id, &model, true, true),
+        // T-069: THE TRANSCRIBED TURN MINUS ITS `api_retry` LINE, so the
+        // `result` line is the ONLY carrier of the status. This is the
+        // pin for the false NEGATIVE T-029's terminal-line rule
+        // introduced (disclosed in `runner.rs` beside `auth_status =
+        // api_error_status;`): that rule is safe against 2.1.226 ONLY
+        // because 2.1.226 puts `api_error_status` on the terminal line
+        // itself. A CLI version that moved the status into the
+        // diagnostic and left the `result` line bare would stop being
+        // typed `AuthFailed` — silently, since `auth-error` above would
+        // still classify off its diagnostic. This stream has no
+        // diagnostic to fall back on, so moving the status REDS here.
+        "auth-error-result-only" => auth_error(&session_id, &model, false, false),
         // T-029 (T-025-s1): THE TOO-NARROW-ALLOWLIST SHAPE. The adapter
         // passes exactly six `Bash(...)` patterns, so a planner that
         // reaches for a seventh is refused by the CLI's own permission
@@ -274,6 +274,32 @@ fn main() {
             );
             std::process::exit(1);
         }
+        // T-069: THE FATAL DENIAL THE CLI DID NOT FLAG. The turn really
+        // died of the refusal — `terminal_reason: "refusal"`, the same
+        // sentence `tool-denied` carries — but `is_error` is FALSE, so
+        // T-029-s7's deliberately narrow guard DECLINES to claim it and
+        // the turn is a plain `ExitNonZero`. That decline is right (the
+        // wider `terminal_reason` guard needs the set T-029-s5 records
+        // as unverified) and it is exactly where the relay has to work:
+        // `is_error: false` also means the `result` text never reaches
+        // the ring, so before T-069 this turn arrived with an EMPTY
+        // tail and the screen read "the planner exited with code 1"
+        // with nothing under it.
+        "denied-fatal-not-flagged" => {
+            emit_init(&session_id, &model);
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": false,
+                    "terminal_reason": "refusal", "num_turns": 1,
+                    "permission_denials": [
+                        { "tool_name": "Bash", "tool_use_id": "tu_11" }
+                    ],
+                    "result": "I was not permitted to run the tools this stage needs."
+                })
+            );
+            std::process::exit(1);
+        }
         // T-029-s6's counter-pin: the case the fix must NOT break. A
         // diagnostic-only auth failure — status 403, and the CLI dies
         // before it writes any `result` line at all, so there is no
@@ -291,6 +317,28 @@ fn main() {
             );
             std::process::exit(1);
         }
+        // T-069: THE RESIDUAL FALSE POSITIVE AND ITS CONTROL. A recovered
+        // `api_retry` 401, then MODEL TEXT — which only arrives because
+        // the retry SUCCEEDED — and then the process dies without ever
+        // writing a `result` line. There is no terminal verdict to clear
+        // the status, so before T-069 this classified `AuthFailed` and
+        // took the Try again button away from a user whose login is
+        // fine. The control is the same stream minus the 401 line, and
+        // as with `retry_then` both go through ONE emitter so the
+        // control is the failing stream minus exactly one line by
+        // construction rather than by two fixtures agreeing to stay in
+        // step.
+        "retry-401-then-no-result" => no_result_after(&session_id, &model, true, false),
+        "no-result-no-retry" => no_result_after(&session_id, &model, false, false),
+        // …and the third of the family, which keeps the discriminator
+        // from over-reaching: the CLI recovers one 401, answers, and
+        // then hits ANOTHER one it does not recover from. The budget
+        // says `max_retries: 10`, so a turn spending two of them is
+        // ordinary. The text sits between the two statuses, so it is
+        // evidence about the FIRST and says nothing about the second —
+        // which is why the runner scopes its flag to the LAST
+        // status-bearing line rather than to any status ever seen.
+        "retry-401-text-then-401-no-result" => no_result_after(&session_id, &model, true, true),
         // T-039: an init line carrying a HOSTILE session id — the fixture
         // for the capture-side gate. The id is the test's own choice
         // (`NPUTER_FAKE_SESSION_ID`), defaulting to the exact injection the
@@ -562,6 +610,88 @@ fn retry_then(session_id: &str, model: &str, with_retry: bool, ending: Ending) {
         }
     }
     std::process::exit(1);
+}
+
+/// T-069: the transcribed 2.1.226 auth failure — init · [the `api_retry`
+/// system line carrying `error_status: 401`] · a `result` line whose
+/// `subtype` still reads "success" while `is_error` is true AND which
+/// carries an `api_error_status` OF ITS OWN · exit 1, stderr empty.
+///
+/// `with_retry_line` is the one line between `auth-error` and
+/// `auth-error-result-only`, and `with_text` the one line between
+/// `auth-error` and `auth-error-after-text`. All three go through this
+/// emitter for the same reason `retry_then` exists: a stream that is
+/// "the other stream minus one line" has to be the same code minus one
+/// line, or the transcription can move on one side and not the other.
+/// **What `auth-error-result-only` watches is precisely that the
+/// `result` line still carries the status**, because that is the whole
+/// reason T-029's terminal-line rule costs 2.1.226 nothing.
+fn auth_error(session_id: &str, model: &str, with_retry_line: bool, with_text: bool) {
+    emit_init(session_id, model);
+    if with_retry_line {
+        println!(
+            "{}",
+            serde_json::json!({
+                "type": "system", "subtype": "api_retry", "attempt": 1,
+                "max_retries": 10, "retry_delay_ms": 508,
+                "error_status": 401, "error": "authentication_failed",
+                "session_id": session_id
+            })
+        );
+    }
+    if with_text {
+        emit_delta("Let me get started on that.");
+    }
+    println!(
+        "{}",
+        serde_json::json!({
+            "type": "result", "subtype": "success", "is_error": true,
+            "api_error_status": 401, "terminal_reason": "api_error",
+            "num_turns": 1,
+            "result": "Failed to authenticate. API Error: 401 OAuth access token has been revoked."
+        })
+    );
+    std::process::exit(1);
+}
+
+/// T-069's stream for the residual false positive: init · [the recovered
+/// `api_retry` 401] · a text delta · **no `result` line at all** ·
+/// exit 1.
+///
+/// The delta is the load-bearing line, not decoration. Model text can
+/// only be streamed by a request that SUCCEEDED, so text arriving after
+/// the last status-bearing diagnostic is the stream's own evidence that
+/// the CLI got past the 401 — which is what `runner.rs` classifies on.
+/// The control (`with_retry: false`) is the same stream minus the 401,
+/// which is what makes the other row's classification mean what it says.
+/// `second_retry` adds a SECOND 401 after the text, which the text
+/// cannot be evidence about — the row that keeps the discriminator from
+/// eating a genuine auth failure it has no business claiming.
+fn no_result_after(session_id: &str, model: &str, with_retry: bool, second_retry: bool) {
+    emit_init(session_id, model);
+    if with_retry {
+        emit_api_retry_401(session_id, 1);
+    }
+    emit_delta("Right, let me start on the north star.");
+    if second_retry {
+        emit_api_retry_401(session_id, 2);
+    }
+    std::process::exit(1);
+}
+
+/// The `api_retry` diagnostic, byte-for-byte the transcribed one apart
+/// from `attempt`. One emitter so the two places that stream it cannot
+/// drift into two different transcriptions.
+fn emit_api_retry_401(session_id: &str, attempt: u32) {
+    println!(
+        "{}",
+        serde_json::json!({
+            "type": "system", "subtype": "api_retry", "attempt": attempt,
+            "max_retries": 10, "retry_delay_ms": 508,
+            "error_status": 401, "error": "authentication_failed",
+            "session_id": session_id
+        })
+    );
 }
 
 fn emit_result(text: &str) {

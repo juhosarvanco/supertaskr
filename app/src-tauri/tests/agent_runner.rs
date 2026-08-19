@@ -1507,6 +1507,18 @@ fn a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed() {
 /// exactly what T-029-s5 records as still unverified (this machine's
 /// login is revoked, so no denial can be provoked). Building the guard
 /// on a guessed set is the mistake that earned this card its rejection.
+///
+/// T-069 ADDS THE OTHER HALF OF THE QUESTION: what does the user SEE?
+/// The classifier declining is right; the turn arriving with an EMPTY
+/// tail was not. `is_error: false` also means the `result` text never
+/// reaches the diagnostic ring, so this turn measured
+/// `ExitNonZero { code: Some(1), stderr_tail: "" }` — `failureDetail`
+/// returns null for an empty trimmed detail, `FailureBlock` renders no
+/// detail span, and the screen read exactly "the planner exited with
+/// code 1" with nothing under it. The denial had been parsed into a
+/// bounded, control-stripped `Vec<String>` and then dropped on the
+/// floor. RELAYING IS NOT DIAGNOSING: the classification is unchanged
+/// below and the name arrives anyway.
 #[test]
 fn a_denial_the_planner_routed_around_is_not_blamed_for_an_unrelated_exit() {
     let h = harness(
@@ -1515,7 +1527,15 @@ fn a_denial_the_planner_routed_around_is_not_blamed_for_an_unrelated_exit() {
     );
     agent::start_genesis(&h.watch, &h.agent);
     match wait_failed(&h.events) {
-        TurnError::ExitNonZero { code, .. } => assert_eq!(code, Some(1)),
+        TurnError::ExitNonZero { code, stderr_tail } => {
+            assert_eq!(code, Some(1));
+            // T-069: the declined diagnosis still relays what it parsed.
+            assert!(
+                stderr_tail.contains("WebFetch"),
+                "the tool the CLI refused is named in the tail even though the \
+                 classifier declined to blame it: {stderr_tail:?}"
+            );
+        }
         other => panic!("expected ExitNonZero, got {other:?}"),
     }
     let status = settle(&h.agent);
@@ -1524,6 +1544,233 @@ fn a_denial_the_planner_routed_around_is_not_blamed_for_an_unrelated_exit() {
         "a denial the turn survived is not the cause of its death: {:?}",
         status.last_error
     );
+}
+
+/// T-069, THE SHARPEST RELAY CASE. A denial that really DID end the turn
+/// — `terminal_reason: "refusal"`, the CLI's own sentence saying it was
+/// refused — which the CLI nonetheless wrote with `is_error: false`.
+/// T-029-s7's narrow guard declines it, correctly and deliberately: the
+/// wider `terminal_reason` form needs the vocabulary T-029-s5 records as
+/// UNVERIFIED, and this fixture's `"refusal"` is precisely the
+/// constructed value that finding is about.
+///
+/// So this is the turn with the most to lose from a declined diagnosis
+/// and it lost everything: no `is_error` means no result text in the
+/// ring, no claim means no `denials` on the variant, and the tail
+/// measured EMPTY. It is now the case that proves the relay is not
+/// merely a nicer `ToolDenied` — the user is told which tool by a
+/// variant that never claimed the tool killed anything.
+///
+/// It is ALSO a tripwire in the other direction, said out loud rather
+/// than discovered: widening the guard to `terminal_reason == "refusal"`
+/// turns this into `ToolDenied` and REDS here, so building on the
+/// unverified vocabulary stays a deliberate, visible act.
+#[test]
+fn a_fatal_denial_the_cli_did_not_flag_as_an_error_still_names_the_tool() {
+    let h = harness(
+        "deniedfatal",
+        Options { scenario: "denied-fatal-not-flagged", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ExitNonZero { code, stderr_tail } => {
+            assert_eq!(code, Some(1));
+            assert!(
+                stderr_tail.contains("Bash"),
+                "the refused tool is relayed even when nothing claimed it: {stderr_tail:?}"
+            );
+        }
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+    let status = settle(&h.agent);
+    assert!(
+        !matches!(status.last_error, Some(TurnError::ToolDenied { .. })),
+        "`is_error: false` is not a turn the CLI says it failed: {:?}",
+        status.last_error
+    );
+}
+
+/// T-069: THE PIN ON THE FALSE NEGATIVE T-029 BOUGHT.
+///
+/// `auth_status = api_error_status;` is assigned, never merged — the
+/// terminal line is the turn's own verdict — and that is right. Its
+/// undisclosed consequence is that an auth failure naming its status
+/// ONLY in a diagnostic, with a `result` line that carries none, stops
+/// being typed and degrades to `ExitNonZero`. The trade costs 2.1.226
+/// NOTHING for exactly one reason: the transcribed shape carries
+/// `api_error_status` on its own `result` line.
+///
+/// That reason is a fact about the CLI, and facts about the CLI move.
+/// This stream is `auth-error` minus its `api_retry` diagnostic — one
+/// `bool` apart, same emitter — so the `result` line is the only carrier
+/// of the status left. If a future transcription moves the status off
+/// the terminal line, `auth-error` keeps classifying `AuthFailed` off
+/// its diagnostic and says nothing, while THIS reds.
+#[test]
+fn the_transcribed_auth_shape_carries_its_status_on_its_own_result_line() {
+    let h = harness(
+        "authresultonly",
+        Options { scenario: "auth-error-result-only", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::AuthFailed { status, message } => {
+            assert_eq!(
+                status,
+                Some(401),
+                "with no diagnostic in the stream the terminal line is the only \
+                 place this status can have come from"
+            );
+            assert!(message.contains("revoked"), "the CLI's own sentence: {message:?}");
+        }
+        other => panic!(
+            "the transcribed auth failure stopped being typed when its diagnostic \
+             was removed — `api_error_status` has moved off the `result` line, got {other:?}"
+        ),
+    }
+    settle(&h.agent);
+}
+
+/// T-069: A TERMINAL LINE OUTRANKS THE TEXT THAT CAME BEFORE IT — and
+/// this body exists because, without it, the line that says so could be
+/// deleted with the whole suite still green.
+///
+/// T-069's discriminator reads model text as evidence the CLI got past a
+/// status. A CLI that streams a few words and THEN has its credentials
+/// refused produces exactly that evidence in front of a genuine auth
+/// failure, and its `result` line names the status again. The terminal
+/// line is the turn's own verdict (T-029's rule) so it wins, which the
+/// runner implements by clearing the flag wherever a status is written.
+///
+/// No other stream in this file puts a delta between an auth diagnostic
+/// and an auth result line, so no other body can tell that clearing from
+/// its absence. That is the shape T-043-s4 named — a mechanism with no
+/// falsifying body — and this is the body.
+#[test]
+fn an_auth_failure_that_streamed_text_before_it_failed_is_still_typed() {
+    let h = harness(
+        "authaftertext",
+        Options { scenario: "auth-error-after-text", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::AuthFailed { status, message } => {
+            assert_eq!(status, Some(401));
+            assert!(message.contains("revoked"), "the CLI's own sentence: {message:?}");
+        }
+        other => panic!(
+            "the terminal line named the status again, so the text before it is not \
+             evidence the CLI got past anything: {other:?}"
+        ),
+    }
+    settle(&h.agent);
+}
+
+/// T-069's RULING, built: the residual false positive is closed on
+/// evidence the stream already carries.
+///
+/// A recovered `api_retry` 401, then MODEL TEXT, then a process that
+/// dies without writing any `result` line. There is no terminal verdict
+/// to clear the status, so T-029's rule cannot reach this turn and it
+/// classified `AuthFailed` — removing Try again (`failureAction` returns
+/// `retry: false` for `authFailed`) and sending a user whose login is
+/// fine to `claude login`. That is the exact harm T-029 exists to undo,
+/// surviving in the one family its rule cannot see.
+///
+/// The discriminator is the delta: text can only be streamed by a
+/// request that SUCCEEDED, so text after the last status-bearing
+/// diagnostic is the stream's own evidence that the CLI got past the
+/// error. No `terminal_reason` vocabulary is consulted — T-029-s5's
+/// objection does not reach this — and the 401 stays legible in the
+/// tail, so nothing that was relayed before is lost.
+#[test]
+fn a_recovered_auth_retry_followed_by_model_text_and_no_result_line_is_not_an_auth_failure() {
+    let h = harness(
+        "retrynoresult",
+        Options { scenario: "retry-401-then-no-result", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ExitNonZero { code, stderr_tail } => {
+            assert_eq!(code, Some(1));
+            // Declined as a DIAGNOSIS, still delivered as a RELAY.
+            assert!(
+                stderr_tail.contains("401"),
+                "the status the stream named is still legible: {stderr_tail:?}"
+            );
+        }
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+    let status = settle(&h.agent);
+    assert!(
+        !matches!(status.last_error, Some(TurnError::AuthFailed { .. })),
+        "the CLI answered after that 401, so it is not what killed the turn: {:?}",
+        status.last_error
+    );
+}
+
+/// T-069: THE DISCRIMINATOR IS SCOPED TO THE LAST STATUS, and this is
+/// the body that can tell. The CLI recovers one 401, streams its answer,
+/// then hits a SECOND 401 it does not recover from and dies with no
+/// `result` line. The text sits BETWEEN the two, so it is evidence about
+/// the first and says nothing about the second: this is a real
+/// authentication failure and must stay typed, or T-069 would have
+/// closed a false positive by opening a false negative on the same
+/// family.
+///
+/// Its unique mutant is the flag's reset in the runner's `Diagnostic`
+/// arm — the line that makes "after the LAST status-bearing diagnostic"
+/// true rather than "after any status ever seen". Delete that line and
+/// only this body reds.
+#[test]
+fn a_second_auth_retry_behind_the_recovered_one_is_still_an_auth_failure() {
+    let h = harness(
+        "secondretry",
+        Options { scenario: "retry-401-text-then-401-no-result", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::AuthFailed { status, .. } => assert_eq!(status, Some(401)),
+        other => panic!(
+            "the text was evidence about the FIRST 401, not the second: {other:?}"
+        ),
+    }
+    settle(&h.agent);
+}
+
+/// THE CONTROL for
+/// `a_recovered_auth_retry_followed_by_model_text_and_no_result_line_is_not_an_auth_failure`
+/// — the same emitter, one `bool` apart, so it is that stream minus
+/// exactly the 401 line. Pre-fix the pair classified `AuthFailed` and
+/// `ExitNonZero` respectively; post-fix both are `ExitNonZero`, which is
+/// what the fix means.
+///
+/// Unlike T-029's control this one keeps a falsifying body of its own:
+/// nothing in this stream ever reaches the diagnostic ring, so flipping
+/// the fixture's `with_retry` back on reds it here rather than passing
+/// unnoticed. That is the assertion doing the discriminating — the 401
+/// row asserts the tail NAMES the status, this one asserts there is no
+/// status to name.
+#[test]
+fn the_same_no_result_stream_without_the_retry_line_has_nothing_to_relay() {
+    let h = harness(
+        "noresultctl",
+        Options { scenario: "no-result-no-retry", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ExitNonZero { code, stderr_tail } => {
+            assert_eq!(code, Some(1));
+            assert!(
+                stderr_tail.trim().is_empty(),
+                "this stream carries no diagnostic at all, so the ring stays empty \
+                 and the 401 in the row above can only have come from that one line: \
+                 {stderr_tail:?}"
+            );
+        }
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+    settle(&h.agent);
 }
 
 #[test]
