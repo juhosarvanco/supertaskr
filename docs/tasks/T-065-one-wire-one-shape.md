@@ -20,6 +20,36 @@ shallow symptom of T-041-s2's missing comparison. T-027-s5 is no longer
 absorbed: T-028 implemented its scroll-property assertion at `286fd2c`, and
 T-065 only preserves that gate.
 
+Also absorbs T-051-s8 (fourth triage, 2026-08-19); its suggestion file
+is removed in the same commit as this line. **The lens region's content
+height is a function of the artifact ROW COUNT and the lens's width —
+nothing else.** Three sessions measured that region at 1440x900 and got
+three answers; the mechanism now explains all three. Measured at
+`f60b3e8` in the exact scenario the frame test drives, fonts confirmed
+loaded:
+
+    streakFixture (9 files)     9 rows   970/648  886/600  858/780  margin 78  strict > PASS
+    streakMidInterview (6)      7 rows   876/648  792/600  780/780  margin  0  strict > FAIL
+
+The second row was produced by dropping `docs/tasks/` from the same
+fixture — T-028's exact subtraction — and it lands on 780/780, the
+precise cell T-028 reported going red. Artifact rows are 40px tall on a
+47px pitch, so two rows out of the lens is 78px out of the content,
+which is the whole of the margin.
+
+**T-027-s5's conclusion is vindicated and its stated lever is not.** s5
+attributed its 780/780 to a project dir one character longer than the
+spec's. Both dirs were measured here against both fixtures at all three
+viewports and **every cell is identical** — one extra path character
+moves nothing. T-051-s2 filed the same non-reproduction as "T-027
+measured wrong" and has been REJECTED as superseded by this measurement.
+
+So T-065's criterion preserving that gate SHALL name CONTENT VOLUME as
+the mechanism rather than any property of the path, and SHALL keep the
+split T-028 already shipped — "bounded at every size" as the frame's
+property, plus "scrolls where content genuinely exceeds the box" — which
+is the shape that survives a fixture change.
+
 `PickOutcome` and `ProjectStatus` cross IPC as JSON and are mirrored by hand
 three times. Rust owns the native enums; its current test fully pins three
 specimens but checks only the `ProjectStatus::NoDocs` tag, not that status's

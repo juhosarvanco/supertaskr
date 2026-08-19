@@ -21,6 +21,34 @@ are removed in the same commit as this card. Both are
 by T-042's executor and verifier respectively, and both want a RULING
 between named arms rather than a hot-patch. Serialize app-shell.
 
+Also absorbs T-063-s3 (fourth triage, 2026-08-19); its suggestion file
+is removed in the same commit as this line. Same shape at a different
+seam — the shell claiming more than it knows, closable only by choosing
+between named arms. `startupStepPhrase("subscribe")` says *"the watcher
+subscription was refused, so no file change can reach the board."* The
+first clause is true. **The second is false whenever a refused
+RE-subscribe leaves attempt 1's live subscription attached** — a state
+`startup-recovery.test.ts` pins GREEN on purpose, because turning a live
+watcher into no watcher in the name of retrying is strictly worse than
+doing nothing. So the shell holds a subscribe failure while a live
+`docs-changed` handler is attached, and tells the user the app cannot
+recover on its own when the next file change will bring it up. They
+correctly conclude they must retry or reopen; they need not.
+Reachability is low but not zero — a refused invoke followed by a
+refused listen — which is exactly the sort of state that shows up in a
+real bug report and nowhere else.
+
+THE THREE ARMS, none free: **(a)** a `resubscribe` step distinct from
+`subscribe`, with copy saying the watcher is still live — most honest,
+adds a fourth step to a type that just grew a third; **(b)** derive the
+sentence from whether a subscription is HELD rather than from the step,
+which the store already knows, roughly six lines, but it puts a second
+fact about the subscription into shell state; **(c)** weaken the copy
+for all subscribe failures, losing the consequence clause that makes
+T-050's wording useful. **(b) is preferred and the ruling SHALL be
+recorded before implementation**, alongside the @human copy judgment
+T-063 already reserved.
+
 TWO MEASUREMENTS OF ONE FOLDER, TAKEN AT DIFFERENT MOMENTS.
 `probe = probe_plan(&canon)` runs BEFORE the rendezvous because its
 answer decides whether genesis is offered at all; `snapshot =
