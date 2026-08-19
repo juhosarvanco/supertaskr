@@ -1241,8 +1241,8 @@ test") plus `419 420` (two, the boot-gate legend) = seventeen.
 The invariant that matters holds, re-proved with an explicit range:
 **over `041e8ec..HEAD`, across ALL files, zero added lines carry U+00B7.**
 Over the whole branch `e4a5ae7..HEAD` exactly ONE added line carries it —
-`+  end of this bullet) · npm run boot:check …` replacing
-`-  (+ -- --selftest) · npm run boot:check …` — the same pre-existing
+`+  end of this bullet) <U+00B7> npm run boot:check …` replacing
+`-  (+ -- --selftest) <U+00B7> npm run boot:check …` — the same pre-existing
 separator, still sitting BETWEEN two commands, on a line the build
 session reflowed. The prior verdict named that line. **No new middle dot
 exists anywhere.**
@@ -1503,3 +1503,13 @@ CONTROL samples and 37 walk checks, exit 0; the derivation
 `["lib/parser","app","app/src-tauri","tools/e2e"]`, split 4/5/5/5,
 **19** exposed, **0** structural. Scratch ports 17881 and 17883 free,
 no process of mine surviving, 1420 still one listener at pid 82549.
+
+**Caught in my own verdict, recorded because it cuts against me.** Two
+lines of the middle-dot paragraph above quoted the reflowed diff lines
+with the LITERAL character in them, so this verdict carried two added
+U+00B7 lines while asserting the branch carried none. Caught by running
+the same range check over my own commits (`5b5e1c7..HEAD`) rather than
+only over the executor's. Rewritten to the `U+00B7` notation the card's
+own discipline uses; the check now returns **0** for my lines too. The
+one remaining literal in this file is line 785, inside the frozen
+REJECTED entry, which is not mine to edit.
