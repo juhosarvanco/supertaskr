@@ -1157,3 +1157,101 @@ teaching sentence wrote `POISON` / `DRILL` across a line break, so
 `git grep "POISON DRILL"` returned **1** hit in this file — the drill
 bullet — and never the sentence teaching the search. At HEAD it returns
 **3** (lines 175, 304, 435). Findable.
+
+#### SUITES — first-hand in this worktree, every exit from `$?` unpiped
+
+| suite | result | exit |
+|---|---|---|
+| `lib/parser` `npx vitest run` | **234 passed (234)**, 12 files | 0 |
+| `tools/e2e` parity spec alone (port 17881) | **14 passed** | 0 |
+| `tools/e2e` full lane (port 17881) | **88 passed** (22.0s), 0 failure marks | 0 |
+| `npm run lint:tokens` | clean, **TOKEN 118** / CONTROL **505** | 0 |
+| `npm run lint:tokens -- --selftest` | 49 TOKEN + 2 CONTROL samples, 37 walk checks | 0 |
+
+Every run wrote to a file and `$?` was read from the unpiped command
+before anything was inspected; nothing went through `tail`, `head` or
+`grep` ahead of its exit code. All four baselines match. The tree is
+clean after the lane's own plant/restore drills (`git status --porcelain`
+empty). **`cargo` was NOT run**: this worktree has no `target/` at all
+(0 files in `app/src-tauri/target/debug/deps`), a cold build is not in
+the baseline set, and it would fetch dependencies — see the pin drill
+below for how the cargo coupling was proved instead.
+
+#### THE DERIVATION — calibrated at `e4a5ae7`, re-implemented from the spec's own exported functions
+
+| ref | dirs | per-bullet | exposed | structuralProblems | ciBullet |
+|---|---|---|---|---|---|
+| `e4a5ae7` | `["lib/parser","app","app/src-tauri","tools/e2e"]` | 4/5/5/5 | **19** | 0 | found |
+| `5b5e1c7` | same, same order | 4/5/5/5 | **19** | 0 | found |
+
+The nineteen command STRINGS `diff` byte-identically between the two
+refs — nothing entered or left the parsed list. `awk '/^[ \t]+- /'` over
+the whole file returns **0**. The live spec agrees: test 2 ("the expected
+commands derive cleanly") and test 3 ("every CONVENTIONS command is a
+step, verbatim and in CI order") both pass, which is the needle check
+run by the machine rather than by my transcription of it.
+
+#### BOTH GATES — computed over a NON-EMPTY list, with the assert made real
+
+The executor's own catch reproduces exactly. Passing the range as ONE
+argument gives `fatal: ambiguous argument 'e4a5ae7 HEAD'`, **exit 128**,
+an EMPTY path list — and an empty list scores **BOOT 0 / GRAPH 0**, a
+green that means "I measured nothing". Redone with the assert
+(`git-diff exit != 0 OR count == 0 -> abort`), the assert FIRES on that
+run. Against the real list:
+
+    merge-base e4a5ae7 ..HEAD + untracked   ->  12 paths, git diff exit 0
+    census                                  ->  12 under docs/ , 12 .md , 0 elsewhere
+    BOOT GATE  (app/src-tauri/**, app/src/**, either manifest)  ->  0
+    GRAPH REGEN (*.ts/*.tsx/*.js/*.jsx outside docs/)          ->  0
+
+**Neither gate fires, and the zero is a real zero.** Entailed
+independently: `docs/` is `.nputerignore`d, so nothing in this diff is in
+the indexer's walk. `docs/architecture/graph.json` is a 0-file diff and
+was not regenerated.
+
+#### THE ELEVEN GREEN CRITERIA — nothing moved, and this is structural
+
+`git diff 041e8ec HEAD -- docs/CONVENTIONS.md` contains **exactly two
+hunks**, `@@ -171,8 +171,15 @@` and `@@ -292,18 +299,37 @@` — the
+citation bullet (criterion 5) and the walk table plus its counts sentence
+(criterion 7). Every other byte of the file is identical to the version
+the first verifier passed on eleven criteria, so the other nine cannot
+have moved. `docs/tasks/T-054-…` (criterion 11) is untouched by the fix
+range entirely. Needles re-checked live at HEAD anyway: `MUTATE ONE SIDE
+ONLY` 1, `SHAPE FIVE` 1, `SHAPE SIX` 1, `A NEGATIVE ASSERTION NEEDS A
+POSITIVE CONTROL` (line 514) 1, `A TEST PARAMETRISED BY THE CONSTANT` 1,
+`T-063` 1, `LIFTING A SAFETY GUARD TO DISCRIMINATE` (line 543) 1,
+`lifted arm` 1, `A CITATION NAMES A SYMBOL, NOT A LINE` 1, `THE FOUR
+WALKS` 2, the `exit 0 clean, 1 EITHER a violation` legend (line 59) 1,
+`U+00B7` 1, `deliberately NOT given an ordinal` **0** (correctly gone).
+The ordinal citations outside this file still agree: `T-080` line 63
+"poison shape five", `T-072` line 38 "poison shape SIX", `docs/STATE.md`.
+
+#### THE MIDDLE DOT — settled at SEVENTEEN, and the executor's proof command is weaker than its claim
+
+Measured with a UTF-8 layer at seven refs — `e4a5ae7`, `c4208c6`,
+`22b31f1`, `d92afc7`, `041e8ec`, `1f0f7ae`, `5b5e1c7` — the answer is
+**17 lines carrying, 21 occurrences, at every single one**, including
+`22b31f1`, the ref the rejecting verdict measured at. Line set at HEAD:
+`10 11 14 15 16 17 22 25 26 29 56 58 61 65 66` (fifteen, in "Build &
+test") plus `419 420` (two, the boot-gate legend) = seventeen.
+**T-078-s7 is right and the prior verdict's 16 does not reproduce.**
+
+The invariant that matters holds, re-proved with an explicit range:
+**over `041e8ec..HEAD`, across ALL files, zero added lines carry U+00B7.**
+Over the whole branch `e4a5ae7..HEAD` exactly ONE added line carries it —
+`+  end of this bullet) · npm run boot:check …` replacing
+`-  (+ -- --selftest) · npm run boot:check …` — the same pre-existing
+separator, still sitting BETWEEN two commands, on a line the build
+session reflowed. The prior verdict named that line. **No new middle dot
+exists anywhere.**
+
+**But the command the notes quote as proof does not prove it.**
+`git diff -U0 -- docs/CONVENTIONS.md | grep '^+' | grep <U+00B7>` carries
+NO RANGE, so it compares the working tree to the index. On a clean tree —
+the state at the commit where the claim is written — that diff is
+**0 bytes, 0 lines**, and the grep can only ever return zero. It is the
+same vacuous-green shape the gate computation was redone to avoid, and
+the assert was added to one and not the other. The CLAIM is true; the
+EVIDENCE offered for it is not evidence. Filed as **T-078-s11**.
