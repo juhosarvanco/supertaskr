@@ -575,6 +575,45 @@ nobody had yet asked about.
   and it exited 0. The same is true of the token lint's dependency on
   git being on PATH — which is now precisely what exit 3 is for.
 
+- **THE SEVEN-DAY QUOTA IS THE BINDING CONSTRAINT ON THE NEXT THREE
+  DAYS, and it is a fact the app currently discards.** The real-CLI
+  observation's stream carried a `rate_limit_event` line —
+  `{"status":"allowed_warning","rateLimitType":"seven_day",
+  "utilization":0.85,"surpassedThreshold":0.75,"resetsAt":1787371200}`
+  — measured 2026-08-19 ~15:5x. **85% spent, resetting 2026-08-22
+  07:00, roughly 62 hours out.** Each verifier or integrator lane this
+  session cost 130k–230k tokens, so the remaining 15% is perhaps a
+  handful of lanes. **Dispatch was stopped here deliberately rather
+  than spending it unattended**; how to spend the rest is the human's
+  call. The runner ignores `rate_limit_event` entirely — surfacing it
+  is a candidate card, and it is the one line in the stream that is
+  about the user rather than the turn.
+- **`claude login` IS NOT A COMMAND, and the app ships it.** Verified
+  against CLI 2.1.226: the command surface is `claude auth login` /
+  `claude auth logout` / `claude auth status`. A bare `login` is parsed
+  as the PROMPT, so a user following the app's own recovery advice
+  starts a session that sends the word "login" to a model they cannot
+  reach. Filed as **T-083's sibling T-082**, which deliberately leaves
+  open whether `fake_agent.rs:176`'s message is a faithful
+  transcription of the CLI's own stderr — if it is, it stays verbatim
+  and only the app's advice changes.
+- **THE DISPATCH STAMP LAPSED, AND THE LAPSE IS THE ARCHITECT'S.**
+  `status: building` was stamped on main at dispatch for this
+  project's first four days — 25 explicit `Dispatch T-NNN` commits,
+  several titled "status building, builder stamped" — and no such
+  commit exists after T-042 on 2026-08-17. The claim that reached this
+  session was that `building` had never been used at all; that is
+  false (87 commits moved it) and came from grepping the current tree,
+  which cannot see a transient state. The conflict question was then
+  TESTED rather than argued, in a throwaway repo: **stamping before
+  the branch is cut merges CLEAN; stamping after the lane exists
+  CONFLICTS.** So `TASK-FORMAT.md:97`'s "fields lock at dispatch" is
+  precisely the constraint that makes the field safe, `dashboard.md`'s
+  amber can be driven from the field it names, and the board's
+  live-pipeline design does not need rebuilding on git. Restoring the
+  stamp is a decision, not a repair — see
+  `docs/design/dispatch-technical-plan.md` D4.
+
 Milestone 3's implementation list is complete, but the milestone is not
 claimed until the real timed genesis exists.
 
