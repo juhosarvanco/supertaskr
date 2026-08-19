@@ -171,8 +171,15 @@
   merges a line number does not, and it is what a reader can search for.
   Search from the repo ROOT — `git grep` run from a subdirectory silently
   scopes itself to that subdirectory and returns nothing, which reads
-  like a refutation rather than a miss (measured: `git grep -c "POISON
-  DRILL"` finds three files from the root and one from app/).
+  like a refutation rather than a miss. Measured, on this file's own
+  `POISON DRILL` bullet: from the ROOT, `git grep -c "POISON DRILL"`
+  finds this file, its cards under docs/tasks and a test under app/test;
+  run from app/, the same search finds the app/ one and NONE of the
+  others. CITE THE SHAPE, NOT THE TALLY — that file count was four when
+  T-078's verifier measured it and five one commit later, when the
+  finding correcting it was itself filed. A hit COUNT is a line number by
+  another name: it drifts under other people's merges, and the mechanism
+  it illustrates never does.
 - This project was planned in a long chat session before the folder
   existed; the chat is NOT the record — if it isn't in this folder,
   it didn't happen (succession rule).
@@ -292,18 +299,37 @@
   CONTROL, and by the PARSER only if it is a flat `docs/tasks/T-*.md` or
   `docs/architecture/components/C-*.md`. THIS FILE is seen by CONTROL
   only: the parser never reads it, which is why an edit here cannot move
-  the parser suite — but see the CI bullet under "Build & test", because
-  the E2E lane parses it and an edit there can red that lane.
+  the parser suite. **BUT TWO LIVE READERS SIT OUTSIDE ALL FOUR WALKS,
+  AND THIS LIST IS CLOSED AT TWO** (T-078-s6 — naming one and stopping is
+  the one-sidedness the POISON DRILL bullet below warns about, and a
+  reader who trusts a half list edits into the half it omitted). ONE, the
+  E2E lane parses the "Build & test" section — see the CI bullet there —
+  so an edit to a command bullet can red
+  tools/e2e/tests/workflow-parity.spec.ts. TWO, the CARGO suite reads
+  this file off disk on every `cargo test`:
+  `snapshot_version_matches_the_live_method_stamps` in
+  app/src-tauri/src/agent/kit.rs asserts it still carries the
+  `currently v<METHOD_SNAPSHOT_VERSION>` stamp from the FIRST gotcha
+  above, against a Rust `const` in that same file. So the method version
+  in gotcha one is an ENFORCED PIN, not bookkeeping, and bumping it is a
+  commit whose third file is Rust — which is why a
+  `[docs/CONVENTIONS.md, method/]` fence cannot carry a format bump
+  (T-078-s3).
   AND THE COUNTS ARE PRINTED, NEVER PINNED. `npm run lint:tokens` reports
   both corpora on every run and no test fixes either number, so they move
   with the tree: at `e4a5ae7` they are **TOKEN 118 / CONTROL 496**, and
   the widely-quoted **529** is the count at T-058's merge `7c6c5aa`, 33
-  tracked docs/tasks files ago (38 removed, 13 added, nothing outside
-  docs/tasks). DERIVE THE COUNT AT YOUR OWN REF — a figure copied out of
-  a checkpoint is a figure about a different tree, and this one has
-  already been carried one commit too far once: STATE attributes 529 to
-  `9b15f7d`, where the tree is actually at 521 because that commit
-  removed the eight discharged suggestion files.
+  tracked docs/tasks files ago (46 removed, 13 added, nothing outside
+  docs/tasks — `git diff --no-renames --name-status 7c6c5aa e4a5ae7 --
+  docs/tasks` re-derives that in one second, and the tree checks it:
+  143 − 46 + 13 = 110). DERIVE THE COUNT AT YOUR OWN REF — a figure
+  copied out of a checkpoint is a figure about a different tree, and this
+  one has already been carried one commit too far once: STATE attributes
+  529 to `9b15f7d`, where the tree is actually at 521 because that commit
+  removed the eight discharged suggestion files. **THOSE EIGHT ARE
+  EXACTLY THE GAP** between the range above and `9b15f7d..e4a5ae7`, which
+  is `38 removed` — the number this sentence carried until T-078-s4
+  measured it, derived one commit shy of the ref it was quoted at.
 - GRAPH REGEN (T-009-s1's INTERIM rule, RETIRED at T-054 and replaced
   by this bullet — the retirement condition it carried, "when T-014's
   `index --check` becomes the gate", is met in the same commit that
