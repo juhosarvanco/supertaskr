@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [app-agent]
 builder: claude-opus-5 @fresh
-verifier:
+verifier: claude-opus-5 @fresh
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-029-s8, T-029-s9 (fourth triage, 2026-08-19). The suggestion
@@ -743,3 +743,156 @@ Pass A/B lines were read from the file and every one is a real assertion
 inside the seven rows. The report is honest.
 
 Restored, sha256 identical, `git status --porcelain` empty.
+
+#### The gates, first-hand in this worktree, exits from `echo $?`
+
+Nothing piped through `tail`, `head` or `grep`; every command was
+redirected to a file and its exit code read from the command itself.
+
+- **lib/parser**: `npx tsc --noEmit` exit 0 · `npx vitest run`
+  **234 passed across 12 files**, exit 0. Baseline held.
+- **app**: `npm run build` exit 0, **265 modules transformed** ·
+  `npm test` **825 passed across 42 files**, exit 0. Baseline held.
+- **app/src-tauri**, bare `cargo test`: **343 passed / 0 failed / 3
+  ignored**, exit 0, summed from fifteen `test result:` lines — re-run a
+  final time after every mutation was restored, and green.
+- **E2E**: **88 passed**, exit 0, scratch port **18733**, bind-probed
+  free with a `net.createServer()` listen before anything spawned.
+- **token lint**: selftest exit 0 (49 TOKEN + 2 CONTROL samples, 37
+  walk-policy checks) · **TOKEN 118 / CONTROL 503**, exit 0 — the
+  executor's predicted 503 exactly. After this verdict files two more
+  suggestions it re-measures **CONTROL 505**, exit 0.
+- **graph currency**: `index --check --root ../..` exit 0 —
+  **`graph.json is CURRENT`**, 571733 bytes / 117 files / 989 symbols /
+  1508 edges. Not regenerated and not needing to be: the indexer reads
+  TS and this diff is Rust.
+- **`#[ignore]` ATTRIBUTES repo-wide: exactly THREE**, anchored
+  `git grep -n "^\s*#\[ignore"` from the repo root —
+  `crates/nputer-index/tests/perf.rs:53`,
+  `crates/nputer-index/tests/self_graph.rs:58`,
+  `tests/agent_runner.rs:3284`. The other 53 `#[ignore` hits are prose.
+  The env-gated real smoke did not run, none was added, none removed.
+  **NO MODEL WAS CALLED** — every stream in this verification came from
+  `fake_agent` through `RunnerConfig::binary_override`.
+- **charsets**: `file --mime` on all five changed files —
+  `charset=utf-8` on every one.
+
+#### BOOT GATE — fires, ran, PASSED on a different port
+
+The fence is `app/src-tauri/**`, so it fires. `NPUTER_BOOT_PORT=15821
+npm run boot:check` from `tools/e2e/`, port bind-probed free first.
+**`BOOT_EXIT=0`, read from my own `echo $?`.** Both startup lines:
+
+```
+[boot-check] app: [nputer] project folder: /Users/ujju/Projects/nputer-T-069
+[boot-check] app: [nputer] window "main" created
+[boot-check] process tree stopped (exit=null signal=SIGTERM)
+```
+
+Ports **18733** and **15821** both empty under `lsof -nP -iTCP:<port>`
+afterwards. **1420 was never bound, contacted or signalled** — read once
+with `lsof` at the start and once at the end, showing the human's vite
+(pid 82549) holding it both times.
+
+#### T-069-s1 — the right call, and the suggestion is one line short
+
+**Right call.** Three things settle it. The BODY is not vacuous — R1
+reds `a_fatal_denial_the_cli_did_not_flag_as_an_error_still_names_the_tool`
+and it is the declared tripwire against widening the guard to
+`terminal_reason == "refusal"`; only the trailing negative is
+undistinguishable. The idiom predates this card in four bodies, and
+diverging in one of five without closing the other four buys
+inconsistency and no coverage. And the executor DISCLOSED it with the
+measurement attached rather than leaving it for me, which is exactly
+what the POISON DRILL bullet asks ("IF a body cannot be poisoned … THEN
+say so and name it"). Its own scoping is right too: the event-to-state
+path belongs to whoever owns `agent/mod.rs`'s status storage.
+
+Verified first-hand: `run_turn` does
+`out.error = Some(error.clone()); emitter.failed(req.turn, error);`
+(`runner.rs:2072-2073`) and `agent/mod.rs:856` stores
+`outcome.error.clone()`, so event and status cannot disagree about the
+variant. R10's two panics land at `agent_runner.rs:1539:18` and
+`:1583:18`, both `other => panic!` arms, never at the negatives on
+`:1542` / `:1586`.
+
+**The one thing s1 does not say**, and should, is that `TurnError`
+derives `PartialEq, Eq` (`runner.rs:94`). So the strong form is not the
+brittle whole-variant literal the suggestion imagines — it is
+`assert_eq!(status.last_error.as_ref(), Some(&got))`, comparing the
+settled status to the very event the match already accepted. One line,
+no fixture coupling, and it would pin the event-to-state path in all
+five bodies at once. Worth adding to the suggestion before anyone
+chooses between its two arms.
+
+## VERDICT: **APPROVED**
+
+Criterion by criterion, every one verified by measurement in this
+worktree rather than by reading the notes.
+
+**1 — the declined denial relays anyway.** MET. Both relayed streams
+measured EMPTY-tailed through the unchanged `run_turn` at `76cf034` and
+naming their tool at the tip; R1 (the push deleted) reds exactly the two
+relay rows. The comment beside the push says RELAYING IS NOT DIAGNOSING
+and names the `api_retry` precedent, as the criterion requires. The
+unconditional placement is right: `ToolDenied` has no `stderr_tail`
+field, and the guard it would have to duplicate reads the child's exit
+status, which does not exist inside the parse loop. *Coverage gap filed
+as s3: the criterion's plural has no pin, and a mutant that relays only
+the first name survives 343 tests at exit 0.*
+
+**2 — the disclosure and the transcription pin.** MET. Twenty-five lines
+of comment on the assignment, naming the false negative, the one reason
+2.1.226 pays nothing for it, and that the reason is a fact about a CLI
+that moves. R9 proves the pin discriminates and is unique to it — 65
+passed, 1 failed, only
+`the_transcribed_auth_shape_carries_its_status_on_its_own_result_line`.
+R7 proves the card's "silent loss" half of the premise wrong, reddening
+three bodies including the pre-existing transcribed one. Both halves
+verified; the executor's correction stands.
+
+**3 — the residual false positive.** MET, built rather than declined,
+and the ruling survives attack. The joint the executor named is REAL — a
+CLI-prose delta after an unrecovered 401 loses its typed `AuthFailed`,
+measured both sides of the fix — but it is unclosable without reading
+delta CONTENT, which is the guessed vocabulary the criterion forbids;
+and the degradation hands the user a MORE legible failure than the true
+positive it replaces, with Try again restored. No `terminal_reason` is
+consulted, so T-029-s5's vocabulary is untouched. R5 shows the
+`auth-403-no-result` counter-pin is load-bearing, not decorative.
+*Narrowing filed as s2: the same argument covers `tool_use` evidence,
+which is stronger and is not read.*
+
+**4 — the regression pins DISCRIMINATE.** MET. R6 reds the control with
+its own assertion text (unlike T-029's control, which the same flip left
+green); R2 reds exactly the no-result row. Both mechanisms that had no
+falsifying body now have exactly one each — R3 and R4, one body apiece,
+each printing the false negative it prevents — and the executor's
+sentence about opening a false negative on the same family is confirmed
+by R4's panic text.
+
+**Nothing regressed.** 337 → 343 with +6 bodies and none deleted, every
+other suite at its baseline, boot gate green, graph current, three
+`#[ignore]`s, no model call, no process leaked, no `pkill` of any kind.
+
+Three findings, all filed from s2 as instructed, none of them
+rejection-grade: **s2** (the discriminator declines stronger evidence
+than it acts on), **s3** (poison shape seven — the relay's plural has no
+pin), and one line correction below.
+
+**Card corrections.** The notes cite the third `#[ignore]` at
+`tests/agent_runner.rs:3218`; the attribute is at **`:3284`** (it was
+`:3037` at `76cf034`, per T-043's verdict). And the notes justify keeping
+the `if auth_status.is_some()` guard aesthetically — "it makes the
+variable's NAME true at all times" — where the measured justification is
+stronger and belongs in the source comment: it absorbs a future status
+write-site that forgets its reset, for every stream whose text preceded
+any status.
+
+Restoration proved by sha256 after every round; final state byte-identical
+to `git show HEAD:<path>`: runner
+`8a334697b7e19a8c4533c8df97776e85f9d87119259c3613917c8ce63c147777`,
+fake_agent
+`f1c270f2ce2a9d65ae548a217481c1990925651579fd81578dcd59b15169f2ad`,
+agent_runner
+`4218d4476da325a29af235b101e16583136d0f667c5cb8e294d472c1e44079cf`.
