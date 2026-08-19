@@ -459,3 +459,76 @@ therefore appears on the subject side ONLY, which is what makes the
 mutated policy on both sides — the tautology, one rung out. Reasoning
 verified by execution, not by reading.
 
+### Criterion by criterion
+
+**1. CONTROL gains a coverage floor — APPROVED.** Both of the card's
+options are implemented, not one: a derived rung that cannot go stale
+(A/C) and a named rung that survives a two-list edit (B). A new
+first-party TEXT format needs no edit anywhere — confirmed by the
+executor's `.rst` drill and by the fact that six new `.md` findings
+moved CONTROL 507 -> **513** across this branch with every rung green.
+
+**2. Proved to bite for `.rs` AND `.tsx`, reverted, restoration proved
+by hash — APPROVED.** Both halves re-run here. `.tsx` alone in the deny
+list: selftest **exit 1** with `CONTROL covers every tracked .tsx file
+(0/46)`, `required CONTROL class .tsx is present and whole (0/46)`,
+`app/ 178/224`, while the lint stayed **exit 0** at 467. Every drill in
+this verdict was restored with `git show HEAD:<path>` and the
+restoration proved by `shasum -a 256` against the pre-mutation digest
+(`1fc5aaff...` for `token-scan.mjs`), never by a clean `git status`.
+
+**3. Neither corpus count pinned as a literal — APPROVED.** Grepped
+`507|513|118|529|531|463|469|461` across all three files: every hit is
+inside a COMMENT recording a measurement. Every numeric expectation in
+the spec is structural (`toBe(0)`, `toBeGreaterThan(0)`, or a literal
+target cardinality asserted against a same-body array). No count is an
+expectation anywhere.
+
+**4. The evidence set gains a floor — APPROVED, with the residual the
+executor already filed.** The per-pattern shape is right and it bites:
+deleting both lettered P5 positives reds with exactly one row,
+`P5 has a positive whose codepoint carries a hex letter (0)`, restoring
+the precise pre-T-080 blind spot. **And the floor is itself floored one
+rung out, which the notes under-sell.** `evidenceFloorChecks` is a
+self-enumerating array with no internal floor — I deleted its hex-letter
+row and the selftest went **green at 7 evidence-floor checks**. The
+focused spec caught it alone (`body 8`, via
+`>= TOKEN_PATTERNS.length + 4`, where the literal `+ 4` is the
+load-bearing half). Samples guarded by the floor, floor guarded by the
+spec. The `walkPolicyChecks` array still has no cardinality floor — that
+is `T-080-s2`, honestly filed, and see `T-080-s7` below for why the
+obvious remedy would not have helped.
+
+**5. P5 gains a lettered positive, named literally — APPROVED.** Two
+lettered positives ship, not one (`U+001B`, `U+007F`), each expectation
+written out as a string. Re-run here: dropping `.toUpperCase()` reds the
+**selftest** twice (`U+001b`, `U+007f`), dropping `.padStart` reds three
+times (`U+0`, `U+1B`, `U+7F`), lowercasing the prefix reds three times.
+Before this card the first of those was **exit 0**. The gate that runs
+first can now see what the seventeenth step sees, which is the whole
+title of the card. The general form is recorded in the notes as the
+criterion required.
+
+**6. Could-not-run is distinguished — APPROVED, with the hole named.**
+Measured first-hand with an absolute interpreter path: clean **0**; a
+real planted `U+000B` in a tracked file **1**, reported as
+`docs/ROADMAP.md:byte 28613: U+000B` and restored byte-exact; `git` off
+`PATH` **3** for BOTH `lintTree` and `selftest`, with `GATE COULD NOT
+RUN` and `it is NOT a claim about the tree`. `2` is genuinely unused —
+no `exit(2)` and no `USAGE` symbol exists in `tools/e2e/scripts/` except
+the boot check's own. **The spec never imports `EXIT`**; all three codes
+are literals, so renumbering `CANNOT_RUN` to 4 leaves the selftest at
+exit 0 and reds spec body 8 alone — reproduced. **`T-080-s4`'s hole is
+real and I reproduced it**: a control byte planted in `lint-tokens.mjs`
+gives `SyntaxError: Invalid or unexpected token` at **exit 1**, because
+the module never links and its own `try` never runs. Correctly filed
+rather than papered over; it does not defeat the criterion, which asks
+for a distinct code for the underivable case and gets one.
+
+**7. Sample construction discipline — APPROVED.** Machine-checked, not
+eyeballed: **zero literal control bytes and zero escape spellings of any
+forbidden C0 byte or DEL** in all three files. Every control byte is
+built from a numeric code (`String.fromCharCode(0)` at 369 and 723,
+`Buffer.from([...])` at 904/909/914/919). The card's claim that
+`token-scan.mjs` now spells no control escape anywhere holds.
+
