@@ -528,3 +528,110 @@ lines of the `graph currency (nputer-index index --check)` step from
 `git diff`): **1 failed, 13 passed, exit 1**, message
 `missing verbatim step: [app/src-tauri] cargo run -p nputer-index -- index --check --root ../..`.
 Restored; sha256 `5598c3eb…` matches `git show HEAD:.github/workflows/ci.yml`.
+
+#### CRITERION BY CRITERION
+
+1. **One-sidedness clause.** Present, and inside the right sentence —
+   `docs/CONVENTIONS.md` POISON DRILL bullet: "MUTATE ONE SIDE ONLY: the
+   code under test OR the assertion, never a literal the two SHARE; and
+   confirm the mutated TEXT is what you intended rather than only that a
+   substitution COUNT was non-zero." Both halves the criterion names,
+   and the WHY carries both measurements. **HOLDS.**
+2. **The two shapes get ordinals, five before six.** `SHAPE FIVE` =
+   assertion set with no cardinality/coverage floor (token-scan.mjs
+   `selftest()`, T-058-s2 → T-080); `SHAPE SIX` = a body that reds under
+   a value poison while killing no unique mutant (interview-model.test.ts,
+   T-057-s1 → T-072). Five first, with the mechanical-remedy reason. The
+   "deliberately NOT given an ordinal" parenthetical is gone. **Checked
+   for a silent renumber across every citing file**, which is the real
+   risk: `docs/STATE.md:488-490` already assigns five to T-058-s2/T-080
+   and six to T-057-s1/T-072; `T-080` line 63 says "this is poison shape
+   five"; `T-072` line 38 says "poison shape SIX". All four agree with
+   what landed. **HOLDS, no citation broken.**
+3. **Negative-control rule, beside the constant-parametrisation rule.**
+   `git grep` (from the repo ROOT, per the standing rule) over
+   `docs/CONVENTIONS.md` and `method/`: at `e4a5ae7`, `positive control`
+   → **0 hits**, `negative assertion` → **0**, `parametris|parametriz` →
+   **0**, `T-063` → **0**. At `22b31f1`: the rule at
+   `docs/CONVENTIONS.md:488` and its companion sentence at 510-513
+   ("A TEST PARAMETRISED BY THE CONSTANT IT CHECKS CANNOT PIN THAT
+   CONSTANT (T-063 …)"). The criterion's premise was false and the
+   executor made it true rather than pretending it held — the correct
+   call, and the sharpest thing on the branch. **HOLDS.**
+4. **Guard-lift rule, both halves.** `docs/CONVENTIONS.md:517`, zero
+   hits for `lifting a safety guard` / `lifted arm` at `e4a5ae7`. Both
+   obligations are present and stated as SHALLs: the lifted arm proven
+   to terminate in a fixture ("pointed at one, not merely started at
+   one") and the guard's state asserted before anything is exercised.
+   **HOLDS.**
+5. **A citation names a symbol, not a line.** Present at
+   `docs/CONVENTIONS.md:165`, placed with the record-keeping conventions
+   near the top of Gotchas. **HOLDS** — but its worked example carries a
+   wrong number; see s5 below.
+6. **GRAPH REGEN trigger.** The criterion's headline ("SHALL STOP SAYING
+   'outside docs/'") and its **PREFERRED ARM** ("keep the wide trigger")
+   contradict each other; the executor took the arm the criterion itself
+   labels preferred and said so. Line 311 still reads "outside docs/",
+   and lines 317-332 now say the trigger is deliberately wider than the
+   walk, that a `tools/**`-only diff matches it and cannot move the
+   graph by construction, that narrowing the wording to chase
+   `.nputerignore` goes stale, and that `index --check` is the
+   one-second way to ask instead of predicting. **HOLDS on substance.**
+   Flagged for the record: a reader testing the headline alone would
+   score this unmet, and the criterion, not the build, is what is
+   ambiguous.
+7. **The four-walks table.** Every authority claim re-derived against
+   the source, not read: `.nputerignore` really does list `docs/`,
+   `tools/` and `app/src-tauri/crates/nputer-index/tests/fixtures/`;
+   `Lang::for_extension` (graph.rs:45) really returns a language for
+   exactly `ts tsx mts cts js jsx` and for nothing else, so "`Lang::Rust`
+   maps to no extension" is literally true (its only other use is
+   `as_str()`); `walk_root` (walk.rs:42) really hard-skips `.git` and
+   `node_modules` via `filter_entry` regardless of ignore files and
+   really skips symlinks outright via its own `symlink_metadata` check
+   beyond `follow_links(false)`. TOKEN's row matches `TOKEN_ROOTS` /
+   `TOKEN_EXTENSIONS` / `TOKEN_EXCLUDED_FILES`; CONTROL's row matches
+   `controlCorpus()`'s `git ls-files -z` minus `SKIP_DIRS` minus
+   `CONTROL_BINARY_EXTENSIONS`; the parser's row matches
+   `project.ts`'s flat `readdirSync` filters `/^T-.*\.md$/` and
+   `/^C-.*\.md$/` plus `docs/ROADMAP.md`. **HOLDS** — but carries the
+   `38 removed` error; see s4.
+   **On the executor's own low-confidence point**: I do not think the
+   GRAPH row misleads. The three-authority cell is the AUTHORITY column,
+   whose job is to point; the "what it sees" cell it sits beside is
+   accurate standing alone, and the table's most useful property is
+   exactly the asymmetry it makes visible in one glance (`.mjs` is in
+   TOKEN and NOT in the graph; `.rs` is in CONTROL and nothing else).
+   A reader who quotes that row gets a true sentence.
+8. **"Held by a gate" now reads future-tense.** `git remote` returns
+   **zero** remotes (`git remote -v` prints nothing at exit 0;
+   `git remote | wc -l` = 0) — confirmed at this session. The bullet now
+   names the integrator's hand run as today's confirmation, says the CI
+   step becomes the enforcing copy at the first push and not before, and
+   is fair about the three tripwires. One of those three I drilled
+   rather than took on trust: deleting the CI step really does red the
+   parity spec by name (above). **HOLDS.**
+9. **`lint:tokens` exit-code legend.** Present in the parenthetical
+   ("exit 0 clean, 1 EITHER a violation OR a gate that could not run")
+   with the collapse explained after the bullet's command list, and it
+   does not depend on T-080. **The central factual claim drilled, not
+   read**: `env PATH=/var/empty/nonexistent node scripts/lint-tokens.mjs`
+   → `Error: lint-tokens: cannot derive tracked CONTROL corpus: Error:
+   spawnSync git ENOENT`, **exit 1** — byte-for-byte the message the doc
+   quotes, at the code the doc claims. `tokenCorpus()` does rethrow
+   (`cannot walk TOKEN root …`) rather than `process.exit(2)`. A clean
+   run does name both corpora and their counts. **HOLDS.** One wording
+   nit, not a defect: the doc says the two failures "look nothing alike
+   on stdout" — true, but only because the corpus failure produces no
+   stdout at all (it is an uncaught throw on stderr), while a violation
+   prints hit lines on stdout and its summary on stderr.
+10. **Middle-dot rule homed in the CI bullet.** Preferred home taken,
+    `tools/e2e` not widened. The clause names "U+00B7 MIDDLE DOT" and
+    **the discipline held**: I enumerated every U+00B7 in the file and
+    none is inside the clause, none is new anywhere, and the derivation
+    is unchanged at 19. **HOLDS.**
+11. **T-054's notes corrected with it.** `docs/tasks/T-054-…` now says
+    the measured thing: the exposed count drops 19 → 16 and the lane
+    REDS naming all three keys, silent in exactly one case. I reproduced
+    that measurement independently before reading their wording.
+    **HOLDS.**
