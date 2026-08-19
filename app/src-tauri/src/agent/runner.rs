@@ -1628,6 +1628,11 @@ pub fn run_turn(
     let mut auth_message: Option<String> = None;
     let mut terminal_reason: Option<String> = None;
     let mut permission_denials: Vec<String> = Vec::new();
+    // T-069: has model text arrived since the last line that named an
+    // auth status? Only meaningful for a turn that never writes a
+    // terminal `result` line, which is the one family T-029's rule
+    // cannot reach.
+    let mut text_after_auth_status = false;
     let mut oversize = false;
     let mut last_line_at = Instant::now();
     let mut failure: Option<TurnError> = None;
@@ -1702,6 +1707,17 @@ pub fn run_turn(
                     }
                     StreamLine::TextDelta(text) => {
                         saw_json_anchor = true;
+                        // T-069's discriminator, recorded where the
+                        // evidence arrives. Model text is streamed by a
+                        // request that SUCCEEDED, so a delta after the
+                        // last status-bearing line is the stream saying
+                        // the CLI got past that status. Kept as its own
+                        // flag rather than read off `relayed`, which
+                        // counts FLUSHED bytes only and carries no order
+                        // relative to the diagnostic.
+                        if auth_status.is_some() {
+                            text_after_auth_status = true;
+                        }
                         if relayed < MAX_RELAY_BYTES {
                             if pending.is_empty() {
                                 pending_since = Some(Instant::now());
@@ -1752,11 +1768,73 @@ pub fn run_turn(
                         // failure, which then REMOVES the retry
                         // affordance and sends the user to `claude
                         // login` with a login that is fine.
+                        //
+                        // T-069 DISCLOSES WHAT THAT COST, because the
+                        // comment above says why the rule is right and
+                        // never said what it gave up. An auth failure
+                        // that names its status ONLY in a diagnostic,
+                        // over a `result` line carrying no
+                        // `api_error_status` of its own, is CLEARED here
+                        // and stops being typed: it degrades to
+                        // `ExitNonZero`, with the auth sentence still in
+                        // the tail and Try again restored. Measured one
+                        // line apart at `307319b` (pre-fix, `AuthFailed`)
+                        // and `4540821` (post-fix, `ExitNonZero`).
+                        //
+                        // IT COSTS 2.1.226 NOTHING, and that is the whole
+                        // of why the trade is safe: the transcribed
+                        // shape puts `api_error_status` on its own
+                        // `result` line, so nothing observed is narrowed.
+                        // THAT IS A FACT ABOUT THE CLI, AND FACTS ABOUT
+                        // THE CLI MOVE. `auth-error-result-only` in
+                        // `fake_agent.rs` is the transcribed stream minus
+                        // its diagnostic — the terminal line is the only
+                        // carrier of the status left — and
+                        // `the_transcribed_auth_shape_carries_its_status_on_its_own_result_line`
+                        // drives it, so a CLI version that moves the
+                        // status REDS instead of silently losing the
+                        // flagship affordance.
                         auth_status = api_error_status;
+                        // The turn's own verdict has just spoken, so
+                        // whatever the model said earlier no longer
+                        // argues against it (see `text_after_auth_status`
+                        // in the `Diagnostic` arm below).
+                        text_after_auth_status = false;
                         if reason.is_some() {
                             terminal_reason = reason;
                         }
                         if !denials.is_empty() {
+                            // T-069: RELAYING IS NOT DIAGNOSING, and this
+                            // push is the difference. The classification
+                            // below may DECLINE these names — it does
+                            // whenever the CLI did not flag its own
+                            // result an error — and declining is right:
+                            // a cumulative record of what was refused is
+                            // not a statement that a refusal ended the
+                            // turn. But a declined DIAGNOSIS was also
+                            // relaying nothing. `is_error: false` means
+                            // the branch above never pushed the result
+                            // text either, so the turn arrived as
+                            // `ExitNonZero { code: Some(1), stderr_tail:
+                            // "" }`, `failureDetail` returned null for an
+                            // empty trimmed detail, and the screen read
+                            // "the planner exited with code 1" with
+                            // nothing under it — while the names sat
+                            // parsed, bounded and control-stripped in
+                            // this very `Vec`.
+                            //
+                            // The `api_retry` note below is the
+                            // precedent: the ring already carries
+                            // diagnostics the classifier does not act
+                            // on, because the ring is a DIAGNOSTIC ring
+                            // and not a claim. Bounded by `denial_names`
+                            // (16 × 128 bytes) and sanitized there, then
+                            // sanitized again with the whole tail.
+                            let note = format!("permission_denials: {}", denials.join(", "));
+                            let mut ring = stderr_ring.lock().expect("stderr ring poisoned");
+                            ring.push(note.as_bytes());
+                            ring.push(b"\n");
+                            drop(ring);
                             permission_denials = denials;
                         }
                         result_text = Some(text);
@@ -1765,6 +1843,12 @@ pub fn run_turn(
                         saw_json_anchor = true;
                         if error_status.is_some() {
                             auth_status = error_status;
+                            // A NEW status supersedes whatever text came
+                            // before it: the discriminator is about text
+                            // after the LAST status-bearing line, so a
+                            // second 401 arriving behind a recovered
+                            // first one still classifies.
+                            text_after_auth_status = false;
                         }
                         stderr_ring.lock().expect("stderr ring poisoned").push(note.as_bytes());
                         stderr_ring.lock().expect("stderr ring poisoned").push(b"\n");
@@ -1880,7 +1964,31 @@ pub fn run_turn(
             // 401 (no/expired credentials) and 403 (credentials the API
             // will not accept). Every other status is somebody else's
             // problem and stays a relayed tail rather than a guess.
-            if matches!(auth_status, Some(401) | Some(403)) {
+            //
+            // T-069 CLOSES THE ONE FAMILY THE TERMINAL-STATE RULE CANNOT
+            // REACH. A turn that writes NO `result` line has no terminal
+            // verdict to clear a status with, so a 401 the CLI retried
+            // and got past survived here and typed `AuthFailed` — which
+            // removes Try again and sends a user whose login is fine to
+            // `claude login`, the exact harm T-029 exists to undo.
+            //
+            // `text_after_auth_status` closes it on evidence the stream
+            // ALREADY CARRIES: model text is streamed by a request that
+            // SUCCEEDED, so a delta after the last status-bearing line
+            // is the CLI demonstrating it got past that status. No
+            // `terminal_reason` vocabulary is consulted — the set
+            // T-029-s5 records as unverified is not touched here.
+            //
+            // IT WITHDRAWS A CLAIM, IT NEVER MAKES ONE, which is why it
+            // is allowed to rest on weaker evidence than the arms above:
+            // when it is wrong the turn degrades to `ExitNonZero` with
+            // the status still legible in the tail and Try again
+            // restored — the direction T-029's verifier ratified, where
+            // losing a diagnosis to a relay beats a false positive that
+            // takes the retry away. The counter-pin holds by
+            // construction: `auth-403-no-result` streams no delta at
+            // all, so its 403 still classifies.
+            if matches!(auth_status, Some(401) | Some(403)) && !text_after_auth_status {
                 let message = auth_message
                     .as_deref()
                     .map(str::trim)
