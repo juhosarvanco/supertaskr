@@ -607,3 +607,223 @@ SIGKILLed, which is correct because the only "member" was our own zombie.
 The one answer that would break it — a live grandchild plus an ESRCH —
 is impossible on any kernel. The executor's uncertainty is real and its
 mitigation is sound.
+
+#### A red I caused myself, and what it cost to find out
+
+**Recorded first, because it is the most misleading thing in this
+verdict if it is not.** After the load probe, four consecutive bare
+`cargo test` runs FAILED —
+`docs_watch::tests::startup_arm_watches_the_initial_root`, "expected a
+docs-changed emit: Timeout" — while the same body passed 8-for-8 in
+isolation. `docs_watch.rs` is untouched by this branch
+(`git diff --name-only adb32c3..HEAD` does not list it; last moved by
+T-042).
+
+The cause was **my own leaked processes**. My load harness wrote
+`LOADPIDS="$LOADPIDS $!"` and cleaned up with
+`for p in $LOADPIDS; do kill -9 $p; done` — and **zsh does not word-split
+unquoted parameters**, so that passed one malformed argument, killed
+nothing, and my `kill -0` leak check was vacuous for exactly the same
+reason and printed "all load generators gone". Forty busy loops survived
+with `ppid 1` for eight minutes at load average **148**, and at that load
+a watcher test with a ten-second `recv_timeout` and a 250 ms debounce
+fails every time.
+
+Found by `ps -eo pid= -o ppid= -o comm= -o command=`, killed **by
+verified pid, one at a time, with no `pkill`**, each proven gone with
+`kill -0`; forty confirmed, zero survivors, zero residual matches
+system-wide. The human's app tree (`82342`/`82364`/`82549`) and the
+`nputer-T-060` pair were explicitly excluded by pid before any signal
+went out.
+
+**Three consecutive bare `cargo test` runs on the settled machine
+afterwards:**
+
+```
+quiet run 1: exit=0 passed=337 failed=0 ignored=3
+quiet run 2: exit=0 passed=337 failed=0 ignored=3
+quiet run 3: exit=0 passed=337 failed=0 ignored=3
+```
+
+The gate reproduces. The red was mine. The irony — a verifier leaking
+processes out of an unchecked cleanup while auditing a card about leaked
+processes, and being told so by its own vacuous check — is left in the
+record on purpose.
+
+**And it produced the sharpest timing evidence in this verdict.** With a
+correct cleanup (pids to a file, killed by `while read`), the
+`agent_runner` binary at four threads under forty burners:
+
+```
+heavy run 1 (4 threads, load 26.55): exit=0  60 passed; 0 failed
+heavy run 2 (4 threads, load 36.98): exit=0  60 passed; 0 failed
+heavy run 3 (4 threads, load 41.46): exit=0  60 passed; 0 failed
+heavy run 4 (4 threads, load 48.95): exit=0  60 passed; 0 failed
+burners still alive: 0
+```
+
+At loads that deterministically broke a DIFFERENT test's ten-second
+timeout, every one of T-043's five ceilings held. That is the strongest
+statement available on this hardware about the T-060 flake shape, and it
+is a good deal stronger than the executor's twelve busy loops.
+
+#### Remaining gates
+
+- `index --check --root ../..` exit **0**, `graph.json is CURRENT` —
+  **568598 bytes, 117 files, 982 symbols, 1502 edges**.
+- `cargo audit -n` exit **0**: 1216 advisories, 472 crate dependencies,
+  **0 vulnerabilities**, `warning: 17 allowed warnings found`.
+- **BOOT GATE re-run on port 18447**, bind-probed free with a real
+  `net.createServer().listen()` before and after (`18447 FREE` →
+  `18447 FREE again`). Both lines detected — `[nputer] project folder:`
+  and `[nputer] window "main" created` — tree stopped on SIGTERM. **The
+  script prints no exit code; `BOOT_EXIT=0` is my own `echo $?`.** Port
+  1420 was read with `lsof` only and is still held by the human's
+  `node 82549`.
+- `file --mime` on all ten changed files: every one `charset=utf-8`.
+
+### Criterion by criterion
+
+1. **Reap DURING the grace, latch well inside it — MET.** P1 (turn path
+   switched to the observer form = the old terminate-before-wait
+   ordering) reds `a_cancel_releases_the_turn_latch…` and
+   `the_exit_reap_returns_well_inside…` and nothing else: exactly the two
+   prompt-death pins. Observed release inside the poll, printed by P3's
+   own failure text: **25.510083 ms** of a 3000 ms grace.
+2. **BOTH limbs — MET.** P3 (drop the group limb) reds resistant-
+   grandchild and exit-reap-resistant; P4 (drop the reaped limb) reds the
+   observer control arm at `:916` with "AN EMPTY GROUP ALONE RELEASED THE
+   OBSERVER after 35 ms". The naive `try_wait()`-then-return is caught in
+   both directions.
+3. **Resistant DIRECT child — MET.** `:835` and `:1073` exist and assert
+   signal-death, no zombie, empty group. The fixture resists for real:
+   `ignore_sigterm` installs `SIG_IGN` for signal 15 through `libc`
+   `signal(2)`, and my own probe confirmed a SIGTERM-immune child
+   surviving SIGTERM and dying on SIGKILL.
+4. **App exit inside the grace, by coordination — MET.** `:981` bounds
+   `reap_for_exit` itself; `:1024` is its counterweight. Production grace
+   pinned BY VALUE and alone at `:1266` — `assert_eq!` on the constant,
+   not parametrised by it.
+5. **`genesis_cancel` — MET except one clause.** Prompt: yes, and P11
+   reds it at 918 ms. Background escalation: yes. Idempotence: yes.
+   **"Sends SIGTERM synchronously" has no body that can fail** — see
+   `T-043-s4`. The mechanism is present and correct; only the evidence
+   claim over-reaches.
+6. **Permanent fixtures, exact pids, cleanup on failure — MET, and
+   re-proved.** P3 re-run left zero `nputer-T-043` processes. Every
+   `guard.watch` site registers before the first fallible call. The "notes
+   SHALL NOT claim the pre-task suite already covered resistant
+   processes" clause is honoured — no such claim appears.
+7. **Guarantee corrected everywhere live — MET.** All eight named
+   anchors carry the correction; a repo-wide `git grep` from the root
+   finds no live unqualified restatement outside T-025 §7's historical
+   verification plan. The escapee property re-measured first-hand:
+   `child_alive=gone(errno3) escapee_alive=alive`, `escapee_pgid ==
+   escapee_pid`.
+8. **Descendant sweep a non-goal — MET.** The six granted patterns are
+   verbatim at `adapter.rs:108-113`: `git init`, `git add`, `git commit`,
+   `git status`, `mkdir`, `cp`. None daemonizes.
+9. **The off-by-one — MET.** `KIT_FILES` has fourteen entries; §3's own
+   enumeration lists fourteen. `13` → `14` is right.
+10. **T-060's boundary — MET.** No test sets, clears or reads
+    `NPUTER_NO_REAL_CLI`; the structural guard plus its doctest hold it;
+    exactly three `#[ignore]` attributes; the real smoke did not run; no
+    network, no real CLI, no model call anywhere in this verification.
+11. **Poisoned and red, cleanup, pids proven gone — MET.** Six drills
+    re-run at HEAD, all reproducing the claimed blast radius; three
+    mutations of my own that stayed green, all benign and two of them
+    already disclosed by the executor; one that stayed green and is a
+    real finding (`s4`). No broad `pkill` used anywhere in this
+    verification, including on my own leak.
+
+### The three judgements asked for
+
+- **`T-043-s3` — leaving it out was RIGHT.** I reproduced its claim:
+  `kill_group_now` is SIGTERM and nothing else, `child.wait()` that
+  follows has no bound, and `start_genesis` takes `begin_turn` BEFORE it
+  resolves, so the strand is permanent rather than slow. Fixing it needs
+  its own SIGTERM-immune probe fixture and its own typed outcome — a card,
+  not a rider on this one, and this card was already re-scoped S→M once.
+  s3 does understate the blast radius in two ways, which is why I filed
+  **`T-043-s5`** rather than reopening the fence.
+- **`T-043-s2` — the executor is RIGHT and I endorse it.** I measured the
+  fourteen `include_str!` sources myself: **23890 bytes**, against "~60
+  KB". The count is load-bearing (a parity walk asserts it, a wrong count
+  sends a reader hunting a fifteenth file); the byte total is held by no
+  test and is rewritten by every method bump. Delete it. And the executor
+  changing ONLY the 13→14 it was authorised to change, and filing the
+  rest, is the discipline working.
+- **The `Err(_)` arm and the idempotence body — both admissions are
+  ACCURATE.** I inverted the `Err(_)` arm (`mark_reaped(); true` →
+  `false`) and the suite stayed 60/60 green: no body exercises it, exactly
+  as disclosed. And the idempotence body does prove no panic and a settled
+  `Idle` and cannot prove the absence of deadlock — though `settle` and
+  `wait_for_file` both carry 20 s deadlines that PANIC rather than block,
+  so a deadlock inside them would red rather than hang the suite. The
+  unguarded surface is narrower than the admission implies, which is the
+  right direction for an admission to be wrong in.
+
+### Card corrections the integrator should apply before merge
+
+1. **The recorded restoration sha for `runner.rs` is STALE.** The notes
+   say `fb1f3b61…`; HEAD is **`cc06dd93…`**. `fb1f3b61` is the value at
+   `4d75bac`/`cfa86ef`, i.e. when the drills ran; `ade2d1a` then added
+   one `#[cfg(unix)]` to `POLL_INTERVAL` and the drills were not re-run.
+   The attribute is inert on darwin and I re-ran P1/P2/P3/P4/P7/P11 at
+   HEAD myself with the claimed results, so the evidence stands — but the
+   card's own discipline ("prove restoration by sha256 against
+   `git show HEAD:<path>`") fails on its own central file. `mod.rs`
+   `080107fe…` and `fake_agent.rs` `63b8a9bf…` both match HEAD.
+2. **"the three ceilings are 1000 ms against a 3000 ms grace" is wrong.**
+   There are FIVE, and the fifth is `cancel_returned < 300 ms` against a
+   900 ms grace at `:1102` — the assertion P11 created when it moved.
+3. **Evidence line 5 cites `:1073` for "SIGTERM synchronous".** It covers
+   promptness and background escalation only (`T-043-s4`).
+4. **Two anchors drifted by a line or two:** `runner.rs:1177` names
+   `if is_reaped && empty`, which is at **1178**; `tests:938` names the
+   P11 note, which is at **956**. Every other anchor I checked —
+   twenty-five of them — is exact.
+
+### Findings filed (executor filed s1–s3; these start at s4)
+
+- **`T-043-s4`** — `genesis_cancel`'s synchronous SIGTERM has no body
+  that can fail: deleting it leaves the suite 60/60 green.
+- **`T-043-s5`** — probe children are never registered in the child slot,
+  so `reap_for_exit` cannot reach them; a SIGTERM-immune probe outlives
+  the app, which the sentence this card corrected still does not cover.
+  Widens s3.
+- **`T-043-s6`** — the zombie pin never asserts the zombie: its wait loop
+  calls the `try_wait` its own comment forbids, its `deadline` is
+  unreachable, and a slow-dying fixture would leave it green while
+  measuring nothing. Measured `stat="Z"` 3/3 today, so it is correct now
+  and fragile by construction.
+
+## VERDICT: APPROVED
+
+The mechanism is right and it is proved the hard way. The two-limb
+release does what it claims in both directions; the escalation really is
+guarded by group membership rather than the clock; the darwin measurement
+the whole design rests on reproduces row for row under my own probe; the
+`GroupGuard` that a leak forced into existence holds under the very drill
+that caused the leak, with zero survivors; and every gate re-derives to
+the number claimed. The two green poisons the executor found and fixed
+are both genuinely fixed — and the P11 counterfactual is now MEASURED
+rather than argued, which is the part I most expected to fall over.
+
+The sweep found a third green poison (`s4`), a residual widening of the
+corrected guarantee (`s5`) and a fragile pin (`s6`). None of the three is
+a defect in the shipped kill path: `s4` is an evidence over-claim about a
+line that is correct and present, `s5` is a pre-existing hole on a
+different code path already half-filed as `s3`, and `s6` is a test that
+is correct today and should be made robust. Four card corrections are
+listed above; the stale `runner.rs` sha is the one an integrator must not
+skip, because a reader following the card's own instruction will get a
+mismatch on the file the card is about.
+
+Verified on darwin 25.6.0 arm64, ten cores. Nothing in this verification
+called a real model, touched the network, ran the ignored smoke, or
+signalled anything on port 1420. Every process this session created is
+proven gone; the two `nputer-T-060` orphans (`52504`/`52505`, start
+`Tue Aug 18 16:21:18`) are unchanged and untouched, as `T-043-s1` says.
+
+`status: verifying` left in place for the integrator.
