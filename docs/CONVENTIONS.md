@@ -487,9 +487,10 @@
   never the value.
 - A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL (T-060-s1's sibling
   T-060-s2, written down here at T-078 — the INSTANCE was fixed on
-  T-060's branch and the RULE was never written anywhere; a grep of this
-  file and method/ for it returned zero hits three triages later, which
-  is how a rule goes unwritten while everyone believes it exists). A test
+  T-060's branch and the RULE was written in neither this file nor
+  method/ — a grep of both for it returned zero hits three triages later,
+  which is how a rule goes unwritten while everyone believes it exists;
+  ARCHITECTURE describes the GUARD, never how to test one). A test
   that asserts something is REFUSED must first prove the fixture would
   otherwise have been ACCEPTED; otherwise it cannot tell refusal from
   absence. Measured: `assert_eq!(which_in("relbin", adapter), None)` —
