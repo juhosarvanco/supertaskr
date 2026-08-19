@@ -468,21 +468,35 @@ describe("a planner that ends without a parseable board (criterion 4)", () => {
 // ---- criterion 3: zero new IPC, zero telemetry, measured ----------------
 
 describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
+  /**
+   * EVERY SHIPPED FRONTEND SOURCE FILE, root-relative to `src/`. One
+   * walk, two censuses: the IPC sweep below reads these files for
+   * `invoke<T>("name")` call sites, and the sink sweep reads the same
+   * list for the calls a lens must never make. T-073 widened the sink
+   * sweep onto this walk — it used to be one flat `readdirSync` over
+   * `src/genesis/`, eight files of forty-seven.
+   */
+  function frontendFiles(): string[] {
+    const found: string[] = [];
+    const walk = (dir: string, prefix: string): void => {
+      for (const name of readdirSync(dir).sort()) {
+        const full = join(dir, name);
+        if (statSync(full).isDirectory()) walk(full, `${prefix}${name}/`);
+        else if (/\.tsx?$/.test(name)) found.push(`${prefix}${name}`);
+      }
+    };
+    walk(resolve("src"), "");
+    return found;
+  }
+
+  const sourceOf = (relative: string): string => readFileSync(resolve("src", relative), "utf8");
+
   /** Every `invoke<T>("name")` call site in the shipped frontend. */
   function frontendCommands(): string[] {
     const found = new Set<string>();
-    const walk = (dir: string): void => {
-      for (const name of readdirSync(dir).sort()) {
-        const full = join(dir, name);
-        if (statSync(full).isDirectory()) walk(full);
-        else if (/\.tsx?$/.test(name)) {
-          for (const m of readFileSync(full, "utf8").matchAll(/invoke<[^>]*>\("([a-z_]+)"/g)) {
-            found.add(m[1]!);
-          }
-        }
-      }
-    };
-    walk(resolve("src"));
+    for (const file of frontendFiles()) {
+      for (const m of sourceOf(file).matchAll(/invoke<[^>]*>\("([a-z_]+)"/g)) found.add(m[1]!);
+    }
     return [...found].sort();
   }
 
@@ -539,9 +553,98 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     ]);
   });
 
-  it("nothing in the crescendo can reach a network, a disk or a device store", () => {
+  it("the app program still holds the read-only node surface T-073 restored", () => {
+    // THE OTHER CLOSER, AND THE ONE NOTHING ELSE WATCHES. `app/src` gets
+    // its node surface from whatever ambient files `app/tsconfig.json`
+    // reaches, so ADR-017's free half is exactly two facts wide: that
+    // include list, and what the file it names declares. Put `test` back
+    // in the list — the shape an editor complaint invites — or add one
+    // write to the shared file, and `app/src` silently regains the whole
+    // write surface with every suite still green. That is the defect
+    // this card fixed, one level up, so both facts are pinned instead of
+    // trusted. Parsed rather than string-matched: the include list is
+    // read out of the JSON, and the surface is read from the
+    // DECLARATIONS, so neither assertion can be satisfied by a comment.
+    const included = /"include"\s*:\s*\[([^\]]*)\]/.exec(readFileSync(resolve("tsconfig.json"), "utf8"));
+    expect(included, "app/tsconfig.json must declare an include list").not.toBeNull();
+    expect(
+      included![1]!
+        .split(",")
+        .map((entry) => entry.trim().replace(/^"|"$/g, ""))
+        .filter((entry) => entry.length > 0),
+    ).toEqual(["src", "test/node-builtins.d.ts"]);
+
+    const declared = (file: string): string[] =>
+      [...readFileSync(resolve("test", file), "utf8").matchAll(/export function (\w+)/g)]
+        .map((m) => m[1]!)
+        .sort();
+    // The shared file: reads only. Adding a write here is what T-028 did.
+    expect(declared("node-builtins.d.ts")).toEqual([
+      "fileURLToPath",
+      "join",
+      "readFileSync",
+      "readdirSync",
+      "resolve",
+      "statSync",
+    ]);
+    // The test-only file: T-028's surface, whole and unmoved.
+    expect(declared("node-builtins-write.d.ts")).toEqual([
+      "mkdirSync",
+      "mkdtempSync",
+      "rmSync",
+      "tmpdir",
+      "writeFileSync",
+    ]);
+  });
+
+  it("the swept corpus is the WHOLE of src, pinned by shape rather than printed", () => {
+    // A sweep that has silently narrowed still prints green, so what is
+    // asserted here is the CORPUS, not a result. The pin is the set of
+    // directories the walk reaches — an exact set, changed and never
+    // loosened, chosen over a file list because files land in these
+    // directories constantly and directories do not.
+    //
+    // It reds on every way this walk can quietly shrink: back to
+    // `src/genesis` (the set collapses to one entry), losing its
+    // recursion (it collapses to `.`), or gaining an extension filter
+    // (`.tsx` only drops `lib` and `lib/architecture`, which hold no
+    // JSX; `.ts` only drops `components/ui` and
+    // `components/board/badges`, which are all JSX).
+    const files = frontendFiles();
+    const dirs = new Set(files.map((f) => (f.includes("/") ? f.slice(0, f.lastIndexOf("/")) : ".")));
+    expect([...dirs].sort()).toEqual([
+      ".",
+      "architecture",
+      "components/board",
+      "components/board/badges",
+      "components/shell",
+      "components/ui",
+      "genesis",
+      "lib",
+      "lib/architecture",
+    ]);
+    // Four anchors at four depths, so the corpus cannot be hollowed out
+    // one directory at a time while the set above still spells nine.
+    expect(files).toContain("App.tsx");
+    expect(files).toContain("genesis/GenesisPane.tsx");
+    expect(files).toContain("lib/watcher-store.ts");
+    expect(files).toContain("components/board/badges/ReviewBadge.tsx");
+  });
+
+  it("nothing in the shipped frontend can reach a network, a disk or a device store", () => {
     // The elapsed clock is the one thing on this screen that could have
     // become telemetry, and it is a number in a module with no way out.
+    //
+    // T-073 WIDENED THIS FROM `src/genesis/` TO ALL OF `src`. The narrow
+    // form was one of two closers over ADR-017's "the app renders what
+    // lands, it does not write"; the other was the ambient node surface,
+    // which stopped being read-only when T-028 added writes to the file
+    // `app/tsconfig.json` shares with `app/src`. That one is restored —
+    // `test/node-builtins-write.d.ts` is in the test program only — and
+    // this one is widened, because they are two gates over one property
+    // and neither subsumes the other: a type cannot see `writeTextFile`
+    // arriving through a Tauri plugin, and a grep cannot see a call
+    // spelled through an alias.
     const SINKS = [
       "fetch(",
       "XMLHttpRequest",
@@ -555,11 +658,10 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
       "mkdir",
       "EventSource",
     ];
-    const dir = resolve("src/genesis");
-    for (const name of readdirSync(dir).sort()) {
-      const text = readFileSync(join(dir, name), "utf8");
+    for (const file of frontendFiles()) {
+      const text = sourceOf(file);
       for (const sink of SINKS) {
-        expect(text.includes(sink), `${name} must not reach for ${sink}`).toBe(false);
+        expect(text.includes(sink), `${file} must not reach for ${sink}`).toBe(false);
       }
     }
   });

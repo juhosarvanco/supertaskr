@@ -24,6 +24,18 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "test"],
+  /* THE SHIPPED FRONTEND, AND THE READ-ONLY NODE SURFACE — NOTHING ELSE
+     (T-073). This is the program bare `tsc` compiles, so it is the
+     program `npm run build` gates on. Ambient module declarations are
+     program-global: anything declared in a file this list reaches is
+     declared for `app/src` too. `test/node-builtins.d.ts` is named one
+     path at a time precisely so its READ-ONLY `node:fs` is the whole
+     node surface `app/src` can see, and a webview module reaching for a
+     write fails here with TS2305/TS2724 — ADR-017's free half. The
+     tests live in `tsconfig.test.json`, which adds `test/` (and with it
+     `test/node-builtins-write.d.ts`); `npm run build` runs BOTH, so
+     widening the write surface stays impossible without widening it
+     deliberately, and no test loses its typecheck. */
+  "include": ["src", "test/node-builtins.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
