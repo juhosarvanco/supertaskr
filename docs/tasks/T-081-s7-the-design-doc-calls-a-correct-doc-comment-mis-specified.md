@@ -1,0 +1,55 @@
+---
+id: T-081-s7
+title: The cross-harness plan calls a correct doc comment "provably mis-specified", and it is seeding briefs
+status: suggested
+suggested_by: verifier claude-opus-5 @T-081
+---
+
+`docs/design/cross-harness-plan.md:170` reads:
+
+> **Breaks in the runner's taxonomy, not the table.** `TurnError` was
+> written around Claude's stream, and one variant is now provably
+> mis-specified: `ToolDenied`'s own doc comment says the turn "DIED
+> because a tool it needed was REFUSED" — which is **false for Claude**
+> (measured §2) and **true for Codex** (published §5).
+
+**The doc comment is not false for Claude.** Traced at `94476b4`:
+
+- `TurnError::ToolDenied` has exactly ONE construction site in
+  production code, `app/src-tauri/src/agent/runner.rs:2294`.
+  (`agent/mod.rs:982` is a serde-shape test; `bin/fake_agent.rs`'s
+  `Ending::ToolDenied` is a fixture-scenario enum in the fake CLI, an
+  unrelated type.)
+- That site is gated by
+  `if result_is_error && !permission_denials.is_empty()`.
+- `result_is_error` has exactly ONE write to `true`,
+  `runner.rs:1961`, inside `if is_error { … }` on the terminal `result`
+  arm — the CLI's own `is_error: true`.
+
+So the variant is unreachable for a turn with `is_error: false`, and the
+sentence describes every turn that actually reaches it. The 2026-08-19
+capture (`is_error: false`, `terminal_reason: "completed"`) never
+reaches it: it produces `RunEvent::Denied` events and a `Completed`.
+
+**What the capture falsifies is the INFERENCE `denial => death`, not
+the doc comment** — and the taxonomy's real gap was never a mis-worded
+variant. It was the ABSENCE of a non-fatal denial event, which is
+exactly what T-081 added as `RunEvent::Denied`. The design doc
+mis-locates the defect, so its item 3 ("per-adapter denial semantics —
+is a refusal fatal or recoverable") is right while the sentence
+introducing it is wrong.
+
+**This is not academic.** The sentence landed on main at `d61e986` and
+was quoted as fact in T-081's dispatch brief, which instructed the
+executor that the capture falsified the doc comment. The executor
+declined on the card and was correct; the verifier re-derived it
+independently and agreed. A third reader will be told the same wrong
+thing.
+
+**Suggested close** (a `docs/design/` fence): replace the "provably
+mis-specified" claim with the accurate one — the doc comment is true of
+every turn that reaches the variant, and what Claude lacks is a variant
+or event for a RECOVERABLE denial, now supplied by `RunEvent::Denied`.
+Keep the Codex contrast, which is the paragraph's real point: the two
+harnesses differ in whether a refusal is terminal, and the
+normalisation layer has to say so per adapter.
