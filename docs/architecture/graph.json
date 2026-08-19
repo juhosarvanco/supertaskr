@@ -2677,8 +2677,8 @@
       "id": "f:app/src/genesis/interview-model.ts",
       "path": "app/src/genesis/interview-model.ts",
       "lang": "ts",
-      "hash": "blake3:d4597cbe39a7167103a1b0f002267053a4a52307e60c9c59ce76d6e6f2e8fe55",
-      "loc": 681,
+      "hash": "blake3:837d28a6c759b4d3ffe5b3de4df635fb498e4b72b457d271ea66936fc587dfee",
+      "loc": 688,
       "symbols": [
         {
           "id": "s:app/src/genesis/interview-model.ts#BankBaseline",
@@ -2736,8 +2736,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            572,
-            577
+            579,
+            584
           ]
         },
         {
@@ -2766,8 +2766,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            525,
-            525
+            532,
+            532
           ]
         },
         {
@@ -2776,8 +2776,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            422,
-            422
+            429,
+            429
           ]
         },
         {
@@ -2786,8 +2786,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            663,
-            663
+            670,
+            670
           ]
         },
         {
@@ -2846,8 +2846,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            485,
-            518
+            492,
+            525
           ]
         },
         {
@@ -2896,8 +2896,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            579,
-            629
+            586,
+            636
           ]
         },
         {
@@ -2906,8 +2906,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            640,
-            658
+            647,
+            665
           ]
         },
         {
@@ -2916,8 +2916,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            532,
-            553
+            539,
+            560
           ]
         },
         {
@@ -2936,8 +2936,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            632,
-            636
+            639,
+            643
           ]
         },
         {
@@ -2946,8 +2946,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            449,
-            468
+            456,
+            475
           ]
         },
         {
@@ -2977,7 +2977,7 @@
           "exported": true,
           "range": [
             395,
-            420
+            427
           ]
         },
         {
@@ -2986,8 +2986,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            436,
-            444
+            443,
+            451
           ]
         },
         {
@@ -2996,8 +2996,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            431,
-            434
+            438,
+            441
           ]
         },
         {
@@ -3006,8 +3006,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            674,
-            681
+            681,
+            688
           ]
         },
         {
@@ -3594,8 +3594,8 @@
       "id": "f:app/src/lib/agent-store.ts",
       "path": "app/src/lib/agent-store.ts",
       "lang": "ts",
-      "hash": "blake3:1318ba0508759073d1baf7350639b10131050f3d8bc09d9351b62eb67a3c87eb",
-      "loc": 593,
+      "hash": "blake3:99e203b40c33c8ddebafda149bc011a24c2dda02d54bb7c64aa6734326235c4f",
+      "loc": 660,
       "symbols": [
         {
           "id": "s:app/src/lib/agent-store.ts#CancelOutcomePayload",
@@ -3603,8 +3603,18 @@
           "kind": "type",
           "exported": true,
           "range": [
-            136,
-            138
+            166,
+            168
+          ]
+        },
+        {
+          "id": "s:app/src/lib/agent-store.ts#GenesisDenial",
+          "name": "GenesisDenial",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            70,
+            74
           ]
         },
         {
@@ -3613,8 +3623,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            54,
-            66
+            79,
+            96
           ]
         },
         {
@@ -3623,8 +3633,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            140,
-            140
+            170,
+            170
           ]
         },
         {
@@ -3633,8 +3643,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            171,
-            213
+            218,
+            260
           ]
         },
         {
@@ -3643,8 +3653,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            143,
-            152
+            173,
+            182
           ]
         },
         {
@@ -3653,8 +3663,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            157,
-            169
+            187,
+            216
           ]
         },
         {
@@ -3663,8 +3673,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            96,
-            107
+            126,
+            137
           ]
         },
         {
@@ -3673,8 +3683,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            127,
-            133
+            157,
+            163
           ]
         },
         {
@@ -3683,8 +3693,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            69,
-            93
+            99,
+            123
           ]
         },
         {
@@ -3693,8 +3703,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            111,
-            124
+            141,
+            154
           ]
         },
         {
@@ -3713,8 +3723,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            589,
-            593
+            656,
+            660
           ]
         },
         {
@@ -3723,8 +3733,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            339,
-            354
+            406,
+            421
           ]
         },
         {
@@ -3733,8 +3743,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            469,
-            489
+            536,
+            556
           ]
         },
         {
@@ -3743,8 +3753,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            215,
-            231
+            262,
+            278
           ]
         },
         {
@@ -3753,8 +3763,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            505,
-            507
+            572,
+            574
           ]
         },
         {
@@ -3763,8 +3773,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            568,
-            575
+            635,
+            642
           ]
         },
         {
@@ -3773,8 +3783,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            391,
-            393
+            458,
+            460
           ]
         },
         {
@@ -3783,8 +3793,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            379,
-            380
+            446,
+            447
           ]
         },
         {
@@ -3793,8 +3803,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            373,
-            375
+            440,
+            442
           ]
         },
         {
@@ -3803,8 +3813,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            383,
-            383
+            450,
+            450
           ]
         },
         {
@@ -3813,8 +3823,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            265,
-            334
+            313,
+            401
           ]
         },
         {
@@ -3823,8 +3833,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            359,
-            370
+            426,
+            437
           ]
         },
         {
@@ -3833,8 +3843,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            577,
-            586
+            644,
+            653
           ]
         },
         {
@@ -3843,8 +3853,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            546,
-            563
+            613,
+            630
           ]
         },
         {
@@ -3853,8 +3863,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            498,
-            500
+            565,
+            567
           ]
         },
         {
@@ -3863,8 +3873,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            450,
-            465
+            517,
+            532
           ]
         },
         {
@@ -3873,8 +3883,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            395,
-            399
+            462,
+            466
           ]
         },
         {
@@ -3883,8 +3893,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            434,
-            445
+            501,
+            512
           ]
         },
         {
@@ -3893,8 +3903,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            416,
-            430
+            483,
+            497
           ]
         },
         {
@@ -3903,8 +3913,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            521,
-            534
+            588,
+            601
           ]
         },
         {
@@ -3913,8 +3923,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            384,
-            384
+            451,
+            451
           ]
         },
         {
@@ -3923,8 +3933,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            382,
-            382
+            449,
+            449
           ]
         },
         {
@@ -3933,8 +3943,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            386,
-            389
+            453,
+            456
           ]
         },
         {
@@ -3943,8 +3953,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            235,
-            257
+            282,
+            305
           ]
         }
       ]
@@ -5869,8 +5879,8 @@
       "id": "f:app/test/agent-store.test.ts",
       "path": "app/test/agent-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:2dc7474570b2439141e193ae43b0af8071aefcb63ffadf66f1c0d34217ec57bf",
-      "loc": 261,
+      "hash": "blake3:9b97e6f258bf15adc536c20f86f6ae4ec90dc41a50c5f32433f5f62f04af904f",
+      "loc": 325,
       "symbols": [
         {
           "id": "s:app/test/agent-store.test.ts#ev",
@@ -6540,8 +6550,8 @@
       "id": "f:app/test/crescendo.test.ts",
       "path": "app/test/crescendo.test.ts",
       "lang": "ts",
-      "hash": "blake3:cc9b63c526f664d941931b29d55d2038eaf1ae0c23b2c224247347a5f62173c5",
-      "loc": 374,
+      "hash": "blake3:2f55a879355bf6f6ff4d668a9b2e0c9a3b7116fde8d384dc2f635a47f6525dd2",
+      "loc": 384,
       "symbols": [
         {
           "id": "s:app/test/crescendo.test.ts#NORTH_STAR",
@@ -6589,8 +6599,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            321,
-            336
+            331,
+            346
           ]
         },
         {
@@ -6630,7 +6640,7 @@
           "exported": false,
           "range": [
             202,
-            204
+            214
           ]
         }
       ]
@@ -7838,8 +7848,8 @@
       "id": "f:app/test/interview-model.test.ts",
       "path": "app/test/interview-model.test.ts",
       "lang": "ts",
-      "hash": "blake3:9ee78d128b69edc8bc1dd204f50a5c35f1ff3dec2bd4bde66d819d10fee22aa4",
-      "loc": 926,
+      "hash": "blake3:ca1a63c8ab8c18d5fd67341db459e54c10dcfccf6478a91c4d40eed45d3c5851",
+      "loc": 932,
       "symbols": [
         {
           "id": "s:app/test/interview-model.test.ts#docs",
@@ -7868,7 +7878,7 @@
           "exported": false,
           "range": [
             62,
-            71
+            74
           ]
         }
       ]
@@ -7877,8 +7887,8 @@
       "id": "f:app/test/interview-resume-dom.test.tsx",
       "path": "app/test/interview-resume-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:034d1a9e77dd243be53ae060dc01d4e552b8fdca267bc5ab9cb102f3e2210cba",
-      "loc": 785,
+      "hash": "blake3:916db9a6f8e617178f4323e06527544da57ad7ae0c1b3657bdcf2016adea8b5a",
+      "loc": 788,
       "symbols": [
         {
           "id": "s:app/test/interview-resume-dom.test.tsx#InterviewChat",
@@ -18039,6 +18049,12 @@
     },
     {
       "from": "s:app/src/lib/agent-store.ts#GenesisEvent",
+      "to": "s:app/src/lib/agent-store.ts#GenesisDenial",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#GenesisEvent",
       "to": "s:app/src/lib/agent-store.ts#TurnErrorPayload",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -18088,6 +18104,12 @@
     {
       "from": "s:app/src/lib/agent-store.ts#GenesisStatusPayload",
       "to": "s:app/src/lib/agent-store.ts#TurnErrorPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/agent-store.ts#GenesisTurn",
+      "to": "s:app/src/lib/agent-store.ts#GenesisDenial",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -21863,7 +21885,7 @@
   ],
   "stats": {
     "files": 118,
-    "symbols": 995,
-    "edges": 1518
+    "symbols": 996,
+    "edges": 1520
   }
 }

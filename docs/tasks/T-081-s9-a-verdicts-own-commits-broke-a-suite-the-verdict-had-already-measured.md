@@ -72,25 +72,38 @@ branch tip is **556**. That one is harmless because the arithmetic is
 published and closes; the dogfood red is not, because nothing published
 would lead a reader to re-derive it.
 
-## Two candidate closes, and they are not alternatives
+## ONE candidate close is left here; the other is DEFERRED to T-084
 
-1. **The cheap one, and it is a real gate rather than advice.**
-   `status:` is a closed vocabulary the parser already owns and already
-   reports on. Nothing enforces it at the point a finding is WRITTEN,
-   and the dogfood body — the thing that does catch it — is in the
-   `npm test` suite, which a docs-only edit gives nobody a reason to
-   run. The token lint runs over a CONTROL corpus derived from
-   `git ls-files` and is CI's first step; a frontmatter-vocabulary check
-   belongs beside it, where a docs-only change already gets looked at.
-   (Whether it lives there or in the parser is a fence question for
-   whoever takes this.)
+**This section originally carried two candidate closes. The first is
+now `T-084`'s, and carrying it in two places would be the failure this
+card's own decision ONE names — "a rule with two implementations is two
+chances to disagree about it" (T-057).** The verifier ruled the boundary
+at the second verdict; the integrator applied it at the merge and
+records the edit here rather than folding it in silently.
 
-2. **The role one.** `method/roles/verifier.md` should say that a
-   verifier who COMMITS to the branch re-runs whatever gate its own
-   commits could move, and that in this repo `docs/**` moves the app
-   suite. The same clause covers the CONTROL figure. This is the
-   general form: **a role that writes to the tree owes the tree's gates,
-   even when what it wrote was prose.**
+**DEFERRED — the mechanical gate, now `T-084`'s territory.** The
+original item 1 asked for a frontmatter-vocabulary check beside the
+token lint, on the reasoning that `status:` is a closed vocabulary the
+parser already owns, that nothing enforces it at the point a finding is
+WRITTEN, and that the dogfood body which does catch it lives in a suite
+a docs-only edit gives nobody a reason to run. **`T-084` is scoped to
+exactly that** — *"`docs/` is a code input and neither standing gate
+knows it"*, `touches: [docs/CONVENTIONS.md, tools/e2e]`, landed on main
+at `073f136`, and it already cites THIS incident as its second observed
+instance and THIS finding by id for why the verifier did not catch their
+own red. Whoever takes T-084 owns the trigger and the fence question
+(token lint or parser); nothing about it needs to be decided here.
+
+**WHAT STAYS HERE, because no gate can supply it.** The role clause:
+`method/roles/verifier.md` should say that a verifier who COMMITS to the
+branch re-runs whatever gate its own commits could move, and that in
+this repo `docs/**` moves the app suite. The same clause covers the
+CONTROL figure — and **that half is why this finding survives T-084 at
+all**: a stale printed CONTROL number is not a pin, and nothing
+mechanical will ever catch it. The general form is broader than `docs/`
+in one axis and narrower in another: **a role that writes to the tree
+owes the tree's gates, even when what it wrote was prose** — it is about
+WHO re-measures, not about WHICH trigger fires.
 
 ## What was done here rather than left
 

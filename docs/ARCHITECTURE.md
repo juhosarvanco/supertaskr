@@ -413,6 +413,50 @@ ADR-014/015).
   untouched at 16 entries — and the graph is byte-identical for the same
   reason as T-043: `languages: ["ts"]` still hides
   `app/src-tauri/src/agent/**`.
+
+  **T-081 GIVES C-14 AN EVENT IT DID NOT HAVE, AND IT IS THE FIRST ONE
+  THAT IS NEITHER A RELAY NOR A VERDICT.** T-069's entry above ends "no
+  IPC, grant, event or dependency moved"; this one moves the EVENT set
+  and nothing else in that list. `RunEvent` gains `Denied { seq, turn,
+  tool_name, tool_use_id, message }`, mirrored on the wire as
+  `toolName`/`toolUseId` and in the store as `GenesisDenial` +
+  `GenesisTurn.denials`. The mechanism it closes is one layer BELOW the
+  one T-069 closed: the CLI announces a permission denial the moment it
+  happens, on a `system`/`permission_denied` line whose defining
+  property is what it LACKS — no `error`, no `error_status` — so
+  `classify_line`'s `system` arm, which asks whether an error field is
+  PRESENT, returned `Ignored` and the line never reached the parse at
+  all. On the observed 2.1.226 turn the denials preceded the `result`
+  line by roughly forty seconds. The arm is now keyed POSITIVELY on
+  `subtype`, because a lack cannot be matched.
+  **THE ARCHITECTURAL CONTENT IS THAT A DENIAL IS NOT A DEATH.** Every
+  prior thing C-14 told C-05 about a refusal arrived as part of the
+  turn's OUTCOME — `ToolDenied`, or T-069's ring note riding
+  `stderr_tail` on `ExitNonZero`. Both are terminal by construction, so
+  a denial the planner RECOVERED from reached nobody even after T-069:
+  the observed turn carried two denials and finished `is_error: false`,
+  `terminal_reason: "completed"`. `Denied` is the first C-14 event that
+  says something happened without saying how the turn ends, and the
+  classification is deliberately UNTOUCHED — `result_is_error &&
+  !permission_denials.is_empty()` stays exactly as narrow as T-029-s7
+  left it, which the capture vindicates rather than merely permits.
+  **TWO CHANNELS, ONE JOIN, IN ONE PLACE.** The `result` line carries
+  the denials cumulatively and the in-band lines carry them
+  individually, so `tool_use_id` joins them in the Rust and nowhere
+  else — the store APPENDS what it is given and does not re-join, on
+  T-057's rule that a rule with two implementations is two chances to
+  disagree. An entry with no id is treated as unannounced, because a
+  repeat is a nuisance and a silence is the defect. **No IPC and no
+  grant moved** — still THIRTEEN commands at both ends, `acl_pin.rs` a
+  0-file diff at the same 92-grant `8d24cbad…`, `ENV_ALLOWLIST`
+  byte-identical at 16 entries — but **the GRAPH did move, and that is
+  the difference from T-069**: `app/src/lib/agent-store.ts` is TS and
+  therefore indexed, so `GenesisDenial` is the 996th symbol and its two
+  `type_ref` edges take the graph to 1520. Both edges have BOTH
+  endpoints in that one file, so no component relation moved and the
+  registry still stops at C-14. What is NOT here is the RENDERING: the
+  notice a human would see lives in C-13's chat, outside this fence
+  (`T-081-s1`).
   area app-agent since T-025,
   where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
   `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and

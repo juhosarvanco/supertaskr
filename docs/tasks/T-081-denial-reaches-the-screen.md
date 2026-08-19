@@ -5,12 +5,12 @@ feature: F-03
 milestone: 4
 priority: 39
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-agent]
 builder:
 verifier: claude-opus-5
-built_by: claude-opus-5 @fresh
+built_by: claude-opus-5 @fresh (re-built after the rejection by claude-opus-5 @T-081-fix)
 verified_by: claude-opus-5 @T-081-verify (re-verified @T-081-verify2, 2026-08-20)
 review: same-model
 ---
