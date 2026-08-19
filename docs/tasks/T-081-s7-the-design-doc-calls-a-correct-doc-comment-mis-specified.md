@@ -1,9 +1,20 @@
 ---
 id: T-081-s7
 title: The cross-harness plan calls a correct doc comment "provably mis-specified", and it is seeding briefs
-status: suggested
+status: closed
 suggested_by: verifier claude-opus-5 @T-081
+closed_by: 3b4326d (main, 2026-08-19 23:22) — independently, before this file was written
 ---
+
+**CLOSED ON ARRIVAL, AND THE RECORD IS KEPT BECAUSE THE AGREEMENT IS
+THE POINT.** Main moved during T-081's verification: `3b4326d`, *"ROADMAP
+gains milestone 4; correct my ToolDenied claim in the cross-harness
+plan"*, rewrites the sentence below on exactly the reasoning given here
+and credits T-081's executor for refusing the brief. Three readers
+reached the same conclusion independently — the executor from the card,
+the verifier by tracing construction sites, and the author of the
+original sentence. No work remains; what follows is the derivation, kept
+so the ruling is re-checkable rather than remembered.
 
 `docs/design/cross-harness-plan.md:170` reads:
 

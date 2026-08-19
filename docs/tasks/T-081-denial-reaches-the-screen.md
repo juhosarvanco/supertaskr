@@ -631,7 +631,12 @@ Claude"*. That sentence is itself wrong, for the reason above, and it
 landed on main at `d61e986` where it will keep seeding briefs — it
 seeded this one. The taxonomy's real gap was never a bad doc comment: it
 was the ABSENCE of a non-fatal denial event, which is precisely what
-this card adds. Filed as `T-081-s7`.
+this card adds. Filed as `T-081-s7` — and **already closed on arrival**:
+main moved during this review, and `3b4326d` (*"correct my ToolDenied
+claim in the cross-harness plan"*) rewrites that sentence on exactly this
+reasoning, crediting the executor for refusing the brief. Three readers
+reached it independently. `s7` is kept as `status: closed` so the
+derivation stays re-checkable.
 
 ### THE GRANT SPAN — the executor is RIGHT, STATE is wrong, and no duplicate is needed
 
