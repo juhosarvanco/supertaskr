@@ -452,3 +452,75 @@ test result: FAILED. 63 passed; 3 failed; 1 ignored
 Both denial tails EMPTY, the no-result 401 typed `AuthFailed`. The card
 claimed a measurement and the measurement reproduces. Restored, sha256
 identical, `git status --porcelain` empty.
+
+#### THE RULING, attacked at the joint the executor named — and one it did not
+
+The executor disclosed its own weakest joint: the discriminator assumes
+a delta is THE MODEL speaking, while the CLI demonstrably writes its own
+prose into a nominally-model field. I built that stream and measured it,
+and then built a second one the notes do not consider.
+
+Two probe scenarios added inline to `fake_agent.rs` beside
+`retry-401-text-then-401-no-result`, each with a body that prints the
+classification rather than asserting one. **Probe 1** — a 401 the CLI
+NEVER recovered from, whose only "model text" is the CLI's own sentence
+(`Failed to authenticate. API Error: 401 OAuth access token has been
+revoked.`, the exact string 2.1.226 writes into `result`), then death
+with no `result` line. **Probe 2** — a RECOVERED 401 whose proof of
+recovery is a `tool_use` block instead of a text delta.
+
+```
+VERIFIER PROBE CLASSIFICATION   => ExitNonZero { code: Some(1), stderr_tail: "api_retry: authentication_failed 401\n" }
+VERIFIER PROBE 2 CLASSIFICATION => AuthFailed { status: Some(401), message: "the agent CLI could not authenticate" }
+```
+
+Probe 1 re-run against `runner.rs` at `76cf034` with the same fixture:
+
+```
+VERIFIER PROBE CLASSIFICATION => AuthFailed { status: Some(401), message: "the agent CLI could not authenticate" }
+```
+
+**The joint is real: a true diagnosis is withdrawn there.** The notes
+said the risk existed and judged it lighter; it exists, and it is now
+measured rather than argued.
+
+**It is not a fixable joint, and that is what settles it.** Probe 1 and
+`retry-401-then-no-result` differ in ONE thing — the delta's TEXT — which
+`run_turn` never reads. Any discriminator that separated them would have
+to read the delta's CONTENT, which is guessing at CLI vocabulary and is
+exactly the mistake T-029-s5 is parked on and this card's criterion
+forbids. So the choice is not "a better discriminator" versus this one;
+it is this one versus none.
+
+**And the withdrawn diagnosis degrades better than the card claims.**
+The pre-fix `AuthFailed` message on this stream is the generic `"the
+agent CLI could not authenticate"` — there is no `result` line, so there
+is no CLI sentence to carry. Post-fix the user gets the raw diagnostic,
+`api_retry: authentication_failed 401`: `failureDetail`
+(`interview-model.ts:620`, read only) trims it non-empty and
+`FailureBlock` renders the detail span, while
+`data-retryable={action === null || action.retry}`
+(`interview-turns.tsx:288`) is TRUE because `failureAction` returns null
+for `exitNonZero`. So the false negative costs a typed variant and one
+wasted retry, and it hands the user MORE legible text than the true
+positive it replaced. The false positive it removes costs `retry: false`
+and a trip to `claude login` with a login that is fine. The asymmetry
+T-029's verifier ratified holds on this stream, measured on both sides.
+
+**The ruling is APPROVED as built.** The reasoning survives the attack
+the executor aimed at it, and it survives it for a reason the notes do
+not state: the joint cannot be closed without the vocabulary the card
+forbids.
+
+**Probe 2 is a finding, and it is filed as T-069-s2.** The runner's own
+justification — "model text is streamed by a request that SUCCEEDED" —
+applies verbatim to a `tool_use` block, which is the SAME model response
+in a different content-block type, and which the CLI has no reason to
+fabricate the way it fabricates prose. `StreamLine::Activity` is not
+consulted, so a turn that recovers a 401, calls one tool and dies
+without a `result` line still types `AuthFailed`. The closure covers
+only the sub-family that produced TEXT, and the evidence it declines to
+read is STRICTLY STRONGER than the evidence it acts on.
+
+Both files restored, sha256 identical to `git show HEAD:<path>`,
+`git status --porcelain` empty.
