@@ -597,3 +597,93 @@ move itself is clean and additive-only (`expect(result.issues[0]).not
 .toHaveProperty('nearMiss')` plus a message `not.toContain('zero padding')`,
 nothing removed or loosened), and the pin IS cited elsewhere in the notes
 under C5, so this is an accuracy defect in the prose rather than in the work.
+
+**The poison sweep re-derived, not accepted.** The 34 were derived
+independently by the same mechanical rule (indent-matched `it()` block
+extraction at both revisions, set difference on body TEXT) and land on the
+same number, per file: component 10 · files 2 · id-slot 13 · project 1 ·
+roadmap 1 · validate 7 = **34**. All 34 were poisoned in one run with a
+relation-breaking expectation injected before each body's closing brace:
+
+    POISON_VITEST_EXIT=1
+     Test Files  6 failed | 6 passed (12)
+          Tests  34 failed | 229 passed (263)
+    failures citing T-076 POISON: 170 lines / 34 FAIL blocks
+    assertion failures NOT citing the poison: (none)
+
+**229 = 263 − 34, the pre-poison baseline, and zero collateral.** Restored
+with `git checkout` and proved by sha256 against `git show HEAD:<path>` —
+all six MATCH (`139f0d90…`, `fb8a150a…`, `79c44f59…`, `9dd7132d…`,
+`037951b3…`, `51278b4b…`); `file --mime` reads `charset=utf-8` on all six.
+(One nit: the notes claim `git grep "T-076 POISON"` returns nothing — it
+returns two hits, both in this card's own prose.)
+
+**The (i)/(k) pair spot-checked first-hand, and the notes over-state it.**
+Both mutants applied one-sided to `lib/parser/src/validate.ts` only, each
+verified by reading the resulting DIFF TEXT:
+
+    (i) FIELD dropped, clause kept   -> 5 failed | 258 passed
+    (k) clause dropped, FIELD kept   -> 3 failed | 260 passed
+
+The counts are exactly as claimed. The characterisation is not: (k)'s three
+are a **proper subset** of (i)'s five, so the two do not red "DIFFERENT
+tests" — dropping the field reds two bodies (`fires identically through the
+disk layer`, `the -sN suffix is part of the slot`) that dropping the sentence
+does not, and nothing reds for the sentence alone. Ruling 1's substance
+survives: each half is independently detectable, which is what "pinned as two
+things" has to mean. The symmetry is what does not.
+
+**SEVENTH SHAPE FOUND, and it is a live coverage hole rather than a
+taxonomy note.** Mutant **(q)**: inline the pre-T-076 comparator at the
+`ambiguous-mapping` sort site (`component.ts:412`) ONLY, leaving
+`compareComponentIds` total. One-sided, no shared literal, and it breaks the
+exact relation criterion 1 exists to protect.
+
+    MUT_Q_EXIT=0
+     Test Files  12 passed (12)
+          Tests  263 passed (263)
+
+**It survives the entire suite.** And it is not equivalent — built and
+driven, it restores the defect verbatim:
+
+    MUTANT (q) winner digits: A=400  B=401  | same id? false
+    MUTANT (q) winner file:  A=C-aaa.md  B=C-aaa.md
+    DEFECT RESTORED? true
+    comparator itself still total? compareComponentIds = -1
+
+So the shape is: **"zero survivors" measured against a mutant set derived
+from the pins rather than from the criteria.** Sixteen mutants, all of them
+aimed at something a pin already names; the one input class the card's own
+"Flagged for the verifier" admits is unpinned was never mutated, and it
+survives. This is the dual of shape six — shape six is a body that kills no
+unique mutant, shape seven is a mutant no body kills — and it is worth more,
+because a redundant body costs nothing and this costs the criterion.
+
+**RULING ON `files.test.ts:192` — the body STAYS, and the executor's
+shape-six classification is WRONG.** Mutant **(u)**: swap the assembly order
+in `parseProjectFromFiles` (`files.ts:182`) from
+`issues.push(...roadmap.issues, ...componentSet.issues)` to
+`(...componentSet.issues, ...roadmap.issues)`.
+
+    MUT_U_EXIT=1
+     Test Files  1 failed | 11 passed (12)
+          Tests  1 failed | 262 passed (263)
+    FAIL  test/files.test.ts > duplicate-id says WHICH id space, in one mixed
+          model (T-076) > reads .space off every duplicate without touching a message
+
+**It is the only test in 263 that reds.** The body's `['task','feature',
+'component']` assertion is the sole guard on the layer order `files.ts:181`
+declares in a source comment ("task -> roadmap -> component order, mirroring
+the disk layer"). The executor searched for a killer among `space` mutants
+and found none, which is true and beside the point: the body's second
+assertion pins a different relation entirely. It is not shape six. It earns
+its place on the ordinary ground — it uniquely kills a mutant — and the
+notes should say so instead of apologising for it.
+
+**Other hunts, all killed, no further survivors.** (r) `slotNearMisses`
+sorts instead of preserving model order -> 1 red (`names every spelling when
+the declared space is itself aliased`) — model order IS pinned. (s)
+`idSlotIndex` drops the set dedupe -> 2 red. (t) the WRONG `space` value
+(`'component'` -> `'task'`) rather than a dropped one -> 2 red. Every mutant
+restored; `shasum -a 256 lib/parser/src/*.ts` is byte-identical to the
+pre-drill capture, `git status` clean, and `lib/parser` rebuilt afterwards.
