@@ -517,24 +517,39 @@ and all three were verified against their branch refs through this
 repository's shared object store rather than assumed from their slugs.
 No sibling worktree was read into, written to, built from or signalled.
 
+**Every tip below moved TWICE while this integration ran** — once during
+the merge and again during the checkpoint — so each is recorded with its
+value at the moment of writing and should be read as a moving target,
+not a fact. All three cards read `status: verifying`.
+
 - **T-069 — the turn's own end decides the diagnosis**
   (`task/T-069-relay`, worktree `../nputer-T-069`). F-03, milestone 3,
-  size S, `touches: [app-agent]`, `status: verifying`. **In
-  verification**: its tip moved during this integration, `b4d87cc` at
-  the start and **`8054d0b`** at the end, whose subject is
-  "verdict (3/n)".
+  size S, `touches: [app-agent]`. **In verification**: `b4d87cc` at the
+  start, `8054d0b` at the merge, **`ab8e4bf`** at the end, subject
+  "verdict (5/n)".
 - **T-073 — the ambient node surface stops being a write permit**
   (`task/T-073-write-permit`, worktree `../nputer-T-073`). F-02,
-  milestone 4, size S, `touches: [app-shell]`, `status: verifying`.
-  **In verification**, and the earlier of the two: `7386790` at the
-  start, **`01a452b`** at the end, subject "verdict (1/n)".
+  milestone 4, size S, `touches: [app-shell]`. **In verification**:
+  `7386790` → `01a452b` → **`0388f82`**, subject "verdict (4/n): file s4
+  and s5 — the sweep's unpinned dimensions".
 - **T-078 — the conventions describe the machine that exists**
   (`task/T-078-conventions`, worktree `../nputer-T-078`). F-01,
-  milestone 4, size M, `touches: [docs/CONVENTIONS.md, method/]`,
-  `status: verifying`. **In a POST-REJECTION FIX**, which is the state
-  worth naming precisely: it was rejected, and its tip moved `041e8ec`
-  → **`1f0f7ae`**, subject "T-078 fix: both rejected integers,
-  re-derived at this ref, and s6 closed".
+  milestone 4, size M, `touches: [docs/CONVENTIONS.md, method/]`. **In a
+  POST-REJECTION FIX**, which is the state worth naming precisely: it
+  was rejected and is being repaired. `041e8ec` → `1f0f7ae` →
+  **`5b5e1c7`**, subject "T-078 notes: ref-pin every count, after one of
+  mine went stale by three" — the same lesson this merge learned from a
+  stale range figure, arrived at independently in the lane that owns the
+  written rule.
+
+**SHAPE SEVEN WAS FOUND TWICE, IN TWO LANES, IN THE SAME WINDOW.**
+T-069's verdict (5/n), committed while this checkpoint was being
+written, reads "shape seven found from the criteria (s3)". Neither lane
+could see the other. Two independent discoveries of a mutant no body
+kills, in one afternoon, is much stronger evidence than either finding
+alone — it says the hole is in the METHOD's drill clause and not in
+either card, and triage should treat `T-076-s4` and `T-069-s3` as one
+item.
 
 **All three are disjoint from this merge**, computed with `comm -12`
 against this merge's own nineteen-file list rather than inferred from
