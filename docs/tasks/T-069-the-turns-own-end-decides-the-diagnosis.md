@@ -663,3 +663,83 @@ exact.
 
 All files restored, sha256 identical to HEAD, `git status --porcelain`
 empty.
+
+#### SHAPE SEVEN — hunted from the CRITERIA, and it is here
+
+Criterion 1 says the parsed denial **NAMES** shall reach the ring "so
+`ExitNonZero`'s tail names them" — plural. The pins assert
+`stderr_tail.contains("WebFetch")` and `contains("Bash")`, and **both
+relayed fixtures carry exactly ONE denial** (`fake_agent.rs:269` and
+`:295`). The only two-denial fixture is `tool-denied` (`:230`), which
+classifies `ToolDenied` — a variant with no `stderr_tail` at all
+(`runner.rs:128`), so its tail is never rendered. **Nothing drives the
+`join` with more than one name.**
+
+Measured, not argued. `denials.join(", ")` → `denials.first().cloned()
+.unwrap_or_default()` at `runner.rs:1833`, so a turn refused two tools
+relays one:
+
+```
+test result: ok. 66 passed; 0 failed; 1 ignored     exit 0
+```
+
+And the combined form — the `permission_denials: ` label dropped, the
+trailing newline push dropped, and only the first name relayed — against
+the WHOLE workspace:
+
+```
+15 test result: lines — 343 passed / 0 failed / 3 ignored    exit 0
+```
+
+**A mutant that silently discards every denial name but the first
+survives a 343-test suite at exit 0.** The pins were derived from the
+behaviour the fixtures happen to produce, not from the plural the
+criterion states. That is shape seven exactly. Filed as **T-069-s3**;
+the fix is one extra name in `denied-fatal-not-flagged` and one more
+`contains`. It is a coverage gap rather than a defect — the shipped
+`join` is correct and the criterion's behaviour was measured — so it
+does not carry the verdict.
+
+#### The relay's unconditionality — reasoning checked, no regression found
+
+`TurnError::ToolDenied { denials, terminal_reason }` (`runner.rs:128`)
+carries **no `stderr_tail` field**, so a CLAIMED denial can never render
+the note however it is pushed. And the classification genuinely is not
+available in the parse loop: the `ToolDenied` arm is guarded by
+`exited_badly || result_is_error` where `exited_badly` reads the child's
+**exit status**, which does not exist while lines are still arriving.
+Gating the push would therefore mean re-deriving half the guard inside
+the loop — the coupling this change exists to break. The reasoning
+holds.
+
+Nothing regressed from making it unconditional. Every `stderr_tail`
+assertion in the file is `contains(...)` or `trim().is_empty()` — there
+is no exact-equality tail assertion the extra bytes could break — and
+the ring evicts from the FRONT at 64 KiB (`MAX_STDERR_RING`,
+`Ring::push`) while the note is bounded to 16 × 128 bytes plus a label
+by `denial_names`. Worst case ~2 KiB of a 64 KiB ring, and only for a
+turn whose stderr already overflowed it. Full suite green at the tip:
+**343 / 0 / 3**, exit 0.
+
+#### The executor's poison honesty — spot-checked
+
+Three of the claimed Pass A sites value-poisoned one-sidedly in
+`agent_runner.rs` only (`Some(401)`→`Some(407)` at `:1620`,
+`contains("401")`→`contains("407")` at `:1698`, `is_empty()`→
+`!is_empty()` at `:1765`) — producer literals untouched in
+`fake_agent.rs`:
+
+```
+test result: FAILED. 63 passed; 3 failed; 1 ignored
+panicked at tests/agent_runner.rs:1618:13:  the_transcribed_auth_shape_carries_its_status_on_its_own_result_line
+panicked at tests/agent_runner.rs:1697:13:  a_recovered_auth_retry_followed_by_model_text_and_no_result_line_…
+panicked at tests/agent_runner.rs:1764:13:  the_same_no_result_stream_without_the_retry_line_has_nothing_to_relay
+```
+
+Three for three, each at its OWN assertion, never a neighbour, and all
+three line numbers are in the executor's claimed Pass A set
+(`1533 · 1578 · 1618 · 1658 · 1697 · 1733 · 1764`). All thirteen claimed
+Pass A/B lines were read from the file and every one is a real assertion
+inside the seven rows. The report is honest.
+
+Restored, sha256 identical, `git status --porcelain` empty.
