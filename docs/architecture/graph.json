@@ -2677,8 +2677,8 @@
       "id": "f:app/src/genesis/interview-model.ts",
       "path": "app/src/genesis/interview-model.ts",
       "lang": "ts",
-      "hash": "blake3:77397e0cecc087a58e663084cc0e73f2a42579b7bb79d326ecbe12a91daf46c5",
-      "loc": 661,
+      "hash": "blake3:d4597cbe39a7167103a1b0f002267053a4a52307e60c9c59ce76d6e6f2e8fe55",
+      "loc": 681,
       "symbols": [
         {
           "id": "s:app/src/genesis/interview-model.ts#BankBaseline",
@@ -2786,8 +2786,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            643,
-            643
+            663,
+            663
           ]
         },
         {
@@ -2897,7 +2897,7 @@
           "exported": true,
           "range": [
             579,
-            609
+            629
           ]
         },
         {
@@ -2906,8 +2906,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            620,
-            638
+            640,
+            658
           ]
         },
         {
@@ -2936,8 +2936,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            612,
-            616
+            632,
+            636
           ]
         },
         {
@@ -3006,8 +3006,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            654,
-            661
+            674,
+            681
           ]
         },
         {
@@ -3594,8 +3594,8 @@
       "id": "f:app/src/lib/agent-store.ts",
       "path": "app/src/lib/agent-store.ts",
       "lang": "ts",
-      "hash": "blake3:fcc1ac12c762ee4821e58d0635aa6debdb1328e595d49dfb234cd9f0e730c0db",
-      "loc": 591,
+      "hash": "blake3:1318ba0508759073d1baf7350639b10131050f3d8bc09d9351b62eb67a3c87eb",
+      "loc": 593,
       "symbols": [
         {
           "id": "s:app/src/lib/agent-store.ts#CancelOutcomePayload",
@@ -3603,8 +3603,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            134,
-            136
+            136,
+            138
           ]
         },
         {
@@ -3613,8 +3613,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            52,
-            64
+            54,
+            66
           ]
         },
         {
@@ -3623,8 +3623,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            138,
-            138
+            140,
+            140
           ]
         },
         {
@@ -3633,8 +3633,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            169,
-            211
+            171,
+            213
           ]
         },
         {
@@ -3643,8 +3643,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            141,
-            150
+            143,
+            152
           ]
         },
         {
@@ -3653,8 +3653,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            155,
-            167
+            157,
+            169
           ]
         },
         {
@@ -3663,8 +3663,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            94,
-            105
+            96,
+            107
           ]
         },
         {
@@ -3673,8 +3673,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            125,
-            131
+            127,
+            133
           ]
         },
         {
@@ -3683,8 +3683,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            67,
-            91
+            69,
+            93
           ]
         },
         {
@@ -3693,8 +3693,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            109,
-            122
+            111,
+            124
           ]
         },
         {
@@ -3704,7 +3704,7 @@
           "exported": true,
           "range": [
             29,
-            47
+            49
           ]
         },
         {
@@ -3713,8 +3713,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            587,
-            591
+            589,
+            593
           ]
         },
         {
@@ -3723,8 +3723,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            337,
-            352
+            339,
+            354
           ]
         },
         {
@@ -3733,8 +3733,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            467,
-            487
+            469,
+            489
           ]
         },
         {
@@ -3743,8 +3743,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            213,
-            229
+            215,
+            231
           ]
         },
         {
@@ -3753,8 +3753,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            503,
-            505
+            505,
+            507
           ]
         },
         {
@@ -3763,8 +3763,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            566,
-            573
+            568,
+            575
           ]
         },
         {
@@ -3773,8 +3773,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            389,
-            391
+            391,
+            393
           ]
         },
         {
@@ -3783,8 +3783,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            377,
-            378
+            379,
+            380
           ]
         },
         {
@@ -3793,8 +3793,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            371,
-            373
+            373,
+            375
           ]
         },
         {
@@ -3803,8 +3803,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            381,
-            381
+            383,
+            383
           ]
         },
         {
@@ -3813,8 +3813,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            263,
-            332
+            265,
+            334
           ]
         },
         {
@@ -3823,8 +3823,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            357,
-            368
+            359,
+            370
           ]
         },
         {
@@ -3833,8 +3833,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            575,
-            584
+            577,
+            586
           ]
         },
         {
@@ -3843,8 +3843,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            544,
-            561
+            546,
+            563
           ]
         },
         {
@@ -3853,8 +3853,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            496,
-            498
+            498,
+            500
           ]
         },
         {
@@ -3863,8 +3863,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            448,
-            463
+            450,
+            465
           ]
         },
         {
@@ -3873,8 +3873,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            393,
-            397
+            395,
+            399
           ]
         },
         {
@@ -3883,8 +3883,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            432,
-            443
+            434,
+            445
           ]
         },
         {
@@ -3893,8 +3893,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            414,
-            428
+            416,
+            430
           ]
         },
         {
@@ -3903,8 +3903,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            519,
-            532
+            521,
+            534
           ]
         },
         {
@@ -3913,8 +3913,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            382,
-            382
+            384,
+            384
           ]
         },
         {
@@ -3923,8 +3923,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            380,
-            380
+            382,
+            382
           ]
         },
         {
@@ -3933,8 +3933,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            384,
-            387
+            386,
+            389
           ]
         },
         {
@@ -3943,8 +3943,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            233,
-            255
+            235,
+            257
           ]
         }
       ]
@@ -7838,8 +7838,8 @@
       "id": "f:app/test/interview-model.test.ts",
       "path": "app/test/interview-model.test.ts",
       "lang": "ts",
-      "hash": "blake3:66585cc713aa62be5ad868b457f5fcbf0cbe2d852fa8d58fc8cb9397558bd01f",
-      "loc": 889,
+      "hash": "blake3:9ee78d128b69edc8bc1dd204f50a5c35f1ff3dec2bd4bde66d819d10fee22aa4",
+      "loc": 926,
       "symbols": [
         {
           "id": "s:app/test/interview-model.test.ts#docs",
@@ -7877,8 +7877,8 @@
       "id": "f:app/test/interview-resume-dom.test.tsx",
       "path": "app/test/interview-resume-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:5249607a060770265db78f65b9c87582b05b97fcfcf73a56396c04a6d437ff31",
-      "loc": 739,
+      "hash": "blake3:034d1a9e77dd243be53ae060dc01d4e552b8fdca267bc5ab9cb102f3e2210cba",
+      "loc": 785,
       "symbols": [
         {
           "id": "s:app/test/interview-resume-dom.test.tsx#InterviewChat",

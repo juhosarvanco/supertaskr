@@ -171,6 +171,37 @@ fn main() {
             spawn_grandchild("sleeper-resistant", turn_dir.as_deref());
             sleep_forever();
         }
+        // T-082 RULED ON THIS LINE'S PROVENANCE, AND THE ANSWER IS
+        // **COMPOSED — NOT TRANSCRIBED**. It is the fixture's own voice,
+        // written to give `exitNonZero` a non-empty stderr tail; it is not
+        // a stand-in for anything the real CLI has ever printed, and it
+        // must not be read as one. Four independent facts, none of them
+        // remembered:
+        //   1. It carries this binary's own `fake-agent: ` prefix, the
+        //      same prefix as its three unambiguously-own diagnostics
+        //      (unknown scenario / no current_exe / could not fork).
+        //   2. It predates the observation it would have had to
+        //      transcribe. This line was written at `74a0274`
+        //      (2026-08-16 11:41), the T-025 scaffold; the 2.1.226 auth
+        //      smoke was run and recorded eighteen minutes later at
+        //      `1cb08ba`, which is the commit that added `auth-error`
+        //      below.
+        //   3. THE REAL CLI WRITES NOTHING TO STDERR WHEN IT CANNOT
+        //      AUTHENTICATE. That smoke reported `stderrTail: ""`, and
+        //      `docs/research/real-cli-observation.md` (2026-08-19,
+        //      2.1.226) reconfirms "zero bytes on stderr … this CLI
+        //      reports in band" — so there is no real stderr line here to
+        //      transcribe.
+        //   4. The words the CLI really does emit are on its `result`
+        //      line and name no command at all: "Failed to authenticate.
+        //      API Error: 401 OAuth access token has been revoked." The
+        //      scenario that transcribes them is `auth-error`, below.
+        // THE TEXT IS LEFT VERBATIM ANYWAY, and the `claude login` inside
+        // it is now a command the app deliberately does NOT recommend
+        // (T-082 moved the app's advice to `claude auth login`). That
+        // makes this fixture a small standing witness for the same card's
+        // rule that the app's advice is its own: a CLI naming one command
+        // never moves what the screen prints.
         "nonzero" => {
             emit_init(&session_id, &model);
             eprintln!("fake-agent: credentials expired, please run `claude login`");

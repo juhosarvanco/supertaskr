@@ -581,7 +581,27 @@ export function failureAction(error: TurnErrorPayload): FailureAction | null {
     case "authFailed":
       return {
         hint: "Log in to your agent CLI and the interview carries on from here — nothing is lost. Or drive it by hand right now, which needs no login at all.",
-        command: "claude login",
+        // T-082: THIS SHIPPED AS `claude login`, WHICH IS NOT A COMMAND.
+        // `claude [options] [command] [prompt]` parses an unrecognised
+        // leading word as the PROMPT, so a user whose credentials really
+        // had expired — following the app's own advice — started a
+        // session that sent the word "login" to a model they could not
+        // reach. Checked against the installed CLI 2.1.226 by reading its
+        // own command surface, which spawns no turn and calls no model:
+        // `claude --help` lists `auth  Manage authentication` and no bare
+        // `login`; `claude auth --help` lists `login`/`logout`/`status`;
+        // `claude auth login --help` prints that subcommand's own usage
+        // (`--claudeai`, `--console`, `--email`, `--sso`).
+        //
+        // THE LITERAL IS THE APP'S OWN AND IS NEVER ASSEMBLED FROM
+        // `error.message`. Nothing in this switch reads the CLI's text —
+        // that text reaches the screen through `failureDetail` as
+        // EVIDENCE and never as an instruction, so the app cannot inherit
+        // a bad command from a CLI that prints one. Pinned by the T-082
+        // bodies in app/test/interview-model.test.ts and
+        // app/test/interview-resume-dom.test.tsx, which drive an auth
+        // failure whose own words name a different command entirely.
+        command: "claude auth login",
         // Deterministic until the login changes. Offering a retry would
         // be offering the one thing that cannot work.
         retry: false,
