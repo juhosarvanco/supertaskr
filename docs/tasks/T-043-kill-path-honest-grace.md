@@ -473,3 +473,137 @@ and by worktree-path match, **no broad `pkill` anywhere**: zero
 `52504`/`52505` from `nputer-T-060`, `ppid 1`, start time `Tue Aug 18
 16:21:18` unchanged before and after — not this branch's, not touched.
 `GroupGuard` closes the gap the card says it closes.
+
+#### The rest of the drill table, sampled rather than trusted
+
+Each run inline, whole `agent_runner` binary, restore + sha256 after each.
+
+| drill | mutation | measured red |
+|---|---|---|
+| P1 | turn path uses the OBSERVER form — the old terminate-before-wait ordering | `a_cancel_releases_the_turn_latch…`, `the_exit_reap_returns_well_inside…` — **exactly the two prompt-death pins the card names** |
+| P2 | owner's poll never registers or publishes its reap | 4 bodies: cooperative-poll, resistant-grandchild, cancel-latch, exit-latency — **the card's count of 4 is exact** |
+| P3 | early release drops the GROUP limb | resistant-grandchild + exit-reap-resistant |
+| P4 | early release drops the REAPED limb | `the_observers_early_release…` at `:916`, "AN EMPTY GROUP ALONE RELEASED THE OBSERVER after 35 ms" — **the control arm, exactly as claimed** |
+| P7 | `run_turn`'s trailing publish deleted | happy-path publish, alone |
+| P11 | `genesis_cancel` escalates on the caller's thread | resistant-turn, alone — and green in the cooperative body it left |
+
+Four spot-checks of the card's fourteen-row table, and all four reproduce
+at the claimed blast radius. I did not re-run P5/P6/P8/P9/P10/P12/P13/P14.
+
+#### Three mutations of my OWN that stayed green
+
+- **`POLL_INTERVAL` 25 ms → 400 ms: green.** Not a defect — it degrades
+  gracefully and 400 ms still clears every 1000 ms ceiling — but the
+  interval is unpinned, and at 1000 ms every ceiling would red. Named so
+  nobody reads the ceilings as bounding it.
+- **The owner's `Err(_)` arm inverted (`mark_reaped(); true` → `false`):
+  green.** This is exactly the executor's own disclosure #4, and it is
+  accurate: no body exercises that arm. Disclosed, not hidden.
+- **`GroupExit.waited` on the early path replaced by `Duration::ZERO`:
+  green.** The returned number is consumed only by a `println!` in
+  `reap_for_exit`; the two bodies that assert on it
+  (`exit.waited < 1000 ms`) are backed by two more that time the same
+  thing on the outside with wall clock. A log-only lie, not a hole.
+
+#### THE THIRD POISON THAT STAYED GREEN — filed as `T-043-s4`
+
+Delete the SYNCHRONOUS `signals::kill_group(handle.pid, SIGTERM)` from
+`terminate_group_async` (`runner.rs:1278`), leaving the background thread
+alone:
+
+```
+test result: ok. 60 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out
+M2_EXIT=0
+```
+
+The criterion says `genesis_cancel` "SHALL … **send SIGTERM
+synchronously**", and evidence line 5 cites `:1073` for it. No body can
+fail when it is deleted, because the spawned observer's first act is the
+same `kill_group`, microseconds later. `:1073` measures only that
+`cancel` RETURNS fast — instrumented, it measures **0 ms** against its
+300 ms ceiling. Same shape as P11 before it moved. The line IS
+load-bearing on the path where `thread::spawn` panics, which no test can
+reach, so the fix is to correct the claim rather than chase a body. See
+`T-043-s4`.
+
+#### The timing argument — tested, and its arithmetic is wrong
+
+Full inventory of every timing literal in the new bodies (`grep` over
+lines 700–1270):
+
+**Floors (5)** — `waited >= 800` ×3 against an 800 ms grace,
+`blocked >= 900` and `latch_released >= 900` against a 900 ms grace. Each
+one can only fail if the poll returns EARLY, and `waited` is measured
+from inside the poll against a deadline computed from the same clock, so
+slowness cannot move it down. **The executor's structural claim holds
+exactly.**
+
+**Ceilings — there are FIVE, not three, and one is not 1000 ms.**
+`:771`, `:894`, `:964`, `:1006` are `< 1000 ms` against a 3000 ms grace;
+`:1102` is **`cancel_returned < 300 ms` against a 900 ms grace** — the
+assertion P11 created when it moved. The card's defence says "the three
+ceilings are 1000 ms against a 3000 ms grace"; that sentence undercounts
+its own risk surface and omits the tightest literal on the branch.
+**In practice it is the SAFEST of the five**: instrumented,
+`cancel_returned` measures **0 ms**, a >300× margin, because it bounds a
+mutex lock plus a `killpg` plus a `thread::spawn`. So the finding is that
+the card's inventory is wrong, not that the branch is fragile. Correct
+the sentence at merge.
+
+**A harder load probe than the executor's, because its own was weak.**
+
+| regime | runs | failures |
+|---|---|---|
+| `--test-threads 16` (1.6× oversubscribed) | 5 | **0** |
+| `--test-threads 24` (2.4× oversubscribed) | 3 | **0** |
+| `--test-threads 4` under **40** CPU burners | 3 | **0** |
+
+`uptime` load average went **6.97 → 27.39** on ten cores during the
+loaded runs — genuine starvation, unlike twelve busy loops. Wall clock
+moved only 5.1–5.5 s → 5.4–5.7 s, and that is the informative number:
+these bodies are SLEEP-bound, not CPU-bound, so CPU starvation barely
+reaches them. That supports the executor's structural argument better
+than its own table did. Eleven more clean runs on top of its 38 is still
+a quiet ten-core arm64 machine and still weak evidence about a four-core
+`ubuntu-24.04` runner; I agree with the executor's own caveat and did not
+improve on it.
+
+#### The pid-reuse hazard, attacked directly
+
+`terminate_group_polling` reads `reaped()` and then `group_has_members(pid)`
+as two separate syscalls, and between them the reaped pid is free for the
+OS to reuse — and the pgid IS that pid. Three sub-questions:
+
+1. **Can a recycled pid make the group look EMPTY when survivors remain?**
+   No. A pid cannot be reused while it is still in use as a pgid, and it
+   is in use as a pgid exactly while the group is non-empty.
+2. **Can a recycled pid make an EMPTY group look occupied, and so draw a
+   SIGKILL at the deadline?** **Yes, in principle** — a recycled pid that
+   becomes a group leader answers `killpg(pid,0)` with 0. So the comment
+   at `runner.rs:1160` ("re-testing membership immediately before
+   escalating is what keeps the signal aimed at the survivors and only at
+   them") is **overclaimed**: membership re-testing keeps the SIGKILL off
+   an EMPTY pgid, which is the improvement, but it cannot distinguish our
+   survivors from a recycled group. It needs pid wraparound to land on
+   our just-freed pid AND that process to become a group leader, inside
+   one grace. Negligible, and **not a regression** — the pre-T-043 code
+   SIGKILLed the pgid unconditionally at the deadline, so this branch
+   strictly narrows the exposure. Recorded because the comment states as
+   absolute what is only overwhelmingly likely.
+3. **I could not measure (1).** Confirming it needs a pid wraparound —
+   ~100k spawns on darwin — which I judged not worth doing on the user's
+   machine while their app runs on 1420. It is reasoned from the
+   allocator's skip rule, not measured, and I say so rather than implying
+   otherwise.
+
+**Linux `killpg`-vs-zombie: not probed, and the design does not need it.**
+No Linux available here. But the ORDERING makes the predicate correct
+under either kernel answer, and that I did verify by case analysis:
+if a zombie counts as a member, the reap-first ordering clears it before
+the group is asked; if it does not, `killpg` may report empty early —
+but `is_reaped` is still false, so there is no early release, and at the
+deadline `empty` is true so `escalated` is false and nothing is
+SIGKILLed, which is correct because the only "member" was our own zombie.
+The one answer that would break it — a live grandchild plus an ESRCH —
+is impossible on any kernel. The executor's uncertainty is real and its
+mitigation is sound.
