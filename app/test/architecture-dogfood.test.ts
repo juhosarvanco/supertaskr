@@ -921,6 +921,51 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     comment is itself an indexed edit, so it stales the measuring regen
 //     and the graph is regenerated a final time after it, then proven
 //     deterministic by regenerating once more and `cmp`-ing.
+//
+// RECONCILED AT THE T-076 MERGE (2026-08-19, integrator). Derived from the
+// regenerated graph against `git show 76cf034:docs/architecture/graph.json`
+// before touching either fixture, and cross-checked with a throwaway probe
+// `it()` appended to this describe, run once and removed (removal proved by
+// sha256 against `git show HEAD:<path>` — 2475901a…, not by a clean
+// `git status`):
+//   · stats 117 files (UNCHANGED) / 989 -> 995 symbols (+6) /
+//     1508 -> 1518 edges (+14 added, -4 removed); 571733 -> 575346 bytes.
+//     `files +0 -0 ~13` — no file joins or leaves the index. T-076 is a
+//     lift entirely inside lib/parser/**, which is C-06.
+//   · the +6 symbols are id-slot.ts 3 -> 8 (canonicalDigits,
+//     compareDigitRuns, idSlotIndex, slotNearMisses, nearMissClause) and
+//     component.test.ts 5 -> 6. Every other one of the thirteen changed
+//     files moves loc and hash only.
+//   · the 14 added edges are THREE file-level imports whose `symbols`
+//     lists grew (component.ts, validate.ts and id-slot.test.ts, each
+//     into id-slot.ts — the same three pairs that appear in the -4, so
+//     not one NEW file pair) plus eleven symbol-level `call` edges, every
+//     one of them lib/parser -> lib/parser. An edge with both ends inside
+//     one component can create or grow no component PAIR.
+//   · THEREFORE ZERO ASSERTIONS MOVE, in this file or in
+//     map-dogfood-render.test.tsx — the second merge in this ledger where
+//     the forecast is "nothing changes", after T-057's. MEASURED by the
+//     probe, not reasoned: fileComponent.size 117; mapping C-05 54 /
+//     C-06 25 / C-08 10 / C-09 3 / C-10 2 / C-12 14 / C-13 8 / C-14 1
+//     (= 117); the eleven-id registry; the 32-row relation table at
+//     13 confirmed / 10 undeclared / 9 planned with C-05->C-06 still at
+//     observedCount 10; all ten D1 findings with every `fileEdges` list,
+//     the three D3 findings, drift ["C-01","C-05","C-07","C-08","C-09",
+//     "C-11","C-13"], declaredOnly ["C-01","C-07","C-11"], pinned
+//     ["C-01"] and `unmappedFiles` [] — all byte-identical.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched, and T-024's
+//     three-fixture rule VERIFIED not to fire rather than assumed: its
+//     trigger is DECLARING A COMPONENT (docs/CONVENTIONS.md:145), and
+//     `git diff 76cf034..HEAD -- docs/architecture/components/` is a
+//     0-file diff. No component was declared; the registry still stops
+//     at C-14.
+//   · The ceaa949 ordering, TWENTY-SECOND hold — derived, not carried:
+//     the last NUMBERED hold is T-028's NINETEENTH, and the two entries
+//     since (T-055, T-057) each held it without an ordinal, so this is
+//     the twenty-second. This comment is itself an
+//     indexed edit, so it stales the measuring regen; the graph is
+//     regenerated a final time after it and then proven deterministic by
+//     regenerating once more and `cmp`-ing.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {

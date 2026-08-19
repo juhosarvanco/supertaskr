@@ -335,6 +335,18 @@ describe("the nputer repo on its own map", () => {
     // non-package edges stay inside C-06, so the 32 rendered component
     // edges, ten undeclared relations and every drift count above remain
     // unchanged. Architecture-dogfood records the full 117/982/1502 delta.
+    // 117 → 117 at the T-076 merge regen (2026-08-19): ZERO files join or
+    // leave — `index --check` reports `files +0 -0 ~13`, and all thirteen
+    // are modifications inside lib/parser/**, which is C-06. The hint does
+    // not move because no NODE moves. Like the T-051, T-053, T-029 and
+    // T-057 entries and unlike T-027's and T-028's, the node and edge
+    // pictures do NOT move either: the fourteen added edges are three
+    // file-level import pairs that already existed (their `symbols` lists
+    // grew) plus eleven symbol-level calls with BOTH ends in C-06, and an
+    // edge inside one component can create no component pair. The 32
+    // rendered component edges, ten undeclared relations and every drift
+    // count above stay byte-identical. Architecture-dogfood records the
+    // full 117 files / 989→995 symbols / 1508→1518 edges delta.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
       "committed graph · 117 files",
     );
