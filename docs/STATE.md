@@ -442,3 +442,84 @@ moves no component interface earns no ARCHITECTURE paragraph.
 - T-057-s2 leaves an unpinned behaviour change in C-13 that moves against
   T-056's direction. Is a render-identity property worth a standing test,
   or is "bounded and recorded" the right resting place?
+
+## The fourth triage — 46 suggestions, then 50, dispositioned to zero
+
+Run by `claude-opus-5 @fresh` as a read-only analyst, then applied in
+the main checkout. The backlog was enumerated from disk rather than
+inherited: **46** files at `status: suggested` before T-058 merged,
+**50** after its four verifier findings landed with it, **42** after the
+eight resolutions were committed at `9b15f7d`, and **zero** after this
+pass. The analyst held no git permission, so every file here was written
+with editor tools and staged, removed and moved by the architect — the
+split is recorded because it is the reason this landed in several
+commits rather than one.
+
+**Twelve cards born, T-069 through T-080**, absorbing 35 suggestions.
+Two folds (T-051-s8 into T-065, T-063-s3 into T-064). Four parks, each
+with a dated unpark trigger. One rejection (T-051-s2, superseded).
+Eight resolutions, recorded at `9b15f7d` as dated lines on the cards
+that actually closed them.
+
+**EIGHT FINDINGS WERE ALREADY CLOSED AND NOBODY HAD SAID SO.** Four were
+expected; four were not. T-060-s3, s4 and s5 were closed inside T-060's
+own re-verification, whose verdict says "No blocker or new suggestion
+remains" — the files were never removed, and they sat at
+`status: suggested` through three triages. T-029-s1 was closed at
+`2fc3475`, a commit whose subject is literally that it corrects the
+trace s1 was filed about. **The lesson is in T-078**: a verdict sentence
+that reads as closing five findings, while two of them asked for written
+rules, is exactly how a rule goes unwritten while everyone believes it
+exists — measured, because T-060-s1's and s2's asks were still absent
+from `docs/CONVENTIONS.md` and `method/` at this triage.
+
+**Four citations no longer resolved**, every one drifted downward by a
+later merge into the same file while the finding's substance reproduced
+exactly. T-078 carries the rule that follows: a citation names a symbol,
+not a line.
+
+**Two open questions above are now answered** and are left in place
+rather than edited out, since this section is append-only:
+
+- **The token lint's exit-code legend** is a criterion of **T-078**,
+  which legends what the gate does today INCLUDING the collapse, and of
+  **T-080**, which restores the distinction. The two are written so
+  neither blocks the other.
+- **The poison shapes have ordinals.** **Shape five** — the assertion
+  SET has no cardinality or coverage floor, so deleting an assertion
+  deletes its own failure (T-058-s2, absorbed by T-080). **Shape six** —
+  a body that reds under an expected-value poison while killing no
+  mutant another test does not already kill (T-057-s1, absorbed by
+  T-072). Five before six because five has a mechanical remedy and six
+  can only be asked. Both are written into T-078's drill clause.
+
+T-057-s2's unpinned render-identity change — the last open question
+above — is **T-072**'s third criterion, which requires the identity
+restored and the render count pinned rather than argued.
+
+**CONTROL is 529, TOKEN is 118** at `9b15f7d`, re-derived by calling the
+shipped `corpus()` and classifying with Node's `path.posix.extname`
+exactly as the scanner does. A shell split disagrees, because under
+`extname` a dotfile has no extension — and that row is one of the eight
+unpinned classes, so a naive derivation mis-states it. **109 of 529
+(20.6%)** sit in suffix classes no committed assertion pins: `.tsx` 46,
+`.rs` 44, no-extension 10, `.js` 3, `.jsx` 2, `.cts` 2, `.mts` 1,
+`.txt` 1. Only `.md` grew since the branch, 248 to 256, so the silent
+classes are unchanged from the figures T-058-s1 measured. That is
+**T-080**.
+
+**Free fences after this pass:** `lib-parser` (T-076),
+`docs/CONVENTIONS.md` and `method/` (T-078, which collides with no code
+lane at all), and `tools/e2e` (T-080, and T-079 behind it). The
+recommended first wave is those three concurrently. `app-agent` is held
+by T-043, which is **verifying** as of this triage — the in-flight block
+above was written while it was still building and is left for its
+integrator to update.
+
+**Held for @human, not ranked for dispatch:** T-051-s3 and T-062-s1 are
+the same display question from two sides (does the interview want its
+full 800px canvas, and is 700 a floor a user can work in when the screen
+wants 1082), and both need the app open on a real display rather than a
+measurement. T-029-s5 needs one authenticated planner turn, and T-069's
+wider arm waits on it. T-028-s2 needs a composition ruling before the
+board grows a panel seam.
