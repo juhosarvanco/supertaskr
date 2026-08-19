@@ -369,6 +369,170 @@
   EXACTLY THE GAP** between the range above and `9b15f7d..e4a5ae7`, which
   is `38 removed` — the number this sentence carried until T-078-s4
   measured it, derived one commit shy of the ref it was quoted at.
+- THE RANGE RULE: WHICH TWO COMMITS "THE MERGE'S DIFF" MEANS, AND IT IS
+  A DIFFERENT PAIR BEFORE THE MERGE EXISTS (T-083, correcting the single
+  notation the two gate bullets below carried from T-046 to `ddcc8bb`).
+  GRAPH REGEN and BOOT GATE both fire on "the merge's diff", and both
+  are addressed to TWO readers: the INTEGRATOR, who has a merge commit,
+  and the EXECUTOR, who does not — BOOT GATE assigns the executor in as
+  many words ("THE EXECUTOR RUNS IT TOO, on the same trigger, before
+  handing off"). ONE IDEA IN TWO POSITIONS: this rule is about WHICH TWO
+  COMMITS YOU COMPARE and never about the notation, and it is the
+  RIGHT-HAND endpoint that decides the left one.
+
+  | you are | run this | why |
+  |---|---|---|
+  | AT the merge (integrator) | `git diff --name-only <main-before-the-merge>..<the merge commit>` | the merge commit already contains both parents, so this IS what the merge added to main |
+  | BEFORE the merge (executor) | `TREE=$(git merge-tree --write-tree <main tip> HEAD)` then `git diff --name-only <main tip> "$TREE"` | there is no merge commit to point at, so BUILD the merge's tree and diff main against that — the same question, answered without writing a commit or moving a ref |
+
+  **NEVER `<merge-base>..<the merge commit>`.** The merge-base is the
+  branch POINT, so that range also carries everything MAIN did in the
+  meantime — work that already passed this gate at its own merge.
+  RE-MEASURED at T-027's merge `dc3ef5b`: the boot trigger matches **9**
+  paths under the prescribed range and **36** under that one, and the
+  extra **27** are T-014's indexer crate, already merged at `bdada11`
+  and gated there. This bullet's oldest evidence, still exactly right —
+  and right AT THE MERGE specifically, which is the distinction the rest
+  of this bullet draws.
+  **AND NEVER `<main>..HEAD` BEFORE THE MERGE**, which is the notation
+  this rule used to hand to both readers. `git diff A..B` is `git diff A
+  B`: a symmetric comparison of two divergent tips, so MAIN's own newer
+  work comes back IN REVERSE, as though this branch had modified it.
+  Measured on T-078's lane at main-before `d92dceb` and tip `d219482`:
+  two dots return **76** paths, three dots and the merge-tree form
+  return **16**, and the merge `fed70a2` itself changed **16**. A
+  docs-only lane reads as having rewritten a Rust crate — the same lie
+  this rule exists to prevent, produced by obeying it.
+  **THE THREE-DOT FORM IS THE FORBIDDEN RANGE, SPELLED SO THAT IT LOOKS
+  LIKE A REFINEMENT OF THE PRESCRIBED ONE.** `A...B` is DEFINITIONALLY
+  `$(git merge-base A B)..B`. So `main...HEAD` IS `<merge-base>..HEAD`,
+  the range banned by name two paragraphs up, and QUOTING THE BAN DOES
+  NOT PROTECT YOU: this pipeline's own architect computed
+  `d92dceb...d219482` in a dispatch brief while stating the rule
+  correctly, and reached the right answer by the forbidden route.
+  Reproduced on a fixture repository: before the merge, `A...B` and
+  `$(git merge-base A B)..B` are BYTE-IDENTICAL under `cmp`. What makes
+  three dots harmless before the merge is not the notation but the
+  right-hand endpoint — HEAD is the BRANCH TIP there, merge-base(main,
+  tip) is the branch point, and branch-point..tip is exactly the lane's
+  own work. At the merge the same spelling COLLAPSES instead:
+  `<main-before>` is an ANCESTOR of the merge commit, so
+  merge-base(main-before, merge) IS main-before and three dots returns
+  the prescribed set unchanged. WORKED AT T-080, all four figures at
+  their own refs: `git merge-base --is-ancestor 99791ea 4683566` exits
+  **0**, and at the merge `99791ea..4683566` and `99791ea...4683566`
+  both return **12** paths; before it, against the branch tip instead,
+  `99791ea..72bc98a` returns **60** and `99791ea...72bc98a` returns
+  **12**. Same left-hand ref throughout, and the whole 48-path swing is
+  the right-hand one. **The prescribed and the forbidden forms are
+  indistinguishable exactly where this rule is addressed, and differ
+  only where it used to say nothing** — so the ban has to name the
+  PAIR, not the punctuation.
+  **WHY `merge-tree` AND NOT THREE DOTS, since both are right before the
+  merge.** Three dots answers "what has my branch changed since it was
+  cut", which is a PROXY; `merge-tree` answers the gate's own question,
+  "what will the merge's diff be", by building the merge's tree. Scored
+  over the **31** first-parent merges on main from BOOT GATE's own merge
+  `94ee306` through `ddcc8bb`, each pre-merge form against that merge's
+  own later `M^1..M` diff. **A SCORE WITHOUT ITS METRIC IS NOT A
+  FIGURE** — there are two metrics here and they disagree:
+
+  | pre-merge form | PATH-FOR-PATH (`--name-only`, sorted, `cmp`) | BYTE-FOR-BYTE (whole patch, `cmp`) |
+  |---|---|---|
+  | `merge-tree --write-tree` | **29** of 31 | **29** of 31, the same 29 |
+  | three dots | **30** of 31 | **24** of 31 |
+  | pre-merge two dots | **3** of 31 | **3** of 31 |
+
+  **THE ARGUMENT IS THE GAP BETWEEN THE COLUMNS, NOT EITHER COLUMN ON
+  ITS OWN.** `merge-tree` scores the same under both metrics because it
+  is not forecasting the merge, it IS the merge's tree: when it answers
+  at all it answers in the merge's own bytes, and its two misses are the
+  same two misses. Three dots is the only form whose two scores move,
+  and the SIX merges it drops between them are six where it names
+  EXACTLY the right paths and states them against the wrong baseline —
+  `91ab46e`, `827511e`, `bdada11`, `64469dd`, `3b0d974` and `f4b38c8`,
+  every one a merge where main and the branch had both touched the same
+  file. **THAT SIX IS THE PROXY, MEASURED.** What diverges is less than
+  "different content" and worse than "cosmetic", so state it exactly:
+  one is blob hashes alone (`3b0d974`), three add only `@@` hunk-header
+  line numbers because main inserted lines above the branch's own hunk
+  (`91ab46e`, `827511e`, `64469dd`), one also moves context lines
+  (`f4b38c8`), and only **2** of the 31 differ in a `+`/`-` line at all
+  (`bdada11`, `634c405`). Right files, wrong coordinates: a branch diff
+  is stated against the branch POINT, and the gate reads one stated
+  against MAIN.
+  **AND THREE DOTS' ONE EXTRA PATH WIN IS THE MERGE IT SHOULD HAVE
+  REFUSED.** The single merge where three dots scores path-for-path and
+  `merge-tree` does not is T-014's `bdada11`, where `merge-tree
+  --write-tree` exits **1** and prints CONFLICT instead of a tree. Three
+  dots hands back a clean-looking forecast for a merge nobody could
+  perform without resolving it by hand — and is wrong on bytes there as
+  well. A scoreboard that counts a refusal as a miss is scoring the
+  wrong thing. **READ `merge-tree`'s EXIT CODE** — 0 is a tree, 1 is a
+  conflict report, and a command substitution that swallows it hands you
+  an EMPTY forecast wearing the costume of a clean gate.
+  At T-028's merge `634c405` NEITHER form predicts under EITHER metric,
+  because the integrator wrote into the merge commit itself
+  (`tools/e2e/tests/window-contract.spec.ts` differs from BOTH parents
+  there): no pre-merge forecast can see a file that does not exist on
+  either side yet. That is the honest ceiling on the recommended
+  command, and it is one merge in thirty-one.
+  **RE-DERIVE BOTH COLUMNS RATHER THAN QUOTING THEM**, the way this
+  bullet's flip list asks below. For each merge M the truth is `git diff
+  M^1 M`; the three forecasts are `git diff M^1 $(git merge-tree
+  --write-tree M^1 M^2)`, `git diff M^1...M^2` and `git diff M^1..M^2`;
+  `cmp` each against the truth TWICE, once with `--name-only` through
+  `sort` for the left column and once on the whole patch for the right.
+  Forgiving `index` lines and nothing else is a THIRD metric — it lifts
+  three dots to **25** and moves neither other row — and it needs its
+  own label for exactly the same reason.
+  **THE SENTENCE THAT SAID THIS NEVER CHANGES A GATE'S ANSWER IS FALSE,
+  AND WAS FALSE LONG BEFORE ANYONE MEASURED IT.** It read: "It has never
+  yet changed WHETHER the gate fires — both derivations fired all six
+  times." Derived at `ddcc8bb` across those same 31 merges: the
+  prescribed range says BOOT GATE is NOT owed **10** times and the naive
+  range fires anyway on **8** of them; it says GRAPH REGEN is not owed
+  **5** times and the naive range fires anyway on **5 of 5**. THIRTEEN
+  FLIPS IN FIFTEEN CHANCES, over TWELVE distinct merges, chronologically
+  and BY GATE — BOOT GATE at T-030 `59558de`, T-045 `3b0d974`, T-054
+  `f58fc2b`, T-055 `20c45d4`, T-058 `7c6c5aa`, T-076 `79ae34a` (0 paths
+  against 5), T-078 `fed70a2` (0 against 6) and T-080 `4683566` (0
+  against 4); GRAPH REGEN at T-047 `3f2eb1e`, T-060 `91ab46e`, T-043
+  `38886d3`, T-069 `7e3e8b5` (0 against 18) and T-078 `fed70a2` again (0
+  against 18), which is the one merge that flips BOTH gates at once.
+  Not "rarely": when the two derivations disagree at all, the naive one
+  manufactures a gate run MORE OFTEN THAN NOT. THE MECHANISM is a lane
+  fenced to ONE tree, cut from a checkpoint whose main then advanced in
+  ANOTHER — the branch's own diff misses the trigger, main's advance
+  carries it, and the naive range hands the branch main's work. Lanes
+  are routinely fenced to one tree now, so this is the ORDINARY case and
+  not an accident. DERIVE THE LIST, NEVER QUOTE IT — for each merge M,
+  compare `git diff --name-only M^1..M` against
+  `git diff --name-only $(git merge-base M^1 M^2)..M` and match each
+  side against the gate's own trigger. Only FOUR of the twelve were on
+  record when this correction was written: three named on T-083's card
+  at `99791ea`, a fourth added by T-080's checkpoint `cb3aa31`. The
+  other eight came back from that derivation, so the sentence had been
+  false for weeks while three checkpoints running believed they were
+  recording the first exceptions. THE FOURTH IS ALSO MIS-ATTRIBUTED
+  WHERE IT IS RECORDED: `cb3aa31` lists T-076's flip under GRAPH REGEN,
+  but at `79ae34a` GRAPH is 13 against 13 and it is BOOT GATE that goes
+  0 against 5 — the numbers were right and the gate was not (T-083-s1).
+  **EVERY ERROR MEASURED HERE IS IN THE OVER-FIRING DIRECTION.** At
+  `ddcc8bb` there is NO merge where the naive range says a gate is not
+  owed while the prescribed one says it is, and the pre-merge two-dot
+  form only ever adds paths. So a wrong range wastes a boot check or a
+  regen; it has not yet HIDDEN one. Do not read that as a licence — it
+  is a property of this repository's history, re-derivable in a second,
+  not a guarantee git gives you.
+  **AND THE TWO COSTS DESERVE DIFFERENT WEIGHT**, because this rule used
+  to be justified only by the smaller one. Presentation: it changes what
+  you tell the human the merge touched, and a trigger set 4x too wide is
+  a checkpoint that lies. Correctness: it changes WHETHER A GATE RUNS AT
+  ALL — the twelve merges above. And the executor's failure is the worse
+  of the two, because a lane reported as touching trees it never opened
+  is a false red on somebody else's work, which is the one kind of noise
+  nobody can dismiss by looking at it.
 - GRAPH REGEN (T-009-s1's INTERIM rule, RETIRED at T-054 and replaced
   by this bullet — the retirement condition it carried, "when T-014's
   `index --check` becomes the gate", is met in the same commit that
@@ -376,10 +540,11 @@
   `*.ts/*.tsx/*.js/*.jsx` outside docs/, regenerate the committed
   graph — `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test
   self_graph -- --ignored` — and commit docs/architecture/graph.json
-  **with the CHECKPOINT**. **"The merge's diff" means
-  `<main-before-the-merge>..HEAD`, never `<merge-base>..HEAD`** — see
-  the BOOT GATE bullet below, which states the reason once for both
-  rules. **THE TRIGGER IS DELIBERATELY WIDER THAN THE WALK, AND THE
+  **with the CHECKPOINT**. **"The merge's diff" is the PAIR OF COMMITS
+  THE RANGE RULE above names, and it is not the same pair before the
+  merge exists as at it** — that bullet states the reason once for both
+  gates, and names the notation that spells the forbidden range while
+  looking like a refinement of the prescribed one. **THE TRIGGER IS DELIBERATELY WIDER THAN THE WALK, AND THE
   REGEN IS A NO-OP UNLESS AN INDEXED FILE MOVED** (T-054-s1, closed
   here). No suffix rule can match the walk: see THE FOUR WALKS above —
   `.nputerignore` excludes docs/, tools/ AND the indexer's own fixture
@@ -438,19 +603,12 @@
 - BOOT GATE (T-046, ratified at the 2026-08-16 triage on T-040-s1 +
   T-020-s3): at any merge whose diff touches `app/src-tauri/**`,
   `app/src/**` or either manifest (app/package.json,
-  app/src-tauri/Cargo.toml) — **and "the merge's diff" means
-  `<main-before-the-merge>..HEAD`, NEVER `<merge-base>..HEAD`; SIX
-  consecutive integrators have derived this the hard way and every one
-  had to reason it out afresh, so it is written here once.** The
-  merge-base is the branch POINT, so `<merge-base>..HEAD` also contains
-  everything MAIN did in the meantime — work that already passed this
-  gate at its own merge. At T-027 the two derivations returned 9 files
-  and 36; the extra 27 were T-014's indexer crate, already merged and
-  already boot-gated, and the naive figure would have made a
-  frontend-only merge look like it rewrote a Rust crate. It has never
-  yet changed WHETHER the gate fires — both derivations fired all six
-  times — but it changes what you tell the human the merge touched, and
-  a trigger set that is 4× too wide is a checkpoint that lies. Then run
+  app/src-tauri/Cargo.toml) — **and "the merge's diff" is the PAIR OF
+  COMMITS THE RANGE RULE above names, which is a DIFFERENT pair before
+  the merge exists than at it.** That bullet carries this gate's own
+  oldest worked example (T-027, re-measured at `dc3ef5b`: 9 paths
+  against 36) and the twelve merges on which the wrong pair changed a
+  gate's answer, eight of them this gate's. Then run
   the boot check —
   `NPUTER_BOOT_PORT=<free scratch port> npm run boot:check` from
   tools/e2e/ — and RECORD the result (exit code, both `[nputer]` lines)
