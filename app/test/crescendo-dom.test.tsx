@@ -553,6 +553,50 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     ]);
   });
 
+  it("the app program still holds the read-only node surface T-073 restored", () => {
+    // THE OTHER CLOSER, AND THE ONE NOTHING ELSE WATCHES. `app/src` gets
+    // its node surface from whatever ambient files `app/tsconfig.json`
+    // reaches, so ADR-017's free half is exactly two facts wide: that
+    // include list, and what the file it names declares. Put `test` back
+    // in the list — the shape an editor complaint invites — or add one
+    // write to the shared file, and `app/src` silently regains the whole
+    // write surface with every suite still green. That is the defect
+    // this card fixed, one level up, so both facts are pinned instead of
+    // trusted. Parsed rather than string-matched: the include list is
+    // read out of the JSON, and the surface is read from the
+    // DECLARATIONS, so neither assertion can be satisfied by a comment.
+    const included = /"include"\s*:\s*\[([^\]]*)\]/.exec(readFileSync(resolve("tsconfig.json"), "utf8"));
+    expect(included, "app/tsconfig.json must declare an include list").not.toBeNull();
+    expect(
+      included![1]!
+        .split(",")
+        .map((entry) => entry.trim().replace(/^"|"$/g, ""))
+        .filter((entry) => entry.length > 0),
+    ).toEqual(["src", "test/node-builtins.d.ts"]);
+
+    const declared = (file: string): string[] =>
+      [...readFileSync(resolve("test", file), "utf8").matchAll(/export function (\w+)/g)]
+        .map((m) => m[1]!)
+        .sort();
+    // The shared file: reads only. Adding a write here is what T-028 did.
+    expect(declared("node-builtins.d.ts")).toEqual([
+      "fileURLToPath",
+      "join",
+      "readFileSync",
+      "readdirSync",
+      "resolve",
+      "statSync",
+    ]);
+    // The test-only file: T-028's surface, whole and unmoved.
+    expect(declared("node-builtins-write.d.ts")).toEqual([
+      "mkdirSync",
+      "mkdtempSync",
+      "rmSync",
+      "tmpdir",
+      "writeFileSync",
+    ]);
+  });
+
   it("the swept corpus is the WHOLE of src, pinned by shape rather than printed", () => {
     // A sweep that has silently narrowed still prints green, so what is
     // asserted here is the CORPUS, not a result. The pin is the set of
