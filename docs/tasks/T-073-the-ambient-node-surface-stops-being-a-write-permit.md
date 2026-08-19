@@ -5,12 +5,12 @@ feature: F-02
 milestone: 4
 priority: 32
 size: S
-status: planned
+status: verifying
 blocked_by: []
 touches: [app-shell]
-builder:
+builder: claude-opus-5 @fresh
 verifier:
-built_by:
+built_by: claude-opus-5 @fresh
 verified_by:
 review:
 ---
@@ -81,5 +81,222 @@ holds `app-shell` only because the fence spans both halves of C-05; the
 with a Rust-only lane except through the fence's coarseness.
 
 ## Implementation notes
+
+Built by `claude-opus-5 @fresh` on branch `task/T-073-write-permit`,
+base `76cf034`. Six files, all under `app/`, no Rust, nothing under
+`app/src/**` — the shipped frontend is byte-identical to the base (see
+"zero behaviour change" below).
+
+**THE PREMISE HELD, ALL THREE LIMBS, RE-VERIFIED AT `76cf034` BEFORE
+ANYTHING WAS TOUCHED.** `app/tsconfig.json:27` read
+`"include": ["src", "test"]`; `app/test/node-builtins.d.ts:21-30` still
+carried T-028's `mkdtempSync`/`mkdirSync`/`writeFileSync`/`rmSync` and
+`:33-38` its `node:os` `tmpdir`; and `git grep` from the repo ROOT for
+`writeTextFile\|writeFile\|mkdir` over `app/src` returned **nothing**
+(exit 1). All eleven sink strings return zero over `app/src`, so the
+widening finds nothing to fix. The four-line probe was reproduced: at
+`76cf034`, a file under `app/src` importing `mkdirSync` and
+`writeFileSync` typechecked at **exit 0, zero diagnostics**.
+
+**THE CARD'S SECOND OPTION IS REFUTED, AND THAT IS WHY THE SHAPE IS WHAT
+IT IS.** The criterion offered "a second ambient file included only by a
+test-scoped tsconfig, **or** a `declare module` block inside the one
+test that needs it". The second is not an alternative: **ambient module
+declarations merge PROGRAM-WIDE**. Measured on this tree — write block
+deleted from `node-builtins.d.ts` and written instead as a
+`declare module "node:fs"` block at the bottom of
+`crescendo-dom.test.tsx`, nowhere else — the `app/src` probe **still
+compiled at exit 0**. (A second lesson from the same run: a module file
+can only AUGMENT an ambient module, never create one — the matching
+`node:os` block failed with **TS2664**, "Invalid module name in
+augmentation".) One program cannot both grant the writes to a test and
+deny them to `app/src`, so the split had to be a PROGRAM boundary. Filed
+as `T-073-s3`.
+
+**WHAT WAS BUILT.** `app/test/node-builtins-write.d.ts` (new) carries
+T-028's whole surface — the four `node:fs` writes plus `node:os`'s
+`tmpdir`, moved as one unit because `tmpdir` is what makes the writes
+land outside the repo. `app/tsconfig.test.json` (new) is
+`extends: "./tsconfig.json"` with `include: ["src", "test"]` and nothing
+else, so the two programs cannot drift in any option. `app/tsconfig.json`
+narrows to `["src", "test/node-builtins.d.ts"]` — the shipped frontend
+plus the read-only surface, named one path at a time so the guard is
+legible in the config. `app/package.json`'s build becomes
+`tsc && tsc -p tsconfig.test.json && vite build`, because otherwise the
+narrowing would silently drop all 42 test files from the fast gate;
+CONVENTIONS' description of `npm run build` ("typecheck + frontend
+build") stays true, and `workflow-parity` pins the COMMAND string, not
+the script body, so the lane is unaffected (88/88 green).
+
+**A THIRD PIN WAS BUILT RATHER THAN FILED, and the measurement is why.**
+A restoration nothing holds is the defect this card fixed. With
+`app/tsconfig.json`'s include line reverted to `["src", "test"]`,
+`npx tsc --noEmit` exits **0** and the app suite runs **826 passed / 1
+failed** — every gate in the repo is happy, and the one failure is the
+new pin. So `crescendo-dom.test.tsx` now also asserts the include list
+(parsed out of the JSON, not string-matched) AND the exported-declaration
+set of BOTH ambient files, so a write creeping back into the shared file
+reds too. Reverting the guard is the shape an editor complaint invites
+("test file is not in a project"), and before this pin nothing at all
+would have noticed.
+
+**FENCE NOTE, FLAGGED RATHER THAN ASSUMED.** `app/package.json` is a
+manifest, not TypeScript/tsconfig/tests. It was taken as in-fence
+because it is the invocation of the tsconfigs and the alternative was a
+real coverage regression; it is one line, inside `app/`, and cannot
+collide with an `app/src-tauri/**` lane. It is also the ONLY reason the
+boot gate fires (below).
+
+**THE PROBE, RED, AND ITS REMOVAL PROVED BY HASH.** The same bytes
+(sha256 `4ea339578b01f824c6cb4042786bed5b05a4f1c1d0b81ddaca90333e9dcc6b8a`)
+that greened at exit 0 on the base now fail the app program at **exit 2**
+with exactly the predicted pair:
+
+```
+src/t073-probe.ts(1,10): error TS2305: Module '"node:fs"' has no exported member 'mkdirSync'.
+src/t073-probe.ts(1,21): error TS2724: '"node:fs"' has no exported member named 'writeFileSync'. Did you mean 'readFileSync'?
+```
+
+`npm run build` fails at the same point, exit 2. Removal is proved
+against `git show HEAD`, not against a clean `git status`: the `app/src`
+FILE SET hashes `4fe995c42a40a63828e66704bd856f1b101b3e77e79fb522203da14822e9e048`
+on both sides, and all **53** files under `app/src` match
+`git show HEAD:<path>` byte for byte, **0 mismatches**.
+
+**THE RESTORATION'S HONEST SCOPE.** The guard is restored *in the
+program that gates*. The test program necessarily contains `app/src`
+too — the tests import it — so under `tsc -p tsconfig.test.json` the
+probe still greens (exit 0, measured). No arrangement can fix that while
+tests import the frontend. The property is therefore "the APP program
+denies writes", which is the program `npm run build` runs first and the
+one CI runs. Filed as `T-073-s2` so triage can rule rather than inherit
+it silently.
+
+**THE SWEEP, WIDENED AND ITS CORPUS PINNED.** `crescendo-dom.test.tsx`
+now shares ONE `frontendFiles()` with the IPC census beside it — one
+walk, two censuses — and the sink sweep runs over all of `src`: **8
+files → 47 files, across 9 directories**, all clean of all eleven sinks.
+Because a sweep whose coverage is printed but pinned nowhere can be
+silently narrowed, the new test pins the CORPUS: the exact nine-entry
+directory set, plus four anchors at four depths. Directories rather than
+a file list, deliberately — files land under `app/src` constantly and a
+fourth live-registry fixture is not worth it, while a new DIRECTORY is
+rare and deliberate. The pin reds on every realistic narrowing: back to
+`src/genesis` (set collapses to `['genesis']`), losing recursion (to
+`['.']`), or an extension filter (`.tsx` only drops `lib` and
+`lib/architecture`; `.ts` only drops `components/ui` and
+`components/board/badges`).
+
+**BOTH GATES FIRE INDEPENDENTLY ON THE SAME PROBE, AND THE OLD SWEEP
+MISSES IT.** The probe reds the typecheck (TS2305/TS2724, exit 2) and
+reds the sweep (`t073-probe.ts must not reach for writeFile`, exit 1),
+while the PRE-T-073 sweep replayed verbatim over the identical tree
+reports **8 files and ZERO hits**. That is the whole argument for "both
+closers, not either", measured rather than asserted.
+
+**POISON DRILL: 8 for 8, three limbs each, every mutation one-sided.**
+Every mutation was applied to the PRODUCER; no expected literal was ever
+touched, and the mutated TEXT was read back from `git diff` each time
+rather than trusting a substitution count.
+
+| # | producer mutated | relation broken | exit | failure |
+|---|---|---|---|---|
+| P1 | invoke-name class `[a-z_]+` → `[a-z]+` | the ten names found | 1 | `expected [] to deeply equal [ 'docs_snapshot', …(9) ]` |
+| P2 | `walk(resolve("src"))` → `resolve("src/genesis")` | the nine-directory corpus | 1 | `expected [ '.' ] to deeply equal [ '.', 'architecture', …(7) ]` |
+| P3 | walk drops `App.tsx`, DIR SET intact | the anchor membership | 1 | `expected [ 'architecture/MapEdge.tsx', …(45) ] to include 'App.tsx'` |
+| P4 | a REAL write planted at `src/t073-probe.ts` | no swept file holds a sink | 1 | `t073-probe.ts must not reach for writeFile` |
+| P5 | corpus filtered back to `genesis/` WITH the probe present | — (shape five) | see below | — |
+| P6a | `app/tsconfig.json` include reverted to `["src", "test"]` | the app program's node surface | 1 | `expected [ 'src', 'test' ] to deeply equal [ 'src', 'test/node-builtins.d.ts' ]` |
+| P6b | `appendFileSync` added to the SHARED ambient file | the shared file is reads-only | 1 | `expected [ 'appendFileSync', …(6) ] to deeply equal [ 'fileURLToPath', 'join', …(4) ]` |
+| P6c | `rmSync` deleted from the write file | T-028's surface is whole | 1 | `expected [ 'mkdirSync', 'mkdtempSync', …(2) ] to deeply equal [ 'mkdirSync', 'mkdtempSync', …(3) ]` |
+
+P3 is the one that proves the anchors are not decoration: 46 files
+across the same nine directories, so the set assertion PASSED and only
+the anchor caught it. **P5 is the shape-five demonstration**: with the
+corpus filtered back to the old eight `genesis/` files while a real
+write sits at `src/t073-probe.ts`, **the sink sweep goes GREEN (exit 0)**
+— silently narrowed, printing success — **and the corpus pin REDS
+(exit 1)**. That is exactly the failure mode the pin exists for. (P5's
+first form, narrowing the walk ROOT, is NOT a silent narrowing: paths
+are resolved from `src`, so it throws ENOENT. Recorded because it means
+a root mutation cannot go quiet even without the pin — a filter mutation
+can.)
+
+Restoration after every drill was proved by sha256 against
+`git show HEAD:<path>`, not by `git status`: `crescendo-dom.test.tsx`
+back to `deb2baddb23c8faffbfbb4beacdfc22e0056fce5fa0606e632ded9423cdbdebf`
+each time, and the whole `app/src` tree re-proved as above. The two
+UNCHANGED bodies in that describe — "Rust exposes exactly thirteen
+commands" and the ADR-009 raw-markup sweep — were not drilled, because
+neither was touched.
+
+**ZERO BEHAVIOUR CHANGE, MEASURED THREE WAYS.** `app/src` byte-identical
+to the base (53/53); the vite bundle byte-identical by content hash
+(`dist/assets/index-lKOTjpzi.js`, `index-CwYF5FQb.css` before and
+after); and the widened sweep finds no real sink, so nothing had to be
+fixed and nothing was quietly fixed.
+
+**SUITES, FIRST-HAND AND UNPIPED, in this worktree.** parser
+**234/234 (12 files)** + `tsc --noEmit` exit 0 · app **827/827 (42
+files)** — the baseline 825 plus this card's two new tests, the corpus
+pin and the include/surface pin ·
+cargo **337 passed / 0 failed / 3 ignored** · e2e **88/88** · token lint
+**clean, TOKEN 119 files** (118 + `node-builtins-write.d.ts`; CONTROL 504
+before this card's three suggestion files were tracked, 507 after) and `--selftest` green. The app suite was run after `npm run build`,
+so the twelve shipped-bundle assertions had a real dist/.
+
+**BOOT GATE: IT FIRES, AND THE TRIGGER IS COMPUTED.** Over
+`76cf034..HEAD` (6 files): `app/src-tauri/**` **0**, `app/src/**` **0**,
+`app/src-tauri/Cargo.toml` **0**, `app/package.json` **1**. So the gate
+fires on the MANIFEST limb alone — the frontend limb does not fire at
+all, which is unusual and is the direct consequence of `app/src` being
+byte-identical. Run as
+`NPUTER_BOOT_PORT=14733 npm run boot:check` from `tools/e2e`, port
+bind-probed free first and well away from 1420. **`BOOT_EXIT=0`** (my
+own `echo $?`), both startup lines seen:
+`[nputer] project folder: /Users/ujju/Projects/nputer-T-073` and
+`[nputer] window "main" created`. The tree was stopped cleanly
+(`exit=null signal=SIGTERM`) and 14733 was released; nothing of this
+worktree is left running.
+
+**1420 WAS NEVER TOUCHED.** It is the human's `tauri dev` (node pid
+82549), confirmed by read-only `lsof` before and after. The only orphans
+on this machine remain T-060's two `fake_agent` processes (pids
+52504/52505, ppid 1, `Tue Aug 18 16:21:18`) — the exact pair `T-043-s1`
+recorded, unchanged, and not touched.
+
+**GRAPH: STALE BY DESIGN, DELIBERATELY NOT REGENERATED.**
+`cargo run -p nputer-index -- index --check --root ../..` exits **1**
+with the REAL red (the second line prints counts and a file diff, not
+`committed: MISSING`): **117 → 118 files, +1
+`app/test/node-builtins-write.d.ts`**, `~ crescendo-dom.test.tsx`
+(loc 575→677) and `~ node-builtins.d.ts` (loc 47→49); **symbols 989 and
+edges 1508 both UNMOVED**. The graph-regen trigger fires on three `.ts`
+files outside `docs/`. Per CONVENTIONS the regen belongs to the
+integrator AT THE CHECKPOINT, so it was left alone; the delta above is
+what to expect. The three live-registry fixtures do NOT move: both
+dogfood suites read the COMMITTED graph, and 117 is still what it holds.
+
+**SIZE-S NOTE.** TASK-FORMAT makes size S "executor + tests, no
+verifier", which would license `done`; the dispatch briefing instructed
+`verifying`, and that is what is stamped. The integrator can close it
+without a verifier pass if the S tier is meant literally.
+
+**FILED, NOT FIXED:** `T-073-s1` (the ADR-009 raw-markup sweep one test
+below is still `src/genesis`-only — free to widen, measured clean over
+all 47 files, but the card names only the sink sweep), `T-073-s2` (the
+test program's residual, above), `T-073-s3` (the program-global gotcha
+belongs in CONVENTIONS, since the card specified an option that cannot
+work).
+
+**NOT CONFIDENT ABOUT:** whether triage wants the `app/package.json`
+line at all — the alternative is accepting that the fast gate stops
+typechecking the 42 test files, which seemed the worse trade but is a
+judgement, not a measurement. Also whether the third pin's include-list
+assertion should have been a `.json` fixture instead of a regex over the
+file text: `app/tsconfig.json` is JSONC and its `paths` value contains
+`"@/*": ["./src/*"]`, so naive comment-stripping before `JSON.parse`
+eats the file from that `/*` onward — the regex avoids that, at the cost
+of being a shape match rather than a parse.
 
 ## Verdicts
