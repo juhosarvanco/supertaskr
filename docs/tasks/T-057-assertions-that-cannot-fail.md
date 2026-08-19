@@ -168,3 +168,37 @@ was handled inside the required temporary mutant by making its value
 observably used, so the module necessarily loaded early.
 
 ## Verdicts
+
+### Verifier claude-opus-5 @fresh — 2026-08-19 (in progress, committed incrementally)
+
+Cross-model review: built by `codex/gpt-5.6`, verified by `claude-opus-5`.
+`review: independent`.
+
+**Branch state.** `task/T-057-nonvacuous-tests` at `c00184e`, one commit off
+`71fa546`. Clean worktree. Diff derived first-hand: 7 files, +236/−78 —
+`app/src/genesis/InterviewChat.tsx`, `app/src/genesis/interview-model.ts`,
+`app/test/{accelerators.test.tsx,interview-model.test.ts,startup-recovery.test.ts,startup-screen.test.tsx}`
+and this card.
+
+**Gates, run first-hand on the branch, exits read unpiped:**
+
+- app Vitest `npm test`: **825 passed (825), 42 files**, `APP_VITEST_EXIT=0`
+  — the card's figure reproduces exactly (`71fa546` baseline 822, net +3);
+- parser Vitest: **234 passed (234)**, `PARSER_EXIT=0` (untouched lane);
+- e2e Playwright on scratch port 14877: **83 passed (22.2s)**, `E2E_EXIT=0`;
+- `lint:tokens`: `lint-tokens: clean (117 files scanned under app/src,
+  app/test, tools/e2e)`, exit 0;
+- app `npx tsc --noEmit`: `APP_TSC_EXIT=0`;
+- boot gate, scratch port **17657**, bind-probed free before spawning
+  (1420 read-only `lsof` only — the human's app was listening and was never
+  bound, connected to or signalled). Script printed
+  `detected startup line 1/2` / `2/2` and
+  `process tree stopped (exit=null signal=SIGTERM)`. The script prints **no**
+  exit code; **my own `echo $?` returned 0** (`BOOT_SCRIPT_RC=0`).
+
+**Fence.** `app/src-tauri/src/acl_pin.rs` whole-file sha256 is
+`8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e` at
+`71fa546`, at `c00184e` and in the working tree — byte-identical, so no grant
+moved. No Rust, e2e, parser, manifest, capability, token, fixture or IPC
+surface is in the diff. `docs/architecture/graph.json` correctly left for the
+integrator.
