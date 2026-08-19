@@ -1,9 +1,28 @@
 ---
 id: T-051-s2
 title: T-027's lens-region measurements do not reproduce, and T-027-s5's premise is one of them
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-051
 ---
+
+**REJECTED 2026-08-19 (fourth triage) — superseded by T-051-s8, which
+identified the real lever and corrected this file's premise.**
+
+As filed this reads "T-027 measured wrong". The accurate statement is
+that the region's content height is a function of the fixture's artifact
+ROW COUNT and the lens's width, which is *why* an assertion with no
+margin was unsafe. s8 measured the mechanism against both fixtures at
+all three viewports and reproduced every cell, including the 780/780 the
+three sessions disagreed about; it also refuted T-027-s5's stated lever
+(a project dir one character longer) by measuring both dirs and getting
+identical cells. This file's own 858/780 reproduces exactly and is
+preserved inside s8's table, and its cheapest-close — run both probes
+side by side in one process and diff them — has been executed and
+answered.
+
+Terminal on a triaged suggestion, per TASK-FORMAT: the finding is not
+retriable, it is superseded. s8 folded into **T-065**, which is where
+the surviving mechanism and the criterion wording now live.
 
 T-027's verification recorded a `lens-region` column
 (`scrollHeight/clientHeight` of the genesis pane's own `overflow-y-auto`
