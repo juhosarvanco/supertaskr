@@ -328,8 +328,17 @@ fn main() {
         // control is the failing stream minus exactly one line by
         // construction rather than by two fixtures agreeing to stay in
         // step.
-        "retry-401-then-no-result" => no_result_after(&session_id, &model, true),
-        "no-result-no-retry" => no_result_after(&session_id, &model, false),
+        "retry-401-then-no-result" => no_result_after(&session_id, &model, true, false),
+        "no-result-no-retry" => no_result_after(&session_id, &model, false, false),
+        // …and the third of the family, which keeps the discriminator
+        // from over-reaching: the CLI recovers one 401, answers, and
+        // then hits ANOTHER one it does not recover from. The budget
+        // says `max_retries: 10`, so a turn spending two of them is
+        // ordinary. The text sits between the two statuses, so it is
+        // evidence about the FIRST and says nothing about the second —
+        // which is why the runner scopes its flag to the LAST
+        // status-bearing line rather than to any status ever seen.
+        "retry-401-text-then-401-no-result" => no_result_after(&session_id, &model, true, true),
         // T-039: an init line carrying a HOSTILE session id — the fixture
         // for the capture-side gate. The id is the test's own choice
         // (`NPUTER_FAKE_SESSION_ID`), defaulting to the exact injection the
@@ -655,22 +664,34 @@ fn auth_error(session_id: &str, model: &str, with_retry_line: bool, with_text: b
 /// the CLI got past the 401 — which is what `runner.rs` classifies on.
 /// The control (`with_retry: false`) is the same stream minus the 401,
 /// which is what makes the other row's classification mean what it says.
-fn no_result_after(session_id: &str, model: &str, with_retry: bool) {
+/// `second_retry` adds a SECOND 401 after the text, which the text
+/// cannot be evidence about — the row that keeps the discriminator from
+/// eating a genuine auth failure it has no business claiming.
+fn no_result_after(session_id: &str, model: &str, with_retry: bool, second_retry: bool) {
     emit_init(session_id, model);
     if with_retry {
-        // Byte-for-byte the `auth-error` scenario's diagnostic line.
-        println!(
-            "{}",
-            serde_json::json!({
-                "type": "system", "subtype": "api_retry", "attempt": 1,
-                "max_retries": 10, "retry_delay_ms": 508,
-                "error_status": 401, "error": "authentication_failed",
-                "session_id": session_id
-            })
-        );
+        emit_api_retry_401(session_id, 1);
     }
     emit_delta("Right, let me start on the north star.");
+    if second_retry {
+        emit_api_retry_401(session_id, 2);
+    }
     std::process::exit(1);
+}
+
+/// The `api_retry` diagnostic, byte-for-byte the transcribed one apart
+/// from `attempt`. One emitter so the two places that stream it cannot
+/// drift into two different transcriptions.
+fn emit_api_retry_401(session_id: &str, attempt: u32) {
+    println!(
+        "{}",
+        serde_json::json!({
+            "type": "system", "subtype": "api_retry", "attempt": attempt,
+            "max_retries": 10, "retry_delay_ms": 508,
+            "error_status": 401, "error": "authentication_failed",
+            "session_id": session_id
+        })
+    );
 }
 
 fn emit_result(text: &str) {

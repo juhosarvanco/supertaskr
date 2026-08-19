@@ -1709,10 +1709,41 @@ fn a_recovered_auth_retry_followed_by_model_text_and_no_result_line_is_not_an_au
     );
 }
 
-/// THE CONTROL for the row above — the same emitter, one `bool` apart,
-/// so it is that stream minus exactly the 401 line. Pre-fix the pair
-/// classified `AuthFailed` and `ExitNonZero` respectively; post-fix both
-/// are `ExitNonZero`, which is what the fix means.
+/// T-069: THE DISCRIMINATOR IS SCOPED TO THE LAST STATUS, and this is
+/// the body that can tell. The CLI recovers one 401, streams its answer,
+/// then hits a SECOND 401 it does not recover from and dies with no
+/// `result` line. The text sits BETWEEN the two, so it is evidence about
+/// the first and says nothing about the second: this is a real
+/// authentication failure and must stay typed, or T-069 would have
+/// closed a false positive by opening a false negative on the same
+/// family.
+///
+/// Its unique mutant is the flag's reset in the runner's `Diagnostic`
+/// arm — the line that makes "after the LAST status-bearing diagnostic"
+/// true rather than "after any status ever seen". Delete that line and
+/// only this body reds.
+#[test]
+fn a_second_auth_retry_behind_the_recovered_one_is_still_an_auth_failure() {
+    let h = harness(
+        "secondretry",
+        Options { scenario: "retry-401-text-then-401-no-result", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::AuthFailed { status, .. } => assert_eq!(status, Some(401)),
+        other => panic!(
+            "the text was evidence about the FIRST 401, not the second: {other:?}"
+        ),
+    }
+    settle(&h.agent);
+}
+
+/// THE CONTROL for
+/// `a_recovered_auth_retry_followed_by_model_text_and_no_result_line_is_not_an_auth_failure`
+/// — the same emitter, one `bool` apart, so it is that stream minus
+/// exactly the 401 line. Pre-fix the pair classified `AuthFailed` and
+/// `ExitNonZero` respectively; post-fix both are `ExitNonZero`, which is
+/// what the fix means.
 ///
 /// Unlike T-029's control this one keeps a falsifying body of its own:
 /// nothing in this stream ever reaches the diagnostic ring, so flipping
