@@ -11,7 +11,7 @@ touches: [docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by: claude-opus-5 @fresh
-verified_by: claude-opus-5 @T-083-verify
+verified_by: claude-opus-5 @T-083-verify (re-verified @T-083-reverify, 2026-08-19)
 review: same-model
 ---
 
@@ -982,3 +982,194 @@ it would be reported here as news.
 
 **To clear this verdict:** name the metric on the 29/30/3 sentence. That
 is the whole of it.
+
+### 2026-08-19 — APPROVED (claude-opus-5 @T-083-reverify, review: same-model)
+
+Re-verified at `b590084`, main at `d61e986`. **The defect that produced
+the rejection is fixed, the fix is correct under an independent
+re-derivation of both columns, and the executor's correction to MY OWN
+verdict is right — I was wrong and the record should say so plainly.**
+
+`status:` left at `verifying`: the integrator stamps `done` at the
+checkpoint, which is the practice six of the last seven cards running.
+
+### FIRST: the correction to my own verdict, confirmed against the graph
+
+My rejection said three dots' seven byte-losses meant "six of its seven
+patch losses carry **real content divergence**". **That gloss is wrong.**
+Re-derived line by line, classifying every divergent patch line as
+`index` metadata / `@@` hunk header / context / real `+`/`-`:
+
+| merge | divergence, by class |
+|---|---|
+| `3b0d974` | indexmeta 2 — blob hashes ALONE |
+| `91ab46e` | hunkhdr 2, indexmeta 4 |
+| `827511e` | hunkhdr 4, indexmeta 2 |
+| `64469dd` | hunkhdr 2, indexmeta 2 |
+| `f4b38c8` | hunkhdr 8, context 2, indexmeta 2 — **zero** real `+`/`-` |
+| `bdada11` | **REAL 4**, context 4, hunkhdr 2, indexmeta 2 |
+| `634c405` | **REAL 16**, context 18, filehdr 2, hunkhdr 3, indexmeta 1 |
+
+**Only 2 of the 31 merges differ in a `+`/`-` line at all** —
+`bdada11` and `634c405`, which are precisely the two merge-tree also
+loses. The executor's per-merge classification reproduces to the
+line-class count, including `f4b38c8`'s "8 `@@` + 2 context with zero
+real `+`/`-`". My literal wording (one loss metadata-only, hence 25)
+was true; the gloss on top of it was not, and it would have shipped a
+characterisation that dies on first re-derivation — the same defect I
+rejected the card for, in the opposite direction. **The executor was
+right to correct it rather than accept it, and right to say so.**
+
+### The scoreboard, re-derived independently under BOTH metrics
+
+Over the same 31 first-parent merges, `94ee306^..ddcc8bb`, each forecast
+against that merge's own `M^1..M` diff:
+
+| pre-merge form | path-for-path (`--name-only`, **sorted**, `cmp`) | byte-for-byte (whole patch) | `index` lines forgiven |
+|---|---|---|---|
+| `merge-tree --write-tree` | **29** | **29** | **29** |
+| three dots | **30** | **24** | **25** |
+| pre-merge two dots | **3** | **3** | **3** |
+
+**Every published figure matches, including the sorted variant the
+bullet now prints as its recipe and the third metric's 25.** The claim
+that forgiving `index` lines "moves neither other row" is exact:
+merge-tree stays 29 and two dots stays 3. The claim that merge-tree's
+two misses are "the same two misses" under both metrics is exact. The
+six merges between three dots' two scores are exactly
+`91ab46e`, `827511e`, `bdada11`, `64469dd`, `3b0d974`, `f4b38c8` —
+derived as the set where paths match and bytes do not, which is what
+the doc says they are, `bdada11` correctly included.
+
+**And the universal underneath it holds.** *"every one a merge where
+main and the branch had both touched the same file"* — checked by
+intersecting each side's own change set against the merge base: all six
+have at least one such file (`app/src-tauri/src/lib.rs` twice,
+`docs/CONVENTIONS.md` twice, `docs/tasks/T-014-…md`, `app/src/App.tsx`).
+Not one exception in six.
+
+Three dots' single path-for-path win over merge-tree is `bdada11`, where
+`merge-tree --write-tree` exits **1** with a conflict report — confirmed
+— and where three dots is also wrong on bytes. The argument that a
+scoreboard counting a refusal as a miss is scoring the wrong thing is
+sound, and it is now the doc's argument rather than an assertion.
+
+### Drill A confirmed, and ten fresh mutants of my own
+
+**Drill A reproduces at `b590084`: putting the byte column back to the
+rejected `30` is GREEN EVERYWHERE.** The exact defect that sent this
+card back is invisible to every gate in this repository.
+
+Ten mutants derived from the criteria and from the defect class that
+produced the rejection — not from the executor's pins — applied
+together, each read back out of the file, every gate run:
+
+| # | mutation | tree |
+|---|---|---|
+| N1 | three-dot byte column `24` → `30` (**Drill A**) | GREEN |
+| N3 | "only **2** … differ in a `+`/`-` line" → **5** | GREEN |
+| N4 | **SHAPE NINE**: drop `bdada11` from the six while the word "SIX" stays | GREEN |
+| N5 | third metric `25` → `27` | GREEN |
+| N6 | merge-tree row `29`/`29` → `28`/`28` | GREEN |
+| N7 | T-027 `9`/`36`/`27` → `7`/`12`/`5` | GREEN |
+| N8 | T-076 relabelled GRAPH REGEN (s1's shipped error) | GREEN |
+| N9 | THIRTEEN/TWELVE → FOUR/FOUR | GREEN |
+| N10 | "NO merge" → "THREE merges" (reverse-flip universal) | GREEN |
+| N11 | the printed RE-DERIVE recipe: three dots → two dots | GREEN |
+
+`cargo test` **343 passed / 0 failed / 3 ignored, exit 0**; `npm test`
+**91 passed, exit 0** with workflow-parity **14/14**; `lint:tokens` and
+`--selftest` exit **0**; `index --check` exit **0**; parser **263**
+exit **0**; both typechecks exit **0**. **Ten mutants, zero killed.**
+
+### s2's item 6 is buildable, and I built it rather than asserting it
+
+s2 now says what I ruled, in the terms I ruled it: the unfalsifiability
+is **an artefact of the fence, not of the content**; the factual half is
+a `git` derivation and cheaper to check than the CI-command derivation
+`workflow-parity.spec.ts` already runs; only the judgement half has no
+reader; filing was the method's own prescription; and it is recorded as
+a **dispatch observation**, not an executor failure. The size is
+corrected from M to S–M on the evidence of the instrument I wrote.
+
+**Item 6 — both columns, each under its own metric — is new, is the
+sharpest of the seven, and is not mine.** Its argument is that a
+one-column reader would have been green straight through the defect
+that rejected this card. That is correct, and because s2 asserts
+buildability without building it, I extended my prototype to implement
+exactly item 6: derive both columns, the six-merge split, the
+real-`+`/`-` list and the third metric, then compare against the parsed
+document. **GREEN on `b590084`** — *"31 merges re-derived; doc agrees on
+every figure under BOTH metrics"* — **and RED on the poisoned file with
+13 findings**, catching **nine of the ten** mutants by name, including
+N4, the shape-nine mutation where a row leaves the family while the
+count word stays put (*"doc says 3b0d974,64469dd,827511e,91ab46e,f4b38c8,
+git says … bdada11 …"*). Set comparison catches it; a cardinality check
+would not have. Item 6 is buildable and now demonstrated.
+
+**The one mutant my reader misses is N11**, the corrupted re-derivation
+recipe: the doc prints the commands a reader should run, and nothing
+checks that those commands are the ones that produce the published
+figures. **That is an eighth item for whoever takes s2** — execute the
+printed recipe and assert it yields the published columns, rather than
+re-implementing it beside the doc. Recorded here rather than filed
+separately, since s2 is the card that owns the list.
+
+### The digest, re-derived by running the recipe rather than trusting it
+
+The withdrawn `18583f85…` is replaced with a digest, its recipe and a
+byte length. **I ran the recipe as printed, from the repo root, and it
+reproduces**: `0662c279efb209f8341d39fa9df5f5ab0e0976157352718058e099a4d8feefb9`,
+**12817 bytes**, node exit **0**. The card claims five refs; I checked
+**seven** — `ddcc8bb`, `886e64e`, `8d59ec6`, `7a37b37`, `88c394f`,
+`b590084` and main's current tip `d61e986` — identical at every one.
+The `c677cf4d…` heading-inclusive variant is correctly labelled as not
+what the reader uses. U+00B7 file-wide **21**, unchanged.
+
+### Fence, adjacent features and security
+
+Six paths under the correct range against `d61e986`, **all `docs/`**,
+zero non-`docs`, both gates **0** and therefore not owed. The trap is
+live and wider than at my first review: the pre-merge two-dot form now
+reports **23** paths for this docs-only lane, up from 20, because main
+advanced twice more underneath it. No manifest, lockfile, workflow or
+dependency change; no secret-shaped or executable content in the added
+lines. PORT RULE observed with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and
+nothing else; `node` pid **82549** on `[::1]:1420`, untouched.
+`## Build & test` byte-identical, so its one live reader is unaffected —
+and the executor's Round B independently proves that reader still bites.
+
+Restoration proved five ways: working file back to `057889b7…`,
+`git show HEAD:` identical, empty `git diff`, the section recipe back to
+`0662c279…` at 12817 bytes, and the reader GREEN again. Gates were run
+in the worktree with `node_modules` symlinked from the main checkout and
+`CARGO_TARGET_DIR` in scratch — **no `npm ci`, no `npm install`, nothing
+written to the main checkout** — and the symlinks removed afterwards.
+
+### Two notes, neither blocking
+
+- **The one loose phrase left is the mirror of my own.** *"What diverges
+  is less than 'different content'"* is not true of `bdada11`, which
+  carries four real `+`/`-` lines. It is a preamble to *"so state it
+  exactly:"*, and the exact enumeration names `bdada11` as one of the
+  two exceptions thirty words later in the same sentence — so a
+  re-deriver finds the correct list present rather than absent, which is
+  the difference between this and the gloss that got the card rejected.
+  Worth tightening if the paragraph is ever touched; not worth a round
+  trip.
+- **There is a fourth metric and it does not threaten the
+  recommendation.** Forgiving `index` lines AND `@@` headers puts three
+  dots at **28**; counting only real `+`/`-` divergence puts it at
+  **29**, level with merge-tree. The bullet does not compute these, but
+  it states the fact that produces them — *"Right files, wrong
+  coordinates"* — and explicitly says a further forgiveness "needs its
+  own label for exactly the same reason", which is the right discipline.
+  The recommendation survives the tie intact, because the two things
+  merge-tree adds at 29-all are the two the doc already names: it
+  answers in the merge's own coordinates, and it REFUSES on conflict.
+  Recorded so the next re-deriver meets the number here rather than
+  mistaking it for a contradiction.
+
+**Approved. The figures now carry their metric, the metric is
+reproducible from the recipe the doc prints, and the one claim I got
+wrong has been corrected against me on the evidence.**
