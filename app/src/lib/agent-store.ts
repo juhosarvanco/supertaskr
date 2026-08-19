@@ -48,6 +48,31 @@ export type TurnErrorPayload =
    * for a truncated stream line. */
   | { kind: "rejectedSessionId"; why: string };
 
+/**
+ * T-081: ONE PERMISSION DENIAL, AS THE USER LEARNS OF IT.
+ *
+ * Mirror of the payload on Rust's `RunEvent::Denied`. Every field is
+ * nullable-or-empty on purpose: a denial the app cannot fully describe is
+ * not a denial the user should be denied. `toolName` is null when the
+ * CLI's line did not name a tool; `message` is empty when it offered no
+ * explanation, which is exactly how a denial recovered from the
+ * cumulative `result` line arrives — that line carries `tool_input`,
+ * never a message.
+ *
+ * `toolUseId` is the JOIN KEY the runner uses to report one denial once
+ * when it arrives on both channels. It is NOT re-joined here: the join
+ * has one owner, Rust-side, and a second implementation of a rule is two
+ * chances to disagree about it.
+ *
+ * Model-adjacent DATA, like every other text field in this file —
+ * rendered as text nodes, never as markup or a command.
+ */
+export interface GenesisDenial {
+  toolName: string | null;
+  toolUseId: string | null;
+  message: string;
+}
+
 /** Mirror of Rust's `RunEvent` — the `genesis-turn` channel's payloads.
  * Every one carries `seq` from one runner-owned counter, so the store
  * stale-drops exactly like docs snapshots do. */
@@ -55,6 +80,11 @@ export type GenesisEvent =
   | { kind: "started"; seq: number; turn: number }
   | { kind: "textDelta"; seq: number; turn: number; text: string }
   | { kind: "activity"; seq: number; turn: number; label: string }
+  /** T-081: a tool was refused, and the user hears about it NOW rather
+   * than when the turn ends. **This is not a failure event** — the
+   * observed 2.1.226 turn carried two denials and still completed, and
+   * the denials were roughly forty seconds ahead of the result. */
+  | ({ kind: "denied"; seq: number; turn: number } & GenesisDenial)
   | {
       kind: "completed";
       seq: number;
@@ -162,6 +192,23 @@ export interface GenesisTurn {
   text: string;
   /** Tool markers seen this turn, in order, deduped consecutively. */
   activity: string[];
+  /**
+   * T-081: the tools this turn was REFUSED, in the order the user was
+   * told about them.
+   *
+   * Not deduped and not filtered: the real CLI refused `Bash` twice in
+   * one observed turn — a compound command whose sub-commands were not
+   * all covered, and a `cp` with a glob — so two entries naming one tool
+   * is the ordinary case, not a bug. `toolUseId` is what tells them
+   * apart, and the runner has already used it to make sure each denial
+   * appears here exactly once.
+   *
+   * **A NON-EMPTY LIST SAYS NOTHING ABOUT HOW THE TURN ENDS.** The turn
+   * this shape was transcribed from carried two denials and completed
+   * successfully; the planner decomposed the refused command and carried
+   * on. Read `status` for the outcome.
+   */
+  denials: readonly GenesisDenial[];
   status: "running" | "completed" | "failed" | "cancelled";
   /** True when the runner stopped relaying deltas at its 1 MiB cap. */
   truncatedRelay: boolean;
@@ -245,6 +292,7 @@ function upsertTurn(
           turn,
           text: "",
           activity: [],
+          denials: [],
           status: "running",
           truncatedRelay: false,
           error: null,
@@ -301,6 +349,25 @@ export function reduceGenesisEvent(
             ? t
             : { ...t, activity: [...t.activity, event.label] },
         ),
+      };
+    case "denied":
+      // APPEND, never replace, and never touch `status`: a denial is a
+      // thing that HAPPENED to the turn, not a verdict on it. The runner
+      // has already joined the two channels, so what arrives here is one
+      // denial one time.
+      return {
+        ...base,
+        turns: upsertTurn(prev.turns, event.turn, (t) => ({
+          ...t,
+          denials: [
+            ...t.denials,
+            {
+              toolName: event.toolName,
+              toolUseId: event.toolUseId,
+              message: event.message,
+            },
+          ],
+        })),
       };
     case "completed":
       return {

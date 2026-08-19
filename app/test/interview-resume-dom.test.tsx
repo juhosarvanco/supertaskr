@@ -494,6 +494,9 @@ describe("the transcript survives a restart, and its loss costs only scrollback"
       turn: 1,
       text: "turn 1",
       activity: [],
+      // T-081's new `GenesisTurn` field; this case is about render
+      // identity, not about denials.
+      denials: [],
       status: "completed" as const,
       truncatedRelay: false,
       error: null,

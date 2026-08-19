@@ -200,7 +200,17 @@ describe("showsBoard — the decision cannot take the screen down", () => {
 // ---- criterion 2 / 4: the completion signal ------------------------------
 
 function turn(n: number, status: GenesisTurn["status"]): GenesisTurn {
-  return { turn: n, text: `turn ${n}`, activity: [], status, truncatedRelay: false, error: null };
+  return {
+    turn: n,
+    text: `turn ${n}`,
+    activity: [],
+    // T-081 added this field to `GenesisTurn`; nothing in the crescendo
+    // reads it, and an empty list is what a turn with no refusals has.
+    denials: [],
+    status,
+    truncatedRelay: false,
+    error: null,
+  };
 }
 
 describe("completionOf — four conditions, none of them read out of prose", () => {

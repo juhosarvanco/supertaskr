@@ -100,6 +100,70 @@ describe("reduceGenesisEvent — one turn's life", () => {
     expect(state.nativeSessionId).toBe("abc-123");
   });
 
+  /**
+   * T-081. The runner announces a denial the moment the CLI does, and
+   * the store's job is to keep it on the turn it happened in — WITHOUT
+   * turning that turn into a failure, which is the whole shape of the
+   * observed 2.1.226 run: two denials, then a clean completion.
+   */
+  it("denials land on the turn as they arrive and never make it a failure", () => {
+    const state = play([
+      ev({ kind: "started", seq: 1, turn: 1 }),
+      ev({ kind: "textDelta", seq: 2, turn: 1, text: "Let me scaffold" }),
+      ev({
+        kind: "denied",
+        seq: 3,
+        turn: 1,
+        toolName: "Bash",
+        toolUseId: "toolu_01FAHQKCKFrBLrmVtRiuLT9L",
+        message: "This Bash command contains multiple operations.",
+      }),
+      ev({
+        kind: "denied",
+        seq: 4,
+        turn: 1,
+        toolName: "Bash",
+        toolUseId: "toolu_0173K9Q72m797nLBonDtrc3R",
+        message: "Glob patterns are not allowed in write operations.",
+      }),
+    ]);
+    // TWO entries naming ONE tool, because that is what really happened.
+    // A store that deduped on the name would show one refusal here.
+    expect(state.turns[0]?.denials.map((d) => d.toolName)).toEqual(["Bash", "Bash"]);
+    expect(state.turns[0]?.denials.map((d) => d.toolUseId)).toEqual([
+      "toolu_01FAHQKCKFrBLrmVtRiuLT9L",
+      "toolu_0173K9Q72m797nLBonDtrc3R",
+    ]);
+    expect(state.turns[0]?.denials[1]?.message).toBe(
+      "Glob patterns are not allowed in write operations.",
+    );
+    // Mid-turn, and nothing about the turn has gone wrong.
+    expect(state.turns[0]?.status).toBe("running");
+    expect(state.phase).toBe("running");
+    expect(state.lastError).toBeNull();
+
+    // …and the completion does not wipe them: the refusals happened, and
+    // the turn succeeded anyway.
+    const done = reduceGenesisEvent(
+      state,
+      ev({ kind: "completed", seq: 5, turn: 1, text: "Stage 0 done", truncatedRelay: false }),
+    );
+    expect(done.turns[0]?.denials).toHaveLength(2);
+    expect(done.turns[0]?.status).toBe("completed");
+    expect(done.phase).toBe("idle");
+    expect(done.lastError).toBeNull();
+  });
+
+  /** T-081 criterion 6, at the store: a denial the app cannot fully
+   * describe is still a denial the user gets to see. */
+  it("a denial with no tool name and no message is still kept", () => {
+    const state = play([
+      ev({ kind: "started", seq: 1, turn: 1 }),
+      ev({ kind: "denied", seq: 2, turn: 1, toolName: null, toolUseId: null, message: "" }),
+    ]);
+    expect(state.turns[0]?.denials).toEqual([{ toolName: null, toolUseId: null, message: "" }]);
+  });
+
   it("truncatedRelay rides the completed event so the pane can say so", () => {
     const state = play([
       ev({ kind: "started", seq: 1, turn: 1 }),

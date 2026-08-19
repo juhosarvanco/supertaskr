@@ -63,6 +63,9 @@ function turn(patch: Partial<GenesisTurn> & { turn: number }): GenesisTurn {
   return {
     text: "",
     activity: [],
+    // T-081's new `GenesisTurn` field. Overridable through `patch` like
+    // every other default here.
+    denials: [],
     status: "completed",
     truncatedRelay: false,
     error: null,
@@ -868,6 +871,9 @@ describe("the conversation is where you left it (T-029 criteria 1-2)", () => {
         turn: 2,
         text: "the live turn, mid-stream",
         activity: ["Write"],
+        // T-081's new `GenesisTurn` field; this case is about which COPY
+        // of a turn wins, not about denials.
+        denials: [],
         status: "running",
         truncatedRelay: false,
         error: null,

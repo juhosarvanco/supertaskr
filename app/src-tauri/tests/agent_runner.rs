@@ -192,6 +192,48 @@ fn wait_failed(events: &mpsc::Receiver<RunEvent>) -> TurnError {
     }
 }
 
+/// T-081: EVERY event of one turn, in arrival order, up to and including
+/// the terminal one.
+///
+/// `wait_for` throws away everything it walked past, which is the right
+/// shape for "did the turn end this way" and the wrong shape for "when,
+/// relative to the rest of the stream, did this arrive". A denial that
+/// reaches the screen only at the end of the turn is precisely the defect
+/// T-081 exists to fix, and telling that apart from a denial that reached
+/// it live is an ORDER question.
+fn collect_turn(events: &mpsc::Receiver<RunEvent>) -> Vec<RunEvent> {
+    let deadline = Instant::now() + Duration::from_secs(20);
+    let mut seen = Vec::new();
+    while Instant::now() < deadline {
+        match events.recv_timeout(Duration::from_millis(200)) {
+            Ok(event) => {
+                let terminal =
+                    matches!(event, RunEvent::Completed { .. } | RunEvent::Failed { .. });
+                seen.push(event);
+                if terminal {
+                    return seen;
+                }
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => continue,
+            Err(mpsc::RecvTimeoutError::Disconnected) => break,
+        }
+    }
+    panic!("the turn never reached a terminal event; saw: {seen:#?}");
+}
+
+/// The `Denied` events out of a collected turn, with their seq, so both
+/// WHAT arrived and WHEN it arrived are assertable.
+fn denied_events(seen: &[RunEvent]) -> Vec<(u64, Option<String>, Option<String>, String)> {
+    seen.iter()
+        .filter_map(|e| match e {
+            RunEvent::Denied { seq, tool_name, tool_use_id, message, .. } => {
+                Some((*seq, tool_name.clone(), tool_use_id.clone(), message.clone()))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
 /// Block until the turn thread has finished settling (phase leaves
 /// Running), so registry/transcript assertions are not racing it.
 fn settle(agent: &agent::AgentState) -> GenesisStatus {
@@ -1341,8 +1383,16 @@ fn a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code() {
     let h = harness("tooldenied", Options { scenario: "tool-denied", ..Options::default() });
     agent::start_genesis(&h.watch, &h.agent);
     match wait_failed(&h.events) {
+        // T-081 MOVED THIS EXPECTATION, AND THE MOVE IS THE FINDING
+        // (`T-081-s2`). It read `["Bash", "WebFetch"]` while the fixture
+        // was a construction. The real capture refuses `Bash` TWICE — one
+        // compound command whose sub-commands were not all covered, and
+        // one `cp` with a glob — so the transcribed fixture names one
+        // tool twice, and this list says so. Nothing deduplicates: two
+        // refusals of one tool are two refusals, and the ONLY field that
+        // tells them apart is `tool_use_id`.
         TurnError::ToolDenied { denials, terminal_reason } => {
-            assert_eq!(denials, vec!["Bash".to_string(), "WebFetch".to_string()]);
+            assert_eq!(denials, vec!["Bash".to_string(), "Bash".to_string()]);
             assert_eq!(terminal_reason.as_deref(), Some("refusal"));
         }
         other => panic!("expected ToolDenied, got {other:?}"),
@@ -1357,6 +1407,439 @@ fn a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code() {
     );
     // And the project is untouched: a denied tool is not a write.
     assert!(!h.project.join("docs").exists());
+}
+
+// ---- T-081: THE DENIAL THAT REACHES THE SCREEN WHEN IT HAPPENS ---------
+//
+// T-069 made a parsed denial reach the screen instead of vanishing into
+// an empty tail. This family is the layer under that one: the CLI
+// announces a denial the MOMENT it happens, on a
+// `system`/`permission_denied` line, and until T-081 the runner threw
+// that line away. On the observed 2.1.226 turn the two denials were
+// roughly forty seconds ahead of the `result` line, and for those forty
+// seconds a watching human had no way to know the planner had been
+// refused anything.
+
+/// **THE OBSERVED TURN, DRIVEN END TO END.** Two `permission_denied`
+/// lines, then a `result` with `is_error: false`,
+/// `terminal_reason: "completed"` and both denials listed — a real turn
+/// that really SUCCEEDED with two refusals inside it.
+///
+/// Three properties, and the third is the one a passing body could most
+/// easily fake:
+///
+/// 1. THE TURN SUCCEEDS. `Completed`, phase `Idle`, no error at all. A
+///    denial is not a failure, and `denied-fatal-not-flagged` above is
+///    the standing tripwire against widening the guard to make it one.
+/// 2. BOTH DENIALS CARRY THE CLI'S OWN WORDS — the tool name and the
+///    sentence the CLI wrote, not a summary the app invented.
+/// 3. THEY ARRIVE **LIVE**, WHICH IS AN ORDER CLAIM, NOT A PRESENCE ONE.
+///    The fixture uses a tool AFTER being refused — the recovery the real
+///    planner performed — so a runner that collected the denials and
+///    emitted them at the `result` line would put both `Denied` events
+///    behind that `Activity` instead of in front of it. Asserting only
+///    that two denials turned up somewhere in the turn would pass over
+///    exactly the behaviour this card exists to change. **A DELTA WILL
+///    NOT DO AS THE WITNESS** and this was measured rather than reasoned:
+///    deltas are coalesced, so one streamed after the denials still
+///    flushes at the end of the relay loop and lands behind a batched
+///    denial too. An `Activity` is emitted the instant its line arrives.
+#[test]
+fn a_denial_reaches_the_screen_the_moment_it_happens_and_the_turn_still_succeeds() {
+    let h = harness(
+        "deniedcompleted",
+        Options { scenario: "denied-then-completed", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let seen = collect_turn(&h.events);
+
+    let denied = denied_events(&seen);
+    assert_eq!(denied.len(), 2, "one event per denial, no more: {seen:#?}");
+    assert_eq!(denied[0].1.as_deref(), Some("Bash"));
+    assert_eq!(denied[0].2.as_deref(), Some("toolu_01FAHQKCKFrBLrmVtRiuLT9L"));
+    assert!(
+        denied[0].3.contains("The following part requires approval"),
+        "the CLI's own sentence, not a summary: {:?}",
+        denied[0].3
+    );
+    assert_eq!(denied[1].1.as_deref(), Some("Bash"));
+    assert_eq!(denied[1].2.as_deref(), Some("toolu_0173K9Q72m797nLBonDtrc3R"));
+    assert_eq!(
+        denied[1].3,
+        "Glob patterns are not allowed in write operations. Please specify an exact file path."
+    );
+
+    // THE ORDER CLAIM. The tool the planner reached for AFTER being
+    // refused must follow the refusals in the event log — which it
+    // cannot do if the denials were held back to the terminal line.
+    let last_denial_seq = denied[1].0;
+    let activity: Vec<u64> = seen
+        .iter()
+        .filter_map(|e| match e {
+            RunEvent::Activity { seq, .. } => Some(*seq),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        activity.iter().any(|seq| *seq > last_denial_seq),
+        "the recovery tool ran AFTER the denials, so the denials were live rather \
+         than batched at the end: {seen:#?}"
+    );
+    let completed_seq = match seen.last() {
+        Some(RunEvent::Completed { seq, .. }) => *seq,
+        other => panic!("the observed turn SUCCEEDS; got {other:?}"),
+    };
+    assert!(last_denial_seq < completed_seq);
+
+    let status = settle(&h.agent);
+    assert_eq!(status.phase, Phase::Idle, "two denials, and the turn still completed");
+    assert!(status.last_error.is_none(), "a denial is not a failure: {:?}", status.last_error);
+}
+
+/// **THE SAME DENIAL IS NOT REPORTED TWICE — AND THE ONE THAT ARRIVED ON
+/// ONLY ONE CHANNEL IS STILL REPORTED ONCE.** This is criterion 4 whole,
+/// and it needs a stream neither of its neighbours has.
+///
+/// `permission_denials` on the `result` line is CUMULATIVE: it lists the
+/// denials the in-band channel already announced AND any it did not.
+/// `tool_use_id` is on both channels and is the join key. So the fixture
+/// mixes them — `toolu_on_both_channels` arrives twice over, and
+/// `toolu_result_line_only` arrives once, at the end, the way it would
+/// from a CLI with no in-band channel at all.
+///
+/// **A COUNT OVER A SINGLE-CHANNEL STREAM CANNOT SEE ANY OF THIS**, which
+/// is why this body exists rather than another assertion on the observed
+/// turn. Measured, on the drill: with the in-band arm disabled entirely
+/// the observed turn STILL reports both of its denials exactly once, off
+/// the `result` line, so a two-ids assertion there is green while the
+/// whole live channel is dead. Over THIS stream the two failure
+/// directions are separable and neither is silent — drop the join and
+/// there are three events, drop the late emit and there is one.
+///
+/// The turn exits 0 on purpose: `stderr_tail` rides `ExitNonZero`, so
+/// T-069's ring relay is provably not what reported the silent one.
+#[test]
+fn one_denial_on_each_channel_is_reported_once_each() {
+    let h = harness(
+        "deniedjoin",
+        Options { scenario: "denied-live-and-silent", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let seen = collect_turn(&h.events);
+    let denied = denied_events(&seen);
+    assert_eq!(
+        denied.iter().map(|d| d.2.clone()).collect::<Vec<_>>(),
+        vec![
+            Some("toolu_on_both_channels".to_string()),
+            Some("toolu_result_line_only".to_string()),
+        ],
+        "each id exactly once, from whichever channel carried it: {seen:#?}"
+    );
+    // The one that came in band kept the CLI's words; the one that only
+    // ever appeared in the cumulative record has none to keep, and the
+    // app says so rather than inventing any.
+    assert_eq!(denied[0].1.as_deref(), Some("Bash"));
+    assert_eq!(denied[0].3, "This Bash command contains multiple operations.");
+    assert_eq!(denied[1].1.as_deref(), Some("WebFetch"));
+    assert_eq!(denied[1].3, "");
+    // …and the live one really was live: the tool the planner reached
+    // for between the two sits BETWEEN them in the event log. Nothing
+    // about a count could say that.
+    let activity: Vec<u64> = seen
+        .iter()
+        .filter_map(|e| match e {
+            RunEvent::Activity { seq, .. } => Some(*seq),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        activity.iter().any(|seq| *seq > denied[0].0 && *seq < denied[1].0),
+        "the recovery tool ran BETWEEN the live denial and the late one: {seen:#?}"
+    );
+    let status = settle(&h.agent);
+    assert_eq!(status.phase, Phase::Idle);
+    assert!(status.last_error.is_none());
+}
+
+/// **AND THE JOIN KEY IS `tool_use_id`, WHICH IS A CLAIM NO STREAM ABOVE
+/// CAN FALSIFY.** Criterion 4 names the key in as many words; this is the
+/// body that holds it there.
+///
+/// Its two neighbours are both blind to the key by construction, and the
+/// blindness is the same one twice.
+/// `a_denial_reaches_the_screen_the_moment_it_happens_and_the_turn_still_succeeds`
+/// announces BOTH of the observed turn's denials in band, so joining on
+/// `tool_name` filters both and the count is still two.
+/// `one_denial_on_each_channel_is_reported_once_each` gives its two ids
+/// DIFFERENT names (`Bash`, `WebFetch`), so joining on `tool_name`
+/// separates them exactly as well as joining on `tool_use_id` does.
+/// Swap the key in the runner and the whole cargo suite stays green.
+///
+/// **THIS IS `T-081-s2` IN A NEW COSTUME, AND THAT IS THE LESSON RATHER
+/// THAN THE LINE.** `s2` reported that the old `["Bash", "WebFetch"]`
+/// guess made a NAME look like it could identify a denial; the fixtures
+/// that replaced the guess reintroduced the same blind spot from the
+/// other side. A property is only pinned by a stream in which the wrong
+/// answer and the right one DIFFER.
+///
+/// The one shape where they differ is the observed turn's own — **the
+/// same tool refused twice** (the capture's census is `["Bash", "Bash"]`)
+/// — with one of the two in-band lines missing. A name join then reads
+/// the second refusal as one it already announced and drops it.
+///
+/// **THE FAILURE DIRECTION IS SILENCE**, not a duplicate: the assertion
+/// below reds with ONE id where two are owed, which is a refusal the CLI
+/// reported and the user is never told about. That is the exact defect
+/// this card exists to fix, arriving through the fix.
+#[test]
+fn a_second_refusal_of_the_same_tool_is_not_swallowed_by_the_first() {
+    let h = harness(
+        "deniedsamename",
+        Options { scenario: "denied-same-tool-one-announced", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let seen = collect_turn(&h.events);
+    let denied = denied_events(&seen);
+    assert_eq!(
+        denied.iter().map(|d| d.2.clone()).collect::<Vec<_>>(),
+        vec![
+            Some("toolu_announced".to_string()),
+            Some("toolu_never_announced".to_string()),
+        ],
+        "both refusals of the SAME tool reach the screen - the join is on \
+         `tool_use_id`, and a join on `tool_name` reports only the announced \
+         one and drops the other into silence: {seen:#?}"
+    );
+    // Both name `Bash`, which is the whole point: NOTHING about the tool
+    // name separates these two events, so nothing but the id can have
+    // told them apart.
+    assert_eq!(denied[0].1.as_deref(), Some("Bash"));
+    assert_eq!(denied[1].1.as_deref(), Some("Bash"));
+    // The announced one kept the CLI's own sentence; the one that
+    // reached only the cumulative record has none to keep, and the app
+    // invents nothing.
+    assert_eq!(denied[0].3, "This Bash command contains multiple operations.");
+    assert_eq!(denied[1].3, "");
+    // …and the announced one really was announced LIVE rather than
+    // replayed at the end: the tool the planner reached for next sits
+    // BETWEEN the two events. An `Activity` witness rather than a delta,
+    // for `T-081-s5`'s reason - if the transport can hold B, B cannot
+    // date A.
+    let activity: Vec<u64> = seen
+        .iter()
+        .filter_map(|e| match e {
+            RunEvent::Activity { seq, .. } => Some(*seq),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        activity.iter().any(|seq| *seq > denied[0].0 && *seq < denied[1].0),
+        "the recovery tool ran AFTER the live denial and BEFORE the late one: {seen:#?}"
+    );
+    let status = settle(&h.agent);
+    assert_eq!(status.phase, Phase::Idle, "two denials of one tool, and the turn completed");
+    assert!(status.last_error.is_none(), "a denial is not a failure: {:?}", status.last_error);
+}
+
+/// **AND THE OLDER PATH DOES NOT REGRESS TO SILENCE.** A CLI that writes
+/// no in-band line at all — every fixture in this file before T-081, and
+/// any CLI build predating the channel — still has its denial reported,
+/// from the `result` line, on the same channel the live ones use.
+///
+/// `denied-then-end-turn` is the existing T-029-s7 fixture: one
+/// `WebFetch` denial the planner ROUTED AROUND, no in-band line, and a
+/// process that exits 1 for its own reasons. T-069's tail relay covers
+/// it only because that turn FAILS — `stderr_tail` rides `ExitNonZero`
+/// and nothing else — so the same denial on a turn that SUCCEEDS was
+/// still silent after T-069. This is the arm that closes that.
+#[test]
+fn a_result_only_denial_with_no_in_band_line_is_still_reported() {
+    let h = harness(
+        "deniedresultonly",
+        Options { scenario: "denied-then-end-turn", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let seen = collect_turn(&h.events);
+    let denied = denied_events(&seen);
+    assert_eq!(denied.len(), 1, "the result line's own denial, reported: {seen:#?}");
+    assert_eq!(denied[0].1.as_deref(), Some("WebFetch"));
+    assert_eq!(denied[0].2.as_deref(), Some("tu_07"));
+    assert_eq!(
+        denied[0].3, "",
+        "a result entry carries `tool_input`, never a message - the app says what it \
+         HAS and invents nothing"
+    );
+    // …and T-069's tail relay is untouched: this turn still fails with
+    // the refused tool named in the CLI's own diagnostic tail.
+    match seen.last() {
+        Some(RunEvent::Failed { error: TurnError::ExitNonZero { code, stderr_tail }, .. }) => {
+            assert_eq!(*code, Some(1));
+            assert!(stderr_tail.contains("WebFetch"), "{stderr_tail:?}");
+        }
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+    settle(&h.agent);
+}
+
+/// **A DENIAL THE APP CANNOT FULLY DESCRIBE IS NOT A DENIAL THE USER
+/// SHOULD BE DENIED** (criterion 6), and the same body carries
+/// criterion 2's bound-and-strip pin on this path specifically.
+///
+/// Line one has no `tool_name`, an empty `message` and a `tool_use_id`
+/// that NO `result` entry corroborates — the turn's terminal
+/// `permission_denials` is EMPTY, so nothing at the end of the turn would
+/// ever have mentioned it. Line two is 4 000 plain bytes, so the BOUND is
+/// what it measures. Line three is short and control-laden, so the
+/// STRIPPING is what it measures; the two are separate lines because
+/// escaping runs after truncation and lengthens the result, which makes a
+/// combined length assertion meaningless.
+///
+/// Reusing `denial_names()`'s helper is not the same as being covered by
+/// its tests, so the bound and the stripping are measured HERE, through
+/// the whole spawn-and-relay path, with literals rather than the
+/// constants the producer reads.
+#[test]
+fn a_denial_missing_its_fields_still_reaches_the_screen_bounded_and_stripped() {
+    let h = harness(
+        "deniedpartial",
+        Options { scenario: "denied-partial-fields", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let seen = collect_turn(&h.events);
+    let denied = denied_events(&seen);
+    assert_eq!(denied.len(), 3, "every degenerate line still arrives: {seen:#?}");
+
+    // No tool name, no message, an id nothing corroborates — surfaced.
+    assert_eq!(denied[0].1, None, "an absent tool name is None, never an invented one");
+    assert_eq!(denied[0].2.as_deref(), Some("toolu_orphan_no_name"));
+    assert_eq!(denied[0].3, "");
+
+    // THE BOUND, against a literal rather than the constant the producer
+    // reads: 4 000 bytes of plain text in, 768 out.
+    assert_eq!(denied[1].1.as_deref(), Some("Bash"));
+    assert_eq!(
+        denied[1].3.len(),
+        768,
+        "the message is cut at the module's own byte bound before it reaches the webview"
+    );
+
+    // THE STRIPPING.
+    assert_eq!(denied[2].1.as_deref(), Some("Write"));
+    assert!(!denied[2].3.contains('\n'), "no raw newline survives: {:?}", denied[2].3);
+    assert!(!denied[2].3.contains('\u{1b}'), "no raw ESC survives: {:?}", denied[2].3);
+    assert!(denied[2].3.contains("\\n"), "it is ESCAPED, not deleted: {:?}", denied[2].3);
+    assert!(denied[2].3.contains("\\u{1b}"), "…and so is the ESC: {:?}", denied[2].3);
+
+    let status = settle(&h.agent);
+    assert_eq!(status.phase, Phase::Idle, "none of the three is a failure");
+    assert!(status.last_error.is_none());
+}
+
+/// **THE FIXTURE IS A TRANSCRIPTION, AND THIS IS WHAT MAKES THAT
+/// CHECKABLE RATHER THAN CLAIMED** (criterion 5).
+///
+/// `fake_agent.rs`'s denial scenario was written from documented field
+/// names — T-029-s5's central complaint — and a comment claiming a
+/// transcription is worth exactly as much as the next editor's care. So
+/// this body reads
+/// `docs/research/captures/real-planner-turn-2026-08-19.jsonl` off disk,
+/// runs the fake agent, and compares the two side by side. A paraphrase
+/// reds against the file it claims to be quoting.
+///
+/// The precedent for a cargo test reading a docs file is
+/// `snapshot_version_matches_the_live_method_stamps` in
+/// `src/agent/kit.rs`, which reads `docs/CONVENTIONS.md` on every
+/// `cargo test`. This adds a THIRD live reader outside CONVENTIONS' four
+/// walks; see the implementation notes.
+///
+/// `session_id` and `uuid` are deliberately NOT compared: they are the
+/// identity of one run, not the shape of the protocol, and the fixture
+/// binds `session_id` to whatever session it is playing.
+#[test]
+fn the_tool_denied_fixture_is_a_transcription_not_a_construction() {
+    let capture = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../docs/research/captures/real-planner-turn-2026-08-19.jsonl");
+    let raw = fs::read_to_string(&capture)
+        .unwrap_or_else(|err| panic!("{} is the source of the fixture: {err}", capture.display()));
+    // The file is PRETTY-PRINTED JSON, one object per line. A substring
+    // grep for a compact `"subtype":"permission_denied"` finds nothing in
+    // it and reads as an empty file; parse, never match text.
+    let captured: Vec<serde_json::Value> = raw
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).expect("every capture line is JSON"))
+        .collect();
+    let captured_denials: Vec<&serde_json::Value> = captured
+        .iter()
+        .filter(|v| {
+            v.get("type").and_then(|t| t.as_str()) == Some("system")
+                && v.get("subtype").and_then(|t| t.as_str()) == Some("permission_denied")
+        })
+        .collect();
+    assert_eq!(captured_denials.len(), 2, "the capture's two in-band denials");
+    let captured_entries = captured
+        .iter()
+        .find(|v| v.get("type").and_then(|t| t.as_str()) == Some("result"))
+        .and_then(|v| v.get("permission_denials"))
+        .expect("the capture's result line lists its denials");
+
+    let out = std::process::Command::new(fake_agent_bin())
+        .env("NPUTER_FAKE_SCENARIO", "denied-then-completed")
+        .stdin(std::process::Stdio::null())
+        .output()
+        .expect("the fake agent runs");
+    let emitted: Vec<serde_json::Value> = String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).expect("every fixture line is JSON"))
+        .collect();
+    let emitted_denials: Vec<&serde_json::Value> = emitted
+        .iter()
+        .filter(|v| {
+            v.get("type").and_then(|t| t.as_str()) == Some("system")
+                && v.get("subtype").and_then(|t| t.as_str()) == Some("permission_denied")
+        })
+        .collect();
+
+    assert_eq!(emitted_denials.len(), captured_denials.len());
+    for (i, (emitted, captured)) in emitted_denials.iter().zip(&captured_denials).enumerate() {
+        for key in ["tool_name", "tool_use_id", "decision_reason_type", "decision_reason", "message"]
+        {
+            assert_eq!(
+                emitted.get(key),
+                captured.get(key),
+                "denial {i}: `{key}` is not what the capture says it is"
+            );
+        }
+    }
+    // The shape variation nobody guessed, asserted as a variation rather
+    // than trusted to survive the loop above: the FIRST line carries no
+    // `decision_reason` and the SECOND one does.
+    assert_eq!(emitted_denials[0].get("decision_reason"), None);
+    assert!(emitted_denials[1].get("decision_reason").is_some());
+
+    let emitted_entries = emitted
+        .iter()
+        .find(|v| v.get("type").and_then(|t| t.as_str()) == Some("result"))
+        .and_then(|v| v.get("permission_denials"))
+        .expect("the fixture's result line lists its denials");
+    assert_eq!(emitted_entries, captured_entries, "the cumulative record, entries whole");
+
+    // THE HALF THAT IS STILL A CONSTRUCTION, said out loud here so it
+    // cannot be mistaken for transcribed: no FATAL denial has ever been
+    // observed, so `tool-denied`'s ending is a guess. The observed turn
+    // COMPLETED, and `denied-then-completed` above is faithful to it.
+    let terminal = captured
+        .iter()
+        .find(|v| v.get("type").and_then(|t| t.as_str()) == Some("result"))
+        .expect("terminal line");
+    assert_eq!(terminal.get("is_error").and_then(|v| v.as_bool()), Some(false));
+    assert_eq!(
+        terminal.get("terminal_reason").and_then(|v| v.as_str()),
+        Some("completed"),
+        "the guessed \"refusal\" was never observed - `tool-denied`'s ending stays a \
+         construction and says so in the fixture"
+    );
 }
 
 // ---- T-029-s6/s7: THE RECOVERED RETRY, AND THE DENIAL THAT WAS NOT THE

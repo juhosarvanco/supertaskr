@@ -405,6 +405,13 @@ export function rehydrate(lines: readonly TranscriptLinePayload[]): {
         turn: line.turn,
         text: line.text,
         activity: [],
+        // T-081's new `GenesisTurn` field, and EMPTY here is a statement
+        // rather than a placeholder: `.nputer/genesis/transcript.jsonl`
+        // banks the planner's text and nothing else, so a turn rebuilt
+        // off disk genuinely has no record of what it was refused —
+        // exactly as it has no record of `activity` above. Losable by the
+        // same charter; `T-081-s3` records the gap.
+        denials: [],
         status: "completed",
         truncatedRelay: false,
         error: null,

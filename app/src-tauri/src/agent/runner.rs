@@ -76,6 +76,25 @@ pub const MAX_STDERR_RING: usize = 64 * 1024;
 pub const MAX_DENIALS: usize = 16;
 /// T-029: byte bound on ONE denied tool name.
 pub const MAX_DENIAL_BYTES: usize = 128;
+/// T-081: byte bound on the CLI's OWN explanation of one denial, off a
+/// `system`/`permission_denied` line.
+///
+/// **CHOSEN TO BE THE BOUND THAT ACTUALLY BITES, which is why it is not a
+/// rounder number.** Every stream-borne string here is truncated and then
+/// handed to [`crate::docs_watch::sanitize_for_log`], which caps at
+/// `MAX_ECHO_LOG_CHARS` characters of its own. A value above that cap
+/// would leave the other function's constant deciding the length for
+/// ASCII text, and a pin on THIS bound would then be measuring a number
+/// that lives in another file and can move without this one. 768 sits
+/// below it, so the truncation here is the one a reader can predict.
+///
+/// The longest denial message in the 2.1.226 capture
+/// (`docs/research/captures/real-planner-turn-2026-08-19.jsonl`) is 419
+/// bytes — a whole compound `Bash` command quoted back — so the observed
+/// shape passes through complete, with room to spare. A longer one is
+/// cut, which is the correct direction for a string the CLI wrote about
+/// what a model asked for.
+pub const MAX_DENIAL_MESSAGE_BYTES: usize = 768;
 /// T-029: byte bound on the message inside [`TurnError::AuthFailed`].
 /// The CLI's real one is ~70 bytes; this is headroom with a hard stop.
 pub const MAX_AUTH_MESSAGE_BYTES: usize = 2048;
@@ -157,6 +176,38 @@ pub enum RunEvent {
     Started { seq: u64, turn: u32 },
     TextDelta { seq: u64, turn: u32, text: String },
     Activity { seq: u64, turn: u32, label: String },
+    /// T-081: A TOOL WAS REFUSED, AND THE USER LEARNS IT NOW.
+    ///
+    /// The CLI announces a denial the moment it happens, on a
+    /// `system`/`permission_denied` line; before this variant the runner
+    /// dropped that line and the screen stayed silent until the turn
+    /// ended. On the observed 2.1.226 turn the two denials were separated
+    /// from the `result` line by roughly forty seconds of recovery work,
+    /// and for those forty seconds a watching human had no way to know
+    /// the planner had been refused anything.
+    ///
+    /// **THIS IS NOT A FAILURE EVENT.** The observed turn carried two
+    /// denials and still finished with `is_error: false` and
+    /// `terminal_reason: "completed"` — the planner decomposed the
+    /// refused command and carried on. A `Denied` says a tool was
+    /// refused; it says nothing at all about how the turn ends, and the
+    /// turn that follows it is usually a success.
+    ///
+    /// Every field is optional-shaped for a reason recorded on the card:
+    /// a denial the app cannot fully describe is not a denial the user
+    /// should be denied. `tool_name` and `tool_use_id` are `None` when
+    /// the line did not carry them, and `message` is empty when the CLI
+    /// offered no explanation — a `result`-line denial, which carries no
+    /// message at all, arrives exactly that way.
+    Denied {
+        seq: u64,
+        turn: u32,
+        tool_name: Option<String>,
+        /// T-081's JOIN KEY. The same id appears on both channels, which
+        /// is what lets one denial be reported once.
+        tool_use_id: Option<String>,
+        message: String,
+    },
     Completed { seq: u64, turn: u32, text: String, truncated_relay: bool },
     Failed { seq: u64, turn: u32, error: TurnError },
     SessionRegistered { seq: u64, native_session_id: String },
@@ -168,6 +219,7 @@ impl RunEvent {
             RunEvent::Started { seq, .. }
             | RunEvent::TextDelta { seq, .. }
             | RunEvent::Activity { seq, .. }
+            | RunEvent::Denied { seq, .. }
             | RunEvent::Completed { seq, .. }
             | RunEvent::Failed { seq, .. }
             | RunEvent::SessionRegistered { seq, .. } => *seq,
@@ -198,6 +250,15 @@ impl Emitter {
     }
     pub fn activity(&self, turn: u32, label: String) {
         (self.sink)(RunEvent::Activity { seq: self.next(), turn, label });
+    }
+    pub fn denied(
+        &self,
+        turn: u32,
+        tool_name: Option<String>,
+        tool_use_id: Option<String>,
+        message: String,
+    ) {
+        (self.sink)(RunEvent::Denied { seq: self.next(), turn, tool_name, tool_use_id, message });
     }
     pub fn completed(&self, turn: u32, text: String, truncated_relay: bool) {
         (self.sink)(RunEvent::Completed { seq: self.next(), turn, text, truncated_relay });
@@ -1307,11 +1368,50 @@ const NOT_UNIX: GroupExit = GroupExit {
 
 // ---- stream classification ---------------------------------------------
 
+/// T-081: ONE ENTRY OF THE `result` LINE'S CUMULATIVE `permission_denials`
+/// ARRAY, parsed once and read two ways.
+///
+/// Before this task the array was read straight to `Vec<String>` by
+/// [`denial_names`], which is all [`TurnError::ToolDenied`] needs. The
+/// `tool_use_id` beside each name was parsed by nobody, and it is the one
+/// field that makes the in-band channel and this one joinable — the same
+/// id appears on both. Keeping the two views on ONE parse is deliberate:
+/// two walks of the same array are two chances to disagree about which
+/// entries there are.
+///
+/// Both fields are `None` when the CLI did not write them. A bare string
+/// entry — a shape the CLI could write and never has — yields a name with
+/// no id, which the join then treats as uncorroborated, which is the safe
+/// direction.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ResultDenial {
+    pub tool_name: Option<String>,
+    pub tool_use_id: Option<String>,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum StreamLine {
     Init { session_id: Option<String>, model: Option<String> },
     TextDelta(String),
     Activity(String),
+    /// T-081: the CLI announcing a permission denial AT THE MOMENT IT
+    /// HAPPENS — `system`/`permission_denied`, observed twice in the
+    /// 2.1.226 capture.
+    ///
+    /// **IT IS MATCHED ON WHAT IT HAS, NEVER ON WHAT IT LACKS.** This
+    /// line's most striking property is the absence of `error` and
+    /// `error_status`, which is exactly why the `system` arm below
+    /// returned [`StreamLine::Ignored`] for it — that arm asks whether an
+    /// error field is present, and a lack cannot be matched. The
+    /// discriminator is the positive one: `subtype == "permission_denied"`.
+    ///
+    /// The two observed lines differ in shape and both must classify: the
+    /// first carries only `decision_reason_type` (`"subcommandResults"`),
+    /// the second carries `decision_reason` as well (`"other"`). Neither
+    /// value is read here — the CLI's human-readable `message` is what a
+    /// person needs, and `decision_reason` stands in for it only when
+    /// `message` is missing or empty.
+    Denial { tool_name: Option<String>, tool_use_id: Option<String>, message: String },
     /// The turn's canonical text. `is_error` is the CLI's OWN verdict on
     /// it: observed in the real 2.1.226 smoke, an authentication failure
     /// arrives as `subtype: "success"` with `is_error: true` and the
@@ -1329,7 +1429,10 @@ pub enum StreamLine {
         is_error: bool,
         api_error_status: Option<u32>,
         terminal_reason: Option<String>,
-        permission_denials: Vec<String>,
+        /// T-081: entries rather than names. [`denial_names`] is the view
+        /// [`TurnError::ToolDenied`] takes of this; `tool_use_id` is the
+        /// view the in-band join takes.
+        permission_denials: Vec<ResultDenial>,
     },
     /// A well-formed JSON line carrying an error the CLI is reporting
     /// in-band (e.g. `system`/`api_retry` with `error_status: 401`).
@@ -1359,6 +1462,34 @@ pub fn classify_line(line: &str) -> StreamLine {
                     .and_then(|v| v.as_str())
                     .map(str::to_string),
                 model: value.get("model").and_then(|v| v.as_str()).map(str::to_string),
+            }
+        }
+        // T-081: THE IN-BAND DENIAL, AHEAD OF THE ERROR-BEARING ARM
+        // BELOW, and keyed on its own `subtype` rather than on anything
+        // it happens to be missing. See `StreamLine::Denial`.
+        "system"
+            if value.get("subtype").and_then(|v| v.as_str()) == Some("permission_denied") =>
+        {
+            StreamLine::Denial {
+                tool_name: denial_field(&value, "tool_name"),
+                tool_use_id: denial_field(&value, "tool_use_id"),
+                // `message` is the sentence a person reads. When the CLI
+                // wrote none, `decision_reason` is what it has — on the
+                // second observed line the two are the same string, so
+                // this fallback costs nothing and covers a line that
+                // carried only the reason.
+                message: value
+                    .get("message")
+                    .and_then(|v| v.as_str())
+                    .filter(|m| !m.trim().is_empty())
+                    .or_else(|| {
+                        value
+                            .get("decision_reason")
+                            .and_then(|v| v.as_str())
+                            .filter(|m| !m.trim().is_empty())
+                    })
+                    .map(|m| bounded_stream_string(m, MAX_DENIAL_MESSAGE_BYTES))
+                    .unwrap_or_default(),
             }
         }
         // Other `system` subtypes are ignored EXCEPT when they carry an
@@ -1447,7 +1578,7 @@ pub fn classify_line(line: &str) -> StreamLine {
                     .get("terminal_reason")
                     .and_then(|v| v.as_str())
                     .map(str::to_string),
-                permission_denials: denial_names(value.get("permission_denials")),
+                permission_denials: denial_entries(value.get("permission_denials")),
             }
         }
         _ => StreamLine::Ignored,
@@ -1466,13 +1597,38 @@ fn as_status_u32(value: &serde_json::Value) -> Option<u32> {
     (100..=599).contains(&n).then_some(n as u32)
 }
 
-/// The tool names off a `permission_denials` array. The CLI writes
-/// objects (`{"tool_name": "Bash", …}`) and could write bare strings; both
-/// are read, everything else is skipped, and each name is BOUNDED and
-/// stripped of control characters before it can reach a log line or the
-/// screen — it is model-adjacent data off a stream, like every other
-/// string in this module.
-fn denial_names(value: Option<&serde_json::Value>) -> Vec<String> {
+/// The ONE discipline every stream-borne string in this module travels
+/// under: bounded in bytes, then stripped of control characters, before
+/// it can reach a log line or the screen. Extracted at T-081 so the two
+/// denial channels cannot apply it two slightly different ways — and so
+/// that the JOIN between them compares ids that went through the same
+/// transform on both sides.
+fn bounded_stream_string(raw: &str, max: usize) -> String {
+    crate::docs_watch::sanitize_for_log(&super::sessions::truncate_utf8(raw, max))
+}
+
+/// One optional, bounded, control-stripped field off a denial line.
+/// Absent, non-string and blank all read the same: `None`.
+fn denial_field(value: &serde_json::Value, key: &str) -> Option<String> {
+    value
+        .get(key)
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| bounded_stream_string(s, MAX_DENIAL_BYTES))
+}
+
+/// The entries off a `permission_denials` array. The CLI writes objects
+/// (`{"tool_name": "Bash", "tool_use_id": "toolu_…", "tool_input": {…}}`
+/// — confirmed by the 2.1.226 capture) and could write bare strings; both
+/// are read, everything else is skipped, and every field is BOUNDED and
+/// stripped of control characters — it is model-adjacent data off a
+/// stream, like every other string in this module.
+///
+/// T-081 reads `tool_use_id` here for the first time. It changes nothing
+/// about the names; it is what makes a `result` entry recognisable as the
+/// SAME denial the in-band channel already announced.
+fn denial_entries(value: Option<&serde_json::Value>) -> Vec<ResultDenial> {
     let Some(serde_json::Value::Array(items)) = value else {
         return Vec::new();
     };
@@ -1480,18 +1636,30 @@ fn denial_names(value: Option<&serde_json::Value>) -> Vec<String> {
         .iter()
         .take(MAX_DENIALS)
         .filter_map(|item| match item {
-            serde_json::Value::String(s) => Some(s.as_str()),
-            serde_json::Value::Object(_) => item
-                .get("tool_name")
-                .or_else(|| item.get("tool"))
-                .and_then(|v| v.as_str()),
+            serde_json::Value::String(s) => Some(ResultDenial {
+                tool_name: Some(s.as_str())
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(|s| bounded_stream_string(s, MAX_DENIAL_BYTES)),
+                tool_use_id: None,
+            }),
+            serde_json::Value::Object(_) => Some(ResultDenial {
+                tool_name: denial_field(item, "tool_name")
+                    .or_else(|| denial_field(item, "tool")),
+                tool_use_id: denial_field(item, "tool_use_id"),
+            }),
             _ => None,
         })
-        .filter(|name| !name.trim().is_empty())
-        .map(|name| {
-            crate::docs_watch::sanitize_for_log(&super::sessions::truncate_utf8(name, MAX_DENIAL_BYTES))
-        })
         .collect()
+}
+
+/// The names view of those entries — what [`TurnError::ToolDenied`]
+/// carries, and what the diagnostic ring note lists. An entry the CLI
+/// wrote without a readable tool name contributes nothing here, exactly
+/// as it did before T-081; it still exists as an entry, because the
+/// denial happened whether or not the app can name it.
+fn denial_names<'a>(entries: impl IntoIterator<Item = &'a ResultDenial>) -> Vec<String> {
+    entries.into_iter().filter_map(|d| d.tool_name.clone()).collect()
 }
 
 // ---- the turn ----------------------------------------------------------
@@ -1638,6 +1806,11 @@ pub fn run_turn(
     let mut auth_message: Option<String> = None;
     let mut terminal_reason: Option<String> = None;
     let mut permission_denials: Vec<String> = Vec::new();
+    // T-081: the `tool_use_id` of every denial ALREADY announced live, so
+    // the cumulative `result` list can be told apart from a repeat of it.
+    // Bounded by the live-emit cap below, which is bounded by MAX_DENIALS.
+    let mut announced_denials: Vec<String> = Vec::new();
+    let mut live_denials: usize = 0;
     // T-069: has model text arrived since the last line that named an
     // auth status? Only meaningful for a turn that never writes a
     // terminal `result` line, which is the one family T-029's rule
@@ -1745,6 +1918,31 @@ pub fn run_turn(
                             last_activity = Some(label);
                         }
                     }
+                    // T-081: A DENIAL IS NEWS WHEN IT HAPPENS.
+                    StreamLine::Denial { tool_name, tool_use_id, message } => {
+                        saw_json_anchor = true;
+                        // Order on screen has to match order in the
+                        // stream: a denial that lands mid-sentence must
+                        // appear AFTER the words already streamed, not
+                        // in front of them. Same flush the `Activity`
+                        // arm does, for the same reason.
+                        flush_pending(emitter, req.turn, &mut pending, &mut pending_since, &mut relayed);
+                        // The cap is this module's standing discipline
+                        // applied to an event COUNT rather than to a
+                        // string length: a stream is untrusted, and a
+                        // broken or hostile CLI must not be able to
+                        // flood the webview. Past the cap the id is NOT
+                        // recorded either, so the `result` line's own
+                        // copy is still reported below — the denial
+                        // arrives late rather than not at all.
+                        if live_denials < MAX_DENIALS {
+                            live_denials += 1;
+                            if let Some(id) = &tool_use_id {
+                                announced_denials.push(id.clone());
+                            }
+                            emitter.denied(req.turn, tool_name, tool_use_id, message);
+                        }
+                    }
                     StreamLine::Result {
                         text,
                         is_error,
@@ -1814,6 +2012,49 @@ pub fn run_turn(
                             terminal_reason = reason;
                         }
                         if !denials.is_empty() {
+                            // T-081: THE JOIN, AND IT RUNS BEFORE ANYTHING
+                            // IS REPORTED. `permission_denials` is
+                            // CUMULATIVE — it lists every denial of the
+                            // turn, including the ones the in-band
+                            // channel already announced live, and
+                            // `tool_use_id` is on both channels. Without
+                            // this partition every observed denial would
+                            // reach the user twice: once when it
+                            // happened and once more at the end, which
+                            // reads as two refusals rather than one.
+                            //
+                            // An entry with no id cannot be joined and
+                            // is treated as UNANNOUNCED. That direction
+                            // is deliberate: a repeat is a nuisance, a
+                            // silence is the defect this card exists to
+                            // fix.
+                            let unannounced: Vec<&ResultDenial> = denials
+                                .iter()
+                                .filter(|d| match &d.tool_use_id {
+                                    Some(id) => !announced_denials.iter().any(|seen| seen == id),
+                                    None => true,
+                                })
+                                .collect();
+                            // The older CLI path — and any denial the
+                            // in-band channel missed — reaches the same
+                            // screen the live ones do, late rather than
+                            // never. T-069's ring relay below only ever
+                            // surfaced on a FAILED turn, because
+                            // `stderr_tail` rides `ExitNonZero`; a
+                            // recovered denial on a SUCCEEDING turn was
+                            // silent even after T-069.
+                            for denial in &unannounced {
+                                emitter.denied(
+                                    req.turn,
+                                    denial.tool_name.clone(),
+                                    denial.tool_use_id.clone(),
+                                    // The `result` line carries
+                                    // `tool_input`, never a message. The
+                                    // app says what it has and invents
+                                    // nothing.
+                                    String::new(),
+                                );
+                            }
                             // T-069: RELAYING IS NOT DIAGNOSING, and this
                             // push is the difference. The classification
                             // below may DECLINE these names — it does
@@ -1840,12 +2081,28 @@ pub fn run_turn(
                             // and not a claim. Bounded by `denial_names`
                             // (16 × 128 bytes) and sanitized there, then
                             // sanitized again with the whole tail.
-                            let note = format!("permission_denials: {}", denials.join(", "));
-                            let mut ring = stderr_ring.lock().expect("stderr ring poisoned");
-                            ring.push(note.as_bytes());
-                            ring.push(b"\n");
-                            drop(ring);
-                            permission_denials = denials;
+                            //
+                            // T-081 NARROWS IT TO THE UNANNOUNCED SET
+                            // for the same no-double-reporting reason:
+                            // a name already delivered as its own event
+                            // does not need repeating in the tail.
+                            let unreported = denial_names(unannounced.iter().copied());
+                            if !unreported.is_empty() {
+                                let note =
+                                    format!("permission_denials: {}", unreported.join(", "));
+                                let mut ring = stderr_ring.lock().expect("stderr ring poisoned");
+                                ring.push(note.as_bytes());
+                                ring.push(b"\n");
+                            }
+                            // The CUMULATIVE record, whole and unjoined:
+                            // `ToolDenied` names every tool the turn was
+                            // refused, which is a different question from
+                            // which of them the user has already been
+                            // told about.
+                            let names = denial_names(&denials);
+                            if !names.is_empty() {
+                                permission_denials = names;
+                            }
                         }
                         result_text = Some(text);
                     }
@@ -2349,12 +2606,177 @@ mod tests {
             classify_line(r#"{"type":"system","subtype":"status","status":"requesting"}"#),
             StreamLine::Ignored
         );
+        // T-081: …and the denial line, which ALSO has no error field, is
+        // the one `system` subtype that must not fall through to it.
+        assert_eq!(
+            classify_line(
+                r#"{"type":"system","subtype":"permission_denied","tool_name":"Bash","tool_use_id":"toolu_1","decision_reason_type":"subcommandResults","message":"nope"}"#
+            ),
+            StreamLine::Denial {
+                tool_name: Some("Bash".into()),
+                tool_use_id: Some("toolu_1".into()),
+                message: "nope".into(),
+            }
+        );
         // Forward-compatible: an unknown JSON type is ignored, not fatal.
         assert_eq!(classify_line(r#"{"type":"brand_new_thing"}"#), StreamLine::Ignored);
         assert_eq!(classify_line(r#"{"no":"type"}"#), StreamLine::Ignored);
         // Non-JSON is tolerated (real CLIs warn on stdout).
         assert_eq!(classify_line("warning: node 18 is deprecated"), StreamLine::NotJson);
         assert_eq!(classify_line(""), StreamLine::NotJson);
+    }
+
+    /// T-081, THE BOUND AND THE STRIPPING ON *THIS* PATH.
+    ///
+    /// `denial_names()` has carried the same discipline since T-029 and
+    /// its own tests cover it — but reusing a helper is not the same as
+    /// being covered by that helper's tests, and this path reaches the
+    /// screen with a string the CLI wrote about what a model asked for.
+    /// Every expectation below is a LITERAL, never the constant the
+    /// producer reads: a test parametrised by the constant it checks
+    /// cannot pin that constant.
+    #[test]
+    fn an_in_band_denial_is_bounded_and_control_stripped_on_its_own_path() {
+        // The bound. 5 000 plain bytes in, 768 out — the constant's
+        // value, written out, so moving the constant reds here.
+        let long = "A".repeat(5_000);
+        let line = serde_json::json!({
+            "type": "system", "subtype": "permission_denied",
+            "tool_name": "Bash", "tool_use_id": "toolu_long", "message": long
+        })
+        .to_string();
+        match classify_line(&line) {
+            StreamLine::Denial { message, .. } => {
+                assert_eq!(message.len(), 768, "the message is cut at the module's own bound");
+                assert!(!message.contains('…'), "768 ASCII bytes stay under the log cap, so \
+                     nothing appends a truncation marker here — read the length, not the tail");
+            }
+            other => panic!("expected Denial, got {other:?}"),
+        }
+
+        // The stripping. A control-bearing message must not reach the
+        // screen or a log line with its bytes intact.
+        let line = serde_json::json!({
+            "type": "system", "subtype": "permission_denied",
+            "tool_name": "Ba\u{1b}[31msh", "tool_use_id": "toolu_ctl",
+            "message": "denied\nbecause\u{7f} of a rule"
+        })
+        .to_string();
+        match classify_line(&line) {
+            StreamLine::Denial { tool_name, message, .. } => {
+                assert!(!message.contains('\n'), "no raw newline survives: {message:?}");
+                assert!(!message.contains('\u{7f}'), "no raw DEL survives: {message:?}");
+                assert!(message.contains("\\n"), "it is ESCAPED, not deleted: {message:?}");
+                assert_eq!(
+                    tool_name.as_deref(),
+                    Some("Ba\\u{1b}[31msh"),
+                    "the name travels under the same discipline"
+                );
+            }
+            other => panic!("expected Denial, got {other:?}"),
+        }
+
+        // The name bound is the older, tighter one and applies here too.
+        let line = serde_json::json!({
+            "type": "system", "subtype": "permission_denied",
+            "tool_name": "B".repeat(400), "message": "x"
+        })
+        .to_string();
+        match classify_line(&line) {
+            StreamLine::Denial { tool_name, tool_use_id, .. } => {
+                assert_eq!(tool_name.map(|n| n.len()), Some(128));
+                assert_eq!(tool_use_id, None, "an absent id is None, never an empty string");
+            }
+            other => panic!("expected Denial, got {other:?}"),
+        }
+    }
+
+    /// T-081 criterion 6: a denial the app cannot fully describe is not a
+    /// denial the user should be denied. Each degenerate line below still
+    /// classifies as a `Denial` — the alternative is silence.
+    #[test]
+    fn a_denial_line_missing_its_fields_still_classifies() {
+        assert_eq!(
+            classify_line(r#"{"type":"system","subtype":"permission_denied"}"#),
+            StreamLine::Denial { tool_name: None, tool_use_id: None, message: String::new() },
+            "no tool, no id, no message - still a denial"
+        );
+        assert_eq!(
+            classify_line(
+                r#"{"type":"system","subtype":"permission_denied","tool_name":"Write","message":"   "}"#
+            ),
+            StreamLine::Denial {
+                tool_name: Some("Write".into()),
+                tool_use_id: None,
+                message: String::new(),
+            },
+            "a blank message reads as no message, and the tool name still arrives"
+        );
+        // The SECOND observed line's shape: `decision_reason` beside
+        // `message`. When the message is missing the reason is what the
+        // line has, and what it has is what gets said.
+        assert_eq!(
+            classify_line(
+                r#"{"type":"system","subtype":"permission_denied","tool_name":"Write","decision_reason_type":"other","decision_reason":"Glob patterns are not allowed in write operations."}"#
+            ),
+            StreamLine::Denial {
+                tool_name: Some("Write".into()),
+                tool_use_id: None,
+                message: "Glob patterns are not allowed in write operations.".into(),
+            }
+        );
+    }
+
+    /// T-081: the `result` line's entries are parsed ONCE and read two
+    /// ways — names for [`TurnError::ToolDenied`], `tool_use_id` for the
+    /// join. The 2.1.226 capture is the shape driven here, and it is the
+    /// shape nobody had: **both denials name the SAME tool**, so the name
+    /// cannot be the join key and the id has to be.
+    #[test]
+    fn result_denial_entries_carry_the_join_key_beside_the_name() {
+        let value: serde_json::Value = serde_json::from_str(
+            r#"{"permission_denials":[
+                {"tool_name":"Bash","tool_use_id":"toolu_01FAHQKCKFrBLrmVtRiuLT9L","tool_input":{"command":"…"}},
+                {"tool_name":"Bash","tool_use_id":"toolu_0173K9Q72m797nLBonDtrc3R","tool_input":{"command":"…"}}
+            ]}"#,
+        )
+        .expect("fixture parses");
+        let entries = denial_entries(value.get("permission_denials"));
+        assert_eq!(
+            entries,
+            vec![
+                ResultDenial {
+                    tool_name: Some("Bash".into()),
+                    tool_use_id: Some("toolu_01FAHQKCKFrBLrmVtRiuLT9L".into()),
+                },
+                ResultDenial {
+                    tool_name: Some("Bash".into()),
+                    tool_use_id: Some("toolu_0173K9Q72m797nLBonDtrc3R".into()),
+                },
+            ]
+        );
+        // The names view is what T-029 always saw — and it is NOT deduped,
+        // because two refusals of one tool are two refusals.
+        assert_eq!(denial_names(&entries), vec!["Bash".to_string(), "Bash".to_string()]);
+
+        // The defensive shapes, unchanged in what they yield to the names
+        // view: a bare string is a name with no id; a number is nothing;
+        // an object with no readable name is an ENTRY with no name, which
+        // the join can still carry and the names view still drops.
+        let value: serde_json::Value = serde_json::from_str(
+            r#"{"d":["WebFetch",7,{"tool_use_id":"toolu_nameless"},{"tool":"Legacy"}]}"#,
+        )
+        .expect("fixture parses");
+        let entries = denial_entries(value.get("d"));
+        assert_eq!(
+            entries,
+            vec![
+                ResultDenial { tool_name: Some("WebFetch".into()), tool_use_id: None },
+                ResultDenial { tool_name: None, tool_use_id: Some("toolu_nameless".into()) },
+                ResultDenial { tool_name: Some("Legacy".into()), tool_use_id: None },
+            ]
+        );
+        assert_eq!(denial_names(&entries), vec!["WebFetch".to_string(), "Legacy".to_string()]);
     }
 
     #[test]
