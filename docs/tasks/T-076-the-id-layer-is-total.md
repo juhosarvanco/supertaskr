@@ -5,12 +5,12 @@ feature: F-02
 milestone: 4
 priority: 35
 size: M
-status: planned
+status: verifying
 blocked_by: []
 touches: [lib-parser]
-builder:
+builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @fresh
 verified_by:
 review:
 ---
@@ -191,5 +191,311 @@ near-miss index is keyed by a slot key derived from untrusted file
 content, so it is a `Map` and never an object literal (ADR-009), and a
 `blocked_by: [__proto__]` must not acquire a near miss through inherited
 state. Pinned rather than argued.
+
+### The card's claims, reproduced FIRST
+
+Every one reproduced, three with a correction to the citation.
+
+**The NaN comparator, at the branch point.** `Number('9'.repeat(309))`
+is the first `Infinity` (a leading 1 needs 310 digits), and against the
+branch-point body `compareComponentIds('C-'+'9'.repeat(400), 'C-'+'9'.repeat(401))`
+returns `NaN`. Sorting `[b, a]` and `[a, b]` gives two different arrays,
+which is the defect stated exactly: not a wrong answer, NO answer.
+
+**It governs T-053's own output — and the card UNDERSTATES the reach.**
+`aliasedIdSlots` is a bare `sort(compare)`, so a component `aliased-id`
+past 309 digits reported its `ids` in ARRIVAL order: the same two ids in
+two file namings produced `[402, 403]` and `[403, 402]` character
+lengths. But `ambiguous-mapping` degrades DIFFERENTLY, and neither the
+card nor the dispatch says so: `component.ts:374` sorts with
+`compareComponentIds(a.id, b.id) || (file compare)`, and `NaN` is FALSY,
+so the `||` silently swallowed it and the winner was decided by FILE
+PATH. Reproduced: two components with genuinely different 400/401-digit
+ids declared `ids[0]` — the id the message names as winning file mapping
+— to be whichever file sorted first. So the rule broke in two places by
+two different mechanisms, one non-deterministic and one deterministically
+wrong, and only the first was on the card.
+
+**`duplicate-id` has no space discriminator.** Reproduced at all four
+sites. **Citation correction: the dispatch's `roadmap.ts:48` does not
+resolve** — line 48 is the `description` split, and the emit is
+`roadmap.ts:51-56` with `kind` on `:52`. The other three
+(`component.ts:313`, `project.ts:80`, `files.ts:143`) resolve exactly.
+
+**The roadmap's feature `duplicate-id` already carried
+`files: [file, file]`** at the branch point (`roadmap.ts:54`). The
+dispatch presents it as missing; criterion 4's live half is the second
+clause, the message SHAPE, and that is what moved.
+
+**`dangling-reference` near miss.** Reproduced through the built parser
+at the branch point, both halves: `blocked_by: [T-01]` in a file
+declaring `T-001` said only "no task in the model declares it", and
+`feature: F-1` against a backbone declaring `F-01` said only "the
+roadmap backbone does not declare it".
+
+**`validate.ts:123` and `:134` resolve exactly** as the two
+`dangling-reference` emit sites.
+
+### Criteria → evidence
+
+**C1 — `compareComponentIds` is TOTAL, and the ordering the tree can
+hold is PROVED unchanged rather than asserted.** `id-slot.ts:84` is
+`compareDigitRuns` (canonicalize, then longer-is-greater, then
+lexicographic) over `id-slot.ts:60` `canonicalDigits`, which is the
+strip `idSlotKey` uses — one function, so the comparator and the slot
+key cannot disagree about what the digits of an id are.
+`component.ts:81` calls it, inside `compareComponentIds`. "Unchanged" is a MEASURED relation, not a
+table: `component.test.ts:343` reproduces the branch-point body verbatim
+as `numericSubtraction` and compares SIGNS over all **484 pairs** of a
+22-id set (the pin asserts the 484 so the sweep cannot become vacuously
+empty), then re-sorts the live registry under both. Past the range, in
+both directions: `component.test.ts:372` (same-length 401-digit pair
+both ways, plus 400-vs-401 digits) and `id-slot.test.ts:149`.
+Sort stability: `component.test.ts:396` sorts one list and its reverse
+to the same array and asserts the OLD body does not, plus
+`id-slot.test.ts:162`.
+
+**C1's one behaviour change that is not "unchanged", stated rather than
+buried.** Between 2^53 and Infinity the old body was WRONG, not merely
+imprecise: `Number` rounds 17 nines and 1e17 to the same double, the
+difference was 0, and the STRING fallback then put the 17-digit id after
+the 18-digit one it is smaller than. The new body reverses that pair.
+Pinned as a deliberate correction at `component.test.ts:410` and
+`id-slot.test.ts:139`, asserting BOTH bodies so the direction of the
+change is in the pin.
+
+**C2 — the doc comment stops claiming the guarantee, and does not then
+claim the new one as pre-existing.** `id-slot.ts:180-195`, inside `aliasedIdSlots`'s doc block
+(`id-slot.ts:164-196`). It now says
+the fall-through is a property of the comparator PASSED, names what was
+false and in which range, says T-076 made the one comparator this
+package passes total, and says a caller passing its own `Number()`-based
+comparator would put the NaN back and nothing here can stop it. The
+property itself is pinned at `component.test.ts:422`.
+
+**C3 — `duplicate-id` carries `space` at all four sites.**
+`component.ts:340`, `project.ts:81`, `files.ts:144`, `roadmap.ts:62`;
+the type is `types.ts:238` with its reason. Read structurally off ONE
+mixed three-space model at `files.test.ts:192` — the criterion's own
+consumer story, `['task','feature','component']` with the matching ids
+so the spaces cannot be read off three copies of one issue.
+
+**The four pins that moved, deliberately, each dated and reasoned in
+place** (the criterion asks for the list):
+
+| pin | what moved |
+|---|---|
+| `component.test.ts:449` | `space: 'component'` added to a whole-object `toEqual` |
+| `project.test.ts:89` | `space: 'task'` added to a whole-object `toEqual` |
+| `roadmap.test.ts:267` | `space: 'feature'`, AND the matcher TIGHTENED from `objectContaining` to whole-object `toEqual`, AND the message assertion went from one substring to both declarations named individually |
+| `files.test.ts:48` | `space: 'task'` added to a `toMatchObject` — a TIGHTENING, not a reconciliation: this pin was green before and after, and would have stayed green with the field missing at that one site |
+
+Nothing else in any pre-existing body moved. `files.test.ts:48` is the
+one worth reading twice — it is the fourth emit site and the only one
+whose pin could not have caught its own regression, which is mutant (g)
+below.
+
+**C4 — the backbone `duplicate-id` and the backbone `aliased-id` now say
+the same kind of thing in the same shape.** `roadmap.ts:65` names each
+declaration as `'<id>' (line N)`, which is the alias message's shape at
+`roadmap.ts:137`; `files` was already `[file, file]`. The consequence
+clause is the board's MEASURED behaviour, not a plausible sentence —
+`selectBoard` keys columns on the exact string and skips a repeat
+(`app/src/lib/board-model.ts:248-249`), so the first declaration's
+column survives and the second's name and description are discarded.
+Pinned at `roadmap.test.ts:267`, which also asserts the OLD shape is
+gone rather than merely unasserted.
+
+**C5 — the near-miss hint, three sites, no new kind.** `validate.ts:143`
+(blocked_by), `:156` (feature), `component.ts:396` (depends_on), over
+`id-slot.ts:140` `slotNearMisses` and `id-slot.ts:157` `nearMissClause`.
+The card's own reproduction is the pin at `validate.test.ts:874`, which
+asserts the whole issue object including the exact message and that the
+kind LIST is still `['dangling-reference']` — a hint, never a kind.
+Feature side `validate.test.ts:899`; component side
+`component.test.ts:502`. Absence when there is no near miss:
+`validate.test.ts:917` and `component.test.ts:477`, both asserting
+`not.toHaveProperty('nearMiss')` rather than an empty array. The `-sN`
+suffix is part of the slot, so a hint never crosses it —
+`validate.test.ts:932`, where a padded BASE and a padded SUFFIX each get
+one and a different suggestion number gets none although both
+neighbours are declared one file away. Plural when the declared space is
+itself aliased: `validate.test.ts:959` and `component.test.ts:525`, with
+`validate.test.ts:959` also asserting the `aliased-id` is still reported
+alongside — the hint explains a symptom, it never replaces the root
+cause. ADR-009: `validate.test.ts:980` and `id-slot.test.ts:179`.
+
+**C6 — the two rulings are the section above, committed at `a931bfb`,
+which is the commit BEFORE the first source byte** (`62bec51`). The
+order is checkable in `git log`, not asserted here.
+
+### Obligation — the drill, all three limbs
+
+**Poison sweep: 34 bodies, 34 red, 0 collateral.** The 34 were derived
+MECHANICALLY, not by hand: every `it()` block in the six touched files
+was extracted by matching its opener's indent to its closing `});` in
+both `e4a5ae7` and HEAD, and the bodies whose TEXT differs are the set.
+That is exact where walking `-U0` hunk headers is not — the hunk walk
+returned 39, five of them pre-existing bodies adjacent to an appended
+`describe`. Result: **263 total, 229 passed, 34 failed, 34/34 citing
+`T-076 POISON`, zero collateral assertion failures.** 229 is the
+pre-poison baseline restated, which is the collateral check said twice.
+Restoration proved by **sha256 against `git show HEAD:<path>`** for all
+six files, never by a clean `git status`; `git grep "T-076 POISON"`
+returns nothing.
+
+**But a poison sweep only proves a body RUNS, so 16 one-sided
+discriminating mutants were run against `lib/parser/src/**`. Zero
+survivors.** Every mutation is producer-side only — none touches a
+literal the producer and an assertion share — and each was verified by
+reading the resulting DIFF TEXT rather than a substitution count, which
+is the limb a symmetric mutation passed through this week. Each was
+restored and re-hashed; a final sweep confirmed every file under
+`lib/parser/src` back at its pre-drill sha256.
+
+| mutant | red |
+|---|---|
+| (a) `compareDigitRuns` → the old `Number()` subtraction | 8 |
+| (b) drops the longer-is-greater rule | 9 |
+| (c) drops the leading-zero strip | 8 |
+| (d) `compareComponentIds` reverts to `Number()` at the call site | 5 |
+| (e) `space` dropped at the COMPONENT duplicate site | 2 |
+| (f) `space` dropped at the DISK task site | 1 |
+| (g) `space` dropped at the PURE task site | 2 |
+| (h) `space` dropped at the BACKBONE site | 2 |
+| (i) `nearMiss` FIELD dropped, clause kept (validate, both sites) | 5 |
+| (j) `nearMiss` FIELD dropped, clause kept (component) | 2 |
+| (k) message CLAUSE dropped, FIELD kept (validate, both sites) | 3 |
+| (l) `slotNearMisses` stops excluding the reference itself | 1 |
+| (m) `nearMissClause` always singular | 3 |
+| (n) backbone duplicate message reverts to the old shape | 1 |
+| (o) `idSlotIndex` built on an object literal (ADR-009) | 2 |
+| (p) `slotNearMisses` looks the slot up through a plain object | 3 |
+
+(i) and (k) are the pair that matters for ruling 1: dropping the FIELD
+while keeping the sentence, and dropping the sentence while keeping the
+field, red DIFFERENT tests. The hint is pinned as two things because it
+IS two things. (a) is the one mutant the 484-pair agreement sweep
+correctly does NOT red — it makes the new body identical to the old, and
+an agreement test that reddened there would be asserting disagreement.
+
+**Shape six, declared rather than hidden.** `files.test.ts:192` (the
+mixed three-space model) reds under (e), (g) and (h) — and under each of
+those, a single-site pin already reds. I could construct no mutant it
+uniquely kills, because every site's own pin asserts its own literal. It
+is kept deliberately as the STATEMENT of criterion 3's consumer property
+plus the only assertion anywhere that the three spaces coexist in one
+model in layer order, and it is named here as shape six rather than
+counted as a killer.
+
+### Suites — my own actuals, exit codes read UNPIPED
+
+    lib/parser (from lib/parser/):
+      npm ci            0 vulnerabilities, 55 packages
+      npx tsc --noEmit  exit 0
+      npm run build     exit 0
+      npx vitest run    263/263 (12 files), exit 0   [234 baseline + 29]
+    app (from app/):
+      npm install       clean
+      npx tsc --noEmit  exit 0
+      npm run build     exit 0, 265 modules transformed
+                        (index-DjYVlJel.js 501.37 kB, index-CwYF5FQb.css 43.95 kB)
+      npx vitest run    825/825 (42 files), exit 0 — UNMODIFIED
+
+**The app suite is the criterion, and it passed with ZERO app bytes
+edited** — `git status` clean outside `lib/parser/**` and
+`docs/tasks/T-076*`. That was not a foregone conclusion:
+`compareComponentIds` is EXPORTED and the app imports it at
+`app/src/architecture/map-layout.ts:1` and
+`app/src/lib/architecture/derive.ts:19`, so a comparator change reaches
+the map's layout and the derivation's edge order. It moves nothing
+because every id in that space is two digits and C1's agreement sweep
+covers the whole range a double can weigh.
+
+`cargo test` and the E2E lane were NOT run, stated rather than skipped:
+the diff is `lib/parser/**` plus `docs/tasks/**`, `app/src-tauri/**` is
+a 0-file diff, and nothing under `tools/e2e` imports the parser
+(ADR-011 family). Neither can move, and neither was claimed.
+
+**BOOT GATE — computed, and it does NOT fire.** The trigger is
+`app/src/**`, `app/src-tauri/**`, `app/package.json` or
+`app/src-tauri/Cargo.toml` over `e4a5ae7..HEAD`.
+`git diff --name-only` over exactly that set returns **zero paths**, so
+`boot:check` was not run, no window was opened and there is no
+`BOOT_EXIT` to record.
+
+**GRAPH REGEN — the trigger FIRES and the graph was deliberately NOT
+regenerated** (integrator's ritual, per dispatch and T-009-s1). Twelve
+`.ts` files outside `docs/` moved. Expected delta, so the integrator can
+check rather than discover: NO new file nodes — this card adds no file,
+which means C-06's dogfood file COUNT does not move and T-024's
+three-fixture rule does not fire; four new exported symbols in
+`id-slot.ts` (`compareDigitRuns`, `idSlotIndex`, `slotNearMisses`,
+`nearMissClause`) plus one unexported (`canonicalDigits`); new call
+edges from `component.ts` and `validate.ts` into `id-slot.ts` (the
+IMPORT edges already existed since T-053); and shifted `range` values on
+symbols below every edit in seven source files.
+
+### The live tree — zero issues, three trees
+
+    this worktree, before the s-files   tasks 100 · features 6 ·
+                                        components 11 · ISSUES 0
+    this worktree, FINAL tree           tasks 103 · features 6 ·
+                                        components 11 · ISSUES 0
+    /Users/ujju/Projects/nputer (main)  tasks 106 · features 6 ·
+                                        components 11 · ISSUES 0
+
+Read-only on main; nothing was written there. The 100 files match the
+fourth triage exactly — **51 done / 29 planned / 20 parked / 0
+suggested** — and the final tree is 103 because this card files three
+suggestions. The smoke test re-proves the zero on every run.
+
+What COULD have fired, checked rather than assumed. The near-miss hint
+is the only new issue-SHAPE that can appear on a tree that previously
+had none, and it cannot: it only decorates an issue that already exists,
+and this tree has zero `dangling-reference`s. `duplicate-id`'s `space`
+adds a field to an issue that must already exist. The comparator change
+cannot create an issue at all. So the zero is entailed rather than
+lucky — and it was measured anyway, at every step, including after each
+of the three suggestion files landed.
+
+### Flagged for the verifier
+
+- **Attack the four moved pins first**, and `files.test.ts:48` hardest:
+  it is the only one whose movement was a tightening rather than a
+  forced reconciliation, so it is the one that could have been skipped.
+- **The `ambiguous-mapping` half of the NaN defect is mine, not the
+  card's.** `component.ts:374`'s `||` masks NaN into file order. I fixed
+  it by fixing the comparator and pinned the comparator, but there is no
+  pin that says "the ambiguous-mapping WINNER is id order past 309
+  digits". Worth deciding whether one belongs.
+- **`nearMiss` is optional and index-aligned with nothing.** If a
+  consumer ever wants the FILE each near miss is declared in, that is a
+  second array and a second contract; I deliberately did not add it,
+  because `slotNearMisses` would then need the file map at all three
+  sites and the type would gain an alignment rule nobody asked for.
+- **`aliasedIdSlots`'s `compare` parameter now has exactly one caller
+  passing exactly one value**, and its doc has to warn that a different
+  caller could reintroduce the NaN. The parameter is a hazard with no
+  user; removing it was out of criteria and is a real option.
+- The 484-pair sweep covers `C-\d{2,}` conforming ids plus five
+  non-conforming ones. It does not cover ids with MULTIPLE digit runs,
+  because `compareComponentIds`'s pattern cannot match one. `idSlotKey`
+  does, and is pinned for it.
+
+### Suggestions filed
+
+- **T-076-s1** — the Rust mirror of `compareComponentIds`
+  (`registry.rs:75-90`) parses to `u64` and gives up above 20 digits, so
+  it and the parser have disagreed above 15 digits since T-008. T-076
+  changed the SHAPE of that divergence rather than creating or closing
+  it. Outside the fence.
+- **T-076-s2** — the board REPAIRS `duplicate-id` (one column, first
+  wins) and does not repair `aliased-id` (two columns, cards split into
+  the wrong real column), with no `idSlotKey` anywhere under
+  `app/src/`. Measured, and now stated in a parser message.
+- **T-076-s3** — `dangling-reference` is the last kind spanning three id
+  spaces without a `space` field. Deliberately not done here: no
+  criterion named it, and it would have moved a fourth pin set.
 
 ## Verdicts
