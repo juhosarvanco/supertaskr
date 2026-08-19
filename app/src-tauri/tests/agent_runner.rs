@@ -81,6 +81,12 @@ struct Options<'a> {
     /// T-047: the `model` the fake puts in its init line. `None` leaves
     /// the fake's own `fake-model-1`.
     model: Option<String>,
+    /// T-043: SIGTERM -> this -> SIGKILL. The default stays the 300 ms
+    /// every pre-T-043 body was written against; the kill-path timing
+    /// bodies raise it, because "released well inside the grace" is only
+    /// a claim when the grace is comfortably larger than the scheduling
+    /// noise of the machine measuring it.
+    kill_grace: Duration,
 }
 
 impl Default for Options<'_> {
@@ -94,6 +100,7 @@ impl Default for Options<'_> {
             stall_timeout: Duration::from_millis(1500),
             session_id: None,
             model: None,
+            kill_grace: Duration::from_millis(300),
         }
     }
 }
@@ -138,7 +145,7 @@ fn harness(tag: &str, opts: Options<'_>) -> Harness {
         start_timeout: opts.start_timeout,
         stall_timeout: opts.stall_timeout,
         coalesce: Duration::from_millis(40),
-        kill_grace: Duration::from_millis(300),
+        kill_grace: opts.kill_grace,
         probe_timeout: Duration::from_secs(5),
     };
 
@@ -507,6 +514,585 @@ fn the_exit_hook_reaps_the_turns_process_group() {
     // ordering is a test-precision point, not a leak.)
     settle(&h.agent);
     assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "quitting the app leaves no child");
+}
+
+// ---- T-043: the kill path, its two limbs and its honest grace ---------
+//
+// **WHY THESE BODIES EXIST AT ALL.** Before T-043 the committed suite had
+// never met a process that refuses SIGTERM: the T-025 verifier built one
+// by hand, measured it and deleted it, so "the suite covers a resistant
+// child" was a claim about a probe that no longer existed. The fake agent
+// now carries `hang-resistant` and `hang-resistant-grandchild`
+// permanently, and everything below drives them.
+//
+// **PROCESS HYGIENE IS THE POINT OF THE FIXTURE, SO IT IS NOT LEFT TO
+// CARE.** A `sleeper-resistant` process ignores SIGTERM by construction;
+// leaking one is not a tidiness lapse, it is exactly the defect this card
+// is about. So every pid these tests create is owned by an RAII guard
+// whose `Drop` runs on the unwinding path too — a failed assertion, and a
+// POISON DRILL is a deliberately failed assertion, still cleans up. The
+// guard signals only pids and process groups it recorded itself: no
+// `pkill`, no name match, nothing that can reach a process this file did
+// not create.
+
+#[cfg(unix)]
+mod sig {
+    extern "C" {
+        pub fn kill(pid: i32, sig: i32) -> i32;
+        pub fn killpg(pgrp: i32, sig: i32) -> i32;
+    }
+    pub const SIGTERM: i32 = 15;
+    pub const SIGKILL: i32 = 9;
+}
+
+/// One fake-agent process in ITS OWN process group (pgid == pid, exactly
+/// as `run_turn` spawns), plus whatever it forked, plus the guarantee
+/// that all of it is gone when this value dies.
+#[cfg(unix)]
+struct OwnedGroup {
+    child: std::process::Child,
+    handle: nputer_lib::agent::runner::ChildHandle,
+    pid: i32,
+    dump: PathBuf,
+    root: PathBuf,
+}
+
+#[cfg(unix)]
+impl OwnedGroup {
+    /// Spawn `scenario` into a fresh process group. stdin is closed at
+    /// once (the fake reads to EOF), stdout/stderr go nowhere: these
+    /// bodies are about lifetimes, not streams.
+    fn spawn(tag: &str, scenario: &str) -> Self {
+        use std::os::unix::process::CommandExt;
+        let root = std::env::temp_dir().join(format!(
+            "nputer-t043-{}-{}-{}",
+            tag,
+            std::process::id(),
+            now_ms()
+        ));
+        let dump = root.join("dump");
+        fs::create_dir_all(&dump).expect("mk dump");
+        let mut command = std::process::Command::new(fake_agent_bin());
+        command
+            .env("NPUTER_FAKE_SCENARIO", scenario)
+            .env("NPUTER_FAKE_DUMP_DIR", &dump)
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null());
+        command.process_group(0);
+        let child = command.spawn().expect("spawn the fake");
+        let pid = child.id() as i32;
+        let handle = nputer_lib::agent::runner::ChildHandle::new(pid, 1);
+        // THE HANDSHAKE, not a sleep. `spawn` returns at fork; the child
+        // installs its SIGTERM disposition after `exec`, and a signal
+        // sent into that window kills a "resistant" fixture like a
+        // cooperative one — measured at 27 ms on the first run of the
+        // resistant body below. `ready.txt` is written by the scenario
+        // once it is in the state the test is about to measure. For
+        // `hang-resistant-grandchild` the writer is the GRANDCHILD, which
+        // is exactly the process whose readiness that test depends on.
+        wait_for_file(&dump.join("ready.txt"));
+        Self { child, handle, pid, dump, root }
+    }
+
+    /// The pid the scenario forked into the same group, once it exists.
+    fn grandchild(&self) -> i32 {
+        wait_for_file(&self.dump.join("turn-1").join("grandchild-pid.txt"))
+            .trim()
+            .parse()
+            .expect("grandchild pid")
+    }
+
+    /// Kill everything this guard created and reap our own child.
+    /// Idempotent, so `finish` and `Drop` can both call it.
+    fn cleanup(&mut self) {
+        unsafe {
+            sig::killpg(self.pid, sig::SIGKILL);
+            sig::kill(self.pid, sig::SIGKILL);
+        }
+        let _ = self.child.wait();
+        let _ = fs::remove_dir_all(&self.root);
+    }
+
+    /// The happy-path close: clean up, then PROVE every pid named here is
+    /// gone rather than assert it was probably killed.
+    fn finish(mut self, pids: &[i32]) {
+        self.cleanup();
+        let deadline = Instant::now() + Duration::from_secs(10);
+        for pid in pids {
+            while nputer_lib::agent::runner::pid_alive(*pid) && Instant::now() < deadline {
+                std::thread::sleep(Duration::from_millis(20));
+            }
+            assert!(
+                !nputer_lib::agent::runner::pid_alive(*pid),
+                "pid {pid} survived this test - a kill-path body must never leak a process"
+            );
+        }
+        assert!(
+            !nputer_lib::agent::runner::group_has_members(self.pid),
+            "process group {} still has members after cleanup",
+            self.pid
+        );
+    }
+}
+
+#[cfg(unix)]
+impl Drop for OwnedGroup {
+    fn drop(&mut self) {
+        self.cleanup();
+    }
+}
+
+/// **THE MEASUREMENT THE WHOLE CARD RESTS ON, PINNED.**
+///
+/// `pid_alive` is `kill(pid, 0)`, and it is TRUE FOR A ZOMBIE. The turn's
+/// child is our own child, so between its exit and its `wait()` it is
+/// precisely that — which is why the pre-T-043 poll, which asked only
+/// this question, could never release early and always paid the full
+/// grace. `group_has_members` is the question that survives the zombie:
+/// once the child is reaped and nothing else holds the pgid, it is false.
+#[test]
+#[cfg(unix)]
+fn a_zombie_answers_pid_alive_and_that_is_why_the_grace_needed_two_limbs() {
+    let mut g = OwnedGroup::spawn("zombie", "sleeper");
+    let pid = g.pid;
+    // Alive and in its own group.
+    assert!(nputer_lib::agent::runner::pid_alive(pid), "the sleeper is running");
+    assert!(nputer_lib::agent::runner::group_has_members(pid), "its group holds it");
+
+    // SIGTERM the PROCESS, deliberately not the group, and do not wait.
+    unsafe {
+        sig::kill(pid, sig::SIGTERM);
+    }
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while g.child.try_wait().ok().flatten().is_none() && Instant::now() < deadline {
+        // Spin WITHOUT reaping: `try_wait` would clear the zombie, which
+        // is the state being measured. Fall through on the timer.
+        std::thread::sleep(Duration::from_millis(500));
+        break;
+    }
+    std::thread::sleep(Duration::from_millis(200));
+
+    // THE ZOMBIE WINDOW: the process is dead and `kill(pid, 0)` says yes.
+    assert!(
+        nputer_lib::agent::runner::pid_alive(pid),
+        "a dead-but-unreaped child must still answer kill(pid, 0) - if this reds, \
+         the platform stopped behaving the way the two-limb poll is written for"
+    );
+
+    // Reap it. Now both questions agree, and only now.
+    let status = g.child.wait().expect("wait");
+    assert!(status.code().is_none(), "SIGTERM kills by signal, not by exit code: {status:?}");
+    assert!(!nputer_lib::agent::runner::pid_alive(pid), "the reaped pid is gone");
+    assert!(
+        !nputer_lib::agent::runner::group_has_members(pid),
+        "an empty process group must report empty - this is the ESRCH arm"
+    );
+    g.finish(&[pid]);
+}
+
+/// LIMB ONE, on the owner's path: a cooperative child is reaped INSIDE
+/// the poll, the group empties, and the call returns in milliseconds.
+///
+/// The bound is written as a literal, not as a fraction of the grace: a
+/// body parametrised by the constant it is pinning cannot pin it.
+#[test]
+#[cfg(unix)]
+fn a_cooperative_group_releases_the_owning_poll_well_inside_the_grace() {
+    let mut g = OwnedGroup::spawn("coop", "sleeper");
+    let pid = g.pid;
+    let handle = g.handle.clone();
+    let exit = nputer_lib::agent::runner::terminate_group_owning(
+        &mut g.child,
+        &handle,
+        Duration::from_millis(3000),
+    );
+    assert!(exit.reaped, "the poll must reap the direct child itself: {exit:?}");
+    assert!(exit.group_empty, "the group must be observed empty: {exit:?}");
+    assert!(!exit.escalated, "a cooperative group must never be SIGKILLed: {exit:?}");
+    assert!(
+        exit.waited < Duration::from_millis(1000),
+        "a cooperative group cost {} ms of a 3000 ms grace - the poll is not releasing early",
+        exit.waited.as_millis()
+    );
+    assert!(handle.reaped(), "the owner must PUBLISH the reap for the observers");
+    assert!(!nputer_lib::agent::runner::pid_alive(pid), "no zombie behind an early release");
+    g.finish(&[pid]);
+}
+
+/// **THE CASE A NAIVE `child.try_wait()` + `return` GETS WRONG**, and the
+/// reason early release needs both limbs rather than one.
+///
+/// The direct child cooperates: it dies on the first SIGTERM and is
+/// reaped inside the poll within milliseconds. Its same-group grandchild
+/// IGNORES SIGTERM. An implementation that released on the reap alone
+/// would return here at ~50 ms and leave that grandchild running forever,
+/// with nothing left in the process that would ever escalate to SIGKILL —
+/// a latency defect traded for a leaked process, which is the worse of
+/// the two. So the poll runs to the deadline and kills the survivor.
+#[test]
+#[cfg(unix)]
+fn a_reaped_child_with_a_resistant_grandchild_pays_the_full_grace_and_kills_the_survivor() {
+    let mut g = OwnedGroup::spawn("resistantgc", "hang-resistant-grandchild");
+    let pid = g.pid;
+    let gc = g.grandchild();
+    assert_ne!(pid, gc);
+    assert!(nputer_lib::agent::runner::pid_alive(gc), "the resistant grandchild is running");
+
+    let handle = g.handle.clone();
+    let exit = nputer_lib::agent::runner::terminate_group_owning(
+        &mut g.child,
+        &handle,
+        Duration::from_millis(800),
+    );
+
+    assert!(exit.reaped, "the DIRECT child cooperated and must have been reaped: {exit:?}");
+    assert!(
+        !exit.group_empty,
+        "the resistant grandchild must still have held the group at the deadline: {exit:?}"
+    );
+    assert!(exit.escalated, "the survivor must have been SIGKILLed: {exit:?}");
+    assert!(
+        exit.waited >= Duration::from_millis(800),
+        "THE POLL RETURNED EARLY ({} ms of an 800 ms grace) WITH A SURVIVOR IN THE GROUP - \
+         this is the exact regression the two-limb release exists to prevent",
+        exit.waited.as_millis()
+    );
+
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while nputer_lib::agent::runner::pid_alive(gc) && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    assert!(
+        !nputer_lib::agent::runner::pid_alive(gc),
+        "THE RESISTANT GRANDCHILD OUTLIVED THE GRACE - SIGKILL never reached the group"
+    );
+    g.finish(&[pid, gc]);
+}
+
+/// A resistant DIRECT child: the full grace is paid, SIGKILL follows, and
+/// the child is still reaped — the fix must not leave a zombie behind the
+/// escalation.
+#[test]
+#[cfg(unix)]
+fn a_resistant_direct_child_costs_the_full_grace_then_sigkill_then_reaps() {
+    let mut g = OwnedGroup::spawn("resistant", "sleeper-resistant");
+    let pid = g.pid;
+    let handle = g.handle.clone();
+    let exit = nputer_lib::agent::runner::terminate_group_owning(
+        &mut g.child,
+        &handle,
+        Duration::from_millis(800),
+    );
+    assert!(
+        !exit.reaped,
+        "a child that ignores SIGTERM cannot have been reaped during the grace: {exit:?}"
+    );
+    assert!(!exit.group_empty, "it was still in its group at the deadline: {exit:?}");
+    assert!(exit.escalated, "SIGKILL must follow the grace: {exit:?}");
+    assert!(
+        exit.waited >= Duration::from_millis(800),
+        "the full grace must be paid for a resistant child, not {} ms",
+        exit.waited.as_millis()
+    );
+    let status = g.child.wait().expect("the SIGKILLed child is reapable");
+    assert!(status.code().is_none(), "killed by a signal, not an exit code: {status:?}");
+    assert!(
+        !nputer_lib::agent::runner::pid_alive(pid),
+        "the SIGKILLed child was left as a ZOMBIE - the escalation path must still reap"
+    );
+    g.finish(&[pid]);
+}
+
+/// **THE OBSERVER'S TWO LIMBS, AND ITS CONTROL.**
+///
+/// `reap_for_exit` and the cancel's background escalation hold a
+/// `ChildHandle` and never the `Child`, so they cannot `waitpid`. They
+/// learn the reap from the flag the worker publishes.
+///
+/// Arm one: the flag arrives, the group is empty, the observer releases
+/// early. Arm two is the CONTROL, and it is what makes the flag
+/// load-bearing rather than decorative: the child is reaped by somebody
+/// who does NOT publish, so the group is genuinely empty while the flag
+/// stays false — and the observer must still run the full grace. An
+/// implementation that released on group-emptiness alone passes arm one
+/// and reds here.
+#[test]
+#[cfg(unix)]
+fn the_observers_early_release_needs_the_owners_reap_and_not_only_an_empty_group() {
+    // --- arm one: the owner publishes ---------------------------------
+    let mut g = OwnedGroup::spawn("observed", "sleeper");
+    let published_pid = g.pid;
+    let handle = g.handle.clone();
+    let observer = std::thread::spawn(move || {
+        nputer_lib::agent::runner::terminate_group_observing(&handle, Duration::from_millis(3000))
+    });
+    // Stand in for the worker: wait the child, then publish.
+    let _ = g.child.wait();
+    g.handle.mark_reaped();
+    let exit = observer.join().expect("observer thread");
+    assert!(exit.reaped && exit.group_empty, "both limbs must hold: {exit:?}");
+    assert!(!exit.escalated, "nothing survived, so nothing may be SIGKILLed: {exit:?}");
+    assert!(
+        exit.waited < Duration::from_millis(1000),
+        "a published reap must release the observer early, not after {} ms",
+        exit.waited.as_millis()
+    );
+    g.finish(&[published_pid]);
+
+    // --- arm two: the CONTROL, nobody publishes ------------------------
+    let mut silent = OwnedGroup::spawn("unobserved", "sleeper");
+    let silent_pid = silent.pid;
+    let handle = silent.handle.clone();
+    let observer = std::thread::spawn(move || {
+        nputer_lib::agent::runner::terminate_group_observing(&handle, Duration::from_millis(800))
+    });
+    // Reaped, so the group really is empty — but the flag stays false.
+    let _ = silent.child.wait();
+    let exit = observer.join().expect("observer thread");
+    assert!(!exit.reaped, "nobody published, so the observer must not claim a reap: {exit:?}");
+    assert!(exit.group_empty, "the group did empty: {exit:?}");
+    assert!(
+        !exit.escalated,
+        "an empty group must not be SIGKILLed - that pid may already belong to somebody else: {exit:?}"
+    );
+    assert!(
+        exit.waited >= Duration::from_millis(800),
+        "AN EMPTY GROUP ALONE RELEASED THE OBSERVER after {} ms - the owner's reap is the \
+         other limb and it is not optional",
+        exit.waited.as_millis()
+    );
+    silent.finish(&[silent_pid]);
+}
+
+/// THE USER-FELT HALF, through the real command path: a cancel releases
+/// the single-flight latch in milliseconds instead of holding `busy` for
+/// the whole grace (T-025-s7 measured 3.035 s on a 3 s grace).
+#[test]
+#[cfg(unix)]
+fn a_cancel_releases_the_turn_latch_well_inside_the_grace() {
+    let h = harness(
+        "cancellatency",
+        Options {
+            scenario: "hang",
+            kill_grace: Duration::from_millis(3000),
+            ..Options::default()
+        },
+    );
+    assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
+    let child_pid: i32 =
+        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid");
+    let grandchild_pid: i32 = wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
+        .trim()
+        .parse()
+        .expect("grandchild pid");
+
+    let at_cancel = Instant::now();
+    assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Cancelled { turn: 1 }));
+    let cancel_returned = at_cancel.elapsed();
+    settle(&h.agent);
+    let latch_released = at_cancel.elapsed();
+
+    assert!(
+        cancel_returned < Duration::from_millis(500),
+        "genesis_cancel held the caller for {} ms - it must answer immediately and escalate \
+         in the background",
+        cancel_returned.as_millis()
+    );
+    assert!(
+        latch_released < Duration::from_millis(1000),
+        "the turn latch was held {} ms of a 3000 ms grace after a cooperative child died - \
+         the grace is being paid in full again",
+        latch_released.as_millis()
+    );
+    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "the child outlived the cancel");
+    assert!(
+        !nputer_lib::agent::runner::pid_alive(grandchild_pid),
+        "the grandchild outlived the cancel"
+    );
+}
+
+/// THE APP-EXIT HALF: `reap_for_exit` blocks the thread that quits the
+/// app, so a cooperative group must let go of it in milliseconds. It owns
+/// no `Child`, so this only holds through the handle's published reap.
+#[test]
+#[cfg(unix)]
+fn the_exit_reap_returns_well_inside_the_grace_for_a_cooperative_group() {
+    let h = harness(
+        "exitlatency",
+        Options {
+            scenario: "hang",
+            kill_grace: Duration::from_millis(3000),
+            ..Options::default()
+        },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let child_pid: i32 =
+        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid");
+    let grandchild_pid: i32 = wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
+        .trim()
+        .parse()
+        .expect("grandchild pid");
+
+    let at_exit = Instant::now();
+    h.agent.reap_for_exit();
+    let blocked = at_exit.elapsed();
+    assert!(
+        blocked < Duration::from_millis(1000),
+        "quitting the app blocked for {} ms of a 3000 ms grace on a cooperative group",
+        blocked.as_millis()
+    );
+    settle(&h.agent);
+    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "quitting the app leaves no child");
+    assert!(
+        !nputer_lib::agent::runner::pid_alive(grandchild_pid),
+        "quitting the app leaves no grandchild"
+    );
+}
+
+/// …AND THE EXIT PATH'S OTHER HALF, because a fast exit that abandoned a
+/// survivor would be a worse app than a slow one: the same quit against a
+/// cooperative child with a resistant same-group grandchild must NOT
+/// return early, and must leave the grandchild dead.
+#[test]
+#[cfg(unix)]
+fn the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists() {
+    let h = harness(
+        "exitresist",
+        Options {
+            scenario: "hang-resistant-grandchild",
+            kill_grace: Duration::from_millis(900),
+            ..Options::default()
+        },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let child_pid: i32 =
+        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid");
+    let grandchild_pid: i32 = wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
+        .trim()
+        .parse()
+        .expect("grandchild pid");
+    assert!(nputer_lib::agent::runner::pid_alive(grandchild_pid), "the resistant one is running");
+
+    let at_exit = Instant::now();
+    h.agent.reap_for_exit();
+    let blocked = at_exit.elapsed();
+    assert!(
+        blocked >= Duration::from_millis(900),
+        "the exit reap returned after {} ms of a 900 ms grace while a resistant same-group \
+         descendant was still running - it abandoned it",
+        blocked.as_millis()
+    );
+    settle(&h.agent);
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while nputer_lib::agent::runner::pid_alive(grandchild_pid) && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "the child outlived the exit");
+    assert!(
+        !nputer_lib::agent::runner::pid_alive(grandchild_pid),
+        "THE RESISTANT GRANDCHILD OUTLIVED THE APP - SIGKILL never reached the group"
+    );
+}
+
+/// THE RESISTANT DIRECT CHILD, end to end through the real cancel path:
+/// the full grace is paid, SIGKILL follows, the child is reaped, and no
+/// zombie is left behind. The pre-T-043 code passed the first two of
+/// those by accident — it paid the full grace for EVERY child.
+#[test]
+#[cfg(unix)]
+fn a_turn_whose_child_ignores_sigterm_pays_the_full_grace_and_leaves_no_zombie() {
+    let h = harness(
+        "resistturn",
+        Options {
+            scenario: "hang-resistant",
+            kill_grace: Duration::from_millis(900),
+            ..Options::default()
+        },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let child_pid: i32 =
+        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid");
+    // The disposition is installed after exec; wait for the fact itself.
+    wait_for_file(&h.dump.join("ready.txt"));
+    assert!(nputer_lib::agent::runner::pid_alive(child_pid), "the resistant child is running");
+
+    let at_cancel = Instant::now();
+    assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Cancelled { turn: 1 }));
+    settle(&h.agent);
+    let latch_released = at_cancel.elapsed();
+    assert!(
+        latch_released >= Duration::from_millis(900),
+        "the latch released after {} ms of a 900 ms grace while the child was still \
+         ignoring SIGTERM - the grace was not paid",
+        latch_released.as_millis()
+    );
+    assert!(
+        !nputer_lib::agent::runner::pid_alive(child_pid),
+        "the resistant child outlived its SIGKILL, or was left as a ZOMBIE"
+    );
+    assert!(
+        !nputer_lib::agent::runner::group_has_members(child_pid),
+        "the turn's process group still has members after the cancel"
+    );
+    // A cancel is an OUTCOME: no typed failure, even for a killed child.
+    let events: Vec<RunEvent> = h.events.try_iter().collect();
+    assert!(
+        !events.iter().any(|e| matches!(e, RunEvent::Failed { .. })),
+        "a cancel must not surface as a typed failure: {events:#?}"
+    );
+}
+
+/// Cancel, exit and `Drop` can all observe the same turn at once, and two
+/// of them can arrive after it is already gone. None of that may panic,
+/// double-reap or leave anything behind.
+#[test]
+#[cfg(unix)]
+fn concurrent_cancel_exit_and_drop_observations_stay_idempotent() {
+    let child_pid: i32;
+    let grandchild_pid: i32;
+    {
+        let h = harness(
+            "idempotent",
+            Options {
+                scenario: "hang",
+                kill_grace: Duration::from_millis(1200),
+                ..Options::default()
+            },
+        );
+        agent::start_genesis(&h.watch, &h.agent);
+        child_pid =
+            wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("pid");
+        grandchild_pid = wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
+            .trim()
+            .parse()
+            .expect("grandchild pid");
+
+        // Three observations of one turn, overlapping on purpose.
+        agent::cancel(&h.agent);
+        h.agent.reap_for_exit();
+        h.agent.reap_for_exit();
+        assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Idle | CancelOutcome::Cancelled { .. }));
+        settle(&h.agent);
+        // A cancel after the turn has settled has nothing to signal.
+        assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Idle));
+        // …and the fourth observation is `Drop`, at the end of this scope.
+    }
+    assert!(!nputer_lib::agent::runner::pid_alive(child_pid), "the child survived four observers");
+    assert!(
+        !nputer_lib::agent::runner::pid_alive(grandchild_pid),
+        "the grandchild survived four observers"
+    );
+}
+
+/// PRODUCTION'S GRACE, pinned BY VALUE and on its own.
+///
+/// It is deliberately not folded into a timing body: a test parametrised
+/// by a constant cannot pin that constant, so the number lives here where
+/// changing it is the only way to make this red.
+#[test]
+fn the_production_kill_grace_is_five_seconds() {
+    assert_eq!(RunnerConfig::default().kill_grace, Duration::from_secs(5));
 }
 
 // ---- every §6 failure surface, typed ----------------------------------

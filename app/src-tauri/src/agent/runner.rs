@@ -986,6 +986,11 @@ mod signals {
     }
     pub const SIGTERM: i32 = 15;
     pub const SIGKILL: i32 = 9;
+    /// "No such process (group)". POSIX does not fix the numbers, but 3
+    /// is ESRCH on every platform this ships or tests on (darwin, linux)
+    /// — measured on darwin by this task's probe, and asserted at run
+    /// time by `esrch_is_the_number_this_code_thinks_it_is`.
+    pub const ESRCH: i32 = 3;
 
     pub fn kill_group(pgid: i32, sig: i32) {
         unsafe {
@@ -993,18 +998,54 @@ mod signals {
         }
     }
     /// Signal 0 asks "could I signal this pid?" without sending one.
+    ///
+    /// **IT IS TRUE FOR A ZOMBIE**, and that one fact is the whole reason
+    /// T-043 exists: the turn's child is OUR child, so between its exit
+    /// and its `wait()` it is a zombie that answers this question `true`.
+    /// Measured on this machine: SIGTERM a `/bin/sleep`, do not wait, and
+    /// `kill(pid, 0)` keeps returning 0 until `wait()` runs.
     pub fn pid_alive(pid: i32) -> bool {
         unsafe { kill(pid, 0) == 0 }
+    }
+    /// Does the process GROUP still hold anyone we could signal?
+    ///
+    /// `killpg(pgid, 0)` is the group-shaped form of the question above.
+    /// A non-zero return is only "empty" when errno says ESRCH: EPERM
+    /// means somebody IS there and we may not signal them, which is
+    /// emphatically not permission to declare the group gone. (EPERM
+    /// cannot arise for our own children, which share our uid; the arm
+    /// exists so the predicate is right rather than only usually right.)
+    pub fn group_has_members(pgid: i32) -> bool {
+        if unsafe { killpg(pgid, 0) } == 0 {
+            return true;
+        }
+        std::io::Error::last_os_error().raw_os_error() != Some(ESRCH)
     }
 }
 
 /// Is `pid` still alive? Exported for the group-kill proof.
+///
+/// **A ZOMBIE ANSWERS `true`** — see [`signals::pid_alive`]. Anything
+/// deciding "the child is gone" from this alone is measuring the wrong
+/// thing; that is the defect T-043 fixed.
 #[cfg(unix)]
 pub fn pid_alive(pid: i32) -> bool {
     signals::pid_alive(pid)
 }
 #[cfg(not(unix))]
 pub fn pid_alive(_pid: i32) -> bool {
+    false
+}
+
+/// Does the process group `pgid` still hold a signalable member?
+/// Exported so a test can assert the SURVIVOR half of the group kill
+/// directly, rather than inferring it from one pid.
+#[cfg(unix)]
+pub fn group_has_members(pgid: i32) -> bool {
+    signals::group_has_members(pgid)
+}
+#[cfg(not(unix))]
+pub fn group_has_members(_pgid: i32) -> bool {
     false
 }
 
@@ -1022,56 +1063,222 @@ fn kill_group_now(pid: i32) {
 /// so pgid == pid), which is what makes the group kill safe: the signal
 /// reaches the CLI and every tool subprocess it forked, and reaches
 /// nothing of ours.
-#[derive(Clone, Copy, Debug)]
+///
+/// **T-043 MADE IT THE COORDINATION CHANNEL** (docs/STATE.md's open
+/// question, answered the second way it offers): exactly ONE thread owns
+/// the `std::process::Child` — the worker running [`run_turn`] — and it
+/// is the only thread that may `waitpid`. Every other observer
+/// (`genesis_cancel`, the app-exit hook, `Drop`) holds only this handle,
+/// so "has the direct child been reaped?" is a fact they cannot learn for
+/// themselves. Rather than give them a second `Child` (two reapers racing
+/// one pid) or let them guess from `kill(pid, 0)` (true for a zombie,
+/// which is the bug), the owner PUBLISHES the fact here and the observers
+/// read it.
+#[derive(Clone, Debug)]
 pub struct ChildHandle {
     pub pid: i32,
     pub turn: u32,
+    /// Set exactly once, by the worker that owns the `Child`, the moment
+    /// a `wait`/`try_wait` returns a status. Never cleared: a reaped pid
+    /// stays reaped, and the handle dies with the turn.
+    reaped: Arc<AtomicBool>,
 }
 
-/// SIGTERM the group, wait the grace period, SIGKILL what is left. Called
-/// from the app-exit paths, where blocking is correct.
-pub fn terminate_group(pid: i32, grace: Duration) {
+impl ChildHandle {
+    pub fn new(pid: i32, turn: u32) -> Self {
+        Self { pid, turn, reaped: Arc::new(AtomicBool::new(false)) }
+    }
+    /// Has the owner of the `Child` reaped it? Clones share the answer.
+    pub fn reaped(&self) -> bool {
+        self.reaped.load(Ordering::SeqCst)
+    }
+    /// Called by the owner, and only by the owner, after `waitpid`.
+    pub fn mark_reaped(&self) {
+        self.reaped.store(true, Ordering::SeqCst);
+    }
+}
+
+/// What one grace poll actually did. Returned rather than logged so a
+/// test can assert the SHAPE of the kill, not just its aftermath.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GroupExit {
+    /// The direct child was reaped — its zombie entry is gone and its pid
+    /// is free for the OS to reuse.
+    pub reaped: bool,
+    /// The process group held no signalable member when the poll stopped.
+    pub group_empty: bool,
+    /// The grace ran out with someone still in the group, so SIGKILL went
+    /// out. `false` means the group left of its own accord.
+    pub escalated: bool,
+    /// How long the poll ran, measured inside it — the number the "well
+    /// inside the grace" criterion is about.
+    pub waited: Duration,
+}
+
+/// **THE GRACE POLL, AND THE TWO FACTS IT NEEDS BEFORE IT LETS GO**
+/// (T-043, absorbing T-025-s7).
+///
+/// SIGTERM the group, then poll until BOTH of these hold, or the grace
+/// runs out and the survivors are SIGKILLed:
+///
+/// 1. **the direct child is reaped** — `reaped()` below, whose two
+///    implementations are the whole of the coordination story; and
+/// 2. **its process group is empty** — [`signals::group_has_members`].
+///
+/// **BOTH, and the reason is the case each one alone gets wrong.**
+///
+/// *Without (1)* the poll is what it was before T-043: `kill(pid, 0)` is
+/// TRUE FOR A ZOMBIE, and the turn's child is our own unreaped child, so
+/// a CLI that dies on the first SIGTERM still costs the full grace. The
+/// T-025 verifier measured 3.035 s held on a 3 s grace against a child
+/// that died immediately — five seconds of `busy` after every real
+/// cancel, and five seconds of blocked main thread on app quit.
+///
+/// *Without (2)* — **and this is the regression this function is shaped
+/// to prevent** — a bare `child.try_wait()` followed by `return` releases
+/// the moment the DIRECT child dies, while a same-group grandchild that
+/// ignored the SIGTERM keeps running with nothing left that will ever
+/// escalate to SIGKILL. That trades a latency defect for a leaked
+/// process, which is the worse of the two. So a reaped child with a live
+/// group runs the poll to the deadline and kills the survivor.
+///
+/// **THE ESCALATION IS GUARDED BY THE GROUP, not by the clock.** Once the
+/// direct child is reaped its pid is free for the OS to reuse, and the
+/// pgid IS that pid; SIGKILLing it unconditionally at the deadline is a
+/// use-after-free of a pid number. A pgid stays reserved exactly while
+/// its group is non-empty, so re-testing membership immediately before
+/// escalating is what keeps the signal aimed at the survivors and only at
+/// them.
+#[cfg(unix)]
+fn terminate_group_polling(pid: i32, grace: Duration, mut reaped: impl FnMut() -> bool) -> GroupExit {
+    let started = Instant::now();
+    signals::kill_group(pid, signals::SIGTERM);
+    let deadline = started + grace;
+    loop {
+        // Order matters: reap FIRST, then read the group. A pending
+        // zombie is still a group member on some kernels, so asking about
+        // the group before clearing our own child can only be wrong in
+        // the direction of waiting longer.
+        let is_reaped = reaped();
+        let empty = !signals::group_has_members(pid);
+        if is_reaped && empty {
+            return GroupExit {
+                reaped: true,
+                group_empty: true,
+                escalated: false,
+                waited: started.elapsed(),
+            };
+        }
+        if Instant::now() >= deadline {
+            // Only survivors get SIGKILL — never a pid we already reaped.
+            let escalated = !empty;
+            if escalated {
+                signals::kill_group(pid, signals::SIGKILL);
+            }
+            return GroupExit {
+                reaped: is_reaped,
+                group_empty: empty,
+                escalated,
+                waited: started.elapsed(),
+            };
+        }
+        std::thread::sleep(POLL_INTERVAL);
+    }
+}
+
+/// How often the grace poll looks. Small enough that "well inside the
+/// grace" is about the child's behaviour rather than about this number.
+const POLL_INTERVAL: Duration = Duration::from_millis(25);
+
+/// **THE OWNER'S FORM** — for the one thread that holds the `Child`.
+///
+/// It reaps AS IT POLLS (`try_wait`, which is why this can release
+/// early), and publishes the fact on the handle so the observers below
+/// can stop waiting too. `try_wait` caches the status, so the caller's
+/// later `wait()` is a no-op rather than a second `waitpid`.
+pub fn terminate_group_owning(
+    child: &mut Child,
+    handle: &ChildHandle,
+    grace: Duration,
+) -> GroupExit {
     #[cfg(unix)]
     {
-        signals::kill_group(pid, signals::SIGTERM);
-        let deadline = Instant::now() + grace;
-        while Instant::now() < deadline {
-            if !signals::pid_alive(pid) {
-                return;
+        terminate_group_polling(handle.pid, grace, || {
+            if handle.reaped() {
+                return true;
             }
-            std::thread::sleep(Duration::from_millis(25));
-        }
-        signals::kill_group(pid, signals::SIGKILL);
+            match child.try_wait() {
+                Ok(Some(_)) => {
+                    handle.mark_reaped();
+                    true
+                }
+                Ok(None) => false,
+                // ECHILD and friends: there is nothing left to reap, so
+                // treat the child as gone rather than spinning on it.
+                Err(_) => {
+                    handle.mark_reaped();
+                    true
+                }
+            }
+        })
     }
     #[cfg(not(unix))]
     {
-        let _ = (pid, grace);
+        let _ = (child, handle, grace);
+        NOT_UNIX
+    }
+}
+
+/// **THE OBSERVER'S FORM** — for the app-exit paths, which hold the
+/// handle and never the `Child`.
+///
+/// Blocking, which is correct where it is called from: the app is on its
+/// way out and the point is not to leave before the group does. It cannot
+/// `waitpid`, so it reads the flag the owner sets. If no owner is running
+/// — a `Drop` with a stale slot, a worker that died — the flag never
+/// arrives and this costs the full grace, which is exactly the behaviour
+/// this call had before T-043. The fallback is the old floor, never worse.
+pub fn terminate_group_observing(handle: &ChildHandle, grace: Duration) -> GroupExit {
+    #[cfg(unix)]
+    {
+        terminate_group_polling(handle.pid, grace, || handle.reaped())
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = (handle, grace);
+        NOT_UNIX
     }
 }
 
 /// SIGTERM now and escalate on a background thread, so a `genesis_cancel`
 /// command answers immediately instead of holding the caller for the
-/// grace period.
-pub fn terminate_group_async(pid: i32, grace: Duration) {
+/// grace period. The escalation is the observer's poll, so it stops as
+/// soon as the worker reaps and the group empties — rather than
+/// SIGKILLing a pgid whose pid the OS may by then have handed to somebody
+/// else.
+pub fn terminate_group_async(handle: &ChildHandle, grace: Duration) {
     #[cfg(unix)]
     {
-        signals::kill_group(pid, signals::SIGTERM);
-        std::thread::spawn(move || {
-            let deadline = Instant::now() + grace;
-            while Instant::now() < deadline {
-                if !signals::pid_alive(pid) {
-                    return;
-                }
-                std::thread::sleep(Duration::from_millis(25));
-            }
-            signals::kill_group(pid, signals::SIGKILL);
-        });
+        // Synchronously, before this returns: the cancel's whole promise.
+        signals::kill_group(handle.pid, signals::SIGTERM);
+        let handle = handle.clone();
+        std::thread::spawn(move || terminate_group_observing(&handle, grace));
     }
     #[cfg(not(unix))]
     {
-        let _ = (pid, grace);
+        let _ = (handle, grace);
     }
 }
+
+/// The honest answer on a platform with no process groups. The repo's
+/// standing Windows silence (T-025 §9) covers the rest.
+#[cfg(not(unix))]
+const NOT_UNIX: GroupExit = GroupExit {
+    reaped: false,
+    group_empty: false,
+    escalated: false,
+    waited: Duration::ZERO,
+};
 
 // ---- stream classification ---------------------------------------------
 
@@ -1355,7 +1562,11 @@ pub fn run_turn(
         }
     };
     let pid = child.id() as i32;
-    *child_slot.lock().expect("child slot poisoned") = Some(ChildHandle { pid, turn: req.turn });
+    // ONE handle, two holders: this thread owns the `Child` and does
+    // every `waitpid`; the shared slot hands a clone to `genesis_cancel`
+    // and the exit hook, which read the reaped flag this thread sets.
+    let handle = ChildHandle::new(pid, req.turn);
+    *child_slot.lock().expect("child slot poisoned") = Some(handle.clone());
     emitter.started(req.turn);
 
     // The prompt goes in on stdin and stdin closes — never in argv, which
@@ -1595,12 +1806,30 @@ pub fn run_turn(
 
     // --- reap, then decide -------------------------------------------
     let status = if failure.is_some() || out.cancelled {
-        terminate_group(pid, cfg.kill_grace);
+        // The grace poll REAPS AS IT WAITS (T-043): the direct child is
+        // cleared inside the loop, so a cooperative CLI releases the
+        // single-flight latch in milliseconds instead of costing the full
+        // grace — and a resistant same-group descendant still runs the
+        // poll to the deadline and still gets SIGKILLed.
+        let exit = terminate_group_owning(&mut child, &handle, cfg.kill_grace);
+        if exit.escalated {
+            println!(
+                "[nputer] agent: turn {} did not leave within the {} ms grace - SIGKILLed process group {pid}",
+                req.turn,
+                cfg.kill_grace.as_millis()
+            );
+        }
+        // A no-op when the poll already reaped; the real wait when the
+        // poll had to escalate.
         let _ = child.wait();
         None
     } else {
         child.wait().ok()
     };
+    // Whichever arm ran, this thread has now waited: publish it before
+    // the slot is cleared, so an exit observer holding a clone stops
+    // polling instead of racing the clear.
+    handle.mark_reaped();
     // The turn's child is gone; nothing must outlive it.
     *child_slot.lock().expect("child slot poisoned") = None;
 

@@ -65,6 +65,35 @@ fn main() {
         sleep_forever();
         return;
     }
+    // T-043: THE PERMANENT SIGTERM-RESISTANT FIXTURES. Before this task
+    // there were NONE — the T-025 verifier built resistant processes by
+    // hand, measured them and deleted them, so nothing in the committed
+    // suite had ever met a process that refuses SIGTERM. These two are
+    // that shape, kept.
+    //
+    // `sleeper-resistant` is the leaf: it ignores SIGTERM and sleeps, so
+    // only SIGKILL removes it. It stands in BOTH roles — a resistant
+    // direct child spawned straight by a test, and the resistant
+    // same-group grandchild of `hang-resistant-grandchild` below.
+    //
+    // SIG_IGN SURVIVES `exec`, which is why the disposition is installed
+    // HERE, by the process that needs it, and never by its parent: a
+    // `hang-resistant-grandchild` parent that ignored SIGTERM would hand
+    // that immunity down AND keep it, and that scenario needs exactly one
+    // of the two to be resistant.
+    if scenario == "sleeper-resistant" {
+        ignore_sigterm();
+        announce_ready(dump.as_deref());
+        sleep_forever();
+        return;
+    }
+    // The cooperative control for the same shape: no stream, no
+    // grandchild, dies on the first SIGTERM.
+    if scenario == "sleeper" {
+        announce_ready(dump.as_deref());
+        sleep_forever();
+        return;
+    }
 
     let mut stdin_text = String::new();
     let _ = std::io::stdin().read_to_string(&mut stdin_text);
@@ -119,20 +148,27 @@ fn main() {
             emit_init(&session_id, &model);
             // A grandchild in the same process group: killing only the
             // direct child would leave this one running.
-            let exe = std::env::current_exe().expect("current_exe");
-            let mut command = Command::new(exe);
-            command.env("NPUTER_FAKE_SCENARIO", "grandchild");
-            match command.spawn() {
-                Ok(child) => {
-                    if let Some(turn_dir) = &turn_dir {
-                        let _ = fs::write(
-                            turn_dir.join("grandchild-pid.txt"),
-                            child.id().to_string(),
-                        );
-                    }
-                }
-                Err(err) => eprintln!("fake-agent: could not fork a grandchild: {err}"),
-            }
+            spawn_grandchild("grandchild", turn_dir.as_deref());
+            sleep_forever();
+        }
+        // T-043: a turn whose DIRECT child refuses to leave. The grace
+        // must be paid in full, SIGKILL must follow, and the child must
+        // still be reaped — no zombie behind the fix.
+        "hang-resistant" => {
+            emit_init(&session_id, &model);
+            ignore_sigterm();
+            announce_ready(dump.as_deref());
+            sleep_forever();
+        }
+        // T-043's CENTRAL CASE, and the one a naive `child.try_wait()`
+        // followed by `return` gets wrong: the direct child is
+        // COOPERATIVE (it dies on the first SIGTERM and is reaped
+        // immediately) while a same-group grandchild IGNORES SIGTERM. An
+        // early release on the reap alone leaves that grandchild running
+        // with nothing left that would ever escalate.
+        "hang-resistant-grandchild" => {
+            emit_init(&session_id, &model);
+            spawn_grandchild("sleeper-resistant", turn_dir.as_deref());
             sleep_forever();
         }
         "nonzero" => {
@@ -343,6 +379,74 @@ fn sleep_forever() {
         std::thread::sleep(Duration::from_secs(3600));
     }
 }
+
+/// Fork one more copy of this binary INTO THE SAME PROCESS GROUP —
+/// `Command` without `process_group`, so the pgid is inherited — and
+/// record its pid where the test can read it. That inheritance is the
+/// whole point: the runner never learns this pid, and only a GROUP signal
+/// reaches it.
+fn spawn_grandchild(scenario: &str, turn_dir: Option<&Path>) {
+    let exe = match std::env::current_exe() {
+        Ok(exe) => exe,
+        Err(err) => {
+            eprintln!("fake-agent: no current_exe: {err}");
+            return;
+        }
+    };
+    let mut command = Command::new(exe);
+    command.env("NPUTER_FAKE_SCENARIO", scenario);
+    match command.spawn() {
+        Ok(child) => {
+            if let Some(turn_dir) = turn_dir {
+                let _ = fs::write(turn_dir.join("grandchild-pid.txt"), child.id().to_string());
+            }
+        }
+        Err(err) => eprintln!("fake-agent: could not fork a grandchild: {err}"),
+    }
+}
+
+/// THE HANDSHAKE THAT MAKES THE RESISTANT FIXTURES DETERMINISTIC.
+///
+/// `Command::spawn` returns as soon as the fork succeeds; the child only
+/// installs its SIGTERM disposition after `exec`, several milliseconds
+/// later. A test that signals immediately therefore lands in the window
+/// where a "resistant" process is still running the DEFAULT disposition
+/// and dies like a cooperative one — measured, not imagined: the first
+/// run of `a_resistant_direct_child_costs_the_full_grace…` reaped its
+/// resistant child in 27 ms.
+///
+/// So the disposition is announced. The test waits for this file, and
+/// what it waits for is the fact it depends on, rather than a sleep long
+/// enough to usually be true.
+fn announce_ready(dump: Option<&Path>) {
+    if let Some(dump) = dump {
+        let _ = fs::create_dir_all(dump);
+        let _ = fs::write(dump.join(READY_MARKER), std::process::id().to_string());
+    }
+}
+
+/// `<dump>/ready.txt` — written by the sleeper scenarios once they are in
+/// the state the test is about to measure.
+pub const READY_MARKER: &str = "ready.txt";
+
+/// Refuse SIGTERM, so only SIGKILL ends this process.
+///
+/// `signal` is in libc, which is already linked into every Rust unix
+/// binary — the same zero-new-crates route `runner.rs`'s `killpg`/`kill`
+/// declarations take. `SIG_IGN` is the pointer constant 1.
+#[cfg(unix)]
+fn ignore_sigterm() {
+    extern "C" {
+        fn signal(sig: i32, handler: usize) -> usize;
+    }
+    const SIGTERM: i32 = 15;
+    const SIG_IGN: usize = 1;
+    unsafe {
+        signal(SIGTERM, SIG_IGN);
+    }
+}
+#[cfg(not(unix))]
+fn ignore_sigterm() {}
 
 fn emit_init(session_id: &str, model: &str) {
     println!(
