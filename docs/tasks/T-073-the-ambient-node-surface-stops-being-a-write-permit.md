@@ -543,3 +543,71 @@ change (88/88 confirmed below), and CONVENTIONS' description of
 **Ruled: the line stays.** Removing it would trade a documented,
 in-`app/` manifest edit for an undocumented hole in the repo's typecheck
 coverage. The executor made the right call and was right to flag it.
+
+#### Criterion 4 — no behaviour change. MET, and proved harder than the card proved it.
+
+The card asserted the bundle was byte-identical by comparing content
+hashes of two builds. I built **both sides**: `npx vite build` on HEAD,
+then the identical tree with `76cf034`'s `app/tsconfig.json` swapped in,
+into a separate `dist-base/`. `diff -r dist dist-base` reports
+**DIRECTORIES IDENTICAL** — every asset and `index.html`, not just the
+hashed names (`index-lKOTjpzi.js`
+`59ea3dc8c569365dcf8337db917ad990d778f8feb807e496c541d570362965ca`,
+`index-CwYF5FQb.css`
+`71ed851ed89e20354cb8711e0a72294b60a7512561aef523316793a816b200bb`, both
+sides). `git diff --name-only 76cf034..HEAD -- app/src app/index.html
+app/vite.config.ts app/package-lock.json app/components.json` is
+**empty**, so no bundle input moved. `dist-base/` was removed.
+
+And there was nothing to fix: all eleven sink strings, `git grep -F`
+from the repo ROOT over `app/src`, return **0 files each**. `T-073-s1`
+is accurate — the ADR-009 raw-markup sweep one test below still reads
+`const dir = resolve("src/genesis")` with a flat `readdirSync`, and the
+card names only the sink sweep, so leaving it was correct.
+
+#### Gates and suites — all first-hand in this worktree, exits from my own `echo $?`
+
+| gate | result | exit |
+|---|---|---|
+| parser vitest | **234 passed (12 files)** | 0 |
+| parser `tsc --noEmit` | — | 0 |
+| app vitest | **827 passed (42 files)** | 0 |
+| `cargo test` | **337 passed / 0 failed / 3 ignored**, 15 targets | 0 |
+| e2e `npx playwright test` | **88 passed** | 0 |
+| `npm run lint:tokens` | `clean (TOKEN 119 files …; CONTROL 507 tracked text files)` | 0 |
+| `npm run lint:tokens -- --selftest` | 49 TOKEN + 2 CONTROL samples, 37 walk-policy checks | 0 |
+| `npm run build` (app) | both `tsc` passes + vite | 0 |
+
+Every baseline reproduces: 234/12, 825→**827** (+2, this card's two new
+tests), 337+3, 88, TOKEN 118→**119**.
+
+**BOOT GATE — fires on the manifest limb alone, re-derived.** Over
+`76cf034..HEAD`: `app/src-tauri/` **0**, `app/src/` **0**,
+`app/src-tauri/Cargo.toml` **0**, `app/package.json` **1**. Run on my own
+scratch port, bind-probed free before spawning and well away from 1420:
+`NPUTER_BOOT_PORT=15731 npm run boot:check` from `tools/e2e`.
+**`BOOT_EXIT=0`** — my own `echo $?`, not the script's word — with both
+lines seen (`[nputer] project folder:
+/Users/ujju/Projects/nputer-T-073`, `[nputer] window "main" created`)
+and `process tree stopped (exit=null signal=SIGTERM)`. 15731 re-probed
+**FREE** afterwards; `ps -Ao pid,ppid,command | grep nputer-T-073`
+returns nothing.
+
+**1420 NEVER TOUCHED** — read-only `lsof` before and after, still the
+human's `node` pid **82549**. The only orphans remain T-060's
+`fake_agent` pair **52504/52505**, ppid 1, `Tue Aug 18 16:21:18`,
+unchanged and not mine.
+
+**GRAPH — stale, correctly left for the integrator, and the red is
+REAL.** `cargo run -p nputer-index -- index --check --root ../..` from
+`app/src-tauri` exits **1**, and the SECOND line reads
+`committed: 571733 bytes · 117 files · 989 symbols · 1508 edges` against
+`fresh index: 571994 bytes · 118 files · 989 symbols · 1508 edges` —
+counts, not `MISSING`. Files `+1 -0 ~2`:
+`+ app/test/node-builtins-write.d.ts`, `~ crescendo-dom.test.tsx
+(loc 575 -> 677)`, `~ node-builtins.d.ts (loc 47 -> 49)`; **symbols 989
+and edges 1508 unmoved**. For contrast I ran the same command WITHOUT
+`--root` and got the identical headline with `committed: MISSING at
+docs/architecture/graph.json` — the false red. The card's delta is
+exact. **Not regenerated**, per CONVENTIONS: that is the integrator's
+act at the checkpoint.
