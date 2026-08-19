@@ -374,10 +374,40 @@ receipt and an exact one-test count; both verdicts remain on the card.
 This is security hardening rather than the missing real-model evidence:
 no model was called, no command or grant moved, and the human's first
 authenticated interview remains the milestone gate below.
+T-043 merged 2026-08-19 and it is the first card in this milestone whose
+whole subject is a delay the user SITS THROUGH. T-025's cancel killed
+the process group and then waited out a five-second grace before the
+turn latch released — and it waited out the whole five seconds every
+time, including when the CLI died obediently on the first SIGTERM. The
+cause is one question asked once: the grace poll tested `kill(pid, 0)`,
+which answers "alive" for a ZOMBIE, and the turn's child is always our
+own unreaped child, so the poll was asking a question that could not
+come back "gone" until somebody reaped it and nobody did until the
+grace expired. **⌘. and quitting mid-turn both paid that five seconds
+unconditionally.** Release now requires TWO facts — the direct child
+reaped AND `killpg(pgid, 0)` returning ESRCH — and a cooperative CLI
+releases in tens of milliseconds instead of five seconds. The
+counterweight is the half that makes it honest rather than merely fast:
+a child that exits while a same-group grandchild ignores SIGTERM still
+runs the poll to the deadline and still SIGKILLs the survivor, so the
+speedup is not bought by abandoning anything. The escalation is guarded
+by GROUP MEMBERSHIP rather than by the clock, because once the direct
+child is reaped its pid is free for reuse and the process-group id IS
+that pid — SIGKILLing a pgid unconditionally at the deadline is a
+use-after-free of a pid number. The same correction reaches app EXIT,
+where the observer coordinates with the one worker that owns the child
+handle instead of guessing. And the guarantee itself is narrowed
+wherever it is stated: **no orphaned descendant THAT STAYS IN THE
+GROUP** — a descendant that calls `setsid()` leaves the group and
+survives, which is a property of process groups rather than a defect,
+measured rather than asserted. A descendant sweep stays a deliberate
+non-goal. No command, grant, event or dependency moved; this is
+milestone 3's process-lifecycle debt closed, not new surface.
 **The milestone is NOT complete, and what it waits on is not a task.**
 Every card on milestone 3's list — T-023 → T-024 → T-026 → T-037 →
 T-025 → T-039 → T-041 → T-042 → T-048 → T-049 → T-050 → T-027 → T-051 →
-T-028 → T-029 — plus T-060's resolver hardening is through the pipeline.
+T-028 → T-029 — plus T-060's resolver hardening and T-043's kill path is
+through the pipeline.
 The evidence the claim rests on
 **still does not exist: not one planner turn has ever been observed
 against a real model.** This machine's `claude` OAuth token is revoked,

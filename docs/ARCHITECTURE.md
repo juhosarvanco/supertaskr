@@ -334,6 +334,36 @@ ADR-014/015).
   it. Structurally quiet: no component relation, finding, observedCount or
   drift flag moves, and the whole graph delta is +7 symbols / +6 edges
   inside C-13 and C-05.
+  **T-043 changes who is allowed to know that the child is dead.** C-14's
+  description above ends "kill the group on cancel", and the mechanism
+  behind that sentence had a structural problem rather than a coding one:
+  exactly ONE thread owns the `Child` and may `waitpid` it, while THREE
+  observers — `genesis_cancel`, the exit hook and `AgentState`'s `Drop` —
+  need to know when the group is clear and own nothing. They each asked
+  the only question an observer can ask alone, `kill(pid, 0)`, which is
+  TRUE FOR A ZOMBIE; and since the turn's child is always our own unreaped
+  child, the honest answer to that question was "alive" until the grace
+  expired. The fix is an ownership relocation, not a faster poll:
+  `ChildHandle` (a `Clone` handle over an `Arc<AtomicBool>`) lets the one
+  owner PUBLISH its reap and the observers READ it, and early release now
+  requires both that fact and an ESRCH from `killpg(pgid, 0)`. This is the
+  second of the two options STATE.md's open question offered — coordinate
+  with the worker, rather than hand a second child handle around — and it
+  is chosen because the first is not available: a second owner is a second
+  `waitpid` on the same pid. Escalation is keyed to group membership
+  rather than to the clock, since a reaped pid is reusable and the pgid IS
+  that pid. **No component INTERFACE in the IPC sense moved** — thirteen
+  commands unchanged, `acl_pin.rs` byte-identical at 92 grants, no event,
+  no dependency edge, and the graph is byte-identical because
+  `languages: ["ts"]` still hides `app/src-tauri/src/agent/**`. What moved
+  is the C-14→C-05 seam's TIMING contract: `lib.rs`'s exit hook completes
+  in milliseconds by coordination instead of blocking on a poll that could
+  not succeed, so "child processes SHALL not outlive the app" is now fast
+  as well as true on every exit path the app controls. The guarantee is
+  also narrowed in all four code sites to *no orphaned descendant THAT
+  STAYS IN THE GROUP*: a `setsid()` descendant leaves the group and
+  survives, which is a property of process groups and is measured rather
+  than asserted, and a descendant sweep is a deliberate non-goal.
   area app-agent since T-025,
   where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
   `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and

@@ -5,7 +5,7 @@ feature: F-03
 milestone: 3
 priority: 6
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-agent, app-shell]
 builder: claude-opus-5 @fresh
@@ -156,8 +156,10 @@ four is the ESRCH arm the new predicate turns on.
    `settle`, `< 1000 ms` of 3000). Observed `waited` on the primitive body
    is 25–50 ms. Poison P1 restores the old terminate-before-wait ordering
    and both red.
-2. **Early release needs BOTH limbs.** `runner.rs:1177`
-   (`if is_reaped && empty`). The grandchild direction is
+2. **Early release needs BOTH limbs.** `runner.rs:1178`
+   (`if is_reaped && empty` — the card said 1177; corrected at the merge
+   by locating the symbol rather than trusting the line). The grandchild
+   direction is
    `tests/agent_runner.rs:792` — the direct child cooperates and is reaped
    inside the poll, its grandchild ignores SIGTERM, and the body asserts
    `reaped && !group_empty && escalated && waited >= 800 ms`. Poison P3
@@ -178,11 +180,26 @@ four is the ESRCH arm the new predicate turns on.
    same-group descendant must NOT return early (`>= 900 ms`) and must leave
    it dead. Production grace pinned BY VALUE and alone at
    `tests/agent_runner.rs:1266`.
-5. **`genesis_cancel` prompt, SIGTERM synchronous, escalation in the
-   background; observations idempotent.** `tests/agent_runner.rs:1073`
+5. **`genesis_cancel` prompt, escalation in the background; observations
+   idempotent.** `tests/agent_runner.rs:1073`
    (`cancel` returns in `< 300 ms` while the latch is held `>= 900 ms`) and
    `tests/agent_runner.rs:1134` (cancel + two exits + a settled cancel +
    `Drop`, all on one turn).
+   **INTEGRATOR CORRECTION: this line used to claim `:1073` also covered
+   "SIGTERM synchronous", and it does not.** `:1073` asserts two things —
+   that `cancel` RETURNS fast and that the latch is nonetheless held for
+   the whole grace — and neither can fail if the synchronous
+   `signals::kill_group` is deleted from `terminate_group_async`, because
+   the observer thread it spawns opens with the same `killpg` microseconds
+   later. Verified structurally at the merge: `terminate_group_async`
+   (`runner.rs:1274`) does the synchronous SIGTERM and then spawns
+   `terminate_group_observing`, which delegates to
+   `terminate_group_polling`, whose own first act is the initial SIGTERM
+   that drill P12 removes. The line IS present and correct, and it is
+   load-bearing on the path where `thread::spawn` panics, which no test
+   can reach — so the defect is in the EVIDENCE claim, not the mechanism.
+   Filed as `T-043-s4`, which measured the suite staying 60/60 green with
+   the synchronous call deleted.
 6. **Permanent fixtures, exact pids, cleanup on failure.** The scenarios
    above; `OwnedGroup` (`tests/agent_runner.rs:556`) owns what it spawns;
    `GroupGuard` (`tests/agent_runner.rs:668`) owns what the runner spawns.
@@ -229,8 +246,23 @@ timing assertion is a literal against a grace at least three times larger
 (1000 vs 3000; 800/900 as FLOORS, which can only fail if the code returns
 early — the direction a slow machine cannot cause), and the observed
 release is 25–50 ms, a 20–40× margin. The floors are load-immune by
-construction; the three ceilings are the ones a genuinely starved runner
+construction; the ceilings are the ones a genuinely starved runner
 could still move.
+
+**INTEGRATOR CORRECTION: there are FIVE ceilings, not three, and one of
+them is not 1000 ms.** Re-derived at the merge by reading every timing
+literal in the new bodies: the ceilings are `tests/agent_runner.rs:771`,
+`:894`, `:964` and `:1006` (`< 1000 ms` against a 3000 ms grace) and
+`:1102` (**`cancel_returned < 300 ms` against a 900 ms grace**) — the
+tightest literal on the branch, and the assertion P11 created when it
+moved out of the cooperative body. The five FLOORS are `:813`, `:851`
+and `:917` (`waited >= 800 ms`) and `:1050` and `:1108` (`>= 900 ms`),
+and the executor's structural argument about them is exactly right: a
+floor can only fail if the code returns EARLY, which slowness cannot
+cause. So the correction is to the card's INVENTORY of its own risk
+surface, not to the branch: instrumented, `cancel_returned` measures
+0 ms, a >300× margin, because it bounds a mutex lock plus a `killpg`
+plus a `thread::spawn`. The tightest literal is also the safest.
 
 ### Poison drills — 14 mutations, every one moving a VALUE or a BEHAVIOUR
 
@@ -253,8 +285,25 @@ could still move.
 
 **Twelve new bodies, every one red under at least one drill.** Restoration
 proved by sha256 against `git show HEAD:<path>` after every drill, never by
-a clean `git status`: `runner.rs` `fb1f3b61…`, `agent/mod.rs`
+a clean `git status`: `runner.rs` `cc06dd93…`, `agent/mod.rs`
 `080107fe…`, `fake_agent.rs` `63b8a9bf…`.
+
+**INTEGRATOR CORRECTION, and it is the card's own discipline failing on
+its own central file.** This line recorded `runner.rs` as `fb1f3b61…`,
+which is not the sha of `runner.rs` at this branch's tip. Re-derived at
+the merge: `fb1f3b61…` is the value at `4d75bac` and `cfa86ef` — the
+commits the drills actually ran against — and `ade2d1a` then added ONE
+`#[cfg(unix)]` line to `POLL_INTERVAL` without the drills being re-run,
+so HEAD is `cc06dd93…`. The attribute is inert on darwin, where `unix`
+is true, and the verifier re-ran P1/P2/P3/P4/P7/P11 at HEAD with the
+claimed blast radius, so the EVIDENCE stands. What did not stand is the
+rule: a reader following this card's own instruction — sha256 against
+`git show HEAD:<path>` — would have got a mismatch on the one file the
+card is about. `agent/mod.rs` and `fake_agent.rs` were checked at the
+merge too and both match HEAD. Recorded rather than quietly fixed,
+because the failure mode is the interesting part: a restoration sha is a
+claim about a COMMIT, and it goes stale the moment the file moves for
+any reason, including a reason the drills do not care about.
 
 **TWO DRILLS STAYED GREEN, AND BOTH WERE FINDINGS — that is the drill
 working, not the drill failing.**
@@ -271,8 +320,8 @@ working, not the drill failing.**
   returns in milliseconds once the poll releases early. The promptness
   assertion could not fail where it sat. It moved to the resistant-child
   body, where a blocking escalation costs the whole grace, and it reds
-  there. A note at `tests/agent_runner.rs:938` records why it is absent
-  from the cooperative body.
+  there. A note at `tests/agent_runner.rs:956` records why it is absent
+  from the cooperative body (the card said 938; corrected at the merge).
 
 ### The leak this card caused, found and closed
 
@@ -827,3 +876,50 @@ proven gone; the two `nputer-T-060` orphans (`52504`/`52505`, start
 `Tue Aug 18 16:21:18`) are unchanged and untouched, as `T-043-s1` says.
 
 `status: verifying` left in place for the integrator.
+
+## Integration — `claude-opus-5 @fresh`, merge `38886d3`
+
+Merged into main at **`38886d3`**, no-ff, parents `e4a5ae7` (main-before)
+and `fb583ee` (the approved tip, taken unchanged). The read-only
+`merge-tree` predicted tree **`cd1e4cf5`** before anything was written and
+the merge produced that tree exactly. **The merge's diff `e4a5ae7..HEAD`
+is THIRTEEN files** — five Rust under `app/src-tauri/**`, T-025's card,
+this card, and the six new `T-043-s*` files. The naive `merge-base..HEAD`
+derivation returns **NINETY**, and the extra seventy-seven are main's own
+fourth-triage commits, already integrated; the two changed-file sets have
+an **EMPTY intersection**, so the merge diff equals the branch diff
+file-for-file. `status: done` stamped here.
+
+**Five card corrections, four applied in place and one deliberately not.**
+Corrections 1–4 are inlined at their own sites above rather than collected
+at the bottom, so a reader hits each one where it would have misled them.
+Every one was re-derived at the merge rather than transcribed from the
+verdict: the `runner.rs` restoration sha (`fb1f3b61…` is real, but it is
+`cfa86ef`'s value, and the only intervening change is one `#[cfg(unix)]`
+line at `ade2d1a`); the ceiling count (five, not three, at `:771`, `:894`,
+`:964`, `:1006`, `:1102`, against five floors at `:813`, `:851`, `:917`,
+`:1050`, `:1108`); evidence line 5's synchronous-SIGTERM over-claim; and
+the two drifted anchors (`if is_reaped && empty` is at **1178**, the P11
+note at **956** — the other twenty-five anchors the verifier checked are
+exact, and both drifts were re-confirmed by locating the symbol).
+
+**The fifth — T-025 §3's "~60 KB" — is left standing, and that is a
+judgement, not an oversight.** Measured independently a third time at the
+merge, by extracting the fourteen `include_str!` paths from `KIT_FILES`
+and summing them: **14 files, 23,890 bytes**. Both prior measurements
+reproduce to the byte, so "~60 KB" is wrong by roughly 2.5×. I endorse
+`T-043-s2`'s argument ON THE MERITS — the file COUNT is load-bearing
+(a parity walk asserts it, and a wrong count sends a reader hunting a
+fifteenth file) while the byte total is pinned by nothing and is
+re-falsified by every method bump, so deleting it beats correcting it.
+But I did not do it here, for three reasons. The criterion authorised the
+13→14 count and nothing else, and the executor changing only what it was
+authorised to change and filing the rest is the discipline the verifier
+praised — an integrator overriding that at the merge undoes it. Delete
+versus correct is an editorial ruling on ANOTHER card's plan text, which
+is triage's call, not an integrator's. And the hazard is already closed
+in place: §3 now reads "The byte figure is a separate, still-wrong number
+and is left alone here: see T-043-s2", so the parenthetical discloses its
+own error in the same parenthetical, which is strictly better than a
+corrected figure that will silently go wrong again. `T-043-s2` carries the
+decision to triage with three independent measurements behind it.
