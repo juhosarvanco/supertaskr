@@ -1,6 +1,6 @@
 ---
 id: T-080-s5
-title: `scanControlSource` computes a line number nothing prints — a surviving mutant at a call site no pin names
+title: A line number nothing prints — scanControlSource's dead field survives every suite
 status: suggested
 suggested_by: executor claude-opus-5 @T-080
 ---

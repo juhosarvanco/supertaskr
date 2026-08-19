@@ -346,6 +346,25 @@ outside the criteria and filing beats scope creep:
   and the module's two remaining escape spellings were converted to the
   same form, so `token-scan.mjs` now spells no control escape anywhere.
 
+### The lane caught a defect in this executor's OWN findings
+
+Worth recording because it is the argument for driving the real tree.
+At `146c333` the full lane went **87 passed / 4 failed** where it had
+been 91/91 one commit earlier, and the only change was five new
+`docs/tasks` files. `shell-frame.spec.ts:151` injects a known number of
+failing files into the REAL repo docs snapshot and asserts the board's
+`data-failure-count` equals it: `Expected: "60" · Received: "62"`, in
+four bodies whose subject is the frame's scroll containment. **Two of
+the five findings were themselves unparseable.** Task frontmatter is
+YAML, a plain scalar may not begin with a reserved indicator, and both
+titles opened with a backtick — the natural way to name a symbol, and
+the way this convention's prose does it everywhere. Nothing else in the
+repo notices: `lint:tokens` does not parse frontmatter and `index
+--check` ignores `docs/`. Both titles were rewritten, the lane returned
+to **91/91**, and an audit found **0 unparseable files of 116 and 0
+titles opening with any YAML-reserved character** repo-wide, so these
+were the first instances. Filed as `T-080-s6`.
+
 ### Suites, first-hand in this worktree, exits read unpiped
 
 No suite was piped through `tail`, `head` or `grep`; each redirected to
@@ -385,7 +404,7 @@ a file and the exit code was read from the command itself.
 
 ### Fence
 
-Three files under `tools/e2e/**`, plus this card and the five
+Three files under `tools/e2e/**`, plus this card and the six
 `T-080-s*` findings the dispatch required — the T-058 precedent, which
 committed its own `s1`-`s4` on its branch. `docs/CONVENTIONS.md` was
 deliberately not touched.

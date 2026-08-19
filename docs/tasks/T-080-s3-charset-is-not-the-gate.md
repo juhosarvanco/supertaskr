@@ -1,6 +1,6 @@
 ---
 id: T-080-s3
-title: `file --mime` charset sees U+0000 and misses most of the C0 range — it is not a substitute for the gate
+title: The `file --mime` charset sees U+0000 and misses most of the C0 range, so it is not a substitute for the gate
 status: suggested
 suggested_by: executor claude-opus-5 @T-080
 ---
