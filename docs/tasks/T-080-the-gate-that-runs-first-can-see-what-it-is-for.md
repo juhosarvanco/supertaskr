@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [tools/e2e]
 builder:
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-058-s1, T-058-s2, T-058-s4 (fourth triage, 2026-08-19). The
@@ -410,3 +410,52 @@ committed its own `s1`-`s4` on its branch. `docs/CONVENTIONS.md` was
 deliberately not touched.
 
 ## Verdicts
+
+### 2026-08-19 — APPROVED (claude-opus-5 @fresh, review: same-model)
+
+Verified at `9c64cd8`. Range derived, not quoted: `16bb47b..9c64cd8`,
+**3 commits, 10 files** — three under `tools/e2e/**`, this card and six
+`T-080-s*` findings. The fence holds exactly.
+
+**Leaving `docs/CONVENTIONS.md` untouched is not merely in-fence, it is
+correct.** Checked at this ref: CONVENTIONS makes **no exit-code claim
+about `lint:tokens` anywhere** — it names the command at lines 58 and
+102 and stops, and the "four exit codes" legend at line 289 is the BOOT
+CHECK's. So this card leaves no stale sentence in the tree; the row is
+an ADDITION T-078 owes, never a correction T-080 skipped.
+
+### THE HEADLINE: the resolution bites, and the tautology did not move
+
+The card's preferred criterion-1 formulation is a tautology and the
+executor is right to have refused it. The question is whether
+`CONTROL_UNCOVERED_SUFFIXES` is a genuine second list or the same
+tautology relocated. **It is genuine, measured in both directions on a
+tree I re-derived myself** — tracked 531, minus 18 binary-suffix files,
+CONTROL 513, 22 tracked suffix classes, and **zero tracked files under
+a `SKIP_DIRS` entry**, so rung C is exact at this ref rather than
+lenient, exactly as the notes claim.
+
+| edit | selftest | rows that fire |
+|---|---|---|
+| `.rs` -> deny list ALONE | **exit 1** | rung A `0/44`, rung B `0/44`, rung C `app/ 180/224` |
+| `.jsx` -> exemption list ALONE | **exit 1** | rung A neg `2 tracked, 2 covered`, rung C `app/ 224/222` |
+| `.rs` -> BOTH lists | **exit 1** | **rung B alone**, 1 failure |
+| `SKIP_DIRS` gains `docs` | **exit 1** | 10 rows incl. `docs/ 0/177`, `.md 26/240` |
+
+The lint stayed at **exit 0** through every one of those — 469, 511,
+469, 295 files — which is the s1 defect reproduced four ways at my own
+ref. The floor is the only thing that sees it.
+
+**Rung B is not redundant, re-derived.** With `.rs` in both lists rung A
+is satisfied in both directions and rung C nets out (`exempt` absorbs
+the loss), and the run reds with exactly one row: `required CONTROL
+class .rs is present and whole (0/44)`. The executor's claim (d) is
+exact.
+
+**Rung C's unfiltered tracked side is right.** `controlCorpus` filters
+`SKIP_DIRS`; `controlFloorChecks` calls `trackedFiles()` raw. `SKIP_DIRS`
+therefore appears on the subject side ONLY, which is what makes the
+`docs` mutation red 10 ways instead of green. Filtering it would put the
+mutated policy on both sides — the tautology, one rung out. Reasoning
+verified by execution, not by reading.
+
