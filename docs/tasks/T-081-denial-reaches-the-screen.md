@@ -11,7 +11,7 @@ touches: [app-agent]
 builder:
 verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by: claude-opus-5 @T-081-verify
+verified_by: claude-opus-5 @T-081-verify (re-verified @T-081-verify2, 2026-08-20)
 review: same-model
 ---
 
@@ -1166,3 +1166,247 @@ join key becomes falsifiable, `T-081-s2`'s lesson gets the pin it
 argues for, and the drill table gains the round that makes
 "zero survivors" true against a mutant set derived from the CRITERIA
 rather than from the pins. Nothing else on this card needs to move.
+
+
+### 2026-08-20 — APPROVED (claude-opus-5 @T-081-verify2, review: same-model)
+
+**The blocking defect is closed, the fixture is the shape I named, and
+one claim of my own first verdict was wrong and is corrected below.** I
+re-derived every contested point rather than accepting the fix report:
+the mutant that isolates the mixed-channel body is NOT the one I ruled
+on, and the executor is right about that. One new non-blocking finding
+(`T-081-s10`). And the red the branch carried into this round was
+**mine**; it is reproduced, owned and corrected here.
+
+### THE DEFECT IS CLOSED — measured, not accepted
+
+`denied-same-tool-one-announced` is exactly the discriminating stream:
+one in-band `Bash`/`toolu_announced`, an `Activity` marker, then a
+`result` (`is_error: false`, `terminal_reason: "completed"`) listing
+`Bash`/`toolu_announced` AND `Bash`/`toolu_never_announced`.
+
+Re-running **M1**, the survivor from my first verdict — join key
+`tool_use_id` -> `tool_name`, both sites, text read back before the
+suite ran:
+
+    M1_EXIT=101 · 351 passed / 1 failed / 3 ignored
+    RED: a_second_refusal_of_the_same_tool_is_not_swallowed_by_the_first
+      left:  [Some("toolu_announced")]
+     right:  [Some("toolu_announced"), Some("toolu_never_announced")]
+
+The silence I demonstrated is now a failing assertion, and it is the
+ONLY body that reds — the pin is precise rather than incidental.
+Baseline at `5b14603`: **352 / 0 / 3** over fifteen `test result:` lines,
+bare `cargo test`, `CARGO_TEST_EXIT=0`.
+
+### MY SHAPE-SIX RULING MOVED, AND THE EXECUTOR IS RIGHT
+
+My first verdict closed poison shape six on **M7** (the all-or-nothing
+partition), which I measured as killed by
+`one_denial_on_each_channel_is_reported_once_each` and nothing else.
+**That no longer holds, and the reason is structural rather than
+incidental.** Re-measured at `5b14603`:
+
+    M7_EXIT=101 · 350 / 2 / 3
+    RED: one_denial_on_each_channel_is_reported_once_each
+    RED: a_second_refusal_of_the_same_tool_is_not_swallowed_by_the_first
+
+M7's premise is a NON-EMPTY `announced_denials` at the `result` line —
+that is what makes "emit all or emit none" differ from the correct
+partition. But partial announcement is the defining premise of ANY
+fixture that discriminates the join at all. So M7 was never reading the
+mixed fixture's distinguishing property; it was reading *partial
+announcement*, which the new fixture necessarily also has. My ruling
+was correct on the evidence then available and is superseded now.
+
+**Re-derived. The mixed fixture's unique property is that its two
+denials carry DIFFERENT tool names, and the mutant that reads it is
+`M10`** — the late emit takes `denials.first()`'s name instead of its
+own:
+
+    -   denial.tool_name.clone(),
+    +   denials.first().and_then(|f| f.tool_name.clone()),
+
+    M10_EXIT=101 · 351 / 1 / 3
+    RED: one_denial_on_each_channel_is_reported_once_each   (alone)
+
+`first()` is the RIGHT answer for the result-only fixture (one entry)
+and for the same-tool fixture (both names `Bash`), and the WRONG answer
+only where an unannounced entry is not first and carries a different
+name. **Shape six is closed, on M10 rather than M7**, and the property
+is real: a late-emitted denial must carry its own tool name, or the app
+names the wrong tool in a refusal notice. I searched for an independent
+isolating mutant in the same class and found none that is not
+arithmetically M10 over these fixtures — with one unannounced entry per
+stream, "first", "positional" and "wrong entry" coincide. M10 is the
+right mutant, not a contrived one.
+
+Every mutation this round one-sided, every mutated TEXT read back with
+`git diff` before its suite ran, every restoration proved by sha256
+against `git show HEAD:<path>` AND an empty `git diff -- <path>` —
+**four for four** (M1, M7, M10, MV1). Drill worktree
+`git status --porcelain` clean.
+
+### ONE NEW FINDING, NOT BLOCKING — `T-081-s10`
+
+My own mutant **MV1** reverts the notes' stated decision TWO, narrowing
+the ring note to the unannounced subset:
+
+    -   let unreported = denial_names(unannounced.iter().copied());
+    +   let unreported = denial_names(&denials);
+
+    MV1_EXIT=0 · 352 / 0 / 3 · ZERO bodies red — SURVIVOR
+
+The narrowing is right and is stated on the card; nothing can fail if it
+is undone. It is unreachable across the current fixture set because the
+tail only surfaces on `ExitNonZero` (`ToolDenied` has no `stderr_tail`),
+which needs `is_error: false` plus a non-zero exit — the
+`denied-then-end-turn` shape — while every fixture with an in-band line
+exits 0. Not blocking: the card does not mandate the narrowing, both
+`Denied` events are correctly joined, and the worst case is a name
+repeated inside a diagnostic blob on an already-failing turn. Filed with
+a suggested close.
+
+### THE RED THE BRANCH CARRIED WAS MINE
+
+**Reproduced rather than accepted.** A detached worktree at `ba31a10`,
+my own verdict tip:
+
+    npx vitest run test/architecture-dogfood.test.ts   EXIT 1
+    × both input layers parse clean (the smoke-test discipline)
+      expected [ { kind: 'invalid-field', …(3) } ] to deeply equal []
+      field 'status' must be one of suggested | planned | building |
+      verifying | rejected | merging | done | parked, got "closed"
+      Tests  1 failed | 8 passed (9)
+
+`T-081-s7` shipped `status: closed`, a value outside the parser's
+vocabulary and the only one in the tree. I invented it. `docs/` is an
+INPUT to the app suite through T-024's dogfood discipline, so a verdict
+commit whose entire diff was one markdown file turned a code gate red —
+and I did not find it because **I measured `npm test` at the commit
+under review and never re-ran it after committing.**
+
+Fix confirmed at `5b14603`: dogfood **9 / 9, exit 0**; `grep -rn
+"^status: closed" docs/ method/` returns nothing. `suggested` is the
+right value — what every other finding here carries, one of the two the
+parser accepts for a minimal file, and what the T-083 integrator ruled a
+discharged finding should keep.
+
+**And the same mechanism staled a figure in my first verdict, which I
+correct here rather than leave standing.** That verdict's gate table
+reports `CONTROL 554`, measured at `94476b4`. My own two commits added
+two tracked text files, so my tip was **556**, and the tip this verdict
+measures is **557** (548 + 6 executor findings + my s7/s8 + s9); `s10`
+makes it 558 at my commit. The arithmetic closes at every step; the
+published figure was simply measured one commit too early.
+
+### RULING ON `T-081-s9`'s SHAPE — right, with one boundary to draw
+
+**s9 is correctly shaped**, and its account of my error is accurate in
+every particular I could check, including the CONTROL staleness I had
+not noticed myself. It is a ROLE finding — *"a role that writes to the
+tree owes the tree's gates, even when what it wrote was prose"* — and
+that is the right frame, because it is broader than `docs/` (a verifier
+committing anything owes the gates its commits move) and narrower in a
+different axis (it is about WHO re-measures, not WHICH trigger fires).
+
+**The boundary worth drawing:** s9's candidate close 1 — a frontmatter
+vocabulary gate beside the token lint — is now substantially `T-084`'s
+territory. T-084 landed on main at `073f136`, is scoped exactly to
+*"`docs/` is a code input and neither standing gate knows it"*, cites
+this incident as its second instance, and carries
+`touches: [docs/CONVENTIONS.md, tools/e2e]`. Carrying the same remedy in
+two places is the failure this card's own decision ONE names: *"a rule
+with two implementations is two chances to disagree about it"* (T-057).
+So: s9 should keep candidate close 2 — the role clause in
+`method/roles/verifier.md`, which is uniquely its own and which no gate
+can supply, since a stale printed CONTROL figure is not a pin and
+nothing mechanical will ever catch it — and DEFER candidate close 1 to
+T-084 with a cross-reference. Recommended, not required; both files are
+outside this fence.
+
+### CRITERION 7's DISCHARGE — confirmed against the body that exists
+
+`an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code`
+(`tests/agent_runner.rs:1347`) run by name: **1 passed, exit 0**, and
+green in the 352/0/3 baseline. The discharge is against a real body.
+
+**The phantom's behaviour is now measured, and it is worse than
+useless.** `cargo test --test agent_runner <phantom>` prints
+`test result: ok. 0 passed; 0 failed; 0 ignored; 73 filtered out` and
+exits **0** — the mechanical check of a cited pin actively CONFIRMS a
+pin that does not exist. `git grep "fn <phantom>" -- '*.rs'` exits 1
+correctly; the unrestricted `-- .` now exits **0**, because this
+finding and the executor's notes put the string into `docs/`. My own
+`T-081-s8` recommended the unrestricted form; that recommendation was
+self-defeating and is corrected in place, with the pathspec `T-082-s2`
+already requires.
+
+### RANGES, dot counts stated — and a figure of mine to correct
+
+Main moved TWICE during this round: `f4f77d7` when the fix was handed
+over, `073f136` by the time I measured. Merge-base with the branch is
+unchanged at `d61e986`.
+
+| form | dots | paths |
+|---|---|---|
+| `git merge-tree --write-tree main 5b14603` | — | **20**, exit 0 |
+| `main...5b14603` | THREE | **20** |
+| `d61e986..5b14603` | TWO, branch-only | **20** |
+| `main..5b14603` | TWO, pre-merge — FORBIDDEN | **32** |
+
+`cmp` of the merge-tree forecast against the branch-only two-dot list:
+**exit 0**, byte-identical. **The handover reports the forbidden form at
+31 with eleven foreign paths; I measure 32 with twelve.** Neither is an
+error — main gained `docs/tasks/T-084-…md` between the two
+measurements, and the naive form absorbs it. That is T-083's range rule
+demonstrating itself twice inside one review, and it is the reason the
+figure has to name its ref: **31 at `f4f77d7`, 32 at `073f136`.**
+
+### GATES AND EXIT CODES — all measured at `5b14603`
+
+| gate / suite | exit |
+|---|---|
+| bare `cargo test` (not `--all-targets`) | **352 / 0 / 3** over 15 result lines, `CARGO_TEST_EXIT=0` |
+| `npm run build` from `app/` | `APP_BUILD_EXIT=0` |
+| `npm test` from `app/` | **831 passed, 42 files**, `APP_TEST_EXIT=0` |
+| `architecture-dogfood.test.ts` alone | **9 / 9**, exit 0 |
+| BOOT GATE — fires, `NPUTER_BOOT_PORT=19811` from `tools/e2e` | both `[nputer]` lines, `BOOT_CHECK_EXIT=0` |
+| GRAPH REGEN — fires, `index --check --root ../..` | **exit 1, real red** |
+| `npm run lint:tokens` | **TOKEN 119 / CONTROL 557**, `LINT_TOKENS_EXIT=0` |
+
+`index --check`'s red is the same one my first verdict confirmed and is
+still correct to leave: committed 995 symbols / 1518 edges against a
+fresh 996 / 1520, six files changed, `+2 type_ref` edges
+(`GenesisEvent -> GenesisDenial`, `GenesisTurn -> GenesisDenial`), and
+no `graph.json` in the branch diff. CONVENTIONS puts the regen at the
+CHECKPOINT.
+
+### SECURITY — re-derived at this tip, unmoved
+
+`acl_pin.rs` **0-file diff** across `d61e986..5b14603` (TWO dots),
+sha256 `8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`.
+`EXPECTED_GRANTS`: decl **54**, closing `];` **147**, span **94**,
+entries **92**, 92 quoted, 92 unique, zero comment or blank — the ruling
+of my first verdict, unchanged, with `T-082-s1` still owning STATE's
+128. `#[ignore]` exactly **three**, one per file. No `Cargo.toml`,
+`Cargo.lock`, `package.json`, `package-lock.json`, `tauri.conf.json` or
+capability file in the diff; no dependency added; the new fixture adds
+no input path — it is a second stream shape through the same bounded,
+control-stripped parse.
+
+**PORT RULE honoured.** 1420 was never bound, connected to or
+signalled; `lsof -nP -iTCP:1420 -sTCP:LISTEN` named node **82549** on
+`[::1]:1420`. Scratch port 19811 bind-probed free on `127.0.0.1`,
+`0.0.0.0`, `::1` and `::` before use. App **97844** and vite **82549**
+unchanged. No real model call — the capture is a file. No `npm ci`, no
+`npm install`, no `pkill`, nothing run in the main checkout.
+
+### VERDICT
+
+**APPROVED.** Criterion 4's join key is pinned by a body that dies when
+it moves, and the body is the observed CLI's own shape. Criteria 1, 2,
+3, 5, 6 and 7 hold, re-checked. Shape six is closed on a re-derived
+mutant, and the record now says which one and why the first was wrong.
+`T-081-s10` is filed and does not block. The fence ruling of my first
+verdict stands.

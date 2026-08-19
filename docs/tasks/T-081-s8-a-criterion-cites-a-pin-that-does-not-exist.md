@@ -36,6 +36,26 @@ for several cards.
 name at `T-025-agent-runner.md:505` and in T-081's criterion 7 to the
 one the suite actually carries. Worth pairing with a general rule, in
 the spirit of `T-082-s2`'s pathspec discipline: **a criterion that
-names a test SHALL name it by a string that `git grep -- .` finds as a
-definition**, because a pin cited by a name that does not resolve is a
-pin nobody can run.
+names a test SHALL name it by a string that `git grep -- '*.rs'` finds
+as a definition**, because a pin cited by a name that does not resolve
+is a pin nobody can run.
+
+**A CORRECTION TO THIS FILE'S OWN RECOMMENDATION, by its author at the
+second verdict.** The rule first written here said `git grep -- .`,
+with no pathspec. That is self-defeating and was measured so at
+`5b14603`: `git grep "fn <the phantom>" -- .` now exits **0**, because
+writing this finding — and the second executor's notes quoting the same
+command — put the string into `docs/`. The unrestricted form reports a
+definition that does not exist, in the exact shape `T-082-s2` warns
+about: a hit tally without a pathspec is meaningless. Restricted to
+`-- '*.rs'` it exits **1**, correctly. The rule needs the pathspec, and
+this file needed its own lesson applied to itself.
+
+**AND THE MECHANICAL ROUTE DOES NOT FAIL — IT LIES.** Measured at
+`5b14603`:
+`cargo test --test agent_runner an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail`
+prints `test result: ok. 0 passed; 0 failed; 0 ignored; 73 filtered
+out` and exits **0**. A phantom pin name run as a filter reports
+SUCCESS. That is the same non-answer class as an empty exit code, and
+it is why the citation defect matters rather than being cosmetic: the
+obvious way to check a cited pin actively confirms it.
