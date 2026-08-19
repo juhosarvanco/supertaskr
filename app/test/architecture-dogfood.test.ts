@@ -885,6 +885,42 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     component-ID pin deliberately remains unchanged.
 //   · Both fixture edits precede the final regeneration; the generated
 //     graph is regenerated again afterwards and checked for identity.
+//
+// RECONCILED AT THE T-057 MERGE (2026-08-19, integrator). Derived from the
+// regenerated graph against `git show adb32c3:docs/architecture/graph.json`
+// before touching either fixture, and cross-checked with a throwaway probe
+// `it()` appended to this describe, run once and removed (removal proved by
+// sha256 against HEAD, not by a clean `git status`):
+//   · stats 117 files (UNCHANGED) / 970->982->989 symbols (+7) /
+//     1502->1508 edges (+13 added, -7 removed). No file joins or leaves
+//     the index: T-057 moved 43 lines BETWEEN two already-indexed files.
+//   · the +7 symbols are interview-model.ts +3 (observeBanking,
+//     BankingObservation, EMPTY_BANKING_OBSERVATION), accelerators.test.tsx
+//     +3 (AcceleratorHarness, keydownAdds, keydownRemoves) and
+//     startup-screen.test.tsx +1 (isTauriRuntime). InterviewChat.tsx's
+//     symbol set is BYTE-IDENTICAL — what moved lived inside the component
+//     body, not at the top level.
+//   · the four changed file-level import edges are all EXISTING pairs
+//     whose `symbols` lists grew; not one new file pair appears. Every
+//     symbol-level add is inside interview-model.ts or is
+//     InterviewChat->observeBanking, replacing the two calls and one
+//     type_ref it retired.
+//   · THEREFORE ZERO ASSERTIONS MOVE, in this file or in
+//     map-dogfood-render.test.tsx — the first merge in this ledger where
+//     the forecast is "nothing changes". Measured, not assumed:
+//     fileComponent.size 117; mapping C-05 54 / C-06 25 / C-08 10 /
+//     C-09 3 / C-10 2 / C-12 14 / C-13 8 / C-14 1 (= 117); the 32-row
+//     relation table, all ten D1 findings with every `fileEdges` list and
+//     `observedCount`, the three D3 findings, the drift set and
+//     `unmappedFiles` [] all byte-identical.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched: the live
+//     component registry did not move (`git diff adb32c3..HEAD --
+//     docs/architecture/components/` is a 0-file diff), so the T-024
+//     three-fixtures rule does not fire.
+//   · The ceaa949 ordering still holds and still MATTERS even here: this
+//     comment is itself an indexed edit, so it stales the measuring regen
+//     and the graph is regenerated a final time after it, then proven
+//     deterministic by regenerating once more and `cmp`-ing.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {

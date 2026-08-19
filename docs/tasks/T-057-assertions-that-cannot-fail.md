@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 25
 size: M
-status: planned
+status: done
 blocked_by: []
 touches: [app-shell, app-interview]
 builder: codex/gpt-5.6

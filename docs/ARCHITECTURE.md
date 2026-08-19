@@ -314,6 +314,26 @@ ADR-014/015).
   fold or store source was added. The existing resume DOM suite reaches two
   more C-13 modules directly, so observed C-05→C-13 file edges move 15→17;
   no component relation or finding changes.
+  **T-057 gives C-13's banking rule ONE owner.** The chat used to hold the
+  whole transition in a `useEffect` — prime, advance, rebaseline on a
+  project switch, merge and dedupe within a turn — while the replay tests
+  hand-copied it, so a test could agree with a COPY of the rule rather than
+  the rule. `interview-model.ts` now exports `observeBanking`, one pure
+  `(previous, docs, turn) -> BankingObservation` transition that the shipped
+  chat and the tests both call; no second banking loop remains, and the
+  project-switch clause the copy never had is pinned by a test that reds
+  when the clause is removed (measured here, one test, both watermark
+  arms). The counterweight is recorded rather than smoothed over
+  (**T-057-s2**): the baseline moved from a `useRef` into the same
+  `useState` as the chips, so a snapshot that advances the seq and banks
+  NOTHING now returns a fresh object and re-renders where the old code
+  called no setter at all — measured `identity kept: false`, baseline seq
+  1 -> 2, `chipsByTurn` identity preserved. Bounded (the added render's only
+  effect is an auto-scroll write that is a no-op at the bottom), but it
+  moves against T-056 immediately above, and no test on the branch can see
+  it. Structurally quiet: no component relation, finding, observedCount or
+  drift flag moves, and the whole graph delta is +7 symbols / +6 edges
+  inside C-13 and C-05.
   area app-agent since T-025,
   where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
   `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and

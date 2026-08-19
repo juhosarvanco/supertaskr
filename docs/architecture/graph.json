@@ -2130,8 +2130,8 @@
       "id": "f:app/src/genesis/InterviewChat.tsx",
       "path": "app/src/genesis/InterviewChat.tsx",
       "lang": "ts",
-      "hash": "blake3:595d378c8f7faf315c21564b597a4cbd2143350c5c34ca60360760414e3c1bd8",
-      "loc": 749,
+      "hash": "blake3:037f9d37c3e9caa74e31eccd7dbc59b3df538a7711ca886824a6e8899f71fbf5",
+      "loc": 716,
       "symbols": [
         {
           "id": "s:app/src/genesis/InterviewChat.tsx#HandDrivenBlock",
@@ -2139,8 +2139,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            579,
-            642
+            546,
+            609
           ]
         },
         {
@@ -2149,8 +2149,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            56,
-            549
+            54,
+            516
           ]
         },
         {
@@ -2159,8 +2159,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            657,
-            719
+            624,
+            686
           ]
         },
         {
@@ -2169,8 +2169,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            722,
-            749
+            689,
+            716
           ]
         },
         {
@@ -2179,8 +2179,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            555,
-            559
+            522,
+            526
           ]
         }
       ]
@@ -2677,8 +2677,8 @@
       "id": "f:app/src/genesis/interview-model.ts",
       "path": "app/src/genesis/interview-model.ts",
       "lang": "ts",
-      "hash": "blake3:ff380f5379e60d80551b2bff5a62717fb0d1bd56767f3535b4bd0237628b6a68",
-      "loc": 607,
+      "hash": "blake3:77397e0cecc087a58e663084cc0e73f2a42579b7bb79d326ecbe12a91daf46c5",
+      "loc": 661,
       "symbols": [
         {
           "id": "s:app/src/genesis/interview-model.ts#BankBaseline",
@@ -2691,13 +2691,23 @@
           ]
         },
         {
+          "id": "s:app/src/genesis/interview-model.ts#BankingObservation",
+          "name": "BankingObservation",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            71,
+            74
+          ]
+        },
+        {
           "id": "s:app/src/genesis/interview-model.ts#CHALLENGE_PREFIX",
           "name": "CHALLENGE_PREFIX",
           "kind": "const",
           "exported": false,
           "range": [
-            157,
-            157
+            211,
+            211
           ]
         },
         {
@@ -2706,8 +2716,18 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            159,
-            166
+            213,
+            220
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#EMPTY_BANKING_OBSERVATION",
+          "name": "EMPTY_BANKING_OBSERVATION",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            76,
+            79
           ]
         },
         {
@@ -2716,8 +2736,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            518,
-            523
+            572,
+            577
           ]
         },
         {
@@ -2726,8 +2746,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            237,
-            237
+            291,
+            291
           ]
         },
         {
@@ -2736,8 +2756,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            142,
-            142
+            196,
+            196
           ]
         },
         {
@@ -2746,8 +2766,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            471,
-            471
+            525,
+            525
           ]
         },
         {
@@ -2756,8 +2776,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            368,
-            368
+            422,
+            422
           ]
         },
         {
@@ -2766,8 +2786,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            589,
-            589
+            643,
+            643
           ]
         },
         {
@@ -2776,8 +2796,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            198,
-            203
+            252,
+            257
           ]
         },
         {
@@ -2786,8 +2806,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            234,
-            234
+            288,
+            288
           ]
         },
         {
@@ -2796,8 +2816,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            291,
-            294
+            345,
+            348
           ]
         },
         {
@@ -2816,8 +2836,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            305,
-            311
+            359,
+            365
           ]
         },
         {
@@ -2826,8 +2846,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            431,
-            464
+            485,
+            518
           ]
         },
         {
@@ -2836,8 +2856,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            75,
-            82
+            88,
+            95
           ]
         },
         {
@@ -2846,8 +2866,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            123,
-            138
+            136,
+            151
           ]
         },
         {
@@ -2856,8 +2876,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            183,
-            192
+            237,
+            246
           ]
         },
         {
@@ -2866,8 +2886,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            146,
-            150
+            200,
+            204
           ]
         },
         {
@@ -2876,8 +2896,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            525,
-            555
+            579,
+            609
           ]
         },
         {
@@ -2886,8 +2906,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            566,
-            584
+            620,
+            638
           ]
         },
         {
@@ -2896,8 +2916,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            478,
-            499
+            532,
+            553
           ]
         },
         {
@@ -2906,8 +2926,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            88,
-            90
+            101,
+            103
           ]
         },
         {
@@ -2916,8 +2936,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            558,
-            562
+            612,
+            616
           ]
         },
         {
@@ -2926,8 +2946,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            395,
-            414
+            449,
+            468
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#observeBanking",
+          "name": "observeBanking",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            162,
+            192
           ]
         },
         {
@@ -2936,8 +2966,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            277,
-            280
+            331,
+            334
           ]
         },
         {
@@ -2946,8 +2976,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            341,
-            366
+            395,
+            420
           ]
         },
         {
@@ -2956,8 +2986,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            382,
-            390
+            436,
+            444
           ]
         },
         {
@@ -2966,8 +2996,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            377,
-            380
+            431,
+            434
           ]
         },
         {
@@ -2976,8 +3006,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            600,
-            607
+            654,
+            661
           ]
         },
         {
@@ -2986,8 +3016,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            225,
-            232
+            279,
+            286
           ]
         },
         {
@@ -2996,8 +3026,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            268,
-            273
+            322,
+            327
           ]
         },
         {
@@ -3006,8 +3036,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            248,
-            255
+            302,
+            309
           ]
         }
       ]
@@ -5620,17 +5650,27 @@
       "id": "f:app/test/accelerators.test.tsx",
       "path": "app/test/accelerators.test.tsx",
       "lang": "ts",
-      "hash": "blake3:edd38a0c5f02d5eb45fc152af27811c88a94d21db3a2f9c374bdae2ff1de2fcb",
-      "loc": 620,
+      "hash": "blake3:22ae407b3d76536fff040d01ba437b143a328ebb928abe40d4e916fc54c309c7",
+      "loc": 661,
       "symbols": [
+        {
+          "id": "s:app/test/accelerators.test.tsx#AcceleratorHarness",
+          "name": "AcceleratorHarness",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            121,
+            124
+          ]
+        },
         {
           "id": "s:app/test/accelerators.test.tsx#App",
           "name": "App",
           "kind": "const",
           "exported": false,
           "range": [
-            111,
-            111
+            119,
+            119
           ]
         },
         {
@@ -5639,8 +5679,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            114,
-            114
+            127,
+            127
           ]
         },
         {
@@ -5649,8 +5689,8 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            69,
-            72
+            73,
+            76
           ]
         },
         {
@@ -5659,8 +5699,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            115,
-            115
+            128,
+            128
           ]
         },
         {
@@ -5669,8 +5709,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            113,
-            113
+            126,
+            126
           ]
         },
         {
@@ -5679,8 +5719,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            151,
-            169
+            164,
+            182
           ]
         },
         {
@@ -5689,8 +5729,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            131,
-            136
+            144,
+            149
           ]
         },
         {
@@ -5699,8 +5739,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            117,
-            117
+            130,
+            130
           ]
         },
         {
@@ -5709,8 +5749,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            138,
-            142
+            151,
+            155
           ]
         },
         {
@@ -5719,8 +5759,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            172,
-            188
+            185,
+            201
           ]
         },
         {
@@ -5729,8 +5769,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            125,
-            129
+            138,
+            142
           ]
         },
         {
@@ -5739,8 +5779,28 @@
           "kind": "const",
           "exported": false,
           "range": [
-            29,
-            38
+            33,
+            42
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#keydownAdds",
+          "name": "keydownAdds",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            78,
+            78
+          ]
+        },
+        {
+          "id": "s:app/test/accelerators.test.tsx#keydownRemoves",
+          "name": "keydownRemoves",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            79,
+            79
           ]
         },
         {
@@ -5749,8 +5809,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            73,
-            73
+            77,
+            77
           ]
         },
         {
@@ -5759,8 +5819,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            120,
-            121
+            133,
+            134
           ]
         },
         {
@@ -5769,8 +5829,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            118,
-            118
+            131,
+            131
           ]
         },
         {
@@ -5779,8 +5839,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            122,
-            123
+            135,
+            136
           ]
         },
         {
@@ -5789,8 +5849,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            75,
-            105
+            81,
+            113
           ]
         },
         {
@@ -5799,8 +5859,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            110,
-            110
+            118,
+            118
           ]
         }
       ]
@@ -5937,8 +5997,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:2a41fed8bbc4969b78ad1a5e4ddf97999a49619861f88427989d122a61722738",
-      "loc": 1599,
+      "hash": "blake3:d0884f7691c0c2b8469c043a17d4e34d9f1420dcbda7b5f1c3ebed2d1a85ffb1",
+      "loc": 1635,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -5946,8 +6006,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            923,
-            923
+            959,
+            959
           ]
         },
         {
@@ -5956,8 +6016,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            922,
-            922
+            958,
+            958
           ]
         },
         {
@@ -5966,8 +6026,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            888,
-            888
+            924,
+            924
           ]
         },
         {
@@ -5976,8 +6036,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            894,
-            909
+            930,
+            945
           ]
         },
         {
@@ -5986,8 +6046,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            911,
-            920
+            947,
+            956
           ]
         },
         {
@@ -5996,8 +6056,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            890,
-            892
+            926,
+            928
           ]
         }
       ]
@@ -7778,8 +7838,8 @@
       "id": "f:app/test/interview-model.test.ts",
       "path": "app/test/interview-model.test.ts",
       "lang": "ts",
-      "hash": "blake3:7d8240362e4268d97a0839e15521d7464c4f9b30c84cd650190419dbcf27ff7e",
-      "loc": 879,
+      "hash": "blake3:66585cc713aa62be5ad868b457f5fcbf0cbe2d852fa8d58fc8cb9397558bd01f",
+      "loc": 889,
       "symbols": [
         {
           "id": "s:app/test/interview-model.test.ts#docs",
@@ -7787,8 +7847,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            43,
-            52
+            45,
+            54
           ]
         },
         {
@@ -7797,8 +7857,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            55,
-            57
+            57,
+            59
           ]
         },
         {
@@ -7807,8 +7867,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            60,
-            69
+            62,
+            71
           ]
         }
       ]
@@ -9139,8 +9199,8 @@
       "id": "f:app/test/startup-recovery.test.ts",
       "path": "app/test/startup-recovery.test.ts",
       "lang": "ts",
-      "hash": "blake3:b11923df5294f03922ed732a9229ed49e33717a1d7df74db1eb5e777dd85cb73",
-      "loc": 1024,
+      "hash": "blake3:ecb395ff7b341980fdcaeb51dfd6aeca37042b7cecf6e2f22b19fc6b82248faa",
+      "loc": 1031,
       "symbols": [
         {
           "id": "s:app/test/startup-recovery.test.ts#PROBE",
@@ -9228,8 +9288,8 @@
       "id": "f:app/test/startup-screen.test.tsx",
       "path": "app/test/startup-screen.test.tsx",
       "lang": "ts",
-      "hash": "blake3:864a9484d2cc048fa087d9978e1afb16c449b04a7d00d967920fa56aa8cb83b4",
-      "loc": 448,
+      "hash": "blake3:614f73e65f2e06243d981bda4d9cfd40f5a39858b6f990ff5e4c7a09202f996d",
+      "loc": 449,
       "symbols": [
         {
           "id": "s:app/test/startup-screen.test.tsx#App",
@@ -9247,8 +9307,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            103,
-            108
+            104,
+            109
           ]
         },
         {
@@ -9277,8 +9337,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            138,
-            147
+            139,
+            148
           ]
         },
         {
@@ -9287,8 +9347,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            127,
-            133
+            128,
+            134
           ]
         },
         {
@@ -9297,8 +9357,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            110,
-            110
+            111,
+            111
           ]
         },
         {
@@ -9307,8 +9367,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            151,
-            152
+            152,
+            153
           ]
         },
         {
@@ -9317,8 +9377,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            112,
-            112
+            113,
+            113
           ]
         },
         {
@@ -9327,8 +9387,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            121,
-            125
+            122,
+            126
           ]
         },
         {
@@ -9342,13 +9402,23 @@
           ]
         },
         {
+          "id": "s:app/test/startup-screen.test.tsx#isTauriRuntime",
+          "name": "isTauriRuntime",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            94,
+            94
+          ]
+        },
+        {
           "id": "s:app/test/startup-screen.test.tsx#q",
           "name": "q",
           "kind": "const",
           "exported": false,
           "range": [
-            114,
-            115
+            115,
+            116
           ]
         },
         {
@@ -9357,8 +9427,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            111,
-            111
+            112,
+            112
           ]
         },
         {
@@ -9367,8 +9437,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            116,
-            117
+            117,
+            118
           ]
         },
         {
@@ -9377,8 +9447,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            118,
-            119
+            119,
+            120
           ]
         }
       ]
@@ -11982,13 +12052,11 @@
       "to": "f:app/src/genesis/interview-model.ts",
       "kind": "import",
       "symbols": [
-        "BankBaseline",
-        "UNPRIMED_BASELINE",
+        "EMPTY_BANKING_OBSERVATION",
         "activeTurn",
         "assembleTranscript",
-        "bankBaseline",
-        "bankedSince",
         "mergeRehydrated",
+        "observeBanking",
         "shouldStickToBottom",
         "stageOf",
         "stageReadout",
@@ -12362,7 +12430,9 @@
       "to": "f:app/src/components/shell/accelerators.ts",
       "kind": "import",
       "symbols": [
-        "matchAccelerator"
+        "AcceleratorTable",
+        "matchAccelerator",
+        "useAccelerators"
       ]
     },
     {
@@ -13358,6 +13428,7 @@
       "to": "f:app/src/genesis/interview-model.ts",
       "kind": "import",
       "symbols": [
+        "EMPTY_BANKING_OBSERVATION",
         "MAX_CHIP_PATHS",
         "UNPRIMED_BASELINE",
         "activeTurn",
@@ -13371,6 +13442,7 @@
         "failureHeadline",
         "listOf",
         "mergeRehydrated",
+        "observeBanking",
         "questionFooter",
         "rehydrate",
         "shouldStickToBottom",
@@ -14199,7 +14271,8 @@
       "kind": "import",
       "symbols": [
         "STARTUP_DEADLINE_MS",
-        "StartupFailure"
+        "StartupFailure",
+        "isTauriRuntime"
       ]
     },
     {
@@ -16891,12 +16964,6 @@
     },
     {
       "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
-      "to": "s:app/src/genesis/interview-model.ts#BankBaseline",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
       "to": "s:app/src/genesis/interview-model.ts#activeTurn",
       "kind": "call",
       "confidence": "resolved"
@@ -16909,19 +16976,13 @@
     },
     {
       "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
-      "to": "s:app/src/genesis/interview-model.ts#bankBaseline",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
-      "to": "s:app/src/genesis/interview-model.ts#bankedSince",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
       "to": "s:app/src/genesis/interview-model.ts#mergeRehydrated",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#InterviewChat",
+      "to": "s:app/src/genesis/interview-model.ts#observeBanking",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -17334,6 +17395,18 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/genesis/interview-model.ts#BankingObservation",
+      "to": "s:app/src/genesis/interview-model.ts#BankBaseline",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#EMPTY_BANKING_OBSERVATION",
+      "to": "s:app/src/genesis/interview-model.ts#BankingObservation",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/genesis/interview-model.ts#TranscriptEntry",
       "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
       "kind": "type_ref",
@@ -17450,6 +17523,30 @@
     {
       "from": "s:app/src/genesis/interview-model.ts#mergeRehydrated",
       "to": "s:app/src/lib/agent-store.ts#TranscriptLinePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#observeBanking",
+      "to": "s:app/src/genesis/interview-model.ts#BankingObservation",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#observeBanking",
+      "to": "s:app/src/genesis/interview-model.ts#bankBaseline",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#observeBanking",
+      "to": "s:app/src/genesis/interview-model.ts#bankedSince",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#observeBanking",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -19572,6 +19669,18 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/accelerators.test.tsx#AcceleratorHarness",
+      "to": "s:app/src/components/shell/accelerators.ts#AcceleratorTable",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/accelerators.test.tsx#AcceleratorHarness",
+      "to": "s:app/src/components/shell/accelerators.ts#useAccelerators",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/accelerators.test.tsx#chord",
       "to": "s:app/test/accelerators.test.tsx#flush",
       "kind": "call",
@@ -21615,7 +21724,7 @@
   ],
   "stats": {
     "files": 117,
-    "symbols": 982,
-    "edges": 1502
+    "symbols": 989,
+    "edges": 1508
   }
 }

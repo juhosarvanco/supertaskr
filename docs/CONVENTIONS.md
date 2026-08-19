@@ -322,7 +322,26 @@
   what it found; this is the rule that found it). It stays a DISCIPLINE
   rather than a gate because nothing can automate "would this have
   failed" — which is precisely why it has to be written where a verifier
-  reads it instead of remembered.
+  reads it instead of remembered. WHAT THE DRILL CANNOT SEE (T-057,
+  measured on the card whose own subject was assertions that cannot fail):
+  poisoning proves a body RUNS and that its value MATTERS; it does NOT
+  prove the body is not a DUPLICATE of another. T-057's replacement
+  positive was the same `bank()` call as a test three cases above it —
+  same seq, same turn, same prime, same matcher, same expected value,
+  differing only in an inert content string, and character-identical once
+  that string was rewritten, with the file still green at 58/58 — yet it
+  reds under an expected-value poison, so the discipline passed it. It
+  kills no mutant of its own: removing the project-rebaseline clause reds
+  the switch test and leaves this one green. That is a shape DISTINCT from
+  the four catalogued "matcher moved, value fixed" violations, and note
+  where the fault lay — the CRITERION named a positive the suite already
+  had, so a CARD can specify a duplicate into existence and a faithful
+  executor will build it. SO: after the drill reds, ask the second
+  question — does any OTHER test already drive this exact call?
+  (Deliberately NOT given an ordinal: a sibling shape was being measured
+  on T-058 in the same window, and two lanes independently claiming
+  "shape five" is how a taxonomy acquires two fifths. Number them once
+  both have landed.)
 - THE E2E LANE'S HONEST SCOPE (T-049-s1, recorded rather than coded —
   arms 1 and 2 below stay available and were deliberately not taken):
   tools/e2e covers what a BROWSER can reach, and Tauri-gated
