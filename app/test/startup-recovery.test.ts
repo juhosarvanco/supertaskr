@@ -807,12 +807,19 @@ describe("a successful pick after a refused SUBSCRIBE re-runs startup (criterion
     await settle();
 
     const docs = store.getShellState().docs;
-    expect(docs.seq, "the stale pull was dropped").toBe(9);
-    expect(docs.model.tasks.map((t) => t.id), "the pick's tree survived intact").toEqual(["T-901"]);
-    expect(
-      ipc.emits.filter((e) => e.name === "model-updated"),
-      "and a dropped payload echoes nothing — no re-render, no round trip",
-    ).toHaveLength(1);
+    expect({
+      listenCalls: ipc.listenCalls,
+      invokeCalls: ipc.invokeCalls,
+      seq: docs.seq,
+      taskIds: docs.model.tasks.map((t) => t.id),
+      echoes: ipc.emits.filter((e) => e.name === "model-updated").length,
+    }).toEqual({
+      listenCalls: 2,
+      invokeCalls: 1,
+      seq: 9,
+      taskIds: ["T-901"],
+      echoes: 1,
+    });
   });
 
   it("...and a NEWER pull applies, exactly like any other snapshot", async () => {

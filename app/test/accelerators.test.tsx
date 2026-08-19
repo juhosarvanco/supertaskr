@@ -2,7 +2,11 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { matchAccelerator } from "../src/components/shell/accelerators";
+import {
+  matchAccelerator,
+  useAccelerators,
+  type AcceleratorTable,
+} from "../src/components/shell/accelerators";
 import type { DocsSnapshotPayload } from "../src/lib/docs-model";
 
 /**
@@ -62,7 +66,7 @@ declare global {
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-/** Every live keydown listener in the app, whichever target it is on.
+/** Every live keydown listener registered on `window` or `document`.
  * Recorded from BEFORE the first render, so a listener added by a screen
  * that has since unmounted is removed from this list rather than
  * lingering in it. */
@@ -71,6 +75,8 @@ interface KeydownPath {
   handler: EventListener;
 }
 const livePaths: KeydownPath[] = [];
+let keydownAdds = 0;
+let keydownRemoves = 0;
 
 function trackKeydownPaths(): () => void {
   const restores: Array<() => void> = [];
@@ -83,12 +89,14 @@ function trackKeydownPaths(): () => void {
     const remove = node.removeEventListener.bind(node);
     node.addEventListener = (type, handler, options) => {
       if (type === "keydown" && typeof handler === "function") {
+        keydownAdds += 1;
         livePaths.push({ where, handler: handler as EventListener });
       }
       add(type, handler, options);
     };
     node.removeEventListener = (type, handler, options) => {
       if (type === "keydown" && typeof handler === "function") {
+        keydownRemoves += 1;
         const at = livePaths.findIndex((p) => p.where === where && p.handler === handler);
         if (at >= 0) livePaths.splice(at, 1);
       }
@@ -109,6 +117,11 @@ function trackKeydownPaths(): () => void {
 (window as unknown as { __TAURI_INTERNALS__: unknown }).__TAURI_INTERNALS__ = {};
 const untrack = trackKeydownPaths();
 const { default: App } = await import("../src/App");
+
+function AcceleratorHarness({ table }: { table: AcceleratorTable }) {
+  useAccelerators(table);
+  return null;
+}
 
 const PROJECT_DIR = "/tmp/an-open-project";
 const GENESIS_DIR = "/tmp/sketchpad";
@@ -396,6 +409,34 @@ describe("the header offers both ways in from an open project (criterion 2)", ()
 });
 
 describe("exactly one keydown path handles the chords (criterion 5)", () => {
+  it("removes its listener on unmount", async () => {
+    const action = vi.fn();
+    const box = document.createElement("div");
+    const boxRoot = createRoot(box);
+    await act(async () => boxRoot.render(<AcceleratorHarness table={{ openFolder: action }} />));
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "o", metaKey: true }));
+    });
+    await act(async () => boxRoot.unmount());
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "o", metaKey: true }));
+    });
+    expect(action.mock.calls.map(() => "called")).toEqual(["called"]);
+  });
+
+  it("registers once across fresh table identities and removes once", async () => {
+    const box = document.createElement("div");
+    const boxRoot = createRoot(box);
+    const before = { adds: keydownAdds, removes: keydownRemoves };
+    await act(async () => boxRoot.render(<AcceleratorHarness table={{ openFolder: vi.fn() }} />));
+    await act(async () => boxRoot.render(<AcceleratorHarness table={{ openFolder: vi.fn() }} />));
+    await act(async () => boxRoot.unmount());
+    expect({ adds: keydownAdds - before.adds, removes: keydownRemoves - before.removes }).toEqual({
+      adds: 1,
+      removes: 1,
+    });
+  });
+
   /** Call every live keydown listener in the app, one at a time, with
    * `init` — and count how many of them reach `command`. Each call is
    * flushed before the next, so the store's own single-flight latch

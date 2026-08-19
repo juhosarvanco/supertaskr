@@ -65,6 +65,19 @@ export const UNPRIMED_BASELINE: BankBaseline = {
   primed: false,
 };
 
+/** Everything one docs observation can move. Keeping the baseline and
+ * accumulated chips together makes their transition one pure rule shared by
+ * the shipped chat and its replay tests. */
+export interface BankingObservation {
+  baseline: BankBaseline;
+  chipsByTurn: ReadonlyMap<number, readonly string[]>;
+}
+
+export const EMPTY_BANKING_OBSERVATION: BankingObservation = {
+  baseline: UNPRIMED_BASELINE,
+  chipsByTurn: new Map(),
+};
+
 /**
  * Take (or re-take) the baseline from an observed docs state. This is
  * both the priming call and the reset call — the chat runs it once at
@@ -135,6 +148,47 @@ export function bankedSince(
     banked.push(path); // added (before === undefined) or changed
   }
   return banked.sort();
+}
+
+/**
+ * Observe one docs state for the active turn.
+ *
+ * This owns the entire banking transition: first-turn priming, advancement
+ * after a newer snapshot, unconditional rebaselining when the project
+ * changes (even when its watermark is equal or lower), and sorted/deduped
+ * accumulation within a turn. A project switch never chips the new tree;
+ * the next change in that project is measured from the replacement baseline.
+ */
+export function observeBanking(
+  previous: BankingObservation,
+  docs: DocsModelState,
+  turn: number | null,
+): BankingObservation {
+  if (turn === null) return previous;
+  if (!previous.baseline.primed) {
+    return { baseline: bankBaseline(docs), chipsByTurn: previous.chipsByTurn };
+  }
+
+  const banked = bankedSince(previous.baseline, docs);
+  const shouldRebaseline =
+    docs.projectDir !== previous.baseline.projectDir || docs.seq > previous.baseline.seq;
+  const baseline = shouldRebaseline ? bankBaseline(docs) : previous.baseline;
+  if (banked.length === 0) {
+    return baseline === previous.baseline
+      ? previous
+      : { baseline, chipsByTurn: previous.chipsByTurn };
+  }
+
+  const existing = previous.chipsByTurn.get(turn) ?? [];
+  const merged = [...new Set([...existing, ...banked])].sort();
+  if (merged.length === existing.length) {
+    return baseline === previous.baseline
+      ? previous
+      : { baseline, chipsByTurn: previous.chipsByTurn };
+  }
+  const chipsByTurn = new Map(previous.chipsByTurn);
+  chipsByTurn.set(turn, merged);
+  return { baseline, chipsByTurn };
 }
 
 /** The UI's cap on one chip row (T-003's cap discipline). The underlying

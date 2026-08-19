@@ -91,7 +91,8 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 // The store decides `isTauri` at import time — set before App is loaded.
 (window as unknown as { __TAURI_INTERNALS__: unknown }).__TAURI_INTERNALS__ = {};
 const { default: App, StartupScreen } = await import("../src/App");
-const { STARTUP_DEADLINE_MS } = await import("../src/lib/watcher-store");
+const { STARTUP_DEADLINE_MS, isTauriRuntime } = await import("../src/lib/watcher-store");
+expect(isTauriRuntime()).toBe(true);
 
 /**
  * The hostile rejection. Nothing in it may reach the DOM as markup: a
