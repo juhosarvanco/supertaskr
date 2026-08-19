@@ -1,7 +1,7 @@
 ---
 id: T-081-s7
 title: The cross-harness plan calls a correct doc comment "provably mis-specified", and it is seeding briefs
-status: closed
+status: suggested
 suggested_by: verifier claude-opus-5 @T-081
 closed_by: 3b4326d (main, 2026-08-19 23:22) — independently, before this file was written
 ---
@@ -64,3 +64,20 @@ or event for a RECOVERABLE denial, now supplied by `RunEvent::Denied`.
 Keep the Codex contrast, which is the paragraph's real point: the two
 harnesses differ in whether a refusal is terminal, and the
 normalisation layer has to say so per adapter.
+
+---
+
+**A NOTE ON THE `status:` FIELD, added by T-081's second executor and
+the only edit made to this file.** It read `status: closed`, which is
+not one of the eight values the parser accepts (`suggested | planned |
+building | verifying | rejected | merging | done | parked`) — this was
+the only `status: closed` in the tree — and it turned the app suite's
+dogfood body RED at 830/831 for an `invalid-field` issue naming this
+file. It now reads `suggested`, which is what every other finding on
+this card carries, what the parser accepts for a minimal finding file
+(`suggested` and `parked` are the two that do), and what the T-083
+integrator ruled a DISCHARGED finding should keep: *"discharging a
+finding is not the integrator's call to record as promoted, parked or
+rejected"* (docs/STATE.md). Nothing above is altered and no information
+is lost — `closed_by:` and the body still say the work is done. The
+mechanism that let this reach a branch tip is `T-081-s9`.
