@@ -121,6 +121,26 @@
   `--config` after the script name and leaves the JSON as a stray
   positional (measured on npm 11.12.1). Nothing in the lane ever
   contacts a server it does not own.
+  ONE READ-ONLY COMMAND ANSWERS EVERY QUESTION ABOUT 1420, AND NOTHING
+  ELSE MAY BE USED: `lsof -nP -iTCP:1420 -sTCP:LISTEN` names the holder,
+  its pid and its STACK in one line. **Never bind-probe 1420 to learn
+  whether it is held** — on 2026-08-19 two independent agents did,
+  hours apart, both to demonstrate the same fact, both harmlessly, and
+  both unnecessarily; the second bound `0.0.0.0:1420` as well. The
+  prohibition is on the syscall, not the intent: holding 1420 for a
+  sub-millisecond window to prove it is busy is still taking 1420 from
+  the human. The rule above governs the LANE's tooling, which is why
+  this is stated separately — it governs the hand.
+  THE FACT THEY WERE DEMONSTRATING, RECORDED SO NOBODY DEMONSTRATES IT
+  AGAIN: the human's vite listens on **`[::1]:1420` — IPv6 loopback —
+  and nothing listens on IPv4**, so an IPv4-only probe of 1420 comes
+  back FREE while the app is running (measured 2026-08-19: `node`, one
+  socket, `TCP [::1]:1420 (LISTEN)`). **A free IPv4 probe is not
+  evidence the app is down**, and any check that concludes otherwise is
+  wrong rather than lucky. `tauri-boot-check.mjs` already probes `::1`
+  THEN `127.0.0.1` and carries a comment naming this hazard; that is the
+  shape to copy, and scratch ports must be probed on BOTH stacks for the
+  same reason.
 - CI (.github/workflows/ci.yml) is a thin invoker of exactly these
   commands — dormant until the repo's first GitHub push.
   tools/e2e/tests/workflow-parity.spec.ts DERIVES its expectations from

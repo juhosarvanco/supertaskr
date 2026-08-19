@@ -69,6 +69,20 @@ against its own parent — six paths, all `docs/`.
 **A rule whose notation is unsafe in the case it explicitly assigns is
 not a rule, it is a trap with a warning label.**
 
+**THE MECHANISM, ISOLATED AT T-080's MERGE — and it is sharper than
+"imprecise".** At the merge, `<main-before>` is an ancestor of the merge
+commit, so `git merge-base <main-before> <merge-commit>` **is
+`<main-before>`** (`--is-ancestor` exit 0). Two dots and three dots
+therefore **collapse onto the same set** — measured at `4683566`, both
+return the same 12 paths. Before the merge they differ by main's entire
+advance: 60 versus 12 at the same pair of refs.
+
+So the prescribed and forbidden forms are *indistinguishable* exactly
+where the rule is addressed, and differ *only* where the rule says
+nothing. **The rule is not merely imprecise — it is true only where
+nobody applies it**, which is why quoting it correctly does not protect
+you and why three-dot survives as a plausible-looking refinement.
+
 ## Defect 2 — a sentence that is now false three times
 
 `docs/CONVENTIONS.md:412`:
