@@ -1255,3 +1255,226 @@ the state at the commit where the claim is written — that diff is
 same vacuous-green shape the gate computation was redone to avoid, and
 the assert was added to one and not the other. The CLAIM is true; the
 EVIDENCE offered for it is not evidence. Filed as **T-078-s11**.
+
+#### THE THREE ATTACKS I WAS SENT TO RUN
+
+**T-078-s8 — CONFIRMED on both halves, and it is the sharpest of the
+three.** T-078-s5's ask proposes replacement prose verbatim: *"the same
+search finds matches in `docs/` and `tools/` from the root and none of
+them from `app/`"*. Measured at NINE refs on this branch (`e4a5ae7`,
+`c4208c6`, `22b31f1`, `d92afc7`, `1e96599`, `041e8ec`, `1f0f7ae`,
+`3a5e8ef`, `5b5e1c7`), `git grep -c "POISON DRILL" -- tools/` returns
+**zero files at every one** — the sentence names a directory the search
+has never touched. And the `app/` hit it denies is real and load-bearing:
+`app/test/startup-recovery.test.ts:722`, which is exactly what a search
+run FROM `app/` returns and the entire basis of the 4-vs-1 contrast. An
+executor who adopted the ask rather than re-deriving would have replaced
+one false sentence with a differently false one, in the bullet about
+citing accurately, while believing they had taken the more rigorous arm.
+**The general point holds: a finding's evidence block gets measured and
+its ASK does not, and the ask is the half that is copied into the tree.**
+
+**T-078-s9 — REPRODUCED, and it should be amended in ITS OWN CARD, not
+here.** The mechanism is exactly as filed and is now three times louder
+than when it was written, because main moved twice more during this
+session (`79ae34a` -> `5edb1c8` -> `16bb47b` -> `a137d20`):
+
+| ref of main | `git diff main HEAD` | BOOT | GRAPH | true merge (`merge-tree`) |
+|---|---|---|---|---|
+| `79ae34a` (executor's) | 47 paths | FIRES (5) | FIRES (13) | 12 docs files, 0, 0 |
+| `a137d20` (now) | **66 paths** | **FIRES (6)** | **FIRES (18)** | **16 docs files, 0, 0** |
+
+`git merge-tree --write-tree main HEAD` exits **0** — the merge is clean
+— and `git diff --name-only main <tree>` is **16 files, every one a `.md`
+under `docs/`** (0 non-docs, 0 non-md). So the docs-only branch is
+reported by the bullet's own notation as having rewritten a Rust crate
+and the parser library, and the settlement contradicts it flatly.
+
+**But the amendment does not belong on this branch.** No acceptance
+criterion of T-078 touches the BOOT GATE bullet's range notation; the
+rule is normative, six integrators deep, and changing what an integrator
+computes is a decision for triage rather than a verifier-directed edit
+inside a re-verification. The finding is correctly filed, its mechanism
+is confirmed first-hand, and its disposition is triage. **Its table does
+need its refs pinned before it is acted on** — see T-078-s12.
+
+**The closed list — I found a third and a fourth reader.** Filed as
+**T-078-s10**. `tools/e2e/tests/shell-frame.spec.ts` `repoDocs()` and
+`tools/e2e/tests/window-contract.spec.ts` `repoBoard()` each walk the
+live `docs/` tree and `readFileSync` every file, this one included, on
+every full-lane run; `shell-frame` additionally carries a hard floor
+(`if (files.length < 50) throw`) that is a live assertion about the tree
+this file sits in. Neither can red on this file's CONTENT, and the reason
+is one row up in the same table: the shipped parser filters
+`/^T-.*\.md$/`, `/^C-.*\.md$/` and `docs/ROADMAP.md`, and
+`CONVENTIONS.md` matches none. **So the closure is over "can red", which
+the sentence never says, while it claims to be over "readers", which is
+checkable and false at four.** It does not falsify the warning the table
+exists to give, which is why this is a finding and not the verdict.
+
+#### THE DECLINED HALF OF s6 — the risk is real, drilled, and the reason given was the weaker of two
+
+`app/src-tauri/src/agent/kit.rs:448-453` asserts
+`conventions.contains(&format!("currently v{METHOD_SNAPSHOT_VERSION}"))`
+against a `const` of `"0.1.5"` at `kit.rs:35`. The literal occurs
+**exactly once** in `docs/CONVENTIONS.md`, at line 162, and **zero added
+or removed lines in the whole branch diff carry it**. `cargo` was not run
+(no `target/` in this worktree, cold build out of scope), so the
+predicate was modelled exactly — `grep -F -q 'currently v0.1.5'`, which
+is what `String::contains` does — and drilled inline, substitution counts
+asserted, mutated text read back, restored byte-exact
+(sha256 `965b6219...` against `git show HEAD:docs/CONVENTIONS.md`,
+`git diff --quiet` exit 0):
+
+    baseline                                    1 occurrence   predicate 0 (passes)
+    rewrite gotcha one to cite the symbol       0 occurrences  predicate 1 (FAILS)
+
+**So editing gotcha one is the one edit on this branch that can red the
+cargo suite, and declining s6's other half was right.** The walk table's
+`currently v<METHOD_SNAPSHOT_VERSION>` form adds no second occurrence and
+keeps a method bump a one-place edit — that reasoning verifies. The
+sharper reason it did not give is drill B, and it is an eighth poison
+shape: filed as **T-078-s13**.
+
+#### AN EIGHTH POISON SHAPE, MEASURED
+
+**SHAPE EIGHT — a containment assertion over a whole-file haystack has no
+UNIQUENESS floor, so any second copy of the needle un-pins the original,
+and the likeliest author of that copy is documentation ABOUT the pin.**
+Plant a second `currently v0.1.5` in prose about the stamp, THEN delete
+the pinned sentence's copy: **1 occurrence remains, the predicate passes,
+the suite stays green with its subject gone.** Distinct from one to four
+(nothing moved), from five (the assertion set is untouched; the HAYSTACK
+gained a member), from six (this body does kill a unique mutant, until a
+duplicate appears where it never looks) and from seven. Mechanical
+remedy, which puts it beside five: assert the occurrence COUNT, or narrow
+the haystack to the section actually pinned. Full derivation and the
+sweep for other instances in **T-078-s13**.
+
+#### CRITERION BY CRITERION
+
+Structural argument first: the fix diff is **two hunks**, so criteria
+1, 2, 3, 4, 6, 8, 9, 10 and 11 are byte-identical to the text the first
+verifier passed. Each re-checked live anyway.
+
+1. **One-sidedness clause.** `MUTATE ONE SIDE ONLY` present, one hit,
+   untouched region. **HOLDS.**
+2. **Shapes five and six get ordinals, five first.** Both present once;
+   `deliberately NOT given an ordinal` gone; `T-080:63` "poison shape
+   five", `T-072:38` "poison shape SIX" and `docs/STATE.md` all still
+   agree. No citation broken. **HOLDS.**
+3. **Negative-control rule beside the parametrisation rule.** Line 514
+   `A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL`; `A TEST PARAMETRISED
+   BY THE CONSTANT` and `T-063` each present. **HOLDS.**
+4. **Guard-lift rule, both halves.** Line 543 `LIFTING A SAFETY GUARD TO
+   DISCRIMINATE`, `lifted arm` present. **HOLDS.**
+5. **A citation names a symbol, not a line.** Present at line 165. Its
+   worked example — the defect the rejection named — is now the SHAPE,
+   measured true at HEAD and re-measured true after this verdict's own
+   four files pushed the count from seven to **eight**: from the ROOT the
+   search finds this file, its cards under `docs/tasks` and a test under
+   `app/test`; from `app/`, that one and none of the others. **The
+   sentence needed no edit while the numeral would now be wrong by
+   four.** The split search string is unwrapped and findable (1 hit in
+   this file at `041e8ec`, 3 at HEAD). **HOLDS — this is the rejected
+   half, discharged.**
+6. **GRAPH REGEN trigger.** Wide trigger kept, no-op arm stated,
+   `index --check` named as the way to ask instead of predict. The
+   criterion's headline and its PREFERRED ARM still contradict each other
+   and the executor took the labelled arm. **HOLDS on substance**, as the
+   first verifier found; unchanged since.
+7. **The four-walks table.** Untouched in its walk rows; the changed part
+   is the reader sentence and the counts sentence. `38 removed` -> `46`
+   with the re-deriving command and closing arithmetic — **HOLDS**, and
+   this is the other rejected half, discharged. The reader sentence
+   over-claims at four readers (T-078-s10) without falsifying the
+   warning. **HOLDS.**
+8. **"Held by a gate" future-tense.** Untouched region. **HOLDS.**
+9. **`lint:tokens` exit-code legend.** Line 59, `exit 0 clean, 1 EITHER a
+   violation OR a gate that could not run`, inside the parenthetical,
+   commas only, and the parse still yields it as segment 4 with
+   `npm run boot:check` as segment 5 — confirmed by the 4/5/5/5 split
+   being unchanged. **HOLDS.**
+10. **Middle-dot rule homed in the CI bullet.** `U+00B7` named without
+    being typed; **zero added lines carry the character over the fix
+    range, across all files**; the one added over the whole branch is the
+    pre-existing separator on a reflowed line, still between two
+    commands. **HOLDS.**
+11. **T-054's notes corrected.** Untouched by the fix range; the 19 -> 16
+    / `2 failed, 12 passed` measurement stands and I re-derived the 19
+    independently. **HOLDS.**
+
+#### SECURITY SWEEP
+
+Nil surface. The fix range is five `.md` files under `docs/`: no input
+path, endpoint, query, dependency, secret or default. All twelve files
+the branch touches, and all four this verdict adds, report
+`charset=utf-8` under `file --mime`. No control byte in any added line
+(P5 class checked directly). The one executable behaviour the branch can
+reach — the parity spec's derivation — is unchanged at 19 commands and
+byte-identical command strings. Both drills restored with sha256 proof
+against `git show HEAD:<path>` and `git diff --quiet` exit 0.
+
+#### FINDINGS FILED — s10 through s13
+
+- **T-078-s10** — the walk table's reader list is closed over "can red",
+  a property it never states; four files read this file's bytes.
+- **T-078-s11** — the middle-dot proof command carries no range and so
+  cannot fail on a clean tree. The claim is true; the evidence is not.
+- **T-078-s12** — each pointed-at instance was fixed and neither class
+  swept: the `44` (and s9's whole table) went stale by three inside the
+  commit that filed it, the third instance of that shape on one branch;
+  and the branch introduced two line-break splits of its own search
+  string and unwrapped one.
+- **T-078-s13** — **POISON SHAPE EIGHT**, measured: a containment pin has
+  no uniqueness floor.
+
+None is a defect against a criterion. s12's first half and s11 are
+corrections to the card's own notes and to s9, not to the tree.
+
+#### PROCESS
+
+Main (`/Users/ujju/Projects/nputer`) was never written to. **Disclosed
+against myself**: one command lost its `cd` and ran `git rev-parse HEAD`
+and `git status --porcelain` in the main checkout — both read-only, no
+ref, branch, file or index content changed, though `git status` may
+refresh the index mtime cache. It is now at `a137d20` with three files
+already modified by whoever is working there; I neither made nor touched
+them. Port **1420** was read-only `lsof`-probed at session start and end:
+one healthy listener, node pid **82549**, `[::1]:1420 (LISTEN)`, same pid
+both times, never bound, connected to or signalled. This lane used
+scratch port **17881**, bind-probed free before each use and empty after
+(17883 probed and unused). No `playwright`, `vite` or `chromium` process
+of mine survives; both scratch ports are free. The two `fake_agent`
+orphans (**52504/52505**, ppid 1, from `nputer-T-060`) are pre-existing,
+are not mine, and were left alone. The four live sibling worktrees
+(T-069, T-073, T-080, and the main checkout) were never entered. No
+screen control, no model calls, no new dependencies, no `npm ci`, and
+`docs/architecture/graph.json` was not regenerated.
+
+#### VERDICT
+
+**APPROVED.**
+
+Both rejected figures are discharged and each was re-derived here from
+the commands rather than taken from the verdict or the dispatch. **(a)**
+`46` closes both trees by set difference, rename-detection independent,
+and the eight-file gap is enumerated to a byte-identical match. **(b)**
+the deviation is ruled FOR the executor: `four` was falsified by the very
+act of filing the finding that asked for it, is now wrong by four, and
+the shape sentence that replaced it has survived two independent rounds
+of additions — including this verdict's own — without an edit. The eleven
+green criteria are structurally untouched (two hunks) and were re-checked
+live. The four baselines are green at **234/234 (12) / 14 / 88 /
+TOKEN 118**, plus CONTROL 509 and the selftest. The derivation is
+19 / four dirs / 0 / 0 and byte-identical to `e4a5ae7`. Both gates are
+computed over a non-empty list with the assert made real and neither
+fires; the merge is clean at today's main and adds 16 `.md` files under
+`docs/` and nothing else. The rejecting verdict is untouched, proved by
+sha256. Four findings go to triage, one of them an eighth poison shape.
+
+`status: verifying` left for the integrator. **Note for the integrator:
+main moved three times while this lane was open** (`79ae34a` ->
+`5edb1c8` -> `16bb47b` -> `a137d20`); recompute the merge diff at your
+own ref, and per T-078-s9 compute it as what the merge ADDS, not as
+`git diff main HEAD`.
