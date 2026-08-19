@@ -169,12 +169,29 @@ schema exists. Codex's `exec` is just the first element of `spawn_args`;
 its resume id is one argv element, which is exactly what
 `SESSION_ID_SLOT` requires.
 
-**Breaks in the runner's taxonomy, not the table.** `TurnError` was
-written around Claude's stream, and one variant is now provably
-mis-specified: `ToolDenied`'s own doc comment says the turn "DIED
-because a tool it needed was REFUSED" — which is **false for Claude**
-(measured §2) and **true for Codex** (published §5). The taxonomy
-describes a failure mode the harness it was built for does not have.
+**Breaks in the runner's taxonomy, not the table — but more narrowly
+than this document first claimed.** An earlier revision of this section
+said `TurnError::ToolDenied`'s doc comment ("the turn DIED because a
+tool it needed was REFUSED") is *provably mis-specified*. **That was
+wrong, and T-081's executor refuted it rather than accepting it from a
+brief.** The variant is only ever constructed for a turn the CLI itself
+flagged `is_error`, so the sentence is true of every turn that reaches
+it. What the 2026-08-19 capture falsifies is the **inference** — denial
+implies death — not the doc comment.
+
+The real gap is narrower and still real: **nothing in the taxonomy
+represents a denial the turn SURVIVED.** Claude produces exactly that
+(two denials, agent recovered, `is_error: false`, exit 0) and before
+T-081 it reached nobody, because the names rode `stderr_tail` on
+`ExitNonZero` — a variant a successful turn never constructs. T-081
+adds `RunEvent::Denied` for the surviving case and leaves the fatal
+variant's wording alone.
+
+**The cross-harness consequence survives the correction intact**, and is
+the thing to carry forward: on the same event Claude degrades and Codex
+terminates (published §5), so *fatal-or-recoverable* is a **per-adapter
+property**. Today it is not a field at all — it is an assumption
+distributed across which variant gets constructed.
 
 **So the real work of a second adapter is:**
 1. a `ParseMode::CodexThreadEventV1` and its parser — new code, but the

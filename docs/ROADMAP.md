@@ -456,6 +456,43 @@ unknown. **One real, timed, end-to-end genesis on an authenticated
 machine (T-025-s2, @human) is the whole remaining gate**, and it is
 @human's to run.
 
+### Milestone 4 — dispatch (F-04) (decided 2026-08-19, @human D1 ruling)
+Goal: stop hand-writing the instructions that put an agent to work.
+The board reads its own lanes off disk, says which card is dispatchable
+AND WHY THE OTHERS ARE NOT, and hands you the exact brief and lane
+commands for the one you pick. Named slice: **"dispatch without writing
+the prompt"** — and deliberately, NOT ONE CARD IN IT SPAWNS A PROCESS.
+You paste the brief into any agent CLI in your own terminal and nothing
+in the system notices the difference; the spawn is a later card. This
+follows milestone 3's own precedent exactly, one role over: T-023+T-024
++T-026 delivered hand-driven genesis rendered live before any agent was
+in the loop.
+Tasks: to be written from design/dispatch-technical-plan.md §2. **The
+plan's drafted ids T-081…T-090 are STALE** — T-081, T-082 and T-083
+were claimed on 2026-08-19 by the denial relay, the auth command and
+the range rule. Re-derive the maximum id before writing.
+On the inherited backlog: **45 cards already carry `milestone: 4` and
+they are NOT this milestone's content.** They are standing backlog that
+rides alongside — 29 of them F-02 map hardening, 11 F-06, 3 F-03, 2
+F-01 — inherited from an era when milestone 4 was an inbox with no
+goal. They are not re-stamped (that was the arm the ruling declined:
+~30 frontmatter edits and an argument about each), so this milestone's
+card list will not match its goal, and that is a known and accepted
+cost of the ruling.
+Of the four cards milestone 3 promised would "re-enter after it"
+(T-010, T-013, T-014, T-015), **T-014 is already done** — the indexer
+binary landed with watch and check modes. The other three remain
+planned and remain backlog rather than slice content.
+Open before any card dispatches: **D3** (may the app ever write into
+`docs/`? — it never has; gates the selector card only, not the slice)
+and **D5** (what can `model@session` mean, given `--model` is
+deliberately never passed to Claude while Codex's `exec` accepts one —
+see design/cross-harness-plan.md). **D2 is taken**: dispatch gets its
+own component C-15 with touch slug `app-dispatch`, so it does not fence
+against every genesis card for the life of the feature.
+Progress: NOT STARTED. Decomposition pass complete 2026-08-19
+(design/dispatch-technical-plan.md); D1 ruled by @human the same day.
+
 ## Parked
 The staged future lives in docs/future.md (two expert-room batches:
 v0.2 cost telemetry, retro role, sandboxing, pocket cockpit; v0.3
