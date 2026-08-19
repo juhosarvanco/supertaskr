@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [docs/CONVENTIONS.md, method/]
 builder: claude-opus-5 @T-078
-verifier:
+verifier: claude-opus-5 @T-078-verify
 built_by: claude-opus-5 @T-078
-verified_by:
-review:
+verified_by: claude-opus-5 @T-078-verify
+review: same-model
 ---
 
 Absorbs: T-054-s1, T-054-s2, T-054-s3, T-054-s4, T-060-s1, T-060-s2
@@ -415,3 +415,116 @@ verified present and unchanged. That is T-078-s3.
   quoted as if it were the policy.
 
 ## Verdicts
+
+### 2026-08-19 — REJECTED (claude-opus-5 @T-078-verify, review: same-model)
+
+Verified `22b31f1` against `e4a5ae7` in worktree `nputer-T-078`, fresh
+session, executor's reasoning read only from the committed card. **Range
+derived here, not inherited**: `git merge-base HEAD main` = `e4a5ae7`,
+`git rev-list --count e4a5ae7..22b31f1` = **3**, diff **6 files,
++605/-33** — `docs/CONVENTIONS.md` (+222/-25), `docs/tasks/T-054-…`
+(+23/-5), this card (+229/-3), and three new `T-078-s1..s3`. Zero
+untracked files. Main was never touched; port 1420 was read-only
+`lsof`-probed at start and end — one listener, node pid **82549**,
+`[::1]:1420 (LISTEN)`, same pid both times, never bound, connected to or
+signalled. This lane used scratch port **17861** (empty before, empty
+after). The two `fake_agent` orphans (52504/52505, ppid 1, from
+`nputer-T-060`) are pre-existing and were left alone; no process of mine
+survives.
+
+**Eleven of eleven acceptance criteria hold in substance, and every
+mechanical claim in the notes reproduced.** The rejection is narrow and
+mechanical: **two measured figures this branch WRITES INTO
+`docs/CONVENTIONS.md` do not reproduce**, in the file whose whole
+purpose under this card is to describe the machine that exists. Both are
+one-integer fixes inside the existing fence. Details in "TWO FIGURES
+THAT DO NOT REPRODUCE" below.
+
+#### THE TRAP IN ITS OWN FENCE — checked first, and it holds
+
+`buildAndTestSection()` splits on `^## `, so `## Gotchas` is outside the
+derivation entirely. I re-implemented `buildAndTestSection` /
+`commandBullets` / `structuralProblems` / `ciBullet` inline from the
+spec's source and **calibrated at `e4a5ae7`, where the answer is known
+independently**:
+
+| ref | dirs | exposed commands | structuralProblems | missing CI needles |
+|---|---|---|---|---|
+| `e4a5ae7` | `["lib/parser","app","app/src-tauri","tools/e2e"]` | **19** | 0 | 0 |
+| `22b31f1` | same, same order | **19** | 0 | 0 |
+
+The per-bullet split is identical too — 4 / 5 / 5 / 5 — and the nineteen
+command STRINGS are byte-identical before and after. Nothing entered or
+left the parsed list.
+
+**Each of the two in-region edits checked independently.** (a) The
+`lint:tokens` legend sits inside the `npm run lint:tokens` parenthetical
+and uses commas only; the parse still yields `npm run lint:tokens` as
+segment 4 and `npm run boot:check` as segment 5, and the break still
+falls at `1 the boot failed`. (b) The whole ~15-line token-lint
+exposition is appended AFTER that break, so it is unreachable by the
+parse whatever it contains. (c) The middle-dot clause lands in the CI
+bullet, which carries no `run from <dir>/:` marker — confirmed by the
+dirs list being exactly the four. I enumerated every U+00B7 in the file
+with `awk`: 16 lines carry one or more, and **every one is pre-existing
+except line 61**, where the separator still sits BETWEEN
+`npm run lint:tokens`'s closing paren and `npm run boot:check`. No new
+middle dot exists anywhere in the file.
+
+**Live suites, first-hand in this worktree, every exit read from `$?`
+unpiped:**
+
+| suite | result | exit |
+|---|---|---|
+| `lib/parser` `npx vitest run` | **234 passed (234)**, 12 files | 0 |
+| parity spec alone (port 17861) | **14 passed** | 0 |
+| `tools/e2e` full lane (port 17861) | **88 passed** | 0 |
+| `npm run lint:tokens` | `clean (TOKEN 118 …; CONTROL 499 …)` | 0 |
+| `npm run lint:tokens -- --selftest` | 49 TOKEN + 2 CONTROL, 37 walk checks | 0 |
+
+CONTROL **499** at `22b31f1` is 496 + the three new suggestion files —
+consistent with the doc's own 496 at `e4a5ae7`.
+
+#### BOTH GATES: COMPUTED, NEITHER FIRES
+
+- **BOOT GATE — does not fire.** Trigger set `app/src-tauri/**`,
+  `app/src/**`, `app/package.json`, `app/src-tauri/Cargo.toml` over
+  `e4a5ae7..22b31f1` plus untracked: **0 of 6 paths match** (all six are
+  `.md` under `docs/`). `boot:check` was not run; there is no
+  `BOOT_EXIT` to record, and the script does not print one.
+- **GRAPH REGEN — does not fire.** Trigger `*.ts/*.tsx/*.js/*.jsx`
+  outside `docs/`: **0 matches**. `docs/architecture/graph.json` is a
+  0-file diff and was not regenerated. Entailed independently: `docs/`
+  is `.nputerignore`d, so no file in this diff is in the indexer's walk
+  at all.
+
+#### THE MIDDLE-DOT DRILL — reproduced independently, and it discriminates
+
+Run inline, no scratch script, on the working file. One substitution
+(`exit 0 current, 1` → `exit 0 current · 1`), **asserted == 1 and
+aborted otherwise** — the discriminating assert, and it is a real one:
+it fires on the exact line-break mistake the executor's first attempt
+made. The mutated TEXT was then read back before the suite ran, per this
+card's own new clause: `git diff` showed the intended line, and
+`od -c` showed the separator as `302 267` = U+00B7 in UTF-8, not a raw
+byte and not a lookalike.
+
+    exposed commands   19 → 16   (cargo audit, index --watch, arch)
+    parity spec        2 failed, 12 passed   exit 1
+    named by key       "this spec expects [app/src-tauri] cargo audit,
+                        which docs/CONVENTIONS.md "Build & test" no
+                        longer lists …" — and the same for the other two
+
+**Restoration proved, not asserted**: working file back to
+`1e174732138d2f361c6813141bdbb3e01502ea10a2220eaa1a9fdfa955012556`,
+byte-equal to `git show HEAD:docs/CONVENTIONS.md`, `git diff` empty,
+enumerator back to **19**.
+
+**Second drill, on a claim the doc makes about itself.** The GRAPH REGEN
+bullet now says "deleting the CI step reds
+`tools/e2e/tests/workflow-parity.spec.ts` by name". Deleted the three
+lines of the `graph currency (nputer-index index --check)` step from
+`.github/workflows/ci.yml` (1 substitution, asserted, read back with
+`git diff`): **1 failed, 13 passed, exit 1**, message
+`missing verbatim step: [app/src-tauri] cargo run -p nputer-index -- index --check --root ../..`.
+Restored; sha256 `5598c3eb…` matches `git show HEAD:.github/workflows/ci.yml`.
