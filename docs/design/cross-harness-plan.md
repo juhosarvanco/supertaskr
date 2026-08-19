@@ -35,9 +35,13 @@ what is the smartest way to build that?
 - **The two models have never talked and the pipeline works anyway.**
   Sixty-plus cards have run executor → verifier → integrator with the
   repository as the only medium.
-- **`review: independent` appears on exactly 5 cards.** 46 are
-  `same-model`, 5 `self-verified`, 27 blank. The cross-model path is the
-  rare one here, not the norm — worth knowing before building for it.
+- **`review: independent` appears on exactly 5 cards.** Of 83 real
+  cards at `373a06e`: 46 `same-model`, 26 blank, **6** `self-verified`,
+  5 `independent`. (Derived from frontmatter only. A `grep` over whole
+  files reports 27 blank and 5 self-verified — it catches a line of
+  prose in one card's body and misses a stamp. The 5 that matters is
+  unaffected.) The cross-model path is the rare one here, not the norm
+  — worth knowing before building for it.
 - **`ADAPTERS` has exactly one entry**, and `ADAPTERS.len() == 1` is
   pinned by a test citing "ADR-017 clause 6: one declarative entry in
   v1". Adding Codex breaks that pin **deliberately** — it is a v1 scope
