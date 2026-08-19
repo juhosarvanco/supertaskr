@@ -56,29 +56,48 @@
   `npm ci` · `npm test` (the lane — Playwright drives the app's dev
   bundle in HEADLESS Chromium with trusted input; workers 1, retries 0,
   no skips) · `npm run typecheck` · `npm run lint:tokens`
-  (+ `-- --selftest`; CI's FIRST step — exit 0 clean, 1 EITHER a
-  violation OR a gate that could not run, the collapse explained at the
-  end of this bullet) · `npm run boot:check` (spawns `tauri dev` and
+  (+ `-- --selftest`; CI's FIRST step — exit 0 clean, 1 the gate RAN
+  and found something, 3 the gate COULD NOT run, 2 reserved and
+  unused, legended at the end of this bullet) ·
+  `npm run boot:check` (spawns `tauri dev` and
   asserts the two `[nputer]` startup lines; NOT part of `npm test` —
   it opens a real window). Beside a live app, give it a scratch port:
   `NPUTER_BOOT_PORT=14521 npm run boot:check` (T-046 — see PORT RULE;
   1420 is refused, not borrowed). Exit 0 booted · 1 the boot failed,
   with the child's last output quoted · 2 the port is busy · 3 the
-  override was refused. THE TOKEN LINT'S EXIT 1 IS TWO ANSWERS IN ONE
-  CODE, and that is the legend as the gate behaves TODAY (T-058,
-  measured on Node v22.22.0): a VIOLATION exits 1, and so does a gate
-  that could not READ the tree — CONTROL derives its corpus from
-  `git ls-files`, so with git off PATH the lint prints `lint-tokens:
-  cannot derive tracked CONTROL corpus` and exits 1, and a broken TOKEN
-  walk now rethrows where the old lint called `process.exit(2)`, which
-  Node also exits 1 for. The two other gates that legend their codes in
-  this section — `index --check` and `boot:check` — each RESERVE a
-  separate code for "could not run", so CI's FIRST step is the one that
-  no longer can. READ THE MESSAGE, NOT THE CODE: the two failures look
-  nothing alike on stdout, and a clean run names both corpora and their
-  counts. T-080 restores the distinction; this legend gains its second
-  row when it lands, and until then a red here is not yet a claim about
-  the tree.
+  override was refused. THE TOKEN LINT HAS THREE CODES, AND THIS IS THE
+  SECOND ROW T-078 PROMISED — written at T-080's merge, by the
+  integrator whose merge is what made the promise come due, because
+  T-080's own approved diff does not reach this file. **0** the gate ran
+  and found nothing, naming both corpora and their counts. **1** the
+  gate RAN and FOUND something: a hit in the tree, or a selftest
+  failure, which is a hit against the gate's own evidence. **3** the
+  gate COULD NOT RUN, so the run is not a claim about the tree at all —
+  every throw out of `token-scan.mjs` lands here and the wrapper prints
+  `lint-tokens: GATE COULD NOT RUN` followed by a line saying so in as
+  many words. **2** is deliberately UNUSED, reserved for `usage` — the
+  meaning `index --check` gives it — so adding flag validation later
+  renumbers nothing a checkpoint has quoted; 3 is that gate's number for
+  THIS meaning, which is the only reason to prefer it over 2. The
+  AUTHORITY is the frozen `EXIT` object in
+  tools/e2e/scripts/token-scan.mjs, which owns the codes beside the gate
+  that produces them, and the wrapper IMPORTS it rather than re-typing
+  the numbers.
+  WHAT THIS ROW REPLACED, because an older checkpoint quotes it: until
+  T-080 the two answers SHARED code 1 (T-058, measured on Node
+  v22.22.0). CONTROL derives its corpus from `git ls-files`, so with git
+  off PATH the lint printed `lint-tokens: cannot derive tracked CONTROL
+  corpus` and exited 1 — the code a real violation already used, in the
+  step CI runs FIRST against a bare checkout, while the two neighbouring
+  gates that legend their codes in this section each already RESERVED
+  one for it. THE CATCH IS TOTAL AND IS NEVER A RESCUE: exit 3 still
+  FAILS the step, and `process.exit` inside the scanner is not
+  interceptable by the wrapper, so a genuine hit cannot be relabelled as
+  a gate that did not run. ONE HOLE REMAINS, NAMED RATHER THAN PAPERED
+  OVER (T-080-s4): a parse error in the gate's own two files means Node
+  never links them, so the wrapper's `try` never runs and the process
+  exits 1, not 3. READ THE MESSAGE, NOT THE CODE is still the advice —
+  the three outcomes look nothing alike on stdout.
 - One-time dev-tool setup, outside the repo and never a repo dep:
   `npx playwright install chromium` from tools/e2e/ (browsers cache in
   ~/Library/Caches/ms-playwright, ~/.cache/ms-playwright on Linux —

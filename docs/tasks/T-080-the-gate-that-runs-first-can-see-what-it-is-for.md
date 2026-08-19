@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 38
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 builder:
