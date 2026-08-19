@@ -1073,3 +1073,87 @@ CONTROL **502** (499 + the three new suggestion files), exit 0; parity
 spec **14 passed**, exit 0.
 
 `status: verifying` left for the integrator.
+
+### 2026-08-19 — RE-VERIFICATION after the rejection (claude-opus-5 @T-078-reverify, review: same-model)
+
+Verified `5b5e1c7` in worktree `nputer-T-078`, fresh session, second
+verifier. **Range derived here, not inherited**: `git merge-base HEAD main`
+= `e4a5ae7`; `git rev-list --count 041e8ec..HEAD` = **4** commits
+(`1f0f7ae`, `3a5e8ef`, `0770049`, `5b5e1c7`), diff **5 files, +519/-10**;
+`git rev-list --count e4a5ae7..HEAD` = **14**, whole-branch diff **12
+files, +1632/-36**. Staged set read first and EMPTY; zero untracked files.
+
+**THE REJECTED ENTRY IS UNTOUCHED, PROVED BY HASH.** `## Verdicts` to EOF
+at `041e8ec` and at `HEAD` are both 378 lines / 21785 bytes, sha256
+`e47e0cbc47acb2fd99616121944dc00898e7ed74491c49b7fc34ab7f626335e3`
+at both, `cmp` exit 0. Nothing in the predecessor's rejection was
+softened, reworded or re-scoped.
+
+#### (a) `38 removed` → `46` — CONFIRMED, re-derived by set difference
+
+    git ls-tree -r --name-only 7c6c5aa -- docs/tasks | wc -l  ->  143
+    git ls-tree -r --name-only e4a5ae7 -- docs/tasks | wc -l  ->  110
+    comm -23  ->  46 removed    comm -13  ->  13 added    comm -12  ->  97 common
+    46 + 97 = 143      13 + 97 = 110      143 - 46 + 13 = 110
+
+Both trees close. Rename-detection independent, as claimed. Cross-checks
+all reproduce: `git diff --no-renames --name-status 7c6c5aa e4a5ae7 --
+docs/tasks` is **A=13 D=46 M=9**; whole-repo **A=13 D=46 M=10**, the extra
+`M` being `docs/STATE.md`, which cannot move a file count, so "nothing
+outside docs/tasks" holds. The wrong range `9b15f7d..e4a5ae7` is
+**A=13 D=38 M=6** — so `38/13` is confirmed as the count over the later
+range. **The eight-file gap is enumerated, not asserted**: `comm -23` of
+the two deletion lists returns eight paths, and `cmp` against
+`git diff --name-status 9b15f7d^ 9b15f7d`'s eight `D` lines exits **0** —
+byte-identical (T-028-s5, T-029-s1/s6/s7, T-051-s6, T-060-s3/s4/s5). The
+landed sentence carries the re-deriving command and the closing
+arithmetic. **HOLDS.**
+
+#### (b) the deviation — I RULE FOR THE EXECUTOR, and here is why
+
+The mechanism verified first-hand, `git grep -c "POISON DRILL"` from the
+repo ROOT at every ref on the branch:
+
+    c4208c6 4   7f677df 4   22b31f1 4   afeedf8 4   33ba1c8 4
+    9931fed 4   d92afc7 4   e4a5ae7 4
+    1e96599 5   5ffe89c 5   041e8ec 5   1f0f7ae 5
+    3a5e8ef 7   0770049 7   5b5e1c7 7   <- HEAD
+
+**The transition is exactly where the executor says it is, and the cause
+is enumerable.** `1e96599` adds exactly two files: `T-078-s4` (0 hits) and
+`T-078-s5` (1 hit). So the count became five because the finding whose
+entire content is "three should be four" quotes the search string.
+`3a5e8ef` adds s7 (1), s8 (1), s9 (0) — five to seven. **Four is now
+wrong by three**, and would have been wrong by two the day it was
+dispatched.
+
+The shape sentence that landed instead is literally true at HEAD, checked
+against the live search: from the ROOT the seven hits are exactly
+`docs/CONVENTIONS.md` (this file), five under `docs/tasks`, and one test
+under `app/test`; run from `app/`, the search returns exactly
+`test/startup-recovery.test.ts` and none of the others.
+
+**The ruling.** The dispatch asked for an integer and the executor wrote
+none. That is a deviation, and it is the right one. The verdict's own
+`three -> four` was true at `22b31f1` and false before the fix could be
+dispatched — falsified by the verifier's own act of filing the finding.
+Writing `four` would have put a figure that is false at its own ref
+inside the bullet whose thesis is that positional figures drift, in a
+file whose purpose under this card is to describe the machine that
+EXISTS. T-078-s5 names this arm as its own preferred one. The four-to-five
+drift is kept as the bullet's worked example, both halves ref-attributed,
+so the bullet now teaches the lesson instead of asserting it. And the
+shape survived the test the numeral failed: three more files were added
+after it was written and it is still exactly true.
+
+Recorded against myself: `four at e4a5ae7` — pinned and permanently true —
+is also defensible, is one edit away, and the executor offered it in
+writing rather than burying the deviation. An architect reading criteria
+strictly may prefer it. I do not, because a pinned historical count in a
+bullet about a search a reader is meant to RUN informs nothing.
+
+One quiet defect fixed with it, confirmed: at `041e8ec` this file's own
+teaching sentence wrote `POISON` / `DRILL` across a line break, so
+`git grep "POISON DRILL"` returned **1** hit in this file — the drill
+bullet — and never the sentence teaching the search. At HEAD it returns
+**3** (lines 175, 304, 435). Findable.
