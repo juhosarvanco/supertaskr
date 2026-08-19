@@ -588,15 +588,23 @@ nobody had yet asked about.
   call. The runner ignores `rate_limit_event` entirely — surfacing it
   is a candidate card, and it is the one line in the stream that is
   about the user rather than the turn.
-- **`claude login` IS NOT A COMMAND, and the app ships it.** Verified
-  against CLI 2.1.226: the command surface is `claude auth login` /
-  `claude auth logout` / `claude auth status`. A bare `login` is parsed
-  as the PROMPT, so a user following the app's own recovery advice
-  starts a session that sends the word "login" to a model they cannot
-  reach. Filed as **T-083's sibling T-082**, which deliberately leaves
-  open whether `fake_agent.rs:176`'s message is a faithful
-  transcription of the CLI's own stderr — if it is, it stays verbatim
-  and only the app's advice changes.
+- **`claude login` was not a command and the app shipped it — CLOSED at
+  T-082's merge `7a37b37`.** The app now prints `claude auth login`,
+  checked against 2.1.226's own `--help` surface (`claude --help`,
+  `claude auth --help`, `claude auth login --help`, all exit 0, none
+  spawning a turn). The grammar is `claude [options] [command]
+  [prompt]`, so a bare `login` was parsed as the PROMPT.
+  **The fixture question was settled on provenance, not consistency:
+  `fake_agent.rs:176`'s message is COMPOSED, not transcribed**, proved
+  four ways — it predates the smoke it would have transcribed by 18
+  minutes (`74a0274` vs `1cb08ba`), the other three `eprintln!` in that
+  file are unambiguously the fixture's own, and **the real CLI writes
+  zero bytes to stderr on auth failure** (`1cb08ba` records
+  `stderrTail: ""`); its actual words ride the `result` line and name no
+  command at all. Left verbatim and marked composed in place.
+  **The class was swept, not just the instance** (T-082 criterion 5):
+  three passes over `app/src` found no second executable command
+  rendered anywhere, with seven near-misses each given a verdict.
 - **THE DISPATCH STAMP LAPSED, AND THE LAPSE IS THE ARCHITECT'S.**
   `status: building` was stamped on main at dispatch for this
   project's first four days — 25 explicit `Dispatch T-NNN` commits,
