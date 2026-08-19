@@ -635,3 +635,117 @@ Restored; sha256 `5598c3eb…` matches `git show HEAD:.github/workflows/ci.yml`.
     REDS naming all three keys, silent in exactly one case. I reproduced
     that measurement independently before reading their wording.
     **HOLDS.**
+
+#### TWO FIGURES THAT DO NOT REPRODUCE — the rejection
+
+Both are in text this branch ADDS to `docs/CONVENTIONS.md`. Neither
+breaks a lane; both are the exact defect class the card exists to
+remove, which is why they are a verdict and not a suggestion.
+
+**(a) `38 removed` is measured from the wrong ref — it should be 46.**
+The four-walks bullet says: *"the widely-quoted **529** is the count at
+T-058's merge `7c6c5aa`, 33 tracked docs/tasks files ago (38 removed, 13
+added, nothing outside docs/tasks)"*.
+
+    git ls-tree -r --name-only 7c6c5aa -- docs/tasks | wc -l   ->  143
+    git ls-tree -r --name-only e4a5ae7 -- docs/tasks | wc -l   ->  110
+    git diff --no-renames --name-status 7c6c5aa e4a5ae7        ->  A=13 D=46 M=10
+    143 - 46 + 13 = 110   (the tree)
+    143 - 38 + 13 = 118   (the doc's arithmetic — off by 8)
+
+`33` and `13 added` are right; `38 removed` is not. **38/13 is the count
+over `9b15f7d..e4a5ae7`** (`A=13 D=38`), not over `7c6c5aa..e4a5ae7`.
+The missing 8 are precisely the eight discharged suggestion files that
+`9b15f7d` itself removed — the same eight the very next sentence
+correctly invokes to explain STATE's 529/521 error. **The bullet whose
+thesis is "DERIVE THE COUNT AT YOUR OWN REF" made the identical
+off-by-one-commit mistake it is warning about, against the identical
+commit.** "nothing outside docs/tasks" does hold: every A and D in that
+range is under `docs/tasks/` (the one R is a move into
+`docs/tasks/rejected/`); only `docs/STATE.md` is modified, which does
+not change a count. Fix: `38` → `46`. Filed as **T-078-s4**.
+
+**(b) `three files from the root` is four.** The new citation bullet
+says: *"(measured: `git grep -c "POISON DRILL"` finds three files from
+the root and one from app/)"*. Measured from the repo ROOT at
+`22b31f1`: **four** files — `app/test/startup-recovery.test.ts`,
+`docs/CONVENTIONS.md`, `docs/tasks/T-054-…` (5 hits) and
+`docs/tasks/T-078-…` (3 hits). From `app/`: one. It was **four at
+`e4a5ae7` too**, and four at `c4208c6`, so this never reproduced at any
+point on the branch — it is not drift. The bullet's POINT survives
+intact (root sees more than a subdirectory; 4 vs 1 makes it as well as 3
+vs 1) and the rule above it is right; only the figure is wrong, in the
+bullet about citing accurately. Fix: `three` → `four`, or drop the
+count and keep "four files from the root, one from app/". Filed as
+**T-078-s5**.
+
+#### THE FOUR CLAIMS THAT DID NOT REPRODUCE — all four confirmed
+
+Re-derived independently, with the instrument calibrated at refs where
+the answer is known from outside it (the live lint prints 496 at
+`e4a5ae7`; STATE's own table gives 529 at `7c6c5aa`):
+
+| ref | CONTROL | independent check |
+|---|---|---|
+| `7c6c5aa` | **529** | STATE's table, `| 7c6c5aa merge | 547 | 529 |` |
+| `9b15f7d` | **521** | `9b15f7d^` = 529 and the commit deletes exactly 8 files |
+| `cb36c29` | **498** | — |
+| `e4a5ae7` | **496** | matches the shipped `lint:tokens` |
+| `22b31f1` | **499** | 496 + the three new suggestion files; live run agrees |
+
+1. **CONTROL is 496 at `e4a5ae7`, not 529.** Confirmed. The dispatch
+   brief's 529 is `7c6c5aa`'s figure. TOKEN 118 reproduces exactly.
+2. **STATE attributes 529 to `9b15f7d`, where the tree is 521.**
+   Confirmed — `docs/STATE.md` line 500 says "**CONTROL is 529, TOKEN is
+   118** at `9b15f7d`", and `git diff --name-status 9b15f7d^ 9b15f7d`
+   is 8 D + 3 M. STATE's table one section up is correct. T-078-s2 is
+   accurate, including all four rows of its own table.
+3. **The constant-parametrisation rule existed nowhere.** Confirmed by
+   `git grep` at `e4a5ae7` over `docs/CONVENTIONS.md` and `method/`:
+   zero for `parametris|parametriz`, zero for `T-063`. The criterion's
+   "beside" rested on a false premise and the executor made it true. The
+   right call, and T-078-s1's generalisation (sweep done-card notes for
+   lessons that live only there) is the correct shape of the ask.
+4. **STATE does not carry "which walk sees this file" as an open
+   question** at `e4a5ae7`. Confirmed — its Open questions section
+   carries six, and that is not one of them. Nothing there needed
+   striking, so touching no STATE was right. Two of STATE's six ARE
+   answered by this branch (the token-lint legend and the poison-shape
+   ordinals), and STATE already anticipates that: its fourth-triage
+   section says both are T-078 criteria and are "left in place rather
+   than edited out, since this section is append-only". No gap.
+
+#### THE TWO RULINGS I WAS ASKED FOR
+
+**`docs/tasks/T-054-…` edited outside the literal fence — ALLOWED, keep
+both halves.** `method/tasks/TASK-FORMAT.md:18` defines `touches:` as
+"expected blast radius; orchestrator never parallelizes tasks with
+overlapping touches", and §"Parallelism guardrails" repeats that its
+whole function is scheduling. It is not a permission list. Three tests,
+all passed: (i) a criterion the card carries — "AND T-054'S NOTES SHALL
+BE CORRECTED WITH IT" — is architect-authored authority naming that
+exact file; (ii) the scheduling purpose was not defeated: the three live
+siblings declare `app-agent` (T-069), `app-shell` (T-073) and
+`lib-parser` (T-076), and none of their branches touches any T-054 path
+(`git diff --name-only main...HEAD` in each: 0 hits); (iii) the
+precedent is real and was merged — T-058 (`touches: [tools/e2e]`)
+rewrote `docs/tasks/T-034-map-tasks-lens.md` in place at `7c6c5aa`,
+replacing a false paragraph with a measured five-row table. T-078's
+version is stricter than that precedent, since it carries a dated
+attribution the precedent did not. The improvement worth having is on
+the CARD, not the diff: `touches:` should have named the file, or the
+format should say a card's criteria widen its own fence.
+
+**`method/` untouched — CORRECT, not a gap.** `touches:` declares blast
+radius, never obligation, so listing `method/` reserved it and obliged
+nothing. Every one of the eleven criteria names `docs/CONVENTIONS.md` or
+a bullet in it; none names a `method/` file. And the executor's reason
+is verified sound: `app/src-tauri/src/agent/kit.rs:451` reads the LIVE
+`docs/CONVENTIONS.md` off disk on every `cargo test` and asserts it
+contains `currently v{METHOD_SNAPSHOT_VERSION}`, with
+`METHOD_SNAPSHOT_VERSION` a Rust `const` at `kit.rs:35` — so a `method/`
+format bump is a three-file commit whose third file is Rust and could
+not have been done under this fence. I confirmed the coupling is intact:
+`currently v0.1.5` is present at `docs/CONVENTIONS.md:162` and **zero
+added or removed lines in this branch's diff carry that needle**.
+T-078-s3 states this accurately.
