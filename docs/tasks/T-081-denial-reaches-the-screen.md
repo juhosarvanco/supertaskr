@@ -449,6 +449,389 @@ two" sentence needs its scope.
   easiest to weaken by accident. If you poison them, poison the
   TRANSPORT (batch the denials at the `result` line), not the fixture.
 
+### SECOND EXECUTOR, AFTER THE REJECTION — what this pass added
+
+Appended, not substituted: everything above is the first executor's and
+stands. Built by `claude-opus-5` `@T-081-fix`, continuing on
+`task/T-081-denial-relay` from the verdict commit **`ba31a10`**. Three
+commits: **`6251d37`** the fixture and the pin, **`7171d7c`** an un-red
+of the app suite that was not mine to cause, and this one.
+
+**UNDERSTANDING, CONFIRMED BEFORE ANYTHING WAS TOUCHED.** The runner's
+join is RIGHT and stays byte-unmoved; the rejection is one missing body.
+Criterion 4 names `tool_use_id` as the join key and no stream in the
+suite could distinguish it from `tool_name`, so moving both join sites
+together left all 351 bodies green. The fix is fixture-sized: add the one
+shape where the two answers differ — the same tool refused twice with
+only one of the two refusals announced in band — and one body asserting
+both ids reach the screen.
+
+### THE NEW FIXTURE, AND WHY IT DISCRIMINATES WHERE ITS NEIGHBOURS CANNOT
+
+`denied-same-tool-one-announced` in `fake_agent.rs`, and
+`a_second_refusal_of_the_same_tool_is_not_swallowed_by_the_first` in
+`tests/agent_runner.rs`. The stream is one in-band
+`permission_denied` (`Bash` / `toolu_announced`), an `emit_tool_use`
+marker, then a `result` with `is_error: false`,
+`terminal_reason: "completed"` listing **`Bash` / `toolu_announced` AND
+`Bash` / `toolu_never_announced`**.
+
+**THE TWO EXISTING FIXTURES MISS IT BY CONSTRUCTION, AND IT IS THE SAME
+BLIND SPOT TWICE.** `denied-then-completed` announces BOTH denials in
+band, so a name join filters both and the count is still two.
+`denied-live-and-silent` gives its two ids DIFFERENT names (`Bash`,
+`WebFetch`), so a name join separates them exactly as cleanly as an id
+join. A property is only pinned by a stream in which the right answer and
+the wrong one DIFFER, and neither of those is one.
+
+**THIS IS `T-081-s2` REPRODUCED IN A NEW COSTUME, AND THE PATTERN IS THE
+LESSON RATHER THAN THE LINE.** `s2` reported that the old
+`["Bash", "WebFetch"]` guess made a NAME look like it could identify a
+denial. The fixtures written to replace that guess reintroduced the same
+blind spot from the other side — one by announcing everything, one by
+using two names — and the finding that named the hazard did not stop its
+own card from re-opening it. **A finding that identifies a confusion does
+not immunise the next artefact against it**; only a stream where the two
+readings disagree does. The general form, and it is worth carrying:
+**when a card reports that X was mistaken for Y, the pin that closes it
+must be a case where X and Y give DIFFERENT answers — not a case where
+the confusion happens to be harmless.**
+
+**THE DISCRIMINATING SHAPE IS THE OBSERVED TURN'S OWN, re-derived here
+rather than quoted.** `docs/research/captures/real-planner-turn-2026-08-19.jsonl`
+was parsed line by line in Python — **27 lines on disk, 27 whole JSON
+objects, no line skipped and nothing grepped**, since the file is written
+with spaces after its colons and a compact-JSON grep finds nothing:
+
+    line 17  system/permission_denied  tool_name="Bash"  tool_use_id="toolu_01FAHQKCKFrBLrmVtRiuLT9L"
+             decision_reason_type="subcommandResults"  decision_reason ABSENT
+             error ABSENT  error_status ABSENT
+    line 19  system/permission_denied  tool_name="Bash"  tool_use_id="toolu_0173K9Q72m797nLBonDtrc3R"
+             decision_reason_type="other"  decision_reason PRESENT
+             error ABSENT  error_status ABSENT
+    line 27  result  is_error=false  terminal_reason="completed"
+             permission_denials names=["Bash","Bash"]
+             ids=["toolu_01FAHQKCKFrBLrmVtRiuLT9L","toolu_0173K9Q72m797nLBonDtrc3R"]
+
+**Two identical names, two distinct ids.** So the name cannot identify a
+denial on the one turn anybody has actually seen, and the missing in-band
+line is the only constructed half. That half is named in the fixture's
+comment the way `tool-denied`'s halves are: 2.1.226 announces every
+denial it makes, so a partial announcement cannot be captured from it —
+but a lost or malformed line, and the runner's own `MAX_DENIALS` cap on
+LIVE emits (which deliberately leaves the late channel to report the
+rest), both produce exactly this shape against a CLI that refuses one
+tool repeatedly. **The fixture therefore earns its place on merit and not
+only as a mutant-killer.**
+
+**THE FAILURE DIRECTION IS SILENCE**, which is the defect the whole card
+exists to fix. The ids are self-describing rather than the capture's real
+ones precisely so the assertion message names WHICH channel was lost;
+`tool_use_id` is opaque to the runner and its bytes carry no behaviour.
+
+### THE POISON DRILL — five rounds, all three limbs, and the inverse question answered
+
+Run against the committed implementation, so `git show HEAD:<path>` is
+the restoration authority. **Every mutation is ONE-SIDED** — the producer
+(`agent/runner.rs`), never a literal the assertion shares with it. **Every
+mutated TEXT was read back with `git diff -U1/-U2` and printed in full
+before any suite ran**, never a substitution count: the Python pass
+asserted its own occurrence count was 1 at each site AND the diff was
+read, because a substitution that reports success while landing one of
+two is the failure this repo has already seen. Every restoration is proved
+by sha256 against `git show HEAD:app/src-tauri/src/agent/runner.rs`
+(**`10c7bca22290862b4224cd10d9564513603914e9614909d33d0baaa2109852bb`**)
+AND an empty `git diff -- <path>` — **five for five**.
+
+The suite figures below come from `cargo test --no-fail-fast`, stated as
+such: bare `cargo test` stops after the first failing TARGET and reports
+only the binaries that ran (M1 bare reads `191 passed / 1 failed / 1
+ignored`, exit 101), which cannot answer "which bodies red". The headline
+GREEN figures elsewhere on this card are from the bare invocation.
+
+| # | mutation (producer side, one-sided) | exit | bodies RED |
+|---|---|---|---|
+| **M1** | **both join sites `tool_use_id` -> `tool_name`** — the verifier's exact mutant | **101** | **`a_second_refusal_of_the_same_tool_is_not_swallowed_by_the_first` — AND NOTHING ELSE.** 351 / 1 / 3 |
+| M2 | the join deleted, `.filter(\|_d\| true)` (over-report) | 101 | recovery pin + mixed pin + **mine**. 349 / 3 / 3 |
+| M3 | the late emit deleted, `.iter().take(0)` (silence) | 101 | result-only pin + mixed pin + **mine**. 349 / 3 / 3 |
+| M7 | all-or-nothing partition, `.filter(\|_d\| announced_denials.is_empty())` | 101 | mixed pin + **mine**. 350 / 2 / 3 |
+| M10 | the late emit takes the FIRST result entry's name: `denials.first().and_then(\|d\| d.tool_name.clone())` | 101 | **mixed pin ONLY.** 351 / 1 / 3 |
+
+**M1 IS THE ROUND THAT WAS OWED, AND IT IS A SOLE KILL.** Text read back
+before the suite ran, both sites in one diff:
+
+    @@ -1939,3 +1939,3 @@         @@ -2032,3 +2032,3 @@
+    -  if let Some(id) = &tool_use_id {    -  .filter(|d| match &d.tool_use_id {
+    +  if let Some(id) = &tool_name {      +  .filter(|d| match &d.tool_name {
+
+and the red is the silence, in the runner's own words:
+
+    assertion `left == right` failed: both refusals of the SAME tool reach the
+    screen - the join is on `tool_use_id`, and a join on `tool_name` reports
+    only the announced one and drops the other into silence
+      left: [Some("toolu_announced")]
+     right: [Some("toolu_announced"), Some("toolu_never_announced")]
+
+That reproduces the verifier's scratch `vfy-same-name-split` exactly,
+including the exit code, from a fixture that is now committed.
+
+### THE INVERSE QUESTION, ASKED IN BOTH DIRECTIONS
+
+**Does the new body merely duplicate an existing one?** No — **M1 is a
+mutant it alone kills**, and it is the survivor the rejection was about.
+
+**Does the new body make an existing one redundant?** This is the
+question the brief asked me not to disturb, and **one of the verdict's
+statements moves — measured, and reported rather than absorbed.**
+
+The verdict established that criterion 4's two bodies are independent by
+finding **M7**, the all-or-nothing partition, and recording it as killed
+by `one_denial_on_each_channel_is_reported_once_each` *"and by nothing
+else"*. **That is no longer true, and it could not have stayed true**: my
+fixture's whole premise is a non-empty `announced_denials` at the
+`result` line, so any fixture with the discriminating shape necessarily
+reds under M7. M7 now kills two bodies.
+
+So M7 no longer demonstrates the mixed-channel body's independence, and I
+derived a replacement rather than leaving the claim resting on a mutant
+that has stopped separating them. **M10** — the late emit reading its
+tool name off the FIRST result entry instead of its own, a plausible
+wrong-binding slip — **is killed by
+`one_denial_on_each_channel_is_reported_once_each` and by nothing else**,
+including my new body. The property is the one only a DIFFERENT-names
+fixture can hold: that a denial which reached only the cumulative record
+carries ITS OWN tool name. Both entries in my stream are `Bash`, so mine
+is structurally blind to it, exactly as the mixed one is blind to M1.
+
+**The two bodies are complements, and the matrix shows it.** Mine alone
+kills M1; the mixed one alone kills M10; M2, M3 and M7 they share.
+**Poison shape six: still NOT present, on a different mutant than the
+verdict used.**
+
+### CRITERION 7 CITES A PIN THAT DOES NOT EXIST, AND THE RECORD SHOULD SAY WHICH BODY CARRIES THE GUARANTEE
+
+Confirmed at this tip, not taken on trust.
+`git grep "fn an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail" -- .`
+over all tracked paths **exits 1 — no match**. The string occurs in
+exactly three files, all prose: `docs/tasks/T-025-agent-runner.md`,
+this card (twice: the criterion and the verdict), and `T-081-s8`.
+
+**A CRITERION THAT CITES A NON-EXISTENT PIN CANNOT BE DISCHARGED AS
+WRITTEN**, and the mechanical route does not fail — it lies:
+
+    cargo test --test agent_runner an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail
+      test result: ok. 0 passed; 0 failed; 0 ignored; 73 filtered out    EXIT 0
+
+Exit **0** and the word `ok`, for a pin that does not exist. That is the
+same non-answer class as an empty exit code, and it is why the citation
+matters rather than being a typo.
+
+**THE BODY THAT ACTUALLY CARRIES THE GUARANTEE IS
+`an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code`**,
+`app/src-tauri/tests/agent_runner.rs:1347`. Run by name at this tip:
+
+    cargo test --test agent_runner an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code
+      test an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code ... ok
+      test result: ok. 1 passed; 0 failed; 0 ignored; 72 filtered out    EXIT 0
+
+**Criterion 7 is satisfied against that body**, and the second half is
+unmoved: `git grep -c -E '^\s*#\[ignore' -- .` from the repo ROOT over all
+tracked paths returns **three files with one attribute each** — `perf.rs`,
+`self_graph.rs`, `agent_runner.rs`; total three. (Pathspec stated per
+`T-082-s2`.) `T-081-s8` already owns the correction and needs no
+duplicate; **it lives on THIS BRANCH, added by the verdict commit
+`fede266`, and NOT on main** — the dispatch brief says otherwise and is
+wrong, checked with `git cat-file -e main:<path>`, which fails.
+
+### THE APP SUITE WAS RED WHEN I INHERITED IT, AND THE RED WAS THE VERDICT'S
+
+**A gate that reds is news.** `npm test` from `app/` at the inherited tip
+`ba31a10` fails: **830 passed / 1 failed, 41 of 42 files**, exit 1.
+
+    FAIL test/architecture-dogfood.test.ts >
+      both input layers parse clean (the smoke-test discipline)
+    "field": "status",
+    "file": "docs/tasks/T-081-s7-…-mis-specified.md",
+    "message": "… field 'status' must be one of suggested | planned | building |
+      verifying | rejected | merging | done | parked, got \"closed\""
+
+`T-081-s7` shipped with `status: closed`, which is outside the parser's
+vocabulary and is the only occurrence in the tree
+(`git grep "^status: closed" -- .`). **`docs/` is an INPUT to the app
+suite** — T-024's dogfood body parses the live tree — so a docs-only
+verdict commit turned a code gate red.
+
+**ATTRIBUTED RATHER THAN ASSUMED.** Re-measured with this lane's two Rust
+files checked back out to `ba31a10`, making the tree byte-identical to the
+inherited tip: the same body fails, exit 1. The red predates
+`6251d37`.
+
+Fixed at `7171d7c` by setting `s7`'s status to **`suggested`** — the value
+every other finding on this card carries, one of the two the parser
+accepts for a minimal finding file (`task.ts:157`), and the value T-083's
+integrator ruled a DISCHARGED finding should keep, because disposition
+belongs to triage. The body is untouched and a note records the edit.
+`npm test` is **831 / 831, 42 files, exit 0** after it.
+
+The MECHANISM is filed as **`T-081-s9`**: a verdict measures the suites at
+the commit under review and then COMMITS — the verdict body and its own
+findings — and nothing between the verdict and the merge re-measures. The
+same mechanism staled the verdict's `CONTROL 554` (it is 556 once
+`fede266` lands two finding files). **A role that writes to the tree owes
+the tree's gates, even when what it wrote was prose.**
+
+### EVERY GATE, EVERY RANGE WITH ITS DOT COUNT, EVERY EXIT CODE
+
+Main moved again during this lane: the brief names **`3b4326d`**; it is
+**`f4f77d7`** (*"STATE: T-081 rejected, and two rulings that went against
+the architect"*), one commit further on. Merge-base is unmoved at
+`d61e986`.
+
+**THE FORECAST IS THE COMMAND THE RANGE RULE PRESCRIBES FOR AN EXECUTOR**
+(CONVENTIONS, merged at `5c60e5a` — the rule is on main and NOT on this
+branch, which was cut before it), exit read from `$?` and not swallowed by
+the command substitution:
+
+    TREE=$(git merge-tree --write-tree f4f77d7 7171d7c)   exit 0
+      tree 0dabf0f1065bf33622004783c67e0cc023edcf66
+    git diff --name-only f4f77d7 "$TREE"                  -> 20 paths
+
+    git diff --name-only d61e986..7171d7c  (TWO dots, branch-only)   -> 20   cmp vs the forecast: exit 0
+    git diff --name-only f4f77d7...7171d7c (THREE dots, FORBIDDEN)   -> 20
+    git diff --name-only f4f77d7..7171d7c  (TWO dots,  FORBIDDEN)    -> 31   main's eleven commits, in reverse
+
+The forecast and the branch-only range are byte-identical here under
+`cmp`, and no merge conflict is forecast. The forbidden pre-merge two-dot
+form adds **eleven** paths this lane never touched — the same lie T-083
+measured at 6 -> 24 on its own lane.
+
+Suffix census of the 20: **10 md, 4 rs, 5 ts, 1 tsx**.
+
+| gate | trigger | matches | verdict |
+|---|---|---|---|
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **6** | **FIRES** — `BOOT_CHECK_EXIT=0` |
+| GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` outside `docs/` | **6** | **FIRES** — `index --check` exit **1**, REAL red |
+| T-024 three-fixture rule | `docs/architecture/components/` | **0** | does not fire |
+
+Both counts are unmoved from the first executor's, and necessarily so:
+my three commits touch two `.rs` files already inside BOOT GATE's six,
+and ten `.md` files that match neither trigger.
+
+    NPUTER_BOOT_PORT=19791 npm run boot:check   (from tools/e2e)   BOOT_CHECK_EXIT=0
+      [nputer] project folder: /Users/ujju/Projects/nputer-T-081
+      [nputer] window "main" created
+
+Port 19791 was bind-probed free on **all four** of `127.0.0.1`,
+`0.0.0.0`, `::1` and `::` before use and `lsof`-empty afterwards.
+**1420 was never bound, connected to or signalled** — the only question
+asked of it was `lsof -nP -iTCP:1420 -sTCP:LISTEN`, which every time named
+node **82549** on `[::1]:1420`. The human's app is **97844** (ppid 82364,
+started Wed Aug 19 21:53:30), and all four of 82342 / 82364 / 82549 /
+97844 are the same pids with the same start times before and after every
+suite, the drill and the boot check. The brief's pids are correct.
+
+**`index --check` EXIT 1 IS A REAL RED AND NO `graph.json` IS COMMITTED.**
+Run from `app/src-tauri` with `--root ../..`, so not the false red the
+`--root` note warns about, and the real-red shape is present — both
+counts and a file diff:
+
+    committed:   575619 bytes · 118 files · 995 symbols · 1518 edges
+    fresh index: 576235 bytes · 118 files · 996 symbols · 1520 edges
+    files +0 -0 ~6 · edges +2 -0
+      + GenesisEvent -> GenesisDenial (type_ref)
+      + GenesisTurn  -> GenesisDenial (type_ref)
+
+Byte-identical to what the first executor recorded, which is expected: I
+added no TypeScript. The regen belongs at the CHECKPOINT and
+`docs/architecture/graph.json` is outside this fence.
+
+| suite | at `ba31a10` (inherited) | at this tip | exit |
+|---|---|---|---|
+| bare `cargo test` (not `--all-targets`) | **351 / 0 / 3** | **352 / 0 / 3** | `CARGO_TEST_EXIT=0` |
+| app `npm test` | **830 / 831 — FAILED**, exit 1 | **831 / 831**, 42 files | `APP_TEST_EXIT=0` |
+| parser `npx vitest run` | — | **263 / 263**, 12 files | `PARSER_EXIT=0` |
+
+Both cargo figures summed programmatically over **fifteen** `test result:`
+lines from the BARE invocation. The +1 is the one new body. `3 ignored` is
+unmoved. `npm run build` precedes the app suite (`APP_BUILD_EXIT=0`), as
+this card already records is required.
+
+Also green, each `$?` read unpiped: `npx tsc --noEmit` from app/
+(`TSC_APP_EXIT=0`), `npx tsc -p tsconfig.test.json` (`TSC_TEST_EXIT=0`),
+`npx tsc --noEmit` from lib/parser (`PARSER_TSC_EXIT=0`),
+`npm run typecheck` from tools/e2e (`E2E_TYPECHECK_EXIT=0`), and the token
+lint both ways: `LINT_SELFTEST_EXIT=0` (49 TOKEN + 4 CONTROL samples, 71
+walk-policy, 8 evidence-floor) and `LINT_TOKENS_EXIT=0` — **TOKEN 119 /
+CONTROL 557**. CONTROL closes arithmetically: 548 at `d61e986`, + 6 at
+`94476b4` (s1…s6) = 554, + 2 at `fede266` (s7, s8) = **556**, + 1 at
+`7171d7c` (s9) = **557**. TOKEN is unmoved because `docs/` is outside the
+TOKEN roots and my two `.rs` files are under `app/src-tauri`, not
+`app/src`.
+
+The E2E lane itself was not run: `tools/e2e` is a 0-path diff and nothing
+reachable from a browser bundle moved. Its typecheck and both token-lint
+arms were run instead.
+
+### SECURITY SWEEP, re-derived at this tip
+
+- `app/src-tauri/src/acl_pin.rs` is a **0-file diff** across
+  `d61e986..7171d7c` (TWO dots), sha256
+  `8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`.
+- **92 grants**, three independent ways over the symbol-anchored body:
+  92 quote-bearing lines, 92 quoted strings, 92 UNIQUE quoted strings.
+  Declaration line **54**, closing `];` line **147**, span **94**,
+  entries **55–146 = 92**, comment-or-blank inside the body **ZERO**.
+  Confirms the first executor and the verifier; STATE's "128 / 36" is
+  `T-082-s1`'s and no duplicate is filed.
+- `ENV_ALLOWLIST` **BYTE-IDENTICAL** at `d61e986` and this tip (`cmp`
+  exit 0): **423 bytes, 16 entries, 16 unique**. Anchored on
+  `pub const ENV_ALLOWLIST: &[&str] = &[` specifically — a looser anchor
+  also matches `ENV_ALLOWLIST_LINUX` and a test, which is how a first
+  attempt here produced nonsense before it was re-derived.
+- **IPC surface unmoved at 13**: 13 `#[tauri::command]` attributes in
+  `lib.rs` and 13 names inside `generate_handler!`, read verbatim. (A
+  trailing-comma-based count returns 12 and is wrong — the last name has
+  none.) This lane adds no command, no grant and no capability.
+- The branch diff contains **no** `Cargo.toml`, `Cargo.lock`,
+  `package.json`, `package-lock.json`, `tauri.conf.json` or capability
+  file. No new input path: the fixture is a canned stream and the pin
+  reads events.
+
+### WHAT RAN, AND WHAT DID NOT
+
+Everything ran in this worktree, never in the main checkout, with
+`CARGO_TARGET_DIR` pointed at scratch and `lib/parser/node_modules`,
+`lib/parser/dist` and `tools/e2e/node_modules` symlinked read-only from
+the main checkout for the duration and deleted afterwards
+(`app/node_modules` was already such a symlink). **No `npm ci`, no
+`npm install`, no `pkill`, and no real model call of any kind** — the
+capture is a file and it was parsed, not grepped. `git status --porcelain`
+is empty at the branch tip.
+
+### FINDINGS
+
+`T-081-s9` a verdict measures the suites at the commit under review, then
+commits more, and nothing re-measures — T-081's own verdict left the
+branch tip failing `npm test`.
+
+### FOR THE VERIFIER
+
+- The runner is **byte-unmoved**: `git diff d61e986..HEAD --
+  app/src-tauri/src/agent/runner.rs` is unchanged from the first
+  executor's, and every mutation in the drill above was restored and
+  proved by sha256. The fix is a fixture and a pin.
+- **One verdict statement moved and it is stated above rather than
+  absorbed**: M7 no longer kills the mixed-channel body alone. M10 is the
+  replacement that does, and it was validated in both directions.
+- `T-081-s8` is on THIS BRANCH, not on main.
+- `index --check` exits **1** by design; no regenerated graph is
+  committed.
+- The one edit outside the drill-and-fixture story is `T-081-s7`'s
+  `status:` field, which was breaking the app suite. If you disagree with
+  `suggested` as the value, the alternative the parser accepts for a
+  minimal finding file is `parked`; `done` is not available without the
+  full task field set.
+
 ## Verdicts
 
 ### 2026-08-19 — REJECTED (claude-opus-5 @T-081-verify, review: same-model)
