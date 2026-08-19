@@ -381,11 +381,20 @@ from this merge's Rust fence — verified against their worktrees rather
 than assumed from the slugs:
 
 - **T-078 — the conventions describe the machine that exists**
-  (`task/T-078-conventions`, worktree `../nputer-T-078`, at `e4a5ae7`).
+  (`task/T-078-conventions`, worktree `../nputer-T-078`).
   `touches: [docs/CONVENTIONS.md, method/]`. Documentation only; it
-  collides with no code lane at all.
+  collides with no code lane at all. It moved while this merge was being
+  integrated — still at the base `e4a5ae7` when this session started,
+  **`c4208c6`** when it finished.
 - **T-076 — the id layer is total** (`task/T-076-id-layer`, worktree
-  `../nputer-T-076`, at `a931bfb`). `touches: [lib-parser]`.
+  `../nputer-T-076`). `touches: [lib-parser]`. Also moved during the
+  integration: `a931bfb` at the start, **`c3560a8`** at the end.
+
+Both tips are recorded because they are moving targets, not because they
+were consulted: neither worktree was read into, written to or built from,
+and neither lane's fence intersects this merge's five Rust files. The
+disjointness was checked against this merge's own file list rather than
+inferred from the `touches:` slugs.
 
 Neither was touched by this integration. **`app-agent` and `app-shell`
 are released by this merge**, so T-069 and T-070 (both `blocked_by: []`,
