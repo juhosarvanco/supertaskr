@@ -9,10 +9,10 @@ status: done
 blocked_by: []
 touches: [tools/e2e]
 builder: codex/gpt-5.6
-verifier:
+verifier: claude-opus-5
 built_by: codex/gpt-5.6 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: independent
 ---
 
 Absorbs: T-034-s5, T-034-s6, T-045-s2 (triage 2026-08-17). The
@@ -211,3 +211,147 @@ No suggestion was filed: the checkpoint-count difference was fully explained
 by the already-recorded task-triage wave and required no policy change.
 
 ## Verdicts
+
+### 2026-08-19 — APPROVED (claude-opus-5 @fresh, review: independent)
+
+Verified `2444af0` against its parent `71fa546` in worktree
+`nputer-T-058`. Cross-model: built by `codex/gpt-5.6`, verified by
+`claude-opus-5`, no builder reasoning consulted beyond the committed
+card. Diff is the stated 6 files, +1130/-704.
+
+**All nine acceptance criteria hold**, each re-derived rather than read:
+
+1. **P5 on RAW bytes.** `scanControlSource` takes a `Buffer` and throws
+   a `TypeError` on anything else. Tab, LF and CR pass; 00-08, 0B, 0C,
+   0E-1F and 7F red. Report idiom matches the other four:
+   `path:byte N: U+XXXX  [P5: literal control character …]`.
+2. **Runtime-constructed positive sample, zero allowlist.** The positive
+   is `Buffer.from([0x00])` concatenated after a non-ASCII prefix; the
+   negative is `Buffer.from([0x09, 0x0a, 0x0d])`. No forbidden byte is
+   typed anywhere in the branch — all four changed source files report
+   `charset=utf-8` or `us-ascii` under `file --mime`. No per-hit mute
+   mechanism exists; `allowlist` appears only in prose arguing against
+   one.
+3. **Two explicit corpora.** TOKEN is byte-for-byte the old policy:
+   118 files, and **0 from docs/, method/, lib/parser/ or
+   app/src-tauri/**. P1-P4 run on masked text, P5 on raw Buffers, and
+   `corpus()` hard-errors on any third name.
+4. **The architect's amended scope is what the code implements.**
+   539 tracked, minus exactly the **18** binary assets (16 icons,
+   2 woff2) = **521**. Zero tracked files sit under a skip directory,
+   so `SKIP_DIRS` removes nothing today and the whole exclusion is the
+   suffix deny list. CONTROL carries 248 markdown files, all 44 Rust
+   sources, both lockfiles, dotfiles and extensionless fixtures. Stated
+   scope and real scope agree.
+5. **Byte offsets, separate counts.** Counts re-derived independently
+   from `git ls-tree` under the shipped policy: `ae8833c` TOKEN 117 /
+   CONTROL 520 (matching the card's baseline), `71fa546` 117 / 519,
+   tip **118 / 521** — TOKEN +1 for the spec, CONTROL +2 for the
+   scanner and the spec, nothing removed. The live run agrees exactly.
+6. **Standing check preserved.** `map-tasks-lens-dom.test.tsx` is
+   untouched by the diff and hashes to
+   `b6995559033ac5c6f693527a430b0a6c98fb87f9980cfeadd13f6d0e459740b1`,
+   the value the notes claim.
+7. **Import no longer runs the lint — proven side by side.** With one
+   P3 violation planted live in `tools/e2e/preflight.ts`: importing
+   `token-scan.mjs` exits **0** emitting only the caller's marker;
+   running the wrapper on the same tree exits **1** naming the hit; and
+   restoring the wrapper to its `71fa546` content and importing THAT
+   exits **1** with 30 reports — the T-045-s2 defect, reproduced and
+   then shown closed. Both files restored, `shasum -a 256 -c` OK.
+8. **No argv guard, and its absence is load-bearing.** `git grep` finds
+   `import.meta.url === process.argv[1]` only in comments and card
+   prose, never in executable code. Invoked through a symlink in
+   another directory — the exact path mismatch T-046 argued about — the
+   wrapper still lints and exits 1. A guard would have exited 0 there.
+9. **T-034's record now names the right mechanism.** The false sentence
+   is replaced by s6's five-row table, and the s5 summary line is
+   corrected too. Each row reproduced here on a scratch file carrying
+   one U+0000: `file --mime` says `charset=binary`; `/usr/bin/grep`
+   prints "Binary file … matches" at exit **0** with the line text
+   suppressed; the same grep with `-I` prints nothing at exit **1**;
+   Node's `readFileSync(…, "utf8")` finds **both** needles; and
+   `ci.yml` contains zero greps (`git grep` over it exits 1). ripgrep
+   is not installed on this machine, so its row is corroborated by the
+   `-I` behaviour rather than measured directly.
+
+**Independent plant drill.** Ten targets chosen by the verifier, all
+different from the executor's seven, covering every CONTROL root plus
+markdown, YAML, TOML, JSON lockfile, Rust, TS and TSX. One byte built
+from a character code (U+000B), after a 22-byte prefix containing two
+multi-byte characters where the JavaScript string is 19 units. Result:
+exit 1, `(0 TOKEN, 10 CONTROL)`, **10 of 10 lines matched at the exact
+predicted byte offset** — so the offset is bytes, not a UTF-16 index.
+All ten restored and verified by SHA-256, not by `git status`.
+`.github/workflows/ci.yml` came back at byte 9139 against my 22-byte
+prefix; the file is 9117 bytes and the executor's prefix is 24, giving
+their reported 9141 — their evidence is arithmetically sound.
+
+**Suites, first-hand, exits unpiped.** parser **234/234** exit 0 ·
+app **822/822** exit 0 · e2e lane **88/88** exit 0 on scratch port
+14558, one worker, no skips, all five new tests listed by name ·
+`tsc --noEmit` from tools/e2e exit 0 · `lint:tokens` clean · selftest
+49 + 2 samples and 37 walk-policy checks green. The app suite needs
+`npm run build` first — without `app/dist` twelve shipped-bundle
+assertions fail loudly by design; after building, 822/822. The
+executor's notes do not claim an app-suite run.
+
+**Poison discipline, implementation side.** The notes report five
+expectation-side reds; this pass mutated the IMPLEMENTATION instead,
+which is the stronger direction. Nine mutations, each alone and
+reverted to SHA-256 `998d98a2…e90f0e`: P5 permitting U+0000 → 2 reds;
+byte offset becoming a UTF-16 index → 2 reds; CONTROL dropping docs/ →
+2 reds plus a named selftest red; the scanner running the lint on
+import → the side-effect test red; the scanner exiting on import (the
+literal T-045-s2 hazard) → collection dies; the wrapper ceasing to lint
+→ the plant test red; TOKEN dropping app/test → named selftest red;
+lowercase codepoints → 2 reds. **Every new test is non-vacuous and each
+pins a distinct criterion.** No matcher in the new spec is loosened:
+`toBe` on exit codes and exact stdout, `toEqual` on full arrays,
+`toHaveLength(7)`, `toContain` needles carrying computed offsets.
+
+**Four suggestions filed** (`T-058-s1` through `s4`, committed on this
+branch), none of them a defect against the build. s1: only 13 of the
+CONTROL corpus's 18 suffix classes are pinned, so one line in
+`CONTROL_BINARY_EXTENSIONS` can silently drop 109 of 521 files —
+including all 44 `.rs` and all 46 `.tsx`, the two classes the architect
+named. s2: a **fifth poison shape** — the selftest's assertion-set
+cardinality is unpinned, so deleting an assertion deletes its own
+failure; four measured deletions, including all four P1-P4 positive
+samples at once, leave every gate green. s3: the superseded s5
+mechanism survives verbatim at `map-tasks-lens-dom.test.tsx:579-581`,
+inside the file criterion six ordered preserved — outside this card's
+fence, but it is the first thing the next session reads. s4: the only
+P5 positive sample is U+0000, whose hex has no letters, so CI's FIRST
+gate cannot see a codepoint-format regression that the lane catches.
+
+**Three notes for the integrator, none charged against the build.**
+(a) The card is stamped `status: done` at size M, where
+`method/roles/executor.md:19` allows `done` only for size S. `Verdicts`
+was empty and `verified_by`/`review` blank, so it reads as a stamping
+slip and not a claim that verification had happened; nothing was
+merged, so main and the board were unaffected. (b) **BOOT GATE does not
+fire.** Computed both ways: `71fa546..2444af0` is the 6 stated files
+and `adb32c3..2444af0` adds only `docs/STATE.md` and three cards; the
+trigger set `app/src/**`, `app/src-tauri/**`, `app/package.json`,
+`app/src-tauri/Cargo.toml` matches **zero** paths in either
+derivation. `boot:check` was therefore not run, and no `BOOT_EXIT`
+exists to record. (c) The notes say graph regeneration does not
+trigger; the CONVENTIONS trigger is `*.ts/*.tsx/*.js/*.jsx` outside
+docs/, and `tools/e2e/tests/token-scan.spec.ts` matches it. The
+conclusion is still right — `cargo run -p nputer-index -- index --check
+--root ../..` reports **CURRENT** (117 files, 982 symbols, 1502 edges,
+exit 0) because the indexer does not scope tools/e2e — but it is right
+by a different route than the note gives.
+
+Also verified: ADR-011 holds (the two new files import only node
+builtins, `@playwright/test`, `../preflight` and the sibling scanner);
+no new dependency; `tools/e2e/package.json` unchanged. Two behaviour
+changes worth knowing: CONTROL's authority is now `git ls-files`, so
+CI's first step needs git on PATH — with git removed it fails loudly
+and named (`cannot derive tracked CONTROL corpus`) at exit 1, the right
+direction; and a broken TOKEN walk now throws (exit 1) where the old
+lint used `process.exit(2)`, so a gate that could not run and a tree
+that is dirty share an exit code.
+
+Status left for the integrator.
