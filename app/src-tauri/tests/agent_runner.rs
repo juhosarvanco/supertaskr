@@ -433,14 +433,16 @@ fn cancel_kills_the_whole_process_group_including_a_grandchild() {
     let h = harness("groupkill", Options { scenario: "hang", ..Options::default() });
     assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
 
-    let child_pid: i32 = wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt"))
-        .trim()
-        .parse()
-        .expect("child pid");
-    let grandchild_pid: i32 = wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
-        .trim()
-        .parse()
-        .expect("grandchild pid");
+    let mut guard = GroupGuard::new();
+    let child_pid: i32 = guard.watch(
+        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid"),
+    );
+    let grandchild_pid: i32 = guard.watch(
+        wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
+            .trim()
+            .parse()
+            .expect("grandchild pid"),
+    );
     assert_ne!(child_pid, grandchild_pid);
     assert!(nputer_lib::agent::runner::pid_alive(child_pid), "the child is running");
     assert!(nputer_lib::agent::runner::pid_alive(grandchild_pid), "the grandchild is running");
@@ -489,14 +491,16 @@ fn cancel_kills_the_whole_process_group_including_a_grandchild() {
 fn the_exit_hook_reaps_the_turns_process_group() {
     let h = harness("exitreap", Options { scenario: "hang", ..Options::default() });
     agent::start_genesis(&h.watch, &h.agent);
-    let child_pid: i32 = wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt"))
-        .trim()
-        .parse()
-        .expect("child pid");
-    let grandchild_pid: i32 = wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
-        .trim()
-        .parse()
-        .expect("grandchild pid");
+    let mut guard = GroupGuard::new();
+    let child_pid: i32 = guard.watch(
+        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid"),
+    );
+    let grandchild_pid: i32 = guard.watch(
+        wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
+            .trim()
+            .parse()
+            .expect("grandchild pid"),
+    );
 
     h.agent.reap_for_exit();
 
@@ -640,6 +644,59 @@ impl OwnedGroup {
 impl Drop for OwnedGroup {
     fn drop(&mut self) {
         self.cleanup();
+    }
+}
+
+/// **THE RAII HALF FOR THE HARNESS-DRIVEN BODIES**, and it exists because
+/// a poison drill proved it necessary rather than because it looked
+/// prudent.
+///
+/// `OwnedGroup` above owns the processes it spawned itself. These bodies
+/// get theirs from the RUNNER, so until now their only cleanup was the
+/// production code under test doing its job — and when poison drill P3
+/// removed the group limb from the early release,
+/// `the_exit_reap_pays_the_full_grace_…` failed exactly as intended and
+/// LEAKED its SIGTERM-immune grandchild, which then sat on this machine
+/// with ppid 1 until it was found by hand. **A test that reds must not
+/// need the code it is testing to be correct in order to clean up after
+/// itself.**
+///
+/// Register a pid the moment it is known; `Drop` SIGKILLs exactly the
+/// registered pids and exactly their process groups, on the unwinding
+/// path too. No `pkill`, no name match.
+#[cfg(unix)]
+struct GroupGuard(Vec<i32>);
+
+#[cfg(unix)]
+impl GroupGuard {
+    fn new() -> Self {
+        Self(Vec::new())
+    }
+    /// Record `pid` and hand it straight back, so registration reads as
+    /// part of learning the pid rather than as a separate step somebody
+    /// can forget.
+    fn watch(&mut self, pid: i32) -> i32 {
+        self.0.push(pid);
+        pid
+    }
+}
+
+// NOTE: this guard deliberately has no `assert_all_gone` twin to
+// `OwnedGroup::finish`. Every body that registers a pid here already
+// asserts THAT pid gone, by name, with a message that says what its
+// survival would mean; a second uniform assertion over the same pids
+// would be a duplicate that reds only when the specific one already did.
+// The guard's job is the CLEANUP, which is the half no assertion covers.
+
+#[cfg(unix)]
+impl Drop for GroupGuard {
+    fn drop(&mut self) {
+        for pid in &self.0 {
+            unsafe {
+                sig::killpg(*pid, sig::SIGKILL);
+                sig::kill(*pid, sig::SIGKILL);
+            }
+        }
     }
 }
 
@@ -880,12 +937,16 @@ fn a_cancel_releases_the_turn_latch_well_inside_the_grace() {
         },
     );
     assert!(matches!(agent::start_genesis(&h.watch, &h.agent), StartOutcome::Started { .. }));
-    let child_pid: i32 =
-        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid");
-    let grandchild_pid: i32 = wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
-        .trim()
-        .parse()
-        .expect("grandchild pid");
+    let mut guard = GroupGuard::new();
+    let child_pid: i32 = guard.watch(
+        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid"),
+    );
+    let grandchild_pid: i32 = guard.watch(
+        wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
+            .trim()
+            .parse()
+            .expect("grandchild pid"),
+    );
 
     let at_cancel = Instant::now();
     assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Cancelled { turn: 1 }));
@@ -927,12 +988,16 @@ fn the_exit_reap_returns_well_inside_the_grace_for_a_cooperative_group() {
         },
     );
     agent::start_genesis(&h.watch, &h.agent);
-    let child_pid: i32 =
-        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid");
-    let grandchild_pid: i32 = wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
-        .trim()
-        .parse()
-        .expect("grandchild pid");
+    let mut guard = GroupGuard::new();
+    let child_pid: i32 = guard.watch(
+        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid"),
+    );
+    let grandchild_pid: i32 = guard.watch(
+        wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
+            .trim()
+            .parse()
+            .expect("grandchild pid"),
+    );
 
     let at_exit = Instant::now();
     h.agent.reap_for_exit();
@@ -966,12 +1031,16 @@ fn the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists() {
         },
     );
     agent::start_genesis(&h.watch, &h.agent);
-    let child_pid: i32 =
-        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid");
-    let grandchild_pid: i32 = wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
-        .trim()
-        .parse()
-        .expect("grandchild pid");
+    let mut guard = GroupGuard::new();
+    let child_pid: i32 = guard.watch(
+        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid"),
+    );
+    let grandchild_pid: i32 = guard.watch(
+        wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
+            .trim()
+            .parse()
+            .expect("grandchild pid"),
+    );
     assert!(nputer_lib::agent::runner::pid_alive(grandchild_pid), "the resistant one is running");
 
     let at_exit = Instant::now();
@@ -1011,8 +1080,10 @@ fn a_turn_whose_child_ignores_sigterm_pays_the_full_grace_and_leaves_no_zombie()
         },
     );
     agent::start_genesis(&h.watch, &h.agent);
-    let child_pid: i32 =
-        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid");
+    let mut guard = GroupGuard::new();
+    let child_pid: i32 = guard.watch(
+        wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("child pid"),
+    );
     // The disposition is installed after exec; wait for the fact itself.
     wait_for_file(&h.dump.join("ready.txt"));
     assert!(nputer_lib::agent::runner::pid_alive(child_pid), "the resistant child is running");
@@ -1063,6 +1134,7 @@ fn a_turn_whose_child_ignores_sigterm_pays_the_full_grace_and_leaves_no_zombie()
 fn concurrent_cancel_exit_and_drop_observations_stay_idempotent() {
     let child_pid: i32;
     let grandchild_pid: i32;
+    let mut guard = GroupGuard::new();
     {
         let h = harness(
             "idempotent",
@@ -1073,12 +1145,15 @@ fn concurrent_cancel_exit_and_drop_observations_stay_idempotent() {
             },
         );
         agent::start_genesis(&h.watch, &h.agent);
-        child_pid =
-            wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("pid");
-        grandchild_pid = wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
-            .trim()
-            .parse()
-            .expect("grandchild pid");
+        child_pid = guard.watch(
+            wait_for_file(&turn_dump(&h.dump, 1).join("pid.txt")).trim().parse().expect("pid"),
+        );
+        grandchild_pid = guard.watch(
+            wait_for_file(&turn_dump(&h.dump, 1).join("grandchild-pid.txt"))
+                .trim()
+                .parse()
+                .expect("grandchild pid"),
+        );
 
         // Three observations of one turn, overlapping on purpose.
         agent::cancel(&h.agent);
