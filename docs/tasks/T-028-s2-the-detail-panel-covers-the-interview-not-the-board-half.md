@@ -1,6 +1,7 @@
 ---
+id: T-028-s2
 title: On the genesis board, clicking a card opens the detail panel over the whole window
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-028
 ---
 
@@ -44,3 +45,25 @@ outside it.
 should a card's detail open as a drawer over everything, as a panel
 inside the right half, or not at all while an interview is running? The
 third is defensible — the board is the reward, not yet the workspace.
+
+---
+
+**PARKED 2026-08-19 (fourth triage).** Nothing breaks: the panel is
+read-only, pointerdown dismissal still works, and the conversation
+underneath is untouched. It is composition, not correctness, and the
+right shape is gated on a judgment nobody has made — half-fixing it from
+outside the board's fence would put a second spelling of the detail
+panel in the tree, which is worse than leaving it.
+
+Verified still live at `7282308`: `TaskDetailPanel` is
+`fixed inset-y-0 right-0 z-10 … w-150`, and `MapPanel` carries the same
+shape at `w-120`, so a fix in the board's lane has a second consumer
+waiting.
+
+**UNPARK WHEN** @human answers the composition question: on a split
+screen, should a card's detail open as a drawer over everything, as a
+panel inside the right half, or not at all while an interview is
+running? The third is defensible — the board is the reward, not yet the
+workspace. **OR WHEN** T-022 or T-031 next adds a prop to `Board`, since
+the honest fix is one `onOpen`/`renderPanel` seam done ONCE in the
+board's lane rather than three times from outside it.

@@ -1,7 +1,7 @@
 ---
 id: T-062-s1
 title: T-051's minHeight floor was never verified for the one screen it was raised for — and the genesis screen wants 1082px against a 700px floor
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-062
 ---
 
@@ -78,3 +78,30 @@ are present in the lane today and they read identically.
 The general form: **when a shell changes what CAN move, every probe that
 inferred size from what DID move silently changes meaning.** Nothing in
 the repo flags that; it was found by measuring a suite that stayed green.
+
+---
+
+**PARKED 2026-08-19 (fourth triage) — @human, HELD, NOT RANKED FOR
+DISPATCH.**
+
+**The PROBE half is closed and the class lesson with it.** Verified at
+`7282308`: `naturalHeight` now sums the column's own height plus what
+each engaged scroll region is holding back, its docstring records that
+it reproduces the old numbers exactly on all four screens the old probe
+could measure and answers **1082** for the genesis screen it could not
+see, and the reason is stated where the next reader meets it. The
+general form this file names — when a shell changes what CAN move, every
+probe that inferred size from what DID move silently changes meaning —
+is recorded in that docstring.
+
+**What is NOT closed is the QUESTION.** The genesis screen wants 1082px
+to show everything without scrolling and the declared floor is 700. That
+is legal under one scroll model and may well be right. It is also
+exactly the number T-051 would have wanted when it chose 700, and it did
+not have it.
+
+**UNPARK WHEN** @human has the app open at 1024x700 and rules whether
+the interview at the declared minimum is a screen a user can work in or
+one that is permanently scrolling. That needs the app on a real display,
+not a measurement. Answer it together with **T-051-s3**, which is the
+same question from the other side.
