@@ -78,6 +78,7 @@ export function parseTaskDirectory(dir: string): TaskDirectoryResult {
       if (first !== undefined) {
         issues.push({
           kind: 'duplicate-id',
+          space: 'task',
           id: task.id,
           files: [first, file],
           message: `duplicate task id '${task.id}' in ${first} and ${file}`,

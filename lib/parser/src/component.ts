@@ -1,5 +1,11 @@
 import { extractFrontmatter } from './frontmatter.js';
-import { aliasedIdSlots } from './id-slot.js';
+import {
+  aliasedIdSlots,
+  compareDigitRuns,
+  idSlotIndex,
+  nearMissClause,
+  slotNearMisses,
+} from './id-slot.js';
 import {
   COMPONENT_STATUSES,
   type ComponentParseResult,
@@ -47,12 +53,32 @@ function isNonEmptyString(value: unknown): value is string {
  * falling back to string order for non-conforming ids so the comparator
  * is total. Exported so derivation (T-011) reuses the SAME order instead
  * of forking it.
+ *
+ * TOTAL FOR EVERY INPUT SINCE T-076, which it was not: the digits used to
+ * be weighed as `Number(na) - Number(nb)`, and `C-\d{2,}` bounds a digit
+ * run below and never above. Past ~309 digits both sides are `Infinity`,
+ * the difference is `NaN`, and `NaN !== 0` is TRUE — so it returned NaN
+ * without ever reaching the string fallback, `Array.prototype.sort` was
+ * entitled to do anything with the pair (V8 kept arrival order), and
+ * "first match by component id order wins" — the rule the whole
+ * `ambiguous-mapping` message rests on — quietly became "first by
+ * whatever order the files arrived in". Between 2^53 and that range the
+ * subtraction was merely wrong rather than fatal: `Number` fused
+ * neighbouring runs of different LENGTHS, so `C-99999999999999999` was
+ * ordered after `C-100000000000000000` by the string fallback.
+ *
+ * `compareDigitRuns` weighs the digits as TEXT instead, sharing the
+ * canonicalization `idSlotKey` uses — so the comparator and the slot key
+ * agree about what the digits of an id are by construction rather than
+ * by coincidence, and inside one aliased slot the digit comparison is 0
+ * and this falls through to string order exactly as `aliasedIdSlots`
+ * documents.
  */
 export function compareComponentIds(a: string, b: string): number {
   const na = ID_PATTERN.exec(a)?.[1];
   const nb = ID_PATTERN.exec(b)?.[1];
   if (na !== undefined && nb !== undefined) {
-    const diff = Number(na) - Number(nb);
+    const diff = compareDigitRuns(na, nb);
     if (diff !== 0) return diff;
   }
   return a < b ? -1 : a > b ? 1 : 0;
@@ -311,6 +337,7 @@ export function parseComponentSet(files: readonly ComponentSourceFile[]): Compon
     if (first !== undefined) {
       issues.push({
         kind: 'duplicate-id',
+        space: 'component',
         id: component.id,
         files: [first, path],
         message: `duplicate component id '${component.id}' in ${first} and ${path}`,
@@ -352,15 +379,26 @@ export function parseComponentSet(files: readonly ComponentSourceFile[]): Compon
   // -- dangling depends_on: an id no parsed record declares. The edge
   //    stays in dependsOn (criterion: preserved for placeholder
   //    rendering, never dropped).
+  //
+  //    A NEAR MISS is named when one is available (T-076): `depends_on:
+  //    [C-01]` beside a declared `C-001` reported only "no component
+  //    declares it" — true, and it sends a reader hunting a component
+  //    that does not exist instead of at the padding one file away. The
+  //    slot index is built once rather than per reference, so a hostile
+  //    registry cannot make this quadratic; it is a Map (ADR-009, via
+  //    idSlotIndex).
+  const declaredSlots = idSlotIndex(byId.keys());
   for (const component of components) {
     for (const dep of component.dependsOn) {
       if (!byId.has(dep)) {
+        const nearMiss = slotNearMisses(dep, declaredSlots);
         issues.push({
           kind: 'dangling-reference',
           file: component.file,
           field: 'depends_on',
           id: dep,
-          message: `${component.file}: depends_on names '${dep}' but no component declares it (edge preserved for placeholder rendering)`,
+          ...(nearMiss.length > 0 ? { nearMiss } : {}),
+          message: `${component.file}: depends_on names '${dep}' but no component declares it${nearMissClause(nearMiss)} (edge preserved for placeholder rendering)`,
         });
       }
     }

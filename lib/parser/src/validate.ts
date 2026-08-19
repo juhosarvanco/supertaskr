@@ -1,4 +1,4 @@
-import { aliasedIdSlots } from './id-slot.js';
+import { aliasedIdSlots, idSlotIndex, nearMissClause, slotNearMisses } from './id-slot.js';
 import type { ParseIssue, ProjectParseResult, TaskRecord } from './types.js';
 
 /**
@@ -16,6 +16,12 @@ import type { ParseIssue, ProjectParseResult, TaskRecord } from './types.js';
  *    (`dangling-reference`, field `blocked_by`). Files under
  *    docs/tasks/rejected/ are not model inputs (T-016), so a reference
  *    into rejected territory dangles — deliberately.
+ *    Since T-076 a dangling reference whose numeric SLOT is occupied by a
+ *    declared id carries that id, in `nearMiss` and in the message: the
+ *    reference and the declaration differ in zero padding and nothing
+ *    else, which is a different thing to tell an author than "it does not
+ *    exist". Same for check 2 against the backbone. It is a HINT on the
+ *    existing kind, never a new kind — the reference genuinely dangles.
  * 2. `feature` → must be a backbone id from the roadmap
  *    (`dangling-reference`, field `feature`). The parsed backbone is the
  *    reference space WHATEVER its size: a well-formed `## Backbone` with
@@ -116,26 +122,43 @@ export function validateProject(
   // the roadmap layer failed AND said so — see check 2 in the module doc.
   const skipFeatureCheck = featureIds.size === 0 && options.roadmapReported === true;
 
+  // Slot indexes over the two DECLARED spaces, built once each rather
+  // than per reference — a 10k-task model with a 10k-long blocked_by list
+  // is a file anyone can write, and this check must not be quadratic in
+  // it. Maps, never object literals (ADR-009, via idSlotIndex): a
+  // `blocked_by: [__proto__]` must not acquire a near miss out of
+  // inherited state any more than it may resolve out of it.
+  const taskSlots = idSlotIndex(taskIds);
+  const featureSlots = idSlotIndex(featureIds);
+
   for (const task of project.tasks) {
     for (const ref of task.blockedBy) {
       if (!taskIds.has(ref)) {
+        // T-076: `blocked_by: [T-01]` in a file that declares `T-001` used
+        // to report only that nothing declares T-01 — true, and it sends
+        // the author hunting a task that does not exist rather than at the
+        // padding one line away.
+        const nearMiss = slotNearMisses(ref, taskSlots);
         issues.push({
           kind: 'dangling-reference',
           file: task.file,
           field: 'blocked_by',
           id: ref,
-          message: `${task.file}: blocked_by names '${ref}' but no task in the model declares it (reference preserved on the record)`,
+          ...(nearMiss.length > 0 ? { nearMiss } : {}),
+          message: `${task.file}: blocked_by names '${ref}' but no task in the model declares it${nearMissClause(nearMiss)} (reference preserved on the record)`,
         });
       }
     }
 
     if (task.feature !== undefined && !skipFeatureCheck && !featureIds.has(task.feature)) {
+      const nearMiss = slotNearMisses(task.feature, featureSlots);
       issues.push({
         kind: 'dangling-reference',
         file: task.file,
         field: 'feature',
         id: task.feature,
-        message: `${task.file}: feature names '${task.feature}' but the roadmap backbone does not declare it (reference preserved on the record)`,
+        ...(nearMiss.length > 0 ? { nearMiss } : {}),
+        message: `${task.file}: feature names '${task.feature}' but the roadmap backbone does not declare it${nearMissClause(nearMiss)} (reference preserved on the record)`,
       });
     }
 

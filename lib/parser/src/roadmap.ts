@@ -48,11 +48,21 @@ export function parseRoadmap(content: string, file: string): RoadmapParseResult 
     const description = split ? text.slice(split.index + split[0].length).trim() : '';
     const firstLine = seen.get(id);
     if (firstLine !== undefined) {
+      // Both declarations live in this ONE file, so `files` is that path
+      // twice (index-aligned by contract) and locates nothing: the LINES
+      // are what a human acts on. Named in the SAME shape the feature
+      // `aliased-id` below uses — `'<id>' (line N)` per declaration —
+      // because the two issues say the same kind of thing about the same
+      // backbone and used to say it in two different shapes (T-076). The
+      // consequence clause is the board's measured behaviour, not a
+      // guess: selectBoard keys columns on the exact string and skips a
+      // repeat, so the second bullet's name and description are dropped.
       issues.push({
         kind: 'duplicate-id',
+        space: 'feature',
         id,
         files: [file, file],
-        message: `${file}: duplicate backbone feature '${id}' (lines ${firstLine} and ${line})`,
+        message: `${file}: duplicate backbone feature id '${id}' (line ${firstLine}), '${id}' (line ${line}) — one backbone slot declared twice; the board keeps the first declaration's column and discards the second's name and description`,
       });
     } else {
       seen.set(id, line);
