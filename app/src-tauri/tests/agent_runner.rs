@@ -889,16 +889,16 @@ fn a_cancel_releases_the_turn_latch_well_inside_the_grace() {
 
     let at_cancel = Instant::now();
     assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Cancelled { turn: 1 }));
-    let cancel_returned = at_cancel.elapsed();
     settle(&h.agent);
     let latch_released = at_cancel.elapsed();
 
-    assert!(
-        cancel_returned < Duration::from_millis(500),
-        "genesis_cancel held the caller for {} ms - it must answer immediately and escalate \
-         in the background",
-        cancel_returned.as_millis()
-    );
+    // NOTE: `genesis_cancel`'s PROMPTNESS is deliberately not asserted
+    // here, and a poison drill is why. Once the poll releases early, a
+    // cancel that escalated on the CALLER's thread would also return in
+    // milliseconds against this cooperative group — so the assertion sat
+    // green under the mutation it was supposed to catch. It lives in
+    // `a_turn_whose_child_ignores_sigterm_…` instead, where a blocking
+    // escalation costs the full grace and the claim can fail.
     assert!(
         latch_released < Duration::from_millis(1000),
         "the turn latch was held {} ms of a 3000 ms grace after a cooperative child died - \
@@ -1019,8 +1019,20 @@ fn a_turn_whose_child_ignores_sigterm_pays_the_full_grace_and_leaves_no_zombie()
 
     let at_cancel = Instant::now();
     assert!(matches!(agent::cancel(&h.agent), CancelOutcome::Cancelled { turn: 1 }));
+    let cancel_returned = at_cancel.elapsed();
     settle(&h.agent);
     let latch_released = at_cancel.elapsed();
+    // THE PROMPTNESS CLAIM LIVES HERE, not on the cooperative body: this
+    // is the only fixture where "answers immediately and escalates in the
+    // background" and "escalates on the caller's thread" have different
+    // observable answers, because only here does the escalation cost the
+    // whole grace.
+    assert!(
+        cancel_returned < Duration::from_millis(300),
+        "genesis_cancel held the caller for {} ms of a 900 ms grace - the SIGTERM is \
+         synchronous but the escalation must not be",
+        cancel_returned.as_millis()
+    );
     assert!(
         latch_released >= Duration::from_millis(900),
         "the latch released after {} ms of a 900 ms grace while the child was still \
@@ -1083,6 +1095,91 @@ fn concurrent_cancel_exit_and_drop_observations_stay_idempotent() {
         !nputer_lib::agent::runner::pid_alive(grandchild_pid),
         "the grandchild survived four observers"
     );
+}
+
+/// **THE PUBLISH THE CANCEL PATH DOES NOT COVER**, and this body exists
+/// because a poison drill stayed GREEN without it.
+///
+/// On the cancel/failure path the grace poll reaps and publishes as it
+/// goes, so deleting `run_turn`'s trailing `handle.mark_reaped()` reds
+/// nothing there. The line is load-bearing on the HAPPY path, where no
+/// grace poll runs at all: a turn that finishes normally is reaped by a
+/// plain `child.wait()`, and an app-exit observer holding a clone of the
+/// handle has no other way to learn it. Without the publish, a quit that
+/// races the end of a successful turn polls for the whole five-second
+/// grace — on the thread that is quitting the app — against a pgid whose
+/// pid the OS may already have handed to somebody else.
+///
+/// The observation is DETERMINISTIC rather than raced: the slot is
+/// written before `started` is emitted, so a sink that sees `Started` is
+/// guaranteed to find the handle there. That is the same ordering
+/// `reap_for_exit` depends on.
+#[test]
+#[cfg(unix)]
+fn a_happy_turn_still_publishes_its_reap_to_whoever_holds_the_handle() {
+    use nputer_lib::agent::adapter::planner_adapter;
+    use nputer_lib::agent::runner::{run_turn, ChildHandle, Emitter, TurnRequest};
+    use std::sync::atomic::AtomicBool;
+    use std::sync::Mutex;
+
+    let h = harness("publish", Options::default());
+    let cfg = RunnerConfig {
+        binary_override: Some(fake_agent_bin()),
+        path_override: Some("/nputer-test-path/bin".into()),
+        extra_env: vec![
+            ("NPUTER_FAKE_SCENARIO".into(), "happy".into()),
+            ("NPUTER_FAKE_DUMP_DIR".into(), h.dump.display().to_string()),
+        ],
+        probe_login_shell: false,
+        ..RunnerConfig::default()
+    };
+    let adapter = planner_adapter();
+    let cli = nputer_lib::agent::runner::resolve_cli(&cfg, adapter).expect("the fake resolves");
+
+    let child_slot: Arc<Mutex<Option<ChildHandle>>> = Arc::new(Mutex::new(None));
+    // The observer: exactly what `reap_for_exit` does — clone the handle
+    // out of the shared slot while the turn is live, and keep it.
+    let observed: Arc<Mutex<Option<ChildHandle>>> = Arc::new(Mutex::new(None));
+    let watching = child_slot.clone();
+    let keep = observed.clone();
+    let emitter = Emitter::new(
+        Arc::new(move |event| {
+            if matches!(event, RunEvent::Started { .. }) {
+                *keep.lock().expect("observed") =
+                    watching.lock().expect("slot").clone();
+            }
+        }),
+        Arc::new(AtomicU64::new(0)),
+    );
+    let cancel = AtomicBool::new(false);
+
+    let out = run_turn(
+        &cfg,
+        adapter,
+        &cli,
+        &TurnRequest {
+            project_dir: h.project.clone(),
+            prompt: "an answer".into(),
+            resume: None,
+            turn: 1,
+        },
+        &emitter,
+        &child_slot,
+        &cancel,
+    );
+    assert!(out.error.is_none(), "the happy turn must succeed: {:?}", out.error);
+
+    let handle = observed.lock().expect("observed").clone().expect(
+        "the handle must be in the slot by the time `started` is emitted - that ordering \
+         is what reap_for_exit reads",
+    );
+    assert!(
+        handle.reaped(),
+        "a turn that ended HAPPILY never published its reap, so an exit observer holding \
+         this handle would poll the full grace for a child that is already gone"
+    );
+    assert!(!nputer_lib::agent::runner::pid_alive(handle.pid), "and it really is gone");
+    assert!(child_slot.lock().expect("slot").is_none(), "the slot is cleared after the turn");
 }
 
 /// PRODUCTION'S GRACE, pinned BY VALUE and on its own.
