@@ -749,3 +749,40 @@ not have been done under this fence. I confirmed the coupling is intact:
 `currently v0.1.5` is present at `docs/CONVENTIONS.md:162` and **zero
 added or removed lines in this branch's diff carry that needle**.
 T-078-s3 states this accurately.
+
+#### SECURITY SWEEP
+
+Nil surface. The diff is six `.md` files under `docs/`: no input path, no
+endpoint, no query, no dependency, no secret or key (`git diff` carries
+no token-shaped literal), no default changed. All six files report
+`charset=utf-8` under `file --mime`; the only non-ASCII the branch adds
+that any machine reads is prose. The one executable behaviour the branch
+can reach — the parity spec's derivation — is unchanged at 19 commands,
+and the two drills I ran against it were restored with sha256 proof.
+
+#### ONE MORE FINDING, NOT A BLOCKER
+
+**The walk table volunteers one live coupling and omits the other.** It
+says "THIS FILE is seen by CONTROL only: the parser never reads it,
+which is why an edit here cannot move the parser suite — but see the CI
+bullet …, because the E2E lane parses it and an edit there can red that
+lane." Both halves are true. But having named ONE non-walk reader, the
+sentence reads as a complete list, and it is not: `kit.rs:448-453` reads
+this file live on every `cargo test`. An editor who trusts the table has
+been warned about the lane that reds on a command bullet and not about
+the Rust test that reds on the method stamp — one-sidedness of exactly
+the kind this card's own new clause is about. One clause fixes it, and
+T-078-s3 arm 1 already proposes the sentence. Filed as **T-078-s6**.
+
+#### VERDICT
+
+**REJECTED**, on (a) and (b) alone. Everything else on this branch is
+verified: eleven criteria hold, both in-region edits leave the
+derivation at 19/four/0/0, no new middle dot exists, the middle-dot and
+CI-step drills both reproduce and both restored byte-exact, all four
+non-reproducing claims are confirmed, both fence rulings go the
+executor's way, the four suites are green at 234 / 14 / 88 / clean, and
+neither gate fires. Re-verification after the fix is two integers and
+one `npx playwright test tests/workflow-parity.spec.ts`.
+
+`status: verifying` left for the integrator.
