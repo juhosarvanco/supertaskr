@@ -236,36 +236,206 @@ fn main() {
         // still classify off its diagnostic. This stream has no
         // diagnostic to fall back on, so moving the status REDS here.
         "auth-error-result-only" => auth_error(&session_id, &model, false, false),
-        // T-029 (T-025-s1): THE TOO-NARROW-ALLOWLIST SHAPE. The adapter
-        // passes exactly six `Bash(...)` patterns, so a planner that
-        // reaches for a seventh is refused by the CLI's own permission
-        // layer and the turn dies with the denial named on the result
-        // line.
+        // T-029 (T-025-s1): THE TOO-NARROW-ALLOWLIST SHAPE — the turn
+        // that DIES of a refusal, which is what `ToolDenied` exists for.
         //
-        // HONESTY NOTE, because it is the difference between a
-        // transcription and a construction: unlike `auth-error` above,
-        // this shape was NOT captured from a live 2.1.226 run — this
-        // machine's login is revoked, so no denial could be provoked. The
-        // FIELDS are the CLI's documented ones (`permission_denials`,
-        // `terminal_reason`); their exact population under a real denial
-        // is unverified. The runner reads them defensively (objects or
-        // bare strings, bounded, control-stripped) for that reason.
+        // **T-081 REPLACED THE HONESTY NOTE THAT USED TO SIT HERE, AND
+        // THE REPLACEMENT IS NARROWER RATHER THAN GONE.** The old note
+        // said the whole shape was constructed, because this machine's
+        // login was revoked and no denial could be provoked. A real
+        // denial has since been captured
+        // (`docs/research/captures/real-planner-turn-2026-08-19.jsonl`,
+        // 2.1.226, 2026-08-19), so this scenario is now HALF transcribed
+        // and half constructed, and the halves are named:
+        //
+        //   TRANSCRIBED, byte for byte off that capture — the two
+        //   in-band `permission_denied` lines emitted by
+        //   `emit_observed_denials()` below, and both `permission_denials`
+        //   entries: the real `tool_use_id`s, the real `tool_input`
+        //   objects, and the real fact that **BOTH DENIALS NAME `Bash`**.
+        //   The guess said `Bash` and `WebFetch`; reality refused the
+        //   same tool twice, which is why `tool_use_id` and not
+        //   `tool_name` is the join key T-081 needs (see `T-081-s2`).
+        //
+        //   STILL CONSTRUCTED, and unverifiable until a fatal denial is
+        //   observed: the ENDING. `is_error: true`,
+        //   `terminal_reason: "refusal"` and exit 1 are what a turn that
+        //   DIED of a refusal is guessed to look like. The observed turn
+        //   did not die — it read `is_error: false`,
+        //   `terminal_reason: "completed"`, exit 0, and it is transcribed
+        //   whole as `denied-then-completed` below. That is the shape
+        //   T-029-s5 asked about and got: the guessed `"refusal"` was
+        //   never seen, and `"completed"` is what a denial-bearing turn
+        //   really reports when the planner routes around it.
         "tool-denied" => {
             emit_init(&session_id, &model);
             emit_delta("I need to remove the scaffold I just wrote");
+            emit_observed_denials(&session_id);
             println!(
                 "{}",
                 serde_json::json!({
                     "type": "result", "subtype": "success", "is_error": true,
                     "terminal_reason": "refusal", "num_turns": 1,
-                    "permission_denials": [
-                        { "tool_name": "Bash", "tool_use_id": "tu_01" },
-                        { "tool_name": "WebFetch", "tool_use_id": "tu_02" }
-                    ],
+                    "permission_denials": observed_denial_entries(),
                     "result": "I was not permitted to run the tools this stage needs."
                 })
             );
             std::process::exit(1);
+        }
+        // T-081: **THE OBSERVED TURN, END TO END** — the whole point of
+        // the capture and the one scenario in this file that transcribes
+        // a turn nobody had to guess at.
+        //
+        // Two `permission_denied` lines announce refusals as they happen;
+        // the planner then decomposes the refused command and carries on
+        // (roughly forty seconds of recovery work in the real run, and a
+        // second delta here to stand for it); the `result` line reports
+        // `is_error: false`, `terminal_reason: "completed"` with BOTH
+        // denials listed cumulatively, and the process exits **0**.
+        //
+        // A DENIAL IS NOT A FAILURE, and this stream is the proof. Any
+        // rule that reads a denial as a cause of death fails this turn,
+        // which is a real turn that really succeeded.
+        //
+        // **THE TOOL USE AFTER THE DENIALS IS LOAD-BEARING, NOT
+        // DECORATION.** It is what makes "surfaced live" assertable, and
+        // it has to be a `tool_use` rather than a delta: deltas are
+        // COALESCED, so one emitted after the denials still flushes at
+        // the end of the relay loop and lands behind a batched denial
+        // too. A `tool_use` becomes an `Activity` event immediately, so
+        // a runner that held its denials back to the `result` line would
+        // put both of them AFTER this marker instead of before it.
+        //
+        // It is also what the real turn did: the planner answered the
+        // refusal by decomposing the command and running the pieces.
+        "denied-then-completed" => {
+            emit_init(&session_id, &model);
+            emit_delta("Let me scaffold the docs tree.");
+            emit_observed_denials(&session_id);
+            emit_tool_use("Bash");
+            emit_delta(" Splitting that into single-verb commands instead.");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": false,
+                    "api_error_status": serde_json::Value::Null,
+                    "terminal_reason": "completed", "stop_reason": "end_turn",
+                    "num_turns": 32,
+                    "permission_denials": observed_denial_entries(),
+                    "result": "Stage 0 done - docs/ scaffolded from templates."
+                })
+            );
+        }
+        // T-081 criterion 4: **THE MIXED TURN, WHERE THE PARTITION
+        // ACTUALLY PARTITIONS.** One denial arrives on BOTH channels —
+        // in band as it happens, then again in the `result` line's
+        // cumulative record — and a second arrives ONLY on the `result`
+        // line, as it would from a CLI build with no in-band channel at
+        // all. A correct join reports each exactly once, which is TWO
+        // events; dropping the join gives three, and dropping the late
+        // emit gives one.
+        //
+        // Constructed, and openly: no observed turn mixes the two,
+        // because 2.1.226 announces every denial in band. That is the
+        // point — the mixed shape is what a runner has to survive when a
+        // line is lost or a CLI is older, and it cannot be captured from
+        // a CLI that never produces it.
+        //
+        // The turn exits 0, so `stderr_tail` never reaches the screen and
+        // T-069's ring relay cannot be what reports the silent one.
+        "denied-live-and-silent" => {
+            emit_init(&session_id, &model);
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "system", "subtype": "permission_denied",
+                    "tool_name": "Bash", "tool_use_id": "toolu_on_both_channels",
+                    "decision_reason_type": "subcommandResults",
+                    "message": "This Bash command contains multiple operations.",
+                    "session_id": session_id
+                })
+            );
+            // The liveness witness, for the reason `denied-then-completed`
+            // records: an `Activity` is emitted the instant it arrives,
+            // where a delta waits for the coalescing window.
+            emit_tool_use("Write");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": false,
+                    "terminal_reason": "completed", "num_turns": 1,
+                    "permission_denials": [
+                        { "tool_name": "Bash", "tool_use_id": "toolu_on_both_channels" },
+                        { "tool_name": "WebFetch", "tool_use_id": "toolu_result_line_only" }
+                    ],
+                    "result": "Here is your first question."
+                })
+            );
+        }
+        // T-081 criteria 2 and 6: THE DENIAL LINE THAT BARELY DESCRIBES
+        // ITSELF. Constructed, deliberately and openly — the CLI has
+        // never been seen to write either of these, and that is exactly
+        // why they are here: the runner must not depend on fields the
+        // capture happens to carry.
+        //
+        // Line one has NO `tool_name`, an EMPTY `message`, and a
+        // `tool_use_id` no `result` entry corroborates. Line two is far
+        // past the module's byte bound and carries nothing else, so the
+        // BOUND is what the pin measures. Line three is short and stuffed
+        // with control bytes, so the STRIPPING is what the pin measures.
+        //
+        // THE TWO ARE SEPARATE LINES BECAUSE THEY MEASURE DIFFERENT
+        // THINGS, and putting them on one line hides both: the bound is
+        // applied to the CLI's raw bytes and the escaping runs AFTER it,
+        // so a control character inside a truncated string makes the
+        // result LONGER than the bound. Measured — 768 bytes in, 774 out
+        // for one newline and one ESC — which is correct behaviour and a
+        // useless assertion.
+        //
+        // The turn then COMPLETES with an EMPTY `permission_denials`
+        // array, so nothing on the terminal line would ever have
+        // mentioned any of them.
+        "denied-partial-fields" => {
+            emit_init(&session_id, &model);
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "system", "subtype": "permission_denied",
+                    "tool_use_id": "toolu_orphan_no_name",
+                    "decision_reason_type": "other",
+                    "message": "",
+                    "session_id": session_id
+                })
+            );
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "system", "subtype": "permission_denied",
+                    "tool_name": "Bash", "tool_use_id": "toolu_orphan_long",
+                    "decision_reason_type": "other",
+                    "message": "Z".repeat(4000),
+                    "session_id": session_id
+                })
+            );
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "system", "subtype": "permission_denied",
+                    "tool_name": "Write", "tool_use_id": "toolu_orphan_loud",
+                    "decision_reason_type": "other",
+                    "message": "refused:\nbecause\u{1b}[31m of a rule",
+                    "session_id": session_id
+                })
+            );
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": false,
+                    "terminal_reason": "completed", "num_turns": 1,
+                    "permission_denials": [],
+                    "result": "I worked around all of those."
+                })
+            );
         }
         // T-029-s6: THE RECOVERED RETRY — the third case the first build
         // did not have a fixture for. `auth-error` above is a turn that
@@ -723,6 +893,80 @@ fn emit_api_retry_401(session_id: &str, attempt: u32) {
             "session_id": session_id
         })
     );
+}
+
+/// T-081: THE TWO IN-BAND DENIAL LINES, TRANSCRIBED.
+///
+/// Verbatim off `docs/research/captures/real-planner-turn-2026-08-19.jsonl`
+/// (claude 2.1.226, 2026-08-19) — lines 17 and 19 of that file, minus
+/// their `uuid`, with `session_id` re-bound to this run's own so the
+/// stream is internally consistent. Nothing else is paraphrased.
+///
+/// **THE TWO LINES DIFFER IN SHAPE AND BOTH MUST CLASSIFY.** The first
+/// carries only `decision_reason_type` (`"subcommandResults"`); the
+/// second carries `decision_reason` as well (`"other"`). Neither carries
+/// `error` or `error_status`, which is precisely why the runner ignored
+/// both until T-081 keyed on `subtype` instead.
+///
+/// ONE EMITTER, TWO SCENARIOS, for the reason `retry_then` and
+/// `auth_error` already give: `tool-denied` and `denied-then-completed`
+/// differ only in how they END, so the transcribed half has to be the
+/// same code or the two transcriptions drift apart.
+///
+/// `the_tool_denied_fixture_is_a_transcription_not_a_construction` in
+/// `tests/agent_runner.rs` reads the capture off disk and compares it to
+/// what this function prints, so an edit here that paraphrases the CLI
+/// reds against the file it claims to be quoting.
+fn emit_observed_denials(session_id: &str) {
+    println!(
+        "{}",
+        serde_json::json!({
+            "type": "system", "subtype": "permission_denied",
+            "tool_name": r#"Bash"#,
+            "tool_use_id": r#"toolu_01FAHQKCKFrBLrmVtRiuLT9L"#,
+            "decision_reason_type": r#"subcommandResults"#,
+            "message": r#"This Bash command contains multiple operations. The following part requires approval: KIT=.nputer/genesis/kit && mkdir -p docs/decisions docs/tasks docs/rooms && cp "$KIT"/docs-templates/*.md docs/ && cp "$KIT"/adapters/CLAUDE.md "$KIT"/adapters/AGENTS.md . && cp "$KIT"/runtime/nputer.yaml .nputer/nputer.yaml && printf '.nputer/\n' && git init -q 2>&1; git status --short; find . -path ./.git -prune -o -type f -print"#,
+            "session_id": session_id
+        })
+    );
+    println!(
+        "{}",
+        serde_json::json!({
+            "type": "system", "subtype": "permission_denied",
+            "tool_name": r#"Bash"#,
+            "tool_use_id": r#"toolu_0173K9Q72m797nLBonDtrc3R"#,
+            "decision_reason_type": r#"other"#,
+            "decision_reason": r#"Glob patterns are not allowed in write operations. Please specify an exact file path."#,
+            "message": r#"Glob patterns are not allowed in write operations. Please specify an exact file path."#,
+            "session_id": session_id
+        })
+    );
+}
+
+/// The `permission_denials` array off the SAME captured turn, entries
+/// whole: `tool_name`, `tool_use_id` and the full `tool_input` the CLI
+/// really wrote. **Both entries name `Bash`** — the constructed fixture
+/// this replaced said `Bash` and `WebFetch`, and that guess is what made
+/// a name look like it could be a join key.
+fn observed_denial_entries() -> serde_json::Value {
+    serde_json::json!([
+        {
+            "tool_name": r#"Bash"#,
+            "tool_use_id": r#"toolu_01FAHQKCKFrBLrmVtRiuLT9L"#,
+            "tool_input": {
+                "command": r#"KIT=.nputer/genesis/kit && mkdir -p docs/decisions docs/tasks docs/rooms && cp "$KIT"/docs-templates/*.md docs/ && cp "$KIT"/adapters/CLAUDE.md "$KIT"/adapters/AGENTS.md . && cp "$KIT"/runtime/nputer.yaml .nputer/nputer.yaml && printf '.nputer/\n' > .gitignore && git init -q 2>&1; git status --short; find . -path ./.git -prune -o -type f -print | sort"#,
+                "description": r#"Scaffold docs tree, adapters, gitignore, git init"#
+            }
+        },
+        {
+            "tool_name": r#"Bash"#,
+            "tool_use_id": r#"toolu_0173K9Q72m797nLBonDtrc3R"#,
+            "tool_input": {
+                "command": r#"mkdir -p docs/decisions docs/tasks docs/rooms && cp .nputer/genesis/kit/docs-templates/*.md docs/ && cp .nputer/genesis/kit/adapters/CLAUDE.md .nputer/genesis/kit/adapters/AGENTS.md . && cp .nputer/genesis/kit/runtime/nputer.yaml .nputer/nputer.yaml"#,
+                "description": r#"Copy templates and adapters into place"#
+            }
+        }
+    ])
 }
 
 fn emit_result(text: &str) {

@@ -1019,6 +1019,42 @@ mod tests {
             json,
             serde_json::json!({ "kind": "exitNonZero", "code": 3, "stderrTail": "boom" })
         );
+        // T-081's live denial event, in the same shape. The camelCase
+        // spelling is the contract `agent-store.ts` mirrors: `toolName`
+        // and `toolUseId` are `null` when the CLI's line did not carry
+        // them, and `message` is a plain empty string rather than null,
+        // because a denial with no explanation still happened.
+        let json = serde_json::to_value(RunEvent::Denied {
+            seq: 7,
+            turn: 1,
+            tool_name: Some("Bash".into()),
+            tool_use_id: Some("toolu_1".into()),
+            message: "the following part requires approval".into(),
+        })
+        .expect("serialize");
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "kind": "denied", "seq": 7, "turn": 1, "toolName": "Bash",
+                "toolUseId": "toolu_1", "message": "the following part requires approval"
+            })
+        );
+        let json = serde_json::to_value(RunEvent::Denied {
+            seq: 8,
+            turn: 1,
+            tool_name: None,
+            tool_use_id: None,
+            message: String::new(),
+        })
+        .expect("serialize");
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "kind": "denied", "seq": 8, "turn": 1,
+                "toolName": serde_json::Value::Null,
+                "toolUseId": serde_json::Value::Null, "message": ""
+            })
+        );
     }
 
     /// Every event carries a strictly increasing seq from one counter, so
