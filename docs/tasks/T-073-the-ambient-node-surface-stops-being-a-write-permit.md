@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5 @fresh
-verifier:
+verifier: claude-opus-5 @fresh
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-028-s6 (fourth triage, 2026-08-19). The suggestion file is
@@ -300,3 +300,104 @@ eats the file from that `/*` onward — the regex avoids that, at the cost
 of being a shape match rather than a parse.
 
 ## Verdicts
+
+### Adversarial verification — `claude-opus-5 @fresh`, in progress
+
+Worktree `nputer-T-073`, branch `task/T-073-write-permit`, tip `7386790`,
+**4** commits from `76cf034` (`git rev-list --count 76cf034..HEAD` = 4),
+working tree clean at start and clean again after every drill below.
+Ten files in `git diff --name-status 76cf034..HEAD`: six under `app/`,
+four under `docs/tasks/`. **Zero bytes under `app/src/**`,
+`app/src-tauri/**`, `lib/**`, `tools/**`** — derived, not accepted.
+Dispatched despite size S because the executor edited `app/package.json`
+outside its own fence and said it could not judge whether the line
+belongs. That ruling is below.
+
+**Every drill was run inline; every restoration is proved by sha256
+against `git show HEAD:<path>`, never by a clean `git status` alone.**
+
+#### Criterion 1 — the writes leave the shared ambient file. MET.
+
+My own four-line probe, different bytes from the executor's
+(sha256 `fa2d69ff0b10d41634166b0a30dc01ff0fe05762bdd4e0ae49ce4ba2f7fb4c63`),
+at `app/src/t073-verify-probe.ts`, importing `mkdirSync`/`writeFileSync`
+from `node:fs`. Against the branch, `npx tsc --noEmit` from `app/`:
+
+```
+src/t073-verify-probe.ts(1,10): error TS2305: Module '"node:fs"' has no exported member 'mkdirSync'.
+src/t073-verify-probe.ts(1,21): error TS2724: '"node:fs"' has no exported member named 'writeFileSync'. Did you mean 'readFileSync'?
+TSC_EXIT=2
+```
+
+**And it is a restoration, not a no-op**: the identical bytes against
+`76cf034`'s `app/tsconfig.json` + `node-builtins.d.ts`, with
+`node-builtins-write.d.ts` moved aside, compile at **`BASE_TSC_EXIT=0`,
+zero diagnostics**. The tests that write still compile —
+`tsc -p tsconfig.test.json` exits 0 and the 42-file app suite is green
+(below).
+
+#### Criterion 2 — proved by probe, then removed, tree proved clean. MET.
+
+53 tracked files under `app/src` at HEAD, 53 in the working tree. After
+every drill, each was compared to `git show HEAD:<path>`:
+**checked=53 mismatches=0**, and the set digest returned to its
+pre-probe value `f84955f8289e11ca54fa3e49f0f4f5b0ef6180d8eaae76ac7674e888d3c13832`
+(my own combining form; the executor's `4fe995c4…` does not reproduce
+under four obvious forms of the same computation — a formatting
+artifact, since the load-bearing claim, 53 files 0 mismatches, does
+reproduce exactly). `app/package.json`, both tsconfigs and all three
+`app/test/` files also hash-match HEAD, and `git status --porcelain` is
+empty.
+
+#### The refuted second option (`T-073-s3`) — REPRODUCED, both halves.
+
+The card offered "a `declare module` block inside the one test that
+needs it" as an alternative. It is not one. With `include: ["src",
+"test"]`, the write block deleted from `node-builtins.d.ts` and written
+only at the bottom of `crescendo-dom.test.tsx` (`writeFileSync` count:
+**8 in the test file, 0 declarations in the ambient file**), the
+`app/src` probe **compiled at exit 0** — ambient module declarations
+merge program-wide, exactly as claimed. The second half reproduces
+verbatim too:
+
+```
+test/crescendo-dom.test.tsx(686,16): error TS2664: Invalid module name in augmentation, module 'node:os' cannot be found.
+test/crescendo-dom.test.tsx(3,24): error TS2307: Cannot find module 'node:os' or its corresponding type declarations.
+```
+
+A module file can augment an ambient module, never create one. The card
+specified an option that could not have worked; `T-073-s3` is correct
+and belongs in CONVENTIONS.
+
+#### `T-073-s2` — the test program's residual. JUDGED: it does not undercut the card.
+
+Reproduced: with the probe in place, `npx tsc -p tsconfig.test.json
+--noEmit` exits **0**. So `app/src` code can still reach a node write by
+being compiled in the test program. What the guard restored is therefore
+precisely: **the program `npm run build` gates on denies the write**,
+and `npm run build` reds at exit 2 on the same probe. The residual is
+reachable only by a command no gate runs, and reaching it requires
+writing a test that imports the offending `app/src` module — at which
+point the widened sink sweep reds on the same file regardless of
+program. This is a documented door in a second building, not a door in
+the fence: it cannot be walked through by an `app/src` author alone.
+s2's own recommendation (accept, and write the sentence into
+CONVENTIONS) is the right ruling.
+
+#### Criterion 3 — the sweep widens. MET, and P5 re-derived.
+
+`frontendFiles()` walks all of `src`: **47 files across the 9 pinned
+directories**. Both closers fire independently on one probe — `tsc` at
+exit 2, and the sweep at exit 1 with
+`t073-verify-probe.ts must not reach for writeFile` — while the
+**pre-T-073 sweep replayed verbatim over the identical tree reports
+`OLD SWEEP files=8 hits=0`**. "Both closers, not either" is measured,
+not asserted.
+
+**P5 re-derived, and it is stronger than reported.** Producer mutated
+one-sidedly (`return found` → `return found.filter((f) =>
+f.startsWith("genesis/"))`, read back from `git diff`) with the real
+write present: the **sink sweep goes GREEN** — silently narrowed,
+printing success — while the **corpus pin REDS**, and the IPC census
+reds alongside it (the executor did not claim this second catch).
+Exit 1.
