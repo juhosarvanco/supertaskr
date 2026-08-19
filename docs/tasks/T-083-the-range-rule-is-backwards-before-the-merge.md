@@ -408,6 +408,282 @@ that breaks it, and a sibling lane merging first is all it takes.
    held by `node` pid **82549** on `[::1]:1420` and nothing on IPv4,
    read once with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and never probed.
 
+
+### SECOND EXECUTOR, claude-opus-5 @T-083-exec2, 2026-08-19 — closing the rejection
+
+Appended by a FRESH executor (`claude-opus-5 @T-083-exec2`) on the same
+branch `task/T-083-range-rule`, continuing from the verdict commit
+`8d59ec6`. **The notes above are the first executor's record and are left
+exactly as written**, including the two figures corrected below; a
+checkpoint is a record of a moment, and erasing the claim would erase the
+evidence that this card's own subject caught it. **Two files moved
+besides this one: `docs/CONVENTIONS.md` (+52/−11) and `T-083-s2`
+(rewritten, +128/−30); this card is +254/−0, append-only.** Nothing else,
+and no reader was built.
+
+#### The defect, re-derived under both metrics before either was written
+
+The rejected sentence scored three pre-merge forms and called all three
+scores "byte-for-byte". Re-derived from scratch at `ddcc8bb` over the
+**31** first-parent merges in `94ee306^..ddcc8bb`, each forecast `cmp`'d
+against that merge's own `git diff M^1 M`, under BOTH metrics:
+
+| metric | merge-tree | three dots | pre-merge two dots |
+|---|---|---|---|
+| PATH-FOR-PATH (`--name-only` through `sort`, `cmp`) | **29** | **30** | **3** |
+| BYTE-FOR-BYTE (whole patch, `cmp`) | **29** | **24** | **3** |
+| patch with `index` lines stripped | **29** | **25** | **3** |
+
+**29 and 3 are metric-independent, and only three dots moves** — exactly
+as the verdict said. Under the metric the sentence itself named, three
+dots scores **24**. The verdict's fallback figure reproduces too: forgive
+blob-hash `index` lines and nothing else and it is **25**, which is a
+THIRD metric and is labelled as one in the doc rather than smuggled in.
+
+#### The rewrite: the measurement now carries the recommendation
+
+Patching `30` to `24` would have cleared the verdict and wasted the
+finding. The verdict is right that **the mislabel was hiding this card's
+strongest evidence**, so the bullet now leads with the gap between the
+columns rather than with either column:
+
+- **`merge-tree` scores the SAME under both metrics — 29 and 29, and the
+  same two misses.** It is not forecasting the merge, it IS the merge's
+  tree, so when it answers at all it answers in the merge's own bytes.
+- **Three dots is the only form whose two scores move, and the SIX
+  merges between them are the proxy question, measured**: `91ab46e`,
+  `827511e`, `bdada11`, `64469dd`, `3b0d974`, `f4b38c8` — it names
+  EXACTLY the right paths at all six and states them against the wrong
+  baseline. **Verified rather than asserted: every one of the six is a
+  merge where main and the branch had both touched the same file**
+  (`app/src-tauri/src/lib.rs` twice, `docs/CONVENTIONS.md` twice,
+  `app/src/App.tsx`, `docs/tasks/T-014-index-cli-watch-check.md`).
+- **Three dots' one extra path win is `bdada11` — the merge it should
+  have refused.** That is the single merge where it scores
+  path-for-path and `merge-tree` does not, and `merge-tree` "loses" it
+  by exiting **1** with a CONFLICT report. A scoreboard that counts a
+  refusal as a miss is scoring the wrong thing, and three dots is wrong
+  on bytes there as well.
+
+So the recommendation is no longer a 29-vs-30 the prose has to argue
+around: under the metric that was claimed all along, `merge-tree` wins
+outright **29 to 24**, and the losing six are the proxy in plain sight.
+The bullet also now prints the two-metric derivation as a command, the
+way the flip list below it already demands.
+
+#### ONE CORRECTION TO THE VERDICT, and it is in the same class as the defect
+
+The verdict says six of three dots' seven patch losses "carry real
+content divergence". **They do not, and the doc does not say so.**
+Classified line by line, with `index` lines stripped and the remaining
+differences split into `@@` headers, context lines and real `+`/`-`
+lines:
+
+| merge | what actually differs from the merge's own diff |
+|---|---|
+| `3b0d974` | blob hashes ONLY — 0 lines differ once `index` is stripped |
+| `91ab46e` | 2 `@@` hunk-header line numbers, nothing else |
+| `827511e` | 4 `@@` hunk-header line numbers, nothing else |
+| `64469dd` | 2 `@@` hunk-header line numbers, nothing else |
+| `f4b38c8` | 8 `@@` headers + 2 context lines, **0** real `+`/`-` lines |
+| `bdada11` | 2 `@@` + 4 context + **4** real `+`/`-` lines |
+| `634c405` | 3 `@@` + 18 context + **16** real `+`/`-` lines, plus a whole extra file |
+
+**Only 2 of the 31 merges show a differing `+`/`-` line at all.** The
+verdict's literal claim — that only one loss is blob-hash-only — is TRUE
+and reproduces; its gloss overstates the rest. Writing "different
+content" into the file would have shipped a figure that dies on the first
+re-derivation, which is the defect this card was rejected for, in the
+opposite direction. The doc therefore says what diverges is *"less than
+'different content' and worse than 'cosmetic'"* and enumerates it.
+Recipe: `git diff M^1 M` and `git diff M^1...M^2`, both piped through
+`grep -v '^index '`, then `diff` and count `@@` versus `+`/`-`.
+
+#### The unreproducible digest, replaced with a figure anyone can check
+
+The first executor's `18583f85…` for `## Build & test` **does not
+reproduce and is withdrawn.** The claim it supports is true; the digit
+string was not checkable, which is this card's own subject. Replaced with
+a digest AND its recipe AND the byte length, so all three can be
+re-derived:
+
+    node -e 'const s=require("fs").readFileSync("docs/CONVENTIONS.md","utf8");
+      process.stdout.write(s.split(/^## /m).find(x=>x.startsWith("Build & test"))
+      .replace(/^Build & test[^\n]*\n/,""))' | shasum -a 256
+
+Run from the repo root; RUN, not quoted from here — it was executed as
+printed and exits **0**. That is `buildAndTestSection()` from
+`workflow-parity.spec.ts` verbatim —
+the reader's own extraction, not a hand-rolled one. It returns
+**`0662c279efb209f8341d39fa9df5f5ab0e0976157352718058e099a4d8feefb9`,
+12817 bytes**, identical at **five** refs: `ddcc8bb`, `886e64e`,
+`8d59ec6`, T-082's merge `7a37b37` and main's tip `88c394f`. The
+verifier's independently-derived value matches to the byte. The
+heading-inclusive variant is `c677cf4d…` and is NOT what the reader uses.
+File-wide U+00B7 count: **21 before and 21 after**, unchanged.
+
+#### T-083-s2, rewritten because the ruling changed what it means
+
+The verdict ruled that the card DID owe a reader, that it was genuinely
+not buildable inside `[docs/CONVENTIONS.md]`, and that filing s2 was the
+method's own prescription — but that **the unfalsifiability is an
+artefact of the fence, not of the content.** s2 said the opposite by
+implication, and its title said so outright. Rewritten to say it in those
+words, keeping every fact it already carried:
+
+- Title and thesis now name the cause: *"an artefact of the FENCE, not of
+  the content; the reader is buildable and must live in
+  `tools/e2e/tests/`"*.
+- The two halves are separated. **The factual half is a `git` derivation
+  over immutable commits and is CHEAPER to check than the CI-command
+  derivation `workflow-parity.spec.ts` already runs** against the other
+  half of this same file. **Only the judgement half** — *name the PAIR,
+  not the punctuation*; the two costs; the refusal-is-not-a-miss reading
+  — **genuinely has no mechanical reader**, and none should be asked for.
+- It records that this is a **dispatch observation**: the executor cannot
+  widen its own fence, so the next card that fences a claim to one file
+  should ask where that claim's defence has to live BEFORE drawing the
+  boundary.
+- It carries the verifier's evidence — ten mutants from the criteria,
+  zero killed; then a ninety-line derive-not-pin reader, GREEN on the
+  merged file and RED on the poisoned one with 12 findings — and the
+  seven-item spec of what a reader must assert, item 6 being **both
+  columns under their own metric**, added because a reader checking one
+  column would have been green straight through the defect that rejected
+  this card. Sized down from "size M" to S–M on that evidence.
+- **The reader was NOT built.** It is out of fence, and building it here
+  would repeat the mistake the finding now names.
+
+`T-083-s1` and `T-083-s4` were confirmed in every particular by the
+verifier and are untouched. `T-083-s3` is untouched. `docs/STATE.md` is
+untouched and still outside this fence.
+
+#### Gates, every exit code read from `$?` unpiped
+
+Run in this worktree with `node_modules` and `lib/parser/dist` symlinked
+read-only from the main checkout and `CARGO_TARGET_DIR` in scratch — **no
+`npm ci`, no `npm install`, nothing written to the main checkout**, and
+the symlinks removed before commit.
+
+| gate | result | exit |
+|---|---|---|
+| `cargo test` PLAIN (not `--all-targets`; 15 result lines, doc-tests included) | 343 passed, 0 failed, 3 ignored | **0** |
+| — `snapshot_version_matches_the_live_method_stamps` | ran, ok | in the 343 |
+| `cargo run -p nputer-index -- index --check --root ../..` | graph.json CURRENT, 118 files | **0** |
+| lib/parser `npx vitest run` | 263 passed, 12 files | **0** |
+| lib/parser `npx tsc --noEmit` | — | **0** |
+| tools/e2e `npm test` | 91 passed, workflow-parity **14/14** | **0** |
+| tools/e2e `npm run typecheck` | — | **0** |
+| tools/e2e `npm run lint:tokens` | clean, TOKEN 119 / CONTROL 546 | **0** |
+| tools/e2e `npm run lint:tokens -- --selftest` | 49+4 samples, 71 walk-policy, 8 evidence-floor | **0** |
+
+**ONE EXIT CODE WAS FIRST TAKEN THROUGH A PIPE AND IS RECORDED AS
+RE-RUN.** The first parser run used `${PIPESTATUS[0]}`, which this shell
+is zsh and does not populate, so it printed an EMPTY code. Caught
+immediately and every gate above re-run unpiped with output redirected to
+a file. **An empty exit code is the same class of non-answer as a piped
+one, and it is recorded rather than quietly fixed.**
+
+#### Poison drill — the rejected claim itself, reinstated
+
+Two one-sided rounds, each mutation read back out of the file with `diff`
+against a sha256'd baseline
+(`057889b70d84d90c0da48681cc1cede569ea3a0a7944e0d65cc180d67f623429`)
+before any gate ran.
+
+| # | one-sided mutation | read back | result |
+|---|---|---|---|
+| A | the byte column of the new table put back to the REJECTED value: `three dots … **24** of 31` to `**30** of 31` | the one line, nothing else | **GREEN EVERYWHERE** — parity 14/14 exit **0**, `lint:tokens` exit **0**, `cargo test` 343 exit **0**, parser 263 exit **0** |
+| B | `npx vitest run` to `npx vitest --run` in `## Build & test` (doc side only; the spec's own key untouched) | the one line, nothing else | **RED** — 3 failed / 11 passed, exit **1**, naming BOTH sides |
+
+**Round A is the finding, and it is sharper than the first executor's
+rounds 3 and 4: the exact defect that rejected this card is invisible to
+every gate in this repository.** Round B proves the one live reader over
+`## Build & test` is awake and that this edit stayed out of its half.
+Both are now the concrete evidence in the rewritten `T-083-s2`.
+
+Restoration proved three ways: working file back to
+`057889b7…`; the `## Build & test` extraction back to `0662c279…` at
+12817 bytes; U+00B7 count **21**. `git status --porcelain` shows only the
+two intended modifications.
+
+#### This lane's own range, re-measured — and the two forms no longer agree
+
+Main moved to **`88c394f`** (T-082 merged at `7a37b37`, then
+checkpointed), so the condition the first build lacked is now present and
+this lane is its own worked example a second time. Measured against
+`88c394f` with the branch at the verdict commit `8d59ec6`:
+
+| form | paths | BOOT GATE | GRAPH REGEN |
+|---|---|---|---|
+| `git diff --name-only 88c394f 8d59ec6` (TWO dots) | **22** | **4 — FIRES** | **5 — FIRES** |
+| `git diff --name-only 88c394f...8d59ec6` (THREE dots) | **6** | 0 | 0 |
+| `git merge-tree --write-tree` (exit **0**), then diff | **6** | 0 | 0 |
+
+**A docs-only lane is reported as firing BOTH gates by the notation this
+card exists to retire.** The **16** extra paths are main's own work since
+this lane was cut, handed to the branch in reverse — **SEVEN of them
+code**: `app/src-tauri/src/agent/runner.rs`,
+`app/src-tauri/src/bin/fake_agent.rs`, `app/src/genesis/interview-model.ts`,
+`app/src/lib/agent-store.ts`, `app/test/interview-model.test.ts`,
+`app/test/interview-resume-dom.test.tsx` and
+`tools/e2e/tests/resume-fallback.spec.ts`; the other nine are T-082's own
+card and findings, `docs/ROADMAP.md`, `docs/STATE.md`,
+`docs/architecture/graph.json` and one discharged `T-046-s4`. The
+correct 6 are
+`docs/CONVENTIONS.md`, this card and the four `T-083-s*` findings. **The
+fence `[docs/CONVENTIONS.md]` holds** — T-082 did not touch this file,
+confirmed by `git diff --name-only ddcc8bb..88c394f` containing no
+`CONVENTIONS` path and by the section digest being identical at both refs.
+
+Neither gate is owed and neither was run: the trigger sets are EMPTY under
+the prescribed derivation, which is a derivation rather than an
+assumption. CONTROL stays **546** and TOKEN **119** — this build adds no
+file and deletes none.
+
+**AND MAIN MOVED AGAIN BEFORE THIS COMMIT WAS WRITTEN, WHICH IS THE
+POINT.** Between staging and committing, main advanced from `88c394f` to
+**`d61e986`** (`docs/design/cross-harness-plan.md`, one docs-only
+commit). Re-derived at that tip with this lane at `2eb560a`:
+`git merge-tree --write-tree` exits **0** and the forecast is the SAME
+**6** paths with BOOT **0** and GRAPH **0**, three dots is **6**, and the
+two-dot form has drifted from 22 to **23** — still firing both gates on a
+lane that has never opened a non-docs file. **The prescribed derivation
+did not move when main moved; the forbidden one did, twice in one
+afternoon.** The fence still holds: the new commit touches no
+`CONVENTIONS` path, and the `## Build & test` extraction is
+`0662c279…` at `d61e986` too — a SIXTH ref. Every figure in this
+subsection therefore names two commits, because in the four hours this
+build took, one of them changed three times.
+
+#### Corrections to the second dispatch brief, since it asked again
+
+1. **"two-dot returns 20 paths."** Correct at the refs the verifier used
+   (`7a37b37` and `886e64e`) and I reproduce **20 / BOOT 4 / GRAPH 5**
+   there exactly. At MY refs (`88c394f` and `8d59ec6`) it is **22**. Both
+   honest, neither wrong — main gained the T-082 checkpoint and my
+   right-hand ref is the verdict commit. **The seventh criterion catching
+   the card twice in two days.**
+2. **"only 1 of three-dot's 7 patch losses is metadata-only."** True as
+   worded — one is `index`-lines-only — but the verdict's gloss that the
+   other six "carry real content divergence" is wrong: **four of the six
+   carry no differing `+`/`-` line at all.** Table above.
+3. **"`634c405` … 27 forecast vs 28 actual, odd path
+   `window-contract.spec.ts`"** — confirmed, and it is also three dots'
+   only path-for-path loss, so `634c405` is the one merge no pre-merge
+   form predicts under EITHER metric.
+4. **"`bdada11` (exit 1, a conflict)"** — confirmed, and worth more than
+   the brief claims: it is precisely the merge that produces three dots'
+   30-vs-29 path advantage, which is why the path column overstates it.
+5. **"the `18583f85…` sha256 is not reproducible; spec-identical
+   extraction gives `0662c279…`, heading-inclusive `c677cf4d…`"** —
+   confirmed to the byte, at five refs.
+6. Confirmed as stated: main is `88c394f`; the fence file is untouched by
+   T-082; `T-083-s1` and `T-083-s4` reproduce; 1420 is held by `node` pid
+   **82549** on `[::1]:1420` and nothing on IPv4, read once with
+   `lsof -nP -iTCP:1420 -sTCP:LISTEN` and never probed, connected to or
+   signalled.
+
 ## Verdicts
 
 ### 2026-08-19 — REJECTED (claude-opus-5 @T-083-verify, review: same-model)

@@ -431,20 +431,61 @@
   **WHY `merge-tree` AND NOT THREE DOTS, since both are right before the
   merge.** Three dots answers "what has my branch changed since it was
   cut", which is a PROXY; `merge-tree` answers the gate's own question,
-  "what will the merge's diff be", by building the merge's tree. Over
-  the **31** first-parent merges on main from BOOT GATE's own merge
-  `94ee306` through `ddcc8bb`, the merge-tree forecast reproduces the
-  merge's later diff byte-for-byte **29** times, three dots **30**, and
-  the pre-merge two-dot form **3**. THEY PART COMPANY WHERE IT MATTERS.
-  At T-014's merge `bdada11`, `merge-tree --write-tree` exits **1** and
-  prints CONFLICT instead of a tree — news the executor needs and three
-  dots does not give. At T-028's merge `634c405` NEITHER form predicts,
+  "what will the merge's diff be", by building the merge's tree. Scored
+  over the **31** first-parent merges on main from BOOT GATE's own merge
+  `94ee306` through `ddcc8bb`, each pre-merge form against that merge's
+  own later `M^1..M` diff. **A SCORE WITHOUT ITS METRIC IS NOT A
+  FIGURE** — there are two metrics here and they disagree:
+
+  | pre-merge form | PATH-FOR-PATH (`--name-only`, sorted, `cmp`) | BYTE-FOR-BYTE (whole patch, `cmp`) |
+  |---|---|---|
+  | `merge-tree --write-tree` | **29** of 31 | **29** of 31, the same 29 |
+  | three dots | **30** of 31 | **24** of 31 |
+  | pre-merge two dots | **3** of 31 | **3** of 31 |
+
+  **THE ARGUMENT IS THE GAP BETWEEN THE COLUMNS, NOT EITHER COLUMN ON
+  ITS OWN.** `merge-tree` scores the same under both metrics because it
+  is not forecasting the merge, it IS the merge's tree: when it answers
+  at all it answers in the merge's own bytes, and its two misses are the
+  same two misses. Three dots is the only form whose two scores move,
+  and the SIX merges it drops between them are six where it names
+  EXACTLY the right paths and states them against the wrong baseline —
+  `91ab46e`, `827511e`, `bdada11`, `64469dd`, `3b0d974` and `f4b38c8`,
+  every one a merge where main and the branch had both touched the same
+  file. **THAT SIX IS THE PROXY, MEASURED.** What diverges is less than
+  "different content" and worse than "cosmetic", so state it exactly:
+  one is blob hashes alone (`3b0d974`), three add only `@@` hunk-header
+  line numbers because main inserted lines above the branch's own hunk
+  (`91ab46e`, `827511e`, `64469dd`), one also moves context lines
+  (`f4b38c8`), and only **2** of the 31 differ in a `+`/`-` line at all
+  (`bdada11`, `634c405`). Right files, wrong coordinates: a branch diff
+  is stated against the branch POINT, and the gate reads one stated
+  against MAIN.
+  **AND THREE DOTS' ONE EXTRA PATH WIN IS THE MERGE IT SHOULD HAVE
+  REFUSED.** The single merge where three dots scores path-for-path and
+  `merge-tree` does not is T-014's `bdada11`, where `merge-tree
+  --write-tree` exits **1** and prints CONFLICT instead of a tree. Three
+  dots hands back a clean-looking forecast for a merge nobody could
+  perform without resolving it by hand — and is wrong on bytes there as
+  well. A scoreboard that counts a refusal as a miss is scoring the
+  wrong thing. **READ `merge-tree`'s EXIT CODE** — 0 is a tree, 1 is a
+  conflict report, and a command substitution that swallows it hands you
+  an EMPTY forecast wearing the costume of a clean gate.
+  At T-028's merge `634c405` NEITHER form predicts under EITHER metric,
   because the integrator wrote into the merge commit itself
   (`tools/e2e/tests/window-contract.spec.ts` differs from BOTH parents
   there): no pre-merge forecast can see a file that does not exist on
-  either side yet. **READ `merge-tree`'s EXIT CODE** — 0 is a tree, 1 is
-  a conflict report, and a command substitution that swallows it hands
-  you an EMPTY forecast wearing the costume of a clean gate.
+  either side yet. That is the honest ceiling on the recommended
+  command, and it is one merge in thirty-one.
+  **RE-DERIVE BOTH COLUMNS RATHER THAN QUOTING THEM**, the way this
+  bullet's flip list asks below. For each merge M the truth is `git diff
+  M^1 M`; the three forecasts are `git diff M^1 $(git merge-tree
+  --write-tree M^1 M^2)`, `git diff M^1...M^2` and `git diff M^1..M^2`;
+  `cmp` each against the truth TWICE, once with `--name-only` through
+  `sort` for the left column and once on the whole patch for the right.
+  Forgiving `index` lines and nothing else is a THIRD metric — it lifts
+  three dots to **25** and moves neither other row — and it needs its
+  own label for exactly the same reason.
   **THE SENTENCE THAT SAID THIS NEVER CHANGES A GATE'S ANSWER IS FALSE,
   AND WAS FALSE LONG BEFORE ANYONE MEASURED IT.** It read: "It has never
   yet changed WHETHER the gate fires — both derivations fired all six
