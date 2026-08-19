@@ -6,10 +6,14 @@ import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
 import {
   CONTROL_PATTERN,
+  CONTROL_UNCOVERED_SUFFIXES,
   CORPORA,
   TOKEN_EXCLUDED_FILES,
+  TOKEN_PATTERNS,
   corpus,
   scanControlSource,
+  suffixClass,
+  trackedFiles,
 } from "../scripts/token-scan.mjs";
 
 const wrapper = path.join(repoRoot, "tools", "e2e", "scripts", "lint-tokens.mjs");
@@ -48,6 +52,27 @@ test("P5 rejects every disallowed C0 byte and DEL while allowing tab, LF and CR"
     ),
   );
   expect(new Set(hits.map((hit) => hit.id))).toEqual(new Set([CONTROL_PATTERN.id]));
+});
+
+/**
+ * T-080 / T-058-s4. The sweep above recomputes the production formula,
+ * which pins the PIPELINE and not the FORMAT: change the formula on both
+ * sides and it still agrees with itself. These four expectations are
+ * written out as strings, so uppercasing, zero-padding and the `U+`
+ * prefix each fail here on their own. Two of the four carry a hex
+ * LETTER, which is what the selftest could not do before this card.
+ */
+test("P5 renders the codepoint in the documented format, named literally", () => {
+  const rendered = (byte: number): string => {
+    const hits = scanControlSource(Buffer.from([byte]));
+    expect(hits, `byte ${byte} must be a P5 hit at all`).toHaveLength(1);
+    return hits[0]!.codepoint;
+  };
+
+  expect(rendered(0x00)).toBe("U+0000");
+  expect(rendered(0x0b)).toBe("U+000B");
+  expect(rendered(0x1b)).toBe("U+001B");
+  expect(rendered(0x7f)).toBe("U+007F");
 });
 
 test("P5 offsets are bytes, including after a non-ASCII prefix", () => {
@@ -126,4 +151,89 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
     expect(result!.stdout).toContain(`${relative}:byte ${offsets.get(relative)}: U+0000`);
   }
   expect(result!.stderr).toContain("(0 TOKEN, 7 CONTROL)");
+});
+
+/**
+ * T-080, closing T-058-s1. The floor lives in the selftest so it runs on
+ * a bare checkout; this body recomputes the RELATION here instead of
+ * calling the module's check function, so deleting the floor from
+ * `walkPolicyChecks` reds the lane even while the selftest stays green.
+ * Measured at `16bb47b` before the floor existed: adding one line to
+ * CONTROL_BINARY_EXTENSIONS took the corpus from 507 files to 463
+ * (`.rs`) or 461 (`.tsx`) with the lint AND the selftest both at exit 0.
+ */
+test("CONTROL covers every tracked suffix class it does not declare uncoverable", () => {
+  const tracked = trackedFiles();
+  const covered = new Set<string>(corpus(CORPORA.CONTROL));
+  const byClass = new Map<string, { tracked: number; covered: number }>();
+  for (const relative of tracked) {
+    const cls = suffixClass(relative);
+    const row = byClass.get(cls) ?? { tracked: 0, covered: 0 };
+    row.tracked += 1;
+    if (covered.has(relative)) row.covered += 1;
+    byClass.set(cls, row);
+  }
+
+  expect(byClass.size, "the tree has suffix classes to cover").toBeGreaterThan(0);
+  const dropped: string[] = [];
+  for (const [cls, row] of byClass) {
+    const exempt = CONTROL_UNCOVERED_SUFFIXES.has(cls);
+    const want = exempt ? 0 : row.tracked;
+    if (row.covered !== want) {
+      dropped.push(`${cls || "(no extension)"}: ${row.covered}/${row.tracked}, exempt=${exempt}`);
+    }
+  }
+  expect(dropped, "no tracked suffix class silently leaves CONTROL").toEqual([]);
+
+  // and the classes the architect's 2026-08-18 ruling named are whole,
+  // without the exemption list getting a vote.
+  for (const cls of [".rs", ".tsx", ".ts", ".md"]) {
+    const row = byClass.get(cls);
+    expect(row, `${cls} is tracked`).toBeDefined();
+    expect(row!.covered, `every tracked ${cls} file is CONTROL-covered`).toBe(row!.tracked);
+  }
+});
+
+/**
+ * T-080's last criterion. CI's FIRST step must be able to say whether it
+ * found something or could not run at all — before T-058 there was no
+ * could-not-run mode, and after it there was one that exited 1 like a
+ * violation. The codes are asserted as LITERALS here, never imported
+ * from the module that produces them, so renumbering reds this body.
+ */
+test("the gate distinguishes clean, found-something and could-not-run", () => {
+  const run = (args: string[], env?: NodeJS.ProcessEnv) =>
+    spawnSync(process.execPath, [wrapper, ...args], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      env: { ...process.env, ...env },
+    });
+
+  const clean = run([]);
+  expect(clean.status, clean.stderr).toBe(0);
+  expect(clean.stdout).toContain("lint-tokens: clean");
+
+  // git off PATH is the T-058 behaviour change made legible: the corpus
+  // is underivable, so the gate did not run. Nothing is written, and the
+  // tree is never consulted.
+  const blind = run([], { PATH: path.join(repoRoot, "no-such-directory-t080") });
+  expect(blind.status, blind.stdout + blind.stderr).toBe(3);
+  expect(blind.stderr).toContain("GATE COULD NOT RUN");
+  expect(blind.stderr).toContain("cannot derive tracked CONTROL corpus");
+  expect(blind.stderr).toContain("NOT a claim about the tree");
+  expect(blind.stdout).not.toContain("lint-tokens: clean");
+
+  // the same distinction holds for the selftest, which reaches git too.
+  const blindSelftest = run(["--selftest"], {
+    PATH: path.join(repoRoot, "no-such-directory-t080"),
+  });
+  expect(blindSelftest.status, blindSelftest.stdout + blindSelftest.stderr).toBe(3);
+
+  const selftest = run(["--selftest"]);
+  expect(selftest.status, selftest.stderr).toBe(0);
+  const floors = selftest.stdout.match(/(\d+) evidence-floor checks green/);
+  expect(floors, "the selftest reports its evidence floor").not.toBeNull();
+  // one row per TOKEN pattern, plus the four the control pattern needs:
+  // a positive, a negative, and a positive whose hex carries a letter.
+  expect(Number(floors![1])).toBeGreaterThanOrEqual(TOKEN_PATTERNS.length + 4);
 });
