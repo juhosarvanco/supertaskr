@@ -592,3 +592,74 @@ that instead.
 
 All three files restored, sha256 identical, `git status --porcelain`
 empty.
+
+#### Six more rounds re-derived first-hand — every count reproduces
+
+Each mutation applied by line number, read back from the file, suite run
+unpiped, exit from `echo $?`, restored by `git show HEAD:<path>`.
+
+| round | mutation | reds | which |
+|---|---|---|---|
+| R1 | the relay push (`runner.rs:1833-1837`) deleted | **2** | the two denial rows |
+| R2 | `&& !text_after_auth_status` dropped (`:1991`) | **1** | `a_recovered_auth_retry_followed_by_model_text_and_no_result_line_…` |
+| R5 | over-broad: `result_is_error &&` added to the auth arm | **2** | `a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed` **and** the second-retry row |
+| R6 | FIXTURE: the control's `with_retry` flipped ON (`fake_agent.rs:332`) | **1** | the control |
+| R9 | `auth_status = auth_status.and(api_error_status)` (`:1797`) | **1** | `the_transcribed_auth_shape_carries_its_status_on_its_own_result_line` |
+| R10 | `result_is_error` dropped from the `ToolDenied` guard (`:2026`) | **2** | the two denial rows |
+
+R5's counter-pin is not decorative — the 403-no-result body reds under
+the over-broad form, exactly as the ruling's fourth reason claims. R6's
+control reds with its OWN assertion text, so the executor's contrast
+with T-029's control is real:
+
+```
+this stream carries no diagnostic at all, so the ring stays empty and the 401 in
+the row above can only have come from that one line: "api_retry: authentication_failed 401\n"
+```
+
+**One round of mine was a NO-OP and is discarded, not counted.** My first
+R6 targeted `fake_agent.rs:331`; the string is on `332`, so the
+substitution matched nothing, the suite ran 66/66 green and the sha256
+was unchanged from HEAD. Caught by reading the line back, which is the
+whole point of the third limb. Re-done by the correct line number and
+counted only then — the same discipline the executor applied to its own
+mis-quoted perl round, and the sha256 check is what makes such a round
+visible instead of a fraudulent green.
+
+#### THE CARD PREMISE — both halves confirmed, and the executor is right that it is half wrong
+
+**R7, `api_error_status` removed from the `auth_error` emitter's `result`
+line (`fake_agent.rs:649`)** — `test result: FAILED. 63 passed; 3
+failed; 1 ignored`:
+
+```
+    an_auth_failure_that_streamed_text_before_it_failed_is_still_typed
+    an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code
+    the_transcribed_auth_shape_carries_its_status_on_its_own_result_line
+```
+
+Three bodies, and the middle one is PRE-EXISTING — it predates this card
+and drives `auth-error`, the fully transcribed stream. The assignment
+clears the diagnostic's status, so a CLI that moved `api_error_status`
+off its terminal line ALREADY broke the transcribed test. **The card's
+"silent loss … with no test watching for it" was wrong**, and the
+executor found it by drilling rather than by believing its own card.
+
+**And the new pin still earns its line.** R9 is the demonstration: the
+runner ceasing to read the status off the terminal line reds
+`the_transcribed_auth_shape_carries_its_status_on_its_own_result_line`
+**and nothing else** — 65 passed, 1 failed. So the criterion's pin exists
+and discriminates, on the RUNNER side rather than the CLI side. Both
+halves verified; the notes' correction is accepted as accurate.
+
+#### T-069-s1's evidence, re-measured
+
+R10's two panics fire at `tests/agent_runner.rs:1539:18` and
+`:1583:18` — both the `other => panic!("expected ExitNonZero, got
+{other:?}")` match arms, never at the
+`!matches!(status.last_error, Some(TurnError::ToolDenied { .. }))`
+assertions on `:1542` and `:1586`. The suggestion's measurement is
+exact.
+
+All files restored, sha256 identical to HEAD, `git status --porcelain`
+empty.
