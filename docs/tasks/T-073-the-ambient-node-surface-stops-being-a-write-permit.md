@@ -301,7 +301,7 @@ of being a shape match rather than a parse.
 
 ## Verdicts
 
-### Adversarial verification — `claude-opus-5 @fresh`, in progress
+### Adversarial verification — `claude-opus-5 @fresh`, 2026-08-19 — **APPROVED**
 
 Worktree `nputer-T-073`, branch `task/T-073-write-permit`, tip `7386790`,
 **4** commits from `76cf034` (`git rev-list --count 76cf034..HEAD` = 4),
@@ -611,3 +611,105 @@ and edges 1508 unmoved**. For contrast I ran the same command WITHOUT
 docs/architecture/graph.json` — the false red. The card's delta is
 exact. **Not regenerated**, per CONVENTIONS: that is the integrator's
 act at the checkpoint.
+
+#### Poison table — 8 for 8 re-derived, not read
+
+Every row re-run in this worktree, one-sided, mutated text read back
+from `git diff`, restored by sha256 against `git show HEAD:<path>`:
+
+- **P1** `[a-z_]+ → [a-z]+`: `expected [] to deeply equal [
+  'docs_snapshot', …(9) ]`, exit 1.
+- **P2** walk root `src → src/genesis`: three tests fail, the sweep
+  throwing `ENOENT … app/src/BoardCrescendo.tsx`, exit 1. The
+  executor's observation is right and worth keeping: **a root mutation
+  cannot hide, a filter mutation can** — which is the whole argument for
+  the corpus pin.
+- **P3** `App.tsx` dropped, dir set intact: `expected [
+  'architecture/MapEdge.tsx', …(45) ] to include 'App.tsx'`, exit 1 —
+  46 files across the same nine directories, so only the anchor caught
+  it. The anchors are not decoration.
+- **P4** proved with my own probe rather than replayed: exit 1,
+  `t073-verify-probe.ts must not reach for writeFile`.
+- **P5** re-derived above; stronger than reported (the IPC census reds
+  too).
+- **P6a/P6b/P6c** re-derived, exit 1 each, exact messages as reported.
+
+The table is honest. What it did not reach is the class the brief sent
+me to hunt: **mutants derived from the PINS rather than from the
+CRITERIA**. Every drill above mutates something a pin watches. Three
+mutations that no pin watches are in `T-073-s4` and `T-073-s5`, and each
+survives the full 827-test suite at exit 0.
+
+#### Card corrections
+
+1. **"parsed out of the JSON, not string-matched"** (implementation
+   notes) and the test's own comment **"neither assertion can be
+   satisfied by a comment"** are FALSE for the include half. It is a
+   raw-text regex with a first-match rule, and a comment satisfies it
+   while the real line is reverted — demonstrated above. The
+   export-surface halves ARE read from declarations, so that part of the
+   sentence stands. `T-073-s5` carries the measured one-line fix
+   (`tsc --showConfig`, or `--listFiles` to pin the program itself).
+2. **"The pin reds on every realistic narrowing"** is true of the FILE
+   dimension only. The sink vocabulary, the sweep's own iteration, and
+   the file count are unpinned; all three narrow silently (`T-073-s4`).
+3. The restoration hash `deb2badd…` for `crescendo-dom.test.tsx` is the
+   file at **`1a1e388`**, not at HEAD (`57eec879…`) — correct for the
+   P1–P5 drills, which ran before the third pin landed, but a later
+   reader checking it against HEAD will find a mismatch. Name the commit
+   beside the hash.
+4. The `app/src` aggregate digest **`4fe995c4…`** does not reproduce
+   under four obvious forms of the same computation (mine is
+   `f84955f8…`). The load-bearing claim — 53 files, 0 mismatches against
+   `git show HEAD:<path>` — reproduces exactly, so this is a
+   reproducibility wart, not a false claim: quote the command, or quote
+   only the per-file result.
+5. `T-073-s2` names the triple-slash reference as a way a file enters a
+   program, without noticing that it therefore also walks around the pin
+   the same card built. Cross-reference `T-073-s5`.
+
+#### VERDICT: **APPROVED**
+
+- **Criterion 1 — the writes leave the shared ambient file.** MET. My
+  own probe (`fa2d69ff…`) reds the app program at exit 2 with TS2305 +
+  TS2724; the identical bytes green at exit 0 against `76cf034`, so it
+  is a restoration and not a no-op; `tsc -p tsconfig.test.json` exits 0
+  and the writing tests compile unchanged. The card's refutation of its
+  own second option reproduces on both limbs (program-global merge;
+  TS2664 for `node:os`).
+- **Criterion 2 — proved by probe, then removed, tree proved clean.**
+  MET. 53/53 files under `app/src` byte-match `git show HEAD:<path>`
+  after every drill, set digest back to `f84955f8…`, `git status`
+  empty.
+- **Criterion 3 — the sweep widens to all of `app/src`.** MET. One
+  shared `frontendFiles()` walk feeding both censuses, 47 files across 9
+  directories, all clean; both closers fire independently on one probe
+  while the pre-T-073 sweep replayed verbatim reports `files=8 hits=0`.
+  "Both closers, not either" is measured.
+- **Criterion 4 — no behaviour change.** MET, and proved harder than
+  claimed: `diff -r` between a HEAD build and a base-tsconfig build
+  reports DIRECTORIES IDENTICAL. No real sink exists (eleven strings, 0
+  files each, `git grep` from the repo root), so nothing was quietly
+  fixed, and the three things the executor found were filed.
+- **Fence.** `app/package.json` is IN FENCE and the line stays — see the
+  ruling above. That answers the card's "NOT CONFIDENT ABOUT": triage
+  does want the line, because without it nothing in this repo typechecks
+  any of the 42 test files (measured: `BARE_TSC_EXIT=0`,
+  `VITEST_EXIT=0`, `TESTPROG_EXIT=2`).
+- **Gates.** All green first-hand; boot gate fires on the manifest limb
+  alone and passes at `BOOT_EXIT=0` on port 15731; graph is stale by
+  design with a REAL red, deltas exactly as reported, left for the
+  integrator.
+
+**Why APPROVED with five findings.** Every acceptance criterion is met
+and independently re-measured. `T-073-s4` and `T-073-s5` are both about
+the THIRD pin — a mechanism the card built beyond its criteria, on the
+correct instinct that a restoration nothing holds is not a restoration.
+The instinct deserves credit; the mechanism is one dimension short in
+two places. Neither weakens what the criteria bought: the app program
+genuinely denies the writes today, and the sweep genuinely covers all 47
+files today. What is not yet held is that both stay true — which is the
+next card, not this one.
+
+`status: verifying` left as dispatched; the size-S question (TASK-FORMAT
+gives S "executor + tests, no verifier") is the integrator's to close.
