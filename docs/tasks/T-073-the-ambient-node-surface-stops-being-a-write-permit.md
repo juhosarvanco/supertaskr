@@ -401,3 +401,145 @@ write present: the **sink sweep goes GREEN** — silently narrowed,
 printing success — while the **corpus pin REDS**, and the IPC census
 reds alongside it (the executor did not claim this second catch).
 Exit 1.
+
+#### The third pin — it discriminates against the three shapes it was built for, and I broke it three other ways. `T-073-s4`.
+
+P6a/P6b/P6c re-derived, one-sided, mutated text read back from
+`git diff`, all three RED at exit 1 with the exact messages the card
+reports (`expected [ 'src', 'test' ] to deeply equal [ 'src',
+'test/node-builtins.d.ts' ]`; `expected [ 'appendFileSync', …(6) ]…`;
+`expected [ 'mkdirSync', 'mkdtempSync', …(2) ]…`). The pin is real and
+it is worth having. Then I attacked it.
+
+**(a) THE REGEX ADMITS A PASSING REVERT, and the test says in its own
+comment that it cannot.** The comment reads "Parsed rather than
+string-matched: the include list is read out of the JSON … so neither
+assertion can be satisfied by a comment" — and the card repeats it
+("parsed out of the JSON, not string-matched"). It is
+`/"include"\s*:\s*\[([^\]]*)\]/.exec(text)` over the raw file:
+**first match wins, and comments are text.** I reverted the guard the
+way a developer actually would — widen the line, keep the old value in a
+comment explaining what it used to be:
+
+```
++  /* T-073 kept this narrow: "include": ["src", "test/node-builtins.d.ts"] —
++     widened back only because the editor complained. */
++  "include": ["src", "test"],
+```
+
+`regex-first-match: "src", "test/node-builtins.d.ts"` · `last match in
+file: "src", "test"`. The compiler obeys the second; the pin reads the
+first. **`tsc` exits 0 with a write probe under `app/src`, and the pin
+passes, 14/14.** This is the exact scenario the pin was built for — "the
+shape an editor complaint invites" — and the natural way to write it
+walks straight through. The doubt the executor recorded was the right
+doubt and the answer is no: a shape match is not enough here.
+
+**(b) THE GUARD CAN BE DEFEATED WITHOUT TOUCHING EITHER PINNED FACT.**
+One line at the top of `node-builtins.d.ts` — the file the card
+describes as "READ-ONLY BY CONSTRUCTION":
+
+```
++/// <reference path="./node-builtins-write.d.ts" />
+```
+
+The include list is untouched. Neither ambient file's `export function`
+set moves. All three pin assertions pass. And the write declarations are
+back in the app program: **`npm run build` exits 0** and the **whole app
+suite is 827/827 at exit 0** with
+`rmSync(dir, { recursive: true, force: true })` live in an `app/src`
+module. `T-073-s2` even names this mechanism ("`exclude` … does not stop
+a file arriving by import or by a triple-slash reference") without
+noticing that it also defeats the pin the same card built.
+
+**(c) WHY (b) IS NOT COVERED BY THE OTHER CLOSER.** `rmSync` is in
+NONE of the eleven SINKS strings. Measured on the intact branch: the
+`rmSync` probe reds `tsc` (TS2305, exit 2) and the sweep passes it
+**14/14, exit 0**. So for the most destructive call in T-028's
+surface the type guard is a SINGLE point of failure, and (a) or (b)
+removes it.
+
+#### The sweep's other unpinned dimension — shape SEVEN, found here. `T-073-s4`.
+
+The corpus pin holds `frontendFiles()`'s output. The guarantee depends
+on two more things it does not hold, and both are ordinary call sites:
+
+**(a) THE SINK VOCABULARY.** I planted a DOM-typed sink under `app/src`
+— `await fetch("https://example.com/telemetry", { method: "POST", body:
+payload })` — which `tsc` is structurally blind to (**exit 0**; `fetch`
+is DOM-typed, and this is precisely the class the sweep exists for). The
+sweep reds it correctly. Then one string left the array:
+
+```
+     const SINKS = [
+-      "fetch(",
+       "XMLHttpRequest",
+```
+
+**`npm run build` exit 0, app suite 42 files / 827 tests / exit 0**,
+with a live network sink in the shipped frontend. The corpus pin is
+green (the corpus did not move), the include pin is green, and the
+type program cannot see it. **A mutant at a call site the pins do not
+cover, surviving an 827-test suite at exit 0** — the same shape that
+was catalogued hours earlier, reproduced on this card's own guarantee.
+
+**(b) THE SWEEP'S ITERATION, WHICH IS NOT THE CORPUS.** The pin asserts
+what `frontendFiles()` returns; the sweep is free to filter afterwards.
+One line inside the loop —
+`if (file === "t073-verify-probe.ts") continue; // known false positive`
+— leaves the live sink unswept with **14/14 green** and the corpus pin
+untouched by construction, because the corpus genuinely did not change.
+A per-file excuse is exactly how a sweep dies in practice: the first
+legitimate false positive earns one, and nothing then holds the rest.
+
+Neither (a) nor (b) is a criterion failure — the criteria asked for the
+widening and got it — but the card's claim that the pin "reds on every
+realistic narrowing" is true only of the file dimension. Filed as
+`T-073-s4`.
+
+#### `app/package.json` — THE RULING THIS PASS EXISTS FOR: IN FENCE, and correct.
+
+The card's fence is "TypeScript, tsconfig and tests only — no Rust",
+and `app/package.json` is a manifest. The executor flagged it rather
+than assumed it and said it could not judge. It judges as follows.
+
+**The fence's own stated purpose is not violated.** The card states why
+the fence exists: "this card holds `app-shell` only because the fence
+spans both halves of C-05; the `app/src-tauri` half is untouched, so
+nothing in this diff can collide with a Rust-only lane." `app/package.json`
+is not Rust, is inside `app/`, and cannot collide with an
+`app/src-tauri/**` lane.
+
+**`touches:` is scheduling, not permission** — `method/tasks/TASK-FORMAT.md:18`
+defines it as "expected blast radius; orchestrator never parallelizes
+tasks with overlapping touches". The precedent a sibling verifier set
+this week is directly on point, and T-058 rewrote another card's file in
+place under a `tools/e2e` fence.
+
+**No live lane collides.** Checked read-only against all three sibling
+branch tips (`task/T-069-relay`, `task/T-076-id-layer`,
+`task/T-078-conventions`): none touches `app/package.json`, either
+tsconfig, or any `app/test/` file this card edits.
+
+**The alternative was a real regression, measured rather than argued.**
+I appended `const t073VerifierTypeError: number = "not a number";` to
+`app/test/map-search.test.ts` and ran the gates:
+
+```
+bare `tsc` (the app program, i.e. build without the added line):  BARE_TSC_EXIT=0   <- MISSED
+`tsc -p tsconfig.test.json` (the line the executor added):        TESTPROG_EXIT=2   <- CAUGHT
+`npx vitest run test/map-search.test.ts`:                         VITEST_EXIT=0     <- MISSED
+```
+
+Vitest transpiles without typechecking, so without that one line
+**nothing in this repo would typecheck any of the 42 test files** — a
+silent, permanent coverage loss, caused by this card, in exchange for
+avoiding a one-word manifest edit. `workflow-parity.spec.ts:243` pins
+`{ kind: "verbatim", dir: "app", cmd: "npm run build" }` — the COMMAND
+string, not the script body — so the e2e lane is untouched by the
+change (88/88 confirmed below), and CONVENTIONS' description of
+`npm run build` stays true.
+
+**Ruled: the line stays.** Removing it would trade a documented,
+in-`app/` manifest edit for an undocumented hole in the repo's typecheck
+coverage. The executor made the right call and was right to flag it.
