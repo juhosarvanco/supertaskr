@@ -580,17 +580,22 @@ the verdict is the record.
 | `tools/e2e` parity spec (port 17871) | **14 passed** | 0 |
 | `lib/parser` `npx vitest run` | **234 passed (234)**, 12 files | 0 |
 | `lib/parser` again, with s7/s8/s9 in the tree | **234 passed (234)** | 0 |
-| `npm run lint:tokens` | clean, TOKEN 118 / CONTROL **502** | 0 |
+| `npm run lint:tokens` at `1f0f7ae` | clean, TOKEN 118 / CONTROL **502** | 0 |
+| `npm run lint:tokens` at `0770049` (final) | clean, TOKEN 118 / CONTROL **505** | 0 |
 | `npm run lint:tokens -- --selftest` | 49 TOKEN + 2 CONTROL, 37 walk checks | 0 |
 
 Each suite wrote to a file and `$?` was read from the unpiped command;
-the files were read afterwards. CONTROL 502 is 496 at `e4a5ae7` plus the
-six suggestion files then present, and moves to 505 with s7/s8/s9.
+the files were read afterwards — nothing was piped through `tail`, `head`
+or `grep` ahead of its exit code. CONTROL is 496 at `e4a5ae7`, **502**
+once the six suggestion files this branch already carried are counted,
+and **505** at the final commit with s7/s8/s9 added. Every count in this
+subsection names the ref it was taken at, per T-078-s7.
 
 #### GATE TRIGGERS — both computed, and the notation is a trap
 
-**NEITHER GATE FIRES.** This branch's contribution is nine files, all
-`.md` under `docs/`; BOOT GATE matches 0, GRAPH REGEN matches 0.
+**NEITHER GATE FIRES.** This branch's contribution at the final commit
+`0770049` is **twelve** files, all `.md` under `docs/`; BOOT GATE
+matches 0, GRAPH REGEN matches 0.
 `docs/architecture/graph.json` was NOT regenerated and is a 0-file diff.
 Entailed independently: `docs/` is `.nputerignore`d, so nothing in this
 diff is in the indexer's walk at all.
@@ -599,7 +604,17 @@ diff is in the indexer's walk at all.
 quoting bug passed the range as one argument, `git diff` errored, the
 path list came back EMPTY, and an empty list satisfies every trigger —
 a green that means "I measured nothing". Redone with a non-emptiness
-assert (9 paths, census `9 docs` / `9 md`) so the zero is a real zero.
+assert so the zero is a real zero: at `1f0f7ae` 9 paths, census
+`9 docs` / `9 md`; at `0770049` 12 paths, census `12 docs` / `12 md`.
+
+**And the nine-versus-twelve is this card's own defect, caught in these
+notes.** I first wrote "nine files" here — measured correctly at
+`1f0f7ae`, before I had filed s7, s8 and s9, and stale by three the
+moment I did. A bare count in prose went wrong inside the notes of the
+fix for two bare counts going wrong, in the same session that filed
+T-078-s7 asking that counts carry their ref. Caught by recomputing at
+the final commit instead of trusting the earlier run. Every figure in
+this subsection now names its ref.
 
 **Main moved while this lane was open** — it is at `79ae34a` (T-043 and
 T-076 merged); `git merge-base HEAD main` is still `e4a5ae7`. Computing
@@ -608,8 +623,9 @@ returns **44 paths and FIRES BOTH GATES** — 5 `.rs` and 13 `.ts` that
 belong to T-043 and T-076, shown in reverse because a two-dot diff
 between two divergent tips is symmetric. The true merge diff, computed
 read-only with `git merge-tree --write-tree main HEAD` and then
-`git diff main <tree>`, is exactly the nine `docs/` files and fires
-neither. **The integrator should not attribute a graph obligation to
+`git diff main <tree>`, is exactly the twelve `docs/` files at
+`0770049` and fires neither; the merge itself comes out clean.
+**The integrator should not attribute a graph obligation to
 T-078**: any `.ts` in a merge-time range belongs to T-076 and was
 discharged at T-076's merge. Filed as T-078-s9.
 
