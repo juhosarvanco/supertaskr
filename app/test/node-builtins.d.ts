@@ -8,6 +8,25 @@
  * environment where these modules are real; this file declares exactly
  * the surface the test consumes, nothing more, so any broader node usage
  * in app code still fails the typecheck.
+ *
+ * THIS FILE IS THE SHARED HALF, AND IT IS READ-ONLY BY CONSTRUCTION
+ * (T-073). It is the one `test/` path `app/tsconfig.json` names, so
+ * `app/src` sees exactly this surface and no other: a webview module
+ * that reaches for a node WRITE gets TS2305/TS2724 out of `tsc` for
+ * free, which is half of ADR-017 — the spawned planner writes, the app
+ * renders what lands — enforced by the type system rather than by a
+ * sweep. T-028's write surface now lives in `node-builtins-write.d.ts`,
+ * which only `tsconfig.test.json` includes.
+ *
+ * THE SPLIT HAS TO BE A PROGRAM BOUNDARY, NOT A FILE BOUNDARY, because
+ * ambient module declarations are PROGRAM-GLOBAL: a `declare module
+ * "node:fs"` block written inside the one test that writes does NOT
+ * scope the writes to that test. Measured on this tree at T-073 — with
+ * the write block moved into `crescendo-dom.test.tsx` and nowhere else,
+ * a four-line probe under `app/src` importing `mkdirSync`/
+ * `writeFileSync` still compiled at exit 0.
+ *
+ * ADD READS HERE; ADD WRITES NEXT DOOR.
  */
 
 declare module "node:fs" {
@@ -18,23 +37,6 @@ declare module "node:fs" {
    * plus, since T-037, mtimeMs, so the built-bundle assertion can refuse
    * a dist/ older than the sources it claims to be evidence about. */
   export function statSync(path: string): { isDirectory(): boolean; mtimeMs: number };
-  /** T-028: writing a REAL decomposition into a TEMP project. The whole
-   * surface a scripted planner needs and not one call more — create the
-   * temp root, create directories, write files, remove the tree. Nothing
-   * here can reach the repo unless a test hands it a path inside it,
-   * which is exactly the property `crescendo-dom.test.tsx` guards by
-   * building every path from `mkdtempSync(tmpdir(), …)`. */
-  export function mkdtempSync(prefix: string): string;
-  export function mkdirSync(path: string, options?: { recursive?: boolean }): void;
-  export function writeFileSync(path: string, data: string, encoding: "utf8"): void;
-  export function rmSync(path: string, options?: { recursive?: boolean; force?: boolean }): void;
-}
-
-declare module "node:os" {
-  /** The system temp root — where T-028's scripted decomposition lands.
-   * Declared here rather than reached for generally: this is the one
-   * import that keeps real test files OUT of the repo's own docs/tasks/. */
-  export function tmpdir(): string;
 }
 
 declare module "node:path" {

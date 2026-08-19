@@ -1,0 +1,12 @@
+{
+  /* THE TEST PROGRAM (T-073). Everything `tsconfig.json` compiles, plus
+     `test/` — and `test/` is where `node-builtins-write.d.ts` lives, so
+     this is the only program in which `node:fs` has mkdtempSync /
+     mkdirSync / writeFileSync / rmSync and `node:os` exists at all.
+     Every compiler option is inherited; only `include` widens, because
+     the WHOLE POINT of the second program is that the first one is
+     narrower. `npm run build` runs both, so a type error in a test is
+     still a build failure. */
+  "extends": "./tsconfig.json",
+  "include": ["src", "test"]
+}
