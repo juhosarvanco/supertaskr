@@ -127,13 +127,26 @@ without it:
 6. **BOTH COLUMNS OF THE SCOREBOARD, EACH UNDER ITS OWN METRIC** —
    path-for-path 29/30/3 and byte-for-byte 29/24/3, plus the six merges
    that separate three dots' two scores. This item is added after the
-   fact and it is the sharpest of the seven: **T-083 was rejected for
+   fact and it is the sharpest of them: **T-083 was rejected for
    measuring one metric and labelling it the other**, so a reader
    checking a single column would have been green straight through the
    exact defect that sent this card back. A figure and its metric are
    ONE claim, and a reader that stores them apart re-opens the hole.
 7. **Presence, not value, for the prose commitments**: the `merge-tree`
    command, the `Not "rarely"` refusal, the exit-code warning.
+8. **THE PRINTED RECIPE ITSELF — EXECUTE IT, do not re-implement it.**
+   Folded in by the integrator at T-083's merge `5c60e5a`, from the
+   re-verdict, which recorded it here rather than filing it separately
+   because this finding owns the list. **The one mutant the verifier's
+   prototype missed is N11, a CORRUPTED RE-DERIVATION RECIPE**: the
+   bullet prints the commands a reader should run, and nothing checks
+   that those commands are the ones that produced the published
+   columns. A reader that re-implements the derivation beside the doc
+   is GREEN over a recipe that no longer computes it — so the figures
+   stay defended and the instructions for re-deriving them rot
+   silently, which is the worse failure, because the recipe is what the
+   next re-deriver actually follows. Run the printed commands and
+   compare their output to the parsed table.
 
 **And the argument against the bad remedy still stands.** This is not an
 argument for a fixture that greps for `**9**`. A test pinning the digits

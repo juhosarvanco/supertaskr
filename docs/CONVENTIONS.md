@@ -512,9 +512,18 @@
   side against the gate's own trigger. Only FOUR of the twelve were on
   record when this correction was written: three named on T-083's card
   at `99791ea`, a fourth added by T-080's checkpoint `cb3aa31`. The
-  other eight came back from that derivation, so the sentence had been
-  false for weeks while three checkpoints running believed they were
-  recording the first exceptions. THE FOURTH IS ALSO MIS-ATTRIBUTED
+  other eight came back from that derivation, and three checkpoints
+  running believed they were recording the first exceptions.
+  **THE SENTENCE WAS NEVER TRUE — NOT FOR ONE COMMIT**, derived at
+  T-083's merge `5c60e5a` because this bullet said "false for weeks"
+  until someone checked: it was WRITTEN at `98f931e`, 2026-08-17
+  05:50, and its earliest counterexample — T-030's merge `59558de` —
+  landed at 02:21 the same morning, three and a half hours EARLIER and
+  an ancestor of the commit that wrote it (`git merge-base
+  --is-ancestor 59558de 98f931e` exits 0). "Weeks" was wrong in the
+  other direction too: the repository was two days old. AN UNREFED
+  DURATION GOES STALE EXACTLY THE WAY AN UNREFED COUNT DOES, and one
+  `git log --format=%ci` settles both. THE FOURTH IS ALSO MIS-ATTRIBUTED
   WHERE IT IS RECORDED: `cb3aa31` lists T-076's flip under GRAPH REGEN,
   but at `79ae34a` GRAPH is 13 against 13 and it is BOOT GATE that goes
   0 against 5 — the numbers were right and the gate was not (T-083-s1).
