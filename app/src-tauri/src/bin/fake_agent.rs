@@ -372,6 +372,73 @@ fn main() {
                 })
             );
         }
+        // T-081 criterion 4, and this is the stream the JOIN KEY ITSELF
+        // turns on: **THE SAME TOOL REFUSED TWICE, WITH ONLY ONE OF THE
+        // TWO REFUSALS ANNOUNCED IN BAND.**
+        //
+        // Its two neighbours cannot see the key at all, and the reason
+        // is worth stating because it is the same blind spot twice:
+        // `denied-then-completed` announces BOTH of its denials, so a
+        // join on `tool_name` filters both and the count is still right;
+        // `denied-live-and-silent` gives its two ids DIFFERENT names, so
+        // a join on `tool_name` separates them just as cleanly as a join
+        // on `tool_use_id`. Over this stream it cannot: both entries
+        // name `Bash`, so a name join reads the SECOND refusal as one it
+        // has already announced and drops it.
+        //
+        // **THE FAILURE DIRECTION IS SILENCE** — a refusal the CLI
+        // reported reaches nobody — which is the defect this whole card
+        // exists to fix, not the duplicate that would merely be a
+        // nuisance.
+        //
+        // HALF TRANSCRIBED, and the halves are named the way
+        // `tool-denied`'s are. TRANSCRIBED: the census `["Bash", "Bash"]`
+        // is the observed turn's own
+        // (`docs/research/captures/real-planner-turn-2026-08-19.jsonl`,
+        // 2.1.226) — one tool refused twice, which is exactly what made
+        // the old `["Bash", "WebFetch"]` guess able to hide this, and is
+        // `T-081-s2`'s whole subject. CONSTRUCTED, openly: the MISSING
+        // in-band line. 2.1.226 announces every denial it makes, so a
+        // partial announcement cannot be captured from it — but a lost
+        // or malformed line, and the runner's own `MAX_DENIALS` cap on
+        // LIVE emits (which deliberately leaves the late channel to
+        // report the rest), both produce exactly this shape against a
+        // CLI that refuses one tool repeatedly.
+        //
+        // The ids are self-describing rather than the capture's real
+        // ones so that an assertion failure names WHICH channel was
+        // lost; `tool_use_id` is opaque to the runner and its bytes
+        // carry no behaviour.
+        //
+        // The `emit_tool_use` between is the liveness witness, for the
+        // reason `denied-then-completed` records at length: a delta is
+        // coalesced and therefore dates nothing.
+        "denied-same-tool-one-announced" => {
+            emit_init(&session_id, &model);
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "system", "subtype": "permission_denied",
+                    "tool_name": "Bash", "tool_use_id": "toolu_announced",
+                    "decision_reason_type": "subcommandResults",
+                    "message": "This Bash command contains multiple operations.",
+                    "session_id": session_id
+                })
+            );
+            emit_tool_use("Bash");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": false,
+                    "terminal_reason": "completed", "num_turns": 1,
+                    "permission_denials": [
+                        { "tool_name": "Bash", "tool_use_id": "toolu_announced" },
+                        { "tool_name": "Bash", "tool_use_id": "toolu_never_announced" }
+                    ],
+                    "result": "Stage 0 done - docs/ scaffolded from templates."
+                })
+            );
+        }
         // T-081 criteria 2 and 6: THE DENIAL LINE THAT BARELY DESCRIBES
         // ITSELF. Constructed, deliberately and openly — the CLI has
         // never been seen to write either of these, and that is exactly

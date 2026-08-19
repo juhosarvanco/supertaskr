@@ -1561,6 +1561,86 @@ fn one_denial_on_each_channel_is_reported_once_each() {
     assert!(status.last_error.is_none());
 }
 
+/// **AND THE JOIN KEY IS `tool_use_id`, WHICH IS A CLAIM NO STREAM ABOVE
+/// CAN FALSIFY.** Criterion 4 names the key in as many words; this is the
+/// body that holds it there.
+///
+/// Its two neighbours are both blind to the key by construction, and the
+/// blindness is the same one twice.
+/// `a_denial_reaches_the_screen_the_moment_it_happens_and_the_turn_still_succeeds`
+/// announces BOTH of the observed turn's denials in band, so joining on
+/// `tool_name` filters both and the count is still two.
+/// `one_denial_on_each_channel_is_reported_once_each` gives its two ids
+/// DIFFERENT names (`Bash`, `WebFetch`), so joining on `tool_name`
+/// separates them exactly as well as joining on `tool_use_id` does.
+/// Swap the key in the runner and the whole cargo suite stays green.
+///
+/// **THIS IS `T-081-s2` IN A NEW COSTUME, AND THAT IS THE LESSON RATHER
+/// THAN THE LINE.** `s2` reported that the old `["Bash", "WebFetch"]`
+/// guess made a NAME look like it could identify a denial; the fixtures
+/// that replaced the guess reintroduced the same blind spot from the
+/// other side. A property is only pinned by a stream in which the wrong
+/// answer and the right one DIFFER.
+///
+/// The one shape where they differ is the observed turn's own — **the
+/// same tool refused twice** (the capture's census is `["Bash", "Bash"]`)
+/// — with one of the two in-band lines missing. A name join then reads
+/// the second refusal as one it already announced and drops it.
+///
+/// **THE FAILURE DIRECTION IS SILENCE**, not a duplicate: the assertion
+/// below reds with ONE id where two are owed, which is a refusal the CLI
+/// reported and the user is never told about. That is the exact defect
+/// this card exists to fix, arriving through the fix.
+#[test]
+fn a_second_refusal_of_the_same_tool_is_not_swallowed_by_the_first() {
+    let h = harness(
+        "deniedsamename",
+        Options { scenario: "denied-same-tool-one-announced", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let seen = collect_turn(&h.events);
+    let denied = denied_events(&seen);
+    assert_eq!(
+        denied.iter().map(|d| d.2.clone()).collect::<Vec<_>>(),
+        vec![
+            Some("toolu_announced".to_string()),
+            Some("toolu_never_announced".to_string()),
+        ],
+        "both refusals of the SAME tool reach the screen - the join is on \
+         `tool_use_id`, and a join on `tool_name` reports only the announced \
+         one and drops the other into silence: {seen:#?}"
+    );
+    // Both name `Bash`, which is the whole point: NOTHING about the tool
+    // name separates these two events, so nothing but the id can have
+    // told them apart.
+    assert_eq!(denied[0].1.as_deref(), Some("Bash"));
+    assert_eq!(denied[1].1.as_deref(), Some("Bash"));
+    // The announced one kept the CLI's own sentence; the one that
+    // reached only the cumulative record has none to keep, and the app
+    // invents nothing.
+    assert_eq!(denied[0].3, "This Bash command contains multiple operations.");
+    assert_eq!(denied[1].3, "");
+    // …and the announced one really was announced LIVE rather than
+    // replayed at the end: the tool the planner reached for next sits
+    // BETWEEN the two events. An `Activity` witness rather than a delta,
+    // for `T-081-s5`'s reason - if the transport can hold B, B cannot
+    // date A.
+    let activity: Vec<u64> = seen
+        .iter()
+        .filter_map(|e| match e {
+            RunEvent::Activity { seq, .. } => Some(*seq),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        activity.iter().any(|seq| *seq > denied[0].0 && *seq < denied[1].0),
+        "the recovery tool ran AFTER the live denial and BEFORE the late one: {seen:#?}"
+    );
+    let status = settle(&h.agent);
+    assert_eq!(status.phase, Phase::Idle, "two denials of one tool, and the turn completed");
+    assert!(status.last_error.is_none(), "a denial is not a failure: {:?}", status.last_error);
+}
+
 /// **AND THE OLDER PATH DOES NOT REGRESS TO SILENCE.** A CLI that writes
 /// no in-band line at all — every fixture in this file before T-081, and
 /// any CLI build predating the channel — still has its denial reported,
