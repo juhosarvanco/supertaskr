@@ -85,3 +85,42 @@ narrowing the allowlist is a decision about what the planner may do,
 not about what the runner trusts from disk, and folding it into a
 hygiene card would smuggle a product ruling past the human. Read with
 s2.
+
+**Observed 2026-08-19 — the containment argument is weaker than this
+file assumed, and the proposed fix cannot work.** One authenticated
+planner turn (`docs/research/real-cli-observation.md`) ran `ls -la` and
+`find … | head -100` **unprompted**, and neither is among the six
+patterns. The obvious confound is ruled out: this machine's
+`~/.claude/settings.json` allows only `Bash(git add|rm|mv|commit:*)` —
+no `ls`, no `find`. So the CLI itself grants a read-only Bash class
+under `--permission-mode acceptEdits`, on top of the adapter's table.
+
+Two consequences, both against this file's own premise:
+
+1. **Narrowing the six patterns cannot narrow the effective grant.**
+   This file's implied remedy — drop `cp` and `mkdir`, lean on Read+Write
+   which IS cwd-scoped — leaves whatever the CLI grants by default
+   untouched, and the size of that default is now known to be non-empty
+   and is otherwise unmeasured. Any future containment claim has to
+   characterise the CLI's own baseline, not just the adapter's table.
+2. **The adapter deliberately passes no `--settings`, so it rides the
+   user's config.** On 2026-08-19 this machine's user settings gained
+   `Bash(git rm:*)` and `Bash(git mv:*)` for unrelated reasons — and
+   those are now in the spawned planner's grant surface, under a table
+   whose header says the planner cannot remove files. The grant surface
+   is the union of the adapter's table, the CLI's defaults, and whatever
+   the user happens to have configured; only the first is reviewed.
+
+Also observed, and it makes the `cp` question moot in one direction:
+**`cp <glob>` is structurally refused** regardless of the pattern —
+*"Glob patterns are not allowed in write operations."* Stage 0's literal
+instruction is *copy docs-templates/\*.md into docs/*, so widening
+`Bash(cp:*)` can never make the natural command work; the planner needed
+eight separate `cp` calls. Whatever arm is taken, it is not "grant the
+glob".
+
+STILL PARKED, and now for a better reason: the arm this file leaned
+toward is disproved, and the replacement question — what does the CLI
+grant when we say nothing — is a measurement nobody has taken. UNPARK
+with that measurement, or with F-04's adapter card (T-086 in the
+2026-08-19 decomposition draft), whichever comes first.
