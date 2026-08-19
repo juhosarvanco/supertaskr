@@ -207,10 +207,22 @@ distributed across which variant gets constructed.
 
 In order, each costing approximately nothing:
 
-1. **`codex --help`, `codex exec --help`, `codex exec resume --help`.**
-   Zero model calls, exit codes only. This is what T-082 did for Claude
-   and it settled a shipped defect. **Nothing in §5 should be built on
-   until this is run.**
+1. **`codex --version`, `codex --help`, `codex exec --help`,
+   `codex exec resume --help`.** Zero model calls, exit codes only.
+   This is what T-082 did for Claude and it settled a shipped defect.
+   **Nothing in §5 should be built on until this is run**, and the
+   output belongs in `docs/research/captures/` beside the Claude turn,
+   because a `--help` capture is evidence and a memory of one is not.
+
+   **Resolve the binary through a LOGIN shell before concluding it is
+   absent.** `command -v codex` and `zsh -lic 'command -v codex'` are
+   different questions, and the runner has a login-shell probe
+   precisely because a non-login shell's PATH is not the user's. On
+   this machine both came back empty on 2026-08-19, which is how §0's
+   claim was established — but a future reader who tries only the
+   first and finds nothing has not measured the same thing.
+   `min_major` is why `--version` leads: the adapter refuses below a
+   major version rather than guessing at flag semantics.
 2. **One real `codex exec --json` turn on a throwaway prompt**, captured
    to a file — the Codex twin of `docs/research/real-cli-observation.md`.
    One turn answered three open questions for Claude and closed two
