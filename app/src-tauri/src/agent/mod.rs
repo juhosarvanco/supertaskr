@@ -210,21 +210,54 @@ impl AgentState {
 
     /// Kill the live child's process group and wait for it. Called from
     /// the `RunEvent::ExitRequested`/`Exit` hook and from `Drop` — the
-    /// two paths that make "child processes SHALL not outlive the app"
-    /// true for every exit the app controls.
+    /// two paths that make "no child process SHALL outlive the app" true
+    /// for every exit the app controls.
+    ///
+    /// **WHAT "no orphan" MEANS HERE, exactly** (T-043, absorbing
+    /// T-025-s5): no orphaned descendant THAT STAYS IN THE GROUP. The
+    /// signal is `killpg`, so it reaches the CLI and every tool
+    /// subprocess it forked — and a descendant that calls `setsid()`
+    /// leaves the group and survives. That is a property of process
+    /// groups, not a defect, and it is measured rather than argued: the
+    /// T-025 verifier's escapee probe recorded `child_alive=false
+    /// escapee_alive=true child_pid=72417 escapee_pid=72418
+    /// escapee_pgid=72418`. A descendant SWEEP stays a deliberate
+    /// non-goal — the selected CLI can create a new session, and after
+    /// reparenting the ancestry is undiscoverable — and what bounds the
+    /// exposure is narrower and true: no `Bash(...)` pattern the planner
+    /// is granted intentionally daemonizes. Revisit when that allowlist
+    /// widens.
+    ///
+    /// **THIS THREAD DOES NOT OWN THE `Child`** — the worker running the
+    /// turn does, and it is the only thread that may `waitpid`. So the
+    /// wait here is the OBSERVER's poll: it reads the reaped flag off the
+    /// shared [`ChildHandle`] the worker publishes to, which is what lets
+    /// a cooperative group release the app's exit in milliseconds instead
+    /// of holding the main thread for the full five-second grace
+    /// (T-025-s7). If no worker is there to publish, the poll costs the
+    /// full grace — the behaviour this call always had.
     ///
     /// A SIGKILL of the app itself cannot run cleanup; that orphan is
     /// bounded to ONE turn by the spawn-per-turn topology (§1), and this
     /// is where that honesty is recorded rather than papered over.
     pub fn reap_for_exit(&self) {
         self.cancel.store(true, Ordering::SeqCst);
-        let handle = *self.child.lock().expect("child slot poisoned");
+        let handle = self.child.lock().expect("child slot poisoned").clone();
         if let Some(handle) = handle {
             println!(
                 "[nputer] agent: app exiting - terminating turn {} process group {}",
                 handle.turn, handle.pid
             );
-            runner::terminate_group(handle.pid, self.cfg.kill_grace);
+            let exit = runner::terminate_group_observing(&handle, self.cfg.kill_grace);
+            println!(
+                "[nputer] agent: turn {} process group {} left after {} ms (reaped={} groupEmpty={} sigkilled={})",
+                handle.turn,
+                handle.pid,
+                exit.waited.as_millis(),
+                exit.reaped,
+                exit.group_empty,
+                exit.escalated
+            );
         }
     }
 }
@@ -724,9 +757,13 @@ pub fn status(agent: &AgentState) -> GenesisStatus {
 ///
 /// Answers immediately: SIGTERM goes out synchronously and the 5 s grace
 /// + SIGKILL escalation runs on its own thread, so the command never
-/// holds the caller for the grace period.
+/// holds the caller for the grace period. T-043 changed only what the
+/// background half watches for — the observer's two-limb poll rather than
+/// `kill(pid, 0)` — so the escalation stops once the worker has reaped
+/// and the group is empty, instead of SIGKILLing a pgid whose pid may by
+/// then belong to somebody else.
 pub fn cancel(agent: &AgentState) -> CancelOutcome {
-    let handle = *agent.child.lock().expect("child slot poisoned");
+    let handle = agent.child.lock().expect("child slot poisoned").clone();
     match handle {
         Some(handle) => {
             agent.cancel.store(true, Ordering::SeqCst);
@@ -734,7 +771,7 @@ pub fn cancel(agent: &AgentState) -> CancelOutcome {
                 "[nputer] agent: cancelling turn {} - signalling process group {}",
                 handle.turn, handle.pid
             );
-            runner::terminate_group_async(handle.pid, agent.cfg.kill_grace);
+            runner::terminate_group_async(&handle, agent.cfg.kill_grace);
             CancelOutcome::Cancelled { turn: handle.turn }
         }
         None => CancelOutcome::Idle,
