@@ -9,10 +9,10 @@ status: planned
 blocked_by: []
 touches: [app-shell, app-interview]
 builder: codex/gpt-5.6
-verifier:
+verifier: claude-opus-5 @fresh
 built_by: codex/gpt-5.6 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: independent
 ---
 
 Absorbs: T-027-s4, T-049-s3 (triage 2026-08-17), T-063-s7, T-063-s4
@@ -202,3 +202,88 @@ and this card.
 moved. No Rust, e2e, parser, manifest, capability, token, fixture or IPC
 surface is in the diff. `docs/architecture/graph.json` correctly left for the
 integrator.
+
+**Mutation drills — all seven the card names, applied one at a time,
+restored between each, each restoration proved by sha256 against
+`git show HEAD:<path>` (not by a clean `git status`).**
+
+| # | mutant | result |
+|---|---|---|
+| M1 | project-directory clause removed from `shouldRebaseline` | **red**, 1 test — `changed` flips to `undefined` in **both** the equal (seq 8) and lower (seq 3) arms |
+| M2 | `useAccelerators` cleanup return deleted | **red** — `[ 'called', 'called' ]` vs `[ 'called' ]`, exit 1 |
+| M3 | registration deps `[]` → `[table]` | **red**, 1 test — `{ adds: 2, removes: 2 }` vs `{ adds: 1, removes: 1 }`; **no other test in the suite caught it**, which is exactly the gap the card claimed |
+| M4 | `preventDefault` moved above the absent-entry return | **red** — existing scoped test, "the board never claimed a cancel chord: expected 1 to be +0". No duplicate test was added |
+| M5 | latest-table refresh effect deleted | **red** — existing scoped test, "the interview owns the cancel chord: expected +0 to be 1" |
+| M6 | post-pick re-arm deleted from `watcher-store.ts` | **red** — stale-pull test observed `listenCalls: 1, invokeCalls: 0` vs `2 / 1` |
+| M7 | premature top-level value import of the store, observably used | **red at collect time** — `expected false to be true` at `startup-screen.test.tsx:98`, before any test rendered |
+
+Every figure the card quotes for these seven reproduces. The four final
+test-file sha256 values it quotes also reproduce exactly:
+`2019421bd68a…f3409`, `d9736c5e8759…df5238`, `668c5cc8832a…134ff6`,
+`da3226ad9197…195c33`.
+
+**Matchers.** No fifth "one-sided but relation-preserving" shape found.
+Every changed assertion *tightened*: three separate `expect`s with messages
+became one whole-object `toEqual`, and `toHaveLength(1)` became an exact
+count inside it. No `arrayContaining`, no `.not`, no loosened inequality,
+no `toContain` needle. The one matcher worth a second look —
+`toEqual` ignoring `undefined` properties in the switch test — cannot bite,
+because the object literal always sets the key.
+
+**The recursive check: is there a vacuous assertion inside T-057 itself?**
+Yes, one, and three lesser findings. Filed as
+`T-057-s1`…`T-057-s4` (`status: suggested`):
+
+- **s1 — the replacement positive chip test is a duplicate.** Criterion 3's
+  honest positive, `"a docs snapshot during an active turn produces a chip"`,
+  is the same `bank()` call as `"a file that lands AFTER completed still
+  belongs to that turn"` three cases above it: same seq, same turn, same
+  prime, same matcher, same expected value. The only difference is an inert
+  content string. **Measured:** rewriting `"written"` to `"v1"` makes the two
+  calls character-identical and the file still passes 58/58. It kills no
+  mutant of its own — it stayed green under M1 and under the deleted
+  different-project guard. The `f(x) === f(x)` tautology was not removed so
+  much as spread across two tests. It does red under an expected-value
+  poison, which is why the card's poison discipline passed it.
+- **s2 — the relocation added re-renders.** Faithful rule, but the baseline
+  moved from a `useRef` to `useState`, so a snapshot that advances the seq
+  and banks nothing now returns a fresh object and re-renders where the old
+  code called no setter at all. Measured with a temporary probe:
+  `M9 identity kept: false | prev baseline seq: 1 | next baseline seq: 2 |
+  chipsByTurn identity: true`. Bounded impact (it re-fires an auto-scroll
+  effect that is a no-op at the bottom), but it is a behaviour change no test
+  on this branch can see, moving against T-056's direction.
+- **s3 — `interview-model.ts`'s header still says "and tested"** about the
+  human-writes-the-file property, whose only test this commit deleted. The
+  comment now lies, in the file T-057 edited. Not strictly a criterion miss
+  (the "sharpest proof" wording it names was in the test file and is gone).
+- **s4 — the switch test's `switched: undefined` half** is held by
+  `bankedSince`'s stale-seq guard, not the different-project guard its name
+  implies: deleting that guard reds two *pre-existing* tests and leaves this
+  one green. A tension rather than a mistake — the equal/lower watermarks are
+  precisely what makes the load-bearing `changed` half isolate the projectDir
+  clause.
+
+**One failure was mine, not the branch's.** After the drills the full app
+suite reported `1 failed | 824 passed`, on
+`shell-harness.test.ts > "is not stale: the build is at least as new as the
+store"`. That test compares mtimes; restoring files by rewriting them from
+`git show` bumps mtime while leaving content sha-identical. `npm run build`
+(green, **265 modules transformed** — the card's figure exactly) cleared it
+and the suite returned to **825 passed (825)**, `FINAL_APP_EXIT=0`. Recorded
+so the number is not mistaken for a flake in the branch.
+
+**Two stamp facts for the integrator, neither a defect against the builder.**
+`status:` still reads `planned` and should read `verifying` — size M, so
+`method/roles/executor.md:19` does not allow `done`. That is almost certainly
+the stamp the builder's usage limit interrupted; status left alone as
+instructed. And `docs/architecture/graph.json` is correctly not regenerated.
+
+**VERDICT: APPROVED.** The branch is complete — every acceptance criterion
+is met, and the card's own evidence reproduces line for line, including four
+sha256 values and the 265-module build. All seven mechanism mutants were
+re-derived first-hand and each red. The four findings above are follow-ups,
+not blockers: s1 and s4 are assertions weaker than their names, s2 is an
+unpinned behaviour change, s3 is a stale comment. None of them makes a
+shipped mechanism wrong, and none of them was green under a mutant that
+should have red.
