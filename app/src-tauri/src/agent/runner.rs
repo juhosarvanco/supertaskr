@@ -1202,6 +1202,7 @@ fn terminate_group_polling(pid: i32, grace: Duration, mut reaped: impl FnMut() -
 
 /// How often the grace poll looks. Small enough that "well inside the
 /// grace" is about the child's behaviour rather than about this number.
+#[cfg(unix)]
 const POLL_INTERVAL: Duration = Duration::from_millis(25);
 
 /// **THE OWNER'S FORM** — for the one thread that holds the `Child`.
