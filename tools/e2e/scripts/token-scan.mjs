@@ -97,6 +97,36 @@ const wrapperPath = "tools/e2e/scripts/lint-tokens.mjs";
 export const CORPORA = Object.freeze({ TOKEN: "TOKEN", CONTROL: "CONTROL" });
 
 /**
+ * ── EXIT CODES (T-080) ───────────────────────────────────────────────
+ * The wrapper's legend, owned here so the codes and their meanings live
+ * beside the gate that produces them.
+ *
+ * CI runs this gate FIRST, against a bare checkout, so "the gate could
+ * not run" and "the tree is dirty" must not share a code. T-058 made
+ * CONTROL's authority `git ls-files`, which gave the gate a real
+ * could-not-run mode — git absent, not a repository, the corpus
+ * underivable — and that mode THREW, so Node exited 1, the code a
+ * genuine violation already used. The two other gates that legend their
+ * codes in docs/CONVENTIONS.md, `index --check` and `boot:check`, each
+ * RESERVE one for it; this one now does too, and takes `index --check`'s
+ * number for the same meaning.
+ *
+ * 2 is deliberately UNUSED, reserved for `usage` — the meaning
+ * `index --check` gives it — so adding flag validation later renumbers
+ * nothing a checkpoint has already quoted.
+ */
+export const EXIT = Object.freeze({
+  /** Ran to completion, found nothing. */
+  CLEAN: 0,
+  /** Ran to completion and FOUND something: a hit in the tree, or a
+   *  selftest failure, which is a hit against the gate's own evidence. */
+  FOUND: 1,
+  /** Did NOT run to completion, so it is not a claim about the tree at
+   *  all. Every throw out of this module lands here. */
+  CANNOT_RUN: 3,
+});
+
+/**
  * The trees walked, in order, each with the argument for including it
  * (T-045 criterion 5). The corpus is the tree where a Tailwind class can
  * be WRITTEN — not the tree that ships, because a class written in a test
@@ -208,6 +238,73 @@ export const CONTROL_BINARY_EXTENSIONS = new Set([
   ".zip",
 ]);
 
+/**
+ * ── THE CORPUS FLOOR, RUNG A (T-080 / T-058-s1) ──────────────────────
+ * Suffix classes CONTROL is ALLOWED to be missing. Every other suffix
+ * present in the tracked file list must appear in the corpus.
+ *
+ * DELIBERATELY A SECOND LIST, not CONTROL_BINARY_EXTENSIONS — the same
+ * shape MUST_TOKEN_COVER uses one rung up, and for the same reason. The
+ * obvious formulation ("every suffix in tracked MINUS the binary set is
+ * in the corpus") is a TAUTOLOGY: the corpus is DEFINED as tracked minus
+ * that set, so adding `.rs` to the deny list would remove `.rs` from the
+ * expectation too and the check would stay green. The deletion would
+ * delete its own failure — the very shape this floor exists to close.
+ * Measured before this floor existed, at `16bb47b`: adding one line to
+ * the deny list took CONTROL 507 -> 463 (`.rs`) and 507 -> 461 (`.tsx`)
+ * with the lint AND the selftest both still exiting 0.
+ *
+ * The duplication buys the asymmetry that makes the floor bite:
+ * - a new first-party TEXT format needs NO edit here. It is tracked, it
+ *   is not exempt, and CONTROL already covers it — which is the property
+ *   the deny list was chosen for in the first place.
+ * - a new BINARY asset class needs a deliberate edit in BOTH lists, and
+ *   reds until it gets one. That loudness is the point.
+ */
+export const CONTROL_UNCOVERED_SUFFIXES = new Set([
+  ".gif",
+  ".gz",
+  ".icns",
+  ".ico",
+  ".jpeg",
+  ".jpg",
+  ".mov",
+  ".mp3",
+  ".mp4",
+  ".otf",
+  ".pdf",
+  ".png",
+  ".ttf",
+  ".webm",
+  ".webp",
+  ".woff",
+  ".woff2",
+  ".zip",
+]);
+
+/**
+ * ── THE CORPUS FLOOR, RUNG B (T-080 / T-058-s1) ──────────────────────
+ * Suffix classes CONTROL must cover COMPLETELY — every tracked file of
+ * that class, not merely one of them. Rung A catches a suffix joining
+ * the deny list; rung B catches the two edits that would slip past rung
+ * A, and one rung A cannot see at all:
+ *
+ * - declaring a class binary in BOTH lists at once, and
+ * - a class that stays present but stops being WHOLE, which is what a
+ *   new SKIP_DIRS entry or a narrowed walk does. Rung A only asks for
+ *   one survivor; a class can lose 43 of its 44 files and still have it.
+ *
+ * The four names are not a taste: they are the classes the ARCHITECT's
+ * 2026-08-18 ruling (T-058, criterion 4) named out loud — "app/parser
+ * Rust and TypeScript" and the records "agents search to recover the
+ * project". Ten of the eighteen classes are already held by name-pinned
+ * files below; `.rs` and `.tsx` were the two largest that were held by
+ * nothing, and they are exactly the two the ruling names.
+ *
+ * Counts are DERIVED from the tracked list on every run. No number here.
+ */
+export const MUST_CONTROL_COVER = [".rs", ".ts", ".tsx", ".md"];
+
 /** The 22-name Tailwind default palette (P3). */
 const PALETTE =
   "red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|" +
@@ -264,8 +361,12 @@ export function makeTokenPatterns() {
 }
 
 /** The masked character. No pattern can match it, and it is not a `]`,
- * so an interpolated value (`p-[${n}px]`) still reads as one. */
-const HIDDEN = "\0";
+ * so an interpolated value (`p-[${n}px]`) still reads as one. Built from
+ * a character code, never spelled as an escape: T-058's practical lesson
+ * is that the fix is not to be careful but to never write the escape at
+ * all — thirteen reproductions, two of them inside documents describing
+ * the hazard. After T-080 this module spells no control escape anywhere. */
+const HIDDEN = String.fromCharCode(0);
 
 /** Keywords after which a `/` opens a regex literal rather than dividing
  * (anything else identifier-shaped is a value: `x / y`). */
@@ -598,11 +699,15 @@ function tokenCorpus() {
 }
 
 /**
- * Every tracked first-party text file. git is the authority for "tracked";
- * generated/dependency directories and binary assets are excluded by
- * policy, while every other suffix (and no suffix) is included.
+ * Every path git tracks, UNFILTERED — the authority CONTROL derives from
+ * and, since T-080, the authority its coverage floor derives from too.
+ *
+ * Extracted rather than inlined because the floor has to see the files
+ * the policy REMOVED, and `corpus(CONTROL)` is precisely the view that
+ * cannot show it. A throw here means the gate could not run (EXIT
+ * .CANNOT_RUN), not that the tree is dirty.
  */
-function controlCorpus() {
+export function trackedFiles() {
   let listed;
   try {
     listed = execFileSync("git", ["ls-files", "-z"], {
@@ -615,11 +720,28 @@ function controlCorpus() {
   }
   return listed
     .toString("utf8")
-    .split("\0")
+    .split(String.fromCharCode(0))
     .filter(Boolean)
-    .filter((rel) => !rel.split("/").some((part) => SKIP_DIRS.has(part)))
-    .filter((rel) => !CONTROL_BINARY_EXTENSIONS.has(path.posix.extname(rel).toLowerCase()))
     .sort();
+}
+
+/** The suffix class of a path, lowercased, as `extname` sees it — a
+ *  dotfile has NO extension and shares the "" class with extensionless
+ *  fixtures. Written once so the corpus, the floor and any reader
+ *  classify identically; a shell `${f##*.}` split does NOT agree here. */
+export function suffixClass(rel) {
+  return path.posix.extname(rel).toLowerCase();
+}
+
+/**
+ * Every tracked first-party text file. git is the authority for "tracked";
+ * generated/dependency directories and binary assets are excluded by
+ * policy, while every other suffix (and no suffix) is included.
+ */
+function controlCorpus() {
+  return trackedFiles()
+    .filter((rel) => !rel.split("/").some((part) => SKIP_DIRS.has(part)))
+    .filter((rel) => !CONTROL_BINARY_EXTENSIONS.has(suffixClass(rel)));
 }
 
 /** Every file in one explicit corpus. Importing this module calls neither. */
@@ -656,7 +778,7 @@ export function lintTree() {
         "app/src/styles/tokens.css; literal controls make tracked text unsearchable " +
         "to binary-skipping tools (docs/CONVENTIONS.md).",
     );
-    process.exit(1);
+    process.exit(EXIT.FOUND);
   }
   console.log(
     `lint-tokens: clean (TOKEN ${tokenFiles.length} files under ${TOKEN_ROOTS.join(", ")}; ` +
@@ -752,13 +874,48 @@ const SAMPLES = [
   { text: 'expect(stderr).toContain("[boot-check] REFUSED:");', expect: [] },
 ];
 
-/** P5 samples are Buffers built at runtime; no forbidden byte is typed here. */
+/**
+ * P5 samples. Every forbidden byte is built at runtime from a character
+ * code and none is typed into this source — a source file carrying a
+ * literal control byte would trip the gate it is testing and would
+ * itself be unsearchable (T-058 criterion 2, and T-034 hit exactly this
+ * writing its own gate).
+ *
+ * ── WHY THE EXPECTED STRING IS WRITTEN OUT (T-080 / T-058-s4) ────────
+ * The report format is load-bearing: the byte is INVISIBLE, so this line
+ * is the only description of it a reader ever gets. Each `codepoint` is
+ * therefore a LITERAL — never `codepoint(byte)` and never a second copy
+ * of its formula. An expectation produced by re-running the production
+ * formula pins the PIPELINE and not the FORMAT: it agrees with the
+ * implementation by construction, so uppercasing, zero-padding and the
+ * `U+` prefix can all change together with nothing red.
+ *
+ * And the sample VALUES have to discriminate. Until T-080 the only
+ * positive was U+0000, whose hexadecimal contains no letters, so
+ * uppercasing is a no-op on it: dropping `.toUpperCase()` left this
+ * selftest — CI's FIRST step, on a bare checkout — at exit 0 while the
+ * seventeenth-step lane went red twice. Measured at `16bb47b`, before
+ * and after. U+001B and U+007F both render a letter; the floor below
+ * requires at least one such positive so the gap cannot silently reopen.
+ */
 const CONTROL_SAMPLES = [
   {
+    what: "U+0000 after a non-ASCII prefix — the T-058 original, byte offset included",
     raw: Buffer.concat([Buffer.from("prefix é ", "utf8"), Buffer.from([0x00])]),
     expect: [{ codepoint: "U+0000", offset: Buffer.byteLength("prefix é ", "utf8") }],
   },
   {
+    what: "U+001B (ESC), whose hex carries a LETTER — the s4 blind spot",
+    raw: Buffer.concat([Buffer.from("esc é ", "utf8"), Buffer.from([0x1b])]),
+    expect: [{ codepoint: "U+001B", offset: Buffer.byteLength("esc é ", "utf8") }],
+  },
+  {
+    what: "U+007F (DEL), lettered and above the C0 range the predicate tests separately",
+    raw: Buffer.from([0x7f]),
+    expect: [{ codepoint: "U+007F", offset: 0 }],
+  },
+  {
+    what: "tab, LF and CR are the three allowed bytes — the negative",
     raw: Buffer.from([0x09, 0x0a, 0x0d]),
     expect: [],
   },
@@ -841,6 +998,137 @@ function walkPolicyChecks() {
       "CONTROL excludes generated/dependency directories",
       !controlFiles.some((f) => f.split("/").some((part) => SKIP_DIRS.has(part))),
     ],
+    ...controlFloorChecks(controlFiles),
+  ];
+}
+
+/**
+ * ── THE CORPUS FLOOR (T-080, closing T-058-s1) ───────────────────────
+ * The binary-extension deny list IS the CONTROL policy, and until now
+ * almost nothing pinned it: ten of the eighteen suffix classes were held
+ * by name-pinned files above, and the other eight — `.tsx` 46, `.rs` 44,
+ * no-extension 10, `.js` 3, `.jsx` 2, `.cts` 2, `.mts` 1, `.txt` 1 at
+ * `16bb47b` — were held only by the six root-non-emptiness rows, which
+ * survive losing any one suffix as long as the root keeps a file of some
+ * other suffix. One line could drop a fifth of the corpus green.
+ *
+ * Three rungs, each derived from the TRACKED list rather than from the
+ * corpus, because the corpus is the view that cannot show what the
+ * policy removed:
+ *
+ *   A. every tracked suffix class is covered COMPLETELY, unless it is
+ *      declared in CONTROL_UNCOVERED_SUFFIXES — and every declared class
+ *      really is absent, so the two lists must agree in BOTH directions.
+ *   B. the classes the architect's ruling named are covered completely
+ *      WITHOUT consulting the exemption list, so declaring one binary in
+ *      both lists at once still reds.
+ *   C. every tracked top-level entry keeps all of its non-exempt files,
+ *      which is what a new SKIP_DIRS entry takes away.
+ *
+ * The tracked side is deliberately UNFILTERED by SKIP_DIRS. Filtering it
+ * would make rung C a tautology — a directory added to the skip set
+ * would leave both sides of its own comparison at once. Zero tracked
+ * files sit under a skip directory today; if one ever does, this floor
+ * reds, and that is the correct alarm rather than a false one.
+ */
+function controlFloorChecks(controlFiles) {
+  const tracked = trackedFiles();
+  const covered = new Set(controlFiles);
+  const trackedBy = (key) => {
+    const groups = new Map();
+    for (const rel of tracked) {
+      const k = key(rel);
+      if (!groups.has(k)) groups.set(k, { tracked: 0, covered: 0, exempt: 0 });
+      const g = groups.get(k);
+      g.tracked += 1;
+      if (covered.has(rel)) g.covered += 1;
+      if (CONTROL_UNCOVERED_SUFFIXES.has(suffixClass(rel))) g.exempt += 1;
+    }
+    return [...groups.entries()].sort();
+  };
+
+  const byClass = trackedBy(suffixClass);
+  const byTop = trackedBy((rel) => (rel.includes("/") ? `${rel.split("/")[0]}/` : "(root files)"));
+
+  return [
+    // RUNG A, positive: a covered class keeps every one of its files.
+    ...byClass
+      .filter(([cls]) => !CONTROL_UNCOVERED_SUFFIXES.has(cls))
+      .map(([cls, g]) => [
+        `CONTROL covers every tracked ${cls || "(no extension)"} file ` +
+          `(${g.covered}/${g.tracked})`,
+        g.covered === g.tracked,
+      ]),
+    // RUNG A, negative: a class declared uncoverable really is absent, so
+    // the exemption list cannot quietly grow past the deny list either.
+    ...byClass
+      .filter(([cls]) => CONTROL_UNCOVERED_SUFFIXES.has(cls))
+      .map(([cls, g]) => [
+        `CONTROL excludes every tracked ${cls} file (${g.tracked} tracked, ${g.covered} covered)`,
+        g.covered === 0,
+      ]),
+    // RUNG B: the architect's named classes, without asking the
+    // exemption list for permission.
+    ...MUST_CONTROL_COVER.map((cls) => {
+      const g = byClass.find(([k]) => k === cls)?.[1] ?? { tracked: 0, covered: 0 };
+      return [
+        `required CONTROL class ${cls} is present and whole (${g.covered}/${g.tracked})`,
+        g.tracked > 0 && g.covered === g.tracked,
+      ];
+    }),
+    // RUNG C: no top-level entry quietly loses its text.
+    ...byTop.map(([top, g]) => [
+      `CONTROL keeps all non-asset files under ${top} ` +
+        `(${g.covered}/${g.tracked - g.exempt})`,
+      g.covered === g.tracked - g.exempt,
+    ]),
+  ];
+}
+
+/**
+ * ── THE EVIDENCE FLOOR (T-080, closing T-058-s2 — poison shape five) ──
+ * The three sample/check arrays above are self-enumerating and the
+ * selftest fails per element, so DELETING AN ASSERTION DELETES ITS OWN
+ * FAILURE: the green line then prints a smaller cardinality and nothing
+ * compares it to anything. Measured at `16bb47b`, before this floor
+ * existed — removing the six CONTROL root rows left the selftest green
+ * at 31 walk-policy checks instead of 37, and removing the first six
+ * TOKEN positives left it green at 43 samples instead of 49.
+ *
+ * A per-pattern COVERAGE floor rather than a literal count, because it
+ * survives honest additions and still catches a removal: no number here
+ * moves when a sample is added, and every one of them moves when the
+ * last sample for some pattern is taken away.
+ *
+ * The floor is generated from TOKEN_PATTERNS — the PRODUCTION list — so
+ * a pattern cannot be retired by deleting its row: retire the pattern
+ * and the samples that expect its id fail first.
+ */
+function evidenceFloorChecks() {
+  const positivesFor = (id) => SAMPLES.filter((s) => s.expect.includes(id)).length;
+  const tokenNegatives = SAMPLES.filter((s) => s.expect.length === 0).length;
+  const controlPositives = CONTROL_SAMPLES.filter((s) => s.expect.length > 0);
+  const controlNegatives = CONTROL_SAMPLES.filter((s) => s.expect.length === 0).length;
+  const lettered = controlPositives.filter((s) =>
+    s.expect.some((e) => /[A-F]/.test(e.codepoint.slice(2))),
+  ).length;
+  return [
+    ...TOKEN_PATTERNS.map(({ id }) => [
+      `${id} has a positive sample (${positivesFor(id)})`,
+      positivesFor(id) > 0,
+    ]),
+    [`TOKEN samples include negatives (${tokenNegatives})`, tokenNegatives > 0],
+    [
+      `${CONTROL_PATTERN.id} has a positive sample (${controlPositives.length})`,
+      controlPositives.length > 0,
+    ],
+    [`${CONTROL_PATTERN.id} has a negative sample (${controlNegatives})`, controlNegatives > 0],
+    // T-058-s4: a positive whose hex has no letters cannot tell the
+    // shipped formatter from a lowercase one. At least one must.
+    [
+      `${CONTROL_PATTERN.id} has a positive whose codepoint carries a hex letter (${lettered})`,
+      lettered > 0,
+    ],
   ];
 }
 
@@ -856,12 +1144,13 @@ export function selftest() {
       );
     }
   }
-  for (const { raw, expect } of CONTROL_SAMPLES) {
+  for (const { what, raw, expect } of CONTROL_SAMPLES) {
     const got = scanControlSource(raw).map(({ codepoint, offset }) => ({ codepoint, offset }));
     if (JSON.stringify(got) !== JSON.stringify(expect)) {
       failures += 1;
       console.error(
-        `selftest FAIL: runtime P5 sample matched ${JSON.stringify(got)} expected ${JSON.stringify(expect)}`,
+        `selftest FAIL: runtime P5 sample (${what}) matched ${JSON.stringify(got)} ` +
+          `expected ${JSON.stringify(expect)}`,
       );
     }
   }
@@ -872,13 +1161,24 @@ export function selftest() {
       console.error(`selftest FAIL: walk policy — ${what}`);
     }
   }
+  // The floor runs LAST and reports separately: a sample set that has
+  // stopped covering a pattern is a different failure from a sample that
+  // disagrees with the scanner, and CI's first step should say which.
+  const floors = evidenceFloorChecks();
+  for (const [what, ok] of floors) {
+    if (!ok) {
+      failures += 1;
+      console.error(`selftest FAIL: evidence floor — ${what}`);
+    }
+  }
   if (failures > 0) {
     console.error(`lint-tokens selftest: ${failures} failure(s)`);
-    process.exit(1);
+    process.exit(EXIT.FOUND);
   }
   console.log(
     `lint-tokens selftest: ${SAMPLES.length} TOKEN samples + ` +
       `${CONTROL_SAMPLES.length} CONTROL samples green, ` +
-      `${checks.length} walk-policy checks green`,
+      `${checks.length} walk-policy checks green, ` +
+      `${floors.length} evidence-floor checks green`,
   );
 }
