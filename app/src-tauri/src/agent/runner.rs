@@ -113,7 +113,17 @@ pub enum TurnError {
     /// with an escaped one-line blob of the CLI's own words under it and
     /// a **Try again** button that would fail identically forever. The
     /// bytes were delivered; the MEANING was not, and neither was the one
-    /// action that helps (`claude login`).
+    /// action that helps (`claude auth login`).
+    ///
+    /// **T-082: THAT ACTION READ `claude login` UNTIL 2026-08-19, AND THE
+    /// CLI HAS NO SUCH COMMAND** — `claude [options] [command] [prompt]`
+    /// parses an unrecognised leading word as the PROMPT, so the advice
+    /// started a turn instead of a login. The runner never produced that
+    /// string and does not produce the corrected one either: this variant
+    /// carries a STATUS and the CLI's own MESSAGE, and the action is the
+    /// app's, in `app/src/genesis/interview-model.ts`'s `failureAction`.
+    /// Named here only so a reader of this doc comment is not sent to a
+    /// command that does not exist.
     ///
     /// Measured against claude 2.1.226: the failure arrives on STDOUT as
     /// a `system`/`api_retry` line with `error_status: 401`, then a

@@ -722,7 +722,11 @@ describe("a typed failure carries the ONE action that helps (T-029)", () => {
     } as const;
     expect(failureHeadline(error)).toBe("your CLI's login has expired");
     const action = failureAction(error)!;
-    expect(action.command).toBe("claude login");
+    // T-082: EXACT, and exactly this. `claude login` is not a command —
+    // the CLI parses an unrecognised leading word as the PROMPT — so this
+    // pin is written as equality against the corrected literal rather
+    // than as a substring, which `claude login` would still satisfy.
+    expect(action.command).toBe("claude auth login");
     // THE DISCRIMINATING PROPERTY of the whole criterion. Nothing about
     // an expired login changes between two presses of Try again, so
     // offering it is offering the one thing that cannot work.
@@ -731,6 +735,39 @@ describe("a typed failure carries the ONE action that helps (T-029)", () => {
     // The CLI's own words survive as the detail — evidence, not a
     // diagnosis, and dropping them would trade one silence for another.
     expect(failureDetail(error)).toContain("401");
+  });
+
+  /**
+   * T-082 criterion 4 — THE ADVICE IS THE APP'S OWN AND IS NEVER
+   * ASSEMBLED FROM WHAT THE CLI SAID.
+   *
+   * The defect this card fixes is a command nobody ran. An app that
+   * lifted its recovery command out of the CLI's own error text would
+   * inherit that class forever: whatever the CLI printed would become
+   * what the user is told to type. So the fixture below is an auth
+   * failure whose words name a DIFFERENT command entirely, and the
+   * property is that the app's value does not move.
+   *
+   * THE SECOND ASSERTION IS THE POSITIVE CONTROL, and without it the
+   * first one is satisfied equally by "insulated" and by "the message
+   * never arrived" (CONVENTIONS: a negative assertion needs a positive
+   * control). `failureDetail` proves the hostile text really did reach
+   * the app and really is rendered — as EVIDENCE — while `command`
+   * stayed the app's own literal.
+   */
+  it("keeps its own recovery command when the CLI's words name a different one", () => {
+    const error = {
+      kind: "authFailed",
+      status: 401,
+      message:
+        "Failed to authenticate. API Error: 401 credentials expired, please run `frobnicate --relogin` to continue.",
+    } as const;
+    const action = failureAction(error)!;
+    expect(action.command).toBe("claude auth login");
+    expect(action.command).not.toContain("frobnicate");
+    expect(action.hint).not.toContain("frobnicate");
+    // The control: the CLI's text DID arrive, and is rendered as detail.
+    expect(failureDetail(error)).toContain("frobnicate --relogin");
   });
 
   it("names the denied tools, and KEEPS the retry, because a denial may not repeat", () => {

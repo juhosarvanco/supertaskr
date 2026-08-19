@@ -334,9 +334,15 @@ is ADR-006's manual-interview instrument delivered as a first-class mode
 rather than a fallback nobody built.
 **The expired login.** This is the one a real user hits first. A failure
 the CLI reports in band is now a TYPED outcome instead of a relayed
-blob: an expired login says so and offers `claude login` plus the
+blob: an expired login says so and offers `claude auth login` plus the
 hand-driven route, and a turn killed because `--allowedTools` was too
-narrow names the tool that was denied. **The verification of this card
+narrow names the tool that was denied. **That command read `claude
+login` from T-029 on 2026-08-17 until T-082 on 2026-08-19, and there is
+no such command** — the CLI parses an unrecognised leading word as the
+PROMPT, so the app had correctly diagnosed the login, correctly decided
+to help, and handed over something that silently started a turn instead.
+T-082 read the CLI's own `--help` surface and corrected it. **The
+verification of this card
 is worth one sentence in a roadmap**, because the first attempt got it
 backwards in a way a user would have felt: the auth status latched, so a
 401 the CLI had already RECOVERED from could survive to the end and
@@ -421,7 +427,9 @@ explain. The names now always reach the tail, whether or not anything
 claims them. The second half is quieter and is about a BUTTON: a planner
 that hit a 401, retried, got past it and then died of something else
 used to be reported as an expired login — Try again removed, the user
-sent to `claude login` with a login that was fine. Model text arriving
+sent to `claude login` (the string the app printed at the time, and the
+one T-082 later found is not a command at all) with a login that was
+fine. Model text arriving
 after the failed request is the stream's own evidence that the retry
 worked, and the diagnosis is now withdrawn when it appears, leaving the
 plain exit-code failure with the 401 still readable in the detail and

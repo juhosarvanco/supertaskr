@@ -65,7 +65,12 @@ test("an expired login is a diagnosis with an action, not an exit code with a li
   await expect(block).toBeVisible();
   await expect(block).toHaveAttribute("data-error-kind", "authFailed");
   await expect(block).toContainText("your CLI's login has expired");
-  await expect(page.getByTestId("interview-failure-command")).toHaveText("claude login");
+  // T-082: EXACT — `toHaveText` with a string is a full-text match, not a
+  // substring one, so this reds for `claude login` and for anything else.
+  // `claude login` is not a command: the CLI parses an unrecognised
+  // leading word as the PROMPT, so the app's own advice used to start a
+  // turn instead of a login. Checked against 2.1.226's `--help` surface.
+  await expect(page.getByTestId("interview-failure-command")).toHaveText("claude auth login");
 
   // THE BUTTON THAT LIED IS GONE. Before T-029 this state rendered "the
   // planner exited with code 1" over a relayed blob, with a Try again

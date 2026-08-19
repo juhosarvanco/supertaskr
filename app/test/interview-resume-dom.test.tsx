@@ -211,7 +211,10 @@ describe("an expired CLI login is a diagnosis, not a dead end", () => {
     const block = q("[data-testid=interview-failure]")!;
     expect(block.getAttribute("data-error-kind")).toBe("authFailed");
     expect(block.textContent).toContain("your CLI's login has expired");
-    expect(q("[data-testid=interview-failure-command]")?.textContent).toBe("claude login");
+    // T-082: EXACT. `claude login` is not a command — the CLI parses an
+    // unrecognised leading word as the PROMPT — and a substring matcher
+    // here would pass for both the old value and the new one.
+    expect(q("[data-testid=interview-failure-command]")?.textContent).toBe("claude auth login");
     expect(q("[data-testid=interview-failure-action]")?.textContent).toContain(
       "needs no login at all",
     );
@@ -243,6 +246,49 @@ describe("an expired CLI login is a diagnosis, not a dead end", () => {
     expect(q("[data-testid=interview-kickoff]")?.textContent).toContain("KIT ROOT");
     expect(q("[data-testid=interview-kickoff-cwd]")?.textContent).toBe(PROJECT);
     expect(block.textContent).toContain("Run this in any agent CLI in your terminal");
+  });
+});
+
+/**
+ * T-082 criterion 4, AT THE RENDER — the screen's recovery command is the
+ * app's own and is never relayed out of the CLI's error text.
+ *
+ * Its own block because it needs a chat whose auth failure carries
+ * DIFFERENT words: a CLI that names some other command entirely. The
+ * model-level pin in `interview-model.test.ts` proves `failureAction`
+ * does not read the message; this one proves the COMPONENT does not
+ * either, which is the half a pure-function pin cannot see.
+ *
+ * The detail assertion is the positive control: it proves the hostile
+ * text reached the DOM and is painted as EVIDENCE, so "unmoved" means
+ * insulated rather than absent.
+ */
+describe("the recovery command is the app's own, whatever the CLI said (T-082)", () => {
+  it("renders its own command while the CLI's words name a different one", async () => {
+    await withStatus();
+    render();
+    await flush(() => Promise.resolve());
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      {
+        kind: "failed",
+        seq: 2,
+        turn: 1,
+        error: {
+          kind: "authFailed",
+          status: 401,
+          message:
+            "Failed to authenticate. API Error: 401 credentials expired, please run `frobnicate --relogin` to continue.",
+        },
+      },
+    );
+    expect(q("[data-testid=interview-failure-command]")?.textContent).toBe("claude auth login");
+    expect(q("[data-testid=interview-failure-action]")?.textContent).not.toContain("frobnicate");
+    // The control: the CLI's words DID reach the DOM, as the detail —
+    // so the command element is insulated, not merely starved.
+    expect(q("[data-testid=interview-failure-detail]")?.textContent).toContain(
+      "frobnicate --relogin",
+    );
   });
 });
 
