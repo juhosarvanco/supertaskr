@@ -182,3 +182,40 @@ describe('isTaskFilePath', () => {
     expect(isTaskFilePath('other/T-001-x.md', 'other')).toBe(true);
   });
 });
+
+describe('duplicate-id says WHICH id space, in one mixed model (T-076)', () => {
+  const taskSrc = (id: string): string =>
+    `---\nid: ${id}\ntitle: ${id} title\nfeature: F-01\nmilestone: 1\npriority: 1\nsize: S\nstatus: planned\n---\n`;
+  const componentSrc = (id: string, paths: string[]): string =>
+    `---\nid: ${id}\nname: ${id} name\npaths: [${paths.join(', ')}]\ndepends_on: []\n---\nProse.\n`;
+
+  it('reads .space off every duplicate without touching a message', () => {
+    // Criterion 3's whole point, stated as a consumer would use it: a UI
+    // that can filter ALIASES by space could not filter DUPLICATES by it,
+    // because the only discriminator was the prose. Three duplicates, one
+    // model, three spaces read structurally.
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', '# R\n\n## Backbone\n- F-01: One — a\n- F-01: One again — b\n'],
+        ['docs/tasks/T-300-first.md', taskSrc('T-300')],
+        ['docs/tasks/T-300-second.md', taskSrc('T-300')],
+        ['docs/architecture/components/C-05-a.md', componentSrc('C-05', ['a/**'])],
+        ['docs/architecture/components/C-05-b.md', componentSrc('C-05', ['b/**'])],
+      ]),
+    );
+    const duplicates = result.issues.filter((i) => i.kind === 'duplicate-id');
+    expect(duplicates).toHaveLength(3);
+    expect(duplicates.map((i) => (i.kind === 'duplicate-id' ? i.space : ''))).toEqual([
+      'task',
+      'feature',
+      'component',
+    ]);
+    // …and the ids, so the spaces are not being read off three copies of
+    // one issue.
+    expect(duplicates.map((i) => (i.kind === 'duplicate-id' ? i.id : ''))).toEqual([
+      'T-300',
+      'F-01',
+      'C-05',
+    ]);
+  });
+});

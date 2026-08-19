@@ -318,6 +318,124 @@ describe('compareComponentIds', () => {
   });
 });
 
+/**
+ * T-076 — the comparator is TOTAL. `C-\d{2,}` bounds a digit run below and
+ * never above, so a component file can carry a run of any length; the old
+ * `Number(na) - Number(nb)` stopped being a comparison twice on the way up.
+ *
+ * The old body is reproduced here ONCE so "unchanged where it mattered" and
+ * "changed where it was wrong" are both MEASURED relations between two
+ * implementations rather than claims about one. It is the branch-point body
+ * verbatim (lib/parser/src/component.ts:51-59 at e4a5ae7).
+ */
+const numericSubtraction = (a: string, b: string): number => {
+  const pattern = /^C-(\d{2,})$/;
+  const na = pattern.exec(a)?.[1];
+  const nb = pattern.exec(b)?.[1];
+  if (na !== undefined && nb !== undefined) {
+    const diff = Number(na) - Number(nb);
+    if (diff !== 0) return diff;
+  }
+  return a < b ? -1 : a > b ? 1 : 0;
+};
+
+describe('compareComponentIds — TOTAL for every input (T-076)', () => {
+  it('agrees with the subtraction it replaces over every id a double can weigh', () => {
+    // The range where `Number` is EXACT: up to 15 digits. Ordering for
+    // every id this tree can hold lives here (the longest is C-14), and
+    // the criterion asks for it PROVED, not asserted — so both bodies are
+    // run over the same pairs and their SIGNS compared, rather than the
+    // new one being compared to a table someone wrote out by hand.
+    const runs = [
+      '01', '05', '005', '0005', '08', '09', '10', '14', '50', '99', '100', '500',
+      '000', '00', '0000000001', '999999999999999', '100000000000000',
+    ];
+    const ids = runs.map((r) => `C-${r}`);
+    // Non-conforming ids exercise the fallback arm on both sides too.
+    ids.push('C-1', 'X-01', 'C-08-board', 'c-08', '');
+    let pairs = 0;
+    for (const a of ids) {
+      for (const b of ids) {
+        expect(Math.sign(compareComponentIds(a, b))).toBe(Math.sign(numericSubtraction(a, b)));
+        pairs += 1;
+      }
+    }
+    expect(pairs).toBe(484); // 22 × 22 — the sweep is not vacuously empty
+    // And the live registry's own order is byte-identical under both.
+    const live = ['C-14', 'C-01', 'C-11', 'C-05', 'C-10', 'C-09'];
+    expect([...live].sort(compareComponentIds)).toEqual([
+      'C-01', 'C-05', 'C-09', 'C-10', 'C-11', 'C-14',
+    ]);
+    expect([...live].sort(compareComponentIds)).toEqual([...live].sort(numericSubtraction));
+  });
+
+  it('past ~309 digits the old body returned NaN; this one orders, in BOTH directions', () => {
+    // Both digit runs overflow a double, so the old subtraction was
+    // Infinity - Infinity = NaN, and `NaN !== 0` is TRUE — it RETURNED
+    // that, never reaching its string fallback.
+    const smaller = `C-1${'0'.repeat(400)}`; // 401 digits
+    const larger = `C-2${'0'.repeat(400)}`; // 401 digits, same length
+    expect(Number(smaller.slice(2))).toBe(Infinity);
+    expect(Number(larger.slice(2))).toBe(Infinity);
+    expect(numericSubtraction(smaller, larger)).toBeNaN();
+    expect(numericSubtraction(larger, smaller)).toBeNaN();
+
+    expect(compareComponentIds(smaller, larger)).toBeLessThan(0);
+    expect(compareComponentIds(larger, smaller)).toBeGreaterThan(0);
+    expect(compareComponentIds(larger, larger)).toBe(0);
+
+    // The other direction of "past the range": different LENGTHS, where
+    // longer-is-greater is the whole answer and 400 nines is the smaller.
+    const long400 = `C-${'9'.repeat(400)}`;
+    const long401 = `C-${'1'.repeat(401)}`;
+    expect(numericSubtraction(long400, long401)).toBeNaN();
+    expect(compareComponentIds(long400, long401)).toBeLessThan(0);
+    expect(compareComponentIds(long401, long400)).toBeGreaterThan(0);
+  });
+
+  it('sorts huge ids to ONE order whichever order they arrive in', () => {
+    // The harm the NaN did was not a wrong answer, it was NO answer:
+    // `sort` may do anything with a NaN comparator and V8 leaves the pair
+    // as it found it, so the result depended on file arrival order.
+    const ids = [`C-3${'0'.repeat(400)}`, `C-1${'0'.repeat(400)}`, `C-2${'0'.repeat(400)}`];
+    const expected = [`C-1${'0'.repeat(400)}`, `C-2${'0'.repeat(400)}`, `C-3${'0'.repeat(400)}`];
+    expect([...ids].sort(compareComponentIds)).toEqual(expected);
+    expect([...ids].reverse().sort(compareComponentIds)).toEqual(expected);
+    // The old body: the two arrival orders disagree, which is the defect.
+    expect([...ids].sort(numericSubtraction)).not.toEqual(
+      [...ids].reverse().sort(numericSubtraction),
+    );
+  });
+
+  it('CORRECTS the middle range too: fused neighbours of different lengths', () => {
+    // Between 2^53 and Infinity the subtraction was not fatal, only wrong:
+    // `Number` rounds these two to the same double, so the difference was
+    // 0 and the STRING fallback decided — putting the 17-digit id after
+    // the 18-digit one it is smaller than.
+    const seventeenNines = `C-${'9'.repeat(17)}`;
+    const eighteenDigits = `C-1${'0'.repeat(17)}`;
+    expect(Number('9'.repeat(17))).toBe(Number(`1${'0'.repeat(17)}`));
+    expect(numericSubtraction(seventeenNines, eighteenDigits)).toBeGreaterThan(0);
+    expect(compareComponentIds(seventeenNines, eighteenDigits)).toBeLessThan(0);
+  });
+
+  it('inside one aliased slot the digits tie and string order decides — by construction', () => {
+    // The property aliasedIdSlots's doc claims of the comparator it is
+    // PASSED. It was false past ~309 digits, where the old body returned
+    // NaN instead of reaching the fallback.
+    expect(compareComponentIds('C-05', 'C-005')).toBeGreaterThan(0);
+    expect(compareComponentIds('C-005', 'C-05')).toBeLessThan(0);
+    expect(['C-05', 'C-005', 'C-0005'].sort(compareComponentIds)).toEqual([
+      'C-0005',
+      'C-005',
+      'C-05',
+    ]);
+    const huge = '9'.repeat(400);
+    expect(compareComponentIds(`C-${huge}`, `C-0${huge}`)).toBeGreaterThan(0);
+    expect(numericSubtraction(`C-${huge}`, `C-0${huge}`)).toBeNaN();
+  });
+});
+
 const componentSrc = (
   id: string,
   paths: string[],
@@ -374,6 +492,53 @@ describe('parseComponentsFromFiles — cross-file rules', () => {
     // never dropped: the edge stays on the record for placeholder rendering
     const ui = result.components.find((c) => c.id === 'C-02');
     expect(ui?.dependsOn).toEqual(['C-01', 'C-99']);
+    // No declared id shares C-99's slot, so the hint is ABSENT — not an
+    // empty array. Absence is the ordinary case and means exactly one
+    // thing (T-076 ruling 1).
+    expect(result.issues[0]).not.toHaveProperty('nearMiss');
+    expect(result.issues[0]?.message).not.toContain('zero padding');
+  });
+
+  it('a dangling depends_on that is a PADDING variant of a declared id names it (T-076)', () => {
+    const result = parseComponentsFromFiles(
+      new Map([
+        [path('C-001-core.md'), componentSrc('C-001', ['core/**'])],
+        [path('C-02-ui.md'), componentSrc('C-02', ['ui/**'], ['C-01'])],
+      ]),
+    );
+    // Still ONE dangling-reference and no new kind: C-01 genuinely is not
+    // declared. What changes is that the message stops sending a reader
+    // hunting a component that does not exist.
+    expect(result.issues.map((i) => i.kind)).toEqual(['dangling-reference']);
+    expect(result.issues[0]).toMatchObject({
+      kind: 'dangling-reference',
+      file: path('C-02-ui.md'),
+      field: 'depends_on',
+      id: 'C-01',
+      nearMiss: ['C-001'],
+    });
+    expect(result.issues[0]?.message).toBe(
+      `${path('C-02-ui.md')}: depends_on names 'C-01' but no component declares it — 'C-001' is declared and differs only in zero padding (edge preserved for placeholder rendering)`,
+    );
+  });
+
+  it('names EVERY declared spelling when the registry is itself aliased', () => {
+    // C-01 and C-001 both declared (an aliased slot, reported as such);
+    // C-0001 references it. Naming one of the two would be a guess dressed
+    // as a fix, so both are named, in model order.
+    const result = parseComponentsFromFiles(
+      new Map([
+        [path('C-01-a.md'), componentSrc('C-01', ['a/**'])],
+        [path('C-001-b.md'), componentSrc('C-001', ['b/**'])],
+        [path('C-99-c.md'), componentSrc('C-99', ['c/**'], ['C-0001'])],
+      ]),
+    );
+    const dangling = result.issues.filter((i) => i.kind === 'dangling-reference');
+    expect(dangling).toHaveLength(1);
+    expect(dangling[0]).toMatchObject({ id: 'C-0001', nearMiss: ['C-001', 'C-01'] });
+    expect(dangling[0]?.message).toContain(
+      "'C-001', 'C-01' are declared and differ only in zero padding",
+    );
   });
 
   it('a malformed file does not stop the rest; references to it become dangling', () => {
@@ -450,6 +615,41 @@ describe('parseComponentsFromFiles — numerically aliased ids (T-030, absorbing
     const aliased = result.issues.filter((i) => i.kind === 'aliased-id');
     expect(aliased).toHaveLength(1);
     expect(aliased[0]).toMatchObject({ ids: ['C-0005', 'C-005', 'C-05'] });
+  });
+
+  it("the slot's OWN ids array is ordered past the double range too (T-076)", () => {
+    // T-053 passes compareComponentIds into aliasedIdSlots, so this array
+    // and the order the spellings are named in the message were decided by
+    // the same NaN: `sort` kept whatever order the sorted PATHS delivered.
+    // Same ids, two file namings, one answer — which is the whole claim.
+    const huge = '9'.repeat(400);
+    const byPathOne = parseComponentsFromFiles(
+      new Map([
+        [path('C-aaa.md'), componentSrc(`C-${huge}`, ['a/**'])],
+        [path('C-zzz.md'), componentSrc(`C-0${huge}`, ['b/**'])],
+      ]),
+    );
+    const byPathTwo = parseComponentsFromFiles(
+      new Map([
+        [path('C-aaa.md'), componentSrc(`C-0${huge}`, ['a/**'])],
+        [path('C-zzz.md'), componentSrc(`C-${huge}`, ['b/**'])],
+      ]),
+    );
+    const idsOf = (r: ReturnType<typeof parseComponentsFromFiles>): string[] => {
+      const issue = r.issues.find((i) => i.kind === 'aliased-id');
+      return issue !== undefined && issue.kind === 'aliased-id' ? issue.ids : [];
+    };
+    // String order inside the slot: the padded spelling sorts first.
+    expect(idsOf(byPathOne)).toEqual([`C-0${huge}`, `C-${huge}`]);
+    expect(idsOf(byPathTwo)).toEqual([`C-0${huge}`, `C-${huge}`]);
+    // …and the message names them in that same order, padded one first.
+    // `'C-<nines>'` cannot occur inside `'C-0<nines>'` (the quote pins the
+    // start), so both offsets are unambiguous.
+    const message = byPathOne.issues[0]?.message ?? '';
+    const paddedAt = message.indexOf(`'C-0${huge}'`);
+    const bareAt = message.indexOf(`'C-${huge}'`);
+    expect(paddedAt).toBeGreaterThanOrEqual(0);
+    expect(bareAt).toBeGreaterThan(paddedAt);
   });
 
   it('distinct slots and an exact duplicate stay out of it (one fixture, one violation)', () => {

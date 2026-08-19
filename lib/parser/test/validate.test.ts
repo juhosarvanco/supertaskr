@@ -866,3 +866,142 @@ describe('validateProject — wired into the disk layer identically', () => {
     expect(result.tasks.map((t) => t.id)).toEqual(['T-901']);
   });
 });
+
+describe('validateProject — the near-miss HINT on a dangling reference (T-076)', () => {
+  const dangling = (issues: ParseIssue[]): ParseIssue[] =>
+    issues.filter((i) => i.kind === 'dangling-reference');
+
+  it('THE CARD\'S REPRODUCTION: blocked_by T-01 beside a declared T-001', () => {
+    // Before T-076 this said only "no task in the model declares it" —
+    // true, and it sends the author hunting a task that does not exist
+    // while the padding variant sits in the very same file.
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-001-a.md', task('T-001', [['blocked_by', '[T-01]']])],
+      ]),
+    );
+    // Still ONE issue and still the SAME KIND — a hint, never a new kind.
+    expect(kinds(result.issues)).toEqual(['dangling-reference']);
+    expect(result.issues[0]).toEqual({
+      kind: 'dangling-reference',
+      file: 'docs/tasks/T-001-a.md',
+      field: 'blocked_by',
+      id: 'T-01',
+      nearMiss: ['T-001'],
+      message:
+        "docs/tasks/T-001-a.md: blocked_by names 'T-01' but no task in the model declares it — 'T-001' is declared and differs only in zero padding (reference preserved on the record)",
+    });
+    // The reference is still preserved and the record still returns.
+    expect(result.tasks[0]?.blockedBy).toEqual(['T-01']);
+  });
+
+  it('fires on the FEATURE side too: feature F-1 against a backbone F-01', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-901-a.md', task('T-901', [['feature', 'F-1']])],
+      ]),
+    );
+    expect(kinds(result.issues)).toEqual(['dangling-reference']);
+    expect(result.issues[0]).toMatchObject({
+      field: 'feature',
+      id: 'F-1',
+      nearMiss: ['F-01'],
+    });
+    expect(result.issues[0]?.message).toBe(
+      "docs/tasks/T-901-a.md: feature names 'F-1' but the roadmap backbone does not declare it — 'F-01' is declared and differs only in zero padding (reference preserved on the record)",
+    );
+  });
+
+  it('is ABSENT, not empty, when the reference is simply not there', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-901-a.md', task('T-901', [['blocked_by', '[T-777]'], ['feature', 'F-99']])],
+      ]),
+    );
+    const found = dangling(result.issues);
+    expect(found).toHaveLength(2);
+    for (const issue of found) {
+      expect(issue).not.toHaveProperty('nearMiss');
+      expect(issue.message).not.toContain('zero padding');
+    }
+  });
+
+  it('the -sN suffix is part of the slot, so a hint never crosses it', () => {
+    // The subtlety T-053 called the one most likely to be got wrong,
+    // inherited by the hint: a padded BASE and a padded SUFFIX each earn
+    // one, and a DIFFERENT suffix earns none however many neighbours are
+    // declared.
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-016-a.md', task('T-016')],
+        ['docs/tasks/T-016-s2-b.md', task('T-016-s2')],
+        ['docs/tasks/T-901-c.md', task('T-901', [['blocked_by', '[T-16, T-16-s02, T-016-s3]']])],
+      ]),
+    );
+    const found = dangling(result.issues);
+    expect(found.map((i) => (i.kind === 'dangling-reference' ? i.id : ''))).toEqual([
+      'T-16',
+      'T-16-s02',
+      'T-016-s3',
+    ]);
+    expect(found[0]).toMatchObject({ nearMiss: ['T-016'] }); // padded base
+    expect(found[1]).toMatchObject({ nearMiss: ['T-016-s2'] }); // padded suffix
+    // A different suggestion number is a different slot: no hint, even
+    // though T-016 and T-016-s2 are both declared one file away. A
+    // suffix-blind key would have named one of them here.
+    expect(found[2]).not.toHaveProperty('nearMiss');
+  });
+
+  it('names EVERY declared spelling when the task space is itself aliased', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        ['docs/tasks/T-01-a.md', task('T-01')],
+        ['docs/tasks/T-001-b.md', task('T-001')],
+        ['docs/tasks/T-901-c.md', task('T-901', [['blocked_by', '[T-0001]']])],
+      ]),
+    );
+    const found = dangling(result.issues);
+    expect(found).toHaveLength(1);
+    // Model order, which is path-sorted: T-001-b.md precedes T-01-a.md.
+    expect(found[0]).toMatchObject({ id: 'T-0001', nearMiss: ['T-001', 'T-01'] });
+    expect(found[0]?.message).toContain(
+      "'T-001', 'T-01' are declared and differ only in zero padding",
+    );
+    // The aliasing itself is still reported alongside: the hint explains a
+    // symptom, it never replaces the root cause.
+    expect(kinds(result.issues)).toEqual(['dangling-reference', 'aliased-id']);
+  });
+
+  it('ADR-009: a hostile reference gets no near miss out of inherited state', () => {
+    const result = parseProjectFromFiles(
+      new Map([
+        ['docs/ROADMAP.md', ROADMAP],
+        [
+          'docs/tasks/T-901-a.md',
+          task('T-901', [['blocked_by', '[__proto__, constructor, toString]']]),
+        ],
+      ]),
+    );
+    const found = dangling(result.issues);
+    expect(found).toHaveLength(3);
+    for (const issue of found) expect(issue).not.toHaveProperty('nearMiss');
+    expect(Object.prototype).not.toHaveProperty('polluted');
+  });
+
+  it('fires identically through the disk layer', () => {
+    const root = mkdtempSync(join(tmpdir(), 'nputer-nearmiss-'));
+    const tasks = join(root, 'docs', 'tasks');
+    mkdirSync(tasks, { recursive: true });
+    writeFileSync(join(root, 'docs', 'ROADMAP.md'), ROADMAP);
+    writeFileSync(join(tasks, 'T-001-a.md'), task('T-001', [['blocked_by', '[T-01]']]));
+    const result = parseProject(root);
+    expect(dangling(result.issues)).toHaveLength(1);
+    expect(result.issues[0]).toMatchObject({ id: 'T-01', nearMiss: ['T-001'] });
+    rmSync(root, { recursive: true, force: true });
+  });
+});
