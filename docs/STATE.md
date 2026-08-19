@@ -1,7 +1,8 @@
 # State
 
 Updated: 2026-08-19 by integrator (T-083 merged and checkpointed),
-claude-opus-5 @fresh
+claude-opus-5 @fresh — then amended by the architect at `3b4326d`
+(T-081 rejected and a fix dispatched; ROADMAP milestone 4 landed).
 
 ## Just completed
 
@@ -518,14 +519,43 @@ recorded. Nothing is broken.
 **ONE SIBLING LANE HOLDS A WORKTREE AND IS ACTIVE RIGHT NOW.**
 
 - **T-081 — `/Users/ujju/Projects/nputer-T-081`, branch
-  `task/T-081-denial-relay`.** It committed twice while this integration
-  ran and its tip reached `94476b4`, *"T-081: implementation notes, six
-  findings, status verifying"*. It is a live lane with a card in
+  `task/T-081-denial-relay`. VERIFIED AND *REJECTED* AT `ba31a10`; a
+  fresh executor is fixing it now.** It is a live lane with a card in
   `verifying`, and it also holds a detached base worktree inside the
-  shared scratch directory. **Nothing in this checkpoint touched it**,
-  and whoever integrates it should re-derive main's tip rather than
-  inherit `5656a10` from anywhere — this checkpoint is exactly the kind
-  of movement that produced the 6-to-24 drift table above.
+  shared scratch directory. Whoever integrates it should re-derive
+  main's tip rather than inherit `5656a10` from anywhere — this
+  checkpoint is exactly the kind of movement that produced the 6-to-24
+  drift table above.
+
+  **The rejection is one defect and the runner is not part of it.**
+  Criterion 4 names `tool_use_id` as the join key and **no body can
+  tell it from `tool_name`**: moving both join sites together passes
+  351/0/3 with zero bodies red. Both new fixtures miss it by
+  construction — one announces both denials in band, the other gives
+  its two ids different names. **The discriminating shape is the
+  captured turn's own, `["Bash", "Bash"]`: the same tool refused twice
+  with one in-band line absent**, and the failure direction is silence.
+  This is `T-081-s2` reproduced in a new costume — that finding exists
+  because the OLD guess's distinct names made `tool_name` look
+  sufficient, and the replacement fixtures reintroduced exactly that
+  blind spot.
+
+  **Two of the verifier's rulings settle questions the architect got
+  wrong.** `TurnError::ToolDenied`'s doc comment is CORRECT — one
+  construction site, gated on `result_is_error`, which has a single
+  write to `true` inside `if is_error`, so it is unreachable for
+  `is_error: false`. The capture falsifies the *inference* denial ⇒
+  death, not the prose; the executor refused the architect's claim and
+  was right, and `docs/design/cross-harness-plan.md` was corrected at
+  `3b4326d` on the same reasoning. And **T-081's criterion 7 cites a
+  pin that does not exist** —
+  `an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail`
+  appears nowhere in Rust, only as prose at `T-025-agent-runner.md:505`
+  and in the criterion that copied it. The real body is
+  `..._is_typed_authfailed_not_a_relayed_exit_code`
+  (`agent_runner.rs:1305`) and it is green. `T-081-s8` owns the stale
+  prose. **Same class as the grant-span error: wrong text in a card,
+  carried forward by trust rather than re-derived.**
 - **A REAL-CLI OBSERVATION SESSION and an F-04 DECOMPOSITION PASS, both
   outside the repo.** Their products are on main already
   (`docs/research/real-cli-observation.md`,
