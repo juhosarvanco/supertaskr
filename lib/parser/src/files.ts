@@ -141,6 +141,7 @@ export function parseProjectFromFiles(
       if (first !== undefined) {
         issues.push({
           kind: 'duplicate-id',
+          space: 'task',
           id: task.id,
           files: [first, path],
           message: `duplicate task id '${task.id}' in ${first} and ${path}`,

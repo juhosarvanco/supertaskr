@@ -216,8 +216,26 @@ export type ParseIssue =
   | { kind: 'missing-field'; file: string; field: string; message: string }
   /** A frontmatter field is present but malformed for its type. */
   | { kind: 'invalid-field'; file: string; field: string; message: string }
-  /** The same id appears in two files; both paths listed, first seen first. */
-  | { kind: 'duplicate-id'; id: string; files: [string, string]; message: string }
+  /**
+   * The same id string is declared twice; both paths listed, first seen
+   * first. Both records are kept — flagging, not hiding.
+   *
+   * `space` says WHICH id space (T-076), the same required field its
+   * sibling `aliased-id` gained at T-053 and for the same reason: this
+   * kind spans all three spaces from four emit sites (the component
+   * registry, the task disk layer, the task pure layer and the ROADMAP
+   * backbone), and until T-076 the only way to tell them apart was to
+   * read the prose or guess from the shape of `id` — exactly what T-053
+   * ruled out for the very same concept. A consumer that can filter
+   * aliases by space could not filter duplicates by it.
+   *
+   * `files` is index-aligned but NOT always distinct: both backbone
+   * declarations live in `docs/ROADMAP.md`, so for `space: 'feature'` it
+   * is the same path twice and the MESSAGE carries the line numbers that
+   * actually locate them — the shape the feature `aliased-id` already
+   * uses, so the two say the same kind of thing the same way.
+   */
+  | { kind: 'duplicate-id'; space: IdSpace; id: string; files: [string, string]; message: string }
   /**
    * Two or more DIFFERENT id strings whose numeric value is equal — zero
    * padding aliasing one slot (`C-05` and `C-005`; T-030 absorbing
@@ -255,8 +273,34 @@ export type ParseIssue =
    * task's `feature` against the roadmap backbone — the latter two from
    * validateProject, T-019). The reference is preserved on the record
    * (placeholder rendering / unresolved chips), never dropped.
+   *
+   * `nearMiss` is a HINT, not a second kind (T-076): the DECLARED ids
+   * that occupy the reference's numeric slot without being it — `T-001`
+   * when the reference reads `T-01`. Because the slot key strips leading
+   * zeros and nothing else, a non-empty `nearMiss` means exactly one
+   * thing: these ids differ from the reference in zero padding alone.
+   * Without it the message is true and useless in the one case that
+   * matters, telling an author that an id does not exist while the
+   * padding variant of it sits one line away.
+   *
+   * It is a FIELD as well as a sentence because a consumer offering the
+   * fix needs the id, and prose is never the discriminator in this union
+   * (T-053's rule, applied to a hint rather than a kind). It is ABSENT
+   * rather than empty when there is no near miss — the ordinary case —
+   * and its absence can only mean that. Always in model order; several
+   * spellings can qualify at once when the declared space is itself
+   * aliased, and naming one of them would be a guess dressed as a fix.
+   * All three emit sites carry it: `blocked_by`, `feature` and a
+   * component's `depends_on`.
    */
-  | { kind: 'dangling-reference'; file: string; field: string; id: string; message: string }
+  | {
+      kind: 'dangling-reference';
+      file: string;
+      field: string;
+      id: string;
+      nearMiss?: string[];
+      message: string;
+    }
   /**
    * A task's declared `id` disagrees with the id its filename encodes
    * (`docs/tasks/T-NNN[-sN]-slug.md` — validateProject, T-019). `id` is

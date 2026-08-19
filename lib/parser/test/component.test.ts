@@ -336,9 +336,19 @@ describe('parseComponentsFromFiles — cross-file rules', () => {
       ]),
     );
     expect(result.components).toHaveLength(2);
+    // MOVED AT T-076 (2026-08-19, executor claude-opus-5 @fresh), one
+    // line: `space: 'component'`. T-076 criterion 3 makes `space` a
+    // REQUIRED field on duplicate-id, as its sibling aliased-id gained at
+    // T-053 — the kind spans three id spaces from four emit sites and the
+    // only way to tell them apart was to read the prose. A required field
+    // moves every whole-object pin on the kind by construction; this is
+    // one of the three, listed in the card's notes. Changed, never
+    // loosened: still a whole-object toEqual, every other assertion
+    // byte-identical, and the pin now also asserts the discriminator.
     expect(result.issues).toEqual([
       {
         kind: 'duplicate-id',
+        space: 'component',
         id: 'C-05',
         files: [path('C-05-first.md'), path('C-05-second.md')],
         message: `duplicate component id 'C-05' in ${path('C-05-first.md')} and ${path('C-05-second.md')}`,

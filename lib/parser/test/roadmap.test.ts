@@ -264,18 +264,38 @@ describe('parseRoadmap — backbone lines', () => {
     expect(features).toEqual([{ id: 'F-01', name: 'Real', description: 'yes', line: 4, file: FILE }]);
   });
 
-  it('reports duplicate feature ids with both line numbers', () => {
+  it('reports duplicate feature ids with both line numbers, in the alias message shape', () => {
     const dup = '## Backbone\n- F-01: One — first\n- F-01: One again — second\n';
     const { features, issues } = parseRoadmap(dup, FILE);
     expect(features).toHaveLength(2);
+    // MOVED AT T-076 (2026-08-19, executor claude-opus-5 @fresh). Two
+    // changes, both criteria of this card and neither incidental.
+    // Criterion 3: `space: 'feature'` is now REQUIRED on duplicate-id.
+    // Criterion 4: the two backbone issues must say the same kind of
+    // thing in the same SHAPE, and the alias below already names each
+    // declaration as `'<id>' (line N)` — `(lines 2 and 3)` was the odd
+    // spelling out. Changed, never loosened, TWICE OVER: the matcher
+    // TIGHTENS from objectContaining to a whole-object toEqual (matching
+    // its alias sibling at :291 exactly), and the message assertion goes
+    // from one substring to both declarations named individually.
     expect(issues).toEqual([
-      expect.objectContaining({
+      {
         kind: 'duplicate-id',
+        space: 'feature',
         id: 'F-01',
         files: [FILE, FILE],
-        message: expect.stringContaining('lines 2 and 3'),
-      }),
+        message: expect.stringContaining('duplicate backbone feature id'),
+      },
     ]);
+    expect(issues[0]?.message).toContain("'F-01' (line 2)");
+    expect(issues[0]?.message).toContain("'F-01' (line 3)");
+    expect(issues[0]?.message).toContain(FILE);
+    // The consequence clause is the board's MEASURED behaviour: selectBoard
+    // keys columns on the exact string and skips a repeat, so the second
+    // bullet's name and description never reach a column.
+    expect(issues[0]?.message).toContain('discards the second');
+    // The old shape is gone, not merely unasserted.
+    expect(issues[0]?.message).not.toContain('lines 2 and 3');
   });
 });
 

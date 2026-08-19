@@ -51,7 +51,16 @@ describe('parseProjectFromFiles — mirrors the filesystem layer exactly', () =>
     // duplicate is this project's ONLY issue, cross-reference pass included.
     const result = parseProjectFromFiles(loadFixture('dup-project', (rel) => rel));
     const dup = result.issues.find((i) => i.kind === 'duplicate-id');
+    // TIGHTENED AT T-076 (2026-08-19, executor claude-opus-5 @fresh), one
+    // line: `space: 'task'`. This is the PURE task layer, the fourth of
+    // criterion 3's four emit sites and the only one whose pin is a
+    // toMatchObject — so it stayed green through the field's arrival and
+    // would have stayed green through the field's absence HERE alone.
+    // Asserted rather than assumed: the two layers are deep-equal by
+    // contract, and that contract is what a missing field at one site
+    // would break silently.
     expect(dup).toMatchObject({
+      space: 'task',
       id: 'T-300',
       files: ['docs/tasks/T-300-first.md', 'docs/tasks/T-300-second.md'],
     });

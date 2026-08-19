@@ -90,9 +90,15 @@ describe('parseTaskDirectory — duplicate ids', () => {
     const dir = join(fixture('dup-project'), 'docs', 'tasks');
     const { tasks, issues } = parseTaskDirectory(dir);
 
+    // MOVED AT T-076 (2026-08-19, executor claude-opus-5 @fresh), one
+    // line: `space: 'task'`. Criterion 3 makes `space` REQUIRED on
+    // duplicate-id at all four emit sites; this is the DISK task layer's.
+    // Changed, never loosened: whole-object toEqual, everything else
+    // byte-identical, plus the discriminator.
     expect(issues).toEqual([
       {
         kind: 'duplicate-id',
+        space: 'task',
         id: 'T-300',
         files: [join(dir, 'T-300-first.md'), join(dir, 'T-300-second.md')],
         message: expect.stringContaining('T-300-first.md'),
