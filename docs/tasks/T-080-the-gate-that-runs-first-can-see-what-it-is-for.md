@@ -532,3 +532,191 @@ built from a numeric code (`String.fromCharCode(0)` at 369 and 723,
 `Buffer.from([...])` at 904/909/914/919). The card's claim that
 `token-scan.mjs` now spells no control escape anywhere holds.
 
+### The two findings with reach beyond this card
+
+**The IPv4/IPv6 split — confirmed, and the shipped code is already
+right.** Read-only `lsof -nP -i:1420` at this ref shows the human's app
+listening on `[::1]:1420` and **nothing on IPv4 at all**. So an IPv4
+bind-probe of 1420 succeeds, reports the port free, and does not detect
+the app — which is how every agent that probed it that way saw it free.
+But the repo does not make that mistake anywhere: `tauri-boot-check.mjs`
+probes `::1` FIRST and then `127.0.0.1`, with a comment naming this
+exact hazard, and `preflight.ts` probes IPv4 only while the lane refuses
+1420 at config load and pins vite to `--host 127.0.0.1`, so probe and
+bind agree. **The gap is in the hand-run procedure, not the code.**
+`docs/CONVENTIONS.md`'s PORT RULE is accurate as written and needs no
+correction; what it could GAIN is one clause — that the live app binds
+`[::1]` only, so a manual check must be `lsof -nP -i:1420` rather than
+an IPv4 probe. **That is T-078's fence, not this card's**, and it is an
+addition rather than a fix.
+
+**The backtick chain — reproduced end to end.** I planted ONE untracked
+card whose title opens with a backtick. The YAML reader gives
+`YAMLParseError: Plain value cannot start with reserved character` at
+line 2 column 8. `lint:tokens` stayed **exit 0** and `index --check`
+stayed CURRENT — neither can see it. `shell-frame.spec.ts` reds four
+bodies, the three viewport variants at `:232` plus `:263`, all through
+the same helper line `:151`: **`Expected: "60" · Received: "61"`**, with
+the board reporting `data-task-count="117"`. Removing the one file
+returned the spec to 6/6, so the plant was the whole delta. With two bad
+cards it reads 62, which is exactly what the executor recorded. The
+diagnostic is three steps from the cause and names a count, never a
+file.
+
+**The audit re-run at my ref and it holds, wider than claimed.** Parsing
+frontmatter with the same `yaml` reader the parser uses, across
+`docs/tasks`, `docs/tasks/rejected`, `docs/decisions` and `docs/rooms`:
+**130 frontmatter blocks, 0 unparseable, 0 titles opening with any
+YAML-reserved indicator.**
+
+**Scope ruling on the defect class.** A card no gate can see is broken
+is NOT in scope for T-080 and should not have been pulled in: this card
+fences `tools/e2e/**` and its subject is the CONTROL corpus, whereas the
+remedy s6 proposes is a frontmatter-parse gate over `docs/tasks/**` plus
+a rule in `TASK-FORMAT.md`. `T-080-s6` filing it and stopping is the
+right call, and it deserves its own card rather than a widened fence
+here.
+
+### Ruling on the executor's two least-confident items
+
+**1. Keeping the six literal root rows is RIGHT, and the notes
+understate the reason.** The notes call them "dominated". They are not.
+Measured non-destructively by pointing `GIT_INDEX_FILE` at a COPY of the
+index with `method/` dropped (real index untouched throughout): the
+selftest reds with exactly **two** failures and **both are literal
+rows** — `CONTROL includes method/ (0 files)` and the
+`method/runtime/nputer.yaml` name pin. Every derived rung is silent,
+because `byTop` and `byClass` generate one row per group PRESENT: the
+`method/` rung C row and the entire `.yaml` rung A row do not fail, they
+cease to exist. That is poison shape five displaced out of the SOURCE
+and into the TREE, and the literal rows are the only assertions that
+survive their own subject's disappearance. Keep them; correct the word
+"dominated". Filed as `T-080-s8`.
+
+**2. Rung B's four-class list is an ACCEPTABLE FLOOR but the WRONG
+final authority, and a derived replacement exists.** The concern is
+real and I can put a number on it: a two-list edit is invisible for
+every tracked class rung B does not name. Declaring `.jsx` binary in
+BOTH lists silently drops two tracked React sources with the selftest
+green at **70** checks and the lint green — see the ninth shape below
+for why the count does not even move. Fourteen tracked text classes have
+that two-line escape; four do not. **But a derived authority is
+available and was exact at `9c64cd8`**: all 18 tracked files of an
+exempt class contain U+0000 AND fail a strict UTF-8 decode, while
+**zero** tracked files of any covered class do (`.rs` 44, `.md` 240,
+`.jsx` 2, `.txt` 1, `.mts` 1 — none binary by that test). A fourth rung
+asserting that a class declared uncoverable really is binary would have
+red my `.jsx` edit, derives from the tree rather than from a quoted
+ruling, and cannot go stale. So: ship as built, and treat the hand-
+written four as a floor with a known successor. Filed as `T-080-s7`.
+
+### The ninth shape, and the tautology hunt
+
+**Shape nine: a mutation that MOVES a generated row between families
+leaves the cardinality unchanged, so a count floor is blind to it.**
+Declaring `.jsx` binary in both lists left the selftest at **exactly 70
+walk-policy checks**, identical to the untouched tree — rung A's row for
+`.jsx` migrates from the "covers every" family to the "excludes every"
+family and rung C nets out, because `exempt` grows by precisely what
+`covered` loses. Nothing is deleted, so a floor of the form "at least N
+checks" passes at every N. This is an argument against the remedy
+`T-080-s2` proposes for `walkPolicyChecks`: cardinality floors answer
+deletion and say nothing about reclassification. Only a CONTENT floor
+does. Filed as `T-080-s7`.
+
+**Tautology hunt, every assertion this diff adds.** Rung A positive
+compares a BINARY-derived subject against an UNCOVERED-gated
+expectation; rung A negative against a literal 0; rung B against a third
+independent list; rung C puts `SKIP_DIRS` on the subject side only. Four
+different one-sided relations, each proved to fail by execution above.
+The spec never imports `EXIT` and re-types `MUST_CONTROL_COVER`'s four
+names as literals rather than importing them. **One soft instance
+found**: spec `:238` expects `>= TOKEN_PATTERNS.length + 4`, whose first
+term moves with the same production list that generates the rows it
+counts — but the literal `+ 4` is the load-bearing half, and deleting a
+pattern reds the samples first, so it is dominated rather than blind.
+**One real one found**, and it is structural: all three rungs draw both
+sides from the same `trackedFiles()` call, which is `T-080-s8`.
+
+**No second criterion that cannot fail.** Criterion 1's preferred form
+is a genuine tautology, the executor found it, refused it, and resolved
+it correctly; I re-derived that and could not find another. Criteria 2
+through 7 each name a relation whose two sides have independent sources,
+and I red every one of them by mutation.
+
+### Poison discipline, and my own tooling failing the same way
+
+Fifteen mutations here, every one one-sided, every one breaking the
+relation the assertion claims, every one read back as TEXT before the
+run and restored with `git show HEAD:<path>` proved by `shasum -a 256`.
+**Two of my own probes were wrong and the read-back is what caught
+them**, exactly as the dispatch predicted. First, clearing `PATH` to
+test exit 3 also removed `node` from `PATH`, so the run exited **127**
+with `command not found: node`; re-run with an absolute interpreter it
+gives **3**, which is how the spec does it. Second, I copied a poisoned
+file to an UNTRACKED path and read exit 0 as "the gate missed it" — the
+CONTROL corpus is tracked-only by design; planted into a tracked file
+the same byte reds at exit 1. Neither was a defect in the build; both
+would have been reported as findings without the third limb.
+
+### Suites, first-hand in this worktree, exits from `$?` and never piped
+
+- **token lint** exit 0 — TOKEN 118 / **CONTROL 513** at `9c64cd8`,
+  which is the executor's 507 at `fef8870` plus the six finding cards.
+  Independently re-derived: tracked 531, minus 18 binary-suffix files,
+  equals 513, with 22 tracked suffix classes and zero tracked files
+  under a skip directory.
+- **selftest** exit 0 — 49 TOKEN + 4 CONTROL samples, **70** walk-policy
+  checks, **8** evidence-floor checks. Arithmetic checked: 37 pre-T-080
+  rows + 18 rung A positive + 4 rung A negative + 4 rung B + 7 rung C.
+- **E2E lane 91/91** exit 0 (baseline 88 at `16bb47b`; the spec gained
+  three bodies as **110 insertions and 0 deletions**, so no existing
+  body was touched).
+- **focused suite 8/8** exit 0, from 5 bodies at `16bb47b`.
+- **parser 263/263 (12 files)** exit 0 · **app 825/825 (42 files)** exit
+  0 · **cargo 337 passed, 0 failed, 3 ignored** exit 0 ·
+  **`tsc --noEmit`** exit 0.
+
+### Both gates, computed and stated
+
+- **BOOT GATE does NOT fire.** `app/src/**`, `app/src-tauri/**`,
+  `app/package.json`, `app/src-tauri/Cargo.toml` over
+  `16bb47b..9c64cd8` matches **0 paths**. No `BOOT_EXIT` to record.
+- **GRAPH REGEN: the trigger AS WRITTEN fires** on exactly one path,
+  `tools/e2e/tests/token-scan.spec.ts`. The graph nevertheless cannot
+  move because `.nputerignore` excludes `tools/` — and I proved that by
+  RUNNING the gate rather than reading the ignore file:
+  `cargo run -p nputer-index -- index --check --root ../..` exits **0**
+  and reports **CURRENT**, 575351 bytes / 117 files / 995 symbols /
+  1518 edges, byte-identical to the executor's record.
+  `graph.json` was not regenerated.
+
+### Corrections to the card's own text
+
+1. **"0 unparseable files of 116" is off by one.** There are **117**
+   top-level `docs/tasks/*.md` at `9c64cd8` (plus 10 under
+   `rejected/`); the audit was evidently run before `T-080-s6` itself
+   was written. The substance holds and is wider than claimed — see the
+   130-block re-run above.
+2. **Delete the word "dominated"** from the note on the six literal
+   CONTROL root rows. Measured, they are the only rows that survive
+   their subject leaving the tree.
+3. **No corpus figure in this card is current and none is meant to
+   be.** 507 at `fef8870`, 513 at `9c64cd8`, 515 once this verdict's two
+   findings land, and 496/502/514/517/520/521/529 elsewhere. The card is
+   honest — every figure carries its ref — but a reader must not lift
+   one. Likewise mutation (c)'s `docs/ 0/171` reads `0/177` at my ref.
+
+### Verdict
+
+**APPROVED.** All seven criteria met. The card's preferred criterion-1
+formulation genuinely cannot fail; the executor found that, refused to
+implement it, built a real second list, and filed it — and the
+replacement bites in both directions for all 22 tracked suffix classes
+under a single-list edit, with rung B isolated as the only row that
+catches a two-list edit on a named class. Mutant (v) reproduces exactly:
+selftest green at 37, lint green at 469, and **spec body `:165` alone**
+red. The evidence floor bites, is itself floored one rung out by spec
+body 8, and the third exit code is real. Two residuals are honestly
+filed by the executor (`s2`, `s4`) and two more by me (`s7`, `s8`); none
+of the four is a defect against the build.
