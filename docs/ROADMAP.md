@@ -403,10 +403,37 @@ survives, which is a property of process groups rather than a defect,
 measured rather than asserted. A descendant sweep stays a deliberate
 non-goal. No command, grant, event or dependency moved; this is
 milestone 3's process-lifecycle debt closed, not new surface.
+T-069 merged 2026-08-19 and it earns a paragraph for a reason no other
+internal-correctness card in this backlog has: **it makes a sentence
+already written above TRUE.** T-029's entry promises that "a turn killed
+because `--allowedTools` was too narrow names the tool that was denied",
+and that promise had a hole nobody could see from the outside. It held
+only while the CLI flagged its own result an error. When the same turn
+ended with `is_error: false` — the refusal named on the terminal line,
+the turn plainly dead of it — the classifier correctly declined to call
+it a tool denial, and then nothing else said anything either: the result
+text never reached the diagnostic tail, so the failure block rendered
+**"the planner exited with code 1" and nothing underneath**, over denial
+names the process had already parsed and was holding in memory. A user
+in that position was told their planner failed and given no way to guess
+why, on the one failure class this milestone's fixtures exist to
+explain. The names now always reach the tail, whether or not anything
+claims them. The second half is quieter and is about a BUTTON: a planner
+that hit a 401, retried, got past it and then died of something else
+used to be reported as an expired login — Try again removed, the user
+sent to `claude login` with a login that was fine. Model text arriving
+after the failed request is the stream's own evidence that the retry
+worked, and the diagnosis is now withdrawn when it appears, leaving the
+plain exit-code failure with the 401 still readable in the detail and
+**Try again back**. Both changes move in the same direction on purpose:
+when this runner is unsure, it relays what it saw instead of naming a
+cause, because a wrong name costs the user an affordance and a relayed
+fact never does.
 **The milestone is NOT complete, and what it waits on is not a task.**
 Every card on milestone 3's list — T-023 → T-024 → T-026 → T-037 →
 T-025 → T-039 → T-041 → T-042 → T-048 → T-049 → T-050 → T-027 → T-051 →
-T-028 → T-029 — plus T-060's resolver hardening and T-043's kill path is
+T-028 → T-029 — plus T-060's resolver hardening, T-043's kill path and
+T-069's relay is
 through the pipeline.
 The evidence the claim rests on
 **still does not exist: not one planner turn has ever been observed

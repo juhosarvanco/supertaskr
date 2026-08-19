@@ -376,6 +376,43 @@ ADR-014/015).
   STAYS IN THE GROUP*: a `setsid()` descendant leaves the group and
   survives, which is a property of process groups and is measured rather
   than asserted, and a descendant sweep is a deliberate non-goal.
+  **T-069 separates RELAYING from DIAGNOSING inside C-14, and that
+  distinction is the architectural content.** The paragraph above says
+  C-14 "classifies WHY a turn died as a typed outcome instead of relaying
+  an exit code and a blob" — and the two were coupled in a way nobody had
+  written down: everything the classifier DECLINED to claim was also
+  relayed nowhere. A `result` line carrying `permission_denials` with
+  `is_error: false` fell through T-029-s7's deliberately narrow
+  `ToolDenied` guard (correctly — a cumulative record of what was refused
+  is not a statement that a refusal ended the turn), and because
+  `is_error: false` also kept the result TEXT out of the diagnostic ring,
+  the turn arrived as `ExitNonZero { code: Some(1), stderr_tail: "" }`
+  and C-05 rendered no detail at all. The names were parsed, bounded and
+  control-stripped, and went nowhere a user could see. The ring now
+  carries them unconditionally, on the precedent the file already had —
+  the `api_retry` note, a diagnostic the classifier never acts on. **The
+  ring is a diagnostic ring, not a claim**, and the two decisions are
+  independent from here on. The auth arm gains the mirror-image
+  refinement: `AuthFailed` can now be WITHDRAWN by evidence, not only
+  asserted by it. A turn that writes no terminal `result` line has no
+  verdict to clear a status with, so a 401 the CLI retried and got past
+  used to survive as a typed auth failure that removed Try again from a
+  user whose login was fine; model text arriving after the LAST
+  status-bearing line withdraws it, and the turn degrades to `ExitNonZero`
+  with the status still legible in the tail. The direction is deliberate
+  and is C-14's standing rule for this family — losing a diagnosis to a
+  relay beats a false positive that takes an affordance away. **The
+  honest limit is recorded here because it is a fact about the CLI, not
+  about the code**: the CLI writes its own prose into a nominally-model
+  field, so a delta is not certainly the model, and the runner never reads
+  delta CONTENT — closing that joint would need the guessed vocabulary
+  T-029-s5 records as unverified. `T-069-s2` names the evidence C-14
+  declines to read (a `tool_use` block, which the CLI has no reason to
+  fabricate). **No IPC, grant, event or dependency moved** — thirteen
+  commands, `acl_pin.rs` byte-identical at 92 grants, `ENV_ALLOWLIST`
+  untouched at 16 entries — and the graph is byte-identical for the same
+  reason as T-043: `languages: ["ts"]` still hides
+  `app/src-tauri/src/agent/**`.
   area app-agent since T-025,
   where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
   `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and
