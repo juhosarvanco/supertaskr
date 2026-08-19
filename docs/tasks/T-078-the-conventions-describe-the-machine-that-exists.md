@@ -9,9 +9,9 @@ status: verifying
 blocked_by: []
 touches: [docs/CONVENTIONS.md, method/]
 builder: claude-opus-5 @T-078
-verifier: claude-opus-5 @T-078-verify
+verifier: claude-opus-5 @T-078-reverify
 built_by: claude-opus-5 @T-078
-verified_by: claude-opus-5 @T-078-verify
+verified_by: claude-opus-5 @T-078-reverify
 review: same-model
 ---
 
@@ -1478,3 +1478,28 @@ main moved three times while this lane was open** (`79ae34a` ->
 `5edb1c8` -> `16bb47b` -> `a137d20`); recompute the merge diff at your
 own ref, and per T-078-s9 compute it as what the merge ADDS, not as
 `git diff main HEAD`.
+
+#### RE-PROVED AFTER THIS VERDICT WAS WRITTEN
+
+`verifier:` and `verified_by:` stamped to `claude-opus-5 @T-078-reverify`
+(one substitution each, asserted); `status: verifying` and
+`review: same-model` left as they stand.
+
+**The REJECTED entry re-proved after every edit above, by hash.**
+Extracted from `### 2026-08-19 — REJECTED` to the start of this entry and
+compared against the same extraction at `041e8ec` (where it runs to EOF):
+sha256 **`a6265b6436381567d63c88066411982cdc8cbddafe68ed02e101ed52c1886042`**
+on both sides, `cmp` exit 0, 376 lines. The only byte difference in the
+raw region is the single blank line separating it from this entry, and
+the `041e8ec` text is a strict byte-PREFIX of the region at HEAD
+(`head -c` + `cmp` exit 0) — every original byte present, in order,
+unchanged.
+
+**Final state, everything re-run with this verdict and the four findings
+in the tree:** `lib/parser` **234 passed (234)**, 12 files, exit 0;
+`tools/e2e` full lane **88 passed** (22.4s), exit 0; `npm run lint:tokens`
+clean at **TOKEN 118 / CONTROL 509**, exit 0; `--selftest` 49 TOKEN + 2
+CONTROL samples and 37 walk checks, exit 0; the derivation
+`["lib/parser","app","app/src-tauri","tools/e2e"]`, split 4/5/5/5,
+**19** exposed, **0** structural. Scratch ports 17881 and 17883 free,
+no process of mine surviving, 1420 still one listener at pid 82549.
