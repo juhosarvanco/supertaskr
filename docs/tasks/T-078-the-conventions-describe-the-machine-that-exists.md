@@ -414,6 +414,271 @@ verified present and unchanged. That is T-078-s3.
   to. It is a signpost by design, but it is the row most likely to be
   quoted as if it were the policy.
 
+### THE REJECTION FIX — second executor, `claude-opus-5 @T-078-fix`
+
+Fresh session in worktree `nputer-T-078`, branch `task/T-078-conventions`
+off tip **`041e8ec`**, fixing the 2026-08-19 REJECTED verdict below.
+Commits added on top; nothing rebased or rewritten. **The verdict
+section is untouched** — it is the record. `status: verifying`,
+`verifier:`, `verified_by:` and `review:` all left as they stand.
+
+An earlier attempt at this same fix died on a transient API error after
+re-deriving both numbers and before writing anything; it committed
+nothing and the worktree was clean, so this is a from-scratch redo with
+nothing recovered. This session commits incrementally for that reason.
+
+**Both integers were re-derived here from the commands, not taken from
+the verdict or the dispatch.** That mattered: one of the two did not
+reproduce a second time.
+
+#### (a) `38 removed` → `46`. CONFIRMED, and the fix is now self-checking.
+
+Derived by SET DIFFERENCE first, which is independent of rename
+detection and of any range notation:
+
+    git ls-tree -r --name-only 7c6c5aa -- docs/tasks | wc -l   ->  143
+    git ls-tree -r --name-only e4a5ae7 -- docs/tasks | wc -l   ->  110
+    comm -23 (sorted 7c6c5aa) (sorted e4a5ae7)   ->  46   removed
+    comm -13 (sorted 7c6c5aa) (sorted e4a5ae7)   ->  13   added
+    comm -12 (sorted 7c6c5aa) (sorted e4a5ae7)   ->  97   common
+
+46 + 97 = 143 and 13 + 97 = 110, both trees closed. Cross-checked with
+`git diff --no-renames --name-status 7c6c5aa e4a5ae7 -- docs/tasks`
+(A=13 D=46 M=9) and against the wrong range,
+`9b15f7d..e4a5ae7` (A=13 D=38 M=6) — so `38/13` is confirmed as the
+count over the LATER range. The eight-file gap was enumerated rather
+than asserted: `comm -23` of the two deletion lists returns eight paths,
+byte-identical to `git diff --name-status 9b15f7d^ 9b15f7d`'s eight `D`
+lines. "nothing outside docs/tasks" re-verified: whole-repo the range is
+A=13 D=46 M=10, the extra M being `docs/STATE.md`, which cannot move a
+file count.
+
+The bullet now carries the command that re-derives it and the arithmetic
+that closes it (`143 − 46 + 13 = 110`), which is T-078-s4's second arm —
+a delta a reader can run beats a number they must trust — and it names
+its own near-miss: `38` was the count one commit shy of the ref it was
+quoted at, and those eight files are exactly the eight the next sentence
+already invokes.
+
+#### (b) `three files from the root` — **NOT four either. It is FIVE at this ref, and I did not write a bare numeral.**
+
+Re-derived at every ref on the branch, `git grep -c "POISON DRILL"` from
+the repo ROOT (which is finding (b)'s own subject, so it was run from
+`/Users/ujju/Projects/nputer-T-078` and separately from `app/`):
+
+    c4208c6  4    d92afc7  4
+    e4a5ae7  4    1e96599  5    <- the commit that FILED T-078-s5
+    22b31f1  4    5ffe89c  5
+                  041e8ec  5
+
+**The count became five at `1e96599` — the commit that filed T-078-s5,
+the finding whose entire content is "three should be four".** The
+suggestion file quotes the search string, so filing it matched it. Four was true when the verifier measured it and false by the
+time the fix was dispatched.
+
+Writing `four` would therefore have shipped, for the THIRD time in this
+paragraph's neighbourhood, a figure derived at a ref other than the one
+it is written at — the exact defect (a) is about, in the exact bullet
+about citing accurately. So I took **T-078-s5's own preferred arm**:
+the tally is dropped and the SHAPE is cited — which files, in which
+directories, root versus `app/` — with the four-to-five drift kept as
+the bullet's worked example, since a bullet warning that counts drift is
+better served by a count that visibly drifted than by a new one.
+Re-measured against the edited file, the sentence is literally true:
+from the root the search finds this file, its cards under `docs/tasks`
+and a test under `app/test`; from `app/` it finds the `app/` one and
+none of the others.
+
+One quiet defect fixed with it: the parenthetical wrote its own search
+string across a line break (`POISON` / `DRILL`), so `git grep "POISON
+DRILL"` did not find the sentence that teaches the search — the file's
+only hit was the drill bullet itself. Unwrapped; this file now carries
+three hits instead of one, and the file count is unchanged.
+
+**If the architect wants the bare numeral after all**, the minimal form
+is `four at e4a5ae7` — pinned, permanently true, and one edit away. I
+judged the shape better and am flagging the deviation rather than
+burying it.
+
+#### (c) T-078-s6 — CLOSED in the walk table.
+
+The table volunteered the E2E coupling and stopped, which reads as a
+complete list of the ways an edit here can red something. It now names
+**two live readers outside the four walks and says the list is closed at
+two**: the E2E lane (unchanged), and the cargo suite, cited by SYMBOL
+per this card's own new rule —
+`snapshot_version_matches_the_live_method_stamps` in
+`app/src-tauri/src/agent/kit.rs`, which reads this file off disk on every
+`cargo test`. Verified first-hand at `kit.rs:437` (the test), `448-453`
+(the `read_to_string` and the assert) and `kit.rs:35`
+(`METHOD_SNAPSHOT_VERSION: &str = "0.1.5"`), not taken from s6.
+
+**The `currently v0.1.5` literal is deliberately NOT duplicated.** The
+new sentence cites the stamp as `currently v<METHOD_SNAPSHOT_VERSION>`,
+so a future method bump stays a one-place edit in this file. Quoting the
+literal a second time would have made the pin harder to move while
+appearing to document it.
+
+**s6's OTHER half — declined, in writing.** s6 also asks for T-078-s3
+arm 1: naming `METHOD_SNAPSHOT_VERSION` in the FIRST gotcha. Declined
+here for two reasons. T-078-s3 is a separate open suggestion for triage,
+not a T-078 criterion; and that gotcha's text is the exact string
+`kit.rs` asserts on, so editing it is the one edit on this branch that
+can red the cargo suite. The information s6 wanted a reader to have is
+now in the walk table, which points back at gotcha one and says the
+stamp is an ENFORCED PIN rather than bookkeeping — s6's stated purpose,
+without touching the pinned line.
+
+#### SCOPE — three additions beyond the two integers, each separately declinable
+
+The eleven green criteria were not re-opened and no passing prose was
+touched. Beyond the integers themselves I added: the re-derivation
+command and the closing arithmetic in the counts sentence; the sentence
+naming `38` as the near-miss; and the four-to-five drift as the citation
+bullet's worked example. Each is inside a sentence the verdict rejected,
+each discharges the second arm of s4 or s5, and each can be cut without
+touching the fix. Flagged rather than buried.
+
+#### THE TRAP IN THE FENCE — verified, not assumed
+
+`buildAndTestSection()` splits on `^## ` and this file has exactly two
+`^## ` headings, "Build & test" (line 3) and "Gotchas" (line 159); all
+three edits are in Gotchas. I re-implemented `buildAndTestSection` /
+`commandBullets` / `structuralProblems` / `ciBullet` inline from the
+spec's source, deriving the CI needle list from `CI_SEQUENCE` and
+`LOCAL_ONLY` rather than guessing it, and **calibrated at `e4a5ae7`**:
+
+| ref | dirs | exposed | structuralProblems | missing needles |
+|---|---|---|---|---|
+| `e4a5ae7` | `["lib/parser","app","app/src-tauri","tools/e2e"]` | **19** | 0 | 0 |
+| after these edits | same, same order | **19** | 0 | 0 |
+
+Per-bullet split `4 / 5 / 5 / 5` both times, and the two enumerations
+`diff` byte-identically — command strings included. **One real catch
+here**: my first draft of the s6 clause used INDENTED SUB-BULLETS, which
+is precisely the shape `structuralProblems` flags. It was outside the
+parsed region so it derived clean — but this file contains **zero**
+indented bullets anywhere, and introducing its first ones, in a card
+about not tripping this derivation, was the wrong instinct. Rewritten as
+flowing prose; `awk '/^[ \t]+- /'` over the whole file now returns
+nothing.
+
+#### MIDDLE DOT — no new one, proved directly rather than by totals
+
+`git diff -U0 -- docs/CONVENTIONS.md | grep '^+' | grep <U+00B7>` returns
+**no matches**: not one added line carries the character. That is
+stronger than comparing totals, which two cancelling errors could
+satisfy. Totals recorded anyway: 17 lines carry one at HEAD and 17 after,
+same line set, shifted only by the lines added above them. **The verdict
+says 16; every ref measures 17** — filed as T-078-s7, not fixed, since
+the verdict is the record.
+
+#### SUITES — first-hand, every exit code from `$?` unpiped, nothing piped through tail/head/grep
+
+| suite | result | exit |
+|---|---|---|
+| `tools/e2e` parity spec (port 17871) | **14 passed** | 0 |
+| `lib/parser` `npx vitest run` | **234 passed (234)**, 12 files | 0 |
+| `lib/parser` again, with s7/s8/s9 in the tree | **234 passed (234)** | 0 |
+| `npm run lint:tokens` | clean, TOKEN 118 / CONTROL **502** | 0 |
+| `npm run lint:tokens -- --selftest` | 49 TOKEN + 2 CONTROL, 37 walk checks | 0 |
+
+Each suite wrote to a file and `$?` was read from the unpiped command;
+the files were read afterwards. CONTROL 502 is 496 at `e4a5ae7` plus the
+six suggestion files then present, and moves to 505 with s7/s8/s9.
+
+#### GATE TRIGGERS — both computed, and the notation is a trap
+
+**NEITHER GATE FIRES.** This branch's contribution is nine files, all
+`.md` under `docs/`; BOOT GATE matches 0, GRAPH REGEN matches 0.
+`docs/architecture/graph.json` was NOT regenerated and is a 0-file diff.
+Entailed independently: `docs/` is `.nputerignore`d, so nothing in this
+diff is in the indexer's walk at all.
+
+**The first computation I ran was VACUOUS and I threw it away**: a
+quoting bug passed the range as one argument, `git diff` errored, the
+path list came back EMPTY, and an empty list satisfies every trigger —
+a green that means "I measured nothing". Redone with a non-emptiness
+assert (9 paths, census `9 docs` / `9 md`) so the zero is a real zero.
+
+**Main moved while this lane was open** — it is at `79ae34a` (T-043 and
+T-076 merged); `git merge-base HEAD main` is still `e4a5ae7`. Computing
+the gates as the BOOT GATE bullet literally reads, `git diff main HEAD`,
+returns **44 paths and FIRES BOTH GATES** — 5 `.rs` and 13 `.ts` that
+belong to T-043 and T-076, shown in reverse because a two-dot diff
+between two divergent tips is symmetric. The true merge diff, computed
+read-only with `git merge-tree --write-tree main HEAD` and then
+`git diff main <tree>`, is exactly the nine `docs/` files and fires
+neither. **The integrator should not attribute a graph obligation to
+T-078**: any `.ts` in a merge-time range belongs to T-076 and was
+discharged at T-076's merge. Filed as T-078-s9.
+
+#### FINDINGS FILED
+
+- **T-078-s7** — the tally went stale inside the commit that filed the
+  correction (four → five), plus the verdict's 16-vs-17 dot count. Ask:
+  a tally in prose carries its ref or is not written.
+- **T-078-s8** — T-078-s5's PROPOSED replacement sentence is false on
+  both halves (`tools/` has zero hits; the `app/` hit it denies is the
+  one its contrast needs). Diagnosis measured, remedy not — and the
+  remedy is the half that gets copied into the tree.
+- **T-078-s9** — the gate bullets' range notation inverts before the
+  merge, measured above.
+
+**A near-miss against T-078-s4, recorded because it cuts against me.**
+I suspected s4's `M=10` / `M=7` were mis-scoped, because the same ranges
+filtered `-- docs/tasks` give 9 and 6, and drafted it as a second
+instance inside s8. Measured before filing: s4's worked commands carry
+NO path filter, so 10 and 7 are exactly what they print. **All four of
+s4's figures reproduce byte-for-byte.** I nearly filed, against the file
+that named this defect, the defect itself. What caught it was running
+the command as WRITTEN instead of the command I assumed was meant.
+
+#### WHAT DID NOT REPRODUCE
+
+1. **`four files from the root`** — five at this ref, and at every ref
+   from `1e96599` on. Detailed above; the dispatch, the verdict and
+   T-078-s5 all carry four.
+2. **`16 lines carry a U+00B7`** — 17 at `e4a5ae7`, at `22b31f1` and
+   here. No consequence; the invariant that matters holds and was
+   re-proved a stronger way.
+3. **T-078-s5's proposed replacement wording** — false on both halves.
+4. **Both gates "do not fire" under the bullet's own notation** — under
+   `git diff main HEAD` they both fire. The conclusion survives; the
+   route to it in the bullet does not.
+
+#### WHAT I AM LEAST CONFIDENT ABOUT
+
+**The (b) deviation is a judgement call and it is the one to attack.**
+The dispatch asked for `three` → `four`; I wrote neither numeral. My
+reasoning is that four was measurably false at the ref I was writing at,
+and that s5 itself prefers the shape — but a verifier who holds that an
+executor should write the integer they were sent to write and file the
+staleness separately would be applying a defensible rule, and the fix is
+one edit (`four at e4a5ae7`).
+
+Second: the walk table's new sentence now runs long, and the closed list
+is only closed as of today. If a third live reader of this file appears,
+the sentence becomes exactly the false-completeness s6 objected to, with
+"CLOSED AT TWO" making it worse than the open version it replaced. It is
+the right shape for a table meant to be trusted, but it is a claim with a
+maintenance cost and no gate behind it — no test asserts that only two
+non-walk readers exist.
+
+#### PROCESS
+
+Main (`/Users/ujju/Projects/nputer`) was never touched. Port **1420**
+was read-only `lsof`-probed at session start and end: one healthy
+listener, node pid **82549**, `[::1]:1420 (LISTEN)`, same pid both
+times, never bound, connected to or signalled. This lane used scratch
+port **17871**, bind-probed free first (with 17873) and left empty. The
+three live sibling worktrees (T-069, T-073, T-076) were never entered.
+The two `fake_agent` orphans (**52504/52505**, ppid 1, from
+`nputer-T-060`) are pre-existing, are not mine, and were left alone. No
+process of mine survives this session. No screen control, no model
+calls, no new dependencies, no `npm ci` — the worktree's `node_modules`
+were already installed.
+
 ## Verdicts
 
 ### 2026-08-19 — REJECTED (claude-opus-5 @T-078-verify, review: same-model)
