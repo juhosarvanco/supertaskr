@@ -524,3 +524,71 @@ read is STRICTLY STRONGER than the evidence it acts on.
 
 Both files restored, sha256 identical to `git show HEAD:<path>`,
 `git status --porcelain` empty.
+
+#### The two closures — both re-run, both red exactly one body
+
+`runner.rs` mutated by LINE NUMBER, the mutated text re-read from the
+file each time, suite run first-hand, exit from `echo $?`.
+
+**R3, the `Result`-arm reset (`runner.rs:1802`) deleted** —
+`test result: FAILED. 65 passed; 1 failed; 1 ignored`, exit 101:
+
+```
+thread 'an_auth_failure_that_streamed_text_before_it_failed_is_still_typed' panicked at tests/agent_runner.rs:1661:18:
+the terminal line named the status again, so the text before it is not evidence the CLI got past anything:
+ExitNonZero { code: Some(1), stderr_tail: "api_retry: authentication_failed 401\nFailed to authenticate. API Error: 401 OAuth access token has been revoked." }
+```
+
+**R4, the `Diagnostic`-arm reset (`runner.rs:1851`) deleted** —
+`test result: FAILED. 65 passed; 1 failed; 1 ignored`, exit 101:
+
+```
+thread 'a_second_auth_retry_behind_the_recovered_one_is_still_an_auth_failure' panicked at tests/agent_runner.rs:1734:18:
+the text was evidence about the FIRST 401, not the second:
+ExitNonZero { code: Some(1), stderr_tail: "api_retry: authentication_failed 401\napi_retry: authentication_failed 401\n" }
+```
+
+Exactly one body each, and each names its own stream. **The executor's
+sentence checks out and the panic text is the proof**: without the
+second reset a genuine, unrecovered second 401 degrades to
+`ExitNonZero`, so T-069 would indeed have closed a false positive by
+opening a false negative on the same family. Both mechanisms now have a
+falsifying body and T-043-s4's shape is discharged for both.
+
+#### RULING on the third redundancy — DEFENSIBLE, and the notes undersell it
+
+The `if auth_status.is_some()` guard (`runner.rs:1718`) neutralised to
+`if true {` — **`test result: ok. 66 passed; 0 failed; 1 ignored`, exit
+0**. Inert against the whole suite, exactly as disclosed.
+
+But "unfalsifiable" is not the same as "decorative", and a third probe
+separates them. Stream: init · a text delta · a 401 diagnostic · no
+`result` line — text BEFORE any status, the one ordering the guard is
+about.
+
+| runner state | classification |
+|---|---|
+| unmutated | `AuthFailed { status: Some(401), … }` |
+| `Diagnostic` reset deleted, guard PRESENT | `AuthFailed { status: Some(401), … }` |
+| `Diagnostic` reset deleted, guard NEUTRALISED | `ExitNonZero { code: Some(1), stderr_tail: "api_retry: authentication_failed 401\n" }` |
+
+**The guard absorbs a missing reset.** Its protected case is a future
+third `auth_status` write-site that forgets to clear the flag, for every
+stream whose text preceded any status — and in that fault it is the
+difference between keeping and losing a true `AuthFailed`.
+
+So this is NOT the shape this project files against. T-043-s4's shape is
+a mechanism that is LOAD-BEARING TODAY and that no body can distinguish
+from its own absence — it may already be broken with nobody the wiser.
+This one is load-bearing only under a COMPOUND fault, which is why no
+single-mutation drill can ever red it, and CONVENTIONS' poison bullet
+asks for exactly what was done: "IF a body cannot be poisoned … THEN say
+so and name it". It was disclosed in the notes AND in the source comment
+before any verifier looked. **Kept, correctly.** The one correction is
+that the notes justify it aesthetically — "it makes the variable's NAME
+true at all times" — when the real justification is the measurable
+fault-containment above; the source comment would be stronger for saying
+that instead.
+
+All three files restored, sha256 identical, `git status --porcelain`
+empty.
