@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [lib-parser]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @fresh
-verified_by:
-review:
+verified_by: claude-opus-5 @fresh
+review: same-model
 ---
 
 Absorbs: T-053-s2, T-053-s3, T-053-s4 (fourth triage, 2026-08-19). The
@@ -499,3 +499,101 @@ of the three suggestion files landed.
   criterion named it, and it would have moved a fourth pin set.
 
 ## Verdicts
+
+### 2026-08-19 — verification in progress (claude-opus-5 @fresh, same-model)
+
+Independent verification of tip `f531311` against base `e4a5ae7`, range
+derived rather than taken: `git merge-base HEAD main` = `e4a5ae7`, four
+commits, **17 paths** (4 docs + 7 `lib/parser/src` + 6 `lib/parser/test`),
+`+1310/-37`. Working tree clean. `/Users/ujju/Projects/nputer` was read
+only through `git show`/`git grep` on this worktree's object store; nothing
+was written there and no sibling worktree was touched.
+
+**BOTH NaN mechanisms reproduced at the branch point, first-hand.** The
+branch-point `lib/parser/src` was compiled into a scratch tree (tsc exit 0)
+and driven directly:
+
+    BRANCH POINT compareComponentIds(400x9, 401x9) = NaN
+      sort([a,b]) lengths = [402,403]
+      sort([b,a]) lengths = [403,402]
+      SAME ANSWER?  false
+    Number('9'.repeat(309)) = Infinity | Number('9'.repeat(308)) finite? true
+
+Mechanism two — the executor's own find, absent from the card — reproduced
+through the real parser, two components with 400- and 401-digit ids and
+overlapping `paths`, varying only which FILE holds which id:
+
+    CASE A (small id in C-aaa.md): winner_digits 400, winner_file C-aaa.md
+    CASE B (small id in C-zzz.md): winner_digits 401, winner_file C-aaa.md
+    WINNER is the same ID in both orderings? false
+    deterministic? CASE B repeated 5x -> 401 401 401 401 401
+
+The declared `ambiguous-mapping` winner is the id in the first-sorting FILE,
+five runs out of five: `component.ts:374`'s `compareComponentIds(...) || (file
+compare)` swallows the falsy `NaN`. Deterministic and wrong, where the sort's
+failure is non-deterministic. Sibling half also reproduced: the same aliased
+slot reported `ids` as `[405,402]` or `[402,405]` purely by arrival order.
+
+**The fix closes both.** Same drills against HEAD's build:
+
+    HEAD compareComponentIds(400,401) = -1 | reverse = 1 | isNaN either? false
+    MECH2 winner digits A=400 B=400 | same id? true | winner files C-aaa.md, C-zzz.md
+    MECH1 aliased ids order X=[405,402] Y=[405,402] | SAME? true
+
+**C1 — TOTAL, and "unchanged" proved rather than asserted (APPROVED).**
+`compareDigitRuns` returned a finite integer for every hostile input tried:
+`''`, `'0'`, `'000'` vs `'0'`, `'0'x500 + '5'` vs `'5'`, 400/401 nines,
+`1e400` vs 400 nines, and non-digit text. Order axioms over 606 values:
+**0 reflexivity, 0 antisymmetry, 0 transitivity violations over 200,000
+triples**. Exactness against BigInt truth over **300,000 random pairs of
+1–46 digits with random zero-padding: 0 mismatches**.
+
+Ordering-unchanged is stronger than the card's 484: an **exhaustive** sweep
+of every 2- and 3-digit `C-` id (1,100 ids, **1,210,000 ordered pairs**)
+gave **0 sign disagreements** between the branch-point and HEAD comparators,
+and 400,000 random pairs at 2–15 digits mixed with seven non-conforming ids
+(`C-5`, `C-`, `C-x9`, `''`, `c-07`, `'C-07 '`, `X-99`) gave 0. The one
+declared change reproduced with its direction intact:
+`compareComponentIds('C-'+'9'x17, 'C-1'+'0'x17)` is `1` at the branch point
+and `-1` at HEAD, and `Number()` fuses the two — the old answer was wrong,
+not imprecise.
+
+**Suites, first-hand, exits from `$?`, never piped.** `lib/parser` built
+(`BUILD_EXIT=0`) then `npx vitest run` -> **263/263, 12 files,
+PARSER_VITEST_EXIT=0**. The baseline was re-derived rather than trusted: the
+branch-point `src` + `test` trees were materialised under a scratch repo root
+and run -> **234/234, 12 files, exit 0**, so `+29` is measured. `app/`
+`npm run build` exit 0 (`index-DjYVlJel.js 501.37 kB`,
+`index-CwYF5FQb.css 43.95 kB`) then `npx vitest run` -> **825/825, 42 files,
+APP_VITEST_EXIT=0**, with **zero app bytes in the diff**.
+
+**Card claims that did not reproduce — both CONFIRMED.** At `e4a5ae7`,
+`roadmap.ts:48` is `const description = split ? ...`, the description split;
+the emit is `:51-56` with `kind: 'duplicate-id'` on `:52`, and `files: [file,
+file]` was already on `:54`. The other three dispatch citations
+(`component.ts:313`, `project.ts:80`, `files.ts:143`) all land on
+`kind: 'duplicate-id'` exactly.
+
+**C6 ordering CONFIRMED in `git log`.** `a931bfb` (11:44:22) touches
+`docs/tasks/T-076-the-id-layer-is-total.md` and nothing else — 92 lines,
+zero non-docs paths, both RULINGs present — and `62bec51` (11:50:42) is the
+first source byte. The discipline is real and checkable.
+
+**Emit-site totality re-derived from the repo root.** `git grep -n "kind:
+'duplicate-id'"` returns exactly four source sites (`component.ts:339`,
+`files.ts:143`, `project.ts:80`, `roadmap.ts:61`), all four now carrying
+`space` on the next line, and `git grep -n "kind: 'dangling-reference'"`
+returns exactly three (`component.ts:396`, `validate.ts:143`, `:156`), all
+three carrying the hint. No app or Rust source emits either kind.
+
+**FINDING — the notes under-count the moved pins by one.** The set of
+pre-existing `it()` bodies whose TEXT changed was derived mechanically
+(indent-matched block extraction at both revisions, set difference on body
+text) and is **five**, not four: the four in the card's table plus
+`component.test.ts` base `:349` -> HEAD `:477` (`dangling depends_on:
+structured issue naming file, field and the dangling id`). The notes state
+"Nothing else in any pre-existing body moved" — that sentence is false. The
+move itself is clean and additive-only (`expect(result.issues[0]).not
+.toHaveProperty('nearMiss')` plus a message `not.toContain('zero padding')`,
+nothing removed or loosened), and the pin IS cited elsewhere in the notes
+under C5, so this is an accuracy defect in the prose rather than in the work.
