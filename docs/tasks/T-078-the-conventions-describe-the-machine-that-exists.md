@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 2
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [docs/CONVENTIONS.md, method/]
 builder: claude-opus-5 @T-078
