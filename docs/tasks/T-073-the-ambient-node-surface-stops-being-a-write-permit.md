@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 32
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5 @fresh
@@ -713,3 +713,98 @@ next card, not this one.
 
 `status: verifying` left as dispatched; the size-S question (TASK-FORMAT
 gives S "executor + tests, no verifier") is the integrator's to close.
+
+## Integration — merged to main at `a137d20`, 2026-08-19
+
+Merged `--no-ff` from main-before **`16bb47b`** with the approved tip
+**`bb4cd14`**. Read-only `merge-tree` predicted **`fc43e32b`** before
+anything was written and the merge produced that tree exactly, parents
+`16bb47b` and `bb4cd14` and nothing else. The merge's diff
+(`16bb47b..a137d20`) is the branch's own **twelve** files — main advanced
+24 paths from the shared base `76cf034` and the changed-file
+intersection is **EMPTY** by `comm -12`, so 12 + 24 = 36 is exactly what
+the naive `merge-base..HEAD` derivation returns.
+
+### THE SIZE-S QUESTION, CLOSED: the tier was exceeded twice, deliberately, and the field stays `S`.
+
+TASK-FORMAT's table reads **"S | executor + tests. No verifier, no
+separate integrator."** — which is a sharper question than the one the
+verdict handed over, because it dispenses with BOTH extra passes, not
+just the verifier. Taken literally it would have licensed `done` at
+handoff and no merge pass at all.
+
+**Ruling: the `size:` field stays `S`, and the ceremony that actually
+ran was M-shaped.** The field measures the WORK, and the work is
+genuinely S — six files under `app/`, zero Rust, zero IPC, zero grant,
+`app/src` byte-identical at 53/53 and the shipped bundle proved
+identical by `diff -r`. What triggered each extra pass was not size:
+
+- **The verifier was triggered by a FENCE BREACH the executor declared
+  it could not judge.** A tier that says "no verifier" cannot also say
+  "and the executor may rule on its own out-of-fence edit." The pass
+  paid for itself in a way that is measured rather than argued: it
+  produced `T-073-s4` and `T-073-s5` — three mutations that survive the
+  full 827-test suite at exit 0 — and it converted the flagged
+  `app/package.json` line from an open question into a ruling backed by
+  `BARE_TSC_EXIT=0` / `VITEST_EXIT=0` / `TESTPROG_EXIT=2`. At S as
+  written, all of that is missed and the card merges with `done`
+  already stamped.
+- **The integrator was triggered by CONVENTIONS, not by TASK-FORMAT.**
+  This merge fires two standing gates — the boot gate on
+  `app/package.json` and the graph regen on three `.ts` files outside
+  `docs/` — and CONVENTIONS defines the regen as the integrator's act
+  AT THE CHECKPOINT, because a graph regenerated into the merge commit
+  is stale again the moment the dogfood fixtures are reconciled. A size
+  tier in `method/` cannot dispense with a gate in
+  `docs/CONVENTIONS.md`: something has to regenerate the graph, and
+  "no separate integrator" has no answer for who.
+
+So the honest reading of the S row is that it describes the ceremony
+that is SUFFICIENT when a card stays inside its fence and moves nothing
+the gates watch. **T-073 does neither** — it breaches its own fence by
+one line and it stales the committed graph. The row needs that
+carve-out written into it; recorded as an open question in `STATE.md`
+for T-078's family rather than filed as a sixth suggestion.
+
+`status: done` is stamped HERE, at the checkpoint, by the integrator —
+the fourth card running (T-043, T-057, T-076, T-073), and the first of
+the four where the size tier would have allowed the EXECUTOR to stamp
+it (`method/roles/executor.md:19` permits `done` at size S) and the
+executor declined.
+
+### What the merge measured that the branch could not
+
+- **The graph delta, re-derived against MERGED main rather than carried
+  from the branch.** The branch measured against the pre-T-076 graph
+  (117→118 files, 989 symbols, 1508 edges, 571733→571994 bytes); at
+  merged main the committed graph is T-076's `56178286…` and the real
+  red reads **575351 → 575612 bytes, 117 → 118 files, 995 symbols and
+  1518 edges BOTH UNMOVED**, `files +1 -0 ~2`. The **+261-byte delta is
+  identical on both baselines**, which is the cross-check that the file
+  delta is T-073's alone. Final graph after the fixture reconciliation:
+  **575,619 bytes · 118 files · 995 symbols · 1518 edges**, sha256
+  `aba7c44b1c6a20d9d2c8093eb792371b9f88208b34472492f5f0f91b88653993`.
+- **The new file carries NO SYMBOLS**, so a merge that ADDS a file to
+  the index moves symbols and edges by zero — a first for the dogfood
+  ledger, and the reason only two assertions moved.
+- **The bundle proof was taken at the MERGED tree, not the branch's.**
+  `npx vite build` at HEAD against the identical tree with `16bb47b`'s
+  `app/tsconfig.json` swapped in reports `diff -r` **DIRECTORIES
+  IDENTICAL**, exit 0 — `index-DjYVlJel.js` 501.37 kB and
+  `index-CwYF5FQb.css` 43.95 kB on both sides, which are main's own
+  T-076 figures unchanged. Zero bundle inputs moved
+  (`app/src`, `index.html`, `vite.config.ts`, `package-lock.json`,
+  `components.json`: 0-file diff).
+- **The suite deltas were DERIVED, not carried.** App 825 → **827** is
+  confirmed from a second direction: `it()`/`test()` openers under
+  `app/test` move **775 → 777**, all of it `crescendo-dom.test.tsx`
+  12 → 14, with the test-FILE count unchanged at 42. TOKEN 118 → **119**
+  is the one new file under `app/test`; CONTROL 507 → **514** is
+  532 tracked files minus 18 binary assets, and 525 + 7 = 532 closes
+  from the other end.
+
+The five card corrections in the verdict above stand as written and are
+not re-litigated here; the sharpest — that **"parsed out of the JSON,
+not string-matched" is FALSE for the include half**, which is a
+first-match regex over raw text — is carried into `STATE.md` because it
+is the fact `T-073-s5` turns on.

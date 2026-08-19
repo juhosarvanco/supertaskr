@@ -347,8 +347,19 @@ describe("the nputer repo on its own map", () => {
     // rendered component edges, ten undeclared relations and every drift
     // count above stay byte-identical. Architecture-dogfood records the
     // full 117 files / 989→995 symbols / 1508→1518 edges delta.
+    // 117 → 118 at the T-073 merge regen (2026-08-19): exactly ONE file
+    // joins — app/test/node-builtins-write.d.ts, the ambient declaration
+    // file T-073 split out of node-builtins.d.ts. `index --check` reports
+    // `files +1 -0 ~2` with SYMBOLS AND EDGES UNMOVED (995 / 1518), which
+    // is a first for this ledger: a file joins the index and contributes
+    // no symbol, so no NODE and no EDGE moves and the hint is the only
+    // assertion here that changes. C-05 is the claimant (app/test/** is
+    // its glob alone), so the eleven rendered nodes, the 32 rendered
+    // component edges, the ten undeclared relations and every drift count
+    // above stay byte-identical. Architecture-dogfood records the full
+    // 117→118 files / 995 symbols / 1518 edges delta.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 117 files",
+      "committed graph · 118 files",
     );
   });
 });

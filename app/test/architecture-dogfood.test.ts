@@ -966,6 +966,49 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     indexed edit, so it stales the measuring regen; the graph is
 //     regenerated a final time after it and then proven deterministic by
 //     regenerating once more and `cmp`-ing.
+//
+// RECONCILED AT THE T-073 MERGE (2026-08-19, integrator). Derived against
+// the merged main's committed graph (`56178286…`, 117 files / 995 symbols /
+// 1518 edges — NOT the branch's figures, which were taken against the
+// pre-T-076 graph and read 989/1508), then cross-checked with a throwaway
+// probe `it()` appended to this describe, run once against the freshly
+// regenerated graph and removed (removal proved by sha256 against
+// `git show HEAD:<path>` — eddd4d0b…, not by a clean `git status`):
+//   · stats 117 -> 118 files (+1) / 995 symbols (UNCHANGED) / 1518 edges
+//     (UNCHANGED); 575351 -> 575612 bytes. `files +1 -0 ~2`:
+//     + app/test/node-builtins-write.d.ts, ~ crescendo-dom.test.tsx
+//     (loc 575 -> 677), ~ node-builtins.d.ts (loc 47 -> 49). The +261-byte
+//     delta is the same one the branch measured against the older graph,
+//     which is the cross-check that the file delta is T-073's alone.
+//   · THE NEW FILE IS AN AMBIENT DECLARATION FILE AND CARRIES NO SYMBOLS.
+//     That is why a merge that ADDS a file moves symbols and edges by zero
+//     — the first entry in this ledger where a file joins the index and
+//     nothing else in the graph moves at all.
+//   · TWO ASSERTIONS MOVE IN THIS BODY AND ONLY ONE IS VISIBLE IN THE
+//     FAILURE OUTPUT: the size check below reds at 118, and C-05's row is
+//     the SECOND assertion in the same body, so vitest never reaches it
+//     while the first is red. Derived from the indexed added-file list
+//     BEFORE anything was run and confirmed by the probe — the same shape
+//     T-048, T-049 and T-053 each had to learn once.
+//   · EVERYTHING ELSE IS BYTE-IDENTICAL, measured by the probe rather than
+//     reasoned: unmappedFiles []; the eleven-id registry (11 declared, 0
+//     placeholder, mode full); the 32-row relation table at 13 confirmed /
+//     10 undeclared / 9 planned with C-05->C-06 still observedCount 10 and
+//     ten fileEdges; the ten undeclared pairs unchanged; derived.issues [];
+//     project and graph issues 0/0; declaredOnly ["C-01","C-07","C-11"];
+//     pinned ["C-01"]; C-12's fourteen-file list unchanged.
+//   · map-dogfood-render.test.tsx moves ONE assertion — the index hint,
+//     117 -> 118 files — because a NODE-count-free file join still moves
+//     the file count the hint prints.
+//   · lib/parser/test/smoke.test.ts deliberately NOT touched, and T-024's
+//     three-fixture rule VERIFIED not to fire rather than assumed:
+//     `git diff 16bb47b..a137d20 -- docs/architecture/components/` is a
+//     0-file diff. No component was declared; the registry stops at C-14.
+//   · The ceaa949 ordering, TWENTY-THIRD hold, derived from the entry
+//     above (T-076's twenty-second). This comment is itself an indexed
+//     edit, so it stales the measuring regen; the graph is regenerated a
+//     final time after it and then proven deterministic by regenerating
+//     once more and `cmp`-ing.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -1031,8 +1074,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 117 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(117);
+  it("all 118 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(118);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -1100,7 +1143,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // a mapping count. tools/e2e/tests/resume-fallback.spec.ts is under
       // .nputerignored `tools/` and is invisible here (it counts for the
       // token lint, which walks tools/e2e — two walks, two answers).
-      ["C-05", 54],
+      // 54 → 55 at the T-073 merge regen (2026-08-19), by ONE and by the
+      // same route a ninth time: node-builtins-write.d.ts is under
+      // app/test/**, C-05's alone. It is a `.d.ts` and carries no symbols,
+      // so it moves this row and the file count and NOTHING else in the
+      // graph. It is the SECOND assertion in this body — below the size
+      // check above — so vitest never reaches it while that one is red;
+      // derived from the indexed added-file list before the suite ran.
+      ["C-05", 55],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under

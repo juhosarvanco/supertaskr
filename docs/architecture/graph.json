@@ -5997,8 +5997,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:b8e58c97ba70921166e72776e10cf42a1f794ef99dd4691af19e2b936a431fea",
-      "loc": 1680,
+      "hash": "blake3:a1d356d3a59b4bafb599484a2bb0bb2deeeacfc388bd654a889d72f322fe6dde",
+      "loc": 1730,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -6006,8 +6006,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1004,
-            1004
+            1047,
+            1047
           ]
         },
         {
@@ -6016,8 +6016,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            1003,
-            1003
+            1046,
+            1046
           ]
         },
         {
@@ -6026,8 +6026,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            969,
-            969
+            1012,
+            1012
           ]
         },
         {
@@ -6036,8 +6036,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            975,
-            990
+            1018,
+            1033
           ]
         },
         {
@@ -6046,8 +6046,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            992,
-            1001
+            1035,
+            1044
           ]
         },
         {
@@ -6056,8 +6056,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            971,
-            973
+            1014,
+            1016
           ]
         }
       ]
@@ -6341,8 +6341,8 @@
       "id": "f:app/test/crescendo-dom.test.tsx",
       "path": "app/test/crescendo-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:05181f1cdec30804002a72537c12d873aee951891199a14d324f419374c941f6",
-      "loc": 575,
+      "hash": "blake3:191f13611b0707d2ec403da155c1e7c026e695baafbfdba5fe70e59f7d5c7d53",
+      "loc": 677,
       "symbols": [
         {
           "id": "s:app/test/crescendo-dom.test.tsx#App",
@@ -8086,8 +8086,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:b7404298ea615029f15ca2fcae8d57a03cbabadfd798191c5706a5b0cd49d842",
-      "loc": 354,
+      "hash": "blake3:30f1cacc210ba99f2e62c55fe448318bf8c10296aad4e37fd32ddd55d8fa26d4",
+      "loc": 365,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -8595,11 +8595,19 @@
       ]
     },
     {
+      "id": "f:app/test/node-builtins-write.d.ts",
+      "path": "app/test/node-builtins-write.d.ts",
+      "lang": "ts",
+      "hash": "blake3:b89a4f27813e35ada03509f61a74b2c291ee2eddcac0d65ceb3fbd1ea466fa70",
+      "loc": 45,
+      "symbols": []
+    },
+    {
       "id": "f:app/test/node-builtins.d.ts",
       "path": "app/test/node-builtins.d.ts",
       "lang": "ts",
-      "hash": "blake3:5cfee6d5b6be189644c49eda421fffab91fa5eb96fb4d3158d9867e611b4c84d",
-      "loc": 47,
+      "hash": "blake3:313a231d627b586e67c6acc7854f7c4d54a97d0ed56308bf7d7a519868fa4e9a",
+      "loc": 49,
       "symbols": []
     },
     {
@@ -21854,7 +21862,7 @@
     }
   ],
   "stats": {
-    "files": 117,
+    "files": 118,
     "symbols": 995,
     "edges": 1518
   }
