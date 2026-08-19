@@ -392,3 +392,63 @@ No `pkill` of any kind was issued, broad or narrow.
 
 
 ## Verdicts
+
+### Adversarial verification — `claude-opus-5 @fresh`, in progress
+
+Worktree `nputer-T-069`, branch `task/T-069-relay`, tip **`b4d87cc`**,
+**four** commits from `76cf034` (`git rev-list --count 76cf034..HEAD`
+= 4), working tree clean at start. Fence re-derived from
+`git diff --name-only 76cf034..b4d87cc`: **five** files — three under
+`app/src-tauri/**` (`src/agent/runner.rs`, `src/bin/fake_agent.rs`,
+`tests/agent_runner.rs`) and two under `docs/tasks/**`, **870
+insertions / 27 deletions**. Zero bytes under `app/src/**`,
+`app/test/**`, `lib/**`, `tools/**`, no manifest, no lockfile — derived,
+not accepted.
+
+**Every drill below was run inline, no scratch script, restoration
+proved by `sha256` against `git show HEAD:<path>` and a clean
+`git status --porcelain`.** The three files at the tip hash exactly as
+the notes claim: runner `8a334697…`, fake_agent `f1c270f2…`,
+agent_runner `4218d447…`.
+
+#### The base is what the card says it is
+
+Bare `cargo test` from `app/src-tauri`, redirected to a file, exit read
+from my own `echo $?` — nothing piped through `tail`, `head` or `grep`.
+
+| file state | `test result:` lines | passed / failed / ignored | exit |
+|---|---|---|---|
+| tip `b4d87cc` | 15 | **343 / 0 / 3** | 0 |
+| all three files at `76cf034` | 15 | **337 / 0 / 3** | 0 |
+
+`343 − 337 = 6`, and `agent_runner` moves **60 → 66** passed with 1
+ignored throughout. Six new bodies, one changed body, no body deleted.
+
+#### The three pre-fix reproductions — re-derived at the base runner
+
+`runner.rs` alone reverted to `76cf034` with the new fixtures and the
+new pins in place, so the streams ran through the UNCHANGED `run_turn`.
+Exactly three of the seven rows red, and they print the card's table
+verbatim:
+
+```
+---- a_denial_the_planner_routed_around_is_not_blamed_for_an_unrelated_exit stdout ----
+panicked at tests/agent_runner.rs:1533:13:
+the tool the CLI refused is named in the tail even though the classifier declined to blame it: ""
+[nputer] agent: turn 1 failed: ExitNonZero { code: Some(1), stderr_tail: "" }
+
+---- a_fatal_denial_the_cli_did_not_flag_as_an_error_still_names_the_tool stdout ----
+panicked at tests/agent_runner.rs:1578:13:
+the refused tool is relayed even when nothing claimed it: ""
+[nputer] agent: turn 1 failed: ExitNonZero { code: Some(1), stderr_tail: "" }
+
+---- a_recovered_auth_retry_followed_by_model_text_and_no_result_line_is_not_an_auth_failure stdout ----
+panicked at tests/agent_runner.rs:1702:18:
+expected ExitNonZero, got AuthFailed { status: Some(401), message: "the agent CLI could not authenticate" }
+
+test result: FAILED. 63 passed; 3 failed; 1 ignored
+```
+
+Both denial tails EMPTY, the no-result 401 typed `AuthFailed`. The card
+claimed a measurement and the measurement reproduces. Restored, sha256
+identical, `git status --porcelain` empty.
