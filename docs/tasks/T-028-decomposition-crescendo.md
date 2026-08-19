@@ -31,6 +31,18 @@ suggestion file names its home as "T-027's own lane
 lines plus a guard. Folded rather than given a lane of its own; the
 suggestion file is removed in the same commit as this line.
 
+**Discharges T-028-s5 and T-051-s6 (fourth triage, 2026-08-19).** The
+two files are the same finding from both sides of one merge, and
+T-028's integrator owned and applied the reconcile at merge
+**`634c405`**. Verified at `7282308`:
+`tools/e2e/tests/window-contract.spec.ts` imports `streakMidInterview`
+rather than `streakFixture`, its `genesis()` helper applies it, and the
+comment above that helper states the reason out loud — "The tree is
+`streakMidInterview`, NOT the full `streakFixture`." The `reach()`
+assertion both files were about is intact and green. Both suggestion
+files are removed in the same commit as this line; this paragraph is
+the surviving record.
+
 ## Acceptance criteria
 - WHEN task files begin landing under docs/tasks/ during genesis THE
   right pane SHALL switch to the real board renderer (existing board

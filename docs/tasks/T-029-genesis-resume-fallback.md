@@ -38,6 +38,36 @@ not where you left it" state, and it is the first task with a real
 caller for the third. Their suggestion files are removed in the same
 commit as this line.
 
+**Discharges T-029-s1, T-029-s6 and T-029-s7 (fourth triage,
+2026-08-19).** All three were closed by code and by a records commit
+rather than by a card, so this paragraph is their surviving record.
+
+- **s1 — the auth trace.** `docs/STATE.md`'s @human paragraph was
+  corrected at **`2fc3475`** ("STATE: correct my auth trace — three of
+  its five steps were wrong", 41 insertions / 13 deletions in
+  `docs/STATE.md`), and this card carries the correction inline
+  immediately after the architect's original trace, which is the
+  intended record: the wrong version is preserved as history with the
+  measurement beside it. Re-verified at `7282308` — no claim survives
+  anywhere under `docs/` that a revoked login shows no detail at all.
+- **s6 — the auth-status latch.** Closed by **`5379752`** ("bind the
+  classification to the turn's terminal state"), re-verified at
+  **`c178773`**, merged at **`f812d9e`**. Verified at `7282308`: the
+  `Result` arm of `run_turn` assigns `auth_status = api_error_status;`
+  with no `is_some()` guard, under a comment naming T-029-s6 and
+  stating the latch it removes.
+- **s7 — the misattributed denial.** Same commits. The classification
+  closure now guards `ToolDenied` with `result_is_error &&
+  !permission_denials.is_empty()`, under a comment naming T-029-s7 and
+  recording why the narrow guard is deliberate rather than an oversight.
+
+What did NOT close with them: **s8** (the declined diagnosis relays
+nothing) and **s9** (the terminal-line rule's two edges) are the
+remaining half of the same closure and are promoted to **T-069**; **s5**
+(the denial shape has never been observed) is parked against the human's
+authenticated genesis run, and T-069's wider arm waits on it. The three
+resolved suggestion files are removed in the same commit as this line.
+
 GATE: T-039 (session-id injection) must merge before this dispatches —
 this is the task that reads the id off .nputer/sessions.json, which is
 exactly what makes that injection reachable.

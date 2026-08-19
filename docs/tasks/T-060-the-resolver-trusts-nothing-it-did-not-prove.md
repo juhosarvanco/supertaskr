@@ -18,6 +18,37 @@ review: independent
 Absorbs: T-047-s1, T-047-s4, T-047-s5, T-047-s6 (triage 2026-08-17).
 The suggestion files are removed in the same commit as this card.
 
+**Discharges T-060-s3, T-060-s4 and T-060-s5 (fourth triage,
+2026-08-19).** All three were closed inside this card's own
+re-verification, whose verdict states "No blocker or new suggestion
+remains" — but their files were never removed. This paragraph is the
+surviving record.
+
+- **s3 — the lift window that raced the guard's own pin.** Gone: each
+  arm of
+  `the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found`
+  is now a CHILD PROCESS re-invoking this test binary with `--exact`, an
+  empty-directory `PATH`, and an environment the parent composes rather
+  than mutates. Nothing process-global moves, at any thread count. The
+  lib-side twin was closed the same way: the unit body replaced its
+  `set_var` round trip with pure `guard_decision(setting, is-test-binary)`
+  assertions and names T-060-s3 in its comment.
+- **s4 — the doctest fail-open.** `is_test_harness_dir` now matches
+  `deps` OR any parent whose name starts with `rustdoctest`, and the
+  verdict records a pin that BITES: removing only the `rustdoctest`
+  predicate makes `cargo test --doc` exit 101 with "a DOCTEST must not
+  be able to reach the real CLI".
+- **s5 — `tauri dev` is not `cargo run`.** Corrected in both places the
+  sentence was load-bearing, `runner.rs` and `docs/ARCHITECTURE.md`,
+  both now naming T-060-s5.
+
+What did NOT close: s1's and s2's INSTANCES are fixed here, but both
+files are filed explicitly as CLASSES and both close with "the ask: a
+paragraph in `docs/CONVENTIONS.md`". Verified at this triage by grep
+over `docs/CONVENTIONS.md` and `method/` for every phrase in either ask
+— zero hits. The rules were never written, and they go to **T-078**.
+The three resolved files are removed in the same commit as this line.
+
 Four findings inside the same forty lines of `runner.rs`, and three of
 the four say so themselves ("folds naturally into T-047-s1 if the
 resolver is being reshaped anyway"). STATE names these as the sharpest
