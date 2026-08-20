@@ -110,7 +110,14 @@
  *
  * 1. IT IS A REGEX SCAN over comment-stripped source, not a TypeScript
  *    or Rust parser. It knows string literals, line and block comments,
- *    and nothing about scope, aliasing or control flow.
+ *    and nothing about scope, aliasing or control flow. Two consequences
+ *    the call arm makes concrete, stated rather than argued away: a
+ *    callee is resolved BY NAME, so a local value shadowing an imported
+ *    function is credited to the import (over-firing, the safe
+ *    direction); and `functionDefs` is FIRST-WINS, so a name defined
+ *    twice in one file — two `mod tests` blocks each with their own
+ *    `fn repo_root()` — is read once (under-firing, which is exactly
+ *    what the anchor census underneath it exists to catch).
  * 2. A DOCS PATH BEHIND A VALUE IT CANNOT FOLLOW is invisible as a path
  *    (T-084-s1). Three live instances, all measured:
  *      - `app/test/architecture-dogfood.test.ts` reads
