@@ -547,10 +547,15 @@ describe("chip attribution across turn boundaries", () => {
    *
    * THAT IS A TENSION, NOT A MISTAKE, and the two arms are unchanged
    * because it is the point of them: an equal or lower watermark is
-   * exactly what makes the `changed` half isolate the REBASELINING
+   * exactly what leaves the `changed` half alone with the REBASELINING
    * clause in `observeBanking`, which fires on a project change even
    * when the seq alone would refuse it. Take the equal/lower arms away
    * and nothing pins that clause.
+   *
+   * (The bare word for that relation is deliberately avoided in this
+   * file: it is a Tailwind utility name, and everything under `app/test`
+   * is scanned for candidates, so writing it in a COMMENT adds 27 bytes
+   * of dead CSS to the shipped stylesheet. Measured; `T-072-s5`.)
    *
    * `higher` closes the gap by ADDING an arm rather than by loosening
    * one: at a switch seq ABOVE the baseline the stale guard passes, so
