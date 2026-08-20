@@ -474,6 +474,19 @@ row it does not expect.
 
 ### What actually reached the human's running app: NOTHING
 
+**THE APP DID NOT RESTART, AND THAT IS WORTH SAYING BECAUSE STATE TOLD
+THE NEXT AGENT TO EXPECT IT.** T-081's checkpoint records that
+integrating an `app/src-tauri/**` card restarted the human's window and
+warns *"whoever integrates the next app-agent or app-shell card should
+expect this"*. That warning is about the INTEGRATOR, who writes into the
+main checkout `tauri dev` is watching. **An executor in a worktree is
+the other case**: pid **85379** is still ppid 82364 and still started
+2026-08-20 00:20:43 at the end of this lane, and the four supervisor
+processes (`npm run tauri dev` 82342 → `tauri` 82364, `npm run dev`
+82504 → `vite` 82549) are all still up since Aug 18 03:45:46. The
+restart is a property of WHERE the bytes land, not of what the card
+touches, and this lane is the control that shows it.
+
 **Port 1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and with
 nothing else**, before and after. No bind, no connect, no signal, on any
 interface. The holder is `node` pid **82549**, one socket, `TCP
@@ -483,8 +496,15 @@ CONVENTIONS records. The app process **85379** (ppid 82364, started
 every mutation and the boot check all happened in `../nputer-T-077`,
 which no `tauri dev` watches, and the boot check ran on its own scratch
 port against its own vite. `npm ci` was never run in the main checkout.
-No `pkill` at any point; the `nputer-T-060` orphans (52504/52505) were
-left alone.
+No `pkill` at any point; the `nputer-T-060` orphans (52504/52505, ppid
+1, started Aug 18 16:21:18) are unchanged and were deliberately left
+alone (`T-043-s1`). Final census by `ps -Ao pid,ppid,command`: zero
+`vitest`, zero `playwright` or `chromium`, zero `cargo` or `rustc`, no
+`tauri dev` or `vite` beyond the human's own four. Scratch ports
+**19851** (boot gate) and **19861** (E2E lane) were bind-probed FREE on
+all four stacks before use and hold ZERO listeners after — both chosen
+away from the lane's 14520 default and from the 19841/19843 the last
+checkpoint used.
 
 ### Corrections and things this card noticed but did not do
 
