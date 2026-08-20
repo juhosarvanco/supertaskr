@@ -106,6 +106,137 @@ export function skipReasonPhrase(reason: string): string {
   }
 }
 
+/**
+ * One details-strip row for an issue the model COUNTS but no failure row
+ * explains (T-077). See `modelIssueRows`.
+ */
+export interface ModelIssueRow {
+  /** React list key: the issue's kind plus the ids and files it names,
+   * with a repeat counter appended only when a snapshot really does
+   * carry two issues agreeing on all three (two `missing-field`s on one
+   * file differ in `field` alone, which is not part of the key). */
+  key: string;
+  /** The parser's own discriminator, verbatim. */
+  kind: string;
+  /** Which id space, for the kinds that carry one; ABSENT otherwise —
+   * absence is the honest answer, never a guess (see `issueSpace`). */
+  space?: string;
+  /** The distinct files the issue names, in issue order. */
+  files: string[];
+  /** The parser's own sentence about the issue. */
+  message: string;
+}
+
+/**
+ * The distinct files an issue names.
+ *
+ * READ THE FIELD, NEVER THE KIND (T-077). `ParseIssue` carries paths in
+ * two shapes — `files: string[]` on the cross-file kinds and `file:
+ * string` on the per-file ones — and the union has grown members in both
+ * shapes more than once. Switching on `kind` here would mean a kind
+ * added tomorrow renders with no files at all until somebody remembers
+ * this function; reading the field means it renders correctly the day it
+ * lands. Deliberately NOT index-aligned with `ids`: this is what a row
+ * says out loud, and the feature `aliased-id` names `docs/ROADMAP.md`
+ * twice by contract.
+ */
+export function issueFiles(issue: ParseIssue): string[] {
+  const carrier = issue as { files?: unknown; file?: unknown };
+  const named: string[] = [];
+  if (Array.isArray(carrier.files)) {
+    for (const entry of carrier.files) if (typeof entry === "string") named.push(entry);
+  } else if (typeof carrier.file === "string") {
+    named.push(carrier.file);
+  }
+  return [...new Set(named)];
+}
+
+/**
+ * The ids an issue names, for keying. Same field-not-kind discipline as
+ * `issueFiles`: `ids: string[]` on the set-level kinds, `id: string` on
+ * the ones about a single id, absent on the rest.
+ */
+export function issueIds(issue: ParseIssue): string[] {
+  const carrier = issue as { ids?: unknown; id?: unknown };
+  if (Array.isArray(carrier.ids)) {
+    return carrier.ids.filter((entry): entry is string => typeof entry === "string");
+  }
+  return typeof carrier.id === "string" ? [carrier.id] : [];
+}
+
+/**
+ * Which id space an issue is about, or undefined when it does not say.
+ *
+ * THE FIELD IS PRESENT ON SOME KINDS AND NOT OTHERS, AND THAT SET MOVES:
+ * `aliased-id` gained `space` at T-053 and `duplicate-id` at T-076,
+ * while `dependency-cycle`, `ambiguous-mapping` and `dangling-reference`
+ * still carry none. So this reads the FIELD rather than listing the
+ * kinds that have it — a list would be wrong the next time the parser
+ * grows a kind, in the silent direction (a real space rendered as
+ * nothing). Where it is absent the row says nothing about space rather
+ * than inferring one from the kind: `dependency-cycle` is task-shaped
+ * TODAY, and inferring that is exactly the prose-reading T-053 ruled out.
+ */
+export function issueSpace(issue: ParseIssue): string | undefined {
+  const value = (issue as { space?: unknown }).space;
+  return typeof value === "string" ? value : undefined;
+}
+
+/**
+ * The strip rows the model's issue COUNT owes and `failures` does not
+ * pay (T-077, absorbing T-053-s1).
+ *
+ * `failures` carries one entry per model-input file whose CURRENT
+ * content cannot establish a record, and the strip renders one row per
+ * entry — a statement about a FILE. Every other issue the parser
+ * produces (`aliased-id`, `duplicate-id`, `dependency-cycle`,
+ * `ambiguous-mapping`, every `dangling-reference`, and every soft issue
+ * on a record that still parsed) is counted in `model.issues` and
+ * explained nowhere: the status line ticks from `0 issues` to `2
+ * issues` over an empty strip, which reads as a bug in the app rather
+ * than a fact about the docs.
+ *
+ * REPRESENTED IS A STATEMENT ABOUT FILES, NOT ABOUT SENTENCES, because
+ * that is what a failure row is. An issue is dropped when it names at
+ * least one file and EVERY file it names already has a failure row —
+ * so a file that never parsed is reported once, not twice (its issues
+ * are in `model.issues` too, because `effective` carries the failing
+ * content when there is no last good), while a cross-file issue
+ * straddling one broken and one healthy file still gets its own row.
+ * Deliberately not a message comparison: prose is never the
+ * discriminator in this union.
+ *
+ * Pure and derived — no store state, no memo, no ordering of its own:
+ * rows come back in `model.issues` order, which is the parser's
+ * documented layer order (task → roadmap → component → cross-reference).
+ */
+export function modelIssueRows(
+  issues: readonly ParseIssue[],
+  failures: readonly ParseFailure[],
+): ModelIssueRow[] {
+  // ADR-009: a collection keyed by file-derived strings is a Set.
+  const failed = new Set(failures.map((failure) => failure.path));
+  const seen = new Map<string, number>();
+  const rows: ModelIssueRow[] = [];
+  for (const issue of issues) {
+    const files = issueFiles(issue);
+    if (files.length > 0 && files.every((file) => failed.has(file))) continue;
+    const base = [issue.kind, ...issueIds(issue), ...files].join(" ");
+    const seenBefore = seen.get(base) ?? 0;
+    seen.set(base, seenBefore + 1);
+    const row: ModelIssueRow = {
+      key: seenBefore === 0 ? base : `${base} #${seenBefore}`,
+      kind: issue.kind,
+      files,
+      message: issue.message,
+    };
+    const space = issueSpace(issue);
+    if (space !== undefined) row.space = space;
+    rows.push(row);
+  }
+  return rows;
+}
+
 export interface DocsModelState {
   /** Seq of the applied payload; 0 = nothing applied yet. */
   seq: number;
