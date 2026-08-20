@@ -378,6 +378,17 @@ new `T-07*-s*` cards all read `status: suggested`, so the DOCS GATE's
 live-card half stays clean across the merge — checked by grep against
 main, since this branch may not merge to find out.
 
+**THE RIGHT-HAND ENDPOINT IS NAMED TOO, and it terminates.** The block
+above is measured at `93b5a44`, and writing it moved the tip to
+`7edf94e`. Re-derived there: `git merge-tree --write-tree 2cf59da
+7edf94e` exits 0 at tree `36e0915a…`, the prescribed form returns the
+SAME TWELVE PATHS (`cmp` against the earlier list, exit 0), three dots
+returns twelve and two dots returns thirty-five. **The path set cannot
+move**, because every notes commit touches
+`docs/tasks/T-084-docs-is-a-code-input-and-no-gate-knows-it.md`, which
+is already one of the twelve — which is why naming the pair ends the
+regress instead of chasing it.
+
 `merge-tree`'s exit was read from `$?` and not swallowed by the command
 substitution: a substitution that eats a CONFLICT hands back an empty
 forecast wearing the costume of a clean gate.
