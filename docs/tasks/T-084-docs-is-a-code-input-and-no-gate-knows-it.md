@@ -330,16 +330,39 @@ DISPATCH FROM THE LAST CHECKPOINT asks a reader to check.
     git diff --name-only e83ee1d...HEAD   (THREE dots)   cmp against the forecast
     git diff --name-only e83ee1d..HEAD    (TWO dots)     THE FORBIDDEN PRE-MERGE FORM
 
-The figures are in the commit that carries these notes, because they can
-only be measured once the work is committed; `e83ee1d` is main's tip and
-also the merge-base, so on this lane the forbidden form and the
-prescribed one COINCIDE — main has not advanced since the branch was
-cut. **That is a fact about today, not a licence**: the moment main moves
-the two diverge, and the executor who quotes this paragraph a day later
-is quoting a range that has drifted.
+Measured at the implementation commit **`c8f6213`**, every dot count
+stated:
 
-- **GRAPH REGEN — FIRES, and the regen is a proven no-op.** The diff
-  carries `.ts` and `.mjs` outside `docs/`, so the trigger matches. The
+    git merge-tree --write-tree e83ee1d c8f6213  -> tree cfe2e646…, MERGE_TREE_EXIT=0
+    git diff --name-only e83ee1d <TREE>                      -> 12   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only e83ee1d...c8f6213  (THREE dots)     -> 12   cmp against the forecast: exit 0
+    git diff --name-only e83ee1d..c8f6213   (TWO dots)       -> 12   the forbidden form, and today it agrees
+    git merge-base e83ee1d c8f6213                           -> e83ee1d
+
+**ALL THREE COINCIDE, AND THAT IS A FACT ABOUT TODAY RATHER THAN A
+LICENCE.** `e83ee1d` is main's tip AND the merge-base, because main has
+not advanced since this branch was cut; the two-dot form is
+`<merge-base>..HEAD` here by an accident of timing, which is exactly the
+range CONVENTIONS bans by name. **The moment main moves, the three
+diverge** — and two sibling lanes (T-072, T-074) are live and will move
+it. The integrator re-derives at the merge and does not quote this
+block; that is the last two checkpoints' lesson applied to the one
+endpoint this lane can be wrong about.
+
+`merge-tree`'s exit was read from `$?` and not swallowed by the command
+substitution: a substitution that eats a CONFLICT hands back an empty
+forecast wearing the costume of a clean gate.
+
+**Suffix census of the twelve:** 7 md, 3 mjs, 1 ts, 1 json — one path
+per file, no renames, no deletions.
+
+- **GRAPH REGEN — FIRES AT EXACTLY ONE PATH, and the regen is a proven
+  no-op.** Derived over the twelve: `.ts/.tsx/.js/.jsx` matches **1**
+  path and it is outside `docs/` —
+  `tools/e2e/tests/docs-input-gate.spec.ts`. **The two new `.mjs` scripts
+  do NOT match this trigger**, which is worth stating because they are
+  the substance of the change: that suffix list has never carried
+  `.mjs`, so a lane shipping only scripts would not fire it at all. The
   gate was ASKED rather than predicted: `cargo run -p nputer-index --
   index --check --root ../..` from app/src-tauri exits **0**, *graph.json
   is CURRENT ... 576235 bytes, 118 files, 996 symbols, 1520 edges*.
@@ -347,7 +370,7 @@ is quoting a range that has drifted.
   third time — the trigger is deliberately wider than the walk.
   **No regenerated graph is committed here**: CONVENTIONS puts the regen
   at the CHECKPOINT.
-- **BOOT GATE — DOES NOT FIRE.** Zero paths in the diff match
+- **BOOT GATE — DOES NOT FIRE, 0 of 12.** Zero paths in the diff match
   `app/src-tauri/**`, `app/src/**`, `app/package.json` or
   `app/src-tauri/Cargo.toml`. The executor's own obligation (T-046
   criterion 6) is on the same trigger, so the boot check is not owed and
@@ -361,7 +384,8 @@ is quoting a range that has drifted.
   The lane's own vite ran on scratch port **14561**, bind-probed free on
   all four stacks (`127.0.0.1`, `0.0.0.0`, `::1`, `::`) before use.
 - **DOCS GATE — FIRES, on its own diff, and this is the first thing it
-  was asked.** `docs/CONVENTIONS.md` plus the card plus five findings.
+  was asked.** **7 of the 12 paths are under `docs/`** —
+  `docs/CONVENTIONS.md`, this card and five findings.
   `node tools/e2e/scripts/docs-gate.mjs <the docs paths>` exits **1** and
   owes `cargo test from app/src-tauri/`, `npm test from app/`,
   `npx vitest run from lib/parser/` and `npm test from tools/e2e/`. All
