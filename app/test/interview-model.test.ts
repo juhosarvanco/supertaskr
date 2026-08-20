@@ -459,14 +459,104 @@ describe("chip attribution across turn boundaries", () => {
     expect(chips.get(2)).toEqual(["docs/ROADMAP.md"]);
   });
 
-  it("a docs snapshot during an active turn produces a chip", () => {
-    const observed = bank(
-      [{ seq: 2, files: { "docs/NORTH_STAR.md": "written" }, at: 1 }],
+  /**
+   * T-072 CRITERION 1. What stood here was `a docs snapshot during an
+   * active turn produces a chip` — T-057's replacement for the
+   * `f(x) === f(x)` tautology it deleted, and character-identical to `a
+   * file that lands AFTER completed still belongs to that turn` three
+   * cases above once its one inert content string (`"written"` against
+   * `"v1"`) was rewritten. It red under an expected-value poison and
+   * killed no mutant of its own: POISON SHAPE SIX, and the criterion
+   * that asked for it is what built it.
+   *
+   * THE SHAPE THE SUITE DID NOT DRIVE is a second banking INTO A TURN
+   * THAT ALREADY HAS ONE. Every other `bank()` body in this file banks
+   * once per turn, or banks the same path twice (`a file that changes
+   * TWICE`, where the union is a no-op by cardinality and the early
+   * return above it takes the call) — so nothing reached
+   * `observeBanking`'s union with anything to add, and the ORDER it puts
+   * that union in was pinned nowhere. `bankedSince` sorts its OWN
+   * answer, which is a different sort in a different function and is
+   * already pinned by `the result is sorted and deduped`; the row a
+   * reader sees is the ACCUMULATED set, and the planner writes in
+   * whatever order it writes. So a path banked SECOND that sorts FIRST
+   * has to move to the front of the row, not to the end of it.
+   */
+  it("a second banking in the same turn merges in PATH order, not arrival order", () => {
+    const chips = bank(
+      [
+        { seq: 2, files: { "docs/ROADMAP.md": "r" }, at: 1 },
+        { seq: 3, files: { "docs/ROADMAP.md": "r", "docs/ARCHITECTURE.md": "a" }, at: 1 },
+      ],
       docs(1, {}),
     );
-    expect(observed.get(1)).toEqual(["docs/NORTH_STAR.md"]);
+    // Arrival order is ROADMAP then ARCHITECTURE; the row reads the
+    // other way round. Two entries, so this also says the first chip
+    // SURVIVED the second observation rather than being replaced by it.
+    expect(chips.get(1)).toEqual(["docs/ARCHITECTURE.md", "docs/ROADMAP.md"]);
   });
 
+  /**
+   * T-072 CRITERIA 2-3, the model half of the render pin. The DOM half —
+   * that this identity really does cost React nothing — is `a quiet
+   * snapshot costs the conversation NO extra render` in
+   * `app/test/interview-chat-dom.test.tsx`; this one pins the property
+   * that half depends on, at the only place it can be stated exactly.
+   *
+   * A QUIET SNAPSHOT IS THE ORDINARY CASE, not an edge one: the watcher
+   * debounces at 250 ms and emits on any change under the watch root, so
+   * most snapshots during an interview move the seq and no docs
+   * artifact. The baseline MUST advance for those; the chip map must
+   * not, and the two facts are asserted together because either alone
+   * can be satisfied by a transition that is simply broken.
+   */
+  it("a quiet snapshot advances the baseline and returns the chip map BY IDENTITY", () => {
+    const tree = { "docs/STATE.md": "s", "docs/NORTH_STAR.md": "n" };
+    const primed = observeBanking(EMPTY_BANKING_OBSERVATION, docs(1, { "docs/STATE.md": "s" }), 1);
+    const banked = observeBanking(primed, docs(2, tree), 1);
+    // The positive control, and it comes FIRST so that a transition
+    // which reuses the caller's map reds here rather than three lines
+    // later on the pollution that reuse causes: the map DOES move when
+    // something is banked, so the identity assertions below are claims
+    // about this transition and not about a map that never changes.
+    expect(banked.chipsByTurn, "a banking allocates a NEW map…").not.toBe(primed.chipsByTurn);
+    expect(banked.chipsByTurn.get(1), "…carrying the path").toEqual(["docs/NORTH_STAR.md"]);
+
+    const quiet = observeBanking(banked, docs(3, tree), 1);
+    expect(quiet.baseline.seq, "the baseline still advances…").toBe(3);
+    expect(quiet.chipsByTurn, "…and the render half does not move").toBe(banked.chipsByTurn);
+
+    // A REPEAT is the stronger guarantee, and it is what makes the
+    // chat's effect safe under StrictMode's double-invoke: nothing
+    // moved, so the WHOLE observation comes back by identity.
+    expect(observeBanking(quiet, docs(3, tree), 1), "a repeat moves nothing at all").toBe(quiet);
+  });
+
+  /**
+   * T-072 CRITERION 5 — WHICH GUARD HOLDS WHICH ARM, WRITTEN DOWN
+   * BECAUSE THE NAME OF THIS TEST DOES NOT SAY. Read the `switched:
+   * undefined` half at `equal` and `lower` as proof of the
+   * different-project guard and you have read more than it proves:
+   * MEASURED, deleting `bankedSince`'s project clause reds exactly two
+   * OTHER bodies (`a DIFFERENT project yields nothing` and the second
+   * half of `…but a baseline that knows NO project is not a switch`) and
+   * leaves this one GREEN at every arm below except `higher`. At an
+   * EQUAL or LOWER switch seq it is the STALE-SNAPSHOT guard —
+   * `docs.seq <= baseline.seq`, one line up — that returns the empty
+   * list, and the project clause is never reached.
+   *
+   * THAT IS A TENSION, NOT A MISTAKE, and the two arms are unchanged
+   * because it is the point of them: an equal or lower watermark is
+   * exactly what makes the `changed` half isolate the REBASELINING
+   * clause in `observeBanking`, which fires on a project change even
+   * when the seq alone would refuse it. Take the equal/lower arms away
+   * and nothing pins that clause.
+   *
+   * `higher` closes the gap by ADDING an arm rather than by loosening
+   * one: at a switch seq ABOVE the baseline the stale guard passes, so
+   * `switched: undefined` there can only be the project clause — and it
+   * is the arm that reds under the mutation described above.
+   */
   it("rebaselines a project switch before banking the next change", () => {
     const switchAt = (seq: number) => {
       const projectA = observeBanking(
@@ -486,9 +576,14 @@ describe("chip attribution across turn boundaries", () => {
       );
       return { switched: switched.chipsByTurn.get(1), changed: changed.chipsByTurn.get(1) };
     };
-    expect({ equal: switchAt(8), lower: switchAt(3) }).toEqual({
+    expect({ equal: switchAt(8), lower: switchAt(3), higher: switchAt(9) }).toEqual({
+      // Held by the stale-snapshot guard; the `changed` half is what
+      // isolates the rebaselining clause. See the note above.
       equal: { switched: undefined, changed: ["docs/STATE.md"] },
       lower: { switched: undefined, changed: ["docs/STATE.md"] },
+      // Held by the different-project guard, and by nothing else: seq 9
+      // is above the baseline's 8, so the stale guard passes it through.
+      higher: { switched: undefined, changed: ["docs/STATE.md"] },
     });
   });
 

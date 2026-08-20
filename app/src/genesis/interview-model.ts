@@ -18,12 +18,29 @@ import { deriveGenesis, EMPTY_CHANGE_LOG } from "./genesis-derive";
  *  1. A BANKED CHIP IS FILE EVIDENCE, NEVER MODEL OUTPUT. Nothing here
  *     reads a turn's text, its `activity` labels, or the banking map to
  *     decide that something was banked. The only input is the docs tree
- *     the watcher delivered (criterion 3). The consequence is deliberate
- *     and tested: a file a HUMAN writes in a terminal mid-interview
- *     produces an identical chip, because the chip's claim is "this file
- *     changed on disk at this point in the conversation" and not "this
- *     turn caused it". That is ADR-006's hand-driven mode rendering
- *     correctly.
+ *     the watcher delivered (criterion 3). The consequence is DELIBERATE
+ *     and it is true BY CONSTRUCTION: a file a HUMAN writes in a
+ *     terminal mid-interview produces an identical chip, because the
+ *     chip's claim is "this file changed on disk at this point in the
+ *     conversation" and not "this turn caused it". That is ADR-006's
+ *     hand-driven mode rendering correctly.
+ *
+ *     THIS SENTENCE READ "deliberate and tested" UNTIL T-072, AND THE
+ *     TEST IT LEANED ON HAD BEEN DELETED (T-057). It is corrected rather
+ *     than re-satisfied, because the positive half is not testable from
+ *     this module at all: no parameter distinguishes the two writers, so
+ *     a body that banks the same tree twice and asserts the chips agree
+ *     is `f(x) === f(x)` — which is precisely the tautology T-057
+ *     removed. The type-level argument in the paragraph above IS the
+ *     evidence, and restoring a deleted test to make an old adjective
+ *     true would be evidence of nothing. What a test CAN hold is the
+ *     NEGATIVE, and two do: `activity labels and completed text naming
+ *     docs paths produce ZERO chips` in
+ *     `app/test/interview-model.test.ts`, and its DOM twin `a turn whose
+ *     activity labels name docs paths produces ZERO chips` in
+ *     `app/test/interview-chat-dom.test.tsx`. Both drive a real event
+ *     script whose model output names real docs paths over a disk that
+ *     did not move, and both require zero chips.
  *  2. THE CHALLENGE PREFIX IS A RENDERING HINT AND NOTHING ELSE. It is
  *     read by exactly one function (`challengeOf`) whose result reaches
  *     exactly one class list. Criterion 2 says the hint is never
@@ -67,7 +84,26 @@ export const UNPRIMED_BASELINE: BankBaseline = {
 
 /** Everything one docs observation can move. Keeping the baseline and
  * accumulated chips together makes their transition one pure rule shared by
- * the shipped chat and its replay tests. */
+ * the shipped chat and its replay tests.
+ *
+ * THE TWO HALVES HAVE DIFFERENT RENDER COSTS, AND A CALLER THAT IGNORES
+ * THAT PAYS FOR IT (T-072 criterion 2, closing T-057-s2). `chipsByTurn`
+ * is the render — `assembleTranscript` reads it and a chip row appears.
+ * `baseline` is bookkeeping: no render reads it, ever. A quiet snapshot
+ * (the seq advances, nothing banked) MUST advance the baseline and
+ * cannot avoid allocating a new one, so an observation object is not a
+ * safe unit of React state — holding both halves in one `useState` turns
+ * every quiet snapshot into a re-render for a value nothing displays.
+ *
+ * THE CONTRACT THAT MAKES THE SPLIT WORK, and it is pinned rather than
+ * assumed (`a quiet snapshot advances the baseline and returns the chip
+ * map BY IDENTITY` in `app/test/interview-model.test.ts`):
+ * **`observeBanking` returns `previous.chipsByTurn` BY IDENTITY on every
+ * path that adds no path to no turn**, and a fresh map on exactly the
+ * paths that do. So a caller stores the observation outside React state
+ * and sets only `chipsByTurn`; React's `Object.is` bail-out then costs a
+ * baseline advance nothing. `InterviewChat` is that caller, and the
+ * render count is pinned in `app/test/interview-chat-dom.test.tsx`. */
 export interface BankingObservation {
   baseline: BankBaseline;
   chipsByTurn: ReadonlyMap<number, readonly string[]>;
@@ -158,6 +194,21 @@ export function bankedSince(
  * changes (even when its watermark is equal or lower), and sorted/deduped
  * accumulation within a turn. A project switch never chips the new tree;
  * the next change in that project is measured from the replacement baseline.
+ *
+ * TWO IDENTITY GUARANTEES, in decreasing strength, and the second is the
+ * one T-072 leans on (see `BankingObservation`):
+ *
+ *  - When NOTHING moved — a null turn, a repeat, a stale snapshot — the
+ *    PREVIOUS OBSERVATION comes back by identity, so a replay and
+ *    StrictMode's double-effect are both free.
+ *  - When only the BASELINE moved, the object is new but
+ *    `chipsByTurn` is `previous.chipsByTurn` by identity. That is the
+ *    half a caller puts in React state.
+ *
+ * A fresh map is returned on exactly one condition: a path was added to a
+ * turn. Every early return above `chipsByTurn.set` carries the old map
+ * forward, which is what makes "the map moved" and "a chip appeared" the
+ * same statement.
  */
 export function observeBanking(
   previous: BankingObservation,

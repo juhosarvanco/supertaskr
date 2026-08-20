@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, Profiler } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { emptyState, type DocsModelState } from "../src/lib/docs-model";
@@ -428,6 +428,73 @@ describe("banked chips come from the docs tree (criterion 3)", () => {
     render(docsWith(1, { "docs/STATE.md": "a" }));
     await flush(() => render(docsWith(2, { "docs/STATE.md": "b", "docs/NORTH_STAR.md": "n" })));
     expect(qa("[data-testid=interview-banked]")).toHaveLength(0);
+  });
+});
+
+// ---- what a quiet snapshot costs (T-072 criterion 3) --------------------
+
+describe("a quiet snapshot costs nothing (T-072 criterion 3)", () => {
+  /**
+   * THE PIN T-057-s2 ASKED FOR, COUNTED RATHER THAN ARGUED.
+   *
+   * `<Profiler>` calls `onRender` once per COMMIT that includes its
+   * subtree, so a state update React BAILS OUT of is invisible to this
+   * counter — which is exactly the property being pinned. A new `docs`
+   * prop always costs ONE commit, because the element really did change;
+   * the question is whether the banking effect then schedules a SECOND
+   * one for a value nothing displays.
+   *
+   * WHY IT IS A DELTA AND NOT AN ABSOLUTE. The mount settles a status
+   * pull, an auto-start and a transcript pull, all of them async, and
+   * counting from zero would pin those instead. The two deltas are taken
+   * after the same settle, one snapshot apart, so everything but the
+   * snapshot is held.
+   *
+   * THE BANKING ARM IS THE POSITIVE CONTROL, and it is not optional: on
+   * its own, `quiet: 1` is satisfied just as well by a counter that
+   * cannot move at all, by a chat that stopped observing docs, and by a
+   * `Profiler` that was never wired up.
+   */
+  it("a quiet snapshot costs the conversation NO extra render, a banking one costs exactly one", async () => {
+    let commits = 0;
+    const show = async (docs: DocsModelState): Promise<void> => {
+      await act(async () => {
+        root.render(
+          <Profiler
+            id="interview-chat"
+            onRender={() => {
+              commits += 1;
+            }}
+          >
+            <InterviewChat projectDir={PROJECT} docs={docs} />
+          </Profiler>,
+        );
+      });
+    };
+
+    ipc.outcomes.set("genesis_start", { kind: "started", turn: 1 });
+    await withStatus();
+    await show(docsWith(1, { "docs/STATE.md": "scaffold" }));
+    await emit({ kind: "started", seq: 1, turn: 1 });
+    // Settle every async answer the mount set going, so the two deltas
+    // below differ by the snapshot and by nothing else.
+    await flush(() => Promise.resolve());
+    await flush(() => Promise.resolve());
+
+    // A QUIET SNAPSHOT — the ordinary case. The watcher's seq advances
+    // over a tree in which no docs artifact moved.
+    const beforeQuiet = commits;
+    await show(docsWith(2, { "docs/STATE.md": "scaffold" }));
+    const quiet = commits - beforeQuiet;
+
+    // A BANKING SNAPSHOT — same shape, one file written, one chip.
+    const beforeBanking = commits;
+    await show(docsWith(3, { "docs/STATE.md": "scaffold", "docs/NORTH_STAR.md": "v" }));
+    const banking = commits - beforeBanking;
+
+    expect({ quiet, banking }).toEqual({ quiet: 1, banking: 2 });
+    // …and the second commit really was the chip arriving, not noise.
+    expect(q("[data-testid=interview-banked]")?.textContent).toContain("docs/NORTH_STAR.md");
   });
 });
 
