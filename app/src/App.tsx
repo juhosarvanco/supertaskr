@@ -6,7 +6,7 @@ import { PaneRail, type PaneId } from "@/components/shell/PaneRail";
 import { Button } from "@/components/ui/button";
 import { acceleratorsFor, useAccelerators } from "@/components/shell/accelerators";
 import { cancelTurn, startInterviewSource } from "@/genesis/interview-source";
-import { skipReasonPhrase } from "@/lib/docs-model";
+import { modelIssueRows, skipReasonPhrase, type ModelIssueRow } from "@/lib/docs-model";
 import {
   CONVENTION_HINT,
   getShellState,
@@ -89,6 +89,57 @@ function SkippedFilesBadge({
       {count} skipped file{count === 1 ? "" : "s"}
       {lastValid && <span className="text-status-rejected-foreground">· last valid state</span>}
     </span>
+  );
+}
+
+/**
+ * T-077 (absorbing T-053-s1): the rows the details strip never had.
+ *
+ * The counts line renders `model.issues.length`; the strip iterated
+ * `failures` and `skipped` only. Every issue that does not withhold a
+ * record — the cross-file kinds (`aliased-id`, `duplicate-id`,
+ * `dependency-cycle`, `ambiguous-mapping`), every `dangling-reference`,
+ * and every soft issue on a record that still parsed — was therefore
+ * COUNTED and explained nowhere: `0 issues` ticking to `2 issues` over a
+ * strip that does not even render. A count that cannot be expanded reads
+ * as a bug in the app rather than a fact about the docs.
+ *
+ * `modelIssueRows` (docs-model.ts) decides WHICH issues are still owed a
+ * row and does it structurally; this renders them. Each row names the
+ * kind, the id SPACE where the kind carries one, and the files — and
+ * carries all three as `data-*` too, so a consumer never has to read the
+ * prose to know what a row is about (the discipline the issue union
+ * itself is built on).
+ *
+ * NOT CLICKABLE, RULED RATHER THAN ASSUMED (criterion 3; the reasoning
+ * is in the card's implementation notes). Opening or revealing a named
+ * file is a NATIVE surface, and ADR-012 puts those behind an app-defined
+ * Rust command with the picked path never transiting the webview — this
+ * app has thirteen commands and not one of them opens a path. The
+ * in-app alternative does not cover the rows either: two of the four
+ * cross-file kinds routinely name `docs/ROADMAP.md`, which the board
+ * draws no card for, and component files, which live on the map pane. A
+ * click that works on some rows and silently does nothing on the rest is
+ * worse than a strip that is honestly inert, which is what the failure
+ * and skip rows beside it already are.
+ */
+function ModelIssueRows({ rows }: { rows: ModelIssueRow[] }) {
+  return (
+    <>
+      {rows.map((row) => (
+        <li
+          key={row.key}
+          data-testid="model-issue-row"
+          data-issue-kind={row.kind}
+          {...(row.space !== undefined ? { "data-issue-space": row.space } : {})}
+          className="font-mono text-status-rejected-foreground"
+        >
+          {row.space !== undefined ? `${row.space} ${row.kind}` : row.kind}
+          {row.files.length > 0 ? ` · ${row.files.join(" · ")}` : ""}
+          {` — ${row.message}`}
+        </li>
+      ))}
+    </>
   );
 }
 
@@ -442,6 +493,9 @@ function App() {
   const [pane, setPane] = useState<PaneId>("board");
 
   const { model, failures, skipped, truncated, fileCount, seq } = shell.docs;
+  // T-077: derived at render from the two fields already in hand — no
+  // new store state, and nothing to keep in sync with the count above.
+  const issueRows = modelIssueRows(model.issues, failures);
   const screen = selectScreen(shell);
 
   // T-049 gave the app ONE keydown listener at the root so ⌘O and ⌘N
@@ -678,7 +732,7 @@ function App() {
             )}
           </div>
 
-          {(failures.length > 0 || skipped.length > 0) && (
+          {(failures.length > 0 || skipped.length > 0 || issueRows.length > 0) && (
             <ul
               data-testid="parse-error-details"
               className="mx-6 mb-3.5 flex max-h-48 flex-col gap-1 overflow-y-auto rounded-lg border border-status-rejected-border bg-status-rejected p-3 text-xs"
@@ -698,6 +752,12 @@ function App() {
                   {s.showingLastGood ? " (showing last valid state)" : ""}
                 </li>
               ))}
+              {/* T-077: and every OTHER issue the count above already
+                  claims. Same strip, same row idiom, same containment —
+                  a cross-file message names ids and paths that came off
+                  disk, so it is file-derived text exactly like the two
+                  row families above it. */}
+              <ModelIssueRows rows={issueRows} />
             </ul>
           )}
 

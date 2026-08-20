@@ -47,10 +47,29 @@ function payload(
   return { seq: nextSeq, projectDir: "/dogfood", generatedAtMs: nextSeq, files, ...extra };
 }
 
+// T-077 MADE THIS FIXTURE MEAN WHAT IT SAYS, and every assertion below
+// is unchanged — the fixture was the thing that was wrong. These two
+// files were meant to be "a clean board" and were not. The backbone
+// bullet was a NUMBERED line, which the documented `- F-NN:` shape does
+// not match, so the roadmap parsed ZERO features and legally reported
+// nothing (an empty backbone is a valid state, not a failure); and
+// `status: building` requires the four placement fields, so the task
+// parsed into a RECORD carrying four `missing-field` issues. The board
+// read `0 features · 4 issues` throughout this file while "recovery
+// clears the chip and the strip" asserted an EMPTY strip — true only
+// because a counted issue had nowhere to appear, which is exactly the
+// hole T-077 closes. The bullet is now the shape the parser documents
+// and the task carries its placement, so the clean state below is clean
+// BY PARSE rather than by blindness.
 const TASK = `---
 id: T-701
 title: Survivor task
+feature: F-01
+milestone: 1
+priority: 1
+size: S
 status: building
+touches: [app-shell]
 ---
 ## Acceptance criteria
 - x
@@ -59,7 +78,7 @@ status: building
 const ROADMAP = `# Roadmap
 
 ## Backbone
-1. **F-01 — Thing** — prose
+- F-01: Thing — prose
 `;
 
 const BASE_FILES = [
