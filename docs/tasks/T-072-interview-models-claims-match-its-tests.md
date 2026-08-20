@@ -258,18 +258,21 @@ tautology straight back.
 
 **THE CARD'S MEASUREMENT REPRODUCES EXACTLY, at `e83ee1d`, before
 anything was edited.** Deleting `bankedSince`'s project clause reds
-**2 of 833** — `a DIFFERENT project yields nothing` and the second half
+**2 of 831** — the suite's size at that ref, not at this branch's — `a DIFFERENT project yields nothing` and the second half
 of `…but a baseline that knows NO project is not a switch, however high
 its seq` — and leaves `rebaselines a project switch before banking the
 next change` GREEN. At an equal or lower switch seq the `switched:
 undefined` half is held by the STALE-SNAPSHOT guard one line above, and
 the project clause is never reached.
 
-**THE TWO EXISTING ARMS ARE BYTE-UNCHANGED.** The card rules them
+**THE TWO EXISTING ARMS ARE UNCHANGED, and precisely so rather than
+loosely.** `switchAt` is byte-identical, and so are the `equal:` and
+`lower:` expectation lines; the only edit either sees is that a third key
+now sits beside them in the same object literal. The card rules them
 correct and they are: an equal or lower watermark is precisely what makes
-the `changed` half isolate `observeBanking`'s rebaselining clause, which
-fires on a project change even when the seq alone would refuse it.
-Nothing was "fixed".
+the `changed` half the only pin on `observeBanking`'s rebaselining
+clause, which fires on a project change even when the seq alone would
+refuse it. Nothing was "fixed".
 
 What was added is the comment the criterion asks for — beside the
 assertion, naming which guard holds which arm — **and its second offered
