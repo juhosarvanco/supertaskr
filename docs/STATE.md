@@ -1,6 +1,6 @@
 # State
 
-Updated: 2026-08-20 by architect (T-074 and T-072 merged and checkpointed),
+Updated: 2026-08-20 by architect (T-077 merged and checkpointed),
 claude-opus-5 @T-081-integrate.
 
 ## Just completed
@@ -540,35 +540,46 @@ computed and recorded. Nothing is broken.
 
 **ONE SIBLING LANE IS LIVE.**
 
-- **T-084 — `../nputer-T-084`, `task/T-084-docs-gate`**, still building
-  as this lands. Fence `[docs/CONVENTIONS.md, tools/e2e]`. It is the
-  card for "`docs/` is a code input and neither standing gate knows
-  it", and `T-081-s9` has formally deferred its vocabulary-gate remedy
-  to it.
-- **T-072 is MERGED** at `ea2d58f` and checkpointed here; worktree
-  removed, branch kept at `57aa55b`.
+- **T-084 — `../nputer-T-084`, `task/T-084-docs-gate`, at `6a84bd8`,
+  REJECTED and being fixed.** Fence `[docs/CONVENTIONS.md, tools/e2e]`.
+  Its worktree carries `node_modules` cloned from the main checkout and
+  a built `lib/parser/dist`, both gitignored, left in place.
 
-**Two findings from those lanes reach past their cards and belong to
-T-084's family.**
+  **The rejection's first finding is the fix reproducing the original
+  defect.** The gate defines a reader as a body with a `docs`-first
+  literal in its OWN file, but `lib/parser/test/smoke.test.ts` calls
+  `parseProject(repoRoot)` and `project.ts` resolves `docs/tasks`,
+  `docs/ROADMAP.md` and `docs/architecture/components` off it. Measured
+  twice: a one-line edit to `docs/ROADMAP.md` makes the gate owe only
+  the e2e lane, that lane goes 114/114 green, and the parser goes
+  **262/263 red**. An integrator who obeys the gate merges a red tree.
 
-- **`T-072-s5` — A COMMENT IN A TEST FILE CHANGED THE SHIPPED CSS.**
-  The bare word `isolate`, written once in a comment in
-  `app/test/interview-model.test.ts`, made Tailwind emit
-  `.isolate{isolation:isolate}` — 27 bytes into the stylesheet. Tailwind
-  v4 has no `@source`, so it scans the Vite root including
-  `app/test/**`, a tree that ships no byte. Measured in both
-  directions: the same word in five `docs/tasks/*.md` emits nothing, so
-  the input is `app/test` specifically rather than "any text".
-  **CONVENTIONS' FOUR WALKS table does not describe this fifth walk.**
-  One-line close: `@source ./src`.
-- **`T-072-s1` — THE POISON DRILL'S OWN PROOFS CAN BOTH REPORT SUCCESS
-  WHILE THE WORK IS GONE.** A drill helper's `git checkout --` silently
-  reverted an uncommitted implementation mid-drill, and *both* proofs
-  CONVENTIONS prescribes — an empty `git diff` and a sha256 against
-  `git show HEAD:` — said the restoration was clean, because both
-  compare against HEAD and the work was not in HEAD. The missing clause
-  is **"drill at a commit"**, which is what every integrator has been
-  doing by convention and no rule requires.
+  Two more: **M6's tripwire fix is real for its shape and blind one
+  step out** — the site arm resolves bases through imports while the
+  anchor arm reads local bindings only, and that import idiom is how
+  three of the nine derived readers get their root. And CONVENTIONS now
+  says **twelve** root-anchored readers where the tree says **eleven**,
+  with nothing pinning the number — a wrong figure that had propagated
+  through three documents by the time the verifier caught it, inside
+  the card written to stop exactly that.
+
+**THE THREE-FIXTURE RULE FIRED AT T-077's CHECKPOINT AND THE LEDGER'S
+OWN WARNING CAME TRUE ON THE INTEGRATOR.** T-077 ADDS an indexed file,
+so the regen moved **four** assertions across **three** bodies:
+`fileComponent.size` 118→119 and its test name, C-05's per-component
+tally 55→56 in that same body, C-05→C-10's observedCount 33→34 in
+another, and map-dogfood's index hint. **vitest surfaces them one at a
+time**, so each green run after a fix proved nothing about the rest.
+`architecture-dogfood.test.ts`'s ledger warns of this in as many words
+and names T-048, T-049 and T-053 as having each learned it once; this
+integrator makes four. The ledgers in both files gained an entry rather
+than being rewritten.
+
+**And the regen ran TWICE, which is why the merge/checkpoint split is
+load-bearing.** The first regen made the graph current for the merge;
+reconciling the fixtures then moved two files' `loc` and staled it
+again. A graph regenerated into the merge is stale by the time the
+checkpoint lands.
 
 ## Next up
 

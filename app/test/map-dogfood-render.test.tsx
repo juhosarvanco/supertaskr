@@ -358,8 +358,18 @@ describe("the nputer repo on its own map", () => {
     // component edges, the ten undeclared relations and every drift count
     // above stay byte-identical. Architecture-dogfood records the full
     // 117→118 files / 995 symbols / 1518 edges delta.
+    // 118 → 119 at the T-077 merge regen (2026-08-20): one file joins,
+    // app/test/cross-file-rows.test.tsx, and unlike T-073's entry it DOES
+    // carry symbols — 996 → 1018 (+22) and 1539 edges (+19). C-05 is again
+    // the claimant, so the eleven rendered nodes and the ten undeclared
+    // relations still hold. What moves besides this hint is THREE
+    // assertions in architecture-dogfood, not one: fileComponent.size
+    // 118 → 119, C-05's per-component tally 55 → 56 in that same body,
+    // and C-05→C-10's observedCount 33 → 34 in another. vitest surfaces
+    // them one at a time, so a green run after fixing the first proves
+    // nothing about the rest.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 118 files",
+      "committed graph · 119 files",
     );
   });
 });

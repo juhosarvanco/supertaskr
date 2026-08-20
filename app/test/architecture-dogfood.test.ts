@@ -1074,8 +1074,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 118 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(118);
+  it("all 119 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(119);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -1150,7 +1150,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // graph. It is the SECOND assertion in this body — below the size
       // check above — so vitest never reaches it while that one is red;
       // derived from the indexed added-file list before the suite ran.
-      ["C-05", 55],
+      ["C-05", 56],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under
@@ -1556,7 +1556,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // and confirmed by a throwaway probe against the fresh graph — the
       // node picture, the 32-row edge table, the ten D1 findings, the three
       // D3s and all eight per-component file counts are unchanged.
-      ["C-05", "C-10", "confirmed", 33],
+      // 33 → 34 at the T-077 merge regen (2026-08-20): app/test/cross-file-rows.test.tsx
+      // joins C-05 (app/test/** is its glob alone) and imports from C-10, so the
+      // file join and this row move together. FOUR assertions moved, in three
+      // bodies, and vitest surfaced them ONE AT A TIME — size, then the per-
+      // component tally in that same body, then this row, then map-dogfood's
+      // hint. The ledger entry above warns of exactly this and the integrator
+      // still had to learn it once, which is now five cards deep.
+      ["C-05", "C-10", "confirmed", 34],
       ["C-05", "C-11", "planned", 0],
       // 20 → 22 at the T-034 merge regen: map-task-waves.test.ts imports
       // task-waves.ts and map-tasks-lens-dom.test.tsx imports MapView.tsx.

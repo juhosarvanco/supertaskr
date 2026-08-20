@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:86abfb24993dd27a0162fedb80aaabcd84b9e8d08b65b4859cb0cb28b066dfa3",
-      "loc": 737,
+      "hash": "blake3:815a4933772edbab4051accfa1dd43c8aaadf763766c1312a8ed42b7988718a7",
+      "loc": 797,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -18,8 +18,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            415,
-            735
+            466,
+            795
           ]
         },
         {
@@ -28,8 +28,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            97,
-            112
+            148,
+            163
           ]
         },
         {
@@ -38,8 +38,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            135,
-            255
+            186,
+            306
+          ]
+        },
+        {
+          "id": "s:app/src/App.tsx#ModelIssueRows",
+          "name": "ModelIssueRows",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            126,
+            144
           ]
         },
         {
@@ -68,8 +78,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            300,
-            402
+            351,
+            453
           ]
         },
         {
@@ -78,8 +88,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            406,
-            413
+            457,
+            464
           ]
         },
         {
@@ -88,8 +98,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            283,
-            287
+            334,
+            338
           ]
         },
         {
@@ -98,8 +108,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            267,
-            279
+            318,
+            330
           ]
         }
       ]
@@ -4779,8 +4789,8 @@
       "id": "f:app/src/lib/docs-model.ts",
       "path": "app/src/lib/docs-model.ts",
       "lang": "ts",
-      "hash": "blake3:7e2f2684b0f52177784574c5525a3bb40fa0e136144b99b17e83c746d1dd47fb",
-      "loc": 297,
+      "hash": "blake3:39cfd93d8265311a290746cec3d2fc5c68cd72d74bc599ccc82e271bc4e85191",
+      "loc": 428,
       "symbols": [
         {
           "id": "s:app/src/lib/docs-model.ts#DocsFilePayload",
@@ -4798,8 +4808,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            109,
-            157
+            240,
+            288
           ]
         },
         {
@@ -4820,6 +4830,16 @@
           "range": [
             28,
             28
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#ModelIssueRow",
+          "name": "ModelIssueRow",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            113,
+            128
           ]
         },
         {
@@ -4878,8 +4898,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            219,
-            297
+            350,
+            428
           ]
         },
         {
@@ -4888,8 +4908,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            159,
-            173
+            290,
+            304
           ]
         },
         {
@@ -4898,8 +4918,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            190,
-            204
+            321,
+            335
           ]
         },
         {
@@ -4908,8 +4928,48 @@
           "kind": "function",
           "exported": false,
           "range": [
-            209,
-            211
+            340,
+            342
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#issueFiles",
+          "name": "issueFiles",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            143,
+            152
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#issueIds",
+          "name": "issueIds",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            159,
+            165
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#issueSpace",
+          "name": "issueSpace",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            180,
+            183
+          ]
+        },
+        {
+          "id": "s:app/src/lib/docs-model.ts#modelIssueRows",
+          "name": "modelIssueRows",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            213,
+            238
           ]
         },
         {
@@ -6007,8 +6067,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:a1d356d3a59b4bafb599484a2bb0bb2deeeacfc388bd654a889d72f322fe6dde",
-      "loc": 1730,
+      "hash": "blake3:b66cbd2d3ceda77b8a9e77692c61468da78c9b5b890464741a504c961f2d9f05",
+      "loc": 1737,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -6641,6 +6701,175 @@
           "range": [
             202,
             214
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/cross-file-rows.test.tsx",
+      "path": "app/test/cross-file-rows.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:326e1293eb040d9ac2477f7ea9bf534296e7cd437b51c691af5bcd9a89ab99f0",
+      "loc": 365,
+      "symbols": [
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#ALIASED_TASKS",
+          "name": "ALIASED_TASKS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            90,
+            93
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#ALIASING_BACKBONE",
+          "name": "ALIASING_BACKBONE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            84,
+            89
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#CROSS_FILE_ONLY",
+          "name": "CROSS_FILE_ONLY",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            94,
+            97
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#HEALTHY_ROADMAP",
+          "name": "HEALTHY_ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            99,
+            103
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#apply",
+          "name": "apply",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            116,
+            120
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#attr",
+          "name": "attr",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            130,
+            131
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            36,
+            36
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#countsLine",
+          "name": "countsLine",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            129,
+            129
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#mountAndApply",
+          "name": "mountAndApply",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            105,
+            114
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#nextSeq",
+          "name": "nextSeq",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            54,
+            54
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#payload",
+          "name": "payload",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            56,
+            59
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#q",
+          "name": "q",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            122,
+            123
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            37,
+            37
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#rows",
+          "name": "rows",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            126,
+            128
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#strip",
+          "name": "strip",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            125,
+            125
+          ]
+        },
+        {
+          "id": "s:app/test/cross-file-rows.test.tsx#task",
+          "name": "task",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            65,
+            79
           ]
         }
       ]
@@ -8096,8 +8325,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:30f1cacc210ba99f2e62c55fe448318bf8c10296aad4e37fd32ddd55d8fa26d4",
-      "loc": 365,
+      "hash": "blake3:354cc7e7399665b931b39d911b0599dc2b969e4afdfc995c775bda95c0a66167",
+      "loc": 375,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -9564,8 +9793,8 @@
       "id": "f:app/test/watcher-truth.test.tsx",
       "path": "app/test/watcher-truth.test.tsx",
       "lang": "ts",
-      "hash": "blake3:e62b5124670a8aa17e784bb65e7071393e2886abc222435655a5d86ea11cda1c",
-      "loc": 190,
+      "hash": "blake3:21902c8d25fe116e75d77651322cd052d9a76c49b0c9ce5089392d217c96966f",
+      "loc": 209,
       "symbols": [
         {
           "id": "s:app/test/watcher-truth.test.tsx#BASE_FILES",
@@ -9573,8 +9802,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            65,
-            68
+            84,
+            87
           ]
         },
         {
@@ -9583,8 +9812,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            59,
-            63
+            78,
+            82
           ]
         },
         {
@@ -9593,8 +9822,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            50,
-            57
+            64,
+            76
           ]
         },
         {
@@ -9603,8 +9832,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            81,
-            85
+            100,
+            104
           ]
         },
         {
@@ -9623,8 +9852,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            70,
-            79
+            89,
+            98
           ]
         },
         {
@@ -9653,8 +9882,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            87,
-            88
+            106,
+            107
           ]
         },
         {
@@ -11170,6 +11399,8 @@
       "to": "f:app/src/lib/docs-model.ts",
       "kind": "import",
       "symbols": [
+        "ModelIssueRow",
+        "modelIssueRows",
         "skipReasonPhrase"
       ]
     },
@@ -12974,6 +13205,51 @@
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/cross-file-rows.test.tsx",
+      "to": "f:app/src/App.tsx",
+      "kind": "import",
+      "symbols": [
+        "default"
+      ]
+    },
+    {
+      "from": "f:app/test/cross-file-rows.test.tsx",
+      "to": "f:app/src/lib/docs-model.ts",
+      "kind": "import",
+      "symbols": [
+        "DocsSnapshotPayload"
+      ]
+    },
+    {
+      "from": "f:app/test/cross-file-rows.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/cross-file-rows.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/cross-file-rows.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
         "describe",
         "expect",
         "it"
@@ -15500,6 +15776,12 @@
     },
     {
       "from": "s:app/src/App.tsx#App",
+      "to": "s:app/src/lib/docs-model.ts#modelIssueRows",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#App",
       "to": "s:app/src/lib/docs-model.ts#skipReasonPhrase",
       "kind": "call",
       "confidence": "resolved"
@@ -15562,6 +15844,12 @@
       "from": "s:app/src/App.tsx#EmptyState",
       "to": "s:app/src/lib/watcher-store.ts#planChecklist",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/App.tsx#ModelIssueRows",
+      "to": "s:app/src/lib/docs-model.ts#ModelIssueRow",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -19171,6 +19459,36 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/docs-model.ts#modelIssueRows",
+      "to": "s:app/src/lib/docs-model.ts#ModelIssueRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#modelIssueRows",
+      "to": "s:app/src/lib/docs-model.ts#ParseFailure",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#modelIssueRows",
+      "to": "s:app/src/lib/docs-model.ts#issueFiles",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#modelIssueRows",
+      "to": "s:app/src/lib/docs-model.ts#issueIds",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/docs-model.ts#modelIssueRows",
+      "to": "s:app/src/lib/docs-model.ts#issueSpace",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/task-detail.ts#BlockerLink",
       "to": "s:app/src/lib/board-model.ts#StatusVisual",
       "kind": "type_ref",
@@ -20080,6 +20398,48 @@
       "from": "s:app/test/crescendo.test.ts#turn",
       "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/cross-file-rows.test.tsx#ALIASED_TASKS",
+      "to": "s:app/test/cross-file-rows.test.tsx#task",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/cross-file-rows.test.tsx#apply",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/cross-file-rows.test.tsx#attr",
+      "to": "s:app/test/cross-file-rows.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/cross-file-rows.test.tsx#countsLine",
+      "to": "s:app/test/cross-file-rows.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/cross-file-rows.test.tsx#mountAndApply",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/cross-file-rows.test.tsx#payload",
+      "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/cross-file-rows.test.tsx#strip",
+      "to": "s:app/test/cross-file-rows.test.tsx#q",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -21885,8 +22245,8 @@
     }
   ],
   "stats": {
-    "files": 118,
-    "symbols": 996,
-    "edges": 1520
+    "files": 119,
+    "symbols": 1018,
+    "edges": 1539
   }
 }
