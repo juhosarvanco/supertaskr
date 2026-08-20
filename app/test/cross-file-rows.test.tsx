@@ -124,6 +124,38 @@ const countsLine = (): string => q("[data-testid=model-counts]")?.textContent ??
 const attr = (name: string): string | null =>
   q("[data-testid=docs-model]")?.getAttribute(name) ?? null;
 
+// THIS BLOCK RUNS FIRST DELIBERATELY, AND SAYS SO BECAUSE THE DRILL
+// FOUND OUT WHY. The watcher store is a module singleton carrying a
+// last-good map keyed by PATH, and `docs/ROADMAP.md` is the one path
+// every body in this file writes. Placed later, this body would apply
+// its broken roadmap over a good one, `effective` would render the LAST
+// GOOD parse, `model.issues` would be EMPTY — and the body would assert
+// "no issue rows" against a model that has no issues, killing nothing
+// that the task-file body below does not already kill (poison shape
+// six). The order is now load-bearing, so the precondition is ASSERTED
+// rather than assumed: the failure row must NOT say "showing last valid
+// state", which is exactly what it would say if this ran second.
+describe("a roadmap failure is reported once (T-077 criterion 1 · criterion 5)", () => {
+  it("a roadmap that yields no features, and never did, gets a failure row and no issue row", () => {
+    mountAndApply(
+      payload([
+        { path: "docs/ROADMAP.md", content: "# Roadmap\n\nnothing here\n" },
+        { path: "docs/tasks/T-003-fine.md", content: task("T-003", "F-01") },
+      ]),
+    );
+
+    expect(attr("data-failure-count")).toBe("1");
+    expect(
+      strip()!.textContent,
+      "THE PRECONDITION: no last good roadmap, so this really is the never-parsed path",
+    ).not.toContain("showing last valid state");
+    expect(countsLine()).toContain("1 issues");
+    expect(rows().length, "the failure row already explains the roadmap").toBe(0);
+    expect(strip()!.querySelectorAll("li").length, "one row, not two").toBe(1);
+    expect(strip()!.textContent).toContain("no '## Backbone' section found");
+  });
+});
+
 describe("a cross-file issue can be READ, not just counted (T-077 criterion 4)", () => {
   it("a snapshot whose ONLY problem is cross-file still fills the strip", () => {
     mountAndApply(payload(CROSS_FILE_ONLY));
@@ -235,20 +267,6 @@ describe("the strip does not say the same thing twice (T-077 criterion 1)", () =
     expect(strip()!.textContent).toContain(
       "docs/tasks/T-002-broken.md: no frontmatter — file must start with a '---' YAML block",
     );
-  });
-
-  it("a roadmap that yields no features is reported once too", () => {
-    mountAndApply(
-      payload([
-        { path: "docs/ROADMAP.md", content: "# Roadmap\n\nnothing here\n" },
-        { path: "docs/tasks/T-003-fine.md", content: task("T-003", "F-01") },
-      ]),
-    );
-
-    expect(attr("data-failure-count")).toBe("1");
-    expect(rows().length).toBe(0);
-    expect(strip()!.querySelectorAll("li").length).toBe(1);
-    expect(strip()!.textContent).toContain("no '## Backbone' section found");
   });
 
   it("but a healthy file's issue survives a broken file in the same snapshot", () => {
