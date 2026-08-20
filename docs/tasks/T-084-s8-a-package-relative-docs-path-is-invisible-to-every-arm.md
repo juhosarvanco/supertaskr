@@ -66,3 +66,67 @@ an ordinary thing for someone to write.
 Arm 2 is the one that closes the silence; arm 1 is what should happen
 regardless, because a false universal in the file that defines the
 account is worse than a named limit.
+
+---
+
+## 2026-08-20 — INTEGRATOR: the shape is NOT absent, and the consequence is measured (claude-opus-5 @T-084-integrate)
+
+**"It is absent from the tree today" is false, and I falsified it at the
+merge commit `e8c4ab7` rather than reasoning about it.** `status:`
+stays `suggested` — disposition belongs to triage, which is this merge's
+own ruling — but a finding whose stated premise is wrong is the exact
+class this card exists to retire, so the record is corrected here.
+
+THE LIVE INSTANCE, one, and it runs on bare `cargo test`:
+
+    app/src-tauri/tests/agent_runner.rs:1761
+      let capture = Path::new(env!("CARGO_MANIFEST_DIR"))
+          .join("../../docs/research/captures/real-planner-turn-2026-08-19.jsonl");
+
+`the_tool_denied_fixture_is_a_transcription_not_a_construction` is a
+plain `#[test]`, not `#[ignore]`d, and it compares five fields of this
+repository's live capture against the fake agent's output. Its own doc
+comment says what it is in as many words: *"This adds a THIRD live
+reader outside CONVENTIONS' four walks."*
+
+**WHY THE PROBE MISSED IT, which is the sharper half.** The verdict
+searched for `resolve("../` and `resolve('../` — the JavaScript
+spelling — and this tree writes the Rust one, `.join("../../docs/…")`
+off `CARGO_MANIFEST_DIR`. That is the SAME failure the second verdict
+had already confessed one section earlier about `perf.rs`: a probe
+narrower than the claim it was asked to support. Twice on one card, in
+opposite spellings.
+
+**THE CONSEQUENCE IS BLOCKING 1's OWN SHAPE, SURVIVING THE FIX, ON A
+FIFTH PREFIX.** One field mutated in that capture (`tool_use_id`, both
+occurrences, substitution count 2, the mutated text read back with
+`git diff` before anything ran):
+
+    node tools/e2e/scripts/docs-gate.mjs docs/research/captures/…jsonl
+      -> EXIT 1, and it owes exactly ONE command:
+         npm test from tools/e2e/
+    npm test from tools/e2e/   -> 121/121   E2E_EXIT=0        GREEN
+    cargo test --no-fail-fast  -> 351 passed / 1 failed / 3 ignored,
+                                  CARGO_EXIT=101              RED
+      the_tool_denied_fixture_is_a_transcription_not_a_construction
+      denial 0: `tool_use_id` is not what the capture says it is
+
+Restored by byte copy from `git show e8c4ab7:<path>`, proved by an empty
+per-path `git diff` and sha256 back to
+`273a3d33593a53614101489b9cd3e9574010beae3830a60f43a8e65f74da47ac`;
+`cargo test` back to 352/0/3 at exit 0. **The restore was per-path and
+never `git checkout --`**, because the working tree carried the
+checkpoint's own uncommitted edits at the time (`T-072-s1`).
+
+**So an integrator who obeys the gate can still merge a red tree** —
+the rejection's finding, reproduced verbatim against the APPROVED tip.
+Arm 2 is therefore not a hardening, it is the close; and arm 1's
+sentence is not merely over-broad, it is contradicted by a file in the
+same repository.
+
+**Two figures re-derived at `e8c4ab7`, because both moved.** The
+package-dir form in `app/test` is **21 hits across 9 files**, not nine
+across five — and one of them, `map-dogfood-render.test.tsx:26`, is
+already a bare `resolve("..")`. The escaping shape itself is **1**, not
+0. Neither number is worth transcribing again; the derivation is a
+six-line script over `git ls-files`.

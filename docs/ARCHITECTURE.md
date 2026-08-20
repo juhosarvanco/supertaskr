@@ -480,6 +480,30 @@ ADR-014/015).
   third npm package arrived with T-020 and the ruling was revisited and
   REAFFIRMED — still no root workspace (ADR-011 addendum). docs/ stays
   the brain.
+  **AND SINCE T-084, docs/ IS ALSO A CODE INPUT — the brain is read by
+  programs, and that is now a standing property of this layout rather
+  than an accident of four suites.** Eleven first-party bodies across
+  ALL FOUR packages resolve a path under docs/ against this
+  repository's own root, so a commit whose entire diff is markdown can
+  red a suite; it has done so twice (`9c64cd8`, `fede266`). The repo
+  therefore carries a THIRD standing gate beside BOOT GATE and GRAPH
+  REGEN — the DOCS GATE, specified in docs/CONVENTIONS.md and
+  implemented as `tools/e2e/scripts/docs-gate.mjs` +
+  `docs-scan.mjs` — and its reader set is DERIVED FROM THE TREE on
+  every run rather than listed, so a new dogfood reader is covered
+  without anyone remembering. **THAT WIDENS WHAT `tools/e2e/` IS**: the
+  clause above still holds for the LANE (it drives the app over HTTP
+  and imports neither package), but the directory now also hosts a
+  static analyser that READS all four packages as text — including
+  `lib/parser/src/types.ts`, out of which it reads the task-status
+  vocabulary rather than restating it, so this tree has exactly one
+  status vocabulary (T-057). `.nputerignore` is UNCHANGED and
+  deliberately so: the graph is code-derived, docs/ is not code, and
+  `index --check` is not the gate that missed this. The residual is
+  recorded rather than papered over — the gate's root-anchor ledger
+  lives under `tools/e2e` while four of its six entries argue about
+  `app/src-tauri` (`T-084-s7`), and a docs path expressed relative to a
+  PACKAGE directory escapes every arm (`T-084-s8`).
 - Map data (F-06): C-07 writes docs/architecture/graph.json —
   committed, deterministic, volatile-field-free (ADR-014); intent =
   docs/architecture/components/*.md parsed by C-06 (same C-namespace

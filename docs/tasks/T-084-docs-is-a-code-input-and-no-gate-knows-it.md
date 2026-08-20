@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 42
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [docs/CONVENTIONS.md, tools/e2e]
 builder:
