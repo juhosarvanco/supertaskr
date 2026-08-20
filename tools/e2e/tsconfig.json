@@ -24,6 +24,7 @@
     "fixtures/**/*.ts",
     "tests/**/*.ts",
     "scripts/boot-port.mjs",
-    "scripts/token-scan.mjs"
+    "scripts/token-scan.mjs",
+    "scripts/docs-scan.mjs"
   ]
 }

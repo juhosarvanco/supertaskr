@@ -263,6 +263,24 @@
   board's parse-error badge) — move the file, don't "fix" the parser;
   the flat-glob exclusion and the loud trap are both pinned in
   lib/parser/test/rejected-exclusion.test.ts.
+  THE FOURTH QUESTION, ANSWERED AT T-084 BECAUSE A VERIFIER ASKED IT IN
+  THE FRONTMATTER: **"resolved by other work" is not a fourth move and
+  `closed` is not a ninth status.** It is a DISPOSITION, and disposition
+  belongs to TRIAGE — T-083's integrator ruled it and T-081's applied
+  it, leaving a discharged finding at `status: suggested` because
+  "discharging a finding is not the integrator's call to record as
+  promoted, parked or rejected". So: a finding whose work was resolved
+  elsewhere KEEPS `status: suggested` and records the discharge in its
+  own body — a `closed_by:` line naming the commit is the shape
+  `T-081-s7` uses — and TRIAGE then makes one of the three moves above,
+  normally promotion (`Absorbs:` plus removal), which is what "resolved
+  by other work" already means once the resolving task can name it.
+  ADDING A STATUS IS A METHOD CHANGE, NOT A PARSE FIX: the vocabulary is
+  ratified in method/tasks/TASK-FORMAT.md and lives in exactly one place
+  in code, `lib/parser/src/types.ts`, which the DOCS GATE below READS
+  rather than restates. Do not add a status to make one file parse — and
+  note that a fence able to add one honestly would have to carry a
+  method version bump, whose third file is Rust (T-078-s3).
 - The genesis kit is ratified in method/roles/planner.md +
   method/interview/plan-interview.md (v0.1.5, T-023): interview output
   is INCREMENTALLY BANKED — the stage → artifact table in
@@ -638,6 +656,91 @@
   in the notes. Running it is NOT screen control (@human ruling
   2026-08-16): the app opens and closes its own window; nothing is
   clicked, typed into, screenshotted, or read off the screen.
+- DOCS GATE (T-084 — the third standing gate, and the one the two above
+  exclude BY CONSTRUCTION): at any merge whose diff touches a path under
+  `docs/` that a code suite READS, run the suites that read it, and
+  RECORD which and their results in the checkpoint. **"The merge's diff"
+  is the PAIR OF COMMITS THE RANGE RULE names**, the same pair both
+  gates above take, and a different pair before the merge exists than at
+  it. `docs/` IS A CODE INPUT and neither trigger above can see it:
+  GRAPH REGEN fires on `*.ts/*.tsx/*.js/*.jsx` OUTSIDE docs/, BOOT GATE
+  on `app/src/**`, `app/src-tauri/**` or a manifest, so a commit whose
+  whole diff is `docs/tasks/*.md` matches NEITHER — and it has redded a
+  suite twice. `9c64cd8`: two card titles opened with a backtick, a YAML
+  plain scalar may not, both cards became unparseable, nothing errored,
+  the board just got SHORTER and it surfaced as `Expected "60"` against
+  `Received "62"` in four bodies about scroll containment. `fede266`: a
+  finding filed with a `status:` outside the parser's vocabulary took
+  `npm test` from app/ to 830 of 831 on a commit whose entire diff was
+  ONE markdown file, and the NEXT executor found it rather than the
+  verifier who wrote it (T-081-s9). **Both were found three layers from
+  the cause by somebody who was not looking**, which is the argument for
+  this gate: the failure mode is not that a suite goes red, it is that
+  the red arrives detached from its edit and gets attributed to whatever
+  lane is nearest.
+  RUN IT: `node tools/e2e/scripts/docs-gate.mjs <changed path>...` from
+  the repo root, fed the RANGE RULE's own path list (it deliberately
+  computes no range of its own — a second opinion about which two
+  commits the diff means is the failure that rule exists to prevent).
+  Exit 0 nothing owed, 1 the gate HAS a verdict (suites owed, or a live
+  card the parser will refuse, or both), 2 called wrong, 3 the gate
+  could not run — the same four codes `index --check` and
+  `boot:check` use. IF it cannot run THEN say so LOUDLY in the
+  checkpoint, naming the reason and the exit code; a skipped gate is
+  news, never silence. `tools/e2e/tests/docs-input-gate.spec.ts` is the
+  enforcing copy and it runs inside the lane TODAY, which makes this the
+  one standing gate whose written form is already held by something
+  other than discipline.
+  THE READER SET IS DERIVED FROM THE TREE, NEVER LISTED — that is the
+  whole mechanism, and a hand list is the defect T-058 and T-080 each
+  spent a card on. `tools/e2e/scripts/docs-scan.mjs` finds every tracked
+  source file containing a DOCS SITE: a path-forming call whose first
+  literal segment is `docs` AND whose base expression EVALUATES TO THE
+  REPOSITORY ROOT. BOTH HALVES ARE LOAD-BEARING and either alone is
+  wrong, which is why the enumeration is code and not prose: at
+  `e83ee1d` the tree holds **117 docs-shaped sites in 22 files** and
+  exactly **twelve of them, in nine files, are root-anchored**. The
+  first half is what keeps `tools/e2e/fixtures/shell.ts` out — it joins
+  the REPO ROOT with a path ENDING in `docs`, but its first segment is
+  `app`, so it reads a fixture tree. The second is what keeps
+  `lib/parser/test/files.test.ts` out — it joins a base computed from
+  `import.meta.url`, so any "mentions import.meta.url" heuristic calls
+  it a reader, and it resolves to that suite's own fixtures directory.
+  **A file that does BOTH and cannot be linked is REPORTED, never
+  dropped**: silence is the outcome this gate exists to remove.
+  THE FOUR SUITES the derived readers sit in, listed so a reader knows
+  the shape and re-derivable so nobody quotes them: `npm test from app/`
+  (the two dogfood bodies), `npx vitest run from lib/parser/` (its own
+  live-tree bodies), `npm test from tools/e2e/` (two specs that walk the
+  whole of docs/, graph and all) and `cargo test from app/src-tauri/`
+  (docs/CONVENTIONS.md on every run, plus the component registry).
+  **THE CARD THAT OPENED THIS SAID THE ANSWER WAS `npm test` FROM app/
+  AND NOT THE PARSER SUITE AND NOT E2E; THE TREE SAYS ALL FOUR**, and
+  the first of the two incidents above was caught BY the lane.
+  THE TRIGGER IS WIDE AND THE ANSWER IS NARROW, deliberately, because
+  the over-fire trap is real: a gate that says "run everything on any
+  `docs/**`" is ignored within a week. On this tree EVERY path under
+  docs/ reaches a reader — two lane specs walk all of it — so narrowing
+  the TRIGGER would be a lie. What is proportional is the ANSWER:
+  `docs/rooms/*.md` owes ONE command, `docs/CONVENTIONS.md` owes TWO and
+  not the app suite, a flat `docs/tasks/T-*.md` owes THREE. Ask the
+  gate; do not predict.
+  THE OTHER HALF IS THE FRONTMATTER, asked of the WHOLE TREE and not
+  only of the diff, because a card broken three commits ago is still
+  broken: every live flat `docs/tasks/T-*.md` must parse, and its
+  `status:` must be in the parser's vocabulary. The gate READS that
+  vocabulary out of `lib/parser/src/types.ts` rather than restating it,
+  so this tree has exactly ONE status vocabulary (T-057 — a rule with
+  two implementations is two chances to disagree) and a ninth status
+  added there is honoured here with no edit. It names the FILE, the
+  FIELD and the near miss; the count in a scroll-containment body never
+  could.
+  `.nputerignore` IS UNTOUCHED AND THAT IS DELIBERATE: it excludes
+  docs/ because the graph is CODE-derived and docs/ is not code, so
+  `index --check` is not the gate that missed this and indexing docs/
+  would neither have caught either incident nor been correct. The
+  exclusion is asserted in the spec so "we decided" cannot be mistaken
+  for "we forgot".
 - POISON DRILL (ratified at T-054; until then it was pure oral
   tradition — "poison", "vacuous" and "mutation" appeared nowhere in
   this file or in method/roles/, verified at the 2026-08-17 triage): at

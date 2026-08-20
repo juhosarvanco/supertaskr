@@ -391,8 +391,13 @@ const WORD = /[A-Za-z0-9_$]/;
 
 /** Can a regex literal start at `start`, given the last significant code
  * character at `prevSig`? The classic heuristic plus the two JSX guards
- * (see header). A wrong call either way costs at most one line. */
-function regexCanStart(src, start, prevSig) {
+ * (see header). A wrong call either way costs at most one line.
+ *
+ * EXPORTED at T-084 so docs-scan.mjs's comment strip uses THIS lexer
+ * rather than a second copy of it: a quote or a backtick inside a regex
+ * literal is exactly what makes a naive strip swallow the rest of a
+ * file, and one implementation cannot disagree with itself (T-057). */
+export function regexCanStart(src, start, prevSig) {
   if (src[start + 1] === ">") return false; // `/>` — JSX self-close
   if (prevSig < 0) return true; // start of file
   const ch = src[prevSig];
@@ -410,8 +415,9 @@ function regexCanStart(src, start, prevSig) {
 
 /** Index just past a regex literal starting at `start` (flags included),
  * or -1 if this slash does not open one. A literal that does not close on
- * its own line is not one — that rule is what keeps a misread contained. */
-function regexEnd(src, start, prevSig) {
+ * its own line is not one — that rule is what keeps a misread contained.
+ * Exported at T-084 with `regexCanStart`, for the same reason. */
+export function regexEnd(src, start, prevSig) {
   if (!regexCanStart(src, start, prevSig)) return -1;
   let i = start + 1;
   let inClass = false;
