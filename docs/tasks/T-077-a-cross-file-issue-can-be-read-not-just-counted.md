@@ -330,10 +330,22 @@ tools/e2e `npm ci`), and only then `npm run build` before any suite.
   reproduce.** CONTROL is +6 (the test file plus five findings) and TOKEN
   is +1 (only the test file is under a TOKEN root), which is the whole
   difference between the two corpora stated as arithmetic.
+- **E2E lane: 91/91, `E2E_EXIT=0`**, one worker, zero retries, zero
+  skips, on scratch port **19861** (bind-probed free on all four stacks);
+  `npm run typecheck` `E2E_TYPECHECK_EXIT=0`. Unmoved — see the section
+  below on why this lane was run at all rather than reasoned about.
 - **`cargo build -p nputer-index` `CARGO_INDEX_BUILD_EXIT=0`.** The
-  Rust workspace suite was NOT run: this branch is a 0-path diff under
-  `app/src-tauri/**`, `cargo test` is unmoved by construction, and the
-  boot gate below already builds and RUNS the binary.
+  Rust workspace suite was NOT run, and that is a deliberate omission
+  rather than an oversight: `git diff --name-only 2cf59da HEAD --
+  app/src-tauri` is **0 paths**, so `cargo test` is unmoved by
+  construction, `acl_pin.rs` and `generate_handler!` cannot have moved,
+  and the boot gate below builds and RUNS the binary anyway. The IPC
+  surface was re-derived rather than quoted, because this card's own
+  code comment cites it: **13** `#[tauri::command]` attributes matched on
+  LINE SHAPE (`^[[:space:]]*#\[tauri::command\]`, from the crate root)
+  and **13** entries parsed out of `generate_handler!` with comments
+  stripped — the two census traps T-081's checkpoint recorded, avoided
+  the way it says to.
 
 ### THE TOKEN LINT CAUGHT A REAL DEFECT IN THIS CARD'S FIRST COMMIT
 
@@ -442,8 +454,10 @@ noise on somebody else's work and unfixable from here.
 `getByTestId("parse-error-details").locator("li")` `toHaveCount(60)`
 against this repo's own `docs/` tree plus sixty hand-made
 frontmatter-less files. That count is exactly what new rows could move,
-so it was measured rather than reasoned, through the shipped
-`applySnapshot` + `modelIssueRows` over the lane's own walk:
+so **the lane itself was RUN — 91/91, `E2E_EXIT=0`** — and the
+mechanism was measured underneath it as well, through the shipped
+`applySnapshot` + `modelIssueRows` over the lane's own walk, so that the
+green is explained rather than merely observed:
 
 | snapshot | files | failures | model issues | NEW rows | total `<li>` |
 |---|---|---|---|---|---|
