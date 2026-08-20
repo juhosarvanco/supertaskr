@@ -386,11 +386,24 @@ none of them is evidence for the others — a lane whose main never moved
 cannot distinguish the prescribed range from the banned one, and saying
 so is the point:
 
-    git merge-tree --write-tree 2cf59da HEAD   -> tree cf830900…, exit 0   THE PRESCRIBED FORM
+    git merge-tree --write-tree 2cf59da HEAD   -> a tree, exit 0   THE PRESCRIBED FORM
     git diff --name-only 2cf59da <TREE>        (no dots)    -> 10
     git diff --name-only main...HEAD           (THREE dots) -> 10
     git diff --name-only main..HEAD            (TWO dots)   -> 10   THE FORBIDDEN PRE-MERGE FORM
     git diff --name-only $(git merge-base main HEAD)..HEAD (TWO) -> 10
+
+**THE TREE HASH IS DELIBERATELY NOT QUOTED HERE, and the reason is this
+file's own problem.** `merge-tree --write-tree` names the tree of the
+merge of main with THIS HEAD, so any commit that appends to the lane —
+including the commit carrying this sentence — produces a different one.
+It was `cf830900…` at `76ed63f` and `f05d950d…` two commits later, with
+the ten paths and both gate verdicts unmoved throughout. A tree hash
+written INSIDE the tree it describes is stale by construction, which is
+the unrefed-count lesson meeting its own fixed point; the integrator
+should recompute it against the tip they actually merge. What is safe to
+publish here is what does not depend on the lane's own tail: the ten
+paths and the two verdicts, because every commit after `1f6d366` touches
+`docs/` only.
 
 Ten paths: FOUR code — `app/src/App.tsx`, `app/src/lib/docs-model.ts`,
 `app/test/cross-file-rows.test.tsx`, `app/test/watcher-truth.test.tsx` —
