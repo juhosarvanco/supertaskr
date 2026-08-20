@@ -321,10 +321,41 @@ the DOM count stays `{1,2}` under it. The split made the stronger
 guarantee redundant for rendering, and only the model pin holds it. Said
 plainly rather than left as a green.
 
+### The ranges, every dot count stated, and a collapse worth naming
+
+Pre-merge, so the RANGE RULE's executor row applies: BUILD the merge's
+tree and diff main against it. `merge-tree`'s exit was read from `$?`
+and not through a command substitution, because a substitution that
+swallows a CONFLICT hands back an empty forecast wearing the costume of
+a clean gate.
+
+    git merge-tree --write-tree e83ee1d HEAD   -> cedc0728…, MERGE_TREE_EXIT=0
+    git diff --name-only e83ee1d <TREE>                  -> 10   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only e83ee1d...HEAD  (THREE dots)    -> 10   cmp against the forecast: exit 0
+    git diff --name-only e83ee1d..HEAD   (TWO dots)      -> 10   the pre-merge FORBIDDEN form
+    git diff e83ee1d <TREE>  vs  git diff e83ee1d...HEAD -> byte-identical, cmp exit 0
+
+**ALL THREE FORMS AGREE, AND THAT IS A FACT ABOUT TODAY RATHER THAN
+ABOUT THE NOTATION.** `git merge-base e83ee1d HEAD` IS `e83ee1d` and
+`git merge-base --is-ancestor e83ee1d HEAD` exits **0** — main has not
+advanced since this lane was cut, so the branch point and main's tip are
+the same commit and the forbidden form has nothing of main's to
+misattribute yet. **It will.** Two sibling lanes are live on disjoint
+fences (`T-084` on `[docs/CONVENTIONS.md, tools/e2e]`, `T-074` on
+`[app-shell, app-map]`); the moment either lands, `e83ee1d..HEAD` starts
+returning main's work in reverse while the other two forms do not.
+Whoever integrates this should re-derive against main's tip THEN — a
+range agreeing with its own forbidden spelling is the strongest possible
+argument that the ban names the PAIR and not the punctuation, and the
+weakest possible evidence that the spelling is safe.
+
+Suffix census of the ten: **6 md, 2 ts, 2 tsx**.
+
 ### Gates
 
-**GRAPH REGEN FIRES.** The trigger is `*.ts/*.tsx/*.js/*.jsx` outside
-`docs/`, and this branch moves **four** such paths:
+**GRAPH REGEN FIRES — 4 of the prescribed range's 10 paths.** The
+trigger is `*.ts/*.tsx/*.js/*.jsx` outside `docs/`, and this branch moves
+**four** such paths:
 `app/src/genesis/InterviewChat.tsx`, `app/src/genesis/interview-model.ts`,
 `app/test/interview-chat-dom.test.tsx`, `app/test/interview-model.test.ts`.
 `cargo run -p nputer-index -- index --check --root ../..` from
@@ -346,8 +377,10 @@ puts the regen at the CHECKPOINT, and a graph regenerated into a lane is
 stale again the moment the checkpoint reconciles the indexed fixtures.
 The integrator owes one regen, +28 bytes, one edge.
 
-**BOOT GATE FIRES** (`app/src/**`), and the executor runs it too, per
-T-046 criterion 6. `NPUTER_BOOT_PORT=19851 npm run boot:check` from
+**BOOT GATE FIRES — 2 of the prescribed range's 10 paths**, both under
+`app/src/**` (`InterviewChat.tsx` and `interview-model.ts`); no
+`app/src-tauri/**` path and neither manifest. The executor runs it too,
+per T-046 criterion 6. `NPUTER_BOOT_PORT=19851 npm run boot:check` from
 `tools/e2e`, **`BOOT_CHECK_EXIT=0`**, both `[nputer]` lines detected:
 *`[nputer] project folder: /Users/ujju/Projects/nputer-T-072`* and
 *`[nputer] window "main" created`*, then `exit=null signal=SIGTERM`.
@@ -406,12 +439,15 @@ notes that this is the `T-084` family with a new member: CONVENTIONS'
 FOUR WALKS table does not describe the Tailwind scan, and the Tailwind
 scan is a fifth walk with its own authority.
 
-**CONTROL AND TOKEN.** `lint-tokens: clean (TOKEN 119 files under
-app/src, app/test, tools/e2e; CONTROL 563 tracked text files)` — run
-BEFORE the docs commit, and CONTROL derives from `git ls-files`, so the
-five new `.md` files are invisible to it until they are tracked. The
-figure re-derived after the final commit is below. TOKEN is **119 and
-cannot move**: this branch adds no FILE under `app/src`, `app/test` or
+**CONTROL AND TOKEN, DERIVED AT BOTH ENDS.** Run before the docs commit
+the lint printed **CONTROL 563**, the brief's figure, because CONTROL
+derives from `git ls-files` and the five new `.md` files were still
+untracked. Run after it: `lint-tokens: clean (TOKEN 119 files under
+app/src, app/test, tools/e2e; **CONTROL 568** tracked text files)`,
+`LINT_TOKENS_FINAL_EXIT=0`. It closes arithmetically — `git ls-tree -r`
+counts **581** tracked paths at `e83ee1d` and **586** at the branch tip,
++5 and none deleted, and 563 + 5 = 568. **TOKEN is 119 and cannot
+move**: this branch adds no FILE under `app/src`, `app/test` or
 `tools/e2e`, only modifies four.
 
 **THE PARSER SUITE IS NOT OPTIONAL ON THIS LANE EVEN THOUGH
