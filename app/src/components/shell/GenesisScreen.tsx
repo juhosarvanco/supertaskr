@@ -105,14 +105,39 @@ export function GenesisScreen({
 
         {/* ---- T-024's lens, mounted (T-037), now the right half ------- */}
         {/* THE SPLIT'S BREAKPOINT, and the one consequence worth reading
-            twice. 640px of chat plus the 1px rule leaves the lens W-641:
-            at 1440 -> 799 (the design's own number), at 1280 -> 639, at
-            1024 -> 383, at 800 -> 159. The lens renders at Tailwind's
+            twice. The chat's 640 is BORDER-BOX (Tailwind's preflight sets
+            it on everything), so the split's 1px rule sits INSIDE that
+            640 and the lens gets W-640, not W-641: at 1440 -> 800, at
+            1280 -> 640, at 1024 -> 384 — and 160 at 800, where the lens
+            does not render at all, so that row is arithmetic rather than
+            a measurement. The lens renders at Tailwind's
             existing `lg` (1024px) and above and is ABSENT below it —
             one existing default breakpoint, no new token, no config
             change, which matters because this is the app's first
             responsive call site and T-038-s1 is still open on whether
             breakpoints are tokens.
+
+            CORRECTED 2026-08-20 (T-074, at `e83ee1d`). This paragraph
+            taught W-641 — "at 1440 -> 799 (the design's own number), at
+            1280 -> 639, at 1024 -> 383, at 800 -> 159" — which T-027's
+            verifier falsified by measuring the built app;
+            tools/e2e/tests/interview.spec.ts has carried 800 / 640 / 384
+            ever since, so the shipped comment and the lane's assertion
+            contradicted each other across a fence. THE ATTRIBUTION WAS
+            WRONG TOO, and it is the same border-box slip one level
+            further back: the design of record
+            (docs/design/claudedesign_handoff/`nputer app.dc.html`, the
+            `data-screen-label="Interview"` artboard) sets
+            `* { box-sizing: border-box }`, gives the chat column
+            `width:640px` with a 1px right border and gives the right
+            half `flex:1` — it never says 799. Measured headlessly in
+            Chromium over that artboard: chat 640 (client 639, the rule
+            inside it) and the right half **798**, because the artboard
+            is a 1440px border-box frame whose own 1px window chrome
+            leaves 1438 to split. In the app the VIEWPORT is the frame,
+            so the same design ratio gives 1440 - 640 = 800. 799 is the
+            number you get by subtracting the 1px rule twice, and it is
+            neither the app's nor the design's.
 
             THE CONSEQUENCE: at the app's OWN configured 800x600 window
             the lens does not render. The interview is entirely usable —
