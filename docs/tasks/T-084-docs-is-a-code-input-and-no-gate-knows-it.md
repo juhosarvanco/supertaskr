@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 42
 size: M
-status: planned
+status: verifying
 blocked_by: []
 touches: [docs/CONVENTIONS.md, tools/e2e]
 builder:
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5 @T-084 (re-built after the rejection by claude-opus-5 @T-084-fix)
+verified_by: claude-opus-5 @T-084-verify (re-verified @T-084-verify2, 2026-08-20)
+review: same-model
 ---
 
 **Both standing gate triggers exclude `docs/` deliberately, and both
@@ -106,4 +106,1457 @@ obeyed.
 
 ## Implementation notes
 
+Built by `claude-opus-5 @T-084`, worktree `../nputer-T-084`, branch
+`task/T-084-docs-gate`, cut from main's tip `e83ee1d`.
+
+**UNDERSTANDING, CONFIRMED BEFORE ANYTHING WAS TOUCHED.** `docs/` is an
+input to this repository's code suites and both standing gate triggers
+exclude it by construction, so a commit whose whole diff is markdown
+under `docs/` fires neither GRAPH REGEN nor BOOT GATE and can still turn
+a suite red — twice already, and both times the red was found three
+layers from the cause by somebody who was not looking for it. My job was
+to add a third standing gate whose reader set is DERIVED FROM THE TREE
+rather than listed, to state its remedy as commands rather than as "run
+the suites", to make an illegal `status:` fail loudly naming the file,
+and to ANSWER the vocabulary question rather than add a ninth status to
+make one file parse — all inside the fence
+`[docs/CONVENTIONS.md, tools/e2e]`, leaving `.nputerignore` alone and
+saying why.
+
+### What landed
+
+- **`tools/e2e/scripts/docs-scan.mjs`** — the derivation. Zero
+  dependencies, no I/O at import, the contract `token-scan.mjs` keeps so
+  this can move to CI's first step later without a rewrite.
+- **`tools/e2e/scripts/docs-gate.mjs`** — the hand-run gate. Takes
+  PATHS, never a range: a second opinion about which two commits "the
+  diff" means is the failure THE RANGE RULE exists to prevent. Exit 0
+  nothing owed, 1 the gate has a verdict, 2 called wrong, 3 could not
+  run — the house contract.
+- **`tools/e2e/tests/docs-input-gate.spec.ts`** — 23 bodies, no browser,
+  inside `npm test` from tools/e2e which IS a CI step.
+- **`docs/CONVENTIONS.md`** — the DOCS GATE bullet in Gotchas beside its
+  two siblings, and the disposition ruling in the suggestion-triage
+  bullet.
+- **`tools/e2e/scripts/token-scan.mjs`** — `regexCanStart` and
+  `regexEnd` gain `export`, and nothing else moves. See the poison drill:
+  a second copy of that lexer is what a comment strip needs, and one
+  implementation cannot disagree with itself.
+- **`tools/e2e/tsconfig.json`** — `scripts/docs-scan.mjs` joins the
+  `include` list beside `token-scan.mjs`.
+
+### THE MECHANICAL DERIVATION, and why each half is load-bearing
+
+A DOCS READER is a tracked source file containing a **DOCS SITE**: a
+path-forming call whose **first literal segment is `docs`** AND whose
+**base expression EVALUATES TO THE REPOSITORY ROOT**. Both halves, and
+the tree is what proves neither is sufficient alone.
+
+At `e83ee1d` the corpus holds **117 docs-shaped sites in 22 files**, and
+exactly **twelve of them, in nine files, survive both halves**. A
+hand-written list would not have been merely stale — it would have been
+one twelfth of the truth, and the wrong twelfth.
+
+- **`docs`-FIRST** keeps `tools/e2e/fixtures/shell.ts` out: it joins the
+  REPO ROOT with a path ENDING in `docs`
+  (`app/test/fixtures/genesis/streak/docs`), and its first segment is
+  `app`, so it reads a fixture tree.
+- **ROOT-EVALUATION** keeps `lib/parser/test/files.test.ts` out: its base
+  is `fixture(name)`, computed from `import.meta.url`, so every
+  "mentions import.meta.url" heuristic calls it a reader. It resolves to
+  `lib/parser/test/fixtures/<name>`. **That is the card's own
+  discriminator — "against the repository root rather than a fixture
+  directory" — made executable instead of eyeballed.** It also keeps
+  `lib/parser/src/project.ts` and `app/src-tauri/src/docs_watch.rs` out,
+  correctly: both join `docs` onto a caller-supplied root, which is a
+  USER's project, not this one.
+
+`evalBase` is a small calculus over the six root-forming shapes the tree
+uses (`ROOT_FORMS`), with a fixpoint over in-file bindings, one hop
+through a relative import (`repoRoot` from `../preflight`) and one hop
+through a Rust crate's own modules (`common::repo_root()` in
+`nputer-index`'s `tests/common/mod.rs`).
+
+**A file that does BOTH and cannot be linked is REPORTED, not dropped.**
+`unlinkedFiles()` returns any file that has a root-anchored binding and a
+docs site where no site's base resolved to the root; the spec asserts it
+empty. Silence is the outcome this whole card is about.
+
+### THE ENUMERATION — NINE READERS, FOUR SUITES
+
+| reader | suite | prefixes |
+|---|---|---|
+| `app/src-tauri/crates/nputer-index/tests/arch.rs` | `cargo test` | docs/architecture/components |
+| `app/src-tauri/src/agent/kit.rs` | `cargo test` | docs/CONVENTIONS.md |
+| `app/test/architecture-dogfood.test.ts` | `npm test` from app/ | docs/tasks, docs/architecture/components |
+| `app/test/map-dogfood-render.test.tsx` | `npm test` from app/ | docs/tasks, docs/architecture/components |
+| `lib/parser/test/rejected-exclusion.test.ts` | `npx vitest run` | docs/tasks/rejected |
+| `lib/parser/test/task.test.ts` | `npx vitest run` | docs/tasks |
+| `tools/e2e/tests/shell-frame.spec.ts` | `npm test` from tools/e2e/ | docs |
+| `tools/e2e/tests/window-contract.spec.ts` | `npm test` from tools/e2e/ | docs |
+| `tools/e2e/tests/workflow-parity.spec.ts` | `npm test` from tools/e2e/ | docs/CONVENTIONS.md |
+
+### WHICH TRIGGER I CHOSE, AND WHY IT IS NEITHER OF THE TWO OFFERED
+
+The card offers "any `docs/**`" (over-fires, ignored in a week) against
+"`docs/tasks/**` and `docs/architecture/**`" (narrow and derivable) and
+asks which. **The tree refuses both.** The narrow pair would miss
+`docs/CONVENTIONS.md`, which the cargo suite reads on EVERY run and
+`workflow-parity.spec.ts` parses; and the wide one is, as stated, a
+trigger nobody obeys.
+
+**What I built instead: the trigger is per-path and derived, and the
+ANSWER is what is narrow.** On this tree every path under `docs/` does
+reach a reader — `shell-frame.spec.ts` and `window-contract.spec.ts`
+each walk the whole of it, graph and all — so narrowing the TRIGGER
+would be a lie about the tree. The over-fire trap is escaped from the
+other side:
+
+- `docs/rooms/2026-08-20-x.md` owes **one** command.
+- `docs/CONVENTIONS.md` owes **two**, and not the app suite.
+- a flat `docs/tasks/T-*.md` owes **three**.
+
+Each answer names the READER FILES that read that path, so the
+integrator is told which body will move rather than handed a battery.
+`docs-gate.mjs` prints it in about a second.
+
+### THE VOCABULARY QUESTION, ANSWERED
+
+**`closed` is not a ninth status, and "resolved by other work" is not a
+fourth triage move. It is a DISPOSITION, and disposition belongs to
+triage.** A finding whose work was resolved elsewhere KEEPS
+`status: suggested` and records the discharge in its own body — a
+`closed_by:` line naming the commit is the shape `T-081-s7` now uses —
+and triage then promotes (`Absorbs:` plus removal), parks or rejects it.
+Promotion is what "resolved by other work" already means once the
+resolving task can name it.
+
+The reasoning, in the order it actually decided the question:
+
+1. **The archive already covers it.** `T-081-s7` was closed on arrival by
+   main moving under it, and the fix its own second executor applied was
+   exactly this: `suggested` plus `closed_by:` plus a body note. The
+   move existed before the question was asked.
+2. **T-083's integrator ruled it and T-081's applied it** — *"discharging
+   a finding is not the integrator's call to record as promoted, parked
+   or rejected"* — and `T-081-s9` was left at `suggested` for that
+   reason at the merge that deferred this remedy here.
+3. **A status is a METHOD change, not a parse fix.** The vocabulary is
+   ratified in `method/tasks/TASK-FORMAT.md` and lives in exactly one
+   place in code, `lib/parser/src/types.ts`. Adding one honestly is a
+   version bump whose third file is Rust (T-078-s3) — so this card's
+   fence could not have added a status even had the answer gone the
+   other way, which is the fence encoding the rule rather than a
+   coincidence.
+4. **`closed` is not a typo for anything.** Its near-miss set against the
+   eight is EMPTY at edit distance 2, so a spelling hint would say
+   nothing. What the writer needs is the move, so the gate prints the
+   ruling instead — at the point of failure, which is where it will be
+   read.
+
+The ruling lives in ONE enforced place (`DISPOSITION_RULING` in
+`docs-scan.mjs`, pinned by the spec) and one prose place (CONVENTIONS'
+suggestion-triage bullet, which already enumerates the three moves).
+`method/tasks/TASK-FORMAT.md` should carry it too and is out of fence —
+`T-084-s5`.
+
+**The gate does not restate the vocabulary.** `taskStatuses()` READS
+`TASK_STATUSES` out of `lib/parser/src/types.ts` and throws if the
+declaration has moved, so this tree has exactly one status vocabulary and
+a ninth added there is honoured with no edit here (T-057, and the reason
+T-081's integrator deferred this remedy to a single owner).
+
+### THE POISON DRILL — eight mutants, one-sided, every mutated TEXT read back
+
+Every mutation moved the PRODUCER, never an assertion; every substitution
+count was asserted (`assert n==1`, and one attempt that reported **0**
+was caught by that assert before it could pass as a green); every mutated
+text was read back out of the file before the suite ran; and every
+restoration is proved by sha256 against the pre-mutation hash.
+
+| # | mutation | result |
+|---|---|---|
+| **M1** | **ADD A READER** — two new tracked files, `app/test/t084-poison-reader.ts` (root by `dirname(fileURLToPath(...))` + `resolve(here,"..","..")`) and `app/src-tauri/src/t084_poison_reader.rs` (root by `CARGO_MANIFEST_DIR` + two `.parent()`), neither spelling used by any existing reader | **the derivation grew 9 -> 11 with no list edited**, classified `npm test from app/` reading docs/rooms and `cargo test from app/src-tauri/` reading docs/ROADMAP.md; `docs/rooms/x.md` went from one command to two; **22 passed / 1 failed**, RED: *the answer is PROPORTIONAL* |
+| **M2** | `docs`-first anchor relaxed to `[a-z]+` in `JS_SITE` | **19 / 4**, RED includes *a repo-root join whose first segment is not `docs` is not a reader* |
+| **M3** | `evalBase(site.base, ctx) !== root` guard removed in `docsReaders` | **21 / 2**, RED includes *a docs path off a root that is NOT the repo root is not a reader* |
+| **M4** | `taskStatuses()` returns the eight plus `closed` | **20 / 3**, RED includes *`status: closed` fails loudly...* and *the status vocabulary is READ from the parser* |
+| **M5** | one backticked command removed from CONVENTIONS' DOCS GATE bullet | **22 / 1**, RED: *the DOCS GATE bullet names exactly the commands the derivation produces* |
+| **M6** | **a planted file with a root anchor and an UNEVALUABLE base** (`join(somewhereElse(), "docs", "tasks")`) | **THE ASSERTION WAS VACUOUS AND THE DRILL FOUND IT — see below** |
+| **M7** | `covers()` returns true | **21 / 2**, RED includes *the answer is PROPORTIONAL* and *a path names the readers that read it* |
+| **M8** | `isTaskCardPath` widened to match nested paths | **22 / 1**, RED: *a legal card reports nothing, and a path the parser does not collect is not judged* |
+
+**M6 IS THE ONE WORTH READING.** *"Nothing forms a repo-root docs path
+that the derivation could not link"* is the tripwire that turns a silent
+miss into a loud one — the single assertion this card's argument rests
+on. Planting exactly the shape it exists to catch left it **GREEN**. The
+cause was not in the tripwire: `JS_SITE`'s base group must exclude
+parentheses to stay anchored, so `join(someCall(), "docs", ...)` was not
+a SITE at all, and a tripwire is only as wide as the patterns it reads.
+**A tripwire that cannot see the thing it reports is indistinguishable
+from a tree with nothing to report.** Fixed by adding a zero-argument
+call alternative to the base group (Rust's method form always had one,
+which is how `common::repo_root().join(...)` was found in the first
+place); re-run, `unlinkedFiles()` named the planted file and the body
+went RED at **22 / 1**. Two samples were added for the shape, and the
+residual — a base that is a call WITH arguments — is named in the
+scanner's own "WHAT IT CANNOT SEE" rather than claimed closed.
+
+A second defect the drill found, before the samples existed: **this
+scanner reported ZERO sites in itself.** Its own site patterns are regex
+literals carrying a quote and a backtick, and a comment strip that does
+not lex regex literals opens a fake template at that backtick and
+swallows the rest of the file. The failure direction is HIDING readers.
+Fixed by sharing `token-scan.mjs`'s `regexEnd` rather than writing a
+second lexer, with a sample pinning it. A third, same session: counting
+block-comment DEPTH (for Rust's nested comments) blanked this module
+whole, because a JSDoc paragraph quoting `app/src/**` opens a level it
+never closes. First-close-wins, with the reason in the code.
+
+`SITE_SAMPLES` carries **20 selftest rows** — positives for every
+spelling the tree uses, negatives for every near-miss, an evidence floor
+for positives/negatives/Rust so deleting a sample cannot delete its own
+failure (poison shape FIVE).
+
+### GATE DERIVATIONS FOR THIS LANE, every dot count stated
+
+Main tip at dispatch is `e83ee1d`; the last `Checkpoint:` is `825932c`
+and the single commit between them is **docs-only** — `git diff
+--name-only 825932c e83ee1d` is one path, `docs/design/cross-harness-plan.md`
+— **verified rather than taken from the brief**, which is what
+DISPATCH FROM THE LAST CHECKPOINT asks a reader to check.
+
+    git merge-tree --write-tree e83ee1d HEAD    -> tree <T>, exit read from $?
+    git diff --name-only e83ee1d <T>                     THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only e83ee1d...HEAD   (THREE dots)   cmp against the forecast
+    git diff --name-only e83ee1d..HEAD    (TWO dots)     THE FORBIDDEN PRE-MERGE FORM
+
+Measured at the implementation commit **`c8f6213`**, every dot count
+stated:
+
+    git merge-tree --write-tree e83ee1d c8f6213  -> tree cfe2e646…, MERGE_TREE_EXIT=0
+    git diff --name-only e83ee1d <TREE>                      -> 12   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only e83ee1d...c8f6213  (THREE dots)     -> 12   cmp against the forecast: exit 0
+    git diff --name-only e83ee1d..c8f6213   (TWO dots)       -> 12   the forbidden form, and today it agrees
+    git merge-base e83ee1d c8f6213                           -> e83ee1d
+
+**ALL THREE COINCIDE, AND THAT IS A FACT ABOUT TODAY RATHER THAN A
+LICENCE.** `e83ee1d` is main's tip AND the merge-base, because main has
+not advanced since this branch was cut; the two-dot form is
+`<merge-base>..HEAD` here by an accident of timing, which is exactly the
+range CONVENTIONS bans by name. **The moment main moves, the three
+diverge** — and two sibling lanes (T-072, T-074) are live and will move
+it. The integrator re-derives at the merge and does not quote this
+block; that is the last two checkpoints' lesson applied to the one
+endpoint this lane can be wrong about.
+
+**AND MAIN MOVED BEFORE THIS PARAGRAPH WAS AN HOUR OLD, SO THE
+PREDICTION IS NOW A MEASUREMENT.** Between the commit above and the
+final process census, main advanced from `e83ee1d` to **`2cf59da`** —
+T-074 and T-072 both merged and checkpointed, **23 paths**. Re-derived
+against the new tip, with the branch tip HELD FIXED at `93b5a44`:
+
+    git merge-tree --write-tree 2cf59da 93b5a44  -> tree adf43362…, MERGE_TREE_EXIT=0
+    git diff --name-only 2cf59da <TREE>                      -> 12   UNMOVED
+    git diff --name-only 2cf59da...93b5a44  (THREE dots)     -> 12   cmp against the forecast: exit 0
+    git diff --name-only 2cf59da..93b5a44   (TWO dots)       -> 35   THE FORBIDDEN FORM, 12 -> 35
+    git merge-base 2cf59da 93b5a44                           -> e83ee1d  (unmoved: this branch did not move)
+
+**THE FORBIDDEN FORM WENT 12 TO 35 AND THE CORRECT ANSWER NEVER MOVED**,
+with the LEFT-hand endpoint the only thing that changed — the exact
+half T-081's checkpoint could not show, because there the branch tip
+moved instead. 12 + 23 = 35, and that arithmetic is the check: `comm
+-12` over main's 23 paths and this lane's 12 is **EMPTY**, so the two
+sets are disjoint and `merge-tree` exits 0 rather than reporting a
+conflict. **A lane fenced to one tree, cut from a checkpoint whose main
+then advanced in another, is the ORDINARY case** — CONVENTIONS says so
+and this lane is the next data point.
+
+Two consequences the integrator inherits rather than this lane: main's
+advance carries T-074's graph regen, so `index --check` must be
+re-asked at the merge against the NEW committed graph; and main's ten
+new `T-07*-s*` cards all read `status: suggested`, so the DOCS GATE's
+live-card half stays clean across the merge — checked by grep against
+main, since this branch may not merge to find out.
+
+**THE RIGHT-HAND ENDPOINT IS NAMED TOO, and it terminates.** The block
+above is measured at `93b5a44`, and writing it moved the tip to
+`7edf94e`. Re-derived there: `git merge-tree --write-tree 2cf59da
+7edf94e` exits 0 at tree `36e0915a…`, the prescribed form returns the
+SAME TWELVE PATHS (`cmp` against the earlier list, exit 0), three dots
+returns twelve and two dots returns thirty-five. **The path set cannot
+move**, because every notes commit touches
+`docs/tasks/T-084-docs-is-a-code-input-and-no-gate-knows-it.md`, which
+is already one of the twelve — which is why naming the pair ends the
+regress instead of chasing it.
+
+`merge-tree`'s exit was read from `$?` and not swallowed by the command
+substitution: a substitution that eats a CONFLICT hands back an empty
+forecast wearing the costume of a clean gate.
+
+**Suffix census of the twelve:** 7 md, 3 mjs, 1 ts, 1 json — one path
+per file, no renames, no deletions.
+
+- **GRAPH REGEN — FIRES AT EXACTLY ONE PATH, and the regen is a proven
+  no-op.** Derived over the twelve: `.ts/.tsx/.js/.jsx` matches **1**
+  path and it is outside `docs/` —
+  `tools/e2e/tests/docs-input-gate.spec.ts`. **The two new `.mjs` scripts
+  do NOT match this trigger**, which is worth stating because they are
+  the substance of the change: that suffix list has never carried
+  `.mjs`, so a lane shipping only scripts would not fire it at all. The
+  gate was ASKED rather than predicted: `cargo run -p nputer-index --
+  index --check --root ../..` from app/src-tauri exits **0**, *graph.json
+  is CURRENT ... 576235 bytes, 118 files, 996 symbols, 1520 edges*.
+  `tools/` is `.nputerignore`d, so this is T-054-s1's worked example a
+  third time — the trigger is deliberately wider than the walk.
+  **No regenerated graph is committed here**: CONVENTIONS puts the regen
+  at the CHECKPOINT.
+- **BOOT GATE — DOES NOT FIRE, 0 of 12.** Zero paths in the diff match
+  `app/src-tauri/**`, `app/src/**`, `app/package.json` or
+  `app/src-tauri/Cargo.toml`. The executor's own obligation (T-046
+  criterion 6) is on the same trigger, so the boot check is not owed and
+  was not run. **Nothing bound, connected to or signalled port 1420**;
+  it was read once with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and with
+  nothing else, before and after: holder `node` pid **82549**, one
+  socket, `TCP [::1]:1420 (LISTEN)`, unchanged. The human's app pid
+  **85379** and vite **82549** are untouched — this lane opened no
+  window, ran no `tauri dev`, and built Rust only into the WORKTREE's own
+  `app/src-tauri/target`, never the directory their dev server watches.
+  The lane's own vite ran on scratch port **14561**, bind-probed free on
+  all four stacks (`127.0.0.1`, `0.0.0.0`, `::1`, `::`) before use.
+- **DOCS GATE — FIRES, on its own diff, and this is the first thing it
+  was asked.** **7 of the 12 paths are under `docs/`** —
+  `docs/CONVENTIONS.md`, this card and five findings.
+  `node tools/e2e/scripts/docs-gate.mjs <the docs paths>` exits **1** and
+  owes `cargo test from app/src-tauri/`, `npm test from app/`,
+  `npx vitest run from lib/parser/` and `npm test from tools/e2e/`. All
+  four were run after the docs files were in the tree.
+
+### Suites, every exit code read from its own `$?`, never through a pipe
+
+- **app: 831/831 across 42 files, `APP_TEST_EXIT=0`.** `npm run build`
+  `APP_BUILD_EXIT=0`, emitting `index-3bNJ6pCB.js` **501.54 kB** and
+  `index-CwYF5FQb.css` **43.95 kB** — **both content hashes identical to
+  the checkpoint's**, which is the honest form of "no app source moved".
+  **A NOTE FOR THE NEXT LANE THAT WORKTREES**: a fresh worktree has no
+  `app/dist`, and twelve bodies across four files assert against the
+  SHIPPED BUNDLE. They fail 819/831 until `npm run build` has run once.
+  That is an environment artifact, not a regression, and it cost a
+  confusing minute.
+- **parser: 263/263 across 12 files, `PARSER_EXIT=0`**; `npx tsc
+  --noEmit` `PARSER_TSC_EXIT=0`. Its smoke test parses the live `docs/`
+  tree with five new findings and this card in it and requires zero
+  issues.
+- **cargo, bare `cargo test --no-fail-fast` (never `--all-targets`,
+  which skips doc-tests): 352 passed / 0 failed / 3 ignored**,
+  `CARGO_TEST_EXIT=0`, summed programmatically from **fifteen** `test
+  result:` lines. Unmoved. `snapshot_version_matches_the_live_method_stamps`
+  is green against the EDITED `docs/CONVENTIONS.md`, which is this
+  card's own gate proving itself: a CONVENTIONS edit owes `cargo test`,
+  and the reason is a body no suffix rule would ever have found.
+- **E2E lane: 114/114, `E2E_EXIT=0`**, one worker, zero retries, zero
+  skips, scratch port 14561 — **91 before plus this card's 23**.
+  `npm run typecheck` `E2E_TYPECHECK_EXIT=0`.
+- **token lint: `LINT_SELFTEST_EXIT=0`, `LINT_TOKENS_EXIT=0`** —
+  `lint-tokens: clean (TOKEN 122 files under app/src, app/test,
+  tools/e2e; CONTROL 571 tracked text files)`, selftest at 49 TOKEN + 4
+  CONTROL samples, 71 walk-policy checks, 8 evidence-floor checks.
+  **TOKEN 119 -> 122** (+3, the three new files under tools/e2e) and
+  **CONTROL 563 -> 571** (+8: those three plus the five finding files),
+  both derived at this ref rather than quoted. Measured at 566 before
+  the findings were written and re-derived after, which is the same
+  right-hand-endpoint drift T-081's checkpoint recorded — a count with
+  no ref goes stale from either end.
+  **THE LINT CAUGHT THIS CARD'S OWN SPEC**: the transcription pin quotes
+  the parser's frontmatter regex, which contains `---[`, and `-[` is
+  P1's shape. Split across a concatenation so the literal never appears.
+- **`index --check`** exit **0**; see the gate section.
+
+### What the CARD and the BRIEF got wrong, measured against the tree
+
+Stated plainly, because both are still being quoted.
+
+1. **"the two named here" is TWO of NINE, and the card's own criterion
+   ("SHALL enumerate the real-tree readers rather than assuming the two
+   named here are all of them") is what found the other seven.**
+2. **"the answer today is `npm test` from `app/`, not the parser suite
+   and not e2e" is FALSE THREE WAYS.** The parser suite reads the live
+   tree in `smoke.test.ts`, `task.test.ts` and `rejected-exclusion.test.ts`;
+   the lane reads ALL of `docs/` in two specs; the cargo suite reads
+   `docs/CONVENTIONS.md` on every run and the component registry in
+   `arch.rs`. **And the card's own FIRST INCIDENT was caught by e2e** —
+   `9c64cd8`'s message says so in as many words: *"The E2E lane caught it
+   three steps from the cause — shell-frame's data-failure-count went 60
+   -> 62"*.
+3. **"Today it surfaces as a count mismatch in a dogfood body, which
+   names neither the card nor the field" is true of INCIDENT ONE and
+   false of INCIDENT TWO.** The parser already emits a typed
+   `invalid-field` issue naming the file, the field, the eight-name
+   vocabulary and the offending value, and `T-081-s9` quotes that exact
+   diagnostic. What was missing was never the message — it was that
+   nothing gives a docs-only edit a reason to RUN the suite that prints
+   it. So the near-miss half of that criterion is a nicety and the
+   loudness half was already there; I built the RUNNING half, which is
+   the one that was actually absent, and the gate's own message carries
+   the file, the field, the vocabulary, a near-miss for a genuine typo
+   and the disposition ruling for `closed`.
+4. **Both incidents are dated 2026-08-18 and 2026-08-19 in the card; both
+   commits are 2026-08-19.** `9c64cd8` is *2026-08-19 15:35:21* and
+   `fede266` is the same evening. Minor, and it matters only because the
+   card presents them as separate days.
+5. **CONVENTIONS' own CI bullet claims the workflow-parity derivation is
+   "silent in exactly ONE case, a command the DOC gains that the spec
+   does not yet claim". That is false at `e83ee1d`** — `deriveExpectedSteps`
+   pushes a problem for exactly that case. It is why the gate is not an
+   npm script; `T-084-s2` carries it.
+6. **The brief was RIGHT about the lane** (`e83ee1d` is main's tip; the
+   commits after `825932c` are docs-only — verified), **right about the
+   figures** (CONTROL 563, TOKEN 119, app 831/831, cargo 352/0/3 over 15
+   lines, parser 263/263, graph 576235/118/996/1520 — every one
+   re-derived here and every one correct), and **right that the
+   vocabulary answer is the second arm**.
+
+### Deliberately not done
+
+- **`.nputerignore` is untouched.** `docs/` is excluded there because the
+  graph is CODE-derived; `index --check` is not the gate that missed
+  this and indexing docs/ would have caught neither incident. The
+  exclusion is asserted in the spec so "we decided" cannot be read as
+  "we forgot".
+- **No status added, no `method/` edit, no `.github/` edit, no npm
+  script.** Three of those are fence; the fourth is `T-084-s2`.
+- **No graph regen committed** — that is the checkpoint's.
+- **The parser's `status:` near-miss hint was NOT added to
+  `lib/parser/**`**, which is outside `touches:`. The gate carries the
+  hint instead, at the point a finding is WRITTEN, which is where
+  `T-080-s6` and `T-081-s9` both asked for it.
+
+Findings filed: **`T-084-s1`** (a docs path behind an imported constant
+is invisible to the site scan — `graph.json`), **`T-084-s2`** (the gate
+is not a CI step because the fence could not reach ci.yml, plus the
+false sentence in CONVENTIONS' CI bullet), **`T-084-s3`**
+(`smoke.test.ts` is a live-docs reader with no docs literal and the
+parser suite rides on two siblings), **`T-084-s4`** (running the lane
+writes into the live `docs/` tree and restores it), **`T-084-s5`**
+(`method/tasks/TASK-FORMAT.md` should carry the disposition ruling).
+
+**For the verifier, the four sharpest places to attack.** (1) The
+derivation's completeness: `T-084-s1` and `T-084-s3` are two known
+shapes it cannot see, both argued as bounded — check the argument, not
+the claim. (2) `unlinkedFiles()` is the tripwire the whole design leans
+on and it was VACUOUS on first contact; it is only as wide as
+`JS_SITE`/`RS_SITE`. (3) The DOCS GATE bullet's command list is pinned
+in both directions but its PREFIXES are prose — a reader whose prefixes
+change moves nothing in the doc. (4) `stripComments` is a lexer, and
+three of this card's bugs were in it.
+
+---
+
+### 2026-08-20 — REBUILD AFTER THE REJECTION (`claude-opus-5 @T-084-fix`, a FRESH executor)
+
+Same worktree `../nputer-T-084`, same branch `task/T-084-docs-gate`,
+continued from the verdict commit `6a84bd8`. **Nothing above this line
+was rewritten** — the previous executor's notes are the record of what
+was built, and this is the record of what the rejection cost.
+
+**UNDERSTANDING, CONFIRMED BEFORE ANYTHING WAS TOUCHED.** The verifier
+found the design sound and the REACH short, in three places, and the
+first of them is this card's own failure mode arriving through the gate
+built to remove it: the derivation required a `docs`-first LITERAL in the
+reading file, while AC2 defines a reader as *any body that RESOLVES a
+path under `docs/` against the repository root* — so a one-line edit to
+`docs/ROADMAP.md` owed exactly `npm test` from tools/e2e (114/114, exit
+0) while `npx vitest run` from lib/parser went 262/263 at exit 1 in a
+suite the answer never named. My job was to close that either by
+tracing a root through the call into the module that spends it or by
+over-owing and justifying it; to fix the tripwire's asymmetry (the site
+arm resolved through `ctx.resolveImport`, the anchor arm read
+`ctx.bindings` only, so this tree's dominant idiom was seen and not
+reported) and replace the sampled "WHAT IT CANNOT SEE" with an account;
+and to deal with a measured figure that does not reproduce — `twelve`
+root-anchored where the tree says `eleven` — by pinning or deriving it
+rather than correcting the digit.
+
+**I TRACED. I did not over-owe.** The reason is the card's own warning:
+an answer that is wider than the truth is an answer nobody obeys, and
+"the answer is PROPORTIONAL" is the property that makes a wide trigger
+survivable. Over-owing would have bought completeness by spending the
+one thing that makes this gate different from "run the suites".
+
+### BLOCKING 1 — CLOSED BY TRACING: the CALL SITE arm
+
+A DOCS READER is now a file that resolves a docs path against this
+repository's root **by either of two arms**: a DOCS SITE (a literal in
+its own file, unchanged) or a **CALL SITE** — a call that hands the root
+to a first-party function which spends it on a docs path.
+
+- **One hop, plus re-export barrels.** `smoke.test.ts` imports
+  `parseProject` from `'../src/index.js'`, which is a BARREL; stopping
+  there stops one file short of every parser entry point. `moduleCandidates`
+  also rewrites the emitted extension — this repo is NodeNext, so
+  first-party imports carry `.js` and the file on disk is `.ts`. Without
+  that rewrite **every specifier in lib/parser resolves to nothing**, and
+  silence in the resolver is silence in the answer.
+- **The callee's DEFAULT is read when the call supplies no argument.**
+  `(root = repoRoot)` is the dominant first-party helper signature in
+  this tree — every entry point in `docs-scan.mjs` has it — and such a
+  helper is CALLED WITH NOTHING. The default is evaluated in the
+  CALLEE's context, never the caller's: `repoRoot` names a different
+  directory in every file that spells it.
+- **The callee is NOT credited.** `parseProject` forms all three docs
+  paths off its own PARAMETER, and that parameter is a user's project
+  root. `lib/parser/src/project.ts` stays out, pinned from both sides.
+
+MEASURED, before and after, at the branch tip:
+
+| path | before | after |
+|---|---|---|
+| `docs/ROADMAP.md` | `npm test from tools/e2e/` | **+ `npx vitest run from lib/parser/`** |
+| `docs/architecture/components/C-06-*.md` | cargo · app · e2e | **+ parser** |
+| `docs/tasks/T-*.md` | app · parser · e2e | unchanged (3) |
+| `docs/CONVENTIONS.md` | cargo · e2e | unchanged (2), not the app suite |
+| `docs/rooms/*.md` | e2e | unchanged (1) |
+
+**READERS 9 -> 11**, both new ones found with no list edited:
+`lib/parser/test/smoke.test.ts` (`call parseProject()`, prefixes
+docs/ROADMAP.md · docs/architecture/components · docs/tasks) and
+`tools/e2e/tests/docs-input-gate.spec.ts` (`call conventionsText()`,
+prefix docs/CONVENTIONS.md — the gate's own spec was a live docs reader
+all along). `rejected-exclusion.test.ts` gained the three ROADMAP and
+component prefixes it always read. **The PROPORTIONALITY held**: 1, 2
+and 3 commands are still the answers for rooms, CONVENTIONS and a card.
+
+`T-084-s3` said the remedy was "one hop of call analysis —
+`f(<repo-root expression>)` where `f` is imported from a first-party
+module that forms a `docs`-first path off its own parameter". That is
+what this is, plus the two things the tree needed and the finding did not
+name: the barrel and the defaulted parameter.
+
+### BLOCKING 2 — the asymmetry, and the account that replaces the sample
+
+`rootAnchors()` now asks the same question the site arm asks, by three
+routes: local bindings, **IMPORTED names** (`ctx.resolveImport`, the arm
+that was missing) and Rust **zero-argument calls** (`common::repo_root()`
+is named only by calling it — there is no import line to read).
+
+**PROVED FROM BOTH SIDES, one-sided, at a commit.** The three plants the
+verdict measured, added tracked (`sourceCorpus` reads `git ls-files`, so
+an untracked plant is invisible to the scan and would have been a
+vacuous drill):
+
+| plant | site the scanner SEES | reported BEFORE the fix | AFTER |
+|---|---|---|---|
+| `app/test/m7a-local-anchor.test.ts` — local root anchor | `fixtureRoot()` -> docs/tasks | yes | yes |
+| `tools/e2e/tests/m7b-imported-anchor.spec.ts` — **imported** root | `fixtureRoot()` -> docs/tasks | **NO** | **yes** |
+| `tools/e2e/tests/m7d-member-base.spec.ts` — member-expression base | `cfg.root` -> docs/tasks | **NO** | **yes** |
+
+With all three planted the lane went **27 passed / 3 failed**, RED at
+*nothing forms a repo-root docs path that the derivation could not link*,
+at *THE ACCOUNT and the tree agree* and at the exit contract (a code-only
+diff exits 1 while a file is unlinked). The corpus grew **117 -> 120
+sites in 25 files** and root-anchored stayed **11 in 9** — the plants are
+seen and unlinkable, which is exactly what the tripwire is for. Removed
+with `git rm -f`; `git status --porcelain` empty, HEAD unmoved.
+
+And the direct one-sided proof that the IMPORT arm is what does it: with
+mutant **N4** applied (the `importedNames` loop replaced by `[]`) and
+`m7b` re-planted, `docsSites` still reported
+`{"base":"fixtureRoot()","prefix":"docs/tasks"}` and `unlinkedFiles()`
+returned **`[]`** — the verdict's finding, reproduced under the mutation.
+Restore the arm with the same plant in place and it returns
+`["tools/e2e/tests/m7b-imported-anchor.spec.ts"]`.
+
+**"WHAT IT CANNOT SEE" IS NOW AN ACCOUNT, and the thing that makes it one
+is a BOUND rather than a longer list.** A file can only read THIS
+repository's `docs/` if it holds THIS repository's root, so
+`rootAnchoredFiles()` — the whole population, classified `derived` /
+`unlinked` / `unclassified` — is a set with an edge. At the tip: **24
+files hold the root, 11 derived, 0 unlinked, 13 with no docs site this
+scan can link.** Then arithmetic, not argument, removes most of the
+residue: `suitesOwedForAllOfDocs()` derives that **tools/e2e** is owed
+for every path under `docs/` (two lane specs walk the whole tree), so a
+missed reader there cannot shorten any answer. **What is left is six
+files**, and `ROOT_ANCHOR_LEDGER` argues each one; the lane AND the
+hand-run gate both assert the ledger equals the derived set, so a new one
+is news.
+
+| file | reads live docs/? | why the answer does not move |
+|---|---|---|
+| `nputer-index/src/arch/registry.rs` | **YES**, docs/architecture/components | `read_registry(&testutil::repo_root())`, path behind `const REGISTRY_REL_DIR`. The pair it would add is already produced by `tests/arch.rs:192` — asserted in the spec, not by hand |
+| `nputer-index/src/testutil.rs` | no | defines `repo_root()`, forms no docs path |
+| `nputer-index/tests/common/mod.rs` | no | defines `repo_root()`, forms no docs path |
+| `nputer-index/tests/perf.rs` | no | `copy_repo_to` copies docs/ too, but its only caller is `#[ignore]`d ("perf harness: run on a release build") |
+| `nputer-index/tests/self_graph.rs` | no | the one body reading under docs/ (`root.join(GRAPH_REL_PATH)`) is `#[ignore]`d; the two that RUN assert docs/ is ABSENT from the graph |
+| `app/test/genesis-derive.test.ts` | no | joins the root with `method/interview/plan-interview.md` |
+
+The other seven root-anchored non-readers are all `tools/e2e` and are
+absorbed by the arithmetic: `preflight.ts`, `fixtures/shell.ts`,
+`tauri-boot-check.mjs`, `token-scan.mjs`, `boot-check-guard.spec.ts`,
+`token-scan.spec.ts`, `workflow-permissions.spec.ts`. **Two of those
+seven ARE live docs readers** — `token-scan.mjs`'s CONTROL corpus is
+every tracked text file including `docs/`, and `token-scan.spec.ts`
+asserts on that corpus — and both are in the universally-owed suite, so
+naming them changes nothing. That is the shape of the argument: not "I
+looked and found nothing", but "here is the population, here is the part
+that provably cannot matter, and here is every member of the rest".
+
+**THREE CORRECTIONS TO THE VERDICT AND THE BRIEF, from the tree.**
+
+1. **`tests/self_graph.rs` is not a live-docs reader on a bare `cargo
+   test`.** The verdict names it; `self_graph_is_current` — the body that
+   reads `docs/architecture/graph.json` — carries
+   `#[ignore = "byte-compares the committed graph.json; run explicitly"]`
+   and is one of the three ignored tests in the 352/0/3 line. The two
+   bodies that DO run assert `!file.path.starts_with("docs/")` over the
+   indexed graph, which is the opposite of reading docs/.
+2. **`lint-tokens.mjs` does not hold the repository root.** The verdict
+   pairs it with `token-scan.mjs`; it imports `lintTree` and has no root
+   of its own, so it is not in the anchor census. `token-scan.mjs` is,
+   and the CONTROL claim is correct for it.
+3. **`tests/perf.rs` belongs on that list and was not on it** — it copies
+   the entire tree including docs/ off `common::repo_root()`. It is
+   `#[ignore]`d too, so it changes nothing, but the sweep that produced
+   the verdict's three missed it.
+
+### BLOCKING 3 — the digits are GONE, not corrected
+
+Re-derived independently, by a `siteCensus()` written for this pass and
+not by reading the verdict: **117 docs-shaped sites in 22 files, 11 of
+them in 9 files root-anchored.** The doc said twelve. Eleven.
+
+**I did not correct the digit, because a corrected digit is the same
+defect with a different value.** The two figures are gone from
+`docs/CONVENTIONS.md` and the bullet names
+`node tools/e2e/scripts/docs-gate.mjs --census`, which prints them; the
+gate's ordinary output prints them too, on every run, so the current
+answer is never more than a second away.
+
+**Why not PIN the digits in the doc, which is the obvious move and what
+the verdict suggested "considering"?** Because a pinned count in
+`docs/CONVENTIONS.md` reds the e2e lane whenever any lane anywhere adds a
+docs-shaped site, and the fix would be an edit to `docs/CONVENTIONS.md` —
+**out of fence for most lanes**. A gate whose remedy an executor is not
+allowed to apply is a gate that gets a fence widened or gets ignored,
+which is the trap this card's own AC1 names. Deriving is strictly
+stronger here than pinning: there is nothing left to go stale.
+
+What IS pinned: that the bullet names the census command, that it carries
+no transcribed site count (`/\d+\s+docs-shaped sites in \d+ files/`), and
+that the census is internally consistent with the reader set. Both
+directions drilled (N7, N8, N9).
+
+Note the honest gap between two numbers that look like they should
+match: **11 root-anchored SITES in 9 files, but 11 READERS.** Two readers
+(`smoke.test.ts`, `docs-input-gate.spec.ts`) have no literal site at all
+— they are the call arm's, which is the point of it.
+
+### T-084-s6 — ADDRESSED, not deferred
+
+An empty path list is now **exit 2 (called wrong)**, not exit 0. BSD
+`xargs` runs the utility once even on empty input, so the documented
+`git diff --name-only … | xargs docs-gate.mjs` turned a FAILED range into
+a green gate in the same words a genuinely code-only diff gets. The
+message says so: *"An empty path list is not a clean gate; it is a range
+that produced nothing. Re-run the RANGE RULE's own command and read ITS
+exit code before piping it here."* `s6`'s second arm — `xargs` splitting a
+long list across invocations — is left as `s6` describes it: the per-path
+answers stay correct and nothing on this tree is near the limit.
+
+`--census` is the one accepted flag, so "show me the derivation" no
+longer needs a fake path argument. `--range` still exits 2.
+
+### THE POISON DRILL — ten mutants, one-sided, every mutated TEXT read back
+
+Drilled **at commit `7d1397e`** with a clean tree, which is `T-072-s1`'s
+lesson: a proof that compares against HEAD cannot see uncommitted work
+being reverted underneath it. Every mutation moved the PRODUCER, never an
+assertion; the substitution COUNT was asserted before anything was
+written (the helper refuses to write on a count mismatch and exits 1);
+the mutated LINE was read back out of the file and printed; and every
+restore was a byte copy from a pre-mutation backup, proved by sha256.
+
+| # | mutation (producer only) | result |
+|---|---|---|
+| **N1** | `docsReaders` drops the call arm (`const calls = []`) | **27 / 3**, RED at *a body that hands the root to a first-party call is a reader*, at the ACCOUNT and at the exit contract |
+| **N2** | `paramParts` always returns `fallback: null` — no defaulted roots | **29 / 1**, RED at the call sample set's DEFAULTED-root floor |
+| **N3** | `callSites` drops the `evalBase(...) !== root` guard | **24 / 6**, RED at *the CALLEE is not a reader*, at *a docs path off a root that is NOT the repo root*, at *the answer is PROPORTIONAL*, at the samples, the ACCOUNT and the exit contract |
+| **N4** | `rootAnchors` stops following imports (`for (const name of [])`) | **29 / 1**, RED at *the tripwire's ANCHOR arm follows imports* — and with `m7b` re-planted, `unlinkedFiles()` went silent again, which is the verdict's finding reproduced |
+| **N5** | `unaccountedRootAnchors` returns `[]` | **28 / 2**, RED at the ACCOUNT and at the hand-run gate |
+| **N6** | the empty-path-list branch made unreachable | **29 / 1**, RED at *no paths is CALLED WRONG, never a clean gate* |
+| **N7** | `siteCensus` counts every site as root-anchored | **29 / 1**, RED at *root-anchored is a small share of docs-shaped* |
+| **N8** | a transcribed count added back to the DOCS GATE bullet | **29 / 1**, RED at *no transcribed site count* |
+| **N9** | the bullet stops naming `--census` | **29 / 1**, RED at the other direction of the same body |
+| **N10** | one `ROOT_ANCHOR_LEDGER` entry renamed to a file that does not exist | **28 / 2**, RED at the ACCOUNT and at the hand-run gate |
+| **PLANTS** | m7a / m7b / m7d added tracked | **27 / 3**; removed, `git status --porcelain` empty |
+
+Restoration proved at the end for all four touched files: working-tree
+sha256 equalled `git show HEAD:<path> | shasum -a 256` with
+`git status --porcelain` empty. **THE FOUR HASHES ARE AT `7d1397e`, THE
+DRILL COMMIT, AND NOT AT THE TIP** — quoting a hash without its ref is
+the defect this pass spent BLOCKING 3 on, so:
+`git show 7d1397e:tools/e2e/scripts/docs-scan.mjs` is `53f23c63…`,
+`docs-gate.mjs` `389c94e7…`, `docs/CONVENTIONS.md` `c9837559…`,
+`tools/e2e/tests/docs-input-gate.spec.ts` `cb15478c…`. `docs-scan.mjs`
+moved AFTER the drill — two more limits written into WHAT IT CANNOT SEE,
+comment only — so its tip hash differs by design and the two later
+commits say so.
+
+**ONE MUTATION BIT ME RATHER THAN A BODY**, and it is worth recording
+because it is this repo's own lint catching this lane a second time: a
+cache key I wrote as `` `${abs}<sep>${name}` `` went in with a literal
+NUL as the separator. `lint-tokens` found it — *docs-scan.mjs:byte 48918:
+U+0000 [P5: literal control character]* — at exit 1, before any suite ran.
+Fixed to `::`. **The token lint is a real gate and it has now caught two
+different lanes' own source.**
+
+### Suites at the tip, every exit code read from its own `$?`
+
+- **e2e lane: 121/121, `E2E_EXIT=0`** — 114 before plus **7** new bodies.
+  One worker, zero retries, zero skips, scratch port **14833**,
+  bind-probed free on all four stacks (`127.0.0.1`, `0.0.0.0`, `::1`,
+  `::`) before use. `npx tsc --noEmit` from tools/e2e `E2E_TYPECHECK_EXIT=0`.
+- **parser: 263/263 across 12 files, `PARSER_EXIT=0`**; `npx tsc
+  --noEmit` `PARSER_TSC_EXIT=0`; `npm run build` `PARSER_BUILD_EXIT=0`.
+  Its smoke test parses the live tree with this card and seven findings
+  in it and requires zero issues — and `smoke.test.ts` is now the reader
+  the gate names for exactly that.
+- **app: 831/831 across 42 files, `APP_TEST_EXIT=0`**, after `npm run
+  build` `APP_BUILD_EXIT=0` emitting `index-3bNJ6pCB.js` **501.54 kB** and
+  `index-CwYF5FQb.css` **43.95 kB** — **both content hashes identical to
+  the checkpoint's and to the previous pass's**, which is the honest form
+  of "no app source moved".
+- **cargo, bare `cargo test --no-fail-fast`: 352 passed / 0 failed / 3
+  ignored**, `CARGO_TEST_EXIT=0`, summed programmatically from **fifteen**
+  `test result:` lines. Unmoved.
+  `snapshot_version_matches_the_live_method_stamps` is green against the
+  EDITED `docs/CONVENTIONS.md`.
+- **token lint: `LINT_TOKENS_EXIT=0`, `LINT_SELFTEST_EXIT=0`** —
+  *clean (TOKEN 122 files; CONTROL 573 tracked text files)*, selftest 49
+  TOKEN + 4 CONTROL samples, 71 walk-policy checks, 8 evidence-floor
+  checks. **CONTROL 571 -> 573**, and both steps are named: `T-084-s6`,
+  which the VERDICT commit added after the previous pass measured 571,
+  and `T-084-s7`, which this pass filed. TOKEN unmoved at 122 — no new
+  file landed under app/src, app/test or tools/e2e. Measured at 572
+  before `s7` was written and re-derived at 573 after, which is the
+  right-hand-endpoint drift the last two checkpoints keep recording: a
+  count with no ref goes stale from either end.
+- **`index --check` exit 0** — *graph.json is CURRENT … 576235 bytes, 118
+  files, 996 symbols, 1520 edges*, every figure equal to the previous
+  pass's.
+
+### GATE DERIVATIONS AT THIS TIP — main moved again, every dot count stated
+
+**Main is at `7f2f873` now, not `2cf59da`**: T-077 merged and
+checkpointed while this pass was running. Re-derived rather than
+inherited, branch tip `7d1397e`:
+
+    git merge-tree --write-tree 7f2f873 7d1397e  -> tree 6ffa737f…, MERGE_TREE_EXIT=0
+    git diff --name-only 7f2f873 <TREE>                     -> 13   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 7f2f873...7d1397e  (THREE dots)    -> 13   cmp against the forecast: exit 0
+    git diff --name-only 7f2f873..7d1397e   (TWO dots)      -> 48   THE FORBIDDEN PRE-MERGE FORM
+    git merge-base 7f2f873 7d1397e                          -> e83ee1d  (the cut point, still unmoved)
+
+**AND THE RIGHT-HAND ENDPOINT IS NAMED TOO, because this pass files a
+finding and a path count with no ref is as stale as a duration with
+one.** `7d1397e` is the implementation commit; the notes commit that
+carries this paragraph also adds `docs/tasks/T-084-s7-*.md`, so the set
+goes **13 -> 14** exactly once and then TERMINATES: every further notes
+commit touches only this card, which is already one of the fourteen.
+Re-derived at the notes commit rather than predicted — see the trailing
+block below, which is measured after the fact and is the last figure in
+this section.
+
+**THE FORBIDDEN FORM HAS NOW MOVED TWICE ON THIS ONE LANE — 12, then 35,
+then 48 — AND THE CORRECT ANSWER HAS ONLY EVER GROWN BY WHAT THIS LANE
+WROTE**: 12 at `c8f6213`, 12 at `1eba34f`, 13 now (`T-084-s6`, added by
+the verdict commit, plus `T-084-s7` and this notes commit, all already
+inside the set). Main has advanced **35 paths** from `e83ee1d`;
+`comm -12` over main's 35 and this lane's 13 is **EMPTY**, 35 + 13 = 48,
+and that arithmetic is the check that `merge-tree`'s exit 0 means
+disjoint rather than lucky.
+
+**Suffix census of the fourteen:** 9 md, 3 mjs, 1 ts, 1 json.
+
+    MEASURED AT `7356d66`, the notes commit, and not predicted:
+    git merge-tree --write-tree 7f2f873 7356d66  -> exit 0
+    git diff --name-only 7f2f873 <TREE>                   -> 14   PRESCRIBED
+    git diff --name-only 7f2f873...7356d66  (THREE dots)  -> 14   cmp: exit 0
+    git diff --name-only 7f2f873..7356d66   (TWO dots)    -> 49   THE FORBIDDEN FORM
+    comm -12 <main advance> <this lane>                   -> EMPTY, and 35 + 14 = 49
+
+**THE TREE HASH IS DELIBERATELY NOT QUOTED HERE** (T-077, `702dcee`: a
+tree hash quoted inside the tree it describes is stale by construction).
+The COUNTS are quotable because they terminate: writing this paragraph
+moves the tip past `7356d66` and touches only this card, which is
+already one of the fourteen.
+
+- **GRAPH REGEN — FIRES AT EXACTLY 1 OF 13**, and it is outside `docs/`:
+  `tools/e2e/tests/docs-input-gate.spec.ts`. The three `.mjs` files that
+  are the substance of this change still do NOT match — `.mjs` has never
+  been in that suffix list, read off the bullet rather than remembered.
+  The gate was ASKED: `index --check` exits **0** at this tip. **No
+  regenerated graph is committed here** — CONVENTIONS puts the regen at
+  the CHECKPOINT, and main's advance carries T-077's own regen, so the
+  integrator must re-ask against the NEW committed graph.
+- **BOOT GATE — DOES NOT FIRE, 0 of 13.** No path matches
+  `app/src-tauri/**`, `app/src/**`, `app/package.json` or
+  `app/src-tauri/Cargo.toml`, so the executor's own obligation (T-046
+  criterion 6) is not owed and the boot check was not run. **Nothing
+  bound, connected to or signalled port 1420**: it was read with
+  `lsof -nP -iTCP:1420 -sTCP:LISTEN` and with nothing else, before and
+  after — holder `node` pid **82549**, one socket, `TCP [::1]:1420
+  (LISTEN)`, unchanged. The human's app pid **85379** and vite **82549**
+  are untouched; this lane opened no window, ran no `tauri dev`, and
+  built Rust only into the WORKTREE's own `app/src-tauri/target`.
+- **DOCS GATE — FIRES on its own diff, 8 of the 13 paths under `docs/`**,
+  exit **1**, owing all four suites (`cargo test from app/src-tauri/`,
+  `npm test from app/`, `npx vitest run from lib/parser/`, `npm test from
+  tools/e2e/`). All four were run after the docs files were in the tree.
+  `docs/CONVENTIONS.md` now names five readers including
+  `docs-input-gate.spec.ts` itself — the gate's own spec reads the doc
+  the gate is documented in, which the call arm is what discovered.
+
+### What I did NOT do, and why
+
+- **`T-084-s1` is untouched and is now stated exactly rather than
+  bounded by argument.** A docs path behind a constant is still
+  invisible: `read(GRAPH_PATH)` in the app suite,
+  `common::repo_root().join(GRAPH_REL_PATH)` in cargo, and
+  `root.join(REGISTRY_REL_DIR)` in registry.rs. **The consequence, said
+  plainly: `docs/architecture/graph.json` is owed `npm test from
+  tools/e2e/` and nothing else, though the app and cargo suites both read
+  it.** That is a short answer, and the reason it is not a fourth
+  blocking defect is that it is the ONE path under `docs/` another
+  standing gate already owns — GRAPH REGEN regenerates it, `index --check`
+  gates it, and it only ever changes because code changed. Closing it
+  needs constant resolution plus an inverse call hop, which is `s1`'s
+  card, not this one's.
+- **No `method/` edit** (`T-084-s5`), **no `.github/` edit** (`T-084-s2`),
+  **no status added**, **no npm script**, **no `.nputerignore` change**.
+- **`T-084-s4`'s residual is left to `s4`.** The restore-in-a-`finally`
+  hazard is real (a killed run leaves seven tracked files with a trailing
+  NUL) and `token-scan.spec.ts` is technically in fence, but the fix is a
+  caveat `s4` already specifies and touching that spec is scope this card
+  did not buy. I hashed nothing extra: `git status --porcelain` was empty
+  after every lane run this pass.
+
+Filed: **`T-084-s7`** — the root-anchor ledger lives in `tools/e2e` but
+four of its six entries argue about `app/src-tauri`, so a lane fenced
+elsewhere can red it and be unable to fix it in fence. That cost is real
+and I chose it deliberately over silence; the finding weighs three ways
+to pay it down.
+
+**For the verifier, the four sharpest places to attack this pass.**
+(1) The call arm resolves a callee BY NAME with no scope analysis —
+shadowing over-fires (safe) and a doubly-defined name under-fires
+(caught by the anchor census, in theory: check it). (2) `functionDefs`
+and `bodyAfter` are brace-matchers, not parsers, and three of this
+card's earlier bugs were in the other lexer. (3) The account leans on
+`suitesOwedForAllOfDocs()` returning a NON-EMPTY set; if
+`shell-frame.spec.ts` and `window-contract.spec.ts` ever stopped walking
+all of `docs/`, seven files would need ledger entries at once — the lane
+would red loudly, but check that it would. (4) The census is now derived
+in three places (`siteCensus`, `rootAnchoredFiles`, `docsReaders`) that
+each re-walk the corpus; they must agree, and nothing asserts they walk
+the same corpus.
+
 ## Verdicts
+
+### 2026-08-20 — REJECTED (claude-opus-5 @T-084-verify, review: same-model)
+
+**Three blocking findings, all reproducible, and the first of them is
+this card's own failure mode arriving through the gate built to remove
+it.** A one-line docs-only edit to `docs/ROADMAP.md` makes
+`docs-gate.mjs` fire and owe **exactly one** command; that command
+(`npm test` from tools/e2e) runs **114/114 at exit 0**, and
+`npx vitest run` from lib/parser goes **262/263 at exit 1** in a suite
+the gate never named. An integrator who obeys the gate merges a red
+tree. Everything else on this card is strong — the derivation is real,
+both halves of the discriminator are load-bearing and pinned, the
+vocabulary read is genuine, all four suites are green, and the poison
+drill is the most honest one in this archive — so this is a narrow
+rejection about the derivation's REACH, not a rebuild.
+
+**Range derived, every dot count stated.** Main at `2cf59da`, branch tip
+`1eba34f`, `git merge-base 2cf59da 1eba34f` = **`e83ee1d`** (the cut
+point, unmoved).
+
+    git merge-tree --write-tree 2cf59da 1eba34f  -> tree cc30f65c…, exit 0
+    git diff --name-only 2cf59da <TREE>                    -> 12   PRESCRIBED
+    git diff --name-only 2cf59da...1eba34f  (THREE dots)   -> 12   cmp vs two-dot-from-base: exit 0
+    git diff --name-only e83ee1d..1eba34f   (TWO dots)     -> 12   base-relative, agrees
+    git diff --name-only 2cf59da..1eba34f   (TWO dots)     -> 35   THE FORBIDDEN FORM
+
+12 → 35 on the forbidden form, re-derived rather than inherited; the
+merged tree against main is the same twelve paths, so the fences are
+disjoint. **GRAPH REGEN fires at exactly 1 of 12** —
+`tools/e2e/tests/docs-input-gate.spec.ts`; the trigger as written is
+`*.ts/*.tsx/*.js/*.jsx` outside docs/ and **`.mjs` is not in it**, read
+off the bullet rather than remembered, so the three `.mjs` files that
+are the substance of this change do not match. `cargo run -p
+nputer-index -- index --check --root ../..` exits **0** —
+*576235 bytes, 118 files, 996 symbols, 1520 edges*, every figure equal
+to the notes'. **BOOT GATE: 0 of 12, not owed.** Nothing bound,
+connected to or signalled 1420; read once with `lsof -nP -iTCP:1420
+-sTCP:LISTEN` and nothing else — holder `node` pid **82549**, one
+socket, `TCP [::1]:1420 (LISTEN)`; the human's app pid **85379** and
+vite **82549** unchanged at the end. The lane ran on scratch port
+**14721**, bind-probed free first.
+
+---
+
+### BLOCKING 1 — the gate's ANSWER is silent about a suite that reds, on two of the five prefixes it emits
+
+The criteria are explicit about what a reader is. AC1: the rule *"SHALL
+be derived from **what the suites actually read**"*. AC2: *"a reader is
+any body that resolves a path under `docs/` against the repository root
+rather than a fixture directory"*. The implementation narrows that to a
+body that **spells a `docs`-first literal in its own file**, and the two
+are not the same set on this tree.
+
+`lib/parser/test/smoke.test.ts` calls `parseProject(repoRoot)` — the
+repository root, not a fixture — and `lib/parser/src/project.ts`
+resolves three paths off it: `docs/tasks`, `docs/ROADMAP.md` and
+`docs/architecture/components`. The derivation attributes only
+`docs/tasks` and `docs/tasks/rejected` to the parser suite. **Two of the
+three prefixes that suite actually reads are missing from the gate's
+answer today** — not after a future refactor.
+
+MUTANT ONE, mine, derived from AC1/AC2 and not from the pins. One-sided:
+the producer moved, the assertion did not; text read back before any
+suite ran; restored by byte copy and proved by sha256 + `git status`.
+
+    perl -pi -e 's/App shell \+ board/App shell and board/ if $. == 5' docs/ROADMAP.md
+    # read back: "- F-02: App shell and board — Tauri app, read-only story map rendered"
+    # git diff --stat: docs/ROADMAP.md | 2 +- , 1 file changed
+
+    node tools/e2e/scripts/docs-gate.mjs docs/ROADMAP.md      -> EXIT 1
+      docs-gate: FIRES — 1 path(s) under docs/ are code inputs. Run:
+        npm test from tools/e2e/
+        docs/ROADMAP.md <- shell-frame.spec.ts, window-contract.spec.ts
+
+    npm test        from tools/e2e/   -> 114 passed,  E2E_EXIT=0     GREEN
+    npx vitest run  from lib/parser/  -> 262/263,     PARSER_EXIT=1  RED
+
+    FAIL test/smoke.test.ts > parses the backbone features in order
+    AssertionError: expected 'App shell and board' to be 'App shell + board'
+
+Expected, per AC1 and AC3 (*"the integrator needs to know WHICH suite
+answers this"*): `npx vitest run from lib/parser/` in the answer.
+Actual: absent, and the only suite named is green.
+
+MUTANT TWO, the same defect on a second prefix, so it is not a ROADMAP
+quirk:
+
+    perl -pi -e 's/^name: lib-parser$/name: lib-parser-renamed/' \
+      docs/architecture/components/C-06-lib-parser.md          # read back OK
+
+    docs-gate.mjs docs/architecture/components/C-06-lib-parser.md -> EXIT 1
+      owes: cargo test from app/src-tauri/ · npm test from app/ · npm test from tools/e2e/
+
+    npx vitest run from lib/parser/ -> 262/263, PARSER_EXIT=1
+    FAIL test/smoke.test.ts > parses the dogfood component registry (T-008)
+    AssertionError: expected { id: 'C-06', …} to match object { name: 'lib-parser', …}
+
+Both restored: `docs/ROADMAP.md` back to
+`0752482f5e8d790418941521f726939a03c922210ba3b584383854966c06b109`,
+`C-06` byte-restored, `git status --porcelain` empty, parser back to
+263/263.
+
+**`T-084-s3` names the shape and understates the consequence.** It says
+the parser suite *"is in the gate's answer today only because two
+sibling bodies carry literals"* and warns that *"delete or refactor
+those two and the parser suite silently leaves the answer"*. That reads
+as a future risk. Measured, it is a present one: the two siblings carry
+`docs/tasks` and `docs/tasks/rejected` **only**, so for a ROADMAP-only
+or components-only diff the parser suite is already absent. The
+boundedness argument the notes ask a verifier to check ("check the
+argument, not the claim") does not hold.
+
+**And the admissions are a sample, not a complete account.** Sweeping
+every corpus file for a root anchor turns up live-docs readers neither
+`s1` nor `s3` names:
+
+- `app/src-tauri/crates/nputer-index/src/arch/registry.rs` —
+  `reads_this_repos_live_registry_and_finds_the_known_shape` does
+  `read_registry(&crate::testutil::repo_root())`, reading
+  `docs/architecture/components` off the live tree and asserting its
+  shape. Root-anchored, zero sites (its `docs` literal is a bare
+  `const REGISTRY_REL_DIR`, never a `.join("docs…")`), so it is neither
+  derived nor reported.
+- `app/src-tauri/crates/nputer-index/tests/self_graph.rs` — indexes the
+  live repo off `common::repo_root()`; `self_graph_is_current` reads
+  `docs/architecture/graph.json`.
+- `tools/e2e/scripts/token-scan.mjs` / `lint-tokens.mjs` — the CONTROL
+  corpus is every tracked text file, `docs/` included, so CI's first
+  step reads all of docs/ and no site says so.
+
+None of these change which SUITE is owed today, which is why they are
+evidence rather than a fourth finding — but they are the same blind spot
+as BLOCKING 1, and the scanner's *"WHAT IT CANNOT SEE"* section does not
+mention the class at all.
+
+**The remedy is small and `T-084-s3` already writes it**: one hop of call
+analysis — `f(<repo-root expression>)` where `f` is imported from a
+first-party module that forms a `docs`-first path off its own parameter
+is a docs site. That is exactly `parseProject(repoRoot)`. Failing that,
+the honest minimum is for the gate to stop presenting its command list
+as complete: CONVENTIONS says **"Ask the gate; do not predict"**, and on
+this tree that instruction is wrong for two of five prefixes.
+
+---
+
+### BLOCKING 2 — `unlinkedFiles()` is still vacuous one step out, and the residual it names is not the one that bites
+
+M6 in the notes is the sharpest work on this card and its fix is REAL: I
+reproduced both sides.
+
+    // planted, app/test/m7a-local-anchor.test.ts
+    const REPO = join(HERE, "..", "..");        // local root anchor
+    function fixtureRoot() { return REPO; }
+    const dir = join(fixtureRoot(), "docs/tasks");
+    -> unlinkedFiles() reports it.  The zero-arg-call alternative works.
+
+But the tripwire's two arms follow different rules. A SITE's base is
+resolved through `ctx.resolveImport` (one hop into a relative module —
+that is how `shell-frame.spec.ts` resolves `repoRoot` from
+`../preflight`). The ANCHOR scan reads `ctx.bindings` only — local
+`const/let/var` and Rust `fn`. **An imported root is invisible to the
+anchor scan**, and importing `repoRoot` from `../preflight` is the
+dominant idiom in the very package the tripwire lives in: three of the
+nine derived readers get their root that way.
+
+    // planted, tools/e2e/tests/m7b-imported-anchor.spec.ts
+    import { repoRoot } from "../preflight";     // imported root anchor
+    function fixtureRoot() { return repoRoot; }
+    const dir = join(fixtureRoot(), "docs/tasks");
+
+    docsSites  -> the site IS seen (corpus 117 -> 119 sites over the pair)
+    unlinkedFiles() -> ["app/test/m7a-local-anchor.test.ts"]   ONLY
+
+    // and the same with a member-expression base, m7d-member-base.spec.ts
+    const cfg = { root: repoRoot };
+    const dir = join(cfg.root, "docs/tasks");
+    unlinkedFiles() -> ["app/test/m7a-local-anchor.test.ts"]   ONLY
+
+Expected: reported — the file forms a `docs`-first path, computes the
+repository root, and the scanner cannot link it, which is the tripwire's
+own stated trigger. Actual: silent. The scanner's *"WHAT IT CANNOT SEE"*
+names one residual — *"a base that is a call WITH ARGUMENTS"* — and
+claims *"nothing in the tree writes one, because a root gets bound
+before it gets joined"*. That is true and beside the point: the shape
+that escapes is a root that gets bound **in another file**, which this
+tree writes constantly. Confirmed separately that
+`join(path.resolve(REPO), "docs/tasks")` produces no site and no report
+either, so both residuals are silent, not one.
+
+A tripwire that catches one new shape and misses the next is the same
+defect the drill found. The fix is one line in `unlinkedFiles` — fold
+`ctx.resolveImport`-reachable names into the anchor test, exactly as the
+site path already does — plus a sample for the shape.
+
+---
+
+### BLOCKING 3 — `docs/CONVENTIONS.md` ships a measured figure that is wrong
+
+The DOCS GATE bullet: *"at `e83ee1d` the tree holds **117 docs-shaped
+sites in 22 files** and exactly **twelve of them, in nine files, are
+root-anchored**."* The notes repeat it and build the argument on it
+(*"one twelfth of the truth, and the wrong twelfth"*).
+
+Re-derived twice, at a scratch worktree checked out at `e83ee1d` and at
+the branch tip, and once by hand off the tree:
+
+    docs-shaped sites: 117 in 22 files       AGREES
+    ROOT-ANCHORED:      11 in  9 files       the doc says twelve
+
+    arch.rs:192  kit.rs:448  architecture-dogfood:1020,1023
+    map-dogfood:31,36  rejected-exclusion:42  task:257
+    shell-frame:65  window-contract:98  workflow-parity:75      = 11
+
+The notes' own reader table lists eleven prefix rows too. Nothing in the
+lane pins the number, which is why it is green and wrong; the file count
+(nine) is right. `docs/CONVENTIONS.md` is the house spec and this is the
+sentence that carries the derivation's evidence — a figure with a ref
+that does not reproduce at that ref is the class this archive keeps
+filing cards about.
+
+---
+
+### What re-derived cleanly — the rebuild is narrow
+
+- **Both halves of the discriminator are load-bearing and pinned.**
+  Relaxing `docs`-first to `(?:docs|app)` in `JS_SITE` → **21/2**, RED at
+  *a repo-root join whose first segment is not `docs` is not a reader*
+  and at the sample set. Disabling the `evalBase(...) !== root` guard →
+  **21/2**, RED at *a docs path off a root that is NOT the repo root is
+  not a reader* and at *the answer is PROPORTIONAL*. Both counterexamples
+  verified in the tree: `tools/e2e/fixtures/shell.ts` joins `repoRoot`
+  with `app/test/fixtures/genesis/streak/docs`;
+  `lib/parser/test/files.test.ts` carries six sites, none anchored.
+- **The enumeration is mechanical and it grows.** Planting a new
+  `lib/parser/test/*.test.ts` that does `join(repoRoot,'docs/ROADMAP.md')`
+  took the derivation **9 → 10 readers with nothing edited**, and the
+  gate's answer for `docs/ROADMAP.md` correctly gained
+  `npx vitest run from lib/parser/` — which is also the cleanest proof
+  that BLOCKING 1 is a reach problem and not a design problem.
+- **The vocabulary read is REAL, not a copied constant.** Appending
+  `'closed'` to `TASK_STATUSES` in `lib/parser/src/types.ts` made
+  `taskStatuses()` return nine with no gate edit and redded **3** lane
+  bodies. Renaming the declaration to `TASK_STATUS_NAMES` made the gate
+  exit **3** with *"a moved declaration is a gate that could not run,
+  never an empty vocabulary that accepts anything"* — the whole point,
+  held.
+- **The disposition ruling is right and is written where a reader meets
+  it.** `closed` as a ninth status fails all four of the notes' tests
+  independently: `T-081-s7` already carries `status: suggested` plus a
+  `closed_by:` line, TASK-FORMAT.md's three moves are unchanged, the
+  vocabulary is method-ratified so a ninth name is a version bump whose
+  third file is Rust, and `nearMisses("closed", …)` is genuinely empty at
+  distance 2 while `nearMisses("plannd", …)` returns `planned` — a
+  negative with a working positive control. The ruling reaches the
+  writer at the point of failure, quoted in the gate's own message.
+- **The illegal-card criterion is met end to end.** A planted live
+  `docs/tasks/T-995-s1-…md` with `status: closed`: gate **exit 1** naming
+  file, field, the eight-name vocabulary, the value and the ruling; the
+  lane RED by name at *every live task card parses*; `npm test` from
+  app/ **830/831 exit 1** — the second incident reproduced to the
+  digit; `npx vitest run` from lib/parser **262/263 exit 1**. Removed;
+  tree clean.
+- **Exit-code contract holds all four ways**: code-only diff 0, docs diff
+  with a reader 1, `--range` 2, moved declaration 3.
+- **`token-scan.mjs`: nothing else moved.** `--numstat` is 10/4 and every
+  moved line is inside the two doc comments or the two signatures that
+  gained `export`. The token lint is unaffected: **TOKEN 119 → 122**
+  (+3 files under tools/e2e) and **CONTROL 563 → 571** (+8: those three
+  plus five findings), both closed arithmetically by running
+  `lint-tokens.mjs` at `e83ee1d` and at the tip — exit **0** at both.
+- **Suites at the tip, every code read from its own `$?`:** app
+  **831/831** `APP_TEST_EXIT=0` (after `npm run build`, itself preceded
+  by `npm run build` from lib/parser — a fresh worktree has neither
+  `lib/parser/dist` nor `app/dist`, and without the parser's dist the app
+  build dies at TS2307 before the bundle-asserting bodies are reached);
+  parser **263/263** `PARSER_EXIT=0`, `tsc --noEmit` 0; cargo
+  `--no-fail-fast` **352 passed / 0 failed / 3 ignored** over fifteen
+  `test result:` lines, `CARGO_TEST_EXIT=0`; lane **114/114**
+  `E2E_EXIT=0`, all **23** new bodies present and green;
+  `tsc --noEmit` from tools/e2e 0; `lint-tokens` 0; `index --check` 0.
+- **`T-084-s4` is accurate and its hazard is real.** `token-scan.spec.ts`
+  really does append a byte to seven tracked files including
+  `docs/NORTH_STAR.md`, `AGENTS.md` and `.github/workflows/ci.yml`, and
+  really does prove restoration by sha256 per file plus `git diff
+  --quiet`. I hashed all seven before the first lane run and re-checked
+  after three: byte-identical every time. The residual is that the
+  restore lives in a `finally` — a killed run (timeout, interrupt) leaves
+  seven tracked files carrying a trailing NUL, and in the MAIN checkout
+  two of them are files the human's watcher is armed over. Worth the
+  one-line caveat `s4` asks for.
+- **`T-084-s2` is correct, and it is a live spec that is wrong.**
+  CONVENTIONS' CI bullet claims the derivation *"is silent in exactly ONE
+  case, a command the DOC gains that the spec does not yet claim"*.
+  `deriveExpectedSteps` pushes a problem for exactly that case
+  (`for (const key of doc.keys()) … "which this spec has no entry for"`),
+  and `workflow-parity.spec.ts`'s own reword fixture asserts that
+  message. Not silent; correctly filed out of fence rather than fixed.
+
+### The trigger's third way: BETTER, not merely different
+
+The card offered "any `docs/**`" against "`docs/tasks/**` +
+`docs/architecture/**`" and the executor took neither. Both premises
+check out. The narrow pair really would miss `docs/CONVENTIONS.md`:
+`app/src-tauri/src/agent/kit.rs:448` reads it on every `cargo test` and
+`workflow-parity.spec.ts:75` parses it. And "every path under `docs/`
+reaches a reader" is not an excuse — `shell-frame.spec.ts:65` and
+`window-contract.spec.ts:98` each `walk(path.join(repoRoot, "docs"))`
+recursively, so narrowing the trigger would be a lie about the tree.
+Splitting a wide trigger from a narrow, per-path, derived ANSWER is a
+strictly better answer than either option offered, and it satisfies AC3
+in a way "run the suites" cannot. **The one thing that undermines it is
+BLOCKING 1**: a proportional answer is only as good as its completeness,
+and *"Ask the gate; do not predict"* is an instruction to trust it.
+
+### Corrections to the dispatch brief
+
+- The brief inherits **"exactly 12 in 9 files survive both halves"**. The
+  tree says **11**; see BLOCKING 3. Everything else in the brief
+  re-derived correctly: 12/12/`cmp` 0/35, GRAPH REGEN 1 of 12 with
+  `.mjs` genuinely absent from the trigger, BOOT GATE 0 of 12, TOKEN
+  119→122, CONTROL 563→571, the two exported symbols and nothing else in
+  `token-scan.mjs`, and `T-084-s2`'s claim about the CI bullet.
+- The brief's five card errors are all real. #1 two of nine in one of
+  four suites; #2 false three ways, and `9c64cd8`'s message says *"The
+  E2E lane caught it three steps from the cause"* outright; #3 the parser
+  already emits a typed `invalid-field` naming file, field, vocabulary
+  and value — I saw it under the planted card — so what was missing was
+  a reason to RUN it; #4 `9c64cd8` is 2026-08-19 15:35:21 and `fede266`
+  2026-08-19 23:35:23, one day; #5 ruled on above.
+
+### To clear this
+
+1. Extend the derivation one hop through a first-party call so
+   `parseProject(repoRoot)` is a site — `T-084-s3` already specifies it —
+   or, at minimum, make the gate say out loud which prefixes it cannot
+   attribute, so its answer stops reading as exhaustive.
+2. Make the anchor arm of `unlinkedFiles` follow imports the way the
+   site arm already does, with a sample for the shape.
+3. Correct twelve to eleven in `docs/CONVENTIONS.md` and in the notes,
+   and consider pinning the count so the next figure cannot go stale
+   silently.
+
+Re-verification needs mutants 1 and 2 above run against the fix, plus
+the four suites.
+
+### 2026-08-20 — APPROVED (claude-opus-5 @T-084-verify2, review: same-model)
+
+**All three blocking findings are fixed, and I re-ran my own falsifiers
+against the fix rather than reading the notes.** One new finding, filed
+rather than blocking, and one correction to MY OWN first verdict that
+the executor was right to make.
+
+**Range re-derived at the new main, dot counts stated.** Main `7f2f873`,
+tip `fda5c92`, `git merge-base 7f2f873 fda5c92` = **`e83ee1d`**.
+
+    git merge-tree --write-tree 7f2f873 fda5c92 -> tree 4c7ba071…, MERGE_TREE_EXIT=0
+    git diff --name-only 7f2f873 <TREE>                   -> 14   PRESCRIBED
+    git diff --name-only 7f2f873...fda5c92 (THREE dots)   -> 14   cmp vs base two-dot: exit 0
+    git diff --name-only e83ee1d..fda5c92  (TWO dots)     -> 14   base-relative
+    git diff --name-only 7f2f873..fda5c92  (TWO dots)     -> 49   THE FORBIDDEN FORM
+    main advance e83ee1d...7f2f873                        -> 35 ; comm -12 = 0 ; 35 + 14 = 49
+
+Disjoint, so `merge-tree` exits 0 rather than reporting a conflict. The
+coordinator's figures reproduce exactly.
+
+---
+
+### FIRST: the correction to my own sweep, because it lands on me
+
+My first verdict listed three readers the derivation missed. **The
+executor is right on all three counts, and I was wrong twice.**
+
+- **`tests/perf.rs` — I MISSED IT.** `copy_repo_to` does
+  `copy_dir(&common::repo_root(), dst)`, copying the whole tree with
+  `docs/` in it. Both of its root uses are INLINE calls; neither is a
+  `let` binding — **which is exactly why my sweep could not see it,
+  because my sweep read `ctx.bindings` only.** I was reporting that
+  asymmetry as BLOCKING 2 while my own probe was subject to it. It is
+  `#[ignore]`d at line 53 ("perf harness: run on a release build"), so
+  nothing moves on bare `cargo test`.
+- **`tests/self_graph.rs` — I WAS WRONG.** The only body that reads a
+  path under `docs/` is `self_graph_is_current`, `#[ignore]`d at line 58.
+  The two that DO run — `live_repo_indexes_deterministically` and
+  `live_repo_walk_respects_the_dogfood_nputerignore` — assert
+  `!file.path.starts_with("docs/")`, i.e. that docs/ is ABSENT. Calling
+  it a live-docs reader overstated it: a docs-only edit cannot move it on
+  `cargo test`.
+- **`lint-tokens.mjs` — I MIS-ATTRIBUTED IT.** It holds no repository
+  root at all; it is 36 lines that import `EXIT, lintTree, selftest` from
+  `token-scan.mjs`. The anchor and the CONTROL walk are in
+  `token-scan.mjs`, and my claim is right for that file alone.
+- **`registry.rs` — my claim stands**, and the executor promoted it to
+  the ledger's sharpest entry with the correct argument (the pair it
+  would contribute is already contributed by `tests/arch.rs:192`).
+
+So my supporting list was two-thirds wrong in one direction and missed a
+fourth in the other. The finding it supported (BLOCKING 1) never rested
+on it — it rested on `smoke.test.ts` and two reproduced mutants — but
+the record should say plainly that the sweep was weaker than the finding.
+
+---
+
+### BLOCKING 1 — CLEARED. It traced, and it did not over-owe
+
+Both of my mutants re-run against `fda5c92`, one-sided, text read back,
+restored by byte copy and proved by hash, drilled at the commit.
+
+    perl -pi -e 's/App shell \+ board/App shell and board/ if $. == 5' docs/ROADMAP.md
+    # read back: "- F-02: App shell and board — …"   git diff --stat: 1 file
+    docs-gate.mjs docs/ROADMAP.md  -> EXIT 1
+      npm test from tools/e2e/
+      npx vitest run from lib/parser/          <- WAS ABSENT, NOW PRESENT
+      <- rejected-exclusion.test.ts, smoke.test.ts, shell-frame, window-contract
+    npx vitest run from lib/parser -> 262/263 PARSER_EXIT=1 (smoke.test.ts) — now NAMED
+    restored: sha256 0752482f5e8d…b109, git status clean
+
+    perl -pi -e 's/^name: lib-parser$/name: lib-parser-renamed/' …/C-06-lib-parser.md
+    docs-gate.mjs …/C-06-lib-parser.md -> EXIT 1, four commands including
+      npx vitest run from lib/parser/          <- WAS ABSENT, NOW PRESENT
+
+**Proportionality survived, which is the third way's whole justification.**
+Measured on the rebuild:
+
+    docs/rooms/…md                 -> 1  [tools/e2e]
+    docs/CONVENTIONS.md            -> 2  [cargo, tools/e2e]        not the app suite
+    docs/tasks/T-999-x.md          -> 3  [app, tools/e2e, parser]
+    docs/ROADMAP.md                -> 2  (was 1 — correctly grew)
+    docs/architecture/components/  -> 4  (was 3 — correctly grew)
+    docs/architecture/graph.json   -> 1
+    docs/design/…, docs/decisions/ -> 1 each
+
+**And it did not become over-owing.** The callee `lib/parser/src/project.ts`
+is NOT credited; `app/src-tauri/src/docs_watch.rs` (a user project's
+root) is NOT credited. I planted the discriminator myself: a file whose
+only call is `parseProject(fixture('rejected-project'))` is **not**
+credited, while one whose call is `parseProject(repoRoot)` **is**, with
+exactly `docs/ROADMAP.md docs/architecture/components docs/tasks`. The
+arm discriminates on the ARGUMENT, not on the callee's name.
+`rejected-exclusion.test.ts`'s new credit is earned — line 56 really is
+`parseProject(repoRoot)`.
+
+Readers **9 → 11** with no list edited.
+
+---
+
+### BLOCKING 2 — CLEARED as code; the ACCOUNT overstates itself
+
+**The fix is real. I re-planted both of my original falsifiers:**
+
+    tools/e2e/tests/zz-m7b-imported-anchor.spec.ts
+      import { repoRoot } from "../preflight";
+      function fixtureRoot() { return repoRoot; }
+      const dir = join(fixtureRoot(), "docs/tasks");
+    tools/e2e/tests/zz-m7d-member-base.spec.ts
+      const cfg = { root: repoRoot };  const dir = join(cfg.root, "docs/tasks");
+
+    unlinkedFiles() -> BOTH reported.   (before the fix: neither)
+
+`rootAnchors()` now asks three ways and the two arms follow the same
+rules. **And the ledger is not vacuous**: planting
+`tests/zz_ledger_probe.rs` with `let root = common::repo_root();` moved
+`unaccountedRootAnchors()` 6 → 7 and the gate said, at **exit 1**,
+*"the root-anchor ACCOUNT and the tree disagree: + …/zz_ledger_probe.rs —
+holds the root, unargued"*. Removed; back to 6. `T-084-s7`'s description
+of that behaviour is accurate, verified rather than taken.
+
+**THE NEW FINDING — the bound's premise is false, and I falsified it.**
+`ROOT_ANCHOR_LEDGER`'s doc comment states: *"A file that holds this
+repository's root is the only kind of file that CAN read this
+repository's docs/."* That is a universal, and it is not true.
+
+    app/test/zz-falsifier-a.test.ts
+      const TASKS = resolve("../docs/tasks");        // from app/, this IS <root>/docs/tasks
+      export const count = readdirSync(TASKS).length;
+    app/test/zz-falsifier-b.test.ts
+      const TASKS = path.join(process.cwd(), "..", "docs", "tasks");
+
+    root-anchored files: 24   (unchanged — NEITHER is anchored)
+    readers: 11               (unchanged — neither is derived)
+    unlinkedFiles():   []     (neither reported)
+    unaccountedRootAnchors(): 6 (unchanged)
+
+Both read this repository's `docs/tasks` off the live tree; both hold no
+root by name; both escape all four mechanisms in silence. The cause is
+that the site rule's FIRST half — first literal segment is `docs`, which
+exists to keep `shell.ts`'s fixture tree out — also excludes any docs
+path expressed relative to a package directory, even though
+`resolve('<rel>')` against the package dir is already in `ROOT_FORMS`.
+
+**Why this is a finding and not a third rejection.** The shape is absent
+from the tree: `resolve("../` and `resolve('../` return **zero** hits
+across all first-party source, so the ledger's 24 and its residual 6 are
+CORRECT at this ref and every entry re-derived. The sentence is in a code
+comment, not in `docs/CONVENTIONS.md`, whose DOCS GATE bullet claims no
+such universal. And a second rejection would trip the two-rejection rule
+over a claim with zero present consequence, which is the wrong thing to
+spend that escalation on.
+
+**But it is one character from an established idiom.** The package-dir
+form `resolve("dist/assets")` / `resolve("test/fixtures/genesis")` /
+`resolve("src-tauri/tauri.conf.json")` appears **9 times across 5 files**
+in `app/test` alone; none of them carries a `..` today. The integrator
+should downgrade the sentence to what the mechanism actually supports —
+a bound over files that NAME the root — and `T-084-s8` carries the code
+arm (accept a package-dir-relative path whose resolved first segment
+under the root is `docs`).
+
+---
+
+### BLOCKING 3 — removing the digit is the RIGHT answer, not an evasion
+
+I asked for "pin it or derive it" and got a third thing; it is the better
+half of the two I offered. The bullet now carries **no digits at all**
+and points at `docs-gate.mjs --census`. I ran it:
+
+    docs-gate: census — 117 docs-shaped sites in 22 files, 11 of them in 9 files
+    root-anchored; 24 files hold the repository root (11 derived, 0 unlinked,
+    13 with no docs site this scan can link)          CENSUS_EXIT=0
+
+Independently re-counted by hand off the tree in my first verdict: eleven
+in nine. It reproduces.
+
+The reasoning holds and I checked it rather than accepted it: a pinned
+digit in `docs/CONVENTIONS.md` would red the lane for any future card
+that adds a docs-shaped site anywhere in the tree, and the remedy would
+be an edit to CONVENTIONS — out of fence for most lanes. That is a gate
+whose fix its own trigger forbids, which is precisely the shape
+`T-084-s7` is filed about. **Deriving it removes the staleness class
+rather than moving it.** And the bullet does not quietly correct the
+error — it records it: *"claimed twelve root-anchored where the tree held
+eleven — at that ref, at the tip, and counted by hand"*, plus the note
+that it had been relayed into two further documents before anyone
+re-measured. That is the right way to retire a wrong figure.
+
+---
+
+### `T-084-s7` — the trade is ACCEPTABLE
+
+The ledger sits in `tools/e2e` and four of six entries argue about
+`app/src-tauri`, so a lane fenced elsewhere can red it and be unable to
+discharge it in fence. **Chosen loudly over silently, which is this
+card's entire thesis**, and the red names the file and the reason —
+verified above, not assumed. Of the three shapes weighed:
+
+- **1 (move the ledger into `docs/`)** is the one to refuse, and the
+  executor's own reason is the right one: it puts a code input under
+  `docs/`, which this gate would then have to own recursively, and it
+  turns a frozen constant into text nobody type-checks.
+- **2 (narrow to the current diff)** breaks the invariant that makes
+  `docs-gate.mjs` trustworthy — it takes PATHS and forms no opinion about
+  which two commits a diff means. Do not take it.
+- **3 (leave it; let the room happen)** is right for now: 24 root-anchored
+  files, 6 unaccounted, growing slowly. A room per occurrence is cheaper
+  than either mechanism.
+
+The multiplier `s7` names is real: while `T-084-s2` stands, this only
+bites a lane that runs the e2e suite. If `s2` is ever taken, re-weigh 3.
+
+### `T-084-s6` — addressed, verified
+
+    docs-gate.mjs                -> EXIT 2  "NO PATHS GIVEN … An empty path list is
+                                    not a clean gate; it is a range that produced nothing."
+    docs-gate.mjs --bogus        -> EXIT 2
+    docs-gate.mjs app/src/main.tsx -> EXIT 0
+    docs-gate.mjs <a docs path>  -> EXIT 1
+    docs-gate.mjs --census       -> EXIT 0
+
+All four codes distinct and correct, and `--census` is the one accepted
+flag. The `xargs`-splitting arm is left open exactly as `s6` describes.
+
+### Suites at `fda5c92`, every code read from its own `$?`
+
+- `npm run build` from lib/parser **PARSER_BUILD_EXIT=0**; `npm run build`
+  from app **APP_BUILD_EXIT=0**. Both prerequisites, in that order.
+- app **831/831 across 42 files, APP_TEST_EXIT=0**.
+- parser **263/263 across 12 files, PARSER_EXIT=0**; `tsc --noEmit`
+  **PARSER_TSC_EXIT=0**.
+- cargo, bare `cargo test --no-fail-fast`: **352 passed / 0 failed /
+  3 ignored** summed over **15** `test result:` lines,
+  **CARGO_TEST_EXIT=0**.
+- lane **121/121, E2E_EXIT=0**, scratch port 14721 bind-probed free —
+  114 before plus **7** new bodies, **30** in `docs-input-gate.spec.ts`;
+  `tsc --noEmit` **E2E_TYPECHECK_EXIT=0**.
+- token lint **LINT_TOKENS_EXIT=0** *(TOKEN 122, CONTROL **573** — 571 at
+  my first verdict, plus `T-084-s6` and `T-084-s7`)*; `--selftest`
+  **LINT_SELFTEST_EXIT=0**.
+- `index --check` **INDEX_CHECK_EXIT=0**, *576235 bytes, 118 files,
+  996 symbols, 1520 edges* — unmoved.
+- The lane's seven plant targets hashed before and re-checked after:
+  all seven **OK**, `git status --porcelain` empty at every plant/restore
+  boundary. Nothing bound, connected to or signalled 1420 — read once
+  with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else; app pid
+  **85379** and vite **82549** untouched.
+
+### Filed
+
+**`T-084-s8`** — a docs path expressed relative to a PACKAGE directory
+(`resolve("../docs/tasks")` from app/) reads this repo's docs/, holds no
+root, and is invisible to the site scan, the tripwire and the ledger;
+with the one-word correction the account's sentence needs.
