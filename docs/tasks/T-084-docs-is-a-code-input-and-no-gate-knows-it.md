@@ -11,7 +11,7 @@ touches: [docs/CONVENTIONS.md, tools/e2e]
 builder:
 verifier: claude-opus-5
 built_by: claude-opus-5 @T-084 (re-built after the rejection by claude-opus-5 @T-084-fix)
-verified_by: claude-opus-5 @T-084-verify
+verified_by: claude-opus-5 @T-084-verify (re-verified @T-084-verify2, 2026-08-20)
 review: same-model
 ---
 
@@ -1304,3 +1304,259 @@ and *"Ask the gate; do not predict"* is an instruction to trust it.
 
 Re-verification needs mutants 1 and 2 above run against the fix, plus
 the four suites.
+
+### 2026-08-20 — APPROVED (claude-opus-5 @T-084-verify2, review: same-model)
+
+**All three blocking findings are fixed, and I re-ran my own falsifiers
+against the fix rather than reading the notes.** One new finding, filed
+rather than blocking, and one correction to MY OWN first verdict that
+the executor was right to make.
+
+**Range re-derived at the new main, dot counts stated.** Main `7f2f873`,
+tip `fda5c92`, `git merge-base 7f2f873 fda5c92` = **`e83ee1d`**.
+
+    git merge-tree --write-tree 7f2f873 fda5c92 -> tree 4c7ba071…, MERGE_TREE_EXIT=0
+    git diff --name-only 7f2f873 <TREE>                   -> 14   PRESCRIBED
+    git diff --name-only 7f2f873...fda5c92 (THREE dots)   -> 14   cmp vs base two-dot: exit 0
+    git diff --name-only e83ee1d..fda5c92  (TWO dots)     -> 14   base-relative
+    git diff --name-only 7f2f873..fda5c92  (TWO dots)     -> 49   THE FORBIDDEN FORM
+    main advance e83ee1d...7f2f873                        -> 35 ; comm -12 = 0 ; 35 + 14 = 49
+
+Disjoint, so `merge-tree` exits 0 rather than reporting a conflict. The
+coordinator's figures reproduce exactly.
+
+---
+
+### FIRST: the correction to my own sweep, because it lands on me
+
+My first verdict listed three readers the derivation missed. **The
+executor is right on all three counts, and I was wrong twice.**
+
+- **`tests/perf.rs` — I MISSED IT.** `copy_repo_to` does
+  `copy_dir(&common::repo_root(), dst)`, copying the whole tree with
+  `docs/` in it. Both of its root uses are INLINE calls; neither is a
+  `let` binding — **which is exactly why my sweep could not see it,
+  because my sweep read `ctx.bindings` only.** I was reporting that
+  asymmetry as BLOCKING 2 while my own probe was subject to it. It is
+  `#[ignore]`d at line 53 ("perf harness: run on a release build"), so
+  nothing moves on bare `cargo test`.
+- **`tests/self_graph.rs` — I WAS WRONG.** The only body that reads a
+  path under `docs/` is `self_graph_is_current`, `#[ignore]`d at line 58.
+  The two that DO run — `live_repo_indexes_deterministically` and
+  `live_repo_walk_respects_the_dogfood_nputerignore` — assert
+  `!file.path.starts_with("docs/")`, i.e. that docs/ is ABSENT. Calling
+  it a live-docs reader overstated it: a docs-only edit cannot move it on
+  `cargo test`.
+- **`lint-tokens.mjs` — I MIS-ATTRIBUTED IT.** It holds no repository
+  root at all; it is 36 lines that import `EXIT, lintTree, selftest` from
+  `token-scan.mjs`. The anchor and the CONTROL walk are in
+  `token-scan.mjs`, and my claim is right for that file alone.
+- **`registry.rs` — my claim stands**, and the executor promoted it to
+  the ledger's sharpest entry with the correct argument (the pair it
+  would contribute is already contributed by `tests/arch.rs:192`).
+
+So my supporting list was two-thirds wrong in one direction and missed a
+fourth in the other. The finding it supported (BLOCKING 1) never rested
+on it — it rested on `smoke.test.ts` and two reproduced mutants — but
+the record should say plainly that the sweep was weaker than the finding.
+
+---
+
+### BLOCKING 1 — CLEARED. It traced, and it did not over-owe
+
+Both of my mutants re-run against `fda5c92`, one-sided, text read back,
+restored by byte copy and proved by hash, drilled at the commit.
+
+    perl -pi -e 's/App shell \+ board/App shell and board/ if $. == 5' docs/ROADMAP.md
+    # read back: "- F-02: App shell and board — …"   git diff --stat: 1 file
+    docs-gate.mjs docs/ROADMAP.md  -> EXIT 1
+      npm test from tools/e2e/
+      npx vitest run from lib/parser/          <- WAS ABSENT, NOW PRESENT
+      <- rejected-exclusion.test.ts, smoke.test.ts, shell-frame, window-contract
+    npx vitest run from lib/parser -> 262/263 PARSER_EXIT=1 (smoke.test.ts) — now NAMED
+    restored: sha256 0752482f5e8d…b109, git status clean
+
+    perl -pi -e 's/^name: lib-parser$/name: lib-parser-renamed/' …/C-06-lib-parser.md
+    docs-gate.mjs …/C-06-lib-parser.md -> EXIT 1, four commands including
+      npx vitest run from lib/parser/          <- WAS ABSENT, NOW PRESENT
+
+**Proportionality survived, which is the third way's whole justification.**
+Measured on the rebuild:
+
+    docs/rooms/…md                 -> 1  [tools/e2e]
+    docs/CONVENTIONS.md            -> 2  [cargo, tools/e2e]        not the app suite
+    docs/tasks/T-999-x.md          -> 3  [app, tools/e2e, parser]
+    docs/ROADMAP.md                -> 2  (was 1 — correctly grew)
+    docs/architecture/components/  -> 4  (was 3 — correctly grew)
+    docs/architecture/graph.json   -> 1
+    docs/design/…, docs/decisions/ -> 1 each
+
+**And it did not become over-owing.** The callee `lib/parser/src/project.ts`
+is NOT credited; `app/src-tauri/src/docs_watch.rs` (a user project's
+root) is NOT credited. I planted the discriminator myself: a file whose
+only call is `parseProject(fixture('rejected-project'))` is **not**
+credited, while one whose call is `parseProject(repoRoot)` **is**, with
+exactly `docs/ROADMAP.md docs/architecture/components docs/tasks`. The
+arm discriminates on the ARGUMENT, not on the callee's name.
+`rejected-exclusion.test.ts`'s new credit is earned — line 56 really is
+`parseProject(repoRoot)`.
+
+Readers **9 → 11** with no list edited.
+
+---
+
+### BLOCKING 2 — CLEARED as code; the ACCOUNT overstates itself
+
+**The fix is real. I re-planted both of my original falsifiers:**
+
+    tools/e2e/tests/zz-m7b-imported-anchor.spec.ts
+      import { repoRoot } from "../preflight";
+      function fixtureRoot() { return repoRoot; }
+      const dir = join(fixtureRoot(), "docs/tasks");
+    tools/e2e/tests/zz-m7d-member-base.spec.ts
+      const cfg = { root: repoRoot };  const dir = join(cfg.root, "docs/tasks");
+
+    unlinkedFiles() -> BOTH reported.   (before the fix: neither)
+
+`rootAnchors()` now asks three ways and the two arms follow the same
+rules. **And the ledger is not vacuous**: planting
+`tests/zz_ledger_probe.rs` with `let root = common::repo_root();` moved
+`unaccountedRootAnchors()` 6 → 7 and the gate said, at **exit 1**,
+*"the root-anchor ACCOUNT and the tree disagree: + …/zz_ledger_probe.rs —
+holds the root, unargued"*. Removed; back to 6. `T-084-s7`'s description
+of that behaviour is accurate, verified rather than taken.
+
+**THE NEW FINDING — the bound's premise is false, and I falsified it.**
+`ROOT_ANCHOR_LEDGER`'s doc comment states: *"A file that holds this
+repository's root is the only kind of file that CAN read this
+repository's docs/."* That is a universal, and it is not true.
+
+    app/test/zz-falsifier-a.test.ts
+      const TASKS = resolve("../docs/tasks");        // from app/, this IS <root>/docs/tasks
+      export const count = readdirSync(TASKS).length;
+    app/test/zz-falsifier-b.test.ts
+      const TASKS = path.join(process.cwd(), "..", "docs", "tasks");
+
+    root-anchored files: 24   (unchanged — NEITHER is anchored)
+    readers: 11               (unchanged — neither is derived)
+    unlinkedFiles():   []     (neither reported)
+    unaccountedRootAnchors(): 6 (unchanged)
+
+Both read this repository's `docs/tasks` off the live tree; both hold no
+root by name; both escape all four mechanisms in silence. The cause is
+that the site rule's FIRST half — first literal segment is `docs`, which
+exists to keep `shell.ts`'s fixture tree out — also excludes any docs
+path expressed relative to a package directory, even though
+`resolve('<rel>')` against the package dir is already in `ROOT_FORMS`.
+
+**Why this is a finding and not a third rejection.** The shape is absent
+from the tree: `resolve("../` and `resolve('../` return **zero** hits
+across all first-party source, so the ledger's 24 and its residual 6 are
+CORRECT at this ref and every entry re-derived. The sentence is in a code
+comment, not in `docs/CONVENTIONS.md`, whose DOCS GATE bullet claims no
+such universal. And a second rejection would trip the two-rejection rule
+over a claim with zero present consequence, which is the wrong thing to
+spend that escalation on.
+
+**But it is one character from an established idiom.** The package-dir
+form `resolve("dist/assets")` / `resolve("test/fixtures/genesis")` /
+`resolve("src-tauri/tauri.conf.json")` appears **9 times across 5 files**
+in `app/test` alone; none of them carries a `..` today. The integrator
+should downgrade the sentence to what the mechanism actually supports —
+a bound over files that NAME the root — and `T-084-s8` carries the code
+arm (accept a package-dir-relative path whose resolved first segment
+under the root is `docs`).
+
+---
+
+### BLOCKING 3 — removing the digit is the RIGHT answer, not an evasion
+
+I asked for "pin it or derive it" and got a third thing; it is the better
+half of the two I offered. The bullet now carries **no digits at all**
+and points at `docs-gate.mjs --census`. I ran it:
+
+    docs-gate: census — 117 docs-shaped sites in 22 files, 11 of them in 9 files
+    root-anchored; 24 files hold the repository root (11 derived, 0 unlinked,
+    13 with no docs site this scan can link)          CENSUS_EXIT=0
+
+Independently re-counted by hand off the tree in my first verdict: eleven
+in nine. It reproduces.
+
+The reasoning holds and I checked it rather than accepted it: a pinned
+digit in `docs/CONVENTIONS.md` would red the lane for any future card
+that adds a docs-shaped site anywhere in the tree, and the remedy would
+be an edit to CONVENTIONS — out of fence for most lanes. That is a gate
+whose fix its own trigger forbids, which is precisely the shape
+`T-084-s7` is filed about. **Deriving it removes the staleness class
+rather than moving it.** And the bullet does not quietly correct the
+error — it records it: *"claimed twelve root-anchored where the tree held
+eleven — at that ref, at the tip, and counted by hand"*, plus the note
+that it had been relayed into two further documents before anyone
+re-measured. That is the right way to retire a wrong figure.
+
+---
+
+### `T-084-s7` — the trade is ACCEPTABLE
+
+The ledger sits in `tools/e2e` and four of six entries argue about
+`app/src-tauri`, so a lane fenced elsewhere can red it and be unable to
+discharge it in fence. **Chosen loudly over silently, which is this
+card's entire thesis**, and the red names the file and the reason —
+verified above, not assumed. Of the three shapes weighed:
+
+- **1 (move the ledger into `docs/`)** is the one to refuse, and the
+  executor's own reason is the right one: it puts a code input under
+  `docs/`, which this gate would then have to own recursively, and it
+  turns a frozen constant into text nobody type-checks.
+- **2 (narrow to the current diff)** breaks the invariant that makes
+  `docs-gate.mjs` trustworthy — it takes PATHS and forms no opinion about
+  which two commits a diff means. Do not take it.
+- **3 (leave it; let the room happen)** is right for now: 24 root-anchored
+  files, 6 unaccounted, growing slowly. A room per occurrence is cheaper
+  than either mechanism.
+
+The multiplier `s7` names is real: while `T-084-s2` stands, this only
+bites a lane that runs the e2e suite. If `s2` is ever taken, re-weigh 3.
+
+### `T-084-s6` — addressed, verified
+
+    docs-gate.mjs                -> EXIT 2  "NO PATHS GIVEN … An empty path list is
+                                    not a clean gate; it is a range that produced nothing."
+    docs-gate.mjs --bogus        -> EXIT 2
+    docs-gate.mjs app/src/main.tsx -> EXIT 0
+    docs-gate.mjs <a docs path>  -> EXIT 1
+    docs-gate.mjs --census       -> EXIT 0
+
+All four codes distinct and correct, and `--census` is the one accepted
+flag. The `xargs`-splitting arm is left open exactly as `s6` describes.
+
+### Suites at `fda5c92`, every code read from its own `$?`
+
+- `npm run build` from lib/parser **PARSER_BUILD_EXIT=0**; `npm run build`
+  from app **APP_BUILD_EXIT=0**. Both prerequisites, in that order.
+- app **831/831 across 42 files, APP_TEST_EXIT=0**.
+- parser **263/263 across 12 files, PARSER_EXIT=0**; `tsc --noEmit`
+  **PARSER_TSC_EXIT=0**.
+- cargo, bare `cargo test --no-fail-fast`: **352 passed / 0 failed /
+  3 ignored** summed over **15** `test result:` lines,
+  **CARGO_TEST_EXIT=0**.
+- lane **121/121, E2E_EXIT=0**, scratch port 14721 bind-probed free —
+  114 before plus **7** new bodies, **30** in `docs-input-gate.spec.ts`;
+  `tsc --noEmit` **E2E_TYPECHECK_EXIT=0**.
+- token lint **LINT_TOKENS_EXIT=0** *(TOKEN 122, CONTROL **573** — 571 at
+  my first verdict, plus `T-084-s6` and `T-084-s7`)*; `--selftest`
+  **LINT_SELFTEST_EXIT=0**.
+- `index --check` **INDEX_CHECK_EXIT=0**, *576235 bytes, 118 files,
+  996 symbols, 1520 edges* — unmoved.
+- The lane's seven plant targets hashed before and re-checked after:
+  all seven **OK**, `git status --porcelain` empty at every plant/restore
+  boundary. Nothing bound, connected to or signalled 1420 — read once
+  with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else; app pid
+  **85379** and vite **82549** untouched.
+
+### Filed
+
+**`T-084-s8`** — a docs path expressed relative to a PACKAGE directory
+(`resolve("../docs/tasks")` from app/) reads this repo's docs/, holds no
+root, and is invisible to the site scan, the tripwire and the ledger;
+with the one-word correction the account's sentence needs.
