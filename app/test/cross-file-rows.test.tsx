@@ -113,6 +113,12 @@ function mountAndApply(p: DocsSnapshotPayload): void {
   });
 }
 
+function apply(p: DocsSnapshotPayload): void {
+  act(() => {
+    window.__nputerDocsHarness?.apply(p);
+  });
+}
+
 const q = (selector: string): HTMLElement | null =>
   container.querySelector<HTMLElement>(selector);
 
@@ -282,6 +288,45 @@ describe("the strip does not say the same thing twice (T-077 criterion 1)", () =
     expect(countsLine()).toContain("3 issues");
     expect(rows().length).toBe(2);
     expect(strip()!.querySelectorAll("li").length).toBe(3);
+  });
+
+  it("and a cross-file issue naming ONE failing file and one healthy file survives too", () => {
+    // THE DRILL ASKED FOR THIS BODY. Swapping `every` for `some` in the
+    // represented test left the whole suite green: nothing here named a
+    // MIX of failing and healthy files, so the two spellings were
+    // indistinguishable. They are not equivalent, and the difference is
+    // reachable — a file that failed AFTER banking a good parse is in
+    // `failures` while its last-good RECORD is still in the model, so a
+    // cross-file issue can name it beside a perfectly healthy file.
+    // Under `some` the human loses that report entirely.
+    const bank = [
+      { path: "docs/ROADMAP.md", content: HEALTHY_ROADMAP },
+      { path: "docs/tasks/T-100-a.md", content: task("T-100", "F-01") },
+      { path: "docs/tasks/T-200-b.md", content: task("T-200", "F-01") },
+    ];
+    mountAndApply(payload(bank));
+    expect(strip(), "the banked snapshot is clean").toBeNull();
+
+    apply(
+      payload([
+        bank[0]!,
+        // Broken NOW, good a moment ago: it renders its last valid state
+        // and is in `failures`.
+        { path: "docs/tasks/T-100-a.md", content: "# no frontmatter" },
+        // Healthy, and it has just claimed the other file's id.
+        { path: "docs/tasks/T-200-b.md", content: task("T-100", "F-01") },
+      ]),
+    );
+
+    expect(attr("data-failure-count")).toBe("1");
+    expect(strip()!.textContent, "the failing file kept its record").toContain(
+      "showing last valid state",
+    );
+    const duplicate = rows().filter((row) => row.getAttribute("data-issue-kind") === "duplicate-id");
+    expect(duplicate.length, "the collision is reported, not swallowed").toBe(1);
+    expect((duplicate[0]!.textContent ?? "").split(" — ")[0]).toBe(
+      "task duplicate-id · docs/tasks/T-100-a.md · docs/tasks/T-200-b.md",
+    );
   });
 });
 
