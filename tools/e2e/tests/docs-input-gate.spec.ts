@@ -1,28 +1,36 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
 import { repoRoot } from "../preflight";
 import {
+  CALL_SAMPLES,
   DISPOSITION_RULING,
   DOCS_EXCLUDED_FILES,
+  ROOT_ANCHOR_LEDGER,
   ROOT_FORMS,
   SITE_SAMPLES,
   SUITES,
   TASK_STATUS_SOURCE,
+  callSelftest,
   conventionsBullet,
   conventionsText,
   docsGate,
   docsReaders,
   docsSites,
+  siteCensus,
   siteSelftest,
   frontmatterBlock,
   isTaskCardPath,
   liveTaskCards,
   nearMisses,
+  rootAnchoredFiles,
   stripComments,
+  suitesOwedForAllOfDocs,
   taskCardIssues,
   taskStatuses,
+  unaccountedRootAnchors,
   unlinkedFiles,
 } from "../scripts/docs-scan.mjs";
 
@@ -105,6 +113,58 @@ test("the two readers the card names are derived, and they are NOT all of them",
   expect(files.length).toBeGreaterThan(2);
 });
 
+test("a body that hands the root to a first-party call is a reader, and names every prefix that call spends", () => {
+  // THE REJECTION, AS A PIN. `lib/parser/test/smoke.test.ts` spells no
+  // docs path: it calls `parseProject(repoRoot)`, and
+  // `lib/parser/src/project.ts` spends that root on THREE. With the
+  // literal arm alone, a one-line edit to docs/ROADMAP.md owed exactly
+  // `npm test` from tools/e2e — 114/114 at exit 0 — while
+  // `npx vitest run` from lib/parser went 262/263 at exit 1 in a suite
+  // the answer never named. AC2 says a reader is any body that RESOLVES
+  // a path under docs/ against the repository root; resolving it through
+  // a callee is still resolving it.
+  const smoke = READERS.find((r) => r.file === "lib/parser/test/smoke.test.ts");
+  expect(smoke, "smoke.test.ts is derived").toBeDefined();
+  expect(smoke!.via.join(" "), "and it is derived by the CALL arm").toContain("call parseProject()");
+  expect(smoke!.prefixes).toEqual([
+    "docs/ROADMAP.md",
+    "docs/architecture/components",
+    "docs/tasks",
+  ]);
+  expect(smoke!.command).toBe("npx vitest run");
+  // The two mutants from the verdict, as answers rather than anecdotes.
+  expect(docsGate(["docs/ROADMAP.md"], READERS).commands).toContain("npx vitest run from lib/parser/");
+  expect(
+    docsGate(["docs/architecture/components/C-06-lib-parser.md"], READERS).commands,
+  ).toContain("npx vitest run from lib/parser/");
+});
+
+test("the CALLEE is not a reader — a root that arrives as a parameter is somebody else's project", () => {
+  // The half that keeps the call arm from swallowing the tree.
+  // `parseProject` forms all three docs paths off its own PARAMETER, and
+  // that parameter is a user's project root, not this one. If the arm
+  // credited the callee, every file in lib/parser/src would be a reader
+  // and the answer would stop being proportional.
+  const files = READERS.map((r) => r.file);
+  expect(files).not.toContain("lib/parser/src/project.ts");
+  const project = readFileSync(path.join(repoRoot, "lib/parser/src/project.ts"), "utf8");
+  expect(project, "the callee really does form the docs paths").toContain("'docs', 'ROADMAP.md'");
+});
+
+test("the call sample set is green, with a Rust positive and a DEFAULTED-root positive", () => {
+  // Same discipline as the site samples: fragments lexed exactly as a
+  // file is, with an evidence floor so deleting a sample cannot delete
+  // its own failure. The two floors that matter are the shapes the arm
+  // would otherwise miss silently — Rust's borrowed root, and a helper
+  // whose root is a DEFAULT parameter called with no argument at all
+  // (which is every entry point in docs-scan.mjs, and how this very
+  // spec reads docs/CONVENTIONS.md).
+  const rows = callSelftest();
+  expect(rows.filter(([, ok]) => !ok).map(([what]) => what)).toEqual([]);
+  expect(rows.length).toBeGreaterThan(8);
+  expect(CALL_SAMPLES.filter((s) => s.prefixes.length === 0).length).toBeGreaterThan(2);
+});
+
 test("nothing forms a repo-root docs path that the derivation could not link", () => {
   // THE SILENT-MISS TRIPWIRE. A file that both computes the repository
   // root and forms a `docs`-first path, where no site's base resolved to
@@ -113,6 +173,81 @@ test("nothing forms a repo-root docs path that the derivation could not link", (
   // so rather than dropping it, because a gate that goes quiet is the
   // failure this whole card is about.
   expect(unlinkedFiles()).toEqual([]);
+});
+
+test("the tripwire's ANCHOR arm follows imports, exactly as its site arm always did", () => {
+  // THE ASYMMETRY, AS A PIN, off the real tree rather than a plant.
+  // `tools/e2e/tests/boot-check-guard.spec.ts` names the repository root
+  // ONLY by `import { repoRoot } from "../preflight"` — it has no local
+  // binding that evaluates to the root. An anchor scan that read
+  // `ctx.bindings` alone did not see it at all, so a file with an
+  // IMPORTED root and a docs site the scanner could not link produced a
+  // site the scanner SAW and a report it did NOT MAKE. That idiom is how
+  // most of this package names its root.
+  const rel = "tools/e2e/tests/boot-check-guard.spec.ts";
+  const source = readFileSync(path.join(repoRoot, rel), "utf8");
+  expect(source, "the root really is imported").toContain('import { repoRoot } from "../preflight"');
+  expect(source, "and really is not bound locally").not.toMatch(/(?:const|let|var)\s+repoRoot\s*=/);
+  const entry = rootAnchoredFiles().find((f) => f.file === rel);
+  expect(entry, `${rel} is seen to hold the repository root`).toBeDefined();
+  expect(entry!.anchors).toContain("repoRoot");
+});
+
+test("THE ACCOUNT and the tree agree — every root-anchored file is derived, reported, or argued", () => {
+  // WHAT BOUNDS THE BLIND SPOT. Only a file holding this repository's
+  // root can read this repository's docs/, so `rootAnchoredFiles()` is
+  // the whole population. Of those it does not derive, the ones whose
+  // SUITE is already owed for every path under docs/ cannot shorten an
+  // answer; what is left is `unaccountedRootAnchors()`, and every member
+  // is argued by file in ROOT_ANCHOR_LEDGER. Asserting the two sets EQUAL
+  // is what keeps this an account rather than a sample: a new
+  // root-anchored file in app/, app/src-tauri or lib/parser reds by name
+  // and someone has to look at it.
+  const census = rootAnchoredFiles();
+  expect(census.length, "the census is non-trivial").toBeGreaterThan(10);
+  expect(new Set(census.map((f) => f.kind))).not.toContain("unlinked");
+  expect(suitesOwedForAllOfDocs(READERS)).toEqual(new Set(["tools/e2e"]));
+  expect([...unaccountedRootAnchors()].sort()).toEqual(
+    ROOT_ANCHOR_LEDGER.map((e) => e.file).sort(),
+  );
+  for (const entry of ROOT_ANCHOR_LEDGER) {
+    expect(entry.why.length, `${entry.file} carries an argument`).toBeGreaterThan(40);
+  }
+  // The ledger's one live READER: the pair it would contribute must
+  // already be produced by something the derivation DOES find, or the
+  // answer really is short. Derived, not asserted by hand.
+  const registry = ROOT_ANCHOR_LEDGER.find((e) => e.file.endsWith("arch/registry.rs"));
+  expect(registry!.reads).toBe("docs/architecture/components");
+  expect(
+    READERS.some((r) => r.suite === "app/src-tauri" && r.prefixes.includes(registry!.reads)),
+    "cargo test is already owed for the prefix registry.rs reads",
+  ).toBe(true);
+});
+
+test("the census is DERIVED, and the DOCS GATE bullet names the command instead of a digit", () => {
+  // BLOCKING 3, and the reason the fix is not a corrected digit. The
+  // bullet shipped "exactly TWELVE of them, in nine files, are
+  // root-anchored" at a named ref; the tree said ELEVEN at that ref, at
+  // the tip and by hand. Nothing derived it, so it was green and wrong,
+  // and it had been relayed into two further documents before anyone
+  // re-measured. A digit in prose CANNOT be pinned here without forcing
+  // an out-of-fence edit to docs/CONVENTIONS.md on any lane that adds a
+  // docs-shaped site — so the digits are gone and the bullet names the
+  // command that prints them.
+  const census = siteCensus();
+  expect(census.anchoredSites).toBeGreaterThan(0);
+  expect(census.anchoredFiles).toBeGreaterThan(0);
+  expect(census.anchoredSites, "root-anchored is a small share of docs-shaped").toBeLessThan(
+    census.sites / 2,
+  );
+  // Internal consistency: every file with a root-anchored SITE is a
+  // derived reader, and the reader set is at least that big — the call
+  // arm can only add.
+  expect(READERS.length).toBeGreaterThanOrEqual(census.anchoredFiles);
+  expect(DOCS_GATE_BULLET).toContain("docs-gate.mjs --census");
+  expect(DOCS_GATE_BULLET, "no transcribed site count").not.toMatch(
+    /\d+\s+docs-shaped sites in \d+ files/,
+  );
 });
 
 test("a docs path off a root that is NOT the repo root is not a reader", () => {
@@ -253,6 +388,40 @@ test("a path names the readers that read it, not a generic list", () => {
   expect(gate.byPath[0]!.readers).toContain("app/src-tauri/src/agent/kit.rs");
   expect(gate.byPath[0]!.readers).toContain("tools/e2e/tests/workflow-parity.spec.ts");
   expect(gate.byPath[0]!.readers).not.toContain("app/test/architecture-dogfood.test.ts");
+});
+
+test("the hand-run gate's exit codes hold, and an EMPTY path list is 2 and not 0", () => {
+  // T-084-s6, as a pin, driving the real binary the way an integrator
+  // does. The documented invocation pipes a range through `xargs`, and
+  // BSD `xargs` runs the utility once even when its input is empty — so
+  // a range command that FAILED arrived here as zero paths and was
+  // answered "this gate is not owed" at exit 0. A gate that reports
+  // CLEAN because it was told nothing is the exact costume this card
+  // exists to strip off silence.
+  const run = (args: string[]): { code: number; out: string } => {
+    try {
+      const out = execFileSync("node", ["tools/e2e/scripts/docs-gate.mjs", ...args], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      return { code: 0, out };
+    } catch (err) {
+      const e = err as { status?: number; stdout?: string; stderr?: string };
+      return { code: e.status ?? -1, out: `${e.stdout ?? ""}${e.stderr ?? ""}` };
+    }
+  };
+  const empty = run([]);
+  expect(empty.code, "no paths is CALLED WRONG, never a clean gate").toBe(2);
+  expect(empty.out).toContain("NO PATHS GIVEN");
+  expect(empty.out).toContain("a range that produced nothing");
+  expect(run(["--range", "a..b"]).code, "a range is still refused").toBe(2);
+  expect(run(["app/src/main.tsx"]).code, "a code-only diff owes nothing here").toBe(0);
+  expect(run(["docs/ROADMAP.md"]).code, "a docs path with a reader has a verdict").toBe(1);
+  const census = run(["--census"]);
+  expect(census.code, "--census reports and judges no diff").toBe(0);
+  expect(census.out).toContain("docs-gate: census —");
+  expect(census.out).toContain("no diff judged");
 });
 
 // ── 4. the frontmatter vocabulary ─────────────────────────────────────

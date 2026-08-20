@@ -683,31 +683,59 @@
   computes no range of its own — a second opinion about which two
   commits the diff means is the failure that rule exists to prevent).
   Exit 0 nothing owed, 1 the gate HAS a verdict (suites owed, or a live
-  card the parser will refuse, or both), 2 called wrong, 3 the gate
-  could not run — the same four codes `index --check` and
-  `boot:check` use. IF it cannot run THEN say so LOUDLY in the
-  checkpoint, naming the reason and the exit code; a skipped gate is
-  news, never silence. `tools/e2e/tests/docs-input-gate.spec.ts` is the
-  enforcing copy and it runs inside the lane TODAY, which makes this the
-  one standing gate whose written form is already held by something
-  other than discipline.
+  card the parser will refuse, or the root-anchor account and the tree
+  disagree), 2 called wrong, 3 the gate could not run — the same four
+  codes `index --check` and `boot:check` use. **AN EMPTY PATH LIST IS
+  EXIT 2, NOT EXIT 0** (T-084-s6): the invocation above pipes through
+  `xargs`, BSD `xargs` runs the utility once even on empty input, so a
+  range command that FAILED used to reach this gate as zero paths and be
+  answered "not owed" — silence wearing a clean gate's costume. IF it
+  cannot run THEN say so LOUDLY in the checkpoint, naming the reason and
+  the exit code; a skipped gate is news, never silence.
+  `tools/e2e/tests/docs-input-gate.spec.ts` is the enforcing copy and it
+  runs inside the lane TODAY, which makes this the one standing gate
+  whose written form is already held by something other than discipline.
   THE READER SET IS DERIVED FROM THE TREE, NEVER LISTED — that is the
   whole mechanism, and a hand list is the defect T-058 and T-080 each
   spent a card on. `tools/e2e/scripts/docs-scan.mjs` finds every tracked
-  source file containing a DOCS SITE: a path-forming call whose first
-  literal segment is `docs` AND whose base expression EVALUATES TO THE
-  REPOSITORY ROOT. BOTH HALVES ARE LOAD-BEARING and either alone is
-  wrong, which is why the enumeration is code and not prose: at
-  `e83ee1d` the tree holds **117 docs-shaped sites in 22 files** and
-  exactly **twelve of them, in nine files, are root-anchored**. The
-  first half is what keeps `tools/e2e/fixtures/shell.ts` out — it joins
-  the REPO ROOT with a path ENDING in `docs`, but its first segment is
-  `app`, so it reads a fixture tree. The second is what keeps
-  `lib/parser/test/files.test.ts` out — it joins a base computed from
-  `import.meta.url`, so any "mentions import.meta.url" heuristic calls
-  it a reader, and it resolves to that suite's own fixtures directory.
+  source file that RESOLVES a path under docs/ against this repository's
+  root, by either of two arms. A DOCS SITE: a path-forming call in the
+  file whose first literal segment is `docs` AND whose base expression
+  EVALUATES TO THE REPOSITORY ROOT — both halves load-bearing, either
+  alone wrong. Or a CALL SITE: a call that HANDS the repository root to a
+  first-party function which spends it on a docs path.
+  **THE SECOND ARM IS NOT A REFINEMENT, IT IS THE DIFFERENCE BETWEEN A
+  RIGHT ANSWER AND A WRONG ONE.** `lib/parser/test/smoke.test.ts` spells
+  no docs path at all; it calls `parseProject(repoRoot)`, and
+  `lib/parser/src/project.ts` spends that root on docs/tasks,
+  docs/ROADMAP.md and docs/architecture/components. With the literal arm
+  alone, a one-line edit to docs/ROADMAP.md owed `npm test` from
+  tools/e2e (114/114, exit 0) while the parser suite went 262/263 at exit
+  1 — the gate named a green suite while a red one went unmentioned.
+  The site rule's first half is what keeps `tools/e2e/fixtures/shell.ts`
+  out — it joins the REPO ROOT with a path ENDING in `docs`, but its
+  first segment is `app`, so it reads a fixture tree. The second is what
+  keeps `lib/parser/test/files.test.ts` out — it joins a base computed
+  from `import.meta.url`, so any "mentions import.meta.url" heuristic
+  calls it a reader, and it resolves to that suite's own fixtures
+  directory.
   **A file that does BOTH and cannot be linked is REPORTED, never
-  dropped**: silence is the outcome this gate exists to remove.
+  dropped**: silence is the outcome this gate exists to remove. The
+  reporting arm follows IMPORTS as well as local bindings, because
+  `import { repoRoot } from "../preflight"` is how most of this tree
+  names its root and an arm that only read local bindings was vacuous
+  one step out.
+  **NO COUNT IS TRANSCRIBED INTO THIS BULLET, AND THAT IS THE POINT.**
+  It used to carry the site census here as digits at a named ref, and
+  claimed **twelve** root-anchored where the tree held **eleven** — at
+  that ref, at the tip, and counted by hand. Nothing derived the figure,
+  so it was green and wrong, and it had been relayed into two further
+  documents before anyone re-measured. Run
+  `node tools/e2e/scripts/docs-gate.mjs --census` from the repo root: it
+  prints the site census, the reader set with the arm that found each,
+  the root-anchor classification and the residual, and it cannot be
+  stale because it is not written down. **THE FIGURE THAT REPRODUCES IS
+  THE ONLY KIND WORTH QUOTING**, and this bullet quotes none.
   THE FOUR SUITES the derived readers sit in, listed so a reader knows
   the shape and re-derivable so nobody quotes them: `npm test from app/`
   (the two dogfood bodies), `npx vitest run from lib/parser/` (its own

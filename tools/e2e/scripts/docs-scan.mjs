@@ -42,11 +42,38 @@
  * window-contract.spec.ts already take to read `docs/` itself.
  *
  * ── THE DERIVATION ───────────────────────────────────────────────────
- * A DOCS READER is a tracked source file containing a DOCS SITE: a
- * path-forming call whose first string-literal path segment is `docs`
- * and whose base expression EVALUATES TO THE REPOSITORY ROOT.
+ * A DOCS READER is a tracked source file that resolves a path under
+ * `docs/` against THIS repository's root, in either of two ways:
  *
- * Both halves are load-bearing and each one alone is wrong:
+ *   A DOCS SITE — a path-forming call in the file itself whose first
+ *   string-literal path segment is `docs` and whose base expression
+ *   EVALUATES TO THE REPOSITORY ROOT; or
+ *
+ *   A CALL SITE — a call in the file that hands the repository root to a
+ *   first-party function which spends it on a docs path.
+ *
+ * THE SECOND ARM IS NOT AN EXTRA. A literal-only rule reads the card's
+ * "any body that RESOLVES a path under docs/ against the repository
+ * root" as "any body that SPELLS one", and the two are different sets on
+ * this tree: `lib/parser/test/smoke.test.ts` calls
+ * `parseProject(repoRoot)` and spells no docs path at all, while
+ * `lib/parser/src/project.ts` spends that root on docs/tasks,
+ * docs/ROADMAP.md AND docs/architecture/components. Measured before the
+ * arm existed: a one-line edit to docs/ROADMAP.md made this gate owe
+ * exactly `npm test` from tools/e2e — 114/114, exit 0 — while
+ * `npx vitest run` from lib/parser went 262/263 at exit 1 in a suite the
+ * answer never named. AN INTEGRATOR WHO OBEYED THE GATE MERGED A RED
+ * TREE, which is this card's own failure mode arriving through the gate
+ * built to remove it.
+ *
+ * The hop is ONE, plus re-export barrels (lib/parser's public surface is
+ * a barrel, so stopping at it stops one file short of every entry
+ * point), and it reads a parameter's DEFAULT when the call supplies no
+ * argument — `(root = repoRoot)` is the dominant first-party helper
+ * signature in this tree and such a helper is CALLED WITH NOTHING.
+ *
+ * Both halves of the site rule are load-bearing and each one alone is
+ * wrong:
  *
  * - The `docs`-FIRST rule is what keeps `tools/e2e/fixtures/shell.ts`
  *   out. It joins the repo root with
@@ -66,32 +93,76 @@
  * root-forming shapes this tree actually uses (see ROOT_FORMS). A base
  * that does not evaluate is NOT quietly dropped: see `unlinkedFiles()`.
  *
- * ── WHAT IT CANNOT SEE — read before trusting a green run ────────────
- * - It is a REGEX SCAN over comment-stripped source, not a TypeScript or
- *   Rust parser. It knows string literals, line and block comments, and
- *   nothing about scope, aliasing or control flow.
- * - A docs path assembled through a value it cannot follow is invisible
- *   AS A PATH. `app/test/architecture-dogfood.test.ts` reads
- *   `docs/architecture/graph.json` through `read(GRAPH_PATH)`, where
- *   GRAPH_PATH is a constant exported by app/src — no site here. The
- *   FILE is still a reader (it has two literal sites), so the SUITE the
- *   gate names is right; only that one prefix is missing, and it is the
- *   one path under docs/ that a standing gate already owns (GRAPH REGEN
- *   regenerates it and `index --check` gates it). Named rather than
- *   papered over, and pinned as a known limit by the spec.
- * - A file that computes the repo root AND forms a docs path but whose
- *   link this scanner cannot make is reported by `unlinkedFiles()` and
- *   is a hard failure in the lane — the silent-miss direction is the
- *   only dangerous one, so it is the one that shouts. THAT TRIPWIRE IS
- *   ONLY AS WIDE AS THE SITE PATTERNS: a site it cannot SEE is one it
- *   cannot report, which is how the drill found the zero-argument-call
- *   base. A base that is a call WITH ARGUMENTS —
- *   `join(path.resolve(here), "docs")` — is still invisible to both,
- *   and is a named limit rather than a claim: nothing in the tree
- *   writes one, because a root gets bound before it gets joined.
- * - It says nothing about whether a body ASSERTS on what it read. A
- *   reader that reads docs/ and ignores it still counts; over-firing is
- *   the safe direction here, exactly as it is for GRAPH REGEN.
+ * ── WHAT IT CANNOT SEE ───────────────────────────────────────────────
+ * AN ACCOUNT, NOT A SAMPLE. The previous version of this section named
+ * one residual and called it bounded; a verifier then swept the corpus
+ * and found three more of the same class it did not mention. A list of
+ * examples cannot be checked for completeness, so this section is
+ * organised around something that can: `rootAnchoredFiles()`.
+ *
+ * THE BOUND. A file can only read THIS repository's docs/ if it holds
+ * THIS repository's root. `rootAnchoredFiles()` enumerates every corpus
+ * file that does, by three routes — a local binding, an IMPORTED name,
+ * or a Rust zero-argument call — and classifies each as `derived`,
+ * `unlinked` or `unclassified`. Everything below is a statement about
+ * one of those buckets, so "is that all of them?" has an answer a
+ * command can print (`docs-gate.mjs --census`) rather than an argument.
+ *
+ * 1. IT IS A REGEX SCAN over comment-stripped source, not a TypeScript
+ *    or Rust parser. It knows string literals, line and block comments,
+ *    and nothing about scope, aliasing or control flow.
+ * 2. A DOCS PATH BEHIND A VALUE IT CANNOT FOLLOW is invisible as a path
+ *    (T-084-s1). Three live instances, all measured:
+ *      - `app/test/architecture-dogfood.test.ts` reads
+ *        docs/architecture/graph.json through `read(GRAPH_PATH)`, where
+ *        GRAPH_PATH is a constant exported by app/src.
+ *      - `nputer-index/tests/arch.rs` reads the same file as
+ *        `common::repo_root().join(GRAPH_REL_PATH)`.
+ *      - `nputer-index/src/arch/registry.rs` reads
+ *        docs/architecture/components as `root.join(REGISTRY_REL_DIR)`.
+ *    CONSEQUENCE, stated exactly: the first two mean docs/architecture/
+ *    graph.json is owed `npm test from tools/e2e/` and nothing else,
+ *    though `npm test from app/` and `cargo test` both read it. That is
+ *    the ONE path under docs/ another standing gate already owns — GRAPH
+ *    REGEN regenerates it, `index --check` gates it, and it only ever
+ *    changes because code changed — so it is a short answer with a
+ *    sibling gate under it, not a silent one. The third changes nothing:
+ *    the pair it would add is already produced by tests/arch.rs:192.
+ * 3. A CALL HOP OF MORE THAN ONE STEP is not followed — `f(g(root))` is
+ *    invisible — and a callee is only reachable when it is defined in
+ *    the SAME FILE or imported by a RELATIVE specifier. A Rust callee in
+ *    another file of the crate is not reachable: `use` paths name
+ *    modules, not files, and this scanner does not resolve them.
+ *    Measured consequence on this tree: NIL. The one cross-file Rust
+ *    call that matters, `read_registry(&common::repo_root())` in
+ *    tests/arch.rs, has a callee that forms its docs path behind a
+ *    `const` (limit 2), so following it would still yield no prefix —
+ *    which is also why registry.rs's own SAME-FILE call at :385, which
+ *    this scanner DOES resolve, produces nothing.
+ * 4. THE INVERSE CALL — a caller that supplies the PATH to a callee
+ *    holding the root, `read(GRAPH_PATH)` — is not followed either. It
+ *    is the JS half of limit 2 and has the same consequence.
+ * 5. THE TRIPWIRE IS ONLY AS WIDE AS THE SITE PATTERNS. `unlinkedFiles()`
+ *    reports a file that computes the root and forms a docs-first path
+ *    it could not link, and it is a hard failure in the lane — the
+ *    silent-miss direction is the only dangerous one. But a site it
+ *    cannot SEE is one it cannot report: that is how the drill found the
+ *    zero-argument-call base, and it is why the anchor arm now follows
+ *    IMPORTS exactly as the site arm always did. A base that is a call
+ *    WITH ARGUMENTS — `join(path.resolve(here), "docs")` — is still
+ *    invisible to both.
+ * 6. WHAT COVERS THE REST is not this scanner but arithmetic.
+ *    `suitesOwedForAllOfDocs()` derives which suites are owed for EVERY
+ *    path under docs/ (today: tools/e2e, because two lane specs walk the
+ *    whole tree), so a missed reader THERE cannot shorten an answer.
+ *    `unaccountedRootAnchors()` is what is left — root-anchored, not
+ *    derived, in a suite that is not universally owed — and every member
+ *    is argued by file in ROOT_ANCHOR_LEDGER, which the lane and the
+ *    hand-run gate both assert equals the derived set. A new one is
+ *    news; it cannot arrive quietly.
+ * 7. IT SAYS NOTHING about whether a body ASSERTS on what it read. A
+ *    reader that reads docs/ and ignores it still counts; over-firing is
+ *    the safe direction here, exactly as it is for GRAPH REGEN.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
@@ -433,6 +504,122 @@ export function siteSelftest() {
   return rows;
 }
 
+/** A synthetic root for the call samples: no file, no I/O, and a base
+ *  that resolves to it exactly the way a package-relative one does. */
+const SAMPLE_ROOT = path.resolve(path.sep, "nputer-call-sample-root");
+
+/** One fragment's context, with the sample root as its package dir so
+ *  `resolve(".")` inside the fragment IS the root. Imports resolve to
+ *  nothing on purpose: a fragment has no filesystem to hop into, and the
+ *  hop across files is proved against the real tree instead. */
+function sampleContext(stripped) {
+  return {
+    filePath: path.join(SAMPLE_ROOT, "pkg", "sample.ts"),
+    fileDir: path.join(SAMPLE_ROOT, "pkg"),
+    pkgDir: SAMPLE_ROOT,
+    crateDir: undefined,
+    stripped,
+    functionDefs: functionDefs(stripped),
+    bindings: bindings(stripped),
+    resolveImport: () => null,
+  };
+}
+
+/**
+ * CALL SAMPLES — the second arm of the derivation, lexed exactly as a
+ * file is. The negatives are the precision, and three of them are the
+ * ways this arm could invent a reader rather than find one: an argument
+ * that is NOT the repository root, a callee that spends its own binding
+ * rather than the parameter it was handed, and a root handed to a
+ * parameter the docs path does not use.
+ */
+export const CALL_SAMPLES = Object.freeze([
+  // ── positives ──────────────────────────────────────────────────────
+  // The measured shape: smoke.test.ts calling parseProject(repoRoot).
+  {
+    text:
+      'const REPO = resolve(".");\n' +
+      'function spend(root) { return join(root, "docs/tasks"); }\n' +
+      "const r = spend(REPO);",
+    prefixes: ["docs/tasks"],
+  },
+  // A DEFAULTED root and a call with NO ARGUMENT — every entry point in
+  // this module has that signature, and the lane calls them empty.
+  {
+    text:
+      'const REPO = resolve(".");\n' +
+      'function readIt(root = REPO) { return join(root, "docs", "CONVENTIONS.md"); }\n' +
+      "readIt();",
+    prefixes: ["docs/CONVENTIONS.md"],
+  },
+  // Rust, same file: a `&`-borrowed root through a zero-argument fn.
+  {
+    text:
+      "fn repo_root() -> PathBuf {\n" +
+      '    resolve(".")\n' +
+      "}\n" +
+      "fn spend(root: &Path) -> PathBuf {\n" +
+      '    root.join("docs/architecture/components")\n' +
+      "}\n" +
+      "let p = spend(&repo_root());",
+    prefixes: ["docs/architecture/components"],
+  },
+  // ── negatives ──────────────────────────────────────────────────────
+  // A root that is NOT this repository's: the fixture case, which is the
+  // discriminator this whole derivation is built on.
+  {
+    text:
+      'function spend(root) { return join(root, "docs/tasks"); }\n' +
+      'const r = spend(fixture("valid-project"));',
+    prefixes: [],
+  },
+  // The callee spends its OWN binding, not the parameter. The file is
+  // still a docs reader by SITE; it must not also be one by CALL, or one
+  // reader would be counted through every helper that touches it.
+  {
+    text:
+      'const REPO = resolve(".");\n' +
+      'function spend(x) { return join(REPO, "docs/tasks"); }\n' +
+      "const r = spend(1);",
+    prefixes: [],
+  },
+  // The root goes to a parameter the docs path does not use. Position is
+  // load-bearing; an "any argument is the root" rule would fire here.
+  {
+    text:
+      'const REPO = resolve(".");\n' +
+      'function spend(a, root) { return join(root, "docs/tasks"); }\n' +
+      "const r = spend(REPO);",
+    prefixes: [],
+  },
+  // A callee this scanner cannot open is not guessed at.
+  { text: 'const REPO = resolve(".");\nparseProject(REPO);', prefixes: [] },
+]);
+
+/** The call sample set, run, with the same evidence floor discipline. */
+export function callSelftest() {
+  const rows = [];
+  for (const { text, prefixes } of CALL_SAMPLES) {
+    const stripped = stripComments(text);
+    const got = callSites(stripped, sampleContext(stripped), SAMPLE_ROOT).map((c) => c.prefix);
+    rows.push([
+      `call sample ${JSON.stringify(text)} -> ${JSON.stringify(got)}`,
+      JSON.stringify(got) === JSON.stringify(prefixes),
+    ]);
+  }
+  const positives = CALL_SAMPLES.filter((s) => s.prefixes.length > 0).length;
+  const negatives = CALL_SAMPLES.length - positives;
+  const rust = CALL_SAMPLES.filter((s) => s.text.includes("fn ") && s.prefixes.length > 0).length;
+  const defaulted = CALL_SAMPLES.filter(
+    (s) => /\(\s*[\w$]+\s*=\s*[\w$]/.test(s.text) && s.prefixes.length > 0,
+  ).length;
+  rows.push([`call samples include positives (${positives})`, positives > 0]);
+  rows.push([`call samples include negatives (${negatives})`, negatives > 1]);
+  rows.push([`call samples include a Rust positive (${rust})`, rust > 0]);
+  rows.push([`call samples include a DEFAULTED root positive (${defaulted})`, defaulted > 0]);
+  return rows;
+}
+
 /** Every docs site in one already-stripped source text. */
 export function docsSites(stripped) {
   const sites = [];
@@ -645,7 +832,58 @@ function importSourceOf(stripped, name) {
   return null;
 }
 
+/** Names this file imports from a RELATIVE first-party module — the
+ *  candidate ROOT ANCHORS that live in another file. The site arm has
+ *  always followed these (`ctx.resolveImport`); the anchor arm did not,
+ *  which is the asymmetry `unlinkedFiles` used to be silent about. */
+function importedNames(stripped) {
+  const names = new Set();
+  for (const m of stripped.matchAll(/import\s*\{([^}]*)\}\s*from\s*(['"`])([^'"`]+)\2/g)) {
+    if (!m[3].startsWith(".")) continue;
+    for (const raw of m[1].split(",")) {
+      const name = raw.trim().split(/\s+as\s+/).pop()?.trim();
+      if (name !== undefined && name !== "") names.add(name);
+    }
+  }
+  return [...names].sort();
+}
+
+/** `export { a, b as c } from './x.js'` — the barrel hop. Returns the
+ *  relative specifier that re-exports `name`, or null. `lib/parser`'s
+ *  public surface is exactly this shape, so a call hop that stops at the
+ *  barrel stops one file short of every parser entry point. */
+function reExportSourceOf(stripped, name) {
+  for (const m of stripped.matchAll(/export\s*\{([^}]*)\}\s*from\s*(['"`])([^'"`]+)\2/g)) {
+    const names = m[1]
+      .split(",")
+      .map((s) => s.trim().replace(/^type\s+/, "").split(/\s+as\s+/).pop()?.trim());
+    if (names.includes(name) && m[3].startsWith(".")) return m[3];
+  }
+  return null;
+}
+
 const MODULE_SUFFIXES = ["", ".ts", ".tsx", ".mts", ".cts", ".mjs", ".js", "/index.ts", "/index.js"];
+
+/**
+ * Every absolute file a relative specifier could name, in try order.
+ *
+ * THE `.js` -> `.ts` REWRITE IS NOT COSMETIC. This repo's TypeScript is
+ * NodeNext, so a first-party import carries the EMITTED extension:
+ * `lib/parser/test/smoke.test.ts` writes `from '../src/index.js'` and
+ * the file on disk is `index.ts`. Without the rewrite every specifier
+ * in lib/parser/ resolves to nothing — and silence in the resolver is
+ * silence in the answer, which is the defect this whole card is about.
+ */
+function moduleCandidates(fromDir, spec) {
+  const bases = [spec];
+  const emitted = /\.(js|mjs|cjs)$/.exec(spec);
+  if (emitted !== null) bases.push(spec.slice(0, -emitted[0].length));
+  const out = [];
+  for (const base of bases) {
+    for (const suffix of MODULE_SUFFIXES) out.push(path.resolve(fromDir, base + suffix));
+  }
+  return [...new Set(out)];
+}
 
 function readIfFile(abs) {
   try {
@@ -687,6 +925,258 @@ function crateFnBinding(crateDir, name, root) {
   return table.get(name) ?? null;
 }
 
+// ── one hop through a call ───────────────────────────────────────────
+//
+// THE DEFECT THIS SECTION EXISTS TO CLOSE. A DOCS SITE is a literal in
+// the reading file, and a reader that hands the repository root to
+// somebody ELSE spells no literal of its own. `lib/parser/test/smoke.test.ts`
+// is the measured case: it calls `parseProject(repoRoot)` and
+// `lib/parser/src/project.ts` spends that root on THREE docs paths —
+// docs/tasks, docs/ROADMAP.md and docs/architecture/components. Before
+// this hop the derivation attributed only docs/tasks and
+// docs/tasks/rejected to the parser suite, so a one-line edit to
+// docs/ROADMAP.md made the gate owe exactly `npm test` from tools/e2e
+// (114/114, exit 0) while `npx vitest run` from lib/parser went 262/263
+// exit 1 in a suite the answer never named. An integrator who obeyed the
+// gate merged a red tree. The card's AC2 says a reader is "any body that
+// RESOLVES a path under docs/ against the repository root" — resolving
+// it through a callee is still resolving it.
+
+/** Match a delimiter pair from an opening index; -1 if unbalanced. */
+function matchDelim(text, open, openChar, closeChar) {
+  let depth = 0;
+  let quote = null;
+  for (let i = open; i < text.length; i += 1) {
+    const c = text[i];
+    if (quote !== null) {
+      if (c === "\\") i += 1;
+      else if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === BACKTICK) {
+      quote = c;
+      continue;
+    }
+    if (c === openChar) depth += 1;
+    else if (c === closeChar) {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/** A parameter's NAME and its DEFAULT expression, or a null name for a
+ *  destructured or unnamed one — a destructured parameter has no single
+ *  name to compare a root against, so it is a hole rather than a guess.
+ *
+ *  THE DEFAULT IS NOT DECORATION. `(root = repoRoot)` is the dominant
+ *  first-party helper signature in this tree — every entry point in this
+ *  very module has it — and such a helper is called with NO ARGUMENT, so
+ *  a call hop that only reads arguments sees a call with nothing in it
+ *  and stays silent about a body that reads docs/ on every run. */
+function paramParts(text) {
+  const eq = text.indexOf("=");
+  const head = (eq === -1 ? text : text.slice(0, eq))
+    .split(":")[0]
+    .trim()
+    .replace(/^(?:mut|ref)\s+/, "")
+    .replace(/^&+\s*/, "");
+  const fallback = eq === -1 ? null : text.slice(eq + 1).trim();
+  return { name: /^[\w$]+$/.test(head) ? head : null, fallback };
+}
+
+/** The `{ … }` body that follows a signature, or null when there is none
+ *  (a Rust trait signature, an overload). Bounded so a malformed file
+ *  cannot make this walk the rest of the corpus. */
+function bodyAfter(stripped, from) {
+  for (let i = from; i < stripped.length && i < from + 400; i += 1) {
+    const c = stripped[i];
+    if (c === ";") return null;
+    if (c === "{") {
+      const close = matchDelim(stripped, i, "{", "}");
+      return close === -1 ? null : stripped.slice(i + 1, close);
+    }
+  }
+  return null;
+}
+
+/**
+ * Named function definitions in one stripped source — parameter names
+ * and body text, for `function f(…)`, Rust `fn f(…)` and the
+ * `const f = (…) => {…}` arrow form. Deliberately NOT a parser: it knows
+ * nothing about overloads, generics with braces in them, or scope, and a
+ * shape it cannot read yields no definition rather than a wrong one.
+ */
+export function functionDefs(stripped) {
+  const defs = new Map();
+  const record = (name, paramText, bodyFrom) => {
+    if (defs.has(name)) return;
+    const body = bodyAfter(stripped, bodyFrom);
+    if (body === null) return;
+    const parts = splitArgs(paramText).map(paramParts);
+    defs.set(name, {
+      name,
+      params: parts.map((p) => p.name),
+      defaults: parts.map((p) => p.fallback),
+      body,
+    });
+  };
+  for (const m of stripped.matchAll(/(?:^|[^\w$.])(?:function|fn)\s+([\w$]+)\s*(?:<[^<>{}]*>)?\s*\(/g)) {
+    const open = m.index + m[0].length - 1;
+    const close = matchDelim(stripped, open, "(", ")");
+    if (close === -1) continue;
+    record(m[1], stripped.slice(open + 1, close), close + 1);
+  }
+  for (const m of stripped.matchAll(/(?:^|[^\w$.])(?:const|let|var)\s+([\w$]+)\s*(?::[^=;]*)?=\s*(?:async\s+)?\(/g)) {
+    const open = m.index + m[0].length - 1;
+    const close = matchDelim(stripped, open, "(", ")");
+    if (close === -1) continue;
+    const arrow = /^\s*(?::[^=]*)?=>/.exec(stripped.slice(close + 1));
+    if (arrow === null) continue;
+    record(m[1], stripped.slice(open + 1, close), close + 1 + arrow[0].length);
+  }
+  return defs;
+}
+
+/**
+ * The docs prefixes a definition forms off each of its PARAMETERS —
+ * `Map<parameter index, Set<prefix>>`. This is the half that makes the
+ * hop safe in the direction that matters: `parseProject`'s own base is a
+ * parameter, so `lib/parser/src/project.ts` is correctly NOT a reader
+ * (its root is a caller's project, which may be anybody's tree), while
+ * a CALLER that passes THIS repository's root is.
+ */
+function paramDocsPrefixes(def) {
+  if (def.byParam !== undefined) return def.byParam;
+  const out = new Map();
+  const local = bindings(def.body);
+  const index = new Map();
+  def.params.forEach((p, i) => {
+    if (p !== null && !index.has(p)) index.set(p, i);
+  });
+  for (const site of docsSites(def.body)) {
+    let expr = site.base.trim();
+    for (let hop = 0; hop < 6; hop += 1) {
+      const ident = /^([\w$]+)$/.exec(expr);
+      if (ident === null) break;
+      const at = index.get(ident[1]);
+      if (at !== undefined) {
+        if (!out.has(at)) out.set(at, new Set());
+        out.get(at).add(site.prefix === "" ? "docs" : site.prefix);
+        break;
+      }
+      const next = local.get(ident[1]);
+      if (next === undefined || next.trim() === expr) break;
+      expr = next.trim();
+    }
+  }
+  def.byParam = out;
+  return out;
+}
+
+/** Module-level memo: the same barrel is walked by every test file in a
+ *  package, and the enumeration walks the corpus twice. */
+const calleeCache = new Map();
+
+/**
+ * Resolve a called name to a definition PLUS the module it lives in,
+ * following relative imports and re-export barrels.
+ *
+ * The MODULE comes back with the definition because a defaulted root
+ * (`root = repoRoot`) must be evaluated in the CALLEE's context, never
+ * the caller's: `repoRoot` names a different directory in every file
+ * that spells it, and evaluating it in the wrong one is how a
+ * derivation invents a reader instead of finding one.
+ *
+ * Depth-limited; a cycle terminates at the limit.
+ */
+function resolveCalleeIn(fromDir, spec, name, root, depth) {
+  if (depth > 4) return null;
+  for (const abs of moduleCandidates(fromDir, spec)) {
+    const key = `${abs}::${name}`;
+    if (calleeCache.has(key)) return calleeCache.get(key);
+    const text = readIfFile(abs);
+    if (text === null) continue;
+    const other = stripComments(text);
+    const def = functionDefs(other).get(name);
+    let found;
+    if (def !== undefined) {
+      found = { def, rel: path.relative(root, abs).split(path.sep).join("/"), stripped: other };
+    } else {
+      const next = reExportSourceOf(other, name);
+      found = next === null ? null : resolveCalleeIn(path.dirname(abs), next, name, root, depth + 1);
+    }
+    calleeCache.set(key, found);
+    return found;
+  }
+  return null;
+}
+
+/** Reserved words that are followed by `(` and are not calls. */
+const NOT_A_CALL = new Set([
+  "if", "for", "while", "switch", "catch", "return", "function", "fn", "match",
+  "await", "typeof", "new", "throw", "do", "else", "yield", "in", "of", "assert",
+]);
+
+/**
+ * CALL SITES: a call in this file that hands THIS repository's root to a
+ * first-party function which spends it on a docs path. The prefixes are
+ * attributed to the CALLING file, because that is the body a suite runs.
+ *
+ * One hop plus barrels, and no further: `f(g(root))` is not followed and
+ * is named in WHAT IT CANNOT SEE rather than claimed.
+ */
+export function callSites(stripped, ctx, root) {
+  const out = [];
+  const lineOf = (index) => stripped.slice(0, index).split("\n").length;
+  const resolved = new Map();
+  for (const m of stripped.matchAll(/(?:^|[^\w$.])([\w$]+)\s*\(/g)) {
+    const name = m[1];
+    if (NOT_A_CALL.has(name)) continue;
+    const open = m.index + m[0].length - 1;
+    const close = matchDelim(stripped, open, "(", ")");
+    if (close === -1) continue;
+    // An EMPTY argument list is not skipped: `conventionsText()` is the
+    // shape that reads docs/CONVENTIONS.md on every lane run, and a call
+    // hop that only looks at arguments sees nothing in it.
+    const argText = stripped.slice(open + 1, close);
+    if (!resolved.has(name)) {
+      const own = ctx.functionDefs.get(name);
+      let hit = own === undefined ? null : { def: own, ctx };
+      if (hit === null) {
+        const spec = importSourceOf(ctx.stripped, name);
+        if (spec !== null) hit = resolveCalleeIn(ctx.fileDir, spec, name, root, 0);
+      }
+      resolved.set(name, hit);
+    }
+    const hit = resolved.get(name);
+    if (hit === null) continue;
+    const byParam = paramDocsPrefixes(hit.def);
+    if (byParam.size === 0) continue;
+    const args = splitArgs(argText);
+    for (const [at, prefixes] of byParam) {
+      const arg = args[at];
+      let where = ctx;
+      let expr = arg === undefined ? undefined : arg.replace(/^&\s*/, "");
+      if (expr === undefined) {
+        // No argument at that position: the callee's DEFAULT is what runs.
+        // It is the callee's own expression, so it is evaluated in the
+        // callee's own context.
+        expr = hit.def.defaults[at] ?? undefined;
+        if (expr === undefined) continue;
+        hit.ctx ??= contextFor(hit.rel, hit.stripped, root);
+        where = hit.ctx;
+      }
+      if (evalBase(expr, where) !== root) continue;
+      for (const prefix of [...prefixes].sort()) {
+        out.push({ line: lineOf(m.index), callee: name, prefix });
+      }
+    }
+  }
+  return out.sort((a, b) => a.line - b.line || a.prefix.localeCompare(b.prefix));
+}
+
 /** One file's evaluation context, including a one-hop name follower. */
 function contextFor(rel, stripped, root) {
   const filePath = path.join(root, rel);
@@ -697,13 +1187,14 @@ function contextFor(rel, stripped, root) {
     fileDir: path.dirname(filePath),
     pkgDir: suite === undefined ? root : path.join(root, suite.dir),
     crateDir,
+    stripped,
+    functionDefs: functionDefs(stripped),
     bindings: bindings(stripped),
   };
   ctx.resolveImport = (name) => {
     const spec = importSourceOf(stripped, name);
     if (spec !== null) {
-      for (const suffix of MODULE_SUFFIXES) {
-        const abs = path.resolve(ctx.fileDir, spec + suffix);
+      for (const abs of moduleCandidates(ctx.fileDir, spec)) {
         const text = readIfFile(abs);
         if (text === null) continue;
         const other = stripComments(text);
@@ -732,12 +1223,20 @@ export function docsReaders(root = repoRoot) {
   for (const rel of sourceCorpus(root)) {
     const stripped = stripComments(readFileSync(path.join(root, rel), "utf8"));
     const sites = docsSites(stripped);
-    if (sites.length === 0) continue;
     const ctx = contextFor(rel, stripped, root);
     const prefixes = new Set();
+    /** How this file was linked, so the answer can say which arm found it
+     *  rather than presenting a call hop as if it were a literal. */
+    const via = new Set();
     for (const site of sites) {
       if (evalBase(site.base, ctx) !== root) continue;
       prefixes.add(site.prefix === "" ? "docs" : site.prefix);
+      via.add("site");
+    }
+    const calls = callSites(stripped, ctx, root);
+    for (const call of calls) {
+      prefixes.add(call.prefix === "" ? "docs" : call.prefix);
+      via.add(`call ${call.callee}()`);
     }
     if (prefixes.size === 0) continue;
     const suite = suiteFor(rel);
@@ -746,9 +1245,84 @@ export function docsReaders(root = repoRoot) {
       suite: suite?.dir,
       command: suite?.command,
       prefixes: [...prefixes].sort(),
+      via: [...via].sort(),
     });
   }
   return readers.sort((a, b) => a.file.localeCompare(b.file));
+}
+
+/**
+ * THE ROOT-ANCHOR CENSUS — every corpus file that computes THIS
+ * repository's root, classified. This is the ACCOUNT that the
+ * "WHAT IT CANNOT SEE" section owes: the tripwire below can only report
+ * a file it can SEE a docs site in, so a file that reaches docs/ purely
+ * through a callee this scanner cannot open is invisible to BOTH. What
+ * bounds that class is not an argument, it is this list: a file holding
+ * the repository root is the only file that CAN read this repo's docs/,
+ * so `unclassified` is the exact set of places the answer could still be
+ * short — printed on every gate run rather than left in prose.
+ *
+ * `derived`      a docs reader, by literal site or by call hop.
+ * `unlinked`     forms a docs-first path this scanner could not link —
+ *                the hard failure `unlinkedFiles()` reports.
+ * `unclassified` holds the root and forms no docs path this scan can
+ *                see. Almost all are honest non-readers (they join the
+ *                root with `app/`, `method/`, a fixture). The residual
+ *                is the ones that reach docs/ some other way.
+ */
+export function rootAnchoredFiles(root = repoRoot) {
+  const readers = new Map(docsReaders(root).map((r) => [r.file, r]));
+  const out = [];
+  for (const rel of sourceCorpus(root)) {
+    const stripped = stripComments(readFileSync(path.join(root, rel), "utf8"));
+    const ctx = contextFor(rel, stripped, root);
+    const anchors = rootAnchors(ctx, root);
+    if (anchors.length === 0) continue;
+    const reader = readers.get(rel);
+    const sites = docsSites(stripped);
+    const linked = sites.filter((s) => evalBase(s.base, ctx) === root);
+    out.push({
+      file: rel,
+      anchors,
+      kind:
+        reader !== undefined
+          ? "derived"
+          : sites.length > 0 && linked.length === 0
+            ? "unlinked"
+            : "unclassified",
+      prefixes: reader?.prefixes ?? [],
+    });
+  }
+  return out.sort((a, b) => a.file.localeCompare(b.file));
+}
+
+/**
+ * The names in one file that evaluate to THIS repository's root.
+ *
+ * BOTH ARMS, WHICH IS THE FIX. The site arm has always resolved a base
+ * through `ctx.resolveImport` — that is how `shell-frame.spec.ts` gets
+ * `repoRoot` out of `../preflight`, the dominant idiom in the very
+ * package this scanner lives in. The ANCHOR arm read `ctx.bindings`
+ * only, so an IMPORTED root was invisible to it, and a plant with an
+ * imported anchor produced a site the scanner SAW and a report it did
+ * NOT MAKE. A tripwire whose two arms follow different rules is vacuous
+ * one step out of whatever shape it was last fixed for.
+ */
+function rootAnchors(ctx, root) {
+  const names = new Set();
+  for (const [name, expr] of ctx.bindings) {
+    if (evalBase(expr, ctx) === root) names.add(name);
+  }
+  for (const name of importedNames(ctx.stripped)) {
+    if (evalBase(name, ctx) === root) names.add(name);
+  }
+  // Rust names a root by CALLING it (`common::repo_root()`), and the call
+  // is the only place the name appears — there is no import line to read.
+  for (const m of ctx.stripped.matchAll(/([\w$]+(?:::[\w$]+)*)\s*\(\s*\)/g)) {
+    if (names.has(m[1])) continue;
+    if (evalBase(m[1], ctx) === root) names.add(m[1]);
+  }
+  return [...names].sort();
 }
 
 /**
@@ -760,21 +1334,144 @@ export function docsReaders(root = repoRoot) {
  * Silence is the one outcome this card exists to remove.
  */
 export function unlinkedFiles(root = repoRoot) {
-  const out = [];
-  const known = new Set(docsReaders(root).map((r) => r.file));
+  return rootAnchoredFiles(root)
+    .filter((f) => f.kind === "unlinked")
+    .map((f) => {
+      const stripped = stripComments(readFileSync(path.join(root, f.file), "utf8"));
+      return {
+        file: f.file,
+        bases: [...new Set(docsSites(stripped).map((s) => s.base))].sort(),
+        anchors: f.anchors,
+      };
+    });
+}
+
+/**
+ * THE CENSUS, derived — the figures that used to live as digits in
+ * docs/CONVENTIONS.md and went stale there.
+ *
+ * WHY THIS IS A FUNCTION AND NOT A SENTENCE. The bullet shipped
+ * "exactly TWELVE of them, in nine files, are root-anchored" at a named
+ * ref; the tree said ELEVEN at that ref, at the tip, and by hand — and
+ * because nothing derived it, it was green and wrong, and had been
+ * relayed into two more documents by the time anyone re-measured. A
+ * figure a human transcribes is a figure that rots. This one is printed
+ * by `docs-gate.mjs` on every run, so the current answer is never more
+ * than a second away and never has a ref to be stale at.
+ */
+export function siteCensus(root = repoRoot) {
+  let sites = 0;
+  let anchoredSites = 0;
+  const siteFiles = new Set();
+  const anchoredFiles = new Set();
   for (const rel of sourceCorpus(root)) {
-    if (known.has(rel)) continue;
     const stripped = stripComments(readFileSync(path.join(root, rel), "utf8"));
-    const sites = docsSites(stripped);
-    if (sites.length === 0) continue;
+    const found = docsSites(stripped);
+    if (found.length === 0) continue;
+    sites += found.length;
+    siteFiles.add(rel);
     const ctx = contextFor(rel, stripped, root);
-    const anchors = [...ctx.bindings.entries()].filter(
-      ([, expr]) => evalBase(expr, ctx) === root,
-    );
-    if (anchors.length === 0) continue;
-    out.push({ file: rel, bases: [...new Set(sites.map((s) => s.base))].sort() });
+    for (const site of found) {
+      if (evalBase(site.base, ctx) !== root) continue;
+      anchoredSites += 1;
+      anchoredFiles.add(rel);
+    }
   }
-  return out.sort((a, b) => a.file.localeCompare(b.file));
+  return {
+    sites,
+    siteFiles: siteFiles.size,
+    anchoredSites,
+    anchoredFiles: anchoredFiles.size,
+  };
+}
+
+/**
+ * The suites already owed for EVERY path under `docs/`, derived: a suite
+ * holding a reader whose prefix is bare `docs` is owed whatever changes.
+ * Today that is tools/e2e, because `shell-frame.spec.ts` and
+ * `window-contract.spec.ts` each walk the whole tree.
+ */
+export function suitesOwedForAllOfDocs(readers) {
+  return new Set(readers.filter((r) => r.prefixes.includes("docs")).map((r) => r.suite));
+}
+
+/**
+ * THE ACKNOWLEDGEMENT LEDGER — and it is deliberately NOT a list of
+ * readers, which is the defect T-058 and T-080 each spent a card on.
+ *
+ * A file that holds this repository's root is the only kind of file that
+ * CAN read this repository's docs/. Most of them do not, and of the ones
+ * that do, most sit in a suite that is already owed for every path under
+ * docs/ (tools/e2e), so a miss there cannot change an answer. What is
+ * left — a root-anchored file in a suite that is NOT universally owed,
+ * which the derivation could not link — is the exact set of places the
+ * gate's answer could still be short, and it is small enough to be
+ * argued file by file. `unaccountedRootAnchors()` derives that set; this
+ * ledger records the argument for each, and the spec asserts the two
+ * agree EXACTLY. A new one cannot slip in silently, and an entry that
+ * stops being true cannot linger.
+ */
+export const ROOT_ANCHOR_LEDGER = Object.freeze([
+  Object.freeze({
+    file: "app/src-tauri/crates/nputer-index/src/arch/registry.rs",
+    reads: "docs/architecture/components",
+    why:
+      "A REAL READER THIS SCAN CANNOT SEE, and the sharpest entry here. " +
+      "`reads_this_repos_live_registry_and_finds_the_known_shape` calls " +
+      "`read_registry(&crate::testutil::repo_root())`, and read_registry forms its " +
+      "path as `root.join(REGISTRY_REL_DIR)` — a docs path behind a `const &str` " +
+      "(T-084-s1) reached through a Rust call hop. NO ANSWER MOVES: the pair it " +
+      "would contribute (cargo test, docs/architecture/components) is already " +
+      "contributed by tests/arch.rs:192, and the spec asserts that rather than " +
+      "asserting it here.",
+  }),
+  Object.freeze({
+    file: "app/src-tauri/crates/nputer-index/src/testutil.rs",
+    reads: "",
+    why: "Defines `repo_root()`. It forms no path under docs/ at all.",
+  }),
+  Object.freeze({
+    file: "app/src-tauri/crates/nputer-index/tests/common/mod.rs",
+    reads: "",
+    why: "Defines `repo_root()` for the crate's integration tests. Forms no docs path.",
+  }),
+  Object.freeze({
+    file: "app/src-tauri/crates/nputer-index/tests/perf.rs",
+    reads: "",
+    why:
+      "`copy_repo_to` copies the whole tree, docs/ included — but its only caller " +
+      "is `perf_cold_and_incremental_within_ceilings`, which is `#[ignore]`d " +
+      "(\"perf harness: run on a release build\"), so bare `cargo test` never runs it.",
+  }),
+  Object.freeze({
+    file: "app/src-tauri/crates/nputer-index/tests/self_graph.rs",
+    reads: "",
+    why:
+      "Indexes the live repo off `common::repo_root()`. The one body that reads a " +
+      "path under docs/ — `self_graph_is_current`, `root.join(GRAPH_REL_PATH)` — is " +
+      "`#[ignore]`d. The two that DO run assert docs/ is ABSENT from the graph " +
+      "(the root .nputerignore), which is the opposite of reading it.",
+  }),
+  Object.freeze({
+    file: "app/test/genesis-derive.test.ts",
+    reads: "",
+    why: "Joins the root with `method/interview/plan-interview.md`. Not docs/.",
+  }),
+]);
+
+/**
+ * Root-anchored files the derivation could not link WHOSE SUITE IS NOT
+ * ALREADY OWED for every path under docs/ — the residual that could
+ * still shorten an answer. Derived; the ledger above is checked against
+ * it, never the other way round.
+ */
+export function unaccountedRootAnchors(root = repoRoot) {
+  const readers = docsReaders(root);
+  const universal = suitesOwedForAllOfDocs(readers);
+  return rootAnchoredFiles(root)
+    .filter((f) => f.kind !== "derived")
+    .filter((f) => !universal.has(suiteFor(f.file)?.dir))
+    .map((f) => f.file);
 }
 
 /** prefix -> the suites that read it, derived from `docsReaders`. */
