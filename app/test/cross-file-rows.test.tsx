@@ -164,6 +164,11 @@ describe("each row names the files and the space (T-077 criterion 2)", () => {
         // `space` field. The row must degrade to naming no space at
         // all rather than inferring one from the kind.
         { path: "docs/tasks/T-050-dangler.md", content: task("T-050", "F-1", "blocked_by: [T-404]\n") },
+        // A BROKEN FILE THIS BODY DOES NOT OTHERWISE CARE ABOUT, so the
+        // strip renders from `failures` no matter what the rows do. Its
+        // subject is what a row SAYS; the body above owns whether the
+        // strip appears at all, and one mutant should red one body.
+        { path: "docs/tasks/T-002-broken.md", content: "# no frontmatter" },
       ]),
     );
 
@@ -177,31 +182,38 @@ describe("each row names the files and the space (T-077 criterion 2)", () => {
       return found[0]!;
     };
 
+    // WHAT THE ROW ITSELF SAYS, not what the parser's sentence happens
+    // to repeat. The task `aliased-id` MESSAGE already quotes both
+    // paths, so `toContain` on the whole row would pass with the row's
+    // own file list deleted — a green indistinguishable from the
+    // property. So assert the part BEFORE the em-dash separator, which
+    // is this component's own contribution and nothing else's.
+    const said = (row: HTMLElement): string => (row.textContent ?? "").split(" — ")[0] ?? "";
+
     // THE FEATURE SPACE. Both declarations live in ROADMAP.md, so the
     // issue's `files` is that one path twice by contract; the row names
     // it once.
     const feature = byKindAndSpace("aliased-id", "feature");
-    expect(feature.textContent).toContain("feature aliased-id");
-    expect(feature.textContent).toContain("docs/ROADMAP.md");
+    expect(said(feature)).toBe("feature aliased-id · docs/ROADMAP.md");
 
     // THE TASK SPACE — two genuinely different files, and the row names
     // BOTH. A row that named only the first would leave the human
     // hunting for the other half of a pair.
     const taskRow = byKindAndSpace("aliased-id", "task");
-    expect(taskRow.textContent).toContain("task aliased-id");
-    expect(taskRow.textContent).toContain("docs/tasks/T-001-b.md");
-    expect(taskRow.textContent).toContain("docs/tasks/T-01-a.md");
+    expect(said(taskRow)).toBe("task aliased-id · docs/tasks/T-001-b.md · docs/tasks/T-01-a.md");
 
     // THE DEGRADATION, ASSERTED AS AN ABSENCE. `dangling-reference`
     // carries no `space` field today; the field is read where it EXISTS
     // rather than switched on by kind, so this row simply says nothing
-    // about space — and the attribute is absent, not the empty string.
+    // about space — and the attribute is absent, not the empty string,
+    // and the prefix carries no stray separator where a space would be.
     const dangling = byKindAndSpace("dangling-reference", null);
     expect(dangling.hasAttribute("data-issue-space")).toBe(false);
+    expect(said(dangling)).toBe("dangling-reference · docs/tasks/T-050-dangler.md");
     expect(dangling.textContent).not.toContain("undefined");
-    expect(dangling.textContent).toContain("dangling-reference");
-    expect(dangling.textContent).toContain("docs/tasks/T-050-dangler.md");
-    expect(dangling.textContent).toContain("T-404");
+    expect(dangling.textContent, "and the parser's own sentence rides behind it").toContain(
+      "T-404",
+    );
   });
 });
 
@@ -267,6 +279,10 @@ describe("the new rows wear the strip's containment (T-077 criterion 5)", () => 
         { path: "docs/ROADMAP.md", content: HEALTHY_ROADMAP },
         { path: hostile, content: task("T-01", "F-01") },
         { path: "docs/tasks/T-001-b.md", content: task("T-001", "F-01") },
+        // As in the criterion-2 body: a broken file keeps the strip open
+        // on `failures` alone, so this body answers "is the row's text
+        // contained" and never doubles as the criterion-4 pin.
+        { path: "docs/tasks/T-002-broken.md", content: "# no frontmatter" },
       ]),
     );
 
@@ -275,6 +291,9 @@ describe("the new rows wear the strip's containment (T-077 criterion 5)", () => 
     expect(row.querySelector("img"), "no markup is parsed out of a path").toBeNull();
     expect(container.querySelector("img")).toBeNull();
     expect(row.textContent, "the path is named verbatim, as text").toContain(hostile);
+    expect((row.textContent ?? "").split(" — ")[0]).toBe(
+      `task aliased-id · docs/tasks/T-001-b.md · ${hostile}`,
+    );
     // Same row idiom as the failure and skip rows beside it.
     expect(row.tagName).toBe("LI");
     expect(row.className).toBe("font-mono text-status-rejected-foreground");
