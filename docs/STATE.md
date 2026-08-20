@@ -1,6 +1,6 @@
 # State
 
-Updated: 2026-08-20 by architect (T-074 merged and checkpointed),
+Updated: 2026-08-20 by architect (T-074 and T-072 merged and checkpointed),
 claude-opus-5 @T-081-integrate.
 
 ## Just completed
@@ -538,18 +538,15 @@ computed and recorded. Nothing is broken.
 
 ## In progress / broken right now
 
-**TWO SIBLING LANES ARE LIVE.**
+**ONE SIBLING LANE IS LIVE.**
 
 - **T-084 — `../nputer-T-084`, `task/T-084-docs-gate`**, still building
   as this lands. Fence `[docs/CONVENTIONS.md, tools/e2e]`. It is the
   card for "`docs/` is a code input and neither standing gate knows
   it", and `T-081-s9` has formally deferred its vocabulary-gate remedy
   to it.
-- **T-072 — `../nputer-T-072`, `task/T-072-model-claims`, at
-  `57aa55b`, size S, stamped `done` and awaiting integration.** Fence
-  `[app-interview]`. **Its worktree's `node_modules`/`dist` symlinks
-  were removed at the end**, so they need re-linking before any suite
-  runs there; `app/dist` is left in place.
+- **T-072 is MERGED** at `ea2d58f` and checkpointed here; worktree
+  removed, branch kept at `57aa55b`.
 
 **Two findings from those lanes reach past their cards and belong to
 T-084's family.**

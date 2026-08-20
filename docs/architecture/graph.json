@@ -2130,8 +2130,8 @@
       "id": "f:app/src/genesis/InterviewChat.tsx",
       "path": "app/src/genesis/InterviewChat.tsx",
       "lang": "ts",
-      "hash": "blake3:037f9d37c3e9caa74e31eccd7dbc59b3df538a7711ca886824a6e8899f71fbf5",
-      "loc": 716,
+      "hash": "blake3:fadb8978534f6649909fedffdc856a312eeb6440890a8cbc56b30d6ac582d0e0",
+      "loc": 744,
       "symbols": [
         {
           "id": "s:app/src/genesis/InterviewChat.tsx#HandDrivenBlock",
@@ -2139,8 +2139,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            546,
-            609
+            574,
+            637
           ]
         },
         {
@@ -2150,7 +2150,7 @@
           "exported": true,
           "range": [
             54,
-            516
+            544
           ]
         },
         {
@@ -2159,8 +2159,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            624,
-            686
+            652,
+            714
           ]
         },
         {
@@ -2169,8 +2169,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            689,
-            716
+            717,
+            744
           ]
         },
         {
@@ -2179,8 +2179,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            522,
-            526
+            550,
+            554
           ]
         }
       ]
@@ -2677,8 +2677,8 @@
       "id": "f:app/src/genesis/interview-model.ts",
       "path": "app/src/genesis/interview-model.ts",
       "lang": "ts",
-      "hash": "blake3:837d28a6c759b4d3ffe5b3de4df635fb498e4b72b457d271ea66936fc587dfee",
-      "loc": 688,
+      "hash": "blake3:c40dc4b4b9fa88f5448a106780de63e264869abe18f0ae04102ae859adbf761d",
+      "loc": 739,
       "symbols": [
         {
           "id": "s:app/src/genesis/interview-model.ts#BankBaseline",
@@ -2686,8 +2686,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            50,
-            59
+            67,
+            76
           ]
         },
         {
@@ -2696,8 +2696,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            71,
-            74
+            107,
+            110
           ]
         },
         {
@@ -2706,8 +2706,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            211,
-            211
+            262,
+            262
           ]
         },
         {
@@ -2716,8 +2716,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            213,
-            220
+            264,
+            271
           ]
         },
         {
@@ -2726,8 +2726,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            76,
-            79
+            112,
+            115
           ]
         },
         {
@@ -2736,8 +2736,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            579,
-            584
+            630,
+            635
           ]
         },
         {
@@ -2746,8 +2746,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            291,
-            291
+            342,
+            342
           ]
         },
         {
@@ -2756,8 +2756,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            196,
-            196
+            247,
+            247
           ]
         },
         {
@@ -2766,8 +2766,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            532,
-            532
+            583,
+            583
           ]
         },
         {
@@ -2776,8 +2776,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            429,
-            429
+            480,
+            480
           ]
         },
         {
@@ -2786,8 +2786,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            670,
-            670
+            721,
+            721
           ]
         },
         {
@@ -2796,8 +2796,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            252,
-            257
+            303,
+            308
           ]
         },
         {
@@ -2806,8 +2806,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            288,
-            288
+            339,
+            339
           ]
         },
         {
@@ -2816,8 +2816,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            345,
-            348
+            396,
+            399
           ]
         },
         {
@@ -2826,8 +2826,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            61,
-            66
+            78,
+            83
           ]
         },
         {
@@ -2836,8 +2836,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            359,
-            365
+            410,
+            416
           ]
         },
         {
@@ -2846,8 +2846,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            492,
-            525
+            543,
+            576
           ]
         },
         {
@@ -2856,8 +2856,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            88,
-            95
+            124,
+            131
           ]
         },
         {
@@ -2866,8 +2866,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            136,
-            151
+            172,
+            187
           ]
         },
         {
@@ -2876,8 +2876,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            237,
-            246
+            288,
+            297
           ]
         },
         {
@@ -2886,8 +2886,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            200,
-            204
+            251,
+            255
           ]
         },
         {
@@ -2896,8 +2896,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            586,
-            636
+            637,
+            687
           ]
         },
         {
@@ -2906,8 +2906,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            647,
-            665
+            698,
+            716
           ]
         },
         {
@@ -2916,8 +2916,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            539,
-            560
+            590,
+            611
           ]
         },
         {
@@ -2926,8 +2926,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            101,
-            103
+            137,
+            139
           ]
         },
         {
@@ -2936,8 +2936,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            639,
-            643
+            690,
+            694
           ]
         },
         {
@@ -2946,8 +2946,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            456,
-            475
+            507,
+            526
           ]
         },
         {
@@ -2956,8 +2956,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            162,
-            192
+            213,
+            243
           ]
         },
         {
@@ -2966,8 +2966,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            331,
-            334
+            382,
+            385
           ]
         },
         {
@@ -2976,8 +2976,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            395,
-            427
+            446,
+            478
           ]
         },
         {
@@ -2986,8 +2986,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            443,
-            451
+            494,
+            502
           ]
         },
         {
@@ -2996,8 +2996,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            438,
-            441
+            489,
+            492
           ]
         },
         {
@@ -3006,8 +3006,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            681,
-            688
+            732,
+            739
           ]
         },
         {
@@ -3016,8 +3016,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            279,
-            286
+            330,
+            337
           ]
         },
         {
@@ -3026,8 +3026,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            322,
-            327
+            373,
+            378
           ]
         },
         {
@@ -3036,8 +3036,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            302,
-            309
+            353,
+            360
           ]
         }
       ]
@@ -7580,8 +7580,8 @@
       "id": "f:app/test/interview-chat-dom.test.tsx",
       "path": "app/test/interview-chat-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:bb470728fec097ef78d7444629d7e3b624dea95d800fe53193202ac78e240dd2",
-      "loc": 952,
+      "hash": "blake3:f4618376ad909b40df955a1c900ddd82803c8ed3d72b1f64e59a6e4cd0f9f295",
+      "loc": 1019,
       "symbols": [
         {
           "id": "s:app/test/interview-chat-dom.test.tsx#C0",
@@ -7848,8 +7848,8 @@
       "id": "f:app/test/interview-model.test.ts",
       "path": "app/test/interview-model.test.ts",
       "lang": "ts",
-      "hash": "blake3:ca1a63c8ab8c18d5fd67341db459e54c10dcfccf6478a91c4d40eed45d3c5851",
-      "loc": 932,
+      "hash": "blake3:73da5cca2a7175641c504ef574c8245ac6e7dc6d16891bc00e5f40c14f916011",
+      "loc": 1035,
       "symbols": [
         {
           "id": "s:app/test/interview-model.test.ts#docs",
@@ -13439,6 +13439,7 @@
       "to": "p:react",
       "kind": "import",
       "symbols": [
+        "Profiler",
         "act"
       ]
     },
