@@ -349,6 +349,35 @@ it. The integrator re-derives at the merge and does not quote this
 block; that is the last two checkpoints' lesson applied to the one
 endpoint this lane can be wrong about.
 
+**AND MAIN MOVED BEFORE THIS PARAGRAPH WAS AN HOUR OLD, SO THE
+PREDICTION IS NOW A MEASUREMENT.** Between the commit above and the
+final process census, main advanced from `e83ee1d` to **`2cf59da`** —
+T-074 and T-072 both merged and checkpointed, **23 paths**. Re-derived
+against the new tip, with the branch tip HELD FIXED at `93b5a44`:
+
+    git merge-tree --write-tree 2cf59da 93b5a44  -> tree adf43362…, MERGE_TREE_EXIT=0
+    git diff --name-only 2cf59da <TREE>                      -> 12   UNMOVED
+    git diff --name-only 2cf59da...93b5a44  (THREE dots)     -> 12   cmp against the forecast: exit 0
+    git diff --name-only 2cf59da..93b5a44   (TWO dots)       -> 35   THE FORBIDDEN FORM, 12 -> 35
+    git merge-base 2cf59da 93b5a44                           -> e83ee1d  (unmoved: this branch did not move)
+
+**THE FORBIDDEN FORM WENT 12 TO 35 AND THE CORRECT ANSWER NEVER MOVED**,
+with the LEFT-hand endpoint the only thing that changed — the exact
+half T-081's checkpoint could not show, because there the branch tip
+moved instead. 12 + 23 = 35, and that arithmetic is the check: `comm
+-12` over main's 23 paths and this lane's 12 is **EMPTY**, so the two
+sets are disjoint and `merge-tree` exits 0 rather than reporting a
+conflict. **A lane fenced to one tree, cut from a checkpoint whose main
+then advanced in another, is the ORDINARY case** — CONVENTIONS says so
+and this lane is the next data point.
+
+Two consequences the integrator inherits rather than this lane: main's
+advance carries T-074's graph regen, so `index --check` must be
+re-asked at the merge against the NEW committed graph; and main's ten
+new `T-07*-s*` cards all read `status: suggested`, so the DOCS GATE's
+live-card half stays clean across the merge — checked by grep against
+main, since this branch may not merge to find out.
+
 `merge-tree`'s exit was read from `$?` and not swallowed by the command
 substitution: a substitution that eats a CONFLICT hands back an empty
 forecast wearing the costume of a clean gate.
