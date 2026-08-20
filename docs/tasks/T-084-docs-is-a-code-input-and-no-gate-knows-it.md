@@ -789,10 +789,16 @@ restore was a byte copy from a pre-mutation backup, proved by sha256.
 | **PLANTS** | m7a / m7b / m7d added tracked | **27 / 3**; removed, `git status --porcelain` empty |
 
 Restoration proved at the end for all four touched files: working-tree
-sha256 equals `git show HEAD:<path> | shasum -a 256` for
-`docs-scan.mjs` (`53f23c63…`), `docs-gate.mjs` (`389c94e7…`),
-`docs/CONVENTIONS.md` (`c9837559…`) and `docs-input-gate.spec.ts`
-(`cb15478c…`), with `git status --porcelain` empty.
+sha256 equalled `git show HEAD:<path> | shasum -a 256` with
+`git status --porcelain` empty. **THE FOUR HASHES ARE AT `7d1397e`, THE
+DRILL COMMIT, AND NOT AT THE TIP** — quoting a hash without its ref is
+the defect this pass spent BLOCKING 3 on, so:
+`git show 7d1397e:tools/e2e/scripts/docs-scan.mjs` is `53f23c63…`,
+`docs-gate.mjs` `389c94e7…`, `docs/CONVENTIONS.md` `c9837559…`,
+`tools/e2e/tests/docs-input-gate.spec.ts` `cb15478c…`. `docs-scan.mjs`
+moved AFTER the drill — two more limits written into WHAT IT CANNOT SEE,
+comment only — so its tip hash differs by design and the two later
+commits say so.
 
 **ONE MUTATION BIT ME RATHER THAN A BODY**, and it is worth recording
 because it is this repo's own lint catching this lane a second time: a
