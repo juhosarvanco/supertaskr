@@ -1,6 +1,6 @@
 # State
 
-Updated: 2026-08-20 by integrator (T-081 merged and checkpointed),
+Updated: 2026-08-20 by architect (T-074 merged and checkpointed),
 claude-opus-5 @T-081-integrate.
 
 ## Just completed
@@ -538,16 +538,40 @@ computed and recorded. Nothing is broken.
 
 ## In progress / broken right now
 
-**NO LANE HOLDS A WORKTREE.** `git worktree list` returns the main
-checkout alone. The T-081 worktree is removed and the branch
-`task/T-081-denial-relay` is kept at `7c83e79`. No lane is blocked on
-this checkpoint.
+**TWO SIBLING LANES ARE LIVE.**
 
-**One live external thing, and it is the human's:** `npm run tauri dev`
-(82342 → 82364 → app **85379**) and its vite (82504 → 82549 on
-`[::1]:1420`) have been up since Aug 18 03:45:46. The app process is 22
-hours younger than its supervisor because this merge restarted it; see
-the section above before touching `app/src-tauri/**` again.
+- **T-084 — `../nputer-T-084`, `task/T-084-docs-gate`**, still building
+  as this lands. Fence `[docs/CONVENTIONS.md, tools/e2e]`. It is the
+  card for "`docs/` is a code input and neither standing gate knows
+  it", and `T-081-s9` has formally deferred its vocabulary-gate remedy
+  to it.
+- **T-072 — `../nputer-T-072`, `task/T-072-model-claims`, at
+  `57aa55b`, size S, stamped `done` and awaiting integration.** Fence
+  `[app-interview]`. **Its worktree's `node_modules`/`dist` symlinks
+  were removed at the end**, so they need re-linking before any suite
+  runs there; `app/dist` is left in place.
+
+**Two findings from those lanes reach past their cards and belong to
+T-084's family.**
+
+- **`T-072-s5` — A COMMENT IN A TEST FILE CHANGED THE SHIPPED CSS.**
+  The bare word `isolate`, written once in a comment in
+  `app/test/interview-model.test.ts`, made Tailwind emit
+  `.isolate{isolation:isolate}` — 27 bytes into the stylesheet. Tailwind
+  v4 has no `@source`, so it scans the Vite root including
+  `app/test/**`, a tree that ships no byte. Measured in both
+  directions: the same word in five `docs/tasks/*.md` emits nothing, so
+  the input is `app/test` specifically rather than "any text".
+  **CONVENTIONS' FOUR WALKS table does not describe this fifth walk.**
+  One-line close: `@source ./src`.
+- **`T-072-s1` — THE POISON DRILL'S OWN PROOFS CAN BOTH REPORT SUCCESS
+  WHILE THE WORK IS GONE.** A drill helper's `git checkout --` silently
+  reverted an uncommitted implementation mid-drill, and *both* proofs
+  CONVENTIONS prescribes — an empty `git diff` and a sha256 against
+  `git show HEAD:` — said the restoration was clean, because both
+  compare against HEAD and the work was not in HEAD. The missing clause
+  is **"drill at a commit"**, which is what every integrator has been
+  doing by convention and no rule requires.
 
 ## Next up
 

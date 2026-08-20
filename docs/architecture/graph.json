@@ -1846,8 +1846,8 @@
       "id": "f:app/src/components/shell/GenesisScreen.tsx",
       "path": "app/src/components/shell/GenesisScreen.tsx",
       "lang": "ts",
-      "hash": "blake3:0b6709fa351f14607595e228185e81b466223410aca1e84b4a3b1fad544d122e",
-      "loc": 225,
+      "hash": "blake3:0a8d749badca64c99fb0ea77ba26b436bf9c65575c22bf45436519b682c6032b",
+      "loc": 250,
       "symbols": [
         {
           "id": "s:app/src/components/shell/GenesisScreen.tsx#GenesisPaneBoundary",
@@ -1855,8 +1855,8 @@
           "kind": "class",
           "exported": false,
           "range": [
-            180,
-            225
+            205,
+            250
           ]
         },
         {
@@ -1866,7 +1866,7 @@
           "exported": true,
           "range": [
             46,
-            156
+            181
           ]
         }
       ]
@@ -8361,8 +8361,8 @@
       "id": "f:app/test/map-tasks-lens-dom.test.tsx",
       "path": "app/test/map-tasks-lens-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:cabb66780eb34f0faa7eecc682f33899d4c454a75eddc3d9ba19fd27fac08842",
-      "loc": 724,
+      "hash": "blake3:fc69e9359d67720382d756653daa66d73d654061e8b807c9291fa253e1cd09a5",
+      "loc": 744,
       "symbols": [
         {
           "id": "s:app/test/map-tasks-lens-dom.test.tsx#componentFile",
@@ -9306,8 +9306,8 @@
       "id": "f:app/test/startup-screen.test.tsx",
       "path": "app/test/startup-screen.test.tsx",
       "lang": "ts",
-      "hash": "blake3:614f73e65f2e06243d981bda4d9cfd40f5a39858b6f990ff5e4c7a09202f996d",
-      "loc": 449,
+      "hash": "blake3:5bebbcb90e7b7e1fb5b59035e353f34dd40571db7342dd38f0458e8ce39ad723",
+      "loc": 489,
       "symbols": [
         {
           "id": "s:app/test/startup-screen.test.tsx#App",
@@ -9315,8 +9315,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            93,
-            93
+            121,
+            121
           ]
         },
         {
@@ -9325,8 +9325,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            104,
-            109
+            132,
+            137
           ]
         },
         {
@@ -9335,8 +9335,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            94,
-            94
+            122,
+            122
           ]
         },
         {
@@ -9345,8 +9345,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            93,
-            93
+            121,
+            121
           ]
         },
         {
@@ -9355,8 +9355,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            139,
-            148
+            167,
+            176
           ]
         },
         {
@@ -9365,8 +9365,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            128,
-            134
+            156,
+            162
           ]
         },
         {
@@ -9375,8 +9375,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            111,
-            111
+            139,
+            139
           ]
         },
         {
@@ -9385,8 +9385,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            152,
-            153
+            180,
+            181
           ]
         },
         {
@@ -9395,8 +9395,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            113,
-            113
+            141,
+            141
           ]
         },
         {
@@ -9405,8 +9405,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            122,
-            126
+            150,
+            154
           ]
         },
         {
@@ -9415,8 +9415,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            30,
-            39
+            58,
+            67
           ]
         },
         {
@@ -9425,8 +9425,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            94,
-            94
+            122,
+            122
           ]
         },
         {
@@ -9435,8 +9435,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            115,
-            116
+            143,
+            144
           ]
         },
         {
@@ -9445,8 +9445,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            112,
-            112
+            140,
+            140
           ]
         },
         {
@@ -9455,8 +9455,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            117,
-            118
+            145,
+            146
           ]
         },
         {
@@ -9465,8 +9465,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            119,
-            120
+            147,
+            148
           ]
         }
       ]
