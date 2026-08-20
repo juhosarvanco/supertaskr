@@ -68,11 +68,39 @@ export function InterviewChat({
   // NOTHING else — not `activity` labels (those are tool-use markers off
   // the model's own stream, i.e. model output, which criterion 3 bans),
   // not `completed.text`, not the banking map's expectations.
-  const [banking, setBanking] = useState(EMPTY_BANKING_OBSERVATION);
+  //
+  // WHICH HALF OF THE OBSERVATION IS REACT STATE IS THE WHOLE OF T-072
+  // CRITERION 2, and the rule it restores is T-056's. `observeBanking`
+  // is still ONE pure transition owned by `interview-model.ts` and
+  // shared verbatim with the replay tests (T-057 criterion 1) — not a
+  // line of the rule moves back into this component. What moves is
+  // STORAGE. The baseline is bookkeeping no render reads; the chip map
+  // is the render. Holding both in one `useState` meant a quiet snapshot
+  // — the watcher's seq advances, nothing banked — returned a fresh
+  // observation object, which is never `Object.is`-equal to the last
+  // one, so React re-rendered the conversation for a value nothing
+  // displays and the `transcript` effect fired an auto-scroll write with
+  // it (T-057-s2, the regression T-056 exists to move against).
+  //
+  // The observation lives in a ref and only `chipsByTurn` is state, so a
+  // baseline advance costs no render. The ref is written in an EFFECT,
+  // after the commit — CONVENTIONS' render-phase ref stamp rule and its
+  // three conditions govern a write during RENDER and do not apply here.
+  // The write is idempotent, which is what makes it safe under
+  // StrictMode's double-effect: observing the same docs twice is a stale
+  // snapshot the second time, and that path returns the previous
+  // observation by identity.
+  const observed = useRef(EMPTY_BANKING_OBSERVATION);
+  const [chipsByTurn, setChipsByTurn] = useState(EMPTY_BANKING_OBSERVATION.chipsByTurn);
 
   useEffect(() => {
     const active = activeTurn(genesis.turns);
-    setBanking((previous) => observeBanking(previous, docs, active));
+    const next = observeBanking(observed.current, docs, active);
+    observed.current = next;
+    // Identity, not deep equality: `observeBanking` hands back the same
+    // map on every path that adds no path to no turn, and React's eager
+    // bail-out then schedules nothing at all.
+    setChipsByTurn(next.chipsByTurn);
   }, [docs, genesis.turns]);
 
   // ---- the first frame ------------------------------------------------
@@ -162,7 +190,7 @@ export function InterviewChat({
     void rehydrateInterview();
   }, [projectDir]);
   const joined = mergeRehydrated(genesis.rehydrated, genesis.turns, ui.userHalves);
-  const transcript = assembleTranscript(joined.turns, joined.userHalves, banking.chipsByTurn);
+  const transcript = assembleTranscript(joined.turns, joined.userHalves, chipsByTurn);
   const log = useRef<HTMLDivElement | null>(null);
   const stick = useRef(true);
 
