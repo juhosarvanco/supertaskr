@@ -496,7 +496,22 @@ dev harness active, no snapshot applied yet"), shipped on main too.
 DEV — the emitted asset is sha-identical to the production one
 (`3132ec98…`), because Vite's CLI forces `NODE_ENV=production` for
 builds. (b) `NODE_ENV=development npm run build` DOES flip it: 696,302 B,
-all four harness markers present. That is the one lever, it is an
+all four harness markers present. **[CORRECTED 2026-08-20 by T-074 — that
+byte count is a function of the TREE and no longer reproduces. Re-measured
+at `e83ee1d` on node v22.22.0 / vite 7.3.6: the DEV-flipped build is
+`index-JrWCgH80.js` at 782,361 B, sha256 `0a442a30…`, 270 modules
+transformed, carrying `__nputerShellHarness`, `__nputerDocsHarness` AND
+T-027's `__nputerInterviewHarness` — +86,059 B (+12.4%) on this line, and
++17,970 B (+2.4%) on T-063's own 2026-08-18 re-measure of 764,391 B at
+`2fc3475`, which is the same figure going stale a SECOND time in two days.
+BOTH MECHANISMS REPRODUCE EXACTLY, and they are what this passage is
+actually for: at `e83ee1d` `npm run build` and `npx vite build --mode
+development` emit a byte-identical `dist/` (`diff -r` exit 0; JS
+`index-3bNJ6pCB.js`, 501,541 B, sha256 `e4ea1c77…`), while an inherited
+`NODE_ENV` flips it. THE LESSON, recorded with the correction: PIN THE SHA
+AND THE PROPERTY, NEVER THE SIZE — the same lesson STATE already carries
+for `EXPECTED_GRANTS`, where three agents produced three byte figures from
+three ranges.]** That is the one lever, it is an
 inherited env var rather than any configured path, **the runtime half
 still fences it** — I read the emitted code, and the install is still
 inside `if(NS=!0,!Wo){…}` with `Wo` the `__TAURI_INTERNALS__` check —

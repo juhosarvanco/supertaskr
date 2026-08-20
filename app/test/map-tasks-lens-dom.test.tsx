@@ -576,12 +576,32 @@ describe("hostile task content stays TEXT (criterion 5)", () => {
     // straight into a string literal — instead of the six-character
     // escape map-layout.ts uses for two of its three separators —
     // compiles, bundles and tests green, but makes file(1) call the
-    // source "data" and makes grep(1) treat it as BINARY. Every
-    // grep-based gate in this repo then silently stops seeing that
-    // file: the raw-HTML gate above, `lint:tokens`, the CI greps.
-    // T-012 shipped one such byte in map-layout.ts's `layoutKey`
-    // (a literal U+0003 beside two correct escapes); T-034 shipped two
-    // in task-waves.ts before this test existed. Both are now escapes.
+    // source "data".
+    // CORRECTED 2026-08-20 (T-074, measured at `e83ee1d`). This comment
+    // carried T-034-s5's superseded diagnosis — "grep(1) treats it as
+    // BINARY [so] every grep-based gate in this repo then silently stops
+    // seeing that file: the raw-HTML gate above, `lint:tokens`, the CI
+    // greps" — and all three claims are false. NO GATE HERE IS BLINDED:
+    // the raw-HTML gate above reads `readFileSync(file, "utf8")`, where
+    // a C0 byte is an ordinary codepoint and the regex is unaffected;
+    // `lint:tokens`' P5 CONTROL scan reads RAW BYTES over every tracked
+    // text file and is the gate that REDS on one (T-058); and ci.yml
+    // contains ZERO greps.
+    // WHAT IS BLINDED IS THE SEARCHER, AND ONLY BY U+0000. Swept over
+    // the whole range this check rejects, on a real copy of this
+    // directory's map-layout.ts: with a NUL planted, ripgrep drops the
+    // file from a directory search entirely (exit 1 when it is the only
+    // match) and /usr/bin/grep prints "Binary file ... matches" with the
+    // line suppressed (-I exits 1 with nothing). EVERY OTHER byte this
+    // check rejects — U+0001-U+0008, U+000B, U+000C, U+000E-U+001F,
+    // U+007F — is printed normally by both at exit 0, even though
+    // file --mime already calls the source charset=binary.
+    // The two incidents below split on exactly that line, which is how
+    // the old wording came to generalise wrongly: T-012 shipped one byte
+    // in map-layout.ts's `layoutKey` (a literal U+0003 beside two
+    // correct escapes) and no searcher missed it; T-034 shipped two in
+    // task-waves.ts before this test existed, and both of those were
+    // U+0000 — the pair that really did hide a file. Now escapes.
     const scan = (dir: string): string[] => {
       const out: string[] = [];
       for (const name of readdirSync(dir).sort()) {

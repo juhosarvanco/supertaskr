@@ -100,7 +100,14 @@ claimed.
   `--mode development` does NOT (measured: `npm run build` and
   `npx vite build --mode development` produce a sha-IDENTICAL asset;
   `NODE_ENV=development npm run build` produces a 696,302 B bundle
-  carrying `__nputerShellHarness`). `tauri.conf.json`'s
+  carrying `__nputerShellHarness`). **[CORRECTED 2026-08-20 by T-074:
+  that size does not reproduce and never will for long — 764,391 B at
+  `2fc3475` (this card's own notes, below) and 782,361 B at `e83ee1d`
+  (`index-JrWCgH80.js`, sha256 `0a442a30…`, node v22.22.0 / vite 7.3.6).
+  The two MECHANISMS are what the criterion is really asking for and both
+  reproduce exactly at `e83ee1d`: `--mode development` emits a
+  byte-identical `dist/` (`diff -r` exit 0), an inherited `NODE_ENV` does
+  not. PIN THE SHA AND THE PROPERTY, NOT THE SIZE.]** `tauri.conf.json`'s
   `beforeBuildCommand` is `npm run build`, so a packaging run
   inheriting `NODE_ENV=development` embeds the harness — where the
   RUNTIME `__TAURI_INTERNALS__` guard still prevents installation,
@@ -206,7 +213,38 @@ characters. The real `app.listen` wrote, to the real process's stderr:
     [nputer] startup-failed: recv_at_ms=1787015863821 payload={"attempt":1,
     "message":"TEMPPROBE window_ms=72.0 HOSTILE=<script>\u0000\u0007\u001b[31mAAA…(truncated)
 
-**887 characters, zero raw control bytes, the cap's own marker present.**
+**870 characters / 872 bytes, zero raw control bytes, the cap's own
+marker present.**
+
+**[CORRECTED 2026-08-20 by T-074. This line said 887 characters, and 887
+is not a figure this code can produce once the cap fires — it is a wrong
+number wearing history's clothes, so it is corrected in place rather than
+left with a note beside it. The card's own verdict section already
+recorded the correction (T-063-s6, below), which meant one file was
+carrying both numbers two hundred lines apart, and the SOURCE claim is
+the one a developer reads. THE DERIVATION, at `e83ee1d`: the line is
+`format!("[nputer] startup-failed: recv_at_ms={recv_at_ms} payload={}",
+sanitize_for_log(payload))` in `startup_failed_line`
+(`app/src-tauri/src/lib.rs`). The literal head is 36 characters, the
+timestamp above is 13 digits and ` payload=` is 9, so the prefix is 58;
+`sanitize_for_log` (`app/src-tauri/src/docs_watch.rs`) caps at
+`MAX_ECHO_LOG_CHARS` = 800 and appends the 12-character `…(truncated)`.
+58 + 800 + 12 = 870 characters; in BYTES the marker's `…` is U+2026 at
+three bytes, so 58 + 800 + 14 = 872. It is content-independent once the
+cap fires — but NOT stamp-independent, which is the one refinement worth
+adding: the prefix carries the timestamp's digit count, so 870 is the
+figure for a 13-digit epoch-ms stamp (the existing unit test passes
+`recv_at_ms: 7` and its line is 858 by the same arithmetic).
+WHAT PINS IT AND WHAT DOES NOT: the 800 + 12 half IS mechanically pinned
+— `sanitize_for_log_escapes_control_chars_and_truncates` asserts
+`logged.chars().count() == MAX_ECHO_LOG_CHARS + "…(truncated)".chars()
+.count()` — while the prefix and the total are asserted only as
+`line.chars().count() < 1_000` in
+`startup_failed_line_survives_a_10k_hostile_message_from_the_boundary`,
+which 887 would also have satisfied. Every QUALITATIVE claim in this
+passage reproduced exactly and is left alone: zero raw control bytes, the
+escape legible as its six-ASCII-character JSON form, the truncation
+marker present, one line.]**
 
 **And it corrects the card's mental model.** By the time a payload
 reaches the sink it has been through JSON, so the ESC is already six
@@ -227,6 +265,16 @@ is stale — measured today at 764,391 B** (filed as **T-063-s1**), so the
 comment states the mechanism and the sha-identical pair and describes the
 DEV-flipped bundle qualitatively rather than by a byte count that will
 rot again. The ci.yml arm is declined and belongs to **T-054**.
+
+**[T-074, 2026-08-20 — "a byte count that will rot again" was right, and
+this paragraph's own two counts have. At `e83ee1d`: the sha-identical
+pair is `index-3bNJ6pCB.js`, 501,541 B, sha256 `e4ea1c77…` (the whole
+`dist/` compares byte-identical under `diff -r`, exit 0, not merely the
+one asset), and the DEV-flipped build is `index-JrWCgH80.js`, 782,361 B,
+sha256 `0a442a30…`. So this figure has now moved twice — 696,302 →
+764,391 → 782,361 — while BOTH mechanisms have held at every ref. That
+is the argument for the decision this paragraph took: state the property
+and the sha, and let the size be re-derived at whatever ref is asking.]**
 
 The build-half assertion is `has("import.meta.env") === false`, and its
 reach is stated honestly in the test: it catches a build that stopped
@@ -425,7 +473,18 @@ end-to-end log line is **870 characters / 872 bytes**, not 887 (58 prefix
 fires, so 887 cannot be produced by this code at all), and the comment at
 `startup-screen.test.tsx:13` says "10 of these 23 tests" where the file
 has 15 and the poison reds 9. Every QUALITATIVE claim in both places
-reproduced exactly. **T-063-s7** — "the re-subscribe does not FIGHT the
+reproduced exactly. **[T-074, 2026-08-20 — both halves were CLOSED at
+`e83ee1d`; the two figures above were right at this card's ref and one of
+them has since become unreachable, which is worth stating because the
+next reader will try it. "15 tests" still reproduces. "The poison reds 9"
+now needs a caveat: `c00184e` (2026-08-18) added a top-level
+`expect(isTauriRuntime()).toBe(true)` to that file, which throws during
+COLLECTION, so a value-import poison today reports "Test Files 1 failed
+(1) / Tests no tests" at exit 1 and zero bodies run. Lift that one
+tripwire and it is exactly 9 of 15, as recorded here. The citation is
+also re-anchored per CONVENTIONS' "a citation names a symbol, not a
+line": the comment is the TYPE-ONLY import note above
+`import type { StartupFailure }`, not `:13`.]** **T-063-s7** — "the re-subscribe does not FIGHT the
 pick's own snapshot" stays GREEN when the re-subscribe is deleted, while
 its four siblings red; the shipped behaviour is right and the sibling
 discriminates, but the test cannot see the interleaving it is named for.

@@ -8,8 +8,21 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 // TYPE-ONLY, and that matters: the store decides `isTauri` at module
 // load, so a VALUE import here would load it before the line below sets
 // `__TAURI_INTERNALS__` and every assertion in this file would be about
-// a browser. `import type` is erased and loads nothing. (Measured: a
-// value import turned 10 of these 23 tests red with phase "browser".)
+// a browser. `import type` is erased and loads nothing.
+// CORRECTED 2026-08-20 (T-074, every figure re-measured at `e83ee1d`).
+// This read "a value import turned 10 of these 23 tests red with phase
+// browser". The file has 15 tests, not 23, and today the poison does not
+// red a COUNT at all: the top-level `expect(isTauriRuntime()).toBe(true)`
+// below (added at `c00184e`) throws during COLLECTION, so vitest reports
+// "Test Files 1 failed (1) / Tests no tests" at exit 1 and zero bodies
+// run. Lift that one tripwire and the blast radius is 9 of 15 red with
+// phase "browser".
+// AND THE HAZARD NEEDS THE IMPORTED VALUE TO BE GENUINELY USED, which is
+// the sharper half: TypeScript elides an import whose bindings are all
+// unused, so a first attempt that merely ADDS a value import comes back
+// 15 passed at exit 0 and proves nothing. Measured both ways today —
+// unused binding: 15 passed, exit 0; used binding: the suite fails to
+// collect, exit 1.
 import type { StartupFailure } from "../src/lib/watcher-store";
 
 /**
@@ -25,6 +38,21 @@ import type { StartupFailure } from "../src/lib/watcher-store";
  * docs snapshot…" with nothing else on it but "Toggle theme". So the
  * first thing asserted here is the thing that was missing: on that very
  * screen, before anything has failed, there is a way out.
+ *
+ * THE ONE CLOCK COUPLING IN THIS FILE, stated rather than left to be
+ * discovered (T-074, 2026-08-20). The narrative's first act deliberately
+ * PARKS the docs subscription, and parking it is what ARMS T-063's real
+ * `setTimeout(…, STARTUP_DEADLINE_MS)` — 8000 ms of wall clock, cleared
+ * only when the handshake settles. If the time between the park and the
+ * later refusal ever exceeded it, the deadline would fire FIRST, the
+ * copy would say "startup timed out" instead of "was refused", and three
+ * assertions in describe 2 would flip — a failure that reads like a copy
+ * regression and is actually a clock. The parked window is now ONE
+ * DESCRIBE wide (describe 1 refuses in its own `afterAll`) rather than
+ * four, and the whole file runs in about 58 ms at `e83ee1d`, so the
+ * margin is roughly 138x. It is latent, not live — and a test-only
+ * deadline override was refused on sight: a production seam that exists
+ * for a test is what ADR-017's discipline is against.
  */
 
 const ipc = vi.hoisted(() => ({
@@ -220,15 +248,27 @@ describe("1. waiting — the screen from the screenshot, with a way out", () => 
     expect(await chord("n")).toBe(1);
     expect(ipc.invoke).toHaveBeenCalledWith("pick_genesis_folder");
   });
-});
 
-describe("2. failed — the screen stops claiming it is waiting (criterion 3)", () => {
-  it("the parked subscription is refused, and the screen says so", async () => {
+  /** T-074: THE PARKED WINDOW ENDS HERE, not four describes later. The
+   * park is what arms T-063's real 8000 ms deadline (see the clock note
+   * in the header), so every millisecond it stays open is wall-clock the
+   * copy assertions in describe 2 are racing. Refusing in this
+   * describe's own `afterAll` keeps the window ONE DESCRIBE wide while
+   * leaving the narrative — and the transition describe 2 asserts —
+   * exactly where they were. */
+  afterAll(async () => {
     await flush(() => {
       ipc.refuseListen?.(new Error(HOSTILE));
       return new Promise((r) => setTimeout(r, 0));
     });
+  });
+});
 
+describe("2. failed — the screen stops claiming it is waiting (criterion 3)", () => {
+  it("the parked subscription is refused, and the screen says so", () => {
+    // The refusal itself is describe 1's `afterAll`; what this body
+    // asserts is unchanged — the state the app lands in once the parked
+    // subscription comes back rejected.
     expect(screenOf()).toBe("startupFailed");
     expect(startupState()).toBe("failed");
     const message = q("[data-testid=startup-message]")?.textContent ?? "";
