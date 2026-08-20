@@ -169,8 +169,13 @@ right two paths, in the wrong order, and only this body looks.
 ### Criteria 2 and 3 — the render identity, and the count that holds it
 
 **THE TRANSITION DID NOT MOVE. THE STORAGE DID.** T-057 criterion 1 —
-ONE pure transition shared by the chat and the tests — is intact and
-`observeBanking`'s body is a 0-line diff. What changed is which HALF of
+ONE pure transition shared by the chat and the tests — is intact, and
+that is measured rather than argued: **`app/src/genesis/interview-model.ts`
+is a COMMENT-ONLY diff across this whole branch.** Every added and
+removed line in `git diff e83ee1d..HEAD -- app/src/genesis/interview-model.ts`
+is a comment line; filtering them out leaves the diff empty (`grep` exit
+1). `observeBanking`, `bankedSince`, `bankBaseline` and the two constants
+are byte-identical, so the shared rule cannot have drifted. What changed is which HALF of
 its result React is asked to hold. `chipsByTurn` is the render;
 `baseline` is bookkeeping no render reads. A quiet snapshot MUST advance
 the baseline and cannot avoid allocating one, so an observation object is
@@ -395,6 +400,7 @@ reports free, which is why all four — and chosen away from the lane's
 |---|---|---|---|
 | app `npx vitest run` | **831 / 831** over 42 files | **833 / 833** over 42 files | `APP_TEST_BASE_EXIT=0`, `APP_TEST_NEW_EXIT=0` |
 | `app/test/interview-model.test.ts` | 59 | **60** | inside the above |
+| `index --check` re-derived at the FINAL tip | — | still exit 1, `~4` files, `+1 -1` edges | `INDEX_CHECK_FINAL_EXIT=1` |
 | `app/test/interview-chat-dom.test.tsx` | 38 | **39** | inside the above |
 | app `npm run build` (both `tsc` programs + vite) | exit 0 | exit 0 | `APP_BUILD_BASE_EXIT=0`, `APP_BUILD_FINAL_EXIT=0` |
 | `npx tsc --noEmit` (app program alone) | — | exit 0 | `TSC_EXIT=0` |
