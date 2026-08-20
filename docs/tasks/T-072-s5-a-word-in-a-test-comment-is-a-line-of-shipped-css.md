@@ -41,11 +41,21 @@ precisely because *"the CSS hash did not move"* is the honest form of
 that moves on a comment makes that signal unreadable in the direction it
 matters.
 
+**THE SCAN'S BOUNDARY WAS MEASURED IN BOTH DIRECTIONS, not assumed.**
+`docs/` is OUTSIDE it, and the control is not this card's own doing: the
+bare word appears in five tracked `docs/tasks/*.md` files at the branch
+tip, **two of which — `T-029` and `T-057` — predate this lane entirely**,
+and the base tree emits no `.isolate` rule. So the input is `app/test`
+specifically, not "any text in the repository", and `T-084`'s docs/
+question and this one are neighbours rather than the same question.
+
 **T-072 DODGED IT RATHER THAN SHIPPING IT**, deliberately: the sentence
-was reworded, `git grep -nw isolate` over `app/src app/test` is empty
-again, and the final build's stylesheet is **`cmp`-identical to the
-base's**, exit 0. Dodging is not a fix — the next writer does not know
-the trap exists, and the trap is in the vocabulary.
+was reworded — the inflected forms are harmless, only the uninflected
+spelling is a utility — `git grep -lw` for it over `app/` is empty, and
+the final build's stylesheet is **`cmp`-identical to the base's**, exit
+0, at `index-CwYF5FQb.css` 43.95 kB. Dodging is not a fix: the next
+writer does not know the trap exists, and the trap is in the
+vocabulary.
 
 **Three closes, in increasing cost.**
 

@@ -431,9 +431,14 @@ nowhere under `app/src` or `app/test`. `app/src/index.css` imports
 Tailwind with no `@source`, so v4's automatic detection scans the Vite
 root — **`app/test/**` included, a tree that ships no byte to the
 bundle** — and extracts candidates from raw text, where prose and a
-`className` are indistinguishable. The sentence was reworded,
-`git grep -nw isolate -- app/src app/test` is empty again, and the
-stylesheet came back byte-for-byte. **Dodging is not a fix and the
+`className` are indistinguishable. The sentence was reworded (the
+INFLECTED forms are harmless — only the uninflected spelling is a
+utility), `git grep -lw` for it over `app/` is empty, and the stylesheet
+came back byte-for-byte, `cmp` exit 0. **The boundary was measured in
+both directions**: the same word sits in FIVE tracked `docs/tasks/*.md`
+files at this tip, two of them (`T-029`, `T-057`) predating this lane, and
+the base tree emits no such rule — so the input is `app/test`
+specifically and not "any text in the repo". **Dodging is not a fix and the
 finding is `T-072-s5`**, which argues the one-line `@source` close and
 notes that this is the `T-084` family with a new member: CONVENTIONS'
 FOUR WALKS table does not describe the Tailwind scan, and the Tailwind

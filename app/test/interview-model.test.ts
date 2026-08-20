@@ -552,10 +552,13 @@ describe("chip attribution across turn boundaries", () => {
    * when the seq alone would refuse it. Take the equal/lower arms away
    * and nothing pins that clause.
    *
-   * (The bare word for that relation is deliberately avoided in this
-   * file: it is a Tailwind utility name, and everything under `app/test`
-   * is scanned for candidates, so writing it in a COMMENT adds 27 bytes
-   * of dead CSS to the shipped stylesheet. Measured; `T-072-s5`.)
+   * (The UNINFLECTED form of the verb that sentence wants is avoided
+   * deliberately, here and in the inline notes below, where the
+   * inflected forms are harmless: that one spelling is also a Tailwind
+   * utility name, and everything under `app/test` is scanned for
+   * candidates without being parsed, so writing it in a COMMENT adds 27
+   * bytes of dead CSS to the SHIPPED stylesheet. Measured, both
+   * directions; `T-072-s5` carries the close.)
    *
    * `higher` closes the gap by ADDING an arm rather than by loosening
    * one: at a switch seq ABOVE the baseline the stale guard passes, so
