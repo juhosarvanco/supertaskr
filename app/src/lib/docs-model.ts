@@ -112,9 +112,9 @@ export function skipReasonPhrase(reason: string): string {
  */
 export interface ModelIssueRow {
   /** React list key: the issue's kind plus the ids and files it names,
-   * with an occurrence ordinal appended only when a snapshot really does
-   * carry two issues that agree on all three (two `missing-field`s on
-   * one file differ in `field` alone, which is not part of the key). */
+   * with a repeat counter appended only when a snapshot really does
+   * carry two issues agreeing on all three (two `missing-field`s on one
+   * file differ in `field` alone, which is not part of the key). */
   key: string;
   /** The parser's own discriminator, verbatim. */
   kind: string;
@@ -221,11 +221,11 @@ export function modelIssueRows(
   for (const issue of issues) {
     const files = issueFiles(issue);
     if (files.length > 0 && files.every((file) => failed.has(file))) continue;
-    const base = [issue.kind, ...issueIds(issue), ...files].join(" ");
-    const ordinal = seen.get(base) ?? 0;
-    seen.set(base, ordinal + 1);
+    const base = [issue.kind, ...issueIds(issue), ...files].join(" ");
+    const seenBefore = seen.get(base) ?? 0;
+    seen.set(base, seenBefore + 1);
     const row: ModelIssueRow = {
-      key: ordinal === 0 ? base : `${base} #${ordinal}`,
+      key: seenBefore === 0 ? base : `${base} #${seenBefore}`,
       kind: issue.kind,
       files,
       message: issue.message,
