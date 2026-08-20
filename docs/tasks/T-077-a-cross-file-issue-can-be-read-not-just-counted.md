@@ -319,14 +319,17 @@ tools/e2e `npm ci`), and only then `npm run build` before any suite.
   `docs/` tree and requires ZERO issues, which is what makes this card's
   own five new suggestion files a dogfood check rather than paperwork.
 - **token lint: `LINT_TOKENS_EXIT=0`** — *clean (TOKEN 120 files under
-  app/src, app/test, tools/e2e; CONTROL 574 tracked text files)* — and
+  app/src, app/test, tools/e2e; CONTROL 579 tracked text files)* — and
   **`LINT_SELFTEST_EXIT=0`**, 49 TOKEN + 4 CONTROL samples, 71
   walk-policy checks, 8 evidence-floor checks.
 - **CONTROL and TOKEN re-derived from `git ls-tree` at BOTH refs**, using
   `SKIP_DIRS` and `CONTROL_BINARY_EXTENSIONS` read out of
   `token-scan.mjs` (18 binary-suffix matches at both):
   `2cf59da` tracked **591** → CONTROL **573**, TOKEN **119**; this tip
-  tracked 592 → CONTROL 574, TOKEN 120. **The brief's 573/119 reproduce.**
+  tracked **597** → CONTROL **579**, TOKEN **120**. **The brief's 573/119
+  reproduce.** CONTROL is +6 (the test file plus five findings) and TOKEN
+  is +1 (only the test file is under a TOKEN root), which is the whole
+  difference between the two corpora stated as arithmetic.
 - **`cargo build -p nputer-index` `CARGO_INDEX_BUILD_EXIT=0`.** The
   Rust workspace suite was NOT run: this branch is a 0-path diff under
   `app/src-tauri/**`, `cargo test` is unmoved by construction, and the
@@ -367,23 +370,25 @@ Main had NOT moved while this lane ran: `git rev-parse main` is
 `2cf59da`, which is also `git merge-base main HEAD`. **That is the
 degenerate case in which the forbidden form is indistinguishable from
 the prescribed one**, so all four spellings agree at **4 paths** and
-none of them is evidence for the others:
+none of them is evidence for the others — a lane whose main never moved
+cannot distinguish the prescribed range from the banned one, and saying
+so is the point:
 
-    git merge-tree --write-tree 2cf59da HEAD   -> tree fdeca7ef…, exit 0   THE PRESCRIBED FORM
-    git diff --name-only 2cf59da <TREE>        (no dots)   -> 4
-    git diff --name-only main...HEAD           (THREE dots) -> 4
-    git diff --name-only main..HEAD            (TWO dots)   -> 4   THE FORBIDDEN PRE-MERGE FORM
-    git diff --name-only $(git merge-base main HEAD)..HEAD (TWO) -> 4
+    git merge-tree --write-tree 2cf59da HEAD   -> tree cf830900…, exit 0   THE PRESCRIBED FORM
+    git diff --name-only 2cf59da <TREE>        (no dots)    -> 10
+    git diff --name-only main...HEAD           (THREE dots) -> 10
+    git diff --name-only main..HEAD            (TWO dots)   -> 10   THE FORBIDDEN PRE-MERGE FORM
+    git diff --name-only $(git merge-base main HEAD)..HEAD (TWO) -> 10
 
-The four paths: `app/src/App.tsx`, `app/src/lib/docs-model.ts`,
+Ten paths: FOUR code — `app/src/App.tsx`, `app/src/lib/docs-model.ts`,
 `app/test/cross-file-rows.test.tsx`, `app/test/watcher-truth.test.tsx` —
-plus this card and five `T-077-s*.md` under `docs/`, which match neither
-trigger.
+and SIX under `docs/`: this card plus five `T-077-s*.md`, which match
+neither trigger.
 
 | gate | trigger | paths | verdict |
 |---|---|---|---|
-| GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` outside `docs/` | **4 of 4** | **FIRES** |
-| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **2** (`App.tsx`, `docs-model.ts`) | **FIRES** |
+| GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` outside `docs/` | **4 of 10** | **FIRES** |
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **2 of 10** (`App.tsx`, `docs-model.ts`) | **FIRES** |
 
 **BOOT GATE — RUN, `BOOT_CHECK_EXIT=0`**, from `tools/e2e` (not `app/`),
 `NPUTER_BOOT_PORT=19851 npm run boot:check`. Both `[nputer]` lines
@@ -428,6 +433,30 @@ graph (`react`, `react-dom`, `vitest`), so no cross-component relation
 and no `observedCount` should move; the one removed edge is the
 `App.tsx → docs-model.ts` import re-emitted with three symbols instead
 of one.
+
+### THE E2E LANE IS A SIBLING'S FENCE, SO IT WAS CHECKED BY MEASUREMENT
+
+`tools/e2e` is `T-084`'s live fence, so a red there would be this lane's
+noise on somebody else's work and unfixable from here.
+`tools/e2e/tests/shell-frame.spec.ts` asserts
+`getByTestId("parse-error-details").locator("li")` `toHaveCount(60)`
+against this repo's own `docs/` tree plus sixty hand-made
+frontmatter-less files. That count is exactly what new rows could move,
+so it was measured rather than reasoned, through the shipped
+`applySnapshot` + `modelIssueRows` over the lane's own walk:
+
+| snapshot | files | failures | model issues | NEW rows | total `<li>` |
+|---|---|---|---|---|---|
+| `repoDocs` (this branch's live tree) | 240 | 0 | **0** | **0** | **0** |
+| `repoDocsWithErrors` | 300 | 60 | 60 | **0** | **60** |
+
+Sixty issues, sixty failure rows, ZERO new rows — every one of those
+issues names a file that already has a failure row, which is the dedupe
+doing exactly what it is for. **The lane's assertion is unmoved.** The
+`repoDocs` row is the second half of the same check and the reason the
+parser's smoke test matters here: this branch adds six `docs/` files,
+and if any of them parsed with an issue the lane's board would gain a
+row it does not expect.
 
 ### What actually reached the human's running app: NOTHING
 
