@@ -870,11 +870,18 @@ disjoint rather than lucky.
 
 **Suffix census of the fourteen:** 9 md, 3 mjs, 1 ts, 1 json.
 
-    MEASURED AT THE NOTES COMMIT, not predicted:
-    git merge-tree --write-tree 7f2f873 <notes tip>  -> exit 0
-    git diff --name-only 7f2f873 <TREE>                      -> 14   PRESCRIBED
-    git diff --name-only 7f2f873...<notes tip>  (THREE dots) -> 14   cmp: exit 0
-    git diff --name-only 7f2f873..<notes tip>   (TWO dots)   -> 49   THE FORBIDDEN FORM
+    MEASURED AT `7356d66`, the notes commit, and not predicted:
+    git merge-tree --write-tree 7f2f873 7356d66  -> exit 0
+    git diff --name-only 7f2f873 <TREE>                   -> 14   PRESCRIBED
+    git diff --name-only 7f2f873...7356d66  (THREE dots)  -> 14   cmp: exit 0
+    git diff --name-only 7f2f873..7356d66   (TWO dots)    -> 49   THE FORBIDDEN FORM
+    comm -12 <main advance> <this lane>                   -> EMPTY, and 35 + 14 = 49
+
+**THE TREE HASH IS DELIBERATELY NOT QUOTED HERE** (T-077, `702dcee`: a
+tree hash quoted inside the tree it describes is stale by construction).
+The COUNTS are quotable because they terminate: writing this paragraph
+moves the tip past `7356d66` and touches only this card, which is
+already one of the fourteen.
 
 - **GRAPH REGEN — FIRES AT EXACTLY 1 OF 13**, and it is outside `docs/`:
   `tools/e2e/tests/docs-input-gate.spec.ts`. The three `.mjs` files that
