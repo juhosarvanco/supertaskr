@@ -240,6 +240,235 @@ signalled 1420 (lsof-only), scratch port 14585 free after, no `pkill`,
 the drill ran in-tree at a committed ref with byte-restore proved, and
 the `nputer-T-060` orphans were left alone.
 
+### 2026-08-23 — fresh executor, the one-clause fix after the REJECTED verdict
+
+A SECOND executor (`claude-opus-5 @T-085-fix`), not the one who built
+it. Off the verdict's post-suite tip `a3f2d89`, main at **`6834287`**.
+Nothing was rebuilt: the resolution arm, the pins and the drills below
+the line are the first executor's and stand. **This is BLOCKING 1 and
+its sweep, plus the residual the verdict filed.** Delivered tip
+`ca32882` plus this notes commit.
+
+**THE CORRECTED CLAUSE.** `docs-scan.mjs`, in `rootAnchoredFiles()`'s own
+doc comment, read *"a file holding the repository root is the only file
+that CAN read this repo's docs/, so `unclassified` is the exact set of
+places the answer could still be short."* It now reads:
+
+    a file holding the repository root is the only kind of file that
+    can name docs/ by an ABSOLUTE anchor, so `unclassified` is the
+    exact set of places the ROOT-ANCHORED answer could still be short
+
+— the ledger's own narrowing, verbatim in substance — followed by the
+concession the verdict asked for: the package-relative class holds no
+root, never enters this census, and is bounded by CONSTRUCTION rather
+than by any list (`siteDocsPrefix` resolving every docs-shaped literal
+against its base, `packageRelativeSites()` its account, `unlinkedSites()`
+its tripwire). **And it names WHICH copy is authoritative** rather than
+re-arguing the retraction: `ROOT_ANCHOR_LEDGER` owns it. That is
+CONVENTIONS' rule-4 remedy applied to the file that just cost a
+rejection for having two copies of one fact.
+
+**THE SWEEP FOUND NO THIRD COPY OF THE PREMISE — AND THREE OF THE
+CONCLUSION.** `git grep -nE "only (file|kind of file) that (CAN|can)
+read"` over the whole tree returns, in code, exactly ONE occurrence
+after the fix: the ledger's own QUOTATION of the withdrawn sentence
+(*"It read: …"*). The other hits are records — T-084's card, this
+card's spec text, and the verdict's own reproduce block — and a verdict
+is a record, so none was touched. What the sweep did turn up is the
+paragraph-level defect one layer down: **the conclusion the false
+premise warranted is stated in three more places, each without the
+package-relative half.** One clause each, comment-only:
+
+| where | said | now says |
+|---|---|---|
+| `docs-scan.mjs`, WHAT IT CANNOT SEE limit 6 | *"`unaccountedRootAnchors()` is what is left"* | *"…what is left OF THE ROOT-ANCHORED CLASS"*, plus a clause that it is not the whole residual and that `unlinkedSites()` is the other tripwire |
+| `docs-scan.mjs`, `ROOT_ANCHOR_LEDGER`'s own WHAT IS TRUE paragraph | *"…is the exact set of places the GATE's answer could still be short"* | *"…of places THIS CLASS's answer could still be short"*, plus *"Not the GATE's"* naming the other half |
+| `docs-gate.mjs`, the account-vs-tree comment | *"is the exact shape whose answer could be short"* | *"is the ROOT-ANCHORED shape…"*, pointing at the package-relative tripwire twelve lines below it |
+
+**The second row is the one worth flagging to the verifier, because it
+is inside the paragraph the verdict held up as the model.** The verdict
+says *"the narrowing already written at :2110 is the sentence :1878
+needs"*, and the narrowing at :2110 is right — but the paragraph it
+opens ENDS in the same disproved conclusion, so copying it wholesale
+would have moved the defect rather than removed it. The narrowing was
+taken; the conclusion was fixed in both places instead of propagated.
+
+**A REWORDING NOTHING PINS IS WHAT SHIPPED THE FALSE SENTENCE, so the
+existing pin got the half it was missing.** `docs-input-gate.spec.ts`'s
+*"the ledger's universal is gone, and what replaced it is checkable"*
+asserted the retraction is PRESENT — which a live contradiction 220
+lines above satisfies, and did. It now also asserts POSITIONALLY that
+every occurrence of the sentence in `docs-scan.mjs` sits between the
+retraction's opening line and the ledger's positive claim. The
+retraction's own quotation is the POSITIVE CONTROL that keeps the
+negative sweep from being vacuous (CONVENTIONS: a negative assertion
+needs one), and the drill proves both halves.
+
+**POISON DRILL — two mutants, PRODUCER SIDE ONLY, both read back with
+`git diff` before running.** At commit `ca32882`, in the lane worktree,
+no cargo and no scratch worktree needed; the spec (the assertion side)
+was never touched.
+
+- **M1 — the regression itself.** One substitution restoring the exact
+  old two lines at the census comment. `docs-input-gate.spec.ts` goes
+  **35 passed / 1 failed, exit 1**, the red body naming the property:
+  *"the universal is stated at offset 82254, outside the retraction
+  that withdraws it"*. The pin kills the mutant that caused this
+  rejection.
+- **M2 — the positive control.** One substitution deleting the
+  retraction's QUOTATION of the sentence while leaving the retraction's
+  headline intact, so the old `toContain` still passes. **35 / 1, exit
+  1**, red on *"the retraction quotes the sentence, so this sweep can
+  match"*. The sweep cannot go green by matching nothing.
+
+Restored after each by `git checkout --`, proved rather than asserted:
+`sha256(docs-scan.mjs)` back to
+**`cfbe8e58b398e1d0f339eae2bd97147cd2b2f03158220b37e833cf7832cce822`**,
+equal to `git show HEAD:tools/e2e/scripts/docs-scan.mjs | shasum -a
+256`, with `git status --porcelain` empty. Baseline before the drill and
+after it: **36/36, exit 0**.
+
+**THE `undefined from undefined/` CASE IS FILED, NOT FIXED —
+`T-085-s2`.** I reproduced it independently of the verifier's method and
+without planting anything: `docsGate()` is pure, so calling it directly
+with one synthetic suite-less reader returns
+`commands: ["undefined from undefined/"]` and `fires: true`, and
+`suiteFor("docs/design/claudedesign_handoff/x.js")` is `undefined`. Both
+halves of the verifier's report reproduce.
+
+**WHY NOT FIXED, IN FENCE TERMS.** The fence is not the obstacle — both
+scripts are `tools/e2e/**`, inside `touches: [tools/e2e]`. The obstacle
+is that **the only genuinely one-line fix is the wrong direction, and
+the right one is a contract change.** Skipping suite-less readers (or
+filtering them out of `gate.commands`) is one line and converts a LOUD
+garbage answer into a SILENT short one — the exact failure T-084 built
+this gate to remove. Naming them unrunnable keeps the loudness but
+changes what `docsGate()`'s `commands` array contains: today every
+member is a runnable command string and the spec asserts on those
+strings. A third option — making `suiteFor()` total by declaring a suite
+for the rest of the tree — would change the gate's answer on real diffs.
+Choosing among three is a card, not a clause, and the card's criteria do
+not reach it. One datum recorded for whoever takes it: `docsGate()`
+already CONTAINS the guard, wired to a dead value — it fills a local
+`const commands = new Set()` under `if (r.command !== undefined)` and
+then never reads it, because the returned list is recomputed from
+`byPath.flatMap((e) => e.commands)`, which is the unguarded template.
+
+**THE SECOND-ORDER HAZARD, MEASURED HERE RATHER THAN RELAYED.** At
+`ca32882`: **24 root-anchored files, 0 of them outside a declared
+suite**; **12 readers, 0 of them suite-less**; and
+`suitesOwedForAllOfDocs()` is exactly `["tools/e2e"]`. So `undefined`
+cannot enter that set on this tree, and `unaccountedRootAnchors()` —
+which filters on `!universal.has(suiteFor(f.file)?.dir)` — cannot be
+perturbed by it, because no root-anchored file yields `undefined` there.
+The ledger equality is safe by measurement, not by argument.
+
+**FIGURES, ALL AT `ca32882` unless named otherwise.** Census unmoved by
+a comment-only change, which is the point: **12 derived readers across 4
+suites**, **119 docs-shaped sites in 22 files, 12 resolving into docs/
+in 10 files**, **24 root-anchored (11 derived, 0 unlinked, 13
+unclassified)**, **1 package-relative site, derived**, **6 unaccounted
+root anchors, ledger equal**, 0 frontmatter issues. `--census` exit
+**0**.
+
+**RANGES, re-derived at my own tip, every dot count stated.** Main
+`6834287`, tip `ca32882`, merge-base `a15b78e` (unmoved).
+
+    git merge-tree --write-tree 6834287 ca32882 -> 2ddbf6fd…, exit 0 (from $?)
+    git diff --name-only 6834287 <TREE>                    -> 6   PRESCRIBED
+    git diff --name-only 6834287...ca32882  (THREE dots)   -> 6
+    git diff --name-only a15b78e..ca32882   (TWO, branch-only) -> 6
+    git diff --name-only 6834287..ca32882   (TWO dots)     -> 53  FORBIDDEN
+
+**53 IS LEFT-ENDPOINT DRIFT AND THE ARITHMETIC PROVES IT**: main
+advanced **47** paths from the cut, the branch **6**, `comm -12` over
+the two sorted lists is **EMPTY**, and 47 + 6 = 53. The six are three
+`docs/tasks/*.md` (this card, `s1`, the new `s2`) and the three
+`tools/e2e/**` files.
+
+**THE THREE STANDING GATES, derived on those six paths.**
+
+| gate | trigger | on these 6 |
+|---|---|---|
+| GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` outside `docs/` | **1 matches** — `docs-input-gate.spec.ts` |
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **0 — NOT OWED** |
+| DOCS GATE | a `docs/` path a code suite reads | **3 — FIRES**, three suites |
+
+GRAPH REGEN's TRIGGER matches and the REGEN is a no-op, confirmed
+materially rather than argued from `.nputerignore`: `cargo run -p
+nputer-index -- index --check --root ../..` from `app/src-tauri` exits
+**0** — *CURRENT, 588891 bytes, 119 files, 1023 symbols, 1550 edges*,
+identical to main's figures. BOOT GATE is 0 of 6 and the human's window
+should not move for this lane.
+
+**DOCS GATE — exit 1, invoked DIRECTLY with the three paths as
+ARGUMENTS, never through `xargs`.** It owes **three**: `npm test from
+app/`, `npm test from tools/e2e/`, `npx vitest run from lib/parser/`.
+`cargo test` is NOT owed — the package-relative reader this card derived
+reads `docs/research/captures/`, not `docs/tasks/` — which is the
+verdict's finding, reproduced. The Run list contains no
+`undefined from undefined/`, which is the zero-live-instances claim of
+`T-085-s2` shown at the gate rather than in prose.
+
+**SUITES, every exit read from its own unpiped `$?`.**
+
+- `npx vitest run` from `lib/parser/` — **263/263 across 12 files**, exit **0**.
+- `npm test` from `app/` — **857/857 across 43 files**, exit **0**.
+- `npm test` from `tools/e2e/` — **135/135**, exit **0**, `NPUTER_E2E_PORT=14803`.
+- `npm run typecheck` from `tools/e2e/` — exit **0**.
+- `npm run lint:tokens -- --selftest` — exit **0** (49 TOKEN + 4 CONTROL
+  samples, 71 walk-policy, 8 evidence-floor); `npm run lint:tokens` —
+  exit **0**, *clean (TOKEN 124; CONTROL 583)*. **CONTROL 582 → 583 is
+  exactly the one tracked file `T-085-s2` adds**, reconciling with the
+  verdict's figure at its own ref rather than disagreeing with it. TOKEN
+  is unmoved at 124: this commit adds no `.ts/.tsx/.mjs` FILE.
+- All three DOCS-GATE-owed suites were re-run AFTER the notes commit
+  landed (T-081-s9); figures in the commit that carries them.
+
+**ENVIRONMENT.** 1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN`
+and nothing else — never bound, connected or signalled. Holder
+unchanged: `node` pid **82549**, one socket `TCP [::1]:1420 (LISTEN)`,
+read at 2026-08-23 23:20 EEST on `Juhos-MacBook-Pro.local`. Scratch
+ports **14801** (the drill's spec runs) and **14803** (the lane), each
+bind-probed free on `127.0.0.1`, `0.0.0.0`, `::1` and `::` immediately
+before use. No `pkill`, no `npm ci`/`npm install` anywhere, no real
+model call, no cargo target directory outside this worktree, and the
+`nputer-T-060` orphans were left alone. The shared capture was never
+touched: this drill mutates only this lane's own `docs-scan.mjs`.
+
+**WHERE MY BRIEF WAS WRONG — the tree over the brief.**
+
+1. **"Main is at `6834287` or later (T-013 merged, its checkpoint
+   landing)" is half a fact.** Main IS at `6834287` and that commit is
+   the T-013 **MERGE**, not a checkpoint — no checkpoint has landed, and
+   main's `docs/STATE.md` is still T-089's snapshot, which lists T-013 as
+   a live lane at `650fdbe`. It changes nothing here (the range rule
+   forecasts against main's TIP whatever kind of commit it is, and a lane
+   is not being cut), but "the checkpoint landed" is not yet true on
+   disk, and a reader who assumes the graph was regenerated at a
+   checkpoint would be assuming it about a merge commit.
+2. **Every line number in the brief HELD**, which is worth saying
+   because the brief warned that its predecessor's did not: `:1878` is
+   the false universal, `:2096` opens the retraction, `:2110` carries
+   the narrowing. All three resolved exactly at `a3f2d89`.
+3. **The brief's instruction to take `:2110` is right and incomplete**,
+   as set out above: that sentence is the correct narrowing, and the
+   paragraph it opens still ended in the disproved conclusion. Naming
+   one sentence as the model does not make its paragraph true.
+4. **"Sweep for any third assertion of the old bound"** produced no
+   third assertion of the PREMISE and three restatements of the
+   CONCLUSION. The instruction was productive and its expected shape was
+   not what the tree held.
+5. The brief's figures at the verdict tip all re-derive: parser 263/263,
+   app 857/857, e2e 135/135, TOKEN 124, `index --check` 0 at 588891 /
+   119 / 1023 / 1550. **CONTROL is 583 here, not 582** — one file added,
+   not a disagreement.
+6. The brief's account of the `undefined from undefined/` case is
+   accurate in every part I could check independently, including that it
+   is reachable only after this card's `JS_CWD_SITE`. I did not re-plant
+   the suite-less file to re-derive the `a15b78e` comparison; that half
+   is the verifier's measurement, relayed as such.
+
 ## Verdicts
 
 ### 2026-08-23 — REJECTED (claude-opus-5 @T-085-verify, review: same-model)
