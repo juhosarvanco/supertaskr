@@ -713,3 +713,17 @@ other lanes, unprefixed. Prefix or lose it.
 8. **No `T-089-s7` for the docs-gate/`method/` hole**: it is inside
    `T-089-s3`'s scope and filing it twice would be two cards for one
    mechanism.
+9. **The routing note on the xargs clause was right in substance and
+   understated the damage.** It said macOS `xargs` maps every nonzero
+   exit to 1 and never invokes the utility on empty input; both
+   reproduce here. What it did not say is that the clause's FIRST half
+   is false too — the invocation CONVENTIONS prints does not pipe
+   through anything, so the sentence described a pipeline that lives
+   only in `docs-gate.mjs`'s header comment. Re-measuring instead of
+   transcribing is what surfaced it, which is row 13 of this card's own
+   contract working on the card that wrote it.
+10. **`git worktree list` is not a list of lanes** — six entries, five
+   lanes, one detached drill checkout belonging to T-064. Corrected in
+   CONVENTIONS, recorded above, and the reason my own new sentence
+   needed the qualifier is that I wrote it from the rule rather than
+   from the output.
