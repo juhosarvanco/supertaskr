@@ -200,7 +200,19 @@ const GRAPH = JSON.stringify({
         { id: "s:src/a/two.ts#Beta", name: "Beta", kind: "interface", exported: true, range: [1, 2] },
       ],
     },
-    { id: "f:src/b/three.ts", path: "src/b/three.ts", lang: "ts", loc: 7, symbols: [] },
+    {
+      id: "f:src/b/three.ts",
+      path: "src/b/three.ts",
+      lang: "ts",
+      loc: 7,
+      // `x` is DECLARED on purpose. Without it the heuristic edge below
+      // names a symbol the graph does not define, `parseGraph` drops the
+      // edge for referential integrity, and the "a heuristic edge is not
+      // evidence" assertion below becomes vacuous — it would pass
+      // against a reader that counts heuristics, because there would be
+      // no heuristic to count. The drill caught exactly that.
+      symbols: [{ id: "s:src/b/three.ts#x", name: "x", kind: "function", exported: false, range: [1, 1] }],
+    },
   ],
   packages: [{ id: "p:react", name: "react", ecosystem: "npm" }],
   edges: [
@@ -243,9 +255,18 @@ describe("T2 · fileDetail", () => {
 
   it("counts only RESOLVED references — a heuristic edge is not evidence", () => {
     const { derived, graph } = fixture();
+    // POSITIVE CONTROL FIRST (CONVENTIONS: a negative assertion needs
+    // one). "Not counted" must be distinguishable from "not there": the
+    // heuristic edge has to have SURVIVED the graph reader before its
+    // absence from the count means anything.
+    const heuristic = (graph?.edges ?? []).filter(
+      (edge) => edge.to === "s:src/a/one.ts#Alpha" && edge.confidence === "heuristic",
+    );
+    expect(heuristic, "the fixture's heuristic edge must reach the graph").toHaveLength(1);
+
     const detail = fileDetail("src/a/one.ts", derived, graph);
     const alpha = detail.symbols.find((symbol) => symbol.name === "Alpha");
-    // The only edge pointing at Alpha carries confidence "heuristic".
+    // The only edge pointing at Alpha is that one.
     expect(alpha?.refs).toBe(0);
     // Line order, not name order: helper is declared at line 3.
     expect(detail.symbols.map((symbol) => symbol.name)).toEqual(["helper", "Alpha"]);
