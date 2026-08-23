@@ -518,18 +518,49 @@ AFTER `npm run build`, and **12 failed / 828 passed, exit 1** before it
 
 ### The range, forecast the prescribed way, with every dot count stated
 
-**MAIN MOVED UNDER THIS LANE while it was building** — `4d2f03c` to
-`f306ee9` (*Sixth triage, batch 4: nineteen promotions, and the
-suggestion backlog reaches ZERO*), **70 paths, every one under
-`docs/tasks/`, 19 added and 51 deleted**. Re-derived at that tip, not at
-the one in the brief:
+**MAIN MOVED UNDER THIS LANE TWICE while it was building**, and the
+second move matters more than the first:
 
-    git merge-tree --write-tree f306ee9 88f75d9  -> tree c47422e8…, exit 0
-    git diff --name-only f306ee9 <TREE>                        -> 14   THE PRESCRIBED PRE-MERGE FORM
-    git diff --name-only f306ee9...88f75d9  (THREE dots)       -> 14
-    git diff --name-only f306ee9..88f75d9   (TWO dots)         -> 84   THE FORBIDDEN PRE-MERGE FORM
-    git diff --name-only 4d2f03c..main      (main's advance)   -> 70
-    git diff --name-only 4d2f03c..88f75d9   (branch-only)      -> 14
+1. `4d2f03c` to `f306ee9` — *Sixth triage, batch 4* — **70 paths, every
+   one under `docs/tasks/`**, 19 added and 51 deleted.
+2. `f306ee9` to `ea7ea0a` — **T-061's merge**, which is `tools/e2e` and
+   includes `docs-gate.mjs`, `docs-scan.mjs` and
+   `docs-input-gate.spec.ts`. Main's advance from the merge-base is now
+   **88 paths**; the intersection with this lane's fourteen is still
+   **EMPTY**, so the fence held across both moves.
+
+**AND THE SECOND MOVE IS A REAL CROSS-LANE RISK, CHECKED RATHER THAN
+HOPED** (integrator.md step 2's own point, applied one role early): the
+xargs clause I added to CONVENTIONS lives in the DOCS GATE bullet, and
+the file that READS that bullet is one of the files T-061 just changed.
+So my green suites were run against the PRE-T-061 spec. Checked at
+`ea7ea0a` without leaving this lane: `conventionsBullet` in
+`docs-scan.mjs` is **byte-identical** across the two trees (`cmp` of the
+extracted 16-line function, exit **0**), and T-061's whole change to the
+five `DOCS_GATE_BULLET` lines in `docs-input-gate.spec.ts` is one
+non-null assertion (`DOCS_GATE_BULLET` to `DOCS_GATE_BULLET!`) — the
+regex, the `--census` check, the site-count negative and the two script
+names are unmoved. Main's `docs/CONVENTIONS.md` is also untouched by
+T-061 (it still carries the old false sentence, and holds `xargs` once
+against this branch's twice), so the clause neither conflicts nor
+depends on anything T-061 moved. **This is a forecast, not a merge**:
+the integrator still owes the full suite on the merged tree.
+
+Re-derived at main's tip as of this writing, not at the one in the
+brief:
+
+    git merge-tree --write-tree ea7ea0a 16495a4  -> tree d01ee622…, exit 0
+    git diff --name-only ea7ea0a <TREE>                        -> 14   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only ea7ea0a...16495a4  (THREE dots)       -> 14
+    git diff --name-only ea7ea0a..16495a4   (TWO dots)         -> 102  THE FORBIDDEN PRE-MERGE FORM
+    git diff --name-only 4d2f03c..main      (main's advance)   -> 88
+    git diff --name-only 4d2f03c..16495a4   (branch-only)      -> 14
+
+At the previous main tip `f306ee9`, the same six lines read 14 / 14 / 14
+/ **84** / 70 / 14 against tree `c47422e8…`. **Only the forbidden form
+and main's advance moved** — by exactly the 18 paths T-061's merge added
+— which is this rule's own argument in miniature: the prescribed form is
+stable under main's movement and the forbidden one is a function of it.
 
 **THE RIGHT-HAND REF IS `88f75d9` AND THIS PARAGRAPH IS NOT IN IT** —
 recording these figures moves the tip by one path (this card), so the
