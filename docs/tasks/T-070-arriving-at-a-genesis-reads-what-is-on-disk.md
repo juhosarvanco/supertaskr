@@ -11,8 +11,8 @@ touches: [app-agent, app-interview]
 builder:
 verifier:
 built_by: claude-opus-5 @T-070
-verified_by:
-review:
+verified_by: claude-opus-5 @T-070-verify
+review: same-model
 ---
 
 Absorbs: T-029-s2, T-029-s3 (fourth triage, 2026-08-19). The suggestion
@@ -464,3 +464,292 @@ file this session wrote is prefixed `T070-`.
 are T-070 planned → verifying and the three new `T-070-s*` files.
 
 ## Verdicts
+
+### 2026-08-23 — REJECTED (claude-opus-5 @T-070-verify, review: same-model)
+
+**Two blocking findings, both against the BOUND, and the first of them
+is that criterion 2's pin pair does not bind the arrival read at all.**
+Two independent whole-file mutants — one in `read_transcript_tail`, one
+in `agent::transcript` — survive the ENTIRE Rust suite at **356 passed /
+0 failed / 3 ignored, exit 0**, byte-for-byte the unmutated figure. The
+second is that `tail_lines` reads the WHOLE FILE by construction when
+the file holds no newline, measured at **20,971,520 of 20,971,520 bytes
+and 622 ms against the old reader's 3 ms** on the same input. Everything
+else on this card is strong and I want that on the record before the
+findings: the carry is a single call to the one reader, the DOM pin
+genuinely proves delivery rather than existence, `T-070-s1` corrects the
+card's own premise and is RIGHT on an independent arm trace, `T-070-s3`
+indicts the executor's own change and its pin reds on the mutant it
+claims, the shape-six removal costs no coverage, and every suite and
+gate reproduces at my refs. This is a rejection about the READ and the
+PIN, not a rebuild of the feature.
+
+I read the card in a single pass, implementation notes included, so I
+did not form my view of the criteria in ignorance of them. The mutants
+below were derived from the criteria's own adversary class — *any*
+implementation that costs the file — and deliberately NOT from the
+executor's eleven-row matrix; the two that matter attack sites that
+matrix never touches.
+
+**Range derived, every dot count stated.** Main at `4d2f03c`, branch tip
+`2143edc`, `git merge-base 4d2f03c 2143edc` = **`2036fb2`** (the cut
+point, unmoved).
+
+    git merge-tree --write-tree 4d2f03c 2143edc  -> tree d1da1ba6…, exit 0 (read from $?)
+    git diff --name-only 4d2f03c <TREE>                    -> 10   PRESCRIBED
+    git diff --name-only 4d2f03c...2143edc  (THREE dots)   -> 10
+    git diff --name-only 2036fb2..2143edc   (TWO, branch-only) -> 10
+    git diff --name-only 4d2f03c..2143edc   (TWO dots)     -> 52   THE FORBIDDEN FORM
+
+**10 files, 1143 insertions, 10 deletions.** The notes forecast 944 at
+`f018636` and said only the insertion count would move; it moved, the
+path list did not. The forbidden count is now **52** rather than the
+notes' 29 — main advanced `09b83e87` → `dc4199d` → `4d2f03c` while this
+lane sat, all docs-only, which is the range rule's own point observed a
+second time.
+
+---
+
+### BLOCKING 1 — criterion 2's pins bind `tail_lines` and the STRICT decode, and nothing binds the arrival read
+
+The criterion: *"A pin SHALL prove the read is bounded by CONSTRUCTION
+and not by the fixture."* The adversary class it names is any
+implementation that costs the file. The pair as built covers exactly two
+members of that class, and both are members the executor chose to plant.
+
+Drilled in a **detached scratch worktree at `2143edc`** (T-072-s1), never
+in the lane, restores by byte copy from `git show 2143edc:<path>` proved
+by an empty per-path `git diff` and by sha256. Every mutation moved the
+PRODUCER only, reported its substitution count, and had its mutated text
+read back with `git diff` before a suite ran. Baselines there first: unit
+**10/10 exit 0**, `agent_runner` **74/0/1 exit 0**.
+
+| # | producer mutated | subs | result |
+|---|---|---|---|
+| **V1** | `read_transcript_tail` body → `fs::read` + `String::from_utf8_lossy` + last-N-lines. `tail_lines` BYPASSED. | 1 | unit **10/10 exit 0**, `agent_runner` **74/0/1 exit 0**, full `cargo test --no-fail-fast` **356/0/3 exit 0** — **SURVIVES EVERYTHING** |
+| **V3** | `agent::transcript` reads the whole file ITSELF, lossily, touching neither `read_transcript_tail` nor `read_transcript` | 1 | full `cargo test --no-fail-fast` **356/0/3 exit 0** — **SURVIVES EVERYTHING** |
+| V2 (control) | inside `tail_lines`: `seek(Start(0))` + `read_to_end` through the injected `src`, then truncate | 1 | unit exit **101**, 9/1 — *read 20611682 bytes, ceiling 543375*. `agent_runner` **74/0/1 exit 0** |
+| V4 (s3 check) | `read_transcript_tail` → pre-T-070 semantics: `tail_lines(max*10)`, keep the last `max` PARSED | 1 | unit exit **101**, 9/1 — *three lines READ, two of them parseable, left: 3 right: 2* |
+
+**What V2 proves is what the pin pair actually covers.** Pin one is a
+real construction pin — a whole-file read that goes THROUGH the injected
+reader dies on the byte count, exactly as claimed. But `tail_lines` is
+private and `Counting<R>` can only see what passes through `src`. Pin one
+therefore proves a helper is bounded; it says nothing about whether the
+arrival read calls it. Pin two forbids exactly one thing: a whole-file
+read that decodes STRICTLY. `String::from_utf8_lossy` walks straight
+past its 2 MiB of `0xFF`, the last 200 lines are clean ASCII either way,
+the positive control (`read_transcript` empty) stays true because
+`read_to_string` is still strict — and every assertion in the body is
+satisfied by a reader that touched all 2,533,676 bytes.
+
+V1 and V3 are the same defect the card was written to close, reinstated
+at two different sites, and the tree is green on both. A user's
+tens-of-MiB transcript would be read in full on every arrival at the
+interview screen, and no pin would say so.
+
+**AND V3 FALSIFIES THE NOTES' OWN REASON FOR REFUSING THE TRIPWIRE.**
+The notes drop a source-grep body (*"`include_str!("mod.rs")`, assert the
+arrival path names the tail reader"*) on the ground that it *"would kill
+only mutants M2 already kills."* V3 is precisely a mod.rs whose arrival
+path does not name the tail reader, and M2's pin
+(`the_arrival_read_is_bounded_by_the_budget_and_not_by_the_file`) is
+**green** on it. The refused body would have killed a mutant nothing in
+the tree kills. That is not a shape-six removal; it was the one pin that
+composed pin one's measurement onto the path the criterion is about.
+
+**REMEDY, and it is small.** Compose the two claims instead of hoping
+they overlap: keep pin one's `Counting` measurement of `tail_lines`, and
+add a body that pins the ARRIVAL PATH to it — either structurally (assert
+`agent::transcript`'s body names `read_transcript_tail`, and
+`read_transcript_tail`'s body names `tail_lines`, which is the refused
+tripwire and is now argued FOR by V3), or by giving `read_transcript_tail`
+an injectable opener so the command-level pin can carry the same counter.
+Either one kills V1 and V3. Neither needs the fixture to grow.
+
+---
+
+### BLOCKING 2 — `tail_lines` reads the whole file when the file holds no newline, and is 200× slower than the reader it replaced there
+
+Criterion 1: *"read the tail … so a file measured in tens of MiB costs a
+bounded read rather than a whole-file parse."* `tail_lines`
+(`app/src-tauri/src/agent/sessions.rs:392`) loops
+`while pos > 0 && newlines <= max_lines`. The newline clause is the only
+budgeted exit. **A file with no newline in it has no such exit**, and the
+walk runs to byte 0.
+
+The function's own doc comment states the property it does not have:
+*"**Nothing before that point is ever pulled through `src`**"*. There is
+no such point on this input.
+
+Measured with the test's own `Counting` wrapper at the `Read` impl, in
+the drill worktree at `2143edc`:
+
+    PROBE no-newline: file_len=20971520 bytes_read=20971520 lines_out=1 elapsed_ms=622
+    PROBE no-newline OLD whole-file path: lines_out=0 elapsed_ms=3
+
+**The whole file, and 200× the time the whole-file reader it replaced
+took on the same bytes.** `append_transcript` always writes the newline,
+so this is not a shape production writes — but `transcript.jsonl` is
+losable by charter and this card's own DOM body pins the ADR-009 posture
+that it *"came off a file anything can write"*. The registry one module
+over is gated at its read boundary (T-039) for exactly this reason; this
+read is not.
+
+**THE SECOND HALF OF THE SAME FUNCTION, AND IT NEEDS NO CORRUPTION AT
+ALL.** Line 400 is `chunk.extend_from_slice(&buf); buf = chunk;` — every
+backward step copies the entire accumulated buffer forward, so the walk
+is O(steps²). On transcripts written by `append_transcript`'s own rules,
+every line well under `TRANSCRIPT_TEXT_CAP`, release build:
+
+| text per line | file bytes | bytes read | tail read | old whole-file read |
+|---|---|---|---|---|
+| 8 KiB | 3,299,276 | 1,703,936 | 1 ms | 1 ms |
+| 32 KiB | 13,129,676 | 6,619,136 | 25 ms | 4 ms |
+| 128 KiB | 52,451,276 | 26,279,936 | **459 ms** | **16 ms** |
+
+4× the bytes, 18× the time. The READ is bounded on these three — 26 MB
+of 52 MB, proportional to the budget — so this row is not a literal
+criterion-1 failure, and I am not counting it as one; it is filed
+separately as **`T-070-s4`** so it survives a rebuild that fixes only
+the loop's exit condition. It is recorded here
+because it is the same function, one rewrite fixes both, and because the
+card's stated purpose is that *"a tens-of-MiB transcript cost a
+tens-of-MiB read and parse on every arrival"* — at the per-line cap the
+module itself permits (256 KiB, twice the largest row above), arrival is
+now SLOWER than it was before this card. A rebuilt `tail_lines` should
+append forward into one buffer and reverse at the end, or collect the
+chunks and join once; and its loop needs a byte ceiling beside the
+newline count so a newline-free file cannot run it to zero.
+
+---
+
+### What I attacked and could NOT break
+
+**The s1 arm trace, re-derived independently in
+`app/src-tauri/src/agent/mod.rs` before reading the finding.** The
+executor is RIGHT and the card's motivating sentence overreaches.
+`start_genesis` returns `ResumeAvailable { native_session_id, turns,
+model }` at **:301**, out of the `sessions::load` / `find_planner` block
+at :297–:298, and `resolve_cli` is not reached until **:337** — a user
+with a usable saved session and no CLI gets the turn count today.
+`SessionIdRejected` leaves the same block at :322. `resume_genesis` reads
+`sessions::genesis_record` at **:425** and answers `NothingToResume`
+(:426, :439) or `SessionIdRejected` (:429) before its `resolve_cli` at
+**:443**. Only `fresh_genesis` (:505) resolves a CLI at **:518** with no
+registry read in front of it, and the card is exactly right about that
+one. **The live hole is the `Ok(None)` arm at :312** — a planner entry
+with no recorded native id falls through to `CliNotFound { probed }` at
+:339 carrying nothing. `T-070-s1` names that arm and also catches the
+narrower `resume_genesis` case where the record is GOOD and the count is
+dropped at :445. Not rejection-grade; the finding is more accurate than
+the card it corrects.
+
+**The carry, and the second copy that is not there.**
+`sessions::genesis_record` has exactly two production call sites —
+`resume_genesis` at mod.rs:425 (pre-existing) and `kickoff` at mod.rs:700
+(this card) — and no assembly of the same fact from `SessionEntry`
+anywhere in the new code. `KickoffOutcome` carries
+`rename_all_fields = "camelCase"` and `GenesisRecord`
+`rename_all = "camelCase"`, and all seven fields mirror
+`GenesisRecordPayload` name-for-name; `Option` without
+`skip_serializing_if` means Rust always sends the key, as the TS comment
+claims. No pin crosses the IPC boundary to prove that shape — both sides
+are asserted against their own mock — but the shapes agree on
+inspection and the field the DOM reads (`turns`) is spelled identically
+on both sides. Recorded, not a finding.
+
+**The DOM pin proves DELIVERY, which is the card's own distinction.**
+`render()` mounts the real `InterviewChat` through React's reconciler
+into a real container; `click()` dispatches a real `MouseEvent` on the
+real button; `issued()` reads the actual invoke log and is asserted equal
+to `["genesis_kickoff"]`; the count is then read back out of the rendered
+DOM by `data-testid` AND by `data-banked-turns`. That is the count
+travelling payload → store → component → document, not the record
+existing on an outcome. The negative mirror body and the ADR-009
+escaping body are both present.
+
+**`T-070-s3` is real, is pinned, and reds on the right mutant.** V4 above
+restores the pre-T-070 "budget = parsed lines kept" meaning and
+`the_tail_read_answers_what_the_whole_file_read_would_have_kept` reds at
+exit 101 with *left: 3, right: 2*. The trade is stated in the card, in
+the notes' "look at hardest" list, and in `read_transcript_tail`'s doc
+comment. **One gap**: the card's BODY still reads *"Every failure mode
+here is a slow read, never a wrong answer"*, uncorrected in place, and
+the notes say that sentence *"deserves the correction"* without making
+it. A reader of the criteria alone still gets the wrong promise.
+
+**The shape-six removal left nothing uncovered.** The `..` in
+`the_hand_driven_kickoff_materializes_a_real_kit_and_names_it` drops an
+`assert!(record.is_none())` whose exact equivalent is the FIRST step of
+`the_hand_driven_kickoff_carries_what_was_banked`, on the same
+nothing-has-run-here folder. Removing it costs no mutant.
+
+**IPC census re-derived, both traps reproduced.** 13 anchored
+`#[tauri::command]` repo-wide (pathspec `'*.rs'`, `/target/` excluded); 13
+`generate_handler!` entries at `lib.rs:488–502`. The unanchored literal
+reads **14** — the fourteenth is `app/src-tauri/src/agent/mod.rs:24`, a
+`//!` doc comment. A naive comma split of the handler block reads **15**:
+the two-line comment at `lib.rs:493–494` carries two commas.
+`git diff` over `app/src-tauri/src/lib.rs` is **0 lines**.
+
+**Security sweep, re-derived.** 0 paths in the diff match
+`'*Cargo.toml' '*Cargo.lock' '*package.json' '*package-lock.json'
+'*tauri.conf.json' 'app/src-tauri/capabilities/*' '*.entitlements'` — no
+dependency added. `acl_pin.rs` is a 0-file diff. Exactly **3**
+`#[ignore]` attributes, anchored on `^[[:space:]]*#\[ignore`, unmoved.
+`cargo audit -n` exit **0**, 0 vulnerabilities / 17 allowed warnings. The
+1,143 added lines carry **0** real secret shapes and **0** new process
+surface — the three regex hits are the notes' OWN prose describing the
+scan, which is worth naming only because the notes claim 0 over the same
+corpus. The new code opens one file read-only and writes nothing. **0**
+of the ten paths carry a NUL byte (scanned as raw bytes with `perl`, not
+`grep`), and the token lint's P5 agrees.
+
+---
+
+### Suites and gates, re-derived at `2143edc`, every exit read unpiped
+
+- **parser** (build first): `npm run build` **0** · `npx vitest run`
+  **263/263 across 12 files, exit 0** · `npx tsc --noEmit` **0**.
+- **app**: `npm run build` **0**, `index-DdOM3cAL.js` 503.20 kB and
+  `index-CwYF5FQb.css` 43.95 kB — both hashes equal to the notes' ·
+  `npm test` **843/843 across 43 files, exit 0**.
+- **cargo, bare `cargo test --no-fail-fast`**: **356 passed / 0 failed /
+  3 ignored**, exit **0**, summed programmatically from **15**
+  `test result:` lines.
+- **E2E**: `npm test` **121/121, exit 0** on the lane's default 14520 ·
+  `npm run typecheck` **0**.
+- **token lint**: `--selftest` **0** (49 TOKEN + 4 CONTROL samples, 71
+  walk-policy, 8 evidence-floor) · lint **0** — *TOKEN 123 files;
+  CONTROL 593 tracked text files*.
+- **GRAPH REGEN — owed (3 paths), run, REAL RED.** `cargo run -p
+  nputer-index -- index --check --root ../..` exit **1** with BOTH count
+  lines: *committed 585305 bytes · 119 files · 1018 symbols · 1539 edges*
+  against *fresh 586657 · 119 · 1020 · 1543*, `files +0 -0 ~3` naming
+  `InterviewChat.tsx`, `agent-store.ts`, `interview-resume-dom.test.tsx`,
+  `edges +5 -1`. Not the `--root` false red (which prints
+  `committed: MISSING`). No `graph.json` is committed on this branch and
+  none should be — the checkpoint owes it.
+- **BOOT GATE — owed (5 paths), run.** `NPUTER_BOOT_PORT=14877 npm run
+  boot:check` from tools/e2e, exit **0**, both lines: `[nputer] project
+  folder: /Users/ujju/Projects/nputer-T-070` and `[nputer] window "main"
+  created`, then SIGTERM.
+- **DOCS GATE — owed (4 paths), run DIRECTLY** (never through `xargs`):
+  `node tools/e2e/scripts/docs-gate.mjs <the four>` exit **1**, owing
+  **npm test from app/**, **npm test from tools/e2e/** and **npx vitest
+  run from lib/parser/** and NOT cargo; 11 derived readers across 4
+  suites, 0 frontmatter issues. All three were run.
+- **`cargo fmt --check` is not a gate here** and was not run — it is red
+  on main over pre-existing files with no `rustfmt.toml` in the tree.
+
+**Port 1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and with
+nothing else**, before and after: holder `node` pid **82549**, one
+socket, `TCP [::1]:1420 (LISTEN)`, identical at both ends. The human's
+app pid **85379** (ppid 82364, started Aug 20 00:20:43) is unchanged. The
+T-060 `fake_agent` orphans **52504**/**52505** (ppid 1) were left alone;
+no `pkill` was used. Scratch ports 14520/14831/14877 were read with the
+same stack-agnostic `lsof` form before use, and the boot check
+bind-probed 14877 itself. The drill worktree
+`../nputer-T-070-vdrill` was removed and `git worktree list` is back to
+main plus the live lanes.
