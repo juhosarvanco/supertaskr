@@ -10,7 +10,7 @@ blocked_by: []
 touches: [app-interview]
 builder:
 verifier:
-built_by: claude-opus-4.8 @T-101
+built_by: claude-opus-4.8 @T-101 (rebuilt after rejection by claude-opus-5 @T-101-rebuild, 2026-08-24)
 verified_by: claude-opus-5 @T-101-verify
 review: same-model
 ---
@@ -344,6 +344,398 @@ sibling context, not re-filed.
   reds by design at the branch, green after the integrator's regen.
 - The stylesheet-hash claim is falsifiable in one build: the CSS content
   hash must read `index-CwYF5FQb.css` unless you meant a token to move.
+
+---
+
+### THE REBUILD after the 2026-08-23 rejection — a SECOND EXECUTOR, appended not rewritten
+
+Rebuilt by `claude-opus-5` `@T-101-rebuild`, same branch
+`task/T-101-denial-visible`, continued from the verdict tip **`0e6889b`**
+(nothing was started over). The session crosses midnight — the drill and
+the branch gates were run late on **2026-08-23 EEST**, the DOCS GATE and
+the suites below on **2026-08-24** — so where a live-environment reading
+carries a clock time it carries its date too. Everything above this line is the FIRST
+executor's account and the verifier's verdict, left byte-unchanged. Every
+figure below is re-derived at my own refs and every one that moved is
+named.
+
+**What the verdict confirmed sound I did not touch**: the notice's
+register, `denialLine`'s shared `MAX_ERROR_CHARS`, the transcribed
+capture entries, the M1/M3 complement, M10's sharpened hostile count and
+its disclosed limit, M11's after-activity red, the byte-identical
+stylesheet. **What I changed is the SUPPRESSION RULE, the KEY, and one
+finding's premise.**
+
+#### BLOCKING 2 — suppression is now PER DENIAL, and the key is what the failure block rendered
+
+The gate was `planner.denials.length > 0 && planner.error?.kind !==
+"toolDenied"`, which drops the WHOLE notice. `TurnError::ToolDenied`
+carries `denials: Vec<String>` built by `denial_names`, which is
+`filter_map(|d| d.tool_name.clone())` — so a denial the CLI wrote without
+a readable tool name never reaches `error.denials`, and the gate then put
+it on NO surface at all. The runner announces that entry deliberately;
+its own comment at the partition reads *"a repeat is a nuisance, a
+silence is the defect this card exists to fix"*, and the gate recreated
+the silence one layer up. The verifier's probe P5 reproduces at my ref.
+
+`visibleDenials(denials, error)` in `interview-model.ts` is the fix: pure,
+per denial, and keyed on `error.denials` — a TYPED field naming exactly
+what `FailureBlock` restates (twice: `failureAction`'s hint through
+`listOf`, and `failureDetail` through `join(", ")`). A denial whose name
+is in that array defers to the block; **every other denial stands**,
+including every nameless one and including one the in-band channel
+announced that the cumulative `result` line never listed. The mount
+becomes `denials.length > 0 && <DenialNotice …>` over the filtered list —
+the notice can lose a ROW and can never lose the NOTICE.
+
+`denialToolName` gives the printed name and the suppression key ONE
+owner, so "the same refusal" is one string rather than two computations
+that could disagree — and that is also T-101-s2's first half closed
+(below).
+
+**The new body drives both directions and they are different mutants.**
+Arm 1: `toolDenied`, `denials: ["Bash"]`, store holds a `Bash` and a
+nameless one — one row survives, it is the nameless one, and the notice
+does not repeat "Bash". Arm 2: `toolDenied`, `denials: ["Write"]`, store
+holds a NAMED `Bash` — the row survives, because the key is what the
+block RENDERED and not whether the denial happens to be nameless. A rule
+keyed on namelessness passes arm 1 and loses arm 2 (mutant N7, red).
+
+#### BLOCKING 1 — the mechanism was backwards, the fix is runner-side, and I did NOT widen the fence
+
+Confirmed at `0e6889b` by reading `run_turn`'s `StreamLine::Result` arm:
+one `unannounced` vector, iterated twice — `for denial in &unannounced {
+emitter.denied(…) }`, then `denial_names(unannounced.iter().copied())`
+into the `permission_denials:` ring note. **The narrowing selects the
+DOUBLE-REPORTED set, not the safe one**, and T-081's comment on that very
+line (*"a name already delivered as its own event does not need repeating
+in the tail"*) is right about the intent and wrong about the set. The
+verifier's P7 is real; before this card nothing rendered `denials`, so
+**this card built the second surface**.
+
+**THE FENCE ARGUMENT, MADE RATHER THAN ASSUMED.** My `touches:` is
+`[app-interview]` = C-13 = `app/src/genesis/**`. The fix lives in
+`app/src-tauri/src/agent/runner.rs` = `app-agent` = C-14. `app-agent` is
+FREE at this moment (`git worktree list`: only `nputer-T-085`, fenced
+`[tools/e2e]`, and this lane), so a widening would have been disjoint and
+buildable. **I did not take it, and the reason is not timidity.**
+
+1. **The only correct fix is runner-side and it is a DELETION**, not a
+   rendering change: drop the ring note for the set the loop above
+   already emits. Every render-side substitute is worse, and each is a
+   rule the tree already writes down — matching the tail's text puts a
+   copy of a `runner.rs` `format!` string in `interview-model.ts` (T-057,
+   and `FailureBlock`'s own header says in as many words that it parses
+   no error text); the tail is a bounded RING, so a chatty CLI can evict
+   the note's first half and a prefix-keyed renderer un-suppresses at
+   random; and keying on "the message is empty" is the runner's partition
+   re-implemented as a proxy. So there is no honest in-fence fix to
+   choose between.
+2. **This is NOT T-013's situation, and the difference is the test.**
+   T-013's widenings were ruled correct because its CRITERION was
+   unbuildable inside its fence — a subprocess needs a Tauri command,
+   registering one edits `lib.rs`. Here criterion 7's literal antecedent
+   (*"the denial notice and the terminal `toolDenied` error"*) is FULLY
+   buildable in fence and is built above. The `exitNonZero` path is a
+   defect in a NEIGHBOURING surface, and `executor.md` is unambiguous
+   about that case: *"A criterion that cannot be built inside the fence is
+   NOT built. Record it, route it as a suggestion naming the fence it
+   needs, and build the rest. Widening the fence from inside the lane is
+   the one repair this role may never make."*
+3. **The cost of routing is one triage cycle and the cost of widening is
+   a precedent.** STATE's own "Next up" reads T-013's double widening as a
+   DISPATCH error the method has no in-flight channel for. Taking the
+   same liberty for a four-line deletion that no criterion requires would
+   make the exception the rule.
+
+**So: the in-fence half is done and the rest is routed.** In fence I made
+the suppression rule a named function whose doc comment NAMES the
+`exitNonZero` gap and why no key exists there, so the next reader meets
+it rather than rediscovers it. Out of fence, `T-101-s1` is **rewritten,
+not amended** — new title, new filename, `suggested_by` moved to the
+verifier who found the mechanism — carrying the reproduction, the
+deletion, the `app-agent` fence, the pin the same commit should add, and
+the three reasons a render-side key is wrong. **The card ships a known
+double report on the `exitNonZero` path and says so here rather than in a
+footnote.**
+
+#### BLOCKING 3 — probe P6 is a fixture now, and V7 and V8 both red
+
+New body *"two refusals identical in NAME and MESSAGE are still two, told
+apart by toolUseId alone"*: one canned `decision_reason` sentence, two
+`Bash` denials, ids `toolu_a` / `toolu_b`. It asserts two rows, that the
+two rendered strings are EQUAL (the body's own premise — see the drill's
+disclosure), and `ids()` deep-equal in order.
+
+    V7  dedupe by `message`                 861/861 exit 0  ->  862/863 exit 1
+    V8  dedupe by `toolName` AND `message`  861/861 exit 0  ->  862/863 exit 1
+
+Both now red, and **each reds this body ALONE** — which is what makes the
+body a pin rather than a restatement of M1's.
+
+#### T-101-s2 and T-101-s3
+
+- **`T-101-s2` first half CLOSED in fence** (`denialToolName` trims and
+  maps empty to `null`), pinned by a fourth degenerate row spelled
+  `toolName: "   "` rather than `""` on purpose: `""` is falsy and reds a
+  `??`-shaped mutant, `"   "` reds a trim-less one as well, so whitespace
+  strictly dominates. The **message half stays open** and the file is
+  narrowed to it — widening the blank-MESSAGE test past `.trim()` is a
+  decision about what "the CLI gave no reason" means, and the identical
+  `.trim()` test sits on `failureDetail` one function up, so the honest
+  close is one rule for both. Renamed to match what remains.
+- **`T-101-s3` left filed, cross-referenced to `T-090`** as the brief
+  asked. T-090 (`status: planned`, `touches: [tools/e2e, .github/,
+  docs/CONVENTIONS.md]`) already owns the gate's four-code contract and
+  its one spelling; this finding's fence is a SUBSET of T-090's, so
+  absorbing it needs no widening. It is the THIRD leak of one contract —
+  `T-084-s6` the empty list, T-090 the `xargs` collapse, this the
+  unresolvable non-empty list.
+
+#### The poison drill — TEN mutants at `4ef95af`, in a DETACHED worktree, all one-sided
+
+Per CONVENTIONS: detached scratch worktree at a named commit, never in
+place. `node_modules` and `lib/parser/dist` were SYMLINKED in (the parser
+is byte-untouched by this lane, so its dist is the same artefact) and
+`npm run build` run there first, because a fresh worktree has no
+`app/dist` and six files read the shipped bundle. **The drill reproduced
+the lane's bundle byte-for-byte** — `index-CwYF5FQb.css` and
+`index-DlNTlSlJ.js` — an independent confirmation of the build. No
+`CARGO_TARGET_DIR` hazard applies: no Rust is drilled here.
+
+Applied by a Python driver with `encoding='utf-8'` and a
+match-count-of-exactly-1 guard, so the em dash never crossed a shell
+string; every mutation read back with `git diff --unified=0` BEFORE its
+suite ran. Baseline in the drill **863/863, exit 0**, identical to the
+lane.
+
+| # | mutant (producer side only) | exit | tests | reds |
+|---|---|---|---|---|
+| M1 | `DenialNotice` dedupes by `toolName` | 1 | 861/863 | MEASURED TURN **+ IDENTICAL PAIR** |
+| M3 | notice gated on `!running` | 1 | 862/863 | liveness **only** |
+| V7 | dedupes by `message` | 1 | 862/863 | **identical pair only** |
+| V8 | dedupes by `toolName` AND `message` | 1 | 862/863 | **identical pair only** |
+| N1 | the REJECTED gate restored (whole notice on `toolDenied`) | 1 | 862/863 | **per-denial body only** |
+| N2 | no suppression at all | 1 | 861/863 | states-it-ONCE + per-denial |
+| N4 | suppression widened to ANY error | 1 | 860/863 | states-it-ONCE + per-denial + hostile |
+| N7 | keep only NAMELESS denials on `toolDenied` | 1 | 862/863 | **per-denial body only** (arm 2) |
+| N3 | `denialToolName` returns `denial.toolName` raw | 1 | 862/863 | **degenerate only** |
+| N6 | `denialLine`'s `refused:` becomes `denied:` | 1 | 861/863 | degenerate + identical pair |
+
+**M1's ROW IS CORRECTED, not re-litigated.** The first build recorded M1
+as reding *"MEASURED TURN only"* and the verifier reproduced that. At
+this tree it reds TWO bodies, because the new identical-pair body also
+refuses a name dedupe. **The M1/M3 complement still holds** — M3 reds the
+liveness body alone and M1 does not touch it — and the new body is not
+M1's duplicate, which V7/V8 prove by reding it and nothing else.
+
+**SHAPE SIX, asked of each new body rather than assumed.** The
+identical-pair body is killed ALONE by V7 and by V8, which no other body
+kills. The per-denial body is killed ALONE by N1 and by N7, which no
+other body kills. The fourth degenerate row earns its place by N3, which
+reds nothing at all without it (the pre-existing rows are `null`, `Bash`
+and `WebFetch`, none affected by dropping the trim).
+
+**ONE ASSERTION THAT CANNOT BE POISONED, DISCLOSED.** In the
+identical-pair body, `expect(rows[1].textContent).toBe(rows[0].textContent)`
+is a FIXTURE TRIPWIRE, not a producer pin: any one-sided mutation of
+`denialLine` moves both sides together, and the exact-string assertion
+one line above reds first in any case. It guards the body's own premise —
+that the two messages really are identical — and it is recorded here
+because a body that cannot red is the finding.
+
+**THE CRAFT NOTE THE VERDICT RAISED IS CLOSED.** The `toolDenied` body's
+positive control asserted `?.textContent` straight into `toContain`, so
+the widened-suppression mutant redded as `TypeError: the given
+combination of arguments (undefined and string) is invalid`. Presence
+before text now: N4 reds it as `AssertionError: a stall says nothing
+about refusals: expected null not to be null` at
+`interview-chat-dom.test.tsx:1007`.
+
+**Restoration proved THREE ways after every mutant and again at the end**:
+`git checkout --`, then sha256 against `git show 4ef95af:<path>`, then an
+empty per-path `git diff`. Pristine
+`interview-turns.tsx`
+`28c6c5f802aa0c16474fd46529092f0447b7423ecd554fcd2ad13e4d1526d699`,
+`interview-model.ts`
+`fc2e2d434b9edb73636ea2a29782f52c80a36b4fdc923109c3e7b7ac8267850e`. The
+drill worktree's symlinks were UNLINKED (never deleted), `app/dist`
+removed, the worktree removed and pruned, and the lane's own installs
+verified intact.
+
+#### Gates — re-derived at main `1aa7137`, dot-counts on every command
+
+Main advanced TWICE more under this lane (T-013 `6834287` and T-097
+`7e82667`, both merged and checkpointed). Merge-base is still my cut
+`a15b78e` (`git merge-base --is-ancestor a15b78e 1aa7137` exits **0**). I
+am the EXECUTOR, so the prescribed form is the `merge-tree` forecast, and
+its exit code was read from `$?` rather than swallowed:
+
+    TREE=$(git merge-tree --write-tree 1aa7137 HEAD)   exit 0, tree 4522c1ee…
+    git diff --name-only 1aa7137 <TREE>                -> 7   PRESCRIBED
+    git diff --name-only 1aa7137...HEAD  (THREE dots)  -> 7   collapses, agrees
+    git diff --name-only a15b78e..HEAD   (TWO, branch) -> 7
+    git diff --name-only 1aa7137..HEAD   (TWO dots)    -> 68  FORBIDDEN — left-drift
+    git diff --name-only a15b78e..1aa7137 (main's advance) -> 61
+
+**68 IS PURE LEFT-ENDPOINT DRIFT and the arithmetic proves it**: main
+advanced **61** paths from the cut, the branch **7**, `comm -12` over the
+two sorted lists is **EMPTY**, and 61 + 7 = 68. The seven are the three
+code paths, this card, and the three findings (two of them RENAMED, which
+is why the count does not grow: at `1aa7137` neither name exists, so the
+merge adds only the new ones).
+
+`grep -n "at any merge whose diff" docs/CONVENTIONS.md` returns exactly
+**3** (this worktree's copy: lines 566, 631, 660 — the same three bullets
+main numbers 592/717/746, since the lane is cut before those edits).
+**ALL THREE FIRE.**
+
+| gate | trigger | on these 7 |
+|---|---|---|
+| GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` outside `docs/` | **3 — FIRES** |
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **2 — FIRES** |
+| DOCS GATE | a `docs/` path a code suite reads | **4 — FIRES** |
+
+- **GRAPH REGEN — a REAL red at the branch, and the forecast is MEASURED
+  AT THE MERGE TREE rather than reasoned from a delta.** At the branch,
+  `index --check --root ../..` from `app/src-tauri` exits **1**: committed
+  *588891 bytes · 119 files · 1023 symbols · 1550 edges*, fresh *592271 ·
+  119 · 1029 · 1559*, `files +0 -0 ~3`, `edges +12 -3` — both count lines
+  present, so not the `--root` false red. **THE BRIEF IS RIGHT THAT MY
+  PREDECESSOR'S ABSOLUTES ARE STALE, AND SO ARE THE BRANCH'S.** I built
+  the merge's tree as a throwaway commit (`git commit-tree`, no ref
+  moved), checked it out detached with its OWN `CARGO_TARGET_DIR` inside
+  it, and ran the gate there: committed **645482 bytes · 126 files · 1120
+  symbols · 1703 edges** — main's, exactly the brief's figure — against
+  fresh **648862 · 126 · 1126 · 1712**, the SAME `files +0 -0 ~3` and
+  `edges +12 -3`. **So the delta is +6 symbols / +9 edges at BOTH refs and
+  only the endpoints moved** (1023→1029 at the branch, 1120→1126 at the
+  merge), which is T-013's checkpoint lesson reproduced: check a forecast
+  by its endpoints, never by its deltas. The first build's *+4 symbols /
+  +3 edges* is superseded — this rebuild adds `denialToolName` and
+  `visibleDenials`. Every new edge's endpoints are inside C-13 and C-14
+  (`GenesisDenial`, `TurnErrorPayload`), so **no component relation moves
+  and the registry still stops at C-14**. No `graph.json` is committed:
+  the regen is the integrator's at the checkpoint. The forecast worktree
+  and its 343 MiB target were removed and pruned.
+- **BOOT GATE — exit 0**, both lines verbatim: `[nputer] project folder:
+  /Users/ujju/Projects/nputer-T-101` and `[nputer] window "main"
+  created`. Scratch port **14766**, bind-probed FREE on `127.0.0.1`,
+  `0.0.0.0`, `::1` and `::` immediately before use and free again after.
+- **DOCS GATE — invoked DIRECTLY from the repo root with the RANGE RULE's
+  own four ROOT-RELATIVE paths**, never through `xargs` and never with a
+  `../../` spelling (which is `T-101-s3`, and the reason that finding
+  exists). Result and owed suites below.
+
+#### Suites, every `$?` read unpiped, at `4ef95af` unless stated
+
+- **app `npm test`: 863 / 863 across 43 files, exit 0.** Derived, not
+  copied: `interview-chat-dom.test.tsx` holds **39** `it(` bodies at
+  `a15b78e`, **43** at the rejected tip `0e9c045`, **45** now — so 857 +
+  4 + 2 = 863, and the arithmetic closes at every ref. (The first build's
+  prose says *"five new bodies"* where its own arithmetic and the file
+  both say **four**; the fifth was the hostile sweep, which was WIDENED,
+  not added.)
+- `npm run build` from app/ exit **0**, 265 modules.
+- **The stylesheet did not move and I checked it the way the verifier
+  did**: `index-CwYF5FQb.css`, 43.95 kB, unchanged from the base and from
+  the rejected tip, and reproduced independently by the drill worktree's
+  own build. The JS moved and had to — `index-jYo9A0Ak.js` →
+  **`index-DlNTlSlJ.js`**, 504.44 kB — because both source files are
+  bundle inputs.
+| command | where | result | exit |
+|---|---|---|---|
+| `npm run build` | lib/parser | dist emitted | **0** |
+| `npx vitest run` | lib/parser | **263 / 263** over 12 | **0** |
+| `npx tsc --noEmit` | lib/parser | — | **0** |
+| `npm run build` | app | 265 modules, css **43.95 kB** unmoved | **0** |
+| `npm test` | app | **863 / 863** over 43 | **0** |
+| `npx tsc --noEmit` | app | the app program | **0** |
+| `npx tsc -p tsconfig.test.json` | app | the TEST program — a green `tsc` alone is not a green build (T-073) | **0** |
+| `npm run lint:tokens -- --selftest` | tools/e2e | 49 TOKEN + 4 CONTROL samples, 71 walk-policy, 8 evidence-floor | **0** |
+| `npm run lint:tokens` | tools/e2e | clean, **TOKEN 124 / CONTROL 584** | **0** |
+| `npm run typecheck` | tools/e2e | — | **0** |
+| `npm test` (`NPUTER_E2E_PORT=14767`) | tools/e2e | **129 / 129**, 33.8 s | **0** |
+| `node tools/e2e/scripts/docs-gate.mjs <4 paths>` | repo ROOT | **FIRES**, 3 suites owed | **1** |
+| `NPUTER_BOOT_PORT=14766 npm run boot:check` | tools/e2e | both `[nputer]` lines | **0** |
+| `cargo run -p nputer-index -- index --check --root ../..` | app/src-tauri | **REAL** red, by design | **1** |
+
+**CONTROL closes from both directions and TOKEN does not move.** The
+verdict measured **TOKEN 124 / CONTROL 582** at `0e9c045`; the verdict
+COMMIT `0e6889b` then added `T-101-s2` and `T-101-s3` as tracked files,
+so 582 + 2 = **584**, which is what the lint prints here. TOKEN is
+unchanged because this rebuild adds no `.ts`/`.tsx`/`.mjs` file under
+app/src, app/test or tools/e2e — it edits three that already existed.
+
+**No cargo suite is owed**: this diff has no Rust and does not touch
+`docs/CONVENTIONS.md`, which is why the DOCS GATE names three suites and
+not four. All three owed suites were run AFTER the last doc edit
+(T-081-s9), and the run recorded here is that one.
+
+**Port hygiene.** Two scratch ports, **14766** (boot gate) and **14767**
+(e2e), each bind-probed FREE on `127.0.0.1`, `0.0.0.0`, `::1` and `::`
+immediately before use and free again after; neither is the default
+14520 nor 1420. **Port 1420 was READ ONLY** with `lsof -nP -iTCP:1420
+-sTCP:LISTEN`, before and after every stage — holder `node` pid **82549**,
+one socket `TCP [::1]:1420 (LISTEN)`, unchanged at 23:54, 23:56 and 00:02
+EEST. No bind, no connect, no signal, no `pkill`. **No real model call**:
+`docs/research/captures/real-planner-turn-2026-08-19.jsonl` was never
+opened for writing and is byte-identical to `HEAD` (sha256
+`273a3d33593a53614101489b9cd3e9574010beae3830a60f43a8e65f74da47ac`, empty
+`git diff`). No screen-control probe was run — headless verification
+only.
+
+#### Where the brief and the verdict were wrong
+
+- **The brief's regen forecast framing was right and its absolutes were
+  the stale half, as it said.** Nothing in it was wrong on that count; I
+  re-derived at three refs and recorded all three.
+- **The brief says the graph is "1120 symbols / 1703 edges"** — true of
+  MAIN's committed graph, confirmed by reading it inside the merge tree.
+  It is NOT the number this worktree's `index --check` prints (1023/1550),
+  because the lane is cut at `a15b78e`. Both are stated above so neither
+  reads as the other's correction.
+- **The verdict's `T-101-s1` diagnosis reproduces exactly** and its two
+  cited line numbers still resolve at `0e6889b`; I cite the SYMBOL
+  (`run_turn`'s `StreamLine::Result` arm, `denial_names`) per CONVENTIONS
+  rather than the line, because the next merge into `runner.rs` will move
+  them.
+- **The verdict's step 2 offered two ways to fix BLOCKING 2** — scope the
+  suppression, or stop `FailureBlock` owning the denial list. I took the
+  first. The second would have moved a rule out of the failure block that
+  T-029 deliberately put there, and would have left a `toolDenied` turn's
+  cause of death unnamed in the block that names causes of death.
+- **`git worktree list` shows a fourth entry** — another lane's detached
+  scratch worktree in the shared scratchpad. It is not mine and I left it
+  alone (CONVENTIONS' own note that the scratch directory, and therefore
+  the worktree list, is shared).
+
+#### For the verifier of the rebuild
+
+- **The three blocking findings are closed in two different ways and the
+  difference is the point.** BLOCKING 2 and BLOCKING 3 are closed IN CODE
+  with mutants that isolate them (N1/N7 and V7/V8, each reding one body
+  alone). BLOCKING 1 is closed as a CORRECTED FINDING and an argued fence
+  refusal, not as code — the card still double-reports on the
+  `exitNonZero` path, and the argument for routing rather than widening is
+  written out above so it can be ruled on rather than inferred.
+- **The suppression rule is pure and in one place.** If you want to
+  falsify it without a DOM, `visibleDenials` takes `(denials, error)` and
+  returns a subsequence; the interesting inputs are a nameless denial with
+  `toolDenied`, a named one the array does not name, and any non
+  `toolDenied` error.
+- **Re-derive the range at YOUR tip.** Main moved twice under this lane
+  already (`11c82a1` → `6834287` → `1aa7137`) and the forbidden two-dot
+  count went 24 → 52 → **68** across those refs while the branch's own
+  figure went 3 → 5 → **7**. The merge-tree forecast is the only form
+  whose left endpoint is yours.
+- **The graph forecast is measured at the MERGE TREE, not extrapolated.**
+  1120 → 1126 symbols, 1703 → 1712 edges, `files +0 -0 ~3`. If your ref
+  differs, the DELTA (+6 / +9) is the part that should survive; the
+  endpoints are not.
+- **T-081-s3's decision is unchanged** by the rebuild: the notice ships
+  LIVE-ONLY, `rehydrate` still writes `denials: []`, and persisting a
+  denial record still needs both fences.
 
 ## Verdicts
 
