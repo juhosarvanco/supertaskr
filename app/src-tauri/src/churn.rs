@@ -269,9 +269,14 @@ pub struct ParsedChurn {
 
 /// Parse `git log -z --name-only --format=%x01%ct` output.
 ///
-/// THE WIRE FORMAT, measured on git 2.50.1 rather than remembered:
+/// THE WIRE FORMAT, measured on git 2.50.1 rather than remembered
+/// (fenced as `text`: an indented block here is a rustdoc DOCTEST, and
+/// bare `cargo test` runs it — which is how this comment first turned
+/// into a compile error):
 ///
-///     \x01<ct>\0 \n<first path>\0 <path>\0 <path>\0 \x01<ct>\0 …
+/// ```text
+/// \x01<ct>\0 \n<first path>\0 <path>\0 <path>\0 \x01<ct>\0 …
+/// ```
 ///
 /// `-z` NUL-terminates every entry, and the blank line git puts between
 /// a commit header and its diff survives as a SINGLE `\n` glued to the
