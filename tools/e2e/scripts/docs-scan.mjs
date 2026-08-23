@@ -274,12 +274,31 @@ const BACKTICK = String.fromCharCode(96);
  * instead, because their samples are string text and no comment strip
  * can reach them.
  */
+/**
+ * T-061 turned `checkJs` on for this directory, so the shapes this
+ * scanner passes around are declared once here instead of being inferred
+ * per call site. They describe what the code already builds; nothing
+ * below changed to satisfy them.
+ *
+ * @typedef {{ name: string, params: (string | null)[], defaults: (string | null)[], body: string, byParam?: Map<number, Set<string>> }} FnDef
+ * @typedef {{ filePath: string, fileDir: string, pkgDir: string, crateDir: string | undefined, stripped: string, functionDefs: Map<string, FnDef>, bindings: Map<string, string>, resolveImport?: (name: string) => { expr: string, ctx: ScanCtx } | null }} ScanCtx
+ * @typedef {{ file: string, suite: string | undefined, command: string | undefined, prefixes: string[], via: string[] }} Reader
+ * @typedef {{ def: FnDef, ctx?: ScanCtx, rel?: string, stripped?: string }} CalleeHit
+ */
+
+/**
+ * @param {string} src
+ * @returns {string}
+ */
 export function stripComments(src) {
   const n = src.length;
+  /** @type {(string | undefined)[]} */
   const out = new Array(n);
+  /** @param {number} i */
   const keep = (i) => {
     out[i] = src[i];
   };
+  /** @param {number} i */
   const blank = (i) => {
     const c = src[i];
     out[i] = c === "\n" || c === "\r" ? c : " ";
@@ -347,7 +366,7 @@ export function stripComments(src) {
       continue;
     }
     keep(i);
-    if (!/\s/.test(c)) prevSig = i;
+    if (!/\s/.test(/** @type {string} */ (c))) prevSig = i;
     i += 1;
   }
   for (let k = 0; k < n; k += 1) if (out[k] === undefined) blank(k);
@@ -382,12 +401,17 @@ const RS_SITE = /([\w$]+(?:::[\w$]+)*(?:\(\))?)\s*\.\s*join\s*\(\s*"docs(?=[/"])
 /** The path literal a site opens, read forward from the match so a
  *  segmented call (`'docs', 'tasks', 'rejected'`) reads the same as a
  *  slashed one (`"docs/tasks/rejected"`). Returns a POSIX prefix. */
+/**
+ * @param {string} stripped
+ * @param {number} from
+ * @returns {string}
+ */
 function sitePrefix(stripped, from) {
   const segments = [];
   let i = from;
   const n = stripped.length;
   while (i < n) {
-    while (i < n && /[\s,]/.test(stripped[i])) i += 1;
+    while (i < n && /[\s,]/.test(/** @type {string} */ (stripped[i]))) i += 1;
     const q = stripped[i];
     if (q !== '"' && q !== "'" && q !== "`") break;
     let j = i + 1;
@@ -403,7 +427,7 @@ function sitePrefix(stripped, from) {
     if (text.includes("$")) break; // interpolated: stop at what is known
     segments.push(...text.split("/").filter(Boolean));
     i = j + 1;
-    while (i < n && /\s/.test(stripped[i])) i += 1;
+    while (i < n && /\s/.test(/** @type {string} */ (stripped[i]))) i += 1;
     if (stripped[i] !== ",") break;
     i += 1;
   }
@@ -519,6 +543,10 @@ const SAMPLE_ROOT = path.resolve(path.sep, "nputer-call-sample-root");
  *  `resolve(".")` inside the fragment IS the root. Imports resolve to
  *  nothing on purpose: a fragment has no filesystem to hop into, and the
  *  hop across files is proved against the real tree instead. */
+/**
+ * @param {string} stripped
+ * @returns {ScanCtx}
+ */
 function sampleContext(stripped) {
   return {
     filePath: path.join(SAMPLE_ROOT, "pkg", "sample.ts"),
@@ -628,16 +656,30 @@ export function callSelftest() {
 }
 
 /** Every docs site in one already-stripped source text. */
+/**
+ * @param {string} stripped
+ * @returns {{ line: number, base: string, prefix: string }[]}
+ */
 export function docsSites(stripped) {
+  /** @type {{ line: number, base: string, prefix: string }[]} */
   const sites = [];
+  /** @param {number} index @returns {number} */
   const lineOf = (index) => stripped.slice(0, index).split("\n").length;
   for (const m of stripped.matchAll(JS_SITE)) {
     const start = m.index + m[0].length - "docs".length - 1;
-    sites.push({ line: lineOf(m.index), base: m[1].trim(), prefix: sitePrefix(stripped, start) });
+    sites.push({
+      line: lineOf(m.index),
+      base: /** @type {string} */ (m[1]).trim(),
+      prefix: sitePrefix(stripped, start),
+    });
   }
   for (const m of stripped.matchAll(RS_SITE)) {
     const start = m.index + m[0].length - "docs".length - 1;
-    sites.push({ line: lineOf(m.index), base: m[1].trim(), prefix: sitePrefix(stripped, start) });
+    sites.push({
+      line: lineOf(m.index),
+      base: /** @type {string} */ (m[1]).trim(),
+      prefix: sitePrefix(stripped, start),
+    });
   }
   return sites.sort((a, b) => a.line - b.line || a.prefix.localeCompare(b.prefix));
 }
@@ -647,18 +689,29 @@ export function docsSites(stripped) {
 /** `name = <expr>;` bindings, plus Rust `fn name() -> … { <expr> }`. The
  *  value is the raw text, evaluated lazily and to a FIXPOINT so
  *  `here` -> `repoRoot` chains resolve in either declaration order. */
+/**
+ * @param {string} stripped
+ * @returns {Map<string, string>}
+ */
 function bindings(stripped) {
+  /** @type {Map<string, string>} */
   const map = new Map();
   for (const m of stripped.matchAll(/(?:^|[;{}\s])(?:const|let|var)\s+([\w$]+)\s*=\s*([^;\n]+)/g)) {
-    if (!map.has(m[1])) map.set(m[1], m[2].trim());
+    if (!map.has(/** @type {string} */ (m[1])))
+      map.set(/** @type {string} */ (m[1]), /** @type {string} */ (m[2]).trim());
   }
   for (const m of stripped.matchAll(/(?:^|\s)fn\s+([\w$]+)\s*\(\s*\)[^{]*\{([\s\S]{0,400}?)\n\s*\}/g)) {
-    if (!map.has(m[1])) map.set(m[1], m[2].trim());
+    if (!map.has(/** @type {string} */ (m[1])))
+      map.set(/** @type {string} */ (m[1]), /** @type {string} */ (m[2]).trim());
   }
   return map;
 }
 
 /** How many directories `.parent()` / `.ancestors().nth(n)` climbs. */
+/**
+ * @param {string} expr
+ * @returns {number}
+ */
 function rustClimb(expr) {
   let up = 0;
   for (const _ of expr.matchAll(/\.\s*parent\s*\(\s*\)|\.\s*and_then\s*\(\s*Path::parent\s*\)/g)) up += 1;
@@ -675,6 +728,11 @@ function rustClimb(expr) {
  * what a bare `resolve('..')` is relative to); `crateDir` is the nearest
  * ancestor holding a Cargo.toml, which is what `CARGO_MANIFEST_DIR` is.
  * Depth-limited so a self-referential binding cannot spin.
+ *
+ * @param {string} expr
+ * @param {ScanCtx} ctx
+ * @param {number} [depth]
+ * @returns {string | null}
  */
 export function evalBase(expr, ctx, depth = 0) {
   if (depth > 6) return null;
@@ -691,12 +749,14 @@ export function evalBase(expr, ctx, depth = 0) {
   // The file's own URL, with an optional relative step and dirname.
   if (text.includes("import.meta.url")) {
     const url = /new URL\(\s*(['"`])([^'"`]*)\1\s*,\s*import\.meta\.url\s*\)/.exec(text);
-    let base = url === null ? ctx.filePath : path.resolve(ctx.fileDir, url[2]);
+    let base = url === null ? ctx.filePath : path.resolve(ctx.fileDir, /** @type {string} */ (url[2]));
     // fileURLToPath(import.meta.url) is the FILE; dirname() makes it the dir.
     if (url === null && /\bdirname\s*\(/.test(text)) base = path.dirname(base);
     const extra = /(?:^|[^\w$.])(?:[\w$]+\.)?(?:resolve|join)\s*\(\s*[^,()]*\(([\s\S]*?)\)\s*\)\s*,\s*(.*)$/.exec(text);
     if (extra !== null) {
-      const lits = [...extra[2].matchAll(/(['"`])([^'"`]*)\1/g)].map((m) => m[2]);
+      const lits = /** @type {string[]} */ (
+        [.../** @type {string} */ (extra[2]).matchAll(/(['"`])([^'"`]*)\1/g)].map((m) => m[2])
+      );
       if (lits.length > 0) base = path.resolve(base, ...lits);
     }
     return base;
@@ -704,32 +764,34 @@ export function evalBase(expr, ctx, depth = 0) {
   // `resolve(BASE?, '<rel>'…)` / `join(...)`: literals against a base.
   const call = /(?:^|[^\w$.])(?:[\w$]+\.)?(?:resolve|join)\s*\(([\s\S]*)\)\s*$/.exec(text);
   if (call !== null) {
-    const args = splitArgs(call[1]);
+    const args = splitArgs(/** @type {string} */ (call[1]));
     if (args.length === 0) return null;
+    /** @param {string} a */
     const lit = (a) => /^(['"`])([\s\S]*)\1$/.exec(a.trim());
-    const first = lit(args[0]);
+    const first = lit(/** @type {string} */ (args[0]));
     let base;
     let rest;
     if (first !== null) {
       base = ctx.pkgDir; // the runner's cwd for this package
       rest = args;
     } else {
-      base = evalBase(args[0], ctx, depth + 1);
+      base = evalBase(/** @type {string} */ (args[0]), ctx, depth + 1);
       rest = args.slice(1);
     }
     if (base === null || base === undefined) return null;
+    /** @type {string[]} */
     const lits = [];
     for (const a of rest) {
       const l = lit(a);
       if (l === null) return null;
-      lits.push(l[2]);
+      lits.push(/** @type {string} */ (l[2]));
     }
     return lits.length > 0 ? path.resolve(base, ...lits) : base;
   }
   // A bare identifier (or a zero-argument call): follow its binding.
   const ident = /^([\w$]+(?:::[\w$]+)*)(?:\(\))?$/.exec(text);
   if (ident !== null) {
-    const name = ident[1].split("::").pop();
+    const name = /** @type {string} */ (/** @type {string} */ (ident[1]).split("::").pop());
     const local = ctx.bindings.get(name);
     if (local !== undefined && local !== text) return evalBase(local, ctx, depth + 1);
     const imported = ctx.resolveImport?.(name);
@@ -740,7 +802,12 @@ export function evalBase(expr, ctx, depth = 0) {
 }
 
 /** Split a call's argument text on top-level commas. */
+/**
+ * @param {string} text
+ * @returns {string[]}
+ */
 function splitArgs(text) {
+  /** @type {string[]} */
   const out = [];
   let depth = 0;
   let quote = null;
@@ -804,6 +871,10 @@ export function sourceCorpus(root = repoRoot) {
 }
 
 /** The suite a path belongs to: the longest declared package prefix. */
+/**
+ * @param {string} rel
+ * @returns {{ dir: string, command: string } | undefined}
+ */
 export function suiteFor(rel) {
   let best;
   for (const s of SUITES) {
@@ -815,6 +886,11 @@ export function suiteFor(rel) {
 }
 
 /** The nearest ancestor directory holding a Cargo.toml, or undefined. */
+/**
+ * @param {string} absFile
+ * @param {string} root
+ * @returns {string | undefined}
+ */
 function crateDirFor(absFile, root) {
   let dir = path.dirname(absFile);
   while (dir.startsWith(root)) {
@@ -831,10 +907,18 @@ function crateDirFor(absFile, root) {
 
 /** Which module an imported name comes from, if the file imports it from
  *  a RELATIVE first-party path this scanner can open. */
+/**
+ * @param {string} stripped
+ * @param {string} name
+ * @returns {string | null}
+ */
 function importSourceOf(stripped, name) {
   for (const m of stripped.matchAll(/import\s*\{([^}]*)\}\s*from\s*(['"`])([^'"`]+)\2/g)) {
-    const names = m[1].split(",").map((s) => s.trim().split(/\s+as\s+/).pop().trim());
-    if (names.includes(name) && m[3].startsWith(".")) return m[3];
+    const names = /** @type {string} */ (m[1])
+      .split(",")
+      .map((s) => /** @type {string} */ (s.trim().split(/\s+as\s+/).pop()).trim());
+    const spec = /** @type {string} */ (m[3]);
+    if (names.includes(name) && spec.startsWith(".")) return spec;
   }
   return null;
 }
@@ -843,11 +927,16 @@ function importSourceOf(stripped, name) {
  *  candidate ROOT ANCHORS that live in another file. The site arm has
  *  always followed these (`ctx.resolveImport`); the anchor arm did not,
  *  which is the asymmetry `unlinkedFiles` used to be silent about. */
+/**
+ * @param {string} stripped
+ * @returns {string[]}
+ */
 function importedNames(stripped) {
+  /** @type {Set<string>} */
   const names = new Set();
   for (const m of stripped.matchAll(/import\s*\{([^}]*)\}\s*from\s*(['"`])([^'"`]+)\2/g)) {
-    if (!m[3].startsWith(".")) continue;
-    for (const raw of m[1].split(",")) {
+    if (!/** @type {string} */ (m[3]).startsWith(".")) continue;
+    for (const raw of /** @type {string} */ (m[1]).split(",")) {
       const name = raw.trim().split(/\s+as\s+/).pop()?.trim();
       if (name !== undefined && name !== "") names.add(name);
     }
@@ -859,12 +948,18 @@ function importedNames(stripped) {
  *  relative specifier that re-exports `name`, or null. `lib/parser`'s
  *  public surface is exactly this shape, so a call hop that stops at the
  *  barrel stops one file short of every parser entry point. */
+/**
+ * @param {string} stripped
+ * @param {string} name
+ * @returns {string | null}
+ */
 function reExportSourceOf(stripped, name) {
   for (const m of stripped.matchAll(/export\s*\{([^}]*)\}\s*from\s*(['"`])([^'"`]+)\2/g)) {
-    const names = m[1]
+    const names = /** @type {string} */ (m[1])
       .split(",")
       .map((s) => s.trim().replace(/^type\s+/, "").split(/\s+as\s+/).pop()?.trim());
-    if (names.includes(name) && m[3].startsWith(".")) return m[3];
+    const spec = /** @type {string} */ (m[3]);
+    if (names.includes(name) && spec.startsWith(".")) return spec;
   }
   return null;
 }
@@ -881,6 +976,11 @@ const MODULE_SUFFIXES = ["", ".ts", ".tsx", ".mts", ".cts", ".mjs", ".js", "/ind
  * in lib/parser/ resolves to nothing — and silence in the resolver is
  * silence in the answer, which is the defect this whole card is about.
  */
+/**
+ * @param {string} fromDir
+ * @param {string} spec
+ * @returns {string[]}
+ */
 function moduleCandidates(fromDir, spec) {
   const bases = [spec];
   const emitted = /\.(js|mjs|cjs)$/.exec(spec);
@@ -892,6 +992,10 @@ function moduleCandidates(fromDir, spec) {
   return [...new Set(out)];
 }
 
+/**
+ * @param {string} abs
+ * @returns {string | null}
+ */
 function readIfFile(abs) {
   try {
     if (!statSync(abs).isFile()) return null;
@@ -912,6 +1016,12 @@ function readIfFile(abs) {
  */
 const crateFnCache = new Map();
 
+/**
+ * @param {string | undefined} crateDir
+ * @param {string} name
+ * @param {string} root
+ * @returns {{ file: string, expr: string } | null}
+ */
 function crateFnBinding(crateDir, name, root) {
   if (crateDir === undefined) return null;
   let table = crateFnCache.get(crateDir);
@@ -950,6 +1060,13 @@ function crateFnBinding(crateDir, name, root) {
 // it through a callee is still resolving it.
 
 /** Match a delimiter pair from an opening index; -1 if unbalanced. */
+/**
+ * @param {string} text
+ * @param {number} open
+ * @param {string} openChar
+ * @param {string} closeChar
+ * @returns {number}
+ */
 function matchDelim(text, open, openChar, closeChar) {
   let depth = 0;
   let quote = null;
@@ -982,10 +1099,13 @@ function matchDelim(text, open, openChar, closeChar) {
  *  very module has it — and such a helper is called with NO ARGUMENT, so
  *  a call hop that only reads arguments sees a call with nothing in it
  *  and stays silent about a body that reads docs/ on every run. */
+/**
+ * @param {string} text
+ * @returns {{ name: string | null, fallback: string | null }}
+ */
 function paramParts(text) {
   const eq = text.indexOf("=");
-  const head = (eq === -1 ? text : text.slice(0, eq))
-    .split(":")[0]
+  const head = /** @type {string} */ ((eq === -1 ? text : text.slice(0, eq)).split(":")[0])
     .trim()
     .replace(/^(?:mut|ref)\s+/, "")
     .replace(/^&+\s*/, "");
@@ -996,6 +1116,11 @@ function paramParts(text) {
 /** The `{ … }` body that follows a signature, or null when there is none
  *  (a Rust trait signature, an overload). Bounded so a malformed file
  *  cannot make this walk the rest of the corpus. */
+/**
+ * @param {string} stripped
+ * @param {number} from
+ * @returns {string | null}
+ */
 function bodyAfter(stripped, from) {
   for (let i = from; i < stripped.length && i < from + 400; i += 1) {
     const c = stripped[i];
@@ -1015,8 +1140,14 @@ function bodyAfter(stripped, from) {
  * nothing about overloads, generics with braces in them, or scope, and a
  * shape it cannot read yields no definition rather than a wrong one.
  */
+/**
+ * @param {string} stripped
+ * @returns {Map<string, FnDef>}
+ */
 export function functionDefs(stripped) {
+  /** @type {Map<string, FnDef>} */
   const defs = new Map();
+  /** @param {string} name @param {string} paramText @param {number} bodyFrom */
   const record = (name, paramText, bodyFrom) => {
     if (defs.has(name)) return;
     const body = bodyAfter(stripped, bodyFrom);
@@ -1033,7 +1164,7 @@ export function functionDefs(stripped) {
     const open = m.index + m[0].length - 1;
     const close = matchDelim(stripped, open, "(", ")");
     if (close === -1) continue;
-    record(m[1], stripped.slice(open + 1, close), close + 1);
+    record(/** @type {string} */ (m[1]), stripped.slice(open + 1, close), close + 1);
   }
   for (const m of stripped.matchAll(/(?:^|[^\w$.])(?:const|let|var)\s+([\w$]+)\s*(?::[^=;]*)?=\s*(?:async\s+)?\(/g)) {
     const open = m.index + m[0].length - 1;
@@ -1041,7 +1172,11 @@ export function functionDefs(stripped) {
     if (close === -1) continue;
     const arrow = /^\s*(?::[^=]*)?=>/.exec(stripped.slice(close + 1));
     if (arrow === null) continue;
-    record(m[1], stripped.slice(open + 1, close), close + 1 + arrow[0].length);
+    record(
+      /** @type {string} */ (m[1]),
+      stripped.slice(open + 1, close),
+      close + 1 + arrow[0].length,
+    );
   }
   return defs;
 }
@@ -1054,10 +1189,16 @@ export function functionDefs(stripped) {
  * (its root is a caller's project, which may be anybody's tree), while
  * a CALLER that passes THIS repository's root is.
  */
+/**
+ * @param {FnDef} def
+ * @returns {Map<number, Set<string>>}
+ */
 function paramDocsPrefixes(def) {
   if (def.byParam !== undefined) return def.byParam;
+  /** @type {Map<number, Set<string>>} */
   const out = new Map();
   const local = bindings(def.body);
+  /** @type {Map<string, number>} */
   const index = new Map();
   def.params.forEach((p, i) => {
     if (p !== null && !index.has(p)) index.set(p, i);
@@ -1067,13 +1208,13 @@ function paramDocsPrefixes(def) {
     for (let hop = 0; hop < 6; hop += 1) {
       const ident = /^([\w$]+)$/.exec(expr);
       if (ident === null) break;
-      const at = index.get(ident[1]);
+      const at = index.get(/** @type {string} */ (ident[1]));
       if (at !== undefined) {
         if (!out.has(at)) out.set(at, new Set());
-        out.get(at).add(site.prefix === "" ? "docs" : site.prefix);
+        /** @type {Set<string>} */ (out.get(at)).add(site.prefix === "" ? "docs" : site.prefix);
         break;
       }
-      const next = local.get(ident[1]);
+      const next = local.get(/** @type {string} */ (ident[1]));
       if (next === undefined || next.trim() === expr) break;
       expr = next.trim();
     }
@@ -1098,11 +1239,19 @@ const calleeCache = new Map();
  *
  * Depth-limited; a cycle terminates at the limit.
  */
+/**
+ * @param {string} fromDir
+ * @param {string} spec
+ * @param {string} name
+ * @param {string} root
+ * @param {number} depth
+ * @returns {CalleeHit | null}
+ */
 function resolveCalleeIn(fromDir, spec, name, root, depth) {
   if (depth > 4) return null;
   for (const abs of moduleCandidates(fromDir, spec)) {
     const key = `${abs}::${name}`;
-    if (calleeCache.has(key)) return calleeCache.get(key);
+    if (calleeCache.has(key)) return /** @type {CalleeHit | null} */ (calleeCache.get(key) ?? null);
     const text = readIfFile(abs);
     if (text === null) continue;
     const other = stripComments(text);
@@ -1134,12 +1283,21 @@ const NOT_A_CALL = new Set([
  * One hop plus barrels, and no further: `f(g(root))` is not followed and
  * is named in WHAT IT CANNOT SEE rather than claimed.
  */
+/**
+ * @param {string} stripped
+ * @param {ScanCtx} ctx
+ * @param {string} root
+ * @returns {{ line: number, callee: string, prefix: string }[]}
+ */
 export function callSites(stripped, ctx, root) {
+  /** @type {{ line: number, callee: string, prefix: string }[]} */
   const out = [];
+  /** @param {number} index @returns {number} */
   const lineOf = (index) => stripped.slice(0, index).split("\n").length;
+  /** @type {Map<string, CalleeHit | null>} */
   const resolved = new Map();
   for (const m of stripped.matchAll(/(?:^|[^\w$.])([\w$]+)\s*\(/g)) {
-    const name = m[1];
+    const name = /** @type {string} */ (m[1]);
     if (NOT_A_CALL.has(name)) continue;
     const open = m.index + m[0].length - 1;
     const close = matchDelim(stripped, open, "(", ")");
@@ -1150,6 +1308,7 @@ export function callSites(stripped, ctx, root) {
     const argText = stripped.slice(open + 1, close);
     if (!resolved.has(name)) {
       const own = ctx.functionDefs.get(name);
+      /** @type {CalleeHit | null} */
       let hit = own === undefined ? null : { def: own, ctx };
       if (hit === null) {
         const spec = importSourceOf(ctx.stripped, name);
@@ -1158,7 +1317,7 @@ export function callSites(stripped, ctx, root) {
       resolved.set(name, hit);
     }
     const hit = resolved.get(name);
-    if (hit === null) continue;
+    if (hit === null || hit === undefined) continue;
     const byParam = paramDocsPrefixes(hit.def);
     if (byParam.size === 0) continue;
     const args = splitArgs(argText);
@@ -1172,7 +1331,11 @@ export function callSites(stripped, ctx, root) {
         // callee's own context.
         expr = hit.def.defaults[at] ?? undefined;
         if (expr === undefined) continue;
-        hit.ctx ??= contextFor(hit.rel, hit.stripped, root);
+        hit.ctx ??= contextFor(
+          /** @type {string} */ (hit.rel),
+          /** @type {string} */ (hit.stripped),
+          root,
+        );
         where = hit.ctx;
       }
       if (evalBase(expr, where) !== root) continue;
@@ -1185,10 +1348,17 @@ export function callSites(stripped, ctx, root) {
 }
 
 /** One file's evaluation context, including a one-hop name follower. */
+/**
+ * @param {string} rel
+ * @param {string} stripped
+ * @param {string} root
+ * @returns {ScanCtx}
+ */
 function contextFor(rel, stripped, root) {
   const filePath = path.join(root, rel);
   const suite = suiteFor(rel);
   const crateDir = rel.endsWith(".rs") ? crateDirFor(filePath, root) : undefined;
+  /** @type {ScanCtx} */
   const ctx = {
     filePath,
     fileDir: path.dirname(filePath),
@@ -1225,15 +1395,22 @@ function contextFor(rel, stripped, root) {
  * repository's `docs/` tree, with the suite that runs it and the docs
  * prefixes it names. Sorted, so two runs over one tree agree.
  */
+/**
+ * @param {string} [root]
+ * @returns {Reader[]}
+ */
 export function docsReaders(root = repoRoot) {
+  /** @type {Reader[]} */
   const readers = [];
   for (const rel of sourceCorpus(root)) {
     const stripped = stripComments(readFileSync(path.join(root, rel), "utf8"));
     const sites = docsSites(stripped);
     const ctx = contextFor(rel, stripped, root);
+    /** @type {Set<string>} */
     const prefixes = new Set();
     /** How this file was linked, so the answer can say which arm found it
      *  rather than presenting a call hop as if it were a literal. */
+    /** @type {Set<string>} */
     const via = new Set();
     for (const site of sites) {
       if (evalBase(site.base, ctx) !== root) continue;
@@ -1315,7 +1492,13 @@ export function rootAnchoredFiles(root = repoRoot) {
  * NOT MAKE. A tripwire whose two arms follow different rules is vacuous
  * one step out of whatever shape it was last fixed for.
  */
+/**
+ * @param {ScanCtx} ctx
+ * @param {string} root
+ * @returns {string[]}
+ */
 function rootAnchors(ctx, root) {
+  /** @type {Set<string>} */
   const names = new Set();
   for (const [name, expr] of ctx.bindings) {
     if (evalBase(expr, ctx) === root) names.add(name);
@@ -1326,8 +1509,9 @@ function rootAnchors(ctx, root) {
   // Rust names a root by CALLING it (`common::repo_root()`), and the call
   // is the only place the name appears — there is no import line to read.
   for (const m of ctx.stripped.matchAll(/([\w$]+(?:::[\w$]+)*)\s*\(\s*\)/g)) {
-    if (names.has(m[1])) continue;
-    if (evalBase(m[1], ctx) === root) names.add(m[1]);
+    const called = /** @type {string} */ (m[1]);
+    if (names.has(called)) continue;
+    if (evalBase(called, ctx) === root) names.add(called);
   }
   return [...names].sort();
 }
@@ -1397,6 +1581,10 @@ export function siteCensus(root = repoRoot) {
  * holding a reader whose prefix is bare `docs` is owed whatever changes.
  * Today that is tools/e2e, because `shell-frame.spec.ts` and
  * `window-contract.spec.ts` each walk the whole tree.
+ */
+/**
+ * @param {Reader[]} readers
+ * @returns {Set<string | undefined>}
  */
 export function suitesOwedForAllOfDocs(readers) {
   return new Set(readers.filter((r) => r.prefixes.includes("docs")).map((r) => r.suite));
@@ -1482,12 +1670,17 @@ export function unaccountedRootAnchors(root = repoRoot) {
 }
 
 /** prefix -> the suites that read it, derived from `docsReaders`. */
+/**
+ * @param {Reader[]} readers
+ * @returns {Map<string, Set<string | undefined>>}
+ */
 export function docsInputMap(readers) {
+  /** @type {Map<string, Set<string | undefined>>} */
   const map = new Map();
   for (const r of readers) {
     for (const p of r.prefixes) {
       if (!map.has(p)) map.set(p, new Set());
-      map.get(p).add(r.command);
+      /** @type {Set<string | undefined>} */ (map.get(p)).add(r.command);
     }
   }
   return map;
@@ -1495,6 +1688,11 @@ export function docsInputMap(readers) {
 
 /** Does `prefix` cover `changed`? `docs` covers everything under docs/;
  *  `docs/CONVENTIONS.md` covers exactly itself. */
+/**
+ * @param {string} prefix
+ * @param {string} changed
+ * @returns {boolean}
+ */
 function covers(prefix, changed) {
   return changed === prefix || changed.startsWith(`${prefix}/`);
 }
@@ -1506,11 +1704,17 @@ function covers(prefix, changed) {
  * answer for a synthetic diff is as derivable as for a real one, and a
  * pin can drive a docs-only diff with no code file in it at all.
  */
+/**
+ * @param {string[]} changedPaths
+ * @param {Reader[]} readers
+ */
 export function docsGate(changedPaths, readers) {
   const docsPaths = changedPaths.filter((p) => p === "docs" || p.startsWith("docs/")).sort();
+  /** @type {{ path: string, readers: string[], commands: string[] }[]} */
   const byPath = [];
   const commands = new Set();
   for (const changed of docsPaths) {
+    /** @type {Reader[]} */
     const owed = [];
     for (const r of readers) {
       if (!r.prefixes.some((p) => covers(p, changed))) continue;
@@ -1566,7 +1770,9 @@ export function taskStatuses(root = repoRoot) {
         "that could not run, never an empty vocabulary that accepts anything.",
     );
   }
-  const values = [...decl[1].matchAll(/(['"`])([^'"`]+)\1/g)].map((m) => m[2]);
+  const values = /** @type {string[]} */ (
+    [.../** @type {string} */ (decl[1]).matchAll(/(['"`])([^'"`]+)\1/g)].map((m) => m[2])
+  );
   if (values.length === 0) {
     throw new Error(`docs-scan: ${TASK_STATUS_SOURCE} declares TASK_STATUSES with no values`);
   }
@@ -1576,6 +1782,10 @@ export function taskStatuses(root = repoRoot) {
 /** The frontmatter block's raw YAML, or null. The two delimiters are
  *  transcribed from lib/parser/src/frontmatter.ts and the spec pins the
  *  transcription against that file, so the two cannot drift silently. */
+/**
+ * @param {string} content
+ * @returns {string | null}
+ */
 export function frontmatterBlock(content) {
   const open = /^\uFEFF?---\r?\n/.exec(content);
   if (open === null) return null;
@@ -1586,26 +1796,36 @@ export function frontmatterBlock(content) {
 }
 
 /** Levenshtein distance, for the near-miss hint. */
+/**
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
 function distance(a, b) {
   const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i += 1) {
-    let diag = prev[0];
+    let diag = /** @type {number} */ (prev[0]);
     prev[0] = i;
     for (let j = 1; j <= b.length; j += 1) {
       const next = Math.min(
-        prev[j] + 1,
-        prev[j - 1] + 1,
+        /** @type {number} */ (prev[j]) + 1,
+        /** @type {number} */ (prev[j - 1]) + 1,
         diag + (a[i - 1] === b[j - 1] ? 0 : 1),
       );
-      diag = prev[j];
+      diag = /** @type {number} */ (prev[j]);
       prev[j] = next;
     }
   }
-  return prev[b.length];
+  return /** @type {number} */ (prev[b.length]);
 }
 
 /** Statuses within edit distance 2 of `got` — the same near-miss
  *  treatment the parser already gives a dangling `blocked_by`. */
+/**
+ * @param {string} got
+ * @param {string[]} statuses
+ * @returns {string[]}
+ */
 export function nearMisses(got, statuses) {
   return statuses.filter((s) => distance(got.toLowerCase(), s) <= 2).sort();
 }
@@ -1627,6 +1847,10 @@ export const DISPOSITION_RULING =
 
 /** True for the files the parser's live walk collects as task cards:
  *  FLAT `docs/tasks/T-*.md`, non-recursive (THE FOUR WALKS, row four). */
+/**
+ * @param {string} rel
+ * @returns {boolean}
+ */
 export function isTaskCardPath(rel) {
   return /^docs\/tasks\/T-[^/]*\.md$/.test(rel);
 }
@@ -1642,7 +1866,13 @@ export function isTaskCardPath(rel) {
  * the caller passes the SAME `yaml` package the parser itself depends
  * on, so the block either parses for both or for neither.
  */
+/**
+ * @param {{ path: string, content: string }[]} entries
+ * @param {{ statuses: string[], parseYaml: (src: string) => unknown }} deps
+ * @returns {{ kind: string, file: string, message: string, field?: string, value?: unknown, nearMiss?: string[] }[]}
+ */
 export function taskCardIssues(entries, { statuses, parseYaml }) {
+  /** @type {{ kind: string, file: string, message: string, field?: string, value?: unknown, nearMiss?: string[] }[]} */
   const issues = [];
   for (const { path: file, content } of entries) {
     if (!isTaskCardPath(file)) continue;
@@ -1677,7 +1907,7 @@ export function taskCardIssues(entries, { statuses, parseYaml }) {
       });
       continue;
     }
-    const got = data.status;
+    const got = /** @type {Record<string, unknown>} */ (data)["status"];
     if (got === undefined || got === null) {
       issues.push({
         kind: "missing-field",
@@ -1725,6 +1955,11 @@ export function conventionsText(root = repoRoot) {
  * and silently taking the first is how a check ends up asserting
  * against the wrong paragraph. A derivation that expects nothing is
  * worse than one that is wrong, because nothing points at it.
+ */
+/**
+ * @param {string} md
+ * @param {string} phrase
+ * @returns {string | undefined}
  */
 export function conventionsBullet(md, phrase) {
   const bullets = md

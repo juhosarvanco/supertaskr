@@ -27,7 +27,7 @@ try {
   if (process.argv.includes("--selftest")) selftest();
   else lintTree();
 } catch (err) {
-  console.error(`lint-tokens: GATE COULD NOT RUN — ${err?.message ?? String(err)}`);
+  console.error(`lint-tokens: GATE COULD NOT RUN — ${/** @type {{ message?: string }} */ (err)?.message ?? String(err)}`);
   console.error(
     `lint-tokens: exit ${EXIT.CANNOT_RUN} means the gate did not finish scanning; ` +
       `it is NOT a claim about the tree (exit ${EXIT.FOUND} is).`,
