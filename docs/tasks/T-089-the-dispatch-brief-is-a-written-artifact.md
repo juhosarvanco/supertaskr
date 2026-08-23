@@ -1639,3 +1639,33 @@ and it is not a perfect one; row 5 says the right thing.
 - Everything else — the corrections about one verdict rather than two,
   and the s7/s8 claims — checked out, except the three rows in the
   re-walk table above.
+
+---
+
+#### The second verdict's own gate run (T-081-s9)
+
+Everything the DOCS GATE owes, re-run AFTER `25dfce6` landed, main still
+at `a15b78e`:
+
+    node tools/e2e/scripts/docs-gate.mjs <18 paths>   -> exit 1, 4 suites owed
+
+| suite | result | exit |
+|---|---|---|
+| `npx vitest run` from lib/parser | 263 passed (263) | **0** |
+| `npm test` from app | 840 passed (840) | **0** |
+| bare `cargo test --no-fail-fast` | 352 / 0 / 3 over 15 result lines | **0** |
+| `npm test` from tools/e2e | 121 passed, scratch port **14904** bind-probed on four stacks | **0** |
+| `npm run lint:tokens` | clean, TOKEN 123 / **CONTROL 602** | **0** |
+
+CONTROL **600 → 602**, exactly this verdict's two finding files. Kill-path
+flake tally for the whole verification: **4 of 4 green**.
+
+    git merge-tree --write-tree a15b78e 25dfce6  -> tree b2e1f87e…, exit 0
+    git diff --name-only a15b78e <TREE>   PRESCRIBED  -> 18
+    git diff --name-only a15b78e...25dfce6  three dots -> 18
+    git diff --name-only a15b78e..25dfce6   two dots   -> 142   FORBIDDEN
+
+**Clean** at 18 paths — 12 `docs/`, 6 `method/`. GRAPH REGEN and BOOT GATE
+still NOT OWED at 0 of 18; every path is `.md`. Port 1420 untouched
+throughout; the three scratch worktrees this verification used were
+detached, at a commit, on a scratch `CARGO_TARGET_DIR`, and are removed.
