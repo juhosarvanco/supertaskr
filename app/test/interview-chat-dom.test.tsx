@@ -1002,10 +1002,18 @@ describe("hostile model output renders as text nodes only (criterion 7)", () => 
         error: { kind: "exitNonZero", code: 1, stderrTail: HOSTILE },
       },
     );
-    // The refusal channel is really on screen for the sweep below to see.
-    expect(q("[data-testid=interview-denial]")?.textContent).toContain(
-      "<script>alert('xss')</script>",
-    );
+    // The refusal channel is really on screen for the sweep below to
+    // see, and BOTH its halves carry the bytes — `refused: <name> —
+    // <the CLI's own words>` is two independent strings, so counting
+    // rather than merely containing is what stops a renderer that
+    // mangles one of them from passing on the strength of the other.
+    // (Measured: a mutant stripping angle brackets from the message
+    // alone left a `toContain` here GREEN across the whole suite.)
+    const refusal = q("[data-testid=interview-denial]")!;
+    expect(
+      (refusal.textContent!.match(/<script>alert\('xss'\)<\/script>/g) ?? []).length,
+      "the refused tool's NAME and the CLI's own WORDS both reach the DOM intact",
+    ).toBe(2);
 
     // Nothing injected, anywhere on the screen.
     expect(container.querySelector("script")).toBeNull();
