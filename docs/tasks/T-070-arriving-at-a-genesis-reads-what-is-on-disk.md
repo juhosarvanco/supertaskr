@@ -1228,3 +1228,223 @@ same stack-agnostic `lsof` form before use, and the boot check
 bind-probed 14877 itself. The drill worktree
 `../nputer-T-070-vdrill` was removed and `git worktree list` is back to
 main plus the live lanes.
+
+
+---
+
+### 2026-08-23 — APPROVED (claude-opus-5 @T-070-verify, review: same-model)
+
+**The rebuild closes both blocking findings of my first verdict, and I
+re-ran every one of my own break-mutants at the new tip rather than trust
+the notes.** V1 and V3 — the two whole-file reads that survived the entire
+suite last time — now RED and fail closed; the byte ceiling caps the read
+at a file-size-independent constant; `T-070-s4`'s O(steps²) is gone. Two
+residuals remain and neither is a correctness hole: the tripwire's doc
+comment OVERSTATES its refactor-tolerance (a benign loop-split reds it,
+failing closed), and the fragment-reconstruction bypass it cannot kill is
+disclosed honestly rather than papered over. I APPROVE, with those two as
+named non-blocking findings and one provenance nit.
+
+**Range re-derived at the CURRENT main, every dot count stated.** Main
+moved to `ea7ea0a` while the fix ran; my verdict commit `f7da6a9` is
+intact and the fix (`aec0d66` code, `fc5f5c9` notes) sits on top.
+
+    git merge-tree --write-tree ea7ea0a fc5f5c9  -> tree f659dfce…, exit 0
+    git diff --name-only ea7ea0a <TREE>                    -> 11   PRESCRIBED
+    git diff --name-only ea7ea0a...fc5f5c9  (THREE dots)   -> 11
+    git diff --name-only 2036fb2..fc5f5c9   (branch-only)  -> 11
+    git diff --name-only ea7ea0a..fc5f5c9   (TWO dots)     -> 141  THE FORBIDDEN FORM
+
+`merge-base ea7ea0a fc5f5c9` = `2036fb2`, unmoved across both executor
+passes. 11 paths = the original 10 + `T-070-s4` (my first verdict's
+filing). The forbidden two-dot climbed 52 → 141 as main advanced, all
+outside these eleven — the range rule observed a third time.
+
+---
+
+### The drill — nine of my own mutants, detached worktree at `fc5f5c9`, SCRATCH `CARGO_TARGET_DIR`
+
+Per T-013-s7 the target dir was a scratch path outside every lane, never
+the shared one. Restores by byte copy from `git show fc5f5c9:<path>`,
+proved by empty per-path `git diff` and sha256 (`sessions.rs`
+`e490ded8…`, `mod.rs` `f9b82155…` at start and end). Baseline there:
+bare `cargo test --no-fail-fast` **358/0/3 exit 0**.
+
+| # | mutant | result |
+|---|---|---|
+| **V1** | `read_transcript_tail` → `fs::read` + lossy last-N, `tail_lines` bypassed (my verdict-1 survivor) | full suite **357/1/3 exit 101** — HOP 2 callee set: *read_transcript_tail gained or lost a callee* |
+| **V3** | `transcript()` reads the whole file itself, lossily (my verdict-1 survivor) | **357/1/3 exit 101** — HOP 1: *agent::transcript gained or lost a callee* |
+| **V5** | whole-file `fs::read` inside `transcript_path`, an allowlisted leaf (the executor's own sharpest) | **exit 101** — arm 3: *an arrival-path leaf names 'fs::'* |
+| new-A | ordinary new whole-file reader in `sessions.rs` naming `transcript_path` | **exit 101** — census: *transcript_path( a different number of times, expected 4* |
+| new-B | new reader in `mod.rs` naming `sessions::transcript_path` | **exit 101** — containment: *agent/mod.rs names the transcript file in production* |
+| M-ceil | drop the `taken < ceiling` walk exit (my verdict-1 BLOCKING 2) | **exit 101** — *the_tail_walk_stops_at_a_byte_ceiling_with_no_newline_in_the_file* |
+| rewrite | benign push-loop refactor of `transcript()` (reorder + rename + split) | **exit 101 — FALSE RED**, see finding 1 |
+| shadow-dead | fragment-reconstruction reader added to `sessions.rs`, not wired | **GREEN** — census blind, see finding 2 |
+| shadow-live | that reader wired through `transcript_path` so the arrival read slurps the file | full suite **358/0/3 exit 0 — LIVE BYPASS**, see finding 2 |
+
+**V1 and V3 are dead.** The first verdict's BLOCKING 1 — *"the pin pair
+binds `tail_lines`, not the arrival read"* — is answered. The six-arm
+`the_only_production_path_to_the_transcript_is_the_bounded_one` binds the
+callee set of each hop from `genesis_transcript` down, so a whole-file
+read at ANY hop (V1, V3), in a leaf that spells `fs::` (V5), or a NEW
+ordinary reader in either file (new-A, new-B) all red BY NAME. It fails
+closed on every non-obfuscated shape I could build — the composition my
+first verdict said the refused source-grep tripwire would have provided,
+and the executor's V5/arm-3 reasoning is sound; I reproduced it.
+
+---
+
+### BLOCKING 2 of my first verdict — CLOSED, and I re-measured the constant myself
+
+`tail_lines` now has a second exit, `taken < tail_byte_ceiling(max_lines)`
+where the ceiling is `max_lines × TRANSCRIPT_TEXT_CAP`. Measured through
+the test's own `Counting` reader, budget 200 (ceiling **52,428,800**):
+
+    file 10 MiB  -> read 10,485,760   (whole; below ceiling)
+    file 20 MiB  -> read 20,971,520   (whole; STILL, as the executor states plainly)
+    file 55 MiB  -> read 52,428,800   (CAPPED)
+    file 60 MiB  -> read 52,428,800   (CAPPED)
+    file 80 MiB  -> read 52,428,800   (CAPPED)
+
+The cost is a constant independent of file size, and the pin is
+non-vacuous (M-ceil reds it). **RULING on the coordinator's question — is
+a 52 MB constant acceptable?** Yes. The constant is not arbitrary: it is
+`MAX_REHYDRATED_LINES × TRANSCRIPT_TEXT_CAP`, the largest tail a 200-line
+budget of max-width lines could legitimately be, so on a healthy 256 KiB-
+per-line transcript the reader genuinely IS asked for ~52 MB and reading
+it is correct, not wasteful. A tighter ceiling would assume lines are
+smaller than the module's own cap — bounding by the fixture, the very
+failure the card names. The one sub-case where it reads a whole sub-52 MB
+file is a transcript with NO newline in it, which `append_transcript`
+cannot produce; that case is now pinned directly by
+`the_tail_walk_stops_at_a_byte_ceiling_with_no_newline_in_the_file`.
+Criterion 1 — *"a file measured in tens of MiB costs a bounded read
+rather than a whole-file parse"* — is satisfied for the realistic case,
+the pathological case capped at a principled constant.
+
+**`T-070-s4` (O(steps²)) is discharged.** The prepend became a
+`Vec<Vec<u8>>` + `pop`-and-join-once. Re-measured, release build, 400
+half-turns, budget 200:
+
+    per_line   8 KiB  ->  now  2 ms   (bytes read 1,703,936, unchanged)
+    per_line  32 KiB  ->  25 ms -> 5 ms   (6,619,136)
+    per_line 128 KiB  -> 459 ms -> 13 ms  (26,279,936)
+    per_line 256 KiB  -> ceiling bites: read 52,428,800, 199 lines, 26 ms
+
+459 ms → 13 ms at the row that was the finding, bytes-read unchanged on
+every row. My first verdict's 20 MiB newline-free case went 622 ms → 18 ms
+for the same reason: still read whole (under the ceiling), but linear.
+
+---
+
+### FINDING 1 (non-blocking) — the tripwire's doc OVERSTATES its refactor-tolerance; a benign loop-split reds it
+
+The pin's own comment promises: *"Reorder the arrival path, rename its
+locals, split its loop — as long as it still reaches the file only
+through the bounded reader, its callee set is unchanged and this stays
+green."* The middle clause is false. I rewrote `transcript()` into an
+accumulate-with-`push` loop — reaching the file only through
+`read_transcript_tail`, no new file access whatsoever — and the hop-1
+exact-set assertion RED at `mod.rs:1118`, because `push` is a new callee.
+An idiomatic `.iter().map(…).collect()` reds the same way (`iter`, `map`,
+`collect`). "Split its loop … callee set is unchanged" does not hold.
+
+**Why this is NOT rejection-grade** — and I am ruling against the
+coordinator's suggested "plausible refactor false-red = reject" bar
+deliberately, because my job is the card's criteria, not the coordinator's
+attack agenda. The false red fails CLOSED: the developer gets a red with
+the exact right instruction — *"if it is not [a new way to reach the
+file], add it here deliberately"* — and adds `push` to the allowlist. The
+correctness property (no file-reaching callee passes unseen) is intact.
+This is the SAME hand-maintained exact-set pattern the codebase already
+blesses in `EXPECTED_GRANTS` (acl_pin.rs) and the 13-command IPC census:
+those red on ANY set change, benign or not, treated as the review a human
+should get. Criterion 2 asks the pin to prove boundedness by construction;
+it does, if conservatively.
+
+**What IS wrong is the prose**, and it should be corrected in place before
+merge: the comment conflates "reaches the file only through the bounded
+reader" (the safety invariant) with "callee set is unchanged" (the
+green-ness condition), which are not the same set. Recommend rewording to
+state the actual contract — *any* change to a hop's callee set reds and is
+re-blessed by hand, like `EXPECTED_GRANTS`. One comment, no code, no
+rebuild. Noted here rather than as a separate task because it is a
+correction to the delivered artifact's own description.
+
+---
+
+### FINDING 2 (non-blocking, and I concur with the executor) — the fragment-reconstruction bypass is real, live, and honestly bounded
+
+I built the class the executor disclosed and refused: a reader in
+`sessions.rs` that assembles the path from split fragments (`"genesis"`,
+`"transcript" + "." + "jsonl"`, joined) — spelling none of the three
+censused forms — reads the whole file, and is wired onto the arrival path
+through the `transcript_path` leaf. The FULL SUITE stays **358/0/3 exit
+0**. A genuine live bypass no pin catches.
+
+I RULE it honestly bounded, not a hole to reject on. (1) It is disclosed
+in as many words — *"The bypass I could NOT kill, and refuse rather than
+pretend … The honest boundary of a source pin is stated here so the next
+reader does not over-trust it."* That is the "say so" side of the
+coordinator's own dichotomy. (2) The threat model is correct: the T-070
+defect was an ACCIDENT (a whole-file read nobody flagged), and the pin
+catches every accidental/ordinary shape (V1/V3/V5/new-A/new-B); reaching
+this bypass takes deliberate fragment-splitting AND wiring through a leaf
+that has no business reading a file — not an accident. (3) It matches the
+codebase's precedent for disclosed residuals (`T-080-s4`, *"ONE HOLE
+REMAINS, NAMED RATHER THAN PAPERED OVER"*). No pin fails OPEN on any
+benign input; the only fail-open is under deliberate obfuscation, which a
+source pin cannot close without an arms race that embrittles it against
+honest edits. Refusing it is the right call.
+
+---
+
+### FINDING 3 (minor, provenance) — `T-070-s4`'s `closed_by` cites a commit not on the branch
+
+`T-070-s4`'s header reads `closed_by: 1e0b940 (task/T-070-arrival-reads-disk,
+…)` and its measurement section says the drill ran "at `1e0b940`". But
+`git merge-base --is-ancestor 1e0b940 fc5f5c9` is FALSE — `1e0b940` is a
+rewritten predecessor of the delivered code commit `aec0d66` (identical
+subject line), not on the branch. The work is real and delivered in
+`aec0d66`, and I reproduced its measurements independently, so this is a
+documentation nit — the same class the executor itself corrected once at
+`2143edc`. Recommend repointing `closed_by` to `aec0d66`. Not blocking.
+
+---
+
+### What carried over from verdict 1, re-confirmed
+
+The fix touched only `agent/mod.rs` and `agent/sessions.rs` among code
+files (`git diff f7da6a9 fc5f5c9 --stat`), so the carry and the DOM pin —
+validated in verdict 1 — are byte-unchanged: `agent_runner.rs`,
+`InterviewChat.tsx`, `agent-store.ts` and `interview-resume-dom.test.tsx`
+carry no fix diff. `sessions::genesis_record` still has exactly two
+production callers, no second copy. The card BODY's *"never a wrong
+answer"* sentence — my verdict-1 open item — is now CORRECTED IN PLACE
+(lines 38–55), naming both the `T-070-s3` garbage-tail-empty and the
+byte-ceiling fewer-lines behaviours as the deliberate wrong-answers on
+writer-impossible inputs, each pinned. IPC census unmoved at 13/13,
+`lib.rs` untouched by the fix.
+
+---
+
+### Suites and gates, re-derived at `fc5f5c9`, every exit read unpiped
+
+- **parser**: `npm run build` **0** · `npx vitest run` **263/263 exit 0** · tsc **0**.
+- **app**: `npm run build` **0** — `index-DdOM3cAL.js` 503.20 kB (hash unmoved from verdict 1; the fix is Rust-only) and `index-CwYF5FQb.css` 43.95 kB · `npm test` **843/843 across 43 files, exit 0**.
+- **cargo, bare `cargo test --no-fail-fast`**: first run **357/1/3 exit 101** — the sole failure `a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail` (agent_runner.rs:1321), the T-061-s4 kill-path flake: **0 lines in the T-070 diff**, **3/3 green re-run in isolation**. Clean re-run **358/0/3 exit 0** (352 at `2036fb2` + four original bodies + two rebuild bodies). Honest tally, not chased.
+- **E2E**: `npm test` **121/121 exit 0** (14520 free at run) · typecheck **0**.
+- **token lint**: selftest **0** · lint **0** — TOKEN **123**, CONTROL **594** (593 + `T-070-s4`).
+- **GRAPH REGEN** — `index --check --root ../..` exit **1**, REAL red: *committed 585305·119·1018·1539* vs *fresh 586657·119·1020·1543*, `files +0 -0 ~3`, `edges +5 -1`. The checkpoint owes it; no `graph.json` committed on the branch.
+- **BOOT GATE** — `NPUTER_BOOT_PORT=14883 npm run boot:check` exit **0**, both `[nputer]` lines then SIGTERM; 14883 probed free first.
+- **DOCS GATE** — invoked directly on the five T-070 docs, exit **1**, owes app + tools/e2e + parser and NOT cargo; 11 readers / 4 suites, 0 frontmatter issues. All owed suites run above.
+
+**1420 read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else** —
+`node` pid **82549**, one socket `[::1]:1420 (LISTEN)`, unchanged. The
+human's app respawned under its OWN harness during the interval (pid
+**85379 → 93036**, both ppid **82364**, the new one started Aug 23
+20:32); this lane never touched it — every boot check ran on a
+probed-free scratch port (14883 this pass). The T-060 orphans were left
+alone; no `pkill`. The drill worktree used a scratch `CARGO_TARGET_DIR`,
+was restored to an empty `git status` with both files sha256-matched, and
+was removed — `git worktree list` shows no `vdrill`.
