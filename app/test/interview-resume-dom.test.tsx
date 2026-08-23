@@ -786,3 +786,116 @@ describe("no CLI is a mode, not an apology (criterion 4)", () => {
     expect(q("[data-testid=interview-kickoff-cwd]")?.textContent).toContain("<svg");
   });
 });
+
+// ---- T-070 criterion 5: the CLI-LESS arrival says what was banked -------
+
+describe("arriving with no CLI is told what is already on disk (T-070)", () => {
+  /**
+   * THE WHOLE POINT IS THE WORD "REACHES". `the_hand_driven_kickoff_carries_what_was_banked`
+   * in `app/src-tauri/tests/agent_runner.rs` proves the record EXISTS on
+   * the outcome; nothing there can prove it is DELIVERED, and T-029's own
+   * spine is that those two are not the same claim. This body drives the
+   * CLI-less route the way a user takes it — the app cannot find a CLI,
+   * the user asks for the prompt, and the only command on the path is the
+   * one that resolves no CLI — and asserts the banked count is on screen
+   * at the end of it.
+   */
+  const withRecord = (turns: number) => ({
+    kind: "ready",
+    prompt: "You are the planner. KIT ROOT: /tmp/nputer-t029-chat/.nputer/genesis/kit …",
+    projectDir: PROJECT,
+    kitRoot: "/tmp/nputer-t029-chat/.nputer/genesis/kit",
+    methodVersion: "0.1.5",
+    resuming: true,
+    record: {
+      registryId: "S1",
+      turns,
+      status: "idle",
+      created: "2026-08-19T09:41:07Z",
+      nativeSessionId: "fake-session-0001",
+      model: "claude-opus-5",
+      sessionIdRejected: null,
+    },
+  });
+
+  it("delivers the banked turn count and where the artifacts are, with no CLI on the path", async () => {
+    ipc.outcomes.set("genesis_start", {
+      kind: "cliNotFound",
+      probed: ["login shell `command -v claude`", "PATH"],
+    });
+    ipc.outcomes.set("genesis_kickoff", withRecord(7));
+    await withStatus();
+    render();
+    await flush(() => Promise.resolve());
+
+    // The arrival: no CLI, so the CLI-gated commands have nothing more to
+    // say about this folder.
+    expect(q("[data-testid=interview-cli-missing]")).not.toBeNull();
+    ipc.invoke.mockClear();
+    await click("[data-testid=interview-cli-hand-driven]");
+
+    // ONE COMMAND, AND IT IS THE ONE THAT RESOLVES NO CLI. If the count
+    // could only reach the screen through `genesis_resume` or
+    // `genesis_start`, this user would never see it.
+    expect(issued()).toEqual(["genesis_kickoff"]);
+
+    const banked = q("[data-testid=interview-hand-driven-banked]")!;
+    expect(banked, "the sentence renders at all").not.toBeNull();
+    // THE COUNT ITSELF, on screen. `7` is the RECORD's turn count and
+    // nothing else in this fixture carries it, so a screen that printed
+    // `resuming` or the registry id instead would fail here.
+    expect(banked.textContent).toContain("banked 7 turns");
+    // …and WHERE the work is, which is the half a count alone does not
+    // answer: `docs/`, under the project the block already names.
+    expect(banked.textContent).toContain("docs/");
+    expect(banked.textContent).toContain(PROJECT);
+    // One sentence, not a paragraph.
+    expect(banked.textContent?.match(/\./g)?.length).toBe(1);
+    // The DOM carries it as data too, so a later body can read the count
+    // without matching prose.
+    expect(q("[data-testid=interview-hand-driven-block]")?.getAttribute("data-banked-turns")).toBe(
+      "7",
+    );
+  });
+
+  it("says NOTHING about banked work when the registry records none", async () => {
+    // THE POSITIVE CONTROL'S MIRROR (CONVENTIONS: a negative assertion
+    // needs a positive control, and so does a positive one). Without this
+    // body, a block that unconditionally printed "banked 7 turns" from a
+    // hard-coded string would pass the test above.
+    ipc.outcomes.set("genesis_start", { kind: "cliNotFound", probed: ["PATH"] });
+    ipc.outcomes.set("genesis_kickoff", { ...withRecord(7), record: null, resuming: false });
+    await withStatus();
+    render();
+    await flush(() => Promise.resolve());
+    await click("[data-testid=interview-cli-hand-driven]");
+
+    expect(q("[data-testid=interview-hand-driven-block]")).not.toBeNull();
+    expect(q("[data-testid=interview-hand-driven-banked]")).toBeNull();
+    expect(q("[data-testid=interview-hand-driven-block]")?.getAttribute("data-banked-turns")).toBe(
+      "none",
+    );
+    // …and the block a pre-T-070 build produces, with no `record` key at
+    // all, is the same answer rather than a crash or the word `undefined`.
+    expect(q("[data-testid=interview-hand-driven-block]")?.textContent).not.toContain("undefined");
+  });
+
+  it("renders the record as TEXT — it came off a file anything can write (ADR-009)", async () => {
+    ipc.outcomes.set("genesis_start", { kind: "cliNotFound", probed: ["PATH"] });
+    ipc.outcomes.set("genesis_kickoff", {
+      ...withRecord(1),
+      projectDir: '/tmp/<svg onload="alert(4)">',
+    });
+    await withStatus();
+    render();
+    await flush(() => Promise.resolve());
+    await click("[data-testid=interview-cli-hand-driven]");
+
+    const banked = q("[data-testid=interview-hand-driven-banked]")!;
+    // Singular, because one turn is one turn.
+    expect(banked.textContent).toContain("banked 1 turn ");
+    expect(banked.textContent).toContain("<svg");
+    expect(banked.querySelector("svg"), "no element was constructed").toBeNull();
+    expect(container.querySelector("svg[onload]")).toBeNull();
+  });
+});

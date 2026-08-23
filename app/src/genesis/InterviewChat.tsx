@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { DocsModelState } from "@/lib/docs-model";
 import type {
+  GenesisRecordPayload,
   KickoffOutcomePayload,
   SendOutcomePayload,
   StartOutcomePayload,
@@ -554,6 +555,27 @@ function resumeSentence(turns: number, model: string | null): string {
 }
 
 /**
+ * WHAT WAS BANKED HERE, in one sentence (T-070 criterion 4).
+ *
+ * THE SHAPE THIS CLOSES IS T-029's OWN, ONE LAYER OUT: the fact was on
+ * disk, typed, and free to read — `.nputer/sessions.json`, no CLI
+ * anywhere in the call — and a user routed to the hand-driven mode
+ * because the app could not find their CLI was told nothing about the
+ * turns they had already banked with a CLI they have since uninstalled
+ * or renamed. Detection is not delivery.
+ *
+ * The turn count is the record's, and WHERE THE ARTIFACTS ARE is `docs/`
+ * under the project the block already names — never a second path and
+ * never a second source of truth, because `docs/` is the only thing that
+ * was ever project truth (ADR-017 clause 4) and the transcript is not
+ * record.
+ */
+function bankedSentence(record: GenesisRecordPayload, projectDir: string): string {
+  const count = record.turns === 1 ? "1 turn" : `${record.turns} turns`;
+  return `An interview already ran in this folder and banked ${count} — the work itself is in docs/ under ${projectDir}, which is what the prompt below picks up from.`;
+}
+
+/**
  * THE HAND-DRIVEN MODE (criterion 4) — ADR-006's manual interview, as a
  * mode rather than a message.
  *
@@ -598,11 +620,16 @@ function HandDrivenBlock({
       </div>
     );
   }
+  // A pre-T-070 payload has no `record` key at all; a folder nothing has
+  // ever run in has it as `null`. Both mean the same thing here and are
+  // collapsed once, at the boundary, rather than at each read.
+  const banked: GenesisRecordPayload | null = outcome.record ?? null;
   return (
     <div
       data-testid="interview-hand-driven-block"
       data-kind="ready"
       data-resuming={outcome.resuming ? "true" : "false"}
+      data-banked-turns={banked === null ? "none" : String(banked.turns)}
       className="flex flex-col gap-2.5 rounded-lg border border-border bg-card px-4 py-3.5"
     >
       <span className="font-mono text-xs tracking-overline text-muted-foreground uppercase">
@@ -614,6 +641,14 @@ function HandDrivenBlock({
           ? " It picks up from what is already banked rather than starting over."
           : ""}
       </span>
+      {banked !== null && (
+        <span
+          data-testid="interview-hand-driven-banked"
+          className="text-sm break-words text-secondary-foreground"
+        >
+          {bankedSentence(banked, outcome.projectDir)}
+        </span>
+      )}
       <pre
         data-testid="interview-kickoff"
         className="max-h-64 overflow-auto rounded-sm bg-muted px-3 py-2.5 font-mono text-sm whitespace-pre-wrap break-words text-foreground"

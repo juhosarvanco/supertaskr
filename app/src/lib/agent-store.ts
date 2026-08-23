@@ -122,6 +122,27 @@ export type StartOutcomePayload =
   | { kind: "nothingToResume" }
   | { kind: "error"; message: string };
 
+/**
+ * Mirror of Rust's `GenesisRecord` — THE FACT THAT AN INTERVIEW WAS
+ * RUNNING ON THIS FOLDER, derived from `.nputer/sessions.json` and from
+ * nowhere else.
+ *
+ * Runtime state in the user's own project directory, losable by charter:
+ * its absence is an answer ("nothing was ever running here"), never an
+ * error. `nativeSessionId` and `model` are `null` also when the recorded
+ * value was REFUSED at the registry's read boundary, which is why
+ * `sessionIdRejected` is a separate field rather than an inference.
+ */
+export interface GenesisRecordPayload {
+  registryId: string;
+  turns: number;
+  status: string;
+  created: string;
+  nativeSessionId: string | null;
+  model: string | null;
+  sessionIdRejected: string | null;
+}
+
 /** Mirror of Rust's `KickoffOutcome` — ADR-006's hand-driven mode. */
 export type KickoffOutcomePayload =
   | {
@@ -131,6 +152,18 @@ export type KickoffOutcomePayload =
       kitRoot: string;
       methodVersion: string;
       resuming: boolean;
+      /**
+       * T-070: what was already banked in this folder, on the ONE
+       * genesis command that resolves no CLI. `null` when no interview
+       * was ever running here.
+       *
+       * OPTIONAL ON THE WIRE ON PURPOSE. Rust always sends the key, but
+       * this payload also arrives from a pre-T-070 build's `invoke` in
+       * a mixed-version dev tree, and every reader here already treats a
+       * missing record and a null one identically — the same discipline
+       * `TranscriptLinePayload.machine` uses one field up.
+       */
+      record?: GenesisRecordPayload | null;
     }
   | { kind: "noProject" }
   | { kind: "alreadyPlanned"; path: string }

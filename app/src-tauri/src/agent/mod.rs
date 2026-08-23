@@ -589,6 +589,10 @@ pub fn fresh_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
 /// Most transcript half-turns one rehydration will carry. The TAIL is
 /// kept — a mid-interview reload wants the recent conversation, and the
 /// early turns are banked in `docs/` anyway.
+///
+/// SINCE T-070 IT IS ALSO THE READ BUDGET, which is the whole change:
+/// this number used to describe what survived a whole-file parse, and now
+/// it describes how much of the file is touched.
 pub const MAX_REHYDRATED_LINES: usize = 200;
 
 /// `genesis_transcript()` — zero-argument. The chat's rehydration source
@@ -599,14 +603,22 @@ pub const MAX_REHYDRATED_LINES: usize = 200;
 /// corrupt file, a file of nothing but garbage lines — all three answer
 /// the same empty vector, and the screen renders banked-progress from
 /// `docs/` instead. That is the whole of criterion 2.
+///
+/// THE BOUND IS AT THE READ (T-070). `transcript.jsonl` is append-only
+/// and NOTHING rotates, truncates, compacts or deletes it — the only cap
+/// in the module is [`sessions::TRANSCRIPT_TEXT_CAP`], on ONE LINE. Until
+/// T-070 this function read the whole file back and threw all but the
+/// last 200 lines away, so a tens-of-MiB transcript cost a tens-of-MiB
+/// read and parse on every arrival at the interview screen. It now asks
+/// [`sessions::read_transcript_tail`] for the tail, which seeks from the
+/// end and never touches the bytes in front of it. The failure mode was
+/// always a SLOW read and never a wrong answer, which is why the fix is
+/// a change of reader and not of format.
 pub fn transcript(watch: &WatchState) -> Vec<TranscriptLine> {
     let Some(project_dir) = watch.project_dir() else {
         return Vec::new();
     };
-    let mut lines = sessions::read_transcript(&project_dir);
-    if lines.len() > MAX_REHYDRATED_LINES {
-        lines.drain(..lines.len() - MAX_REHYDRATED_LINES);
-    }
+    let mut lines = sessions::read_transcript_tail(&project_dir, MAX_REHYDRATED_LINES);
     for line in &mut lines {
         // A second, independent bound at the boundary the webview reads:
         // the file's own cap is 256 KiB per line and this channel is a
@@ -631,6 +643,17 @@ pub enum KickoffOutcome {
         /// True when `docs/` already holds banked work, so the prompt is
         /// the RESUME kickoff rather than the stage-0 one.
         resuming: bool,
+        /// WHAT WAS ALREADY BANKED HERE, on the ONE path that never
+        /// resolves a CLI (T-070 criterion 3).
+        ///
+        /// `sessions::genesis_record` reads `.nputer/sessions.json` with
+        /// no CLI anywhere in the call, so carrying it here costs
+        /// nothing and is available exactly where the CLI-gated commands
+        /// have already given up. `None` means no interview was ever
+        /// running in this folder (or it was explicitly abandoned) — the
+        /// same "losable by charter" answer the registry gives
+        /// everywhere else, and never an error.
+        record: Option<sessions::GenesisRecord>,
     },
     NoProject,
     AlreadyPlanned { path: String },
@@ -645,6 +668,14 @@ pub enum KickoffOutcome {
 /// It MATERIALIZES the kit, which is the difference between a copyable
 /// block and a working one: `assemble_kickoff` names a kit root, and
 /// nothing else in the hand-driven path would ever write it.
+///
+/// AND IT IS THE UNIVERSAL FALLBACK BECAUSE IT RESOLVES NO CLI — which
+/// is exactly why T-070 hangs the `GenesisRecord` off it. `fresh_genesis`
+/// resolves one before it looks at the registry at all, and `start` and
+/// `resume` resolve one before they can say anything past the recorded
+/// id; a user whose CLI has been uninstalled or renamed reaches this
+/// command and nothing else. The record read adds no process, no path
+/// lookup and no second source of truth.
 pub fn kickoff(watch: &WatchState) -> KickoffOutcome {
     let Some(project_dir) = watch.project_dir() else {
         return KickoffOutcome::NoProject;
@@ -664,6 +695,9 @@ pub fn kickoff(watch: &WatchState) -> KickoffOutcome {
         kit_root: kit::kit_root(&project_dir).display().to_string(),
         method_version: kit::METHOD_SNAPSHOT_VERSION.to_string(),
         resuming: kit::has_banked_docs(&project_dir),
+        // THE ONE PLACE the fact lives — the same reader `resume_genesis`
+        // uses, and no second copy (T-026-s3, held).
+        record: sessions::genesis_record(&project_dir),
     }
 }
 
