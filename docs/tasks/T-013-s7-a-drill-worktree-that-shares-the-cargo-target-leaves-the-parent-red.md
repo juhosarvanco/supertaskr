@@ -58,3 +58,36 @@ environment variable.
 The POISON DRILL bullet in `docs/CONVENTIONS.md` should carry whichever
 arm is chosen, because "drill in a detached scratch worktree" is
 standing advice and this is its first recorded cost.
+
+---
+
+**DISCHARGED AT T-013's OWN CHECKPOINT — `closed_by:` T-013's checkpoint
+commit on `main` (the one that follows merge `6834287`).** The POISON
+DRILL bullet in `docs/CONVENTIONS.md` now carries **arm (c)**: detached
+scratch worktree PLUS its own `CARGO_TARGET_DIR` inside it. Status stays
+`suggested` — discharging a finding is not the integrator's call to
+record as promoted, parked or rejected (the disposition rule in that
+same file); triage makes the move.
+
+**The integrator's own drill took arm (c) and it is measured rather than
+recommended**: three one-sided producer mutants and four suite runs in
+`<scratch>/T013-idrill` with `CARGO_TARGET_DIR=<that worktree>/.drilltarget`
+(1.4 GiB), and the MAIN checkout's `target/` mtime was identical before
+and after — no pollution, and no `cargo clean` to pay. Two refinements
+went into the bullet with it:
+
+1. **The verifier's ruling on the "drill in place" alternative** — it is
+   CORRECT but NARROW. "Absent by construction" is true of the instance,
+   not of the class: the mechanism is *a compile-time constant cargo
+   does not track as an input*, and the manifest directory is the one
+   that bit, not the only one available. In-place drilling also
+   substitutes a hazard this card did not weigh — an interrupted drill
+   leaves the branch dirty and any concurrent reader sees mutated
+   source, which is exactly why "detached scratch worktree" is the
+   standing advice. So arm (c), not in-place.
+2. **A cost this card did not name**: a fresh worktree also has no
+   `app/dist`, so the app suite cannot be drilled until it is built.
+   Measured at T-013's merge — 14 failures across SIX files on the
+   unbuilt drill, 924/924 after `npm run build`. The LANE PROTOCOL
+   bullet in CONVENTIONS still says five of those files; T-013's own
+   `map-t1-t2-dom.test.tsx` is the sixth.

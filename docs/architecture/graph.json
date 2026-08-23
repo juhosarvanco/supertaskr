@@ -115,6 +115,25 @@
       ]
     },
     {
+      "id": "f:app/src/architecture/MapContainer.tsx",
+      "path": "app/src/architecture/MapContainer.tsx",
+      "lang": "ts",
+      "hash": "blake3:7c5149373a87e20eca589d462b8dffbe5d70646ec6f25c7025141dc9a9ca839c",
+      "loc": 283,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/MapContainer.tsx#MapContainer",
+          "name": "MapContainer",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            44,
+            283
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/src/architecture/MapEdge.tsx",
       "path": "app/src/architecture/MapEdge.tsx",
       "lang": "ts",
@@ -157,8 +176,8 @@
       "id": "f:app/src/architecture/MapNode.tsx",
       "path": "app/src/architecture/MapNode.tsx",
       "lang": "ts",
-      "hash": "blake3:20f1684ecd3994f6edbeb998765ce5606f6f4cb9e74e0f956d72e1ea1d627368",
-      "loc": 182,
+      "hash": "blake3:2e1af6aad29518fe47d0e0a71682c09b0fd206c22a9eaac0c6d3cf49ab136c27",
+      "loc": 240,
       "symbols": [
         {
           "id": "s:app/src/architecture/MapNode.tsx#MapNode",
@@ -166,8 +185,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            30,
-            182
+            31,
+            240
           ]
         },
         {
@@ -176,8 +195,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            14,
-            21
+            15,
+            22
           ]
         }
       ]
@@ -186,17 +205,37 @@
       "id": "f:app/src/architecture/MapPanel.tsx",
       "path": "app/src/architecture/MapPanel.tsx",
       "lang": "ts",
-      "hash": "blake3:01a3a41d4e33819dad16a60d93a58285f0ef845deda98a448514ebe2039a8222",
-      "loc": 431,
+      "hash": "blake3:8dfcea933eb53c0e42a340516c4a1f573d705fba5dc89841b9a16f379b77f91d",
+      "loc": 698,
       "symbols": [
+        {
+          "id": "s:app/src/architecture/MapPanel.tsx#ChurnSection",
+          "name": "ChurnSection",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            399,
+            428
+          ]
+        },
         {
           "id": "s:app/src/architecture/MapPanel.tsx#DependencyGrid",
           "name": "DependencyGrid",
           "kind": "function",
           "exported": false,
           "range": [
-            266,
-            327
+            279,
+            340
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapPanel.tsx#EdgeLine",
+          "name": "EdgeLine",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            676,
+            698
           ]
         },
         {
@@ -205,8 +244,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            330,
-            354
+            346,
+            388
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapPanel.tsx#MapFilePanel",
+          "name": "MapFilePanel",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            528,
+            674
           ]
         },
         {
@@ -215,8 +264,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            27,
-            246
+            33,
+            259
           ]
         },
         {
@@ -225,8 +274,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            259,
-            261
+            272,
+            274
           ]
         },
         {
@@ -235,8 +284,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            248,
-            257
+            261,
+            270
           ]
         },
         {
@@ -245,8 +294,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            379,
-            431
+            453,
+            505
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/MapPanel.tsx#churnLabel",
+          "name": "churnLabel",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            392,
+            394
           ]
         },
         {
@@ -255,8 +314,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            361,
-            374
+            435,
+            448
           ]
         }
       ]
@@ -284,8 +343,8 @@
       "id": "f:app/src/architecture/MapView.tsx",
       "path": "app/src/architecture/MapView.tsx",
       "lang": "ts",
-      "hash": "blake3:a645588d5738144476eea752b51e55eb7c63c8fab4807ddc957eea0d11a0ecd5",
-      "loc": 800,
+      "hash": "blake3:23bdd9ac2c1da8344587ec250d5a443b4d25e9fe05c76454bd1583be1222c8d7",
+      "loc": 1003,
       "symbols": [
         {
           "id": "s:app/src/architecture/MapView.tsx#COLLECTOR_CAP_BYTES",
@@ -293,8 +352,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            50,
-            50
+            61,
+            61
           ]
         },
         {
@@ -303,8 +362,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            793,
-            800
+            996,
+            1003
           ]
         },
         {
@@ -313,8 +372,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            47,
-            47
+            58,
+            58
           ]
         },
         {
@@ -323,8 +382,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            46,
-            46
+            57,
+            57
           ]
         },
         {
@@ -333,8 +392,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            105,
-            791
+            120,
+            994
           ]
         },
         {
@@ -343,8 +402,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            58,
-            61
+            69,
+            74
           ]
         },
         {
@@ -353,8 +412,8 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            52,
-            56
+            63,
+            67
           ]
         },
         {
@@ -363,8 +422,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            65,
-            75
+            78,
+            90
           ]
         },
         {
@@ -373,8 +432,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            90,
-            103
+            105,
+            118
           ]
         },
         {
@@ -383,8 +442,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            78,
-            86
+            93,
+            101
           ]
         }
       ]
@@ -489,11 +548,210 @@
       ]
     },
     {
+      "id": "f:app/src/architecture/churn-source.ts",
+      "path": "app/src/architecture/churn-source.ts",
+      "lang": "ts",
+      "hash": "blake3:2cf3ed68540f06c97e43c48f77874e838f1287e08f0209752accde7e3178b92c",
+      "loc": 255,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/churn-source.ts#ChurnDisabledReason",
+          "name": "ChurnDisabledReason",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            33,
+            42
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#ChurnState",
+          "name": "ChurnState",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            73,
+            87
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#DISABLED_REASONS",
+          "name": "DISABLED_REASONS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            44,
+            50
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#LOADING",
+          "name": "LOADING",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            89,
+            89
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#__resetChurnForTests",
+          "name": "__resetChurnForTests",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            251,
+            255
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#applyChurnPayload",
+          "name": "applyChurnPayload",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            199,
+            201
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#churnDisabledSentence",
+          "name": "churnDisabledSentence",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            54,
+            71
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#getChurnState",
+          "name": "getChurnState",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            191,
+            193
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#hasTauriRuntime",
+          "name": "hasTauriRuntime",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            209,
+            211
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#inFlight",
+          "name": "inFlight",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            213,
+            213
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#isCount",
+          "name": "isCount",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            100,
+            101
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#isRecord",
+          "name": "isRecord",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            93,
+            94
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#listeners",
+          "name": "listeners",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            178,
+            178
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#loadChurn",
+          "name": "loadChurn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            222,
+            247
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#own",
+          "name": "own",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            97,
+            98
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#parseChurnPayload",
+          "name": "parseChurnPayload",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            107,
+            173
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#set",
+          "name": "set",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            180,
+            184
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#state",
+          "name": "state",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            177,
+            177
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#subscribeChurn",
+          "name": "subscribeChurn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            186,
+            189
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/src/architecture/map-layout.ts",
       "path": "app/src/architecture/map-layout.ts",
       "lang": "ts",
-      "hash": "blake3:fa8911c5571fbb9bb44a30c546e01295154330a0d8217c5420435a5c3df8680e",
-      "loc": 406,
+      "hash": "blake3:5579a3b8e27bdceb4bd5ed73a6ab2280cb0756a553155dd0bd03cab643129860",
+      "loc": 470,
       "symbols": [
         {
           "id": "s:app/src/architecture/map-layout.ts#BACK_DROP",
@@ -501,8 +759,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            50,
-            50
+            61,
+            61
           ]
         },
         {
@@ -511,8 +769,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            42,
-            42
+            53,
+            53
           ]
         },
         {
@@ -521,8 +779,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            52,
-            55
+            63,
+            66
           ]
         },
         {
@@ -531,8 +789,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            73,
-            82
+            87,
+            96
           ]
         },
         {
@@ -541,8 +799,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            57,
-            62
+            68,
+            73
           ]
         },
         {
@@ -551,8 +809,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            64,
-            71
+            75,
+            85
           ]
         },
         {
@@ -561,8 +819,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            84,
-            92
+            98,
+            106
           ]
         },
         {
@@ -571,8 +829,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            40,
-            40
+            51,
+            51
           ]
         },
         {
@@ -581,8 +839,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            39,
-            39
+            50,
+            50
           ]
         },
         {
@@ -591,8 +849,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            44,
-            44
+            55,
+            55
           ]
         },
         {
@@ -601,8 +859,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            46,
-            46
+            57,
+            57
           ]
         },
         {
@@ -611,8 +869,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            48,
-            48
+            59,
+            59
           ]
         },
         {
@@ -621,8 +879,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            201,
-            254
+            215,
+            268
           ]
         },
         {
@@ -631,8 +889,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            260,
-            281
+            274,
+            295
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-layout.ts#assignYs",
+          "name": "assignYs",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            305,
+            329
           ]
         },
         {
@@ -641,8 +909,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            104,
-            127
+            118,
+            141
           ]
         },
         {
@@ -651,8 +919,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            94,
-            94
+            108,
+            108
           ]
         },
         {
@@ -661,8 +929,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            396,
-            406
+            455,
+            470
           ]
         },
         {
@@ -671,8 +939,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            332,
-            386
+            380,
+            440
           ]
         },
         {
@@ -681,8 +949,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            284,
-            326
+            332,
+            374
           ]
         },
         {
@@ -691,8 +959,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            130,
-            195
+            144,
+            209
           ]
         }
       ]
@@ -769,17 +1037,57 @@
       "id": "f:app/src/architecture/map-visuals.ts",
       "path": "app/src/architecture/map-visuals.ts",
       "lang": "ts",
-      "hash": "blake3:badd68ee6aa23a6c61e60011347b8d204027f6ceafe58843b0946f6cb581d80d",
-      "loc": 518,
+      "hash": "blake3:cadbafa7e2e23dd179a7bc8d87e3f91d6c1c3f30df9143882230b3e73f6a57bd",
+      "loc": 628,
       "symbols": [
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#CHURN_BAR",
+          "name": "CHURN_BAR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            564,
+            564
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#CHURN_BAR_HOTTEST",
+          "name": "CHURN_BAR_HOTTEST",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            565,
+            565
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#ChurnDisplay",
+          "name": "ChurnDisplay",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            549,
+            549
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#ChurnVisual",
+          "name": "ChurnVisual",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            551,
+            562
+          ]
+        },
         {
           "id": "s:app/src/architecture/map-visuals.ts#DOT",
           "name": "DOT",
           "kind": "const",
           "exported": false,
           "range": [
-            84,
-            87
+            93,
+            96
           ]
         },
         {
@@ -788,8 +1096,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            285,
-            285
+            302,
+            302
           ]
         },
         {
@@ -798,8 +1106,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            287,
-            293
+            304,
+            310
           ]
         },
         {
@@ -808,8 +1116,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            295,
-            305
+            312,
+            322
           ]
         },
         {
@@ -818,8 +1126,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            456,
-            463
+            473,
+            480
           ]
         },
         {
@@ -828,8 +1136,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            46,
-            53
+            55,
+            62
           ]
         },
         {
@@ -838,8 +1146,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            24,
-            24
+            28,
+            33
           ]
         },
         {
@@ -848,8 +1156,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            64,
-            71
+            73,
+            80
           ]
         },
         {
@@ -858,8 +1166,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            23,
-            23
+            27,
+            27
           ]
         },
         {
@@ -868,8 +1176,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            27,
-            34
+            36,
+            43
           ]
         },
         {
@@ -878,8 +1186,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            37,
-            44
+            46,
+            53
           ]
         },
         {
@@ -888,8 +1196,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            89,
-            96
+            98,
+            105
           ]
         },
         {
@@ -898,8 +1206,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            98,
-            120
+            107,
+            129
           ]
         },
         {
@@ -908,8 +1216,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            74,
-            81
+            83,
+            90
           ]
         },
         {
@@ -918,8 +1226,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            55,
-            62
+            64,
+            71
           ]
         },
         {
@@ -928,8 +1236,38 @@
           "kind": "function",
           "exported": true,
           "range": [
-            418,
-            428
+            435,
+            445
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#churnAge",
+          "name": "churnAge",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            621,
+            628
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#churnFooter",
+          "name": "churnFooter",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            598,
+            617
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-visuals.ts#churnVisual",
+          "name": "churnVisual",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            572,
+            594
           ]
         },
         {
@@ -938,8 +1276,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            443,
-            445
+            460,
+            462
           ]
         },
         {
@@ -948,8 +1286,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            502,
-            518
+            519,
+            535
           ]
         },
         {
@@ -958,8 +1296,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            313,
-            408
+            330,
+            425
           ]
         },
         {
@@ -968,8 +1306,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            308,
-            311
+            325,
+            328
           ]
         },
         {
@@ -978,8 +1316,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            450,
-            454
+            467,
+            471
           ]
         },
         {
@@ -988,8 +1326,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            465,
-            499
+            482,
+            516
           ]
         },
         {
@@ -998,8 +1336,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            251,
-            257
+            268,
+            274
           ]
         },
         {
@@ -1008,8 +1346,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            274,
-            279
+            291,
+            296
           ]
         },
         {
@@ -1018,8 +1356,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            122,
-            123
+            131,
+            132
           ]
         },
         {
@@ -1028,8 +1366,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            447,
-            447
+            464,
+            464
           ]
         },
         {
@@ -1038,8 +1376,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            129,
-            247
+            138,
+            264
           ]
         },
         {
@@ -1048,8 +1386,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            431,
-            441
+            448,
+            458
           ]
         },
         {
@@ -1058,8 +1396,347 @@
           "kind": "function",
           "exported": true,
           "range": [
-            260,
-            271
+            277,
+            288
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/architecture/map-zoom.ts",
+      "path": "app/src/architecture/map-zoom.ts",
+      "lang": "ts",
+      "hash": "blake3:10b0b5656e18c3888588f3335eab5ecc4347390222ce967e1376231111589119",
+      "loc": 466,
+      "symbols": [
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#CONTAINER_BORDER",
+          "name": "CONTAINER_BORDER",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            52,
+            52
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#CONTAINER_HEADER_H",
+          "name": "CONTAINER_HEADER_H",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            48,
+            48
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#CONTAINER_PAD",
+          "name": "CONTAINER_PAD",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            50,
+            50
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#CONTAINER_W",
+          "name": "CONTAINER_W",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            46,
+            46
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#EDGE_ORDER",
+          "name": "EDGE_ORDER",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            319,
+            319
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#EdgeRow",
+          "name": "EdgeRow",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            289,
+            298
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#Expansion",
+          "name": "Expansion",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            99,
+            115
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#ExpansionGroup",
+          "name": "ExpansionGroup",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            90,
+            97
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#ExpansionMode",
+          "name": "ExpansionMode",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            74,
+            80
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#ExpansionRow",
+          "name": "ExpansionRow",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            85,
+            88
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#FILE_BUDGET",
+          "name": "FILE_BUDGET",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            70,
+            70
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#FileDetail",
+          "name": "FileDetail",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            300,
+            317
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#GROUP_BUDGET",
+          "name": "GROUP_BUDGET",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            72,
+            72
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#GROUP_GAP",
+          "name": "GROUP_GAP",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            60,
+            60
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#GROUP_LABEL_H",
+          "name": "GROUP_LABEL_H",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            54,
+            54
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#INTRA_EDGE_BUDGET",
+          "name": "INTRA_EDGE_BUDGET",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            67,
+            67
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#INTRA_GUTTER",
+          "name": "INTRA_GUTTER",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            64,
+            64
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#NOTE_H",
+          "name": "NOTE_H",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            62,
+            62
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#ROW_GAP",
+          "name": "ROW_GAP",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            58,
+            58
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#ROW_H",
+          "name": "ROW_H",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            56,
+            56
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#SymbolRow",
+          "name": "SymbolRow",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            279,
+            287
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#byPath",
+          "name": "byPath",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            117,
+            117
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#dirSegments",
+          "name": "dirSegments",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            129,
+            133
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#expansionFor",
+          "name": "expansionFor",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            153,
+            231
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#fileDetail",
+          "name": "fileDetail",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            337,
+            434
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#groupAt",
+          "name": "groupAt",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            137,
+            146
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#heightOf",
+          "name": "heightOf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            241,
+            264
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#intraEdges",
+          "name": "intraEdges",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            444,
+            466
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#isResolved",
+          "name": "isResolved",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            275,
+            277
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#labelFor",
+          "name": "labelFor",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            120,
+            122
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#leafOf",
+          "name": "leafOf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            124,
+            127
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#packageLeaf",
+          "name": "packageLeaf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            327,
+            329
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/map-zoom.ts#symbolName",
+          "name": "symbolName",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            322,
+            325
           ]
         }
       ]
@@ -3990,6 +4667,95 @@
       ]
     },
     {
+      "id": "f:app/src/lib/architecture/churn.ts",
+      "path": "app/src/lib/architecture/churn.ts",
+      "lang": "ts",
+      "hash": "blake3:9505951f48f08642f363684d4e7816d6cb9a852bea7eb8050fa8039e8d7a8b1b",
+      "loc": 168,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/architecture/churn.ts#CHURN_BAR_MIN_PERCENT",
+          "name": "CHURN_BAR_MIN_PERCENT",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            162,
+            162
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/churn.ts#ChurnAttribution",
+          "name": "ChurnAttribution",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            50,
+            63
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/churn.ts#ChurnPathEntry",
+          "name": "ChurnPathEntry",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            35,
+            39
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/churn.ts#ComponentChurn",
+          "name": "ComponentChurn",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            41,
+            48
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/churn.ts#EMPTY",
+          "name": "EMPTY",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            65,
+            69
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/churn.ts#attributeChurn",
+          "name": "attributeChurn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            99,
+            151
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/churn.ts#churnBarPercent",
+          "name": "churnBarPercent",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            164,
+            168
+          ]
+        },
+        {
+          "id": "s:app/src/lib/architecture/churn.ts#claimant",
+          "name": "claimant",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            81,
+            91
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/src/lib/architecture/derive.ts",
       "path": "app/src/lib/architecture/derive.ts",
       "lang": "ts",
@@ -6097,8 +6863,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:b66cbd2d3ceda77b8a9e77692c61468da78c9b5b890464741a504c961f2d9f05",
-      "loc": 1737,
+      "hash": "blake3:215114d7815facefb3d211980e9bbcc77331d14925e6d0441945a23d2334b6b1",
+      "loc": 1755,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -6441,8 +7207,8 @@
       "id": "f:app/test/crescendo-dom.test.tsx",
       "path": "app/test/crescendo-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:191f13611b0707d2ec403da155c1e7c026e695baafbfdba5fe70e59f7d5c7d53",
-      "loc": 677,
+      "hash": "blake3:1dbbead437b1111d04d1880157e57f6bb3929413b5e1f0579251d97588e3ed8c",
+      "loc": 686,
       "symbols": [
         {
           "id": "s:app/test/crescendo-dom.test.tsx#App",
@@ -8372,11 +9138,60 @@
       ]
     },
     {
+      "id": "f:app/test/map-churn.test.ts",
+      "path": "app/test/map-churn.test.ts",
+      "lang": "ts",
+      "hash": "blake3:6024b2f43b86572cd24341a0c3779f41aee8ebe4cb764c9de1863232af0f6e81",
+      "loc": 389,
+      "symbols": [
+        {
+          "id": "s:app/test/map-churn.test.ts#componentFile",
+          "name": "componentFile",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            32,
+            48
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn.test.ts#entry",
+          "name": "entry",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            72,
+            76
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn.test.ts#fixture",
+          "name": "fixture",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            62,
+            70
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn.test.ts#graphJson",
+          "name": "graphJson",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            50,
+            60
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:354cc7e7399665b931b39d911b0599dc2b969e4afdfc995c775bda95c0a66167",
-      "loc": 375,
+      "hash": "blake3:dc45614034f8d5103857822ac3be2671197a4a1aa13e0f88ab75cdb189ac83e2",
+      "loc": 396,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -8444,8 +9259,8 @@
       "id": "f:app/test/map-layout.test.ts",
       "path": "app/test/map-layout.test.ts",
       "lang": "ts",
-      "hash": "blake3:4842ba62666a851165840d2a389ae9fdac3ec6d6ac0fcbf3d1a04322ae4afe0e",
-      "loc": 347,
+      "hash": "blake3:416398189e914ef1a1b8e983b559d3dfdc5d84056f79cebfec13dc0268989ab4",
+      "loc": 380,
       "symbols": [
         {
           "id": "s:app/test/map-layout.test.ts#c",
@@ -8593,6 +9408,145 @@
           "range": [
             21,
             21
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/map-t1-t2-dom.test.tsx",
+      "path": "app/test/map-t1-t2-dom.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:24a229e97751d44fea0816c5e713ac52db8192781099162f82fb9760bded75be",
+      "loc": 828,
+      "symbols": [
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#GraphFileSpec",
+          "name": "GraphFileSpec",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            74,
+            77
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#boxOf",
+          "name": "boxOf",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            178,
+            182
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#componentFile",
+          "name": "componentFile",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            51,
+            72
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            34,
+            34
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#expandByDoubleClick",
+          "name": "expandByDoubleClick",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            197,
+            201
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#graphJson",
+          "name": "graphJson",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            79,
+            109
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#measuredChurn",
+          "name": "measuredChurn",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            561,
+            579
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#node",
+          "name": "node",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            172,
+            176
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#positions",
+          "name": "positions",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            185,
+            195
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#renderMap",
+          "name": "renderMap",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            158,
+            170
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            35,
+            35
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#segment",
+          "name": "segment",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            581,
+            585
+          ]
+        },
+        {
+          "id": "s:app/test/map-t1-t2-dom.test.tsx#zoomFixture",
+          "name": "zoomFixture",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            117,
+            156
           ]
         }
       ]
@@ -8759,8 +9713,8 @@
       "id": "f:app/test/map-view-dom.test.tsx",
       "path": "app/test/map-view-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:c75662c3ed5cea9640f832da4ee05356a1466597065aa11df80b7f1fbb11f285",
-      "loc": 641,
+      "hash": "blake3:e7bc20f2e6975d37bdaeba306f8c1131582b6cb230cde102c8ee34778b181648",
+      "loc": 654,
       "symbols": [
         {
           "id": "s:app/test/map-view-dom.test.tsx#componentFile",
@@ -8879,6 +9833,45 @@
           "range": [
             24,
             38
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/test/map-zoom.test.ts",
+      "path": "app/test/map-zoom.test.ts",
+      "lang": "ts",
+      "hash": "blake3:0b5b7588510ad2efbb3c2ac4642cb1040d550c70095fcd77d3c78d87e27f8804",
+      "loc": 328,
+      "symbols": [
+        {
+          "id": "s:app/test/map-zoom.test.ts#GRAPH",
+          "name": "GRAPH",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            179,
+            227
+          ]
+        },
+        {
+          "id": "s:app/test/map-zoom.test.ts#componentFile",
+          "name": "componentFile",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            161,
+            177
+          ]
+        },
+        {
+          "id": "s:app/test/map-zoom.test.ts#fixture",
+          "name": "fixture",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            229,
+            241
           ]
         }
       ]
@@ -11490,6 +12483,58 @@
       ]
     },
     {
+      "from": "f:app/src/architecture/MapContainer.tsx",
+      "to": "f:app/src/architecture/map-layout.ts",
+      "kind": "import",
+      "symbols": [
+        "LayoutNode",
+        "NODE_W"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapContainer.tsx",
+      "to": "f:app/src/architecture/map-visuals.ts",
+      "kind": "import",
+      "symbols": [
+        "ChurnVisual",
+        "STATUS_CHIP"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapContainer.tsx",
+      "to": "f:app/src/architecture/map-zoom.ts",
+      "kind": "import",
+      "symbols": [
+        "CONTAINER_BORDER",
+        "CONTAINER_HEADER_H",
+        "CONTAINER_PAD",
+        "Expansion",
+        "GROUP_GAP",
+        "GROUP_LABEL_H",
+        "INTRA_EDGE_BUDGET",
+        "INTRA_GUTTER",
+        "NOTE_H",
+        "ROW_GAP",
+        "ROW_H"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapContainer.tsx",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedComponent"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapContainer.tsx",
+      "to": "f:app/src/lib/utils.ts",
+      "kind": "import",
+      "symbols": [
+        "cn"
+      ]
+    },
+    {
       "from": "f:app/src/architecture/MapEdge.tsx",
       "to": "f:app/src/architecture/map-layout.ts",
       "kind": "import",
@@ -11528,7 +12573,6 @@
       "kind": "import",
       "symbols": [
         "LayoutNode",
-        "NODE_H",
         "NODE_W"
       ]
     },
@@ -11537,6 +12581,7 @@
       "to": "f:app/src/architecture/map-visuals.ts",
       "kind": "import",
       "symbols": [
+        "ChurnVisual",
         "NodeUiState",
         "attributedFindings",
         "hasVisibleMark",
@@ -11563,13 +12608,32 @@
     },
     {
       "from": "f:app/src/architecture/MapPanel.tsx",
+      "to": "f:app/src/architecture/churn-source.ts",
+      "kind": "import",
+      "symbols": [
+        "ChurnState",
+        "churnDisabledSentence"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapPanel.tsx",
       "to": "f:app/src/architecture/map-visuals.ts",
       "kind": "import",
       "symbols": [
         "STATUS_CHIP",
+        "churnAge",
         "findingText",
         "panelFindings",
         "provenanceLabel"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapPanel.tsx",
+      "to": "f:app/src/architecture/map-zoom.ts",
+      "kind": "import",
+      "symbols": [
+        "EdgeRow",
+        "fileDetail"
       ]
     },
     {
@@ -11582,12 +12646,28 @@
     },
     {
       "from": "f:app/src/architecture/MapPanel.tsx",
+      "to": "f:app/src/lib/architecture/churn.ts",
+      "kind": "import",
+      "symbols": [
+        "ChurnAttribution"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapPanel.tsx",
       "to": "f:app/src/lib/architecture/derive.ts",
       "kind": "import",
       "symbols": [
         "DerivedArchitecture",
         "DerivedTaskRef",
         "UNMAPPED_ID"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapPanel.tsx",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "ArchGraph"
       ]
     },
     {
@@ -11644,6 +12724,14 @@
     },
     {
       "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/architecture/MapContainer.tsx",
+      "kind": "import",
+      "symbols": [
+        "MapContainer"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
       "to": "f:app/src/architecture/MapEdge.tsx",
       "kind": "import",
       "symbols": [
@@ -11665,6 +12753,7 @@
       "to": "f:app/src/architecture/MapPanel.tsx",
       "kind": "import",
       "symbols": [
+        "MapFilePanel",
         "MapPanel"
       ]
     },
@@ -11674,6 +12763,17 @@
       "kind": "import",
       "symbols": [
         "TasksLens"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/architecture/churn-source.ts",
+      "kind": "import",
+      "symbols": [
+        "churnDisabledSentence",
+        "getChurnState",
+        "loadChurn",
+        "subscribeChurn"
       ]
     },
     {
@@ -11713,8 +12813,20 @@
       "symbols": [
         "MAP_OVERLAYS",
         "MapOverlay",
+        "churnFooter",
+        "churnVisual",
         "driftFooter",
         "edgeVisual"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/architecture/map-zoom.ts",
+      "kind": "import",
+      "symbols": [
+        "Expansion",
+        "expansionFor",
+        "intraEdges"
       ]
     },
     {
@@ -11731,6 +12843,15 @@
       "kind": "import",
       "symbols": [
         "Button"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/MapView.tsx",
+      "to": "f:app/src/lib/architecture/churn.ts",
+      "kind": "import",
+      "symbols": [
+        "ChurnAttribution",
+        "attributeChurn"
       ]
     },
     {
@@ -11792,7 +12913,8 @@
         "useEffect",
         "useMemo",
         "useRef",
-        "useState"
+        "useState",
+        "useSyncExternalStore"
       ]
     },
     {
@@ -11848,6 +12970,22 @@
       ]
     },
     {
+      "from": "f:app/src/architecture/churn-source.ts",
+      "to": "f:app/src/lib/architecture/churn.ts",
+      "kind": "import",
+      "symbols": [
+        "ChurnPathEntry"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/churn-source.ts",
+      "to": "p:@tauri-apps/api",
+      "kind": "import",
+      "symbols": [
+        "invoke"
+      ]
+    },
+    {
       "from": "f:app/src/architecture/map-layout.ts",
       "to": "f:app/src/lib/architecture/derive.ts",
       "kind": "import",
@@ -11875,6 +13013,15 @@
     },
     {
       "from": "f:app/src/architecture/map-visuals.ts",
+      "to": "f:app/src/lib/architecture/churn.ts",
+      "kind": "import",
+      "symbols": [
+        "ChurnAttribution",
+        "churnBarPercent"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/map-visuals.ts",
       "to": "f:app/src/lib/architecture/derive.ts",
       "kind": "import",
       "symbols": [
@@ -11883,6 +13030,32 @@
         "DerivedStatus",
         "DriftFinding",
         "UNMAPPED_ID"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/map-zoom.ts",
+      "to": "f:app/src/architecture/map-layout.ts",
+      "kind": "import",
+      "symbols": [
+        "NODE_H",
+        "NODE_W"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/map-zoom.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedArchitecture"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/map-zoom.ts",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "ArchGraph",
+        "GraphFile"
       ]
     },
     {
@@ -12624,6 +13797,22 @@
       "symbols": [
         "invoke",
         "listen"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/architecture/churn.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "DerivedArchitecture"
+      ]
+    },
+    {
+      "from": "f:app/src/lib/architecture/churn.ts",
+      "to": "f:app/src/lib/architecture/glob.ts",
+      "kind": "import",
+      "symbols": [
+        "claimsPath"
       ]
     },
     {
@@ -13968,6 +15157,77 @@
       ]
     },
     {
+      "from": "f:app/test/map-churn.test.ts",
+      "to": "f:app/src/architecture/churn-source.ts",
+      "kind": "import",
+      "symbols": [
+        "ChurnDisabledReason",
+        "__resetChurnForTests",
+        "applyChurnPayload",
+        "churnDisabledSentence",
+        "getChurnState",
+        "parseChurnPayload",
+        "subscribeChurn"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn.test.ts",
+      "to": "f:app/src/architecture/map-visuals.ts",
+      "kind": "import",
+      "symbols": [
+        "churnAge",
+        "churnFooter",
+        "churnVisual"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn.test.ts",
+      "to": "f:app/src/lib/architecture/churn.ts",
+      "kind": "import",
+      "symbols": [
+        "CHURN_BAR_MIN_PERCENT",
+        "ChurnPathEntry",
+        "attributeChurn",
+        "churnBarPercent"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn.test.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "deriveArchitecture"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn.test.ts",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "parseGraph"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn.test.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "FileEntry",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "beforeEach",
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
       "from": "f:app/test/map-dogfood-render.test.tsx",
       "to": "f:app/src/architecture/MapView.tsx",
       "kind": "import",
@@ -14161,6 +15421,81 @@
     },
     {
       "from": "f:app/test/map-shell-dom.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/map-t1-t2-dom.test.tsx",
+      "to": "f:app/src/architecture/MapView.tsx",
+      "kind": "import",
+      "symbols": [
+        "MapView"
+      ]
+    },
+    {
+      "from": "f:app/test/map-t1-t2-dom.test.tsx",
+      "to": "f:app/src/architecture/churn-source.ts",
+      "kind": "import",
+      "symbols": [
+        "__resetChurnForTests",
+        "applyChurnPayload"
+      ]
+    },
+    {
+      "from": "f:app/test/map-t1-t2-dom.test.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "FileEntry",
+        "ProjectParseResult",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/map-t1-t2-dom.test.tsx",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync",
+        "statSync"
+      ]
+    },
+    {
+      "from": "f:app/test/map-t1-t2-dom.test.tsx",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "resolve"
+      ]
+    },
+    {
+      "from": "f:app/test/map-t1-t2-dom.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/map-t1-t2-dom.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/map-t1-t2-dom.test.tsx",
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
@@ -14380,6 +15715,61 @@
     },
     {
       "from": "f:app/test/map-visuals.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:app/test/map-zoom.test.ts",
+      "to": "f:app/src/architecture/map-zoom.ts",
+      "kind": "import",
+      "symbols": [
+        "CONTAINER_BORDER",
+        "CONTAINER_HEADER_H",
+        "CONTAINER_PAD",
+        "FILE_BUDGET",
+        "GROUP_BUDGET",
+        "GROUP_GAP",
+        "GROUP_LABEL_H",
+        "NOTE_H",
+        "ROW_GAP",
+        "ROW_H",
+        "expansionFor",
+        "fileDetail",
+        "intraEdges"
+      ]
+    },
+    {
+      "from": "f:app/test/map-zoom.test.ts",
+      "to": "f:app/src/lib/architecture/derive.ts",
+      "kind": "import",
+      "symbols": [
+        "deriveArchitecture"
+      ]
+    },
+    {
+      "from": "f:app/test/map-zoom.test.ts",
+      "to": "f:app/src/lib/architecture/graph.ts",
+      "kind": "import",
+      "symbols": [
+        "parseGraph"
+      ]
+    },
+    {
+      "from": "f:app/test/map-zoom.test.ts",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "FileEntry",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/map-zoom.test.ts",
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
@@ -15941,6 +17331,36 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/architecture/MapContainer.tsx#MapContainer",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutNode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapContainer.tsx#MapContainer",
+      "to": "s:app/src/architecture/map-visuals.ts#ChurnVisual",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapContainer.tsx#MapContainer",
+      "to": "s:app/src/architecture/map-zoom.ts#Expansion",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapContainer.tsx#MapContainer",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapContainer.tsx#MapContainer",
+      "to": "s:app/src/lib/utils.ts#cn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/architecture/MapEdge.tsx#MapEdge",
       "to": "s:app/src/architecture/MapEdge.tsx#edgeKey",
       "kind": "call",
@@ -15979,6 +17399,12 @@
     {
       "from": "s:app/src/architecture/MapNode.tsx#MapNode",
       "to": "s:app/src/architecture/map-layout.ts#LayoutNode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapNode.tsx#MapNode",
+      "to": "s:app/src/architecture/map-visuals.ts#ChurnVisual",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -16037,6 +17463,30 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/architecture/MapPanel.tsx#ChurnSection",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#ChurnSection",
+      "to": "s:app/src/architecture/churn-source.ts#churnDisabledSentence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#ChurnSection",
+      "to": "s:app/src/architecture/map-visuals.ts#churnAge",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#ChurnSection",
+      "to": "s:app/src/lib/architecture/churn.ts#ChurnAttribution",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/architecture/MapPanel.tsx#DependencyGrid",
       "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
       "kind": "type_ref",
@@ -16046,6 +17496,48 @@
       "from": "s:app/src/architecture/MapPanel.tsx#DependencyGrid",
       "to": "s:app/src/lib/utils.ts#cn",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#EdgeLine",
+      "to": "s:app/src/architecture/map-zoom.ts#EdgeRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapFilePanel",
+      "to": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapFilePanel",
+      "to": "s:app/src/components/board/panel-dismissal.ts#attachPanelDismissal",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapFilePanel",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapFilePanel",
+      "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapPanel",
+      "to": "s:app/src/architecture/MapPanel.tsx#churnLabel",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapPanel",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -16070,6 +17562,12 @@
       "from": "s:app/src/architecture/MapPanel.tsx#MapPanel",
       "to": "s:app/src/components/board/panel-dismissal.ts#attachPanelDismissal",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#MapPanel",
+      "to": "s:app/src/lib/architecture/churn.ts#ChurnAttribution",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -16112,6 +17610,12 @@
       "from": "s:app/src/architecture/MapPanel.tsx#TaskRow",
       "to": "s:app/src/lib/utils.ts#cn",
       "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapPanel.tsx#churnLabel",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "kind": "type_ref",
       "confidence": "resolved"
     },
     {
@@ -16170,6 +17674,18 @@
     },
     {
       "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/churn-source.ts#churnDisabledSentence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/churn-source.ts#loadChurn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
       "to": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -16218,6 +17734,18 @@
     },
     {
       "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-visuals.ts#churnFooter",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-visuals.ts#churnVisual",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
       "to": "s:app/src/architecture/map-visuals.ts#driftFooter",
       "kind": "call",
       "confidence": "resolved"
@@ -16225,6 +17753,36 @@
     {
       "from": "s:app/src/architecture/MapView.tsx#MapView",
       "to": "s:app/src/architecture/map-visuals.ts#edgeVisual",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-zoom.ts#Expansion",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-zoom.ts#expansionFor",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/map-zoom.ts#intraEdges",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/architecture/churn.ts#ChurnAttribution",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/lib/architecture/churn.ts#attributeChurn",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -16361,6 +17919,132 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnDisabledReason",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "to": "s:app/src/lib/architecture/churn.ts#ChurnPathEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#LOADING",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#applyChurnPayload",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#applyChurnPayload",
+      "to": "s:app/src/architecture/churn-source.ts#parseChurnPayload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#applyChurnPayload",
+      "to": "s:app/src/architecture/churn-source.ts#set",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#churnDisabledSentence",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnDisabledReason",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#getChurnState",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#inFlight",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#loadChurn",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#loadChurn",
+      "to": "s:app/src/architecture/churn-source.ts#applyChurnPayload",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#loadChurn",
+      "to": "s:app/src/architecture/churn-source.ts#hasTauriRuntime",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#loadChurn",
+      "to": "s:app/src/architecture/churn-source.ts#set",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#parseChurnPayload",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnDisabledReason",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#parseChurnPayload",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#parseChurnPayload",
+      "to": "s:app/src/architecture/churn-source.ts#isCount",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#parseChurnPayload",
+      "to": "s:app/src/architecture/churn-source.ts#isRecord",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#parseChurnPayload",
+      "to": "s:app/src/architecture/churn-source.ts#own",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#parseChurnPayload",
+      "to": "s:app/src/lib/architecture/churn.ts#ChurnPathEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#set",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#state",
+      "to": "s:app/src/architecture/churn-source.ts#ChurnState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
       "to": "s:app/src/lib/architecture/derive.ts#DerivedComponentKind",
       "kind": "type_ref",
@@ -16398,6 +18082,12 @@
     },
     {
       "from": "s:app/src/architecture/map-layout.ts#assignRows",
+      "to": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#assignYs",
       "to": "s:app/src/architecture/map-layout.ts#LayoutComponentInput",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -16470,6 +18160,12 @@
     },
     {
       "from": "s:app/src/architecture/map-layout.ts#layoutMap",
+      "to": "s:app/src/architecture/map-layout.ts#assignYs",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-layout.ts#layoutMap",
       "to": "s:app/src/architecture/map-layout.ts#breakCycles",
       "kind": "call",
       "confidence": "resolved"
@@ -16519,6 +18215,12 @@
     {
       "from": "s:app/src/architecture/map-search.ts#searchMap",
       "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#ChurnVisual",
+      "to": "s:app/src/architecture/map-visuals.ts#ChurnDisplay",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -16585,6 +18287,36 @@
     {
       "from": "s:app/src/architecture/map-visuals.ts#attributedFindings",
       "to": "s:app/src/lib/architecture/derive.ts#DriftFinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#churnFooter",
+      "to": "s:app/src/lib/architecture/churn.ts#ChurnAttribution",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#churnVisual",
+      "to": "s:app/src/architecture/map-visuals.ts#ChurnVisual",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#churnVisual",
+      "to": "s:app/src/lib/architecture/churn.ts#ChurnAttribution",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#churnVisual",
+      "to": "s:app/src/lib/architecture/churn.ts#churnBarPercent",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-visuals.ts#churnVisual",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -16699,6 +18431,186 @@
     {
       "from": "s:app/src/architecture/map-visuals.ts#provenanceLabel",
       "to": "s:app/src/lib/architecture/derive.ts#DerivedProvenance",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#Expansion",
+      "to": "s:app/src/architecture/map-zoom.ts#ExpansionGroup",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#Expansion",
+      "to": "s:app/src/architecture/map-zoom.ts#ExpansionMode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#Expansion",
+      "to": "s:app/src/architecture/map-zoom.ts#ExpansionRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#FileDetail",
+      "to": "s:app/src/architecture/map-zoom.ts#EdgeRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#FileDetail",
+      "to": "s:app/src/architecture/map-zoom.ts#SymbolRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#expansionFor",
+      "to": "s:app/src/architecture/map-zoom.ts#Expansion",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#expansionFor",
+      "to": "s:app/src/architecture/map-zoom.ts#ExpansionMode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#expansionFor",
+      "to": "s:app/src/architecture/map-zoom.ts#ExpansionRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#expansionFor",
+      "to": "s:app/src/architecture/map-zoom.ts#dirSegments",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#expansionFor",
+      "to": "s:app/src/architecture/map-zoom.ts#groupAt",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#expansionFor",
+      "to": "s:app/src/architecture/map-zoom.ts#heightOf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "to": "s:app/src/architecture/map-zoom.ts#EdgeRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "to": "s:app/src/architecture/map-zoom.ts#FileDetail",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "to": "s:app/src/architecture/map-zoom.ts#SymbolRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "to": "s:app/src/architecture/map-zoom.ts#byPath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "to": "s:app/src/architecture/map-zoom.ts#isResolved",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "to": "s:app/src/architecture/map-zoom.ts#leafOf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "to": "s:app/src/architecture/map-zoom.ts#packageLeaf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "to": "s:app/src/architecture/map-zoom.ts#symbolName",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#fileDetail",
+      "to": "s:app/src/lib/architecture/graph.ts#GraphFile",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#groupAt",
+      "to": "s:app/src/architecture/map-zoom.ts#byPath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#groupAt",
+      "to": "s:app/src/architecture/map-zoom.ts#dirSegments",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#groupAt",
+      "to": "s:app/src/architecture/map-zoom.ts#labelFor",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#heightOf",
+      "to": "s:app/src/architecture/map-zoom.ts#ExpansionGroup",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#heightOf",
+      "to": "s:app/src/architecture/map-zoom.ts#ExpansionMode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#intraEdges",
+      "to": "s:app/src/architecture/map-zoom.ts#byPath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#intraEdges",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/map-zoom.ts#intraEdges",
+      "to": "s:app/src/lib/architecture/graph.ts#ArchGraph",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -18746,6 +20658,60 @@
       "from": "s:app/src/lib/agent-store.ts#upsertTurn",
       "to": "s:app/src/lib/agent-store.ts#GenesisTurn",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/churn.ts#ChurnAttribution",
+      "to": "s:app/src/lib/architecture/churn.ts#ComponentChurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/churn.ts#EMPTY",
+      "to": "s:app/src/lib/architecture/churn.ts#ChurnAttribution",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/churn.ts#attributeChurn",
+      "to": "s:app/src/lib/architecture/churn.ts#ChurnAttribution",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/churn.ts#attributeChurn",
+      "to": "s:app/src/lib/architecture/churn.ts#ChurnPathEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/churn.ts#attributeChurn",
+      "to": "s:app/src/lib/architecture/churn.ts#ComponentChurn",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/churn.ts#attributeChurn",
+      "to": "s:app/src/lib/architecture/churn.ts#claimant",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/churn.ts#attributeChurn",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/churn.ts#claimant",
+      "to": "s:app/src/lib/architecture/derive.ts#DerivedArchitecture",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/architecture/churn.ts#claimant",
+      "to": "s:app/src/lib/architecture/glob.ts#claimsPath",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -21185,6 +23151,30 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/map-churn.test.ts#entry",
+      "to": "s:app/src/lib/architecture/churn.ts#ChurnPathEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-churn.test.ts#fixture",
+      "to": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-churn.test.ts#fixture",
+      "to": "s:app/src/lib/architecture/graph.ts#parseGraph",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-churn.test.ts#fixture",
+      "to": "s:app/test/map-churn.test.ts#graphJson",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/map-dogfood-render.test.tsx#liveFiles",
       "to": "s:app/test/map-dogfood-render.test.tsx#read",
       "kind": "call",
@@ -21236,6 +23226,30 @@
       "from": "s:app/test/map-shell-dom.test.tsx#payload",
       "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-t1-t2-dom.test.tsx#expandByDoubleClick",
+      "to": "s:app/test/map-t1-t2-dom.test.tsx#node",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-t1-t2-dom.test.tsx#graphJson",
+      "to": "s:app/test/map-t1-t2-dom.test.tsx#GraphFileSpec",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-t1-t2-dom.test.tsx#zoomFixture",
+      "to": "s:app/test/map-t1-t2-dom.test.tsx#componentFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-t1-t2-dom.test.tsx#zoomFixture",
+      "to": "s:app/test/map-t1-t2-dom.test.tsx#graphJson",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -21320,6 +23334,24 @@
       "from": "s:app/test/map-visuals.test.ts#component",
       "to": "s:app/src/lib/architecture/derive.ts#DerivedComponent",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-zoom.test.ts#fixture",
+      "to": "s:app/src/lib/architecture/derive.ts#deriveArchitecture",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-zoom.test.ts#fixture",
+      "to": "s:app/src/lib/architecture/graph.ts#parseGraph",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-zoom.test.ts#fixture",
+      "to": "s:app/test/map-zoom.test.ts#componentFile",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -22363,8 +24395,8 @@
     }
   ],
   "stats": {
-    "files": 119,
-    "symbols": 1023,
-    "edges": 1550
+    "files": 126,
+    "symbols": 1116,
+    "edges": 1698
   }
 }

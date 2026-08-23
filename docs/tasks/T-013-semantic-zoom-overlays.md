@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 6
 size: M
-status: verifying
+status: done
 blocked_by: [T-012]
 touches: [app-map, app-shell, app-agent]
 builder: claude-opus-5

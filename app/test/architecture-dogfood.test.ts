@@ -1074,8 +1074,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
-  it("all 119 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(119);
+  it("all 126 files map — zero unclaimed territory after the §2 amendments", () => {
+    expect(derived.fileComponent.size).toBe(126);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -1150,7 +1150,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // graph. It is the SECOND assertion in this body — below the size
       // check above — so vitest never reaches it while that one is red;
       // derived from the indexed added-file list before the suite ran.
-      ["C-05", 56],
+      // 56 → 59 at the T-013 merge regen, by THREE and by the same route
+      // a tenth time: map-churn.test.ts, map-t1-t2-dom.test.tsx and
+      // map-zoom.test.ts are all under app/test/**, C-05's alone.
+      // Derived from the indexed added-file list and validated by a
+      // POSITIVE CONTROL — the same matcher reproduces this array's
+      // previous value exactly against the graph committed at 11c82a1 —
+      // before the suite was run, never off the failure output.
+      ["C-05", 59],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under
@@ -1175,7 +1182,11 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // task-waves.ts all land under app/src/architecture/**, C-12's own
       // glob and its only claimant. The FILE LIST below moves with it —
       // same body, same merge, and it is the half that gets missed.
-      ["C-12", 14],
+      // 14 → 18 at the T-013 merge regen, by FOUR: MapContainer.tsx,
+      // churn-source.ts and map-zoom.ts under app/src/architecture/**,
+      // plus churn.ts under app/src/lib/architecture/** — both C-12's
+      // globs and C-12 their only claimant. Same positive control.
+      ["C-12", 18],
       // The genesis pane joined the index at the T-024 merge regen, and
       // STAYS 2 at T-037's: the mount gave the lens a consumer, not a
       // file.
@@ -1209,17 +1220,21 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // checked against the regenerated graph's ordering, not copied out
     // of a failure diff.
     expect(derived.components.find((c) => c.id === "C-12")?.files).toEqual([
+      "app/src/architecture/MapContainer.tsx",
       "app/src/architecture/MapEdge.tsx",
       "app/src/architecture/MapNode.tsx",
       "app/src/architecture/MapPanel.tsx",
       "app/src/architecture/MapProvenanceMark.tsx",
       "app/src/architecture/MapView.tsx",
       "app/src/architecture/TasksLens.tsx",
+      "app/src/architecture/churn-source.ts",
       "app/src/architecture/map-layout.ts",
       "app/src/architecture/map-lens.ts",
       "app/src/architecture/map-search.ts",
       "app/src/architecture/map-visuals.ts",
+      "app/src/architecture/map-zoom.ts",
       "app/src/architecture/task-waves.ts",
+      "app/src/lib/architecture/churn.ts",
       "app/src/lib/architecture/derive.ts",
       "app/src/lib/architecture/glob.ts",
       "app/src/lib/architecture/graph.ts",
@@ -1241,8 +1256,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           { from: "app/test/architecture-derive.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/architecture-dogfood.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/board-truth.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
+          { from: "app/test/map-churn.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/map-dogfood-render.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/map-search.test.ts", to: LIB_PARSER, package: PARSER_PKG },
+          { from: "app/test/map-t1-t2-dom.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
           // Both NEW at the T-034 merge regen: 8 → 10 file edges. This
           // LIST is a separate assertion from the relation table's
           // observedCount below and lives in a different it() body — the
@@ -1250,6 +1267,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           { from: "app/test/map-task-waves.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/map-tasks-lens-dom.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/map-view-dom.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
+          { from: "app/test/map-zoom.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/select-board.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/select-task-detail.test.ts", to: LIB_PARSER, package: PARSER_PKG },
         ],
@@ -1508,7 +1526,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // 8 → 10 at the T-034 merge regen: both new map suites import
       // @nputer/parser, riding the T-009 package.path seam like the
       // eight before them. The fileEdges LIST above moves with it.
-      ["C-05", "C-06", "undeclared", 10],
+      ["C-05", "C-06", "undeclared", 13],
       ["C-05", "C-08", "confirmed", 4],
       ["C-05", "C-09", "undeclared", 3],
       // 10 → 13 at the T-024 merge regen: both genesis suites import
@@ -1567,7 +1585,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["C-05", "C-11", "planned", 0],
       // 20 → 22 at the T-034 merge regen: map-task-waves.test.ts imports
       // task-waves.ts and map-tasks-lens-dom.test.tsx imports MapView.tsx.
-      ["C-05", "C-12", "confirmed", 22],
+      ["C-05", "C-12", "confirmed", 32],
       // 2 → 4 at the T-037 merge regen, and one of the two additions is
       // the shell's own SOURCE import of the lens — the mount. Still
       // undeclared: the integrator's reasoning is in the dated addendum.
@@ -1610,7 +1628,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // seven the branch forecast: the third new app/src/lib/** edge
       // (TasksLens.tsx → lib/task-detail.ts) belongs to C-09, which
       // declares that file explicitly. See C-12→C-09 below.
-      ["C-12", "C-05", "confirmed", 6],
+      ["C-12", "C-05", "confirmed", 7],
       // 4 → 6: task-waves.ts and TasksLens.tsx both import
       // @nputer/parser, the package.path seam again.
       ["C-12", "C-06", "confirmed", 6],

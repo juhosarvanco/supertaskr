@@ -890,7 +890,44 @@
   -a 256` against the working file, or an empty `git diff -- <path>`.
   RECORD the count and the restoration proof in the notes, the verdict
   or the checkpoint — "133-for-133" is the shape (T-027), "drills run"
-  is not. IF a body cannot be poisoned — it asserts a constant, or every
+  is not.
+  **DRILL IN A DETACHED SCRATCH WORKTREE AT A NAMED COMMIT, AND GIVE IT
+  ITS OWN `CARGO_TARGET_DIR` INSIDE ITSELF** (T-013-s7 arm (c), taken at
+  T-013's merge — the standing advice above CREATES this hazard, and it
+  has now bitten three agents). A scratch worktree has no `target/`, so
+  the obvious economy is to symlink or share the parent's — and that is
+  a trap that stays silent until after the drill is over. Several Rust
+  bodies here resolve the repository from `env!("CARGO_MANIFEST_DIR")`,
+  which is baked in at COMPILE time and which cargo does not fingerprint
+  as an input, so the binaries the DRILL compiled — carrying the DRILL's
+  path — are reused by the parent afterwards. Measured on T-013's lane:
+  bare `cargo test --no-fail-fast` went **336 passed / 33 failed, exit
+  101** with the drill worktree deleted, every failure naming a
+  directory that no longer exists, and `cargo clean -p` plus a rebuild
+  (12 704 files, 3.0 GiB) was the whole fix. **AND THE POLLUTION RUNS
+  THE OTHER WAY TOO**, which is the half that matters to a drill: a
+  mutant can look DEAD against a stale binary that never saw the
+  mutation. Arm (c) costs one environment variable and one cold build,
+  and it is the only arm that leaves the parent's cache untouched
+  without a `cargo clean` to remember: measured at T-013's merge, the
+  main checkout's `target/` mtime was **byte-identical before and after
+  three mutants and four suite runs** in a drill rooted at
+  `<scratch>/.drilltarget`. **DRILLING IN PLACE IS NOT THE REMEDY** —
+  the in-place argument ("one manifest path throughout, so the hazard is
+  absent by construction") is true of the INSTANCE and not of the CLASS,
+  the mechanism being a compile-time constant cargo does not track
+  rather than that one constant; and it substitutes a different hazard,
+  since an interrupted drill leaves the branch dirty and any concurrent
+  reader sees mutated source. Detached worktree **plus** its own target
+  directory, not either.
+  **AND THE APP SUITE NEEDS A BUILD BEFORE IT CAN BE DRILLED.** A fresh
+  worktree has no `app/dist`, and the test files that read the shipped
+  bundle fail on its absence with a message about the build rather than
+  about the tree — **SIX files since T-013 added
+  `map-t1-t2-dom.test.tsx`, where the LANE PROTOCOL bullet below still
+  says five** (measured at T-013's merge: 14 failures across 6 files on
+  an unbuilt drill, 924/924 after `npm run build`). Build first, then
+  baseline, then mutate. IF a body cannot be poisoned — it asserts a constant, or every
   mutation is one the test already makes — THEN say so and name it,
   because a body that cannot red is the finding. WHY: an assertion that
   cannot fail is indistinguishable from one that passes, and this

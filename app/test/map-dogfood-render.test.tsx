@@ -368,8 +368,29 @@ describe("the nputer repo on its own map", () => {
     // and C-05→C-10's observedCount 33 → 34 in another. vitest surfaces
     // them one at a time, so a green run after fixing the first proves
     // nothing about the rest.
+    // 119 → 126 at the T-013 merge regen (2026-08-23): SEVEN files join
+    // — MapContainer.tsx, churn-source.ts, map-zoom.ts under
+    // app/src/architecture/**, churn.ts under app/src/lib/architecture/**,
+    // and map-churn.test.ts, map-t1-t2-dom.test.tsx, map-zoom.test.ts
+    // under app/test/**. Symbols 1023 → 1116, edges 1550 → 1698, and
+    // `files +7 -0 ~8`. THE BRANCH'S FORECAST OF THOSE ABSOLUTES WAS
+    // STALE (it read 1018 → 1111 and 1539 → 1687, measured against a base
+    // two regens old); the +7 file delta survived and the symbol/edge
+    // absolutes did not, so the whole set was re-derived here.
+    // The eleven nodes and the 32-row relation table STILL HOLD — every
+    // new edge lands on a pair that already had a row.
+    // What moves besides this hint is FIVE assertions across THREE bodies
+    // in architecture-dogfood, not four: fileComponent.size 119 → 126;
+    // the per-component tally C-05 56 → 59 and C-12 14 → 18 in that same
+    // body; C-12's FILE LIST 14 → 18 entries, a THIRD assertion in that
+    // body which the forecast missed because the tally hides it; three
+    // new C-05→C-06 fileEdges; and three observedCounts — C-05→C-06
+    // 10 → 13, C-05→C-12 22 → 32, C-12→C-05 6 → 7. THE THIRD OF THOSE IS
+    // NOT THE ROW ITS POSITION SUGGESTS: C-05→C-14 also reads 6, so a
+    // value read off the failure diff by position corrupts two rows.
+    // Key on (from, to, relation), never on the printed order.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 119 files",
+      "committed graph · 126 files",
     );
   });
 });

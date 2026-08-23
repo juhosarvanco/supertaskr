@@ -27,6 +27,20 @@
   FAIL on rather than only something a human can look at — so "drift
   as a first-class signal" now reaches the command line and CI, not
   only the map pane
+  Since T-013 (2026-08-23) the pane also ZOOMS and shows CHURN. A
+  component can be expanded in place into a container of its own files
+  grouped by directory, with the intra-component edges drawn and the
+  stub edges to collapsed neighbours still attached — it grows DOWN
+  within its own column, so the rest of the map does not move under
+  you — and selecting a file lists its symbols and their resolved
+  edges in the panel. Over the render budget the container groups
+  deeper and then paginates, naming what it left out, rather than
+  freezing the canvas. The overlay control gains a FOURTH member:
+  churn, a 3px bar reading each component's share of the last 30 days
+  of git history, with the single hottest one step darker and a tie
+  naming none. It is the first thing the map shows that does not come
+  out of a file — and on a folder that is not a git repository the
+  segment is DISABLED with the reason on it, not quietly missing
 
 ## Milestones
 ### Milestone 0 — planning (current)
