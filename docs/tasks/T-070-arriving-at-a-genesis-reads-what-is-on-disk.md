@@ -32,8 +32,26 @@ away. The cap protects the webview; nothing protects the read. Three
 honest mitigations hold and none is a fix: the file is losable by
 charter so deleting it is always safe, the per-line cap bounds any
 single turn, and 200 lines is a generous conversation. Every failure
-mode here is a slow read, never a wrong answer — which is why this is
-sized beside its sibling rather than alone.
+mode OF THE CODE THIS CARD FOUND is a slow read, never a wrong answer —
+which is why this is sized beside its sibling rather than alone.
+
+**CORRECTED IN PLACE, 2026-08-23, BY THE SECOND EXECUTOR** (the first
+filed the finding and left the sentence; the verdict caught that a
+reader of the criteria alone still got the wrong promise). The sentence
+above described the WHOLE-FILE reader and was true of it. **It is NOT
+true of the bounded reader this card ships, and the difference is the
+price of the fix**: a budget on LINES READ cannot reach further back to
+replace an unparseable line, so a tail of garbage now rehydrates as
+empty where the whole-file read would have kept the good lines behind
+it (`T-070-s3`, pinned in
+`the_tail_read_answers_what_the_whole_file_read_would_have_kept`), and a
+walk stopped by its byte ceiling answers with fewer lines than the
+budget rather than costing the file (pinned in
+`the_tail_walk_stops_at_a_byte_ceiling_with_no_newline_in_the_file`).
+Both are wrong ANSWERS in the sentence's own sense, both are on inputs
+the module's own writer does not produce, and both are deliberate. The
+criteria below are unchanged; only this paragraph's claim about the
+outcome was.
 
 AND THE ONE SCREEN THAT COULD SAY SO NEEDS A CLI TO BE REACHED.
 `genesis_start`, `genesis_resume` and `genesis_fresh` all resolve a CLI

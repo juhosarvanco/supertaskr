@@ -369,27 +369,66 @@ pub fn read_transcript(project_dir: &Path) -> Vec<TranscriptLine> {
 /// against, spelled there as `tail_bytes + 2 * TAIL_CHUNK`.
 const TAIL_CHUNK: usize = 64 * 1024;
 
+/// THE WALK'S SECOND EXIT, IN BYTES (T-070 rebuild, closing the verdict's
+/// BLOCKING 2).
+///
+/// The newline count alone is not a budget: a file with NO newline in it
+/// never satisfies it, and the walk runs to byte 0 — the whole-file read
+/// this card exists to remove, reachable on an input `transcript.jsonl`
+/// is losable-by-charter open to. The natural constant is the budget
+/// times the module's OWN per-line cap: [`TRANSCRIPT_TEXT_CAP`] is the
+/// largest `text` [`append_transcript`] will write, so `max_lines` of
+/// them is the largest tail this reader was ever asked for.
+///
+/// IT WINS OVER THE LINE BUDGET, and that is deliberate rather than
+/// regrettable: on an input where the ceiling bites, the walk answers
+/// with FEWER lines than the budget instead of costing the file. That
+/// only happens on lines the module's own writer cannot produce (JSON
+/// escaping can expand a capped `text` past its cap on the wire), and it
+/// is the same trade `T-070-s3` already records one level in — the
+/// budget is on what is READ, never on what is found.
+fn tail_byte_ceiling(max_lines: usize) -> u64 {
+    max_lines.saturating_mul(TRANSCRIPT_TEXT_CAP) as u64
+}
+
 /// THE BOUND, AT THE READ (T-070 criterion 1).
 ///
 /// Read at most `max_lines` lines from the END of `src`, seeking backward
-/// in [`TAIL_CHUNK`] steps and stopping the moment the buffer holds one
-/// more newline than the budget. **Nothing before that point is ever
-/// pulled through `src`** — which is the property, and the reason this
-/// takes a `Read + Seek` rather than a path: a caller can wrap the file
-/// in a counting reader and MEASURE what the read cost, instead of
-/// trusting a figure this function reports about itself.
+/// in [`TAIL_CHUNK`] steps and stopping at the FIRST of two budgeted
+/// exits: the buffer holds one more newline than the budget, or the walk
+/// has pulled [`tail_byte_ceiling`] bytes. **Nothing before that point is
+/// ever pulled through `src`, and there is such a point on EVERY input**
+/// — the byte ceiling is what makes that sentence true of a file with no
+/// newline in it, which the newline count alone left running to byte 0.
+///
+/// That is the property, and it is also the reason this takes a
+/// `Read + Seek` rather than a path: `src` is the function's ONLY channel
+/// to any byte, so a caller can wrap the file in a counting reader and
+/// MEASURE what the read cost, instead of trusting a figure this function
+/// reports about itself.
+/// `the_tail_read_costs_the_budget_and_not_the_file` and
+/// `the_tail_walk_stops_at_a_byte_ceiling_with_no_newline_in_the_file`
+/// are the two bodies that do it.
 ///
 /// The first segment of the buffer is dropped unless the walk reached
 /// byte 0, because a backward step lands mid-line far more often than
-/// not. Returned raw, newest last, in the file's own order.
+/// not — and a walk stopped by the ceiling has by definition not reached
+/// it, so a newline-free file answers with nothing at all.
+///
+/// ONE JOIN, AT THE END (`T-070-s4`). The steps are kept as chunks and
+/// concatenated once when the walk stops; prepending each step onto the
+/// accumulated buffer copies it forward every time and makes the walk
+/// O(steps²) in a function whose whole purpose is a bounded cost.
 fn tail_lines<R: Read + Seek>(src: &mut R, max_lines: usize) -> io::Result<Vec<String>> {
     if max_lines == 0 {
         return Ok(Vec::new());
     }
+    let ceiling = tail_byte_ceiling(max_lines);
     let mut pos = src.seek(SeekFrom::End(0))?;
-    let mut buf: Vec<u8> = Vec::new();
+    let mut chunks: Vec<Vec<u8>> = Vec::new();
+    let mut taken: u64 = 0;
     let mut newlines = 0usize;
-    while pos > 0 && newlines <= max_lines {
+    while pos > 0 && newlines <= max_lines && taken < ceiling {
         let step = std::cmp::min(TAIL_CHUNK as u64, pos);
         pos -= step;
         src.seek(SeekFrom::Start(pos))?;
@@ -397,8 +436,15 @@ fn tail_lines<R: Read + Seek>(src: &mut R, max_lines: usize) -> io::Result<Vec<S
         let mut chunk = vec![0u8; step as usize];
         src.read_exact(&mut chunk)?;
         newlines += chunk.iter().filter(|byte| **byte == b'\n').count();
-        chunk.extend_from_slice(&buf);
-        buf = chunk;
+        taken += step;
+        chunks.push(chunk);
+    }
+    // `pop` hands back the LAST step first, which is the EARLIEST in the
+    // file — so this reassembles the file's own order, and frees each
+    // chunk as it goes rather than holding two copies of the tail.
+    let mut buf: Vec<u8> = Vec::with_capacity(taken as usize);
+    while let Some(chunk) = chunks.pop() {
+        buf.extend_from_slice(&chunk);
     }
     // LOSSY, and deliberately: a backward step may land inside a
     // multi-byte character, and the segment that split is the one dropped
@@ -433,6 +479,18 @@ fn tail_lines<R: Read + Seek>(src: &mut R, max_lines: usize) -> io::Result<Vec<S
 /// as [`read_transcript`] skips them — the budget is on LINES READ, which
 /// is what bounds the read, so a tail full of garbage answers with fewer
 /// than `max_lines` entries rather than reaching further back for more.
+/// A file with no newline inside [`tail_byte_ceiling`] answers the same
+/// empty vector for the same reason, and costs the ceiling rather than
+/// the file.
+///
+/// THIS IS THE ONLY PRODUCTION READER OF `transcript.jsonl`, and that is
+/// pinned rather than asserted:
+/// `the_only_production_path_to_the_transcript_is_the_bounded_one` in
+/// `agent/mod.rs` derives the callee set of every hop from
+/// `genesis_transcript` down to [`tail_lines`] and reds if any of them
+/// gains a way to reach the file that is not the next hop. Without it the
+/// `Counting` measurement one level down binds a HELPER, never the
+/// arrival read — which is the defect T-070's first verdict rejected on.
 pub fn read_transcript_tail(project_dir: &Path, max_lines: usize) -> Vec<TranscriptLine> {
     let Ok(mut file) = fs::File::open(transcript_path(project_dir)) else {
         return Vec::new();
@@ -841,6 +899,68 @@ mod tests {
         // here. This line is the difference between bounded by
         // construction and bounded by the fixture.
         assert!(src.read * 20 <= file_len, "read {} of {file_len} bytes", src.read);
+    }
+
+    /// T-070 CRITERION 1 ON THE INPUT THE FIRST BUILD MISSED — the walk's
+    /// byte ceiling, pinned with a file that holds NO newline at all.
+    ///
+    /// The newline count was the walk's only budgeted exit, so this input
+    /// had no exit: `tail_lines` read all 20,971,520 bytes of a 20 MiB
+    /// newline-free file, measured by T-070's verifier. `append_transcript`
+    /// always writes the newline, so this is not a shape production
+    /// writes — and `transcript.jsonl` is LOSABLE BY CHARTER, which is
+    /// exactly the sentence that says anything may have written it.
+    ///
+    /// THE FIXTURE IS NEWLINE-FREE AND THE BUDGETS ARE SMALL, on purpose.
+    /// A ceiling that is a fixed constant and a ceiling that is
+    /// `budget × TRANSCRIPT_TEXT_CAP` are indistinguishable at one
+    /// budget; three budgets separate them, and the cost has to MOVE with
+    /// the budget. The `Counting` wrapper is the same observation at the
+    /// `Read` impl as the body above — never a figure the reader reports
+    /// about itself.
+    #[test]
+    fn the_tail_walk_stops_at_a_byte_ceiling_with_no_newline_in_the_file() {
+        const FILE: usize = 5 * 1024 * 1024;
+        let t = TempTree::new("tailnonewline");
+        let path = transcript_path(&t.0);
+        fs::create_dir_all(path.parent().expect("parent")).expect("mk .nputer/genesis");
+        // Five mebibytes, not one newline in it. Written as bytes so no
+        // formatting helper can slip a line ending in.
+        let content = vec![b'x'; FILE];
+        assert!(!content.contains(&b'\n'), "the fixture's whole point");
+        fs::write(&path, &content).expect("write the transcript");
+        let file_len = fs::metadata(&path).expect("stat").len();
+        assert_eq!(file_len, FILE as u64);
+
+        let mut costs: Vec<u64> = Vec::new();
+        for budget in [1usize, 2, 4] {
+            let mut src = Counting { inner: fs::File::open(&path).expect("open"), read: 0 };
+            let out = tail_lines(&mut src, budget).expect("tail");
+            // There is no complete line in this file, so there is nothing
+            // to answer with — losable by charter, not an error.
+            assert!(out.is_empty(), "budget {budget} answered {} lines", out.len());
+            // THE DISCRIMINATING ASSERTION, and it is the one the newline
+            // count could not make: the walk stopped, and it stopped at
+            // the budget's own multiple of the per-line cap plus at most
+            // the one step that crossed it.
+            let ceiling = (budget * TRANSCRIPT_TEXT_CAP + TAIL_CHUNK) as u64;
+            assert!(src.read <= ceiling, "budget {budget}: read {} > {ceiling}", src.read);
+            assert!(
+                src.read * 2 <= file_len,
+                "budget {budget}: read {} of {file_len} - the walk reached byte 0",
+                src.read
+            );
+            costs.push(src.read);
+        }
+        // …and the ceiling is the BUDGET's, not a constant: doubling the
+        // budget doubles what the walk is allowed to pull. A hard-coded
+        // ceiling satisfies every assertion above and dies here.
+        assert!(costs[1] > costs[0] && costs[2] > costs[1], "costs {costs:?}");
+        assert_eq!(costs[2], 4 * costs[0], "the cost is linear in the budget: {costs:?}");
+
+        // AND THE COMMAND-FACING READER ANSWERS EMPTY on the same file,
+        // which is the losable-by-charter contract one level up.
+        assert!(read_transcript_tail(&t.0, 200).is_empty());
     }
 
     /// The tail read answers what the whole-file read would have KEPT —
