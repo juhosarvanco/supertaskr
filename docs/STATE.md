@@ -1,6 +1,6 @@
 # State
 
-Updated: 2026-08-23 by claude-opus-5 @T-013-integrate (T-013 merged and
+Updated: 2026-08-24 by architect (T-097 merged and checkpointed),
 checkpointed).
 
 ## Just completed
@@ -537,58 +537,44 @@ criterion says one column and the design bundle draws three),
 
 ## In progress / broken right now
 
-**THREE SIBLING LANES ARE LIVE and all three are DISJOINT from this
-merge** — `comm -12` over each lane's branch-only path list against this
-merge's twenty-six returns **0**. **Tips are READINGS, not facts**: all
-three moved during this integration, and all three went from zero
-commits to real ones.
+**THREE LANES LIVE.** All cut at `a15b78e`; all now owe a regen
+forecast against **1120 symbols / 1703 edges** (this checkpoint's
+graph), not the 1023/1550 they measured at.
 
-| lane | branch | tip (read at this checkpoint) | branch paths | base | overlap |
-|---|---|---|---|---|---|
-| **T-085** | `task/T-085-package-relative-docs` | `a3f2d89` | 5 | `a15b78e` | **0** |
-| **T-097** | `task/T-097-aliased-column` | `7e051e1` | 7 | `a15b78e` | **0** |
-| **T-101** | `task/T-101-denial-visible` | `0e9c045` | 5 | `a15b78e` | **0** |
+- **T-085 — `../nputer-T-085`, REJECTED, fixing.** One clause:
+  `docs-scan.mjs:1878` still asserts the false universal that `:2096`
+  in the same file explicitly withdraws. Its verification was the
+  session's most thorough — 8 over-admission attempts with 7 refused,
+  the fixtures exclusion proved to be *containment* rather than an
+  accident of evaluation failure (by making the evaluator succeed), and
+  `T-085-s1`'s "NIL census" turned from an assertion into a measurement:
+  3800 bindings enumerated, exactly 2 land inside `<root>/docs`, both
+  already derived readers.
+- **T-101 — `../nputer-T-101`, REJECTED, three blocking findings.**
+  The denial notice renders, but: (1) **`T-101-s1` has its mechanism
+  backwards** — `runner.rs` emits a live `Denied` for every entry of
+  `unannounced` AND pushes the same names into the stderr ring, so the
+  narrowing selects the double-reported set; this card builds the
+  second surface and "Bash" appears twice on one turn. (2) **The
+  `toolDenied` gate over-suppresses to zero** — `denial_names` filters
+  out nameless denials, so a nameless denial never reaches
+  `error.denials` and the gate hides the whole notice, recreating the
+  silence the runner's own comment says the card exists to fix. (3)
+  Criterion 3's `toolUseId` key is unpinned; only dedupe-by-name is.
+- **T-097 is MERGED** at `7e82667` and checkpointed here.
 
-**ALL THREE ARE CUT AT `a15b78e`, WHICH IS NOW TWO CHECKPOINTS BEHIND**
-— T-089's `11c82a1` and this one. Their `touches:` are `[tools/e2e]`,
-`[app-board]` and `[app-interview]`, all disjoint from T-013's fence, so
-the disjointness is real and not luck. But **whoever integrates them
-must re-derive the regen forecast against THIS checkpoint's graph** —
-1116 symbols / 1698 edges, up from 1023 / 1550, moved by the merge this
-checkpoint records. A forecast computed against 1023/1550 or 1018/1539
-is stale; **the regens COMPOUND, and T-013 is the third card in a row to
-pay for it.**
-
-`task/T-013-semantic-zoom` is kept as a branch and its worktree is
-removed.
-
-## What in the dispatch brief was wrong or stale
-
-Recorded because the brief asked, and because two of these would have
-produced a wrong number if trusted.
-
-1. **"the unanchored `tauri::command` literal reads 14 repo-wide … so it
-   will now agree with the true count by coincidence."** It reads
-   **15** at the merged tree. The coincidence was a property of the
-   PRE-merge count (13 real + 1 doc); after the merge the naive figure
-   over-reads by one. The warning was right and its arithmetic was
-   half a merge old.
-2. **"a naive comma-split of `generate_handler!` reads 15."** It reads
-   **17** or **21** depending on the recipe, and the card's own second
-   pass said 17. A naive count is not one number.
-3. **"ARCHITECTURE … C-13/C-15's relations."** **There is no C-15** —
-   the registry holds eleven components, C-01 and C-05…C-14. The
-   relations that moved are `C-05→C-06`, `C-05→C-12` and `C-12→C-05`,
-   and **C-13 did not move at all**.
-4. **"the column-0-only `assignYs` … reds 1 of 907."** Correct in shape,
-   stale in denominator: **1 of 924** at the merged tree.
-5. **"a third `#[ignore]`… the naive grep returns 11."** The naive grep
-   now returns **90** — the card's own text carries the word many times.
-   The anchored count is still 3.
-6. The brief's other warnings all held: the regen forecast was stale
-   exactly as predicted, `acl_pin.rs` had not moved, both NUL greps lie,
-   the DOCS GATE must be called directly, the human's app relaunched at
-   the working-tree write, and the T-061-s4 flake did not fire.
+**THE VERIFIER-BLINDNESS LEAK IS AVOIDABLE AND THE ARCHITECT WAS THE
+FOURTH LEAK PATH.** Three verifiers this session declared exposure
+unavoidable "via a single `cat`" — because the architect's briefs told
+them so. T-085's verifier found `sed -n '1,86p'` reads frontmatter
+through the last criterion and stops one line short of
+`## Implementation notes`; T-101's verifier then used it deliberately,
+wrote its mutant list before reading the notes, and **all three of its
+blocking findings came from the pre-notes list — none appears in the
+executor's own 11-row matrix.** That is the measured value of the
+blindness, obtained today with no new machinery. Briefs now carry the
+bounded read as an instruction rather than the leak as an excuse
+(`T-089-s2` gains this as its fourth path and its interim remedy).
 
 ## Next up
 

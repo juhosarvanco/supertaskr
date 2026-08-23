@@ -2213,8 +2213,8 @@
       "id": "f:app/src/components/board/FeatureColumn.tsx",
       "path": "app/src/components/board/FeatureColumn.tsx",
       "lang": "ts",
-      "hash": "blake3:e0542d613b809bb3635d82e304782008bfc0865c506b39993bbc66e604ce449f",
-      "loc": 71,
+      "hash": "blake3:a7ca7d7f419676dfbc39ea16a8c401f2e046c32270098b08f9fe522de98f3b21",
+      "loc": 90,
       "symbols": [
         {
           "id": "s:app/src/components/board/FeatureColumn.tsx#FeatureColumn",
@@ -2222,8 +2222,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            22,
-            71
+            31,
+            90
           ]
         }
       ]
@@ -5396,8 +5396,8 @@
       "id": "f:app/src/lib/board-model.ts",
       "path": "app/src/lib/board-model.ts",
       "lang": "ts",
-      "hash": "blake3:c617def670c6f9cb1e4034576e305b9268dc922bb50c074c5ccede59a8a2d784",
-      "loc": 305,
+      "hash": "blake3:e1bc7a2a20066a419fd505c2364844a8968c664c74eaf293377597068b020260",
+      "loc": 402,
       "symbols": [
         {
           "id": "s:app/src/lib/board-model.ts#BoardCard",
@@ -5405,8 +5405,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            103,
-            127
+            104,
+            128
           ]
         },
         {
@@ -5415,8 +5415,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            129,
-            152
+            130,
+            166
           ]
         },
         {
@@ -5425,8 +5425,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            154,
-            160
+            168,
+            174
           ]
         },
         {
@@ -5435,8 +5435,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            94,
-            99
+            95,
+            100
           ]
         },
         {
@@ -5445,8 +5445,8 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            213,
-            221
+            227,
+            236
           ]
         },
         {
@@ -5455,8 +5455,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            28,
-            34
+            29,
+            35
           ]
         },
         {
@@ -5465,8 +5465,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            36,
-            41
+            37,
+            42
           ]
         },
         {
@@ -5475,8 +5475,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            224,
-            224
+            275,
+            275
           ]
         },
         {
@@ -5485,8 +5485,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            207,
-            211
+            221,
+            225
           ]
         },
         {
@@ -5495,8 +5495,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            197,
-            204
+            211,
+            218
           ]
         },
         {
@@ -5505,8 +5505,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            194,
-            194
+            208,
+            208
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#featureAliasIndex",
+          "name": "featureAliasIndex",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            255,
+            266
           ]
         },
         {
@@ -5515,8 +5525,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            162,
-            162
+            176,
+            176
           ]
         },
         {
@@ -5525,8 +5535,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            164,
-            170
+            178,
+            184
           ]
         },
         {
@@ -5535,8 +5545,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            243,
-            305
+            297,
+            402
           ]
         },
         {
@@ -5545,8 +5555,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            78,
-            91
+            79,
+            92
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#spreadAlias",
+          "name": "spreadAlias",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            270,
+            272
           ]
         },
         {
@@ -5555,8 +5575,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            50,
-            68
+            51,
+            69
           ]
         },
         {
@@ -5565,8 +5585,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            172,
-            191
+            186,
+            205
           ]
         }
       ]
@@ -7028,8 +7048,8 @@
       "id": "f:app/test/board-truth.test.tsx",
       "path": "app/test/board-truth.test.tsx",
       "lang": "ts",
-      "hash": "blake3:ff0d40ad6b39a818c38ef4bf874289bf3c9fccd978d3017cb56ee3537798b33f",
-      "loc": 394,
+      "hash": "blake3:3b0f90f81314a365fcd748dc5a9ea4ffea7e02afea2709bb5e4cf5b47c4a3c23",
+      "loc": 464,
       "symbols": [
         {
           "id": "s:app/test/board-truth.test.tsx#FILES",
@@ -10093,17 +10113,27 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:692c0f148fb0aba8ab3bb4d1d9ff2b4ac960183f5c5d9d0f93fce04bd6855652",
-      "loc": 514,
+      "hash": "blake3:d1307e051c1763c54fbaaaf5c86e363b9ecf095db30df69880937b609f957dab",
+      "loc": 668,
       "symbols": [
+        {
+          "id": "s:app/test/select-board.test.ts#ALIASED_ROADMAP",
+          "name": "ALIASED_ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            250,
+            258
+          ]
+        },
         {
           "id": "s:app/test/select-board.test.ts#Field",
           "name": "Field",
           "kind": "type",
           "exported": false,
           "range": [
-            21,
-            21
+            28,
+            28
           ]
         },
         {
@@ -10112,8 +10142,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            11,
-            19
+            18,
+            26
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#aliasedBoard",
+          "name": "aliasedBoard",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            260,
+            261
           ]
         },
         {
@@ -10122,8 +10162,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            24,
-            25
+            31,
+            32
           ]
         },
         {
@@ -10132,8 +10172,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            53,
-            53
+            60,
+            60
           ]
         },
         {
@@ -10142,8 +10182,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            47,
-            48
+            54,
+            55
           ]
         },
         {
@@ -10152,8 +10192,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            28,
-            45
+            35,
+            52
           ]
         },
         {
@@ -10162,8 +10202,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            50,
-            51
+            57,
+            58
           ]
         }
       ]
@@ -13860,6 +13900,7 @@
       "to": "p:@nputer/parser",
       "kind": "import",
       "symbols": [
+        "ParseIssue",
         "ProjectParseResult",
         "ReviewMode",
         "TaskRecord",
@@ -15894,6 +15935,9 @@
       "to": "f:app/src/lib/board-model.ts",
       "kind": "import",
       "symbols": [
+        "BoardColumn",
+        "BoardModel",
+        "UNMAPPED_KEY",
         "selectBoard",
         "shortModelName",
         "statusVisual"
@@ -21388,6 +21432,18 @@
     },
     {
       "from": "s:app/src/lib/board-model.ts#selectBoard",
+      "to": "s:app/src/lib/board-model.ts#featureAliasIndex",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectBoard",
+      "to": "s:app/src/lib/board-model.ts#spreadAlias",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectBoard",
       "to": "s:app/src/lib/board-model.ts#toCard",
       "kind": "call",
       "confidence": "resolved"
@@ -23415,6 +23471,24 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/select-board.test.ts#aliasedBoard",
+      "to": "s:app/src/lib/board-model.ts#BoardModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#aliasedBoard",
+      "to": "s:app/src/lib/board-model.ts#selectBoard",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#aliasedBoard",
+      "to": "s:app/test/select-board.test.ts#project",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/select-board.test.ts#fm",
       "to": "s:app/test/select-board.test.ts#Field",
       "kind": "type_ref",
@@ -24396,7 +24470,7 @@
   ],
   "stats": {
     "files": 126,
-    "symbols": 1116,
-    "edges": 1698
+    "symbols": 1120,
+    "edges": 1703
   }
 }
