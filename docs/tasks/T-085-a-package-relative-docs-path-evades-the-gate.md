@@ -485,6 +485,35 @@ graph CURRENT and unmoved at 588891 bytes / 119 files / 1023 symbols /
 583** — this append adds no tracked FILE, so neither count moves again,
 which is why the regress stops here rather than at the next commit.
 
+**MAIN MOVED THREE COMMITS WHILE THIS WAS BEING WRITTEN, AND THE
+BRANCH'S OWN SET DID NOT — which is the left-endpoint story told twice
+rather than argued once.** Read at 2026-08-23 23:40 EEST, main is
+**`1aa7137`** (T-097's checkpoint), reached from `6834287` through
+T-013's checkpoint `d673039` and T-097's merge `7e82667`;
+`git merge-base --is-ancestor 6834287 1aa7137` exits **0** and the
+merge-base with this lane is still **`a15b78e`**, unmoved. Re-derived
+there, dot counts stated:
+
+    git merge-tree --write-tree 1aa7137 c4ca0b8 -> a1016fdb…, exit 0
+    git diff --name-only 1aa7137 <TREE>                    -> 6   PRESCRIBED
+    git diff --name-only 1aa7137...c4ca0b8  (THREE dots)   -> 6
+    git diff --name-only a15b78e..c4ca0b8   (TWO, branch-only) -> 6
+    git diff --name-only 1aa7137..c4ca0b8   (TWO dots)     -> 67  FORBIDDEN
+
+The prescribed answer is the SAME SIX at both main tips. The forbidden
+one went **53 → 67** for a branch that did not move: main's advance from
+the cut went 47 → **61**, and 61 + 6 = 67 with `comm -12` still EMPTY.
+Only the left endpoint moved, for the second main tip running. The lane
+list also shrank while this ran — `git worktree list` now holds this
+lane and **T-101** (`[app-interview]`) and nothing else, both integrators
+having removed their own trees, so the fence is disjoint on a smaller
+board than the brief described.
+
+**This append changes no tracked FILE and no census figure**, so the
+T-081-s9 round stops here rather than recursing: the three owed suites
+are re-run once more against this commit and their exits are in the
+executor's report, and a further round would be measuring the same tree.
+
 ## Verdicts
 
 ### 2026-08-23 — REJECTED (claude-opus-5 @T-085-verify, review: same-model)
