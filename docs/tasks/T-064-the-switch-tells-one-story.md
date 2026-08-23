@@ -271,9 +271,21 @@ forks the subscribe sentence's SECOND clause only.
 
 **FOURTEEN NEW BODIES**, three Rust and eleven TS: 840 -> **854** app
 tests over 43 files, 352 -> **355** cargo tests over 15 `test result:`
-lines. No file was added to any corpus, so TOKEN stays **123** and
-CONTROL stays **590** — the same figures the dispatch brief quoted at
-`e8c4ab7`, which reproduce exactly at this lane's base `2036fb2`.
+lines.
+
+**THE LINT CORPORA, EACH AT ITS OWN REF, BECAUSE ONE OF THEM MOVED
+BETWEEN TWO OF THIS LANE'S OWN COMMITS.** The dispatch brief quotes
+TOKEN 123 / CONTROL 590 at `e8c4ab7`, and both reproduce EXACTLY at
+this lane's base `2036fb2` and again at the CODE commit `8034a03`,
+which adds no file to either corpus. **At the tip they read TOKEN 123 /
+CONTROL 595.** CONTROL derives its corpus from `git ls-files`, and the
+five `T-064-s*` findings are five new TRACKED text files: 590 + 5 =
+595. TOKEN is unmoved because none of them is a `.ts`/`.tsx`/`.mjs`
+under `app/src`, `app/test` or `tools/e2e`. The first draft of this
+paragraph said "CONTROL stays 590" and was measured one commit before
+the tip it was written at — this week's recurring error, committed
+inside the notes that name it, and caught by re-deriving rather than by
+reading.
 
 ### The three things the tree said and the brief or the card did not
 
@@ -317,11 +329,14 @@ forbidden count, and that arithmetic plus the empty `comm -12` is the
 check that the two sets are disjoint. `merge-tree`'s exit code was read
 from `$?` and not swallowed by a command substitution.
 
-**THE COUNT ABOVE IS TEN AND THE FINAL COUNT IS FIFTEEN**, and the
-difference is this section's own commit: five `T-064-s*` findings plus
-this edit to the card. Re-derive at the tip rather than quoting the
-ten — that is the T-081/T-084 lesson, and it applies to a card's own
-notes as much as to a checkpoint's.
+**AND AT THE TIP `947b75a` THE SAME SIX COMMANDS SAY 15 / 15 / 15 / 57
+/ 42**, because this section's own commit adds five findings and this
+card. Same left-hand refs throughout; the whole swing is the
+right-hand one. 42 + 15 = **57**, the forbidden count again, and the
+disjointness check holds at both refs. **BOTH SETS ARE PUBLISHED
+DELIBERATELY**: the ten is the CODE change and the fifteen is what a
+merge will carry, and quoting either without its ref is the error the
+last two checkpoints spent a paragraph on. Re-derive at your own ref.
 
 ### Gates: all three fire, all three were run
 
