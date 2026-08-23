@@ -39,9 +39,10 @@ review:
 ## Implementation notes
 
 Built by `claude-opus-5 @T-013` on `task/T-013-semantic-zoom`, cut from
-the `Checkpoint:` commit **`2036fb2`**. **Sixteen code paths plus this
-card and six findings.** Every figure below is derived at this branch's
-own tip; nothing is quoted from a checkpoint.
+the `Checkpoint:` commit **`2036fb2`**. **Sixteen code
+paths plus this card and six findings — twenty-three in all.** Every
+figure below is derived at this branch's own tip; nothing is quoted from
+a checkpoint.
 
 ### The fence is wrong, and the card widened it rather than hide the diff
 
@@ -327,7 +328,7 @@ legend IS exact.
   block now reads **17**, not the 15 the last checkpoint recorded —
   this card's own comment inside the macro adds two more commas. Strip
   comments, then count; the stripped split reads 14.
-- **4337 added lines scanned** for `sk-`/`AKIA`/PEM/bearer/
+- **5061 added lines scanned** for `sk-`/`AKIA`/PEM/bearer/
   `key|secret|password|token` assignment shapes — **0 hits**.
 
 ### Ranges, every dot count stated, at their own refs
@@ -336,28 +337,42 @@ Derived with `git merge-tree --write-tree`, whose exit code was read from
 `$?` and not swallowed by a command substitution. Main tip **`4d2f03c`**,
 merge-base **`2036fb2`** (unchanged — main advanced only in `docs/`).
 
-    git merge-tree --write-tree 4d2f03c HEAD   -> tree 6764f736…, exit 0
-    git diff --name-only 4d2f03c <TREE>        -> 16   THE PRESCRIBED PRE-MERGE FORM
-    git diff --name-only 4d2f03c...HEAD  (THREE dots) -> 16   cmp against the forecast: exit 0
-    git diff --name-only 2036fb2..HEAD   (TWO, branch-only) -> 16
-    git diff --name-only 4d2f03c..HEAD   (TWO dots)   -> 58   THE FORBIDDEN PRE-MERGE FORM
+    git merge-tree --write-tree 4d2f03c HEAD   -> tree 69fe20ce…, exit 0
+    git diff --name-only 4d2f03c <TREE>               -> 23   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 4d2f03c...HEAD  (THREE dots) -> 23   cmp against the forecast: exit 0
+    git diff --name-only 2036fb2..HEAD   (TWO, branch-only) -> 23
+    git diff --name-only 4d2f03c..HEAD   (TWO dots)   -> 65   THE FORBIDDEN PRE-MERGE FORM
     git diff --name-only 2036fb2..4d2f03c (TWO dots)  -> 42   main's own advance
 
-Main advanced **42** paths from the merge-base, the branch **16**,
-`comm -12` over the sorted lists is **EMPTY**, and 42 + 16 = 58 — exactly
+Main advanced **42** paths from the merge-base, the branch **23**,
+`comm -12` over the sorted lists is **EMPTY**, and 42 + 23 = 65 — exactly
 the forbidden count, which is the arithmetic that proves the two sets
-disjoint. **The figures above were measured at `237af84`; the tip this
-card is handed off at is later, and the RIGHT-hand endpoint is what goes
-stale** (T-081's lesson, twice recorded) — re-derive at the verdict's own
-ref rather than quoting these.
+disjoint. **23 files changed, 5061 insertions, 65 deletions.**
+**RE-DERIVE AT THE VERDICT'S OWN REF rather than quoting these**: it is
+the RIGHT-hand endpoint that goes stale, twice recorded on this board
+(T-081's checkpoint, then T-084's), and an earlier draft of this very
+section said 16 because it was measured three commits before the tip it
+named.
 
-### Gate derivations
+### Gate derivations, off the prescribed list
 
-| gate | owed? | derivation |
+| gate | paths matching its trigger | owed? |
 |---|---|---|
-| GRAPH REGEN | **FIRES** | 14 of the 16 paths are `*.ts/*.tsx` outside `docs/` |
-| BOOT GATE | **FIRES** | 2 under `app/src-tauri/**`, 9 under `app/src/**` |
-| DOCS GATE | **FIRES** | the card and six findings are flat `docs/tasks/T-*.md` |
+| GRAPH REGEN (`*.ts/*.tsx/*.js/*.jsx` outside `docs/`) | **14** of 23 | FIRES |
+| BOOT GATE (`app/src-tauri/**`, `app/src/**`, either manifest) | **11** of 23 | FIRES |
+| DOCS GATE (a `docs/` path a code suite reads) | **7** of 23 | FIRES |
+
+**DOCS GATE — RUN, on this branch's own prescribed path list, fed as
+`$(cat <list>)` and NOT through `xargs`** (BSD `xargs` maps a utility
+exit of 1–125 to 123, so the gate's four-code contract survives a pipe
+only by accident). Exit **1**, owing **three** suites — `npm test from
+app/`, `npm test from tools/e2e/`, `npx vitest run from lib/parser/` —
+the proportional answer CONVENTIONS describes for a flat task card, and
+NOT the cargo suite. It reports **11 derived docs readers across 4
+suites** and **0 frontmatter issues in the live tree**, so every live
+card's `status:` is in the parser's vocabulary. **All three owed suites
+were re-run AFTER the doc edits** — app 906/906, parser 263/263, e2e
+121/121 — and not only before them.
 
 ### GRAPH REGEN — the forecast, MEASURED and then restored
 
