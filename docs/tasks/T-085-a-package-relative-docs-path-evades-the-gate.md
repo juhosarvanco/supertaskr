@@ -957,3 +957,19 @@ card — the second round is credited only inside `T-085-s2`'s
 `suggested_by` (`executor claude-opus-5 @T-085-fix`). The frontmatter
 field is stamped on `done`, so it is the integrator's to correct; left
 as found rather than edited from the verifier's seat.
+
+**Owed suites re-run AFTER the second verdict commit `a42143b` landed
+(T-081-s9).** Gate fed the two changed paths ROOT-RELATIVE (the
+`T-101-s3` spelling trap avoided deliberately) fires at exit 1 and owes
+three; all three green on the committed tree:
+
+    npx vitest run   from lib/parser/   263/263, exit 0
+    npm test         from app/          857/857, exit 0
+    npm test         from tools/e2e/    135/135, exit 0   NPUTER_E2E_PORT=14621
+                                        (bind-probed free on 0.0.0.0,
+                                         127.0.0.1, ::, ::1 before use)
+
+Also measured, not owed: `lint:tokens` clean, exit 0, TOKEN 124 /
+**CONTROL 583** before this commit's `T-085-s3`. `cargo test` is not
+owed by a `docs/tasks/` diff and the executable code of both scripts is
+byte-identical to the tree I ran it against in the first verdict.
