@@ -199,6 +199,32 @@
 - method/ is the generic, product-agnostic convention — nothing
   nputer-specific goes in it; product docs live in docs/. Changes to
   method/ formats are version-bumped (currently v0.1.5) and noted here.
+  **A BUMP IS A THREE-FILE COMMIT AND THE THIRD FILE IS RUST** (T-078-s3
+  arm 1, taken here at T-089 — it had been true and unwritten for six
+  method versions). The three are: this stamp; the `(v<version>` stamp in
+  method/interview/plan-interview.md's Output heading; and
+  `METHOD_SNAPSHOT_VERSION` in app/src-tauri/src/agent/kit.rs, which
+  `snapshot_version_matches_the_live_method_stamps` checks BOTH docs
+  against, off disk, on every `cargo test`. So a fence of
+  `[method/, docs/CONVENTIONS.md]` can change method/ and CANNOT bump
+  it: moving either stamp alone reds that test by name. Measured at
+  T-089 in a fresh worktree, one side at a time — doc stamps to v0.1.6
+  with the const untouched is **exit 101**, and the const to `0.1.6`
+  with the docs untouched is **exit 101** as well, each naming the file
+  it read. **The two asserts are ORDERED, and that is the trap this
+  gotcha must carry rather than leave in a finding**: a const-only bump
+  reds on the plan-interview arm and NEVER reaches the CONVENTIONS arm,
+  so fixing only the file a panic names yields a SECOND red, not a green
+  — move both doc stamps and the const in ONE commit. **AND THE BUMP IS A
+  FOUR-PLACE FACT, THREE PINNED AND ONE NOT**: the genesis-kit gotcha
+  below stamps a `(v0.1.5, T-023)` version on its `plan-interview.md`
+  reference that NO test reads, so a bump must hand-update that reference
+  in the same commit or leave it stale and green.
+  **T-089's OWN CHANGE TO method/ IS THEREFORE OWED A BUMP TO v0.1.6 AND
+  DID NOT TAKE ONE**: kit.rs sits under `app/src-tauri/src/agent/**`,
+  which is C-14's `app-agent` slug, held by a live lane at that dispatch.
+  `T-089-s1` carries the debt with the exact three-file edit; delete
+  these two sentences with the commit that pays it.
 - [?] marks an unresolved claim (archaeology convention) — resolve or
   room it; never silently delete.
 - A CITATION NAMES A SYMBOL, NOT A LINE (fourth triage, 2026-08-19).
@@ -616,9 +642,69 @@
   written down (T-014-s3). IF the regen cannot run THEN say so LOUDLY in
   the checkpoint, naming the reason — a skipped gate is news, never
   silence.
+- THE LANE PROTOCOL — the generic rules are `method/lane-protocol.md`
+  and are NOT restated here (T-089). That file rules one task/one
+  branch/one worktree, the base commit, the sibling worktree, the
+  executor never touching the integration branch, disjoint `touches:`,
+  and who removes the worktree; it deliberately leaves every NAME to the
+  project, and these are this project's:
+  - integration branch `main`; branch `task/T-NNN-<slug>`; worktree
+    `../nputer-T-NNN`, a sibling of the repo root and never a path
+    inside it. Created with
+    `git worktree add ../nputer-T-NNN -b task/T-NNN-<slug> <base>`, and
+    the base is the bullet below. **BOTH BRANCH SPELLINGS ARE LIVE IN
+    THIS REPO and the older one is not a mistake to fix**: derived at
+    `4d2f03c`, 69 branches — 31 `task/T-NNN-…`, 37 the older `tNNN-…`,
+    plus `main`. The two OVERLAP rather than succeed each other (the old
+    set runs T-001…T-050, the new one starts at T-013 and T-028), so
+    there is no cutover id to cite; derive the pair, never quote it.
+  - the BRANCH IS KEPT after the merge and only the WORKTREE is removed
+    (`git worktree remove`), which is why `git branch` lists every lane
+    this repo has ever run and `git worktree list` lists only the live
+    ones. `git worktree list` is therefore the authority on which fences
+    are held right now — the board's `status: building` is not, while
+    the dispatch stamp is lapsed (see the STAMP bullet's own history in
+    method/tasks/TASK-FORMAT.md).
+    **BUT READ IT AS ENTRIES ON A `task/T-NNN-*` BRANCH, NOT AS A ROW
+    COUNT**, and this correction is measured rather than anticipated: at
+    T-089's tip `git worktree list` returned SIX entries, of which one is
+    `…/scratchpad/drill` on a DETACHED HEAD at `09ce637` — a transient
+    poison-drill checkout belonging to T-064's lane, holding no fence and
+    named after no card. A detached entry is not a lane. Filter on the
+    branch, and expect other lanes' scratch worktrees to appear beside
+    yours: the scratch directory is shared (STATE's standing observation
+    about prefixes), and so, it turns out, is the worktree list.
+  - A FRESH WORKTREE HAS NOTHING INSTALLED AND NOTHING BUILT: no
+    node_modules in any of the three packages, no `lib/parser/dist`, no
+    `app/dist`, no `target/`. The fresh-clone ORDER at the top of this
+    file covers parser-before-app and stops there. **THE APP'S OWN BUILD
+    IS ALSO ORDER-DEPENDENT, and the suite does not say so**: five app
+    test files read the built bundle off `app/dist`, so `npm test` from
+    app/ on an unbuilt worktree fails **12 of 840 across five files at
+    exit 1** — window-manifest, genesis-mount, map-tasks-lens-dom,
+    shell-harness and interview-harness — every message about a build
+    being stale or absent rather than about the tree. Measured at
+    `4d2f03c` before this lane changed anything; after `npm run build`
+    the same suite is **840/840 at exit 0**. CI never sees it because
+    ci.yml orders app build before app suite; a hand-run lane does.
 - DISPATCH FROM THE LAST CHECKPOINT, never from a merge commit
   (T-014-s3, seven-for-seven): cut a task branch from the newest
-  `Checkpoint:` commit on main. A merge commit carries a graph the
+  `Checkpoint:` commit on main. **READ THE REASON, NOT ONLY THE
+  SENTENCE — THE TWO DISAGREE, AND THIS LANE IS THE INSTANCE** (T-089).
+  The rule bans a MERGE commit, and the reason is a stale graph; a
+  non-merge commit later than the checkpoint carries the checkpoint's
+  graph and is safe ON THAT COUNT. **But "safe" is all its gates green,
+  not only the graph**: a docs-only non-merge commit can still red a
+  code suite through FRONTMATTER (the DOCS GATE), which no graph argument
+  covers — so this holds by PRACTICE, verified (every non-merge
+  first-parent commit between checkpoints on main is docs-only with green
+  gates), NOT by property; nothing forbids a source commit between
+  checkpoints. T-089 was itself dispatched from `4d2f03c`,
+  which is FOUR docs-only commits after the newest checkpoint `2036fb2`
+  and is not a merge — obeying the reason while failing the letter, with
+  `index --check` exit 0 at the base. What the bullet means is: cut from
+  a commit whose gates are green, which the newest `Checkpoint:` always
+  is and a merge commit never is. A merge commit carries a graph the
   checkpoint has not regenerated yet (see GRAPH REGEN above), so a lane
   cut from one inherits a stale graph and a red `index --check` through
   no fault of its own. T-014 is the counter-example — cut from the merge
@@ -686,10 +772,31 @@
   card the parser will refuse, or the root-anchor account and the tree
   disagree), 2 called wrong, 3 the gate could not run — the same four
   codes `index --check` and `boot:check` use. **AN EMPTY PATH LIST IS
-  EXIT 2, NOT EXIT 0** (T-084-s6): the invocation above pipes through
-  `xargs`, BSD `xargs` runs the utility once even on empty input, so a
-  range command that FAILED used to reach this gate as zero paths and be
-  answered "not owed" — silence wearing a clean gate's costume. IF it
+  EXIT 2, NOT EXIT 0** (T-084-s6) — and that remedy only reaches you if
+  you call the gate DIRECTLY, with the paths as ARGUMENTS, which is what
+  the RUN IT line above prints.
+  **NEVER PIPE IT THROUGH `xargs`, AND DISTRUST ANY SENTENCE THAT NAMES
+  AN EXIT MAPPING WITHOUT NAMING THE PLATFORM** (T-061-s3, measured
+  independently by that card's executor and its verifier, and
+  re-measured here at T-089 on Darwin 25.6.0 against `/usr/bin/xargs`).
+  TWO OF THE FOUR CODES DO NOT SURVIVE THE PIPE ON THIS MACHINE. An
+  EMPTY list never invokes the utility at all and the pipeline exits 0,
+  so a range command that FAILED arrives as "nothing owed" — silence
+  wearing a clean gate's costume, which is the exact outcome T-084-s6
+  exists to remove, reached by the opposite mechanism from the one that
+  clause describes. And EVERY nonzero utility exit collapses to 1
+  (measured one invocation per code over 1, 2, 3, 4, 5, 100, 123, 125,
+  126, 127 and 255), so "called wrong" and "could not run" both arrive
+  as "has a verdict". The direct call is the control: no arguments is
+  **2** direct and **0** piped; an unknown flag is **2** direct and
+  **1** piped; a docs path with a reader is **1** either way. The
+  widely-quoted **123** is GNU's mapping — what CI's ubuntu runner will
+  use — so the contract breaks in two DIFFERENT ways on the two
+  platforms and a mapping quoted without its platform is wrong on one of
+  them. **T-090 OWNS THE FIX** — a named command, a CI step, one
+  spelling shared with `docs-gate.mjs`'s own header comment, and the
+  full two-platform matrix; this clause is only the true minimum until
+  that lands, and it deliberately builds no matrix of its own. IF it
   cannot run THEN say so LOUDLY in the checkpoint, naming the reason and
   the exit code; a skipped gate is news, never silence.
   `tools/e2e/tests/docs-input-gate.spec.ts` is the enforcing copy and it
