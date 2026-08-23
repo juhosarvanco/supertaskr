@@ -11,8 +11,8 @@ touches: [app-shell]
 builder: claude-opus-5
 verifier:
 built_by: claude-opus-5 @T-064
-verified_by:
-review:
+verified_by: claude-opus-5 @T-064-verify
+review: same-model
 ---
 
 Absorbs: T-042-s2, T-042-s3 (triage 2026-08-17). The suggestion files
@@ -633,3 +633,378 @@ re-run AFTER the last doc edit** — 854/854, 121/121 (scratch port
 lane's own backtick title, one section up.
 
 ## Verdicts
+
+### 2026-08-23 — APPROVED (claude-opus-5 @T-064-verify, review: same-model)
+
+Adversarial pass at `09ce637`, cut from `2036fb2`. My reading of the
+seven criteria was written before `## Implementation notes` was opened;
+**nothing in it changed after reading them**, and the one place I
+expected to disagree — criterion 1's second conjunct — I had already
+derived the same way and for the same reason.
+
+**FENCE, re-derived at MY refs.** Main is `f306ee9` (the sixth triage),
+not the `4d2f03c` the notes measured at. `git rev-list --left-right
+--count f306ee9...09ce637` -> **6 / 7**; `git rev-list --count
+2036fb2..09ce637` -> **7**. `git merge-tree --write-tree f306ee9
+09ce637` -> tree `2f6223d4…`, **exit 0, zero CONFLICT lines**. Main's
+six commits since the branch point are **docs-only** (`git diff
+--name-only 2036fb2 f306ee9 | grep -v '^docs/'` is empty), so the
+notes' disjointness argument survives its own right-hand drift.
+**SIBLING LANE T-013** (`task/T-013-semantic-zoom`, `a2173f8`, 9
+commits off the same `2036fb2`) now shares the `app-shell` slug. `comm
+-12` over the two sorted path lists is **EMPTY** — zero file-level
+overlap, independently confirmed. It touches `app/src/architecture/**`,
+`app/src-tauri/src/churn.rs` and `lib.rs`; this lane touches none of
+them, and T-013 touches neither `docs_watch.rs` nor `watcher-store.ts`
+nor `App.tsx`.
+
+#### The criteria, attacked one at a time
+
+**1 — MET, and the criterion's own spelling is DEAD ON ARRIVAL exactly
+as the executor says.** I traced it before reading the notes.
+`resetDocsForProjectSwitch` is `{ ...emptyState(), seq: prev.seq }` and
+`emptyState().projectDir` is `""`, so `switched.projectDir` is the empty
+string for every input there is. The other side of the equality is
+`PickOutcome::Genesis`'s `project_dir`, built in `apply_genesis_folder`
+as `canon.display().to_string()` from a **canonicalized** path, which is
+absolute and never empty. So the conjunct as written is not merely
+usually false — it is **unsatisfiable**, and had it been implemented
+literally the guard would have been constant-false and arm (b) a no-op.
+**THE REINTERPRETATION IS FAITHFUL, and I would have made the same
+one.** The conjunct's job is to answer "is the model I am about to throw
+away already a model OF THIS folder?"; the model in question is the one
+that exists BEFORE the reset, which is `prev.docs`, and `switched.seq`
+IS `prev.docs.seq` by construction so the first conjunct is untouched by
+the move. Nothing is weakened: the empty-string reading would have
+vetoed nothing, and the implemented reading vetoes exactly the emits
+that are later readings of the same folder.
+
+**The implemented predicate does not veto the wrong emits.** I checked
+the direction the brief was worried about. Rust's seq counter is global
+and monotonic, and the switch stamps itself with `next_seq()` after the
+ack, so `prev.docs.projectDir === outcome.projectDir` together with
+`(outcome.snapshot?.seq ?? outcome.seq) <= prev.seq` can only hold when
+an emit for that same folder was produced AFTER the switch took its
+stamp — strictly fresher, by construction. Re-picking the open folder as
+a genesis root takes a HIGHER seq and applies normally (pinned). A model
+from a different project has a different `projectDir` and is cleared
+(pinned). And keeping the emit loses nothing the switch carried, because
+watcher emits are **full** snapshots — `snapshot_from(&root, seq,
+outcome)` over a whole `collect_docs_tree`, not a diff.
+
+**THE BRANCH POINT'S OWN BEHAVIOUR, RE-MEASURED BY ME** in a detached
+worktree at `2036fb2`, driving the branch-point reducers directly:
+
+    in-order    switch@7 -> fileCount=2 seq=7 phase=genesis
+    overtaken   emit@8   -> fileCount=3 seq=8
+                then switch@7 -> fileCount=0 seq=8 phase=genesis
+
+Identical to the figures the card carries from T-042's verifier. I also
+measured the **second** defect, which the card does not state and which
+the executor added on its own reading — the snapshot-LESS branch:
+
+    snapshot-less switch@7 -> fileCount=0 seq=7   (the watermark was 8)
+
+The watermark walked **backwards, 8 -> 7**. The `Math.max` is not
+defensive dressing; it fixes a measured regression, and `M-D` (revert it
+to the assignment) reds `a genesis switch onto a DIFFERENT folder still
+clears everything`.
+
+**2 — MET for the order the criterion is about; see FINDING V1 for the
+third of the commit it does not reach.** Pinned by name, driven through
+a **relay thread in front of a real watcher** with no sleeps: the
+rendezvous is the synchronisation, which is the right way to build this
+and is stronger than the criterion asked for. I re-ran the executor's
+two reorders and derived two more.
+
+**3 — MET.** One predicate (`PlanProbe::has_plan`), two constructors.
+The re-read is **veto-only** and I verified the claim rather than
+accepting it: `apply_genesis_folder` reaches the re-read only on the
+branch where `probe.has_plan()` was already false, so it can turn
+genesis OFF and never ON. The route to `PickOutcome::Picked` is sound
+for the reason given — at that point the project is committed, the docs
+watch armed recursively, the sentinel armed, the seq taken and the
+candidate cleared, which is byte-for-byte what the ordinary open
+produces. Path handling is safe: `under_docs_dir` and
+`is_flat_task_file` run on post-canonicalize project-relative POSIX
+paths (`is_collected_docs_path` is the gate), and I checked the
+adversarial spellings — `docs/tasks/../../evil.md` (contains `/`, false),
+`docs//ROADMAP.md` (false), `docsfoo/ROADMAP.md` (false), bare `docs`
+(false). Every error is in the veto direction.
+
+**4 — ANTECEDENT FALSE, obligations discharged anyway.** Arm (a) was
+taken for criterion 3 and arm (c) removed the field, so "IF the probe is
+kept as a decision record" does not fire. The frozen-lie window is named
+with its open, close and 10 s `REARM_TIMEOUT` ceiling regardless, which
+is the right call — the window survives inside the Rust even though the
+field does not.
+
+**5 — MET, measurement re-derived at my own refs.** `git grep -n
+'\.probe' -- app/src` at `09ce637` returns **four** hits and none is the
+genesis outcome: `planChecklist(notice.probe)`, `outcome.probe` on the
+**noDocs** variant, `status.probe` on `ProjectStatus::NoDocs`, and
+`InterviewChat`'s `outcome.probed` (a different word, C-14's agent
+outcome). The same four hits are present at the branch point `2036fb2`,
+which is the sharper form of the claim: the genesis `probe` had **zero
+readers under `app/src` before this lane touched it**. I also checked
+for the spelling `git grep` cannot see — no destructuring of a genesis
+outcome exists anywhere in `app/src`. Dropping it is boundary-narrowing,
+which is the safe direction.
+
+**6 — MET, and the race is genuinely driven.** `M-I` (disable the veto)
+reds the race body with `expected the ordinary open, got Genesis { …
+files: [DocsFile { path: "docs/ROADMAP.md" … }] }` — that is the
+pre-fix defect reproduced in the failure message, not merely a guard
+being exercised. The positive control earns its place: `M-K` (make
+`ARCHITECTURE.md` count as a plan) reds three bodies including the
+control.
+
+**7 — MET.** T-026-s1 was re-read and its stated expectation falsified
+in `T-064-s1`. I confirmed the substance: the casing disagreement cannot
+reach a screen at this seam, because on a case-insensitive filesystem
+the STAT arm answers `roadmap: true` and routes the folder to
+`open_as_project` before anything is armed, so the snapshot arm never
+runs. Parking T-026-s1 is correct; it is a rule decision, not a
+hot-patch.
+
+#### The poison drill, re-run and extended
+
+Every mutation one-sided, every mutated TEXT read back with `git diff`
+before a suite ran, every restore proved by sha256 against `git show
+09ce637:<path>`. Run in a **detached scratch worktree at `09ce637`**.
+
+| # | mutant | suite | exit | red bodies |
+|---|---|---|---|---|
+| M-A | the projectDir conjunct dropped | vitest | 1 | 2 |
+| M-B | the seq conjunct's boundary, `<=` -> `<` | vitest | 1 | 1 |
+| M-C | the snapshot's own seq ignored | vitest | 1 | 1 |
+| M-D | the watermark back to an assignment | vitest | 1 | 1 |
+| M-E | `watcherLive` written as constant `false` | vitest | 1 | 2 |
+| M-F | the subscribe fork collapsed | vitest | 1 | 1 (+build 2) |
+| M1a | the WHOLE commit hoisted above the send | cargo | 101 | 1 — arm A |
+| M1b | ONLY `next_seq` hoisted above the send | cargo | 101 | 1 — arm A |
+| **M1c** | **ONLY the project mutex write hoisted** | cargo | 101 | **1 — arm B** |
+| **M1d** | **the whole commit moved BETWEEN the send and the ack** | cargo | 101 | **1 — arm A** |
+| **M1e** | **ONLY `clear_rejected()` hoisted** | cargo | **0** | **NONE** |
+| M-G | `is_flat_task_file` drops the `/` check | cargo | 101 | 1 |
+| M-I | the snapshot veto never fires | cargo | 101 | 1 |
+| M-J | `probe.git` at the call site -> `false` | cargo | **0** | NONE |
+| M-K | the veto widened to ARCHITECTURE.md | cargo | 101 | 3 |
+| M-E2 | `from_docs_snapshot` stops reading `skipped` | cargo | 101 | 1 |
+
+**M1b IS KILLED BY THAT BODY ALONE — CONFIRMED**, at 122 passed / 1
+failed in the lib binary, no neighbour. So is M1a.
+
+**MY TWO DERIVED REORDERS.** `M1c` (the project mutex write alone) is
+caught by **arm B**, not arm A — which is the discrimination the
+executor claims for having two arms, and it holds. `M1d` is the one the
+brief asked me to invent and it is the interesting one: the commit moved
+to sit **between the `ctl.send` and the `recv_timeout`**, so the arm is
+still DISPATCHED before the commit and only the ACK discipline breaks.
+Arm A caught it here (`left: 1, right: 0`) — but that catch is a
+scheduling race between the relay's hook and the main thread, so I
+checked arm B independently: with the commit after a successful send,
+part B's dead-ack fixture commits before the disconnect is seen and
+`refused.project_dir().is_none()` fails **deterministically**. The body
+has a race-free killer for it. (Arm A is not racy on the green side:
+shipped, the commit cannot happen until the real watcher has acked,
+which is strictly after the relay forwarded the message.)
+
+**THE ARM-(a) MUTANT THE BRIEF ASKED FOR.** Dropping
+`.chain(snapshot.skipped…)` from `PlanProbe::from_docs_snapshot` reds
+**exactly one assertion** — the 2 MiB `docs/ROADMAP.md` in the skip
+list — and nothing else. The derivation behind it is sound: a file the
+collector could not SHIP still EXISTS, so a snapshot whose only docs
+evidence is a skipped `ROADMAP.md` must veto genesis, and it does.
+
+#### Findings — none blocking, all reproducible
+
+**V1 — CRITERION 2's PIN COVERS TWO OF THE THREE STATEMENTS THE CODE
+CALLS "THE COMMIT".** `M1e` above: `state.clear_rejected()` hoisted
+above the `ArmGenesis` send is **exit 0, nothing red**. The pin's own
+doc comment says arm B catches "a watcher that dies mid-arm leaves the
+project, **the candidate** and the latch untouched" — the body asserts
+the project and the latch and not the candidate, which is the one
+`clear_rejected()` clears. In the mutant's world a transient arm failure
+silently retargets the zero-argument "Start an interview here" from the
+folder the user chose to whatever project is open, because
+`genesis_target()` falls back to `project_dir()`. **NOT A DEFECT IN THE
+SHIPPED CODE**, and outside the criterion's stated rationale (the
+candidate has nothing to do with why an emit can overtake a reply),
+which is why it does not block. Filed as **`T-064-s6`** with the closing
+body written and measured — green at `09ce637`, red under `M1e` with
+`left: None`, `right: Some(<the chosen folder>)`.
+
+**V2 — THE DECLARED SHAPE SIX IS NOT A SHAPE SIX; IT IS AN ASSERTION
+THAT CANNOT FAIL, AND ITS STATED JUSTIFICATION IS FALSIFIABLE.** My
+ruling, since the brief asks for one. Shape six per CONVENTIONS is "a
+body that **reds** under an expected-value poison while killing no
+mutant another test does not already kill" — it can red. This one
+cannot. In `genesis_and_no_docs_wire_shapes_are_pinned` the
+`…get("probe").is_none()` assertion runs **after** an `assert_eq!` on
+the same `serde_json::to_value(&genesis)` against a four-key map;
+`serde_json::Value` object equality is key-set exact, so the assertion
+is reached only when the value provably has no `probe` key. It is
+unconditionally true whenever it executes — the ordinary vacuous shape
+the drill's own headline names ("an assertion that cannot fail is
+indistinguishable from one that passes"). The executor's own
+poison, `M5`, moved the assertion's own side, which proves it EVALUATES
+and not that it can fail against any producer.
+
+Measured, one-sided, on the producer — `#[serde(rename = "probe")]` on
+the Genesis variant's `snapshot` field, so the wire regains a `probe`
+key with no constructor touched:
+
+    as shipped:   the assert_eq! panics first, message is the whole-value
+                  diff. The .is_none() assertion never runs.
+    hoisted ABOVE its neighbour, same mutant:
+                  panics with "the genesis switch carries ONE reading of
+                  the folder" — the message it was kept for.
+
+**SO THE RULE, rather than the precedent.** Declaring a shape six is an
+acceptable disposition **only when the body can actually red**; the
+declaration is then honest bookkeeping about coverage. When the
+assertion cannot fail at all it is not a shape-six exception, and
+"kept for its failure message" is self-defeating because the message
+can never print. The remedy is one line and is strictly better than
+deletion: **move the assertion above its neighbour**, where it becomes
+the first-line guard whose message actually reaches the reader and the
+whole-value `assert_eq!` remains the backstop. The assertion should not
+stay where it is.
+
+**V3 — `T-064-s4` UNDERCOUNTS ITS OWN SUBJECT: the mirror is stale in
+FOUR places, and two of them are on the line the finding quotes.**
+`tools/e2e/fixtures/shell.ts`:
+
+1. line 51 declares `probe` — removed by T-064 (the finding's own).
+2. line 54's `StartupStep` lacks `"deadline"` — added by T-063 (the
+   finding's own).
+3. **line 51 also lacks `snapshot?: DocsSnapshotPayload | null`**, added
+   to the real genesis variant by **T-042** at `82634c7`, a card BEFORE
+   this one. The finding quotes this exact line and misses it.
+4. **line 65's `rejectedPick: { path, message }`** — the real
+   `RejectedPick` (watcher-store.ts:235) also carries `probe:
+   PlanProbePayload | null`, since T-026.
+
+Four drifts, four cards, zero red suites. **THE FINDING'S THESIS IS
+RIGHT AND ITS COUNT PROVES IT HARDER THAN ITS TEXT DOES**: an audit of a
+hand-written mirror, performed by hand, by an executor whose whole
+subject was that mirror drifting, missed half the drift on the line it
+was quoting. **WHAT PINS IT GOING FORWARD CANNOT BE A COUNT.** No number
+written into `T-064-s4`, this verdict or a checkpoint survives the next
+card. The floor has to be structural — the mirror imported from or
+type-checked against `app/src/lib/watcher-store.ts` (T-065's "one wire,
+one shape") — and until it exists the honest statement is "unknown and
+unpinnable", not "two". `T-064-s4` should be corrected to say four and
+to say that the four is also not the floor.
+
+**V4 — ONE UN-POISONABLE SPOT WENT UNNAMED.** `M-J`: passing `false`
+instead of `probe.git` at the production call site is **exit 0, nothing
+red**, and correctly so — `has_plan()` does not read `git` and the
+temporary is discarded, so the argument is provably inert there. The
+constructor's parameter IS pinned by the unit test. The POISON DRILL
+bullet says "IF a body cannot be poisoned … THEN say so and name it";
+the notes name three residuals of the re-read and not this one.
+Bookkeeping, not a defect.
+
+**V5 — CRITERION 3's WINDOW HAS ONE UNCOVERED SUB-WINDOW, in the
+conservative direction.** The re-read only exists when `docs_armed` is
+true, because `build_snapshot` is only called then. A folder with no
+`docs/` at arm time that gains `docs/ROADMAP.md` between the watcher's
+arm check and the return therefore ships `snapshot: None` and lands on
+genesis. It is strictly narrower than the pre-existing and unclosable
+"user writes a plan after the switch" case, and the sentinel brings the
+pipeline up correctly either way. Named because the notes name three
+residuals and this is a fourth.
+
+**V6 — CONFIRMED ON THE TREE: `T-064-s5` is real and reaches no pinned
+path.** Driven directly at `09ce637`: a DIRECTORY named
+`docs/tasks/notes.md` gives `stat.tasks=true`, `snapshot.tasks=false`,
+`files=[]`, `skipped=[]`, and `apply_genesis_pick` answers **`Picked`**
+— genesis refused, the conservative direction, exactly as the finding
+argues. **Reachability through a pinned path: NONE.** No test in this
+tree creates a directory named `*.md`, so neither side of the
+disagreement is held by anything and either could flip silently. That
+is the reason to take it, and it belongs with `T-064-s1` as filed.
+
+**V7 — filed as `T-064-s7`, not this lane's code.** The docs gate exits
+**2** on an empty path list (T-084-s6's close) and **exit 0, nothing
+owed** on a list of ONE EMPTY STRING — which is what the quoted
+command-substitution spelling produces when the range command fails.
+
+#### Suites and gates, at MY refs, every exit code read unpiped
+
+Run twice: before this verdict, and again after the commit below (the
+T-081-s9 rule). Both runs identical.
+
+- bare `cargo test`: **355 passed / 0 failed / 3 ignored**, summed over
+  **15** `test result:` lines, `EXIT=0`.
+- app `npm test`: **854/854 over 43 files**, `EXIT=0`; `npm run build`
+  `EXIT=0`.
+- parser `npx vitest run`: **263/263 over 12 files**, `EXIT=0`;
+  `npm run build` `EXIT=0`.
+- tools/e2e `npm test`: **121/121**, `EXIT=0`, on default lane port
+  14520 (bind-probed free first).
+- **GRAPH REGEN — fires, exit 1, REAL red as the brief predicted.**
+  Both count lines present (committed 585305 · 119 · 1018 · 1539;
+  fresh 587539 · 119 · **1021** · **1546**) and `files +0 -0 ~8`, so it
+  is not the `--root` false red. **+3 symbols / +7 edges** (+8 / -1),
+  the new symbol `genesisSwitchIsOvertaken` — matching the executor's
+  probe figure exactly. No `graph.json` in the lane diff; it is the
+  integrator's to commit.
+- **BOOT GATE — fires, exit 0**, `NPUTER_BOOT_PORT=14521` from
+  tools/e2e, both `[nputer]` lines seen, process tree stopped.
+- **DOCS GATE — fires, exit 1**, invoked DIRECTLY on the range rule's
+  own 15-path list, never through `xargs`. Owes `npm test from app/`,
+  `npm test from tools/e2e/`, `npx vitest run from lib/parser/` for the
+  docs paths; **11 derived readers across 4 suites, 0 frontmatter
+  issues**; census 118 sites in 22 files, 11 in 9 root-anchored. All
+  three owed suites re-run after this commit.
+- **token lint: exit 0** — `TOKEN 123 files … CONTROL 595 tracked text
+  files`, reproducing the executor's tip figures.
+
+#### Security sweep — clean
+
+`acl_pin.rs` is a **0-file diff** and its sha256 is
+`8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`,
+matching. IPC surface **13/13**, `lib.rs` untouched. Three `#[ignore]`,
+all pre-existing and argued (`^[[:space:]]*#\[ignore` over `'*.rs'`).
+**Zero dependency additions** — no `Cargo.toml`, `Cargo.lock`,
+`package.json` or lockfile in the diff. No `unsafe`, no new command, no
+new input path, no secret. The change is **boundary-narrowing**: a field
+leaves the IPC payload and none is added, and ADR-012's zero-argument
+property is untouched — `apply_genesis_folder`'s signature does not
+change and no path crosses from the webview.
+
+#### Two operational notes for the integrator
+
+**I REPRODUCED `T-013-s7` ON MYSELF, and it is worse than an
+inconvenience.** I ran the Rust drill in a detached scratch worktree
+with `CARGO_TARGET_DIR` pointed at this lane's `target/`. After deleting
+the drill, bare `cargo test` in this worktree went to **exit 101 with 26
+failures** across five binaries, all naming a scratch directory that no
+longer exists — `CARGO_MANIFEST_DIR` is baked in at compile time and
+cargo does not track it as an input. `cargo clean -p nputer -p
+nputer-index` (25 778 files, 5.5 GiB) plus a rebuild returned it to
+**355 / 0 / 3, exit 0**, which is the state this lane is in now. The
+sibling lane's finding is correct and it cost me a full rebuild;
+anybody drilling Rust here should read it first.
+
+**THE DISPATCH BRIEF WAS WRONG IN THREE PLACES**, none affecting the
+verdict: main is `f306ee9` and not "several lanes ahead" of the notes'
+`4d2f03c` by code (its advance is docs-only); the brief's claim that the
+`…get("probe").is_none()` assertion is "kept for the failure message"
+is measurably false in the shipped ordering (V2); and `T-064-s4`'s "two
+places" is four (V3).
+
+#### What I did not touch
+
+No merge. No `graph.json`. No `tools/e2e` source. No `npm ci` or `npm
+install` anywhere. Port 1420 was read with `lsof -nP -iTCP:1420
+-sTCP:LISTEN` and nothing else — holder `node` pid **82549**, one
+socket, `TCP [::1]:1420 (LISTEN)`, unchanged at the close; the human's
+app pid **85379** and their `tauri dev` tree were never signalled and
+no `pkill` was run. The boot gate opened and closed its own window on
+scratch port **14521**. Both scratch worktrees were removed and `git
+worktree list` shows none under the scratchpad. Working tree
+`git status --porcelain` empty apart from this commit's own paths.
