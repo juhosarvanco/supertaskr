@@ -521,7 +521,7 @@ against this merge's seventeen returning **0** too.
 |---|---|---|---|---|---|
 | **T-013** | `task/T-013-semantic-zoom` | `c7528cc` | `verifying`, verdict **REJECTED** 2026-08-23 | 24 | `[app-map, app-shell]` |
 | **T-070** | `task/T-070-arrival-reads-disk` | `fc5f5c9` | `verifying`, REJECTED then **rebuilt by a second executor** (`@T-070-fix`) | 11 | `[app-agent, app-interview]` |
-| **T-089** | `task/T-089-brief-contract` | `989731c` | `verifying`, verdict **REJECTED** 2026-08-23 | 16 | `[method/, docs/CONVENTIONS.md]` |
+| **T-089** | `task/T-089-brief-contract` | `989731c` -> `b38a3cf` | `verifying`, verdict **REJECTED** 2026-08-23 | 16 at `989731c` | `[method/, docs/CONVENTIONS.md]` |
 
 **T-013 STILL SHARES THE `app-shell` SLUG AND STILL OVERLAPS IN ZERO
 FILES** — measured a fourth time, at a tip (`c7528cc`) that is not the
@@ -539,13 +539,24 @@ moved by +3 / +7. **The two regens compound and neither integrator's
 figures are transitive.** T-089's merge-base is `4d2f03c`, not
 `2036fb2`, so its range must be derived at its own base as well.
 
+**T-089 MOVED TWICE WHILE I WAS MEASURING IT** — `b416efb` when the
+worktree list was taken, `989731c` when its path count was derived,
+`b38a3cf` at the final census — which is why every tip in that table is
+named and why the path count carries the ref it was measured at. It is
+the same lesson as the stale forecast above, arriving from a third
+direction: **a sibling lane's tip is not a fact, it is a reading**.
+
 `task/T-064-switch-one-story` is kept as a branch and its worktree is
 removed. Scratch worktrees belonging to OTHER live sessions were present
-throughout and left untouched — `basedrill` at `f306ee9` and `mdrill` at
-`b416efb` under the shared scratchpad, and `nputer-T-070-vdrill2` at
-`fc5f5c9` beside the T-070 lane, which appeared DURING this integration.
-**Zero processes from THIS integration survive**, verified by grepping
-the full `ps` for this session's scratch prefix and its two ports.
+DURING this integration and left untouched — `basedrill` at `f306ee9`
+and `mdrill` at `b416efb` under the shared scratchpad, and
+`nputer-T-070-vdrill2` at `fc5f5c9` beside the T-070 lane, which
+appeared while this checkpoint was being written. **All three were gone
+by the final census**, removed by their own sessions; do not read the
+list as an inventory. **Zero processes from THIS integration survive**,
+verified by grepping the full `ps` for this session's scratch prefix and
+by re-probing all five of its scratch ports (14731-14735, every one
+free).
 
 ## Next up
 
