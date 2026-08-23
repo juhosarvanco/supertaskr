@@ -46,3 +46,19 @@ tell what you asked about", and today those share a code.
 Worth pairing with the enforcing copy: `tools/e2e/tests/docs-input-gate.spec.ts`
 already runs inside the lane, so a body driving a `../../`-spelled path
 and requiring a non-zero exit would hold the fix.
+
+**BELONGS WITH `T-090`, and should be absorbed rather than triaged
+alone** (added by T-101's second executor at the rebuild). T-090 — *"The
+DOCS GATE is a hand-run ritual, the invocation CONVENTIONS prints
+destroys its four-code contract, and two sentences about it are false"*,
+`status: planned`, `touches: [tools/e2e, .github/, docs/CONVENTIONS.md]`
+— already owns exactly this surface: the gate's four-code contract, the
+one spelling shared between the CONVENTIONS bullet and `docs-gate.mjs`'s
+own header comment, and the CI step that will run it. This finding is the
+THIRD leak of the same contract — `T-084-s6` closed the empty list, T-090
+owns the `xargs` collapse, and this is a non-empty list the gate cannot
+resolve — and all three are one distinction: *"I looked and nothing is
+owed"* versus *"I could not tell what you asked about"*. Fixing it inside
+T-090 costs one predicate and one lane body; fixing it separately means a
+second lane opening the same file for the same reason. Its fence is a
+SUBSET of T-090's, so absorption needs no widening.

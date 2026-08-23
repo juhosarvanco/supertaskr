@@ -748,12 +748,94 @@ export function failureDetail(error: TurnErrorPayload): string | null {
  * the two is the treatment, not the bound.
  */
 export function denialLine(denial: GenesisDenial): string {
-  const tool = denial.toolName ?? "a tool";
+  const tool = denialToolName(denial) ?? "a tool";
   const raw = denial.message.trim();
   if (raw.length === 0) return `refused: ${tool} — the CLI gave no reason`;
   const why =
     raw.length > MAX_ERROR_CHARS ? `${raw.slice(0, MAX_ERROR_CHARS)}…` : raw;
   return `refused: ${tool} — ${why}`;
+}
+
+/**
+ * THE NAME THIS REFUSAL IS KNOWN BY, WITH EXACTLY ONE OWNER.
+ *
+ * Two callers need it and they must not disagree: `denialLine` PRINTS it,
+ * and `visibleDenials` below decides whether the terminal failure block
+ * already said it. If those two computed the name differently, a refusal
+ * could be suppressed under one spelling and displayed under another —
+ * criterion 7's "the same refusal" would stop being one thing.
+ *
+ * `null` means "the CLI did not name a tool". T-101-s2's first half is
+ * closed here rather than at the template: `toolName` is typed
+ * `string | null`, which PERMITS `""` and `"   "`, and `??` catches
+ * neither, so the row rendered `refused:  — <message>` with the tool name
+ * silently missing. The invariant that made that unreachable
+ * (`denial_field`'s `.map(str::trim).filter(|s| !s.is_empty())`) lives in
+ * Rust, in another fence, and nothing on this side recorded the
+ * dependency. Now nothing depends on it. **The message half of that
+ * finding is NOT closed here** and stays filed: a message of only U+200B
+ * survives `.trim()`, because the zero-width space is not ECMAScript
+ * `WhiteSpace`, and widening the blank test to cover it is a different
+ * decision about what "the CLI gave no reason" means.
+ */
+export function denialToolName(denial: GenesisDenial): string | null {
+  const named = denial.toolName?.trim();
+  return named === undefined || named.length === 0 ? null : named;
+}
+
+/**
+ * WHICH REFUSALS THE LIVE NOTICE STILL OWES THE USER (T-101, rebuilt).
+ *
+ * Criterion 7 — *if the denial notice and the terminal `toolDenied` error
+ * can both be on screen at once then the same refusal SHALL NOT read as
+ * two different events* — licenses hiding **the same refusal**. It does
+ * not license hiding a DIFFERENT one, and the first build's gate
+ * (`planner.error?.kind !== "toolDenied"`, dropping the whole notice) did
+ * exactly that.
+ *
+ * **THE OVER-SUPPRESSION WAS A SILENCE, WHICH IS THE DEFECT THIS CARD
+ * EXISTS TO FIX, ONE LAYER UP.** `TurnError::ToolDenied` carries
+ * `denials: Vec<String>` built by `denial_names`, which is
+ * `filter_map(|d| d.tool_name.clone())` — an entry the CLI wrote without
+ * a readable tool name contributes NOTHING to it, while still existing as
+ * a `GenesisDenial` and still reaching this list. One mixed `result` line
+ * produces both halves at once: the store holds two refusals, the failure
+ * block names one, and a whole-notice gate put the other on no surface at
+ * all. The runner's own comment at that partition reads *"a repeat is a
+ * nuisance, a silence is the defect this card exists to fix"*.
+ *
+ * **SO THE KEY IS WHAT THE FAILURE BLOCK ACTUALLY RENDERED, NEVER THE
+ * ERROR'S KIND.** On `toolDenied`, `FailureBlock` restates the refusals
+ * BY NAME twice — `failureAction`'s hint (`listOf(error.denials)`) and
+ * `failureDetail` (`error.denials.join(", ")`) — so a denial whose name is
+ * in that array is genuinely on screen already and is dropped here. Every
+ * other denial stands, including every nameless one, and including one
+ * the CLI announced in band that the cumulative `result` line never
+ * listed.
+ *
+ * **WHAT THIS CANNOT REACH, NAMED RATHER THAN LEFT TO BE DISCOVERED.**
+ * The `exitNonZero` path double-reports today and no honest rule here can
+ * stop it. Its failure block renders `stderrTail`, an UNTYPED blob, into
+ * which `runner.rs` pushes `permission_denials: <names>` for the same
+ * `unannounced` vector it emits live `Denied` events from — so one
+ * result-only refusal reaches the screen as a notice row AND as a name in
+ * the tail. Keying suppression on that text would mean this module owning
+ * a copy of a runner format string (T-057: a rule with two
+ * implementations is two chances to disagree), against a tail that is a
+ * bounded RING and may hold the note only in part. The fix is the
+ * runner's — drop the ring note for the set it already emits — and it is
+ * routed as `T-101-s1`, outside `[app-interview]`.
+ */
+export function visibleDenials(
+  denials: readonly GenesisDenial[],
+  error: TurnErrorPayload | null,
+): readonly GenesisDenial[] {
+  if (error === null || error.kind !== "toolDenied") return denials;
+  const restated = error.denials;
+  return denials.filter((denial) => {
+    const name = denialToolName(denial);
+    return name === null || !restated.includes(name);
+  });
 }
 
 // ---- scroll policy -----------------------------------------------------

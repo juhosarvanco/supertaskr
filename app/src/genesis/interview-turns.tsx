@@ -9,6 +9,7 @@ import {
   failureDetail,
   failureHeadline,
   questionFooter,
+  visibleDenials,
   type StageSegmentState,
 } from "./interview-model";
 
@@ -247,6 +248,12 @@ export const PlannerTurn = memo(function PlannerTurn({
   const footer = current ? questionFooter(approxStage) : null;
   const running = planner.status === "running";
   const lastActivity = planner.activity[planner.activity.length - 1];
+  // PER DENIAL, NEVER PER TURN — see `visibleDenials`. The first build
+  // asked "is this turn's error a `toolDenied`?" and dropped the whole
+  // notice on a yes, which put a refusal the failure block never names
+  // (a nameless one — `denial_names` filters those out of
+  // `error.denials`) on no surface at all.
+  const denials = visibleDenials(planner.denials, planner.error);
 
   return (
     <div
@@ -279,17 +286,18 @@ export const PlannerTurn = memo(function PlannerTurn({
 
       {/* Below the activity line and OUTSIDE the `running` guard above
           it: the refusal is news while the turn runs and still true once
-          it has landed. The one thing that takes it away is the terminal
-          `toolDenied` block, which is the SAME refusal stated as the
-          turn's cause of death — T-081's criterion 4 ("the same denial
-          shall not be reported twice") read as the rendering obligation
-          it also is. Every other failure kind says nothing about
-          refusals, so the notice stands beside those; the DOM suite
-          drives both directions, because a negative assertion needs a
-          positive control. */}
-      {planner.denials.length > 0 && planner.error?.kind !== "toolDenied" && (
-        <DenialNotice denials={planner.denials} />
-      )}
+          it has landed. What can take a ROW away is the terminal
+          `toolDenied` block naming that same tool — the SAME refusal
+          stated as the turn's cause of death, T-081's criterion 4 ("the
+          same denial shall not be reported twice") read as the rendering
+          obligation it also is. It can never take the NOTICE away:
+          suppression is per denial and keyed on the names the failure
+          block actually rendered, so a refusal that block cannot name
+          keeps its row. The DOM suite drives all three directions —
+          suppressed, kept beside a `toolDenied` that does not name it,
+          and kept beside every other failure kind — because a negative
+          assertion needs a positive control. */}
+      {denials.length > 0 && <DenialNotice denials={denials} />}
 
       {planner.truncatedRelay && (
         <span data-testid="interview-truncated" className="font-mono text-xs text-muted-foreground">
