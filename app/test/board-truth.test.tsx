@@ -183,6 +183,76 @@ describe("title overflow containment (T-004-s1)", () => {
   });
 });
 
+describe("a padding-aliased backbone is disclosed AT the column (T-097)", () => {
+  // The ruling at selectBoard refuses to merge `F-1` into `F-01`, so
+  // this marker is the only thing standing between a reader and two
+  // plausible-looking columns that are one backbone slot. It has to
+  // reach the DOM — an advisory issue in the issue list is three panes
+  // away and is not the same claim.
+  const ALIASED = parseProjectFromFiles([
+    {
+      path: "docs/ROADMAP.md",
+      content: ["# R", "", "## Backbone", "- F-1: One — a", "- F-01: One padded — b", ""].join(
+        "\n",
+      ),
+    },
+    {
+      path: "docs/tasks/T-201.md",
+      content: src([
+        ["id", "T-201"],
+        ["title", "T-201 title"],
+        ["feature", "F-1"],
+        ["status", "planned"],
+      ]),
+    },
+    {
+      path: "docs/tasks/T-202.md",
+      content: src([
+        ["id", "T-202"],
+        ["title", "T-202 title"],
+        ["feature", "F-01"],
+        ["status", "planned"],
+      ]),
+    },
+  ]);
+
+  const columnFor = (featureId: string): Element => {
+    const found = q(`[data-testid="feature-column"][data-feature-id="${featureId}"]`);
+    if (found === null) throw new Error(`no column ${featureId}`);
+    return found;
+  };
+
+  it("both headers name the other spelling, and each column still holds only its exact-string task", () => {
+    render(<Board model={ALIASED} />);
+    const unpadded = columnFor("F-1");
+    const padded = columnFor("F-01");
+
+    // The disclosure, in the header, on BOTH columns.
+    expect(
+      unpadded.querySelector('[data-testid="column-alias"]')?.getAttribute("data-aliased-with"),
+    ).toBe("F-01");
+    expect(
+      padded.querySelector('[data-testid="column-alias"]')?.getAttribute("data-aliased-with"),
+    ).toBe("F-1");
+    expect(unpadded.querySelector("header")?.textContent).toContain("F-01");
+    expect(padded.querySelector("header")?.textContent).toContain("F-1");
+
+    // …and the split it is disclosing is really there: the ruling did
+    // not quietly move a card while the marker was being added.
+    expect(
+      [...unpadded.querySelectorAll("[data-task-id]")].map((c) => c.getAttribute("data-task-id")),
+    ).toEqual(["T-201"]);
+    expect(
+      [...padded.querySelectorAll("[data-task-id]")].map((c) => c.getAttribute("data-task-id")),
+    ).toEqual(["T-202"]);
+  });
+
+  it("an unaliased backbone grows no marker anywhere on the board", () => {
+    render(<Board model={model} />);
+    expect(q('[data-testid="column-alias"]')).toBeNull();
+  });
+});
+
 describe("rejected ×N on the card face (T-006-s3)", () => {
   it("a rejected card with two REJECTED verdicts says `rejected ×2`", () => {
     render(<Board model={model} />);
