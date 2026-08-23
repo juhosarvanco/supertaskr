@@ -40,7 +40,7 @@ review:
 
 Built by `claude-opus-5 @T-013` on `task/T-013-semantic-zoom`, cut from
 the `Checkpoint:` commit **`2036fb2`**. **Sixteen code
-paths plus this card and seven findings — twenty-four in all.** Every
+paths plus this card and seven findings — TWENTY-FOUR in all.** Every
 figure below is derived at this branch's own tip; nothing is quoted from
 a checkpoint.
 
@@ -332,8 +332,11 @@ legend IS exact.
   block now reads **17**, not the 15 the last checkpoint recorded —
   this card's own comment inside the macro adds two more commas. Strip
   comments, then count; the stripped split reads 14.
-- **5061 added lines scanned** for `sk-`/`AKIA`/PEM/bearer/
-  `key|secret|password|token` assignment shapes — **0 hits**.
+- **Every added line in the branch's diff scanned** for
+  `sk-`/`AKIA`/PEM/bearer/`key|secret|password|token` assignment shapes
+  — **0 hits**. (The line count is deliberately not transcribed here: it
+  moves with every edit to this card, which is the same right-hand-drift
+  the ranges section below is about.)
 
 ### Ranges, every dot count stated, at their own refs
 
@@ -342,29 +345,31 @@ Derived with `git merge-tree --write-tree`, whose exit code was read from
 merge-base **`2036fb2`** (unchanged — main advanced only in `docs/`).
 
     git merge-tree --write-tree 4d2f03c HEAD   -> tree 69fe20ce…, exit 0
-    git diff --name-only 4d2f03c <TREE>               -> 23   THE PRESCRIBED PRE-MERGE FORM
-    git diff --name-only 4d2f03c...HEAD  (THREE dots) -> 23   cmp against the forecast: exit 0
-    git diff --name-only 2036fb2..HEAD   (TWO, branch-only) -> 23
-    git diff --name-only 4d2f03c..HEAD   (TWO dots)   -> 65   THE FORBIDDEN PRE-MERGE FORM
+    git diff --name-only 4d2f03c <TREE>               -> 24   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 4d2f03c...HEAD  (THREE dots) -> 24   cmp against the forecast: exit 0
+    git diff --name-only 2036fb2..HEAD   (TWO, branch-only) -> 24
+    git diff --name-only 4d2f03c..HEAD   (TWO dots)   -> 66   THE FORBIDDEN PRE-MERGE FORM
     git diff --name-only 2036fb2..4d2f03c (TWO dots)  -> 42   main's own advance
 
-Main advanced **42** paths from the merge-base, the branch **23**,
-`comm -12` over the sorted lists is **EMPTY**, and 42 + 23 = 65 — exactly
+Main advanced **42** paths from the merge-base, the branch **24**,
+`comm -12` over the sorted lists is **EMPTY**, and 42 + 24 = 66 — exactly
 the forbidden count, which is the arithmetic that proves the two sets
-disjoint. **23 files changed, 5061 insertions, 65 deletions.**
+disjoint.
 **RE-DERIVE AT THE VERDICT'S OWN REF rather than quoting these**: it is
 the RIGHT-hand endpoint that goes stale, twice recorded on this board
-(T-081's checkpoint, then T-084's), and an earlier draft of this very
-section said 16 because it was measured three commits before the tip it
-named.
+(T-081's checkpoint, then T-084's), and **this section has now been
+wrong twice on its own card** — it said 16 while the findings were being
+written and 23 while `T-013-s7` was — which is the mechanism, seen from
+the inside, rather than a warning copied from somebody else's
+checkpoint.
 
 ### Gate derivations, off the prescribed list
 
 | gate | paths matching its trigger | owed? |
 |---|---|---|
-| GRAPH REGEN (`*.ts/*.tsx/*.js/*.jsx` outside `docs/`) | **14** of 23 | FIRES |
-| BOOT GATE (`app/src-tauri/**`, `app/src/**`, either manifest) | **11** of 23 | FIRES |
-| DOCS GATE (a `docs/` path a code suite reads) | **7** of 23 | FIRES |
+| GRAPH REGEN (`*.ts/*.tsx/*.js/*.jsx` outside `docs/`) | **14** of 24 | FIRES |
+| BOOT GATE (`app/src-tauri/**`, `app/src/**`, either manifest) | **11** of 24 | FIRES |
+| DOCS GATE (a `docs/` path a code suite reads) | **8** of 24 | FIRES |
 
 **DOCS GATE — RUN, on this branch's own prescribed path list, fed as
 `$(cat <list>)` and NOT through `xargs`** (BSD `xargs` maps a utility
