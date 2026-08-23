@@ -677,4 +677,46 @@ absent from the GRAPH REGEN trigger, the `acl_pin.rs` hash, the three
 `#[ignore]`s, IPC 13 at both ends, `[::1]:1420`, and all three sibling
 lanes live and disjoint.
 
+### The notes commit's own gate run, because this card is a code input too
+
+The section above measures the CODE commit `44007bc` (11 paths, DOCS
+GATE not owed). This card and its six findings are seven more paths, and
+they are `docs/tasks/T-*.md` — so the DOCS GATE fires on the branch as a
+whole and this is the obligation T-084's merge created for its own next
+step, met here rather than left to the integrator.
+
+Derived at main tip **`4d2f03c`** — main's FOURTH position during this
+build, and the reason every count above names its ref:
+
+    git merge-tree --write-tree 4d2f03c HEAD  -> tree 20dddca5…, exit 0
+    git diff --name-only 4d2f03c <TREE>                   -> 18   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 4d2f03c...HEAD   (THREE dots)    -> 18
+    git diff --name-only 4d2f03c..HEAD    (TWO dots)      -> 60   THE FORBIDDEN PRE-MERGE FORM
+
+Eighteen = the eleven code paths plus the seven docs paths.
+
+    node tools/e2e/scripts/docs-gate.mjs $(cat <the 18>)  -> exit 1
+
+**FIRES — 7 paths under docs/ are code inputs, owing THREE suites**
+(`npm test from app/`, `npm test from tools/e2e/`,
+`npx vitest run from lib/parser/`, and NOT `cargo test`, which is the
+proportionality the gate promises for a flat task card). All three run
+with the seven cards on disk:
+
+- **parser 263/263 across 12 files, exit 0** — its smoke test parses this
+  repository's live `docs/` tree and requires zero issues, which is the
+  body that would have caught `9c64cd8`.
+- **app 840/840 across 43 files, exit 0** — the two dogfood bodies.
+- **E2E 129/129, exit 0**, scratch port 14654 — the two specs that walk
+  all of docs/.
+
+The gate's frontmatter half is green over the WHOLE tree, not just the
+diff: *every live task card's frontmatter parses, with a legal status*,
+with `status: verifying` on this card and `status: suggested` on all six
+findings.
+
+**BOOT GATE and GRAPH REGEN are unmoved by the seven docs paths** —
+neither trigger can see `docs/`, by construction, which is the sentence
+the DOCS GATE exists because of.
+
 ## Verdicts
