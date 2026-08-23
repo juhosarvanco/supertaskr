@@ -294,10 +294,11 @@ legend IS exact.
 - **E2E: 121/121**, `E2E_EXIT=0`, scratch port **14831**; `npm run
   typecheck` 0.
 - **token lint: selftest 0, lint 0** — `lint-tokens: clean (TOKEN 130
-  files under app/src, app/test, tools/e2e; CONTROL 604 tracked text
+  files under app/src, app/test, tools/e2e; CONTROL 605 tracked text
   files)`, at 49 TOKEN + 4 CONTROL samples, 71 walk-policy checks, 8
   evidence-floor checks. TOKEN 123 → 130 (+7 `.ts`/`.tsx`), CONTROL
-  590 → 604 (+7 `.ts`/`.tsx`, `churn.rs`, and the six finding files) —
+  590 → 605 (+7 `.ts`/`.tsx`, `churn.rs`, and the seven finding files;
+  590 + 7 + 1 + 7 = 605, which is the arithmetic rather than the print) —
   and this is also the repo's only NUL-byte gate, green over the whole
   tree after one reached `map-zoom.ts` during authoring.
 - **`cargo audit -n`** exit 0: 472 locked crates, **0 vulnerabilities /
