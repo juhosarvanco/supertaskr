@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [tools/e2e]
 builder:
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-4.8 @T-085
-verified_by:
-review:
+verified_by: claude-opus-5 @T-085-verify
+review: same-model
 ---
 
 Absorbs: T-084-s8, T-084-s1 (fifth triage, 2026-08-20). Both files
@@ -239,3 +239,278 @@ Nothing from this integration survives: no process bound/connected/
 signalled 1420 (lsof-only), scratch port 14585 free after, no `pkill`,
 the drill ran in-tree at a committed ref with byte-restore proved, and
 the `nputer-T-060` orphans were left alone.
+
+## Verdicts
+
+### 2026-08-23 — REJECTED (claude-opus-5 @T-085-verify, review: same-model)
+
+**One blocking finding, and it is this card's own subject matter left
+half-done: `docs-scan.mjs` now RETRACTS the false universal in one
+comment while still ASSERTING it in another, 220 lines earlier.** Line
+1878, in the doc comment of `rootAnchoredFiles()` — the census the
+sentence is about — reads:
+
+    * the tripwire below can only report a file it can SEE a docs site
+    * in, so a file that reaches docs/ purely through a callee this
+    * scanner cannot open is invisible to BOTH. What bounds that class
+    * is not an argument, it is this list: A FILE HOLDING THE REPOSITORY
+    * ROOT IS THE ONLY FILE THAT CAN READ THIS REPO'S DOCS/, so
+    * `unclassified` is the exact set of places the answer could still
+    * be short
+
+That is the same claim the ledger comment at :2096 now explicitly
+withdraws — *"THE SENTENCE THAT USED TO OPEN THIS COMMENT WAS FALSE, and
+T-085 is what it cost"* — and it is not decorative. It is the stated
+WARRANT for the paragraph's conclusion, and T-085 disproved the
+conclusion too: `agent_runner.rs` was a place the answer was short, and
+it is not in the root-anchor census at all, because it holds no root. So
+`unclassified` is NOT "the exact set of places the answer could still be
+short"; the package-relative class is another, which is precisely why
+`packageRelativeSites()` and `unlinkedSites()` had to be written.
+
+Reproduce:
+
+    grep -n "only file that CAN read\|only kind of file that CAN read" \
+      tools/e2e/scripts/docs-scan.mjs
+    # 1878:  * the repository root is the only file that CAN read this repo's docs/,
+    # 2098:  * the only kind of file that CAN read this repository's docs/." It is a
+
+:2098 is the quoted-and-retracted copy. :1878 is live and unqualified.
+Criterion 1 asks for the universal "corrected to what is true"; the
+executor's own notes name `T-070-s5`/`T-081-s8` — a live false comment —
+as the reason arm (a) was done at all, and this file's remaining copy is
+that shape exactly. The narrowing already written at :2110 ("can name
+docs/ by an ABSOLUTE anchor") is the sentence :1878 needs, plus a clause
+conceding that the package-relative class is bounded by construction
+rather than by this list. **The code is correct; this is a comment fix,
+and it is the only thing standing between this card and APPROVED.**
+
+**Everything else on this card held under attack, including the parts I
+tried hardest to break.** Findings below are non-blocking.
+
+**Criteria read before the notes.** The criteria are inline in the card,
+but the `T-089-s2` leak path was AVOIDED here rather than declared: I
+read `sed -n '1,86p'` (frontmatter through the last criterion, stopping
+one line short of `## Implementation notes`), formed and wrote down my
+own mutant set, and only then read :87 onward. A ranged read is
+sufficient; a single `cat` is not forced. Three verifiers declaring the
+leak unavoidable this session were each one `sed` from not having it.
+
+**Refs, re-derived, not inherited.** Main had already advanced past the
+brief's `11c82a1`: **T-013 LANDED** at `6834287` before I started. Tip
+`8f09df1`, base `a15b78e`, `git merge-base 6834287 8f09df1` =
+`a15b78e`, unmoved.
+
+    git merge-tree --write-tree 6834287 8f09df1 -> 2ca84028…, exit 0
+    git diff --name-only 6834287 <TREE>               -> 5   PRESCRIBED
+    git diff --name-only 6834287...8f09df1 (3 dots)   -> 5
+    git diff --name-only a15b78e..8f09df1  (2 dots)   -> 5
+    git diff --name-only 6834287..8f09df1  (2 dots)   -> 52  FORBIDDEN
+
+`comm -12` over main's advance and the branch's paths is EMPTY — T-089
+and T-013 are disjoint from `tools/e2e`.
+
+**T-013 did NOT move the live instance.** The brief said to expect it to.
+In the merged tree (lane + `6834287`, merge exit 0) `agent_runner.rs`
+still holds `Path::new(env!("CARGO_MANIFEST_DIR"))` at **1760** and the
+`.join("../../docs/…")` at **1761**, and the re-derived census is
+**12 readers, unchanged**. The card's prose cites `:1761` (the literal)
+while the gate prints `:1760` (the base, where the match starts); both
+are findable, neither is wrong, but they are different lines.
+
+**THE OVER-ADMISSION ATTACK — eight mutants planted in a detached
+worktree at `8f09df1`, seven refused, one admitted.** Planted as tracked
+source and re-derived with the real `docsReaders()`:
+
+| mutant | shape | result |
+|---|---|---|
+| fixture `docs/` dir, base EVALUABLE | `resolve(HERE,"fixtures","valid-project")` + `join(FIX,"docs","tasks")` | excluded — containment |
+| scratch path built then deleted | `mkdtempSync(join(tmpdir(),…))` base | excluded — base null |
+| sibling checkout | `resolve("../../nputer-T-013/docs/tasks")` | excluded — not even docs-SHAPED |
+| escape climb | `resolve("../../../docs/tasks")` | excluded, classified `outside` |
+| partially-foldable variable | `join(join(resolve(".."), which), "docs","tasks")` | excluded — one arg unfoldable |
+| template under `method/` | `resolve("../docs/tasks")` from `method/docs-templates/` | excluded, classified `outside` |
+| **suite-less file under `docs/`** | `join("docs","tasks")` in `docs/design/…/x.js` | **ADMITTED — see finding 2** |
+| bare-`docs` suite-less reader | `join("docs")` | admitted; ledger equality UNAFFECTED |
+
+The sibling-checkout climb is refused one layer EARLIER than containment
+and that is worth recording: `docsShaped` requires `docs` to be the
+first segment that is not a `..`, so `../../nputer-T-013/docs/tasks` —
+a real directory on this disk — never becomes a site at all. Two
+independent exclusions, not one.
+
+**THE FIXTURES DISCRIMINATOR IS CONTAINMENT, NOT ACCIDENT — ruled by
+making the evaluator succeed.** On the live tree `evalBase("root")` in
+`lib/parser/test/files.test.ts` returns **null** for all six of its
+docs-shaped sites (`root = fixture(name)`, a call WITH ARGUMENTS the
+calculus cannot follow), so today the exclusion is TAKEN by evaluation
+failure. That is not the question. I respelled the live file's base into
+a form the calculus CAN follow —
+
+    const root = fileURLToPath(new URL('./fixtures/valid-project', import.meta.url));
+
+— and re-derived: `evalBase` now returns
+`…/lib/parser/test/fixtures/valid-project`, and **all six sites still
+yield `prefix=null`**, dropped by containment because
+`lib/parser/test/fixtures/valid-project/docs/ROADMAP.md` is not under
+`<root>/docs`. The exclusion survives the evaluator improving. It is a
+property of containment with evaluation failure sitting in front of it,
+not an accident of the failure — and it holds structurally, because the
+fixture tree is rooted at the file's own directory, which is nowhere
+near `<root>/docs`. Independently pinned twice in the tree
+(`RESOLVE_SAMPLES`' floored fixture negative, `PLANTED_READERS`'
+`t085-planted-fixture.ts`), so it cannot regress silently.
+
+The brief told me the executor claims this "does NOT rest on `evalBase`
+merely failing to follow `fixture(name)`". **The brief mischaracterised
+the executor.** The notes and the header comment at :99–110 both state
+plainly that on this tree `evalBase` DOES yield null and that the
+exclusion must not rest on it — which is exactly what I proved. The tree
+is more honest than the brief reported it to be.
+
+**BOTH SPELLINGS PLANTED BY ME, BOTH DERIVED.** Not the executor's pins
+— my own, written into the live corpus of the drill worktree:
+
+    app/src-tauri/tests/vfy_rust_reader.rs
+      Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/research/captures/vfy.jsonl")
+      -> DERIVED  [cargo test from app/src-tauri/]  docs/research/captures/vfy.jsonl
+    app/test/vfy-js-reader.ts
+      resolve("../docs/tasks")
+      -> DERIVED  [npm test from app/]  docs/tasks
+
+Readers 12 → 15 with both plants and the suite-less mutant present; both
+spellings appear in `packageRelativeSites()` as `derived`. T-084's
+verifier missed the live instance by probing only the JS idiom; probing
+both, the Rust idiom derives.
+
+**THE CAPTURE MUTANT, RE-RUN INDEPENDENTLY.** In the detached drill at
+`8f09df1`, never in the lane or main checkout. One field mutated on line
+19 of `docs/research/captures/real-planner-turn-2026-08-19.jsonl`
+(`"decision_reason_type": "other"` → `"MUTANT"`; my field, not the
+executor's `subcommandResults` → `sUbcommandResults`):
+
+    node tools/e2e/scripts/docs-gate.mjs <the one changed path>
+      exit 1 — FIRES, owing:  cargo test from app/src-tauri/
+                              npm test from tools/e2e/
+    cargo test --no-fail-fast   (from app/src-tauri, CARGO_TARGET_DIR
+                                 inside the drill, cold)
+      360 passed / 1 failed / 3 ignored over 15 `test result:` lines
+      exit 101
+      the_tool_denied_fixture_is_a_transcription_not_a_construction
+      panicked at tests/agent_runner.rs:1808:13
+
+The owed suite reds. The executor's 360/1/3 exit 101 reproduces exactly
+at a different mutated field, which is the stronger result. Restored and
+proved byte-identical across all four copies:
+
+    sha256 273a3d33593a53614101489b9cd3e9574010beae3830a60f43a8e65f74da47ac
+      drill after restore == git show 8f09df1:<path>
+      == main checkout on disk == lane worktree on disk
+
+**The brief's warning that a sibling lane left this shared fixture
+modified on disk is FALSE as of this session.** All four copies were
+already at `273a3d33…` before I touched anything, and
+`git status --porcelain` was empty for that path in main and in all four
+`nputer-T-*` worktrees. Nothing needed recovering.
+
+**THE LIVE INSTANCE IS DERIVED, NOT LISTED — and the 11 → 12 delta is
+exactly one file.** Measured by running BOTH scanners over the same
+merged tree:
+
+    a15b78e scanner -> 11 readers
+    8f09df1 scanner -> 12 readers
+    ADDED   : ['app/src-tauri/tests/agent_runner.rs']
+    REMOVED : []
+
+`ROOT_ANCHOR_LEDGER` holds six files and `agent_runner.rs` is not among
+them. The set-equality assertion is against `unaccountedRootAnchors()`,
+which filters `kind !== "derived"`, so a derived reader correctly drops
+out rather than owing a hand-written entry — no contradiction between
+criterion 3 and the ledger equality.
+
+**T-085-s1's NIL census: HONEST BOUND, filed, not rejected — and I made
+it falsifiable.** The card argues the package-relative class has no
+enumerable population, so its one disclosed residual (limit 5b: a base
+already inside `docs/`, spent on a literal not itself starting with
+`docs`) has no census. The READER class indeed has none. But the
+RESIDUAL does, by a different census than the one the card says cannot
+exist: enumerate every binding in the corpus whose value evaluates
+inside `<root>/docs`. I ran it over **3800 bindings across the whole
+corpus** and found **exactly 2**:
+
+    lib/parser/test/rejected-exclusion.test.ts  rejectedDir -> docs/tasks/rejected
+    lib/parser/test/task.test.ts                taskDir     -> docs/tasks
+
+Both are LOCAL, and both files are already derived readers carrying
+prefixes that cover everything a second site off those bases could name
+(`docs/tasks/rejected`, `docs/tasks`). The IMPORTED case — the actual
+residual — is **NIL, measured, not asserted**. This is materially
+stronger than T-084-s8's precedent, where a disclosed hole with zero
+instances had no census and the tree then turned out to hold one: here a
+census exists, I ran it, and it held. Filing is right. The residual card
+should record the census method so the next reader can re-run it rather
+than re-argue it.
+
+**Standing gates on this lane's diff, derived from CONVENTIONS rather
+than accepted.** GRAPH REGEN fires on `*.ts/*.tsx/*.js/*.jsx` outside
+`docs/`; `docs-input-gate.spec.ts` IS `.ts` and outside `docs/`, so the
+trigger DOES match — the executor says so too, and is right that the
+regeneration is a no-op because `.nputerignore` excludes `tools/` from
+the index walk. Stating it as "not owed" is a claim about the
+consequence, not the trigger; the distinction matters if `.nputerignore`
+ever changes. The two `.mjs` are not trigger suffixes. BOOT GATE fires on
+`app/src/**`, `app/src-tauri/**` or a manifest: none of the five paths.
+NOT owed, confirmed.
+
+**Non-blocking findings.**
+
+2. **A suite-less file becomes a reader whose owed command is
+   `undefined` — new to T-085, zero live instances.** `JS_CWD_SITE` is
+   the no-base arm this card adds; combined with `suiteFor()` returning
+   `undefined` for anything outside the four declared packages, a file
+   at `docs/design/claudedesign_handoff/x.js` containing
+   `join("docs","tasks")` derives as a reader and the gate prints, at
+   exit 1:
+
+       reader  docs/design/…/x.js  [undefined from undefined/]  docs/tasks
+       docs-gate: FIRES …  Run:
+         undefined from undefined/
+
+   The `a15b78e` scanner does NOT admit the same file (verified by
+   running it over the identical tree), so this is newly reachable. It
+   is the loud direction — an integrator sees an uninterpretable command
+   and stops, rather than a short answer — and the one suite-less corpus
+   file today (`docs/design/claudedesign_handoff/support.js`) contains
+   no docs-shaped path call, so the census is NIL. I also checked the
+   second-order hazard: a suite-less reader with a bare `docs` prefix
+   puts `undefined` into `suitesOwedForAllOfDocs()`, but
+   `unaccountedRootAnchors()` and the ledger stayed EQUAL, because every
+   root-anchored file sits in a declared suite. Suggested fix: either
+   skip readers with no suite, or name them explicitly as unrunnable.
+
+3. **A doc comment on the judgement function overstates the live tree.**
+   `siteDocsPrefix`'s comment (:1074) says *"The fixture base resolves to
+   lib/parser/test/fixtures/<name>"*. It does not resolve — `evalBase`
+   returns null there, as the header at :99–110 correctly says and as I
+   measured. The conclusion (dropped, outside `<root>/docs`) is right;
+   the mechanism as written is not. One clause.
+
+4. **A docs-shaped site with an unevaluable base, a non-climbing
+   literal, and no repository root in the file is dropped SILENTLY** —
+   `unlinkedSites()` filters to climbing sites and `unlinkedFiles()` to
+   root-anchored ones, so neither reports it (my `mkdtempSync` mutant is
+   this shape). This is disclosed as limit 5 in "WHAT IT CANNOT SEE"
+   (*"a base that is a call WITH ARGUMENTS … is still invisible to
+   both"*), so it is a known hole and not a new one — recorded here only
+   because it is the under-firing direction and the census above is what
+   bounds it.
+
+**Environment.** 1420 read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` only,
+never bound, connected or signalled; holder unchanged, `node` 82549 on
+`[::1]:1420`. No `pkill`; the `nputer-T-060` orphans were left alone. No
+`npm ci`/`npm install` anywhere; the drill reached `yaml` through a
+symlink to the lane's own `node_modules`. `docs-gate.mjs` was invoked
+DIRECTLY with paths, never through `xargs`. The drill ran detached at
+`8f09df1` in a scratch worktree outside the repository with its own
+`CARGO_TARGET_DIR` inside it, and was reset and cleaned after. No real
+model call. Nothing from this verification survives on disk.
