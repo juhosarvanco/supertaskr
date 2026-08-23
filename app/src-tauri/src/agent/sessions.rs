@@ -362,8 +362,11 @@ pub fn read_transcript(project_dir: &Path) -> Vec<TranscriptLine> {
 /// It is a STEP SIZE, never a bound: a single half-turn may be up to
 /// [`TRANSCRIPT_TEXT_CAP`] (256 KiB), four times this, so a chunk is not
 /// promised to hold even one line and the loop simply takes another step.
-/// What the size buys is the constant: the tail read costs the bytes of
-/// the lines it returns, plus at most one step of overshoot.
+/// What the size buys is the CONSTANT in the bound: the tail read costs
+/// the bytes of the lines it returns, plus the one line that carries the
+/// newline which ends the walk, plus at most one further step — which is
+/// the ceiling `the_tail_read_costs_the_budget_and_not_the_file` asserts
+/// against, spelled there as `tail_bytes + 2 * TAIL_CHUNK`.
 const TAIL_CHUNK: usize = 64 * 1024;
 
 /// THE BOUND, AT THE READ (T-070 criterion 1).

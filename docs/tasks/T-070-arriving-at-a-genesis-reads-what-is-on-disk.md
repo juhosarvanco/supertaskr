@@ -288,14 +288,20 @@ two sets are disjoint.
 **10 files, 944 insertions, 10 deletions.** Suffix census: 4 md, 3 rs,
 2 tsx, 1 ts.
 
-**THE FORECAST IS STATED AT `f018636` AND THE BRANCH TIP IS ONE COMMIT
+**THE FORECAST IS STATED AT `f018636` AND THE BRANCH TIP IS TWO COMMITS
 LATER**, because the commit that carries this section cannot name its
-own hash. That last commit adds prose to
-`docs/tasks/T-070-arriving-at-a-genesis-reads-what-is-on-disk.md` and to
-nothing else — a path already in the ten — so the PATH LIST is
-invariant across it and every gate derivation above holds at the tip
-unchanged. Re-derive at the tip and `cmp`; the insertion count is the
-only figure that moves.
+own hash. Those two commits touch this card and one doc comment in
+`app/src-tauri/src/agent/sessions.rs` — **both paths already in the
+ten** — so the PATH LIST is invariant across them and every gate
+derivation above holds at the tip unchanged (verified: `cmp` of the
+sorted list at the tip against the sorted list at `f018636` exits 0).
+Only the insertion count moves. **AND MAIN IS A MOVING TARGET WHILE A
+LANE RUNS**: it went `2036fb2` → `36b7365` → `09b83e87` → `dc4199d`
+during this build, all four docs-only, so the forbidden two-dot count
+climbs (29 at `09b83e87`, 50 at `dc4199d`) while the prescribed ten does
+not move at all. That is the range rule's own point, observed live:
+**the count goes stale from the RIGHT-hand side, and naming the ref is
+the whole defence.**
 
 ### The three standing gates, derived under BOTH ranges
 
