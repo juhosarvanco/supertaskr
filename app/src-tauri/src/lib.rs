@@ -8,6 +8,12 @@ pub mod agent;
 /// runner's real write set. No item's visibility changed — the module's
 /// own `pub fn`s were already public.
 pub mod docs_watch;
+/// T-013 (C-12's data, C-05's registration): the map's churn surface —
+/// the app's SECOND subprocess, and the only one that reads a
+/// stranger's repository. `pub` for the same reason `docs_watch` is:
+/// the seam is driven directly by tests. src/churn.rs states the four
+/// properties its argv, its environment and its output parser hold.
+pub mod churn;
 mod index_cmd;
 
 /// T-021: the pinned webview ACL surface (test-only module — the pin
@@ -23,6 +29,7 @@ use tauri::{Emitter, Listener, Manager};
 use tauri_plugin_dialog::DialogExt;
 
 use agent::{AgentState, CancelOutcome, GenesisStatus, SendOutcome, StartOutcome};
+use churn::{ChurnDisabled, ChurnOutcome};
 use docs_watch::{PickOutcome, ProjectStatus, WatchState};
 use index_cmd::IndexOutcome;
 
@@ -306,6 +313,46 @@ async fn index_repo(app: tauri::AppHandle) -> IndexOutcome {
     })
 }
 
+/// T-013: the map's churn overlay data — commits per path over the last
+/// 30 days, read by shelling out to `git` (ADR-013 / map plan §0.0-6).
+///
+/// **THE FOURTEENTH COMMAND, AND THE FIRST SINCE T-029.** It is
+/// ADR-012 APPLIED rather than reopened: ZERO ARGUMENTS (the project
+/// root comes from `WatchState`, never from the webview), a typed
+/// outcome out, and NO new webview grant — app commands are un-gated by
+/// the ACL, which is the whole ADR-012 point, so `acl_pin.rs` stays a
+/// 0-file diff at its 92-grant `core:default` set. What is genuinely
+/// new is a SUBPROCESS, and the narrowness that ADR-012 says lives in
+/// the command's own signature lives here in `churn.rs`'s argv: every
+/// element is a `&'static str`, the project path is the child's working
+/// directory and appears in no argument, and nothing git prints can
+/// reach the webview — the outcome has no message field to carry it.
+///
+/// Why not ride `index_repo`, the surface that already exists: churn
+/// must be available WITHOUT re-indexing (an overlay the user cannot
+/// see until they rewrite a committed file is not an overlay), and
+/// selecting an overlay must never write `graph.json`. The two are also
+/// different clocks — the graph is a function of the TREE, churn of the
+/// HISTORY — so `index --check` would go stale on every commit if churn
+/// rode the committed payload (ADR-014 forbids exactly that).
+#[tauri::command]
+async fn repo_churn(app: tauri::AppHandle) -> ChurnOutcome {
+    // Spawning and draining a child is blocking work; keep it off the
+    // async runtime's core threads (the T-007 spawn_blocking pattern).
+    let handle = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = handle.state::<WatchState>();
+        churn::run_churn(&state)
+    })
+    .await
+    .unwrap_or_else(|err| {
+        // The join error is a detail for the app's log, never for a
+        // canvas — the outcome carries a typed reason and nothing else.
+        eprintln!("[nputer] churn: task failed: {}", docs_watch::sanitize_for_log(&err.to_string()));
+        ChurnOutcome::disabled(ChurnDisabled::GitFailed)
+    })
+}
+
 /// T-025 criterion 1: start the genesis interview. ZERO ARGUMENTS — the
 /// kickoff prompt is assembled Rust-side from the compiled-in method
 /// snapshot plus the open project from `WatchState`, never from the
@@ -490,6 +537,9 @@ pub fn run() {
             pick_genesis_folder,
             start_genesis_here,
             index_repo,
+            // T-013: the fourteenth. A SUBPROCESS surface, still zero
+            // arguments and still zero grants (see repo_churn above).
+            repo_churn,
             // T-025: four app commands, ZERO new webview grants — app
             // commands are not grants, which is the whole ADR-012 point.
             genesis_start,

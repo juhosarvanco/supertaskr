@@ -594,6 +594,20 @@ pub fn validate_resolved_binary(
     path: &Path,
     adapter: &AgentAdapter,
 ) -> Result<(), ResolvedPathRejection> {
+    validate_resolved_program(path, adapter.binary)
+}
+
+/// THE RESOLVED-PATH GATE, parametrized by the program NAME rather than
+/// by an [`AgentAdapter`] — so a SECOND door can hold exactly the SAME
+/// standard without a SECOND implementation of it (T-057: a rule with two
+/// implementations is two chances to disagree; T-060: "one standard,
+/// applied at every door"). [`validate_resolved_binary`] is this with the
+/// adapter's own `binary`; `churn.rs`'s git resolver calls it with
+/// `"git"`. The whole security content of the gate lives here, once.
+pub fn validate_resolved_program(
+    path: &Path,
+    expected_name: &'static str,
+) -> Result<(), ResolvedPathRejection> {
     if path.as_os_str().is_empty() {
         return Err(ResolvedPathRejection::Empty);
     }
@@ -617,8 +631,8 @@ pub fn validate_resolved_binary(
     {
         return Err(ResolvedPathRejection::Traversal);
     }
-    if path.file_name().and_then(|n| n.to_str()) != Some(adapter.binary) {
-        return Err(ResolvedPathRejection::WrongName { expected: adapter.binary });
+    if path.file_name().and_then(|n| n.to_str()) != Some(expected_name) {
+        return Err(ResolvedPathRejection::WrongName { expected: expected_name });
     }
     if !is_executable_file(path) {
         return Err(ResolvedPathRejection::NotExecutable);
@@ -771,7 +785,11 @@ pub fn resolve_cli(cfg: &RunnerConfig, adapter: &AgentAdapter) -> Result<Resolve
 ///
 /// **Verdict: no memo, no file.** Criterion 1's plain
 /// probe-then-typed-not-found stands.
-fn login_shell() -> PathBuf {
+///
+/// **Shared since T-013**: `churn.rs` runs its own `command -v git`
+/// through this same name-checked selection, so both doors run their
+/// login-shell probe with the one program `$SHELL` is allowed to name.
+pub fn login_shell() -> PathBuf {
     /// The shells whose `-l -c` semantics the script actually relies on.
     const SUPPORTED: [&str; 3] = ["zsh", "bash", "sh"];
     std::env::var("SHELL")

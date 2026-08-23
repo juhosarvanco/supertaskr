@@ -500,12 +500,19 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     return [...found].sort();
   }
 
-  it("the frontend reaches exactly the ten commands it is allowed", () => {
+  it("the frontend reaches exactly the eleven commands it is allowed", () => {
     // The whole set, spelled out: an eleventh would fail this line by
     // name, and so would a rename. `pick_project_folder` /
     // `pick_genesis_folder` / `start_genesis_here` go through one call
     // site with a variable, so they are asserted against the Rust handler
     // below instead.
+    //
+    // T-013 ADDS ONE — `repo_churn`, the map's churn overlay — and it
+    // is the first command backed by a SUBPROCESS. Still zero arguments
+    // (the project root is `WatchState`'s, never the webview's) and
+    // still zero webview grants, which is ADR-012 applied rather than
+    // reopened; see the doc comment on `repo_churn` in lib.rs and the
+    // four properties `src-tauri/src/churn.rs` states and pins.
     //
     // T-029 ADDS FOUR, and they are the reason it needed any: a resume
     // that respawns the recorded native session, the fresh session that
@@ -525,10 +532,11 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
       "genesis_status",
       "genesis_transcript",
       "index_repo",
+      "repo_churn",
     ]);
   });
 
-  it("Rust exposes exactly thirteen commands, and T-029 added four", () => {
+  it("Rust exposes exactly fourteen commands, and T-013 added the subprocess one", () => {
     const lib = readFileSync(resolve("src-tauri/src/lib.rs"), "utf8");
     const handler = /invoke_handler\(tauri::generate_handler!\[([\s\S]*?)\]\)/.exec(lib);
     expect(handler, "the handler list must be findable").not.toBeNull();
@@ -549,6 +557,7 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
       "index_repo",
       "pick_genesis_folder",
       "pick_project_folder",
+      "repo_churn",
       "start_genesis_here",
     ]);
   });

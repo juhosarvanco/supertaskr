@@ -33,6 +33,17 @@ import { UNMAPPED_ID, type DerivedComponentKind } from "@/lib/architecture/deriv
  *     partners) + 1, bottom-append row; no partners → column 0.
  *
  * Layout never reads hover/overlay/selection — position is structure.
+ *
+ * T-013 ADDS RULE T1, AND IT IS RULE 4 WITH ONE SLOT MADE TALLER.
+ * `expanded` maps a component id to its container's height; a column's
+ * rows are then STACKED (`assignYs`) instead of multiplied by a constant
+ * slot, so an expanded node pushes the rows BELOW it in its OWN column
+ * down by exactly the extra height and nothing else moves. Two
+ * properties follow structurally rather than by care, and both are
+ * pinned by test: a node's y depends only on the rows ABOVE it in its
+ * own column (so expanding anything leaves every row above it and every
+ * other column byte-identical), and with `expanded` empty the stack
+ * reduces to `SLOT_TOP + row * SLOT_H` — T-012's formula, unchanged.
  */
 
 /** Node geometry (bundle "map" screen, measured). */
@@ -68,6 +79,9 @@ export interface LayoutNode {
   /** Top-left corner in graph-area coordinates. */
   x: number;
   y: number;
+  /** Box height: `NODE_H` collapsed, the container's height expanded
+   * (T-013 rule T1). Width never changes — see map-zoom.ts's header. */
+  h: number;
 }
 
 export interface LayoutEdge {
@@ -280,10 +294,44 @@ function assignRows(
   return row;
 }
 
+/**
+ * Rules 3 + 4 + T1: y per node by STACKING its column. A row's slot is
+ * `SLOT_H` when the node is collapsed and `container + (SLOT_H -
+ * NODE_H)` when it is expanded — the same gutter under a taller box —
+ * so the extra height lands entirely on the rows below it, in this
+ * column only. With `expanded` empty this returns `SLOT_TOP + row *
+ * SLOT_H` for every node, which is T-012's formula.
+ */
+function assignYs(
+  components: readonly LayoutComponentInput[],
+  col: ReadonlyMap<string, number>,
+  row: ReadonlyMap<string, number>,
+  heights: ReadonlyMap<string, number>,
+): Map<string, number> {
+  const byColumn = new Map<number, string[]>();
+  for (const c of components) {
+    const column = col.get(c.id);
+    if (column === undefined || row.get(c.id) === undefined) continue;
+    const bucket = byColumn.get(column);
+    if (bucket === undefined) byColumn.set(column, [c.id]);
+    else bucket.push(c.id);
+  }
+  const ys = new Map<string, number>();
+  for (const ids of byColumn.values()) {
+    const ordered = [...ids].sort((a, b) => (row.get(a) as number) - (row.get(b) as number));
+    let y = SLOT_TOP;
+    for (const id of ordered) {
+      ys.set(id, y);
+      y += (heights.get(id) ?? NODE_H) + (SLOT_H - NODE_H);
+    }
+  }
+  return ys;
+}
+
 /** Rule 6: orthogonal elbow routing. */
 function routeEdge(src: LayoutNode, dst: LayoutNode): Pick<LayoutEdge, "path" | "labelAnchor"> {
-  const sy = src.y + NODE_H / 2;
-  const ty = dst.y + NODE_H / 2;
+  const sy = src.y + src.h / 2;
+  const ty = dst.y + dst.h / 2;
 
   if (dst.col > src.col) {
     // Forward: out of the source's right edge, into the target's left.
@@ -315,10 +363,10 @@ function routeEdge(src: LayoutNode, dst: LayoutNode): Pick<LayoutEdge, "path" | 
   // (target below the run) or bottom (target above it) — the hero's
   // C-01→C-05 back edge pattern.
   const sx = src.x + NODE_W / 2;
-  const startY = src.y + NODE_H;
+  const startY = src.y + src.h;
   const runY = startY + BACK_DROP;
   const tx = dst.x + NODE_W / 2;
-  const targetEdgeY = dst.y >= runY ? dst.y : dst.y + NODE_H;
+  const targetEdgeY = dst.y >= runY ? dst.y : dst.y + dst.h;
   return {
     path: `M${sx} ${startY} V${runY} H${tx} V${targetEdgeY}`,
     labelAnchor: { x: tx, y: (runY + targetEdgeY) / 2 },
@@ -332,21 +380,27 @@ function routeEdge(src: LayoutNode, dst: LayoutNode): Pick<LayoutEdge, "path" | 
 export function layoutMap(
   components: readonly LayoutComponentInput[],
   edges: readonly LayoutEdgeInput[],
+  /** T-013 rule T1: id → container height for the expanded nodes.
+   * Absent (or empty) is exactly T-012's layout. */
+  expanded: ReadonlyMap<string, number> = new Map(),
 ): MapLayout {
   const col = assignColumns(components, edges);
   const row = assignRows(components, col);
+  const ys = assignYs(components, col, row, expanded);
 
   const nodes = new Map<string, LayoutNode>();
   for (const c of components) {
     const column = col.get(c.id);
     const r = row.get(c.id);
-    if (column === undefined || r === undefined) continue;
+    const y = ys.get(c.id);
+    if (column === undefined || r === undefined || y === undefined) continue;
     nodes.set(c.id, {
       id: c.id,
       col: column,
       row: r,
       x: column * COLUMN_PITCH,
-      y: SLOT_TOP + r * SLOT_H,
+      y,
+      h: expanded.get(c.id) ?? NODE_H,
     });
   }
 
@@ -379,7 +433,7 @@ export function layoutMap(
   let height = 0;
   for (const n of nodes.values()) {
     width = Math.max(width, n.x + NODE_W);
-    height = Math.max(height, n.y + NODE_H);
+    height = Math.max(height, n.y + n.h);
   }
 
   return { nodes, edges: laidEdges, neighborhood, width, height };
@@ -392,15 +446,25 @@ export function layoutMap(
  * them appear here, so none of them can move a node (rule 7's spirit;
  * pinned by test: same key ⇒ layoutMap not re-run ⇒ same positions,
  * and even across a re-run, positions are a pure function of this key).
+ *
+ * T-013 adds the EXPANSION to the key, and it belongs here rather than
+ * beside it: an expanded container is a structural change (a slot got
+ * taller), so it must invalidate the cache the way a new component does
+ * -- and it must appear here for the same reason status must not.
  */
 export function layoutKey(
   components: readonly LayoutComponentInput[],
   edges: readonly LayoutEdgeInput[],
+  expanded: ReadonlyMap<string, number> = new Map(),
 ): string {
   const c = components.map((x) => `${x.id}\u0001${x.kind}`).sort().join("\u0002");
   const e = edges
     .map((x) => `${x.from}\u0001${x.to}\u0001${x.declared ? 1 : 0}`)
     .sort()
     .join("\u0002");
-  return `${c}\u0003${e}`;
+  const x = [...expanded.entries()]
+    .map(([id, height]) => `${id}\u0001${height}`)
+    .sort()
+    .join("\u0002");
+  return `${c}\u0003${e}\u0003${x}`;
 }
