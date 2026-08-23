@@ -5,11 +5,11 @@ feature: F-03
 milestone: 3
 priority: 11
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @T-064
 verified_by: claude-opus-5 @T-064-verify
 review: same-model

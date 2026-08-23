@@ -9,8 +9,8 @@
       "id": "f:app/src/App.tsx",
       "path": "app/src/App.tsx",
       "lang": "ts",
-      "hash": "blake3:815a4933772edbab4051accfa1dd43c8aaadf763766c1312a8ed42b7988718a7",
-      "loc": 797,
+      "hash": "blake3:3ee93da435815233ed39af67e33d6acf360071f67266c567558885bd633eb6cb",
+      "loc": 823,
       "symbols": [
         {
           "id": "s:app/src/App.tsx#App",
@@ -18,8 +18,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            466,
-            795
+            491,
+            821
           ]
         },
         {
@@ -78,8 +78,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            351,
-            453
+            371,
+            478
           ]
         },
         {
@@ -88,8 +88,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            457,
-            464
+            482,
+            489
           ]
         },
         {
@@ -98,8 +98,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            334,
-            338
+            354,
+            358
           ]
         },
         {
@@ -108,8 +108,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            318,
-            330
+            336,
+            350
           ]
         }
       ]
@@ -5165,8 +5165,8 @@
       "id": "f:app/src/lib/watcher-store.ts",
       "path": "app/src/lib/watcher-store.ts",
       "lang": "ts",
-      "hash": "blake3:de7fb9453f4cb8a585b3501b96ef2c3e624b9454e0f4338c8e1e8cbb574db03d",
-      "loc": 1200,
+      "hash": "blake3:9604db45d98b888a54935d51d04680ccaffc34cf66e59d2849d575e338ea7e30",
+      "loc": 1319,
       "symbols": [
         {
           "id": "s:app/src/lib/watcher-store.ts#CONVENTION_HINT",
@@ -5174,8 +5174,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            296,
-            297
+            331,
+            332
           ]
         },
         {
@@ -5194,8 +5194,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            330,
-            332
+            365,
+            367
           ]
         },
         {
@@ -5204,8 +5204,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            104,
-            118
+            115,
+            129
           ]
         },
         {
@@ -5225,7 +5225,7 @@
           "exported": true,
           "range": [
             73,
-            99
+            110
           ]
         },
         {
@@ -5234,8 +5234,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            301,
-            306
+            336,
+            341
           ]
         },
         {
@@ -5264,8 +5264,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            224,
-            228
+            235,
+            239
           ]
         },
         {
@@ -5274,8 +5274,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            198,
-            198
+            209,
+            209
           ]
         },
         {
@@ -5284,8 +5284,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            209,
-            209
+            220,
+            220
           ]
         },
         {
@@ -5294,8 +5294,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            336,
-            347
+            371,
+            385
           ]
         },
         {
@@ -5304,8 +5304,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            545,
-            566
+            655,
+            676
           ]
         },
         {
@@ -5314,8 +5314,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            131,
-            137
+            142,
+            148
           ]
         },
         {
@@ -5324,8 +5324,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            230,
-            259
+            241,
+            294
           ]
         },
         {
@@ -5334,8 +5334,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            213,
-            219
+            224,
+            230
           ]
         },
         {
@@ -5344,8 +5344,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            157,
-            157
+            168,
+            168
           ]
         },
         {
@@ -5354,8 +5354,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            750,
-            763
+            861,
+            874
           ]
         },
         {
@@ -5364,8 +5364,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            778,
-            806
+            889,
+            917
           ]
         },
         {
@@ -5374,8 +5374,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            735,
-            748
+            846,
+            859
           ]
         },
         {
@@ -5384,8 +5384,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1111,
-            1157
+            1230,
+            1276
+          ]
+        },
+        {
+          "id": "s:app/src/lib/watcher-store.ts#genesisSwitchIsOvertaken",
+          "name": "genesisSwitchIsOvertaken",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            487,
+            495
           ]
         },
         {
@@ -5394,8 +5404,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            694,
-            696
+            805,
+            807
           ]
         },
         {
@@ -5404,8 +5414,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            611,
-            611
+            721,
+            721
           ]
         },
         {
@@ -5414,8 +5424,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            698,
-            700
+            809,
+            811
           ]
         },
         {
@@ -5424,8 +5434,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1174,
-            1176
+            1293,
+            1295
           ]
         },
         {
@@ -5434,8 +5444,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            626,
-            626
+            737,
+            737
           ]
         },
         {
@@ -5444,8 +5454,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            496,
-            500
+            606,
+            610
           ]
         },
         {
@@ -5454,8 +5464,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1166,
-            1171
+            1285,
+            1290
           ]
         },
         {
@@ -5464,8 +5474,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            520,
-            531
+            630,
+            641
           ]
         },
         {
@@ -5474,8 +5484,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1067,
-            1069
+            1186,
+            1188
           ]
         },
         {
@@ -5484,8 +5494,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1056,
-            1058
+            1175,
+            1177
           ]
         },
         {
@@ -5494,8 +5504,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            311,
-            321
+            346,
+            356
           ]
         },
         {
@@ -5504,8 +5514,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            814,
-            850
+            925,
+            969
           ]
         },
         {
@@ -5514,8 +5524,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            281,
-            291
+            316,
+            326
           ]
         },
         {
@@ -5524,8 +5534,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            418,
-            474
+            504,
+            584
           ]
         },
         {
@@ -5534,8 +5544,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            271,
-            273
+            306,
+            308
           ]
         },
         {
@@ -5544,8 +5554,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            873,
-            910
+            992,
+            1029
           ]
         },
         {
@@ -5554,8 +5564,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1189,
-            1200
+            1308,
+            1319
           ]
         },
         {
@@ -5564,8 +5574,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            1092,
-            1102
+            1211,
+            1221
           ]
         },
         {
@@ -5574,8 +5584,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            929,
-            1006
+            1048,
+            1125
           ]
         },
         {
@@ -5584,8 +5594,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            349,
-            409
+            387,
+            451
           ]
         },
         {
@@ -5594,8 +5604,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            767,
-            776
+            878,
+            887
           ]
         },
         {
@@ -5604,8 +5614,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            702,
-            705
+            813,
+            816
           ]
         },
         {
@@ -5614,8 +5624,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            613,
-            625
+            723,
+            736
           ]
         },
         {
@@ -5624,8 +5634,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            712,
-            733
+            823,
+            844
           ]
         },
         {
@@ -5634,8 +5644,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1019,
-            1048
+            1138,
+            1167
           ]
         },
         {
@@ -5644,8 +5654,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            1077,
-            1079
+            1196,
+            1198
           ]
         },
         {
@@ -5654,8 +5664,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            655,
-            655
+            766,
+            766
           ]
         },
         {
@@ -5664,8 +5674,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            657,
-            657
+            768,
+            768
           ]
         },
         {
@@ -5674,8 +5684,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            687,
-            687
+            798,
+            798
           ]
         },
         {
@@ -5684,8 +5694,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            689,
-            692
+            800,
+            803
           ]
         },
         {
@@ -5694,8 +5704,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            676,
-            676
+            787,
+            787
           ]
         }
       ]
@@ -6610,8 +6620,8 @@
       "id": "f:app/test/crescendo.test.ts",
       "path": "app/test/crescendo.test.ts",
       "lang": "ts",
-      "hash": "blake3:2f55a879355bf6f6ff4d668a9b2e0c9a3b7116fde8d384dc2f635a47f6525dd2",
-      "loc": 384,
+      "hash": "blake3:7d9248053a16cc0fd8b007aeac917344647d61a486f8c7743d1453ecc470541a",
+      "loc": 385,
       "symbols": [
         {
           "id": "s:app/test/crescendo.test.ts#NORTH_STAR",
@@ -6660,7 +6670,7 @@
           "exported": false,
           "range": [
             331,
-            346
+            347
           ]
         },
         {
@@ -7620,8 +7630,8 @@
       "id": "f:app/test/genesis-switch-truth.test.tsx",
       "path": "app/test/genesis-switch-truth.test.tsx",
       "lang": "ts",
-      "hash": "blake3:9a57a2e1352e18c6f5cb67e14905c74aca7c179d8fb4726bfb4af7b41dc5d67e",
-      "loc": 373,
+      "hash": "blake3:02878c5328cce893ea45ee42f8b20e3583c9f39756c35f44292984198120d823",
+      "loc": 525,
       "symbols": [
         {
           "id": "s:app/test/genesis-switch-truth.test.tsx#ARCHITECTURE",
@@ -7701,6 +7711,16 @@
           "range": [
             94,
             94
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#emitDocs",
+          "name": "emitDocs",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            195,
+            199
           ]
         },
         {
@@ -7791,6 +7811,16 @@
           "range": [
             148,
             159
+          ]
+        },
+        {
+          "id": "s:app/test/genesis-switch-truth.test.tsx#startInterviewPending",
+          "name": "startInterviewPending",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            171,
+            192
           ]
         },
         {
@@ -9397,8 +9427,8 @@
       "id": "f:app/test/shell-harness.test.ts",
       "path": "app/test/shell-harness.test.ts",
       "lang": "ts",
-      "hash": "blake3:5dbd329cc9029446d3cd013fc566b4905e48050024a0458eb41d8a51e5ad132c",
-      "loc": 354,
+      "hash": "blake3:ce7d21bb854ce10f4208a30fb502fa2ee5fc305d3447a203d1dfaa67ce1779fc",
+      "loc": 352,
       "symbols": [
         {
           "id": "s:app/test/shell-harness.test.ts#StoreModule",
@@ -9446,8 +9476,8 @@
       "id": "f:app/test/startup-recovery.test.ts",
       "path": "app/test/startup-recovery.test.ts",
       "lang": "ts",
-      "hash": "blake3:ecb395ff7b341980fdcaeb51dfd6aeca37042b7cecf6e2f22b19fc6b82248faa",
-      "loc": 1031,
+      "hash": "blake3:afed687985e3c5efe18029710bc5f7b31518ebeb3c12c201f942273cda1fa5a6",
+      "loc": 1094,
       "symbols": [
         {
           "id": "s:app/test/startup-recovery.test.ts#PROBE",
@@ -9535,8 +9565,8 @@
       "id": "f:app/test/startup-screen.test.tsx",
       "path": "app/test/startup-screen.test.tsx",
       "lang": "ts",
-      "hash": "blake3:5bebbcb90e7b7e1fb5b59035e353f34dd40571db7342dd38f0458e8ce39ad723",
-      "loc": 489,
+      "hash": "blake3:5f61311534f44944bf613a04ec8d168a9dd7e2138504eb7fc0d5a5e0e1f10dae",
+      "loc": 534,
       "symbols": [
         {
           "id": "s:app/test/startup-screen.test.tsx#App",
@@ -9704,8 +9734,8 @@
       "id": "f:app/test/watcher-store.test.ts",
       "path": "app/test/watcher-store.test.ts",
       "lang": "ts",
-      "hash": "blake3:4bb74f492c53882a986775c177589499bdcecc6be9806292022c6b0d60bccc85",
-      "loc": 466,
+      "hash": "blake3:862ca5dba9b0ac4bb176b03d1a965406276efe95fb200bcc51a792f0496d9c02",
+      "loc": 605,
       "symbols": [
         {
           "id": "s:app/test/watcher-store.test.ts#BROKEN_ROADMAP",
@@ -9713,8 +9743,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            31,
-            31
+            32,
+            32
           ]
         },
         {
@@ -9723,8 +9753,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            29,
-            29
+            30,
+            30
           ]
         },
         {
@@ -9733,8 +9763,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            30,
-            30
+            31,
+            31
           ]
         },
         {
@@ -9743,8 +9773,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            49,
-            50
+            50,
+            51
           ]
         },
         {
@@ -9753,8 +9783,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            33,
-            42
+            34,
+            43
           ]
         },
         {
@@ -9763,8 +9793,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            44,
-            47
+            45,
+            48
           ]
         },
         {
@@ -9773,8 +9803,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            169,
-            188
+            170,
+            194
           ]
         },
         {
@@ -9783,8 +9813,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            27,
-            28
+            28,
+            29
           ]
         }
       ]
@@ -14701,6 +14731,7 @@
         "EMPTY_PROBE",
         "PlanProbePayload",
         "ShellState",
+        "genesisSwitchIsOvertaken",
         "outcomeCarriesSnapshot",
         "planChecklist",
         "reduceDocs",
@@ -19795,6 +19826,18 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/watcher-store.ts#genesisSwitchIsOvertaken",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#genesisSwitchIsOvertaken",
+      "to": "s:app/src/lib/watcher-store.ts#PickOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/watcher-store.ts#getShellState",
       "to": "s:app/src/lib/watcher-store.ts#ShellState",
       "kind": "type_ref",
@@ -19892,6 +19935,12 @@
     },
     {
       "from": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
+      "to": "s:app/src/lib/docs-model.ts#DocsModelState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
       "to": "s:app/src/lib/docs-model.ts#applySnapshot",
       "kind": "call",
       "confidence": "resolved"
@@ -19906,6 +19955,12 @@
       "from": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
       "to": "s:app/src/lib/watcher-store.ts#ShellState",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/watcher-store.ts#reducePickOutcome",
+      "to": "s:app/src/lib/watcher-store.ts#genesisSwitchIsOvertaken",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -20809,6 +20864,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/genesis-switch-truth.test.tsx#emitDocs",
+      "to": "s:app/test/genesis-switch-truth.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/genesis-switch-truth.test.tsx#existingDocs",
       "to": "s:app/src/lib/docs-model.ts#DocsSnapshotPayload",
       "kind": "type_ref",
@@ -20828,6 +20889,18 @@
     },
     {
       "from": "s:app/test/genesis-switch-truth.test.tsx#startInterview",
+      "to": "s:app/test/genesis-switch-truth.test.tsx#q",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-switch-truth.test.tsx#startInterviewPending",
+      "to": "s:app/test/genesis-switch-truth.test.tsx#flush",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/genesis-switch-truth.test.tsx#startInterviewPending",
       "to": "s:app/test/genesis-switch-truth.test.tsx#q",
       "kind": "call",
       "confidence": "resolved"
@@ -22246,7 +22319,7 @@
   ],
   "stats": {
     "files": 119,
-    "symbols": 1018,
-    "edges": 1539
+    "symbols": 1021,
+    "edges": 1546
   }
 }

@@ -134,6 +134,26 @@ smaller truths landed with it: an armed `docs/` that DISAPPEARS is now
 news the same way one that appears is (one measured rule, not two
 special cases), and the `model-updated` echo fires on provenance
 instead of a guard that was always true.
+T-064 merged 2026-08-23 and closed the timing hole T-042's own tree
+opened up. Carrying the tree made the switch honest about what was on
+disk WHEN IT LOOKED; it looked twice, ten seconds apart, and shipped
+both answers. What a user could hit before and cannot now: start an
+interview on an empty folder, have anything write a plan into it while
+the pick is still in flight — a sibling terminal, a `git checkout`, an
+editor's save — and land on the interview screen over a folder that
+plainly has a plan, which is the one state "no overwrite path exists"
+is supposed to make unreachable. The later reading now wins and the
+folder opens as the project it has become. The second visible repair is
+the reverse case: a file change that arrives WHILE the switch is
+returning is no longer thrown away, so the first frame of an interview
+can no longer be emptier than the frame before it. Both are seconds-wide
+windows nobody would file a bug for; they are in this list because the
+screen they produce is indistinguishable from the bug T-042 was written
+to fix. One quieter fix rides along, from @human's own startup thread:
+when a re-subscribe is refused but the FIRST subscription is still
+attached, the failure screen stops saying no file change can reach the
+board — because one can, and the next write will bring it up without
+the user retrying or reopening anything.
 T-025 (the agent runner, the milestone's hard core) merged 2026-08-16
 and the honest reading of it is narrow. The MECHANISM exists: four app
 commands spawn the user's own `claude` headless once per turn, resume
