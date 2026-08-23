@@ -58,12 +58,14 @@ import {
   docsGate,
   docsReaders,
   liveTaskCards,
+  packageRelativeSites,
   rootAnchoredFiles,
   siteCensus,
   taskCardIssues,
   taskStatuses,
   unaccountedRootAnchors,
   unlinkedFiles,
+  unlinkedSites,
 } from "./docs-scan.mjs";
 
 const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
@@ -106,6 +108,8 @@ function main(argv) {
   const census = siteCensus();
   const anchored = rootAnchoredFiles();
   const unaccounted = unaccountedRootAnchors();
+  const climbing = packageRelativeSites();
+  const climbingUnlinked = unlinkedSites();
   const statuses = taskStatuses();
   const issues = taskCardIssues(liveTaskCards(), { statuses, parseYaml });
   const gate = docsGate(censusOnly ? [] : argv, readers);
@@ -128,12 +132,26 @@ function main(argv) {
   // names this line instead of restating it.
   console.log(
     `docs-gate: census — ${census.sites} docs-shaped sites in ${census.siteFiles} files, ` +
-      `${census.anchoredSites} of them in ${census.anchoredFiles} files root-anchored; ` +
+      `${census.resolvedSites} of them in ${census.resolvedFiles} files RESOLVE into this repo's docs/; ` +
       `${anchored.length} files hold the repository root (` +
       `${anchored.filter((f) => f.kind === "derived").length} derived, ` +
       `${anchored.filter((f) => f.kind === "unlinked").length} unlinked, ` +
       `${anchored.filter((f) => f.kind === "unclassified").length} with no docs site this scan can link)`,
   );
+  // T-085. The root-anchor census bounds the ROOT-anchored class and
+  // nothing else — a docs path written relative to a PACKAGE directory
+  // holds no root, and one is live on `cargo test`. That class has no
+  // anchor to enumerate, so what is printed is its SHAPE: every
+  // docs-shaped literal that climbs, and where it landed.
+  console.log(
+    `docs-gate: ${climbing.length} package-relative docs site(s) — ` +
+      `${climbing.filter((c) => c.kind === "derived").length} resolve into docs/, ` +
+      `${climbing.filter((c) => c.kind === "outside").length} outside it, ` +
+      `${climbingUnlinked.length} with a base this scan cannot evaluate`,
+  );
+  for (const c of climbing) {
+    console.log(`  climb   ${c.file}:${c.line}  ${c.raw}  -> ${c.prefix ?? c.kind.toUpperCase()}`);
+  }
   console.log(
     `docs-gate: ${unaccounted.length} root-anchored file(s) sit in a suite NOT already owed for ` +
       "all of docs/ — each argued in ROOT_ANCHOR_LEDGER (docs-scan.mjs), and the two sets are asserted equal.",
@@ -157,6 +175,18 @@ function main(argv) {
       if (!seen.includes(f)) console.error(`  - ${f} — argued, no longer in the set`);
     }
     found += 1;
+  }
+
+  if (climbingUnlinked.length > 0) {
+    // The package-relative half of the same tripwire, and it needs its
+    // own because the root-anchor one cannot reach it: a file that
+    // climbs out of its package dir into docs/ holds no root, so
+    // `unlinkedFiles()` never looks at it.
+    console.error(
+      "\ndocs-gate: a PACKAGE-RELATIVE docs path has a base this scan cannot evaluate — a reader may be MISSING:",
+    );
+    for (const c of climbingUnlinked) console.error(`  ${c.file}:${c.line}  base: ${c.base}  path: ${c.raw}`);
+    found += climbingUnlinked.length;
   }
 
   if (unlinked.length > 0) {

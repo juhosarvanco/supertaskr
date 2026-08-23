@@ -42,12 +42,13 @@
  * window-contract.spec.ts already take to read `docs/` itself.
  *
  * ── THE DERIVATION ───────────────────────────────────────────────────
- * A DOCS READER is a tracked source file that resolves a path under
- * `docs/` against THIS repository's root, in either of two ways:
+ * A DOCS READER is a tracked source file that resolves a path landing
+ * inside THIS repository's `docs/`, in either of two ways:
  *
- *   A DOCS SITE — a path-forming call in the file itself whose first
- *   string-literal path segment is `docs` and whose base expression
- *   EVALUATES TO THE REPOSITORY ROOT; or
+ *   A DOCS SITE — a path-forming call in the file itself whose literal
+ *   path is DOCS-SHAPED (`docs` is its first segment that is not a `..`
+ *   climb) and which, RESOLVED against whatever its base expression
+ *   evaluates to, lands inside <root>/docs; or
  *
  *   A CALL SITE — a call in the file that hands the repository root to a
  *   first-party function which spends it on a docs path.
@@ -72,26 +73,49 @@
  * argument — `(root = repoRoot)` is the dominant first-party helper
  * signature in this tree and such a helper is CALLED WITH NOTHING.
  *
- * Both halves of the site rule are load-bearing and each one alone is
- * wrong:
+ * RESOLUTION IS THE JUDGEMENT, AND IT SUBSUMES THE OLD RULE (T-085).
+ * The site rule used to be two textual halves — first literal segment is
+ * `docs`, AND the base evaluates to the repository root — and the pair
+ * excluded a whole class it never named: a docs path expressed relative
+ * to a PACKAGE directory. `app/src-tauri/tests/agent_runner.rs` reads
+ * docs/research/captures/ as `env!("CARGO_MANIFEST_DIR")` +
+ * `../../docs/…`, holding no root and spelling no leading `docs`, and it
+ * escaped the site scan, the call arm, the tripwire and the ledger in
+ * silence. Measured at T-084's merge: mutate one field of that capture
+ * and the gate owed only `npm test from tools/e2e/` (121/121, exit 0)
+ * while bare `cargo test` went 351/1/3 at exit 101 — an integrator who
+ * obeyed the gate merged a red tree, which is this gate's own failure
+ * mode arriving through the gate built to remove it.
  *
- * - The `docs`-FIRST rule is what keeps `tools/e2e/fixtures/shell.ts`
- *   out. It joins the repo root with
- *   `app/test/fixtures/genesis/streak/docs` — a base that IS the repo
- *   root and a path that DOES end in `docs`, but the first segment is
- *   `app`, so it reads a fixture tree and not this repo's docs/.
- * - The ROOT-EVALUATION rule is what keeps `lib/parser/test/files.test.ts`
- *   out. It does `join(root, 'docs', 'ROADMAP.md')` where `root` is
- *   `fixture(name)` — computed from `import.meta.url`, so a
- *   "mentions import.meta.url" heuristic would call it a reader. It
- *   evaluates to `lib/parser/test/fixtures/<name>`, which is not the
- *   repository root, so it is not one. THAT IS THE CARD'S OWN
- *   DISCRIMINATOR — "against the repository root rather than a fixture
- *   directory" — made executable instead of eyeballed.
+ * So the shape is decided textually (`docsShaped`) and the MEMBERSHIP is
+ * decided by resolving the literal against the base and testing
+ * containment (`siteDocsPrefix`). Both old halves survive underneath it,
+ * and each is still load-bearing:
  *
- * Bases are evaluated by `evalBase`, a small calculus over the six
- * root-forming shapes this tree actually uses (see ROOT_FORMS). A base
- * that does not evaluate is NOT quietly dropped: see `unlinkedFiles()`.
+ * - `tools/e2e/fixtures/shell.ts` stays out TEXTUALLY. It joins the repo
+ *   root with `app/test/fixtures/genesis/streak/docs` — a base that IS
+ *   the repo root and a path that DOES end in `docs`, but its first
+ *   segment is `app`, so it is not docs-shaped and never becomes a site.
+ * - `lib/parser/test/files.test.ts` stays out BY CONTAINMENT. It does
+ *   `join(root, 'docs', 'ROADMAP.md')` where `root` is `fixture(name)` —
+ *   computed from `import.meta.url`, so a "mentions import.meta.url"
+ *   heuristic would call it a reader. On this tree `evalBase` cannot
+ *   follow a call WITH ARGUMENTS, so the base yields null; but the
+ *   exclusion does not depend on that, and RESOLVE_SAMPLES proves it
+ *   with a fixtures base the calculus CAN evaluate — the path lands in
+ *   `…/fixtures/<name>/docs`, outside <root>/docs, and is dropped.
+ *   THAT IS THE CARD'S OWN DISCRIMINATOR — "against the repository root
+ *   rather than a fixture directory" — made executable rather than
+ *   eyeballed, and it is what stops the widening from flooding the
+ *   reader set with fixture readers.
+ * - A path that climbs OUT of the repository is dropped by the same
+ *   test, because `path.relative` answers with a `..` of its own. This
+ *   gate acquires no readers in other repositories.
+ *
+ * Bases are evaluated by `evalBase`, a small calculus over the
+ * root-forming and package-forming shapes this tree actually uses (see
+ * ROOT_FORMS). A base that does not evaluate is NOT quietly dropped:
+ * see `unlinkedFiles()` and `unlinkedSites()`.
  *
  * ── WHAT IT CANNOT SEE ───────────────────────────────────────────────
  * AN ACCOUNT, NOT A SAMPLE. The previous version of this section named
@@ -100,12 +124,22 @@
  * examples cannot be checked for completeness, so this section is
  * organised around something that can: `rootAnchoredFiles()`.
  *
- * THE BOUND. A file can only read THIS repository's docs/ if it holds
- * THIS repository's root. `rootAnchoredFiles()` enumerates every corpus
- * file that does, by three routes — a local binding, an IMPORTED name,
- * or a Rust zero-argument call — and classifies each as `derived`,
- * `unlinked` or `unclassified`. Everything below is a statement about
- * one of those buckets, so "is that all of them?" has an answer a
+ * THE BOUND, AND THE ONE IT REPLACED. This section used to open "a file
+ * can only read THIS repository's docs/ if it holds THIS repository's
+ * root", and T-085 is the card that sentence cost: every file holds its
+ * own PACKAGE directory, so a docs path written as `../../docs/…` reads
+ * the live tree while holding no root, and one is live in
+ * app/src-tauri/tests/agent_runner.rs. THE PACKAGE-RELATIVE CLASS HAS NO
+ * ANCHOR TO ENUMERATE. It is closed by CONSTRUCTION instead — every
+ * docs-shaped literal is resolved against its base — and accounted by
+ * `packageRelativeSites()`, whose `unlinked` members are a hard failure.
+ *
+ * `rootAnchoredFiles()` remains the account of the ROOT-anchored class:
+ * every corpus file that computes this repository's root, by three
+ * routes — a local binding, an IMPORTED name, or a Rust zero-argument
+ * call — classified `derived`, `unlinked` or `unclassified`. Everything
+ * below is a statement about one of those buckets or about the
+ * package-relative account, so "is that all of them?" has an answer a
  * command can print (`docs-gate.mjs --census`) rather than an argument.
  *
  * 1. IT IS A REGEX SCAN over comment-stripped source, not a TypeScript
@@ -157,7 +191,17 @@
  *    zero-argument-call base, and it is why the anchor arm now follows
  *    IMPORTS exactly as the site arm always did. A base that is a call
  *    WITH ARGUMENTS — `join(path.resolve(here), "docs")` — is still
- *    invisible to both.
+ *    invisible to both. RUST'S base admits ONE level of nested
+ *    parentheses, which is exactly what
+ *    `Path::new(env!("CARGO_MANIFEST_DIR"))` needs (T-085); a deeper
+ *    Rust nest is not held either.
+ * 5b. A BASE THAT ALREADY POINTS INSIDE `docs/`, spent on a literal that
+ *    does not itself begin with `docs` — `join(docsDir, "tasks")` where
+ *    `docsDir` came from another file — is not docs-SHAPED, so it is not
+ *    a site. Measured consequence on this tree: NIL. Where such a base
+ *    is LOCAL the file is already a reader by the site that formed the
+ *    base, with a prefix that covers everything the second site could
+ *    name; the residual is the imported case, and the corpus holds none.
  * 6. WHAT COVERS THE REST is not this scanner but arithmetic.
  *    `suitesOwedForAllOfDocs()` derives which suites are owed for EVERY
  *    path under docs/ (today: tools/e2e, because two lane specs walk the
@@ -249,6 +293,7 @@ export const ROOT_FORMS = Object.freeze([
   "path.dirname(fileURLToPath(import.meta.url))",
   "path.resolve(<base>, '<rel>'...)",
   "resolve('<rel>') — against the package dir, where the runner starts",
+  "process.cwd() — the same package dir, spelled as a call",
   "Path::new(env!(\"CARGO_MANIFEST_DIR\")).parent()...",
   "Path::new(env!(\"CARGO_MANIFEST_DIR\")).ancestors().nth(<n>)",
 ]);
@@ -381,9 +426,17 @@ export function stripComments(src) {
 
 // ── docs sites ───────────────────────────────────────────────────────
 
-/** `join(BASE, "docs/…")` / `resolve(BASE, 'docs', …)` — a JS/TS path
- *  call whose first literal segment is `docs` and whose base is not a
- *  string literal. Group 1 is the base expression.
+/** `join(BASE, '<path>'…)` — a JS/TS path call with an explicit base
+ *  and a string-literal path after it. Group 1 is the base expression.
+ *
+ *  THE PATTERN NO LONGER JUDGES THE PATH, and that is T-085. It used to
+ *  require the literal to open with `docs`, which made "reads this
+ *  repository's docs/" mean "SPELLS `docs` first" — so a docs path
+ *  expressed relative to a PACKAGE directory matched nothing at all,
+ *  while reading the live tree. `docsShaped` now picks the candidates
+ *  and `siteDocsPrefix` resolves them, which SUBSUMES the old rule
+ *  rather than replacing it: `join(<root>, "docs/tasks")` still resolves
+ *  to <root>/docs/tasks and still reads exactly the same.
  *
  *  THE ZERO-ARGUMENT CALL ALTERNATIVE IS NOT DECORATION: a base like
  *  `fixtureRoot()` carries parentheses, which the character class must
@@ -393,20 +446,47 @@ export function stripComments(src) {
  *  unlinked-file assertion was VACUOUS for that shape until this
  *  branch existed. Rust's method form has always allowed it, which is
  *  how `common::repo_root().join(…)` was found in the first place. */
-const JS_SITE = /(?:^|[^\w$.])(?:[\w$]+\.)?(?:join|resolve)\s*\(\s*((?:[\w$.]+\s*\(\s*\)|[^,()'"`]+?))\s*,\s*(['"`])docs(?=[/'"`]|\2)/g;
+const JS_SITE = /(?:^|[^\w$.])(?:[\w$]+\.)?(?:join|resolve)\s*\(\s*((?:[\w$.]+\s*\(\s*\)|[^,()'"`]+?))\s*,\s*(?=['"`])/g;
 
-/** `BASE.join("docs/…")` — Rust's method form, one argument. */
-const RS_SITE = /([\w$]+(?:::[\w$]+)*(?:\(\))?)\s*\.\s*join\s*\(\s*"docs(?=[/"])/g;
+/** `resolve('<path>'…)` / `path.join('<path>'…)` — the same call with NO
+ *  base written down. Its implicit base is the PACKAGE DIRECTORY the
+ *  runner starts in, which `ROOT_FORMS` has listed since T-084 and no
+ *  site pattern could see. `resolve("../docs/tasks")` from app/ reads
+ *  this repository's docs/tasks and holds no root at all — it is the
+ *  falsifier T-084's own verifier wrote against the ledger's universal.
+ *
+ *  THE `path.` PREFIX IS THE WHOLE ALLOWANCE, deliberately. A bare
+ *  `X.join("…")` is RUST's one-argument method form, already matched by
+ *  RS_SITE with `X` as its base, and admitting it here as well would
+ *  count every Rust site TWICE — once correctly and once against the
+ *  crate directory. A Rust local actually named `path` is the one
+ *  overlap: it resolves against the package dir, lands outside docs/,
+ *  and is dropped — one census entry, no answer. */
+const JS_CWD_SITE = /(?:^|[^\w$.])(?:path\.)?(?:join|resolve)\s*\(\s*(?=['"`])/g;
+
+/** `BASE.join("<path>")` — Rust's method form, one argument.
+ *
+ *  THE BASE MAY ITSELF BE A CALL, which is what the live instance
+ *  needed: `Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/…")`
+ *  in app/src-tauri/tests/agent_runner.rs could not be held by the old
+ *  `name` / `name()` character class, so that read was invisible twice
+ *  over — the base did not match, and the literal would have been
+ *  rejected for not opening with `docs` even if it had. One level of
+ *  nested parentheses is enough for `Path::new(env!(…))`; deeper is
+ *  named in WHAT IT CANNOT SEE rather than claimed. */
+const RS_SITE = /((?:[\w$]+(?:::[\w$]+)*\s*\([^()]*(?:\([^()]*\)[^()]*)*\))|[\w$]+(?:::[\w$]+)*(?:\(\))?)\s*\.\s*join\s*\(\s*(?=")/g;
 
 /** The path literal a site opens, read forward from the match so a
  *  segmented call (`'docs', 'tasks', 'rejected'`) reads the same as a
- *  slashed one (`"docs/tasks/rejected"`). Returns a POSIX prefix. */
+ *  slashed one (`"docs/tasks/rejected"`). Returns the literal AS
+ *  WRITTEN, POSIX-joined with empty segments dropped — a `..` climb
+ *  SURVIVES, because resolving it against the base is the whole point. */
 /**
  * @param {string} stripped
  * @param {number} from
  * @returns {string}
  */
-function sitePrefix(stripped, from) {
+function siteLiteral(stripped, from) {
   const segments = [];
   let i = from;
   const n = stripped.length;
@@ -432,6 +512,31 @@ function sitePrefix(stripped, from) {
     i += 1;
   }
   return segments.join("/");
+}
+
+/**
+ * Is this literal SHAPED like a path into a `docs/` tree — is `docs` its
+ * first segment that is not a `..` climb?
+ *
+ * TEXTUAL ONLY, and the layering is the fix. This keeps the candidate
+ * set — and therefore the census — the DOCS-SHAPED one out of a corpus
+ * holding roughly a thousand path calls, while `siteDocsPrefix` does the
+ * judging. BOTH HALVES OF THE OLD RULE SURVIVE UNDERNEATH IT rather than
+ * being replaced: a literal whose first segment is `app` is not
+ * docs-shaped (that is what keeps tools/e2e/fixtures/shell.ts out), and a
+ * docs-shaped literal off a FIXTURE base resolves outside <root>/docs and
+ * is dropped one layer up (that is what keeps lib/parser/test/
+ * files.test.ts out). What is NEW is only that `docs` no longer has to be
+ * segment ZERO.
+ *
+ * @param {string} raw
+ * @returns {boolean}
+ */
+function docsShaped(raw) {
+  const segments = raw.split("/").filter((seg) => seg !== "" && seg !== ".");
+  let i = 0;
+  while (i < segments.length && segments[i] === "..") i += 1;
+  return segments[i] === "docs";
 }
 
 /**
@@ -479,8 +584,6 @@ export const SITE_SAMPLES = Object.freeze([
   // an in-memory fixture entry: a docs-shaped string with no path call
   { text: 'entries.push({ path: "docs/tasks/T-101.md", content: text });', sites: [] },
   { text: "const full = join(dir, name);", sites: [] },
-  // a base that is itself a literal is a relative path, not a root
-  { text: 'const rel = join("docs", "tasks");', sites: [] },
   // documenting the idiom must not make the documenting file a reader
   { text: '// join(ROOT, "docs/tasks") in a line comment is prose', sites: [] },
   { text: '/* join(ROOT, "docs/tasks") in a block comment is prose */', sites: [] },
@@ -508,6 +611,32 @@ export const SITE_SAMPLES = Object.freeze([
   // form always allowed it; the JS form does now.
   { text: 'const d = join(fixtureRoot(), "docs/tasks");', sites: [["fixtureRoot()", "docs/tasks"]] },
   { text: 'const d = join(path.resolve(here), "docs");', sites: [] },
+  // ── the third one, and the one T-085 exists for ────────────────────
+  // A DOCS PATH RELATIVE TO A PACKAGE DIRECTORY. Neither spelling holds
+  // a root, and the `docs`-first rule rejected both on sight. The Rust
+  // one is LIVE in this tree (app/src-tauri/tests/agent_runner.rs) and
+  // the JS one is the falsifier T-084's verifier wrote and could not
+  // find in the tree; whether the base RESOLVES into docs/ is decided
+  // by siteDocsPrefix, and RESOLVE_SAMPLES is where that is proved.
+  {
+    text: 'let c = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/research/captures/x.jsonl");',
+    sites: [['Path::new(env!("CARGO_MANIFEST_DIR"))', "../../docs/research/captures/x.jsonl"]],
+  },
+  { text: 'const TASKS = resolve("../docs/tasks");', sites: [["", "../docs/tasks"]] },
+  {
+    text: 'const TASKS = path.join(process.cwd(), "..", "docs", "tasks");',
+    sites: [["process.cwd()", "../docs/tasks"]],
+  },
+  // A SEGMENTED climb reads the same as a slashed one.
+  { text: 'const d = join(CRATE, "..", "..", "docs");', sites: [["CRATE", "../../docs"]] },
+  // AN IMPLICIT BASE IS STILL A BASE, and it is the PACKAGE dir, not the
+  // root: this is a site here and a NON-reader in RESOLVE_SAMPLES, which
+  // is where the old "a base that is itself a literal is a relative
+  // path, not a root" negative moved to. Judging it textually is what
+  // made the package-relative class unreachable in the first place.
+  { text: 'const rel2 = join("docs", "tasks");', sites: [["", "docs/tasks"]] },
+  // and a climb that never reaches a `docs` segment is not docs-shaped
+  { text: 'const up = join(CRATE, "../../app/test/fixtures");', sites: [] },
 ]);
 
 /**
@@ -520,7 +649,7 @@ export const SITE_SAMPLES = Object.freeze([
 export function siteSelftest() {
   const rows = [];
   for (const { text, sites } of SITE_SAMPLES) {
-    const got = docsSites(stripComments(text)).map((s) => [s.base, s.prefix]);
+    const got = docsSites(stripComments(text)).map((s) => [s.base, s.raw]);
     rows.push([
       `sample ${JSON.stringify(text)} -> ${JSON.stringify(got)}`,
       JSON.stringify(got) === JSON.stringify(sites),
@@ -529,9 +658,20 @@ export function siteSelftest() {
   const positives = SITE_SAMPLES.filter((s) => s.sites.length > 0).length;
   const negatives = SITE_SAMPLES.length - positives;
   const rust = SITE_SAMPLES.filter((s) => s.text.includes("::") || s.text.startsWith("let ")).length;
+  // T-085 FLOORS. The class that evaded every mechanism was a docs path
+  // written relative to a PACKAGE directory, and the verifier who
+  // falsified the ledger missed the live instance by probing only the
+  // JS spelling while the tree writes the Rust one. Both spellings are
+  // required to survive here, separately, so deleting either sample
+  // deletes its own failure and this floor reds instead.
+  const climbing = SITE_SAMPLES.filter((s) => s.sites.some((site) => (site[1] ?? "").startsWith("..")));
+  const climbingRust = climbing.filter((s) => s.text.includes("CARGO_MANIFEST_DIR")).length;
+  const climbingJs = climbing.filter((s) => !s.text.includes("CARGO_MANIFEST_DIR")).length;
   rows.push([`site samples include positives (${positives})`, positives > 0]);
   rows.push([`site samples include negatives (${negatives})`, negatives > 0]);
   rows.push([`site samples include a Rust spelling (${rust})`, rust > 0]);
+  rows.push([`site samples include the Rust package-relative spelling (${climbingRust})`, climbingRust > 0]);
+  rows.push([`site samples include the JS package-relative spelling (${climbingJs})`, climbingJs > 0]);
   return rows;
 }
 
@@ -655,33 +795,303 @@ export function callSelftest() {
   return rows;
 }
 
-/** Every docs site in one already-stripped source text. */
+/** A package directory INSIDE the sample root, so the two are different
+ *  directories: the whole T-085 class is "resolved against the package
+ *  dir, not the root", and a sample context where they coincide cannot
+ *  tell a reader from a non-reader. The crate dir is the package dir,
+ *  which is the live shape (app/src-tauri holds the Cargo.toml). */
+const SAMPLE_PKG = path.join(SAMPLE_ROOT, "pkg");
+
 /**
  * @param {string} stripped
- * @returns {{ line: number, base: string, prefix: string }[]}
+ * @returns {ScanCtx}
+ */
+function resolveContext(stripped) {
+  return {
+    filePath: path.join(SAMPLE_PKG, "tests", "sample.rs"),
+    fileDir: path.join(SAMPLE_PKG, "tests"),
+    pkgDir: SAMPLE_PKG,
+    crateDir: SAMPLE_PKG,
+    stripped,
+    functionDefs: functionDefs(stripped),
+    bindings: bindings(stripped),
+    resolveImport: () => null,
+  };
+}
+
+/**
+ * RESOLVE SAMPLES — the third arm, and the one this card is. A site is a
+ * candidate because of its SHAPE; it is a reader because of where its
+ * literal RESOLVES. These fragments are run through `siteDocsPrefix`
+ * against a context whose package directory is NOT the root, because
+ * that difference is the entire subject.
+ *
+ * THE NEGATIVES ARE THE PRECISION, and they are the three ways a widened
+ * scan goes wrong rather than short: a FIXTURE base (which would flood
+ * the reader set with fixture readers — the over-owing failure this
+ * derivation exists to avoid), an implicit package base that never
+ * reaches the root, and a climb that leaves the repository altogether.
+ */
+export const RESOLVE_SAMPLES = Object.freeze([
+  // ── positives ──────────────────────────────────────────────────────
+  // THE LIVE SPELLING, in shape: app/src-tauri/tests/agent_runner.rs.
+  {
+    text: 'let c = Path::new(env!("CARGO_MANIFEST_DIR")).join("../docs/research/captures/x.jsonl");',
+    prefixes: ["docs/research/captures/x.jsonl"],
+  },
+  // THE JS SPELLING: T-084's own falsifier, with no base written down.
+  { text: 'const TASKS = resolve("../docs/tasks");', prefixes: ["docs/tasks"] },
+  { text: 'const TASKS = path.join(process.cwd(), "..", "docs", "tasks");', prefixes: ["docs/tasks"] },
+  // THE OLD RULE, SUBSUMED: a base that evaluates to the root, spelled
+  // `docs`-first, still resolves to exactly what it always did.
+  {
+    text: 'const REPO = resolve("..");\nconst d = join(REPO, "docs", "tasks");',
+    prefixes: ["docs/tasks"],
+  },
+  // ── negatives ──────────────────────────────────────────────────────
+  // THE DISCRIMINATOR, and the one that must survive the widening. The
+  // base is a FIXTURES directory this calculus CAN evaluate, so the
+  // exclusion cannot be an accident of `evalBase` failing to follow it:
+  // the path lands in <root>/pkg/test/fixtures/valid/docs, outside
+  // <root>/docs, and is dropped there.
+  {
+    text: 'const FIX = resolve("test", "fixtures", "valid");\nconst road = join(FIX, "docs", "ROADMAP.md");',
+    prefixes: [],
+  },
+  // The implicit base is the PACKAGE dir, and it is not the root — this
+  // is where "a base that is itself a literal is a relative path, not a
+  // root" moved to when the site rule stopped judging paths.
+  { text: 'const rel = join("docs", "tasks");', prefixes: [] },
+  // A CLIMB THAT ESCAPES THE REPOSITORY. The gate must not acquire
+  // readers in other repos, and `path.relative` says so with a `..` of
+  // its own rather than with a rule that has to be remembered.
+  { text: 'const out = resolve("../../../docs/tasks");', prefixes: [] },
+  // A base this calculus cannot EVALUATE yields nothing rather than a
+  // guess. It is still a SITE, which is what keeps the tripwires honest:
+  // `unlinkedFiles()` reports it when the file holds the root, and
+  // `unlinkedSites()` when it climbs.
+  { text: 'const d = join(unknownBase, "docs/tasks");', prefixes: [] },
+]);
+
+/** The resolve sample set, run, with the same evidence-floor discipline:
+ *  both package-relative spellings and the escape must survive deletion
+ *  of any one sample. */
+export function resolveSelftest() {
+  const rows = [];
+  for (const { text, prefixes } of RESOLVE_SAMPLES) {
+    const stripped = stripComments(text);
+    const ctx = resolveContext(stripped);
+    const got = docsSites(stripped)
+      .map((s) => siteDocsPrefix(s, ctx, SAMPLE_ROOT))
+      .filter((x) => x !== null);
+    rows.push([
+      `resolve sample ${JSON.stringify(text)} -> ${JSON.stringify(got)}`,
+      JSON.stringify(got) === JSON.stringify(prefixes),
+    ]);
+  }
+  const positives = RESOLVE_SAMPLES.filter((s) => s.prefixes.length > 0);
+  const negatives = RESOLVE_SAMPLES.filter((s) => s.prefixes.length === 0);
+  const rustClimb = positives.filter((s) => s.text.includes("CARGO_MANIFEST_DIR")).length;
+  const jsClimb = positives.filter(
+    (s) => !s.text.includes("CARGO_MANIFEST_DIR") && s.text.includes(".."),
+  ).length;
+  const fixtureBase = negatives.filter((s) => s.text.includes("fixtures")).length;
+  const escapes = negatives.filter((s) => s.text.includes("../../../")).length;
+  rows.push([`resolve samples include the Rust package-relative reader (${rustClimb})`, rustClimb > 0]);
+  rows.push([`resolve samples include the JS package-relative reader (${jsClimb})`, jsClimb > 1]);
+  rows.push([`resolve samples keep a FIXTURE base out (${fixtureBase})`, fixtureBase > 0]);
+  rows.push([`resolve samples keep an ESCAPING path out (${escapes})`, escapes > 0]);
+  rows.push([`resolve samples include negatives (${negatives.length})`, negatives.length > 2]);
+  // NON-VACUITY. A negative that produces NO SITE AT ALL proves nothing
+  // about the resolution — it proves the textual filter rejected it, and
+  // then this whole arm could be deleted and stay green. Every negative
+  // here must be a docs-shaped site that resolution DROPS.
+  const dropped = negatives.filter(
+    (sample) => docsSites(stripComments(sample.text)).length > 0,
+  ).length;
+  rows.push([
+    `every resolve negative is a SITE that resolution drops (${dropped}/${negatives.length})`,
+    dropped === negatives.length,
+  ]);
+  return rows;
+}
+
+/**
+ * PLANTED READERS — the two spellings of a package-relative docs read
+ * and the three shapes that must stay OUT, as SOURCE TEXT.
+ *
+ * THEY LIVE HERE AND NOT IN THE SPEC for the reason SITE_SAMPLES does:
+ * this module is the one file excluded from its own scan by name, and a
+ * spec that spelled a site out in a template literal would BECOME a
+ * reader of docs/ — `stripComments` keeps string literals, which is the
+ * point. The spec writes these into a scratch git repository and runs
+ * the REAL derivation over it, so "derived" means the same thing there
+ * as it does on this tree.
+ *
+ * T-084's verifier probed for `resolve("../docs/…")`, found zero, and
+ * filed; the integrator then found `env!("CARGO_MANIFEST_DIR")` +
+ * `../../docs` live in the tree. The probe missed by SPELLING, so both
+ * spellings are planted and both are required.
+ */
+export const PLANTED_READERS = Object.freeze([
+  Object.freeze({
+    file: "app/src-tauri/tests/t085_planted_rust.rs",
+    source:
+      "use std::path::Path;\n" +
+      "#[test]\n" +
+      "fn planted() {\n" +
+      '    let capture = Path::new(env!("CARGO_MANIFEST_DIR"))\n' +
+      '        .join("../../docs/research/captures/planted.jsonl");\n' +
+      "    let _ = capture;\n" +
+      "}\n",
+    prefix: "docs/research/captures/planted.jsonl",
+    command: "cargo test",
+    suite: "app/src-tauri",
+    why: "THE LIVE SPELLING. A crate-relative capture read that holds no root.",
+  }),
+  Object.freeze({
+    file: "app/test/t085-planted-js.ts",
+    source:
+      'import { resolve } from "node:path";\n' +
+      'export const TASKS = resolve("../docs/tasks");\n',
+    prefix: "docs/tasks",
+    command: "npm test",
+    suite: "app",
+    why: "T-084's own falsifier: from app/, `../docs/tasks` IS this repo's docs/tasks.",
+  }),
+  Object.freeze({
+    file: "app/test/t085-planted-cwd.ts",
+    source:
+      'import path from "node:path";\n' +
+      'export const TASKS = path.join(process.cwd(), "..", "docs", "tasks");\n',
+    prefix: "docs/tasks",
+    command: "npm test",
+    suite: "app",
+    why: "The verifier's SECOND falsifier, segmented rather than slashed.",
+  }),
+  Object.freeze({
+    file: "app/test/t085-planted-fixture.ts",
+    source:
+      'import { dirname, join, resolve } from "node:path";\n' +
+      'import { fileURLToPath } from "node:url";\n' +
+      'const HERE = dirname(fileURLToPath(import.meta.url));\n' +
+      'const FIX = resolve(HERE, "fixtures", "valid-project");\n' +
+      'export const ROADMAP = join(FIX, "docs", "ROADMAP.md");\n',
+    prefix: null,
+    command: null,
+    suite: "app",
+    why:
+      "THE DISCRIMINATOR, planted with a base the calculus CAN evaluate — so " +
+      "the exclusion is the containment test doing its job, not `evalBase` " +
+      "failing to follow `fixture(name)` the way it does on the live tree.",
+  }),
+  Object.freeze({
+    file: "app/test/t085-planted-escape.ts",
+    source:
+      'import { resolve } from "node:path";\n' +
+      'export const OUT = resolve("../../../docs/tasks");\n',
+    prefix: null,
+    command: null,
+    suite: "app",
+    why: "A climb that leaves the repository. The gate must not acquire readers in other repos.",
+  }),
+]);
+
+
+/**
+ * Every DOCS-SHAPED site in one already-stripped source text: a
+ * path-forming call whose literal path has `docs` as its first segment
+ * that is not a `..` climb. `base` is the base expression, EMPTY when
+ * the call wrote none (the implicit package directory), and `raw` is
+ * the literal exactly as written — resolving it is `siteDocsPrefix`.
+ *
+ * TEXTUAL. It says a site is SHAPED like a docs read, never that it IS
+ * one: `join(fixture(name), "docs/ROADMAP.md")` is here and is not a
+ * reader. Keeping the two apart is what lets the census stay a census
+ * and the resolution stay the judgement.
+ */
+/**
+ * @param {string} stripped
+ * @returns {{ line: number, base: string, raw: string }[]}
  */
 export function docsSites(stripped) {
-  /** @type {{ line: number, base: string, prefix: string }[]} */
+  /** @type {{ line: number, base: string, raw: string }[]} */
   const sites = [];
   /** @param {number} index @returns {number} */
   const lineOf = (index) => stripped.slice(0, index).split("\n").length;
-  for (const m of stripped.matchAll(JS_SITE)) {
-    const start = m.index + m[0].length - "docs".length - 1;
-    sites.push({
-      line: lineOf(m.index),
-      base: /** @type {string} */ (m[1]).trim(),
-      prefix: sitePrefix(stripped, start),
-    });
+  /** @type {[RegExp, boolean][]} */
+  const patterns = [
+    [JS_SITE, true],
+    [JS_CWD_SITE, false],
+    [RS_SITE, true],
+  ];
+  for (const [pattern, hasBase] of patterns) {
+    for (const m of stripped.matchAll(pattern)) {
+      // The pattern ends in a LOOKAHEAD at the opening quote, so the
+      // literal starts exactly where the match stops — no arithmetic
+      // off the length of the word `docs`, which is the constant the
+      // old form could only ever find.
+      const raw = siteLiteral(stripped, m.index + m[0].length);
+      if (!docsShaped(raw)) continue;
+      sites.push({
+        line: lineOf(m.index),
+        base: hasBase ? /** @type {string} */ (m[1]).trim() : "",
+        raw,
+      });
+    }
   }
-  for (const m of stripped.matchAll(RS_SITE)) {
-    const start = m.index + m[0].length - "docs".length - 1;
-    sites.push({
-      line: lineOf(m.index),
-      base: /** @type {string} */ (m[1]).trim(),
-      prefix: sitePrefix(stripped, start),
-    });
-  }
-  return sites.sort((a, b) => a.line - b.line || a.prefix.localeCompare(b.prefix));
+  return sites.sort((a, b) => a.line - b.line || a.raw.localeCompare(b.raw));
+}
+
+/**
+ * The directory a site's base names, or null when it does not evaluate.
+ * An EMPTY base is the package directory — `resolve("../docs/tasks")`
+ * writes no base and runs from wherever its suite starts.
+ */
+/**
+ * @param {{ base: string, raw: string }} site
+ * @param {ScanCtx} ctx
+ * @returns {string | null}
+ */
+export function siteBaseDir(site, ctx) {
+  if (site.base === "") return ctx.pkgDir;
+  return evalBase(site.base, ctx);
+}
+
+/**
+ * THE JUDGEMENT, and the whole of T-085: a site's literal RESOLVED
+ * against its base, kept only when it lands inside THIS repository's
+ * `docs/`. Returns the repo-relative prefix, or null.
+ *
+ * ONE CONTAINMENT TEST DOES FOUR JOBS the old rule split across two
+ * halves and a hole:
+ *
+ *  - `join(<root>, "docs/tasks")` -> `docs/tasks`. The `docs`-first rule
+ *    is SUBSUMED, not replaced: it was always the special case where the
+ *    base is the root.
+ *  - `Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/…")` ->
+ *    `docs/…`. The class that read the live tree while holding no root.
+ *  - `join(fixture(name), "docs", "ROADMAP.md")` -> null. The fixture
+ *    base resolves to lib/parser/test/fixtures/<name>, so the path lands
+ *    OUTSIDE <root>/docs. That is the card's own discriminator, and it
+ *    now holds BY CONSTRUCTION rather than by the first-segment rule —
+ *    which is what stops a widened scan from flooding the reader set
+ *    with fixture readers.
+ *  - `resolve("../../../../docs/tasks")` that climbs out of the tree ->
+ *    null, because `path.relative` answers with a `..` of its own. The
+ *    gate must not acquire readers in other repositories.
+ */
+/**
+ * @param {{ base: string, raw: string }} site
+ * @param {ScanCtx} ctx
+ * @param {string} root
+ * @returns {string | null}
+ */
+export function siteDocsPrefix(site, ctx, root) {
+  const base = siteBaseDir(site, ctx);
+  if (base === null || base === undefined) return null;
+  const rel = path.relative(root, path.resolve(base, site.raw)).split(path.sep).join("/");
+  return rel === "docs" || rel.startsWith("docs/") ? rel : null;
 }
 
 // ── root evaluation ──────────────────────────────────────────────────
@@ -739,6 +1149,13 @@ export function evalBase(expr, ctx, depth = 0) {
   const text = expr.trim().replace(/\s+/g, " ");
   if (text === "") return null;
 
+  // `process.cwd()` IS the package directory: a suite runs from its own
+  // package, which is the same assumption `resolve("<rel>")` already
+  // makes. It is here because it is the SECOND package-relative
+  // spelling T-084's verifier falsified the ledger with, and a
+  // derivation that knew only the first would have been one character
+  // from silent again.
+  if (/^process\s*\.\s*cwd\s*\(\s*\)$/.test(text)) return ctx.pkgDir;
   // Rust: the crate manifest dir, climbed.
   if (text.includes('env!("CARGO_MANIFEST_DIR")')) {
     if (ctx.crateDir === undefined) return null;
@@ -1204,14 +1621,22 @@ function paramDocsPrefixes(def) {
     if (p !== null && !index.has(p)) index.set(p, i);
   });
   for (const site of docsSites(def.body)) {
+    // A CALLEE'S BASE IS A PARAMETER, so there is nothing to resolve
+    // against: the prefix is the literal read AS IF the parameter were a
+    // root. A climb out of it (`root.join("../docs")`) leaves whatever
+    // root it was handed and is not a docs path of that root, so the
+    // docs-FIRST rule is exactly right here and stays.
+    const rel = path.posix.normalize(site.raw);
+    if (rel !== "docs" && !rel.startsWith("docs/")) continue;
     let expr = site.base.trim();
+    if (expr === "") continue;
     for (let hop = 0; hop < 6; hop += 1) {
       const ident = /^([\w$]+)$/.exec(expr);
       if (ident === null) break;
       const at = index.get(/** @type {string} */ (ident[1]));
       if (at !== undefined) {
         if (!out.has(at)) out.set(at, new Set());
-        /** @type {Set<string>} */ (out.get(at)).add(site.prefix === "" ? "docs" : site.prefix);
+        /** @type {Set<string>} */ (out.get(at)).add(rel);
         break;
       }
       const next = local.get(/** @type {string} */ (ident[1]));
@@ -1413,8 +1838,16 @@ export function docsReaders(root = repoRoot) {
     /** @type {Set<string>} */
     const via = new Set();
     for (const site of sites) {
-      if (evalBase(site.base, ctx) !== root) continue;
-      prefixes.add(site.prefix === "" ? "docs" : site.prefix);
+      // THE RESOLUTION ARM. The literal is resolved against whatever the
+      // base evaluates to — the repository root, a crate directory, a
+      // package directory, a fixture tree — and kept only if it lands
+      // INSIDE this repository's docs/. One containment test does all
+      // three jobs the old rule split across two halves and a hole:
+      // it keeps the fixture base out, it keeps the `app/…/docs` fixture
+      // path out, and it drops a climb that escapes the repository.
+      const prefix = siteDocsPrefix(site, ctx, root);
+      if (prefix === null) continue;
+      prefixes.add(prefix);
       via.add("site");
     }
     const calls = callSites(stripped, ctx, root);
@@ -1464,7 +1897,11 @@ export function rootAnchoredFiles(root = repoRoot) {
     if (anchors.length === 0) continue;
     const reader = readers.get(rel);
     const sites = docsSites(stripped);
-    const linked = sites.filter((s) => evalBase(s.base, ctx) === root);
+    // LINKED means the site produced a docs prefix, not that its base
+    // was the root — a root-anchored file may reach docs/ off its crate
+    // directory instead, and calling that "unlinked" would report a file
+    // the derivation in fact handled.
+    const linked = sites.filter((s) => siteDocsPrefix(s, ctx, root) !== null);
     out.push({
       file: rel,
       anchors,
@@ -1552,9 +1989,9 @@ export function unlinkedFiles(root = repoRoot) {
  */
 export function siteCensus(root = repoRoot) {
   let sites = 0;
-  let anchoredSites = 0;
+  let resolvedSites = 0;
   const siteFiles = new Set();
-  const anchoredFiles = new Set();
+  const resolvedFiles = new Set();
   for (const rel of sourceCorpus(root)) {
     const stripped = stripComments(readFileSync(path.join(root, rel), "utf8"));
     const found = docsSites(stripped);
@@ -1563,17 +2000,79 @@ export function siteCensus(root = repoRoot) {
     siteFiles.add(rel);
     const ctx = contextFor(rel, stripped, root);
     for (const site of found) {
-      if (evalBase(site.base, ctx) !== root) continue;
-      anchoredSites += 1;
-      anchoredFiles.add(rel);
+      // RESOLVED, not ROOT-ANCHORED. The second figure used to count
+      // sites whose BASE was the repository root, which is the same
+      // sentence T-085 falsified: a site can land inside this repo's
+      // docs/ off a crate or package directory and hold no root at all.
+      if (siteDocsPrefix(site, ctx, root) === null) continue;
+      resolvedSites += 1;
+      resolvedFiles.add(rel);
     }
   }
   return {
     sites,
     siteFiles: siteFiles.size,
-    anchoredSites,
-    anchoredFiles: anchoredFiles.size,
+    resolvedSites,
+    resolvedFiles: resolvedFiles.size,
   };
+}
+
+/**
+ * THE PACKAGE-RELATIVE ACCOUNT — every docs-shaped site in the corpus
+ * that CLIMBS out of its base, with what it resolved to.
+ *
+ * WHY THIS EXISTS AS A SEPARATE ENUMERATION. `rootAnchoredFiles()` is an
+ * account of the files that hold the repository ROOT, and it bounded the
+ * blind spot only while the ledger's universal was true. It is not:
+ * every file holds its own package directory, so the package-relative
+ * class has no anchor to enumerate and no census can bound it. What CAN
+ * be enumerated is the shape — a docs-shaped literal with a `..` climb —
+ * and this is it, classified the same three ways so the same question
+ * ("is that all of them?") has the same kind of answer:
+ *
+ *   `derived`   it resolved INSIDE this repository's docs/. It is a
+ *               reader, and `docsReaders()` has it.
+ *   `outside`   the base evaluated and the path landed somewhere else —
+ *               a fixture tree, another package, or OUT OF THE
+ *               REPOSITORY entirely. Correctly not a reader; the gate
+ *               must not acquire readers in other repos.
+ *   `unlinked`  the base did not evaluate at all, so this scanner cannot
+ *               tell. The loud direction, reported by `unlinkedSites()`.
+ */
+export function packageRelativeSites(root = repoRoot) {
+  /** @type {{ file: string, line: number, base: string, raw: string, prefix: string | null, kind: string }[]} */
+  const out = [];
+  for (const rel of sourceCorpus(root)) {
+    const stripped = stripComments(readFileSync(path.join(root, rel), "utf8"));
+    const climbing = docsSites(stripped).filter((s) => s.raw.startsWith(".."));
+    if (climbing.length === 0) continue;
+    const ctx = contextFor(rel, stripped, root);
+    for (const site of climbing) {
+      const base = siteBaseDir(site, ctx);
+      const prefix = siteDocsPrefix(site, ctx, root);
+      out.push({
+        file: rel,
+        line: site.line,
+        base: site.base,
+        raw: site.raw,
+        prefix,
+        kind: prefix !== null ? "derived" : base === null ? "unlinked" : "outside",
+      });
+    }
+  }
+  return out.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
+}
+
+/**
+ * Package-relative docs sites whose base this scanner could not
+ * evaluate — the same hard failure `unlinkedFiles()` is for the
+ * root-anchored class, for the class that has no anchor. A docs-shaped
+ * climb off a base `evalBase` cannot read is either a reader in a shape
+ * the calculus does not know or a genuine non-reader, and the scanner
+ * cannot tell. It says so; silence is the outcome this card removes.
+ */
+export function unlinkedSites(root = repoRoot) {
+  return packageRelativeSites(root).filter((s) => s.kind === "unlinked");
 }
 
 /**
@@ -1594,10 +2093,25 @@ export function suitesOwedForAllOfDocs(readers) {
  * THE ACKNOWLEDGEMENT LEDGER — and it is deliberately NOT a list of
  * readers, which is the defect T-058 and T-080 each spent a card on.
  *
- * A file that holds this repository's root is the only kind of file that
- * CAN read this repository's docs/. Most of them do not, and of the ones
- * that do, most sit in a suite that is already owed for every path under
- * docs/ (tools/e2e), so a miss there cannot change an answer. What is
+ * THE SENTENCE THAT USED TO OPEN THIS COMMENT WAS FALSE, and T-085 is
+ * what it cost. It read: "A file that holds this repository's root is
+ * the only kind of file that CAN read this repository's docs/." It is a
+ * universal, and `app/src-tauri/tests/agent_runner.rs` falsifies it on
+ * the live tree — it reaches docs/research/captures/ off
+ * `env!("CARGO_MANIFEST_DIR")` and holds no root by any name. EVERY FILE
+ * HOLDS ITS OWN PACKAGE DIRECTORY, so the package-relative class has no
+ * anchor to enumerate and no census can bound it. It is covered by
+ * CONSTRUCTION instead — `siteDocsPrefix` resolves every docs-shaped
+ * literal against its base and keeps what lands inside <root>/docs — and
+ * `packageRelativeSites()` is its account, with `unlinkedSites()` as its
+ * tripwire.
+ *
+ * WHAT IS TRUE, and all this ledger claims: a file that holds this
+ * repository's ROOT is the only kind of file that can name docs/ by an
+ * ABSOLUTE anchor, and `rootAnchoredFiles()` is the whole of THAT class.
+ * Most of them do not read docs/, and of the ones that do, most sit in a
+ * suite that is already owed for every path under docs/ (tools/e2e), so
+ * a miss there cannot change an answer. What is
  * left — a root-anchored file in a suite that is NOT universally owed,
  * which the derivation could not link — is the exact set of places the
  * gate's answer could still be short, and it is small enough to be
