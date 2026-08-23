@@ -4129,7 +4129,15 @@ fn the_hand_driven_kickoff_materializes_a_real_kit_and_names_it() {
     assert!(!h.project.join(".nputer/genesis/kit").exists(), "nothing is materialized yet");
 
     match agent::kickoff(&h.watch) {
-        agent::KickoffOutcome::Ready { prompt, project_dir, kit_root, method_version, resuming } => {
+        // `..` rather than the exhaustive list T-070 would otherwise have
+        // grown: `record` is asserted by
+        // `the_hand_driven_kickoff_carries_what_was_banked`, whose FIRST
+        // step is this same "nothing has run here yet" folder. Adding it
+        // here too would be a body that reds under a poison while killing
+        // no mutant another body does not (CONVENTIONS, shape six).
+        agent::KickoffOutcome::Ready {
+            prompt, project_dir, kit_root, method_version, resuming, ..
+        } => {
             assert!(!resuming, "an empty docs/ is a stage-0 start");
             assert_eq!(project_dir, h.project.display().to_string());
             assert!(prompt.contains(&kit_root), "the prompt names the kit root: {prompt}");
@@ -4155,6 +4163,148 @@ fn the_hand_driven_kickoff_materializes_a_real_kit_and_names_it() {
             assert!(resuming, "banked docs make this a resume");
             assert!(prompt.contains("RESUME RULE"), "{prompt}");
             assert!(!prompt.contains("stage 0 scaffold first"), "{prompt}");
+        }
+        other => panic!("expected Ready, got {other:?}"),
+    }
+}
+
+/// T-070 CRITERION 1-2, AT THE COMMAND. The screen's arrival read is
+/// bounded AT THE READ, and the proof is a fixture a whole-file read
+/// cannot survive AT ALL.
+///
+/// THE MUTANT THIS EXISTS TO KILL is the one a fixture-bounded pin would
+/// survive: an implementation that slurps the file and truncates
+/// afterwards. It returns the same two hundred lines, so no assertion
+/// about CONTENT can separate it from a tail read. So the fixture is
+/// built so that reading from byte zero is not merely expensive but
+/// IMPOSSIBLE: the first two mebibytes are bytes no UTF-8 decoder
+/// accepts, `fs::read_to_string` fails on them, and `read_transcript`
+/// answers with nothing. The bounded reader never seeks that far back,
+/// so it never meets them.
+///
+/// It is the complement of `the_tail_read_costs_the_budget_and_not_the_file`
+/// in `agent/sessions.rs`, and the pair is deliberate: a "read it all
+/// LOSSILY, then truncate" implementation survives this body and dies on
+/// the byte count there, while a mod.rs that goes back to the whole-file
+/// reader survives nothing here. Neither body kills the other's mutant.
+#[test]
+fn the_arrival_read_is_bounded_by_the_budget_and_not_by_the_file() {
+    const VALID_LINES: usize = 400;
+    let h = harness("t070tailread", Options::default());
+    let path = sessions::transcript_path(&h.project);
+    fs::create_dir_all(path.parent().expect("parent")).expect("mk .nputer/genesis");
+
+    // The HEAD: two mebibytes of undecodable bytes, laid out in
+    // newline-terminated runs so the file is line-shaped throughout.
+    let mut bytes: Vec<u8> = Vec::new();
+    while bytes.len() < 2 * 1024 * 1024 {
+        bytes.extend(std::iter::repeat(0xFFu8).take(4_095));
+        bytes.push(b'\n');
+    }
+    let head_len = bytes.len();
+    // The TAIL: real half-turns, each large enough that two hundred of
+    // them are a fraction of the file rather than all of it.
+    for turn in 1..=VALID_LINES {
+        let line = serde_json::json!({
+            "turn": turn,
+            "role": if turn % 2 == 0 { "planner" } else { "user" },
+            "text": format!("turn {turn} {}", "z".repeat(2_000)),
+            "atMs": turn,
+        });
+        bytes.extend_from_slice(serde_json::to_string(&line).expect("encode").as_bytes());
+        bytes.push(b'\n');
+    }
+    fs::write(&path, &bytes).expect("write the transcript");
+
+    let file_len = fs::metadata(&path).expect("stat").len();
+    assert!(
+        file_len > 2 * 1024 * 1024,
+        "the fixture must exceed the budget in BYTES by a wide margin: {file_len}"
+    );
+    assert!(
+        VALID_LINES > agent::MAX_REHYDRATED_LINES,
+        "…and in LINES, before the undecodable head is even counted"
+    );
+
+    // THE POSITIVE CONTROL FOR THE DISCRIMINATOR (CONVENTIONS' rule, one
+    // level out): this fixture really does defeat a whole-file read.
+    // Without this line, the assertion below would pass for an
+    // implementation that reads everything and a fixture that happens to
+    // be small, and the two would be indistinguishable.
+    assert!(
+        sessions::read_transcript(&h.project).is_empty(),
+        "the whole-file reader cannot decode this file at all - that is the point"
+    );
+
+    // …and the arrival read answers the tail, in order, from the bytes
+    // at the END of the file.
+    let lines = agent::transcript(&h.watch);
+    assert_eq!(lines.len(), agent::MAX_REHYDRATED_LINES, "the budget, exactly");
+    assert_eq!(lines[0].turn, (VALID_LINES - agent::MAX_REHYDRATED_LINES + 1) as u32);
+    assert_eq!(lines[agent::MAX_REHYDRATED_LINES - 1].turn, VALID_LINES as u32);
+    assert!(lines[0].text.starts_with("turn 201 "), "{}", lines[0].text);
+    // Nothing from the head leaked into the answer.
+    assert!(
+        lines.iter().all(|l| !l.text.contains('\u{fffd}')),
+        "no undecodable byte reached the webview channel"
+    );
+    // The file is untouched: this read rotates, truncates and deletes
+    // nothing, which is what keeps the losable-by-charter property.
+    assert_eq!(fs::metadata(&path).expect("stat").len(), file_len);
+    // …and the part it never touched is the MAJORITY of the file.
+    assert!(head_len as u64 > file_len / 2, "head {head_len} of {file_len}");
+}
+
+/// T-070 CRITERION 3. The universal fallback answers the question the
+/// CLI-gated commands cannot: WHAT WAS ALREADY BANKED HERE.
+///
+/// `genesis_kickoff` is the one genesis command that resolves no CLI, and
+/// `sessions::genesis_record` reads `.nputer/sessions.json` with no CLI
+/// anywhere in the call — so the record rides the outcome that is still
+/// reachable when the user's CLI has been uninstalled or renamed.
+#[test]
+fn the_hand_driven_kickoff_carries_what_was_banked() {
+    let h = harness("t070kickoffrecord", Options::default());
+
+    // Before anything ran there is nothing to carry, and that is an
+    // ANSWER rather than an omission.
+    match agent::kickoff(&h.watch) {
+        agent::KickoffOutcome::Ready { record, .. } => {
+            assert!(record.is_none(), "nothing was ever running here: {record:?}")
+        }
+        other => panic!("expected Ready, got {other:?}"),
+    }
+
+    agent::start_genesis(&h.watch, &h.agent);
+    wait_completed(&h.events);
+    settle(&h.agent);
+
+    // THE SAME FACT, FROM THE ONE PLACE IT LIVES. The record the kickoff
+    // carries is `sessions::genesis_record`'s own answer — not a second
+    // copy assembled here, which is what T-026-s3 forbids.
+    let direct = sessions::genesis_record(&h.project).expect("the registry recorded a session");
+    let carried = match agent::kickoff(&h.watch) {
+        agent::KickoffOutcome::Ready { record, .. } => record.expect("the record rides Ready"),
+        other => panic!("expected Ready, got {other:?}"),
+    };
+    assert_eq!(carried, direct);
+    assert_eq!(carried.registry_id, "S1");
+    assert_eq!(carried.turns, 1);
+    assert_eq!(carried.native_session_id.as_deref(), Some("fake-session-0001"));
+
+    // NO CLI WAS RESOLVED TO SAY IT. The kickoff spawns nothing — the
+    // dump directory the fake writes into gained no second turn — and the
+    // count came off disk, so a user with no CLI on their path still
+    // learns their work was banked.
+    assert!(!turn_dump(&h.dump, 2).exists(), "the record read spawns no child");
+
+    // Losable by charter, held: delete the one file and the outcome is
+    // still Ready, now carrying nothing.
+    fs::remove_file(sessions::sessions_path(&h.project)).expect("delete the registry");
+    match agent::kickoff(&h.watch) {
+        agent::KickoffOutcome::Ready { record, prompt, .. } => {
+            assert!(record.is_none(), "the fact went with the file: {record:?}");
+            assert!(!prompt.is_empty(), "and the hand-driven prompt is unaffected");
         }
         other => panic!("expected Ready, got {other:?}"),
     }

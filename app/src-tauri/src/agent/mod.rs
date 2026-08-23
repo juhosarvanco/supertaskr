@@ -589,6 +589,10 @@ pub fn fresh_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
 /// Most transcript half-turns one rehydration will carry. The TAIL is
 /// kept — a mid-interview reload wants the recent conversation, and the
 /// early turns are banked in `docs/` anyway.
+///
+/// SINCE T-070 IT IS ALSO THE READ BUDGET, which is the whole change:
+/// this number used to describe what survived a whole-file parse, and now
+/// it describes how much of the file is touched.
 pub const MAX_REHYDRATED_LINES: usize = 200;
 
 /// `genesis_transcript()` — zero-argument. The chat's rehydration source
@@ -599,14 +603,22 @@ pub const MAX_REHYDRATED_LINES: usize = 200;
 /// corrupt file, a file of nothing but garbage lines — all three answer
 /// the same empty vector, and the screen renders banked-progress from
 /// `docs/` instead. That is the whole of criterion 2.
+///
+/// THE BOUND IS AT THE READ (T-070). `transcript.jsonl` is append-only
+/// and NOTHING rotates, truncates, compacts or deletes it — the only cap
+/// in the module is [`sessions::TRANSCRIPT_TEXT_CAP`], on ONE LINE. Until
+/// T-070 this function read the whole file back and threw all but the
+/// last 200 lines away, so a tens-of-MiB transcript cost a tens-of-MiB
+/// read and parse on every arrival at the interview screen. It now asks
+/// [`sessions::read_transcript_tail`] for the tail, which seeks from the
+/// end and never touches the bytes in front of it. The failure mode was
+/// always a SLOW read and never a wrong answer, which is why the fix is
+/// a change of reader and not of format.
 pub fn transcript(watch: &WatchState) -> Vec<TranscriptLine> {
     let Some(project_dir) = watch.project_dir() else {
         return Vec::new();
     };
-    let mut lines = sessions::read_transcript(&project_dir);
-    if lines.len() > MAX_REHYDRATED_LINES {
-        lines.drain(..lines.len() - MAX_REHYDRATED_LINES);
-    }
+    let mut lines = sessions::read_transcript_tail(&project_dir, MAX_REHYDRATED_LINES);
     for line in &mut lines {
         // A second, independent bound at the boundary the webview reads:
         // the file's own cap is 256 KiB per line and this channel is a
@@ -631,6 +643,17 @@ pub enum KickoffOutcome {
         /// True when `docs/` already holds banked work, so the prompt is
         /// the RESUME kickoff rather than the stage-0 one.
         resuming: bool,
+        /// WHAT WAS ALREADY BANKED HERE, on the ONE path that never
+        /// resolves a CLI (T-070 criterion 3).
+        ///
+        /// `sessions::genesis_record` reads `.nputer/sessions.json` with
+        /// no CLI anywhere in the call, so carrying it here costs
+        /// nothing and is available exactly where the CLI-gated commands
+        /// have already given up. `None` means no interview was ever
+        /// running in this folder (or it was explicitly abandoned) — the
+        /// same "losable by charter" answer the registry gives
+        /// everywhere else, and never an error.
+        record: Option<sessions::GenesisRecord>,
     },
     NoProject,
     AlreadyPlanned { path: String },
@@ -645,6 +668,14 @@ pub enum KickoffOutcome {
 /// It MATERIALIZES the kit, which is the difference between a copyable
 /// block and a working one: `assemble_kickoff` names a kit root, and
 /// nothing else in the hand-driven path would ever write it.
+///
+/// AND IT IS THE UNIVERSAL FALLBACK BECAUSE IT RESOLVES NO CLI — which
+/// is exactly why T-070 hangs the `GenesisRecord` off it. `fresh_genesis`
+/// resolves one before it looks at the registry at all, and `start` and
+/// `resume` resolve one before they can say anything past the recorded
+/// id; a user whose CLI has been uninstalled or renamed reaches this
+/// command and nothing else. The record read adds no process, no path
+/// lookup and no second source of truth.
 pub fn kickoff(watch: &WatchState) -> KickoffOutcome {
     let Some(project_dir) = watch.project_dir() else {
         return KickoffOutcome::NoProject;
@@ -664,6 +695,9 @@ pub fn kickoff(watch: &WatchState) -> KickoffOutcome {
         kit_root: kit::kit_root(&project_dir).display().to_string(),
         method_version: kit::METHOD_SNAPSHOT_VERSION.to_string(),
         resuming: kit::has_banked_docs(&project_dir),
+        // THE ONE PLACE the fact lives — the same reader `resume_genesis`
+        // uses, and no second copy (T-026-s3, held).
+        record: sessions::genesis_record(&project_dir),
     }
 }
 
@@ -881,6 +915,358 @@ mod tests {
 
     fn silent_agent(cfg: RunnerConfig) -> AgentState {
         AgentState::new(cfg, |_| {})
+    }
+
+    // ---- the arrival-path tripwire's three helpers (T-070 rebuild) -----
+
+    /// A function's body, brace-matched from its signature, with `//`
+    /// comments stripped.
+    ///
+    /// The signature must name EXACTLY ONE function in the file: a
+    /// renamed or duplicated hop must red here rather than quietly pick
+    /// the wrong body, which is the failure mode a source assertion is
+    /// most likely to have.
+    fn body_of(source: &str, signature: &str) -> String {
+        let hits = source.matches(signature).count();
+        assert_eq!(hits, 1, "'{signature}' names {hits} functions, expected exactly 1");
+        let start = source.find(signature).expect("signature");
+        let open = start + source[start..].find('{').expect("an opening brace");
+        let mut depth = 0usize;
+        let mut end = 0usize;
+        for (idx, ch) in source[open..].char_indices() {
+            match ch {
+                '{' => depth += 1,
+                '}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = open + idx;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        assert!(end > open, "unbalanced braces after '{signature}'");
+        // Comments are PROSE. A doc note naming `fs::read` must not red a
+        // body about what the CODE does — and stripping them is also what
+        // keeps this pin from being a grep for a word.
+        source[open + 1..end]
+            .lines()
+            .map(|line| match line.find("//") {
+                Some(at) => &line[..at],
+                None => line,
+            })
+            .collect::<Vec<&str>>()
+            .join("\n")
+    }
+
+    /// Every name that is CALLED in `body`, sorted and deduped.
+    ///
+    /// A call is an identifier path immediately in front of a `(`, which
+    /// also catches tuple-struct patterns (`Some(`, `Ok(`) — deliberately,
+    /// because the allowlist is meant to be the body's whole vocabulary
+    /// rather than a curated subset of it.
+    fn callees(body: &str) -> Vec<String> {
+        let bytes = body.as_bytes();
+        let mut found: Vec<String> = Vec::new();
+        for (idx, ch) in body.char_indices() {
+            if ch != '(' {
+                continue;
+            }
+            let mut end = idx;
+            while end > 0 && bytes[end - 1].is_ascii_whitespace() {
+                end -= 1;
+            }
+            let mut start = end;
+            while start > 0 {
+                let byte = bytes[start - 1];
+                if byte.is_ascii_alphanumeric() || byte == b'_' || byte == b':' {
+                    start -= 1;
+                } else {
+                    break;
+                }
+            }
+            let name = body[start..end].trim_matches(':');
+            // Keywords take a parenthesised expression without calling
+            // anything.
+            if name.is_empty()
+                || matches!(name, "if" | "while" | "for" | "match" | "return" | "in" | "let")
+            {
+                continue;
+            }
+            found.push(name.to_string());
+        }
+        found.sort();
+        found.dedup();
+        found
+    }
+
+    /// A file's PRODUCTION half: everything in front of its unit-test
+    /// module. A test may call the unbounded reader, and may quote the
+    /// name of anything it pins; production may do neither.
+    ///
+    /// The marker is the whole `mod tests {` line rather than the
+    /// attribute alone, because `lib.rs` carries a `#[cfg(test)] mod
+    /// acl_pin;` at line 15 and cutting there would hide the file.
+    fn production_half(source: &str) -> &str {
+        let marker = "\n#[cfg(test)]\nmod tests {";
+        match source.find(marker) {
+            Some(at) => &source[..at],
+            None => source,
+        }
+    }
+
+    /// Every `.rs` file under this crate's `src/`, production half only,
+    /// `//` comments stripped, as `(path-from-src, text)`.
+    ///
+    /// A DIRECTORY WALK rather than `include_str!`, and the difference is
+    /// stated rather than glossed: `include_str!` binds the text to what
+    /// was COMPILED, which is what the three named hops above want. This
+    /// arm is a claim about files nobody has written yet, so it cannot
+    /// name them, and it reads the tree cargo just compiled from
+    /// `CARGO_MANIFEST_DIR` instead of the process's working directory.
+    fn production_sources() -> Vec<(String, String)> {
+        fn walk(dir: &std::path::Path, root: &std::path::Path, out: &mut Vec<(String, String)>) {
+            let mut entries: Vec<std::path::PathBuf> = std::fs::read_dir(dir)
+                .unwrap_or_else(|err| panic!("read {}: {err}", dir.display()))
+                .filter_map(Result::ok)
+                .map(|entry| entry.path())
+                .collect();
+            entries.sort();
+            for path in entries {
+                if path.is_dir() {
+                    walk(&path, root, out);
+                } else if path.extension().is_some_and(|ext| ext == "rs") {
+                    let text = std::fs::read_to_string(&path).expect("read a source file");
+                    let stripped = production_half(&text)
+                        .lines()
+                        .map(|line| match line.find("//") {
+                            Some(at) => &line[..at],
+                            None => line,
+                        })
+                        .collect::<Vec<&str>>()
+                        .join("\n");
+                    let name = path
+                        .strip_prefix(root)
+                        .expect("under src/")
+                        .to_string_lossy()
+                        .replace('\\', "/");
+                    out.push((name, stripped));
+                }
+            }
+        }
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut out = Vec::new();
+        walk(&root, &root, &mut out);
+        assert!(out.len() >= 5, "the source walk found {} files", out.len());
+        out
+    }
+
+    /// **THE ARRIVAL READ IS BOUND TO THE BOUNDED READER — STRUCTURALLY,
+    /// BECAUSE NOTHING BEHAVIOURAL CAN DO IT (T-070 criterion 2, and the
+    /// whole of its first verdict's BLOCKING 1).**
+    ///
+    /// `the_tail_read_costs_the_budget_and_not_the_file` measures
+    /// `tail_lines` through a `Counting` reader, and that measurement is
+    /// airtight for what it covers: `tail_lines` is generic over
+    /// `R: Read + Seek` and is handed no path, so `src` is its ONLY
+    /// channel to any byte on disk. What it cannot see is whether the
+    /// arrival read goes anywhere near it. Two whole-file mutants — one
+    /// in `read_transcript_tail`, one in `transcript` — survived the
+    /// entire Rust suite at 356/0/3, because neither passes a byte
+    /// through the injected reader.
+    ///
+    /// So this body pins the SHAPE the measurement needs in order to mean
+    /// anything: from the IPC command down to the generic walk, each hop
+    /// reaches the next one and reaches the file NO OTHER WAY. It is an
+    /// allowlist of CALLEES per hop rather than a search for a forbidden
+    /// word, and that is the difference that matters — a denylist is
+    /// bypassed by a new helper with an innocent name, while a new callee
+    /// of any name fails this list by name.
+    ///
+    /// WHY IT SURVIVES A REWRITE OF THE CALLER: it names no line, no
+    /// order, no argument count and no body shape. Reorder the arrival
+    /// path, rename its locals, split its loop — as long as it still
+    /// reaches the file only through the bounded reader, its callee set is
+    /// unchanged and this stays green. It FAILS CLOSED, which is the point:
+    /// the one edit it cannot tolerate is a new way out of the path, and
+    /// that is exactly the edit that needs a human to look.
+    #[test]
+    fn the_only_production_path_to_the_transcript_is_the_bounded_one() {
+        // THE PRODUCTION HALVES, and the cut is load-bearing: this body
+        // lives in one of the files it reads, so every signature it looks
+        // for is also a string literal a few lines below. Reading the
+        // production half is what keeps the pin from finding itself.
+        let lib = production_half(include_str!("../lib.rs"));
+        let module = production_half(include_str!("mod.rs"));
+        let sessions = production_half(include_str!("sessions.rs"));
+        assert!(lib.contains("fn genesis_transcript("), "lib.rs was cut too short");
+        assert!(module.contains("pub fn transcript("), "mod.rs was cut too short");
+        assert!(sessions.contains("fn tail_lines"), "sessions.rs was cut too short");
+
+        // HOP 0 — the IPC command. It delegates and does nothing else.
+        assert_eq!(
+            callees(&body_of(lib, "fn genesis_transcript(")),
+            vec!["agent::transcript"],
+            "the rehydration command reaches the file through something new"
+        );
+
+        // HOP 1 — the arrival read. Its whole vocabulary, and the bounded
+        // reader is in it.
+        let arrival = body_of(module, "pub fn transcript(");
+        assert!(arrival.len() > 100, "the arrival body did not extract: {arrival:?}");
+        assert_eq!(
+            callees(&arrival),
+            vec![
+                "Some",
+                "Vec::new",
+                "project_dir",
+                "sessions::read_transcript_tail",
+                "sessions::truncate_utf8",
+            ],
+            "agent::transcript gained or lost a callee - if it is a new way to reach \
+             transcript.jsonl, that is the T-070 defect; if it is not, add it here \
+             deliberately"
+        );
+        // …and it asks for the BUDGET, not for a multiple of it. A caller
+        // that passes usize::MAX gets a ceiling that saturates and a walk
+        // with nothing to stop it, and no callee moves.
+        let args = {
+            let at = arrival.find("read_transcript_tail(").expect("the call");
+            let rest = &arrival[at..];
+            let open = rest.find('(').expect("open");
+            let close = rest.find(')').expect("close");
+            rest[open + 1..close].to_string()
+        };
+        assert_eq!(
+            args.split(',').nth(1).map(str::trim),
+            Some("MAX_REHYDRATED_LINES"),
+            "the arrival read's budget argument moved: {args}"
+        );
+
+        // HOP 2 — the reader. It opens the file, hands it to the generic
+        // walk, and parses what comes back.
+        let reader = body_of(sessions, "pub fn read_transcript_tail(");
+        assert_eq!(
+            callees(&reader),
+            vec![
+                "Ok",
+                "Vec::new",
+                "collect",
+                "filter_map",
+                "fs::File::open",
+                "iter",
+                "ok",
+                "serde_json::from_str",
+                "tail_lines",
+                "transcript_path",
+            ],
+            "read_transcript_tail gained or lost a callee - a whole-file read here is \
+             invisible to the Counting pin, because nothing reaches the injected reader"
+        );
+
+        // HOP 3 — the walk itself. It is measured behaviourally elsewhere;
+        // what is pinned here is the SIGNATURE that makes the measurement
+        // total, plus the absence of any second channel to a file.
+        assert_eq!(
+            sessions
+                .matches("fn tail_lines<R: Read + Seek>(src: &mut R, max_lines: usize)")
+                .count(),
+            1,
+            "tail_lines' signature moved - Counting only measures what passes through src, \
+             so a tail_lines that can open a path of its own is unmeasured"
+        );
+        // THE LEAVES of hops 1 and 2, so the walk above cannot be dodged
+        // by hiding the read one call further down an allowlisted name —
+        // `truncate_utf8` is the sharpest of these, because a whole-file
+        // read planted THERE leaves every callee set above byte-identical
+        // and never touches the counted reader either.
+        //
+        // The list is the three ways to OPEN a file, and deliberately not
+        // a list of ways to read one: `read_to_end` on `src` inside
+        // `tail_lines` is the injected reader being used, which is
+        // measured rather than forbidden, and pinning it here would take
+        // the work away from the body that should be doing it.
+        for leaf in [
+            body_of(sessions, "fn tail_lines<R: Read + Seek>("),
+            body_of(sessions, "fn transcript_path("),
+            body_of(sessions, "pub fn truncate_utf8("),
+        ] {
+            for forbidden in ["fs::", "File::", "include_str"] {
+                assert!(
+                    !leaf.contains(forbidden),
+                    "an arrival-path leaf names '{forbidden}': {leaf}"
+                );
+            }
+        }
+
+        // AND THE UNBOUNDED READER HAS NO PRODUCTION CALLER AT ALL. It
+        // stays `pub` as the tests' assertion channel (its own doc comment
+        // argues that); putting it back on a production path is the defect
+        // this card closed, so the count is pinned rather than trusted.
+        assert_eq!(
+            sessions.matches("read_transcript(").count(),
+            1,
+            "read_transcript is called in sessions.rs production code"
+        );
+        assert!(sessions.contains("pub fn read_transcript("));
+        for (name, source) in [("agent/mod.rs", module), ("lib.rs", lib)] {
+            assert_eq!(
+                source.matches("read_transcript(").count(),
+                0,
+                "{name} calls the WHOLE-FILE reader in production"
+            );
+        }
+
+        // THE CONTAINMENT ARM, and it is what makes the four hops above a
+        // claim about the PRODUCT rather than about three files. Every
+        // check so far pins the path from `genesis_transcript` down; none
+        // of them says a word about a SECOND path opened somewhere else,
+        // and the transcript cannot be read without first being named.
+        // `agent/sessions.rs` is the only production file allowed to name
+        // it, in any of its three spellings.
+        let sources = production_sources();
+        let owner = sources
+            .iter()
+            .find(|(name, _)| name == "agent/sessions.rs")
+            .map(|(_, text)| text.as_str())
+            .unwrap_or_else(|| {
+                panic!(
+                    "the walk missed the module it is about: {:?}",
+                    sources.iter().map(|(name, _)| name).collect::<Vec<&String>>()
+                )
+            });
+        for (name, text) in &sources {
+            if name == "agent/sessions.rs" {
+                continue;
+            }
+            for spelling in ["transcript_path", "TRANSCRIPT_REL", "genesis/transcript.jsonl"] {
+                assert!(
+                    !text.contains(spelling),
+                    "{name} names the transcript file ('{spelling}') in production. Only \
+                     agent/sessions.rs may, because a reader that can name the file can \
+                     read all of it, and no pin above would see that read"
+                );
+            }
+        }
+
+        // …AND INSIDE THE ONE MODULE THAT MAY NAME IT, the namings are
+        // counted. The arm above sends a would-be second reader here; this
+        // one meets it. Comments are stripped, so this is a census of the
+        // CODE and prose about the file is free.
+        for (spelling, expected, who) in [
+            ("transcript_path(", 4, "its declaration plus append_transcript, read_transcript, read_transcript_tail"),
+            ("TRANSCRIPT_REL", 2, "its declaration plus transcript_path"),
+            ("genesis/transcript.jsonl", 1, "the TRANSCRIPT_REL declaration"),
+        ] {
+            assert_eq!(
+                owner.matches(spelling).count(),
+                expected,
+                "agent/sessions.rs names the transcript as '{spelling}' a different number \
+                 of times. Expected {expected}: {who}. A NEW one is a new way to reach the \
+                 file, and every pin above is blind to it"
+            );
+        }
     }
 
     #[test]
