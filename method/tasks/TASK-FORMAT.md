@@ -95,6 +95,21 @@ not carry both meanings in one directory.
 ## Lifecycle rules
 
 - Fields lock at dispatch (status: building); unlock on rejected/planned.
+- **THE DISPATCH STAMP HAS AN OWNER AND AN ORDER.** The ARCHITECT
+  (orchestrator) writes `status: building`, on the INTEGRATION BRANCH,
+  BEFORE the lane's branch is cut — the same single-writer rule that
+  governs every other placement field, applied to the field that says
+  the placement is now fixed. The order is not a preference: a lane cut
+  afterwards inherits the stamp in its own base commit and never touches
+  that line, so the merge has exactly one writer for it. A stamp written
+  after the cut, by either side, makes one line the property of two
+  branches and every merge resolves it by hand.
+- **WHAT ITS ABSENCE MEANS — nothing about the work.** A card at
+  `status: planned` whose lane exists means the stamp was not written,
+  not that the task is undispatched. The authority on what is being
+  built is the repository's own lane list (lane-protocol.md rule 7); the
+  stamp is how the BOARD learns it. Read a missing stamp as a missing
+  stamp, and re-stamp forward rather than reconstructing history.
 - A rejected task goes to a FRESH executor (never the author session, which
   would defend its work) — unless a human explicitly overrides.
 - Two rejections → stop; open a room, escalate to the human.

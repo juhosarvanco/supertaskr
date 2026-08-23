@@ -57,10 +57,10 @@ docs/
 ## The lifecycle
 
 1. `/plan` interview → docs banked incrementally as it runs (roles/planner.md, interview/plan-interview.md) → decomposition stage turns the backbone into exact task files (interview/decomposition.md)
-2. Orchestrator (fresh session, any time) picks the highest-priority unblocked task
-3. Executor (fresh or named session) builds it in a git worktree
+2. Orchestrator (fresh session, any time) picks the highest-priority unblocked task, stamps it `building` on the integration branch, cuts the lane, and hands over a brief assembled to the contract in roles/executor.md
+3. Executor (fresh or named session) builds it in a git worktree (lane-protocol.md)
 4. Verifier (independent by default) red-teams the diff, writes a verdict
-5. Integrator merges, runs the full suite, performs the checkpoint ritual
+5. Integrator merges `--no-ff`, runs the full suite, writes the checkpoint as a SEPARATE commit, removes the worktree
 6. Docs updated → board fills in → repeat
 
 Ceremony scales with the task's size tier — see tasks/TASK-FORMAT.md.
@@ -69,3 +69,8 @@ Ceremony scales with the task's size tier — see tasks/TASK-FORMAT.md.
 
 Open any agent CLI, paste the relevant role prompt from roles/, point it at
 the files it needs. That's the whole protocol. The CLI only automates this.
+
+The one artifact that actually moves work is the DISPATCH BRIEF, and it
+has a written contract — the normative table in roles/executor.md. A
+brief assembled by hand and a brief assembled by a program are the same
+thing: the layers above only save the typing.
