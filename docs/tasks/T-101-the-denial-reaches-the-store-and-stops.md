@@ -1075,3 +1075,329 @@ blank `toolName` through; unreachable today because the Rust boundary
 normalizes it) and `T-101-s3` (`docs-gate.mjs` answers a non-empty but
 non-root-relative path list "not owed" at exit 0 — `T-084-s6`'s shape,
 one level over; I hit it myself on my first invocation).
+
+### 2026-08-24 — APPROVED (claude-opus-5 @T-101-verify, review: same-model, second verdict)
+
+**All three blocking findings are cleared, my two survivors are dead, and
+the one defect that ships is named in three places with its fix, its
+fence and its pin.** I re-ran every claim rather than reading the table:
+ten of my own mutants against the new rule, both pass-1 survivors, the
+carried-forward set, and my P5/P7 probes. **Every row of the rebuild's
+drill table reproduces at my refs, and so do the pristine hashes.** One
+correction is recorded below and it is not a rejection.
+
+**Boundary, again.** I read to line 110 and stopped; the criteria block
+is **byte-identical** to my first pass (`diff` of lines 69–110 across
+`0e9c045..a86703d`: no output), so my pass-1 reading of them stands
+unrevised. I derived the pass-2 mutant set from those criteria and the
+DIFF, wrote it to scratch, ran it, and read `## Implementation notes`
+only afterwards. N-J and the citation finding below both came out of that
+list. My first verdict is byte-unchanged — `sha256` of everything from
+`## Verdicts` down at `0e6889b` and at `a86703d` is
+`44f8e7de…824f7e25` at both.
+
+**Ranges re-derived at my own tip.** Main moved twice more while I worked
+(`1aa7137` → `d673039`/`7e82667` → **`2ea1d27`**, T-097 and T-085 both
+merged). Pre-merge, so the `merge-tree` form:
+
+    TREE=$(git merge-tree --write-tree 2ea1d27 HEAD)   exit 0
+    git diff --name-only 2ea1d27 <TREE>                -> 7   PRESCRIBED
+    git diff --name-only 2ea1d27...HEAD  (THREE dots)  -> 7   agrees
+    git diff --name-only 2ea1d27..HEAD   (TWO dots)    -> 75  FORBIDDEN
+
+---
+
+### THE RULING — shipping the named `exitNonZero` defect is CORRECT, and the distinction offered is real
+
+**I rule for the executor, and the distinction is worth stating cleanly
+because it will be cited.** The line is not "was the fence free" — it was
+free, and that is not the test. The line is:
+
+> **Widen when the fence makes THIS CARD'S OWN CRITERION unbuildable.
+> Route when the fence makes a NEIGHBOURING DEFECT unfixable.**
+
+T-013's two widenings were ruled right on the first branch: its criterion
+needed a subprocess, a subprocess needs a Tauri command, and registering
+one edits `lib.rs` — the criterion could not exist inside the fence.
+Here criterion 7's literal antecedent is *"the denial notice and the
+terminal `toolDenied` error"*, and that is **fully built in fence and now
+pinned by two mutants no other body kills**. Nothing this card was asked
+for is missing. The `exitNonZero` double report is a defect on a
+neighbouring surface that this card's renderer made *visible* — which
+obliges disclosure and routing, not annexation of another component.
+
+**I checked the three refusals rather than accepting them**, because the
+ruling collapses if any in-fence fix were honest:
+
+1. **Text-matching the tail** would copy a `runner.rs` `format!` string
+   into `interview-model.ts` — T-057's rule, and `FailureBlock`'s own
+   header says it at line 332 (*"NOTHING HERE PARSES THE ERROR TEXT"*).
+   Real.
+2. **The ring is genuinely bounded** — `MAX_STDERR_RING = 64 * 1024`,
+   `Ring::new(MAX_STDERR_RING)` at `runner.rs:1779`. A prefix-keyed
+   renderer really can un-suppress at random on a chatty CLI. Real.
+3. **The empty-`message` proxy is genuinely ambiguous**: the unannounced
+   replay emits `String::new()`, but an in-band `permission_denied` line
+   can also arrive with no message — `runner.rs`'s own fixture
+   `StreamLine::Denial { tool_name: None, tool_use_id: None, message:
+   String::new() }` is exactly that. Real.
+
+So there was no honest in-fence fix to decline, and the correct fix is a
+**deletion in another component that no criterion of this card requires**.
+Widening to perform it would have dragged a Rust behaviour change and a
+cargo gate into a card whose `touches:` is `[app-interview]` and which
+correctly owes no cargo.
+
+**And this is not the same defect I rejected.** I rejected because the
+card **denied the defect existed** — `T-101-s1` asserted the two surfaces
+were disjoint and that a double report needed a revert. My own "To clear
+this" said the render-side key was the wrong answer and that it *"most
+likely routes to `app-agent`"*. That is precisely what was done. Shipping
+a defect you have reproduced, mechanised, routed with its fix and named
+in the code is a different act from shipping one you have argued away.
+
+**THE LIMIT, so the precedent is not over-read.** Routing instead of
+widening is right only when all three hold, as they do here: (a) no
+criterion of the card is left unbuilt; (b) every in-fence alternative is
+forbidden by a rule already written down, not merely unattractive; and
+(c) the gap is disclosed **in the code** and in a routed finding carrying
+the mechanism, the fix, the fence and the pin. Absent any one of those,
+routing is evasion.
+
+---
+
+### CORRECTION — the `executor.md` quotation does not exist
+
+The fence argument's third ground quotes `method/roles/executor.md` as
+*"unambiguous about that case"*:
+
+> *"A criterion that cannot be built inside the fence is NOT built.
+> Record it, route it as a suggestion naming the fence it needs, and
+> build the rest. Widening the fence from inside the lane is the one
+> repair this role may never make."*
+
+**`method/roles/executor.md` is nineteen lines long and contains neither
+"fence" nor "widen".** Measured:
+
+    grep -in "widen|fence" method/roles/executor.md   -> exit 1, no output
+    wc -l method/roles/executor.md                    -> 19
+    git grep -l "may never make"                      -> this card, and nothing else
+
+The sentence exists nowhere in the tree except in the paragraph quoting
+it. **The conclusion survives, because the substance is written down
+twice — but neither says this.** In the lane, `executor.md` step 5 carries
+it in different words: *"anything you noticed but didn't do — file it as
+a status: suggested task … suggestions never expand your scope."* On
+main, `method/lane-protocol.md` rule 5 carries it almost verbatim:
+*"…record it, route it, and build the part that fits. A fence is not
+widened from inside the lane it fences."*
+
+**Why this is a correction and not a second rejection**, weighed rather
+than waved through. `method/lane-protocol.md` **did not exist in this
+lane** — it landed with T-089's merge, after the cut at `a15b78e`
+(`git cat-file -e a15b78e:method/lane-protocol.md` fails; at `main` it
+succeeds). The executor could not read the file carrying the verbatim
+rule, reached for the one it had, and put quotation marks around a
+paraphrase. The defect is quotation integrity, not an invented rule: the
+argument rests on real, written authority in both trees, and the ruling
+above is unchanged by it.
+
+**It still has to be fixed, because this is the failure mode this project
+has already spent cards on.** CONVENTIONS' own negative-control bullet
+records a rule that went unwritten *"while everyone believes it exists"*
+with *"a grep of both … zero hits three triages later"*, and T-105 is a
+whole card for the sweep. A card is a code input and later sessions cite
+cards. Filed as **`T-101-s4`**: re-cite to `lane-protocol.md` rule 5,
+which will exist in the tree the moment this branch merges. **Had the
+conclusion depended on the invented wording rather than merely being
+mis-attributed, this would have been a rejection.**
+
+---
+
+### BLOCKING 2 — cleared, and the two arms genuinely discriminate
+
+`visibleDenials(denials, error)` keyed on `error.denials` is the right
+key: it is the typed array `FailureBlock` actually restates, so
+suppression tracks what is on screen rather than what kind of error it
+was. My P5 re-run against the fix, same emit as the rejection:
+
+    notice present: true     rows: 1
+    notice text:    [refused: a tool — the CLI gave no reason]
+    notice does not repeat "Bash"; the failure block still names it
+
+**The arms are independent, proven by WHICH LINE reds** — this is the
+check I was asked to make and it passes:
+
+| my mutant | reds at | which arm |
+|---|---|---|
+| N-A the rejected whole-notice gate | `:1057` | arm 1 |
+| N-C also drop the nameless | `:1057` | arm 1 |
+| **N-D keep ONLY the nameless** | **`:1090`** | **arm 2** |
+
+Different lines, different assertions. A rule keyed on namelessness
+passes arm 1 and dies on arm 2 — arm 2 is not arm 1 restated. Five more
+of mine red as they must: N-B no suppression (861/863), N-E keyed on
+`restated.length` (862/863), N-F membership inverted (861/863), N-G
+widened to any error (860/863), N-H/N-I on `denialToolName` (862/863
+each, degenerate body — the `"   "` row earns its place exactly as
+claimed: the trim-less mutant N-I reds, which `""` would not have
+caught).
+
+### BLOCKING 3 — cleared, and the new body is not a duplicate
+
+Both pass-1 survivors are dead, each redding the identical-pair body
+**alone**:
+
+| | pass 1 | pass 2 |
+|---|---|---|
+| V7 dedupe by `message` | 861/861 exit 0 | **862/863 exit 1** |
+| V8 dedupe by `toolName` AND `message` | 861/861 exit 0 | **862/863 exit 1** |
+
+**The M1 correction is right and the complement still holds.** M1 now
+reds MEASURED TURN **and** the identical-pair body (861/863) — the first
+build's "MEASURED TURN only" is stale, as stated. M3 still reds the
+liveness body alone (862/863) and M1 still does not touch it, so the
+complement is intact; and because V7/V8 red the pair body and nothing
+else, the pair body kills mutants no neighbour kills. Not shape six.
+
+### The disclosed unpoisonable assertion — disclosure IS sufficient
+
+`expect(rows[1].textContent).toBe(rows[0].textContent)` cannot be redded
+by any producer mutant, and I confirmed the mechanism rather than
+assuming it (probe P8): `denialLine` receives only the denial object and
+prints name and message, so the two rows move together under every
+one-sided mutation, and the ids that differ are never printed. It is a
+fixture tripwire.
+
+That is the honest treatment and it meets the rule, which requires
+naming — *"a body that cannot red is the finding"* — and the body does
+not lean on it: `toHaveLength(2)` and `ids()` each red under V7, V8 and
+M1. T-085's precedent applies as offered. **Sufficient.**
+
+### The merge-forecast technique — SOUND, and I reproduced it
+
+I ran it myself rather than judging it on description: built the tree,
+wrapped it in a throwaway `commit-tree` with both parents, checked it out
+detached with its own `CARGO_TARGET_DIR`, and ran the gate there.
+
+    committed:   645482 bytes · 126 files · 1120 symbols · 1703 edges
+    fresh index: 648862 bytes · 126 files · 1126 symbols · 1712 edges
+    files +0 -0 ~3        edges +12 -3        exit 1
+
+**Identical to the executor's figures**, at a DIFFERENT main
+(`2ea1d27`, two merges later than theirs). And at the lane ref the same
+gate reads committed 1023/1550 against fresh 1029/1559 — **delta +6/+9 at
+both refs, absolutes 100 apart.** That is the claim, measured twice
+independently, and it supersedes the first build's +4/+3 correctly (the
+rebuild adds `denialToolName` and `visibleDenials`: +2 symbols on +4).
+
+The hygiene holds too: **73 refs before and 73 after**, the throwaway
+commit contained by no branch, the worktree removed and the scratch
+target dir deleted. It moves nothing and it measures instead of
+extrapolating. **Endorsed — it is better than an absolute forecast,
+because the delta is the invariant and the endpoints are not.**
+
+### The bind-probe finding — CONFIRMED, and stronger than filed
+
+Reproduced from first principles on port 14899: opened a listener with
+`SO_REUSEADDR`, closed the SERVER side first to leave `TIME_WAIT` on the
+local port, then measured.
+
+    lsof -nP -iTCP:14899 -sTCP:LISTEN  -> exit 1, 0 rows
+    lsof -nP -iTCP:14899               -> exit 1, 0 rows
+    netstat -an -p tcp                 -> 2 TIME_WAIT rows on 14899
+    bind() without SO_REUSEADDR        -> REFUSED, EADDRINUSE   ("busy")
+    bind() with    SO_REUSEADDR        -> OK                    ("free")
+
+So the bind probe calls the port BUSY while a real listener binds it
+fine, because node and vite set `SO_REUSEADDR` by default on POSIX. The
+conclusion — **`lsof … -sTCP:LISTEN` is the authority and the bind probe
+is only the confirming half** — is correct and every lane using the bind
+probe as primary should invert that order.
+
+**One sharpening the finding does not have.** The *unfiltered* `lsof` is
+equally blind: it returned zero rows too. So the discrepancy is not the
+`-sTCP:LISTEN` filter hiding a state — `TIME_WAIT` sockets have no owning
+process, so `lsof` cannot see them at all, and `netstat`/`ss` is the only
+tool that can. Dropping the filter to "be safer" buys nothing.
+
+### Everything else re-measured
+
+- **Stylesheet still byte-identical.** `index-CwYF5FQb.css`, 43 950
+  bytes, sha256 `71ed851e…b200bb` at this ref — the same hash I computed
+  from a base-source build in the first verdict. The rebuild minted no
+  utility either. JS moved to `index-DlNTlSlJ.js` (504.44 kB).
+- **`T-101-s2`'s split is honest.** The first half really is closed in
+  code (N-H and N-I both red), and the message half really is a different
+  decision — the identical `.trim()` sits on `failureDetail` one function
+  up, so one rule for both is the right close.
+- **CONTROL 582 → 584 is mine**, not the fix: my own verdict commit added
+  `s2` and `s3`. The rebuild's file churn nets zero. Confirmed.
+- **"Five bodies" → four** is right: 857 + 4 + 2 = **863**, and 863/863 is
+  what I measure.
+- **The craft note is closed.** N-G now reds as
+  `AssertionError: a stall says nothing about refusals: expected null not
+  to be null` at `:1007`, not as a `TypeError`.
+
+### One survivor of my own, disclosed and filed
+
+**N-J survives at 863/863, exit 0**: point `visibleDenials` at
+`denial.toolName` while `denialLine` keeps printing `denialToolName(…)`
+— the exact two-owner split that function's doc comment exists to
+prevent. No fixture has a name needing normalisation that also appears in
+`error.denials`, so the suite cannot see the split. It is unobservable in
+production for the same reason the `??` hole was (`denial_field` trims on
+the Rust side, and `denial_names` clones an already-trimmed name), and it
+is not a criterion violation — with one owner the spelling is identical
+by construction. But the executor closed the `??` hole on the principle
+that *"nothing on this side recorded the dependency"*, and the keying
+half of that same property is recorded only in prose. Filed as
+**`T-101-s5`**, non-blocking.
+
+### Suites, gates and exits — every `$?` read unpiped
+
+| command | where | result | exit |
+|---|---|---|---|
+| `npm run build` | lib/parser | dist emitted | **0** |
+| `npm run build` | app | css 43.95 kB, sha `71ed851e…` | **0** |
+| `npm test` | app | **863 / 863** over 43 files | **0** |
+| `npx tsc --noEmit` · `tsc -p tsconfig.test.json` | app | both clean | **0** / **0** |
+| `npx vitest run` | lib/parser | **263 / 263** over 12 | **0** |
+| `npm test` (`NPUTER_E2E_PORT=14561`) | tools/e2e | **129 / 129**, 34.2 s | **0** |
+| `npm run typecheck` | tools/e2e | clean | **0** |
+| `npm run lint:tokens` | tools/e2e | TOKEN **124** / CONTROL **584** | **0** |
+| `node tools/e2e/scripts/docs-gate.mjs <4 paths>` | repo root | **FIRES**, 3 suites owed | **1** |
+| `NPUTER_BOOT_PORT=14562 npm run boot:check` | tools/e2e | both `[nputer]` lines | **0** |
+| `index --check --root ../..` | app/src-tauri | **REAL** red, 1023→1029 / 1550→1559 | **1** |
+| same, on the merge forecast | detached, own target dir | **REAL** red, 1120→1126 / 1703→1712 | **1** |
+
+No cargo suite owed — still no Rust in this diff. Graph red is real at
+both refs (count lines present, `files +0 -0 ~3`), no `graph.json`
+committed. Boot lines verbatim: `[nputer] project folder:
+/Users/ujju/Projects/nputer-T-101` and `[nputer] window "main" created`.
+
+**Drill hygiene.** 19 mutants this pass, each one side only, each read
+back with `git diff --unified=0` before its suite, applied by a Python
+driver with `encoding='utf-8'` and a match-count-of-exactly-1 guard.
+Restoration proved three ways after every run and at the end: empty
+`git diff`, sha256 against the recorded pristine triple, and agreement
+with the rebuild's own published hashes (`interview-turns.tsx`
+`28c6c5f8…1526d699` — identical). **Port 1420 read with `lsof -nP
+-iTCP:1420 -sTCP:LISTEN` only**, before and after every stage: `node`
+pid **82549** on `[::1]:1420`, unchanged all session. No real model call;
+the capture is untouched at `273a3d33…`.
+
+### @human — the one look still stands, and it is now safe to take
+
+My first verdict's guidance is unchanged and I will not restate it in
+full: judge the register on a turn that **completes** carrying two `Bash`
+refusals, and it reads as ALARM if the rows borrow the failure surface's
+colour, outrank the answer, or make a completed turn look unresolved.
+
+**What the rebuild changed for you:** on a turn that dies of a refusal
+you will now see the failure block naming the tool AND — if the CLI
+refused something it could not name — one quiet row beside it. That is
+correct and is the fix; it is not the double report. The genuine double
+report is on the `exitNonZero` path only (one tool name in the notice and
+again inside the error blob) and it is `T-101-s1`'s to close, so do not
+read it as a verdict on the register.
