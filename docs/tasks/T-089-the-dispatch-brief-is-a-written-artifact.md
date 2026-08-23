@@ -11,8 +11,8 @@ touches: [method/, docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by: claude-opus-5 @T-089
-verified_by:
-review:
+verified_by: claude-opus-5 @T-089-verify
+review: same-model
 ---
 
 F-04's T-023: the one artifact that actually moves work — the brief a
@@ -727,3 +727,424 @@ other lanes, unprefixed. Prefix or lose it.
    CONVENTIONS, recorded above, and the reason my own new sentence
    needed the qualifier is that I wrote it from the rule rather than
    from the output.
+
+## Verdicts
+
+### 2026-08-23 — REJECTED (claude-opus-5 @T-089-verify, review: same-model)
+
+**Two blocking defects, both one clause, both a sentence this card's own
+work already disproves elsewhere in the same commit.** Everything else
+re-derived: five of six criteria are met to a high standard, the suites
+are green at `b416efb` at every figure the brief quoted, the merge
+preview is clean, the xargs re-measurement reproduces in all six control
+cells, and the M1/M2/M3 bump drill reproduces including the ordering
+asymmetry. The rejection is narrow and the fix is two edits.
+
+**EXPOSURE DECLARED FIRST, as T-070's verifier did.** `## Implementation
+notes` are inline in this card, so `roles/verifier.md`'s "never the
+executor's reasoning" could not be honoured. I formed and WROTE DOWN my
+reading of the criteria and my whole hand-assembly walk before opening
+line 97 (scratch file, pre-notes, referenced below where the two agree
+and where they do not). A second leak has no card yet and is recorded in
+finding 9: my own dispatch brief relayed the executor's reasoning to me
+directly — `roles/executor.md`'s interim clause bans content addressed to
+the executor alone and says nothing about executor-derived content in the
+VERIFIER's brief. That is a THIRD channel, and `T-089-s2` covers two.
+
+---
+
+## BLOCKING 1 — the criterion-6 evidence brief carries the false figure this commit deletes
+
+Criterion 6 makes the hand-assembled brief a deliverable. Line **316**,
+inside `=== BEGIN ASSEMBLED BRIEF: T-085 ===`, row 8:
+
+> NEVER through `xargs` (BSD `xargs` maps exits 1–125 to 123)
+
+Line **623** of the same file:
+
+> **The 123 in the old sentence and in T-084's checkpoint is GNU's
+> mapping**
+
+and this diff's own CONVENTIONS clause: *"EVERY nonzero utility exit
+collapses to 1"*.
+
+**Re-measured independently at `b416efb`, Darwin 25.6.0, `/usr/bin/xargs`,
+one invocation per code, each exit read from `$?` unpiped** — a probe
+script that announces its own invocation and exits with `$EXITC`:
+
+| utility exit | direct | through `/usr/bin/xargs` |
+|---|---|---|
+| 1 · 2 · 3 · 4 · 5 · 100 · 123 · 125 · 126 · 127 · 255 | 1 · 2 · 3 · 4 · 5 · 100 · 123 · 125 · 126 · 127 · 255 | **1 · 1 · 1 · 1 · 1 · 1 · 1 · 1 · 1 · 1 · 1** |
+
+**123 never appears on this platform.** The brief states, as the reason
+for a NEVER, a mapping that is wrong on the machine the brief was
+assembled on and dispatches lanes to. Row 13 — the correction clause this
+card invented — did not catch it, and the row 8 text is the one part of
+the brief a reader has the least reason to re-derive because it is
+already phrased as a settled prohibition.
+
+Reproduce: `grep -n "1–125 to 123" docs/tasks/T-089-the-dispatch-brief-is-a-written-artifact.md`.
+Line **316** is the brief's own copy — the defect. The other hits are
+this verdict quoting it.
+
+**Why blocking rather than a note.** This brief is the worked example
+F-04's assembler transcribes and every hand-dispatcher copies. Rule 3 of
+the contract this card writes names the hazard in as many words: *"A
+brief nobody contradicts is a brief that gets copied."* Shipping a
+corrected-in-CONVENTIONS falsehood inside the canonical brief is that
+sentence coming true in the commit that wrote it.
+
+**Fix:** in row 8, replace the parenthetical with the platform-named
+truth the same commit puts in CONVENTIONS — on BSD `xargs` an empty list
+never invokes the utility and the pipeline exits 0, and every nonzero
+utility exit collapses to 1; 123 is GNU's. Or drop the justification and
+keep the NEVER, citing the CONVENTIONS bullet.
+
+---
+
+## BLOCKING 2 — the stamp rule's stated reason is a universal the tree falsifies, twice
+
+`method/tasks/TASK-FORMAT.md`, the new lifecycle rule:
+
+> A stamp written after the cut, by either side, makes one line the
+> property of two branches **and every merge resolves it by hand.**
+
+**Measured at `main` = `9a8d523`.** The notes found the two instances and
+got the analysis right; the normative file did not take the correction.
+
+| | T-054 | T-063 |
+|---|---|---|
+| late stamp, written from inside the lane | `5991375` 2026-08-18 04:27 | `3e2318c` 2026-08-18 04:41 |
+| its merge | `f58fc2b` | `827511e` |
+| merge-base `2fc3475` → status | `planned` | `planned` |
+| MAIN at `^1` → status | `planned` | `planned` |
+| LANE at `^2` → status | `building` | `building` |
+| did main change the card between base and merge? | **NO** | **NO** |
+| resolved by hand? | **NO — clean three-way** | **NO — clean three-way** |
+
+    git diff --name-only $(git merge-base f58fc2b^1 f58fc2b^2) f58fc2b^1 -- docs/tasks/T-054-retire-the-interim-graph-rule.md   # empty
+    git diff --name-only $(git merge-base 827511e^1 827511e^2) 827511e^1 -- docs/tasks/T-063-a-startup-that-fails-says-so.md    # empty
+
+The sentence is wrong in both halves. **"by either side"** should be *by
+both sides*: a late stamp written by ONE side — the lane, as here, or
+main alone — is a single writer against an unmoved base and merges
+clean. **"every merge resolves it by hand"** is then falsified by the
+only two instances this repository has. The defensible claim is the one
+the notes reach (*"one line the property of two branches"* — a HAZARD,
+and correction #4 says exactly that) and the one `orchestrator.md` 5b
+already carries, which stops at *"Stamping after the cut makes one line
+the property of two branches."*
+
+Note also that correction #4 quotes its own file short: it says
+TASK-FORMAT states the defensible half, and TASK-FORMAT states that half
+**plus the tail this finding falsifies**.
+
+**Why blocking.** Criterion 3 asks for the stamp's owner and *"the
+measured safe order"*. The ORDER is measured safe — 25 clean
+`Dispatch T-NNN` stamps, newest `c27c197`, re-derived here. The REASON is
+argued and falsified, in a file the kit ships to every project, under a
+card whose own premise section says *"Measured, not argued"*. It is one
+clause.
+
+**Fix:** end the sentence at *"…the property of two branches"*, or make
+the tail conditional — *"and a merge in which BOTH sides wrote it
+resolves by hand"*. Then the two copies stop disagreeing (see finding 2).
+
+---
+
+## The hand-assembly walk — my own, on T-096, before reading the notes
+
+Target: **T-096** (`planned`, F-02, **size S**, `touches: [lib-parser]`),
+read from `main`. Walking the 13 rows literally and recording every place
+*I* had to decide something the table did not:
+
+| row | resolved from its named source? | what I had to decide |
+|---|---|---|
+| 1 Role | partly | the table never says WHICH role it is for. Rows 4 and 11 are executor-only; a verifier brief built from these 13 rows is wrong. "in one line" has no extraction rule (I used the role file's first prose line) |
+| 2 Task | **yes** | — |
+| 3 Read-first | **no** | the column says `adapters/*.md`; that is the KIT TEMPLATE dir, with `<project name>` placeholders, and it holds TWO files (`CLAUDE.md`, `AGENTS.md`) with no selection rule. The real source is the copied-to-root `CLAUDE.md` |
+| 4 The lane | **no** | the column says `lane-protocol.md`; that file says *"Nothing in this file is a project's actual name."* Branch pattern, worktree path and the `git worktree add` command exist only in CONVENTIONS, which the column does not name |
+| 5 The fence | **no** | the two named sources DISAGREE right now: board says **0** building, `git worktree list` says **5** `task/` lanes (T-013/T-064/T-070/T-089 `planned`, T-061 `done` with its worktree still live mid-integration). The precedence rule exists — in CONVENTIONS, unnamed by this row. And disjointness across `[lib-parser]` (slug) vs `[method/, docs/CONVENTIONS.md]` (paths) needs the slug map at `docs/ARCHITECTURE.md:26` + `docs/architecture/components/*.md` `touch_slugs:`, also unnamed |
+| 6 Setup | **no** | the column says "the CONVENTIONS **build section**". The load-bearing new fact — `npm run build` from app/ before `npm test`, worth 12 red bodies — is in the LANE PROTOCOL section |
+| 7 Commands | partly | no scoping rule. All four packages, or only the fenced ones? Row 8 has an explicit DERIVE instruction; row 7 has none |
+| 8 Gates | partly | "standing gate" is not enumerable from CONVENTIONS by any marker — `grep -i gate` returns AUDIT GATE POLICY, GRAPH-CURRENCY GATE, BOOT GATE, DOCS GATE and the token lint. I knew the answer is three; the table does not say how |
+| 9 Disciplines | partly | same class, and overlaps row 10 |
+| 10 Prohibitions | **conflicts with rule 2** | requires live-environment figures (port holders, pids). Rule 2 stamps every figure with *the REF it was measured at* and says a figure is *"a function of a tree"*. A pid is not. My own brief carried "app pid 85379, vite 82549" with no ref of any kind, and rule 3 ("the repository wins") cannot adjudicate a pid |
+| 11 Deliverable | **no, and CONTRADICTS on size S** | see finding 3 |
+| 12 The report | **no — the source is empty** | `executor.md` step 6 is *"Commit… Set status… Stop."* There is no report spec in this role file or in `orchestrator.md`. Row 12's own "if absent" column says *"the work lands and the record does not"* — the row is present and still does not prevent it |
+| 13 Corrections | **yes**, self-sourcing, and honestly so | — |
+
+**The card's own assembled brief confirms this independently, which is
+the strongest form of the finding.** It does not obey its own source
+column on four rows and does not say so: row 3 says *"Per `CLAUDE.md`"*
+(not `adapters/*.md`); row 4 uses CONVENTIONS' spellings and command; row
+6 cites *"(CONVENTIONS, lane bullet)"* by name; row 12 is a bespoke list
+derived from the CARD. The table is transcribable by a session that
+already knows this project. **It is not transcribable off the source
+column, which is what a program has.** Filed as `T-089-s7`, not folded
+into the rejection — criterion 1 asks for a normative table with each
+row's source, and every source the criterion enumerates is present.
+
+Two things the walk found that the card's M-sized target could not:
+
+- **T-096 is size S, and no role can finish a size-S card.** Ceremony
+  table: *"S | executor + tests. No verifier, no separate integrator."*
+  `lane-protocol.md` rule 4: the executor never merges. Rule 6: *"The
+  integrator removes the worktree. The executor never removes its own."*
+  Row 11 names both sources and they contradict. Rule 4's ban pre-existed
+  as *"Never touch main"*; rule 6 is new and closes the last exit.
+  `T-089-s8`.
+- **At `ea7ea0a` there was no legal base at all** under the old letter —
+  main's tip was a merge with no checkpoint on it. The new *"read the
+  reason, not only the sentence"* text is what makes dispatch possible
+  there, and it earns its place. See finding 5 for where it overreaches.
+
+**Dispatchability of the card's own T-085 brief, judged rather than
+accepted.** It passes, and its best moment is that it REFUSES: row 5
+derives `T-061` holding `tools/e2e` and concludes NOT DISPATCHABLE. Rows
+1–7 and 9–13 all resolve to files in the repository. Two exceptions:
+row 8's 123 (BLOCKING 1), and row 7's *"not `--all-targets`, which skips
+doc-tests"*, which appears nowhere in CONVENTIONS — a second, minor
+breach of governing rule 4 by the table's own worked example.
+
+---
+
+## My ruling on the two copies, and on the six rules
+
+**Which copy is authoritative: nothing says, and the very first
+application of rule 4 produced two copies that already differ.** The
+stamp rule lives in `TASK-FORMAT.md` (the field's home) and
+`orchestrator.md` 5b (the role that performs it). Governing rule 4
+*requires* the duplication — *"Nothing in the brief may be the only copy
+of itself"* — but the method has no companion rule for precedence, and
+rule 3 ("the repository wins") is inert when both copies ARE the
+repository. They differ twice at birth: TASK-FORMAT adds the falsified
+*"and every merge resolves it by hand"* (BLOCKING 2), and orchestrator
+says *"cut the lane FROM THAT COMMIT"* where TASK-FORMAT says only
+*"BEFORE the lane's branch is cut"* — not the same constraint, though
+both are merge-safe. **Ruling: TASK-FORMAT is authoritative for the
+FIELD and orchestrator.md for the ACT, and neither file says so.** That
+gap is rule 4's missing half and belongs in `T-089-s7`.
+
+Coherence in the card's favour, since it cuts the other way too:
+orchestrator 5b's *"cut the lane from that commit"* makes the lane's base
+a dispatch-stamp commit — a non-merge, non-checkpoint commit. That is
+legal only because of the CONVENTIONS relaxation this same card writes,
+and `lane-protocol.md` rule 2 already permits it generically. The two
+changes need each other and fit.
+
+**The six rules, each judged falsifiable-or-norm:**
+
+1. *Transcription, not summary* — falsifiable (diff each row against its
+   source). **Falsified today on rows 3/4/6/12 by the card's own brief.**
+2. *Every figure carries its ref* — falsifiable, and the sharpest rule
+   here. Breaks only on row 10's environment figures, which are not
+   functions of a tree.
+3. *A brief is evidence, never authority* — **NOT decoration, and I
+   attacked it hardest.** It does two things nothing else does: it names
+   a PRECEDENCE (repository over brief) and an OBLIGATION (say so in
+   writing). Row 13 is its operational half; the rule is the tie-break
+   the row does not state. Observable difference: a session under it
+   produces a corrections list. This card produced ten, three of which
+   corrected its own dispatch brief. Rule stands.
+4. *Nothing may be the only copy of itself* — falsifiable, and it is the
+   dispatchability test correctly transposed. Incomplete: it mandates
+   redundancy and supplies no precedence for divergent copies (above).
+   Breached twice by the worked example (row 7's `--all-targets` claim;
+   row 8's 123, which is worse than uncopied — it is contradicted).
+5. *A criterion outside the fence is NOT built* — falsifiable by
+   behaviour, and applied to this card's own criterion 5 (see below).
+6. *The verifier-blindness conflict* — explicitly a recorded conflict,
+   not a rule, and correctly so. See finding 9.
+
+**Criterion 1's conditional is satisfied, and NOT quietly resolved.** The
+clause records both sentences verbatim, says *"Both cannot hold"*, and
+routes. Its interim constraint — *"the brief carries nothing addressed to
+the executor alone"* — is a partial ruling on the BRIEF half, but it is
+stated, labelled *"Until it is ruled"*, and is the only interim that
+forecloses none of `T-089-s2`'s four arms. The notes conflict
+(`executor.md` step 5 vs `verifier.md` line 3) is left open, which is
+what the criterion asked.
+
+---
+
+## Findings — not blocking, each concrete
+
+1. **`T-089-s4` duplicates `T-061-s2`.** Same body, same line 145, same
+   mechanism, same fix. Honest — `T-061-s2` was not in this lane's tree
+   at `4d2f03c`. **Reproduced here from a third target**, and it is real:
+   `token-scan.spec.ts` alone on the clean lane tip is **8 passed, exit
+   0**; append one comment line to `method/README.md` and leave it
+   uncommitted → **7 passed / 1 failed, exit 1**, `Error: all seven plant
+   targets restore to an empty diff / Expected: 0 / Received: 1` at line
+   145, with all seven sha256 assertions above it PASSING. Restored;
+   `method/README.md` sha256 back to `255cedba…`, tree clean, re-run **8
+   passed**. Two suggestion cards for one defect will reach triage
+   together — absorb one.
+2. **Rule 4 has no precedence half.** Above.
+3. **The size-S hole.** Above. `T-089-s8`.
+4. **The bump is a FOUR-place fact and the account names three.**
+   `docs/CONVENTIONS.md:303` carries *"method/interview/plan-interview.md
+   (v0.1.5, T-023)"*. No test reads it, so a bump leaves it stale and
+   green. `T-089-s1`'s *"the whole edit is three literals"* would ship
+   that.
+5. **"a non-merge commit later than the checkpoint carries the
+   checkpoint's graph and is equally safe" is a graph-only argument
+   stated unqualified.** The premise is about `graph.json`; the same file
+   documents the OTHER way a docs-only non-merge diff reds a code suite —
+   `9c64cd8` and `fede266`, both single-parent, both `docs/tasks/*.md`
+   only, both redded a suite through FRONTMATTER, which no graph argument
+   covers. Checked rather than asserted: at the live candidate base
+   `f306ee9` (19 cards added, 51 deleted, four commits after the
+   checkpoint) `index --check --root ../..` is **exit 0**, *graph.json is
+   CURRENT — 585305 bytes, 119 files, 1018 symbols, 1539 edges*, and all
+   **136** cards' frontmatter parses with a legal status. Every non-merge
+   first-parent commit on main from `2cf59da` to `9a8d523` is docs-only
+   except the checkpoints. **The claim holds today by practice, not by
+   property** — nothing forbids a source commit on main between
+   checkpoints. Add *"whose gates are green — which for a docs commit
+   means the DOCS GATE, not only the graph"*.
+6. **"each naming the file it read" is true and misleading.** Both arms
+   of the CONVENTIONS bump measurement name `plan-interview.md`, never
+   CONVENTIONS. The thing that will cost the next editor a cycle — the
+   ordering asymmetry — is in `T-089-s1` only, not in the bullet that
+   editor is reading. Rule 4 applies to CONVENTIONS too.
+7. **A citation-spelling nit in a card that legislates citations.** The
+   notes anchor the 77 on `^[+-]status: building$`; `git log -G` matches
+   diff content WITHOUT the `+`/`-`, so that literal returns **0**. The
+   figure is right: `git log main -G'^status: building$' -- 'docs/tasks/*.md'`
+   → **77**. Also re-derived: **25** `Dispatch T-NNN` commits, newest
+   `c27c197` T-042 2026-08-17 01:56:07; **63** first-parent merges at
+   `4d2f03c`.
+8. **`T-090` did not exist in this lane's tree.** It was created on main
+   at `f306ee9`, after the cut at `4d2f03c`; the notes say it was read
+   there, so the reference is sourced. **Checked for contradiction and
+   there is none**: T-090's criterion 5 says *"IF a spelling cannot
+   preserve all four THEN the doc SHALL print one that does not use
+   `xargs` at all"* — this clause pre-takes that branch. Its four
+   promises (named command, CI step, spelling shared with `docs-gate.mjs`'s
+   header, two-platform matrix) match T-090's criteria one for one, and
+   this clause builds no matrix. Only caution: T-090's criterion 4 targets
+   a sentence this commit already deletes, so T-090 needs a re-read at
+   dispatch, not a rewrite.
+9. **The blindness conflict has a third channel and no card.** Above.
+
+---
+
+## Everything re-derived, at my own refs
+
+Suites at the lane tip `b416efb`, every exit from `$?` unpiped:
+
+| suite | result | exit |
+|---|---|---|
+| `npx vitest run` from lib/parser | **263 passed (263)**, 12 files | **0** |
+| `npx tsc --noEmit` from lib/parser | — | **0** |
+| `npm run build` from app | built in 719ms | **0** |
+| `npm test` from app | **840 passed (840)**, 43 files | **0** |
+| bare `cargo test --no-fail-fast` from app/src-tauri | **352 passed / 0 failed / 3 ignored**, summed over **15** `test result:` lines | **0** |
+| `npm test` from tools/e2e | **121 passed** | **0** |
+| `npm run typecheck` from tools/e2e | — | **0** |
+| `npm run lint:tokens` from tools/e2e | clean, **TOKEN 123 / CONTROL 598** | **0** |
+| `node tools/e2e/scripts/docs-gate.mjs <14 paths>` direct | FIRES — 8 docs paths are code inputs, 4 suites owed, 11 derived readers, 0 frontmatter issues | **1** |
+| `index --check --root ../..` | CURRENT, 585305 B / 119 files / 1018 symbols / 1539 edges | **0** |
+
+Every one of the executor's stated figures reproduces: 263/263, 840/840,
+352/0/3 over 15 lines, 121/121, CONTROL 598. **No kill-path flake this
+run** — `the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists`
+passed; tally 1 of 1 green.
+
+**Gate derivations, mine.** GRAPH REGEN — trigger is
+`*.ts/*.tsx/*.js/*.jsx` outside `docs/`; **0** of 14 paths match, all are
+`.md`; NOT OWED. BOOT GATE — trigger is `app/src-tauri/**`, `app/src/**`,
+`app/package.json`, `app/src-tauri/Cargo.toml`; **0** of 14 match; NOT
+OWED, and this sentence is the derivation. DOCS GATE — FIRES, exit 1, all
+four suites owed and all four run above; re-run after this commit lands,
+since it adds three more `docs/tasks` paths.
+
+**The merge, forecast the prescribed way, every dot count stated.** Main
+moved again during this verification — `ea7ea0a` → **`9a8d523`**
+(*Checkpoint: T-061 done*), so the tip in my brief is stale by one:
+
+    git merge-tree --write-tree 9a8d523 b416efb  -> tree 3b742201…, exit 0
+    git diff --name-only 9a8d523 <TREE>   PRESCRIBED  -> 14
+    git diff --name-only 9a8d523...b416efb  three dots -> 14
+    git diff --name-only 9a8d523..b416efb   two dots   -> 105   FORBIDDEN
+
+**No conflict.** 14 paths, **8** under `docs/` and **6** under `method/`,
+identical to the executor's list. Against the previous tip `ea7ea0a` the
+same three lines read 14 / 14 / **102** at tree `2bff6c36…` — only the
+forbidden form moved, by main's three new paths, which is this rule's own
+argument in miniature for a third time.
+
+**xargs, re-measured, all six control cells.** Direct vs
+`printf … | /usr/bin/xargs`:
+
+| call | direct | piped |
+|---|---|---|
+| no arguments | **2** | **0** — utility never invoked (probe silent) |
+| `--no-such-flag` | **2** | **1** |
+| `docs/CONVENTIONS.md` | **1** | **1** |
+
+Every cell matches the clause. The clause **names its platform** (Darwin
+25.6.0, `/usr/bin/xargs`), **prescribes the direct call**, and **builds no
+matrix** — it gives one collapse sentence and three control rows and
+hands the two-platform matrix to T-090. Correct on all three counts, and
+the T-084-s6 premise it replaces (*"BSD `xargs` runs the utility once even
+on empty input"*) is indeed false: my probe printed nothing.
+
+**The bump drill — five mutants, one side each, in a DETACHED scratch
+worktree at `b416efb` with a scratch `CARGO_TARGET_DIR`.** Every mutation
+read back with `git diff` before the run; every restore proved by sha256
+against the drill commit and `git status --porcelain` empty at the end.
+Pre-drill: `plan-interview.md` `e67c34b1…`, `CONVENTIONS.md` `5f37c301…`,
+`kit.rs` `649c54de…`.
+
+| # | mutation (SUBS) | exit | assertion that fired |
+|---|---|---|---|
+| M0 | none | **0** | `1 passed … 119 filtered out`; 13 result lines read, twelve at `0 tests`, none red |
+| M1 | BOTH doc stamps → v0.1.6, const untouched (2) | **101** | `kit.rs:443` — *plan-interview.md … no longer stamps v0.1.5* |
+| M2 | const → `"0.1.6"`, docs untouched (1) | **101** | `kit.rs:443` — *… no longer stamps v0.1.6* |
+| M3 | = M2, inspected | — | **the CONVENTIONS assert never ran**: `grep -c "no longer says"` = **0** |
+| M4 | const + plan-interview → v0.1.6, CONVENTIONS behind (2) | **101** | `kit.rs:450` — *docs/CONVENTIONS.md no longer says 'currently v0.1.6'* |
+| M5 | CONVENTIONS stamp alone → v0.1.6 (1) | **101** | `kit.rs:450` — *… no longer says 'currently v0.1.5'* |
+
+**The ordering asymmetry is characterized CORRECTLY** in `T-089-s1`, and
+M2→M4 is the proof of its consequence: fix the file the panic names and
+you get the SECOND red, not a green. CONVENTIONS' *"moving either stamp
+alone reds that test by name"* verifies (M2, M5). Its *"each naming the
+file it read"* is true and misleading — finding 6.
+
+**Criterion 5's routing accepted, and the fence claim verified.**
+`kit.rs` is under `app/src-tauri/src/agent/**` = C-14's `app-agent`;
+`T-070`'s card declares `touches: [app-agent, app-interview]` and its
+worktree `/Users/ujju/Projects/nputer-T-070` is live. The bump was
+unbuildable inside `[method/, docs/CONVENTIONS.md]` under this card's own
+rule 5. **The debt is stated where the next executor must meet it** — in
+CONVENTIONS' first gotcha, the bullet a `method/` editor reads to learn a
+bump is owed, with a delete-me instruction — not only in a finding file.
+Correct placement.
+
+**Board vs worktrees, at `9a8d523`.** T-013 `planned` · T-064 `planned` ·
+T-070 `planned` · T-089 `planned` — four live lanes, zero stamps; T-061
+`done` with its worktree still live mid-integration. Both of row 5's
+sources are wrong in opposite directions right now, which is the card's
+own premise holding and the argument for its ruling.
+
+---
+
+## What in my dispatch brief was wrong
+
+- **"Pick a real planned card (say T-096 or T-100)"** — neither exists in
+  this lane's tree; the maximum id at `b416efb` is **T-089**. They exist
+  on main (created at `f306ee9`), which is where I read T-096.
+- **"tip `b416efb`, cut from `4d2f03c`"** — correct.
+- **"Main has T-061's merge on it now"** — stale by the time I ran:
+  main is **`9a8d523`**, the checkpoint on top of that merge. Both
+  forecasts stated above.
+- **"14 paths, 8 docs / 6 method"** — reproduces at both main tips.
+- **"the fresh-clone order needs `npm run build` from app/ before
+  `npm test`"** — correct, and `T-089-s5` is accurate.
+- **The brief relayed the executor's reasoning to me** (*"Its answer: one
+  writer per line was luck there, not property"*). That is finding 9: the
+  answer is right, and I should not have been handed it.
+
