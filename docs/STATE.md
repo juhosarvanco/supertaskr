@@ -247,9 +247,11 @@ never `xargs`.
 - **token lint: selftest 0, lint 0** — `clean (TOKEN 124 …; CONTROL 575
   tracked text files)`, 49 TOKEN + 4 CONTROL samples, **71** walk-policy
   checks, 8 evidence-floor checks. This is also the repo's only NUL gate
-  and it is green; independently, the merge's seventeen paths were read
-  as bytes with `grep -qP '\x00'` (never the `$'\x00'` shell form that
-  T-061 recorded as a false-positive generator) and **0 carry a NUL**.
+  and it is green (its selftest is what validates it). Independently,
+  the merge's seventeen paths and this checkpoint's five were read as
+  bytes and **0 carry a NUL** — but see the correction below, because
+  the FIRST probe that produced that answer could not have produced any
+  other.
 - **`cargo audit -n`** exit **0**: 472 crate dependencies, **0
   vulnerabilities / 17 allowed warnings**, unmoved — which a 0-file
   `Cargo.lock` diff requires.
@@ -454,6 +456,22 @@ untouched.
   judgement calls — amending ARCHITECTURE where T-061 declined to,
   ticking ROADMAP for a seconds-wide window, and NOT grafting in
   `T-064-s6`'s measured body — are recorded above.
+- **MY NUL PROBE WAS A FALSE GREEN, THE EXACT MIRROR OF T-061'S FALSE
+  RED, AND ONLY A CANARY FOUND IT.** T-061's checkpoint records
+  `grep -qU $'\x00'` reporting a NUL in every file, because the shell
+  truncates the pattern at the NUL and greps for the empty string. I
+  avoided that spelling and used `LC_ALL=C grep -qP '\x00'`, which
+  reported **0 of 17** — and then I fed it a file containing a real NUL
+  and **it still said no**. `grep` on this box is **ugrep 7.8.4**, whose
+  `-P` is a build-time option (`-P:pcre2jit`) and which does not answer
+  this pattern the way GNU grep does. **A gate that answers NO for every
+  input is not a gate either**, and it is the harder half of the pair to
+  notice, because a clean answer is the answer you expected. Re-measured
+  with a byte scan that PASSES A CANARY first — canary containing a NUL
+  answers yes, a plain file answers no — and the answer is genuinely
+  **0 NULs across all 22 paths this integration wrote**. The lesson is
+  not about `grep`: **validate the probe on a positive before believing
+  its negative.**
 - **`T-064-s4` UNDERCOUNTS ITSELF and the verdict says so** (V3): the
   hand-written E2E mirror is stale in FOUR places, not two, and two of
   the misses are on the line the finding quotes. **No correction was
