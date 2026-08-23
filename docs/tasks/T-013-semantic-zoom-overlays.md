@@ -40,7 +40,7 @@ review:
 
 Built by `claude-opus-5 @T-013` on `task/T-013-semantic-zoom`, cut from
 the `Checkpoint:` commit **`2036fb2`**. **Sixteen code
-paths plus this card and six findings — twenty-three in all.** Every
+paths plus this card and seven findings — twenty-four in all.** Every
 figure below is derived at this branch's own tip; nothing is quoted from
 a checkpoint.
 
@@ -283,7 +283,9 @@ legend IS exact.
   `index-WORLmrLf.js` **523.98 kB**. Both TypeScript programs typecheck:
   `tsc --noEmit` 0 and `tsc -p tsconfig.test.json --noEmit` 0.
 - **bare Rust workspace, `cargo test --no-fail-fast`: 369 passed / 0
-  failed / 3 ignored**, `CARGO_TEST_EXIT=0`, summed programmatically
+  failed / 3 ignored**, `CARGO_TEST_EXIT=0` (twice — see `T-013-s7` for
+  the run in between, which was 336/33 for a reason that was not the
+  tree), summed programmatically
   from **fifteen** `test result:` lines (352 → 369: the 17 in
   `churn.rs`). Not `--all-targets` — **and that matters here**: an
   indented block in `parse_churn`'s doc comment is a rustdoc DOCTEST,
@@ -292,10 +294,12 @@ legend IS exact.
 - **E2E: 121/121**, `E2E_EXIT=0`, scratch port **14831**; `npm run
   typecheck` 0.
 - **token lint: selftest 0, lint 0** — `lint-tokens: clean (TOKEN 130
-  files under app/src, app/test, tools/e2e; CONTROL 598 tracked text
+  files under app/src, app/test, tools/e2e; CONTROL 604 tracked text
   files)`, at 49 TOKEN + 4 CONTROL samples, 71 walk-policy checks, 8
   evidence-floor checks. TOKEN 123 → 130 (+7 `.ts`/`.tsx`), CONTROL
-  590 → 598 (+7 and `churn.rs`).
+  590 → 604 (+7 `.ts`/`.tsx`, `churn.rs`, and the six finding files) —
+  and this is also the repo's only NUL-byte gate, green over the whole
+  tree after one reached `map-zoom.ts` during authoring.
 - **`cargo audit -n`** exit 0: 472 locked crates, **0 vulnerabilities /
   17 allowed warnings**, unmoved — which a 0-file `Cargo.lock` diff
   requires and this branch has.
@@ -478,6 +482,21 @@ needs a positive control"* names. Closed in `7fbad85`: the symbol is
 declared, and the body now proves the heuristic edge **reached the
 graph** before asserting it is not counted. M7 then reds 1 of 45.
 
+**THE DRILL'S OWN COST, MEASURED, because the standing advice creates
+it.** The drill worktree symlinked the lane's `app/src-tauri/target` to
+avoid a cold build. Several Rust bodies resolve this repository from
+`env!("CARGO_MANIFEST_DIR")`, which is baked in at COMPILE time and which
+cargo does not track as an input — so the binaries the drill compiled,
+carrying the DRILL's path, were reused by the lane afterwards. With the
+drill worktree deleted, bare `cargo test` went **336 passed / 33 failed
+/ 3 ignored, exit 101**, every failure naming a directory that no longer
+exists. `cargo clean -p nputer -p nputer-index` (12 704 files, 3.0 GiB)
+and a rebuild returned it to **369 / 0 / 3, exit 0**. Nothing was ever
+wrong with the tree. Filed as **`T-013-s7`** with three arms, because
+"drill in a detached scratch worktree" is standing advice and this is
+its first recorded cost — and because the pollution can also run the
+OTHER way, making a mutant look dead against a stale binary.
+
 ### What reached the human's running app
 
 **Nothing.** All work is in `../nputer-T-013`; the main checkout was
@@ -514,6 +533,8 @@ invokes) · `T-013-s3` (the churn subprocess has no wall-clock bound;
 weigh with `T-043-s3`) · `T-013-s4` (the figure is file edits, not
 commits) · `T-013-s5` (churn is measured once per mount and shows no
 age) · `T-013-s6` (the container's width, and the two sentences that
-disagree about it).
+disagree about it) · **`T-013-s7`** (a drill worktree that shares the
+cargo target directory leaves the parent RED — measured here at 336/33,
+and it is a hazard the POISON DRILL bullet's own advice creates).
 
 ## Verdicts
