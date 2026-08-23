@@ -606,14 +606,22 @@ the only reason this one did not is that something told me to look.
 ### Closing state
 
 Branch `task/T-064-switch-one-story`, worktree `/Users/ujju/Projects/nputer-T-064`,
-cut from **`2036fb2`**. Four commits: `f6cf200` the rulings, `8034a03`
-the code and its tests, `947b75a` the notes and the five findings,
-`cbd9690` the corpus/range figures pinned to their refs. **NOT MERGED,
-and main was never touched** — `git worktree list` shows this lane
-beside `nputer-T-013`, `nputer-T-061` and `nputer-T-070`, all four
-disjoint. Working tree `git status --porcelain` EMPTY at the close;
-every poison-drill file round-tripped and every restore was proved
-twice.
+cut from **`2036fb2`**. **EXACTLY TWO COMMITS CARRY CODE**: `f6cf200`
+the rulings and nothing else, then `8034a03` the whole implementation
+and its fourteen new bodies. Everything after `8034a03` is this
+section — notes, five findings, and two corrections to figures that had
+gone stale between the writing and the tip — so `git diff --name-only
+8034a03..HEAD` touches only `docs/tasks/`, and a reader who wants the
+change without the prose can read the second commit alone. (The exact
+number of notes commits is deliberately NOT stated: a count of commits
+written from inside the last one is the same unrefed figure this
+section spends two paragraphs on. `git log --oneline 2036fb2..HEAD`
+answers it and cannot be stale.) **NOT MERGED, and main was never
+touched** — `git worktree list` shows this lane beside
+`nputer-T-013`, `nputer-T-061`, `nputer-T-070` and `nputer-T-089`, all
+disjoint from it. Working tree `git status --porcelain` EMPTY at the
+close; every poison-drill file round-tripped and every restore was
+proved twice.
 
 **THE DOCS GATE FIRES ON THIS SECTION TOO**, which is the obligation
 T-084's merge created for its own next step and which this card now
