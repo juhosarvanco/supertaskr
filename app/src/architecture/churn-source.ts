@@ -222,7 +222,13 @@ let inFlight: Promise<ChurnState> | null = null;
 export function loadChurn(): Promise<ChurnState> {
   if (inFlight !== null) return inFlight;
   if (!hasTauriRuntime()) {
-    return Promise.resolve(set({ kind: "disabled", reason: "notTauri" }));
+    // A browser bundle cannot spawn anything, so it must not OVERWRITE
+    // a state something else already folded — only answer the question
+    // nobody has answered yet. Under Tauri the branch below always
+    // re-measures, so a remount is still a fresh read of the history.
+    return Promise.resolve(
+      state.kind === "loading" ? set({ kind: "disabled", reason: "notTauri" }) : state,
+    );
   }
   // The type argument is NOT decoration. The IPC census in
   // `app/test/crescendo-dom.test.tsx` finds call sites by matching an
