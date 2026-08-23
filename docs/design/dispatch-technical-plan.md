@@ -235,8 +235,21 @@ on the plan's own reasoning — it is the cheapest it will ever be, and
 the alternative fences every dispatch card against every genesis card
 for the life of the feature.
 
-**D3 remains open** and gates only the selector card, not the slice.
-**D5 is superseded in part** — see below.
+**D3 is RULED by the human (2026-08-20): the app may write exactly
+`builder:` and `verifier:` — nothing else.** Single-field frontmatter
+edits, written atomically, refused if the file changed since it was
+read, unknown keys preserved byte-for-byte. The deciding argument was
+cross-harness: the two models talk only through the repo, and
+`.nputer/` is gitignored so a selection stored there cannot reach an
+agent on another machine. The card is the only channel that reaches
+both. **What this ruling does NOT extend to is `status:`** — D4's
+measurement stands.
+
+**D5 is deliberately held** pending a north-star-level question the
+human raised in the same session: whether nputer is the app you run
+the process FROM (set builder/verifier there, talk to the orchestrator
+there) or a mirror that follows work you run from the agents' own
+apps. See the room when it opens; D5's answer falls out of that one.
 
 ### The card ids in §2 are stale
 
