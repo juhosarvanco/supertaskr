@@ -125,3 +125,119 @@ against the real reducers for both interleavings. @human: none.
 ## Implementation notes
 
 ## Verdicts
+
+### THE RULINGS, RECORDED BEFORE IMPLEMENTATION
+
+Built by `claude-opus-5 @T-064` in worktree `nputer-T-064` off `2036fb2`
+(main's tip, a `Checkpoint:` commit — the DISPATCH FROM THE LAST
+CHECKPOINT rule). This section is its own commit and it is the FIRST
+commit on the branch, because three of the criteria say the choice is to
+be recorded before the code and a section appended afterwards cannot
+prove it was.
+
+**RULING 1 (criterion 1) — ARM (b), THE LATER READING WINS, and the
+guard is a NAMED, EXPORTED PREDICATE.** When the overtaking emit and the
+switch describe the SAME folder and the switch's reading is not newer,
+the emit is a strictly better measurement of that folder taken at a
+strictly later moment, and throwing it away to render an empty model is
+the T-026-s4 symptom the whole card exists to remove. Arm (a)
+(`max(switched.seq, snapshot.seq)`) keeps the watermark too but still
+DISCARDS the emit's files, so it fixes the watermark and leaves
+`fileCount=0` — it answers the smaller half of the finding. Arm (b) is
+preferred BY THE CARD and is also the only one that leaves the model
+correct.
+
+**ONE CORRECTION TO THE CRITERION'S OWN SPELLING, said plainly because
+this repository asks its executors to trust the tree over the brief.**
+The criterion reads "if `snapshot.seq <= switched.seq` AND
+`switched.projectDir` already equals the switch's `projectDir`".
+`switched` is `resetDocsForProjectSwitch(prev.docs)`, which is
+`{ ...emptyState(), seq: prev.seq }` — so `switched.projectDir` is the
+EMPTY STRING, always, and the second conjunct as literally written can
+never be true. The conjunct that carries the intended meaning is over
+`prev.docs.projectDir`, the model as it stood BEFORE the reset, which is
+where the overtaking emit landed. `switched.seq` IS `prev.docs.seq` by
+construction, so the first conjunct is unaffected. Implemented over
+`prev.docs` in both halves, and the predicate is named
+`genesisSwitchIsOvertaken(prev.docs, outcome)` so the two conjuncts have
+one home.
+
+**AND THE READING SEQ IS `outcome.snapshot?.seq ?? outcome.seq`, which
+covers a branch the criterion does not mention.** The criterion is
+written for the snapshot-bearing switch, but the snapshot-LESS branch
+(`{ ...switched, seq: outcome.seq }`) has the same defect AND a second
+one the criterion does not name: it ASSIGNS the switch's seq, so an
+overtaking emit at a HIGHER seq is followed by a watermark going
+BACKWARDS — exactly the regression the card attributes to the branch
+point ("additionally regressed the watermark") and which T-042 removed
+from the snapshot branch only. One guard covers both branches because
+Rust stamps the carried snapshot with the switch's own seq, so the two
+readings are the same number whenever both exist.
+
+**RULING 2 (criterion 3) — ARM (a), re-derive from the snapshot, and it
+is ONE PREDICATE with TWO CONSTRUCTORS rather than one predicate spelled
+twice.** `PlanProbe::has_plan()` stays exactly as it is and stays the
+only place that says what a plan IS. What is new is a second way to
+BUILD a `PlanProbe`: `PlanProbe::from_docs_snapshot(&snapshot, git)`,
+which reads the same three docs-side facts off the snapshot's own file
+list instead of off a stat sweep. `apply_genesis_folder` then asks the
+one predicate twice — once before the rendezvous, once after the
+collect — and routes to `PickOutcome::Picked` when the later reading
+says there is a plan. Routing there is sound with NO extra work because
+the two paths have already converged: a genesis arm over a folder that
+has a plain `docs/` IS `rearm`, the same call `open_as_project` makes,
+so at the moment of the re-read the project is committed, the recursive
+docs watch is armed, the sentinel is armed, the seq is taken and the
+rejected candidate is cleared — the state is byte-for-byte what the
+ordinary open produces, and `Picked { snapshot }` is the outcome that
+describes it.
+
+**THE RE-READ CAN ONLY EVER VETO, and that is a property worth naming
+rather than a limitation to apologise for.** It runs only in the branch
+where the stat probe already said "no plan", so it can turn genesis OFF
+and never ON. The opposite disagreement (probe says plan, snapshot says
+none) is unreachable as a screen defect: that folder was routed to
+`open_as_project` before anything was armed, and a board over a folder
+whose plan was deleted mid-pick is the board, not the interview.
+
+**RULING 3 (criterion 5) — ARM (c): `probe` LEAVES `PickOutcome::Genesis`.**
+The live-consumer question is ANSWERED, by measurement rather than by
+reading: `git grep` over `app/src` finds ZERO reads of the genesis
+outcome's `probe` — `reducePickOutcome`'s genesis case sets
+`resolvedProbe: null` and stores `genesisDir` plus the docs model, and
+`GenesisScreen`/`GenesisPane` render the `DocsModelState` and the
+project dir. The only readers anywhere are TEST literals and the wire
+pin. `PlanProbe` is untouched and keeps BOTH its live consumers — the
+front door's "No plan in <folder>" checklist rides `NoDocs.probe` and
+`ProjectStatus::NoDocs.probe`, and nothing here narrows those. Ruling 2
+is what makes this cheap rather than merely tidy: after it, the folder
+is read TWICE inside Rust and exactly ONE reading crosses the boundary,
+which is what the card's title asks for. Criterion 4 is therefore the
+road not taken and its obligations do not attach; the frozen-lie window
+is named in the notes below anyway, because it still exists INSIDE the
+Rust and the next reader deserves its bounds.
+
+**RULING 4 (T-063-s3) — ARM (b), and the fact lands in `ShellState`
+rather than on `StartupFailure`.** The sentence is derived from whether
+a `docs-changed` subscription is HELD, which the store knows in
+`unlistenDocs`. Arm (a) (a fourth `StartupStep`) makes the wire wider for
+a copy fix and gives the log a fourth step name that means "the same
+refusal, different survivor"; arm (c) throws away the consequence clause
+that is the whole value of T-050's wording in the common case. WHERE the
+fact goes was decided by the TREE and not by taste: putting it on
+`StartupFailure` reds `tools/e2e/tests/startup-recovery.spec.ts:52`,
+which asserts `toEqual({ step, message, attempt })` on that exact object
+— and `tools/e2e` is a SIBLING LANE'S FENCE this week (T-061). The
+card's own wording for arm (b) says "a second fact about the
+subscription into SHELL STATE", so the fence-clean placement is also the
+literal one. `ShellState.watcherLive` is written by the same `setShell`
+that records the failure, from `unlistenDocs !== null`, and is read by
+exactly one thing. THE FIRST CLAUSE OF THE COPY IS UNCHANGED IN BOTH
+ARMS ("the watcher subscription was refused"), which the card says is
+true and which the E2E lane asserts by substring today; only the
+consequence clause forks.
+
+**RESERVED FOR @human, not decided here** (T-064's own Verification line
+says "@human: none", and T-063's notes put this on the morning list): the
+WORDING of the forked clause. The code decides WHICH sentence, the human
+decides what it says.
