@@ -491,6 +491,33 @@ now rehydrates as empty and a newline-free file answers with fewer lines
 than the budget, both deliberate, both on inputs the transcript writer
 cannot produce, each pinned. The FILE it reads still grows forever; that
 is filed (T-070-s2), not closed.
+T-101 merged 2026-08-24 and it earns a paragraph on T-069's precedent —
+**it makes a promise already written above true all the way to the eye.**
+T-081 shipped the fact that a refusal happened: the CLI's in-band
+`permission_denied` line became a classified event, crossed the channel
+and landed on the turn, in order, joined and bounded. Its own criterion
+said the denial "SHALL reach the frontend at the moment it arrives", and
+it did — into a field **no component read**. A refusal was a datum in
+memory that no human could ever see, and T-081's own @human question
+("does a live denial notice read as information rather than alarm?") had
+nothing to look at. It renders now, beside the pulse dot, in the quiet
+furniture register and deliberately NOT in the failure treatment,
+because the measured real turn carried two refusals and **completed** —
+the planner decomposed the refused command and carried on, so painting
+that turn as a failure would say the opposite of what the runner
+measured. Two refusals of the same tool stay two, told apart by
+`toolUseId` and never deduped. The sharper half is what the card learned
+by getting it wrong first: suppressing the notice when the terminal
+"tool denied" block already names the tool is right, but suppressing the
+NOTICE rather than the ROW hid refusals the block could not name — the
+nameless ones the runner announces precisely so they will not be silent
+— so a turn with two refusals showed one. Suppression is per refusal
+now, keyed on the names the failure block actually printed. One report
+is still duplicated, on the exit-code path, and it is disclosed in the
+code and routed rather than argued away (T-101-s1). What is NOT here:
+the notice is live-only, so a restart still forgets what the planner was
+refused (T-081-s3, which needs both fences). **@human still owes this
+card one look** — the question T-081 could not ask is now askable.
 **The milestone is NOT complete, and what it waits on is not a task.**
 Every card on milestone 3's list — T-023 → T-024 → T-026 → T-037 →
 T-025 → T-039 → T-041 → T-042 → T-048 → T-049 → T-050 → T-027 → T-051 →

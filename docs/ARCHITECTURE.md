@@ -491,9 +491,11 @@ ADR-014/015).
   therefore indexed, so `GenesisDenial` is the 996th symbol and its two
   `type_ref` edges take the graph to 1520. Both edges have BOTH
   endpoints in that one file, so no component relation moved and the
-  registry still stops at C-14. What is NOT here is the RENDERING: the
+  registry still stops at C-14. What was NOT here is the RENDERING: the
   notice a human would see lives in C-13's chat, outside this fence
-  (`T-081-s1`).
+  (`T-081-s1`) — **and since T-101 it EXISTS, so the denial channel now
+  reaches the screen end to end**; see C-13's entry below for what the
+  screen does with it and for the one report it still duplicates.
   **T-070 BOUNDS THE ONE READ IN THIS COMPONENT THAT HAD NO BOUND, and
   like T-081 it moves the GRAPH while moving no IPC.** Since T-029 the
   arrival at the interview screen rehydrated its transcript by reading
@@ -540,6 +542,57 @@ ADR-014/015).
   the budget — both deliberate, both on inputs `append_transcript`
   cannot produce, each pinned. The FILE still grows unbounded
   (`T-070-s2`).
+
+  **T-101 CLOSES THE CHANNEL T-081 OPENED, AND IT IS C-13's WORK, NOT
+  C-14's.** T-081's entry above ends "what is NOT here is the RENDERING";
+  this is it. `interview-turns.tsx` gains a `DenialNotice` mounted inside
+  `PlannerTurn` BELOW the activity line and OUTSIDE the `running` guard,
+  in the existing quiet furniture register (`font-mono text-xs
+  text-secondary-foreground`) and deliberately never in `FailureBlock`'s
+  treatment — **because a denial is not a death**, which is the property
+  T-081 established in the runner and this card is the first thing to
+  render. One row per DENIAL and never per tool: the list is not deduped,
+  `toolUseId` rides as `data-tool-use-id`, and the measured real turn —
+  two `Bash` refusals, `is_error: false`, `terminal_reason: "completed"`
+  — renders as two rows on a turn whose status still reads COMPLETED.
+  **THE ARCHITECTURAL CONTENT IS WHERE SUPPRESSION IS KEYED.** Criterion
+  7 licenses hiding *the same refusal* when the terminal `toolDenied`
+  block already names it, and the first build implemented that as
+  `error?.kind !== "toolDenied"` — a WHOLE-NOTICE gate. That
+  over-suppressed to zero, because `TurnError::ToolDenied`'s `denials`
+  is built by `denial_names`, a `filter_map` over `tool_name`, so a
+  refusal the CLI never named contributes nothing to the failure block
+  and was then dropped from the notice as well: two refusals in the
+  store, one on screen, and the silent one is precisely the one the
+  runner announces *because* silence is the defect. `visibleDenials`
+  suppresses **per denial**, keyed on `error.denials` — the TYPED array
+  `FailureBlock` actually restates (twice: `failureAction`'s `listOf`
+  and `failureDetail`'s `join`) — so suppression tracks WHAT IS ON
+  SCREEN rather than what kind of error it was, and the notice can lose
+  a row but can never lose the notice. `denialToolName` gives the
+  printed name and the suppression key ONE owner, on T-057's rule.
+  **ONE DEFECT SHIPS, DISCLOSED IN THE CODE.** On the `exitNonZero`
+  path a single result-only refusal is reported twice — once as a notice
+  row and again inside `stderrTail`, where `runner.rs` pushes
+  `permission_denials: <names>` for the same `unannounced` vector it
+  emits live `Denied` events from. No honest key exists on this side:
+  matching the tail's text would put a copy of a `runner.rs` `format!`
+  string in `interview-model.ts`, the tail is a bounded 64 KiB RING that
+  can hold the note in part, and the empty-`message` proxy is ambiguous
+  on inputs the runner really produces. The fix is a DELETION in C-14
+  and it is routed as `T-101-s1`; the gap is named in `visibleDenials`'
+  own doc comment so the next reader meets it rather than rediscovers
+  it. **No IPC, no grant, no event, no Rust and no store change** —
+  `agent-store.ts` is a 0-file diff, IPC still FOURTEEN at both ends,
+  `acl_pin.rs` a 0-file diff at the same 92-grant `8d24cbad…` — but the
+  GRAPH moves, the T-081/T-070 shape again: +6 symbols / +9 edges
+  (`denialLine`, `denialToolName`, `visibleDenials`, `DenialNotice` and
+  two in the test file), every endpoint inside C-13 and C-14, so no
+  component relation moves and the registry still stops at C-14. The
+  persistence half is DEFERRED and said so: the notice is LIVE-ONLY,
+  `rehydrate` still writes `denials: []`, and banking a denial record
+  needs both `app-agent` and `app-interview` (T-081-s3, unpark condition
+  now met).
   area app-agent since T-025,
   where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
   `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and

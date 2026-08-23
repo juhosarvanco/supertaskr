@@ -5,13 +5,13 @@ feature: F-03
 milestone: 4
 priority: 57
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-interview]
 builder:
 verifier:
-built_by: claude-opus-4.8 @T-101 (rebuilt after rejection by claude-opus-5 @T-101-rebuild, 2026-08-24)
-verified_by: claude-opus-5 @T-101-verify
+built_by: claude-opus-5 @T-101 (re-built after the rejection by claude-opus-5 @T-101-rebuild, 2026-08-24)
+verified_by: claude-opus-5 @T-101-verify (two passes — rejected 2026-08-23, approved 2026-08-24)
 review: same-model
 ---
 

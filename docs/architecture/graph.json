@@ -3374,8 +3374,8 @@
       "id": "f:app/src/genesis/interview-model.ts",
       "path": "app/src/genesis/interview-model.ts",
       "lang": "ts",
-      "hash": "blake3:c40dc4b4b9fa88f5448a106780de63e264869abe18f0ae04102ae859adbf761d",
-      "loc": 739,
+      "hash": "blake3:935f114befa5896b602e61883decc6a1961d58d95aaa50070d646b26d69ce1c8",
+      "loc": 862,
       "symbols": [
         {
           "id": "s:app/src/genesis/interview-model.ts#BankBaseline",
@@ -3383,8 +3383,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            67,
-            76
+            68,
+            77
           ]
         },
         {
@@ -3393,8 +3393,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            107,
-            110
+            108,
+            111
           ]
         },
         {
@@ -3403,8 +3403,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            262,
-            262
+            263,
+            263
           ]
         },
         {
@@ -3413,8 +3413,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            264,
-            271
+            265,
+            272
           ]
         },
         {
@@ -3423,8 +3423,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            112,
-            115
+            113,
+            116
           ]
         },
         {
@@ -3433,8 +3433,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            630,
-            635
+            631,
+            636
           ]
         },
         {
@@ -3443,8 +3443,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            342,
-            342
+            343,
+            343
           ]
         },
         {
@@ -3453,8 +3453,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            247,
-            247
+            248,
+            248
           ]
         },
         {
@@ -3463,8 +3463,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            583,
-            583
+            584,
+            584
           ]
         },
         {
@@ -3473,8 +3473,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            480,
-            480
+            481,
+            481
           ]
         },
         {
@@ -3483,8 +3483,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            721,
-            721
+            844,
+            844
           ]
         },
         {
@@ -3493,8 +3493,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            303,
-            308
+            304,
+            309
           ]
         },
         {
@@ -3503,8 +3503,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            339,
-            339
+            340,
+            340
           ]
         },
         {
@@ -3513,8 +3513,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            396,
-            399
+            397,
+            400
           ]
         },
         {
@@ -3523,8 +3523,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            78,
-            83
+            79,
+            84
           ]
         },
         {
@@ -3533,8 +3533,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            410,
-            416
+            411,
+            417
           ]
         },
         {
@@ -3543,8 +3543,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            543,
-            576
+            544,
+            577
           ]
         },
         {
@@ -3553,8 +3553,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            124,
-            131
+            125,
+            132
           ]
         },
         {
@@ -3563,8 +3563,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            172,
-            187
+            173,
+            188
           ]
         },
         {
@@ -3573,8 +3573,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            288,
-            297
+            289,
+            298
           ]
         },
         {
@@ -3583,8 +3583,28 @@
           "kind": "function",
           "exported": true,
           "range": [
-            251,
-            255
+            252,
+            256
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#denialLine",
+          "name": "denialLine",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            750,
+            757
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#denialToolName",
+          "name": "denialToolName",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            781,
+            784
           ]
         },
         {
@@ -3593,8 +3613,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            637,
-            687
+            638,
+            688
           ]
         },
         {
@@ -3603,8 +3623,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            698,
-            716
+            699,
+            717
           ]
         },
         {
@@ -3613,8 +3633,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            590,
-            611
+            591,
+            612
           ]
         },
         {
@@ -3623,8 +3643,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            137,
-            139
+            138,
+            140
           ]
         },
         {
@@ -3633,8 +3653,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            690,
-            694
+            691,
+            695
           ]
         },
         {
@@ -3643,8 +3663,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            507,
-            526
+            508,
+            527
           ]
         },
         {
@@ -3653,8 +3673,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            213,
-            243
+            214,
+            244
           ]
         },
         {
@@ -3663,8 +3683,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            382,
-            385
+            383,
+            386
           ]
         },
         {
@@ -3673,8 +3693,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            446,
-            478
+            447,
+            479
           ]
         },
         {
@@ -3683,8 +3703,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            494,
-            502
+            495,
+            503
           ]
         },
         {
@@ -3693,8 +3713,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            489,
-            492
+            490,
+            493
           ]
         },
         {
@@ -3703,8 +3723,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            732,
-            739
+            855,
+            862
           ]
         },
         {
@@ -3713,8 +3733,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            330,
-            337
+            331,
+            338
           ]
         },
         {
@@ -3723,8 +3743,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            373,
-            378
+            374,
+            379
           ]
         },
         {
@@ -3733,8 +3753,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            353,
-            360
+            354,
+            361
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#visibleDenials",
+          "name": "visibleDenials",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            829,
+            839
           ]
         }
       ]
@@ -4182,8 +4212,8 @@
       "id": "f:app/src/genesis/interview-turns.tsx",
       "path": "app/src/genesis/interview-turns.tsx",
       "lang": "ts",
-      "hash": "blake3:565f5e58d820baf3e1377af0cd12f595302a4c818673b88a53d79d81852179c2",
-      "loc": 363,
+      "hash": "blake3:8288f9645e545e980dc01ce9f77b15f8b824cfb4bd0bc27ba85eee46b76cc744",
+      "loc": 439,
       "symbols": [
         {
           "id": "s:app/src/genesis/interview-turns.tsx#BankedChips",
@@ -4191,8 +4221,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            350,
-            363
+            426,
+            439
           ]
         },
         {
@@ -4201,8 +4231,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            45,
-            59
+            47,
+            61
           ]
         },
         {
@@ -4211,8 +4241,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            107,
-            129
+            109,
+            131
           ]
         },
         {
@@ -4221,8 +4251,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            151,
-            168
+            153,
+            170
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-turns.tsx#DenialNotice",
+          "name": "DenialNotice",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            204,
+            223
           ]
         },
         {
@@ -4231,8 +4271,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            271,
-            340
+            347,
+            416
           ]
         },
         {
@@ -4241,8 +4281,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            136,
-            148
+            138,
+            150
           ]
         },
         {
@@ -4251,8 +4291,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            31,
-            37
+            33,
+            39
           ]
         },
         {
@@ -4261,8 +4301,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            177,
-            249
+            232,
+            325
           ]
         },
         {
@@ -4271,8 +4311,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            64,
-            86
+            66,
+            88
           ]
         },
         {
@@ -4281,8 +4321,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            92,
-            101
+            94,
+            103
           ]
         }
       ]
@@ -8645,8 +8685,8 @@
       "id": "f:app/test/interview-chat-dom.test.tsx",
       "path": "app/test/interview-chat-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:f4618376ad909b40df955a1c900ddd82803c8ed3d72b1f64e59a6e4cd0f9f295",
-      "loc": 1019,
+      "hash": "blake3:cb715e88ec801df32b13131f19e5a9dc70a84a0af20f3b0b01d40d487dd52936",
+      "loc": 1442,
       "symbols": [
         {
           "id": "s:app/test/interview-chat-dom.test.tsx#C0",
@@ -8686,6 +8726,26 @@
           "range": [
             94,
             94
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#REFUSED_COMPOUND",
+          "name": "REFUSED_COMPOUND",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            716,
+            721
+          ]
+        },
+        {
+          "id": "s:app/test/interview-chat-dom.test.tsx#REFUSED_GLOB",
+          "name": "REFUSED_GLOB",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            723,
+            728
           ]
         },
         {
@@ -13741,6 +13801,7 @@
       "to": "f:app/src/lib/agent-store.ts",
       "kind": "import",
       "symbols": [
+        "GenesisDenial",
         "GenesisTurn",
         "TranscriptLinePayload",
         "TurnErrorPayload"
@@ -13807,10 +13868,12 @@
         "StageSegmentState",
         "challengeOf",
         "chipLabel",
+        "denialLine",
         "failureAction",
         "failureDetail",
         "failureHeadline",
-        "questionFooter"
+        "questionFooter",
+        "visibleDenials"
       ]
     },
     {
@@ -13818,6 +13881,7 @@
       "to": "f:app/src/lib/agent-store.ts",
       "kind": "import",
       "symbols": [
+        "GenesisDenial",
         "GenesisTurn",
         "TurnErrorPayload"
       ]
@@ -19883,6 +19947,24 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/genesis/interview-model.ts#denialLine",
+      "to": "s:app/src/genesis/interview-model.ts#denialToolName",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#denialLine",
+      "to": "s:app/src/lib/agent-store.ts#GenesisDenial",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#denialToolName",
+      "to": "s:app/src/lib/agent-store.ts#GenesisDenial",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/genesis/interview-model.ts#failureAction",
       "to": "s:app/src/genesis/interview-model.ts#FailureAction",
       "kind": "type_ref",
@@ -20017,6 +20099,24 @@
     {
       "from": "s:app/src/genesis/interview-model.ts#stageStrip",
       "to": "s:app/src/genesis/interview-model.ts#StageSegmentState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#visibleDenials",
+      "to": "s:app/src/genesis/interview-model.ts#denialToolName",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#visibleDenials",
+      "to": "s:app/src/lib/agent-store.ts#GenesisDenial",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#visibleDenials",
+      "to": "s:app/src/lib/agent-store.ts#TurnErrorPayload",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -20315,6 +20415,18 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/genesis/interview-turns.tsx#DenialNotice",
+      "to": "s:app/src/genesis/interview-model.ts#denialLine",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-turns.tsx#DenialNotice",
+      "to": "s:app/src/lib/agent-store.ts#GenesisDenial",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/genesis/interview-turns.tsx#FailureBlock",
       "to": "s:app/src/genesis/interview-model.ts#failureAction",
       "kind": "call",
@@ -20347,6 +20459,12 @@
     {
       "from": "s:app/src/genesis/interview-turns.tsx#PlannerTurn",
       "to": "s:app/src/genesis/interview-model.ts#questionFooter",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-turns.tsx#PlannerTurn",
+      "to": "s:app/src/genesis/interview-model.ts#visibleDenials",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -24470,7 +24588,7 @@
   ],
   "stats": {
     "files": 126,
-    "symbols": 1120,
-    "edges": 1703
+    "symbols": 1126,
+    "edges": 1712
   }
 }
