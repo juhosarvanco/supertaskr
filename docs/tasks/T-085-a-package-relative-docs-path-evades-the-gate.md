@@ -11,7 +11,7 @@ touches: [tools/e2e]
 builder:
 verifier: claude-opus-5
 built_by: claude-opus-4.8 @T-085
-verified_by: claude-opus-5 @T-085-verify
+verified_by: claude-opus-5 @T-085-verify-2
 review: same-model
 ---
 
@@ -811,3 +811,149 @@ reconciles exactly at its own ref rather than disagreeing.
 `nputer-index --check --root ../..` exit **0**, graph CURRENT at 588891
 bytes / 119 files / 1023 symbols / 1550 edges — GRAPH REGEN confirmed
 not owed materially, not only by reading the trigger.
+
+### 2026-08-23 — APPROVED (claude-opus-5 @T-085-verify-2, review: same-model)
+
+**My blocking finding is closed, and the fix went past it in a way that
+corrects my own verdict.** I recommended narrowing `:1878` to match the
+paragraph at `:2110`. That advice was contaminated: at `8f09df1` the
+`:2110` paragraph OPENS with the correct narrowing ("can name docs/ by
+an ABSOLUTE anchor") and ENDS, six lines later, with *"is the exact set
+of places **the gate's answer** could still be short"* — the disproved
+conclusion, unqualified. An executor who had copied the paragraph I
+pointed at would have moved the defect rather than removed it. Verified
+by reading the paragraph at my own rejection's commit; the coordinator's
+reading is right and mine was incomplete.
+
+**The premise is gone — swept my own way, not the brief's.**
+Case-insensitively, across BOTH scripts and the spec:
+
+    grep -nEi "only (kind of )?file that (can|could) read" \
+      tools/e2e/scripts/*.mjs tools/e2e/tests/docs-input-gate.spec.ts
+    tools/e2e/scripts/docs-scan.mjs:2115:  * the only kind of file that CAN read this repository's docs/." It is a
+
+One occurrence, inside the retraction's own quotation. **The three
+restatements of the CONCLUSION are each corrected by a scoping clause**
+and I found no fourth: limit 6 now says outright *"IT IS NOT THE WHOLE
+RESIDUAL, and saying it was is the error T-085 cost"*; `:1884` scopes to
+*"the ROOT-ANCHORED answer"*; `:2133` to *"THIS CLASS's answer"*; and
+`docs-gate.mjs`'s account-vs-tree comment to *"the ROOT-ANCHORED shape"*.
+Both surviving "exact set of places" occurrences carry a scoping word.
+The `WHAT IT CANNOT SEE` preamble at `:120-143` was already correct and
+is untouched.
+
+**The fix is comments only, proved rather than eyeballed.** Both scripts
+comment-stripped and whitespace-normalised at `8f09df1` and at
+`ea4a758`:
+
+    docs-scan.mjs  executable code identical? true   (39929 chars both)
+    docs-gate.mjs  executable code identical? true   (5657 chars both)
+
+So every finding from my first verdict carries forward unchanged and
+needed no re-running: the seven refused over-admission mutants, the
+containment ruling on the fixtures discriminator, both planted spellings
+deriving, the escape exclusion, the 11 → 12 delta, and the capture
+mutant. The only executable change on this branch since my rejection is
+24 added lines of spec.
+
+**Re-derived at the new main, dot counts stated.** Main `1aa7137`
+(T-013 and T-097 both merged and checkpointed; their worktrees gone —
+live lanes are this one and T-101). Tip `ea4a758`. `git merge-base` =
+`a15b78e`, still unmoved.
+
+    git merge-tree --write-tree 1aa7137 ea4a758 -> 1bda8220…, exit 0
+    git diff --name-only 1aa7137 <TREE>               -> 6   PRESCRIBED
+    git diff --name-only 1aa7137...ea4a758 (3 dots)   -> 6
+    git diff --name-only a15b78e..ea4a758  (2 dots)   -> 6
+    git diff --name-only 1aa7137..ea4a758  (2 dots)   -> 67  FORBIDDEN
+
+`comm -12` over main's advance and the branch is EMPTY. Census at the
+merged tree is unchanged by T-097: **12 readers**, live instance still
+`agent_runner.rs:1760`, 1 package-relative site derived, ledger equality
+holds.
+
+**THE PIN — attacked five ways, and it catches one spelling in one
+file.** Baseline `docs-input-gate.spec.ts` **36/36 exit 0**:
+
+    A  exact two rejected lines, restored outside the window  35/1 exit 1  CAUGHT
+    B  same claim, WRAPPED so CAN / read split across lines   36/36 exit 0 ESCAPES
+    C  same claim, lowercase "can read"                        36/36 exit 0 ESCAPES
+    D  same claim stated in docs-gate.mjs                      36/36 exit 0 ESCAPES
+    E  retraction quotation deleted (positive control)        35/1 exit 1  CAUGHT
+
+A and E reproduce the executor's M1 and M2 independently. B, C and D
+each restore the exact claim I rejected on, at a green suite. B is the
+likely shape, not an exotic one — this file wraps at about 72 columns,
+so whether `CAN read` stays contiguous is an accident of the wrap, and
+the original defect had it contiguous by luck. C matters because the
+file's own corrected sentence at `:1882` writes lowercase "can". D
+matters because `docs-gate.mjs` is where one of the three corrected
+restatements lived, and it is the sibling the pin does not read.
+
+**The tree already demonstrates this without a mutant.**
+`docs-scan.mjs:127-129` states the universal in a different wording —
+*"a file can only read THIS repository's docs/ if it holds THIS
+repository's root"* — outside the retraction window, and the pin does
+not see it. It is benign there (it is itself a retraction, and correct),
+which is what makes it good evidence: a live, differently-worded
+statement of the same claim, where the pin cannot reach, suite green.
+
+**This is NOT a blocking finding and does not gate the merge.** The
+criteria never asked for a pin; criterion 1 asks that the universal be
+corrected to what is true, and it is. The pin is strictly better than
+the `toContain` it replaced — which was satisfiable by the defect, and
+was satisfied by it — and it carries a real positive control. Filed as
+**T-085-s3** with the five mutants and three costed shapes. The one
+thing worth narrowing there is the spec's own prose: it says the
+retraction "has to be the ONLY place it survives", which is the intent,
+while the assertion enforces that for one spelling in one file.
+
+**T-085-s2 — filing is right, and the dead value does not change that.**
+Reproduced purely, no planting, at this tip: a synthetic suite-less
+reader yields `fires: true`, `commands: ["undefined from undefined/"]`.
+`docsGate()` does declare `const commands = new Set()` and fill it under
+`if (r.command !== undefined)` while never reading it — the card already
+records this. My ruling: the dead value makes the fix cheaper to WRITE
+but does not collapse the design choice. Routing the return through the
+existing Set is not a drop-in, because that Set holds bare command
+strings (`cargo test`) while the returned array holds display strings
+(`cargo test from app/src-tauri/`) and the spec asserts on the latter
+form. The real one-liner is guarding the `byPath` template, which is a
+one-line edit and a contract change at once. Three defensible shapes is
+an honest count and this belongs on a card.
+
+One correction for whoever takes `s2`: **"loud garbage becomes a silent
+short answer" overstates the cost.** `fires` is computed from
+`byPath[].readers.length`, not from `commands`, so guarding the template
+leaves the gate FIRING at exit 1 with the reader file still named on its
+per-path line and only the `Run:` list empty. That is weaker than
+silence, and it should be costed as such rather than as the T-084 shape.
+
+**Confirmed in this lane, already filed elsewhere (`T-101-s3`).** The
+gate answers "not owed" at **exit 0** for `./`-prefixed AND absolute
+spellings of a path that fires at exit 1 root-relative, because
+`docsGate()` filters on `p.startsWith("docs/")`. Out of scope here; I
+invoked the gate with root-relative paths throughout.
+
+**Criteria, re-confirmed.** Lines 54-86 are byte-identical to what I
+read at `8f09df1`, so my pre-notes mutant set still applies and all six
+criteria remain met — the resolution arm plus the outright correction,
+the fixtures discriminator holding by containment, the live instance
+derived with no ledger entry, the mutant owing a suite that reds, both
+spellings planted and derived, and the escape excluded and asserted.
+Read to the criteria boundary with `sed -n '1,86p'` again before forming
+this round's mutant set; the pin attack above was designed before the
+notes were opened.
+
+**Environment.** 1420 read with `lsof` only, holder unchanged, `node`
+82549 on `[::1]:1420`. Drill detached at `ea4a758` in a scratch worktree
+outside the repository, deps reached by symlink to this lane rather than
+by any install, reset and removed after. No `pkill`, no real model call.
+CONTROL is **583**, matching the coordinator's correction.
+
+**One record defect, for the integrator not the executor.** `built_by:`
+still reads `claude-opus-4.8 @T-085` while two executors built this
+card — the second round is credited only inside `T-085-s2`'s
+`suggested_by` (`executor claude-opus-5 @T-085-fix`). The frontmatter
+field is stamped on `done`, so it is the integrator's to correct; left
+as found rather than edited from the verifier's seat.
