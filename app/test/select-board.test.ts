@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
-import { selectBoard, shortModelName, statusVisual } from "../src/lib/board-model";
+import {
+  selectBoard,
+  shortModelName,
+  statusVisual,
+  UNMAPPED_KEY,
+  type BoardColumn,
+  type BoardModel,
+} from "../src/lib/board-model";
 
 // Pure-selector tests for the story map board (T-004). Fixtures run
 // through the real parser (parseProjectFromFiles) so these pin the
@@ -232,6 +239,153 @@ describe("selectBoard — unmapped routing (criterion 4)", () => {
   it("the unmapped column does not exist when everything maps", () => {
     const board = selectBoard(withRoadmap([[path("T-011"), task("T-011", "F-01", 1)]]));
     expect(board.columns.some((c) => c.key === "unmapped")).toBe(false);
+  });
+});
+
+// T-097 — a padding-aliased BACKBONE (`F-1` beside `F-01`) is one slot
+// spelled twice; the parser reports it as `aliased-id` / space feature.
+// These bodies pin what the BOARD does with it, and they were written
+// and run BEFORE the ruling below was made, so the behaviour they
+// capture is today's rather than the one that was wanted.
+const ALIASED_ROADMAP = [
+  "# R",
+  "",
+  "## Backbone",
+  "- F-1: One — the unpadded bullet",
+  "- F-01: One padded — the padded bullet",
+  "- F-02: Two — a genuinely different slot",
+  "",
+].join("\n");
+
+const aliasedBoard = (files: Array<[string, string]>): BoardModel =>
+  selectBoard(project([["docs/ROADMAP.md", ALIASED_ROADMAP], ...files]));
+
+describe("selectBoard — a padding-aliased backbone slot (T-097)", () => {
+  it("renders BOTH spellings as columns and SPLITS the slot's tasks across them by exact string", () => {
+    const board = aliasedBoard([
+      [path("T-101"), task("T-101", "F-1", 1)],
+      [path("T-102"), task("T-102", "F-01", 1)],
+    ]);
+
+    // The column SET: two columns for one slot, in ROADMAP order, and
+    // — the half that discriminates this from the unmapped case —
+    // NO unmapped column at all. Neither task is homeless.
+    expect(board.columns.map((c) => c.key)).toEqual(["F-1", "F-01", "F-02"]);
+    expect(board.columns.some((c) => c.key === UNMAPPED_KEY)).toBe(false);
+
+    // Column IDENTITY, per task. Asserting "not in unmapped" would be
+    // satisfied by the defect; these two lines name the column each
+    // task reaches, which is the only assertion the next change moves.
+    const cardsIn = (key: string): string[] =>
+      board.columns.find((c) => c.key === key)?.cards.map((c) => c.id ?? "") ?? ["NO SUCH COLUMN"];
+    expect(cardsIn("F-1")).toEqual(["T-101"]);
+    expect(cardsIn("F-01")).toEqual(["T-102"]);
+    expect(cardsIn("F-02")).toEqual([]);
+
+    // Both columns keep their own name and description — the two
+    // bullets really are two declarations and the board says so (T-017).
+    expect(board.columns.map((c) => c.name)).toEqual(["One", "One padded", "Two"]);
+  });
+
+  // Everything above this line is what the board did BEFORE T-097 and
+  // still does: the ruling refused slot routing. What T-097 ADDS is the
+  // disclosure — below.
+  it("BOTH aliased columns disclose the other spelling; the unaliased one carries no key at all", () => {
+    const board = aliasedBoard([
+      [path("T-101"), task("T-101", "F-1", 1)],
+      [path("T-102"), task("T-102", "F-01", 1)],
+    ]);
+    const column = (key: string): BoardColumn | undefined => board.columns.find((c) => c.key === key);
+
+    expect(column("F-1")?.aliasedWith).toEqual(["F-01"]);
+    expect(column("F-01")?.aliasedWith).toEqual(["F-1"]);
+
+    // ABSENCE, not `[]` — an unaliased column does not grow the key.
+    expect(column("F-02")?.aliasedWith).toBeUndefined();
+    expect(
+      Object.prototype.hasOwnProperty.call(column("F-02") as object, "aliasedWith"),
+    ).toBe(false);
+  });
+
+  it("an UNALIASED backbone discloses nothing anywhere — the marker is not unconditional", () => {
+    const board = selectBoard(
+      withRoadmap([
+        [path("T-011"), task("T-011", "F-01", 1)],
+        [path("T-099"), task("T-099", "F-99", 1)],
+      ]),
+    );
+    expect(board.columns.every((c) => c.aliasedWith === undefined)).toBe(true);
+  });
+
+  it("a THREE-way alias names both other spellings, and the disclosure is per-column", () => {
+    const threeWay = [
+      "# R",
+      "",
+      "## Backbone",
+      "- F-1: A — one",
+      "- F-01: B — two",
+      "- F-001: C — three",
+      "",
+    ].join("\n");
+    const board = selectBoard(project([["docs/ROADMAP.md", threeWay]]));
+    // Columns are in ROADMAP order (F-1, F-01, F-001); the spellings
+    // WITHIN each disclosure are in the parser's own comparator order,
+    // which is string order ('F-001' < 'F-01' < 'F-1'), because they
+    // are the issue's `ids` array minus self and the board does not
+    // re-sort what the parser already ordered.
+    expect(board.columns.map((c) => c.key)).toEqual(["F-1", "F-01", "F-001"]);
+    expect(board.columns.map((c) => c.aliasedWith)).toEqual([
+      ["F-001", "F-01"],
+      ["F-001", "F-1"],
+      ["F-01", "F-1"],
+    ]);
+  });
+
+  // HONEST LABEL (T-097-s2): this body does NOT discriminate removal of
+  // the `space === 'feature'` filter. Component ids are `C-\d{2,}` and
+  // feature ids are `F-\d+`, so a component slot key can never equal a
+  // feature column key and an unfiltered index would leave every column
+  // untouched anyway. The filter is correct and deliberate, and it is
+  // provably unreachable-as-a-bug for the board; what this body pins is
+  // the OUTCOME (a component alias marks no column), not the mechanism.
+  it("a COMPONENT-space alias marks no board column", () => {
+    const componentAlias = (id: string): [string, string] => [
+      `docs/architecture/components/${id}-thing.md`,
+      fm(["id", id], ["name", `${id} thing`], ["layer", "app"], ["status", "auto"]),
+    ];
+    const parsed = project([
+      ["docs/ROADMAP.md", ROADMAP],
+      componentAlias("C-05"),
+      componentAlias("C-005"),
+    ]);
+    // The parser really did raise an alias — in the OTHER space.
+    expect(
+      parsed.issues.filter((i) => i.kind === "aliased-id").map((i) => i.space),
+    ).toEqual(["component"]);
+    expect(selectBoard(parsed).columns.every((c) => c.aliasedWith === undefined)).toBe(true);
+  });
+
+  it("the split is invisible in the model without the alias marker — the parser's issue is the only other signal", () => {
+    const parsed = project([
+      ["docs/ROADMAP.md", ALIASED_ROADMAP],
+      [path("T-101"), task("T-101", "F-1", 1)],
+    ]);
+    const aliasIssues = parsed.issues.filter((i) => i.kind === "aliased-id");
+    expect(aliasIssues).toHaveLength(1);
+    expect(aliasIssues[0]).toMatchObject({ space: "feature", ids: ["F-01", "F-1"] });
+  });
+
+  it("ONE spelling in the backbone is the contrasting case: the other spelling is homeless, visibly", () => {
+    const onlyPadded = ["# R", "", "## Backbone", "- F-01: One — the padded bullet", ""].join("\n");
+    const board = selectBoard(
+      project([
+        ["docs/ROADMAP.md", onlyPadded],
+        [path("T-101"), task("T-101", "F-1", 1)],
+      ]),
+    );
+    expect(board.columns.map((c) => c.key)).toEqual(["F-01", UNMAPPED_KEY]);
+    expect(board.columns[0]?.cards.map((c) => c.id)).toEqual([]);
+    expect(board.columns[1]?.cards.map((c) => c.id)).toEqual(["T-101"]);
   });
 });
 

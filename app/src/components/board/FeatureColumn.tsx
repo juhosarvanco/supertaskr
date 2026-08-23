@@ -18,6 +18,15 @@ import { SliceLine } from "./SliceLine";
  *
  * T-005: cards forward clicks up as detail-panel opens. T-017: the
  * parked row expands into entries that open the panel the same way.
+ *
+ * T-097: when the backbone spells one numeric slot twice (`F-1` beside
+ * `F-01`) the header carries an `= <other spelling>` marker after the
+ * name. The board does NOT merge those columns — see the ruling at
+ * `selectBoard`'s routing site — so this marker is the only thing that
+ * tells a reader the two plausible-looking columns are one slot and
+ * that its tasks are split across them by exact string. It reuses the
+ * id chip's own classes deliberately: this is identity metadata, and
+ * adding no new utility keeps the compiled stylesheet unmoved.
  */
 export function FeatureColumn({
   column,
@@ -51,6 +60,16 @@ export function FeatureColumn({
         <span className="truncate text-base font-semibold tracking-title text-column-header-foreground">
           {column.name}
         </span>
+        {column.aliasedWith !== undefined && (
+          <span
+            data-testid="column-alias"
+            data-aliased-with={column.aliasedWith.join(" ")}
+            title={`one backbone slot spelled twice: ${[column.featureId, ...column.aliasedWith].join(", ")} — the board keeps a column per spelling and each task lands in the column matching its exact feature: string, so this slot's tasks are SPLIT across them`}
+            className="shrink-0 font-mono text-xs text-column-header-id"
+          >
+            = {column.aliasedWith.join(" = ")}
+          </span>
+        )}
       </header>
       <div aria-hidden="true" className="mt-0.5 mb-1 h-px bg-hairline" />
       <ul className="flex flex-col gap-2">

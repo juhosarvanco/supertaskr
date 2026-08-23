@@ -1,4 +1,5 @@
 import type {
+  ParseIssue,
   ProjectParseResult,
   ReviewMode,
   TaskRecord,
@@ -134,6 +135,19 @@ export interface BoardColumn {
   /** Header text: feature name, or "unmapped". */
   name: string;
   description: string;
+  /**
+   * The OTHER backbone spellings that occupy this column's numeric slot
+   * (T-097): `F-1`'s column carries `["F-01"]` and vice versa. Present
+   * only on a column the parser named in an `aliased-id` issue —
+   * ABSENT, never `[]`, when the id is unaliased (T-017: absence is not
+   * a count of zero).
+   *
+   * This is the board's DISCLOSURE of a defect it deliberately does not
+   * repair; the reason it does not is at the routing site in
+   * `selectBoard`. It exists so the split is visible AT the column
+   * rather than only in the issue list on the other side of the screen.
+   */
+  aliasedWith?: string[];
   /** Real cards (not suggested/parked) in display order: milestone-1
    * block first, then later; priority asc within each block. */
   cards: BoardCard[];
@@ -215,9 +229,46 @@ interface MutableColumn {
   featureId?: string;
   name: string;
   description: string;
+  aliasedWith?: string[];
   real: BoardCard[];
   ghosts: BoardCard[];
   parked: BoardCard[];
+}
+
+/**
+ * Feature id -> the OTHER spellings sharing its numeric slot, read
+ * STRAIGHT OFF the parser's `aliased-id` issues (T-097).
+ *
+ * The board does NOT re-derive the slot rule. `idSlotKey` lives in
+ * `lib/parser/src/id-slot.ts` and is not exported from the package,
+ * and T-057 is explicit that one rule with two implementations is two
+ * chances to disagree — so this reads the parser's ANSWER instead of
+ * asking the same question again. The consequence is worth naming: if
+ * the parser ever stops reporting a feature alias, these columns stop
+ * disclosing it, which is the correct coupling. One source of truth
+ * about what aliases what.
+ *
+ * `space: 'feature'` is the filter that matters — the same kind is
+ * emitted for component and task ids, and a component alias must not
+ * mark a board column.
+ */
+function featureAliasIndex(issues: readonly ParseIssue[]): Map<string, string[]> {
+  // ADR-009: keys are feature ids read from files — a Map, never a literal.
+  const others = new Map<string, string[]>();
+  for (const issue of issues) {
+    if (issue.kind !== "aliased-id" || issue.space !== "feature") continue;
+    for (const id of issue.ids) {
+      const rest = issue.ids.filter((other) => other !== id);
+      if (rest.length > 0) others.set(id, rest);
+    }
+  }
+  return others;
+}
+
+/** `{ aliasedWith }` when there is one, `{}` when there is not — so an
+ * unaliased column never grows the key (T-017's absence discipline). */
+function spreadAlias(alias: string[] | undefined): { aliasedWith?: string[] } {
+  return alias === undefined ? {} : { aliasedWith: alias };
 }
 
 /** Column key/name for the trailing catch-all column. */
@@ -229,10 +280,13 @@ export const UNMAPPED_KEY = "unmapped";
  * - Columns = backbone features in ROADMAP order (duplicate backbone ids
  *   collapse into the first occurrence — the parser already flags the
  *   duplicate as an issue; a second identical column adds nothing).
- * - A task routes to its feature's column; tasks whose feature is unset
- *   or not in the backbone land in the trailing "unmapped" column
- *   (criterion 4 — nothing is ever dropped), which appears only when
- *   non-empty. Feature-less suggestions land there too.
+ * - A task routes to its feature's column BY EXACT STRING; tasks whose
+ *   feature is unset or not in the backbone land in the trailing
+ *   "unmapped" column (criterion 4 — nothing is ever dropped), which
+ *   appears only when non-empty. Feature-less suggestions land there
+ *   too. A padding-aliased backbone (`F-1` beside `F-01`) is DISCLOSED
+ *   on both columns and deliberately NOT normalised — the ruling and
+ *   its three reasons are at the routing site below (T-097).
  * - Within a column: parked → the collapsed row's entries (id-ordered,
  *   T-005-s1), suggested → ghosts, the rest → real cards ordered
  *   milestone-1 block first (slice line between the blocks stays a
@@ -244,6 +298,7 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
   // ADR-009: feature ids come from files — keyed collection is a Map.
   const byFeature = new Map<string, MutableColumn>();
   const featureColumns: MutableColumn[] = [];
+  const aliasedWith = featureAliasIndex(model.issues);
 
   for (const feature of model.features) {
     if (byFeature.has(feature.id)) continue; // duplicate backbone id: first wins, issue already flagged
@@ -252,6 +307,10 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
       featureId: feature.id,
       name: feature.name,
       description: feature.description,
+      // Spread, not `aliasedWith: undefined`: an unaliased column does
+      // not carry the key at all, so `toStrictEqual` and `in` agree
+      // with the doc comment's "ABSENT, never []".
+      ...spreadAlias(aliasedWith.get(feature.id)),
       real: [],
       ghosts: [],
       parked: [],
@@ -270,6 +329,43 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
   };
 
   for (const task of model.tasks) {
+    // T-097 — THE RULING: routing stays EXACT-STRING, and a
+    // padding-aliased backbone is DISCLOSED rather than repaired.
+    //
+    // `F-1` beside `F-01` is one numeric slot spelled twice; the parser
+    // reports it (`aliased-id`, space `feature`) and it is tempting to
+    // read that issue here and route both spellings to one canonical
+    // column, "repairing" the alias the way the skip above appears to
+    // repair a duplicate. REFUSED, for three reasons the duplicate case
+    // does not share:
+    //
+    // 1. THERE IS NO CANONICAL COLUMN TO ROUTE TO. The two bullets are
+    //    two DECLARATIONS, each with its own name and description;
+    //    nothing in the roadmap says which one the slot means. Choosing
+    //    — first-declared, or the shorter spelling — would make the
+    //    board pick an arbitrary winner nobody declared, which is the
+    //    precise defect `aliased-id` exists to report (T-030, T-053).
+    //    The board would commit the bug it is displaying the warning
+    //    for, and it would do so silently, under a heading naming one
+    //    of the two descriptions.
+    // 2. THE DUPLICATE-ID SKIP IS NOT A PRECEDENT FOR NORMALISING.
+    //    Two bullets both spelled `F-01` carry ONE id string, so a Map
+    //    keyed by that string cannot hold two columns for them: the
+    //    skip is a consequence of KEYING, not a policy of repairing
+    //    defects. An alias has two distinct strings and keys two
+    //    distinct columns with no help from anyone.
+    // 3. A TASK IS NEVER FILED AGAINST TEXT IT DOES NOT CARRY. Today
+    //    `feature: F-01` lands under the bullet spelled `F-01` — what
+    //    the file says, verifiable by reading two files. Slot routing
+    //    would file it under a heading its own frontmatter never names.
+    //
+    // What the board owes instead is DISCLOSURE WHERE THE HARM IS: both
+    // columns carry `aliasedWith`, and FeatureColumn renders it in the
+    // header, so the one-slot-two-columns split is visible at the
+    // columns rather than only as an advisory issue elsewhere on the
+    // screen. Pinned in `app/test/select-board.test.ts`, describe "a
+    // padding-aliased backbone slot (T-097)", and in the DOM by
+    // `app/test/board-truth.test.tsx`.
     const column =
       (task.feature !== undefined ? byFeature.get(task.feature) : undefined) ?? unmapped;
     const card = toCard(task);
@@ -294,6 +390,7 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
       featureId: column.featureId,
       name: column.name,
       description: column.description,
+      ...spreadAlias(column.aliasedWith),
       cards: [...milestone1, ...later],
       sliceIndex: milestone1.length,
       ghosts: [...column.ghosts].sort(byIdThenFile),
