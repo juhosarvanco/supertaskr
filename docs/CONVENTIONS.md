@@ -758,10 +758,31 @@
   card the parser will refuse, or the root-anchor account and the tree
   disagree), 2 called wrong, 3 the gate could not run — the same four
   codes `index --check` and `boot:check` use. **AN EMPTY PATH LIST IS
-  EXIT 2, NOT EXIT 0** (T-084-s6): the invocation above pipes through
-  `xargs`, BSD `xargs` runs the utility once even on empty input, so a
-  range command that FAILED used to reach this gate as zero paths and be
-  answered "not owed" — silence wearing a clean gate's costume. IF it
+  EXIT 2, NOT EXIT 0** (T-084-s6) — and that remedy only reaches you if
+  you call the gate DIRECTLY, with the paths as ARGUMENTS, which is what
+  the RUN IT line above prints.
+  **NEVER PIPE IT THROUGH `xargs`, AND DISTRUST ANY SENTENCE THAT NAMES
+  AN EXIT MAPPING WITHOUT NAMING THE PLATFORM** (T-061-s3, measured
+  independently by that card's executor and its verifier, and
+  re-measured here at T-089 on Darwin 25.6.0 against `/usr/bin/xargs`).
+  TWO OF THE FOUR CODES DO NOT SURVIVE THE PIPE ON THIS MACHINE. An
+  EMPTY list never invokes the utility at all and the pipeline exits 0,
+  so a range command that FAILED arrives as "nothing owed" — silence
+  wearing a clean gate's costume, which is the exact outcome T-084-s6
+  exists to remove, reached by the opposite mechanism from the one that
+  clause describes. And EVERY nonzero utility exit collapses to 1
+  (measured one invocation per code over 1, 2, 3, 4, 5, 100, 123, 125,
+  126, 127 and 255), so "called wrong" and "could not run" both arrive
+  as "has a verdict". The direct call is the control: no arguments is
+  **2** direct and **0** piped; an unknown flag is **2** direct and
+  **1** piped; a docs path with a reader is **1** either way. The
+  widely-quoted **123** is GNU's mapping — what CI's ubuntu runner will
+  use — so the contract breaks in two DIFFERENT ways on the two
+  platforms and a mapping quoted without its platform is wrong on one of
+  them. **T-090 OWNS THE FIX** — a named command, a CI step, one
+  spelling shared with `docs-gate.mjs`'s own header comment, and the
+  full two-platform matrix; this clause is only the true minimum until
+  that lands, and it deliberately builds no matrix of its own. IF it
   cannot run THEN say so LOUDLY in the checkpoint, naming the reason and
   the exit code; a skipped gate is news, never silence.
   `tools/e2e/tests/docs-input-gate.spec.ts` is the enforcing copy and it

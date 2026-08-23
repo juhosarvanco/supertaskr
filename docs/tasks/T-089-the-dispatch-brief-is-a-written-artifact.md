@@ -406,7 +406,8 @@ get a second red, not a green.
 target string count back to 1.
 
 **WHAT COULD NOT BE DRILLED, SAID PLAINLY.** Everything this card ADDS is
-prose in `method/`, and **no reader covers any of it** — not the 13-row
+prose in `method/` plus three prose clauses in CONVENTIONS, and **no
+reader covers any of it** — not the 13-row
 brief table, not the 7-rule lane protocol, not the stamp rule in
 TASK-FORMAT. Derived rather than assumed: the only first-party code that
 asserts anything about a `method/` file's CONTENT is `kit.rs` (the
@@ -547,6 +548,79 @@ exactly the forbidden count, and that arithmetic is the proof the two
 sets are disjoint. **THE FENCE HELD ACROSS A MOVING MAIN**: main's 70
 paths include no `method/` file, no `docs/CONVENTIONS.md`, and none of
 this lane's fourteen.
+
+### An in-fence addition: the xargs clause was false in both halves
+
+Added to this lane after the fact, on the coordinator's routing, because
+`docs/CONVENTIONS.md` is inside this fence and the correction is one
+sentence. **SOURCE: `T-061-s3`, measured independently by T-061's
+executor and its verifier, verdict at `ed0c622`.** RE-MEASURED HERE
+rather than transcribed, per row 13 of the contract this card writes —
+and the re-measurement is sharper than the summary I was handed.
+
+The DOCS GATE bullet said: *"the invocation above pipes through `xargs`,
+BSD `xargs` runs the utility once even on empty input"*. **Both halves
+are false, and the first is false about the very line above it** — the
+RUN IT line prints a DIRECT call with paths as arguments; the pipeline
+lives only in `docs-gate.mjs`'s header comment.
+
+Measured at T-089 on **Darwin 25.6.0, arm64, `/usr/bin/xargs`**, with a
+planted probe script that announces its own invocation on stderr:
+
+| input | does the utility run? | pipeline exit |
+|---|---|---|
+| empty (`printf '' \| xargs <probe>`) | **NO — the probe never printed** | **0** |
+| empty (`printf '' \| xargs echo HELLO`) | no, nothing printed | 0 |
+
+And the mapping, one invocation per code over utility exits **1, 2, 3,
+4, 5, 100, 123, 125, 126, 127, 255**: every one arrives as **1**. Only 0
+survives as 0.
+
+Against the gate's own four codes, with the direct call as the control:
+
+| call | direct | through `/usr/bin/xargs` |
+|---|---|---|
+| no arguments | **2** called wrong | **0** — never invoked |
+| `--nope` | **2** | **1** |
+| `docs/ROADMAP.md` | **1** | **1** |
+| `README.md` | **0** | **0** |
+
+**TWO OF THE FOUR CODES ARE DESTROYED.** An empty list — which is what a
+FAILED range command produces — arrives as *nothing owed*, the exact
+outcome `T-084-s6` was written to remove, reached by the opposite
+mechanism from the one its clause describes. And *called wrong* and
+*could not run* both arrive as *has a verdict*. **The 123 in the old
+sentence and in T-084's checkpoint is GNU's mapping**, which is CI's
+ubuntu runner — so the contract breaks in two DIFFERENT ways on the two
+platforms, and a mapping quoted with no platform beside it is wrong on
+one of them. My clause names the platform and prescribes the direct
+call; it deliberately builds NO matrix, because `T-090` owns that (read
+at `f306ee9`: it takes the named command, the CI step, the shared
+spelling with `docs-gate.mjs`'s header, and the two-platform matrix).
+
+**AND THE CLAUSE HAS NO READER — DEMONSTRATED, NOT ASSUMED.** The DOCS
+GATE bullet IS read by `docs-input-gate.spec.ts`, which is why this
+needed checking rather than assuming: that spec asserts the bullet
+contains `docs-gate.mjs --census`, contains both script names, carries
+no transcribed site count, and that its backticked `<command> from
+<dir>/` strings equal the derived reader set exactly. **None of those
+touch the clause's content.** Poisoned one-sidedly — `NEVER PIPE IT`
+flipped to `ALWAYS PIPE IT`, and the empty-list consequence changed from
+"nothing owed" to "exit 2", i.e. the clause's own central claim negated,
+SUBS=2, read back with `git diff` — `docs-input-gate.spec.ts` and
+`workflow-parity.spec.ts` together stay at **44 passed, exit 0**.
+Restored by byte copy, sha256 back to `5f37c301…`. So this correction
+joins the brief contract and the lane protocol in `T-089-s3`'s column:
+true, load-bearing, and held by nothing but the next reader's attention.
+
+I also checked mechanically, before running anything, that the edited
+bullet still satisfies all four of that spec's actual assertions —
+`conventionsBullet` finds exactly ONE bullet for `DOCS GATE (T-084`, the
+site-count regex does not match, and the backticked set is still exactly
+the four derived suite commands. Adding a backticked phrase of the shape
+`x from y/` anywhere in this bullet would have redded the lane by name;
+that is the one property of this bullet a reader DOES hold, and it is
+worth knowing before editing it.
 
 ### One sentence of my own that the tree falsified while I wrote it
 
