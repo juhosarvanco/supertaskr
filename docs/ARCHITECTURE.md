@@ -565,10 +565,17 @@ ADR-014/015).
   the brain.
   **AND SINCE T-084, docs/ IS ALSO A CODE INPUT — the brain is read by
   programs, and that is now a standing property of this layout rather
-  than an accident of four suites.** Eleven first-party bodies across
-  ALL FOUR packages resolve a path under docs/ against this
-  repository's own root, so a commit whose entire diff is markdown can
-  red a suite; it has done so twice (`9c64cd8`, `fede266`). The repo
+  than an accident of four suites.** First-party bodies across ALL FOUR
+  packages resolve a path under docs/ — most against this repository's
+  own root, and since T-085 at least one against its own PACKAGE
+  directory — so a commit whose entire diff is markdown can red a suite;
+  it has done so twice (`9c64cd8`, `fede266`). **THE NUMBER OF THEM IS
+  DELIBERATELY NOT WRITTEN HERE**: it is `node
+  tools/e2e/scripts/docs-gate.mjs --census` from the repo root, for the
+  reason docs/CONVENTIONS.md's DOCS GATE bullet gives at length — this
+  sentence carried the digit ELEVEN and T-085 made it twelve, which is
+  the second time a transcribed reader count in this tree went green and
+  wrong. The repo
   therefore carries a THIRD standing gate beside BOOT GATE and GRAPH
   REGEN — the DOCS GATE, specified in docs/CONVENTIONS.md and
   implemented as `tools/e2e/scripts/docs-gate.mjs` +
@@ -585,8 +592,21 @@ ADR-014/015).
   `index --check` is not the gate that missed this. The residual is
   recorded rather than papered over — the gate's root-anchor ledger
   lives under `tools/e2e` while four of its six entries argue about
-  `app/src-tauri` (`T-084-s7`), and a docs path expressed relative to a
-  PACKAGE directory escapes every arm (`T-084-s8`).
+  `app/src-tauri` (`T-084-s7`). **THE PACKAGE-RELATIVE HOLE IS CLOSED,
+  AND HOW IT CLOSED IS THE PART WORTH KNOWING (T-085).** `T-084-s8` said
+  a docs path expressed relative to a PACKAGE directory escapes every
+  arm, and the tree held a live instance —
+  `app/src-tauri/tests/agent_runner.rs` reading a captured planner turn
+  through `CARGO_MANIFEST_DIR` + `../../docs/…`, owed by `cargo test`
+  and named by no arm, so the gate could answer with only green suites
+  while bare `cargo test` redded. The fix RESOLVES each docs-shaped
+  literal against its own evaluated base and keeps what lands inside
+  `<root>/docs`, which means the class is closed BY CONSTRUCTION rather
+  than by a population anyone could enumerate — so what bounds it is the
+  textual filter, whose one disclosed gap is `T-085-s1`, and the pin
+  that guards the retraction reaches one spelling in one file
+  (`T-085-s3`). Root-anchoring is therefore the ledger's subject, not
+  the gate's.
 - Map data (F-06): C-07 writes docs/architecture/graph.json —
   committed, deterministic, volatile-field-free (ADR-014); intent =
   docs/architecture/components/*.md parsed by C-06 (same C-namespace

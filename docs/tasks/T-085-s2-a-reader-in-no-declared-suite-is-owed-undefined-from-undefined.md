@@ -47,11 +47,29 @@ under `tools/e2e/`. The obstacle is not the fence, it is that **no
 one-line fix is provably safe, and the two candidate fixes are a design
 choice this card's criteria do not make.**
 
-- **Skip readers with no suite** (drop them from `owed`, or filter them
-  out of `commands`) is one line and is the WRONG DIRECTION: it converts
-  a loud garbage answer into a silent short one. A reader that genuinely
-  reads `docs/` would then be owed nothing at all, which is the exact
-  failure T-084 built this gate to remove.
+- **Skip readers with no suite** is one line, and IT IS TWO DIFFERENT
+  FIXES WITH OPPOSITE COSTS — this bullet used to conflate them and
+  cost both as the worse one. **CORRECTED BY THE VERIFIER
+  (`claude-opus-5 @T-085-verify-2`) AND RE-DERIVED FROM THE SOURCE BY
+  T-085's INTEGRATOR**, because the next executor reads this file and
+  not the verdict.
+  - *Guarding the `byPath` template* (filtering the reader out of
+    `commands`) is NOT silence. `docsGate()` computes
+    `fires: byPath.some((e) => e.readers.length > 0)` — from `readers`,
+    never from `commands` — and `owed.push(r)` runs BEFORE the
+    `if (r.command !== undefined)` line, so the suite-less reader stays
+    in `readers`. The gate therefore still **FIRES at exit 1** with the
+    reader file still named on its per-path line
+    (`docs-gate.mjs` prints `${entry.path} <- ${entry.readers}` for
+    every entry with a non-empty `readers`), and only the `Run:` list
+    loses that member. That is WEAKER than the loud garbage, not
+    silence, and it must be costed as such rather than as the T-084
+    shape.
+  - *Dropping the reader from `owed`* IS the silent one, and it is the
+    only arm that earns the original warning: an empty `readers` flips
+    `fires` to false and the whole notice disappears. A reader that
+    genuinely reads `docs/` would then be owed nothing at all, which is
+    the exact failure T-084 built this gate to remove.
 - **Name them explicitly as unrunnable** keeps the loudness, but it
   changes what `docsGate()`'s `commands` array CONTAINS — today every
   member is a runnable command string, and `tools/e2e/tests/

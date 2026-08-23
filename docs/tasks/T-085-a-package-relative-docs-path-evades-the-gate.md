@@ -5,13 +5,13 @@ feature: F-06
 milestone: 4
 priority: 43
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 builder:
 verifier: claude-opus-5
-built_by: claude-opus-4.8 @T-085
-verified_by: claude-opus-5 @T-085-verify-2
+built_by: claude-opus-5 @T-085 (re-built after the rejection by claude-opus-5 @T-085-fix)
+verified_by: claude-opus-5 @T-085-verify (re-verified @T-085-verify-2, 2026-08-23)
 review: same-model
 ---
 

@@ -534,9 +534,14 @@ goal. They are not re-stamped (that was the arm the ruling declined:
 card list will not match its goal, and that is a known and accepted
 cost of the ruling.
 Of the four cards milestone 3 promised would "re-enter after it"
-(T-010, T-013, T-014, T-015), **T-014 is already done** — the indexer
-binary landed with watch and check modes. The other three remain
-planned and remain backlog rather than slice content.
+(T-010, T-013, T-014, T-015), **TWO are already done** — T-014's
+indexer binary landed with watch and check modes, and **T-013 landed
+2026-08-23** (merge `6834287`, checkpoint `d673039`): semantic zoom
+T1/T2 plus the churn overlay, which gave the map pane a third data
+source that is not a file. T-010 and T-015 remain planned and remain
+backlog rather than slice content. (This paragraph read "the other
+three remain planned" for two checkpoints after T-013 merged; corrected
+at T-085's.)
 Open before any card dispatches: **D3** (may the app ever write into
 `docs/`? — it never has; gates the selector card only, not the slice)
 and **D5** (what can `model@session` mean, given `--model` is
