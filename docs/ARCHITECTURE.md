@@ -494,6 +494,52 @@ ADR-014/015).
   registry still stops at C-14. What is NOT here is the RENDERING: the
   notice a human would see lives in C-13's chat, outside this fence
   (`T-081-s1`).
+  **T-070 BOUNDS THE ONE READ IN THIS COMPONENT THAT HAD NO BOUND, and
+  like T-081 it moves the GRAPH while moving no IPC.** Since T-029 the
+  arrival at the interview screen rehydrated its transcript by reading
+  the WHOLE `.nputer/genesis/transcript.jsonl` and parsing every line
+  before dropping all but the last `MAX_REHYDRATED_LINES` (200) — the
+  cap protected the webview and nothing protected the read, so a
+  tens-of-MiB transcript cost a tens-of-MiB read on every arrival. The
+  read is now bounded AT THE READ: `agent::transcript` calls
+  `read_transcript_tail`, which drives a private
+  `tail_lines<R: Read + Seek>` that seeks from the end and walks
+  backward in `TAIL_CHUNK` (64 KiB) steps, stopping at the line budget
+  OR a byte ceiling of `MAX_REHYDRATED_LINES × TRANSCRIPT_TEXT_CAP`
+  (= 52 MB, independent of file size). `TRANSCRIPT_TEXT_CAP` and the
+  losable-by-charter property are untouched; nothing rotates, truncates
+  or deletes. The bound is held by a pin PAIR whose COMPOSITION is the
+  point — a `Counting<R>` cost pin that is total because `tail_lines` is
+  handed no path (its only channel to disk is `src`), and a six-arm
+  source tripwire
+  `the_only_production_path_to_the_transcript_is_the_bounded_one` that
+  binds the callee set of each hop from `genesis_transcript` down, so a
+  whole-file read planted at ANY hop, in an allowlisted leaf, or in a
+  new ordinary reader of either file reds BY NAME and FAILS CLOSED. It
+  is an allowlist and not a denylist for the same reason
+  `EXPECTED_GRANTS` is (`T-070-s5` records that its doc comment
+  overstates the refactor-tolerance — a benign loop-split reds it, fails
+  closed; and the fragment-reconstruction bypass it cannot kill is
+  disclosed and honestly bounded, `T-070-s6`, the `T-080-s4`
+  precedent). The CLI-less half is the user-facing one:
+  `KickoffOutcome::Ready` now carries `record: Option<GenesisRecord>`
+  filled by `sessions::genesis_record` — the ONE place that fact lives,
+  no CLI anywhere in the call — so a user with no supported CLI, routed
+  to the hand-driven kickoff, is finally told what they already banked
+  (the turn count reaches the DOM). **NO IPC AND NO GRANT MOVED** —
+  thirteen commands at both ends, `lib.rs` a 0-line diff, `acl_pin.rs` a
+  0-file diff at the same 92-grant `8d24cbad…` — **but the GRAPH DID**,
+  exactly the T-081 shape: `agent-store.ts` gains `GenesisRecordPayload`
+  and `InterviewChat.tsx` gains `bankedSentence`, taking the graph
+  +2 symbols / +4 edges to **1023 / 1550**, every new edge's endpoints
+  inside C-13 and C-14 so no component relation moved and the registry
+  still stops at C-14. The honest edge, corrected in the card body:
+  bounding the read changed one answer — a tail of unparseable lines
+  rehydrates as EMPTY where the whole-file read reached further back
+  (`T-070-s3`), and a newline-free file answers with fewer lines than
+  the budget — both deliberate, both on inputs `append_transcript`
+  cannot produce, each pinned. The FILE still grows unbounded
+  (`T-070-s2`).
   area app-agent since T-025,
   where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
   `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and

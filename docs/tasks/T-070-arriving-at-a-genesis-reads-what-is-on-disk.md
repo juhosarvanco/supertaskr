@@ -5,7 +5,7 @@ feature: F-03
 milestone: 3
 priority: 13
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-agent, app-interview]
 builder:

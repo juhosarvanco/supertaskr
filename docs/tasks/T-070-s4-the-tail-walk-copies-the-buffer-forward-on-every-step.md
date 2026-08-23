@@ -3,7 +3,7 @@ id: T-070-s4
 title: The tail walk copies its whole buffer forward on every backward step, so a large legitimate tail costs O(steps squared)
 status: suggested
 suggested_by: verifier claude-opus-5 @T-070-verify
-closed_by: 1e0b940 (task/T-070-arrival-reads-disk, 2026-08-23) — the second arm below, taken in the same rewrite as the verdict's BLOCKING 2
+closed_by: aec0d66 (task/T-070-arrival-reads-disk, 2026-08-23) — the second arm below, taken in the same rewrite as the verdict's BLOCKING 2
 ---
 
 **DISCHARGED BY THE WORK THAT ANSWERED THE VERDICT, AND THIS FILE STAYS

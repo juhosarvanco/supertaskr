@@ -457,11 +457,31 @@ plain exit-code failure with the 401 still readable in the detail and
 when this runner is unsure, it relays what it saw instead of naming a
 cause, because a wrong name costs the user an affordance and a relayed
 fact never does.
+T-070 merged 2026-08-23 and bounds the one read in this milestone that
+had no bound. Since T-029 the interview screen rehydrates its transcript
+from disk on every arrival — and it did so by reading the WHOLE
+`transcript.jsonl` and parsing every line before throwing all but the
+last 200 away, so a tens-of-MiB transcript cost a tens-of-MiB read on
+every visit. The read is now bounded AT THE READ: a backward tail walk
+that stops at the line budget or a byte ceiling (52 MB, independent of
+file size), so arrival costs the budget and not the file, with a
+six-arm source pin keeping the only production path to that file the
+bounded one. What a user can SEE that they could not: a user with no
+supported CLI — routed to the hand-driven kickoff, and until now told
+NOTHING about the interview they had already banked — is now shown, in
+that same block, how many turns they banked and where the artifacts are.
+The card corrects its own premise in place: bounding the read changed
+one answer, because a budget on lines READ cannot reach past a tail of
+garbage the whole-file read would have skipped — so an unparseable tail
+now rehydrates as empty and a newline-free file answers with fewer lines
+than the budget, both deliberate, both on inputs the transcript writer
+cannot produce, each pinned. The FILE it reads still grows forever; that
+is filed (T-070-s2), not closed.
 **The milestone is NOT complete, and what it waits on is not a task.**
 Every card on milestone 3's list — T-023 → T-024 → T-026 → T-037 →
 T-025 → T-039 → T-041 → T-042 → T-048 → T-049 → T-050 → T-027 → T-051 →
-T-028 → T-029 — plus T-060's resolver hardening, T-043's kill path and
-T-069's relay is
+T-028 → T-029 — plus T-060's resolver hardening, T-043's kill path,
+T-069's relay and T-070's bounded arrival read is
 through the pipeline.
 The evidence the claim rests on
 **still does not exist: not one planner turn has ever been observed
