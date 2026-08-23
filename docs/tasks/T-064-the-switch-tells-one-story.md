@@ -124,7 +124,6 @@ against the real reducers for both interleavings. @human: none.
 
 ## Implementation notes
 
-## Verdicts
 
 ### THE RULINGS, RECORDED BEFORE IMPLEMENTATION
 
@@ -624,3 +623,5 @@ the gate owes `npm test from app/`, `npm test from tools/e2e/` and
 re-run AFTER the last doc edit** — 854/854, 121/121 (scratch port
 14620), 263/263, every exit code 0. That re-run is what caught this
 lane's own backtick title, one section up.
+
+## Verdicts
