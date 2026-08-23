@@ -1148,3 +1148,42 @@ own premise holding and the argument for its ruling.
   writer per line was luck there, not property"*). That is finding 9: the
   answer is right, and I should not have been handed it.
 
+
+---
+
+### The verdict commit's own gate run (T-081-s9)
+
+The DOCS GATE fires on this verdict's three `docs/` paths, so everything
+it owes was re-run AFTER `989731c` landed. Derived at that commit, with
+main at `71f49cf` (*Merge T-064* — main moved twice more during this
+verification, `ea7ea0a` → `9a8d523` → `71f49cf`):
+
+    node tools/e2e/scripts/docs-gate.mjs <16 paths>   -> exit 1, 10 docs paths are code inputs, 4 suites owed
+
+| suite | result | exit |
+|---|---|---|
+| `npx vitest run` from lib/parser | 263 passed (263), 12 files | **0** |
+| `npm run build` from app | built in 754ms | **0** |
+| `npm test` from app | 840 passed (840), 43 files | **0** |
+| bare `cargo test --no-fail-fast` | 352 passed / 0 failed / 3 ignored over 15 result lines | **0** |
+| `npm test` from tools/e2e | 121 passed | **0** |
+| `npm run lint:tokens` | clean, TOKEN 123 / **CONTROL 600** | **0** |
+
+CONTROL moves **598 → 600**, which is exactly the two finding files this
+verdict adds; derive it at your own ref rather than quoting either.
+The kill-path flake did not appear in either cargo run — tally **2 of 2
+green** for
+`the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists`.
+
+Merge preview re-derived at `71f49cf`, every dot count stated:
+
+    git merge-tree --write-tree 71f49cf 989731c  -> tree fae157ba…, exit 0
+    git diff --name-only 71f49cf <TREE>   PRESCRIBED  -> 16
+    git diff --name-only 71f49cf...989731c  three dots -> 16
+    git diff --name-only 71f49cf..989731c   two dots   -> 124   FORBIDDEN
+
+**Clean** at 16 paths — 10 under `docs/`, 6 under `method/`. GRAPH REGEN
+and BOOT GATE remain NOT OWED at 0 of 16; every path is `.md`.
+
+Drill hygiene: both scratch worktrees this verification created were
+detached, at a commit, on a scratch `CARGO_TARGET_DIR`, and are removed.
