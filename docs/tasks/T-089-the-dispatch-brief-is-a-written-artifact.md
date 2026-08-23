@@ -11,7 +11,7 @@ touches: [method/, docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by: claude-opus-5 @T-089
-verified_by: claude-opus-5 @T-089-verify
+verified_by: claude-opus-5 @T-089-verify (2 passes)
 review: same-model
 ---
 
@@ -1366,3 +1366,276 @@ and BOOT GATE remain NOT OWED at 0 of 16; every path is `.md`.
 
 Drill hygiene: both scratch worktrees this verification created were
 detached, at a commit, on a scratch `CARGO_TARGET_DIR`, and are removed.
+
+### 2026-08-23 — APPROVED (claude-opus-5 @T-089-verify, second pass, review: same-model)
+
+Same verifier as the first pass, by the coordinator's routing, on the
+grounds that I found these by walking the table and should walk it again.
+**Both blocking findings are cleared, verified against my own
+measurements rather than the report.** I re-walked all thirteen rows on a
+DIFFERENT card (`T-100`, size S, `touches: [app-shell]`) so the fix could
+not be tuned to my first walk, and I nearly rejected a second time on a
+sweep result that turned out to be my error, not the executor's — that
+near-miss is finding 1 and it is the most useful thing in this verdict.
+
+Exposure is unchanged from the first pass: the notes are inline, so
+`roles/verifier.md`'s blindness could not be honoured. I re-formed my
+reading of the two clauses and walked T-100 before reading the new
+`### Second pass` narrative.
+
+---
+
+## BLOCKING 1 — CLEARED, and I verified the sweep independently
+
+Row 8 of the assembled T-085 brief (card line **315-320**) now names the
+platform, states the measured truth, records 123 as GNU's, and prescribes
+the direct call. Correct against my own re-measurement.
+
+**The sweep. I ran a wider one than the executor did and found two hits
+it did not — then measured that they cannot reach the merge, which makes
+the executor's scope right and my alarm wrong.** Recorded in full because
+"the verifier nearly rejected on a stale read" is exactly the failure
+this card's rule 3 exists to catch, and it caught me:
+
+- At the LANE tip `1e5c4e9`, `docs/STATE.md` carries the false mapping
+  twice — line **242** (*"`node … | xargs` would map an exit 1 to 123"*)
+  and lines **448-449** (*"BSD `xargs` maps a utility exit of 1–125 to
+  **123**"*). A third line, **450**, says CONVENTIONS' RUN IT clause
+  *"describes an `xargs` invocation"*, which THIS diff falsified.
+- At MAIN `a15b78e`, all three are **gone**. `STATE.md` is a snapshot
+  rewritten at every checkpoint (integrator.md step 3), and two
+  checkpoints have landed since this lane was cut. Main's only surviving
+  `xargs` line is 140: *"never through `xargs`"* — correct.
+- `docs/STATE.md` is **not in this merge's diff** (`git diff --name-only
+  a15b78e <TREE> | grep -c docs/STATE.md` → **0**), so the merge takes
+  main's copy. Checked on the merge's own tree:
+  `git show 10d78877…:docs/STATE.md | grep -e "1–125" -e xargs` returns
+  the single correct line 140.
+
+**So no stale copy reaches the merged tree, and the executor's scope was
+correct.** What the sweep did not say is WHY `docs/STATE.md` is excludable
+— that it is regenerated wholesale and outside the diff — and that
+sentence is worth one line, because the next reader will run the same
+wider grep I ran and reach the same wrong conclusion. That is the whole
+finding; it is not blocking, and the claim as written is true of the tree
+that will exist.
+
+## BLOCKING 2 — CLEARED, three copies checked, evidence stayed home
+
+`TASK-FORMAT.md` now reads *"writable by BOTH branches: it merges clean
+as long as only one side ever writes it, and resolves by hand only when
+both do — a latent conflict the pre-cut order removes entirely, not one
+every merge pays."* The falsified universal is gone and the quantifier is
+right. The T-054/T-063 instances no longer contradict it.
+
+**All three copies agree**, checked by reading each:
+
+| file | says | agrees? |
+|---|---|---|
+| `tasks/TASK-FORMAT.md` | writable by both; clean while one side writes; hand only when both | ✔ |
+| `roles/orchestrator.md` 5b | *"writable by both branches — clean only while a single side writes it"* | ✔ |
+| `lane-protocol.md` (stamp section, unchanged) | *"A stamp written inside the lane **and** a stamp written on the integration branch are two edits to one line"* → hand | ✔ — it always named both sides |
+
+**And the precedence I ruled is now written in both files by name**:
+TASK-FORMAT *"IS AUTHORITATIVE FOR THE FIELD"*, orchestrator 5b *"owns the
+ACT"*. That is the ruling, adopted verbatim in substance.
+
+**The measured evidence stayed in the card.** `grep -rnE
+"T-0[0-9]{2}|[0-9a-f]{7}\b|nputer" method/` returns only pre-existing
+template ids (`T-000`, `T-016`, `T-015`, `T-014`, `T-013`, `T-001-s2`),
+the tool's own name (`nputer.yaml`, `.nputer/`) and the README. **No
+commit hash, no `T-054`, no `T-089` anywhere in `method/`.**
+
+**One precision residual, measured rather than argued** (finding 5): I
+drove the claim in a scratch fixture repository, three cases, base
+`status: planned` each time:
+
+| case | main after the cut | lane | `git merge --no-ff` | conflicts |
+|---|---|---|---|---|
+| A | writes `building` | writes `building` (identical) | **exit 0** | **0** |
+| B | writes `building` | writes `verifying` (its exit stamp) | **exit 1** | **1** |
+| C | untouched | writes `building` (the T-054/T-063 shape) | **exit 0** | **0** |
+
+Case A is both sides writing, and it merges clean — git sees one change
+made twice. So *"resolves by hand only when both do"* is **necessary, not
+sufficient**: the sufficient condition is both sides writing DIFFERENT
+values. Not blocking — nothing in the tree falsifies it, the conclusion
+(the pre-cut order removes the hazard) is unaffected, and it makes the
+hazard smaller, not the rule wrong. But **case B is the sharper example
+and the one that actually arises**: the architect stamps `building` late
+while the executor writes its own exit status `verifying` on the same
+line. Worth naming, since a rule justified by its worst case should name
+the worst case that happens.
+
+---
+
+## The re-walk — thirteen rows, T-100, a different card
+
+`T-100` (`planned`, F-02, **size S**, `touches: [app-shell]`) — chosen
+because size S exercises the new row-11 self-integrate and a SLUG fence
+exercises row 5's new map clause. **Ten of thirteen rows now resolve off
+the source column alone. Three do not, and one contradiction sits
+outside the table.**
+
+| row | verdict | note |
+|---|---|---|
+| 1 Role | **CLOSED** | the extraction rule works on all three role files: executor *"You build exactly one task, then you end."*, verifier *"You are adversarial by design."*, integrator *"You merge one approved task and leave the docs true."* The role-substitution paragraph names rows 4/11/12 as role-specific rather than leaving them silently wrong |
+| 2 Task | CLOSED | — |
+| 3 Read-first | **CLOSED** | verified the repo HAS both root files, 501 bytes each, and their read-first sentences `diff` identical, so `CLAUDE.md`/`AGENTS.md` is safe here |
+| 4 The lane | **CLOSED for the spellings**; one residual | CONVENTIONS is now named. Residual: rule 2 now says a later non-merge base is safe *"PROVIDED its own gates are green"* and no procedure is given for establishing that. It bites whenever the tip is a merge — as it was at `740f0b7` twenty minutes before I wrote this, when the only legal base was 12 commits back |
+| 5 The fence | **CLOSED for precedence**; residual | lane-list-over-board is now stated, which is the right call. Residual: *"the project's slug↔path map"* is named but not LOCATED — every other row names a file (CONVENTIONS, the root adapter, the ceremony table); this one makes a program search. It is `docs/ARCHITECTURE.md` plus each `docs/architecture/components/*.md`'s `touch_slugs:` |
+| 6 Setup | **CLOSED** | — |
+| 7 Commands | **CLOSED** | scoping rule given, and in the safe direction |
+| 8 Gates | **CLOSED, and mechanically checkable** | I tested the new rule: `grep -n "at any merge whose diff" docs/CONVENTIONS.md` returns exactly **3** — lines 592 (GRAPH REGEN), 717 (BOOT GATE), 746 (DOCS GATE). It discriminates against AUDIT GATE POLICY and the token lint, which have no merge-diff trigger |
+| 9 Disciplines | **RESIDUAL — row 8's untwinned twin** | row 8 got an enumeration rule and row 9, same defect, same walk, did not. *"the project's CONVENTIONS"* with no way to enumerate what counts as a standing discipline |
+| 10 Prohibitions | **CLOSED** | rule 2's live-environment carve-out resolves the pid tension exactly as needed |
+| 11 Deliverable | **CLOSED for merge/worktree**; **NEW GAP** | the size-S chain now resolves: ceremony row S + lane-protocol 4/6 + step 6 → status `done`, executor merges, checkpoints, removes its own worktree. But it is told to **checkpoint** and no source row 11 names says what a checkpoint IS — the ritual is `roles/integrator.md` step 3, and row 11 lists ceremony table + lane-protocol + this role file. A size-S executor is never pointed at integrator.md |
+| 12 The report | **CLOSED — the empty source is real** | `## The report` exists, names to-whom and what, and step 6 references it. Minor: *"in what form"* is still unstated |
+| 13 Corrections | CLOSED | — |
+
+**Rules.** Rule 2's carve-out and rule 4's precedence companion are both
+in, and rule 4's companion is the ruling I made, stated better than I
+stated it.
+
+**The contradiction outside the table (finding 2).** `roles/executor.md`
+step 2, unchanged:
+
+> Work only in your git worktree / branch, per ../lane-protocol.md.
+> **Never touch the integration branch.**
+
+`lane-protocol.md` rule 4 now carves out the size-S executor, which
+merges and checkpoints on the integration branch. Step 2 states the
+absolute without the exception. The coordinator asked whether a third
+place contradicts: **it does, and it is the role file the executor reads
+first.** `per ../lane-protocol.md` subordinates it only if the reader
+follows the pointer before believing the sentence after it.
+
+---
+
+## Ruling on `closed_by:` — the convention, since it sets precedent
+
+**The VALUE shape is right and I endorse it.** A commit hash written into
+a file that the same commit contains is stale by construction (T-077's
+`702dcee` lesson, which this card already quotes). Naming the resolving
+TASK plus the branch and date is the correct answer to that.
+
+**The KEY needs one sentence in `TASK-FORMAT.md`, and did not get it**,
+which is the same shape as everything else this card is about:
+
+1. **It is not in TASK-FORMAT's frontmatter vocabulary.** The parser is
+   fine — `task.ts` preserves unknown keys deliberately, and the suite is
+   263/263 — but the format doc and the tree now disagree, and
+   `method/tasks/TASK-FORMAT.md` is INSIDE this card's fence.
+2. **The tree already holds a SECOND shape.**
+   `docs/tasks/rejected/T-081-s7` carries
+   `closed_by: 3b4326d (main, 2026-08-19 23:22)` — a HASH, correct there
+   because the closing work was on another branch and already merged.
+   Two shapes, no rule for when each applies: rule 4's hazard, in the
+   commit that wrote rule 4's precedence companion.
+3. **`status:` still says `suggested`,** so the board renders two
+   discharged findings as open ghosts. TASK-FORMAT already rules this
+   event differently — *"the planned task ABSORBS the suggestion … and
+   the suggestion file is removed in the same commit"* — so there are now
+   two conventions for one thing.
+
+**Ruling: keep the value shape; document the key.** One TASK-FORMAT
+bullet saying (a) `closed_by:` carries a HASH when the closing commit is
+outside this tree and the resolving TASK when it is inside, (b) what
+`status:` becomes, and (c) how it relates to the absorption rule. Not
+blocking — an undocumented key that the parser preserves and the board
+renders as a visible ghost is wrong-and-visible, not wrong-and-silent.
+Filed as `T-089-s10`.
+
+---
+
+## Findings — none blocking
+
+1. **The STATE.md near-miss, and it was mine.** Above. The executor's
+   sweep scope was right; its claim is true of the merged tree; the
+   missing half is one sentence saying why `docs/STATE.md` is excludable.
+2. **`executor.md` step 2 is the third place.** Above. `T-089-s9`.
+3. **A size-S executor is told to checkpoint and never told what one
+   is.** Above. `T-089-s9`.
+4. **Row 9 is row 8's untwinned twin; row 5's map has no location.**
+   Above. `s7` is marked closed and these three rows are what remains —
+   recorded here so "closed" does not read as "complete".
+5. **The stamp hazard's sufficient condition.** Above, measured over
+   three fixture cases.
+6. **`closed_by:` needs a format bullet.** Above. `T-089-s10`.
+
+Everything I raised as a non-blocking finding in the first verdict was
+taken and taken correctly: the four-place bump fact and the ordering
+asymmetry are now in the gotcha the editor reads rather than only in
+`s1`; *"equally safe"* is qualified in BOTH copies as holding by practice
+rather than property, naming FRONTMATTER as the mechanism a graph
+argument misses; and `T-089-s2` gained the third leak path, recorded
+accurately — it names the mechanism (row 13's correction folded into the
+verifier's brief), quotes the interim clause's actual gap, and requires
+the winning arm to govern all three surfaces.
+
+---
+
+## Re-derived at my own refs — main moved three more times during this pass
+
+`ea7ea0a` → `9a8d523` → `71f49cf` → `740f0b7` → **`a15b78e`**
+(*Checkpoint: T-070 done*). Every figure below is at lane tip `1e5c4e9`.
+
+| suite | result | exit |
+|---|---|---|
+| `npx vitest run` from lib/parser | **263 passed (263)**, 12 files | **0** |
+| `npx tsc --noEmit` from lib/parser | — | **0** |
+| `npm run build` from app | — | **0** |
+| `npm test` from app | **840 passed (840)**, 43 files | **0** |
+| bare `cargo test --no-fail-fast` | **352 passed / 0 failed / 3 ignored** over **15** result lines | **0** |
+| `cargo test snapshot_version_matches_the_live_method_stamps` (all targets) | **1 passed; 119 filtered out**; 13 result lines read, all `ok`, zero `FAILED` | **0** |
+| `npm test` from tools/e2e | **121 passed**, scratch port **14903** | **0** |
+| `npm run typecheck` from tools/e2e | — | **0** |
+| `npm run lint:tokens` | clean, **TOKEN 123 / CONTROL 600** | **0** |
+| `index --check --root ../..` | CURRENT — 585305 B / 119 files / 1018 symbols / 1539 edges | **0** |
+| `docs-gate.mjs <16 paths>` direct | FIRES — 10 docs code-input paths, 4 suites owed, 11 derived readers, 0 frontmatter issues | **1** |
+
+Port 14903 was **bind-probed free on all four stacks** (`127.0.0.1`,
+`0.0.0.0`, `::1`, `::`) before use, per the collision on the default
+14520. Port **1420 was never bound, connected to or signalled** — `lsof
+-nP -iTCP:1420 -sTCP:LISTEN` only, node **82549** on `[::1]:1420`
+throughout, unchanged.
+
+**The kill-path flake did not appear.** Tally across this whole
+verification, honestly: **3 of 3 green** for
+`the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists`.
+
+**Gates.** GRAPH REGEN — 0 of 16 paths match `*.ts/*.tsx/*.js/*.jsx`
+outside `docs/`; NOT OWED. BOOT GATE — 0 of 16 match `app/src-tauri/**`,
+`app/src/**` or either manifest; NOT OWED, derived rather than silent.
+DOCS GATE — FIRES, all four suites owed and all four run above, and
+re-run after this verdict commits.
+
+**The merge, prescribed form, every dot count:**
+
+    git merge-tree --write-tree a15b78e 1e5c4e9  -> tree 10d78877…, exit 0
+    git diff --name-only a15b78e <TREE>   PRESCRIBED  -> 16
+    git diff --name-only a15b78e...1e5c4e9  three dots -> 16
+    git diff --name-only a15b78e..1e5c4e9   two dots   -> 140   FORBIDDEN
+
+**Clean.** 16 paths, **10** under `docs/`, **6** under `method/`, 0 other.
+At the previous tip `740f0b7` the same three read 16 / 16 / **138** —
+only the forbidden form moved, for the fourth main tip running.
+
+**Board vs lane list at `a15b78e`,** since row 5 now rules between them:
+live lanes are `T-013` (`planned`) and `T-089` (`planned`); zero cards at
+`status: building`. The board under-reports by two and over-reports by
+none — `T-070`'s worktree, live and `done` when I started, was removed by
+its integrator mid-verification. The lane list is the better authority
+and it is not a perfect one; row 5 says the right thing.
+
+## What in the coordinator's message was wrong
+
+- **"no third live stale copy" — right about the merged tree, wrong as
+  stated about the working tree.** Two live copies exist at the lane tip
+  in `docs/STATE.md`; neither reaches the merge. The conclusion holds; the
+  reason it holds was not the one given.
+- **Main was `740f0b7`** when the message was written and **`a15b78e`**
+  by the time I forecast; the merge is clean at both.
+- Everything else — the corrections about one verdict rather than two,
+  and the s7/s8 claims — checked out, except the three rows in the
+  re-walk table above.
