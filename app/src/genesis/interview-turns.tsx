@@ -1,9 +1,10 @@
 import { memo } from "react";
-import type { GenesisTurn, TurnErrorPayload } from "@/lib/agent-store";
+import type { GenesisDenial, GenesisTurn, TurnErrorPayload } from "@/lib/agent-store";
 import { Button } from "@/components/ui/button";
 import {
   challengeOf,
   chipLabel,
+  denialLine,
   failureAction,
   failureDetail,
   failureHeadline,
@@ -168,6 +169,59 @@ function CurrentQuestion({ body, footer }: { body: string; footer: string | null
 }
 
 /**
+ * WHAT THIS TURN WAS REFUSED, WHILE IT IS STILL HAPPENING (T-101).
+ *
+ * T-081 carried the CLI's in-band `permission_denied` line all the way to
+ * `GenesisTurn.denials` and stopped there, outside its own fence; this is
+ * the notice it could not build. Three properties, each of which a naive
+ * renderer gets wrong, and each driven in `interview-chat-dom.test.tsx`:
+ *
+ *  1. **THIS IS NOT `FailureBlock` AND MUST NEVER BECOME IT.** A denial
+ *     says something HAPPENED, never how the turn ends — the measured
+ *     turn carried two and completed. So the treatment is the quiet
+ *     furniture register the streaming line and the truncation note
+ *     already use, in the same neighbourhood, and it borrows no part of
+ *     the rejected-status surface. Rendering a refusal in the failure
+ *     treatment would say the opposite of what the runner measured.
+ *  2. **ONE ROW PER DENIAL, NEVER PER TOOL.** The real CLI refused
+ *     `Bash` twice in one turn. The list arrives already joined on
+ *     `tool_use_id` by the runner, so what is here is each refusal
+ *     exactly once, and a render-side dedupe by NAME would drop a
+ *     refusal the CLI reported — the silence T-081's verifier rejected a
+ *     build over, reproduced one layer up. `data-tool-use-id` is what
+ *     tells two rows of one tool apart.
+ *  3. **IT OUTLIVES THE TURN.** The rows are keyed to the turn's own
+ *     `denials`, not to the `running` furniture above them, so nothing a
+ *     later delta, activity label or `completed` does can drop them. A
+ *     notice a later render drops is worse than none.
+ *
+ * Positional keys are correct and ADR-009-safe for the same reason
+ * `StageStrip`'s are: the list is append-only, never reordered, and
+ * nothing here is keyed by a string the app did not author — `toolUseId`
+ * is CLI-supplied, so it rides as a data attribute and never as a key.
+ */
+function DenialNotice({ denials }: { denials: readonly GenesisDenial[] }) {
+  return (
+    <div
+      data-testid="interview-denials"
+      data-count={denials.length}
+      className="flex flex-col gap-1.25"
+    >
+      {denials.map((denial, index) => (
+        <span
+          key={index}
+          data-testid="interview-denial"
+          data-tool-use-id={denial.toolUseId ?? ""}
+          className="font-mono text-xs whitespace-pre-wrap break-words text-secondary-foreground"
+        >
+          {denialLine(denial)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
  * A planner turn, in whichever of the three treatments it earns. The
  * mid-stream furniture (the pulse dot and the last activity label) rides
  * the SAME `motion-safe:` mechanism the lens uses, so
@@ -221,6 +275,20 @@ export const PlannerTurn = memo(function PlannerTurn({
             {" · ⌘. to stop"}
           </span>
         </div>
+      )}
+
+      {/* Below the activity line and OUTSIDE the `running` guard above
+          it: the refusal is news while the turn runs and still true once
+          it has landed. The one thing that takes it away is the terminal
+          `toolDenied` block, which is the SAME refusal stated as the
+          turn's cause of death — T-081's criterion 4 ("the same denial
+          shall not be reported twice") read as the rendering obligation
+          it also is. Every other failure kind says nothing about
+          refusals, so the notice stands beside those; the DOM suite
+          drives both directions, because a negative assertion needs a
+          positive control. */}
+      {planner.denials.length > 0 && planner.error?.kind !== "toolDenied" && (
+        <DenialNotice denials={planner.denials} />
       )}
 
       {planner.truncatedRelay && (

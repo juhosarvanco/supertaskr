@@ -694,6 +694,232 @@ describe("a failed turn is calm, inline and never a dead end (criterion 5)", () 
   });
 });
 
+// ---- a refusal is news, and it is not a failure (T-101) ------------------
+
+/**
+ * THE MEASURED TURN, TRANSCRIBED RATHER THAN INVENTED.
+ *
+ * Both entries are copied field-for-field out of
+ * `docs/research/captures/real-planner-turn-2026-08-19.jsonl` — the
+ * `system`/`permission_denied` lines 17 and 19 of one authenticated
+ * planner turn against CLI 2.1.226. That turn's `result` (line 27) reads
+ * `is_error: false`, `terminal_reason: "completed"`, exit 0, and lists
+ * BOTH of these `tool_use_id`s under `permission_denials`. So the shape
+ * these bodies drive is not a synthetic worst case: it is what the real
+ * CLI did, and it is simultaneously the two-refusals-of-one-tool case
+ * and the refusals-on-a-turn-that-completes case.
+ *
+ * The capture is PRETTY-PRINTED JSON, one object per line with spaces
+ * after its colons, so a compact-JSON grep over it finds nothing; these
+ * literals were produced by parsing it, not by eyeballing it.
+ */
+const REFUSED_COMPOUND = {
+  toolName: "Bash",
+  toolUseId: "toolu_01FAHQKCKFrBLrmVtRiuLT9L",
+  message:
+    "This Bash command contains multiple operations. The following part requires approval: KIT=.nputer/genesis/kit && mkdir -p docs/decisions docs/tasks docs/rooms && cp \"$KIT\"/docs-templates/*.md docs/ && cp \"$KIT\"/adapters/CLAUDE.md \"$KIT\"/adapters/AGENTS.md . && cp \"$KIT\"/runtime/nputer.yaml .nputer/nputer.yaml && printf '.nputer/\\n' && git init -q 2>&1; git status --short; find . -path ./.git -prune -o -type f -print",
+} as const;
+
+const REFUSED_GLOB = {
+  toolName: "Bash",
+  toolUseId: "toolu_0173K9Q72m797nLBonDtrc3R",
+  message:
+    "Glob patterns are not allowed in write operations. Please specify an exact file path.",
+} as const;
+
+describe("a refusal is visible when it happens, and it is not a failure (T-101)", () => {
+  const ids = (): (string | null)[] =>
+    qa("[data-testid=interview-denial]").map((row) =>
+      row.getAttribute("data-tool-use-id"),
+    );
+
+  it("THE MEASURED TURN: two refusals of the SAME tool both appear, in order, and the turn still reads COMPLETED", async () => {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "denied", seq: 2, turn: 1, ...REFUSED_COMPOUND },
+      { kind: "denied", seq: 3, turn: 1, ...REFUSED_GLOB },
+      {
+        kind: "completed",
+        seq: 4,
+        turn: 1,
+        text: "Scaffolded the docs tree with explicit paths instead.",
+        truncatedRelay: false,
+      },
+    );
+
+    // TWO ROWS, NOT ONE. A renderer that deduped by tool name would show
+    // a single `Bash` here and drop a refusal the CLI actually reported.
+    const rows = qa("[data-testid=interview-denial]");
+    expect(rows, "one row per refusal, never per tool").toHaveLength(2);
+    for (const row of rows) expect(row.textContent).toContain("Bash");
+
+    // `toolUseId` is what tells them apart, and the ORDER is the order
+    // the user was told — the two `Denied` events are EMITTED in their
+    // own classification arm rather than buffered like a delta, so their
+    // relative order is the CLI's own (T-081-s5 / T-092).
+    expect(ids()).toEqual([
+      "toolu_01FAHQKCKFrBLrmVtRiuLT9L",
+      "toolu_0173K9Q72m797nLBonDtrc3R",
+    ]);
+    expect(rows[0]!.textContent).toContain("contains multiple operations");
+    expect(rows[1]!.textContent).toContain("Glob patterns are not allowed");
+
+    // ...AND THE TURN COMPLETED. Both facts in one body, because that is
+    // the case the capture recorded and the pair is what makes "a denial
+    // is not a failure" a measurement rather than a claim.
+    const turn = q("[data-testid=interview-planner-turn]")!;
+    expect(turn.getAttribute("data-status")).toBe("completed");
+    expect(turn.textContent).toContain("Scaffolded the docs tree");
+    expect(q("[data-testid=interview-failure]"), "never the failure treatment").toBeNull();
+    expect(q("[data-testid=interview-streaming]"), "and the turn really has ended").toBeNull();
+    // The rows survived the landing they were not part of.
+    expect(q("[data-testid=interview-denials]")!.getAttribute("data-count")).toBe("2");
+  });
+
+  it("the refusal is on screen WHILE the turn runs, and no later render drops it", async () => {
+    await withStatus();
+    render();
+    await emit({ kind: "started", seq: 1, turn: 1 });
+    await emit({ kind: "denied", seq: 2, turn: 1, ...REFUSED_GLOB });
+
+    // AT ARRIVAL — and the pulse dot beside it is the proof this is
+    // mid-turn rather than the turn's ending being rendered. Before
+    // T-101 nothing rendered this field at all, so the user learned of a
+    // refusal only when the turn ended, which on the measured run was
+    // roughly forty seconds later.
+    expect(q("[data-testid=interview-streaming]"), "the turn is still running").not.toBeNull();
+    expect(q("[data-testid=interview-denial]")?.textContent).toContain(
+      "Glob patterns are not allowed",
+    );
+
+    // A WITNESS THAT IS EMITTED, NOT BUFFERED (T-092, absorbing
+    // T-081-s5): `activity` is emitted inside its own classification arm,
+    // so it can date the refusal above; a `textDelta` rides `pending` in
+    // the runner and therefore dates nothing.
+    await emit({ kind: "activity", seq: 3, turn: 1, label: "Write(docs/NORTH_STAR.md)" });
+    expect(q("[data-testid=interview-streaming]")!.textContent).toContain(
+      "Write(docs/NORTH_STAR.md)",
+    );
+    expect(
+      q("[data-testid=interview-denial]")?.textContent,
+      "the furniture moved and the refusal did not",
+    ).toContain("Glob patterns are not allowed");
+
+    // ...and after a subsequent delta, which is the render the criterion
+    // names. One refusal is still exactly one row.
+    await emit({ kind: "textDelta", seq: 4, turn: 1, text: "carrying on without it" });
+    expect(q("[data-testid=interview-turn-body]")!.textContent).toContain(
+      "carrying on without it",
+    );
+    expect(qa("[data-testid=interview-denial]")).toHaveLength(1);
+    expect(ids()).toEqual(["toolu_0173K9Q72m797nLBonDtrc3R"]);
+  });
+
+  it("a refusal with no tool name or no message still reads, and prints neither \"undefined\" nor \"null\"", async () => {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      // Every degenerate combination the payload permits: no name and no
+      // words, no name with words, and a name whose message is blank —
+      // the last is exactly how a refusal recovered from the cumulative
+      // `result` line arrives, since that line carries `tool_input` and
+      // never a message.
+      { kind: "denied", seq: 2, turn: 1, toolName: null, toolUseId: null, message: "" },
+      {
+        kind: "denied",
+        seq: 3,
+        turn: 1,
+        toolName: null,
+        toolUseId: "toolu_nameless",
+        message: "Glob patterns are not allowed in write operations.",
+      },
+      {
+        kind: "denied",
+        seq: 4,
+        turn: 1,
+        toolName: "WebFetch",
+        toolUseId: null,
+        message: "   ",
+      },
+    );
+
+    const rows = qa("[data-testid=interview-denial]");
+    expect(rows).toHaveLength(3);
+    // SOMETHING A HUMAN CAN READ in each case — asserted positively,
+    // because "no 'null' on screen" is equally satisfied by rendering
+    // nothing at all.
+    expect(rows[0]!.textContent).toBe("refused: a tool — the CLI gave no reason");
+    expect(rows[1]!.textContent).toBe(
+      "refused: a tool — Glob patterns are not allowed in write operations.",
+    );
+    expect(rows[2]!.textContent).toBe("refused: WebFetch — the CLI gave no reason");
+
+    // THE ASSERTION THE CARD NAMES, over the whole rendered subtree and
+    // its ATTRIBUTES, not only its text: a missing `toolUseId` becomes an
+    // empty attribute rather than the four letters of its absence.
+    const notice = q("[data-testid=interview-denials]")!;
+    expect(notice.outerHTML).not.toContain("undefined");
+    expect(notice.outerHTML).not.toContain("null");
+    expect(ids()).toEqual(["", "toolu_nameless", ""]);
+  });
+
+  it("a turn that DIES of a refusal states it ONCE — the live notice yields to the terminal block", async () => {
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "denied", seq: 2, turn: 1, ...REFUSED_COMPOUND },
+      { kind: "denied", seq: 3, turn: 1, ...REFUSED_GLOB },
+    );
+    expect(qa("[data-testid=interview-denial]"), "live, before the verdict").toHaveLength(2);
+
+    await emit({
+      kind: "failed",
+      seq: 4,
+      turn: 1,
+      error: {
+        kind: "toolDenied",
+        denials: ["Bash", "Bash"],
+        terminalReason: "error_during_execution",
+      },
+    });
+
+    // The terminal block IS this refusal, named as the turn's cause of
+    // death. Two surfaces for one event is what T-081's criterion 4
+    // forbids on the runner's side; it forbids it here too.
+    const failure = q("[data-testid=interview-failure]")!;
+    expect(failure.getAttribute("data-error-kind")).toBe("toolDenied");
+    expect(failure.textContent).toContain("the planner was refused a tool it needed");
+    expect(
+      q("[data-testid=interview-denials]"),
+      "the same refusal is not also a second, quieter event",
+    ).toBeNull();
+  });
+
+  it("and it yields ONLY to that block — a stall says nothing about refusals, so the notice stands", async () => {
+    // THE POSITIVE CONTROL for the negative assertion above: without it,
+    // "the notice is gone" is equally satisfied by a rule that drops the
+    // notice on ANY failure, which would lose the refusal on every turn
+    // that dies of something else.
+    await withStatus();
+    render();
+    await emit(
+      { kind: "started", seq: 1, turn: 1 },
+      { kind: "denied", seq: 2, turn: 1, ...REFUSED_GLOB },
+      { kind: "failed", seq: 3, turn: 1, error: { kind: "stall" } },
+    );
+    const failure = q("[data-testid=interview-failure]")!;
+    expect(failure.getAttribute("data-error-kind")).toBe("stall");
+    expect(failure.textContent).toContain("the planner stopped mid-answer");
+    expect(q("[data-testid=interview-denial]")?.textContent).toContain(
+      "Glob patterns are not allowed",
+    );
+  });
+});
+
 // ---- the CLI-missing fallback --------------------------------------------
 
 describe("no CLI is a route, never a dead end (criterion 6)", () => {
@@ -734,7 +960,7 @@ describe("no CLI is a route, never a dead end (criterion 6)", () => {
 // ---- hostile content -----------------------------------------------------
 
 describe("hostile model output renders as text nodes only (criterion 7)", () => {
-  it("injects nothing through turn text, activity labels, stderr tails or chip paths", async () => {
+  it("injects nothing through turn text, activity labels, refusal notices, stderr tails or chip paths", async () => {
     await withStatus();
     render(docsWith(1, {}));
     await emit({ kind: "started", seq: 1, turn: 1 });
@@ -744,13 +970,29 @@ describe("hostile model output renders as text nodes only (criterion 7)", () => 
     });
     await emit(
       { kind: "activity", seq: 2, turn: 1, label: HOSTILE },
-      { kind: "textDelta", seq: 3, turn: 1, text: HOSTILE },
+      // T-101's channel: the CLI's own refusal text, plus the two fields
+      // that reach the DOM as an ATTRIBUTE rather than as a text node.
+      // `exitNonZero` below is deliberately not `toolDenied`, so the
+      // notice is still mounted when the sweep runs.
+      {
+        kind: "denied",
+        seq: 3,
+        turn: 1,
+        toolName: HOSTILE,
+        toolUseId: HOSTILE,
+        message: HOSTILE,
+      },
+      { kind: "textDelta", seq: 4, turn: 1, text: HOSTILE },
       {
         kind: "failed",
-        seq: 4,
+        seq: 5,
         turn: 1,
         error: { kind: "exitNonZero", code: 1, stderrTail: HOSTILE },
       },
+    );
+    // The refusal channel is really on screen for the sweep below to see.
+    expect(q("[data-testid=interview-denial]")?.textContent).toContain(
+      "<script>alert('xss')</script>",
     );
 
     // Nothing injected, anywhere on the screen.

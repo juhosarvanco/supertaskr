@@ -1,5 +1,6 @@
 import type { DocsModelState } from "@/lib/docs-model";
 import type {
+  GenesisDenial,
   GenesisTurn,
   TranscriptLinePayload,
   TurnErrorPayload,
@@ -713,6 +714,46 @@ export function failureDetail(error: TurnErrorPayload): string | null {
   return trimmed.length > MAX_ERROR_CHARS
     ? `${trimmed.slice(0, MAX_ERROR_CHARS)}…`
     : trimmed;
+}
+
+// ---- a refusal is not a failure ----------------------------------------
+
+/**
+ * ONE REFUSED TOOL, AS A SENTENCE A HUMAN CAN READ (T-101).
+ *
+ * THIS SITS BELOW THE FAILURE SECTION AND SHARES NOTHING WITH IT, which
+ * is the whole point rather than a filing decision. `TurnError`'s
+ * `toolDenied` is a VERDICT — the turn died because a tool it needed was
+ * refused. A `GenesisDenial` is not a verdict about anything: the
+ * measured 2.1.226 turn carried two of them and ended `is_error: false`,
+ * `terminal_reason: "completed"`, because the planner decomposed the
+ * refused command and carried on
+ * (docs/research/captures/real-planner-turn-2026-08-19.jsonl, lines 17,
+ * 19 and 27). So this produces a neutral line and never a headline, and
+ * nothing here reaches for `failureHeadline` or `failureAction`.
+ *
+ * EVERY FIELD MAY BE MISSING AND NONE OF THEM MAY PRINT AS ONE.
+ * `toolName` is `string | null` and `message` may be empty or blank — a
+ * refusal recovered from the cumulative `result` line arrives with no
+ * message at all — so a template interpolating either straight would put
+ * the word "null" on the screen this card exists to make trustworthy.
+ * Both degrade to words instead, and the DOM suite asserts that neither
+ * "null" nor "undefined" appears anywhere in the rendered subtree.
+ *
+ * The CLI's own text is BOUNDED and never interpreted. Rust already
+ * capped it (`MAX_DENIAL_MESSAGE_BYTES`, 768); `MAX_ERROR_CHARS` is this
+ * side's own second, independent ceiling on any relayed CLI string, and
+ * it is deliberately the SAME constant `failureDetail` applies rather
+ * than a second number that can drift away from it. What differs between
+ * the two is the treatment, not the bound.
+ */
+export function denialLine(denial: GenesisDenial): string {
+  const tool = denial.toolName ?? "a tool";
+  const raw = denial.message.trim();
+  if (raw.length === 0) return `refused: ${tool} — the CLI gave no reason`;
+  const why =
+    raw.length > MAX_ERROR_CHARS ? `${raw.slice(0, MAX_ERROR_CHARS)}…` : raw;
+  return `refused: ${tool} — ${why}`;
 }
 
 // ---- scroll policy -----------------------------------------------------
