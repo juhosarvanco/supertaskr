@@ -3,6 +3,7 @@ id: T-089-s7
 title: Five of the brief contract's thirteen rows name a source that does not contain the row's content — and the card's own assembled brief silently goes somewhere else for four of them
 status: suggested
 suggested_by: verifier claude-opus-5 @T-089-verify
+closed_by: T-089 re-execution (task/T-089-brief-contract, 2026-08-23) — arm 1 taken; columns fixed in method/roles/executor.md, see this card's Closed section
 ---
 
 The dispatch-brief table in `method/roles/executor.md` is declared
@@ -81,3 +82,46 @@ thing that will actually have only the column. Two arms:
 
 Do not take arm 2 without arm 1: pinning the table as it stands pins four
 wrong pointers.
+
+## Closed — arm 1 taken in T-089's re-execution
+
+Arm 1 (fix the columns) is done in `method/roles/executor.md`; arm 2
+(the reader that HOLDS the columns) stays with F-04's assembler card and
+`T-089-s3`, unchanged. Row by row, source columns now yield their rows:
+
+- **Role named.** A new paragraph above the table states it assembles an
+  EXECUTOR's brief and that a verifier/integrator brief substitutes the
+  role-specific rows (4, 11, 12) and reads them against that role's file.
+  "one line" now has an extraction rule (row 1: the role file's opening
+  line).
+- **Row 3** → the project's OWN root adapter (`CLAUDE.md`/`AGENTS.md`),
+  NOT the `adapters/*.md` template dir with its placeholders.
+- **Row 4** → `lane-protocol.md` PLUS the project's own lane spellings
+  (branch/worktree/base + create command, which the protocol leaves to
+  CONVENTIONS).
+- **Row 5** → the card's `touches:`; the LANE LIST (live worktrees on a
+  task branch) made authoritative over the board's lapsing
+  `status: building`; and the project's slug↔path map, named for the
+  slug-vs-path disjointness case.
+- **Row 6** → the build ORDER *and* any fresh-worktree ordering the lane
+  rules add (the "build before test" fact lives in the lane section, not
+  the build section).
+- **Row 10 / rule 2** → governing rule 2 now carves out live-environment
+  facts (pids, ports): they carry when/where they were READ, not a tree
+  ref, and are re-read at dispatch. "The repository wins" no longer has
+  to adjudicate a pid.
+- **Row 11** → adds `lane-protocol.md` (who merges / removes the
+  worktree, incl. the size-S self-integrate) so "whether to merge" has a
+  source.
+- **Row 12** → a real report spec now exists in `method/roles/executor.md`
+  ("## The report"), which the row names.
+- **Rule 4's missing half** → a precedence companion added: where two
+  copies diverge, the brief names which is authoritative (field's home
+  file for what a thing IS, acting role's file for who DOES it). The
+  stamp is the worked case, and `TASK-FORMAT.md` now states it owns the
+  FIELD while `orchestrator.md` 5b owns the ACT.
+
+The `closed_by:` frontmatter names the resolving TASK, not a commit hash:
+the fix lands in the same commit that would name it, and a hash quoted
+inside the tree it describes is stale by construction (T-077). Triage can
+promote this the usual way (`Absorbs:` + removal) once it reads the fix.

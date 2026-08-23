@@ -24,8 +24,10 @@ you know is in docs/. You are disposable at any moment.
    commit it — THEN cut the lane from that commit, THEN hand over the
    brief. Fields lock at that write (tasks/TASK-FORMAT.md, lifecycle),
    and the lane inherits the stamp in its own base rather than writing
-   that line itself. Stamping after the cut makes one line the property
-   of two branches. The brief is assembled to the contract in
+   that line itself. Stamping after the cut makes that line writable by
+   both branches — clean only while a single side writes it
+   (tasks/TASK-FORMAT.md owns the FIELD and states the hazard in full;
+   this step owns the ACT). The brief is assembled to the contract in
    roles/executor.md — every row, from the sources that row names.
 6. Read new verdicts; on second rejection open a room and escalate.
 7. Keep ROADMAP.md current. If reality contradicts NORTH_STAR.md, open a

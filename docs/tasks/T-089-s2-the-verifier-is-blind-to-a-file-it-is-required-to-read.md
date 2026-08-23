@@ -41,6 +41,22 @@ premise the integrator falsified an hour later. A verifier that has read
 the executor's account of what it did is exactly the verifier those
 findings describe.
 
+## A THIRD leak path — the dispatch brief itself
+
+The two channels above are both the CARD. A third surfaced in T-089's own
+verdict, found by the verifier reading its own dispatch brief:
+**executor-derived reasoning reached the verifier THROUGH the brief the
+architect assembled**, not through the card. Row 13 of the brief contract
+tells the executor to report where the brief was wrong; when the architect
+folds that correction into the VERIFIER's brief, the verifier is handed
+the builder's reasoning before it has read a single line of diff.
+`roles/executor.md`'s interim clause bans only content addressed to the
+executor ALONE — it says nothing about executor-derived content arriving
+in the verifier's brief. So the blindness is contradicted on THREE
+surfaces, not two: the appended notes, the "what you'd flag for the
+verifier" line, and the brief. Whichever arm below wins must govern all
+three, or the property simply leaks through the surface it missed.
+
 ## The arms, none of them free
 
 1. **Say what actually happens** — delete the blindness clause and

@@ -102,8 +102,13 @@ not carry both meanings in one directory.
   the placement is now fixed. The order is not a preference: a lane cut
   afterwards inherits the stamp in its own base commit and never touches
   that line, so the merge has exactly one writer for it. A stamp written
-  after the cut, by either side, makes one line the property of two
-  branches and every merge resolves it by hand.
+  after the cut makes that line writable by BOTH branches: it merges
+  clean as long as only one side ever writes it, and resolves by hand
+  only when both do — a latent conflict the pre-cut order removes
+  entirely, not one every merge pays. THIS FILE IS AUTHORITATIVE FOR THE
+  FIELD (what the stamp is and what its absence means); the dispatch step
+  in `roles/orchestrator.md` (5b) is authoritative for the ACT (who
+  writes it and in what order). The two must agree where they overlap.
 - **WHAT ITS ABSENCE MEANS — nothing about the work.** A card at
   `status: planned` whose lane exists means the stamp was not written,
   not that the task is undispatched. The authority on what is being
@@ -119,7 +124,7 @@ not carry both meanings in one directory.
 
 | Size | Pipeline |
 |------|----------|
-| S | executor + tests. No verifier, no separate integrator. |
+| S | executor + tests; the executor is its OWN integrator — it merges, checkpoints and removes its own worktree (lane-protocol.md rules 4, 6). No verifier, no *separate* integrator. |
 | M | executor → verifier → integrator. |
 | L | planning pass (or debate room) → executor → verifier → integrator. |
 

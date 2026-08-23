@@ -3,6 +3,7 @@ id: T-089-s8
 title: The size-S ceremony tier abolishes the integrator, and the new lane protocol gives the integrator two jobs nobody else may do
 status: suggested
 suggested_by: verifier claude-opus-5 @T-089-verify
+closed_by: T-089 re-execution (task/T-089-brief-contract, 2026-08-23) — arm 1 taken; both files moved and agree, see this card's Closed section
 ---
 
 Found by hand-assembling a brief for a real size-S card (`T-096`,
@@ -51,6 +52,31 @@ nothing said the executor could not clean up after itself.
 Arm 1 is the likely answer, but it is the architect's, and whichever wins
 has to move BOTH files — the ceremony table and the lane protocol — or
 the contradiction just changes address.
+
+## Closed — arm 1 taken, and BOTH files moved
+
+Taken in T-089's re-execution, exactly the way this finding warned it had
+to be — in both files, so the contradiction does not just change address:
+
+- `method/tasks/TASK-FORMAT.md` ceremony row S now reads *"the executor
+  is its OWN integrator — it merges, checkpoints and removes its own
+  worktree (lane-protocol.md rules 4, 6). No verifier, no separate
+  integrator."*
+- `method/lane-protocol.md` rule 4 gains the exception (a size-S card has
+  no separate integrator, so its executor plays integrator for its own
+  work once tests pass), and rule 6 gains the matching clause (on size S
+  the executor removes its own worktree after merging and checkpointing —
+  no verdict to preserve it for).
+
+The two now cite each other and agree; a size-S brief assembled to row 11
+carries one coherent instruction instead of three contradictory
+sentences. The historical-sample question in "Check while you are there"
+is left for triage — codification either way, since arm 1 names the
+executor the role that was already doing the merge on an S card.
+
+The `closed_by:` frontmatter names the resolving TASK, not a commit hash,
+for the same reason `T-089-s7` does: a hash quoted inside the tree it
+describes is stale by construction (T-077).
 
 ## Check while you are there
 

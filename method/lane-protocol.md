@@ -23,7 +23,10 @@ this file is a project's actual name.
    a red gate it did not cause and its fence forbids it to fix. Which
    commits qualify is the project's to name — where a project
    checkpoints after every merge, the newest checkpoint is the base, and
-   a later non-merge commit on the same branch is equally safe.
+   a later non-merge commit on the same branch is equally safe PROVIDED
+   its own gates are green — a base is trusted for its green gates, not
+   for being a checkpoint, and a non-merge commit can still trip a gate a
+   graph check does not cover.
    **STATE THE BASE AS A HASH.** "Latest" names a different commit for
    every reader and a different one an hour later.
 
@@ -36,7 +39,11 @@ this file is a project's actual name.
 4. **The executor never touches the integration branch.** No commit, no
    merge, no push, no branch move, no dependency install run against
    that checkout. If the lane needs something that exists only there, it
-   waits for the integrator or opens a room.
+   waits for the integrator or opens a room. **The one exception is the
+   smallest ceremony tier**: a size-S card has no separate integrator
+   (tasks/TASK-FORMAT.md), so its executor plays integrator for its OWN
+   work once its tests pass — it merges, checkpoints and removes its own
+   worktree. Every larger tier keeps the two roles in different hands.
 
 5. **Concurrent lanes have disjoint `touches:`** — the orchestrator's
    guardrail (tasks/TASK-FORMAT.md), and the executor's too. An executor
@@ -48,7 +55,10 @@ this file is a project's actual name.
    checkpoint, not before. The executor never removes its own: a
    worktree deleted before the verdict destroys the only reproducible
    copy of what was measured. Whether the branch survives the worktree
-   is the project's rule.
+   is the project's rule. **On a size-S card there is no separate
+   integrator (rule 4, tasks/TASK-FORMAT.md): the executor IS the
+   integrator and removes its OWN worktree — after it has merged and
+   checkpointed, and with no verdict to preserve it for.**
 
 7. **The lane list is a fact on disk, not a memory.** Which lanes exist
    is answered by asking the repository (its worktrees and branches),

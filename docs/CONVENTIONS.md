@@ -211,7 +211,15 @@
   T-089 in a fresh worktree, one side at a time — doc stamps to v0.1.6
   with the const untouched is **exit 101**, and the const to `0.1.6`
   with the docs untouched is **exit 101** as well, each naming the file
-  it read.
+  it read. **The two asserts are ORDERED, and that is the trap this
+  gotcha must carry rather than leave in a finding**: a const-only bump
+  reds on the plan-interview arm and NEVER reaches the CONVENTIONS arm,
+  so fixing only the file a panic names yields a SECOND red, not a green
+  — move both doc stamps and the const in ONE commit. **AND THE BUMP IS A
+  FOUR-PLACE FACT, THREE PINNED AND ONE NOT**: the genesis-kit gotcha
+  below stamps a `(v0.1.5, T-023)` version on its `plan-interview.md`
+  reference that NO test reads, so a bump must hand-update that reference
+  in the same commit or leave it stale and green.
   **T-089's OWN CHANGE TO method/ IS THEREFORE OWED A BUMP TO v0.1.6 AND
   DID NOT TAKE ONE**: kit.rs sits under `app/src-tauri/src/agent/**`,
   which is C-14's `app-agent` slug, held by a live lane at that dispatch.
@@ -685,7 +693,13 @@
   SENTENCE — THE TWO DISAGREE, AND THIS LANE IS THE INSTANCE** (T-089).
   The rule bans a MERGE commit, and the reason is a stale graph; a
   non-merge commit later than the checkpoint carries the checkpoint's
-  graph and is equally safe. T-089 was itself dispatched from `4d2f03c`,
+  graph and is safe ON THAT COUNT. **But "safe" is all its gates green,
+  not only the graph**: a docs-only non-merge commit can still red a
+  code suite through FRONTMATTER (the DOCS GATE), which no graph argument
+  covers — so this holds by PRACTICE, verified (every non-merge
+  first-parent commit between checkpoints on main is docs-only with green
+  gates), NOT by property; nothing forbids a source commit between
+  checkpoints. T-089 was itself dispatched from `4d2f03c`,
   which is FOUR docs-only commits after the newest checkpoint `2036fb2`
   and is not a merge — obeying the reason while failing the letter, with
   `index --check` exit 0 at the base. What the bullet means is: cut from

@@ -312,8 +312,13 @@ and is a proven no-op unless an indexed file moved — ask
 `app/src-tauri/**` or manifest) — say so rather than being silent; DOCS
 GATE fires only if you touch a `docs/` path, and you run it yourself:
 `node tools/e2e/scripts/docs-gate.mjs <paths>` from the repo root, fed
-the RANGE RULE's own path list, NEVER through `xargs` (BSD `xargs` maps
-exits 1–125 to 123). The range for all three is the RANGE RULE's pair:
+the RANGE RULE's own path list, NEVER through `xargs` — on Darwin
+(`/usr/bin/xargs`) an empty list never invokes the utility (pipeline
+exits 0) and every nonzero utility exit collapses to 1; the 1–125-to-123
+mapping is GNU's (CI's ubuntu runner), so a bare mapping is wrong on one
+of the two platforms. Call `docs-gate.mjs` directly with the paths as
+arguments (CONVENTIONS' DOCS GATE bullet). The range for all three is
+the RANGE RULE's pair:
 before the merge, `git merge-tree --write-tree <main tip> HEAD` and diff
 main against that tree — read `merge-tree`'s exit code.
 
@@ -727,6 +732,180 @@ other lanes, unprefixed. Prefix or lose it.
    CONVENTIONS, recorded above, and the reason my own new sentence
    needed the qualifier is that I wrote it from the rule rather than
    from the output.
+
+### 2026-08-23 — fresh executor, re-execution after the REJECTED verdict
+
+A FRESH executor (not the builder) took over on tip `b38a3cf`, main at
+`c03a193` (a post-checkpoint docs-only T-064 commit; newest checkpoint
+`302298c`). Five of six criteria were already met; nothing built was
+restarted. History is APPENDED here, not rewritten (T-081). Every figure
+carries its ref; the suites at the end ran on the exact bytes committed.
+
+**BLOCKING 1 — the assembled brief's row 8 carried the mapping this
+commit deletes.** Fixed at the `=== BEGIN ASSEMBLED BRIEF: T-085 ===`
+row 8: it no longer asserts a bare `1–125 to 123`. It now names the
+platform (Darwin, `/usr/bin/xargs`), states the measured truth the same
+commit's CONVENTIONS clause already carries — an empty list never invokes
+the utility (pipeline exits 0) and every nonzero utility exit collapses
+to 1 — records that the 1–125-to-123 mapping is GNU's (CI's ubuntu
+runner), and prescribes the direct call. **Third-occurrence sweep (rule
+4's own hazard).** Grepped the WHOLE card plus all of `method/`,
+`docs/CONVENTIONS.md` and the eight `T-089-s*` files for `1–125` / a bare
+`to 123`. The ONLY live assertion of the stale mapping was this row (now
+fixed). Every other hit is the CORRECT copy (the card's re-measurement;
+`CONVENTIONS` already says "the widely-quoted 123 is GNU's mapping"), a
+token-lint count, a utility-exit INPUT in a measurement table, or the
+verifier quoting the defect inside its own verdict — left verbatim, since
+the verdict is not the executor's to rewrite. **No third stale copy
+exists.**
+
+**BLOCKING 2 — the stamp rule's stated reason was a universal the tree
+falsifies.** `TASK-FORMAT.md`'s lifecycle rule read "…by either side,
+makes one line the property of two branches and every merge resolves it
+by hand." Corrected to the true, conditional hazard: a late stamp makes
+that line **writable by BOTH branches** — clean as long as only one side
+ever writes it, a hand-resolved conflict only when both do, a latent
+conflict the pre-cut order removes entirely (not one every merge pays).
+The accurate quantifier replaces "by either side": the hazard is both
+sides writing, not either. **The measured evidence stays in THIS card,
+not in the shipped generic file** (`method/` carries no project hashes):
+T-054 (`5991375`) and T-063 (`3e2318c`) were both stamped late from
+inside their lanes and merged CLEAN — merge-base `planned`, main `^1`
+`planned`, lane `^2` `building`, main never wrote the file — precisely
+because only one side wrote the line. **Authoritative copy named, in both
+files.** Per rule 4, the two copies now say which governs: `TASK-FORMAT.md`
+owns the FIELD (what the stamp is, what its absence means);
+`orchestrator.md` 5b owns the ACT (who writes it, in what order). Each
+states the split; they agree. `lane-protocol.md`'s own copy was already
+correct (it names BOTH sides writing) and is unchanged.
+
+**The 13-row brief table — every row now transcribable off its source
+column (`T-089-s7`, closed).** The verifier's walk found five rows a
+program cannot transcribe and two source tensions. Fixed in
+`method/roles/executor.md`:
+
+- **Role named.** A new paragraph above the table states it assembles an
+  EXECUTOR's brief and that a verifier/integrator brief substitutes the
+  role-specific rows (4, 11, 12), read against that role's file. Row 1
+  gains an extraction rule ("the role file's opening line IS the one-line
+  summary").
+- **Row 3** now points at the project's OWN root adapter file
+  (`CLAUDE.md`/`AGENTS.md`), not the `adapters/*.md` TEMPLATE dir with its
+  `<project name>` placeholders and two undifferentiated files.
+- **Row 4** adds the project's own lane SPELLINGS (branch/worktree/base +
+  create command, which the protocol leaves to CONVENTIONS) beside
+  `lane-protocol.md`.
+- **Row 5** names the card's `touches:`, the LANE LIST (live worktrees on
+  a task branch) made authoritative over the board's lapsing
+  `status: building`, and the project's slug↔path map for the
+  slug-vs-path disjointness case — resolving both the tension (worktree
+  list wins) and the missing slug map.
+- **Row 6** corrects "build section" to the build ORDER plus any
+  fresh-worktree ordering the LANE rules add (the load-bearing "build
+  before test" fact lives in the lane section).
+- **Rows 7, 8** gain the scoping/enumeration rules the walk missed (every
+  package the suite spans; each standing gate is a merge-diff-trigger
+  bullet).
+- **Row 10 / rule 2** — the pid tension is resolved in governing rule 2,
+  which now carves out live-environment facts: a pid/port/socket carries
+  when-and-where it was READ, never a tree ref, and is re-read at
+  dispatch; "the repository wins" no longer has to adjudicate a pid.
+- **Row 11** adds `lane-protocol.md` (who merges / removes the worktree,
+  incl. the size-S self-integrate) so "whether to merge" has a source.
+- **Row 12 — the previously-EMPTY source is now real.** A report spec is
+  written into `executor.md` ("## The report"), which the row names.
+  Step 6 references it.
+- **Rule 4's missing half** — a precedence companion: where two copies
+  diverge, the brief names which is authoritative (field's home file vs
+  acting role's file), with the stamp as the worked case.
+
+Both previously-empty/wrong sources are now real: row 12 (a report spec
+now exists) and row 3 (the root adapter, not the template dir).
+
+**Size-S ceremony (`T-089-s8`, closed).** Arm 1 taken in BOTH files, so
+the contradiction does not just change address: `TASK-FORMAT.md` ceremony
+row S now says the size-S executor is its own integrator (merges,
+checkpoints, removes its own worktree); `lane-protocol.md` rules 4 and 6
+gain the matching exception. They cite each other and agree.
+
+**Non-blocking corrections folded in (not re-litigated).**
+- The bump is a FOUR-place fact: CONVENTIONS' first gotcha now NAMES the
+  unguarded fourth place (its own genesis-kit gotcha's `(v0.1.5, T-023)`
+  reference, which no test reads) and carries the ordering-asymmetry
+  warning that was only in `T-089-s1`. `T-089-s1` corrected to "four
+  literals across three files".
+- "each naming the file it read" — the misleading half is fixed by
+  bringing the ordering asymmetry into the gotcha the editor actually
+  reads.
+- "a non-merge commit later than the checkpoint is equally safe" is now
+  qualified in BOTH copies (CONVENTIONS' DISPATCH bullet and
+  `lane-protocol.md` rule 2): it holds by PRACTICE, verified, not by
+  property — a docs-only non-merge commit can still red a code suite
+  through FRONTMATTER (the DOCS GATE), which no graph argument covers.
+- `T-089-s2` gains the THIRD leak path: executor-derived reasoning reaches
+  the verifier THROUGH the architect's brief (row 13's correction folded
+  in), a channel `executor.md`'s interim clause does not cover.
+
+**`closed_by:` shape.** `s7` and `s8` keep `status: suggested` and record
+the discharge in-body with a `closed_by:` line (the T-084 shape), naming
+the resolving TASK not a commit hash — the fix lands in the same commit
+that would name it, and a hash quoted inside its own tree is stale by
+construction (T-077). First draft used a colon-space inside the value and
+the parser rejected it as a nested mapping (`smoke.test.ts` red, 262/263);
+re-written as a plain scalar, 263/263.
+
+**Suites, on the committed bytes; every exit read from `$?` unpiped.** Tip
+`b38a3cf` + this commit; main `c03a193`.
+
+| suite | result | exit |
+|---|---|---|
+| `npx vitest run` from lib/parser | **263/263**, 12 files | **0** |
+| `npm run build` from app | 265 modules transformed | **0** |
+| `npm test` from app | **840/840**, 43 files | **0** |
+| bare `cargo test --no-fail-fast` from app/src-tauri | **352 passed / 0 failed / 3 ignored** over **15** result lines | **0** |
+| `cargo test snapshot_version_matches_the_live_method_stamps` (all targets) | **1 passed**, 12 targets at 0 tests (whole output read) | **0** |
+| `npm test` from tools/e2e | **121/121**, scratch port **14896** bind-probed free on all four stacks | **0** |
+| `npm run lint:tokens -- --selftest` / `lint:tokens` | clean, **TOKEN 123 / CONTROL 600** | **0** / **0** |
+| `index --check --root ../..` | CURRENT — 585305 B / 119 files / 1018 symbols / 1539 edges | **0** |
+| `docs-gate.mjs <paths>` (direct, never `xargs`) | FIRES — 6 docs code-input paths, 4 suites owed, 11 derived readers, 0 frontmatter issues | **1** |
+
+CONVENTIONS' three live readers are green: the kit.rs stamp test (0),
+`workflow-parity` and `docs-input-gate` (both inside the e2e 121).
+**CONTROL is 600** at this tip and this commit adds no file and deletes
+none, so it holds; TOKEN 123. Derive at your own ref.
+
+**Gates.** GRAPH REGEN — NOT OWED (every changed path is `.md`; 0 match
+the `.ts/.tsx/.js/.jsx`-outside-`docs/` trigger) and `index --check` is
+0 anyway. BOOT GATE — NOT OWED (0 of the changed paths under
+`app/src-tauri/**`, `app/src/**` or a manifest). DOCS GATE — FIRES,
+re-run after this commit (T-081-s9).
+
+**The range, prescribed form, dot counts stated, at `b38a3cf` vs main
+`c03a193`:**
+
+    git merge-tree --write-tree c03a193 b38a3cf  -> tree f7513585…, exit 0
+    git diff --name-only c03a193 <TREE>   PRESCRIBED  -> 16
+    git diff --name-only c03a193...b38a3cf  three dots -> 16
+    git diff --name-only c03a193..b38a3cf   two dots   -> 127   FORBIDDEN
+
+Clean at **16** paths — 10 under `docs/`, 6 under `method/`. Merge-base
+`4d2f03c`; `comm -12` over the two advances is EMPTY (the fence held).
+This commit MODIFIES only files already in that 16-set, so it adds no new
+path — the count is stable and only the tree hash moves (T-077); re-derive
+both at whatever tip you read.
+
+**What in the dispatch brief handed to me was wrong.** (a) It said to read
+"BOTH verdicts"; the card carries exactly ONE verdict (the REJECTED one)
+plus the verifier's own gate-run appendix — there is no second verdict.
+(b) It said main was "last seen `71f49cf`"; by the time I ran, main had
+advanced to `c03a193` through the T-064 checkpoint `302298c` and two
+post-checkpoint docs commits — re-derived above. (c) BLOCKING 1 told me to
+"GREP THE WHOLE CARD for any third occurrence of a bare mapping … the same
+fact lives in two places and one went stale"; the sweep found NO third
+LIVE assertion — the stale mapping lived in exactly ONE place (row 8), the
+correct copy in the re-measurement, and every remaining hit is a quote or
+an input, not a stale claim. The brief was otherwise accurate, and where
+it and the tree disagreed the tree won (recorded).
 
 ## Verdicts
 

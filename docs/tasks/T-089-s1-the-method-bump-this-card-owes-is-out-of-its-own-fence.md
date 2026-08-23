@@ -48,9 +48,17 @@ names gets a second red rather than a green.
 
 Ride the bump on any lane that already holds `app-agent` fence room, or
 dispatch it alone with `touches: [method/, docs/CONVENTIONS.md,
-app-agent]`. The whole edit is three literals, `0.1.5` → `0.1.6`, plus
-deleting the two sentences in CONVENTIONS' first gotcha that record this
-debt. Nothing else moves: no other test pins the version, and the three
+app-agent]`. The edit is **FOUR literals across three files**, `0.1.5` →
+`0.1.6`: the three PINNED ones above (CONVENTIONS' `currently v0.1.5`
+stamp, plan-interview's `(v0.1.5` heading, kit.rs's const) PLUS a fourth
+that NO test pins — CONVENTIONS' own genesis-kit gotcha carries a
+`(v0.1.5, T-023)` version on its `plan-interview.md` reference, and a
+bump that stops at three literals leaves that fourth one stale and green
+(T-089's verifier, finding 4). Then delete the two sentences in
+CONVENTIONS' first gotcha that record this debt. **Order matters — the
+two `kit.rs` asserts are sequential, so a partial bump reds a SECOND
+time rather than going green; move all four literals together.** Nothing
+else moves: no other test pins the version, and the three
 `methodVersion: "0.1.5"` occurrences in `app/test/` and
 `tools/e2e/tests/shell-harness.ts` are fixture-local (the fixture sets
 the value the assertion reads), so they do not red on a bump — verify
