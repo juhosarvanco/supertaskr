@@ -681,10 +681,28 @@ third scratch port, **14768**, bind-probed free on all four stacks before
 use and free again after. Three independent runs of each suite across
 this rebuild, all identical.
 
-**Port hygiene.** Two scratch ports, **14766** (boot gate) and **14767**
-(e2e), each bind-probed FREE on `127.0.0.1`, `0.0.0.0`, `::1` and `::`
-immediately before use and free again after; neither is the default
-14520 nor 1420. **Port 1420 was READ ONLY** with `lsof -nP -iTCP:1420
+**Port hygiene.** Three scratch ports — **14766** (boot gate), **14767**
+and **14768** (e2e) — each bind-probed FREE on `127.0.0.1`, `0.0.0.0`,
+`::1` and `::` immediately before use and free again after; none is the
+default 14520 and none is 1420.
+
+**A BIND PROBE RUN IMMEDIATELY AFTER THE E2E LANE CAN FALSE-RED, and it
+did once here — recorded because the "free again after" ritual is only
+worth running if its failures mean something.** The probe on 14768 taken
+in the same command as the lane's own exit reported BUSY; seconds later
+the identical probe reported all four stacks FREE. The cause is
+TIME_WAIT, not a survivor: `lsof -nP -iTCP:14768` returned **no rows at
+all** at the moment of the refusal — no LISTEN, no process — while
+`netstat -an` showed a wall of `127.0.0.1.<ephemeral> -> 127.0.0.1.14768
+TIME_WAIT` peers from the browser's own connections, and a plain `bind()`
+without `SO_REUSEADDR` refuses against those. **So the authority on
+whether a port was left held is `lsof … -sTCP:LISTEN`, and a bind probe
+is the CONFIRMING half, never the deciding one.** Final state: zero
+listeners on 14766, 14767 and 14768; no `vite`, `playwright` or `tauri`
+process of this lane survives. The only long-lived strangers are the two
+`nputer-T-060` `fake_agent` orphans (52504/52505, ppid 1, five days old)
+— not mine, T-043-s1, left alone — and the human's own
+`npm run tauri dev` chain. **Port 1420 was READ ONLY** with `lsof -nP -iTCP:1420
 -sTCP:LISTEN`, before and after every stage — holder `node` pid **82549**,
 one socket `TCP [::1]:1420 (LISTEN)`, unchanged at 23:54, 23:56 and 00:02
 EEST. No bind, no connect, no signal, no `pkill`. **No real model call**:
