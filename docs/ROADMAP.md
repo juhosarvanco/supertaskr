@@ -530,7 +530,14 @@ deliberately never passed to Claude while Codex's `exec` accepts one —
 see design/cross-harness-plan.md). **D2 is taken**: dispatch gets its
 own component C-15 with touch slug `app-dispatch`, so it does not fence
 against every genesis card for the life of the feature.
-Progress: NOT STARTED. Decomposition pass complete 2026-08-19
+Progress: STARTED — **1 of 2 written F-04 cards done**. T-089 merged
+2026-08-23 and put the brief itself in writing: a thirteen-row normative
+contract in `method/roles/executor.md` that a program transcribes and a
+human reads as a checklist, plus the generic `method/lane-protocol.md`.
+The slice's goal is "stop hand-writing the instructions", and the
+artifact the assembler (T-090+) has to emit now has a spec instead of
+ninety examples. T-088 (C-15's declaration) is still `planned`.
+Decomposition pass complete 2026-08-19
 (design/dispatch-technical-plan.md); D1 ruled by @human the same day.
 
 ## Parked
