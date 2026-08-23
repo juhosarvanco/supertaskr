@@ -138,9 +138,12 @@ LINES, so **no assertion about content can separate it from a tail
 read**. Two pins do, and each kills a mutant the other does not.
 
 **PIN ONE — `the_tail_read_costs_the_budget_and_not_the_file`**
-(`agent/sessions.rs`). A 20,611,682-byte, 10,000-line transcript — 50x
-the budget in lines, 50x the tail's own byte length in bytes — read
-through a `Counting<R>` wrapper the TEST owns. The measurement is an
+(`agent/sessions.rs`). A **20,611,682-byte, 10,000-line** transcript,
+read through a `Counting<R>` wrapper the TEST owns. The body asserts the
+margin rather than assuming it: `LINES >= 40 * BUDGET` (it is 50x) and
+`file_len >= 40 * tail_bytes` (it is 49.99x — 20,611,682 against
+412,303), so the fixture cannot quietly shrink under a later edit and
+leave the cost assertion trivially true. The measurement is an
 observation at the `Read` impl, never a figure the reader reports about
 itself, which is the same rule as CONVENTIONS' positive control one
 level out. It asserts the right 200 lines AND that the cost is at most
@@ -263,8 +266,185 @@ rather than a line.
   card offered as an alternative was not taken. Size S.
 - **`T-070-s3`** — the budget-meaning change above.
 
-### Gates, suites and figures
+### Ranges, every dot count stated, at their own refs
 
-See the section below, all measured at the handoff commit.
+Main was `2036fb2` at dispatch and **`09b83e87`** when this handoff was
+measured; the forecast is against the TIP, because it is the RIGHT-HAND
+endpoint that decides the left one.
+
+    git merge-tree --write-tree 09b83e87 f018636   -> tree 8b01855c…, exit 0 (read from $?, not swallowed)
+    git diff --name-only 09b83e87 <TREE>                        -> 10   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 09b83e87...f018636   (THREE dots)      -> 10   cmp against the forecast: exit 0
+    git diff --name-only 2036fb2..f018636     (TWO, branch-only)-> 10
+    git diff --name-only 09b83e87..f018636    (TWO dots)        -> 29   THE FORBIDDEN PRE-MERGE FORM
+
+`git merge-base 09b83e87 f018636` is **`2036fb2`** — the cut point — so
+three dots and branch-only collapse onto each other here, exactly as the
+rule says they do before the merge. Main advanced **19** paths from the
+cut, **all of them under `docs/`** and none of them code; 19 + 10 = 29,
+which is the forbidden count, and that arithmetic is the check that the
+two sets are disjoint.
+
+**10 files, 944 insertions, 10 deletions.** Suffix census: 4 md, 3 rs,
+2 tsx, 1 ts.
+
+**THE FORECAST IS STATED AT `f018636` AND THE BRANCH TIP IS ONE COMMIT
+LATER**, because the commit that carries this section cannot name its
+own hash. That last commit adds prose to
+`docs/tasks/T-070-arriving-at-a-genesis-reads-what-is-on-disk.md` and to
+nothing else — a path already in the ten — so the PATH LIST is
+invariant across it and every gate derivation above holds at the tip
+unchanged. Re-derive at the tip and `cmp`; the insertion count is the
+only figure that moves.
+
+### The three standing gates, derived under BOTH ranges
+
+| gate | prescribed (10) | forbidden two-dot (29) |
+|---|---|---|
+| GRAPH REGEN (`*.ts/*.tsx/*.js/*.jsx` outside docs/) | **3 — FIRES** | 3 — fires |
+| BOOT GATE (`app/src-tauri/**`, `app/src/**`, either manifest) | **5 — FIRES** | 5 — fires |
+| DOCS GATE (a `docs/` path a code suite reads) | **4 — FIRES**, three suites | 23 — fires |
+
+**NO GATE FLIPS ON THIS LANE**, and the reason is derivable rather than
+lucky: main's whole advance is `docs/`, so the two code triggers see the
+same paths under either range. This is T-081's shape rather than T-084's
+— the complement of the merge that manufactured a boot check — and the
+DOCS GATE is the only row where the wrong range would change the
+PRESENTATION (23 against 4) without changing whether it fires.
+
+- **GRAPH REGEN — OWED, RUN, AND A REAL RED.** `cargo run -p
+  nputer-index -- index --check --root ../..` from `app/src-tauri` exits
+  **1** with BOTH count lines and a `~` file diff, which is the
+  discriminator for a real red (a `--root` false red prints
+  `committed: MISSING`): *committed 585305 bytes · 119 files · 1018
+  symbols · 1539 edges* against *fresh 586657 · 119 · 1020 · 1543*,
+  `files +0 -0 ~3` naming `InterviewChat.tsx`, `agent-store.ts` and
+  `interview-resume-dom.test.tsx`, `edges +5 -1`. **`graph.json` is
+  DELIBERATELY NOT REGENERATED HERE — the CHECKPOINT owes it**, per the
+  gate's own bullet and because the checkpoint edits indexed fixtures.
+  The three-fixture rule does NOT fire: `git diff 09b83e87 <TREE> --
+  docs/architecture/components/` is a **0-file** diff, so the parser pin
+  holds, and the two app dogfood bodies read the COMMITTED graph, which
+  this branch does not move — both green inside the 843 below.
+- **BOOT GATE — OWED AND RUN.** `NPUTER_BOOT_PORT=14831 npm run
+  boot:check` from `tools/e2e`, exit **0**, both lines: `[nputer]
+  project folder: /Users/ujju/Projects/nputer-T-070` and `[nputer]
+  window "main" created`, then SIGTERM. Port **14831** was bind-probed
+  free on all four stacks (`127.0.0.1`, `0.0.0.0`, `::1`, `::`) before
+  each of the two runs — an IPv4-only probe of a v6 listener reports
+  free, which is why all four.
+- **DOCS GATE — OWED AND RUN**, invoked DIRECTLY rather than through
+  `xargs` (BSD `xargs` maps a utility exit of 1–125 to 123, so the
+  four-code contract survives the pipe only by accident): `node
+  tools/e2e/scripts/docs-gate.mjs $(cat <list>)`, exit **1**, owing
+  **three** suites — `npm test from app/`, `npm test from tools/e2e/`,
+  `npx vitest run from lib/parser/` — and NOT `cargo test from
+  app/src-tauri/`, which is the proportionality the gate promises for a
+  flat task card. It reports **11 derived docs readers across 4
+  suites**, **0 frontmatter issues in the live tree**, and a census of
+  *117 docs-shaped sites in 22 files, 11 of them in 9 files
+  root-anchored*. All three owed suites were run AFTER the doc edits,
+  and the cargo suite was run anyway because this lane is mostly Rust.
+
+### Suites, every number derived at this ref, every exit read unpiped
+
+No exit code below came through a pipe — `${PIPESTATUS[0]}` is empty in
+zsh, so each command's own `$?` was echoed on the next statement.
+
+- **parser: 263/263 across 12 files**, `PARSER_EXIT=0`; `npx tsc
+  --noEmit` `PARSER_TSC_EXIT=0`; `npm run build` run FIRST in the fresh
+  worktree, because the app build dies at TS2307 without
+  `lib/parser/dist`.
+- **app: 843/843 across 43 files**, `APP_TEST_EXIT=0` — **840 at
+  `2036fb2`, plus this card's three DOM bodies**. `npm run build`
+  `APP_BUILD_EXIT=0`, **265 modules transformed**, emitting
+  `index-DdOM3cAL.js` **503.20 kB** and `index-CwYF5FQb.css` **43.95
+  kB**; the CSS hash is unmoved and the JS hash is this card's doing.
+- **bare Rust workspace, `cargo test --no-fail-fast`: 356 passed / 0
+  failed / 3 ignored**, `CARGO_TEST_EXIT=0`, summed programmatically
+  from **fifteen** `test result:` lines — **352 at `2036fb2`, plus this
+  card's four bodies** (two unit in `agent/sessions.rs`, two integration
+  in `tests/agent_runner.rs`). Not `--all-targets`, which skips
+  doc-tests.
+- **E2E: 121/121**, `E2E_EXIT=0`, on the lane's own default port 14520,
+  bind-probed free on all four stacks first; `npm run typecheck`
+  `E2E_TYPECHECK_EXIT=0`.
+- **token lint: `LINT_SELFTEST_EXIT=0`, `LINT_TOKENS_EXIT=0`** —
+  `lint-tokens: clean (TOKEN 123 files under app/src, app/test,
+  tools/e2e; CONTROL 593 tracked text files)`, selftest at 49 TOKEN + 4
+  CONTROL samples, 71 walk-policy checks, 8 evidence-floor checks.
+  CONTROL is **590 + 3**, the three finding files; TOKEN is unmoved at
+  123 because this card adds no `.ts/.tsx/.mjs` FILE. This is also the
+  repo's only NUL-byte gate (P5, over raw bytes) and it is green; the
+  ten paths were independently read as bytes and **0 carry a NUL**.
+- **`cargo audit -n`** `CARGO_AUDIT_EXIT=0`: 472 locked crates, **0
+  vulnerabilities / 17 allowed warnings**, unmoved — which a 0-file
+  `Cargo.lock` diff requires.
+- **`index --check`** exit **1**, the real red above.
+- **`cargo fmt --check` is NOT run and is NOT a gate**: it exits 1 over
+  **32 pre-existing files** on this tree with no `rustfmt.toml` anywhere
+  (the tree is written wider than rustfmt's default), so it is red on
+  main and says nothing about this diff. Recorded rather than silently
+  skipped. New Rust here matches its neighbours' width.
+
+### Security sweep, re-derived at this ref
+
+- **NO manifest, lockfile, capability file, `tauri.conf.json` or
+  `.entitlements` in the diff** — `git diff --name-only 09b83e87 <TREE>
+  -- '*Cargo.toml' '*Cargo.lock' '*package.json' '*package-lock.json'
+  '*tauri.conf.json' 'app/src-tauri/capabilities/*' '*.entitlements'` is
+  **0 paths**. No dependency added; no new crate, no new npm package.
+- **IPC IS THIRTEEN AT BOTH ENDS AND DID NOT MOVE**: 13 anchored
+  `#[tauri::command]` attributes repo-wide, 13 `generate_handler!`
+  entries with comments stripped. Both census traps reproduce — the
+  unanchored literal `tauri::command` reads **14** repo-wide (the
+  fourteenth is a doc comment), and a naive comma split of the handler
+  block reads **15**, because two COMMENTS inside the macro contain
+  commas. `app/src-tauri/src/lib.rs` is a **0-line** diff.
+- `app/src-tauri/src/acl_pin.rs` is a **0-file diff**, sha256
+  `8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`;
+  `EXPECTED_GRANTS` unmoved at 92 and `acl_pin` green inside the cargo
+  run.
+- `ENV_ALLOWLIST` in `agent/runner.rs`: **16 entries**, counted over the
+  symbol-anchored body (declaration line 1000). The three-entry
+  `ENV_ALLOWLIST_LINUX` is a SEPARATE symbol and is not in the count —
+  a regex loose enough to match both reads 3, which is how that figure
+  goes wrong. `runner.rs` is a 0-file diff here.
+- **Exactly THREE `#[ignore]` attributes**, anchored on
+  `^[[:space:]]*#\[ignore` with pathspec `'*.rs'` from the repo root:
+  `crates/nputer-index/tests/perf.rs`, `crates/nputer-index/tests/self_graph.rs`,
+  `tests/agent_runner.rs`. Unmoved.
+- **No secret-shaped content**: all 944 added lines scanned for
+  `sk-`/`AKIA`/PEM/bearer/`key|secret|password|token` assignment
+  shapes — **0 hits**. **NO new process surface**: 0 added lines match
+  `Command::new`, `execFileSync`, `execSync`, `spawn(` or
+  `child_process`. The new code opens ONE file read-only
+  (`fs::File::open` on the transcript) and adds no write path at all.
+
+### The human's app, and what this lane left behind
+
+**Port 1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and with
+nothing else**, before and after. No bind, no connect, no signal, on any
+interface. Holder `node` pid **82549**, one socket, `TCP [::1]:1420
+(LISTEN)`, identical at both ends — and the IPv4 side is free while the
+app runs, which is the fact CONVENTIONS records so nobody probes it
+again. **Their app process is unchanged**: pid **85379** (started Aug 20
+00:20:43) under `82364` under `82342`. Nothing in `app/src/**` of the
+MAIN checkout was touched — every edit is in `../nputer-T-070`, and the
+boot check ran against the LANE's tree on port 14831. The two
+`nputer-T-060` `fake_agent` orphans (**52504**/**52505**, ppid 1) are
+unchanged and deliberately left alone (T-043-s1); **no `pkill` was used
+at any point**. Process census at the end: zero `vitest`, zero
+`playwright`/`chromium`, zero `cargo`/`rustc`, no `tauri dev` beyond the
+human's own pair. The drill worktree is removed and
+`git worktree list` shows the four live lanes and main. Every scratch
+file this session wrote is prefixed `T070-`.
+
+### The board at this handoff
+
+**187 flat task files, 64 done / 19 planned / 19 parked / 84 suggested /
+1 verifying**; 64 + 19 + 19 + 84 + 1 = 187. Ten files sit in
+`docs/tasks/rejected/` and are counted separately. The deltas from main
+are T-070 planned → verifying and the three new `T-070-s*` files.
 
 ## Verdicts
