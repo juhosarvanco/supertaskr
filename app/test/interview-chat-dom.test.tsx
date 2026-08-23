@@ -822,18 +822,22 @@ describe("a refusal is visible when it happens, and it is not a failure (T-101)"
     render();
     await emit(
       { kind: "started", seq: 1, turn: 1 },
-      // Every degenerate combination the payload permits: no name and no
-      // words, no name with words, and a name whose message is blank —
-      // the last is exactly how a refusal recovered from the cumulative
+      // Row 0 is the doubly-degenerate case, row 2 the blank-message one
+      // — which is exactly how a refusal recovered from the cumulative
       // `result` line arrives, since that line carries `tool_input` and
-      // never a message.
+      // never a message. ROW 1 IS THE POSITIVE CONTROL between them: a
+      // fully-populated denial, so "a tool" and "the CLI gave no reason"
+      // are demonstrably the FALLBACKS and not what this renderer prints
+      // for everything. Its three tool names are deliberately distinct,
+      // which keeps this body silent about deduplication — that is the
+      // measured turn's body to own, one case up.
       { kind: "denied", seq: 2, turn: 1, toolName: null, toolUseId: null, message: "" },
       {
         kind: "denied",
         seq: 3,
         turn: 1,
-        toolName: null,
-        toolUseId: "toolu_nameless",
+        toolName: "Bash",
+        toolUseId: "toolu_named",
         message: "Glob patterns are not allowed in write operations.",
       },
       {
@@ -844,6 +848,8 @@ describe("a refusal is visible when it happens, and it is not a failure (T-101)"
         toolUseId: null,
         message: "   ",
       },
+      // Landed, so this body says nothing about liveness either.
+      { kind: "completed", seq: 5, turn: 1, text: "Q?", truncatedRelay: false },
     );
 
     const rows = qa("[data-testid=interview-denial]");
@@ -853,7 +859,7 @@ describe("a refusal is visible when it happens, and it is not a failure (T-101)"
     // nothing at all.
     expect(rows[0]!.textContent).toBe("refused: a tool — the CLI gave no reason");
     expect(rows[1]!.textContent).toBe(
-      "refused: a tool — Glob patterns are not allowed in write operations.",
+      "refused: Bash — Glob patterns are not allowed in write operations.",
     );
     expect(rows[2]!.textContent).toBe("refused: WebFetch — the CLI gave no reason");
 
@@ -863,10 +869,10 @@ describe("a refusal is visible when it happens, and it is not a failure (T-101)"
     const notice = q("[data-testid=interview-denials]")!;
     expect(notice.outerHTML).not.toContain("undefined");
     expect(notice.outerHTML).not.toContain("null");
-    expect(ids()).toEqual(["", "toolu_nameless", ""]);
+    expect(ids()).toEqual(["", "toolu_named", ""]);
   });
 
-  it("a turn that DIES of a refusal states it ONCE — the live notice yields to the terminal block", async () => {
+  it("a turn that DIES of a refusal states it ONCE — and only THAT block takes the notice away", async () => {
     await withStatus();
     render();
     await emit(
@@ -890,33 +896,36 @@ describe("a refusal is visible when it happens, and it is not a failure (T-101)"
     // The terminal block IS this refusal, named as the turn's cause of
     // death. Two surfaces for one event is what T-081's criterion 4
     // forbids on the runner's side; it forbids it here too.
-    const failure = q("[data-testid=interview-failure]")!;
-    expect(failure.getAttribute("data-error-kind")).toBe("toolDenied");
-    expect(failure.textContent).toContain("the planner was refused a tool it needed");
+    const dead = q("[data-testid=interview-planner-turn][data-turn='1']")!;
     expect(
-      q("[data-testid=interview-denials]"),
+      dead.querySelector("[data-testid=interview-failure]")!.getAttribute("data-error-kind"),
+    ).toBe("toolDenied");
+    expect(dead.textContent).toContain("the planner was refused a tool it needed");
+    expect(
+      dead.querySelector("[data-testid=interview-denials]"),
       "the same refusal is not also a second, quieter event",
     ).toBeNull();
-  });
 
-  it("and it yields ONLY to that block — a stall says nothing about refusals, so the notice stands", async () => {
-    // THE POSITIVE CONTROL for the negative assertion above: without it,
-    // "the notice is gone" is equally satisfied by a rule that drops the
-    // notice on ANY failure, which would lose the refusal on every turn
-    // that dies of something else.
-    await withStatus();
-    render();
+    // THE POSITIVE CONTROL, on its own turn and in the same body because
+    // the negative above is worthless without it: a rule that dropped the
+    // notice on ANY failure would satisfy that assertion equally, and
+    // would lose the refusal on every turn that dies of something else. A
+    // stall says nothing about refusals, so the notice stands beside it.
     await emit(
-      { kind: "started", seq: 1, turn: 1 },
-      { kind: "denied", seq: 2, turn: 1, ...REFUSED_GLOB },
-      { kind: "failed", seq: 3, turn: 1, error: { kind: "stall" } },
+      { kind: "started", seq: 5, turn: 2 },
+      { kind: "denied", seq: 6, turn: 2, ...REFUSED_GLOB },
+      { kind: "failed", seq: 7, turn: 2, error: { kind: "stall" } },
     );
-    const failure = q("[data-testid=interview-failure]")!;
-    expect(failure.getAttribute("data-error-kind")).toBe("stall");
-    expect(failure.textContent).toContain("the planner stopped mid-answer");
-    expect(q("[data-testid=interview-denial]")?.textContent).toContain(
-      "Glob patterns are not allowed",
-    );
+    const stalled = q("[data-testid=interview-planner-turn][data-turn='2']")!;
+    expect(
+      stalled.querySelector("[data-testid=interview-failure]")!.getAttribute("data-error-kind"),
+    ).toBe("stall");
+    expect(stalled.textContent).toContain("the planner stopped mid-answer");
+    expect(
+      stalled.querySelector("[data-testid=interview-denial]")?.textContent,
+    ).toContain("Glob patterns are not allowed");
+    // ...and turn 1 did not gain one back on turn 2's account.
+    expect(dead.querySelector("[data-testid=interview-denials]")).toBeNull();
   });
 });
 
