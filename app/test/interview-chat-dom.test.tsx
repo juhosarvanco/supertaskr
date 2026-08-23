@@ -880,7 +880,12 @@ describe("a refusal is visible when it happens, and it is not a failure (T-101)"
       { kind: "denied", seq: 2, turn: 1, ...REFUSED_COMPOUND },
       { kind: "denied", seq: 3, turn: 1, ...REFUSED_GLOB },
     );
-    expect(qa("[data-testid=interview-denial]"), "live, before the verdict").toHaveLength(2);
+    // Present before the verdict — the positive control for its
+    // disappearance below. Deliberately NOT a count: how many rows two
+    // same-tool refusals produce is the measured-turn body's property,
+    // and asserting it twice would make one dedupe mutant kill two
+    // bodies and leave neither of them isolating anything.
+    expect(q("[data-testid=interview-denials]"), "live, before the verdict").not.toBeNull();
 
     await emit({
       kind: "failed",
