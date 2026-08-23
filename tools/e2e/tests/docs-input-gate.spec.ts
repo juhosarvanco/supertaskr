@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
@@ -8,6 +9,8 @@ import {
   CALL_SAMPLES,
   DISPOSITION_RULING,
   DOCS_EXCLUDED_FILES,
+  PLANTED_READERS,
+  RESOLVE_SAMPLES,
   ROOT_ANCHOR_LEDGER,
   ROOT_FORMS,
   SITE_SAMPLES,
@@ -25,6 +28,8 @@ import {
   isTaskCardPath,
   liveTaskCards,
   nearMisses,
+  packageRelativeSites,
+  resolveSelftest,
   rootAnchoredFiles,
   stripComments,
   suitesOwedForAllOfDocs,
@@ -32,6 +37,7 @@ import {
   taskStatuses,
   unaccountedRootAnchors,
   unlinkedFiles,
+  unlinkedSites,
 } from "../scripts/docs-scan.mjs";
 
 /**
@@ -235,15 +241,15 @@ test("the census is DERIVED, and the DOCS GATE bullet names the command instead 
   // docs-shaped site — so the digits are gone and the bullet names the
   // command that prints them.
   const census = siteCensus();
-  expect(census.anchoredSites).toBeGreaterThan(0);
-  expect(census.anchoredFiles).toBeGreaterThan(0);
-  expect(census.anchoredSites, "root-anchored is a small share of docs-shaped").toBeLessThan(
+  expect(census.resolvedSites).toBeGreaterThan(0);
+  expect(census.resolvedFiles).toBeGreaterThan(0);
+  expect(census.resolvedSites, "resolving is a small share of docs-SHAPED").toBeLessThan(
     census.sites / 2,
   );
-  // Internal consistency: every file with a root-anchored SITE is a
-  // derived reader, and the reader set is at least that big — the call
-  // arm can only add.
-  expect(READERS.length).toBeGreaterThanOrEqual(census.anchoredFiles);
+  // Internal consistency: every file with a site that RESOLVES into
+  // docs/ is a derived reader, and the reader set is at least that big —
+  // the call arm can only add.
+  expect(READERS.length).toBeGreaterThanOrEqual(census.resolvedFiles);
   expect(DOCS_GATE_BULLET).toContain("docs-gate.mjs --census");
   expect(DOCS_GATE_BULLET, "no transcribed site count").not.toMatch(
     /\d+\s+docs-shaped sites in \d+ files/,
@@ -271,6 +277,210 @@ test("a repo-root join whose first segment is not `docs` is not a reader", () =>
   const text = readFileSync(path.join(repoRoot, rel), "utf8");
   expect(text, "the file really does join the root with a docs-ending path").toContain("repoRoot");
   expect(READERS.map((r) => r.file)).not.toContain(rel);
+});
+
+/**
+ * A throwaway repository holding the PLANTED READERS, so the real
+ * derivation runs over real files rather than over fragments. The plant
+ * sources live in docs-scan.mjs (the one file excluded from its own
+ * scan): a spec that spelled a docs site out in a template literal
+ * would BECOME a reader of docs/, because `stripComments` keeps string
+ * literals — which is the whole reason that exclusion exists.
+ */
+function plantRepo(): string {
+  const dir = mkdtempSync(path.join(tmpdir(), "t085-docs-gate-"));
+  const write = (rel: string, content: string): void => {
+    const abs = path.join(dir, rel);
+    mkdirSync(path.dirname(abs), { recursive: true });
+    writeFileSync(abs, content, "utf8");
+  };
+  write("app/src-tauri/Cargo.toml", '[package]\nname = "planted"\nversion = "0.0.0"\n');
+  write("docs/research/captures/planted.jsonl", "{}\n");
+  write("docs/tasks/T-000-planted.md", "---\nid: T-000\nstatus: planned\n---\n\nbody\n");
+  for (const plant of PLANTED_READERS) write(plant.file, plant.source);
+  execFileSync("git", ["init", "-q"], { cwd: dir, stdio: ["ignore", "ignore", "ignore"] });
+  execFileSync("git", ["add", "-A"], { cwd: dir, stdio: ["ignore", "ignore", "ignore"] });
+  return dir;
+}
+
+test("THE LIVE PACKAGE-RELATIVE READER IS DERIVED — not listed, and not in the ledger", () => {
+  // T-085's own criterion, and the measurement that produced the card.
+  // `app/src-tauri/tests/agent_runner.rs` reads
+  // docs/research/captures/real-planner-turn-2026-08-19.jsonl as
+  // `Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/…")`. It
+  // holds no root, its literal does not open with `docs`, and it escaped
+  // the site scan, the call arm, the tripwire AND the ledger in silence.
+  // Measured at T-084's merge: mutate one field of that capture and the
+  // gate owed only `npm test from tools/e2e/` (121/121, exit 0) while
+  // bare `cargo test` went 351/1/3 at exit 101. An integrator who obeyed
+  // the gate merged a red tree.
+  const rel = "app/src-tauri/tests/agent_runner.rs";
+  const capture = "docs/research/captures/real-planner-turn-2026-08-19.jsonl";
+  const source = readFileSync(path.join(repoRoot, rel), "utf8");
+  expect(source, "the file really does anchor on the crate dir").toContain(
+    'env!("CARGO_MANIFEST_DIR")',
+  );
+  expect(source, "and really does climb into docs/").toContain(`../../${capture}`);
+  expect(source, "and holds no repository root by name").not.toMatch(
+    /(?:const|let|fn)\s+repo_?[Rr]oot/,
+  );
+  const reader = READERS.find((r) => r.file === rel);
+  expect(reader, "agent_runner.rs is a derived reader").toBeDefined();
+  expect(reader!.prefixes).toContain(capture);
+  expect(reader!.command).toBe("cargo test");
+  expect(reader!.suite).toBe("app/src-tauri");
+  // DERIVED, NOT LISTED: nothing in the acknowledgement ledger names it.
+  expect(ROOT_ANCHOR_LEDGER.map((e) => e.file)).not.toContain(rel);
+  // AND THE ANSWER MOVES. This is the mutant, as an answer rather than an
+  // anecdote: the suite that actually reds is the one now named.
+  const gate = docsGate([capture], READERS);
+  expect(gate.fires).toBe(true);
+  expect(gate.commands).toContain("cargo test from app/src-tauri/");
+  expect(gate.byPath[0]!.readers).toContain(rel);
+});
+
+test("the resolve sample set is green — both spellings in, the fixture base and the escape out", () => {
+  // THE THIRD ARM's samples: shape is decided textually, MEMBERSHIP by
+  // resolving the literal against the base. The floors are the two
+  // spellings (T-084's verifier probed for the JS one, found zero, and
+  // missed the Rust one that was live), the fixture base, and the climb
+  // that leaves the repository — plus a non-vacuity row requiring every
+  // negative to be a SITE that resolution DROPS, since a negative the
+  // textual filter never matched would keep this arm green if it were
+  // deleted outright.
+  const rows = resolveSelftest();
+  expect(rows.filter(([, ok]) => !ok).map(([what]) => what)).toEqual([]);
+  expect(rows.length).toBeGreaterThan(10);
+  expect(RESOLVE_SAMPLES.filter((s) => s.prefixes.length === 0).length).toBeGreaterThan(2);
+});
+
+test("PLANTED READERS in BOTH spellings are derived by the real derivation, off a scratch repository", () => {
+  // Criterion five, and the reason it is two plants and not one: T-084's
+  // verifier falsified the ledger's universal with the JS spelling,
+  // found zero instances, and filed — while the Rust spelling sat live
+  // in the tree. The probe missed BY SPELLING. Both are planted, both
+  // are required, and the plant text is READ BACK off disk before the
+  // derivation is believed.
+  const dir = plantRepo();
+  try {
+    for (const plant of PLANTED_READERS) {
+      expect(readFileSync(path.join(dir, plant.file), "utf8"), `${plant.file} is on disk as written`).toBe(
+        plant.source,
+      );
+    }
+    const planted = docsReaders(dir);
+    const byFile = new Map(planted.map((r) => [r.file, r]));
+    for (const plant of PLANTED_READERS) {
+      if (plant.prefix === null) {
+        expect(byFile.has(plant.file), `${plant.file} is NOT a reader — ${plant.why}`).toBe(false);
+        continue;
+      }
+      const got = byFile.get(plant.file);
+      expect(got, `${plant.file} is derived — ${plant.why}`).toBeDefined();
+      expect(got!.prefixes).toContain(plant.prefix);
+      expect(got!.command).toBe(plant.command);
+      expect(got!.suite).toBe(plant.suite);
+    }
+    // BOTH SPELLINGS, named rather than counted: the Rust plant is owed
+    // by cargo and the JS plant by npm, which is the whole point — a
+    // package-relative read answers with ITS OWN suite.
+    const rust = PLANTED_READERS.find((plant) => plant.source.includes("CARGO_MANIFEST_DIR"))!;
+    const js = PLANTED_READERS.find((plant) => plant.source.includes('resolve("../docs'))!;
+    expect(rust.command).toBe("cargo test");
+    expect(js.command).toBe("npm test");
+    expect(docsGate([rust.prefix!], planted).commands).toContain("cargo test from app/src-tauri/");
+    expect(docsGate([js.prefix!], planted).commands).toContain("npm test from app/");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a planted climb that ESCAPES the repository is excluded, and the exclusion is asserted", () => {
+  // Criterion six. `path.relative` answers an escape with a `..` of its
+  // own, so one containment test covers it — but "it is not a reader" is
+  // satisfied equally by a working exclusion and by a site the scan
+  // never saw, so the account has to say WHICH. It is a docs-shaped
+  // climbing site, seen, classified `outside`, and dropped.
+  const dir = plantRepo();
+  try {
+    const climbs = packageRelativeSites(dir);
+    const byFile = new Map(climbs.map((c) => [c.file, c]));
+    const escape = PLANTED_READERS.find((plant) => plant.source.includes("../../../docs"))!;
+    const seen = byFile.get(escape.file);
+    expect(seen, "the escaping climb IS seen as a docs-shaped site").toBeDefined();
+    expect(seen!.kind, "and it is classified as landing outside docs/").toBe("outside");
+    expect(seen!.prefix).toBeNull();
+    expect(docsReaders(dir).map((r) => r.file)).not.toContain(escape.file);
+    // The two planted climbs that DO land inside are classified derived,
+    // so `outside` is a verdict this classifier can actually reach.
+    expect(climbs.filter((c) => c.kind === "derived").length).toBeGreaterThan(0);
+    expect(climbs.every((c) => c.kind !== "unlinked")).toBe(true);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("the package-relative account has no member this scan could not evaluate", () => {
+  // THE SECOND TRIPWIRE, and it needs to exist separately because the
+  // first one cannot reach this class: `unlinkedFiles()` looks only at
+  // files holding the repository ROOT, and a file that climbs out of its
+  // package directory into docs/ holds none. A climbing docs-shaped site
+  // whose base `evalBase` cannot read is a reader this gate may be
+  // missing, and it says so instead of going quiet.
+  expect(unlinkedSites()).toEqual([]);
+  const climbs = packageRelativeSites();
+  expect(climbs.length, "the class is live on this tree, not hypothetical").toBeGreaterThan(0);
+  expect(climbs.every((c) => c.kind === "derived")).toBe(true);
+  // Every climbing site that resolved is a reader of exactly that path.
+  for (const c of climbs) {
+    const reader = READERS.find((r) => r.file === c.file);
+    expect(reader, `${c.file} is a reader`).toBeDefined();
+    expect(reader!.prefixes).toContain(c.prefix);
+  }
+});
+
+test("the ledger's universal is gone, and what replaced it is checkable", () => {
+  // BLOCKING 1 of T-084's verdict, surviving its own fix. The ledger
+  // asserted "a file that holds this repository's root is the only kind
+  // of file that CAN read this repository's docs/" — a universal, and
+  // false: the live instance above holds no root. The sentence is not
+  // corrected by rewording alone, so the pin is the TREE: a derived
+  // reader that is not root-anchored is a counterexample the census can
+  // produce, and it exists.
+  const anchored = new Set(rootAnchoredFiles().map((f) => f.file));
+  const unanchoredReaders = READERS.filter((r) => !anchored.has(r.file));
+  expect(
+    unanchoredReaders.map((r) => r.file),
+    "a reader that holds no root falsifies the old universal",
+  ).toContain("app/src-tauri/tests/agent_runner.rs");
+  const scanner = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs"), "utf8");
+  expect(scanner, "the ledger no longer claims the universal as live").toContain(
+    "THE SENTENCE THAT USED TO OPEN THIS COMMENT WAS FALSE",
+  );
+  // AND THE RETRACTION HAS TO BE THE ONLY PLACE IT SURVIVES — T-085's
+  // own rejection. This file retracted the universal in the ledger while
+  // `rootAnchoredFiles()`'s comment still ASSERTED it 220 lines above:
+  // the T-070-s5 shape, a live false comment, in the card that exists
+  // because a stale claim shipped. `toContain` on the retraction cannot
+  // see that, so the pin is POSITIONAL. The retraction QUOTES the
+  // sentence, which is the positive control that keeps the sweep below
+  // from being vacuous (a negative assertion needs one, CONVENTIONS).
+  const retraction = scanner.indexOf("THE SENTENCE THAT USED TO OPEN THIS COMMENT WAS FALSE");
+  const positiveClaim = scanner.indexOf("WHAT IS TRUE, and all this ledger claims");
+  expect(positiveClaim, "the retraction ends where the ledger's positive claim begins").toBeGreaterThan(
+    retraction,
+  );
+  const asserted = [...scanner.matchAll(/only (?:kind of )?file that CAN read/g)];
+  expect(asserted.length, "the retraction quotes the sentence, so this sweep can match").toBeGreaterThan(0);
+  for (const m of asserted) {
+    expect(
+      m.index,
+      `the universal is stated at offset ${m.index}, outside the retraction that withdraws it`,
+    ).toBeGreaterThan(retraction);
+    expect(m.index, `the universal is stated at offset ${m.index}, past the retraction`).toBeLessThan(
+      positiveClaim,
+    );
+  }
 });
 
 test("the one by-name exclusion is load-bearing, and the spec is NOT excluded", () => {
