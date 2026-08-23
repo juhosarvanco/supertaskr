@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CONVENTION_HINT,
   EMPTY_PROBE,
+  genesisSwitchIsOvertaken,
   outcomeCarriesSnapshot,
   planChecklist,
   reduceDocs,
@@ -181,6 +182,11 @@ const shell = (patch: Partial<ShellState>): ShellState => ({
   // test/startup-recovery.test.ts.
   starting: false,
   startupFailure: null,
+  // T-064 added a third, for the same reason and with the same
+  // treatment: `watcherLive` is meaningful only while `startupFailure`
+  // is non-null, and every case here describes a healthy startup. Its
+  // own behaviour is pinned in test/startup-recovery.test.ts.
+  watcherLive: false,
   indexing: false,
   indexOutcome: null,
   docs: emptyState(),
@@ -357,7 +363,6 @@ describe("reducePickOutcome (T-026: one pipeline for all three pickers)", () => 
       kind: "genesis",
       projectDir: "/tmp/sketchpad",
       seq: 42,
-      probe: EMPTY_PROBE,
     });
     expect(next.phase).toBe("genesis");
     expect(next.genesisDir).toBe("/tmp/sketchpad");
@@ -391,7 +396,6 @@ describe("reducePickOutcome (T-026: one pipeline for all three pickers)", () => 
       kind: "genesis",
       projectDir: "/tmp/sketchpad",
       seq: 42,
-      probe: EMPTY_PROBE,
       snapshot: payload(42, "/tmp/sketchpad", [
         { path: "docs/ARCHITECTURE.md", content: "# the shape of the thing" },
         { path: "docs/decisions/001-x.md", content: "# 001 - x" },
@@ -421,11 +425,147 @@ describe("reducePickOutcome (T-026: one pipeline for all three pickers)", () => 
     // skip fields are: a payload minted before it existed stays valid,
     // and absent must read as "no tree", never as a claim about one.
     const s = open();
-    const legacy = { kind: "genesis", projectDir: "/tmp/sketchpad", seq: 42, probe: EMPTY_PROBE };
+    const legacy = { kind: "genesis", projectDir: "/tmp/sketchpad", seq: 42 };
     const next = reducePickOutcome(s, legacy as Parameters<typeof reducePickOutcome>[1]);
     expect(next.phase).toBe("genesis");
     expect(next.docs.fileCount).toBe(0);
     expect(next.docs.seq).toBe(42);
+  });
+});
+
+// ---- T-064 criterion 1: the overtaking emit -----------------------------
+
+/**
+ * `arm_genesis` arms the watch BEFORE `apply_genesis_folder` commits, so
+ * a `docs-changed` emit for the NEW root can reach this store before the
+ * invoke reply. Measured through these very reducers by T-042's verifier
+ * on the branch point:
+ *
+ *     in-order    switch@7 -> fileCount=2 seq=7 phase=genesis
+ *     overtaken   emit@8   -> fileCount=3 seq=8
+ *                 then switch@7 -> fileCount=0 seq=8 phase=genesis
+ *
+ * "0 files written" over a docs/ that is not empty — the T-026-s4
+ * symptom one layer down.
+ */
+describe("T-064: a genesis switch that arrives AFTER an emit for the same folder", () => {
+  const GENESIS_DIR = "/tmp/sketchpad";
+  const genesisFiles = (n: number): DocsFilePayload[] =>
+    Array.from({ length: n }, (_, i) => ({
+      path: `docs/decisions/00${i + 1}-x.md`,
+      content: `# 00${i + 1}`,
+    }));
+
+  /** The emit landed first: the model already describes the new folder. */
+  const overtaken = (emitSeq: number, files: number): ShellState =>
+    shell({ docs: reduceDocs(emptyState(), payload(emitSeq, GENESIS_DIR, genesisFiles(files))) });
+
+  it("the PREDICATE is true only when both halves are", () => {
+    const prev = overtaken(8, 3).docs;
+    const at = (seq: number, projectDir = GENESIS_DIR) =>
+      ({ kind: "genesis", projectDir, seq }) as const;
+
+    expect(genesisSwitchIsOvertaken(prev, at(7)), "older reading, same folder").toBe(true);
+    expect(genesisSwitchIsOvertaken(prev, at(8)), "equal seq is still not newer").toBe(true);
+    expect(genesisSwitchIsOvertaken(prev, at(9)), "a NEWER switch is not overtaken").toBe(false);
+    expect(
+      genesisSwitchIsOvertaken(prev, at(7, "/projects/somewhere-else")),
+      "a different folder must still be reset away",
+    ).toBe(false);
+  });
+
+  it("the snapshot's OWN seq is the reading compared, when one rides", () => {
+    const prev = overtaken(8, 3).docs;
+    // Rust stamps a carried snapshot with the switch's own seq, so these
+    // agree in production; spelling it from the snapshot is what makes
+    // the tree-less branch and the tree-bearing branch one rule.
+    expect(
+      genesisSwitchIsOvertaken(prev, {
+        kind: "genesis",
+        projectDir: GENESIS_DIR,
+        seq: 9,
+        snapshot: payload(7, GENESIS_DIR, genesisFiles(2)),
+      }),
+    ).toBe(true);
+  });
+
+  it("KEEPS the overtaking emit instead of resetting to the empty model", () => {
+    const s = overtaken(8, 3);
+    expect(s.docs.fileCount).toBe(3);
+    const next = reducePickOutcome(s, {
+      kind: "genesis",
+      projectDir: GENESIS_DIR,
+      seq: 7,
+      snapshot: payload(7, GENESIS_DIR, genesisFiles(2)),
+    });
+    // The screen still moves — this is a switch, and the phase is what
+    // the switch is FOR.
+    expect(next.phase).toBe("genesis");
+    expect(next.genesisDir).toBe(GENESIS_DIR);
+    // ...but the model is the LATER reading of the same folder, not an
+    // empty one, and not the switch's own two-file tree either.
+    expect(next.docs.fileCount, "the fresher measurement survives").toBe(3);
+    expect(next.docs).toBe(s.docs); // identity: nothing was rebuilt
+    expect(next.docs.seq).toBe(8);
+  });
+
+  it("the SNAPSHOT-LESS branch is covered too, and stops walking the watermark back", () => {
+    // This branch ASSIGNED `outcome.seq`, so an overtaking emit at a
+    // higher seq was followed by the watermark going BACKWARDS — a
+    // second defect the tree-bearing branch does not have.
+    const s = overtaken(8, 3);
+    const next = reducePickOutcome(s, {
+      kind: "genesis",
+      projectDir: GENESIS_DIR,
+      seq: 7,
+      snapshot: null,
+    });
+    expect(next.phase).toBe("genesis");
+    expect(next.docs.fileCount).toBe(3);
+    expect(next.docs.seq, "8, never back to 7").toBe(8);
+    // And the watermark still does its job afterwards.
+    expect(reduceDocs(next.docs, payload(8, GENESIS_DIR, genesisFiles(1)))).toBe(next.docs);
+  });
+
+  it("a genesis switch onto a DIFFERENT folder still clears everything", () => {
+    // The conjunct that is not about seq. Without it, an emit from the
+    // previously open project at a high seq would be kept as though it
+    // described the folder being switched to.
+    const s = shell({
+      docs: reduceDocs(emptyState(), payload(99, "/projects/a", projectAFiles())),
+    });
+    expect(s.docs.model.tasks.length).toBe(1);
+    const next = reducePickOutcome(s, {
+      kind: "genesis",
+      projectDir: GENESIS_DIR,
+      seq: 7,
+      snapshot: null,
+    });
+    expect(next.docs.model.tasks, "no cross-project ghosts").toEqual([]);
+    expect(next.docs.lastGood.size).toBe(0);
+    expect(next.docs.fileCount).toBe(0);
+    // ...and the watermark only ever goes UP. This branch used to ASSIGN
+    // `outcome.seq`, walking it back to 7 — measured here before the
+    // `Math.max`. Unreachable in production (Rust's counter is global
+    // and monotonic, so a switch always stamps above every prior emit),
+    // but a pure reducer cannot see that and must not depend on it.
+    expect(next.docs.seq, "the watermark still survives the switch").toBe(99);
+  });
+
+  it("re-picking the OPEN folder as a genesis root is not an overtake", () => {
+    // Same projectDir, but the switch's seq is NEWER — which is what a
+    // real re-pick produces, because the switch stamps itself after the
+    // ack. It must apply normally.
+    const s = overtaken(8, 3);
+    const next = reducePickOutcome(s, {
+      kind: "genesis",
+      projectDir: GENESIS_DIR,
+      seq: 9,
+      snapshot: payload(9, GENESIS_DIR, genesisFiles(1)),
+    });
+    expect(next.docs).not.toBe(s.docs);
+    expect(next.docs.fileCount, "the switch's own tree, applied").toBe(1);
+    expect(next.docs.seq).toBe(9);
   });
 });
 
@@ -443,7 +583,6 @@ describe("outcomeCarriesSnapshot — provenance, not the seq", () => {
         kind: "genesis",
         projectDir: "/tmp/sketchpad",
         seq: 42,
-        probe: EMPTY_PROBE,
         snapshot,
       }),
     ).toBe(true);
@@ -456,8 +595,8 @@ describe("outcomeCarriesSnapshot — provenance, not the seq", () => {
       { kind: "noDocs", path: "/tmp/elsewhere", probe: EMPTY_PROBE },
       { kind: "error", path: "/tmp/gone", message: "that folder is no longer there" },
       // The one that used to slip through, and its legacy spelling.
-      { kind: "genesis", projectDir: "/tmp/sketchpad", seq: 42, probe: EMPTY_PROBE, snapshot: null },
-      { kind: "genesis", projectDir: "/tmp/sketchpad", seq: 42, probe: EMPTY_PROBE },
+      { kind: "genesis", projectDir: "/tmp/sketchpad", seq: 42, snapshot: null },
+      { kind: "genesis", projectDir: "/tmp/sketchpad", seq: 42 },
     ];
     for (const outcome of cases) {
       expect(outcomeCarriesSnapshot(outcome), `${outcome.kind} carries no tree`).toBe(false);

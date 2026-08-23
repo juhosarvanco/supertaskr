@@ -197,6 +197,10 @@ describe("a rejecting listen leaves the app RECOVERABLE (criterion 4)", () => {
     expect(store.selectScreen(shell)).toEqual({
       screen: "startupFailed",
       failure: shell.startupFailure,
+      // T-064: NOTHING survived this refusal — it is attempt 1, so there
+      // was no earlier subscription to keep. "no file change can reach
+      // the board" is TRUE here, which is why the sentence was written.
+      watcherLive: false,
     });
   });
 
@@ -587,6 +591,65 @@ describe("the store holds the unlisten handle (criterion 1)", () => {
     expect(ipc.unlistened, "#1 is untouched").toEqual([]);
     expect(ipc.liveSubscriptions, "still live — a file change can still land").toBe(1);
     expect(store.getShellState().startupFailure?.step).toBe("subscribe");
+  });
+});
+
+// ---- T-064, closing T-063-s3 ------------------------------------------
+
+/**
+ * THE STATE ABOVE IS EXACTLY THE ONE THE COPY WAS WRONG ABOUT. A refused
+ * re-subscribe leaves attempt 1's subscription attached — deliberately,
+ * and pinned green three tests up — while the failure's step is
+ * `subscribe`, whose sentence said "so no file change can reach the
+ * board". The first clause is true; the second is false here, and the
+ * user correctly concludes they must retry or reopen when they need not.
+ *
+ * The step cannot tell these two apart, because two different situations
+ * share it. `watcherLive` can, and it is READ OFF THE STORE'S OWN
+ * `unlistenDocs` handle rather than tracked a second time.
+ */
+describe("T-064: the shell knows whether a refused subscribe left a watcher behind", () => {
+  it("is FALSE on a first refused subscribe — nothing was ever attached", async () => {
+    const store = await freshStore();
+    ipc.listenRejects = true;
+    await store.startDocsWatcher();
+
+    expect(ipc.liveSubscriptions, "the control: there really is no watcher").toBe(0);
+    expect(store.getShellState().startupFailure?.step).toBe("subscribe");
+    expect(store.getShellState().watcherLive).toBe(false);
+    expect(store.selectScreen(store.getShellState())).toMatchObject({
+      screen: "startupFailed",
+      watcherLive: false,
+    });
+  });
+
+  it("is TRUE when attempt 1's subscription survived attempt 2's refusal", async () => {
+    const store = await freshStore();
+    ipc.invokeRejects = true;
+    await store.startDocsWatcher(); // #1: listen ok, invoke refused
+    expect(store.getShellState().watcherLive, "the subscribe DID succeed").toBe(true);
+
+    ipc.listenRejects = true;
+    await store.startDocsWatcher(); // #2: listen refused, #1 kept
+
+    const shell = store.getShellState();
+    expect(shell.startupFailure?.step, "the same step name as the case above").toBe("subscribe");
+    expect(shell.startupFailure?.attempt).toBe(2);
+    expect(ipc.liveSubscriptions, "and a file change really can still land").toBe(1);
+    expect(shell.watcherLive, "which is what the sentence has to say").toBe(true);
+    expect(store.selectScreen(shell)).toMatchObject({
+      screen: "startupFailed",
+      watcherLive: true,
+    });
+  });
+
+  it("a refused SNAPSHOT records it too — the subscribe is the one that succeeded", async () => {
+    const store = await freshStore();
+    ipc.invokeRejects = true;
+    await store.startDocsWatcher();
+
+    expect(store.getShellState().startupFailure?.step).toBe("snapshot");
+    expect(store.getShellState().watcherLive).toBe(true);
   });
 });
 

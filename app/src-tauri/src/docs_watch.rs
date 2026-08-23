@@ -48,6 +48,15 @@ use serde::Serialize;
 pub const DEBOUNCE: Duration = Duration::from_millis(250);
 
 const DOCS_DIR: &str = "docs";
+/// The paths `PlanProbe` is about, spelled ONCE because since T-064 they
+/// are spent by TWO readings of the same folder: `probe_plan` joins them
+/// onto a root and stats them, and `PlanProbe::from_docs_snapshot`
+/// matches them against a snapshot's project-relative POSIX paths.
+/// Relative to `DOCS_DIR`, which is the form both readings can build
+/// from.
+const ROADMAP_NAME: &str = "ROADMAP.md";
+const ARCHITECTURE_NAME: &str = "ARCHITECTURE.md";
+const TASKS_SUBDIR: &str = "tasks";
 /// Caps so a pathological repo cannot balloon the IPC payload.
 const MAX_FILE_BYTES: u64 = 1_048_576; // 1 MiB per file
 const MAX_FILES: usize = 2_000;
@@ -188,10 +197,22 @@ pub enum PickOutcome {
     /// so the pane renders what is actually there instead of claiming
     /// nothing is written. `None` means the folder genuinely has no
     /// docs/ yet — the one shape this variant used to assume.
+    ///
+    /// T-064 criterion 5: `probe` IS GONE FROM THIS VARIANT, and its
+    /// absence is the card's title made structural. The folder is read
+    /// twice inside `apply_genesis_folder` — a stat sweep before the
+    /// arming rendezvous, the collected tree after it — and exactly ONE
+    /// of those readings crosses the boundary, so the payload can no
+    /// longer describe the same folder two ways at two moments. The
+    /// field had no reader: nothing under `app/src` ever touched it, the
+    /// genesis SCREEN renders `genesisDir` plus the docs model, and
+    /// `reducePickOutcome` let `resolvedProbe` go null. `PlanProbe` is
+    /// unchanged and keeps both its live consumers — the front door's
+    /// "No plan in <folder>" checklist reads `NoDocs.probe` and
+    /// `ProjectStatus::NoDocs.probe`.
     Genesis {
         project_dir: String,
         seq: u64,
-        probe: PlanProbe,
         snapshot: Option<DocsSnapshot>,
     },
 }
@@ -414,6 +435,76 @@ impl PlanProbe {
     pub fn has_plan(&self) -> bool {
         self.roadmap || self.tasks
     }
+
+    /// T-064 criterion 3: THE SAME THREE DOCS-SIDE FACTS, READ FROM A
+    /// SNAPSHOT INSTEAD OF FROM A STAT SWEEP. One predicate
+    /// (`has_plan`), two inputs — `probe_plan` reads the folder before
+    /// the arming rendezvous because its answer decides whether genesis
+    /// may be OFFERED, and this reads the tree the switch actually
+    /// collected AFTER it. Between them sits a channel round trip with a
+    /// `REARM_TIMEOUT` ceiling, and a plan written in that window used to
+    /// put the interview screen over a planned folder.
+    ///
+    /// `.git` is not a docs path and cannot ride a docs snapshot, so it
+    /// is CARRIED IN from the reading that could see it rather than
+    /// silently defaulted — `has_plan` does not read it, and a probe
+    /// whose `git` was a guess would be a worse lie than the one this
+    /// closes.
+    ///
+    /// TWO LIMITS, NAMED RATHER THAN ASSUMED AWAY, both in the
+    /// conservative direction (this reading can only ever VETO genesis,
+    /// never offer it): the collector drops symlinks silently and caps
+    /// the tree at `MAX_FILES`, so a plan that is a symlink or that sits
+    /// past the cap is invisible here — and `probe_plan`, which stats,
+    /// sees the symlink and has already routed that folder away.
+    /// `skipped` is read as well as `files`, because a file the
+    /// collector could not SHIP still EXISTS; the honest residual is
+    /// that the skip list clips at `MAX_SKIPPED_REPORTED`.
+    fn from_docs_snapshot(snapshot: &DocsSnapshot, git: bool) -> PlanProbe {
+        let paths = snapshot
+            .files
+            .iter()
+            .map(|f| f.path.as_str())
+            .chain(snapshot.skipped.iter().map(|s| s.path.as_str()));
+        let mut probe = PlanProbe {
+            git,
+            ..PlanProbe::default()
+        };
+        for rel in paths {
+            let Some(under_docs) = under_docs_dir(rel) else {
+                continue;
+            };
+            probe.roadmap |= under_docs == ROADMAP_NAME;
+            probe.architecture |= under_docs == ARCHITECTURE_NAME;
+            probe.tasks |= is_flat_task_file(under_docs);
+        }
+        probe
+    }
+}
+
+/// The part of a project-relative POSIX path that sits under `docs/`,
+/// or `None` when it does not. Snapshot paths are always
+/// `docs/`-prefixed (`is_collected_docs_path` is the gate), so this is a
+/// total function over them rather than a filter — it is written as one
+/// anyway, because a reader who has to know that invariant to trust the
+/// call site is a reader who will eventually be wrong about it.
+fn under_docs_dir(rel: &str) -> Option<&str> {
+    rel.strip_prefix(DOCS_DIR)?.strip_prefix('/')
+}
+
+/// `has_any_task_file`'s rule, said over a path instead of over a
+/// directory listing: a `.md` sitting DIRECTLY in `docs/tasks/`. Both
+/// readings are non-recursive, which is THE PARSER's rule too (docs/
+/// tasks is flat and non-recursive — see CONVENTIONS' four walks).
+/// `under_docs` is already `docs/`-stripped.
+fn is_flat_task_file(under_docs: &str) -> bool {
+    let Some(name) = under_docs
+        .strip_prefix(TASKS_SUBDIR)
+        .and_then(|rest| rest.strip_prefix('/'))
+    else {
+        return false;
+    };
+    !name.contains('/') && name.ends_with(".md")
 }
 
 /// Stat what a plan would live in. Never reads content; never follows a
@@ -423,9 +514,9 @@ impl PlanProbe {
 pub fn probe_plan(root: &Path) -> PlanProbe {
     let docs = root.join(DOCS_DIR);
     PlanProbe {
-        roadmap: fs::symlink_metadata(docs.join("ROADMAP.md")).is_ok(),
-        tasks: has_any_task_file(&docs.join("tasks")),
-        architecture: fs::symlink_metadata(docs.join("ARCHITECTURE.md")).is_ok(),
+        roadmap: fs::symlink_metadata(docs.join(ROADMAP_NAME)).is_ok(),
+        tasks: has_any_task_file(&docs.join(TASKS_SUBDIR)),
+        architecture: fs::symlink_metadata(docs.join(ARCHITECTURE_NAME)).is_ok(),
         git: fs::symlink_metadata(root.join(".git")).is_ok(),
     }
 }
@@ -768,7 +859,12 @@ fn open_as_project(state: &WatchState, canon: &Path) -> PickOutcome {
 ///    sentinel goes on the project root, so the interview's first
 ///    `mkdir docs` re-arms the docs watch and lights the existing
 ///    pipeline with no re-pick (criterion 3, T-018's mechanism);
-/// 4. only then commit the project dir and take the ordering seq.
+/// 4. only then commit the project dir and take the ordering seq;
+/// 5. T-064: RE-READ the plan predicate off the collected tree, and
+///    route to the ordinary open after all if the two readings of the
+///    folder disagree — step 2 answered before a rendezvous that can
+///    take up to `REARM_TIMEOUT`, and a plan written in that window
+///    must not land the user on the interview screen.
 ///
 /// T-042 criterion 1: step 3's ack also reports whether a plain `docs/`
 /// was already there and armed. When it was, this switch carries a
@@ -856,7 +952,39 @@ pub fn apply_genesis_folder(
     // baseline and a file written in between would never diff — it would
     // be suppressed forever. Reading the tree after the ack costs one
     // extra collect and makes the snapshot never older than the baseline.
-    let snapshot = docs_armed.then(|| build_snapshot(&canon, seq));
+    let snapshot = match docs_armed.then(|| build_snapshot(&canon, seq)) {
+        // T-064 CRITERION 3: ONE PREDICATE, TWO INPUTS, THE LATER
+        // READING WINS. `probe` above answered before the rendezvous,
+        // because its answer is what decides whether genesis may be
+        // offered at all; this snapshot is the same folder read AFTER
+        // the ack and after the commit, because collecting earlier could
+        // produce a tree older than the emit baseline. Between them sits
+        // a channel round trip bounded only by `REARM_TIMEOUT`. Write a
+        // plan into the folder in that window and the two readings
+        // disagree — and before this they BOTH rode the payload, so the
+        // app put the interview screen over a folder that now has a
+        // plan: the exact state T-026's criterion 5 exists to make
+        // unreachable, reached by timing instead of by routing.
+        //
+        // The route is `open_as_project`'s own outcome and needs no
+        // further work, because the two paths have already converged: a
+        // genesis arm over a folder with a plain `docs/` IS `rearm`, the
+        // same call the ordinary open makes. Project committed, docs
+        // watch armed recursively, sentinel armed, seq taken, candidate
+        // cleared — `Picked { snapshot }` is the honest name for the
+        // state we are already in.
+        //
+        // THIS CAN ONLY VETO. It runs only where the stat sweep already
+        // said "no plan", so it turns genesis OFF and never ON.
+        Some(snap) if PlanProbe::from_docs_snapshot(&snap, probe.git).has_plan() => {
+            println!(
+                "[nputer] genesis declined at the snapshot: {} gained a plan between the probe and the collect - opening it as a project",
+                canon.display()
+            );
+            return PickOutcome::Picked { snapshot: snap };
+        }
+        other => other,
+    };
     println!(
         "[nputer] genesis project opened: {} ({})",
         canon.display(),
@@ -868,7 +996,6 @@ pub fn apply_genesis_folder(
     PickOutcome::Genesis {
         project_dir: canon.display().to_string(),
         seq,
-        probe,
         snapshot,
     }
 }
@@ -2394,18 +2521,20 @@ mod tests {
         // Criterion 2: the zero-argument picker variant's pipeline.
         let t = bare_tree("genesis-open");
         let (state, _emits) = live_state(None);
+        // T-064 criterion 5: the probe is the GATE, not the payload — so
+        // it is asserted where it is read, on the folder, rather than on
+        // the outcome that no longer carries it.
+        assert_eq!(probe_plan(t.root()), PlanProbe::default());
         let outcome = apply_genesis_pick(&state, t.root());
         let canon = t.root().canonicalize().expect("canon");
         match outcome {
             PickOutcome::Genesis {
                 project_dir,
                 seq,
-                probe,
                 snapshot,
             } => {
                 assert_eq!(project_dir, canon.display().to_string());
                 assert!(seq >= 1, "the switch carries an ordering stamp");
-                assert_eq!(probe, PlanProbe::default());
                 // T-042 criterion 1, the OTHER direction: this folder
                 // really has no docs/, so there is nothing to snapshot
                 // and the switch must not invent one.
@@ -2865,11 +2994,9 @@ mod tests {
         // first file with no arm-transition emit needed.
         let t = TempTree::new("genesis-with-empty-docs"); // TempTree makes docs/
         let (state, emits) = live_state(None);
+        assert!(!probe_plan(t.root()).has_plan());
         match apply_genesis_pick(&state, t.root()) {
-            PickOutcome::Genesis {
-                probe, snapshot, ..
-            } => {
-                assert!(!probe.has_plan());
+            PickOutcome::Genesis { snapshot, .. } => {
                 // T-042 criterion 1: docs/ is armed, so a tree rides — an
                 // EMPTY one. "nothing is written here" becomes a
                 // MEASUREMENT the switch carried rather than an
@@ -2905,17 +3032,15 @@ mod tests {
         let (state, emits) = live_state(None);
         let canon = t.root().canonicalize().expect("canon");
 
+        // The verifier's shape, verbatim: architecture found, no plan, so
+        // genesis is still what this folder gets. Read off the FOLDER
+        // since T-064 dropped the probe from the payload.
+        let gate = probe_plan(t.root());
+        assert!(gate.architecture, "the probe sees ARCHITECTURE.md");
+        assert!(!gate.has_plan(), "and it is still not a plan");
+
         let (seq, snapshot) = match apply_genesis_pick(&state, t.root()) {
-            PickOutcome::Genesis {
-                probe,
-                seq,
-                snapshot,
-                ..
-            } => {
-                // The verifier's shape, verbatim: architecture found, no
-                // plan, so genesis is still what this folder gets.
-                assert!(probe.architecture, "the probe sees ARCHITECTURE.md");
-                assert!(!probe.has_plan(), "and it is still not a plan");
+            PickOutcome::Genesis { seq, snapshot, .. } => {
                 (seq, snapshot.expect("THE FIX: the tree rides the switch"))
             }
             other => panic!("expected Genesis, got {other:?}"),
@@ -2961,19 +3086,274 @@ mod tests {
         assert!(emit.seq > seq, "and ordered after the switch");
     }
 
+    // ---- T-064: one reading of the folder reaches the screen -----------
+
+    /// A `WatchState` whose control channel passes through a RELAY thread
+    /// which runs `on_arm` at the moment an `ArmGenesis` message is
+    /// DISPATCHED — strictly inside the window between the pick's own
+    /// `probe_plan` and the commit that follows the ack — and then
+    /// forwards the message unchanged to a REAL watcher thread. So
+    /// `arm_genesis`, `rearm`, the sentinel and the emit baseline are all
+    /// the shipped ones; only the MOMENT of the hook is arranged.
+    ///
+    /// This is how T-064's race is DRIVEN rather than argued (criterion
+    /// 6): no sleeps, no debounce luck, no timing assumption at all —
+    /// the rendezvous itself is the synchronisation.
+    ///
+    /// The SEQ COUNTER IS SUPPLIED BY THE CALLER because it is the one
+    /// witness of the pick's progress that crosses a thread boundary:
+    /// `WatchState` holds an `mpsc::Sender`, which is `Send` but not
+    /// `Sync`, so no other thread may hold `&WatchState` while the pick
+    /// is running, and the hook has to be handed something it can read.
+    fn relayed_state(
+        seq: Arc<AtomicU64>,
+        initial: Option<PathBuf>,
+        on_arm: impl Fn() + Send + 'static,
+    ) -> (WatchState, mpsc::Receiver<DocsSnapshot>) {
+        let (emit_tx, emit_rx) = mpsc::channel();
+        let real = spawn_watcher_thread(seq.clone(), initial.clone(), move |snap| {
+            let _ = emit_tx.send(snap.clone());
+        });
+        let (relay_tx, relay_rx) = mpsc::channel::<WatchCtl>();
+        std::thread::spawn(move || {
+            for msg in relay_rx {
+                if matches!(msg, WatchCtl::ArmGenesis { .. }) {
+                    on_arm();
+                }
+                if real.send(msg).is_err() {
+                    break;
+                }
+            }
+        });
+        (WatchState::new(initial, seq, relay_tx), emit_rx)
+    }
+
+    /// T-064 CRITERION 2 — THE INTERLEAVING, PINNED BY NAME.
+    ///
+    /// `arm_genesis` arms the watch BEFORE `apply_genesis_folder`
+    /// commits. That is not an accident and it is not free: it is what
+    /// makes T-007's "a failed arm leaves the previous project exactly as
+    /// it was" true, and it is ALSO why a `docs-changed` emit for the new
+    /// root can reach the webview before the invoke reply does — the
+    /// whole reason `genesisSwitchIsOvertaken` exists on the frontend. If
+    /// this order were ever flipped, that guard would become unreachable
+    /// code and nothing would say so.
+    ///
+    /// TWO ASSERTIONS, from the two directions the order can break:
+    ///
+    /// A. AT THE ARM, THE COMMIT HAS NOT HAPPENED. The commit is followed
+    ///    immediately by `state.next_seq()`, and the shared counter is
+    ///    the one thing a second thread may read, so an unadvanced
+    ///    counter at dispatch time IS "the switch has not stamped itself
+    ///    yet". Hoist the commit block above the `ctl.send` and this reds.
+    ///
+    /// B. NO ACK, NO COMMIT. A watcher that dies mid-arm leaves the
+    ///    project, the candidate and the latch untouched — which catches
+    ///    the mutant that moves only the project mutex write upward and
+    ///    leaves the seq stamp where it is.
+    #[test]
+    fn the_watch_is_armed_before_the_switch_commits_so_an_emit_can_overtake_the_reply() {
+        // A ---------------------------------------------------------------
+        let t = TempTree::new("t064-order"); // docs/ exists, no plan
+        let seen_at_arm = Arc::new(Mutex::new(None::<u64>));
+        let recorder = seen_at_arm.clone();
+        let counter = Arc::new(AtomicU64::new(0));
+        let counter_for_hook = counter.clone();
+        let (state, _emits) = relayed_state(counter, None, move || {
+            *seen_at_arm.lock().expect("observation mutex") =
+                Some(counter_for_hook.load(Ordering::SeqCst));
+        });
+
+        let outcome = apply_genesis_pick(&state, t.root());
+        let switch_seq = match outcome {
+            PickOutcome::Genesis { seq, .. } => seq,
+            other => panic!("expected Genesis, got {other:?}"),
+        };
+        let at_arm = recorder
+            .lock()
+            .expect("observation mutex")
+            .expect("the arm was dispatched");
+        assert_eq!(
+            at_arm, 0,
+            "the switch had not stamped itself when the watch was armed"
+        );
+        assert_eq!(
+            switch_seq, 1,
+            "and it stamped itself afterwards, off the same counter"
+        );
+
+        // B ---------------------------------------------------------------
+        let dead = TempTree::new("t064-order-dead");
+        let (ctl_tx, ctl_rx) = mpsc::channel::<WatchCtl>();
+        std::thread::spawn(move || {
+            for msg in ctl_rx {
+                if let WatchCtl::ArmGenesis { ack, .. } = msg {
+                    drop(ack); // die mid-arm without answering
+                }
+            }
+        });
+        let refused = WatchState::new(None, Arc::new(AtomicU64::new(0)), ctl_tx);
+        match apply_genesis_pick(&refused, dead.root()) {
+            PickOutcome::Error { message, .. } => assert!(
+                message.contains("dropped the re-arm ack"),
+                "a dead ack is a disconnect, not a timeout: {message}"
+            ),
+            other => panic!("expected Error, got {other:?}"),
+        }
+        assert!(
+            refused.project_dir().is_none(),
+            "no ack, no commit - the previous project is literally untouched"
+        );
+        assert!(
+            refused.begin_pick().is_some(),
+            "and the latch is free after the failed arm"
+        );
+    }
+
+    /// T-064 CRITERION 6 — THE RACE, DRIVEN.
+    ///
+    /// `probe_plan` runs BEFORE the rendezvous because its answer decides
+    /// whether genesis may be offered at all; the snapshot is collected
+    /// AFTER the ack because collecting earlier could produce a tree
+    /// older than the emit baseline. Between them sits a channel round
+    /// trip with a `REARM_TIMEOUT` ceiling. Write a plan into the folder
+    /// in that window and the two readings of one folder disagree —
+    /// "no plan, offer genesis" against a tree that ships a ROADMAP.
+    ///
+    /// The relay puts the write EXACTLY there, so this is a rendezvous
+    /// and not a sleep. Both halves of `has_plan` are driven, and the
+    /// THIRD case is the positive control this negative needs: a
+    /// non-plan file written into the same window must still land on
+    /// genesis, carrying the tree, or "routes to Picked" would be
+    /// indistinguishable from "routes to Picked whenever anything is
+    /// written".
+    #[test]
+    fn a_plan_written_between_the_probe_and_the_collect_opens_the_project_instead() {
+        for (tag, written) in [
+            ("t064-race-roadmap", "docs/ROADMAP.md"),
+            ("t064-race-tasks", "docs/tasks/T-001-x.md"),
+        ] {
+            let t = bare_tree(tag);
+            let root = t.root().to_path_buf();
+            let path = root.join(written);
+            let (state, _emits) = relayed_state(Arc::new(AtomicU64::new(0)), None, move || {
+                fs::create_dir_all(path.parent().expect("parent")).expect("mkdirs");
+                fs::write(&path, "# written in the window").expect("write");
+            });
+
+            // The FIRST reading, taken where the shipped code takes it:
+            // this folder has no plan, so genesis is offered.
+            assert!(
+                !probe_plan(t.root()).has_plan(),
+                "{written}: the probe sees no plan before the arm"
+            );
+
+            match apply_genesis_pick(&state, t.root()) {
+                PickOutcome::Picked { snapshot } => {
+                    assert!(
+                        snapshot.files.iter().any(|f| f.path == written),
+                        "{written}: the tree that vetoed genesis is the tree that ships"
+                    );
+                }
+                other => panic!("{written}: expected the ordinary open, got {other:?}"),
+            }
+            // ...and the folder really is the open project, watched.
+            assert_eq!(
+                state.project_dir(),
+                Some(t.root().canonicalize().expect("canon"))
+            );
+        }
+
+        // THE POSITIVE CONTROL. Same window, same relay, a file that is
+        // NOT a plan: `has_plan` is deliberately narrow (an
+        // ARCHITECTURE.md alone is not a plan), so this folder is still
+        // genesis-eligible and the tree rides the switch.
+        let t = bare_tree("t064-race-control");
+        let root = t.root().to_path_buf();
+        let (state, _emits) = relayed_state(Arc::new(AtomicU64::new(0)), None, move || {
+            let path = root.join("docs/ARCHITECTURE.md");
+            fs::create_dir_all(path.parent().expect("parent")).expect("mkdirs");
+            fs::write(&path, "# the shape of the thing").expect("write");
+        });
+        match apply_genesis_pick(&state, t.root()) {
+            PickOutcome::Genesis { snapshot, .. } => {
+                let snap = snapshot.expect("docs/ appeared in the window, so a tree rides");
+                assert_eq!(
+                    snap.files.iter().map(|f| f.path.as_str()).collect::<Vec<_>>(),
+                    vec!["docs/ARCHITECTURE.md"]
+                );
+            }
+            other => panic!("expected Genesis for a folder with no plan, got {other:?}"),
+        }
+    }
+
+    /// T-064 criterion 3, at the predicate itself: the SAME `has_plan`,
+    /// fed the snapshot instead of a stat sweep.
+    #[test]
+    fn from_docs_snapshot_reads_the_plan_rule_off_the_tree() {
+        let snap = |paths: &[&str], skipped: &[&str]| DocsSnapshot {
+            seq: 1,
+            project_dir: "/tmp/sketchpad".into(),
+            generated_at_ms: 1,
+            files: paths
+                .iter()
+                .map(|p| DocsFile {
+                    path: (*p).into(),
+                    content: String::new(),
+                })
+                .collect(),
+            skipped: skipped
+                .iter()
+                .map(|p| SkippedFile {
+                    path: (*p).into(),
+                    reason: SkipReason::Oversize,
+                })
+                .collect(),
+            skipped_total: skipped.len(),
+            truncated: false,
+        };
+
+        // Nothing at all.
+        let empty = PlanProbe::from_docs_snapshot(&snap(&[], &[]), false);
+        assert_eq!(empty, PlanProbe::default());
+
+        // Either half of the plan predicate, exactly as `probe_plan`'s
+        // own test drives it.
+        assert!(PlanProbe::from_docs_snapshot(&snap(&["docs/ROADMAP.md"], &[]), false).has_plan());
+        assert!(
+            PlanProbe::from_docs_snapshot(&snap(&["docs/tasks/T-001-x.md"], &[]), false).has_plan()
+        );
+
+        // ARCHITECTURE.md alone is measured and is NOT a plan — the same
+        // narrowness `PlanProbe::has_plan` has always had.
+        let arch = PlanProbe::from_docs_snapshot(&snap(&["docs/ARCHITECTURE.md"], &[]), false);
+        assert!(arch.architecture && !arch.has_plan());
+
+        // NON-RECURSIVE, like `has_any_task_file` and like the parser's
+        // own flat walk: a task file one level deeper is not a task file.
+        assert!(
+            !PlanProbe::from_docs_snapshot(&snap(&["docs/tasks/sub/T-001-x.md"], &[]), false)
+                .has_plan()
+        );
+        // ...and neither is a non-.md sitting in docs/tasks/.
+        assert!(!PlanProbe::from_docs_snapshot(&snap(&["docs/tasks/notes.txt"], &[]), false).has_plan());
+
+        // A file the collector could not SHIP still EXISTS, so the skip
+        // list counts: a 2 MiB ROADMAP.md is a plan.
+        assert!(PlanProbe::from_docs_snapshot(&snap(&[], &["docs/ROADMAP.md"]), false).has_plan());
+
+        // `.git` cannot ride a docs snapshot, so it is carried in rather
+        // than guessed — and `has_plan` does not read it either way.
+        let carried = PlanProbe::from_docs_snapshot(&snap(&[], &[]), true);
+        assert!(carried.git && !carried.has_plan());
+    }
+
     #[test]
     fn genesis_and_no_docs_wire_shapes_are_pinned() {
         // The webview reads these tags; pin them like T-021 pinned busy.
-        let probe = PlanProbe {
-            roadmap: false,
-            tasks: false,
-            architecture: true,
-            git: true,
-        };
         let genesis = PickOutcome::Genesis {
             project_dir: "/tmp/sketchpad".into(),
             seq: 7,
-            probe,
             snapshot: None,
         };
         assert_eq!(
@@ -2982,17 +3362,21 @@ mod tests {
                 "kind": "genesis",
                 "projectDir": "/tmp/sketchpad",
                 "seq": 7,
-                "probe": {
-                    "roadmap": false,
-                    "tasks": false,
-                    "architecture": true,
-                    "git": true
-                },
                 // T-042: the KEY IS ALWAYS PRESENT — a docs-less switch
                 // says "no tree" explicitly rather than by omission, so
                 // the webview never has to read absence as a claim.
                 "snapshot": serde_json::Value::Null
             })
+        );
+        // T-064 criterion 5: and `probe` is not on this wire at all.
+        // Asserted as an ABSENT KEY rather than left to the equality
+        // above, because a whole-value comparison reds for any reason
+        // and this is the one reason that has a card behind it.
+        assert!(
+            serde_json::to_value(&genesis).expect("serialize")
+                .get("probe")
+                .is_none(),
+            "the genesis switch carries ONE reading of the folder"
         );
 
         // T-042 criterion 1: the docs-bearing switch, pinned in the same
@@ -3002,7 +3386,6 @@ mod tests {
         let bearing = PickOutcome::Genesis {
             project_dir: "/tmp/sketchpad".into(),
             seq: 7,
-            probe,
             snapshot: Some(DocsSnapshot {
                 seq: 7,
                 project_dir: "/tmp/sketchpad".into(),
@@ -3022,12 +3405,6 @@ mod tests {
                 "kind": "genesis",
                 "projectDir": "/tmp/sketchpad",
                 "seq": 7,
-                "probe": {
-                    "roadmap": false,
-                    "tasks": false,
-                    "architecture": true,
-                    "git": true
-                },
                 "snapshot": {
                     "seq": 7,
                     "projectDir": "/tmp/sketchpad",
