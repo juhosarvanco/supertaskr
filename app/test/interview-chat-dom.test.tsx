@@ -802,10 +802,15 @@ describe("a refusal is visible when it happens, and it is not a failure (T-101)"
     expect(q("[data-testid=interview-streaming]")!.textContent).toContain(
       "Write(docs/NORTH_STAR.md)",
     );
-    expect(
-      q("[data-testid=interview-denial]")?.textContent,
-      "the furniture moved and the refusal did not",
-    ).toContain("Glob patterns are not allowed");
+    // Presence FIRST, then text: a mutant that drops the notice once an
+    // activity marker arrives (the arrival-only bug) reds crisply here —
+    // "expected null not to be null" — rather than throwing on a
+    // `toContain` over an undefined. This is the render the "survives a
+    // later render" criterion names, and an arrival-only body asserting
+    // only before this activity would pass the very mutant that reds it.
+    const afterActivity = q("[data-testid=interview-denial]");
+    expect(afterActivity, "the furniture moved and the refusal did not").not.toBeNull();
+    expect(afterActivity!.textContent).toContain("Glob patterns are not allowed");
 
     // ...and after a subsequent delta, which is the render the criterion
     // names. One refusal is still exactly one row.
