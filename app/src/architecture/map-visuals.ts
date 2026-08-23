@@ -5,6 +5,7 @@ import type {
   DriftFinding,
 } from "@/lib/architecture/derive";
 import { UNMAPPED_ID } from "@/lib/architecture/derive";
+import { churnBarPercent, type ChurnAttribution } from "@/lib/architecture/churn";
 
 /**
  * State → ink for the map pane (T-012): every visual decision as a pure
@@ -19,9 +20,17 @@ import { UNMAPPED_ID } from "@/lib/architecture/derive";
  * @utility mechanisms in index.css.
  */
 
-/** Overlay modes shipped in T-012 (churn arrives with T-013's git data). */
-export type MapOverlay = "status" | "provenance" | "drift";
-export const MAP_OVERLAYS: readonly MapOverlay[] = ["status", "provenance", "drift"];
+/** Overlay modes. T-013 adds `churn`, the only one backed by data the
+ * repository's FILES do not contain (it comes from git history — see
+ * churn-source.ts), which is why it is also the only one that can be
+ * DISABLED. */
+export type MapOverlay = "status" | "provenance" | "drift" | "churn";
+export const MAP_OVERLAYS: readonly MapOverlay[] = [
+  "status",
+  "provenance",
+  "drift",
+  "churn",
+];
 
 /** Status fill families (bg + border), the cards' exact tokens. */
 const NODE_FILL: Record<DerivedStatus, string> = {
@@ -216,8 +225,16 @@ export function nodeVisual(component: DerivedComponent, ui: NodeUiState): NodeVi
       : undefined;
 
   // --- drift ----------------------------------------------------------
+  // THE RING STAYS IN EVERY OVERLAY, INCLUDING CHURN, and that is a
+  // deliberate departure from the bundle's churn screen (which draws no
+  // rings at all): T-012's ratified amendment (b) makes drift core
+  // rendering, never overlay-gated, and a drifting component that looks
+  // clean because you are reading churn is the one thing this pane must
+  // not do. What DOES yield is the SLOT — the card's "raw count at the
+  // mark slot" is that slot, so the drift chip steps aside for the churn
+  // figure exactly as the mock draws it.
   const ring = component.hasDrift && kind === "declared";
-  const driftDisplay = !component.hasDrift
+  const driftDisplay = !component.hasDrift || ui.overlay === "churn"
     ? ("none" as const)
     : ui.overlay === "drift"
       ? ("numeral" as const)
@@ -515,4 +532,97 @@ export function driftFooter(
     parts.push(`${unmappedFiles.length} unclaimed file${unmappedFiles.length === 1 ? "" : "s"}`);
   }
   return parts.join(" · ");
+}
+
+// ---------------------------------------------------------------------
+// Churn (T-013)
+// ---------------------------------------------------------------------
+
+/**
+ * How a node draws its churn.
+ *  - `bar`   — a 3px bottom bar plus the figure at the mark slot.
+ *  - `zero`  — the figure `0` and no bar: it exists and it has not moved.
+ *  - `dash`  — an em dash and no bar. The design's own sentence: "Declared-only
+ *    components show — rather than a zero bar. Nothing has churned because
+ *    nothing exists; a zero-width bar would lie about that."
+ */
+export type ChurnDisplay = "bar" | "zero" | "dash";
+
+export interface ChurnVisual {
+  display: ChurnDisplay;
+  /** Bar width as a percentage of the node, 0-100. */
+  percent: number;
+  /** The single hottest component — one step darker (design). */
+  hottest: boolean;
+  /** File edits in the window; absent when `display` is `dash`. */
+  edits?: number;
+  /** Bar ink. INK ONLY, NEVER AMBER: "churn is not a judgement, and the
+   * moment it turns amber people read it as a problem." */
+  barClass: string;
+}
+
+const CHURN_BAR = "bg-muted-foreground";
+const CHURN_BAR_HOTTEST = "bg-secondary-foreground";
+
+/**
+ * The churn face for one node. Pure over the derived component and the
+ * attribution — no overlay check here, because the caller owns whether
+ * churn is being drawn at all (an overlay that is off draws none of it).
+ */
+export function churnVisual(
+  component: DerivedComponent,
+  attribution: ChurnAttribution,
+): ChurnVisual {
+  // Nothing on paper has churned, and a zero-width bar would claim it
+  // had a chance to. Placeholders (D5 targets) are the same shape.
+  if (component.declaredOnly || component.kind === "placeholder") {
+    return { display: "dash", percent: 0, hottest: false, barClass: CHURN_BAR };
+  }
+  const churn = attribution.byComponent.get(component.id);
+  const edits = churn?.edits ?? 0;
+  if (edits <= 0) {
+    return { display: "zero", percent: 0, hottest: false, edits: 0, barClass: CHURN_BAR };
+  }
+  const hottest = attribution.hottest === component.id;
+  return {
+    display: "bar",
+    percent: churnBarPercent(edits, attribution.busiest),
+    hottest,
+    edits,
+    barClass: hottest ? CHURN_BAR_HOTTEST : CHURN_BAR,
+  };
+}
+
+/** The churn legend's own footer line — the window, what was walked, and
+ * every degradation, in one sentence of facts. */
+export function churnFooter(
+  windowDays: number,
+  commits: number,
+  attribution: ChurnAttribution,
+  options: { truncated: boolean; rejected: number },
+): string {
+  const parts = [
+    `${windowDays}d`,
+    `${commits} commit${commits === 1 ? "" : "s"}`,
+    `${attribution.busiest} edits in the busiest component`,
+  ];
+  if (attribution.unattributed > 0) {
+    parts.push(`${attribution.unattributed} outside every component`);
+  }
+  if (options.rejected > 0) {
+    parts.push(`${options.rejected} entr${options.rejected === 1 ? "y" : "ies"} refused`);
+  }
+  if (options.truncated) parts.push("truncated — this is a floor");
+  return parts.join(" · ");
+}
+
+/** Relative "last touched" for the panel's churn section. Same shape as
+ * the header's indexed-at hint, deliberately. */
+export function churnAge(lastCommitMs: number, nowMs: number): string {
+  if (lastCommitMs <= 0) return "unknown";
+  const minutes = Math.max(0, Math.floor((nowMs - lastCommitMs) / 60000));
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }

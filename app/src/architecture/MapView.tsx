@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ProjectParseResult } from "@nputer/parser/pure";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,15 +20,26 @@ import {
   type MapLayout,
 } from "./map-layout";
 import {
+  churnFooter,
+  churnVisual,
   driftFooter,
   edgeVisual,
   MAP_OVERLAYS,
   type MapOverlay,
 } from "./map-visuals";
+import { attributeChurn, type ChurnAttribution } from "@/lib/architecture/churn";
+import {
+  churnDisabledSentence,
+  getChurnState,
+  loadChurn,
+  subscribeChurn,
+} from "./churn-source";
+import { expansionFor, intraEdges, type Expansion } from "./map-zoom";
 import { searchMap } from "./map-search";
 import { MapEdge, MapEdgeMarkers, edgeKey } from "./MapEdge";
 import { MapNode } from "./MapNode";
-import { MapPanel } from "./MapPanel";
+import { MapContainer } from "./MapContainer";
+import { MapPanel, MapFilePanel } from "./MapPanel";
 import { TasksLens } from "./TasksLens";
 import { MAP_LENSES, type MapLens } from "./map-lens";
 
@@ -58,19 +69,23 @@ interface Viewport {
 type PanelState =
   | { kind: "component"; id: string }
   | { kind: "task"; ref: TaskRef }
+  /** T-013 T2: a file's symbols and resolved edges, in the panel. */
+  | { kind: "file"; path: string }
   | null;
 
 /** Pure viewport math for select-and-center (tested headlessly): the
  * node never moves, the viewport does. */
 export function centerViewport(
-  node: Pick<LayoutNode, "x" | "y">,
+  node: Pick<LayoutNode, "x" | "y" | "h">,
   containerWidth: number,
   containerHeight: number,
   scale: number,
 ): { x: number; y: number } {
   return {
     x: containerWidth / 2 - (node.x + 96) * scale,
-    y: containerHeight / 2 - (node.y + 33) * scale,
+    // T-013: the box's own half-height, so centring an EXPANDED
+    // container centres the container and not its title bar.
+    y: containerHeight / 2 - (node.y + node.h / 2) * scale,
   };
 }
 
@@ -131,6 +146,25 @@ export function MapView({
     [model, parsed],
   );
 
+  // --- T1: which components are open, and how tall each container is --
+  // The heights are a pure function of the file lists, so they belong in
+  // the STRUCTURAL key below: an expansion moves nodes, which is exactly
+  // what rule 7 says may invalidate the layout cache.
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  const expansions = useMemo(() => {
+    const out = new Map<string, Expansion>();
+    for (const component of derived.components) {
+      if (!expanded.has(component.id)) continue;
+      out.set(component.id, expansionFor(component.files));
+    }
+    return out;
+  }, [derived, expanded]);
+  const expandedHeights = useMemo(() => {
+    const out = new Map<string, number>();
+    for (const [id, expansion] of expansions) out.set(id, expansion.height);
+    return out;
+  }, [expansions]);
+
   // --- layout: recomputes only when the structural key changes (rule 7
   // — status flips repaint, never move) ---------------------------------
   const structural = useMemo(() => {
@@ -143,16 +177,33 @@ export function MapView({
       to: e.to,
       declared: e.declared,
     }));
-    return { components, edges, key: layoutKey(components, edges) };
-  }, [derived]);
+    return {
+      components,
+      edges,
+      key: layoutKey(components, edges, expandedHeights),
+    };
+  }, [derived, expandedHeights]);
   const layoutCache = useRef<{ key: string; layout: MapLayout } | null>(null);
   if (layoutCache.current === null || layoutCache.current.key !== structural.key) {
     layoutCache.current = {
       key: structural.key,
-      layout: layoutMap(structural.components, structural.edges),
+      layout: layoutMap(structural.components, structural.edges, expandedHeights),
     };
   }
   const layout = layoutCache.current.layout;
+
+  // --- churn (T-013): one command per mount, folded by the pane's own
+  // source module. The store is read through useSyncExternalStore so the
+  // pane holds no second copy of it. ------------------------------------
+  const churnState = useSyncExternalStore(subscribeChurn, getChurnState, getChurnState);
+  useEffect(() => {
+    void loadChurn();
+  }, []);
+  const churn: ChurnAttribution = useMemo(
+    () => attributeChurn(derived, churnState.kind === "measured" ? churnState.entries : []),
+    [derived, churnState],
+  );
+  const churnAvailable = churnState.kind === "measured";
 
   // --- view state (session-ephemeral; T-022 owns persistence) ----------
   const [lens, setLens] = useState<MapLens>("architecture");
@@ -220,6 +271,13 @@ export function MapView({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  // --- churn cannot be the active overlay while it is unavailable -----
+  // (a disabled segment is unclickable, so this only fires when a
+  // measured read is replaced by a disabled one — a project switch).
+  useEffect(() => {
+    if (!churnAvailable) setOverlay((mode) => (mode === "churn" ? "status" : mode));
+  }, [churnAvailable]);
+
   // --- interactions ----------------------------------------------------
   const select = (id: string): void => {
     setSelected(id);
@@ -228,6 +286,31 @@ export function MapView({
   const closePanel = (): void => {
     setPanel(null);
     setSelected(null); // Esc closes panel + clears selection (one state)
+  };
+
+  /** T1. A component with no files has nothing to open into, and a
+   * container that says only "no indexed files" is a worse answer than
+   * the panel's own placeholder. */
+  const expandable = (id: string): boolean => {
+    const component = derived.components.find((c) => c.id === id);
+    return component !== undefined && component.files.length > 0;
+  };
+  const expand = (id: string): void => {
+    if (!expandable(id)) return;
+    setExpanded((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  };
+  const collapse = (id: string): void => {
+    setExpanded((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   };
 
   const centerOn = (id: string): void => {
@@ -262,13 +345,40 @@ export function MapView({
     }
   };
 
-  /** Arrow-key walking (settled silence): ↑/↓ previous/next slot in the
-   * column; →/← first outgoing/incoming edge partner by id ascending.
-   * The bundle's `→ = expand` collision belongs to T-013 (it owns
-   * expansion). */
+  /**
+   * Arrow-key walking, and T-013's reconciliation of the collision
+   * T-012 left it.
+   *
+   * THE COLLISION: the bundle's interaction table maps `→` to EXPAND;
+   * T-012 shipped `→`/`←` as "first outgoing/incoming edge partner".
+   * Both survive, on the ARIA tree rule, which is what a reader already
+   * knows from every file tree they have used: `→` on a COLLAPSED
+   * expandable node opens it, and `→` on anything else walks the edge.
+   * `←` collapses an OPEN one, and otherwise walks back. So the bundle's
+   * mapping is honoured, edge-walking stays reachable (press `→` twice),
+   * and neither behaviour has a key that silently does nothing.
+   * `Esc` collapses too — the handoff's "Esc → collapse / deselect" —
+   * and stops there, so it never also closes the panel in one press.
+   */
   const onNodeKeyDown = (event: React.KeyboardEvent, id: string): void => {
     const node = layout.nodes.get(id);
     if (node === undefined) return;
+    if (event.key === "Escape" && expanded.has(id)) {
+      event.preventDefault();
+      event.stopPropagation();
+      collapse(id);
+      return;
+    }
+    if (event.key === "ArrowRight" && !expanded.has(id) && expandable(id)) {
+      event.preventDefault();
+      expand(id);
+      return;
+    }
+    if (event.key === "ArrowLeft" && expanded.has(id)) {
+      event.preventDefault();
+      collapse(id);
+      return;
+    }
     let target: string | undefined;
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       const column = [...layout.nodes.values()]
@@ -444,26 +554,42 @@ export function MapView({
             data-testid="map-overlay-control"
             className="flex items-center gap-1 rounded-lg bg-secondary p-0.75"
           >
-            {/* status · provenance · drift — churn is ABSENT until
-                T-013 supplies its git data (a disabled segment has no
-                designed treatment). */}
-            {MAP_OVERLAYS.map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                data-testid={`map-overlay-${mode}`}
-                aria-pressed={overlay === mode}
-                onClick={() => setOverlay(mode)}
-                className={cn(
-                  "rounded-chip px-2.5 py-1.25 font-mono text-xs",
-                  overlay === mode
-                    ? "border border-map-node-border bg-background text-foreground"
-                    : "text-secondary-foreground",
-                )}
-              >
-                {mode}
-              </button>
-            ))}
+            {/* status · provenance · drift · churn. T-012 left the churn
+                segment ABSENT because a disabled one had no designed
+                treatment; T-013's criterion asks for the opposite in as
+                many words — "IF the project is not a git repo THEN the
+                churn overlay SHALL be disabled, not broken" — so it is
+                present and inert, wearing the disabled treatment the
+                pane's Re-index button already uses, with the ONE fixed
+                sentence for its reason as the title. Absent would hide
+                that churn exists; disabled says it exists and why it
+                cannot answer here. */}
+            {MAP_OVERLAYS.map((mode) => {
+              const off = mode === "churn" && !churnAvailable;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  data-testid={`map-overlay-${mode}`}
+                  aria-pressed={overlay === mode}
+                  disabled={off}
+                  {...(off && churnState.kind === "disabled"
+                    ? { title: `churn is off — ${churnDisabledSentence(churnState.reason)}` }
+                    : {})}
+                  {...(off ? { "data-disabled-reason": churnState.kind } : {})}
+                  onClick={() => setOverlay(mode)}
+                  className={cn(
+                    "rounded-chip px-2.5 py-1.25 font-mono text-xs",
+                    overlay === mode
+                      ? "border border-map-node-border bg-background text-foreground"
+                      : "text-secondary-foreground",
+                    off && "cursor-not-allowed opacity-45",
+                  )}
+                >
+                  {mode}
+                </button>
+              );
+            })}
           </div>
           {indexing ? (
             <span
@@ -626,12 +752,45 @@ export function MapView({
               const node = layout.nodes.get(component.id);
               if (node === undefined) return null;
               const wipe = wipes.get(component.id);
+              const churnFace =
+                overlay === "churn" ? churnVisual(component, churn) : undefined;
+              const expansion = expansions.get(component.id);
+              const tabbable =
+                focusedNode === component.id ||
+                (focusedNode === null && component.id === derived.components[0]?.id);
+              if (expansion !== undefined) {
+                return (
+                  <MapContainer
+                    key={component.id}
+                    component={component}
+                    node={node}
+                    expansion={expansion}
+                    intra={intraEdges(component.id, derived, parsed.graph)}
+                    {...(churnFace !== undefined ? { churn: churnFace } : {})}
+                    selectedFile={panel?.kind === "file" ? panel.path : null}
+                    onCollapse={collapse}
+                    onSelectFile={(path) => setPanel({ kind: "file", path })}
+                    onSelectComponent={select}
+                    containerRef={(el) => {
+                      if (el === null) nodeRefs.current.delete(component.id);
+                      else nodeRefs.current.set(component.id, el);
+                    }}
+                    tabbable={tabbable}
+                    onKeyDown={onNodeKeyDown}
+                    onFocus={setFocusedNode}
+                    onHover={setHoveredNode}
+                  />
+                );
+              }
               return (
                 <MapNode
                   key={component.id}
                   component={component}
                   node={node}
                   findings={derived.findings}
+                  {...(churnFace !== undefined ? { churn: churnFace } : {})}
+                  expandable={component.files.length > 0}
+                  onExpand={expand}
                   ui={{
                     hovered: hoveredNode === component.id,
                     selected: selected === component.id,
@@ -648,10 +807,7 @@ export function MapView({
                     if (el === null) nodeRefs.current.delete(component.id);
                     else nodeRefs.current.set(component.id, el);
                   }}
-                  tabbable={
-                    focusedNode === component.id ||
-                    (focusedNode === null && component.id === derived.components[0]?.id)
-                  }
+                  tabbable={tabbable}
                   onSelect={select}
                   onHover={setHoveredNode}
                   onFocus={setFocusedNode}
@@ -754,6 +910,34 @@ export function MapView({
             {driftFooter(derived.findings, derived.unmappedFiles)}
           </span>
         )}
+        {overlay === "churn" && (
+          <>
+            <LegendLine label="edits">
+              <span className="h-0.75 w-5.5 bg-muted-foreground" />
+            </LegendLine>
+            <LegendLine label="hottest">
+              <span className="h-0.75 w-5.5 bg-secondary-foreground" />
+            </LegendLine>
+            <LegendLine label="nothing on paper">
+              <span className="font-mono text-map-meta text-map-declared-only-foreground">
+                —
+              </span>
+            </LegendLine>
+            <span
+              data-testid="map-churn-footer"
+              className="font-mono text-xs text-secondary-foreground"
+            >
+              {churnState.kind === "measured"
+                ? churnFooter(churnState.windowDays, churnState.commits, churn, {
+                    truncated: churnState.truncated,
+                    rejected: churnState.rejected,
+                  })
+                : churnState.kind === "disabled"
+                  ? `churn is off — ${churnDisabledSentence(churnState.reason)}`
+                  : "reading git…"}
+            </span>
+          </>
+        )}
         <span className="ml-auto flex items-center gap-4">
           {truncatedFiles !== undefined && truncatedFiles > 0 && (
             <span data-testid="map-truncation-note" className="font-mono text-map-id text-muted-foreground">
@@ -774,7 +958,10 @@ export function MapView({
           derived={derived}
           componentId={panel.id}
           model={model}
+          churn={churn}
+          churnState={churnState}
           onOpenTask={(ref) => setPanel({ kind: "task", ref })}
+          onOpenFile={(path) => setPanel({ kind: "file", path })}
           onClose={closePanel}
         />
       )}
@@ -783,6 +970,15 @@ export function MapView({
           model={model}
           taskRef={panel.ref}
           onOpen={(ref) => setPanel({ kind: "task", ref })}
+          onClose={closePanel}
+        />
+      )}
+      {panel?.kind === "file" && (
+        <MapFilePanel
+          derived={derived}
+          {...(parsed.graph !== undefined ? { graph: parsed.graph } : { graph: undefined })}
+          path={panel.path}
+          onOpenComponent={select}
           onClose={closePanel}
         />
       )}

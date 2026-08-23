@@ -314,7 +314,12 @@ describe("panel behavior (T-005 primitive pattern, trusted event order)", () => 
     expect(panel.textContent).toContain("decisions");
     expect(panel.textContent).toContain("no linked decisions"); // placeholder
     expect(panel.textContent).toContain("files");
-    expect(panel.textContent).toContain("churn arrives with T-013"); // placeholder
+    // T-013 replaced T-012's "churn arrives with T-013" placeholder with
+    // the real section. In jsdom there is no Tauri runtime, so the churn
+    // read is DISABLED for the `notTauri` reason and the section renders
+    // that reason's ONE fixed sentence — which is also the disabled path
+    // this criterion cares about, exercised here for free.
+    expect(panel.textContent).toContain("churn is off");
     expect(panel.querySelector("[data-testid=map-panel-status]")?.textContent).toBe("done");
   });
 
@@ -432,13 +437,21 @@ describe("panel behavior (T-005 primitive pattern, trusted event order)", () => 
 
 describe("search select + center", () => {
   it("centerViewport math: the node never moves, the viewport does", () => {
-    expect(centerViewport({ x: 216, y: 190 }, 800, 600, 1)).toEqual({
+    // T-013 gave the layout node a HEIGHT (a container is taller than a
+    // node), so centring uses the box's own half-height. At NODE_H = 66
+    // that is the 33 this body already asserted.
+    expect(centerViewport({ x: 216, y: 190, h: 66 }, 800, 600, 1)).toEqual({
       x: 400 - 312,
       y: 300 - 223,
     });
-    expect(centerViewport({ x: 0, y: 40 }, 800, 600, 2)).toEqual({
+    expect(centerViewport({ x: 0, y: 40, h: 66 }, 800, 600, 2)).toEqual({
       x: 400 - 192,
       y: 300 - 146,
+    });
+    // And an expanded container centres on ITS middle, not on 33px.
+    expect(centerViewport({ x: 0, y: 40, h: 260 }, 800, 600, 1)).toEqual({
+      x: 400 - 96,
+      y: 300 - 170,
     });
   });
 

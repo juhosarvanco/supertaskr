@@ -1,11 +1,12 @@
 import { cn } from "@/lib/utils";
 import type { DerivedComponent, DerivedStatus, DriftFinding } from "@/lib/architecture/derive";
-import { NODE_H, NODE_W, type LayoutNode } from "./map-layout";
+import { NODE_W, type LayoutNode } from "./map-layout";
 import { MapProvenanceMark } from "./MapProvenanceMark";
 import {
   attributedFindings,
   hasVisibleMark,
   nodeVisual,
+  type ChurnVisual,
   type NodeUiState,
 } from "./map-visuals";
 
@@ -32,6 +33,9 @@ export function MapNode({
   node,
   ui,
   findings,
+  churn,
+  expandable,
+  onExpand,
   wipe,
   buttonRef,
   tabbable,
@@ -44,6 +48,12 @@ export function MapNode({
   node: LayoutNode;
   ui: NodeUiState;
   findings: readonly DriftFinding[];
+  /** T-013: present ONLY while the churn overlay is active — the face
+   * carries no churn ink in any other mode. */
+  churn?: ChurnVisual;
+  /** T-013: this component has files to open into (T1). */
+  expandable: boolean;
+  onExpand: (id: string) => void;
   /** Set when the derived status just turned done: the previous fill +
    * a nonce keying the one-shot overlay. */
   wipe?: { from: DerivedStatus; key: number };
@@ -110,6 +120,9 @@ export function MapNode({
       aria-label={`${component.id} ${component.name}`}
       tabIndex={tabbable ? 0 : -1}
       onClick={() => onSelect(component.id)}
+      onDoubleClick={() => {
+        if (expandable) onExpand(component.id);
+      }}
       onPointerEnter={() => onHover(component.id)}
       onPointerLeave={() => onHover(null)}
       onFocus={() => onFocus(component.id)}
@@ -120,7 +133,7 @@ export function MapNode({
         visual.container,
         visual.ring && "map-drift-ring",
       )}
-      style={{ left: node.x, top: node.y, width: NODE_W, height: NODE_H }}
+      style={{ left: node.x, top: node.y, width: NODE_W, height: node.h }}
     >
       {wipe !== undefined && (
         <span
@@ -146,6 +159,20 @@ export function MapNode({
           </span>
           <span className="flex shrink-0 items-center gap-1.5">
             {driftSlot}
+            {churn !== undefined && (
+              <span
+                data-testid="map-churn-count"
+                data-churn={churn.display}
+                className={cn(
+                  "font-mono text-map-meta",
+                  churn.display === "dash"
+                    ? "text-map-declared-only-foreground"
+                    : "text-secondary-foreground",
+                )}
+              >
+                {churn.display === "dash" ? "—" : churn.edits}
+              </span>
+            )}
             {visual.dot !== undefined && (
               <span
                 className={cn("flex items-center gap-1.25 font-mono text-map-meta", visual.idInk)}
@@ -177,6 +204,37 @@ export function MapNode({
         </span>
         <span className={cn("truncate font-mono text-map-meta", visual.metaInk)}>{meta}</span>
       </span>
+      {/* T-013 · the expand affordance: "no permanent chevron, it appears
+          on hover in the bottom-right" (bundle interaction table). It is
+          decoration — the whole node is already the click target, and
+          double-click / the arrow key are what expand. */}
+      {expandable && ui.hovered && (
+        <span
+          aria-hidden="true"
+          data-testid="map-expand-hint"
+          className={cn(
+            "pointer-events-none absolute right-2 bottom-1.5 font-mono text-map-meta",
+            visual.metaInk,
+          )}
+        >
+          ›
+        </span>
+      )}
+      {/* T-013 · churn. A 3px bar on the node's bottom edge, width = the
+          component's share of the busiest one; the single hottest is one
+          step darker. INK ONLY, never amber — churn is not a judgement.
+          This is the one place a node grows ink outside its padding box
+          (bundle), and the node's own `overflow-hidden` clips it to the
+          rounded border. */}
+      {churn !== undefined && churn.display === "bar" && churn.percent > 0 && (
+        <span
+          aria-hidden="true"
+          data-testid="map-churn-bar"
+          data-hottest={churn.hottest || undefined}
+          className={cn("pointer-events-none absolute bottom-0 left-0 h-0.75", churn.barClass)}
+          style={{ width: `${churn.percent}%` }}
+        />
+      )}
     </button>
   );
 }
