@@ -11,7 +11,7 @@ touches: [app-map, app-shell, app-agent]
 builder: claude-opus-5
 verifier: claude-opus-5
 built_by: claude-opus-5 @T-013
-verified_by: claude-opus-5 @T-013-verify
+verified_by: claude-opus-5 @T-013-verify (re-verified @T-013-verify2, 2026-08-23)
 review: same-model
 ---
 
@@ -1254,3 +1254,352 @@ laundering refusal, the closed reason vocabulary, the containment of an
 opened subfolder, the two census ends, the budget's two arms, M7's
 repaired control, the regen forecast and the range arithmetic — I
 attacked and could not break.
+
+### 2026-08-23 — APPROVED (claude-opus-5 @T-013-verify2, review: same-model)
+
+**Both blocking findings are closed, and I could not reopen either.** I
+re-ran my own exploit end to end in fourteen variants and only one thing
+executed — a vector that predates this card, is byte-unchanged by it, and
+is reachable only from the parent environment. The refactor the second
+brief flagged as the new risk is, on measurement, the opposite of a
+risk: the shared gate's body is byte-identical under the rename, and the
+new caller's test is now the ONLY thing in the workspace pinning the
+gate's name check for EITHER door.
+
+#### Suites at `056cb3d`, every exit code from `$?` unpiped
+
+| suite | result | exit |
+|---|---|---|
+| lib/parser build · `npx vitest run` · `tsc --noEmit` | **263/263 over 12 files** | 0 / 0 / 0 |
+| app `npm run build` | `index-C86RloYb.css` 45.06 kB · `index-WORLmrLf.js` 523.98 kB — **both hashes UNCHANGED** | 0 |
+| app `npm test` | **907/907 over 46 files** | 0 |
+| bare `cargo test --no-fail-fast` | **373 / 0 / 3** over **15** `test result:` lines | 0 |
+| tools/e2e `npm test` · `npm run typecheck` | **121/121** | 0 / 0 |
+| `lint:tokens --selftest` · `lint:tokens` | `TOKEN 130 / CONTROL 605` | 0 / 0 |
+| `docs-gate.mjs` on the prescribed list | 3 suites owed, 11 readers, 0 frontmatter issues | 1 |
+| BOOT GATE, `NPUTER_BOOT_PORT=14841` | booted, both `[nputer]` lines | 0 |
+| `index --check --root ../..` | `+7 -0 ~8`, 639906 bytes | 1 |
+
+Every executor figure reproduces. The T-061-s4 kill-path flake did not
+fire on either of my two full cargo runs. Port 1420 read with
+`lsof -nP -iTCP:1420 -sTCP:LISTEN` only, before and after: `node` pid
+**82549**, one socket, `TCP [::1]:1420 (LISTEN)`, identical at both ends.
+Scratch port 14841 bind-probed free on `::1`, `127.0.0.1`, `::` and
+`0.0.0.0` before use.
+
+**Ranges re-derived at TWO refs, because main moved again while I
+worked** — `740f0b7` (the brief's) and `a15b78e` (current):
+
+    git merge-tree --write-tree 740f0b7 056cb3d -> tree 24792aa2…, exit 0
+    git diff --name-only 740f0b7 <TREE>              -> 26   THE PRESCRIBED FORM
+    git diff --name-only 740f0b7...056cb3d (THREE)   -> 26
+    git diff --name-only 2036fb2..056cb3d  (branch)  -> 26
+    git diff --name-only 740f0b7..056cb3d  (TWO)     -> 190  THE FORBIDDEN FORM
+    git diff --name-only 2036fb2..740f0b7  (main)    -> 164
+
+`comm -12` **EMPTY**, and 164 + 26 = 190. At `a15b78e` the prescribed
+form is **26** again, `merge-tree` exit 0 both times — no conflict.
+Gates off the prescribed list: **GRAPH REGEN 15 · BOOT GATE 12 · DOCS
+GATE 8, of 26**, matching the card's second-pass table exactly.
+
+---
+
+### The gate refactor — SAFE, and the proof is textual, not sampled
+
+This was the brief's highest-value target, so I took it first.
+`validate_resolved_program(path, &'static str)` versus the old
+`validate_resolved_binary(path, &AgentAdapter)`, extracted from
+`740f0b7` and from the tip and normalised for the two renamed tokens:
+
+    diff <(old, adapter.binary -> NAME_EXPR) <(new, expected_name -> NAME_EXPR)
+    -> no output.  THE BODY IS BYTE-IDENTICAL UNDER THE RENAME.
+
+So there is **no input that passes the new gate and fails the old one**
+— that is a proof over all inputs, not a sample. Specifically:
+
+- The name check is still `path.file_name().and_then(to_str) != Some(name)`
+  — **exact equality on the final component**, not a suffix, prefix or
+  `contains`.
+- `AgentAdapter.binary` is `&'static str` (adapter.rs), the same type
+  the new parameter takes, so `ResolvedPathRejection::WrongName {
+  expected: &'static str }` did not widen and no lifetime was relaxed.
+- Check ORDER is preserved: Empty → NotAbsolute → Traversal → WrongName
+  → NotExecutable. Nothing was reordered, and nothing was added or
+  dropped after `is_executable_file`.
+- `is_executable_file` is **byte-identical** between the two refs.
+- Every original caller still goes through the
+  `validate_resolved_binary(path, adapter)` wrapper — `resolve_cli`,
+  `which_in`, and all four unit bodies plus
+  `tests/agent_runner.rs`. **No pre-existing call site was rewritten**,
+  so the CLI door's behaviour is unchanged by construction as well as by
+  argument.
+- `login_shell()` differs from `740f0b7` by the `pub` keyword and
+  nothing else (diff is one line).
+
+**AND THE REFACTOR IMPROVED THE PIN COVERAGE, WHICH IS WORTH RECORDING
+BECAUSE IT IS THE OPPOSITE OF THE FEAR.** I planted exactly the
+regression the brief describes — the exact name check degraded to a
+suffix match:
+
+    -    if path.file_name().and_then(|n| n.to_str()) != Some(expected_name) {
+    +    if !path.to_str().unwrap_or_default().ends_with(expected_name) {
+
+read back with `git diff`, then `cargo test --no-fail-fast` over the
+whole workspace: **372 passed / 1 failed**, and the single failure is
+`churn::tests::the_git_gate_holds_the_same_standard_the_cli_resolver_does`
+— the body **this fix added**. T-060's own suite, unit and integration
+alike, does **not** catch it: under that mutant `/tmp/evil/notclaude`
+would resolve for the CLI door. The generalisation did not weaken the
+standard; the second caller's test is now the only thing pinning it.
+That is also a dependency worth knowing about, and it is F8 below.
+
+---
+
+### The exploit, re-run — fourteen variants, one execution, and it is not this card's
+
+I did not accept the refusals. Two batteries, both temporary probes in
+`churn.rs`, both removed (`churn.rs` back to sha256
+`44db08e9eb45f9fb…`, `git status` empty).
+
+**Battery A — the pure seam** (`resolve_git_from`, no process env
+mutated), reporting the resolved program and whether it is under the
+project:
+
+| search path | relative dirs kept | program | under project? |
+|---|---|---|---|
+| `:REAL` (empty first) | 0 | `/usr/bin/git` | no |
+| `.:REAL` | 0 | `/usr/bin/git` | no |
+| `./:REAL` | 0 | `/usr/bin/git` | no |
+| `:.:REAL` | 0 | `/usr/bin/git` | no |
+| `REAL:` (empty last) | 0 | `/usr/bin/git` | no |
+| `relbin:REAL` (bare relative) | 0 | `/usr/bin/git` | no |
+| `:` / `.` alone | 0 | **none** | no |
+| login answer `git` / `./git` / `<proj>/bin/../git` | — | `/usr/bin/git` | no |
+
+Every child `PATH` came back with **zero** relative or empty elements.
+
+**Battery B — end to end through `churn_at`**, with a real fake `git`
+planted in the opened project and the process `PATH`/`SHELL` actually
+poisoned:
+
+| vector | fake ran? |
+|---|---|
+| shell-script fake + `:REAL`, `.:REAL`, `./:REAL`, `:.:REAL`, `:` | **no** (5/5) |
+| `cc`-compiled binary fake + `:REAL`, `.:REAL` | **no** (2/2) |
+| compiled fake + PATH element that IS the project dir (absolute) | **no** |
+| symlink in an absolute PATH dir whose target is in the project | **no** |
+| `SHELL` = a traversal spelling into the project | **no** (`login_shell()` fell back to `/bin/zsh`) |
+| no usable login shell + project dir absolutely on PATH | **no** |
+| **`SHELL` = a fake `zsh` INSIDE the project** | **YES** |
+
+Thirteen of fourteen refused, including every variant of the break I
+demonstrated in the first verdict. The one that executed is F7.
+
+---
+
+### F7 — non-blocking. The shape gate checks shape, never identity, and both doors inherit that
+
+Two residuals, stated at the strength I could actually measure.
+
+**(a) `$SHELL` pointing inside the project EXECUTES.** `login_shell()`
+requires absolute + `file_name() ∈ {zsh, bash, sh}` + executable;
+`<project>/zsh` satisfies all three, and `login_shell_git()` then runs
+it. **This is not new and not this card's**: `login_shell()` is
+byte-unchanged from `740f0b7`, the CLI resolver has run `$SHELL -l -c`
+through it since T-060, and the pointer comes from the parent
+environment, never from the project — a user whose `$SHELL` points into
+a repository is already running the attacker's login shell. What this
+card changes is FREQUENCY, not reachability: churn probes on every map
+mount where genesis probed only on an interview.
+
+**(b) An absolute PATH element equal to the project directory selects
+`<project>/git`** — measured `UNDER_PROJECT=true` in the pure seam. I
+could **not** reach it end to end, because `resolve_git` consults the
+login shell's `command -v git` first and that absolute answer wins; it
+becomes reachable exactly when the login-shell probe cannot answer,
+which is the documented GUI-launch case. Honest strength: real in the
+core, masked on a machine with a working login shell.
+
+Both are the residual `validate_resolved_binary`'s own doc comment
+already records — *"an absolute, traversal-free path named `claude`
+pointing at an attacker's binary still passes. The gate checks SHAPE and
+never IDENTITY"* — inherited deliberately with the standard, and closing
+either inside the shared gate would make the two doors diverge, which is
+the thing the refactor exists to prevent. **The point of the fix is that
+the project lost its PRIVILEGED position**: `current_dir(root)` no
+longer participates in resolution at all, so what is left is the generic
+"whoever can write to a directory on your PATH wins", true of every
+program on the machine.
+
+One caller-side hardening is available that does NOT touch the shared
+gate, because only this caller knows the project root: refuse a resolved
+`program` that `starts_with(root)`. One line, no divergence, and it
+would have refused both (a) and (b). Recommended, not required.
+
+### F8 — non-blocking. The env list is right, and it can never be complete
+
+**Twelve is correct and the third addition is load-bearing.** Measured
+with a positive control on git 2.50.1:
+`GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.fsmonitor GIT_CONFIG_VALUE_0=…`
+**runs the program** on `git status`; the same pair with `GIT_CONFIG_COUNT`
+removed does **not**. So gating the numbered family on the one variable
+is a real neutralisation, not an assumption.
+
+**But there is a thirteenth, and it is not a `GIT_*` variable.** `HOME`
+redirected at a directory holding a hostile `.gitconfig` reaches exactly
+the surface `GIT_CONFIG_GLOBAL` does — control fires on `git status`. It
+cannot be removed from a git child. `GIT_TRACE=<path>` is a fourteenth
+of a different kind: an arbitrary-file append. Neither is exploitable
+here — I re-confirmed that **neither `PROBE_ARGV` nor `LOG_ARGV`
+triggers fsmonitor at all**, with or without the clear — which is the
+real defence and the reason the list is honest as defence in depth. Two
+sentences in `GIT_ENV_REMOVED`'s doc comment saying "this list cannot be
+complete; what carries the property is that these two argvs run no
+program" would stop the next reader treating length as coverage.
+`-c core.fsmonitor=` now rides both argvs and the pin asserts it over
+`[PROBE_ARGV, LOG_ARGV]`, closing the asymmetry I named.
+
+### F9 — non-blocking. Two stale figures, same class as F5
+
+1. **Property 2's doc comment still reads ``Command::new("git")``**, two
+   lines below the new property 0 which says the resolved absolute
+   program is used. A reader grepping `churn.rs` to check whether the
+   bare-name spawn is gone finds the sentence saying it is still there.
+   One token.
+2. **"the F1 fix grows it to 1118"** — it does not. `git diff --numstat
+   c7528cc 056cb3d` is **+382 −16** on `churn.rs`, and 792 + 382 − 16 =
+   **1158**, which `wc -l` confirms. The figure appears twice, and it
+   sits inside the paragraph correcting three figures that were not
+   derived at the tip. Everything else in that paragraph is right: 792
+   at `c7528cc`, 19 distinct selectors / 20 rule occurrences with
+   `.bg-background/60` twice, four failing bodies.
+
+### My own drill, independent of the card's six
+
+Four one-sided producer mutants, each read back with `git diff` before
+running, each followed by a byte-copy restore proved with `git status`
+and sha256. Two of mine are not on the card's list.
+
+| # | producer mutated | cargo | red |
+|---|---|---|---|
+| VM1 | `sanitized_dirs` stops requiring `is_absolute()` | 101 | 1 — `a_git_reachable_only_by_a_relative_path_element_never_resolves` |
+| VM2 | the login-shell answer is no longer gated (**not on the card's list**) | 101 | 1 — same body |
+| VM3 | `run_git` drops `env("PATH", …)` | 101 | 1 — `run_git_spawns_the_resolved_program_and_sets_the_childs_path` |
+| VM4 | the shared gate's exact name check becomes `ends_with` (**not on the card's list**) | 101 | 1 — `the_git_gate_holds_the_same_standard_the_cli_resolver_does` |
+
+And **F2's own mutant re-run**: `assignYs` applying the expansion height
+only when `column === 0` — the mutant that survived 906/906 in my first
+verdict — now reds **1 of 907**, and it is exactly the new body
+*"T1: an expanded container pushes its OWN column's sibling — in a
+NON-ZERO column too"*. The pre-existing *"EXPANDING A DIFFERENT COLUMN"*
+body still survives it, which is precisely the gap the new pin fills.
+`map-layout.ts` restored, byte-identical to `HEAD`.
+
+The three restoration hashes the card quotes — `churn.rs`
+`44db08e9…`, `runner.rs` `22d3bb17…`, `map-layout.ts` `9bfc57ef…` — all
+three match the values I measured independently, and the last one
+matches what I recorded in my first verdict a pass earlier.
+
+### The other closures, checked rather than taken
+
+- **F3.** The false reuse claim is gone and the choice is recorded as
+  designed-here with a reason that is true: the segment is a raw
+  `<button>`, not the shadcn `Button`, so it cannot inherit
+  `disabled:pointer-events-none disabled:opacity-50`. **Nothing was
+  minted**: `index-C86RloYb.css` and `index-WORLmrLf.js` come back at the
+  same hashes and sizes as at `c7528cc`, so the 19-distinct / 20-occurrence
+  selector diff I derived last pass carries unchanged.
+- **F4.** The 90d → 30d divergence is now written on the card, and
+  `CHURN_WINDOW_DAYS`'s doc comment finally points at a record that
+  exists.
+- **Regen forecast, re-verified from scratch.** Regenerated into a
+  detached worktree at `056cb3d` (639906 bytes, 126 files, 1111 symbols,
+  1687 edges; `index --check` there exits 0) and ran both dogfood
+  suites: **four failing bodies**, three in `architecture-dogfood` and
+  one in `map-dogfood-render` — unchanged by the second pass, exactly as
+  the card now says. Graph restored by byte copy, worktree removed.
+- **Security pins unmoved at the CURRENT main**, which is stronger than
+  against the cut point: `acl_pin.rs` is a **0-file diff against
+  `a15b78e`** at sha256 `8d24cbad…` with **92** grants; `lib.rs` is a
+  0-file diff since `c7528cc` so the IPC census stays **14 at both
+  ends**; three `#[ignore]`; no manifest, lockfile, capability file or
+  `tokens.css` in the diff.
+- **NUL sweep, with a proven-sensitive probe.** Both `grep` spellings
+  are known-unreliable here, so I counted bytes instead: `wc -c` minus
+  `tr -d '\000' | wc -c`. Canary first — a planted `a\0b` reports 1 and a
+  clean file reports 0 — then the 26 paths: **0 NUL bytes total**.
+
+### Ruling — the second widening to `[app-map, app-shell, app-agent]` is RIGHT
+
+`docs/ARCHITECTURE.md` maps `app-agent` to **C-14, the agent runner**,
+and the fix edits `app/src-tauri/src/agent/runner.rs`. So the slug is not
+a judgement call, it is the mapping — the same argument that carried the
+first widening, and a stronger one here, because the third slug is the
+direct and unavoidable consequence of a change **I demanded**: reusing
+the ratified gate instead of writing a second one requires touching the
+file the gate lives in. Refusing to widen would have meant either a
+second implementation of a security gate (the T-057 defect the reuse
+exists to avoid) or a `touches:` line that omits a tree the diff opens.
+The direction of error is unchanged and still safe: a wider fence can
+only ever cause MORE serialization.
+
+Collision re-derived at `740f0b7` **and** at the current `a15b78e`, not
+at the executor's snapshot: T-064 and T-070 are both merged, the only
+lanes still ahead of main are **T-089** (`c43eadd`, 10 commits) and
+**T-085** (0 commits), and `comm -12` against T-089's own prescribed
+list is **EMPTY**. No live lane holds `app-agent` or touches
+`runner.rs`, `lib.rs`, `crescendo-dom.test.tsx` or `acl_pin.rs`. The
+integrator should still re-derive at the merge rather than quote this —
+main moved three times during the first review and twice during this
+one.
+
+### Ruling — T-013-s7's refinement is CORRECT but NARROW, and must not dilute the finding
+
+The mechanical claim is right: `env!("CARGO_MANIFEST_DIR")` is baked in
+at compile time and cargo does not fingerprint it, so a *cross-worktree*
+mismatch needs two paths sharing one target directory, and an in-place
+drill has one path throughout. As a justification for how THIS drill was
+run it is sound, and the restoration proofs back it up.
+
+Two limits, and they matter because three agents have now been bitten.
+
+1. **"Absent by construction" is true of the instance, not the class.**
+   The mechanism is *a compile-time constant cargo does not track as an
+   input*; the manifest directory is the one that bit, not the only one
+   available.
+2. **In-place drilling substitutes a different hazard the card does not
+   weigh** — it mutates the lane's working tree, so an interrupted drill
+   leaves the branch dirty and any concurrent reader sees mutated
+   source. That is exactly why "detached scratch worktree" is the
+   standing advice.
+
+`T-013-s7` itself is **byte-unchanged on this branch** and already
+carries the answer that avoids both hazards: its arm (c), *"give the
+drill its own `CARGO_TARGET_DIR` under the scratch directory … probably
+the right default, and one environment variable."* That is the arm I
+used for my own first-pass drill and it cost nothing. So the refinement
+belongs in the CARD, where it is, and the CONVENTIONS edit the finding
+asks for should still take arm (c) — detached worktree **plus** its own
+target directory — rather than reading the refinement as licence to
+drill in place.
+
+### What reached the human's running app
+
+**Nothing.** All work in `../nputer-T-013` and one detached scratch
+worktree at `056cb3d` (removed, `git worktree prune` run) that never ran
+cargo — the graph was regenerated by the lane's own warm indexer with
+`--root`, so no second `CARGO_MANIFEST_DIR` ever entered a target
+directory. The in-lane probes and mutants were restored by byte copy
+with an empty `git status` and matching sha256 every time. No `npm ci`
+or `npm install` in the main checkout, no `pkill`, no bind, connect or
+signal to 1420 on any interface.
+
+### Verdict
+
+**APPROVED.** F1 and F2 are closed and I could not reopen them; the gate
+refactor is provably behaviour-preserving for its original caller and
+incidentally improved its pin coverage. F7, F8 and F9 are non-blocking
+and none of them needs to hold up the merge: F7 is the ratified residual
+of the shared standard with an optional one-line hardening, F8 is two
+sentences of honesty about a list that cannot be complete, F9 is a stale
+doc token and a stale line count.
