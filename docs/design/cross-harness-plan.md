@@ -107,11 +107,23 @@ choosing who examines whom is a policy decision (which model, is the
 fence free, is the ceiling reached) and belongs in one place.
 `orchestrator.md:19` already says propose and wait.
 
-## 5. What Codex offers — PUBLISHED, NOT MEASURED (see §0)
+## 5. What Codex offers — NOW MEASURED (2026-08-20)
 
-Per OpenAI's docs and the community references cited in §10:
+**Superseding §0's caveat**: the CLI was found — it ships INSIDE the
+ChatGPT desktop app at
+`/Applications/ChatGPT.app/Contents/Resources/codex` (arm64 Mach-O,
+`codex-cli 0.147.0-alpha.1.2`). The earlier "not installed" claim was a
+probe error: `command -v`, login-shell PATH and an app-bundle search
+for `Codex.app` all miss a binary living in ChatGPT.app's Resources.
+The human corrected it. `--version`, `--help`, `exec --help` and
+`exec resume --help` are captured verbatim in
+`docs/research/captures/codex-cli-*-2026-08-20.txt`; all four exit 0
+and none spawns a turn.
 
-| need | Claude Code (measured) | Codex (published) |
+Measured against those captures (published-docs claims that survived
+are unmarked; corrections are bold):
+
+| need | Claude Code (measured) | Codex (measured 0.147.0-alpha.1.2) |
 |---|---|---|
 | non-interactive | `-p` | `exec` subcommand |
 | machine-readable stream | `--output-format stream-json --include-partial-messages --verbose` | `--json` (JSONL) |
@@ -121,6 +133,23 @@ Per OpenAI's docs and the community references cited in §10:
 | final message | `result` line | `--output-last-message FILE` |
 | no session on disk | — | `--ephemeral` |
 | event shape | `system` / `assistant` / `stream_event` / `result` | `TurnStarted` / `TurnCompleted` / `ItemStarted` / `ItemCompleted` |
+
+**Three measured findings the published docs did not carry:**
+
+1. **`codex exec` accepts `--dangerously-bypass-approvals-and-sandbox`
+   and `--dangerously-bypass-hook-trust`.** These are the Codex
+   spellings of the flag class the adapter table's standing bypass ban
+   exists for. The ban iterates `ADAPTERS`, so a Codex entry inherits
+   it automatically — but the ban's pattern must MATCH these spellings,
+   and that is now checkable against a capture rather than a guess.
+2. **Auth is `codex login` / `codex logout` at top level** — where
+   Claude's is `claude auth login`. A recovery-advice string that works
+   for one CLI is wrong for the other; T-082's class, cross-harness.
+3. **`-C/--cd <DIR>` sets the working directory and `--add-dir`
+   widens it** — the same pair of knobs whose absence/presence the
+   Claude adapter's containment story rests on. `--skip-git-repo-check`,
+   `--ephemeral`, `--ignore-user-config` and `--ignore-rules` also
+   exist and each is a containment-relevant decision for the entry.
 
 **THE DIFFERENCE THAT MATTERS MOST IS NOT THE FLAGS. IT IS WHAT A
 DENIAL MEANS.** The docs state that in `exec` mode "approval requests
@@ -237,9 +266,12 @@ In order, each costing approximately nothing:
   hand-driven path (assemble, human pastes) needs no adapter at all and
   works today. It is the whole of F-04's first slice and should probably
   ship before any second adapter exists.
-- **D-X2 — `--model`, given the asymmetry.** Codex accepts it, Claude
-  is deliberately not given it. Either the rule becomes per-adapter or
-  ADR-003's reasoning has to be revisited. Blocks F-04's T-086/T-090.
+- **D-X2 — `--model`: SHAPED by the cockpit-or-mirror ruling
+  (rooms/cockpit-or-mirror.md, 2026-08-20).** `model@session` is intent
+  on the card (D3: the app writes `builder:`/`verifier:`), enforced
+  per-adapter where nputer spawns (Claude stays unpassed per ADR-003;
+  Codex `exec` accepts `-m`, measured), honoured by the human where
+  they paste. No global rule; the adapter entry carries it.
 - **D-X3 — one sandbox policy per ROLE or per ADAPTER?** §5 says the
   same policy cannot mean the same thing on both, so this cannot be a
   single shared constant.
