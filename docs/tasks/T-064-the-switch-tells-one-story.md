@@ -603,3 +603,24 @@ after the code — and the fix was one word in front of the backtick.
 Recorded rather than quietly corrected: the failure mode is not that a
 suite goes red, it is that the red arrives detached from its edit, and
 the only reason this one did not is that something told me to look.
+
+### Closing state
+
+Branch `task/T-064-switch-one-story`, worktree `/Users/ujju/Projects/nputer-T-064`,
+cut from **`2036fb2`**. Four commits: `f6cf200` the rulings, `8034a03`
+the code and its tests, `947b75a` the notes and the five findings,
+`cbd9690` the corpus/range figures pinned to their refs. **NOT MERGED,
+and main was never touched** — `git worktree list` shows this lane
+beside `nputer-T-013`, `nputer-T-061` and `nputer-T-070`, all four
+disjoint. Working tree `git status --porcelain` EMPTY at the close;
+every poison-drill file round-tripped and every restore was proved
+twice.
+
+**THE DOCS GATE FIRES ON THIS SECTION TOO**, which is the obligation
+T-084's merge created for its own next step and which this card now
+inherits: the notes commits are diffs whose whole content is `docs/`,
+the gate owes `npm test from app/`, `npm test from tools/e2e/` and
+`npx vitest run from lib/parser/` for six paths, and **all three were
+re-run AFTER the last doc edit** — 854/854, 121/121 (scratch port
+14620), 263/263, every exit code 0. That re-run is what caught this
+lane's own backtick title, one section up.
