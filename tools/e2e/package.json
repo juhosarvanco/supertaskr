@@ -11,7 +11,8 @@
     "test": "playwright test",
     "typecheck": "tsc --noEmit",
     "lint:tokens": "node scripts/lint-tokens.mjs",
-    "boot:check": "node scripts/tauri-boot-check.mjs"
+    "boot:check": "node scripts/tauri-boot-check.mjs",
+    "boot:orphan-drill": "node scripts/orphan-drill.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",

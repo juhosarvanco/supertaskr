@@ -337,7 +337,7 @@ test("the DOCS GATE bullet names exactly the commands the derivation produces", 
   // the doc gains that the tree does not produce reds, and so does one
   // the tree produces that the doc stops naming.
   const derived = [...new Set(READERS.map((r) => `${r.command} from ${r.suite}/`))].sort();
-  const quoted = [...DOCS_GATE_BULLET.matchAll(/`([^`]+ from [^`]+\/)`/g)].map((m) => m[1]!);
+  const quoted = [...DOCS_GATE_BULLET!.matchAll(/`([^`]+ from [^`]+\/)`/g)].map((m) => m[1]!);
   expect([...new Set(quoted)].sort()).toEqual(derived);
 });
 

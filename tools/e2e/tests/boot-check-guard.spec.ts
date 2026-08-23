@@ -1,13 +1,21 @@
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import net from "node:net";
+import os from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { repoRoot } from "../preflight";
 import {
   BOOT_PORT_ENV,
+  BootPortRefusal,
   DEFAULT_TAURI_PORT,
   EXIT_REFUSED,
+  TAURI_CONF_SEGMENTS,
+  beforeDevCommandWithPort,
   bootConfigJson,
+  devUrlWithPort,
+  isSignalableGroup,
+  readCommittedBuildConfig,
   resolveBootPort,
   tauriDevArgs,
 } from "../scripts/boot-port.mjs";
@@ -57,6 +65,9 @@ test("unset resolves to 1420 and threads no --config — the pre-T-046 command, 
   }
 });
 
+/** The values this repository actually commits, as a fixture. */
+const COMMITTED = { devUrl: "http://localhost:1420", beforeDevCommand: "npm run dev" };
+
 test("a scratch port threads the matching --config to BOTH halves of tauri dev", () => {
   const resolved = resolveBootPort("14521");
   expect(resolved).toEqual({ port: 14521, overridden: true });
@@ -64,7 +75,7 @@ test("a scratch port threads the matching --config to BOTH halves of tauri dev",
   // devUrl (what the CLI waits for and the webview loads) AND
   // beforeDevCommand (the vite server it starts) — moving one without the
   // other hangs the check on a URL nothing serves.
-  expect(JSON.parse(bootConfigJson(14521))).toEqual({
+  expect(JSON.parse(bootConfigJson(14521, COMMITTED))).toEqual({
     build: {
       devUrl: "http://localhost:14521",
       beforeDevCommand: "npm run dev -- --port 14521 --strictPort",
@@ -74,7 +85,7 @@ test("a scratch port threads the matching --config to BOTH halves of tauri dev",
   // The `--` is load-bearing: npm eats a bare `--config` after the script
   // name (measured on npm 11.12.1, the flag vanishes and the JSON arrives
   // as a stray positional). CLI flags only — tauri.conf.json is untouched.
-  expect(tauriDevArgs(resolved)).toEqual([
+  expect(tauriDevArgs(resolved, COMMITTED)).toEqual([
     "run",
     "tauri",
     "dev",
@@ -82,6 +93,150 @@ test("a scratch port threads the matching --config to BOTH halves of tauri dev",
     "--config",
     '{"build":{"devUrl":"http://localhost:14521","beforeDevCommand":"npm run dev -- --port 14521 --strictPort"}}',
   ]);
+});
+
+// ── T-061: the overlay is DERIVED from the committed values ───────────
+//
+// T-046's overlay EMITTED both keys from nothing, so the two it replaced
+// were not merely un-asserted, they were DISCARDED — measured at T-046-s4,
+// a committed devUrl on a dead port and a committed beforeDevCommand
+// naming a script that does not exist BOTH exited 0, GREEN.
+
+test("the overlay carries the COMMITTED dev command, so a renamed script still reds", () => {
+  // The failure T-046-s4 names one step further than the blindness: with a
+  // hard-coded `npm run dev`, a committed script renamed to `dev:app` left
+  // the check happily running a command the human's `tauri dev` no longer
+  // runs — green, on a config that cannot boot.
+  expect(beforeDevCommandWithPort("npm run dev:app", 14521)).toBe(
+    "npm run dev:app -- --port 14521 --strictPort",
+  );
+  expect(beforeDevCommandWithPort("npm run no-such-script-at-all", 14521)).toBe(
+    "npm run no-such-script-at-all -- --port 14521 --strictPort",
+  );
+  expect(
+    JSON.parse(bootConfigJson(14521, { ...COMMITTED, beforeDevCommand: "npm run dev:app" })).build
+      .beforeDevCommand,
+  ).toBe("npm run dev:app -- --port 14521 --strictPort");
+});
+
+test("a committed command that already carries `--` does not gain a second one", () => {
+  // A second `--` would be handed to vite as an argument rather than eaten
+  // by npm, so the port flags would arrive behind a separator vite has to
+  // interpret. One separator, wherever the committed value put it.
+  expect(beforeDevCommandWithPort("npm run dev -- --host", 14521)).toBe(
+    "npm run dev -- --host --port 14521 --strictPort",
+  );
+  expect(beforeDevCommandWithPort("  npm run dev  ", 14521)).toBe(
+    "npm run dev -- --port 14521 --strictPort",
+  );
+});
+
+test("only the PORT of the committed devUrl is rewritten — scheme, host and path survive", () => {
+  expect(devUrlWithPort("http://localhost:1420", 14521)).toBe("http://localhost:14521");
+  // A committed https where vite serves http is now CAUGHT, not overwritten.
+  expect(devUrlWithPort("https://localhost:1420", 14521)).toBe("https://localhost:14521");
+  // A committed dead host is now CAUGHT too.
+  expect(devUrlWithPort("http://t061-no-such-host.invalid:1420", 14521)).toBe(
+    "http://t061-no-such-host.invalid:14521",
+  );
+  // A path is part of what the webview loads, so it is preserved verbatim.
+  expect(devUrlWithPort("http://localhost:1420/app/", 14521)).toBe("http://localhost:14521/app/");
+  // A committed URL with no port at all gains one rather than being replaced.
+  expect(devUrlWithPort("http://localhost", 14521)).toBe("http://localhost:14521");
+});
+
+test("THE RESIDUAL, asserted rather than described: a wrong committed PORT is still masked", () => {
+  // This is the hole T-061 SHRINKS and does not close, and it is pinned
+  // here so nobody reads the card's "one integer unverified" as prose. The
+  // port is the one thing the override is entitled to change; every other
+  // component of the committed URL is now load-bearing.
+  expect(devUrlWithPort("http://localhost:14999", 14521)).toBe("http://localhost:14521");
+  expect(devUrlWithPort("http://localhost:1420", 14521)).toBe(
+    devUrlWithPort("http://localhost:14999", 14521),
+  );
+});
+
+test("against the REAL committed config the derivation is a no-op, byte for byte", () => {
+  // The strongest thing that can be said about a refactor of a merge
+  // gate's overlay: for the values this tree actually commits, the derived
+  // JSON is character-identical to the string T-046 hard-coded. Anything
+  // that reds here is a change to what the boot check spawns.
+  const committed = readCommittedBuildConfig(repoRoot);
+  expect(committed).toEqual(COMMITTED);
+  expect(bootConfigJson(14521, committed)).toBe(
+    '{"build":{"devUrl":"http://localhost:14521","beforeDevCommand":"npm run dev -- --port 14521 --strictPort"}}',
+  );
+  expect(TAURI_CONF_SEGMENTS).toEqual(["app", "src-tauri", "tauri.conf.json"]);
+});
+
+test("an underivable committed config REFUSES — it never falls back to the committed port", () => {
+  // There is no safe fallback and that is the whole argument: the only
+  // value to fall back to is the committed devUrl, and on this repository
+  // that is 1420. A boot check that quietly dropped the overlay would boot
+  // on the human's app.
+  const dir = mkdtempSync(path.join(os.tmpdir(), "t061-conf-"));
+  const write = (body: string): void => {
+    const file = path.join(dir, ...TAURI_CONF_SEGMENTS);
+    mkdirSync(path.dirname(file), { recursive: true });
+    writeFileSync(file, body, "utf8");
+  };
+  try {
+    // (1) no file at all
+    expect(() => readCommittedBuildConfig(dir)).toThrow(BootPortRefusal);
+    expect(() => readCommittedBuildConfig(dir)).toThrow(/cannot read the committed build config/);
+
+    // (2) not JSON
+    write("{ this is not json");
+    expect(() => readCommittedBuildConfig(dir)).toThrow(/is not valid JSON/);
+
+    // (3) no devUrl to rewrite the port of
+    write(JSON.stringify({ build: { beforeDevCommand: "npm run dev" } }));
+    expect(() => readCommittedBuildConfig(dir)).toThrow(/no string `build.devUrl`/);
+
+    // (4) no beforeDevCommand to append to
+    write(JSON.stringify({ build: { devUrl: "http://localhost:1420" } }));
+    expect(() => readCommittedBuildConfig(dir)).toThrow(/no string `build.beforeDevCommand`/);
+
+    // (5) a devUrl that is not a URL is refused at derivation time
+    expect(() => devUrlWithPort("not a url", 14521)).toThrow(/is not a URL/);
+
+    // Every refusal says the same thing about what it did NOT do.
+    write(JSON.stringify({ build: { devUrl: "http://localhost:1420" } }));
+    expect(() => readCommittedBuildConfig(dir)).toThrow(/Nothing was probed and nothing was spawned/);
+
+    // And the whole thing round-trips once both keys are back.
+    write(JSON.stringify({ build: COMMITTED }));
+    expect(readCommittedBuildConfig(dir)).toEqual(COMMITTED);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("an OVERRIDE with no committed config refuses rather than emitting a bare overlay", () => {
+  expect(() => tauriDevArgs({ port: 14521, overridden: true })).toThrow(BootPortRefusal);
+  expect(() => tauriDevArgs({ port: 14521, overridden: true })).toThrow(/DERIVED/);
+  // The DEFAULT path needs none of it, which is exactly why it still tests
+  // both committed keys for real.
+  expect(tauriDevArgs({ port: DEFAULT_TAURI_PORT, overridden: false })).toEqual([
+    "run",
+    "tauri",
+    "dev",
+  ]);
+});
+
+test("the process-group guard refuses the two ids that mean something else entirely", () => {
+  // `kill(-0, …)` is `kill(0, …)`, this process's OWN group, because
+  // JavaScript has `-0 === 0`; `kill(-1, …)` is the POSIX broadcast to
+  // every process this user may signal — which on a dev machine includes
+  // the human's `tauri dev` on 1420. Neither arises from a real spawn and
+  // both are one typo away in a file whose job is killing process trees.
+  expect(-0 === 0).toBe(true);
+  for (const bad of [0, -0, 1, -1, -5, 1.5, NaN, Infinity, undefined, null, "2", "1420"]) {
+    expect(isSignalableGroup(bad), `pgid ${String(bad)} must not be signalable`).toBe(false);
+  }
+  for (const ok of [2, 42, 99973, 2 ** 20]) {
+    expect(isSignalableGroup(ok), `pgid ${ok} is a real spawned group`).toBe(true);
+  }
 });
 
 test(`${BOOT_PORT_ENV}=1420 is refused by the resolver — the lane's own throw, restated`, () => {

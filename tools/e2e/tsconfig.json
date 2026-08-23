@@ -13,18 +13,24 @@
     // T-046: the lane spec imports scripts/boot-port.mjs, which is plain JS
     // with JSDoc types (the scripts run under bare `node`, so they cannot
     // be TS). allowJs lets tsc infer from those annotations instead of
-    // failing TS7016. checkJs stays OFF deliberately — enabling it would
-    // newly type-check the two long-standing .mjs scripts, a separate
-    // change with its own diff rather than a side effect of this one.
-    "allowJs": true
+    // failing TS7016.
+    //
+    // T-061 (absorbing T-046-s2): checkJs is now ON, so tsc CHECKS the
+    // scripts against their own JSDoc instead of merely READING it to type
+    // the spec's imports. Until then a wrong `@param` silently mistyped the
+    // spec's expectations, and the annotations on a merge gate's kill path
+    // were load-bearing and unverified.
+    "allowJs": true,
+    "checkJs": true
   },
   "include": [
     "playwright.config.ts",
     "preflight.ts",
     "fixtures/**/*.ts",
     "tests/**/*.ts",
-    "scripts/boot-port.mjs",
-    "scripts/token-scan.mjs",
-    "scripts/docs-scan.mjs"
+    // A GLOB, not a list, and that is the point: T-046-s2 named the two
+    // scripts that existed when it was written and this directory now holds
+    // six. A hand list is the defect T-058 and T-080 each spent a card on.
+    "scripts/**/*.mjs"
   ]
 }

@@ -397,16 +397,22 @@ const WORD = /[A-Za-z0-9_$]/;
  * rather than a second copy of it: a quote or a backtick inside a regex
  * literal is exactly what makes a naive strip swallow the rest of a
  * file, and one implementation cannot disagree with itself (T-057). */
+/**
+ * @param {string} src
+ * @param {number} start
+ * @param {number} prevSig
+ * @returns {boolean}
+ */
 export function regexCanStart(src, start, prevSig) {
   if (src[start + 1] === ">") return false; // `/>` — JSX self-close
   if (prevSig < 0) return true; // start of file
-  const ch = src[prevSig];
+  const ch = /** @type {string} */ (src[prevSig]);
   if (ch === "<") return false; // `</div>` — JSX closing tag
   if (ch === ">") return src[prevSig - 1] === "="; // `=>` yes, a tag close no
   if (ch === ")" || ch === "]" || ch === "}") return false; // value-ish: division
   if (WORD.test(ch)) {
     let s = prevSig;
-    while (s > 0 && WORD.test(src[s - 1])) s -= 1;
+    while (s > 0 && WORD.test(/** @type {string} */ (src[s - 1]))) s -= 1;
     return REGEX_AFTER.has(src.slice(s, prevSig + 1));
   }
   if ((ch === "+" || ch === "-") && src[prevSig - 1] === ch) return false; // `x++ / y`
@@ -417,6 +423,12 @@ export function regexCanStart(src, start, prevSig) {
  * or -1 if this slash does not open one. A literal that does not close on
  * its own line is not one — that rule is what keeps a misread contained.
  * Exported at T-084 with `regexCanStart`, for the same reason. */
+/**
+ * @param {string} src
+ * @param {number} start
+ * @param {number} prevSig
+ * @returns {number}
+ */
 export function regexEnd(src, start, prevSig) {
   if (!regexCanStart(src, start, prevSig)) return -1;
   let i = start + 1;
@@ -432,7 +444,7 @@ export function regexEnd(src, start, prevSig) {
     else if (c === "]") inClass = false;
     else if (c === "/" && !inClass) {
       i += 1;
-      while (i < src.length && /[a-z]/.test(src[i])) i += 1;
+      while (i < src.length && /[a-z]/.test(/** @type {string} */ (src[i]))) i += 1;
       return i;
     }
     i += 1;
@@ -446,12 +458,19 @@ export function regexEnd(src, start, prevSig) {
  * offsets and line numbers carry straight through. Delimiters (`"`, `'`,
  * backtick) are kept: P2 anchors on them.
  */
+/**
+ * @param {string} src
+ * @returns {string}
+ */
 export function maskSource(src) {
   const n = src.length;
+  /** @type {(string | undefined)[]} */
   const out = new Array(n);
+  /** @param {number} i */
   const keep = (i) => {
     out[i] = src[i];
   };
+  /** @param {number} i */
   const hide = (i) => {
     const c = src[i];
     out[i] = c === "\n" || c === "\r" ? c : HIDDEN;
@@ -460,13 +479,14 @@ export function maskSource(src) {
   /** Last significant (non-whitespace, non-comment) code character. */
   let prevSig = -1;
   /** One entry per open template literal, carrying the `{` depth of the
-   * substitution currently being lexed. */
+   * substitution currently being lexed.
+   * @type {{ depth: number }[]} */
   const templates = [];
   let inTemplateText = false;
   let i = 0;
 
   while (i < n) {
-    const c = src[i];
+    const c = /** @type {string} */ (src[i]);
 
     if (inTemplateText) {
       if (c === "\\") {
@@ -486,7 +506,7 @@ export function maskSource(src) {
       if (c === "$" && src[i + 1] === "{") {
         hide(i);
         hide(i + 1);
-        templates[templates.length - 1].depth = 0;
+        /** @type {{ depth: number }} */ (templates[templates.length - 1]).depth = 0;
         inTemplateText = false;
         prevSig = i + 1;
         i += 2;
@@ -547,7 +567,7 @@ export function maskSource(src) {
       continue;
     }
     if (templates.length > 0) {
-      const top = templates[templates.length - 1];
+      const top = /** @type {{ depth: number }} */ (templates[templates.length - 1]);
       if (c === "{") top.depth += 1;
       else if (c === "}") {
         if (top.depth === 0) {
@@ -583,6 +603,12 @@ export function maskSource(src) {
  * unclosed group is NOT a variant — every uncertainty resolves toward
  * reporting.
  */
+/**
+ * @param {string} masked
+ * @param {number} start
+ * @param {number} end
+ * @returns {boolean}
+ */
 function isVariant(masked, start, end) {
   for (let i = start; i < end; i += 1) {
     const open = masked[i];
@@ -604,12 +630,18 @@ function isVariant(masked, start, end) {
 /** Widen a raw regex match to the surrounding utility-ish token so the
  * report reads `p-[13px]`, not the bare 3-char match. Display only —
  * detection is the regex alone. */
+/**
+ * @param {string} line
+ * @param {number} index
+ * @param {number} length
+ * @returns {string}
+ */
 function displayMatch(line, index, length) {
   const boundary = /[\s"'`{}<>,;]/;
   let start = index;
-  while (start > 0 && !boundary.test(line[start - 1])) start -= 1;
+  while (start > 0 && !boundary.test(/** @type {string} */ (line[start - 1]))) start -= 1;
   let end = index + length;
-  while (end < line.length && !boundary.test(line[end])) end += 1;
+  while (end < line.length && !boundary.test(/** @type {string} */ (line[end]))) end += 1;
   return line.slice(start, end);
 }
 
@@ -617,13 +649,17 @@ function displayMatch(line, index, length) {
  * Every pattern hit in a source text: `{line, id, what, match}`.
  * Detection runs over the MASKED text (string context only); the display
  * string is cut from the raw line at the same offsets.
+ *
+ * @param {string} src
+ * @returns {{ line: number, id: string, what: string, match: string }[]}
  */
 export function scanSource(src) {
   const maskedLines = maskSource(src).split(/\r?\n/);
   const rawLines = src.split(/\r?\n/);
+  /** @type {{ line: number, id: string, what: string, match: string }[]} */
   const hits = [];
   for (let i = 0; i < maskedLines.length; i += 1) {
-    const masked = maskedLines[i];
+    const masked = /** @type {string} */ (maskedLines[i]);
     const raw = rawLines[i] ?? masked;
     for (const { id, what, re } of makeTokenPatterns()) {
       for (const m of masked.matchAll(re)) {
@@ -641,6 +677,10 @@ export function scanSource(src) {
 }
 
 /** U+XXXX for the one-byte ASCII controls P5 can report. */
+/**
+ * @param {number} byte
+ * @returns {string}
+ */
 function codepoint(byte) {
   return `U+${byte.toString(16).toUpperCase().padStart(4, "0")}`;
 }
@@ -649,15 +689,19 @@ function codepoint(byte) {
  * Every forbidden raw byte in a Buffer. Tabs, LF and CR are the only C0
  * bytes allowed; every other C0 byte and DEL is a P5 hit. `offset` is the
  * true zero-based BYTE offset, not a UTF-16 string index.
+ *
+ * @param {Buffer} raw
+ * @returns {{ line: number, offset: number, codepoint: string, id: string, what: string }[]}
  */
 export function scanControlSource(raw) {
   if (!Buffer.isBuffer(raw)) {
     throw new TypeError("scanControlSource requires a Buffer so byte offsets stay truthful");
   }
+  /** @type {{ line: number, offset: number, codepoint: string, id: string, what: string }[]} */
   const hits = [];
   let line = 1;
   for (let offset = 0; offset < raw.length; offset += 1) {
-    const byte = raw[offset];
+    const byte = /** @type {number} */ (raw[offset]);
     if (byte === 0x0a) line += 1;
     const forbiddenC0 =
       byte <= 0x08 || byte === 0x0b || byte === 0x0c || (byte >= 0x0e && byte <= 0x1f);
@@ -675,6 +719,10 @@ export function scanControlSource(raw) {
 }
 
 /** Recursive deterministic TOKEN walk, returning repo-relative POSIX paths. */
+/**
+ * @param {string} dir
+ * @returns {string[]}
+ */
 function walkToken(dir) {
   const out = [];
   for (const name of readdirSync(dir).sort()) {
@@ -735,6 +783,10 @@ export function trackedFiles() {
  *  dotfile has NO extension and shares the "" class with extensionless
  *  fixtures. Written once so the corpus, the floor and any reader
  *  classify identically; a shell `${f##*.}` split does NOT agree here. */
+/**
+ * @param {string} rel
+ * @returns {string}
+ */
 export function suffixClass(rel) {
   return path.posix.extname(rel).toLowerCase();
 }
@@ -751,6 +803,10 @@ function controlCorpus() {
 }
 
 /** Every file in one explicit corpus. Importing this module calls neither. */
+/**
+ * @param {string} which
+ * @returns {string[]}
+ */
 export function corpus(which) {
   if (which === CORPORA.TOKEN) return tokenCorpus();
   if (which === CORPORA.CONTROL) return controlCorpus();
@@ -937,6 +993,7 @@ const CONTROL_SAMPLES = [
 function walkPolicyChecks() {
   const tokenFiles = corpus(CORPORA.TOKEN);
   const controlFiles = corpus(CORPORA.CONTROL);
+  /** @param {string[]} files @param {string} root @returns {number} */
   const under = (files, root) => files.filter((f) => f.startsWith(`${root}/`)).length;
   const selfHits = scanSource(readFileSync(path.join(repoRoot, selfPath), "utf8")).length;
   return [
@@ -1002,7 +1059,9 @@ function walkPolicyChecks() {
     ],
     [
       "CONTROL excludes generated/dependency directories",
-      !controlFiles.some((f) => f.split("/").some((part) => SKIP_DIRS.has(part))),
+      !controlFiles.some((/** @type {string} */ f) =>
+        f.split("/").some((/** @type {string} */ part) => SKIP_DIRS.has(part)),
+      ),
     ],
     ...controlFloorChecks(controlFiles),
   ];
@@ -1037,9 +1096,13 @@ function walkPolicyChecks() {
  * files sit under a skip directory today; if one ever does, this floor
  * reds, and that is the correct alarm rather than a false one.
  */
+/**
+ * @param {string[]} controlFiles
+ */
 function controlFloorChecks(controlFiles) {
   const tracked = trackedFiles();
   const covered = new Set(controlFiles);
+  /** @param {(rel: string) => string} key */
   const trackedBy = (key) => {
     const groups = new Map();
     for (const rel of tracked) {
@@ -1111,6 +1174,7 @@ function controlFloorChecks(controlFiles) {
  * and the samples that expect its id fail first.
  */
 function evidenceFloorChecks() {
+  /** @param {string} id @returns {number} */
   const positivesFor = (id) => SAMPLES.filter((s) => s.expect.includes(id)).length;
   const tokenNegatives = SAMPLES.filter((s) => s.expect.length === 0).length;
   const controlPositives = CONTROL_SAMPLES.filter((s) => s.expect.length > 0);

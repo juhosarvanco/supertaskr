@@ -70,6 +70,7 @@ const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
 
 const CENSUS_FLAG = "--census";
 
+/** @param {string[]} argv */
 function main(argv) {
   const flags = argv.filter((a) => a.startsWith("-"));
   const censusOnly = argv.length === 1 && argv[0] === CENSUS_FLAG;
@@ -144,6 +145,7 @@ function main(argv) {
   // in a suite that is not universally owed is the exact shape whose
   // answer could be short — so it is news here as well as in the lane,
   // because the lane is not what an integrator runs at a merge.
+  /** @type {string[]} */
   const ledgerFiles = ROOT_ANCHOR_LEDGER.map((e) => e.file).sort();
   const seen = [...unaccounted].sort();
   if (JSON.stringify(ledgerFiles) !== JSON.stringify(seen)) {
