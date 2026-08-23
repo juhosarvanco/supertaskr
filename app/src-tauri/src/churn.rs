@@ -1,9 +1,11 @@
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
 use serde::Serialize;
 
+use crate::agent::runner::{login_shell, validate_resolved_program};
 use crate::docs_watch::{now_ms, sanitize_for_log, WatchState};
 
 /// The map's CHURN surface (T-013): commits-per-path over a fixed
@@ -11,9 +13,24 @@ use crate::docs_watch::{now_ms, sanitize_for_log, WatchState};
 /// no `git2` dependency; smaller surface, ADR-003 spirit).
 ///
 /// THIS IS THE APP'S SECOND SUBPROCESS AND IT IS TREATED LIKE THE FIRST
-/// (C-14's runner, ADR-003). Four properties hold by construction and
+/// (C-14's runner, ADR-003). Five properties hold by construction and
 /// each is pinned by a test below:
 ///
+/// 0. **Which `git` runs is RESOLVED by the app, never inherited.** The
+///    first door (T-060) exists to hold exactly this, and T-013's first
+///    draft did not: `Command::new("git")` plus `current_dir(root)` made
+///    the child `chdir` into the opened project and only THEN resolve a
+///    bare `git`, so a relative or empty `PATH` element resolved a `git`
+///    shipped INSIDE the repository being read (a verifier ran it end to
+///    end). Now [`resolve_git`] produces an ABSOLUTE, traversal-free,
+///    name-checked path through the SAME gate the CLI resolver uses
+///    ([`validate_resolved_program`], T-060's "one standard, applied at
+///    every door"); the child's `PATH` is SET by the app to a
+///    sanitized, absolute-only search list, so neither `current_dir` nor
+///    a relative element can aim git's own helper resolution at the
+///    project; and a `git` that cannot be resolved to a trusted absolute
+///    path is a typed `Disabled { GitUnavailable }`, never a bare-name
+///    spawn.
 /// 1. **Every argv element is a compile-time literal.** Not one byte of
 ///    argv is formatted, interpolated or derived from anything — not
 ///    from the webview, not from the project path, not from a config
@@ -74,6 +91,14 @@ const ARG_MAX_COUNT: &str = "--max-count=5000";
 ///   not a repository    : exit 128, stdout empty
 const PROBE_ARGV: &[&str] = &[
     "--no-optional-locks",
+    // The fsmonitor clear rides BOTH argvs now (T-013 F1). It is not
+    // exploitable through `rev-parse --is-inside-work-tree HEAD` on git
+    // 2.50.1 — the verifier confirmed neither invocation triggers
+    // fsmonitor — but the pair is one compile-time literal and carrying
+    // it on only one of two invocations is an asymmetry a reader has to
+    // reason about; defence in depth is cheaper than that footnote.
+    "-c",
+    "core.fsmonitor=",
     "rev-parse",
     "--is-inside-work-tree",
     "HEAD",
@@ -106,10 +131,23 @@ const LOG_ARGV: &[&str] = &[
 ];
 
 /// Environment variables that would move git's idea of WHICH repository
-/// it is reading, or hand it a program to execute. The child inherits
-/// the app's environment otherwise (git needs a usable PATH to find its
-/// own helpers), but it must not be steerable by whatever launched the
-/// app.
+/// it is reading, or hand it configuration or a program to execute. The
+/// child's `PATH` is SET explicitly by [`run_git`] (property 0), and its
+/// environment is otherwise inherited; these are the keys that survival
+/// would let whatever launched the app steer.
+///
+/// **TWELVE since T-013 F1** (the verifier measured the list at nine and
+/// named the three missing). The last three are the config-injection
+/// triple that ranks at the same level as `-c` on the command line:
+///   - `GIT_CONFIG_GLOBAL` / `GIT_CONFIG_SYSTEM` repoint the global and
+///     system config files, and a config file can set `core.fsmonitor`
+///     or an alias — measured: a `GIT_CONFIG_GLOBAL` pointing at a file
+///     that sets `core.fsmonitor` DOES take effect.
+///   - `GIT_CONFIG_COUNT` gates the numbered `GIT_CONFIG_KEY_<n>` /
+///     `GIT_CONFIG_VALUE_<n>` inline-config family: git reads none of
+///     that family when `GIT_CONFIG_COUNT` is absent, so removing the
+///     count neutralises the whole triple with one key and there is no
+///     per-`n` list to keep in sync.
 const GIT_ENV_REMOVED: &[&str] = &[
     "GIT_DIR",
     "GIT_WORK_TREE",
@@ -120,6 +158,9 @@ const GIT_ENV_REMOVED: &[&str] = &[
     "GIT_CEILING_DIRECTORIES",
     "GIT_EXTERNAL_DIFF",
     "GIT_PAGER",
+    "GIT_CONFIG_GLOBAL",
+    "GIT_CONFIG_SYSTEM",
+    "GIT_CONFIG_COUNT",
 ];
 
 /// Why the churn overlay is off. A CLOSED vocabulary: the frontend
@@ -193,13 +234,157 @@ enum RepoProbe {
     GitUnavailable,
 }
 
-/// Spawn git in `root` with a fixed argv. Every element of `argv` is a
-/// `&'static str` by type, which is the type system carrying property 1.
-fn run_git(root: &Path, argv: &[&'static str]) -> Option<Output> {
-    let mut command = Command::new("git");
+/// A `git` the app resolved and trusts: an absolute, traversal-free,
+/// name-checked, executable program (through the SHARED T-060 gate) plus
+/// the sanitized `PATH` the child is GIVEN — never the app's own
+/// inherited one. Both halves are property 0.
+struct ResolvedGit {
+    /// Absolute path to the `git` binary; passed to `Command::new`, so
+    /// no `current_dir` and no `PATH` element can change which file runs.
+    program: PathBuf,
+    /// The child's `PATH`, SET not inherited: only the absolute,
+    /// traversal-free directories of a sanitized search list, so git's
+    /// own helper resolution cannot be aimed at the opened project.
+    child_path: OsString,
+}
+
+/// The login-shell probe script — a compile-time literal, no
+/// interpolation (property 1's discipline, applied to resolution too).
+const GIT_LOGIN_PROBE: &str = "command -v git && echo NPUTER_GIT_PATH=$PATH";
+
+/// Resolve `git` to a trusted absolute path and a sanitized child `PATH`,
+/// the same way C-14's CLI resolver resolves `claude` (T-060): a
+/// login-shell PATH probe, then the SHARED shape gate, then a typed
+/// refusal. Returns `None` when no trusted `git` can be found — the
+/// caller turns that into `Disabled { GitUnavailable }`, never a
+/// bare-name spawn.
+///
+/// **Why the probe DRIVER is mirrored here rather than called on the
+/// runner's**: the runner's `login_shell_probe` / `which_in` are private
+/// and hard-keyed to the `claude` adapter, and generalising them would
+/// refactor the exact functions T-060's security rests on for no gain
+/// here. What actually carries the security — the shape gate
+/// [`validate_resolved_program`] and the name-checked shell selection
+/// [`login_shell`] — is REUSED, not re-implemented, so the one standard
+/// lives in one place (T-057).
+fn resolve_git() -> Option<ResolvedGit> {
+    let (login_answer, login_path) = login_shell_git();
+    // The search list we resolve over AND hand to the child: the login
+    // shell's rich PATH if we captured one, else the app's own.
+    let raw_path = login_path.or_else(|| std::env::var("PATH").ok());
+    resolve_git_from(login_answer, raw_path.as_deref())
+}
+
+/// The pure core of resolution, over explicit inputs — a test seam that
+/// spawns nothing and reads no environment, so the relative/empty PATH
+/// vectors can be driven without mutating this process's `PATH` (the
+/// thread-unsafe move T-060-s3 warns against). `login_answer` is the
+/// login shell's `command -v git` result if any; `raw_path` is the
+/// search list, sanitized to absolute-only dirs for BOTH resolution and
+/// the child's `PATH`, so a relative or empty element survives into
+/// neither use.
+fn resolve_git_from(login_answer: Option<PathBuf>, raw_path: Option<&str>) -> Option<ResolvedGit> {
+    let dirs = sanitized_dirs(raw_path);
+
+    // Candidate order mirrors the runner: the login shell's own
+    // `command -v` answer first (still gated — a hostile shell PATH can
+    // print a relative path), then a gated lookup over the sanitized
+    // dirs. Nothing is executed on the way to refusing.
+    let program = login_answer
+        .filter(|p| validate_resolved_program(p, "git").is_ok())
+        .or_else(|| which_git(&dirs))?;
+
+    // The child at least gets git's own directory, so its siblings
+    // resolve even if the sanitized search list came back empty.
+    let mut child_dirs = dirs;
+    if let Some(parent) = program.parent() {
+        if parent.is_absolute() && !child_dirs.iter().any(|d| d == parent) {
+            child_dirs.insert(0, parent.to_path_buf());
+        }
+    }
+    let child_path = std::env::join_paths(&child_dirs).ok()?;
+    Some(ResolvedGit { program, child_path })
+}
+
+/// Split a search path and keep only ABSOLUTE, traversal-free
+/// directories — dropping the empty element (POSIX CWD), `.`, `..` and
+/// any bare relative name. This is the list `current_dir(root)` must not
+/// be able to steer, expressed as data.
+fn sanitized_dirs(path: Option<&str>) -> Vec<PathBuf> {
+    let Some(path) = path else {
+        return Vec::new();
+    };
+    std::env::split_paths(path)
+        .filter(|dir| {
+            !dir.as_os_str().is_empty()
+                && dir.is_absolute()
+                && !dir.components().any(|c| {
+                    matches!(
+                        c,
+                        std::path::Component::ParentDir | std::path::Component::CurDir
+                    )
+                })
+        })
+        .collect()
+}
+
+/// Gated PATH lookup for `git`, mirroring the runner's `which_in` for one
+/// fixed name over an already-sanitized dir list: a candidate that is not
+/// absolute/traversal-free/named `git`/executable produces NO answer
+/// rather than a path `Command::new` would hand to the OS.
+fn which_git(dirs: &[PathBuf]) -> Option<PathBuf> {
+    dirs.iter()
+        .map(|dir| dir.join("git"))
+        .find(|candidate| validate_resolved_program(candidate, "git").is_ok())
+}
+
+/// Run the user's login shell — the name-checked one the CLI resolver
+/// uses ([`login_shell`]) — with a fixed `command -v git` script, in the
+/// APP's own working directory and NEVER `current_dir(root)`, so the
+/// probe itself cannot resolve against the opened project. Its answer is
+/// untrusted here; [`resolve_git`] gates it.
+fn login_shell_git() -> (Option<PathBuf>, Option<String>) {
+    if cfg!(not(unix)) {
+        return (None, None);
+    }
+    let mut command = Command::new(login_shell());
+    command
+        .arg("-l")
+        .arg("-c")
+        .arg(GIT_LOGIN_PROBE)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null());
+    let Ok(output) = command.output() else {
+        return (None, None);
+    };
+    if !output.status.success() {
+        return (None, None);
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut found: Option<PathBuf> = None;
+    let mut login_path: Option<String> = None;
+    for line in stdout.lines() {
+        let line = line.trim();
+        if let Some(rest) = line.strip_prefix("NPUTER_GIT_PATH=") {
+            login_path = Some(rest.to_string());
+        } else if !line.is_empty() && found.is_none() {
+            found = Some(PathBuf::from(line));
+        }
+    }
+    (found, login_path)
+}
+
+/// Spawn the resolved `git` in `root` with a fixed argv. `Command::new`
+/// gets the ABSOLUTE program (property 0), the child's `PATH` is SET from
+/// `git.child_path` and never inherited, and every element of `argv` is a
+/// `&'static str` by type (property 1).
+fn run_git(git: &ResolvedGit, root: &Path, argv: &[&'static str]) -> Option<Output> {
+    let mut command = Command::new(&git.program);
     command
         .args(argv)
         .current_dir(root)
+        .env("PATH", &git.child_path)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
@@ -218,8 +403,8 @@ fn run_git(root: &Path, argv: &[&'static str]) -> Option<Output> {
     }
 }
 
-fn probe_repo(root: &Path) -> RepoProbe {
-    let Some(output) = run_git(root, PROBE_ARGV) else {
+fn probe_repo(git: &ResolvedGit, root: &Path) -> RepoProbe {
+    let Some(output) = run_git(git, root, PROBE_ARGV) else {
         return RepoProbe::GitUnavailable;
     };
     // The first line is `--is-inside-work-tree`'s answer; anything else
@@ -379,7 +564,14 @@ pub fn run_churn(state: &WatchState) -> ChurnOutcome {
 /// The same, rooted at an explicit directory (tests; `run_churn` is the
 /// only caller that reads `WatchState`).
 pub fn churn_at(root: &Path) -> ChurnOutcome {
-    match probe_repo(root) {
+    // Property 0: resolve WHICH git runs before touching the project.
+    // A git that cannot be resolved to a trusted absolute path is a
+    // typed refusal, never a bare-name spawn inside `root`.
+    let Some(git) = resolve_git() else {
+        return ChurnOutcome::disabled(ChurnDisabled::GitUnavailable);
+    };
+
+    match probe_repo(&git, root) {
         RepoProbe::GitUnavailable => {
             return ChurnOutcome::disabled(ChurnDisabled::GitUnavailable)
         }
@@ -388,7 +580,7 @@ pub fn churn_at(root: &Path) -> ChurnOutcome {
         RepoProbe::Ready => {}
     }
 
-    let Some(output) = run_git(root, LOG_ARGV) else {
+    let Some(output) = run_git(&git, root, LOG_ARGV) else {
         return ChurnOutcome::disabled(ChurnDisabled::GitUnavailable);
     };
     if !output.status.success() {
@@ -474,8 +666,26 @@ mod tests {
             assert!(LOG_ARGV.contains(&flag), "{flag} left the log argv");
         }
         // The fsmonitor clear is a PAIR; either half alone does nothing.
-        let position = LOG_ARGV.iter().position(|arg| *arg == "-c");
-        assert_eq!(LOG_ARGV.get(position.expect("-c present") + 1), Some(&"core.fsmonitor="));
+        // Since T-013 F1 it rides BOTH argvs, not the log argv only.
+        for argv in [PROBE_ARGV, LOG_ARGV] {
+            let position = argv.iter().position(|arg| *arg == "-c");
+            assert_eq!(
+                argv.get(position.expect("-c present") + 1),
+                Some(&"core.fsmonitor="),
+                "the fsmonitor clear left an argv"
+            );
+        }
+    }
+
+    #[test]
+    fn the_config_injection_family_is_removed_from_the_child_env() {
+        // Property 0's environment half: the config-injection triple ranks
+        // with `-c`, so it must not survive from whatever launched the
+        // app. Twelve, and the three the verifier named are present.
+        assert_eq!(GIT_ENV_REMOVED.len(), 12, "the removal list is twelve since T-013 F1");
+        for key in ["GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "GIT_CONFIG_COUNT"] {
+            assert!(GIT_ENV_REMOVED.contains(&key), "{key} must be removed from the child env");
+        }
     }
 
     // ---- containment ---------------------------------------------------
@@ -501,6 +711,162 @@ mod tests {
         ] {
             assert!(!is_safe_repo_relative(bad), "{bad:?} should be refused");
         }
+    }
+
+    // ---- property 0: which git runs (T-013 F1) -------------------------
+
+    #[test]
+    fn the_git_gate_holds_the_same_standard_the_cli_resolver_does() {
+        use std::os::unix::fs::PermissionsExt;
+        // Positive control: an ABSOLUTE, executable, git-named file passes
+        // the SHARED gate — or the refusals below prove only a broken
+        // predicate (a negative assertion needs a positive control).
+        let root = std::env::temp_dir().join(format!(
+            "nputer-t013-gate-{}-{}",
+            std::process::id(),
+            now_ms()
+        ));
+        fs::create_dir_all(&root).expect("mk temp dir");
+        let good = root.join("git");
+        fs::write(&good, "#!/bin/sh\nexit 0\n").expect("write");
+        fs::set_permissions(&good, fs::Permissions::from_mode(0o755)).expect("chmod");
+        assert!(
+            validate_resolved_program(&good, "git").is_ok(),
+            "an absolute, executable `git` must pass the gate"
+        );
+
+        // The shapes the exploit needs, refused by the one standard.
+        assert!(validate_resolved_program(Path::new("git"), "git").is_err(), "a bare name");
+        assert!(validate_resolved_program(Path::new("./git"), "git").is_err(), "a relative path");
+        assert!(
+            validate_resolved_program(&root.join("bin/../git"), "git").is_err(),
+            "a traversal component"
+        );
+        let notgit = root.join("notgit");
+        fs::write(&notgit, "#!/bin/sh\nexit 0\n").expect("write");
+        fs::set_permissions(&notgit, fs::Permissions::from_mode(0o755)).expect("chmod");
+        assert!(
+            validate_resolved_program(&notgit, "git").is_err(),
+            "a file not named git"
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn a_git_reachable_only_by_a_relative_path_element_never_resolves() {
+        use std::os::unix::fs::PermissionsExt;
+        // The rejected draft resolved `<project>/git` because a relative
+        // or empty PATH element plus `current_dir(project)` reached it.
+        // Both the sanitizer (drops the element) and the shared gate
+        // (refuses the relative candidate) close it. Planted the runner's
+        // own way — UNDER the test's CWD, so a relative lookup genuinely
+        // finds the file and only its SHAPE is what refuses it (CONVENTIONS
+        // — a negative assertion needs a positive control that would
+        // otherwise be ACCEPTED). No process `PATH` is mutated: the search
+        // list is an explicit argument (the `which_in` idiom).
+        let cwd = std::env::current_dir().expect("cwd");
+        assert_eq!(
+            cwd.file_name().and_then(|n| n.to_str()),
+            Some("src-tauri"),
+            "cargo no longer runs tests from the package root — the relative fixture \
+             below would not resolve and this test would pass for the wrong reason"
+        );
+        let rel_dir = format!("target/nputer-t013-relgit-{}-{}", std::process::id(), now_ms());
+        let abs_dir = cwd.join(&rel_dir);
+        fs::create_dir_all(&abs_dir).expect("mk rel dir");
+        let planted = abs_dir.join("git");
+        fs::write(&planted, "#!/bin/sh\nexit 0\n").expect("write");
+        fs::set_permissions(&planted, fs::Permissions::from_mode(0o755)).expect("chmod");
+
+        // POSITIVE CONTROL: reached ABSOLUTELY the very same file resolves.
+        assert_eq!(
+            which_git(&[abs_dir.clone()]),
+            Some(planted.clone()),
+            "the absolute spelling must resolve, or the refusals below prove nothing"
+        );
+        // …and it is executable THROUGH a relative path, so the only thing
+        // refusing it below is its relative shape, not its mode.
+        assert!(
+            crate::agent::adapter::is_executable_file(Path::new(&format!("{rel_dir}/git"))),
+            "the relative fixture must be executable through a relative path"
+        );
+
+        // 1) The gate refuses the relative dir directly: `dir.join("git")`
+        //    is relative, so `which_git` produces no candidate.
+        assert_eq!(which_git(&[PathBuf::from(&rel_dir)]), None);
+        // 2) The sanitizer drops the empty element, `.`, `..` and any bare
+        //    relative dir, so the whole hostile search path yields nothing.
+        for hostile in [rel_dir.as_str(), ".", "", ".:", ":", "..:."] {
+            assert_eq!(
+                which_git(&sanitized_dirs(Some(hostile))),
+                None,
+                "sanitized {hostile:?} produced a candidate; a relative element must not"
+            );
+        }
+        // 3) End to end: a `.`-first search path that ALSO holds the
+        //    absolute planted dir resolves to the ABSOLUTE git, and the
+        //    child's PATH the app SETS carries no relative element.
+        let mixed = format!(".:{rel_dir}:{}", abs_dir.display());
+        let resolved =
+            resolve_git_from(None, Some(&mixed)).expect("the absolute element resolves");
+        assert!(resolved.program.is_absolute(), "the resolved git must be absolute");
+        assert_eq!(resolved.program.file_name().and_then(|n| n.to_str()), Some("git"));
+        for dir in std::env::split_paths(&resolved.child_path) {
+            assert!(dir.is_absolute(), "child PATH element {dir:?} is not absolute");
+            assert!(
+                !dir.as_os_str().is_empty()
+                    && !dir.components().any(|c| matches!(
+                        c,
+                        std::path::Component::CurDir | std::path::Component::ParentDir
+                    )),
+                "child PATH element {dir:?} is relative"
+            );
+        }
+        // 4) A login-shell answer that is itself relative is refused too;
+        //    a purely relative search path then resolves nothing.
+        assert!(resolve_git_from(Some(PathBuf::from("./git")), Some(".:")).is_none());
+
+        let _ = fs::remove_dir_all(&abs_dir);
+    }
+
+    #[test]
+    fn run_git_spawns_the_resolved_program_and_sets_the_childs_path() {
+        use std::os::unix::fs::PermissionsExt;
+        // The OTHER half of property 0, which the resolution tests do not
+        // reach: `run_git` must spawn `git.program` (the ABSOLUTE path we
+        // resolved) and NOT a bare name, and it must SET the child's PATH
+        // from `git.child_path` rather than inherit the app's. A stand-in
+        // that echoes its own `$0` and `$PATH` proves both — reverting to
+        // `Command::new("git")` moves `$0` off our program, and dropping
+        // the `env("PATH", …)` moves `$PATH` off our sentinel.
+        let root = std::env::temp_dir().join(format!(
+            "nputer-t013-rungit-{}-{}",
+            std::process::id(),
+            now_ms()
+        ));
+        fs::create_dir_all(&root).expect("mk temp dir");
+        let program = root.join("git");
+        fs::write(&program, "#!/bin/sh\necho \"PROG=$0\"\necho \"PATH=$PATH\"\nexit 0\n")
+            .expect("write");
+        fs::set_permissions(&program, fs::Permissions::from_mode(0o755)).expect("chmod");
+
+        let sentinel = "/nputer-sentinel-t013-only";
+        let git = ResolvedGit {
+            program: program.clone(),
+            child_path: OsString::from(sentinel),
+        };
+        let output = run_git(&git, &root, PROBE_ARGV).expect("the stand-in runs");
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(
+            stdout.contains(&format!("PROG={}", program.display())),
+            "run_git spawned something other than the resolved program: {stdout}"
+        );
+        assert!(
+            stdout.contains(&format!("PATH={sentinel}")),
+            "run_git did not SET the child's PATH from git.child_path: {stdout}"
+        );
+
+        let _ = fs::remove_dir_all(&root);
     }
 
     // ---- the parser, poisoned without a git ----------------------------

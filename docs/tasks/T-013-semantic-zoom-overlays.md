@@ -7,7 +7,7 @@ priority: 6
 size: M
 status: verifying
 blocked_by: [T-012]
-touches: [app-map, app-shell]
+touches: [app-map, app-shell, app-agent]
 builder: claude-opus-5
 verifier: claude-opus-5
 built_by: claude-opus-5 @T-013
@@ -64,7 +64,10 @@ today **by luck rather than by fence**.
 
 ### The git surface, which is the security half of this card
 
-`app/src-tauri/src/churn.rs` (+520) is new, and `lib.rs` gains three
+`app/src-tauri/src/churn.rs` (a new file — **792 lines / +792
+insertions** at the verdict tip `c7528cc`; F5-corrected from a `+520`
+that reproduced under no metric — the F1 fix in the second-verdict
+section below grows it to **1118**) is new, and `lib.rs` gains three
 lines: `pub mod churn;`, the `repo_churn` command, one handler entry.
 **The IPC census moves 13 → 14 at both ends** and that is the only
 census that moves. It is **ADR-012 APPLIED, not reopened** — zero
@@ -222,10 +225,17 @@ draws it. Recorded deviation, pinned by `M12`.
 
 **Disabled, not absent.** T-012 left the segment out because a disabled
 one had no designed treatment; this card's criterion asks for the
-opposite in as many words, so the segment renders inert with the
-`disabled` treatment the pane's own Re-index button already uses and the
-one fixed sentence for its reason as its `title`. Absent would hide that
-churn exists; disabled says it exists and why it cannot answer here.
+opposite in as many words, so the segment renders inert with a
+smallest-reasonable inert treatment DESIGNED here
+(`cursor-not-allowed opacity-45`) and the one fixed sentence for its
+reason as its `title`. **NOT reused from the Re-index button, and the
+first draft's claim that it was is false (F3-corrected):** Re-index is
+the shadcn `Button` primitive at `disabled:pointer-events-none
+disabled:opacity-50`, while this is a raw segmented-control `<button>`
+that cannot inherit those without becoming a Button and fighting the
+control's styling — both utilities are new to the sheet, so nothing in
+this pane wore either before. Absent would hide that churn exists;
+disabled says it exists and why it cannot answer here.
 
 **The join is two-step and the ORDER is the modelling decision.** An
 indexed path is attributed by `fileComponent` — the derivation's own
@@ -422,9 +432,12 @@ back to **`b5d1cf2c7beb99d3b0b4974b3b21b87a95163c62bfb011ad5ec7974ade56f038`**.
   C-12→C-05 via `lib/utils.ts`, C-05→C-06). Both were confirmed green
   against the regenerated graph before it was restored.
 
-That is **four assertions across three bodies in two files**, which is
-the T-077 shape; vitest surfaces them one at a time, so reconcile from
-this list rather than from the first red.
+That is **four failing bodies across two files** (three in
+`architecture-dogfood.test.ts`, one in `map-dogfood-render.test.tsx`;
+F5-corrected from "three bodies" — the bullet list above enumerates four,
+and the first of them carries two distinct edits), which is the T-077
+shape; vitest surfaces them one at a time, so reconcile from this list
+rather than from the first red.
 
 ### The poison drill — 22 mutants, all one-sided, all producer-side
 
@@ -520,8 +533,11 @@ this session wrote is prefixed `T013-`.**
 **THE STYLESHEET HASH MOVED, AND IT WAS MEANT TO.** `index-CwYF5FQb.css`
 (43.95 kB) → `index-C86RloYb.css` (45.06 kB). The baseline was rebuilt in
 a detached worktree at `2036fb2` — reproducing `CwYF5FQb` byte for byte
-— and the two emitted selector sets diffed: **20 added, 0 removed**, and
-every one of the twenty is a utility this card deliberately wrote
+— and the two emitted selector sets diffed: **19 DISTINCT selectors added
+/ 20 rule OCCURRENCES** (`.bg-background/60` emits twice), **0 removed**
+on both metrics (F5-corrected — the bare "20 added" stated neither
+metric, and the parenthetical below lists exactly the nineteen), and
+every one of them is a utility this card deliberately wrote
 (`bg-map-group`, `bg-secondary-foreground`, `opacity-45`,
 `cursor-not-allowed`, `odd:bg-sidebar`, `rounded-xl`, `w-5.5`, `w-8`,
 `px-1.25`, `bottom-1.5`, `right-2`, `underline`, `decoration-hairline`,
@@ -542,6 +558,210 @@ age) · `T-013-s6` (the container's width, and the two sentences that
 disagree about it) · **`T-013-s7`** (a drill worktree that shares the
 cargo target directory leaves the parent RED — measured here at 336/33,
 and it is a hazard the POISON DRILL bullet's own advice creates).
+
+### Second executor pass — F1–F5 of the rejection below, resolved
+
+A FRESH executor took this over at the verdict tip `c7528cc`; nothing in
+the original build was rebuilt. Every figure here is derived at MY
+handoff, and where the original notes were wrong the correction is in
+place with its ref (F5) rather than a rewrite.
+
+**F1 (BLOCKING) — the opened project can no longer supply the `git` that
+runs.** The hole was `run_git`'s `Command::new("git")` + `current_dir
+(root)` with an inherited PATH: the child `chdir`ed into the project and
+only THEN resolved a bare name, so a relative/empty PATH element resolved
+`<project>/git`. Closed by matching T-060's ratified standard at this
+door too, reusing it rather than reimplementing it (T-057):
+
+- **`git` is RESOLVED to a trusted absolute path before any spawn.**
+  `resolve_git` runs the SHARED name-checked login shell (`runner::
+  login_shell`, made `pub`) as `$SHELL -l -c "command -v git && echo
+  NPUTER_GIT_PATH=$PATH"` — in the app's own cwd, never the project — and
+  puts every candidate through the SHARED shape gate, which is now
+  `runner::validate_resolved_program(path, "git")`: T-060's
+  `validate_resolved_binary` refactored to take the program NAME, so the
+  gate has ONE implementation and two callers (the adapter wrapper for
+  `claude`, this for `git`). A login-shell answer that is relative is
+  refused and the search falls to a gated PATH lookup (`which_git` over
+  `sanitized_dirs`); a `git` that resolves to nothing trusted is a typed
+  `Disabled { GitUnavailable }`, never a bare-name spawn.
+- **The child's PATH is SET by the app, not inherited.** `run_git` spawns
+  `Command::new(<absolute git>)` and `env("PATH", …)` from a sanitized,
+  ABSOLUTE-ONLY search list, so neither `current_dir(root)` nor a relative
+  element can aim git's own helper resolution at the project.
+- **Why the driver is mirrored, not unified** (the brief's "say why"):
+  the security-critical STANDARD — the shape gate — and the shell
+  selection are reused from `runner.rs` unchanged; only the ~20-line probe
+  driver is churn-local, because the runner's `login_shell_probe`/
+  `which_in` are private and hard-keyed to the `claude` adapter and
+  generalising them would refactor the exact functions T-060's security
+  rests on for no gain here. **The fence widened to `[app-map, app-shell,
+  app-agent]`** because reusing the gate edits `agent/runner.rs`
+  (source-only). Measured collision-free with every live lane and with
+  merged main: `git diff --name-only 2036fb2..71f49cf -- runner.rs
+  adapter.rs lib.rs` is EMPTY, and the only live `app-agent` lane, T-070,
+  touches `agent/mod.rs`, `agent/sessions.rs` and `tests/agent_runner.rs`
+  — zero file overlap with my `runner.rs`, the shared-slug/zero-file case
+  the fences allow (same shape as T-013 ∩ T-064 on `app-shell`).
+
+**The env hardening is now twelve, per-var.** `GIT_ENV_REMOVED` gains the
+config-injection triple the verifier named: `GIT_CONFIG_GLOBAL` /
+`GIT_CONFIG_SYSTEM` (repoint the global/system config files, which can set
+`core.fsmonitor` or an alias — the verifier measured `GIT_CONFIG_GLOBAL`
+taking effect) and `GIT_CONFIG_COUNT` (gates the numbered
+`GIT_CONFIG_KEY_n`/`VALUE_n` inline-config family — git reads none of it
+without the count, so one key neutralises the whole triple and there is no
+per-`n` list to maintain). **The `-c core.fsmonitor=` pair now rides
+`PROBE_ARGV` too**, not the log argv only: not exploitable through
+`rev-parse --is-inside-work-tree HEAD` on git 2.50.1 (the verdict's
+finding, reproduced), but carrying it on one of two invocations is an
+asymmetry a reader must reason about, and the pair is one compile-time
+literal — defence in depth is cheaper than the footnote.
+
+**The exploit, re-run — every variant refused, texts read back.** Via a
+throwaway `churn_at` probe (the verifier's own method: a real one-commit
+repo, an executable `git` planted inside it, PATH poisoned), removed
+afterward with `churn.rs` sha unchanged. A shell-script fake AND a
+compiled-binary (`cc`) fake, under `PATH` prefixes `:`, `.`, `./` and
+`:.` — in EVERY case the marker (`PWNED`) was ABSENT and `churn_at`
+returned `Measured { commits: 1, rejected: 0, paths: [a.ts] }` from the
+trusted git. The shipped, thread-safe pins that make it discriminating
+(the `which_in` idiom — an explicit search path, no process-env mutation):
+`the_git_gate_holds_the_same_standard_the_cli_resolver_does`,
+`a_git_reachable_only_by_a_relative_path_element_never_resolves` (plants a
+`git` UNDER the test cwd so the absolute spelling resolves as a positive
+control and only the relative SHAPE is refused), and
+`run_git_spawns_the_resolved_program_and_sets_the_childs_path` (a
+stand-in echoing `$0` and `$PATH` proves the absolute program ran and the
+child's PATH was SET, not inherited).
+
+**F2 (BLOCKING) — the column-0-only layout mutant now reds.** New pin in
+`map-layout.test.ts`, "an expanded container pushes its OWN column's
+sibling — in a NON-ZERO column too": the slot-arithmetic fixture already
+has C-02 and C-03 both in column 1 (rows 0/1); expanding C-02 must push
+C-03 down by exactly the extra height. The mutant (apply the height only
+when `column === 0`) reds it — "expected 190 to be 280" — and reds ONLY
+it; the pre-existing "EXPANDING A DIFFERENT COLUMN" body survives, which
+is precisely the gap the verdict found.
+
+**F3 — the disabled treatment is recorded as designed, not reused.** Both
+the site (`MapView.tsx`) and the card above now say the churn segment's
+`cursor-not-allowed opacity-45` is the smallest-reasonable inert treatment
+DESIGNED here — a raw segmented-control `<button>` cannot inherit the
+shadcn `Button`'s `disabled:pointer-events-none disabled:opacity-50`
+without becoming a Button and fighting the control's styling. The false
+reuse claim is gone.
+
+**F4 — the window divergence, now recorded in the card (this is that
+record).** `docs/design/map-technical-plan.md` §4.6 draws `git log
+--since=90d`; the design bundle that supersedes it draws **30 days**, and
+the panel section T-012 shipped is already labelled `churn · 30d`. **30
+wins.** The label renders `churn · ${windowDays}d` from the payload, so
+`CHURN_WINDOW_DAYS`, `ARG_SINCE` and the heading cannot drift. This closes
+`CHURN_WINDOW_DAYS`'s doc comment, which pointed at a record that did not
+exist until this paragraph.
+
+**F5 — the three figures, corrected in place above**: `churn.rs` is a
+new file of **792 lines / +792 insertions** at `c7528cc` (not `+520`; the
+F1 fix grows it to 1118); the CSS diff is **19 distinct selectors / 20
+rule occurrences** (`.bg-background/60` twice), not a bare "20"; the regen
+forecast is **four failing bodies** (three in `architecture-dogfood`, one
+in `map-dogfood-render`), not three.
+
+**New tests / drill.** Rust 369 → **373** (`the_git_gate…`,
+`a_git_reachable_only…`, `run_git_spawns…`, and
+`the_config_injection_family_is_removed_from_the_child_env`; plus the
+existing `the_log_argv…` extended to assert the fsmonitor pair on BOTH
+argvs). App 906 → **907** (the F2 layout pin). **Poison drill — 6
+one-sided producer mutants, each read back before running, each RED, each
+restored with a sha256 proof**: F2 `assignYs` column-0-only (reds only the
+new pin, 190≠280; `map-layout.ts` back to `9bfc57ef…`); `run_git` drops
+`env("PATH", …)` (reds `run_git_spawns…`); `which_git`'s gate → the
+pre-T-060 `is_executable_file` (reds `a_git_reachable…` with
+`Some("target/…/git") != None` — the vulnerability itself); the shared
+gate drops its name check (reds `the_git_gate…`; `runner.rs` back to
+`22d3bb17…`); `GIT_ENV_REMOVED` drops `GIT_CONFIG_GLOBAL` (reds the
+env-removal pin); `PROBE_ARGV` drops the fsmonitor pair (reds
+`the_log_argv…`). `churn.rs` back to `44db08e9…` after each. Drilled
+in-place in the lane: the T-013-s7 hazard is a CROSS-worktree
+manifest-path mismatch (a drill worktree at a different path baking its
+own `CARGO_MANIFEST_DIR` into the shared target); in-place drilling has
+one manifest path throughout, so the hazard is absent by construction, and
+the full suite is green after restoration (373/0/3).
+
+**Suites, gates, exits — every code read from `$?` unpiped, at my
+handoff.** parser **263/263** (`tsc --noEmit` 0, build 0); app
+**907/907**, `npm run build` 0 with BOTH TS programs typechecking, and the
+built `index-C86RloYb.css` (45.06 kB) / `index-WORLmrLf.js` (523.98 kB)
+are UNCHANGED — F3 minted no utility, F1/F2 add no frontend runtime; bare
+`cargo test --no-fail-fast` **373 / 0 / 3, exit 0** over 15 `test result:`
+lines (the T-061-s4 flake did not fire); e2e **121/121** (typecheck 0);
+token lint selftest **0** / lint **0**, `TOKEN 130 / CONTROL 605` — the
+repo's NUL gate, green, and my five changed files carry **0 NUL bytes**
+(read as bytes; the `grep -qU $'\x00'` false positive STATE.md names was
+avoided). **`index --check` exit 1 by design** (119 → 126 files, 1018 →
+1111 symbols, 1539 → 1687 edges): my F2 edit adds `map-layout.test.ts` to
+the `~` set, so it is now `+7 -0 ~8` and 639904 → **639906** bytes, with
+symbols/edges unchanged — the integrator's three-fixture reconciliation is
+otherwise as the original notes forecast, and no `graph.json` is
+committed. **BOOT GATE exit 0** (both `[nputer]` lines; scratch port
+**14840** bind-probed free on all four stacks, cleared after). **DOCS GATE
+exit 1**, owing `npm test` from app/, `npm test` from tools/e2e/ and `npx
+vitest run` from lib/parser/ (11 readers, 0 frontmatter issues — the
+widened frontmatter parses), all three re-run green AFTER the doc edits.
+
+**Security pins unmoved.** `acl_pin.rs` 0-file diff, sha256
+`8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`, 92
+grants — **F1 adds no webview grant**. IPC census **14 at both ends**
+(`lib.rs` is a 0-file diff — no new command). **Three `#[ignore]`**. No
+lockfile, `Cargo.toml`, `package.json`, `tauri.conf.json`, capability file
+or `tokens.css` in the diff; no dependency added (`churn` uses
+`std::process` and the `serde`/`serde_json` already present).
+
+**Ranges, at the handoff ref.** Main advanced to **`71f49cf`** (T-064
+MERGED since the verdict — see the brief note below); merge-base
+**`2036fb2`**, unmoved.
+
+    git merge-tree --write-tree 71f49cf HEAD          -> tree 58bc6dfb…, exit 0
+    git diff --name-only 71f49cf <TREE>               -> 26   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 71f49cf...HEAD  (THREE dots) -> 26   collapses onto the prescribed form before the merge
+    git diff --name-only 2036fb2..HEAD   (branch-only)-> 26
+    git diff --name-only 71f49cf..HEAD   (TWO dots)   -> 176  THE FORBIDDEN PRE-MERGE FORM
+    git diff --name-only 2036fb2..71f49cf (main adv)  -> 150
+
+Main advanced **150** paths from the merge-base (T-064's merge plus main's
+own triage), the branch **26** (the verdict's 24, plus `runner.rs` for the
+F1 gate reuse and `map-layout.test.ts` for the F2 pin), `comm -12` over the
+sorted lists is **EMPTY**, and 150 + 26 = 176 — exactly the forbidden
+count, the arithmetic that proves the two sets disjoint. Gate table off the
+prescribed list: **GRAPH REGEN 15 of 26 · BOOT GATE 12 of 26 · DOCS GATE 8
+of 26** — all three FIRE and all three were run above (the F2 test is the
+15th GRAPH path, `runner.rs` the 12th BOOT path).
+
+**What reached the human's running app: nothing.** All work in
+`../nputer-T-013` and `/tmp` scratch (T013-prefixed); no `npm ci`/`install`
+in the main checkout; no `pkill`. Port 1420 was read with `lsof -nP
+-iTCP:1420 -sTCP:LISTEN` and nothing else, before and after: holder `node`
+pid **82549**, one socket, `TCP [::1]:1420 (LISTEN)`, identical at both
+ends. No bind, connect or signal to 1420 on any interface; scratch 14840
+verified clear afterward. The lane's OWN `target/` was relinked by cargo,
+which cannot reach the human's loaded app process in the MAIN checkout's
+target.
+
+**What in the dispatch brief is wrong / stale.** (1) The brief says
+"**T-064 is integrating right now and … touches app/src + lib.rs; expect
+lib.rs to have moved**." At handoff T-064 has MERGED (main `71f49cf`) and
+its merged diff does **not** touch `lib.rs` — it touched
+`docs_watch.rs`/`App.tsx`/`watcher-store.ts` (`git diff --name-only
+2036fb2..71f49cf -- app/src-tauri/src/lib.rs` is EMPTY), so my `lib.rs`
+`repo_churn` registration does not collide with it. (2) The brief names
+"**app pid 85379**"; the mandated `lsof -nP -iTCP:1420` only ever shows
+the LISTENER (`node` 82549), so pid 85379 is unobservable by that command
+alone — consistent with STATE.md's own caveat, noted rather than
+contradicted. Everything else in the brief held: the exploit reproduced
+and is now refused, F2's mutant survived 906 and now reds, the gate is
+"could be twelve" and is, `acl_pin` is a 0-diff at the pinned sha, and
+`index --check`/BOOT/DOCS all fired as predicted.
 
 ## Verdicts
 

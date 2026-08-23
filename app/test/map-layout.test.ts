@@ -181,6 +181,39 @@ describe("rules 3 + 4: id-ordered rows, append-only stability", () => {
     expect(nodes.get("C-02")).toMatchObject({ x: COLUMN_PITCH, y: SLOT_TOP });
     expect(nodes.get("C-03")).toMatchObject({ x: COLUMN_PITCH, y: SLOT_TOP + SLOT_H });
   });
+
+  it("T1: an expanded container pushes its OWN column's sibling — in a NON-ZERO column too", () => {
+    // The column-0-only mutant of `assignYs` (apply the expansion height
+    // only when `column === 0`) survives the whole DOM suite, because the
+    // DOM fixture's SECOND column holds exactly one node — "pushes only
+    // that column" is exercised in column 0 alone. Here C-02 and C-03 are
+    // BOTH in column 1 (rows 0 and 1, from the same C-01 → C-02, C-03
+    // edges as the slot test above), so expanding C-02 MUST push C-03 down
+    // by exactly the extra height; a stack that reads the height only in
+    // column 0 leaves C-03 where it was.
+    const components = [c("C-01"), c("C-02"), c("C-03")];
+    const edges = [declared("C-01", "C-02"), declared("C-01", "C-03")];
+    const EXTRA = 90; // a container height that is NOT NODE_H
+    const before = layoutMap(components, edges);
+    const after = layoutMap(components, edges, new Map([["C-02", NODE_H + EXTRA]]));
+
+    // C-02 above C-03, both in the non-zero column — the shape the DOM
+    // fixture never had.
+    expect(after.nodes.get("C-02")).toMatchObject({ col: 1, row: 0 });
+    expect(after.nodes.get("C-03")).toMatchObject({ col: 1, row: 1 });
+
+    // The sibling BELOW, in the SAME non-zero column, moves down by
+    // exactly the extra height. EXTRA is a fixed positive number, so the
+    // mutant's non-move reds against a concrete value rather than passing
+    // vacuously (a negative assertion needs a positive control).
+    expect(after.nodes.get("C-03")?.y).toBe((before.nodes.get("C-03")?.y ?? 0) + EXTRA);
+
+    // The container reserves the expanded height; column 0 and the
+    // expanded node itself do not move.
+    expect(after.nodes.get("C-02")?.h).toBe(NODE_H + EXTRA);
+    expect(after.nodes.get("C-01")?.y).toBe(before.nodes.get("C-01")?.y);
+    expect(after.nodes.get("C-02")?.y).toBe(before.nodes.get("C-02")?.y);
+  });
 });
 
 describe("rule 6: elbow routing", () => {

@@ -559,11 +559,18 @@ export function MapView({
                 treatment; T-013's criterion asks for the opposite in as
                 many words — "IF the project is not a git repo THEN the
                 churn overlay SHALL be disabled, not broken" — so it is
-                present and inert, wearing the disabled treatment the
-                pane's Re-index button already uses, with the ONE fixed
-                sentence for its reason as the title. Absent would hide
-                that churn exists; disabled says it exists and why it
-                cannot answer here. */}
+                present and inert, with the ONE fixed sentence for its
+                reason as the title. Absent would hide that churn exists;
+                disabled says it exists and why it cannot answer here.
+                The inert treatment (`cursor-not-allowed opacity-45`) is
+                DESIGNED here, not reused: this is a raw segmented-control
+                `<button>`, not the shadcn `Button` primitive Re-index is,
+                so it cannot inherit that primitive's
+                `disabled:pointer-events-none disabled:opacity-50` without
+                becoming a Button and fighting the control's own styling.
+                It is the smallest-reasonable choice for the state T-012's
+                amendment asked to be designed, recorded as one rather
+                than dressed up as a reuse. */}
             {MAP_OVERLAYS.map((mode) => {
               const off = mode === "churn" && !churnAvailable;
               return (
