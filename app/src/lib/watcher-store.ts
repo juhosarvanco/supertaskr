@@ -89,12 +89,23 @@ export type PickOutcomePayload =
    * always sends the key; it is declared OPTIONAL here for the same
    * reason T-018's `skipped`/`truncated` are — a payload minted before
    * the field existed stays valid, and absent reads as "no tree", never
-   * as a claim about one. */
+   * as a claim about one.
+   *
+   * T-064 criterion 5: `probe` IS GONE from this variant, and its
+   * absence is what makes the switch tell ONE story. Rust reads the
+   * folder twice — a stat sweep before the arming rendezvous, the
+   * collected tree after it — and only the second reading crosses the
+   * boundary, so the payload can no longer describe one folder two ways
+   * at two moments. The field had no reader on this side: the genesis
+   * case below sets `resolvedProbe: null`, and the genesis SCREEN
+   * renders `genesisDir` plus the docs model. `PlanProbePayload` is
+   * untouched and keeps both its live consumers — `noDocs` above and
+   * `ProjectStatusPayload`'s `noDocs`, which are what the front door's
+   * "No plan in <folder>" checklist reads. */
   | {
       kind: "genesis";
       projectDir: string;
       seq: number;
-      probe: PlanProbePayload;
       snapshot?: DocsSnapshotPayload | null;
     };
 
@@ -248,6 +259,30 @@ export interface ShellState {
    * the rejection used to become an unhandled promise and nothing else,
    * so the user was told nothing. */
   startupFailure: StartupFailure | null;
+  /**
+   * T-064, closing T-063-s3: was a live `docs-changed` subscription
+   * still attached when `startupFailure` was recorded?
+   *
+   * THE SECOND FACT ABOUT THE SUBSCRIPTION THIS SHELL NOW HOLDS, and it
+   * is here because the alternative is a sentence that is false in a
+   * state this repo pins GREEN on purpose. `startupStepPhrase`'s
+   * subscribe copy says "the watcher subscription was refused, so no
+   * file change can reach the board." The first clause is always true.
+   * The second is false whenever a refused RE-subscribe leaves attempt
+   * 1's subscription attached — the state
+   * `a refused re-subscribe does not tear down the subscription that
+   * still works` exists to protect, because turning a live watcher into
+   * no watcher in the name of retrying is strictly worse than doing
+   * nothing. The user is then told the app cannot recover on its own
+   * while the next file change will in fact bring it up.
+   *
+   * WRITTEN BY THE SAME `setShell` THAT RECORDS THE FAILURE, from the
+   * store's own `unlistenDocs` handle — which is the fact, not a second
+   * copy of it — and MEANINGFUL ONLY WHILE `startupFailure` IS NON-NULL.
+   * It is read by exactly one thing: the fork in that sentence's second
+   * clause.
+   */
+  watcherLive: boolean;
   /** index_repo in flight (T-012; single-flight like `picking`). */
   indexing: boolean;
   /** Last index_repo outcome THIS SESSION (drives the map header hint —
@@ -337,8 +372,11 @@ export type ScreenModel =
   | { screen: "loading" }
   /** T-050: startup rejected and the app is NOT still waiting. The
    * failure rides the screen so the renderer needs no second opinion
-   * about what went wrong. */
-  | { screen: "startupFailed"; failure: StartupFailure }
+   * about what went wrong — and since T-064 so does `watcherLive`, for
+   * the same reason: the subscribe sentence's second clause depends on
+   * whether a subscription SURVIVED the refusal, which is a fact about
+   * the store and not about the step. */
+  | { screen: "startupFailed"; failure: StartupFailure; watcherLive: boolean }
   | { screen: "browser" }
   | { screen: "empty"; notice: FrontDoorNotice; canKeepCurrent: boolean }
   /** T-026: a genesis project is open — full-bleed, no rail (the rail
@@ -376,7 +414,11 @@ export function selectScreen(shell: ShellState): ScreenModel {
     shell.startupFailure !== null &&
     (shell.phase === "loading" || shell.phase === "browser")
   ) {
-    return { screen: "startupFailed", failure: shell.startupFailure };
+    return {
+      screen: "startupFailed",
+      failure: shell.startupFailure,
+      watcherLive: shell.watcherLive,
+    };
   }
   switch (shell.phase) {
     case "loading":
@@ -406,6 +448,50 @@ export function selectScreen(shell: ShellState): ScreenModel {
     case "open":
       return { screen: "board" };
   }
+}
+
+/**
+ * T-064 CRITERION 1: HAS THE SWITCH ALREADY BEEN OVERTAKEN?
+ *
+ * `arm_genesis` arms the watch BEFORE `apply_genesis_folder` commits
+ * (pinned by name in `docs_watch.rs`'s
+ * `the_watch_is_armed_before_the_switch_commits_so_an_emit_can_overtake_the_reply`),
+ * so a `docs-changed` emit for the NEW root can reach this store before
+ * the invoke reply that announced the switch. When it does, `prev.docs`
+ * is already a model OF THE FOLDER THE SWITCH IS ANNOUNCING, read LATER
+ * than the switch's own reading.
+ *
+ * What the genesis case used to do with that is throw it away:
+ * `resetDocsForProjectSwitch` empties the model and KEEPS the seq
+ * watermark (the T-007 stale-drop invariant), and `applySnapshot` opens
+ * with `if (payload.seq <= prev.seq) return prev` — so the fresher tree
+ * was replaced by nothing and the pane rendered "0 files written" over a
+ * docs/ that is not empty. Measured through the real reducers by T-042's
+ * verifier: `emit@8 -> fileCount=3`, then `switch@7 -> fileCount=0`.
+ *
+ * BOTH CONJUNCTS ARE LOAD-BEARING and they answer different questions.
+ * The projectDir equality answers "is this the SAME folder?" — a model
+ * from the PREVIOUS project must still be cleared, because same-named
+ * paths must never fall back to another project's content. The seq
+ * comparison answers "is the switch's reading OLDER?" — re-picking the
+ * currently-open folder as a genesis root takes a NEW, higher seq, so it
+ * is not an overtake and must apply normally.
+ *
+ * THE READING SEQ IS THE SNAPSHOT'S WHEN THERE IS ONE. Rust stamps a
+ * carried snapshot with the switch's own seq, so the two are the same
+ * number whenever both exist; spelling it this way covers the
+ * snapshot-less branch too, which had the same defect plus a second one
+ * — it ASSIGNED `outcome.seq`, so an overtaking emit at a higher seq was
+ * followed by the watermark going backwards.
+ */
+export function genesisSwitchIsOvertaken(
+  prev: DocsModelState,
+  outcome: Extract<PickOutcomePayload, { kind: "genesis" }>,
+): boolean {
+  return (
+    prev.projectDir === outcome.projectDir &&
+    (outcome.snapshot?.seq ?? outcome.seq) <= prev.seq
+  );
 }
 
 /**
@@ -445,24 +531,48 @@ export function reducePickOutcome(
         resolvedProbe: null,
       };
     case "genesis": {
-      // The previous project's model is cleared HERE — same-named paths
-      // in the new folder must never fall back to another project's
-      // content — while `resetDocsForProjectSwitch` KEEPS the seq
-      // watermark and the switch's own seq advances it past every
-      // pre-switch emit (the T-007 stale-drop invariant).
-      const switched = resetDocsForProjectSwitch(prev.docs);
-      // T-042 criterion 1: a genesis folder can already HAVE a docs/ (no
-      // plan is weaker than no docs/), and when it does the switch
-      // carries that tree. Rust stamps the snapshot with the switch's own
-      // seq, so applying it advances the watermark to exactly the value
-      // the other branch sets by hand — one stamp either way.
-      const snapshot = outcome.snapshot ?? null;
+      // T-064 criterion 1: THE LATER READING WINS. An emit that
+      // overtook the invoke reply is a measurement of THIS folder taken
+      // after the switch's own, so it is kept rather than reset away.
+      // See `genesisSwitchIsOvertaken` for why both conjuncts are
+      // load-bearing; this branch is a pure identity return, so it also
+      // suppresses the `model-updated` echo (`commitPickOutcome` echoes
+      // on `next.docs !== before.docs`) — correctly, because the emit
+      // already echoed the model it produced.
+      let docs: DocsModelState;
+      if (genesisSwitchIsOvertaken(prev.docs, outcome)) {
+        docs = prev.docs;
+      } else {
+        // The previous project's model is cleared HERE — same-named
+        // paths in the new folder must never fall back to another
+        // project's content — while `resetDocsForProjectSwitch` KEEPS
+        // the seq watermark and the switch's own seq advances it past
+        // every pre-switch emit (the T-007 stale-drop invariant).
+        const switched = resetDocsForProjectSwitch(prev.docs);
+        // T-042 criterion 1: a genesis folder can already HAVE a docs/
+        // (no plan is weaker than no docs/), and when it does the switch
+        // carries that tree. Rust stamps the snapshot with the switch's
+        // own seq, so applying it advances the watermark to exactly the
+        // value the other branch sets by hand — one stamp either way.
+        const snapshot = outcome.snapshot ?? null;
+        docs =
+          snapshot === null
+            ? // T-064: `Math.max`, not an ASSIGNMENT. The watermark is
+              // the T-007 stale-drop invariant and it may only ever go
+              // UP; this branch used to write `outcome.seq` over it,
+              // which walks it BACKWARDS whenever an applied emit is
+              // already past the switch. Unreachable in production
+              // today — Rust's seq counter is global and monotonic, so a
+              // switch always stamps itself above every prior emit — but
+              // this is a pure reducer and nothing here can see that,
+              // and `applySnapshot` (the other branch) has always
+              // behaved this way.
+              { ...switched, seq: Math.max(switched.seq, outcome.seq) }
+            : applySnapshot(switched, snapshot);
+      }
       return {
         ...prev,
-        docs:
-          snapshot === null
-            ? { ...switched, seq: outcome.seq }
-            : applySnapshot(switched, snapshot),
+        docs,
         phase: "genesis",
         genesisDir: outcome.projectDir,
         rejectedPick: null,
@@ -619,6 +729,7 @@ let shell: ShellState = {
   picking: false,
   starting: false,
   startupFailure: null,
+  watcherLive: false,
   indexing: false,
   indexOutcome: null,
   docs: emptyState(),
@@ -827,7 +938,15 @@ function recordStartupFailure(step: StartupStep, reason: unknown): void {
     message: String(reason),
     attempt: startupAttempts,
   };
-  setShell({ starting: false, startupFailure: failure });
+  // T-064 (T-063-s3): recorded IN THE SAME WRITE as the failure, from
+  // the handle that IS the fact. A refused `listen` on attempt 2 leaves
+  // attempt 1's subscription attached, and the copy must not tell the
+  // user no file change can reach the board while one still can.
+  setShell({
+    starting: false,
+    startupFailure: failure,
+    watcherLive: unlistenDocs !== null,
+  });
   // The message is an ARGUMENT, never interpolated into the line — the
   // same discipline as the `model-updated` echo's error log.
   console.error("[nputer] startup failed at", step, reason);

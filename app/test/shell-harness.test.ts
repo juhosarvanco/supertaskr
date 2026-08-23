@@ -165,7 +165,6 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
       kind: "genesis",
       projectDir: "/tmp/sketchpad",
       seq: 7,
-      probe,
     });
     expect(store.getShellState().phase).toBe("genesis");
     expect(store.getShellState().genesisDir).toBe("/tmp/sketchpad");
@@ -226,7 +225,7 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
     store.keepCurrentProject();
     expect(harness?.getShell()).toMatchObject({ phase: "open", screen: "board" });
 
-    harness?.applyPickOutcome({ kind: "genesis", projectDir: "/tmp/c", seq: 12, probe });
+    harness?.applyPickOutcome({ kind: "genesis", projectDir: "/tmp/c", seq: 12 });
     expect(harness?.getShell()).toMatchObject({ phase: "genesis", screen: "genesis" });
   });
 
@@ -243,7 +242,6 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
     const store = await loadStore("browser");
     await store.startDocsWatcher();
     const harness = window.__nputerShellHarness;
-    const probe = { roadmap: false, tasks: false, architecture: false, git: false };
     const snapshot = (seq: number) => ({
       seq,
       projectDir: "/tmp/sketchpad",
@@ -251,7 +249,7 @@ describe("the gate, positive half: the browser DEV path installs it", () => {
       files: [{ path: "docs/ROADMAP.md", content: "# Roadmap\n\n## Backbone\n" }],
     });
 
-    harness?.applyPickOutcome({ kind: "genesis", projectDir: "/tmp/sketchpad", seq: 4, probe });
+    harness?.applyPickOutcome({ kind: "genesis", projectDir: "/tmp/sketchpad", seq: 4 });
     harness?.applyProjectStatus({ kind: "open", snapshot: snapshot(5) });
     expect(harness?.getShell()).toMatchObject({
       phase: "genesis",

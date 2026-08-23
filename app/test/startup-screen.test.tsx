@@ -418,11 +418,16 @@ describe("6. T-063: the DEADLINE case, rendered", () => {
   let box: HTMLDivElement;
   let boxRoot: Root;
 
-  const render = async (failure: StartupFailure | null, starting = false): Promise<void> => {
+  const render = async (
+    failure: StartupFailure | null,
+    starting = false,
+    watcherLive = false,
+  ): Promise<void> => {
     await act(async () => {
       boxRoot.render(
         <StartupScreen
           failure={failure}
+          watcherLive={watcherLive}
           starting={starting}
           picking={false}
           onRetry={() => {}}
@@ -485,5 +490,45 @@ describe("6. T-063: the DEADLINE case, rendered", () => {
     await render(null, true);
     expect(text("[data-testid=startup-message]")).toBe("waiting for the first docs snapshot…");
     expect(box.querySelector("[data-testid=startup-failure-detail]")).toBeNull();
+  });
+
+  /**
+   * T-064, closing T-063-s3. "the watcher subscription was refused, so no
+   * file change can reach the board" is TRUE of a first refusal and FALSE
+   * of a refused RE-subscribe, because the store deliberately keeps
+   * attempt 1's live subscription rather than turning a working watcher
+   * into no watcher in the name of retrying (pinned green in
+   * startup-recovery.test.ts). The consequence clause therefore forks on
+   * whether a subscription is HELD, not on the step — which cannot tell
+   * the two situations apart, since they share it.
+   */
+  it("the subscribe sentence forks on whether a watcher SURVIVED the refusal", async () => {
+    const failure: StartupFailure = { step: "subscribe", message: "…", attempt: 1 };
+
+    await render(failure, false, false);
+    const dead = text("[data-testid=startup-message]");
+    expect(dead).toContain("the watcher subscription was refused");
+    expect(dead).toContain("no file change can reach the board");
+
+    await render(failure, false, true);
+    const alive = text("[data-testid=startup-message]");
+    // The FIRST clause is true in both cases and is unchanged in both.
+    expect(alive).toContain("the watcher subscription was refused");
+    // The second is the one that was lying.
+    expect(alive, "the claim the user cannot check is gone").not.toContain(
+      "no file change can reach the board",
+    );
+    expect(alive).toContain("still reach the board");
+    expect(alive).not.toBe(dead);
+  });
+
+  it("the other two steps do not fork — `watcherLive` is read for `subscribe` alone", async () => {
+    for (const step of ["snapshot", "deadline"] as const) {
+      const failure: StartupFailure = { step, message: "…", attempt: 1 };
+      await render(failure, false, false);
+      const off = text("[data-testid=startup-message]");
+      await render(failure, false, true);
+      expect(text("[data-testid=startup-message]"), `${step} says one thing`).toBe(off);
+    }
   });
 });

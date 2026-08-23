@@ -338,6 +338,7 @@ function shellWith(patch: Partial<ShellState>): ShellState {
     picking: false,
     starting: false,
     startupFailure: null,
+    watcherLive: false,
     indexing: false,
     indexOutcome: null,
     docs: tree([...SCAFFOLD, taskFile("T-001", "Store and done")]),

@@ -314,11 +314,31 @@ export function EmptyState({
  * screenshot actually showed, where the old copy said "waiting for the
  * first docs snapshot…" truthfully and forever. The wording is
  * deliberately about TIME rather than blame: the call may still land,
- * and if it does the app comes up underneath this screen. */
-function startupStepPhrase(step: StartupStep): string {
+ * and if it does the app comes up underneath this screen.
+ *
+ * T-064, CLOSING T-063-s3: "a refused subscribe leaves no live watcher
+ * at all" is TRUE OF THE FIRST ONE AND FALSE OF A RETRY. Attempt 1 can
+ * succeed at `listen` and fail at `invoke`; attempt 2's `listen` is then
+ * refused, and the store deliberately does NOT tear #1 down — turning a
+ * live watcher into no watcher in the name of retrying is strictly
+ * worse than doing nothing, and `startup-recovery.test.ts` pins that
+ * state green on purpose. In it the old sentence told the user the app
+ * could not recover on its own while the very next file change would
+ * bring it up, so they would correctly conclude they must retry or
+ * reopen and need not.
+ *
+ * THE STEP CANNOT ANSWER THIS AND THAT IS THE WHOLE POINT — two
+ * different situations share one step name, so the consequence clause
+ * is derived from whether a subscription is HELD (`watcherLive`, which
+ * the store reads off its own `unlistenDocs` handle) rather than from
+ * the step. The FIRST clause is identical in both arms because it is
+ * true in both. */
+function startupStepPhrase(step: StartupStep, watcherLive: boolean): string {
   switch (step) {
     case "subscribe":
-      return "the watcher subscription was refused, so no file change can reach the board.";
+      return watcherLive
+        ? "the watcher subscription was refused, but an earlier one is still attached — the next file change will still reach the board."
+        : "the watcher subscription was refused, so no file change can reach the board.";
     case "snapshot":
       return "the first docs snapshot was refused, so there is nothing to render yet.";
     case "deadline":
@@ -350,6 +370,7 @@ function startupFailureHeading(failure: StartupFailure): string {
  */
 export function StartupScreen({
   failure,
+  watcherLive,
   starting,
   picking,
   onRetry,
@@ -357,6 +378,10 @@ export function StartupScreen({
   onStartInterview,
 }: {
   failure: StartupFailure | null;
+  /** T-064: was a subscription still attached when `failure` was
+   * recorded? Read only for the `subscribe` step; see
+   * `startupStepPhrase`. */
+  watcherLive: boolean;
   starting: boolean;
   picking: boolean;
   onRetry: () => void;
@@ -384,7 +409,7 @@ export function StartupScreen({
           >
             {failure === null
               ? "waiting for the first docs snapshot…"
-              : `nputer could not start — ${startupStepPhrase(failure.step)}`}
+              : `nputer could not start — ${startupStepPhrase(failure.step, watcherLive)}`}
           </p>
         </div>
 
@@ -678,6 +703,7 @@ function App() {
       {(screen.screen === "loading" || screen.screen === "startupFailed") && (
         <StartupScreen
           failure={screen.screen === "startupFailed" ? screen.failure : null}
+          watcherLive={screen.screen === "startupFailed" && screen.watcherLive}
           starting={shell.starting}
           picking={shell.picking}
           onRetry={() => void startDocsWatcher()}

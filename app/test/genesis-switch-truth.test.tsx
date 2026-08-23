@@ -158,6 +158,46 @@ async function startInterview(outcome: unknown): Promise<void> {
   });
 }
 
+/**
+ * T-064: the same real click, with the invoke reply left PENDING so this
+ * test owns the interleaving.
+ *
+ * `ipc.outcomes` values are handed to `Promise.resolve`, which ADOPTS a
+ * thenable — so storing a deferred promise makes the shipped `runPicker`
+ * await for exactly as long as the test wants it to, and a
+ * `docs-changed` event delivered in the meantime is a genuine overtake
+ * of the reply rather than a simulation of one. Returns the settler.
+ */
+async function startInterviewPending(): Promise<(outcome: unknown) => Promise<void>> {
+  let settle: (value: unknown) => void = () => {};
+  const pending = new Promise<unknown>((resolve) => {
+    settle = resolve;
+  });
+  ipc.outcomes.set("start_genesis_here", pending);
+  ipc.outcomes.set("pick_genesis_folder", pending);
+  const button =
+    q('[data-testid="start-interview-here"]') ??
+    q('[data-testid="header-start-interview"]') ??
+    q('[data-testid="start-interview"]');
+  expect(button, "some screen offers the interview").not.toBeNull();
+  await flush(() => {
+    button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+  return async (outcome: unknown) => {
+    await flush(async () => {
+      settle(outcome);
+      await pending;
+    });
+  };
+}
+
+/** Deliver a `docs-changed` event the way Rust's watcher would. */
+async function emitDocs(payload: unknown): Promise<void> {
+  const handler = ipc.listeners.get("docs-changed");
+  expect(handler, "the store subscribed at startup").toBeDefined();
+  await flush(() => handler?.({ payload }));
+}
+
 beforeEach(() => {
   ipc.echoes.length = 0;
 });
@@ -185,7 +225,6 @@ describe("criterion 1: a genesis switch onto a folder that already has docs/", (
       kind: "genesis",
       projectDir: GENESIS_DIR,
       seq: 7,
-      probe: PROBE,
       snapshot: existingDocs(7),
     });
 
@@ -209,7 +248,6 @@ describe("criterion 1: a genesis switch onto a folder that already has docs/", (
       kind: "genesis",
       projectDir: GENESIS_DIR,
       seq: 7,
-      probe: PROBE,
       snapshot: null,
     });
 
@@ -239,7 +277,6 @@ describe("criterion 1: a genesis switch onto a folder that already has docs/", (
       kind: "genesis",
       projectDir: GENESIS_DIR,
       seq: 7,
-      probe: PROBE,
       snapshot: existingDocs(7),
     });
     expect(screenOf()).toBe("genesis");
@@ -291,7 +328,6 @@ describe("criterion 3: the model-updated echo reads provenance, not the seq", ()
       kind: "genesis",
       projectDir: GENESIS_DIR,
       seq: 7,
-      probe: PROBE,
       snapshot: null,
     });
 
@@ -312,7 +348,6 @@ describe("criterion 3: the model-updated echo reads provenance, not the seq", ()
       kind: "genesis",
       projectDir: GENESIS_DIR,
       seq: 7,
-      probe: PROBE,
       snapshot: existingDocs(7),
     });
 
@@ -369,5 +404,122 @@ describe("criterion 3: the model-updated echo reads provenance, not the seq", ()
       }
       expect(ipc.echoes, `${outcome.kind} produced no model`).toEqual([]);
     }
+  });
+});
+
+// ---- T-064 -------------------------------------------------------------
+
+/**
+ * T-064 AT THE SAME BOUNDARY, and the two halves of one story.
+ *
+ * CRITERION 1 — THE OVERTAKING EMIT. `arm_genesis` arms the watch BEFORE
+ * `apply_genesis_folder` commits (pinned by name in docs_watch.rs's
+ * `the_watch_is_armed_before_the_switch_commits_so_an_emit_can_overtake_the_reply`),
+ * so a `docs-changed` for the NEW root can land before the invoke reply.
+ * The store then reset the model to empty and dropped the emit's tree by
+ * seq, and the pane said "0 files written" over a docs/ that is not
+ * empty — the T-026-s4 symptom one layer down. Measured on the unfixed
+ * store, this very interleaving:
+ *
+ *   emit@8 (3 files) then switch@7 -> genesis-file-count "0 files written"
+ *
+ * CRITERION 3/6 — THE PROBE AND THE SNAPSHOT. Rust re-reads the plan
+ * predicate off the collected tree and routes a folder that gained a
+ * plan in the rendezvous window to `Picked`. What that means HERE is the
+ * half a Rust test cannot show: the app lands on the BOARD, not on the
+ * interview screen over a planned folder.
+ */
+describe("T-064: one reading of the folder reaches the screen", () => {
+  it("an emit that overtakes the switch is KEPT — it is the later reading of the same folder", async () => {
+    await mountFreshApp({ kind: "noDocs", projectDir: GENESIS_DIR, probe: PROBE });
+    expect(screenOf()).toBe("empty");
+    ipc.echoes.length = 0;
+
+    // The click goes out; Rust has armed the watch but not yet replied.
+    const reply = await startInterviewPending();
+
+    // ...and the watcher, armed on the NEW root, emits first — three
+    // files, at a seq above the switch's.
+    await emitDocs({
+      seq: 8,
+      projectDir: GENESIS_DIR,
+      generatedAtMs: 1_700_000_000_008,
+      files: [
+        { path: "docs/ARCHITECTURE.md", content: ARCHITECTURE },
+        { path: "docs/decisions/001-x.md", content: DECISION },
+        { path: "docs/NORTH_STAR.md", content: "# North star\n\nthe point of it\n" },
+      ],
+    });
+
+    // Now the reply arrives, carrying the OLDER two-file reading.
+    await reply({
+      kind: "genesis",
+      projectDir: GENESIS_DIR,
+      seq: 7,
+      snapshot: existingDocs(7),
+    });
+
+    expect(screenOf(), "the switch still moves the screen").toBe("genesis");
+    // THE FIX, at the surface that made the false claim.
+    expect(fileCount()).toContain("3 files written");
+    expect(writtenPaths()).toContain("docs/NORTH_STAR.md");
+    expect(container.textContent).not.toContain("nothing written yet");
+    // Exactly ONE echo, the emit's own: the switch changed no model, so
+    // it reported none (`outcomeCarriesSnapshot` is true here, and the
+    // identity return is what suppresses the second echo).
+    expect(ipc.echoes.length).toBe(1);
+    expect(ipc.echoes[0]?.seq).toBe(8);
+  });
+
+  it("a snapshot-LESS switch overtaken the same way keeps the tree AND the watermark", async () => {
+    await mountFreshApp({ kind: "noDocs", projectDir: GENESIS_DIR, probe: PROBE });
+    const reply = await startInterviewPending();
+    await emitDocs({
+      seq: 8,
+      projectDir: GENESIS_DIR,
+      generatedAtMs: 1_700_000_000_008,
+      files: [{ path: "docs/NORTH_STAR.md", content: "# North star\n\nthe point of it\n" }],
+    });
+    await reply({ kind: "genesis", projectDir: GENESIS_DIR, seq: 7, snapshot: null });
+
+    expect(screenOf()).toBe("genesis");
+    expect(fileCount()).toContain("1 file written");
+    // The watermark did not walk backwards to 7: a re-delivery at 8
+    // still drops, so nothing re-renders and nothing re-echoes.
+    ipc.echoes.length = 0;
+    await emitDocs({
+      seq: 8,
+      projectDir: GENESIS_DIR,
+      generatedAtMs: 1_700_000_000_009,
+      files: [],
+    });
+    expect(fileCount()).toContain("1 file written");
+    expect(ipc.echoes, "seq 8 is still applied, so a duplicate drops").toEqual([]);
+  });
+
+  it("a folder that gained a plan in the rendezvous window lands on the BOARD", async () => {
+    // What Rust answers for T-064's race (driven end to end in
+    // docs_watch.rs's
+    // `a_plan_written_between_the_probe_and_the_collect_opens_the_project_instead`):
+    // the probe said "no plan, offer genesis", the collected tree says
+    // otherwise, and the LATER reading wins — so the outcome is the
+    // ordinary open and this side must not show the interview.
+    await mountFreshApp({ kind: "noDocs", projectDir: GENESIS_DIR, probe: PROBE });
+    expect(screenOf()).toBe("empty");
+
+    await startInterview({
+      kind: "picked",
+      snapshot: {
+        seq: 7,
+        projectDir: GENESIS_DIR,
+        generatedAtMs: 1_700_000_000_007,
+        files: [
+          { path: "docs/ROADMAP.md", content: "# Roadmap\n\n## Backbone\n- F-01: Alpha — thing\n" },
+        ],
+      },
+    });
+
+    expect(screenOf(), "the interview screen is not where a planned folder goes").toBe("board");
+    expect(q('[data-testid="genesis-file-count"]')).toBeNull();
   });
 });
