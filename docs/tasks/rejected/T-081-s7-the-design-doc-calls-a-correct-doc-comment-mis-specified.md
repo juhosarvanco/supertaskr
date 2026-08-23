@@ -1,7 +1,7 @@
 ---
 id: T-081-s7
 title: The cross-harness plan calls a correct doc comment "provably mis-specified", and it is seeding briefs
-status: suggested
+status: rejected
 suggested_by: verifier claude-opus-5 @T-081
 closed_by: 3b4326d (main, 2026-08-19 23:22) — independently, before this file was written
 ---

@@ -1,7 +1,7 @@
 ---
 id: T-083-s1
 title: The fourth counterexample is recorded against the wrong gate — T-076 flipped BOOT, not GRAPH
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-083
 ---
 

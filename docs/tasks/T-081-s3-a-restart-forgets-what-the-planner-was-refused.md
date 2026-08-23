@@ -1,7 +1,7 @@
 ---
 id: T-081-s3
 title: A restart forgets what the planner was refused
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-081
 ---
 
@@ -44,3 +44,5 @@ discipline `machine?: boolean` already carries and for the same reason.
 
 Filed rather than built: it needs both `app-agent` and `app-interview`,
 and T-081's fence is the first alone.
+
+**PARKED at the fifth triage (2026-08-20).** Unpark when T-081-s1's promoted card ships the denial notice — decide the optional TranscriptLine field in the same card, not before.

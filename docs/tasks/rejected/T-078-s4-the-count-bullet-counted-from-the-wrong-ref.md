@@ -1,7 +1,7 @@
 ---
 id: T-078-s4
 title: The bullet that says "derive the count at your own ref" derived one from the wrong ref — 38 removed should be 46
-status: suggested
+status: rejected
 suggested_by: verifier claude-opus-5 @T-078-verify
 ---
 

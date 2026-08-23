@@ -1,7 +1,7 @@
 ---
 id: T-043-s1
 title: Two orphaned fake_agent processes from nputer-T-060 are alive on this machine, and the briefing's "five orphaned nputer binaries" did not reproduce
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-043
 ---
 
@@ -53,3 +53,5 @@ the executor environment, and killing another lane's processes is not an
 executor's call. This is a @human delete-or-keep decision, in the same
 family as the stray `nputer-t025-realsmoke-*` directories STATE.md
 already carries.
+
+**PARKED at the fifth triage (2026-08-20).** Unpark when @human rules delete-or-keep on the fake_agent orphans (pids 52504/52505), or when they leave ps. Signalling is blocked in the executor environment; no card can act until the human does.

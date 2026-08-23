@@ -1,7 +1,7 @@
 ---
 id: T-084-s6
 title: An empty path list makes the DOCS GATE report "not owed" at exit 0 — the documented xargs invocation turns a failed range into a green gate
-status: suggested
+status: rejected
 suggested_by: verifier claude-opus-5 @T-084-verify
 ---
 

@@ -1,7 +1,7 @@
 ---
 id: T-076-s1
 title: The Rust mirror of compareComponentIds is now wrong in a different way than the original
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-076
 ---
 
@@ -34,3 +34,5 @@ somewhere — the two sides are compared by nothing, and the only reason
 this was noticed is that a card went looking at the comparator.
 `registry.rs:368` and `:390` are the existing Rust order pins and both
 use two-digit ids.
+
+**PARKED at the fifth triage (2026-08-20).** Unpark when T-076-s4's promoted card lands a shared pin, or when any C- id exceeds 15 digits. Verified: the live registry is C-01..C-14, so the divergence is unreachable today.

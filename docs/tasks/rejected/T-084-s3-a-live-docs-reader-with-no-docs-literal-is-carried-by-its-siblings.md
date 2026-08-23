@@ -1,7 +1,7 @@
 ---
 id: T-084-s3
 title: A live-docs reader with no docs literal is found only because two siblings have one — smoke.test.ts is invisible and the parser suite rides on its neighbours
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-084
 ---
 

@@ -1,7 +1,7 @@
 ---
 id: T-084-s7
 title: The root-anchor ledger lives in tools/e2e but four of its six entries argue about app/src-tauri — a fenced lane can red it and not be able to fix it
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-084-fix
 ---
 
@@ -46,3 +46,5 @@ Three shapes worth weighing, none of them obviously right:
 Related but distinct: `T-084-s2` (the gate is not a CI step) means this
 only bites a lane that runs the e2e suite at all. If `s2` is ever fixed,
 this bites everybody.
+
+**PARKED at the fifth triage (2026-08-20).** Unpark when T-084-s2's promoted card lands (the gate as a CI step). STATE already rules option 3 for now at 24/6; re-weigh then.

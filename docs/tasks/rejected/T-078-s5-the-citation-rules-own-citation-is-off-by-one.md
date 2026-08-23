@@ -1,7 +1,7 @@
 ---
 id: T-078-s5
 title: The citation rule's worked example says three files where the measurement is four — at every commit on the branch
-status: suggested
+status: rejected
 suggested_by: verifier claude-opus-5 @T-078-verify
 ---
 

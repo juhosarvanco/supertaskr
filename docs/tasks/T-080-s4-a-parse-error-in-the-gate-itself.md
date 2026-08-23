@@ -1,7 +1,7 @@
 ---
 id: T-080-s4
 title: Exit 3 cannot cover a parse error in the gate's own two files
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-080
 ---
 
@@ -25,3 +25,5 @@ obviously right, which is why this is a suggestion and not a defect
 against the build. The measured fact is small and should be written into
 the CONVENTIONS legend when T-078 gains its second row: **exit 1 with no
 findings on stdout is still ambiguous**.
+
+**PARKED at the fifth triage (2026-08-20).** Unpark at the repo's first GitHub push (CI becomes a real gate), or if the entry-point/launcher question is reopened. The documentation half is already discharged in CONVENTIONS.

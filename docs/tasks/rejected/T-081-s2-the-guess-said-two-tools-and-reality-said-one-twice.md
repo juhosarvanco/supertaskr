@@ -1,7 +1,7 @@
 ---
 id: T-081-s2
 title: The guessed denial fixture said two tools; the real turn refused one tool twice
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-081
 ---
 

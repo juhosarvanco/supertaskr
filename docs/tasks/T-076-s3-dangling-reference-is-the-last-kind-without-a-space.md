@@ -1,7 +1,7 @@
 ---
 id: T-076-s3
 title: dangling-reference is now the last kind spanning three id spaces with no space field
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-076
 ---
 
@@ -36,3 +36,5 @@ blocked_by and feature checks plus `component.test.ts`'s
 T-076 already proved no app SOURCE file reads this kind: the only hits
 outside `lib/parser/**` are `app/test/select-board.test.ts:507` and
 `app/test/select-task-detail.test.ts:309-310`, all `objectContaining`.
+
+**PARKED at the fifth triage (2026-08-20).** Unpark when a second component-side reference field, or a task field pointing at components, is added — today `field` determines the space.

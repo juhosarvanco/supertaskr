@@ -1,7 +1,7 @@
 ---
 id: T-082-s1
 title: The grant set's 128-line span is measured from a doc-comment mention, not from the declaration
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-082
 ---
 

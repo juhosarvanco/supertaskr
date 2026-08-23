@@ -1,7 +1,7 @@
 ---
 id: T-078-s7
 title: The hit count went stale inside the very commit that filed the correction — four became five, and the verdict's own dot enumeration says 16 where every ref measures 17
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-078-fix
 ---
 

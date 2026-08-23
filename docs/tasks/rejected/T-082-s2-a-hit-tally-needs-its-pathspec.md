@@ -1,7 +1,7 @@
 ---
 id: T-082-s2
 title: The ignore-attribute hit tally is true only under a pathspec nobody states
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-082
 ---
 

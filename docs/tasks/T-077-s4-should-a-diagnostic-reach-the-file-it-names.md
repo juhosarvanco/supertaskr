@@ -1,7 +1,7 @@
 ---
 id: T-077-s4
 title: Should a diagnostic row reach the file it names? — the product question T-077 ruled around
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-077
 ---
 
@@ -55,3 +55,5 @@ is reversible.
 
 Nothing is blocked on this. T-077 shipped inert rows and the strip reads
 correctly without it.
+
+**PARKED at the fifth triage (2026-08-20).** Unpark when @human/@architect rules whether the app may reveal or open a docs file — this is a room, not a card: it would be the first path travelling webview to process under ADR-012.

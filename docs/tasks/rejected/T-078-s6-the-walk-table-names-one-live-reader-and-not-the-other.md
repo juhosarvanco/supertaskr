@@ -1,7 +1,7 @@
 ---
 id: T-078-s6
 title: The walk table warns about the E2E lane that parses CONVENTIONS and not about the Rust test that reads it
-status: suggested
+status: rejected
 suggested_by: verifier claude-opus-5 @T-078-verify
 ---
 

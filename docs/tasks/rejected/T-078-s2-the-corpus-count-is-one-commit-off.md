@@ -1,7 +1,7 @@
 ---
 id: T-078-s2
 title: STATE attributes CONTROL 529 to the wrong commit — it is the merge's count, eight files earlier
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-078
 ---
 

@@ -1,7 +1,7 @@
 ---
 id: T-072-s3
 title: The empty banking observation is a shared mutable Map wearing a readonly type
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-072
 ---
 
@@ -47,3 +47,5 @@ Nothing is broken today: the live code copies before writing and always
 has. This is about the distance between where such a bug is INTRODUCED
 and where it is OBSERVED, which T-072 measured at three unrelated test
 bodies and one file.
+
+**PARKED at the fifth triage (2026-08-20).** Unpark when a second consumer of EMPTY_BANKING_OBSERVATION appears, or when a test-pollution failure is attributed to the shared map. Verified at the fifth triage: live code copies before writing and always has.
