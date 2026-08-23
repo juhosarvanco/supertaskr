@@ -10,7 +10,7 @@ blocked_by: []
 touches: [app-agent, app-interview]
 builder:
 verifier:
-built_by: claude-opus-5 @T-070
+built_by: claude-opus-5 @T-070, claude-opus-5 @T-070-fix
 verified_by: claude-opus-5 @T-070-verify
 review: same-model
 ---
@@ -480,6 +480,463 @@ file this session wrote is prefixed `T070-`.
 1 verifying**; 64 + 19 + 19 + 84 + 1 = 187. Ten files sit in
 `docs/tasks/rejected/` and are counted separately. The deltas from main
 are T-070 planned → verifying and the three new `T-070-s*` files.
+
+### 2026-08-23 — THE REBUILD, by a second executor (`claude-opus-5 @T-070-fix`)
+
+**Appended, not rewritten. Everything above this line is the first
+executor's and stands as written**, including the eleven-mutant drill —
+the verdict confirmed the carry, the DOM delivery pin, the shape-six
+removal and `T-070-s1`'s arm trace, and none of them was touched. Cut
+from **`f7da6a9`**, the verdict commit; the code commit is **`aec0d66`**.
+**FOUR paths moved**: `app/src-tauri/src/agent/mod.rs`,
+`app/src-tauri/src/agent/sessions.rs`, this card, and `T-070-s4`. No
+production behaviour outside `tail_lines` changed, and no test the first
+build wrote was deleted or weakened.
+
+`built_by:` now names both passes, which is T-084's precedent for a card
+rebuilt after a rejection.
+
+#### BLOCKING 1 — what binds the ARRIVAL read now, and why it is a SOURCE pin
+
+The verdict's diagnosis is exactly right and worth restating in one
+sentence, because the remedy follows from it: **`Counting<R>` can only
+observe bytes that pass through the `src` handed to `tail_lines`**, so a
+whole-file read planted anywhere ABOVE that argument — in
+`read_transcript_tail` (V1) or in `agent::transcript` (V3) — reaches the
+disk without touching the instrument. That is not a fixture problem. No
+fixture fixes it, because the instrument is not on the path.
+
+**THE THREE OPTIONS WERE WEIGHED AND TWO WERE REFUSED.**
+
+1. **A fixture hostile to a LOSSY whole-file read too — REFUSED, and the
+   reason is structural rather than aesthetic.** The verdict's own
+   suggestion carries its condition: *"an `fs` bytes-read observation at
+   the command boundary IF ONE EXISTS HEADLESSLY"*. There is none. The
+   command opens the file itself, so nothing can be injected; `std`
+   exposes no per-process bytes-read counter; and `getrusage`'s
+   `ru_inblock` counts BLOCK-DEVICE input, which is zero for a file the
+   fixture just wrote and the page cache still holds — it would report
+   the same number for both implementations and would be a fixture
+   pretending to be an instrument. The only fixture a lossy whole-file
+   read genuinely cannot survive is one too large to hold in memory, and
+   a multi-gigabyte sparse file is hostile to the machine running the
+   suite rather than to the mutant. **Refused on the merits, not skipped.**
+2. **An injectable opener on `read_transcript_tail` — REFUSED, and it
+   would not have worked.** It puts a test-only seam into a production
+   signature, which is the shape ADR-011's neighbours avoid; and it
+   closes V1 while leaving **V3 wide open**, because V3 lives one hop
+   ABOVE the opener. Half a remedy for a whole defect.
+3. **The source tripwire the first build refused — TAKEN.** The verdict
+   falsified the stated reason for refusing it (*"would kill only mutants
+   M2 already kills"* — M2's pin is GREEN on V3), and the drill below
+   re-proves the point from the other side: V3 and V1 are killed by this
+   body and by nothing else in the tree.
+
+**`the_only_production_path_to_the_transcript_is_the_bounded_one`**
+(`agent/mod.rs`, in the module the arrival read lives in) is **SIX ARMS
+AND ONE CLAIM**: *from the IPC command down to the generic walk, each hop
+reaches the next one and reaches the file NO OTHER WAY.*
+
+| arm | what it derives | what it asserts |
+|---|---|---|
+| hop 0 | callee set of `fn genesis_transcript(`'s body in `lib.rs` | exactly `[agent::transcript]` |
+| hop 1 | callee set of `pub fn transcript(`'s body, and the SECOND ARGUMENT of its `read_transcript_tail(` call | exactly five names; the budget is `MAX_REHYDRATED_LINES` and not a multiple of it |
+| hop 2 | callee set of `pub fn read_transcript_tail(`'s body | exactly ten names, `tail_lines` and `fs::File::open` among them |
+| hop 3 | `tail_lines`' generic signature, and the bodies of the three LEAVES the two hops call (`tail_lines`, `transcript_path`, `truncate_utf8`) | the signature is unmoved; no leaf names `fs::`, `File::` or `include_str` |
+| no second reader | `read_transcript(` in the production halves of the three files | 1 in `sessions.rs` (its own declaration), 0 in `mod.rs` and `lib.rs` |
+| containment | every `.rs` file under `src/`, production half, comments stripped | only `agent/sessions.rs` may NAME the transcript — and inside it the three spellings are counted at **4 / 2 / 1** |
+
+**WHY AN ALLOWLIST OF CALLEES AND NOT A SEARCH FOR `fs::read`.** A
+denylist is bypassed by a new helper with an innocent name; an allowlist
+fails on a new callee of ANY name. V1's message is the demonstration —
+it does not say "you used `fs::read`", it prints both sets and the
+diff is `fs::read` in and `tail_lines` out. And the containment arm is
+the same reasoning one level up: a reader cannot read the transcript
+without first NAMING it, so the set of files allowed to name it is the
+set of files that can possibly read it. **V8 and V9 are the two mutants
+that exist only because of that arm**, and neither has any other body in
+the tree that sees it.
+
+**WHY THIS SURVIVES A REWRITE OF THE CALLER.** It names no line number,
+no call order, no argument count, no body shape and no comment. Reorder
+`transcript()`, rename its locals, split its loop, change its early
+return, move it in the file — the callee SET is unchanged and the pin
+stays green. What it will not tolerate is a new callee, which is
+precisely the edit that opens a new path to the file. **IT FAILS
+CLOSED**, and that is the trade, stated out loud: a legitimate refactor
+that adds a call has to add one name to a list, and the assertion message
+says so in as many words. For a twelve-line arrival path whose entire
+defect history is "somebody read the whole file", that is the right
+direction to fail in.
+
+**WHAT THE COMPOSITION IS, since neither half is sufficient alone.**
+`tail_lines` is generic over `R: Read + Seek` and is handed no path, so
+**`src` is its only channel to any byte on disk** — that is a property of
+the SIGNATURE, not of the body, which is why arm 3 pins the signature.
+Given that, `the_tail_read_costs_the_budget_and_not_the_file`'s
+`Counting` measurement is TOTAL for `tail_lines`. The tripwire supplies
+the missing half: that the arrival read is `tail_lines` and nothing else.
+Cost pin plus shape pin, and each kills what the other cannot — V2 is
+killed only by the cost pin, V1/V3/V5/V8/V9 only by the shape pin.
+
+#### BLOCKING 2 — the walk's second budgeted exit, in BYTES
+
+`tail_byte_ceiling(max_lines) = max_lines * TRANSCRIPT_TEXT_CAP`
+(saturating), and the walk's condition is now
+`while pos > 0 && newlines <= max_lines && taken < ceiling`. The
+function's doc comment no longer claims a property it lacks: *"Nothing
+before that point is ever pulled through `src`, **and there is such a
+point on EVERY input**"*.
+
+**THE CONSTANT IS THE BUDGET TIMES THE MODULE'S OWN PER-LINE CAP**,
+which is the largest tail the reader was ever asked for:
+`append_transcript` caps one `text` at `TRANSCRIPT_TEXT_CAP`, so
+`max_lines` of them is the answer's own worst case. **THE CEILING WINS
+OVER THE LINE BUDGET**, and that is deliberate: on an input where it
+bites, the walk answers with FEWER lines rather than costing the file.
+That is reachable only on lines the module's own writer cannot produce
+(JSON escaping can expand a capped `text` past its cap on the wire), and
+it is the same trade `T-070-s3` already records — the budget is on what
+is READ, never on what is found. The card body now says so too.
+
+**`the_tail_walk_stops_at_a_byte_ceiling_with_no_newline_in_the_file`**
+is the pin: a 5 MiB file with **no newline in it**, asserted newline-free
+before it is written, read at **three budgets** through the same
+`Counting` wrapper. Per budget it asserts the answer is EMPTY (there is
+no complete line), the cost is at most `budget * CAP + TAIL_CHUNK`, and
+the cost is at most half the file. Then across budgets it asserts the
+costs STRICTLY INCREASE and that `cost(4) == 4 * cost(1)`. **Three
+budgets rather than one is the whole design**: a hard-coded ceiling
+satisfies every per-budget assertion and dies on the last two — V7 below
+is that mutant, and it prints `costs [262144, 262144, 262144]`.
+
+**MEASURED AT THE PRODUCTION BUDGET (200), release build, both walks
+timed in one process on the same file:**
+
+| newline-free file | BEFORE: read / time / lines | AFTER: read / time / lines |
+|---|---|---|
+| 20 MiB | 20,971,520 · 381 ms · 1 | 20,971,520 · **11 ms** · 0 |
+| 60 MiB | 62,914,560 · 4,063 ms · 1 | **52,428,800** · **26 ms** · 0 |
+
+**THE 20 MiB ROW IS THE VERDICT'S OWN INPUT AND IT IS STILL READ IN
+FULL, said plainly rather than buried**: 20 MiB is UNDER
+`200 × 256 KiB = 52,428,800`, so the ceiling does not bite there. What
+changed on that row is that the cost is now bounded by a CONSTANT
+instead of by the file — the 60 MiB row is the same walk stopping at
+exactly the ceiling — and that the quadratic term which made 20 MiB cost
+381 ms is gone. A file measured in tens of MiB now costs at most
+50 MiB and 26 ms; a file measured in GiB costs the same.
+
+#### `T-070-s4`, discharged in the same rewrite
+
+The steps are pushed into a `Vec<Vec<u8>>` and joined once when the walk
+stops, `pop`ped so the earliest bytes are copied first and each chunk is
+freed as it goes. **BYTES READ DID NOT MOVE ON ANY ROW**, which is the
+proof that the seek pattern, the `Read + Seek` seam and `TAIL_CHUNK` are
+untouched and that the existing cost pin still measures what it measured:
+
+| text per line | file bytes | bytes read | BEFORE | AFTER | `read_transcript` |
+|---|---|---|---|---|---|
+| 8 KiB | 3,295,784 | 1,703,936 | 3 ms | **2 ms** | 1 ms |
+| 32 KiB | 13,126,184 | 6,619,136 | 25 ms | **5 ms** | 4 ms |
+| 128 KiB | 52,447,784 | 26,279,936 | **544 ms** | **16 ms** | 20 ms |
+
+The three read figures are **identical to the verifier's**, measured by a
+different session on a different day; the file sizes differ by a few
+thousand bytes because this fixture's line shape is slightly different.
+At 128 KiB per line, arrival is now FASTER than the whole-file reader it
+replaced (16 ms against 20 ms) — the sentence `T-070-s4` said the card's
+stated purpose required. The finding keeps `status: suggested` and gains
+a `closed_by:` line plus this measurement, per CONVENTIONS' fourth
+question: disposition is triage's call, not an executor's.
+
+**THE S4 FIX IS NOT POISON-DETECTABLE AND THAT IS SAID RATHER THAN
+GLOSSED** (the POISON DRILL bullet's "if a body cannot be poisoned, say
+so"). No assertion in this tree fails when the walk is quadratic — the
+answer and the bytes read are identical either way, which is exactly why
+the defect survived the first build's eleven mutants. Its evidence is
+the measurement above, taken with the pre-fix loop transcribed beside
+the shipped one in one process, with the two answers asserted
+byte-identical before either time was printed. A timing assertion was
+considered and refused: a wall-clock threshold in a unit suite is a
+flake generator, and CONVENTIONS' headless-verification posture is
+against it.
+
+#### The card BODY, corrected in place
+
+*"Every failure mode here is a slow read, never a wrong answer"* was true
+of the whole-file reader it described and is false of the reader this
+card ships. It is now qualified in place and followed by a dated
+correction naming both wrong-answer modes and the pin for each. The
+verdict is right that a reader of the criteria alone got the wrong
+promise; the notes' promise to correct it was not the correction.
+
+#### Left as the verdict left it
+
+**The IPC shape is still unpinned across the boundary** — seven
+`camelCase` fields asserted on each side against its own mock, agreeing
+on inspection. The verdict recorded it as *not a finding*, and closing it
+means a pin that serialises Rust's `KickoffOutcome` and feeds the bytes
+to the TS parser, which is a new test seam rather than a trivial edit.
+Left, deliberately, and named here so it is not mistaken for an
+oversight.
+
+#### The poison drill — NINE mutants, one-sided, at the code commit
+
+Run in a **detached scratch worktree** `../nputer-T070-fixdrill` at
+**`aec0d66`**, which IS this branch's code tip — never in the lane, never
+`git checkout --` (T-072-s1). **Correspondence established by hash before
+anything was mutated**: `agent/mod.rs`, `agent/sessions.rs`, `lib.rs` and
+`docs_watch.rs` all sha256-matched `git show aec0d66:<path>`. Baseline
+there first: `cargo test -p nputer --no-fail-fast` **199 passed / 0
+failed / 1 ignored, exit 0** (124 unit + 74 `agent_runner` + 1 doc-test);
+bare `cargo test --no-fail-fast` **358 / 0 / 3, exit 0**.
+
+**Every mutation moved the PRODUCER and never an assertion; every one
+reported its substitution COUNT; every one had its mutated TEXT read back
+with `git diff` before a suite ran; every restore was a byte copy from
+`git show aec0d66:<path>` proved by an empty per-path `git diff` AND by
+sha256.** V1–V4 are the verdict's own four, transcribed rather than
+invented.
+
+| # | producer mutated | subs | result (`-p nputer`) | which body |
+|---|---|---|---|---|
+| **V1** | `read_transcript_tail` → `fs::read` + `from_utf8_lossy` + last-N, `tail_lines` BYPASSED | 1 | **198/1/1, exit 101** | tripwire hop 2, printing both callee sets |
+| **V2** | inside `tail_lines`: `seek(Start(0))` + `read_to_end` through `src`, then truncate | 1 | **197/2/1, exit 101** | the COST pins — *read 20611682 bytes, ceiling 543375* and the new ceiling body |
+| **V3** | `agent::transcript` reads the whole file ITSELF, lossily | 1 | **198/1/1, exit 101** | tripwire hop 1 |
+| **V4** | `read_transcript_tail` → pre-T-070 semantics: `tail_lines(max*10)`, keep the last `max` PARSED | 1 | **197/2/1, exit 101** | `T-070-s3`'s pin — *three lines READ, two of them parseable, left 3 right 2* — and hop 2 |
+| **V5** | **MY OWN DERIVED BYPASS**: `transcript_path`, an ALLOWLISTED LEAF, slurps the file with `fs::read_to_string` | 1 | **198/1/1, exit 101** | ONLY the leaf arm |
+| **V6** | `tail_byte_ceiling` → `saturating_mul(usize::MAX)` | 1 | **198/1/1, exit 101** | the ceiling body — *budget 1 answered 1 lines* |
+| **V7** | `tail_byte_ceiling` → a CONSTANT, not the budget's multiple | 1 | **196/3/1, exit 101** | the ceiling body's linearity — *costs [262144, 262144, 262144]* — plus both budget pins at *left 127, right 200* |
+| **V8** | a second production reader in `docs_watch.rs` naming `sessions::transcript_path` | 1 | **198/1/1, exit 101** | the containment arm, by file name |
+| **V9** | a second production reader INSIDE `agent/sessions.rs` (`pub fn read_transcript_bytes`) | 1 | **198/1/1, exit 101** | the name census — *'transcript_path(' … left 5, right 4* |
+
+**V1 AND V3 WERE ALSO RUN UNDER THE FULL BARE SUITE**, because the
+verdict's headline figure is a full-suite green: both go **357 passed / 1
+failed / 3 ignored, exit 101**, against the 356/0/3 exit 0 the verdict
+measured for the same two mutants. That is the finding closed, in the
+same units it was written in.
+
+**V5 IS THE ONE I DERIVED AGAINST MY OWN FIX, and it is the sharpest of
+the nine.** Both callee sets stay byte-identical, the budget argument
+does not move, `read_transcript` gains no caller, no file outside
+`sessions.rs` names anything, and `Counting` never sees the read —
+because the whole-file read is inside a leaf both hops are ALLOWED to
+call. One arm in the tree fails on it. Without arm 3 the tripwire would
+have been an allowlist with a hole under it.
+
+After the last restore the drill worktree's `git status --porcelain` was
+**empty**, all four files sha256-matched again, bare `cargo test` was
+back to **358/0/3 exit 0**, and the worktree was removed.
+
+#### The bypass I could NOT kill, and refuse rather than pretend
+
+**A reader inside `agent/sessions.rs` that reconstructs the path from
+fragments** — `project_dir.join(".nputer").join("genesis").join(...)` —
+evades every name census above, because the census counts SPELLINGS and
+that shape spells none of them. It is refused rather than chased:
+defeating deliberate obfuscation with a source pin is an arms race a test
+does not win, and each extra fragment pattern added to the census makes
+the pin more brittle against honest edits without making it sound. What
+the six arms defend against is the ORDINARY edit and the ACCIDENT — a
+future task that reaches for `fs::read_to_string` because it is at hand
+— and the nine mutants above are every non-obfuscated shape I could
+construct. **The honest boundary of a source pin is stated here so the
+next reader does not over-trust it.**
+
+Two more, named for the same reason. **A whole-file read on a surface
+that is not the arrival read at all** (a future command that legitimately
+wants the entire transcript) is not this card's criterion and the pins
+correctly say nothing about it; the containment arm will make it
+visible by redding, which is the review the change should get.
+**`T-070-s2` is still open**: the READ is bounded and the FILE is not.
+
+#### Ranges, every dot count stated, at their own refs
+
+Main at **`ea7ea0a`**, branch tip **`aec0d66`** for the code (the notes
+commit is one later and cannot name its own hash),
+`git merge-base ea7ea0a aec0d66` = **`2036fb2`**, the cut point, unmoved
+across both executor passes.
+
+    git merge-tree --write-tree ea7ea0a aec0d66  -> tree 13073a60…, exit 0 (read from $?)
+    git diff --name-only ea7ea0a <TREE>                     -> 11   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only ea7ea0a...aec0d66  (THREE dots)    -> 11
+    git diff --name-only 2036fb2..aec0d66   (TWO, branch-only) -> 11
+    git diff --name-only ea7ea0a..aec0d66   (TWO dots)      -> 141  THE FORBIDDEN FORM
+
+**ELEVEN, not the ten of both earlier measurements, and the eleventh is
+`T-070-s4` — the finding the VERIFIER filed onto this branch.** Main
+advanced **130** paths from the cut, **11 of them code** (all under
+`tools/e2e`) and 119 under `docs/`; `comm -12` over the sorted lists is
+**EMPTY**, and 130 + 11 = 141, which is exactly the forbidden count —
+the arithmetic that proves the two sets are disjoint. **The notes commit
+adds no path**: it touches this card AND `T-070-s4`, both already in the
+eleven, so the PATH LIST is invariant across it and every gate
+derivation below holds at the true tip unchanged. Only the insertion
+count moves - **11 files, 2478 insertions, 14 deletions** at the notes
+tip, against the verdict's 1143/10 over the same eleven.
+
+**AND THE COUNT WENT STALE FROM THE RIGHT-HAND SIDE FOR THE THIRD TIME
+ON THIS CARD.** The notes forecast 29 at `09b83e87`, the verdict measured
+52 at `4d2f03c`, and it is 141 at `ea7ea0a` — while the prescribed number
+moved once, and only because a file was ADDED to the branch. Same lesson,
+third observation, one card.
+
+#### The three standing gates, derived under BOTH ranges
+
+| gate | prescribed (11) | forbidden two-dot (141) |
+|---|---|---|
+| GRAPH REGEN (`*.ts/*.tsx/*.js/*.jsx` outside docs/) | **3 — FIRES** | 5 — fires |
+| BOOT GATE (`app/src-tauri/**`, `app/src/**`, either manifest) | **5 — FIRES** | 6 — fires |
+| DOCS GATE (a `docs/` path a code suite reads) | **5 — FIRES**, three suites | 124 — fires |
+
+**NO GATE FLIPS**, and the reason is derivable: main's 11 code paths are
+all `tools/e2e`, which matches BOOT GATE not at all and GRAPH REGEN only
+through two `.spec.ts` files. This lane's own three GRAPH REGEN paths and
+five BOOT GATE paths are unchanged from the first handoff — **the rebuild
+adds no `.ts/.tsx` path and no `app/src/**` path at all**, so both code
+triggers see exactly what they saw before.
+
+- **GRAPH REGEN — OWED (3), RUN, AND A REAL RED**, unchanged from the
+  first handoff and from the verdict. `cargo run -p nputer-index --
+  index --check --root ../..` from `app/src-tauri` exits **1** with BOTH
+  count lines (the discriminator for a real red; a `--root` false red
+  prints `committed: MISSING`): *committed 585305 bytes · 119 files ·
+  1018 symbols · 1539 edges* against *fresh 586657 · 119 · 1020 · 1543*,
+  `files +0 -0 ~3` naming `InterviewChat.tsx`, `agent-store.ts` and
+  `interview-resume-dom.test.tsx`, `edges +5 -1`. **Byte-for-byte the
+  verdict's figures**, which is the check that this rebuild moved no
+  indexed file: it is Rust and Markdown only. `graph.json` is
+  DELIBERATELY NOT REGENERATED and none is committed — the CHECKPOINT
+  owes it.
+- **BOOT GATE — OWED (5) AND RUN.** `NPUTER_BOOT_PORT=14833 npm run
+  boot:check` from `tools/e2e`, exit **0**, both lines: `[nputer] project
+  folder: /Users/ujju/Projects/nputer-T-070` and `[nputer] window "main"
+  created`, then SIGTERM. Port **14833** was bind-probed free on all four
+  stacks (`127.0.0.1`, `0.0.0.0`, `::1`, `::`) before the run — an
+  IPv4-only probe of a v6 listener reports free, which is why all four.
+- **DOCS GATE — OWED (5) AND RUN, invoked DIRECTLY** and never through
+  `xargs` (BSD `xargs` maps a utility exit of 1–125 to 123): `node
+  tools/e2e/scripts/docs-gate.mjs $(cat <list>)`, exit **1**, owing
+  **three** suites — `npm test from app/`, `npm test from tools/e2e/`,
+  `npx vitest run from lib/parser/` — and NOT `cargo test from
+  app/src-tauri/`, the proportionality the gate promises for flat task
+  cards. It reports **11 derived docs readers across 4 suites**, **0
+  frontmatter issues in the live tree**, a census of *117 docs-shaped
+  sites in 22 files, 11 of them in 9 files root-anchored*, and *every
+  live task card's frontmatter parses, with a legal status* — which is
+  this run's answer to `T-070-s4` gaining a `closed_by:` field. All three
+  owed suites were run AFTER the doc edits.
+
+#### Suites, every number derived at this ref, every exit read unpiped
+
+No exit code below came through a pipe — `${PIPESTATUS[0]}` is empty in
+zsh, so each command's own `$?` was echoed on the next statement.
+
+- **parser**: `npm run build` **`PARSER_BUILD_EXIT=0`** FIRST (the app
+  build dies at TS2307 without `lib/parser/dist`) · `npx tsc --noEmit`
+  **`PARSER_TSC_EXIT=0`** · `npx vitest run` **263/263 across 12 files,
+  `PARSER_EXIT=0`**, re-run after the doc edits because its smoke test
+  parses this repository's live `docs/` tree.
+- **app**: `npm run build` **`APP_BUILD_EXIT=0`**, **265 modules
+  transformed**, emitting `index-DdOM3cAL.js` **503.20 kB** and
+  `index-CwYF5FQb.css` **43.95 kB** — **both hashes identical to the
+  first handoff's**, because this rebuild changes no `app/src` file ·
+  `npm test` **843/843 across 43 files, `APP_TEST_EXIT=0`**, unmoved,
+  which is the check that the DOM half was not disturbed.
+- **bare Rust workspace, `cargo test --no-fail-fast`: 358 passed / 0
+  failed / 3 ignored**, **`CARGO_TEST_EXIT=0`**, summed programmatically
+  from **fifteen** `test result:` lines — **356 at the verdict, plus this
+  rebuild's TWO bodies** (`the_tail_walk_stops_at_a_byte_ceiling_with_no_newline_in_the_file`
+  and `the_only_production_path_to_the_transcript_is_the_bounded_one`).
+  Not `--all-targets`, which skips doc-tests.
+- **E2E: 121/121, `E2E_EXIT=0`**, one worker, zero retries, zero skips ·
+  `npm run typecheck` **`E2E_TYPECHECK_EXIT=0`**.
+  **THE PORT MOVED MID-SESSION AND THE GUARD IS WHY, recorded because it
+  is a live worked example of the PORT RULE rather than a footnote.** The
+  first runs used the lane's default 14520, read with `lsof` first and
+  free. The last one exited **1** before a single test ran, with *lane
+  port 14520 is not bindable on 127.0.0.1 (EADDRINUSE) - something else
+  is listening* — and the something else was the **T-013 lane's own
+  playwright run**, `node` pid 86233 on `127.0.0.1:14520`, a sibling
+  worktree that had started while this one was writing notes. **The
+  default port is shared between lanes and `reuseExistingServer: false`
+  means the second lane REFUSES rather than borrowing**, which is the
+  behaviour the rule wants and is indistinguishable from a real red only
+  if you read the exit code instead of the message. Re-run on scratch
+  port **14539**, bind-probed free on all four stacks first: 121/121,
+  exit 0. Nothing was signalled and the sibling's run was not
+  interrupted.
+- **token lint: `LINT_SELFTEST_EXIT=0`, `LINT_TOKENS_EXIT=0`** —
+  *lint-tokens: clean (TOKEN 123 files under app/src, app/test,
+  tools/e2e; CONTROL 594 tracked text files)*, selftest at 49 TOKEN + 4
+  CONTROL samples, 71 walk-policy checks, 8 evidence-floor checks.
+  **CONTROL is 593 + 1**, the verifier's `T-070-s4`; TOKEN is unmoved at
+  123 because this rebuild adds no `.ts/.tsx/.mjs` FILE. This is also the
+  repo's only NUL-byte gate (P5, over raw bytes) and it is green.
+- **`cargo audit -n`** **`CARGO_AUDIT_EXIT=0`**: 472 locked crates, **0
+  vulnerabilities / 17 allowed warnings**, unmoved — which a 0-file
+  `Cargo.lock` diff requires.
+- **`index --check`** exit **1**, the real red above.
+- **`cargo fmt --check` is NOT a gate here and was not run**: it is red
+  on main over pre-existing files with no `rustfmt.toml` in the tree, so
+  it says nothing about this diff. Recorded rather than silently skipped.
+  New Rust here matches its neighbours' width.
+
+#### Security sweep, re-derived over the rebuild's own diff
+
+- **NO manifest, lockfile, capability file, `tauri.conf.json` or
+  `.entitlements`** in the four paths this rebuild moved, and no
+  dependency added: no new crate, no new npm package.
+- **NO NEW IPC SURFACE.** `app/src-tauri/src/lib.rs` is a **0-line diff**
+  across the rebuild — the new pin READS it and does not touch it. IPC is
+  **13 at both ends**, unmoved, and both census traps still reproduce.
+- **NO NEW PROCESS SURFACE**: 0 added lines match `Command::new`,
+  `execFileSync`, `execSync`, `spawn(` or `child_process`.
+- **ONE NEW FILE-SYSTEM READ, IN TEST CODE ONLY, AND IT IS NAMED HERE
+  RATHER THAN LEFT TO BE FOUND**: the containment arm walks
+  `app/src-tauri/src/**` with `std::fs::read_dir`/`read_to_string`,
+  rooted at `env!("CARGO_MANIFEST_DIR")` and not at the process's working
+  directory. It lives inside `#[cfg(test)]`, reads only this crate's own
+  sources, and writes nothing. The other five arms use `include_str!`,
+  which binds their text to what was COMPILED; the walk cannot, because
+  it is a claim about files nobody has written yet, and that difference
+  is stated in its own doc comment.
+- **`acl_pin.rs`, `runner.rs` and `ENV_ALLOWLIST` are 0-file diffs** in
+  this rebuild; `EXPECTED_GRANTS` unmoved at 92; exactly **THREE**
+  `#[ignore]` attributes, unmoved — **this rebuild deliberately adds no
+  `#[ignore]`d benchmark**, which is why the s4 timings are a scratch
+  probe restored afterwards rather than a fourth ignored body.
+- **No secret-shaped content** in the added lines, and **0 NUL bytes** in
+  the four paths (the token lint's P5 agrees).
+
+#### The human's app, and what this lane left behind
+
+**Port 1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and with
+nothing else**, before and after. No bind, no connect, no signal, on any
+interface. Holder `node` pid **82549**, one socket, `TCP [::1]:1420
+(LISTEN)`, identical at both ends. Their app process is unchanged: pid
+**85379**. Every edit is in `../nputer-T-070`; the boot check ran against
+THIS tree on port 14833, bind-probed on four stacks first. The two
+`nputer-T-060` `fake_agent` orphans (**52504**/**52505**, ppid 1) were
+left alone (T-043-s1); **no `pkill` was used at any point**. The drill
+worktree `../nputer-T070-fixdrill` was created twice and removed twice,
+and `git worktree list` is back to main plus the live lanes. **Every
+scratch file this session wrote is prefixed `T070fix-`** — the scratch
+directory is not private, and two other sessions' worktrees were visible
+inside it and left untouched.
+
+#### The board at this handoff
+
+**188 flat task files, 64 done / 19 planned / 19 parked / 85 suggested /
+1 verifying**; 64 + 19 + 19 + 85 + 1 = 188. Ten files sit in
+`docs/tasks/rejected/` and are counted separately. The delta from the
+first handoff is exactly `T-070-s4`, filed by the verifier. **No finding
+was filed by this pass**: the two things it found in its own work
+(the s4 fix's undetectability by poison, and the obfuscated-path limit of
+a source pin) are properties of this change stated above, not work
+somebody else should do.
+
 
 ## Verdicts
 

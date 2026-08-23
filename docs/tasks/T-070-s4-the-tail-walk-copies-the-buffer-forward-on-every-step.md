@@ -3,9 +3,63 @@ id: T-070-s4
 title: The tail walk copies its whole buffer forward on every backward step, so a large legitimate tail costs O(steps squared)
 status: suggested
 suggested_by: verifier claude-opus-5 @T-070-verify
+closed_by: 1e0b940 (task/T-070-arrival-reads-disk, 2026-08-23) — the second arm below, taken in the same rewrite as the verdict's BLOCKING 2
 ---
 
-Filed beside T-070's rejection rather than inside it: this is NOT the
+**DISCHARGED BY THE WORK THAT ANSWERED THE VERDICT, AND THIS FILE STAYS
+`status: suggested`** — a finding whose work was resolved elsewhere keeps
+its status and records the discharge in its own body, and the three
+moves are triage's, not an executor's (CONVENTIONS' fourth question,
+T-083's ruling as `T-081-s7` spells it). The finding's own last line
+predicted this: *"it merges naturally into whatever rebuild answers the
+verdict's BLOCKING 2, since that finding is in the same loop."* It did.
+
+**WHICH ARM.** The second one, verbatim: the walk pushes each backward
+step into a `Vec<Vec<u8>>` and concatenates once when it stops, `pop`ping
+so the LAST step — the earliest bytes in the file — is copied first and
+each chunk is freed as it goes. Total copying is linear in the bytes
+read; peak memory is the tail plus one chunk rather than two copies of
+the tail. **The seek pattern, the `Read + Seek` seam and `TAIL_CHUNK` are
+untouched**, which is what the finding asked for, and the proof is that
+BYTES READ did not move on any row below.
+
+**RE-MEASURED ON THE FINDING'S OWN THREE FIXTURES**, release build,
+400 half-turns, budget 200, in the detached scratch worktree at
+`1e0b940`. Both walks were timed IN THE SAME PROCESS on the SAME file —
+the pre-fix loop transcribed beside the shipped one — and their answers
+were asserted byte-identical before either time was printed:
+
+| text per line | file bytes | bytes read | BEFORE | AFTER | `read_transcript` |
+|---|---|---|---|---|---|
+| 8 KiB | 3,295,784 | 1,703,936 | 3 ms | **2 ms** | 1 ms |
+| 32 KiB | 13,126,184 | 6,619,136 | 25 ms | **5 ms** | 4 ms |
+| 128 KiB | 52,447,784 | 26,279,936 | **544 ms** | **16 ms** | 20 ms |
+
+**The 128 KiB row is the finding**: 544 ms → 16 ms, and arrival is now
+FASTER than the whole-file reader it replaced on the same file (20 ms),
+which is the sentence the finding said the card's stated purpose
+required. Four times the bytes is now about three times the time, not
+eighteen. The three BYTES READ figures are identical to the ones in the
+table above this section, measured by a different session on a different
+day — the file sizes differ by a few thousand bytes because this
+fixture's line shape is slightly different, and the read figures do not
+differ at all.
+
+**AND THE NEWLINE-FREE FILE, at the production budget of 200**, which is
+where this finding and BLOCKING 2 meet:
+
+| file | BEFORE: read / time / lines | AFTER: read / time / lines |
+|---|---|---|
+| 20 MiB, no newline | 20,971,520 · 381 ms · 1 | 20,971,520 · **11 ms** · 0 |
+| 60 MiB, no newline | 62,914,560 · 4,063 ms · 1 | **52,428,800** · **26 ms** · 0 |
+
+The 20 MiB row is honest about what the ceiling does and does not do:
+20 MiB is UNDER `200 × TRANSCRIPT_TEXT_CAP`, so that file is still read
+in full — the cost is now bounded by a CONSTANT rather than by the file,
+not made small. The 60 MiB row is the ceiling actually biting, at
+exactly 52,428,800 bytes. The quadratic term is what made the first one
+matter, and it is gone.
+
 criterion failure the verdict rejects on (the READ is bounded on every
 input in the table below — 26 MB of a 52 MB file). It is an efficiency
 defect in the same function, and it is filed separately so that it
