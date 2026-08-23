@@ -1,7 +1,7 @@
 ---
 id: T-085-s2
 title: A docs reader that sits in no declared suite is owed the literal command "undefined from undefined/" — loud, zero live instances, and newly reachable because of T-085
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-085-verify, confirmed by executor claude-opus-5 @T-085-fix
 ---
 
@@ -90,3 +90,5 @@ returned `commands` is recomputed from `byPath.flatMap((e) => e.commands)`,
 which is the unguarded template. The intent was there and the wiring
 dropped it, so the fix is smaller than it looks — but it still has to
 choose which of the three shapes above it means.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark at the first corpus file outside the four SUITES entries containing a docs-shaped path call. Zero live instances; the failure is loud, not silent; three candidate fixes with opposite costs and no ruling. Note for whoever opens it: the dead `const commands = new Set()` at docs-scan.mjs:2248 is real and sweepable by T-090.

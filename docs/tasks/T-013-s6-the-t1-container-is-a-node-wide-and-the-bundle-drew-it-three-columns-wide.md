@@ -1,7 +1,7 @@
 ---
 id: T-013-s6
 title: The T1 container is one node wide because the criterion says "within its own column"; the bundle drew it three columns wide, and nobody has ruled
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-013
 ---
 
@@ -41,3 +41,5 @@ separation from the next column. This is the architect's call and it is
 a DESIGN question — the handoff's own §9 says "IF a component or edge
 state has no designed treatment THEN the pass is not done", and the two
 sentences above are one state with two treatments.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark at the same design pass — the finding calls it "the architect's call and a DESIGN question": two sentences of record, one state, two treatments.

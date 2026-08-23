@@ -1,7 +1,7 @@
 ---
 id: T-070-s2
 title: The READ is bounded now and the FILE still is not — transcript.jsonl grows forever and nothing rotates it
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-070
 ---
 
@@ -41,3 +41,5 @@ new failure mode into a card sized beside its sibling.
 
 **SIZE S.** One clause in `append_transcript`, one constant, one unit
 body in `agent/sessions.rs`, and a sentence in the module header.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark at the first real transcript measured above the tail read's own ceiling (52,428,800 bytes). Nothing reads those bytes today — write-only by construction.

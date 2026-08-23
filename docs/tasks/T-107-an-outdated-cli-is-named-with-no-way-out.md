@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs (seventh triage, 2026-08-24): T-070-s1 — files removed in this commit.
+
 Absorbs: T-082-s4 (sixth triage, 2026-08-20). That file is removed in
 this commit.
 

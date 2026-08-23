@@ -1,7 +1,7 @@
 ---
 id: T-013-s4
 title: The per-component churn figure is FILE EDITS, not commits — the design says commits, and the exact number needs a payload this card did not ship
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-013
 ---
 
@@ -39,3 +39,5 @@ payload; (b) push the component globs Rust-side so the aggregation can
 happen there — contradicts ADR-015 and forks the glob matcher; (c) keep
 edits and say so, which is what this card did. Weigh (a) against the
 payload size on a real monorepo before choosing.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark at the design pass that owns the map-behavior screen — the finding's own words: "Weigh (a) against the payload size on a real monorepo before choosing." Answer together with T-013-s6 in one pass.

@@ -1,7 +1,7 @@
 ---
 id: T-070-s6
 title: The fragment-reconstruction bypass is a live whole-file read no source pin catches — disclosed, honestly bounded, and matching the T-080-s4 precedent
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-070-verify
 ---
 
@@ -47,3 +47,5 @@ against deliberate obfuscation is stated rather than closed. The arm — if
 one is ever wanted — is a read-boundary gate on the transcript reader in
 the shape the registry got at T-039, not more census spellings. Sized
 against that, not against the diff.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark at a second production reader of `transcript.jsonl`, or any ACCIDENTAL (non-obfuscated) bypass of the six-arm census. Verifier-ruled honestly bounded; T-080-s4 precedent.

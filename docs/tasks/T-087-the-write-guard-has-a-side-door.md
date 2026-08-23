@@ -7,7 +7,7 @@ priority: 45
 size: M
 status: planned
 blocked_by: []
-touches: [app-shell]
+touches: [app-shell, docs/CONVENTIONS.md]
 builder:
 verifier:
 built_by:

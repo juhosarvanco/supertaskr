@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs (seventh triage, 2026-08-24): T-089-s6, T-013-s1 — files removed in this commit.
+
 `method/roles/orchestrator.md:16` states the rule in one sentence:
 *among the topmost undone tasks of each feature column, pick the
 highest-priority one that is unblocked AND whose `touches:` don't

@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs (seventh triage, 2026-08-24): T-097-s2 — files removed in this commit.
+
 > **DRAFTER'S NOTE — remove before landing.** Two things for the
 > architect. **(1) ORDINALS MUST BE MINTED IN ONE PLACE.** This card is
 > the taxonomy pass, so it should assign every outstanding ordinal —

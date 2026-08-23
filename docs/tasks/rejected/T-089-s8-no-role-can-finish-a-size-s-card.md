@@ -1,7 +1,7 @@
 ---
 id: T-089-s8
 title: The size-S ceremony tier abolishes the integrator, and the new lane protocol gives the integrator two jobs nobody else may do
-status: suggested
+status: rejected
 suggested_by: verifier claude-opus-5 @T-089-verify
 closed_by: T-089 re-execution (task/T-089-brief-contract, 2026-08-23) — arm 1 taken; both files moved and agree, see this card's Closed section
 ---
@@ -87,3 +87,5 @@ live lanes is size S (`T-013`, `T-064` and `T-070` are all M), so the
 sample is historical. `git log --diff-filter=D --name-only` over removed
 worktrees is not a thing; the record is in the checkpoints, which state
 whether the integrator removed a worktree it did not create.
+
+**REJECTED at the seventh triage (2026-08-24) — discharged by:** closed_by: T-089's re-execution — verified in both files: TASK-FORMAT's ceremony row S reads 'the executor is its OWN integrator', and lane-protocol rules 4/6 carry the matching carve-outs.

@@ -1,7 +1,7 @@
 ---
 id: T-064-s5
 title: The stat reading counts a DIRECTORY named `*.md` inside docs/tasks/ as a task file and the snapshot reading cannot — a second place where "one predicate, two inputs" is two questions
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-064
 ---
 
@@ -37,3 +37,5 @@ shape. The close is one `entry.file_type()` check, or `is_file()`, in
 `has_any_task_file`; sized S, and it belongs with `T-064-s1`, which is
 the same file, the same two readings and the same decision about what
 the two inputs are allowed to disagree about.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark with T-026-s1 (same file, same two readings, one decision), or independently at the first directory named `*.md` under docs/tasks/.

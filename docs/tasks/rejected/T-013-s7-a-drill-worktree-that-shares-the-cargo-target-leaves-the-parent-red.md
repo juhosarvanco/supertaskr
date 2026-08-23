@@ -1,7 +1,7 @@
 ---
 id: T-013-s7
 title: A drill worktree that shares the cargo target directory bakes its own manifest dir into the cached test binaries and leaves the parent worktree RED after it is deleted
-status: suggested
+status: rejected
 suggested_by: executor claude-opus-5 @T-013
 ---
 
@@ -91,3 +91,5 @@ went into the bullet with it:
    unbuilt drill, 924/924 after `npm run build`. The LANE PROTOCOL
    bullet in CONVENTIONS still says five of those files; T-013's own
    `map-t1-t2-dom.test.tsx` is the sixth.
+
+**REJECTED at the seventh triage (2026-08-24) — discharged by:** T-013's own checkpoint — CONVENTIONS:895 now carries arm (c) (detached scratch worktree PLUS its own CARGO_TARGET_DIR inside it), naming T-013-s7. Its SECOND half (a fresh worktree has no app/dist; CONVENTIONS' five-file figure is six) rides T-117.

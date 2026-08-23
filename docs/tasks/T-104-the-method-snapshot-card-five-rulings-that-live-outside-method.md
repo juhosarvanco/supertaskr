@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs (seventh triage, 2026-08-24): T-089-s1, T-089-s9, T-089-s10, T-089-s11, T-061-s1 — files removed in this commit.
+
 > **DRAFTER'S NOTE — remove before landing.** The `touches:` above is
 > the card's whole point and should not be trimmed. `T-078-s3` measured
 > that a `method/` FORMAT change is a THREE-file commit whose third file
@@ -127,6 +129,26 @@ Rust, so your docs-only card cannot do it".
    verdict's printed `CONTROL 554` was stale at its own tip by two
    tracked files, and no gate will ever catch a stale printed number.
    `method/roles/verifier.md` is the file.
+
+## Carried forward from `T-089-s7` (seventh triage, 2026-08-24)
+
+`T-089-s7` is rejected as discharged — its arm 1 landed in T-089's
+re-execution — **but one residual survives only inside the file the
+convention schedules for removal**, so it is copied here rather than
+buried:
+
+- **Row 5's slug map is named but never located.** It is
+  `docs/ARCHITECTURE.md` plus each component's `touch_slugs:`, and no
+  row says so; every other row names a file.
+- **Row 5's two named sources disagree today** — the board reports zero
+  cards `building` while `git worktree list` reports live lanes — and
+  the precedence rule between them lives in CONVENTIONS, also unnamed.
+  This card SHALL name both the map and the precedence, because an
+  assembler transcribing row 5 cannot compute fence disjointness
+  without them.
+
+`T-089-s11` records the same two rows from the verdict side; both are
+absorbed here.
 
 ## Acceptance criteria
 

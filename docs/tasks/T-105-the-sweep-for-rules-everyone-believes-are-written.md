@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs (seventh triage, 2026-08-24): T-101-s4 — files removed in this commit.
+
 > **DRAFTER'S NOTE — remove before landing.** Two things. **(1) THE
 > FENCE.** If the sweep routes any lesson into `method/`, T-078-s3's
 > three-file coupling applies and this fence cannot carry it — either

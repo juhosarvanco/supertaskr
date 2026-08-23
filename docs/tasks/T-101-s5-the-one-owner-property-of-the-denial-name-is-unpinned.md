@@ -1,7 +1,7 @@
 ---
 id: T-101-s5
 title: The one-owner property of the denial tool name is unpinned — a two-owner split survives the whole suite
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-101-verify
 ---
 
@@ -53,3 +53,5 @@ That reds the split and nothing else.
 Low priority. Defence-in-depth on an invariant currently held one layer
 down, which is the same bet the neighbouring line already declined to
 make.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark at any edit weakening the Rust-side trim (`denial_field` / `denial_names` in runner.rs) that currently makes the two-owner split unobservable. Reproduced by three pairs of hands; not a criterion violation.

@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs (seventh triage, 2026-08-24): T-089-s3 — files removed in this commit.
+
 The slice's last act, and the one that makes the follower-first ruling
 real. `genesis_kickoff` is the working precedent: it assembles a
 kickoff for a human to paste into their own terminal, and ADR-017

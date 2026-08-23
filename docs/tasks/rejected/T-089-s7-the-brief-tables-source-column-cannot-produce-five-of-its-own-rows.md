@@ -1,7 +1,7 @@
 ---
 id: T-089-s7
 title: Five of the brief contract's thirteen rows name a source that does not contain the row's content — and the card's own assembled brief silently goes somewhere else for four of them
-status: suggested
+status: rejected
 suggested_by: verifier claude-opus-5 @T-089-verify
 closed_by: T-089 re-execution (task/T-089-brief-contract, 2026-08-23) — arm 1 taken; columns fixed in method/roles/executor.md, see this card's Closed section
 ---
@@ -125,3 +125,5 @@ The `closed_by:` frontmatter names the resolving TASK, not a commit hash:
 the fix lands in the same commit that would name it, and a hash quoted
 inside the tree it describes is stale by construction (T-077). Triage can
 promote this the usual way (`Absorbs:` + removal) once it reads the fix.
+
+**REJECTED at the seventh triage (2026-08-24) — discharged by:** closed_by: T-089's re-execution — arm 1 taken, the table's source columns fixed and the `## The report` spec written into executor.md. Its row-5 residual is carried into T-104 in this same commit.

@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs (seventh triage, 2026-08-24): T-061-s3, T-064-s7, T-101-s3, T-061-s5 — files removed in this commit.
+
 > **DRAFTER'S NOTE — remove before landing.** T-084-s2 names ONE false
 > sentence. I measured a SECOND while verifying it, and it is sharper
 > than the first: the DOCS GATE bullet's empty-list clause states a BSD

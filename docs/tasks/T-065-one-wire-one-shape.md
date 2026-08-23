@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs (seventh triage, 2026-08-24): T-064-s4, T-064-s3 — files removed in this commit.
+
 Absorbs T-041-s2 and T-042-s1 (triage 2026-08-17). T-042-s1 names the
 shallow symptom of T-041-s2's missing comparison. T-027-s5 is no longer
 absorbed: T-028 implemented its scroll-property assertion at `286fd2c`, and

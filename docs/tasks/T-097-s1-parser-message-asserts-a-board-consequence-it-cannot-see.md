@@ -1,7 +1,7 @@
 ---
 id: T-097-s1
 title: The parser asserts a board consequence in two messages, and nothing on either side notices when the board changes
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-097
 ---
 
@@ -62,3 +62,5 @@ grep is `git grep -n "the board" -- lib/parser/src`, it returns SEVEN
 hits at `a15b78e`, and only three of them are message text; the other
 four are doc comments, which are a milder version of the same coupling
 and are probably fine.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark when a card whose criteria change `selectBoard`'s column or slot routing is dispatched. All three parser messages read TRUE today (roadmap.ts:65, :137, validate.ts:198) and T-097 pinned the board side.

@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs (seventh triage, 2026-08-24): T-013-s2 — files removed in this commit.
+
 Absorbs: T-021-s2, T-021-s3. Triage 2026-08-16: two pins that step
 over the path they exist to guard, in the two files T-021 owns
 (src/lib.rs, src/docs_watch.rs, with the pin in src/acl_pin.rs).

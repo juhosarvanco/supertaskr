@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs (seventh triage, 2026-08-24): T-013-s3, T-070-s5 — files removed in this commit.
+
 > **DRAFTER'S NOTE — remove before landing.** Every code claim below was
 > re-read at HEAD `4d2f03c` and every one reproduces, including the two
 > the findings quote as source blocks. Line numbers have drifted

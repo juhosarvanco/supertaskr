@@ -15,6 +15,8 @@ verified_by:
 review:
 ---
 
+Absorbs (seventh triage, 2026-08-24): T-064-s2 — files removed in this commit.
+
 Absorbs: T-028-s1, T-028-s3, T-029-s4 (fourth triage, 2026-08-19). The
 suggestion files are removed in the same commit as this card.
 

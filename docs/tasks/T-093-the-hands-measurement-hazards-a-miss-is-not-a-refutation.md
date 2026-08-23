@@ -152,6 +152,29 @@ honest narrow version is "flag a comment quoting a figure in the same
 file as an assertion of a DIFFERENT value", worth a prototype only if a
 sixth instance turns up.
 
+## Two more hazards, measured this session (seventh triage, 2026-08-24)
+
+**5. A merge forecast should be MEASURED, not extrapolated.** Three
+forecasts went stale in their absolutes this session and none in its
+delta. The technique that works: build the merge tree, wrap it in a
+throwaway `commit-tree` (no ref moves), check it out detached with its
+own `CARGO_TARGET_DIR`, and run the gate there. Reproduced exactly at a
+main two merges later — 1120/1703 to 1126/1712 against the lane's
+1023/1550 to 1029/1559, **delta +6/+9 identical, only the endpoints
+moved**. THE CARD SHALL state the delta as the invariant and the
+endpoints as ref-bound, because a forecast checked by its deltas alone
+would have reported "current" when it was not.
+
+**6. THE PORT-PROBE ORDER IS BACKWARDS IN EVERY BRIEF THIS SESSION.**
+`lsof -nP -iTCP:<port> -sTCP:LISTEN` is the **authority**; a `bind()`
+probe is the confirming half, never the primary. Measured: on a port
+holding client-side TIME_WAIT peers, `lsof` returns zero rows and a
+plain `bind()` without `SO_REUSEADDR` still fails EADDRINUSE — a real
+false red on port 14768. And the corollary, which is the part a reader
+will get wrong: **unfiltered `lsof` is equally blind**, because
+TIME_WAIT sockets have no owning process, so dropping `-sTCP:LISTEN`
+"to be safer" buys nothing.
+
 ## Acceptance criteria
 
 - **THE CITATION BULLET SHALL NAME EVERY KNOWN CAUSE OF A FALSE EMPTY,

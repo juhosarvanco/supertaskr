@@ -1,7 +1,7 @@
 ---
 id: T-070-s3
 title: Bounding the read changed one answer — a tail of unparseable lines now rehydrates as empty where the whole-file read reached further back
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-070
 ---
 
@@ -44,3 +44,5 @@ recovers the old answer for a merely-dirty tail while keeping the read
 bounded by construction. It costs one more loop condition and one more
 constant, and it needs a body of its own, since the existing byte pin
 would not distinguish the two.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark at the first observed unparseable transcript tail. Nothing in the app writes garbage to that file; only an external writer or a torn append can.

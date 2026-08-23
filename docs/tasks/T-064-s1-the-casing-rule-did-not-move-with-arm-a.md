@@ -1,7 +1,7 @@
 ---
 id: T-064-s1
 title: The casing rule did NOT move with arm (a) — one predicate now has two constructors whose NAME MATCHING is filesystem-dependent on one side and exact on the other
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-064
 ---
 
@@ -54,3 +54,5 @@ and (b) is now the cheaper of the two precisely BECAUSE the constants
 are shared: one `eq_ignore_ascii_case` on each side, against one
 literal. Whoever takes T-026-s1 should take this with it; it is the
 same decision and it now has two implementations waiting for it.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark at the first Linux run (T-020's CI lane), inheriting T-026-s1's trigger verbatim: "Decide when the first Linux run makes the divergence observable rather than argued." Park beside T-026-s1 — this file falsifies its stated expectation.

@@ -1,7 +1,7 @@
 ---
 id: T-101-s2
 title: A message of only U+200B survives denialLine's blank test and renders a blank reason — the toolName half of this finding is closed
-status: suggested
+status: parked
 suggested_by: verifier claude-opus-5 @T-101-verify
 ---
 
@@ -54,3 +54,5 @@ not a second special case beside `denialLine`.
 
 Low priority: unreachable from the observed CLI, and the worst case is a
 row whose reason reads as empty rather than as absent.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark at the next edit to `failureDetail`'s identical `.trim()` test — the honest close is ONE rule for both. Unreachable from the observed CLI.

@@ -1,7 +1,7 @@
 ---
 id: T-085-s1
 title: The package-relative docs class is closed by construction, not by an enumerable population — so its one residual has no census, and its tripwire inherits a narrower version of T-084-s7's out-of-fence cost
-status: suggested
+status: parked
 suggested_by: executor claude-opus-4.8 @T-085
 ---
 
@@ -39,3 +39,5 @@ options `T-084-s7` weighs; the population is smaller still (one climbing
 site in the whole tree today), so option 3 — let the room happen — is
 even more clearly right here. Re-weigh with `T-084-s7` if `T-084-s2` (the
 gate as a CI step) ever lands.
+
+**PARKED at the seventh triage (2026-08-24).** Unpark when T-090 merges — its own trigger names T-084-s2, which T-090 absorbed, so T-090's merge IS the unpark event. Census measured NIL on this tree.

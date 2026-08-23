@@ -54,6 +54,26 @@ individually right: fresh installs prove a merge on a clean tree;
 app while work proceeds. The method has no rule about the shared
 tree, so the collision is invisible until something dies.
 
+## A tenth instance, and it is a CONFLATION rather than a kill (seventh triage, 2026-08-24)
+
+**BOOT GATE's trigger set and the app-relaunch trigger set overlap but
+are NOT the same set, and three checkpoints treated them as one.**
+`tauri dev` restarts the binary on `app/src-tauri/**`; a change under
+`app/src/**` goes to vite HMR and the window is never replaced. Two
+merges this session relaunched the human's app at the
+`git merge --no-commit` working-tree write (measured at ten and thirty
+seconds before the merge commit); T-101's merge touched only `app/src`
+and correctly did **not**, against a brief that predicted it would.
+THE CARD SHALL state both sets and their difference where an integrator
+writes the "what reached the human's app" section.
+
+**Carry the measurement pitfall with it**: `ps | grep
+'target/debug/nputer'` matches `nputer-index` as a substring, so an
+integrator's own graph-gate run reads exactly like a relaunch — a fresh
+start time on a second `nputer`. Anchor the match
+(`awk '$NF=="target/debug/nputer"'`). One integrator caught this as a
+near-false-positive in its own relaunch report.
+
 ## Acceptance criteria
 - THE method SHALL state, where an integrator will read it, that the
   main checkout may be in use by a human running the app, and SHALL

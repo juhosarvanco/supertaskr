@@ -1,7 +1,7 @@
 ---
 id: T-070-s4
 title: The tail walk copies its whole buffer forward on every backward step, so a large legitimate tail costs O(steps squared)
-status: suggested
+status: rejected
 suggested_by: verifier claude-opus-5 @T-070-verify
 closed_by: aec0d66 (task/T-070-arrival-reads-disk, 2026-08-23) — the second arm below, taken in the same rewrite as the verdict's BLOCKING 2
 ---
@@ -111,3 +111,5 @@ it measures today.
 
 **SIZE S**, and it merges naturally into whatever rebuild answers the
 verdict's BLOCKING 2, since that finding is in the same loop.
+
+**REJECTED at the seventh triage (2026-08-24) — discharged by:** closed_by: aec0d66 — arm 2 taken in the rewrite answering the verdict's BLOCKING 2; re-measured 544 ms to 16 ms.
