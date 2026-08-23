@@ -11,8 +11,8 @@ touches: [app-interview]
 builder:
 verifier:
 built_by: claude-opus-4.8 @T-101
-verified_by:
-review:
+verified_by: claude-opus-5 @T-101-verify
+review: same-model
 ---
 
 Absorbs: T-081-s1 (sixth triage, 2026-08-20). That file is removed in
@@ -344,3 +344,313 @@ sibling context, not re-filed.
   reds by design at the branch, green after the integrator's regen.
 - The stylesheet-hash claim is falsifiable in one build: the CSS content
   hash must read `index-CwYF5FQb.css` unless you meant a token to move.
+
+## Verdicts
+
+### 2026-08-23 — REJECTED (claude-opus-5 @T-101-verify, review: same-model)
+
+**Three blocking findings, and all three are about the LAST criterion —
+"the same refusal shall not read as two different events." The notice
+itself is good work.** Before the findings, what reproduces exactly at my
+own refs: the register really is the quiet furniture and never
+`FailureBlock`; `denialLine` is pure and shares `MAX_ERROR_CHARS` with
+`failureDetail` rather than minting a second number; the two capture
+entries are faithful; the M1/M3 complement is genuine and I re-measured
+it; M10's sharpening is real and I falsified the alternative; the
+stylesheet is byte-identical from a base-source build; every suite,
+count and gate reproduces. **This is a rejection about the SUPPRESSION
+GATE and one unpinned criterion clause, not about the notice.**
+
+**DISCLOSURE — the implementation-notes leak path (`T-089-s2`).** The
+notes are inline in this card, so a single `cat` exposes them. I read
+**lines 1–110 only** (spec + criteria, stopping at `## Implementation
+notes`), wrote my own mutant list to a scratch file BEFORE reading
+further, ran the entire drill below from that list, and read the notes
+only afterwards. The pre-notes list is what produced V7/V8 and P5/P7 —
+the three blocking findings — none of which appear in the executor's
+eleven-row matrix. I am the fourth verifier this session to declare this
+path.
+
+**Ranges re-derived at my own tip, dot-counts on every command.** Main
+`6834287`; lane tip `0e9c045`; merge-base `a15b78e` (unchanged).
+Pre-merge, so the `merge-tree` form:
+
+    TREE=$(git merge-tree --write-tree 6834287 HEAD)  exit 0, tree 016fba5…
+    git diff --name-only 6834287 <TREE>               -> 5   PRESCRIBED
+    git diff --name-only 6834287...HEAD  (THREE dots) -> 5   agrees
+    git diff --name-only 6834287..HEAD   (TWO dots)   -> 52  FORBIDDEN, left-drift
+
+Triggers confirmed at that list: GRAPH REGEN on the 3 `.ts/.tsx`, BOOT
+GATE on the 2 `app/src/**`, DOCS GATE on the 2 `docs/tasks/`.
+
+---
+
+#### BLOCKING 1 — the `exitNonZero` path double-reports TODAY, and `T-101-s1` has the mechanism backwards
+
+`T-101-s1` says the two surfaces are disjoint because T-081 "narrowed
+[the tail] to the UNANNOUNCED subset — so an announced denial appears in
+the live notice ONLY, and a result-only denial in the tail ONLY", and
+that a double report would need T-081-s10's narrowing to be *reverted*.
+**The narrowing does not select the safe set. It selects the
+double-reported one.** In `runner.rs`, one `result` line drives both of
+these over the SAME `unannounced` vector, ~40 lines apart:
+
+    for denial in &unannounced { emitter.denied(req.turn, …) }   // ~2046
+    let unreported = denial_names(unannounced.iter().copied());  // ~2089
+    …ring.push(format!("permission_denials: {}", unreported.join(", ")))
+
+So every result-only denial that has a `tool_name` becomes a live
+`Denied` event **and** puts its name in the stderr ring — which is
+exactly what `ExitNonZero.stderrTail` carries and `failureDetail`
+renders. Before this card that was harmless: nothing rendered
+`denials`, so the tail was the only surface. **This card builds the
+second surface.** Reproduced (probe P7, real store, real `genesis-turn`
+channel):
+
+    emit: denied{toolName:"Bash", toolUseId:"toolu_resultonly", message:""}
+          failed{exitNonZero, code:1, stderrTail:"permission_denials: Bash"}
+
+    live notice:    [refused: Bash — the CLI gave no reason]
+    failure block:  [the planner exited with code 1  permission_denials: Bash …]
+    "Bash" occurrences on the turn: 2
+
+Expected one surface, got two. `T-101-s1` should be rewritten: the
+`exitNonZero` path is not "inherited and honest", it is **broken now**,
+and the trigger is not a hypothetical revert.
+
+#### BLOCKING 2 — the `toolDenied` gate over-suppresses: a refusal reported ZERO times
+
+The gate is `planner.error?.kind !== "toolDenied"`, which drops the
+WHOLE notice. Criterion 7 licenses hiding **the same refusal**; it does
+not license hiding a *different* one. `TurnError::ToolDenied` carries
+`denials: Vec<String>` built by `denial_names`, which is
+`filter_map(|d| d.tool_name.clone())` (`runner.rs:1661`) — it **drops
+every entry with no `tool_name`**, a shape the runner's own fixture
+models (`ResultDenial { tool_name: None, tool_use_id: Some("toolu_nameless") }`,
+`runner.rs:2774`). One mixed `result` line with `is_error: true`
+produces both halves at once. Reproduced (probe P5):
+
+    store denials: [{toolName:"Bash",toolUseId:"toolu_named"},
+                    {toolName:null, toolUseId:"toolu_nameless"}]
+    error:         {kind:"toolDenied", denials:["Bash"]}
+
+    live notice present: false
+    whole turn text:     "…the planner was refused a tool it needed
+                          The planner asked for Bash and nputer's allowlist
+                          does not carry it… Bash …"
+
+Two refusals in the store, **one** on screen. The nameless refusal is
+announced by the runner specifically so it will not be silent — its own
+comment reads *"a repeat is a nuisance, a silence is the defect this
+card exists to fix"* — and this gate converts it into the silence, one
+layer up. That is criterion 5's *"a notice that a later render drops is
+worse than none"* in its literal form. Note also that all denial
+MESSAGES are lost on this path, since `FailureBlock` renders names only.
+
+#### BLOCKING 3 — the criterion's own key is unpinned: two dedupe mutants survive the whole suite
+
+Criterion 3 reads *"distinguished by `toolUseId` rather than deduped."*
+The suite pins "not deduped **by name**" (M1) and nothing else. From my
+pre-notes list, one side only, text read back with `git diff`, restored
+and sha256-proved:
+
+| mutant (mine) | result |
+|---|---|
+| V7 — `DenialNotice` dedupes by `message` | **SURVIVES · 861/861 · exit 0** |
+| V8 — dedupes by `toolName` only when `message` also matches | **SURVIVES · 861/861 · exit 0** |
+| V9 — dedupes by `toolUseId` | reds degenerate only (861→860) |
+
+Both survive because every fixture in the file gives its denials
+distinct messages, so a message-keyed dedupe never fires. The shape is
+reachable, not theoretical: `classify_line`'s `decision_reason`
+fallback yields a **canned** sentence, so two glob refusals in one turn
+arrive with identical `toolName` AND identical `message`, differing only
+in `toolUseId`. The renderer handles it correctly today — probe P6 gives
+2 rows, ids `["toolu_a","toolu_b"]` — but **nothing stops the next
+editor from deduping it away**, which is the defect T-081's verifier
+rejected T-081's first build over. P6 is the missing fixture; it is a
+few lines in the existing describe.
+
+---
+
+### What I verified and found SOUND
+
+**The M1/M3 complement is real — re-measured, not taken on trust.** Each
+reds exactly one body and the two singletons are disjoint, so neither
+body is the other's shape-six duplicate:
+
+| mutant | exit | tests | reds |
+|---|---|---|---|
+| M1 dedupe by `toolName` | 1 | 860/861 | `THE MEASURED TURN` **only** |
+| M3 notice gated on `!running` | 1 | 860/861 | liveness body **only** |
+| M6 suppression deleted | 1 | 860/861 | toolDenied body only |
+| M7 suppression widened to any error | 1 | 859/861 | toolDenied + hostile |
+| M11 gated on `activity.length === 0` | 1 | 859/861 | liveness + hostile |
+| V18 order reversed (mine) | 1 | 859/861 | measured + degenerate |
+| V19 keep only the last denial (mine) | 1 | 859/861 | measured + degenerate |
+
+All five re-runs match the executor's matrix row-for-row.
+
+**M6/M7 are NOT "disjoint sets" — they are disjoint ASSERTIONS inside
+one body**, which is the stronger and truer claim. M6 reds the negative
+(*"the same refusal is not also a second, quieter event"*, turn 1); M7
+reds the positive control (the stalled turn 2). The executor's own table
+says this correctly; the dispatch brief's "disjoint sets" is a garbling.
+
+**M11 reds at the AFTER-activity assertion, as claimed** —
+`interview-chat-dom.test.tsx:812`, *"the furniture moved and the refusal
+did not: expected null not to be null"*. The arrival assertion above it
+passes (at arrival `activity.length === 0`), so an arrival-only body
+would indeed have shipped the mutant. The presence-before-text ordering
+does produce the crisp message it advertises.
+
+**M10's sharpening is real, not relabelled.** The decisive pair, mangling
+ONE half (strip `<>` from the message, tool name untouched):
+
+| | assertion | result |
+|---|---|---|
+| G1 | the shipped `.toBe(2)` count | **RED**, hostile sweep only, 860/861 |
+| G2 | downgraded to the old `toContain` | **GREEN, 861/861, exit 0** |
+
+That reproduces the executor's claimed measurement independently.
+`HOSTILE` contains the probe string exactly once, so the count of 2
+genuinely requires both halves. **Its limit, stated honestly:** the count
+pins *how many* hostile strings, not *which half carries them*. My T1
+(halves transposed), T2 (tool half duplicated) and T3 (message half
+duplicated) all leave the hostile sweep GREEN and are caught only by the
+degenerate body's exact-string equality (T1 861→860, T2 861→857, T3
+861→859). The split is defensible — the exact-string body owns "which
+half is which" — but the hostile sweep alone does not prove it.
+
+**The degenerate-row attempts, all four.** `toolUseId: null` becomes
+`data-tool-use-id=""`, so the `.outerHTML` assertion is genuinely
+attribute-aware and passes. Slip-through attempts: a whitespace-only
+message is caught (`.trim()`); a `toolName` of `""` or `"   "` is NOT
+(`??` only catches null/undefined) and renders `refused:  — m2`, but is
+**unreachable** — `denial_field` trims and `filter(|s| !s.is_empty())`
+to `None` at the Rust boundary, so the producer cannot emit it (filed
+`T-101-s2`); a message of only U+200B survives `.trim()` and renders a
+blank reason, same unreachability class. A `toolUseId` of the literal
+string `"null"` DOES break `not.toContain("null")` — but that assertion
+is the CARD's own wording, and the same brittleness applies to any CLI
+message containing the word "null". Card-level residual, not a build
+defect.
+
+**Stylesheet, falsified the way the notes invite.** Built at HEAD:
+`index-CwYF5FQb.css`, 43 950 bytes, sha256 `71ed851e…b200bb`. Checked
+the three files out at `a15b78e`, rebuilt: **same name, same sha256**.
+Byte-identical confirmed, not merely same-named. `gap-1.25`,
+`whitespace-pre-wrap`, `break-words` and `text-secondary-foreground` all
+pre-exist at base, so neither the component nor its test minted a rule.
+
+**One craft note, non-blocking.** The presence-before-text lesson landed
+in the liveness body (`5917e8e`) but not in the toolDenied body's
+positive control: M7 reds there as `TypeError: the given combination of
+arguments (undefined and string) is invalid` (line 934,
+`?.textContent` into `toContain`) rather than as a diagnostic assertion.
+It reds, which is what the drill requires — but it reds badly.
+
+**A weak survivor, disclosed.** V16 (notice gated on
+`activity.length < 2`) survives 861/861: the liveness body emits exactly
+one activity label, so its survives-re-render proof is one delta deep.
+M11 covers the realistic freeze-at-first-render bug; I record V16 as a
+depth limit, not a finding.
+
+### Suites, gates and exits — every `$?` read unpiped
+
+| command | where | result | exit |
+|---|---|---|---|
+| `npm run build` | lib/parser | dist emitted | **0** |
+| `npm run build` | app | 265 modules, css 43.95 kB | **0** |
+| `npm test` | app | **861 / 861** over 43 files | **0** |
+| `npx vitest run` | lib/parser | **263 / 263** over 12 | **0** |
+| `npm test` (`NPUTER_E2E_PORT=14547`) | tools/e2e | **129 / 129**, 38.1 s | **0** |
+| `npm run lint:tokens` | tools/e2e | TOKEN **124** / CONTROL **582** | **0** |
+| `node tools/e2e/scripts/docs-gate.mjs <2 paths>` | repo root | **FIRES**, 3 suites owed | **1** |
+| `NPUTER_BOOT_PORT=14548 npm run boot:check` | tools/e2e | both `[nputer]` lines | **0** |
+| `cargo run -p nputer-index -- index --check --root ../..` | app/src-tauri | **REAL** red | **1** |
+
+No cargo suite is owed — this diff has no Rust. The graph red is real,
+not the `--root` false red: both count lines print, `committed: 1023
+symbols · 1550 edges` against `fresh: 1027 · 1553`, `files +0 -0 ~3`.
+**+4 symbols / +3 edges (+6 −3)**, matching the notes. No `graph.json`
+committed; the regen is the integrator's.
+
+BOOT GATE lines, verbatim: `[nputer] project folder:
+/Users/ujju/Projects/nputer-T-101` and `[nputer] window "main" created`.
+**Port 1420 was READ ONLY** (`lsof -nP -iTCP:1420 -sTCP:LISTEN`), before
+and after every stage: `node` pid **82549** on `[::1]:1420`, unchanged.
+No bind, no connect, no signal. The boot check ran on **14548**,
+bind-probed free before use (14520 was free too, but a sibling took the
+default earlier today). No real model call was made and the capture was
+never opened for writing.
+
+**Drill hygiene.** 16 mutants, each one side only, each mutated text read
+back with `git diff --unified=0` before its suite ran, and applied by a
+Python driver with `encoding='utf-8'` and a match-count-of-exactly-1
+guard — the em dash and ellipsis never passed through a shell string
+(T-054/T-078's encoding lesson). Restoration proved three ways after
+every run and again at the end: empty `git diff`, sha256 against the
+recorded pristine triple, and sha256 against `git show 0e9c045:<path>`.
+All three agree.
+
+### @human — the one look, and what would count as alarm
+
+**It is answerable now, and it takes one turn.** Drive the interview
+until the planner is refused a tool — or, without a real refusal, open
+the `THE MEASURED TURN` case: a turn carrying two `Bash` refusals that
+then **completes**. What to look at, in the transcript, on the turn
+itself, directly under the pulse-dot activity line: two mono rows
+reading `refused: Bash — This Bash command contains multiple
+operations…` and `refused: Bash — Glob patterns are not allowed…`, in
+`text-secondary-foreground`, with the turn's answer text above and the
+turn's status reading **completed**.
+
+**It reads as INFORMATION if:** the rows sit in the same visual register
+as the streaming line and the truncation note — same mono, same size,
+same muted ink; the eye reaches the planner's actual answer first; and
+after the turn lands the rows read as history rather than as something
+outstanding.
+
+**It reads as ALARM if any of these:** the rows pull colour that the
+rejected/failure surface owns (the red or warning chips) or carry an
+icon or border the failure block also uses; they sit ABOVE the answer or
+otherwise win the turn's visual priority; a completed turn still looks
+unresolved because the refusal rows are the last and loudest thing on
+it; or the two same-tool rows read as one error repeated rather than two
+separate refusals. **Any one of those is a NO** and should come back as
+a `[app-interview]` card about the register, not about the plumbing.
+
+Worth knowing before the look: on the two failure paths this verdict
+rejects, what you would see is either the refusal twice (BLOCKING 1) or
+not at all (BLOCKING 2) — so judge the register on a turn that
+**completes**, which is the case the card is really about and the one
+the capture recorded.
+
+### To clear this
+
+1. **BLOCKING 1** — decide where the `exitNonZero` double report is
+   fixed. Render-side name-matching against the tail is the wrong answer
+   (the block explicitly parses no error text, and T-057 forbids a
+   second owner of a runner rule), so this most likely routes to
+   `app-agent`: now that a renderer exists, the ring note for the
+   `unannounced` set is redundant with the live events emitted from the
+   same vector. Rewrite `T-101-s1` either way — its premise is inverted.
+2. **BLOCKING 2** — scope the suppression to the refusals the terminal
+   block actually restates, or stop `FailureBlock` from owning the
+   denial list on `toolDenied` and let the notice keep it. Add a body
+   for a `toolDenied` turn carrying a denial `error.denials` does not
+   name, asserting it appears exactly once.
+3. **BLOCKING 3** — add probe P6 as a fixture: two denials identical in
+   `toolName` and `message`, differing only in `toolUseId`; assert two
+   rows and two distinct ids. Confirm V7 and V8 then red.
+
+Findings 1 and 2 are one criterion seen from both sides — the gate is
+wrong in one direction and absent in the other — and I would expect them
+to close together.
+
+Filed alongside, non-blocking: `T-101-s2` (`denialLine`'s `??` lets a
+blank `toolName` through; unreachable today because the Rust boundary
+normalizes it) and `T-101-s3` (`docs-gate.mjs` answers a non-empty but
+non-root-relative path list "not owed" at exit 0 — `T-084-s6`'s shape,
+one level over; I hit it myself on my first invocation).
