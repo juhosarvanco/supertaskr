@@ -880,13 +880,11 @@ describe("a refusal is visible when it happens, and it is not a failure (T-101)"
       { kind: "denied", seq: 2, turn: 1, ...REFUSED_COMPOUND },
       { kind: "denied", seq: 3, turn: 1, ...REFUSED_GLOB },
     );
-    // Present before the verdict — the positive control for its
-    // disappearance below. Deliberately NOT a count: how many rows two
-    // same-tool refusals produce is the measured-turn body's property,
-    // and asserting it twice would make one dedupe mutant kill two
-    // bodies and leave neither of them isolating anything.
-    expect(q("[data-testid=interview-denials]"), "live, before the verdict").not.toBeNull();
-
+    // NO MID-TURN READING IS TAKEN HERE ON PURPOSE. That the notice is
+    // on screen while the turn runs is the body above's whole property,
+    // and re-asserting it here would make one liveness-gating mutant
+    // kill both bodies and leave neither isolating anything. The
+    // positive control this body's negative needs is turn 2 below.
     await emit({
       kind: "failed",
       seq: 4,
