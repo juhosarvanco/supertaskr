@@ -170,8 +170,18 @@ were planted and both behaved exactly that way — see M1 and M2 below.
 ### The poison drill — ELEVEN mutants, one-sided, at the handoff commit
 
 Run in a **detached scratch worktree** `../nputer-T-070-drill` at
-`41b58d6` (the lane's own commit, since amended into the handoff tip),
-never in the lane and never with `git checkout --` (T-072-s1).
+**`41b58d6`** — this branch's FIRST commit and an ANCESTOR of the
+handoff tip, not a rewritten one — never in the lane and never with
+`git checkout --` (T-072-s1).
+
+**HOW MUCH OF THE DRILLED ARTIFACT IS THE HANDED-OFF ARTIFACT, STATED
+RATHER THAN IMPLIED.** `git diff --name-only 41b58d6..<tip> --
+app/src-tauri app/src app/test` returns **one** path,
+`app/src-tauri/src/agent/sessions.rs`, and its diff is **5 lines of a
+`///` doc comment above `TAIL_CHUNK`** (the bound-wording fix at
+`4efa6cb`). So five of the six changed files are byte-identical to what
+was drilled, and the sixth differs only in text no compiler or test
+reads. Every suite was re-run at the tip afterwards regardless.
 **Correspondence established by hash before anything was mutated**: all
 six changed files sha256-matched `git show 41b58d6:<path>`, e.g.
 `agent/sessions.rs` at
