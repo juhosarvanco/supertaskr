@@ -5,12 +5,12 @@ feature: F-02
 milestone: 3
 priority: 27
 size: M
-status: planned
+status: verifying
 blocked_by: []
 touches: [tools/e2e]
-builder:
+builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @T-061
 verified_by:
 review:
 ---
@@ -89,5 +89,592 @@ exit-path drills, the orphan drill, and the four config mutations.
 free and left alone.** @human: none.
 
 ## Implementation notes
+
+Built on branch `task/T-061-boot-gate-cleanup` in worktree
+`../nputer-T-061`, cut from main's `Checkpoint:` commit **`2036fb2`**, by
+claude-opus-5 @T-061, 2026-08-23. Three sibling lanes were live
+throughout — T-013 (`app-map`), T-064 (`app-shell`), T-070 (`app-agent`,
+`app-interview`) — and this lane's fence is `[tools/e2e]`, disjoint from
+all three. **Main moved twice under me while I measured**: `2036fb2` →
+`c2179d6` → `09b83e8` → `dc4199d` (the fifth triage landed mid-build).
+Every range figure below names the ref it was taken at, twice where the
+two answers differ, which is the whole point of naming it.
+
+**The human's app was up the entire time — `node` pid 82549, one socket,
+`TCP [::1]:1420 (LISTEN)`, identical at the first read and the last.**
+Port 1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and with
+nothing else: never bound, never connected to, never signalled. Every
+boot ran on a scratch port bind-probed free on all four stacks
+(`127.0.0.1`, `0.0.0.0`, `::1`, `::`) first — 14631 through 14653,
+prefixed and logged. **No `pkill` was used at any point**, and no signal
+in this session was addressed to anything but a pid or a negated pgid
+this session had captured at spawn.
+
+### The three criteria, and what each one cost
+
+#### 1. The child-exit path signals the group — and WHY the naive fix is not enough
+
+`killTree("SIGTERM")` on that path is wrong for a reason that is easy to
+state and easy to get wrong: **by the time `exit` fires, node has reaped
+the child**, so `-child.pid` names a group whose LEADER no longer exists,
+and a reaped pid is a pid the kernel is free to hand to somebody else.
+Signalling it is a bet that nothing has taken it yet.
+
+What makes the bet winnable is a POSIX guarantee, and I measured it here
+rather than quoting it. A process-group id is reserved for as long as
+the group has a MEMBER, so:
+
+    a detached `sh -c '/bin/sleep 25 & /bin/sleep 1; exit 7'`
+    -> ps pgid of the leader == its own pid                    (detached is setsid)
+    -> leader 'exit' event {c: 7}                              (node has reaped it)
+    -> process.kill(-pid, 0)                       -> ALIVE    (the orphan holds the id)
+    -> ps by pgid                                  -> exactly the orphaned sleep
+    -> process.kill(-pid, "SIGTERM"); 400 ms
+    -> process.kill(-pid, 0)                       -> throws ESRCH
+    -> process.kill(-999999, 0)                    -> throws ESRCH
+
+So the zero-signal probe is not a nicety, it is the discriminator: **a
+group that still has members is a group whose id is still reserved**, and
+a group that is empty is exactly when the id becomes recyclable. Hence
+`groupAlive()` first, `signalGroup()` only if it says yes. `signal 0`
+performs the kernel's error checking and delivers nothing, so asking the
+question does not answer it in the destructive direction.
+
+**Both branches are exercised in this session's transcripts, which is
+the part I would not have believed without seeing.**
+
+- The GROUP-STILL-ALIVE branch, from the orphan drill on 14653:
+  `[boot-check] child process group 33377 still has members after the
+  child exited — SIGTERM to the group` then `… is empty — no orphan
+  survives this check`.
+- The GROUP-ALREADY-EMPTY branch, from config mutation M1 (a broken
+  `default-run`) on 14641: `[boot-check] child process group 3729 is
+  already empty — nothing to signal`. The tauri CLI exited in an orderly
+  way there and tore down its own `beforeDevCommand`, so there was
+  nothing to reap — and the check **signalled nothing at all**, which is
+  the whole safety property. A naive `killTree("SIGTERM")` would have
+  fired a signal at a recyclable pgid on that run.
+
+**Two further hardenings, one of which is not decoration.** `pgid` is
+captured at SPAWN (`const pgid = isSignalableGroup(child.pid) ? … `) and
+never re-read; and `isSignalableGroup` refuses any id that is not an
+integer **greater than 1**. That guard is load-bearing:
+`process.kill(-0, sig)` is `process.kill(0, sig)` because JavaScript has
+`-0 === 0` (measured: `-0 === 0` is `true`, `Object.is(-0, 0)` is
+`false`), and POSIX defines that as *every process in the CALLER's own
+group*; `process.kill(-1, sig)` is the BROADCAST to every process this
+user may signal, which on this machine includes the human's `tauri dev`.
+Neither can arise from a real spawn. Both were one typo away in the file
+whose job is killing process trees, and the pre-T-061 code had no guard
+at all (`process.kill(-child.pid, signal)` with `child.pid` typed
+`number | undefined`). `isSignalableGroup` lives in `boot-port.mjs`
+precisely so the lane can pin it, which it now does in both directions.
+
+**The `child.kill()` fallback is safe and I measured why.** When the
+group probe says gone, `killTree` falls back to the child HANDLE. Node
+addresses that through its own record of the spawn: `child.kill()` after
+the `exit` event **returns `false`** and signals nothing — it cannot
+reach a recycled pid. So the fallback is inert exactly when it would be
+dangerous.
+
+**What the child-exit path does now**, in order: print the failure
+report **byte-identical to the pre-T-061 one, and FIRST**; probe; if the
+group is empty, say so and exit 1; otherwise SIGTERM the group, poll the
+probe every 50 ms for `ORPHAN_GRACE_MS` (3 s, env-overridable), escalate
+to SIGKILL, poll another second, and exit 1 either way — with a
+`WARNING` naming the surviving group and the `ps` incantation to find it
+if anything outlives SIGKILL. The exit is inside the continuation, so
+the process cannot leave before the reap has had its say.
+
+**One path was deliberately NOT changed**: `child.once("error", …)`, the
+spawn-failure path. On a spawn failure `child.pid` is `undefined`, so
+`pgid` is `undefined` and there is nothing to signal; adding the call
+there would be a no-op dressed as care. The card counts four terminal
+paths and this is the fifth; saying so is cheaper than leaving a reader
+to wonder.
+
+#### 2. The orphan drill is a shipped procedure — and the failing case came first
+
+`tools/e2e/scripts/orphan-drill.mjs`, `npm run boot:orphan-drill` from
+tools/e2e, four exit codes in the family the other three gates use: **0**
+clean, **1** THE LEAK (named, then reaped by the drill, because a drill
+that manufactures an orphan must not leave one), **2** called wrong (no
+`NPUTER_BOOT_PORT`, or the port is busy), **3** the drill could not run.
+
+**THE FAILING CASE, REPRODUCED FIRST, exactly as the card asks.** Both
+`tauri-boot-check.mjs` and `boot-port.mjs` were replaced by byte copies
+from `git show 2036fb2:<path>` (per-path `git diff --stat` empty for
+both, i.e. provably the pre-fix code), and the shipped drill was pointed
+at them on scratch port 14633:
+
+    [orphan-drill] group 98615 armed: tauri CLI 98638, vite 98885 listening on 14633
+    [orphan-drill] SIGKILL the tauri CLI, pid 98638 (pgid 98615, verified == 98615)
+    [orphan-drill] boot check exited (code=1 signal=null)
+    [orphan-drill] LEAK: the boot check exited 1 and left 3 process(es) in group 98615, with port 14633 STILL HELD:
+        98824 (pgid 98615) npm run dev --port 14633 --strictPort
+        98885 (pgid 98615) node .../app/node_modules/.bin/vite --port 14633 --strictPort
+        98889 (pgid 98615) .../@esbuild/darwin-arm64/bin/esbuild --service=0.28.2 --ping
+    DRILL_PREFIX_EXIT=1
+
+T-046's verifier's transcript, reproduced — **and one process larger than
+it recorded**: the `npm run dev` wrapper survives too, so the leak is
+three processes, not two. The drill then reaped its own mess
+(SIGTERM to group 98615, nothing survived) and the port was free.
+
+Restored by byte copy from the saved fixed files, proved twice —
+`shasum -a 256` equal on both sides and `cmp` exit 0 for each — and the
+same drill on 14635:
+
+    [orphan-drill] group 99973 armed: tauri CLI 99996, vite 376 listening on 14635
+    [orphan-drill] SIGKILL the tauri CLI, pid 99996 (pgid 99973, verified == 99973)
+    [orphan-drill] boot check exited (code=1 signal=null)
+    [orphan-drill] process group 99973 is EMPTY and port 14635 is free on both families
+    [orphan-drill] PASS: the child-exit path signalled its group before exiting
+    DRILL_FIXED_EXIT=0
+
+Re-run at the committed ref on 14653: **exit 0**, same shape. Red, then
+green, on the same shipped procedure.
+
+**AN ACCIDENT WORTH RECORDING BECAUSE IT IS THE HAZARD ITSELF.** In that
+green run the tauri CLI is pid **99996** and the vite it started is pid
+**376** — the machine's pid space WRAPPED inside a single boot. The
+recycled-pid risk the liveness probe exists for is not a thought
+experiment on this machine; it is a few seconds wide.
+
+**THE DRILL'S SAFETY RULES, because it SIGKILLs things beside a live
+app.** Every signal it sends is addressed either to the negated PGID it
+captured from the boot check's own direct child, or to a pid whose PGID
+it has just read back from `ps` and compared against that same group. It
+never matches a process by NAME alone, never uses `pkill` or `killall`,
+refuses to run without `NPUTER_BOOT_PORT` (exit 2 — its whole job is
+manufacturing an orphaned listener, and the default port is 1420),
+refuses 1420 through the same `resolveBootPort` the check uses (exit 3),
+and refuses any group id `isSignalableGroup` rejects. It learns the
+group by finding the check's single direct child in `ps` and then
+**asserting `pgid == pid`** — the `detached`/`setsid` property this
+drill's every safety claim rests on, read back rather than assumed; if
+that ever fails it exits 3 having signalled nothing. Deriving the group
+from `ps` rather than parsing the check's own new log line is what lets
+the identical drill run against the pre-fix check.
+
+#### 3. The overlay is derived — and the residual is measured, not described
+
+`bootConfigJson(port, committed)` now takes the committed values.
+`readCommittedBuildConfig(repoRoot)` reads `build.devUrl` and
+`build.beforeDevCommand` out of `app/src-tauri/tauri.conf.json`;
+`beforeDevCommandWithPort` APPENDS the port flags to the committed
+command; `devUrlWithPort` rewrites ONLY the port of the committed URL.
+
+**The derivation is a no-op against today's committed values, byte for
+byte**, and the lane asserts it: committed
+`{"devUrl":"http://localhost:1420","beforeDevCommand":"npm run dev"}`
+derives to
+`{"build":{"devUrl":"http://localhost:14521","beforeDevCommand":"npm run dev -- --port 14521 --strictPort"}}`,
+character-identical to the string T-046 hard-coded. (The
+trailing-slash dance in `devUrlWithPort` is what buys that:
+`new URL(…).href` would normalise to `http://localhost:14521/`.) So
+anything that reds that body is a change to what the boot check spawns.
+
+**THE FIXTURE DRILL, five mutations, one at a time, each read back with
+`git diff` before anything ran and each restored by byte copy from
+`git show HEAD:<path>` with an empty per-path `git diff` and a matching
+sha256 afterwards.** `app/src-tauri/tauri.conf.json` baseline sha256
+`52eb5e69017c4fd0381d3cc82745ef0d56ce0ea9022e74faa65da2fb98718bc5`,
+identical before and after all of them.
+
+| # | mutation | at T-046 | HERE |
+|---|---|---|---|
+| M1 | `Cargo.toml` `default-run` removed (T-040's class) | exit 1 | **exit 1**, cargo's ambiguity error quoted verbatim, and the group was ALREADY EMPTY |
+| M2 | `app/package.json` `"dev": "true"` | exit 1 | **exit 1**, tail shows ten `Warn Waiting for your frontend dev server…` |
+| M3a | committed `devUrl` -> a dead PORT (`:14999`) | **exit 0 GREEN** | **exit 0 GREEN — still, by design** |
+| M3b | committed `devUrl` -> a dead HOST (`t061-no-such-host.invalid`) | untestable | **exit 1** |
+| M4 | committed `beforeDevCommand` -> `npm run no-such-script-at-all` | **exit 0 GREEN** | **exit 1**, `npm error Missing script: "no-such-script-at-all"` quoted |
+
+**M4 is the one the card is about**: the mutation that shipped an app
+that cannot launch and reported GREEN now reds, with the cause quoted.
+
+**M3b is the sharper one, and it is not synthetic.** The tauri CLI does
+not fail politely on an unresolvable devUrl — it **panics**:
+`thread '<unnamed>' panicked at crates/tauri-cli/src/dev.rs:277:52:
+called Result::unwrap() on an Err value: … "failed to lookup address
+information"`, and the child dies on **SIGABRT** without any chance to
+tear down its own `beforeDevCommand`. That is T-046-s1's hypothetical
+"a CLI that segfaults" occurring naturally, from a config regression,
+with no hand SIGKILL anywhere. Before T-061 that mutation would have
+left an orphaned vite on the scratch port; the transcript shows the
+group still had members, took SIGTERM, and emptied.
+
+**M3a IS THE HOLE, STILL OPEN, AND THE NOTES SAY SO IN AS MANY WORDS.**
+A committed `devUrl` whose PORT is wrong is masked by this overlay and
+always will be, because rewriting that port is the one thing the
+override exists to do. What T-061 buys is that the committed **scheme**,
+**host** and **path** are now load-bearing, and the committed
+`beforeDevCommand` is load-bearing in full. **Two whole keys unverified
+becomes one integer unverified. It does not close the hole.** The lane
+pins the residual as an assertion rather than leaving it as prose
+(`THE RESIDUAL, asserted rather than described`), and poison mutant P3 —
+restoring T-046's hard-coded `devUrl` — reds the "only the PORT is
+rewritten" body while leaving the residual body GREEN, which is that
+distinction made mechanical.
+
+**AN UNDERIVABLE COMMITTED CONFIG IS A REFUSAL, NOT A FALLBACK, and the
+reason is the whole point of the override.** If `tauri.conf.json` cannot
+be read, is not JSON, or has no string `build.devUrl` /
+`build.beforeDevCommand`, the check exits **3** before probing or
+spawning anything. There is no safe fallback: the only value to fall
+back to is the committed port, and on this repository that is **1420**.
+A boot check that quietly dropped the overlay would boot on the human's
+app. Measured — `devUrl` deleted from the committed config, mutation
+read back with `git diff`, restored to the same sha256:
+
+    [boot-check] REFUSED: …/app/src-tauri/tauri.conf.json has no string `build.devUrl`
+    to rewrite the port of. The overlay is DERIVED from the committed value and will
+    not invent one. Nothing was probed and nothing was spawned.
+    EXIT3C=3
+
+This widens the MEANING of exit 3 beyond CONVENTIONS' one-line legend
+("the override was refused"); the doc is out of this lane's fence and
+the clause is filed as `T-061-s5`.
+
+#### 4. checkJs — and it is three times the change T-046-s2 described
+
+`checkJs: true`, and `include` gains **`scripts/**/*.mjs`** as a GLOB
+rather than the three-name list it replaced. T-046-s2 named two scripts;
+the directory now holds **six**, three of them T-084's, and a hand list
+is the defect T-058 and T-080 each spent a card on.
+
+The flag surfaced **154 errors in 6 files**: docs-scan 97, token-scan 38,
+tauri-boot-check 14, docs-gate 3, lint-tokens 1, boot-port 1. 124 of the
+154 were TS7006 implicit-any parameters. **Every fix is a JSDoc
+annotation, a `@typedef`, or a `/** @type {…} */` cast — no runtime
+statement was added, removed or reordered in any of the four scanner
+scripts.** The card's own prediction held exactly: `child.pid` typed
+`number | undefined` at the process-kill call, `recent` and `seen`
+inferred from empty literals, and implicit `any` on the stream chunks.
+
+**THE ANNOTATIONS ARE PROVED BEHAVIOUR-NEUTRAL BY A/B, NOT ASSERTED.**
+`docs-scan.mjs`, `token-scan.mjs`, `docs-gate.mjs` and `lint-tokens.mjs`
+were each swapped for their `2036fb2` bytes (per-path `git diff --stat`
+empty for all four), the same three commands run, then swapped back
+(`cmp` exit 0 each):
+
+    diff <pristine --census> <annotated --census>                  -> exit 0
+    diff <pristine lint:tokens> <annotated lint:tokens>            -> exit 0
+    diff <pristine lint:tokens --selftest> <annotated --selftest>  -> exit 0
+
+And the census reproduces T-084's checkpoint figures at a different ref:
+**11 derived readers across 4 suites, 0 frontmatter issues, 117
+docs-shaped sites in 22 files, 11 of them in 9 files root-anchored, 24
+files holding the root (11 derived / 0 unlinked / 13 unlinkable), 6
+unaccounted.**
+
+One `.ts` edit came with it: `tests/docs-input-gate.spec.ts` gained a
+single `!` on `DOCS_GATE_BULLET`, because `conventionsBullet` is now
+honestly typed `string | undefined`. One character, and it is the
+annotation earning its keep on its first day.
+
+#### 5. All four exit paths, re-run after the flag flip
+
+Every code read from `$?` immediately, unpiped, on a bind-probed scratch
+port.
+
+| code | how | evidence |
+|---|---|---|
+| **0** | 14638, 14652 | both `[nputer]` lines, `process tree stopped (exit=null signal=SIGTERM)` |
+| **1** | 14639, overall timeout 2500 ms | `timed out after 2500 ms`, 10-line tail, tree stopped, no survivors |
+| **1** | 14640, watchdog `NPUTER_BOOT_QUIET_MS=1200` | `no output for 1200 ms (watchdog)`, tree stopped |
+| **1** | M1/M2/M3b/M4 above, the child exiting early | the new cleanup path, both probe branches |
+| **2** | 14636 held by a listener this session owned | `ABORT: port 14636 (NPUTER_BOOT_PORT) is in use` |
+| **3** | `NPUTER_BOOT_PORT=1420` | `REFUSED: … refusing … Nothing was probed and nothing was spawned.` |
+| **3** | `NPUTER_BOOT_PORT=not-a-port` | `REFUSED: … is not a valid port number` |
+| **3** | committed `devUrl` deleted | the new refusal, above |
+
+`npm run` propagates all four (measured: bare node exits 0/1/2/3 arrive
+as 0/1/2/3 through `npm run`).
+
+#### 6. The default path's shape
+
+**Unchanged**: the two `[nputer]` needles, `TIMEOUT_MS`, `QUIET_MS`,
+`TAIL_LINES`, the `finish()` SIGTERM-then-SIGKILL-after-10s grace, the
+exit-2 messages, the exit-3 messages, the `spawning` log line, the
+overlay log line's wording, and the child-exit failure report **byte for
+byte** — it is still printed FIRST, before any cleanup line, so the
+diagnosis a reader came for is still the last thing in the failure
+block. With `NPUTER_BOOT_PORT` unset the argv is still exactly
+`["run","tauri","dev"]`, no overlay is derived, `tauri.conf.json` is not
+even read, and both committed keys are therefore still tested for real —
+which is why the default path is the one place the residual above does
+not apply.
+
+**Added, and it is one stdout line plus the cleanup lines**:
+`[boot-check] child pid N; captured process group N (detached: setsid,
+so pgid == pid)`, printed after a successful spawn. It is none of the
+three things the criterion protects, it is the only external witness
+that the capture happened, and the paths the lane asserts spawn nothing
+still print nothing (`assertNothingSpawned` is untouched and green).
+
+### Ranges, every dot count stated, at their own refs
+
+**At `c2179d6`** (main's tip when I first measured):
+
+    git merge-tree --write-tree c2179d6 HEAD  -> tree bc84cf57…, exit 0
+    git diff --name-only c2179d6 <TREE>                   -> 11   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only c2179d6...HEAD   (THREE dots)    -> 11   cmp against the forecast: exit 0
+    git diff --name-only c2179d6..HEAD    (TWO dots)      -> 18   THE FORBIDDEN PRE-MERGE FORM
+    git diff --name-only 2036fb2..c2179d6 (TWO dots)      ->  7   main's advance, all docs/
+    git diff --name-only 2036fb2..HEAD    (TWO dots)      -> 11   the branch's own
+
+**At `dc4199d`** (main's tip an hour later — the fifth triage landed
+mid-build):
+
+    git merge-tree --write-tree dc4199d HEAD  -> tree 0ca45730…, exit 0
+    git diff --name-only dc4199d <TREE>                   -> 11   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only dc4199d...HEAD   (THREE dots)    -> 11   cmp against the forecast: exit 0
+    git diff --name-only dc4199d..HEAD    (TWO dots)      -> 51   THE FORBIDDEN PRE-MERGE FORM
+    git diff --name-only 2036fb2..dc4199d (TWO dots)      -> 40   main's advance, all docs/
+
+`merge-tree`'s exit was read from `$?` and not swallowed by a command
+substitution; it is 0 at both refs. `comm -12` over main's advance and
+the branch's own is **EMPTY** at both, and the arithmetic checks it:
+7 + 11 = 18 and 40 + 11 = 51, which are exactly the two forbidden counts.
+**The prescribed answer is 11 at both refs and the forbidden one moved by
+33 in an hour** — the same right-hand-endpoint drift T-081 and T-084
+each recorded, watched happening live this time.
+
+### Gate derivations, over the prescribed 11
+
+| gate | prescribed (11) | forbidden two-dot at `c2179d6` (18) |
+|---|---|---|
+| BOOT GATE (`app/src-tauri/**`, `app/src/**`, either manifest) | **0 — NOT OWED** | 0 — also not owed |
+| GRAPH REGEN (`*.ts/*.tsx/*.js/*.jsx` outside docs/) | **2 — FIRES** | 2 — fires |
+| DOCS GATE (a `docs/` path a code suite reads) | **0 — NOT OWED** | **7 — FIRES**, one suite |
+
+**THIS IS THE THIRD GATE'S FIRST RECORDED FLIP, and it is in the
+over-firing direction, which is the direction CONVENTIONS says every
+measured error has been.** Main's advance from my merge-base is entirely
+`docs/`, so the forbidden range hands this tools-only lane seven
+documents it never opened — a room, two design docs and four Codex
+captures — and manufactures a DOCS GATE run owing `npm test from
+tools/e2e/`. BOOT GATE and GRAPH REGEN answer identically under both
+ranges here, so the flip is the new gate's alone. Measured, not
+predicted:
+
+    node tools/e2e/scripts/docs-gate.mjs $(cat <prescribed 11>) -> exit 0
+      "11 changed path(s) given, none under docs/ — this gate is not owed."
+    node tools/e2e/scripts/docs-gate.mjs $(cat <forbidden 18>)  -> exit 1
+      "FIRES — 7 path(s) under docs/ are code inputs. Run: npm test from tools/e2e/"
+
+**The `$(cat <list>)` spelling was used deliberately and never `xargs`.**
+See `T-061-s3`: on this machine `xargs` loses two of the gate's four
+codes, and it loses them differently from how CONVENTIONS says it does.
+
+**BOOT GATE: NOT OWED, AND RUN ANYWAY, BEFORE AND AFTER.** The trigger
+matches 0 of the 11 paths — but this card edits the gate itself, so
+running it is not optional here. **Before** any edit, on 14631: exit
+**0**, both `[nputer]` lines. **After**, at the committed ref, on 14652:
+exit **0**, both lines, plus the new pgid line. Plus the six mutation
+runs and the three orphan-drill runs in between: **thirteen boots this
+session, zero survivors after any of them.**
+
+**GRAPH REGEN: OWED, RUN, A PROVEN NO-OP.** The trigger matches
+`tools/e2e/tests/boot-check-guard.spec.ts` and
+`tools/e2e/tests/docs-input-gate.spec.ts` (the three `.mjs` files that
+are the substance of this change do NOT match it — `.mjs` is absent from
+the trigger, read off the bullet). `index --check --root ../..` from
+app/src-tauri exits **0** BEFORE — *graph.json is CURRENT … 585305
+bytes, 119 files, 1018 symbols, 1539 edges* —
+`NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test self_graph --
+--ignored` exits **0** and moves **ZERO paths** (`git status --porcelain`
+empty), and `index --check` exits **0** again after. Derivable rather
+than lucky: `.nputerignore` excludes `tools/`, so **none of the eleven
+paths is indexable** — the fourth worked example of the trigger being
+deliberately wider than the walk.
+
+**THE THREE-FIXTURE RULE DOES NOT FIRE**: no indexed file moves, and
+`git diff --stat 2036fb2..HEAD -- app/ lib/ crates/ docs/architecture/`
+is empty.
+
+### Suites, every exit code from `$?` unpiped, at the committed ref
+
+- **parser: 263/263 across 12 files**, `PARSER_EXIT=0`;
+  `npx tsc --noEmit` `PARSER_TSC_EXIT=0`; `npm run build`
+  `PARSER_BUILD_EXIT=0` FIRST, per the fresh-clone order — this worktree
+  started with no node_modules and no `lib/parser/dist`.
+- **app: 840/840 across 43 files**, `APP_TEST_EXIT=0`; `npm run build`
+  `APP_BUILD_EXIT=0`, **265 modules transformed**, `index-kNOKiTKD.js`
+  **502.75 kB** and `index-CwYF5FQb.css` **43.95 kB** — both hashes
+  identical to the ones at `e8c4ab7`, as they must be, since this branch
+  moves no `app/**` path at all.
+- **Rust, bare `cargo test --no-fail-fast`: 352 passed / 0 failed / 3
+  ignored**, `CARGO_TEST_EXIT=0`, summed programmatically over **fifteen**
+  `test result:` lines. **The first run of it was 351/1/3 at exit 101**
+  and that is filed as `T-061-s4`, not swept: a stderr-tail assertion
+  read an empty tail once under parallel load, went 5-for-5 green in
+  isolation, and the immediate re-run of the whole suite was 352/0/3.
+  `app/`, `lib/` and `crates/` have a ZERO diff on this branch.
+- **E2E: 129/129**, `E2E_EXIT=0`, one worker, zero retries, zero skips,
+  scratch port 14651 — 121 at the merge-base plus the 8 new bodies.
+  `npm run typecheck` `E2E_TYPECHECK_EXIT=0` **with `checkJs` on**.
+- **token lint: `LINT_SELFTEST_EXIT=0`, `LINT_TOKENS_EXIT=0`** —
+  `clean (TOKEN 124 files under app/src, app/test, tools/e2e; CONTROL
+  591 tracked text files)`, selftest at 49 TOKEN + 4 CONTROL samples, 71
+  walk-policy checks, 8 evidence-floor checks. The figures at `e8c4ab7`
+  were TOKEN 123 / CONTROL 590; this branch adds exactly one tracked
+  first-party file, `scripts/orphan-drill.mjs`, which is both a `.mjs`
+  under tools/e2e and a tracked text file, so **+1 to each**. Derived at
+  my own ref, and the arithmetic is the check.
+- **DOCS GATE: exit 0, NOT OWED** on the code commit; see below for the
+  notes commit, which is a different answer.
+- **`index --check`** exit **0** before and after the regen.
+
+**ONE RED I CAUSED AND DID NOT FIX, because fixing it was not the
+answer.** Before committing, the lane ran **128 passed / 1 failed**:
+`token-scan.spec.ts`'s seven-plant body asserts
+`git diff --quiet -- <seven tracked files>`, one of which is
+`tools/e2e/package.json`, and this lane adds an npm script to it. The
+sha256 round-trip three lines above it passed for all seven, so the
+restore was byte-exact and the assertion was answering a different
+question — *is the working tree clean* rather than *did the lane put
+back what it took*. Committing and re-running, nothing else changed,
+gave 129/129 at exit 0. Filed as `T-061-s2`.
+
+### The poison drill — NINE mutants, one-sided, every mutated text read back
+
+Every mutant is a change to the PRODUCER (`scripts/boot-port.mjs`) and
+never to an assertion, built from a saved base file with an exact
+substitution count of 1 (the planter aborts otherwise), each mutated
+text read back with `diff` against the base **before** the suite ran,
+each restored by byte copy with `cmp` exit 0. Base sha256
+`de005bc0c40f51b296c57f06c39246f1cb34402f78ceb1d6ed7dacbda546704a`,
+identical at the end.
+
+| mutant | one-line change | reds |
+|---|---|---|
+| P1 | `beforeDevCommandWithPort` emits `npm run dev` instead of the committed command | 2 failed / 12 passed — *carries the COMMITTED dev command*, *already carries `--`* |
+| P2 | the `--` separator is always inserted | 1/13 — *already carries `--`* |
+| P3 | `devUrlWithPort` returns T-046's hard-coded `http://localhost:${port}` | 1/13 — *only the PORT … survive* |
+| P4 | the trailing-slash preservation dropped | 4/10 — *threads the matching --config*, *only the PORT*, *THE RESIDUAL*, *no-op byte for byte* |
+| P5 | the port is rewritten only when the committed one is 1420 | 2/12 — *only the PORT*, *THE RESIDUAL* |
+| P6 | the missing-`devUrl` refusal short-circuited | 1/13 — *an underivable committed config REFUSES* |
+| P7 | `tauriDevArgs`'s no-committed-config refusal short-circuited | 1/13 — *an OVERRIDE with no committed config refuses* |
+| P8 | `isSignalableGroup` accepts `>= 0` | 1/13 — *the process-group guard* |
+| P9 | the load-bearing `--` dropped from the spawn argv | 1/13 — *threads the matching --config* |
+
+All nine exit 1. **Every one of the 8 new bodies and the 1 changed body
+reds under at least one mutant**, and the mutants discriminate rather
+than merely killing: **P3 leaves THE RESIDUAL green while killing *only
+the PORT*** — restoring T-046's hard-coded devUrl does not change the
+fact that a wrong committed port is masked, which is exactly what that
+body claims and the reason the two are separate bodies rather than a
+duplicate pair (the SHAPE SIX question, asked and answered with a
+mutant).
+
+**WHAT THE DRILL CANNOT SEE HERE, said plainly**: the group-signalling
+helpers live inside `main()`'s closure in a module that runs `main()` at
+import (deliberately, T-046), so **no lane body can poison them**. Only
+`isSignalableGroup` was liftable and it is pinned. The rest is pinned by
+the orphan drill, which is a hand procedure. Filed as `T-061-s6` with a
+concrete shape for closing it.
+
+### Security sweep, re-derived at this ref
+
+- **No lockfile, no `Cargo.toml`, no `tauri.conf.json`, no capability
+  file, no `.entitlements`** in the range — 0 paths matched. The one
+  `package.json` is `tools/e2e/package.json` and its whole diff is **one
+  added script line**; `devDependencies` is untouched. **No dependency
+  added.**
+- `app/src-tauri/src/acl_pin.rs`: **0-file diff**, sha256
+  `8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e` —
+  the brief's figure, reproduced. `EXPECTED_GRANTS` declaration line
+  **54**, closing `];` line **147**, entries 55–146 = **92**, with **92**
+  quoted strings, **92 UNIQUE** quoted strings and **zero** blank or
+  comment lines. Counted from the symbol, never the line.
+- **Exactly THREE `#[ignore]` attributes**, anchored on
+  `^[[:space:]]*#\[ignore` with pathspec `'*.rs'` from the repo ROOT:
+  `crates/nputer-index/tests/perf.rs:53`,
+  `crates/nputer-index/tests/self_graph.rs:58`,
+  `tests/agent_runner.rs:3767`, all three carrying `= "reason"`.
+- **IPC is THIRTEEN at both ends**: 13 anchored `#[tauri::command]`
+  attributes, 13 `generate_handler!` entries counted after stripping
+  comments from the macro body.
+- **0** secret-shaped added lines (`sk-`, `AKIA`, PEM, bearer, and
+  `key|secret|password|token` assignment shapes). **0** of the eleven
+  paths carries a NUL byte, read as BYTES rather than through a shell
+  argument — a `grep` for `$'\x00'` cannot express a NUL in argv and
+  matches everything, which this executor did once before catching it.
+- **TWO new process surfaces, named rather than denied**, both in
+  `orphan-drill.mjs`: `execFileSync("/bin/ps", [argv array])`, read-only
+  with no shell and no interpolated input, and
+  `spawn(process.execPath, [bootCheck])`, an argv array with no shell.
+  Neither is an IPC command or a grant. The third surface is the point
+  of the card — `process.kill` — and it is guarded by
+  `isSignalableGroup` plus the zero-signal probe, and addressed only to
+  a pgid captured at spawn.
+
+### What reached the human's machine
+
+1. **Their app process is unchanged** — `node` 82549, `TCP [::1]:1420
+   (LISTEN)`, one socket, identical at the first read and the last. This
+   branch touches no `app/src/**` and no `app/src-tauri/**` path, so the
+   watcher had nothing to rebuild, and BOOT GATE's own trigger set
+   predicted that.
+2. **Thirteen `tauri dev` boots ran in `../nputer-T-061`**, each on its
+   own scratch port, each cleaned up. `ps -Ao pid,pgid,command` filtered
+   to this worktree is EMPTY at the end; `lsof` on every scratch port
+   used is empty.
+3. **`../nputer-T-061/app/src-tauri/target` was written** by the warm
+   build, `cargo test` twice, the regen and every boot. It is this
+   worktree's own target directory — there is no `CARGO_TARGET_DIR` and
+   no `.cargo/config.toml` on this tree, so the main checkout's target
+   was never touched.
+4. **`docs/architecture/graph.json` did not move** — 119 files, 1018
+   symbols, 1539 edges, before and after the regen.
+5. **The two `nputer-T-060` `fake_agent` orphans (52504 / 52505, ppid 1,
+   started Tue Aug 18 16:21:18) are untouched and still running**,
+   verified at the end. They are a human decision recorded in STATE
+   (`T-043-s1`) and this card is about orphans, which is exactly why
+   they were left alone.
+6. **The scratch directory is not private**: every file this session
+   wrote there is prefixed `T061-`.
+
+### Findings
+
+Six, all filed as `status: suggested` with `suggested_by: executor
+claude-opus-5 @T-061`:
+
+- **`T-061-s1`** — the `T-046-s4` id was REUSED after promotion, so this
+  card's own preamble tells its executor to delete a live unrelated
+  finding.
+- **`T-061-s2`** — the seven-plant body asks git whether the tree is
+  clean, not whether the lane restored what it planted.
+- **`T-061-s3`** — what BSD `xargs` actually does here: it does not run
+  the utility on an empty list, and it maps non-zero to **1**, not 123.
+  Both facts CONVENTIONS records are wrong, and T-084's exit-2 fix is
+  unreachable through the documented pipe.
+- **`T-061-s4`** — the flaky `stderr_tail` assertion.
+- **`T-061-s5`** — the orphan drill ships and CONVENTIONS does not name
+  it; plus exit 3's legend is now incomplete.
+- **`T-061-s6`** — the group-signalling path has no headless pin.
+
+### Two things in the dispatch brief that the tree disagreed with
+
+- **"BSD `xargs` maps a utility exit of 1–125 to 123."** Not on this
+  machine. Its man page says 127 / 126 / **1**, and 1, 2, 3, 4 and 255
+  all measure as **1**. The 123 mapping is GNU findutils'. The brief's
+  CONCLUSION — do not read an exit code through that pipe — is right,
+  and `T-061-s3` measures the real behaviour, which is worse: the empty
+  list never reaches the gate at all.
+- **"The suggestion files are removed in the same commit as this
+  card"**, inherited from the card's own preamble. All three were
+  already removed at `abc6814`, the triage commit that created this
+  card. The file that now carries the name `T-046-s4` is a DIFFERENT,
+  live finding and was **not** removed (`T-061-s1`).
+
+Everything else in the brief reproduced: the `e8c4ab7` figures (app
+840/840 over 43, parser 263/263, cargo 352/0/3 over 15 lines, e2e 121
+before my 8, TOKEN 123 and CONTROL 590 before my one new file), `.mjs`
+absent from the GRAPH REGEN trigger, the `acl_pin.rs` hash, the three
+`#[ignore]`s, IPC 13 at both ends, `[::1]:1420`, and all three sibling
+lanes live and disjoint.
 
 ## Verdicts
