@@ -423,7 +423,7 @@ verdict's finding, reproduced. The Run list contains no
   verdict's figure at its own ref rather than disagreeing with it. TOKEN
   is unmoved at 124: this commit adds no `.ts/.tsx/.mjs` FILE.
 - All three DOCS-GATE-owed suites were re-run AFTER the notes commit
-  landed (T-081-s9); figures in the commit that carries them.
+  landed (T-081-s9) — the closing paragraph below carries them.
 
 **ENVIRONMENT.** 1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN`
 and nothing else — never bound, connected or signalled. Holder
@@ -468,6 +468,22 @@ touched: this drill mutates only this lane's own `docs-scan.mjs`.
    is reachable only after this card's `JS_CWD_SITE`. I did not re-plant
    the suite-less file to re-derive the `a15b78e` comparison; that half
    is the verifier's measurement, relayed as such.
+
+**OWED SUITES RE-RUN AFTER THE NOTES COMMIT `f4872a1` LANDED
+(T-081-s9).** `docs-gate.mjs` fed this card's own path fires at exit
+**1** and owes the same three; all three green on the committed tree:
+
+    npx vitest run   from lib/parser/   263/263, 12 files, exit 0
+    npm test         from app/          857/857, 43 files, exit 0
+    npm test         from tools/e2e/    135/135, exit 0   NPUTER_E2E_PORT=14805
+                                        (bind-probed free on 127.0.0.1,
+                                         0.0.0.0, :: and ::1 before use)
+
+`cargo run -p nputer-index -- index --check --root ../..` exit **0**,
+graph CURRENT and unmoved at 588891 bytes / 119 files / 1023 symbols /
+1550 edges. `npm run lint:tokens` exit **0**, **TOKEN 124 / CONTROL
+583** — this append adds no tracked FILE, so neither count moves again,
+which is why the regress stops here rather than at the next commit.
 
 ## Verdicts
 
