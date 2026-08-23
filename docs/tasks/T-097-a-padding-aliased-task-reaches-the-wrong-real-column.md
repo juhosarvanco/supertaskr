@@ -405,6 +405,23 @@ main, so the base is still 1023/1550 and this delta lands at
 integrating with `[app-map, app-shell, app-agent]`, which WILL move the
 base — if T-013 lands first, re-derive rather than reuse 1027/1555.
 
+**AND IT LANDED WHILE THIS CARD WAS BEING WRITTEN — third movement of
+main in one lane.** Main is now `6834287` (*Merge T-013: semantic zoom
+T1/T2 and the churn overlay*). Re-derived against it: the prescribed
+range is still **7** paths, three dots still 7, branch-only still 7,
+and the sets are still DISJOINT — main's advance is now **47** paths,
+47 + 7 = **54** = the forbidden two-dot count, `comm -12` **EMPTY**. So
+nothing about this branch changed. What DID change is the graph base:
+main's advance now carries **15** code paths, and although
+`graph.json` is still a **0-path** diff on main (T-013's MERGE did not
+regen — the checkpoint owes it, exactly as this convention prescribes),
+T-013's checkpoint will move the base off 1023/1550. **THE DELTA
++4/+5 IS THIS BRANCH'S FIGURE AND IT IS STABLE; THE ABSOLUTE 1027/1555
+IS NOT.** Whoever checkpoints this lane must add +4/+5 to whatever base
+is live then, not paste 1027/1555 — which is the same compounding trap
+`docs/STATE.md` recorded against T-013's integrator, now pointing back
+the other way.
+
 **BOOT GATE — OWED at 2 of 7, RUN, exit 0.** `NPUTER_BOOT_PORT=14761
 npm run boot:check` from `tools/e2e` exits **0** with both `[nputer]`
 lines (*project folder: /Users/ujju/Projects/nputer-T-097* and *window
