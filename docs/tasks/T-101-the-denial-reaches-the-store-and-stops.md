@@ -675,16 +675,18 @@ not four.
 T-081-s9's whole point.** Writing the table above is itself an edit to a
 flat `docs/tasks/T-*.md`, so the gate is owed again: invoked directly on
 this card's own path it FIRES at exit **1** and names the same three
-suites, and the run that validates the sentence you are reading is
-**parser 263/263 exit 0 · app 863/863 exit 0 · e2e 129/129 exit 0** on a
-third scratch port, **14768**, bind-probed free on all four stacks before
-use and free again after. Three independent runs of each suite across
-this rebuild, all identical.
+suites, and the run that validates the sentence you are reading is the
+LAST of them, on scratch port **14769**: **parser 263/263 exit 0 · app
+863/863 exit 0 · e2e 129/129 exit 0**. Each suite ran independently after
+every doc write of this rebuild, and every run was identical — the
+figures never moved, so no reader has to decide which run a number came
+from.
 
-**Port hygiene.** Three scratch ports — **14766** (boot gate), **14767**
-and **14768** (e2e) — each bind-probed FREE on `127.0.0.1`, `0.0.0.0`,
-`::1` and `::` immediately before use and free again after; none is the
-default 14520 and none is 1420.
+**Port hygiene.** FOUR scratch ports — **14766** (boot gate) and
+**14767**, **14768**, **14769** (a fresh one per e2e run, since lanes
+collided on the default earlier this week) — each bind-probed FREE on
+`127.0.0.1`, `0.0.0.0`, `::1` and `::` immediately before use and free
+again after; none is the default 14520 and none is 1420.
 
 **A BIND PROBE RUN IMMEDIATELY AFTER THE E2E LANE CAN FALSE-RED, and it
 did once here — recorded because the "free again after" ritual is only
@@ -698,7 +700,7 @@ TIME_WAIT` peers from the browser's own connections, and a plain `bind()`
 without `SO_REUSEADDR` refuses against those. **So the authority on
 whether a port was left held is `lsof … -sTCP:LISTEN`, and a bind probe
 is the CONFIRMING half, never the deciding one.** Final state: zero
-listeners on 14766, 14767 and 14768; no `vite`, `playwright` or `tauri`
+listeners on all four scratch ports; no `vite`, `playwright` or `tauri`
 process of this lane survives. The only long-lived strangers are the two
 `nputer-T-060` `fake_agent` orphans (52504/52505, ppid 1, five days old)
 — not mine, T-043-s1, left alone — and the human's own
