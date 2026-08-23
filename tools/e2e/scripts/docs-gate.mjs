@@ -160,9 +160,11 @@ function main(argv) {
   let found = 0;
 
   // THE ACCOUNT AND THE TREE MUST AGREE. An unargued root-anchored file
-  // in a suite that is not universally owed is the exact shape whose
-  // answer could be short — so it is news here as well as in the lane,
-  // because the lane is not what an integrator runs at a merge.
+  // in a suite that is not universally owed is the ROOT-ANCHORED shape
+  // whose answer could be short — the package-relative half is the
+  // separate tripwire below and neither reaches the other (T-085) — so
+  // it is news here as well as in the lane, because the lane is not what
+  // an integrator runs at a merge.
   /** @type {string[]} */
   const ledgerFiles = ROOT_ANCHOR_LEDGER.map((e) => e.file).sort();
   const seen = [...unaccounted].sort();

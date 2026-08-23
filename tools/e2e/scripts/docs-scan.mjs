@@ -206,11 +206,16 @@
  *    `suitesOwedForAllOfDocs()` derives which suites are owed for EVERY
  *    path under docs/ (today: tools/e2e, because two lane specs walk the
  *    whole tree), so a missed reader THERE cannot shorten an answer.
- *    `unaccountedRootAnchors()` is what is left — root-anchored, not
- *    derived, in a suite that is not universally owed — and every member
- *    is argued by file in ROOT_ANCHOR_LEDGER, which the lane and the
- *    hand-run gate both assert equals the derived set. A new one is
- *    news; it cannot arrive quietly.
+ *    `unaccountedRootAnchors()` is what is left OF THE ROOT-ANCHORED
+ *    CLASS — root-anchored, not derived, in a suite that is not
+ *    universally owed — and every member is argued by file in
+ *    ROOT_ANCHOR_LEDGER, which the lane and the hand-run gate both
+ *    assert equals the derived set. A new one is news; it cannot arrive
+ *    quietly. IT IS NOT THE WHOLE RESIDUAL, and saying it was is the
+ *    error T-085 cost: the package-relative class has no anchor to
+ *    enumerate, so it carries its own residual and its own tripwire
+ *    (`unlinkedSites()`, limit 5's shape, a hard failure in the lane).
+ *    Neither list covers the other.
  * 7. IT SAYS NOTHING about whether a body ASSERTS on what it read. A
  *    reader that reads docs/ and ignores it still counts; over-firing is
  *    the safe direction here, exactly as it is for GRAPH REGEN.
@@ -1875,9 +1880,21 @@ export function docsReaders(root = repoRoot) {
  * a file it can SEE a docs site in, so a file that reaches docs/ purely
  * through a callee this scanner cannot open is invisible to BOTH. What
  * bounds that class is not an argument, it is this list: a file holding
- * the repository root is the only file that CAN read this repo's docs/,
- * so `unclassified` is the exact set of places the answer could still be
- * short — printed on every gate run rather than left in prose.
+ * the repository root is the only kind of file that can name docs/ by an
+ * ABSOLUTE anchor, so `unclassified` is the exact set of places the
+ * ROOT-ANCHORED answer could still be short — printed on every gate run
+ * rather than left in prose.
+ *
+ * AND THAT IS THE WHOLE OF WHAT THIS LIST BOUNDS. A docs path written
+ * relative to a PACKAGE directory holds no root, so it never enters this
+ * census at all — `app/src-tauri/tests/agent_runner.rs` is the live one
+ * — and that class is bounded by CONSTRUCTION rather than by any list:
+ * `siteDocsPrefix` resolves every docs-shaped literal against its base,
+ * `packageRelativeSites()` accounts for it and `unlinkedSites()` is its
+ * tripwire. THIS SENTENCE USED TO BE A UNIVERSAL about every file that
+ * CAN read this repo's docs/, and it was false; ROOT_ANCHOR_LEDGER below
+ * owns that retraction and is the ONE place it is argued, so this
+ * comment points at it instead of restating it.
  *
  * `derived`      a docs reader, by literal site or by call hop.
  * `unlinked`     forms a docs-first path this scanner could not link —
@@ -2113,9 +2130,11 @@ export function suitesOwedForAllOfDocs(readers) {
  * suite that is already owed for every path under docs/ (tools/e2e), so
  * a miss there cannot change an answer. What is
  * left — a root-anchored file in a suite that is NOT universally owed,
- * which the derivation could not link — is the exact set of places the
- * gate's answer could still be short, and it is small enough to be
- * argued file by file. `unaccountedRootAnchors()` derives that set; this
+ * which the derivation could not link — is the exact set of places
+ * THIS CLASS's answer could still be short, and it is small enough to be
+ * argued file by file. Not the GATE's: the package-relative class
+ * retracted above is the other half of that residual, and
+ * `unlinkedSites()` is what reports it. `unaccountedRootAnchors()` derives that set; this
  * ledger records the argument for each, and the spec asserts the two
  * agree EXACTLY. A new one cannot slip in silently, and an entry that
  * stops being true cannot linger.

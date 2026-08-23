@@ -457,6 +457,30 @@ test("the ledger's universal is gone, and what replaced it is checkable", () => 
   expect(scanner, "the ledger no longer claims the universal as live").toContain(
     "THE SENTENCE THAT USED TO OPEN THIS COMMENT WAS FALSE",
   );
+  // AND THE RETRACTION HAS TO BE THE ONLY PLACE IT SURVIVES — T-085's
+  // own rejection. This file retracted the universal in the ledger while
+  // `rootAnchoredFiles()`'s comment still ASSERTED it 220 lines above:
+  // the T-070-s5 shape, a live false comment, in the card that exists
+  // because a stale claim shipped. `toContain` on the retraction cannot
+  // see that, so the pin is POSITIONAL. The retraction QUOTES the
+  // sentence, which is the positive control that keeps the sweep below
+  // from being vacuous (a negative assertion needs one, CONVENTIONS).
+  const retraction = scanner.indexOf("THE SENTENCE THAT USED TO OPEN THIS COMMENT WAS FALSE");
+  const positiveClaim = scanner.indexOf("WHAT IS TRUE, and all this ledger claims");
+  expect(positiveClaim, "the retraction ends where the ledger's positive claim begins").toBeGreaterThan(
+    retraction,
+  );
+  const asserted = [...scanner.matchAll(/only (?:kind of )?file that CAN read/g)];
+  expect(asserted.length, "the retraction quotes the sentence, so this sweep can match").toBeGreaterThan(0);
+  for (const m of asserted) {
+    expect(
+      m.index,
+      `the universal is stated at offset ${m.index}, outside the retraction that withdraws it`,
+    ).toBeGreaterThan(retraction);
+    expect(m.index, `the universal is stated at offset ${m.index}, past the retraction`).toBeLessThan(
+      positiveClaim,
+    );
+  }
 });
 
 test("the one by-name exclusion is load-bearing, and the spec is NOT excluded", () => {
