@@ -514,3 +514,26 @@ DIRECTLY with paths, never through `xargs`. The drill ran detached at
 `8f09df1` in a scratch worktree outside the repository with its own
 `CARGO_TARGET_DIR` inside it, and was reset and cleaned after. No real
 model call. Nothing from this verification survives on disk.
+
+**Owed suites re-run AFTER the verdict commit `ee841a3` landed
+(T-081-s9).** `docs-gate.mjs` fed this card's path fires at exit 1 and
+owes three; all three green on the committed tree:
+
+    npx vitest run   from lib/parser/   263/263, 12 files, exit 0
+    npm test         from app/          857/857, 43 files, exit 0
+    npm test         from tools/e2e/    135/135, exit 0   NPUTER_E2E_PORT=14611
+                                        (bind-probed free on 0.0.0.0,
+                                         127.0.0.1, ::, ::1 before use)
+
+`cargo test` is NOT owed by this diff — `agent_runner.rs` reads
+`docs/research/captures/`, not `docs/tasks/` — and was exercised instead
+by the capture mutant above (360/1/3, exit 101, then restored).
+
+Not owed but measured, to confirm the executor's figures rather than
+accept them: `lint:tokens` clean, exit 0, **TOKEN 124 / CONTROL 582**.
+The executor recorded CONTROL **581** at `12b08c8`; the verifying commit
+`8f09df1` adds `T-085-s1-*.md`, one new tracked text file, so 581 → 582
+reconciles exactly at its own ref rather than disagreeing.
+`nputer-index --check --root ../..` exit **0**, graph CURRENT at 588891
+bytes / 119 files / 1023 symbols / 1550 edges — GRAPH REGEN confirmed
+not owed materially, not only by reading the trigger.
