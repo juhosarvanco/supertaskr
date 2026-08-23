@@ -5,7 +5,7 @@ feature: F-02
 milestone: 3
 priority: 27
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 builder: claude-opus-5
@@ -1069,3 +1069,317 @@ and at the end, with sha256 equality re-checked on
 `app/**` or `lib/**` path was written. The `nputer-T-060` orphans were
 read with `ps` and left exactly as found — this card is about orphans,
 which is the reason to be careful with somebody else's.
+
+---
+
+## 2026-08-23 — INTEGRATOR: merged at `ea7ea0a`, and both corrected figures went stale again (claude-opus-5 @T-061-integrate)
+
+**History appended, never rewritten** (the T-081 ruling): the notes and
+the verdict below are left exactly as their authors wrote them, and
+every correction is here with the ref it was measured at.
+
+Merged `--no-ff` as **`ea7ea0a`**, main-before **`f306ee9`**, approved
+tip **`ed0c622`**. Nothing was written into the merge commit
+(`T-083-s4`); every edit in this section is in the checkpoint.
+
+### The range rule, every dot count stated, at MY refs
+
+    git merge-tree --write-tree f306ee9 ed0c622  -> tree b118ce50…, exit 0
+    git diff --name-only f306ee9 <TREE>                       -> 18   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only f306ee9...ed0c622   (THREE dots)     -> 18   cmp against the forecast: exit 0
+    git diff --name-only 2036fb2..ed0c622    (TWO, branch-only)-> 18   cmp against the forecast: exit 0
+    git diff --name-only f306ee9..ed0c622    (TWO dots)       -> 130  THE FORBIDDEN PRE-MERGE FORM
+    git diff --name-only f306ee9..ea7ea0a    (TWO dots)       -> 18   THE MERGE'S DIFF
+    git diff --name-only f306ee9...ea7ea0a   (THREE dots)     -> 18   collapses onto the line above
+    git diff --name-only 2036fb2..ea7ea0a    (TWO dots)       -> 130  the naive at-merge range
+
+Merge-base **`2036fb2`**; main advanced **112** paths from it, the
+branch **18**, `comm -12` over the sorted lists is **EMPTY**, and
+112 + 18 = 130 — the forbidden count, and that arithmetic is the proof
+the two sets are disjoint.
+
+**THE VERIFIER'S FORBIDDEN COUNT MORE THAN DOUBLED IN AN AFTERNOON AND
+THE TRUE COUNT NEVER MOVED — 60 at `4d2f03c`, 130 at `f306ee9`, 18 at
+both.** The whole 70-path swing is main's own triage work arriving on
+the LEFT-hand endpoint. That is this rule's entire thesis, and it is now
+measured twice on one card.
+
+**The forecast was exact under BOTH metrics.** `merge-tree --write-tree`
+returned **`b118ce5026d7b6a909376a7240184564af9927b8`** at exit 0, and
+the no-ff merge's own `HEAD^{tree}` IS that tree, with parents `f306ee9`
+and `ed0c622` and nothing else; `cmp` of the whole patch against the
+merge's later diff exits **0**. The staged set at `git merge --no-commit`
+was the eighteen paths and nothing more, `cmp`-ed against the forecast
+at exit 0.
+
+### CORRECTION 1 — CONTROL was 591, then 597, and at the merge it is 566
+
+The notes report CONTROL **591** "at the committed ref"; finding 4 of
+the verdict corrects that to **597**. **Both are right at their own
+refs, and NEITHER is right at the merge.** Derived at every ref from
+`git ls-tree -r --name-only` minus the `SKIP_DIRS` and
+`CONTROL_BINARY_EXTENSIONS` sets read out of `token-scan.mjs` (the skip
+set matches nothing tracked; the binary set matches 18 everywhere):
+
+| ref | what it is | tracked | CONTROL |
+|---|---|---|---|
+| `2036fb2` | merge-base | 608 | **590** |
+| `44007bc` | the CODE commit | 609 | **591** ← the notes' figure, right here |
+| `4d2f03c` | main's fourth position | 609 | 591 |
+| `cc14fc9` / `ed0c622` | branch tip | 615 | **597** ← the verdict's figure, right here |
+| `f306ee9` | main-before-the-merge | 577 | **559** |
+| `ea7ea0a` | **the merge** | 584 | **566** |
+
+The lint printed `CONTROL 566` at the merge and it closes three ways:
+main NET-REMOVED 31 tracked files (29 A + 12 R099 − 60 D — the sixth
+triage taking the suggestion backlog to zero), the branch adds 7 (six
+findings plus `orphan-drill.mjs`), and 590 − 31 + 7 = 590 + 7 − 31 =
+**566**. TOKEN is **124** at the merge and at the branch tip both, because
+main's 112-path advance is entirely `docs/` and TOKEN counts only
+`app/src`, `app/test`, `tools/e2e`.
+
+**The lesson is not that a figure was wrong.** The verifier corrected
+591 → 597 and was right to; the correction then went stale from the
+LEFT-hand endpoint before it could be merged, because main deleted
+thirty-one files underneath it. A count is a function of a ref on BOTH
+sides. This is the third consecutive card to record that sentence.
+
+### CORRECTION 2 — `T-061-s4` names the wrong body, and at my ref the flake did not appear at all
+
+The verdict's finding 5 is confirmed as to the NAME and **contradicted
+as to the RATE, in the reassuring direction**. `T-061-s4` is titled for
+`a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail`; the body the
+verifier caught red three times in seven runs is
+`the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists`
+(`app/src-tauri/tests/agent_runner.rs:1066`, the panic at :1091). `s4`
+gains a dated integrator section carrying the right name.
+
+**MY OWN TALLY, same sample size, at the merge: SEVEN GREEN OF SEVEN.**
+Bare `cargo test --no-fail-fast`, seven consecutive runs, every one
+**352 passed / 0 failed / 3 ignored, exit 0**, summed programmatically
+over **fifteen** `test result:` lines each. Zero reds, zero failing
+bodies. So the measured rate is **3 of 7 at `cc14fc9` under the
+verifier's load and 0 of 7 at `ea7ea0a` under mine** — which is the
+signature of a load-dependent race, not of a fix: `git diff --name-only
+f306ee9..ea7ea0a -- app/ lib/ crates/` is **0 paths**, and
+`agent_runner.rs` was last touched by T-081 at `6251d37`, long before
+this branch. **Nothing here fixed it and nothing here can have; a
+future integrator who sees it red should not read my seven greens as a
+baseline.** The honest statement is that the flake is real, is
+pre-existing, and did not fire on this machine at this hour.
+
+### The three gates, derived over the prescribed 18
+
+| gate | prescribed `f306ee9..ea7ea0a` | naive `2036fb2..ea7ea0a` |
+|---|---|---|
+| BOOT GATE (`app/src-tauri/**`, `app/src/**`, either manifest) | **0 — NOT OWED** | **0** |
+| GRAPH REGEN (`*.ts/*.tsx/*.js/*.jsx` outside docs/) | **2 — FIRES** | 2 |
+| DOCS GATE (a `docs/` path a code suite reads) | **7 — FIRES**, three suites | 119 — fires |
+
+**THIS IS THE COMPLEMENT OF T-084's FLIP AND THE REPEAT OF T-081's
+AGREEMENT, and the reason is derivable rather than lucky**: main's
+112-path advance is **entirely under `docs/`** (0 non-docs paths), so
+neither suffix-triggered gate can see it and the naive range cannot
+manufacture a BOOT CHECK this time. The DOCS GATE still differs, 7
+against 119, because that gate's trigger is exactly what main moved —
+the naive range would have owed the same three suites for the wrong
+reason, which is how a right answer by a wrong route looks.
+
+- **BOOT GATE — NOT OWED at 0 of 18, AND RUN ANYWAY, because this merge
+  is what CHANGES the boot check.** A gate whose own implementation
+  moved cannot be cleared by its trigger arithmetic; the trigger asks
+  "did the app's shell move", and here the answer is no while the
+  question-asker itself moved. `NPUTER_BOOT_PORT=14721 npm run
+  boot:check` from tools/e2e: **exit 0**, both `[nputer]` lines
+  (*project folder:* and *window "main" created*), child pid 45360,
+  captured group 45360, tree stopped on SIGTERM, no survivor on the
+  port afterwards on any of the four stacks.
+- **THE OVERLAY, READ OFF THE WIRE AT MY REF.** Committed
+  `tauri.conf.json` (sha256 `52eb5e69…`, unmoved) holds
+  `beforeDevCommand: "npm run dev"` and `devUrl:
+  "http://localhost:1420"`; the overlay the check threaded was
+  `{"build":{"devUrl":"http://localhost:14721","beforeDevCommand":"npm run dev -- --port 14721 --strictPort"}}`
+  — only the PORT of the committed devUrl rewritten (scheme and host
+  preserved), and the committed beforeDevCommand APPENDED to rather
+  than replaced. The criterion holds on the observed bytes.
+- **GRAPH REGEN — OWED on the two `.spec.ts` paths, RUN, and a PROVEN
+  NO-OP.** `index --check --root ../..` from app/src-tauri exits **0**
+  before (*CURRENT … 585305 bytes, 119 files, 1018 symbols, 1539
+  edges*), `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test
+  self_graph -- --ignored` exits **0** moving **zero** paths (`git
+  status --porcelain` empty), and `index --check` exits **0** after.
+  Derivable rather than lucky, the fourth worked example: `.nputerignore`
+  excludes `docs/` and `tools/`, and **all eighteen paths are under one
+  or the other**, so the indexable-path count of this merge is **0**.
+  The exit code was read from `$?` UNPIPED — the first attempt read
+  `${PIPESTATUS[0]}`, which is empty in zsh, and printed nothing.
+- **DOCS GATE — FIRES, exit 1**, invoked DIRECTLY with
+  `$(cat <the 18>)` and never through `xargs`. Seven `docs/` paths (this
+  card and its six findings), owing **three** suites — `npm test from
+  app/`, `npm test from tools/e2e/`, `npx vitest run from lib/parser/`.
+  `cargo test from app/src-tauri/` is correctly NOT owed: its two
+  readers resolve `docs/architecture/components` and
+  `docs/CONVENTIONS.md`, neither of which this merge touches. The gate
+  reports **11 derived readers across 4 suites**, **0 frontmatter
+  issues**, and *every live task card's frontmatter parses, with a legal
+  status* — which is the check that the six new findings are legal, run
+  by the gate rather than by eye.
+
+### Suites at the merge, every exit code from `$?` unpiped
+
+- **parser 263/263 over 12 files, `PARSER_EXIT=0`**; `npm run build`
+  and `npx tsc --noEmit` both **0**, build FIRST per the fresh-clone
+  order.
+- **app 840/840 over 43 files, `APP_TEST_EXIT=0`**; `npm run build`
+  **0**, **265 modules transformed**, `index-kNOKiTKD.js` **502.75 kB**
+  and `index-CwYF5FQb.css` **43.95 kB** — byte-for-byte the hashes at
+  `e8c4ab7` and at the branch tip, as they must be: this merge moves no
+  `app/**` path, so the bundle is a function of `f306ee9` alone.
+- **E2E 129/129, `E2E_EXIT=0`**, one worker, zero retries, zero skips,
+  scratch port **14723**; `npm run typecheck` **0** with `checkJs` on.
+- **Rust, bare `cargo test --no-fail-fast`, SEVEN runs: 352/0/3 at exit
+  0 every time**, fifteen `test result:` lines each. See CORRECTION 2.
+- **token lint 0, `--selftest` 0** — *clean (TOKEN 124 … CONTROL 566)*,
+  49 TOKEN + 4 CONTROL samples, 71 walk-policy checks, 8 evidence-floor
+  checks. This is also the repo's only NUL gate; independently, all 18
+  paths were read as bytes and **0 carry a NUL** (the first probe,
+  `grep -qU $'\x00'`, matched all 18 — the shell truncates the pattern
+  at the NUL and greps for the empty string, so it is a FALSE POSITIVE
+  generator and not a gate; the byte-level re-read is the real answer).
+- **`cargo audit -n` exit 0**: 472 crate dependencies, **0
+  vulnerabilities / 17 allowed warnings**, unmoved — which a 0-file
+  `Cargo.lock` diff requires.
+
+### The poison drill — the verifier's headline mutant, at the MERGED commit
+
+Detached scratch worktree at `ea7ea0a` under the scratchpad, with
+`CARGO_TARGET_DIR` set INSIDE the drill directory (T-013-s7: a shared
+target bakes the drill path into cached binaries and reds 33 bodies
+after cleanup). **Correspondence established by hash before anything was
+mutated** — `orphan-drill.mjs` `a026f5cb…`, `tauri-boot-check.mjs`
+`344f55a9…`, `boot-port.mjs` `de005bc0…`, each identical to `git show
+ea7ea0a:<path>`, so the drilled artifact IS the merged artifact by
+construction (the latter two also reproduce the verifier's own hashes).
+
+- **CONTROL, shipped code, port 14724: exit 0, PASS** — *the child-exit
+  path signalled its group before exiting*. Run in the same scratch
+  worktree as the mutant, so the environment is not the variable.
+- **MUTANT — the child-exit continuation replaced by a bare
+  `process.exit(1)`**, i.e. the pre-T-061 behaviour of that one path,
+  substitution count **1**, mutated text read back with `git diff`
+  before anything ran. Port 14725: **exit 1, `EXIT_LEAK`** —
+  *the boot check exited 1 and left **4** process(es) in group 59945,
+  with port 14725 STILL HELD*: the `npm run dev` shell, an `npm list`
+  of the tauri plugins, the vite listener and the esbuild helper. The
+  drill then reaped its own mess and the group went empty.
+
+Red, then green, on the same shipped procedure, against the merged
+bytes. Restored by byte copy from `git show ea7ea0a:<path>` and proved
+twice — empty per-path `git diff`, and sha256 back to `344f55a9…`.
+
+**AND THE T-013-s7 PRECAUTION COST NOTHING AND PROVED UNNECESSARY FOR
+THIS PARTICULAR DRILL, which is worth writing down rather than
+re-deriving.** The scratch `CARGO_TARGET_DIR` finished the drill at
+**0 bytes**: the drill SIGKILLs the tauri CLI as soon as vite is
+listening, which is during `beforeDevCommand` and BEFORE cargo is ever
+invoked, so no Rust build starts and the shared target was never at
+risk by any route. Take the precaution anyway — it is free here and the
+failure it prevents is not.
+
+### The findings, and what this role did with each
+
+The verdict's five findings were written into the card and **filed as
+no files at all**, so triage — which reads `docs/tasks/*.md` — could not
+have seen them. Two are genuinely new defects and are filed here; three
+are corrections that belong on the cards they correct, and are appended
+there rather than duplicated:
+
+- **verdict 1 → `T-061-s7`**, new. The shipped drill imports
+  `isSignalableGroup`, absent at `2036fb2`, so it cannot run against
+  pre-fix byte copies and dies at ESM link time — and exit 1 is
+  `EXIT_LEAK`, the drill's loudest verdict, reached having spawned
+  nothing. A false ALARM, never a false green. **Filed and left**, per
+  this merge's brief; disposition is triage's.
+- **verdict 2 → `T-061-s8`**, new. Two sentences claim more than the
+  mechanism delivers — the `tauri-boot-check.mjs:212` comment ("capturing
+  at spawn rather than at kill time is the whole point", measured false:
+  `child.pid` is the same integer after the exit event) and the card's
+  own criterion framing capture+probe as answering pid RECYCLING, which
+  the verifier's P4 row shows it does not.
+- **verdict 3 → appended to `T-061-s6`**, which the executor had already
+  filed. The probe is pinned by nothing: with it deleted, the guard spec
+  is 14/14 green and the drill exits 0. Confirmed by measurement rather
+  than argument, which raises its priority; no second card for one
+  defect.
+- **verdict 4 → CORRECTION 1 above.**
+- **verdict 5 → CORRECTION 2 above and a dated section on `T-061-s4`.**
+
+`T-061-s3`'s CONVENTIONS:690 arm is **NOT this merge's to fix** and was
+confirmed untouched: `git diff f306ee9..ea7ea0a -- docs/CONVENTIONS.md`
+is a **0-file diff**. `T-089` holds that fence, is live, and has been
+told.
+
+### Security sweep, re-derived at the merge
+
+`acl_pin.rs` **0-file diff**, sha256
+`8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`;
+`EXPECTED_GRANTS` declaration line **54**, closing `];` line **147**,
+entries 55–146 = **92**, counted four independent ways over the
+symbol-anchored body (92 quote-bearing lines, 92 quoted strings, 92
+UNIQUE quoted strings, **0** comment or blank). **IPC 13/13** — 13
+anchored `#[tauri::command]` and 13 `generate_handler!` entries with
+comments stripped; both census traps reproduce, the unanchored literal
+reading **14** and a naive comma-split of the raw block reading more
+because two comments inside the macro carry commas. **Exactly THREE
+`#[ignore]`**, anchored `^[[:space:]]*#\[ignore` with pathspec `'*.rs'`
+from the repo root, all three carrying `= "reason"`; the closed literal
+`#[ignore]` matches **8 lines in 5 files and every one is prose**, a set
+DISJOINT from the truth.
+
+**No dependency added**: the only manifest in the range is
+`tools/e2e/package.json` and its entire diff is the one
+`boot:orphan-drill` script line. All **2796** added lines scanned for
+`sk-`/`AKIA`/PEM/bearer/assignment shapes — **0 hits**.
+
+**THE SWEEP THIS CARD ACTUALLY NEEDS — every signal, and what it is
+addressed to.** No `shell: true` anywhere in `tools/e2e/scripts`; no
+`pkill`, no `killall`, no hardcoded pid. Every group signal in both new
+scripts is `process.kill(-pgid, …)` where `pgid` was captured at spawn
+and passed `isSignalableGroup` (integer `> 1`, so `-0`/`0`/`1`/`-1` —
+the caller's own group and the POSIX broadcast — are refused). **There
+is exactly ONE signal to a bare pid**, `orphan-drill.mjs:308`
+`process.kill(cli.pid, "SIGKILL")`, and it is guarded in the right
+direction: the line above re-reads that pid's membership out of `ps` and
+requires `cliMembership.pgid === pgid`, exiting `EXIT_CANNOT_RUN` with
+*"Nothing was signalled"* if the CLI left the group between the census
+and the signal. `execFileSync("/bin/ps", ["-Ao", …])` is read-only with
+no interpolation; `spawn(process.execPath, [bootCheck])` and
+`spawn("npm", args)` are argv arrays.
+
+### What reached the human's machine
+
+**Port 1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and with
+nothing else, before and after.** Holder `node` pid **82549**, one
+socket, `TCP [::1]:1420 (LISTEN)`, identical at the first read and the
+last. No bind, no connect, no signal, on any interface. The app process
+**85379** and the whole supervisor chain are unchanged. **No `pkill` at
+any point.**
+
+`app/src-tauri/target/debug/nputer` **WAS relinked** by my seven cargo
+runs and the regen — sha256 `25cedbed…` → `8ef00495…`, mtime Aug 20
+15:46 → Aug 23 20:04. That is a shared target directory being written by
+any cargo invocation (T-083's correction to `cb3aa31`, holding a fifth
+time) and NOT this merge's content: the merge has a 0-path diff under
+`app/`, `lib/` and `crates/`. A file on disk cannot reach a loaded
+process, so pid 85379 is unaffected and the next `tauri dev` rebuild
+overwrites it. The **poison drill did not touch it at all** — its
+scratch target stayed at 0 bytes.
+
+Scratch ports **14721, 14722, 14723, 14724, 14725** were each
+bind-probed free on all four stacks (`127.0.0.1`, `0.0.0.0`, `::1`,
+`::`) before use and verified empty after — an IPv4-only probe of a v6
+listener reports free, which is why all four. The two `nputer-T-060`
+`fake_agent` orphans (**52504** / **52505**, ppid 1, started Tue Aug 18
+16:21:18) were read with `ps` and left exactly as found. **This card is
+about reaping orphans, which is precisely the reason to leave somebody
+else's alone** (`T-043-s1`, a parked human decision).

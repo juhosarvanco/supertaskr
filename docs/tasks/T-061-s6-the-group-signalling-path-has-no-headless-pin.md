@@ -71,3 +71,36 @@ the capture happened, and the orphan drill deliberately does NOT parse
 it — it derives the group from `ps` by ppid instead, so the drill works
 identically against the pre-T-061 check. If the helpers move, the line
 stays useful for a human and stops being the only witness.
+
+---
+
+## 2026-08-23 — INTEGRATOR: confirmed by mutation, not by argument (claude-opus-5 @T-061-integrate)
+
+**Status stays `suggested`; this section records that the verdict
+independently reached this card by measurement, which raises its
+priority.** T-061's verifier filed it as their finding 3, having built
+the mutant before reading that the executor had already filed the same
+defect.
+
+**Mutant C — the probe deleted**: the `!groupAlive()` guard removed from
+`signalGroup` and the early return removed from `reapOrphanedGroup`.
+Result: `npm test`'s `boot-check-guard` spec **14/14 green**, and the
+shipped orphan drill **exit 0, PASS**. **Nothing in this repository,
+automated or hand-run, can see the difference** — which is exactly what
+this card says, now with a killed-mutant demonstration behind it rather
+than a reading of the closure.
+
+Two things sharpen the disposition:
+
+- The drill CANNOT be the pin. It exercises the path where the group is
+  still populated, so it passes with or without the probe; the probe's
+  only job is the OTHER branch — refusing to signal an EMPTY group — and
+  no procedure in the tree reaches that branch on purpose.
+- What the probe buys is narrower than the card it defends claims (see
+  `T-061-s8`): it refuses an empty group, and it is NOT recycling
+  protection, because a recycled id that has become live again passes
+  it. A pin should assert the narrow property, not the broad one, or it
+  will encode the over-claim.
+
+Merged at `ea7ea0a` with the defect live and unpinned, deliberately —
+discharging a finding is triage's call, not the integrator's.

@@ -74,3 +74,55 @@ race is fixed.
 five isolated greens. That is 1 failure in 7 executions of the body, and
 the single failure is the only one under parallel load — so the rate
 under load is unknown and one-for-two is not an estimate.
+
+---
+
+## 2026-08-23 — INTEGRATOR: this card names the wrong body, and the rate is load-dependent (claude-opus-5 @T-061-integrate)
+
+**Status stays `suggested` — disposition is triage's — but the card's
+title names a body that was green in all seven of the verifier's runs
+and all seven of mine.** Recorded here rather than silently retitled,
+because the two bodies are different failures and merging them would
+lose one.
+
+`T-061`'s verifier ran bare `cargo test --no-fail-fast` seven times at
+`cc14fc9`: **four green (352/0/3, exit 0), three red (351/1/3, exit
+101)**. In all three reds the failing body was
+
+    the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists
+    app/src-tauri/tests/agent_runner.rs:1066   (panic at :1091)
+
+and `a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail` — **the body
+this card is titled for** — passed in all seven. So `agent_runner.rs`
+has **at least two** load-flaky bodies: the one observed once during the
+build (this card, still real, still unexplained) and this one, caught
+three times in seven.
+
+**AT THE MERGE `ea7ea0a` I RAN THE SAME SEVEN AND GOT SEVEN GREEN.**
+352 passed / 0 failed / 3 ignored, exit 0, every run, summed over
+fifteen `test result:` lines each. **0 of 7 red against the verifier's
+3 of 7** — same command, same tree for these purposes (`git diff
+--name-only f306ee9..ea7ea0a -- app/ lib/ crates/` is **0 paths**;
+`agent_runner.rs` was last touched by T-081 at `6251d37`), different
+machine load. That is the signature of a race, and it means **neither
+tally is the rate**. Do not read my seven greens as evidence the flake
+is gone.
+
+**WHY IT DESERVES MORE THAN A RE-RUN, and this is the verifier's point
+worth preserving.** The failing assertion is the RUST MIRROR of T-061's
+own mechanism — a process-group reap that polls for group-emptiness
+across a grace — and it failed with `groupEmpty=true` after 28 ms of a
+900 ms grace while a same-group descendant was asserted alive. Whether
+that is a harness race about when the grandchild joins the group, or the
+emptiness probe answering wrongly under load, is the open question; the
+second answer would matter to `reapOrphanedGroup` in
+`tools/e2e/scripts/tauri-boot-check.mjs` too, which is the code T-061
+shipped. A hypothesis for whoever takes it, not a diagnosis: the two
+`nputer-T-060` `fake_agent` orphans are the same binary this harness
+spawns, and the pid space on this machine wraps (ceiling 99999 — both
+the executor and the verifier watched it wrap mid-run).
+
+**Suggested disposition**: retitle this card for the body that is
+actually reproducible, keep the original observation as a second arm,
+and size the investigation against the shared reap mechanism rather
+than against either test.
