@@ -9,10 +9,10 @@ status: verifying
 blocked_by: [T-012]
 touches: [app-map, app-shell]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @T-013
-verified_by:
-review:
+verified_by: claude-opus-5 @T-013-verify
+review: same-model
 ---
 
 ## Acceptance criteria
@@ -544,3 +544,493 @@ cargo target directory leaves the parent RED — measured here at 336/33,
 and it is a hazard the POISON DRILL bullet's own advice creates).
 
 ## Verdicts
+
+### 2026-08-23 — REJECTED (claude-opus-5 @T-013-verify, review: same-model)
+
+**One security finding and one coverage finding, both reproduced; the
+rest of the card holds up under attack and most of it holds up
+unusually well.** The security half of this card is where it asked to
+be judged, and the argv, the environment, the output parser and the
+closed reason vocabulary all survive the sweep. What does not survive
+is the sentence above them: `churn.rs` says it is *"the app's SECOND
+SUBPROCESS and it is TREATED LIKE THE FIRST"*, and on the one property
+the first subprocess exists to hold — **which binary runs** — it is
+not. Measured inside `churn_at` itself: a `git` shipped by the OPENED
+PROJECT executes. Everything else below is either green or a
+documentation correction.
+
+#### Suites re-derived at my own refs, every exit code from `$?` unpiped
+
+| suite | result | exit |
+|---|---|---|
+| lib/parser `npm run build` / `npx vitest run` / `npx tsc --noEmit` | **263/263 over 12 files** | 0 / 0 / 0 |
+| app `npm run build` | 269 modules, `index-C86RloYb.css` 45.06 kB | 0 |
+| app `npm test` | **906/906 over 46 files** | 0 |
+| bare `cargo test --no-fail-fast` | **369 passed / 0 failed / 3 ignored**, summed over **15** `test result:` lines | 0 |
+| tools/e2e `npm test` | **121/121** | 0 |
+| tools/e2e `npm run typecheck` | clean | 0 |
+| `npm run lint:tokens -- --selftest` then `npm run lint:tokens` | `TOKEN 130 / CONTROL 605` | 0 / 0 |
+| `index --check --root ../..` | STALE, the real red shape | 1 |
+| `docs-gate.mjs` on the prescribed list | 3 suites owed, 11 readers, 0 frontmatter issues | 1 |
+| BOOT GATE, `NPUTER_BOOT_PORT=14833` | booted, both `[nputer]` lines | 0 |
+
+Every executor figure reproduces. Port 1420 was read with
+`lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else, before and after
+the boot check: `node` pid **82549**, one socket, `TCP [::1]:1420
+(LISTEN)`, byte-identical at both ends.
+
+#### Ranges, at MY ref, because the right-hand endpoint moved twice during this review
+
+Main was `4d2f03c` on the card, `f306ee9` when I opened it and
+**`ea7ea0a`** when I measured. Merge-base **`2036fb2`**, unmoved.
+
+    git merge-tree --write-tree ea7ea0a a2173f8 -> tree 3fc2ba4a…, exit 0
+    git diff --name-only ea7ea0a <TREE>               -> 24   THE PRESCRIBED FORM
+    git diff --name-only ea7ea0a...a2173f8 (THREE)    -> 24
+    git diff --name-only 2036fb2..a2173f8  (branch)   -> 24
+    git diff --name-only ea7ea0a..a2173f8  (TWO)      -> 154  THE FORBIDDEN FORM
+    git diff --name-only 2036fb2..ea7ea0a  (main)     -> 130
+
+`comm -12` over the two sorted lists is **EMPTY** and 130 + 24 = 154 —
+the same disjointness argument the card makes, re-derived against a
+main that has advanced 88 paths further. Gate table off the prescribed
+list: **GRAPH REGEN 14 of 24 · BOOT GATE 11 of 24 · DOCS GATE 8 of 24**,
+all three exactly as recorded.
+
+---
+
+### F1 — BLOCKING, security. The opened project can supply the `git` that runs
+
+**Measured inside `churn_at`, not argued.** A temporary probe planted in
+`churn.rs` (`verifier_probe_relative_path_element`, removed and the file
+restored to sha256
+`08af662213ee9f0a6dc716a2aa4204a9c67692f763f067caa6d66290578f5914`)
+builds a real one-commit repository, drops an executable named `git`
+inside it, prepends an empty element to `PATH`, and calls `churn_at` on
+that directory:
+
+    cargo test -p nputer --lib churn::tests::verifier_probe_relative_path_element -- --exact --test-threads=1
+    VERIFIER PROBE: fake-git-from-the-project ran = true; outcome =
+      Measured { window_days: 30, commits: 0, paths: [], truncated: false,
+                 rejected: 2, measured_at_ms: … }
+
+The project's own binary executed, and the app then rendered a churn
+overlay built partly from its output. Reproduced first on a standalone
+program replicating `run_git`'s exact construction, with a shell script
+and again with a compiled binary, and with `.` in place of the empty
+element: `PATH=":/usr/bin:/bin"` and `PATH=".:/usr/bin:/bin"` both fire.
+The mechanism is `current_dir` plus a bare program name — the child
+`chdir`s into the project and only then resolves `git`, so a relative
+`PATH` element resolves **inside the repository being read**.
+
+**Why this is REJECTED-level and not a note.** It contradicts three
+claims that this diff itself makes, and one ruling this repository has
+already ratified:
+
+- `churn.rs` header: *"THIS IS THE APP'S SECOND SUBPROCESS AND IT IS
+  TREATED LIKE THE FIRST (C-14's runner, ADR-003)."*
+- `LOG_ARGV`'s own comment: *"Reading a stranger's repo must not run
+  their code."*
+- The card: *"the narrowest clearing that still works"* — the clearing
+  keeps `PATH` precisely so git can find its helpers, and `PATH` is the
+  vector.
+- `agent/runner.rs`, `validate_resolved_binary`: **"THE RESOLVED-PATH
+  GATE — one standard, applied at every door"** (T-060, absorbing
+  T-047-s5). `which_in`'s own comment says it exists *"so a relative
+  search-path element produces NO candidate rather than a relative
+  binary that `Command::new` would hand to the OS."* The first
+  subprocess spawns `Command::new(&cli.path)` — absolute,
+  traversal-free, name-checked — and sets the child's `PATH`
+  explicitly. The second spawns `Command::new("git")` and inherits
+  `PATH` raw. That is two doors holding one standard between them,
+  which is the exact sentence T-060 was written to retire.
+
+**And it is strictly worse than the case T-060 fixed.** There, a
+relative element resolved against *the app's own CWD* — "whatever the OS
+handed the process". Here `current_dir(root)` aims it at the folder the
+user just opened, which is the one directory in the whole system whose
+contents an attacker controls by asking the user to clone a repository.
+
+**What closes it** (any one, cheapest first): resolve `git` through the
+existing gate before spawning and refuse when it cannot be resolved to
+an absolute, traversal-free path named `git`; or set the child's `PATH`
+explicitly the way `apply_child_env` does; or, at minimum, refuse to
+spawn at all when `std::env::split_paths(PATH)` yields a relative
+element. Whichever is chosen, the pin belongs beside
+`the_log_argv_keeps_the_four_flags_the_containment_argument_rests_on`,
+and it needs the positive control CONVENTIONS asks for — plant the fake
+`git`, prove the ABSOLUTE spelling still resolves, and only then assert
+the relative one does not (the shape `runner.rs` already uses).
+
+#### The rest of the containment sweep — attacked and HELD
+
+- **`core.fsmonitor` from a hostile `.git/config`.** Fixture built and a
+  positive control proved it: `git status` in that repository RUNS the
+  program (`PWNED_FSMONITOR` created), and `-c core.fsmonitor=`
+  neutralises it. Neither `PROBE_ARGV` nor `LOG_ARGV` triggers fsmonitor
+  at all, with or without the clear, on git 2.50.1 — so the clear is
+  defence in depth rather than the load-bearing thing the comment
+  implies, and its absence from `PROBE_ARGV` is not exploitable through
+  `rev-parse --is-inside-work-tree HEAD`. **Recorded because the
+  asymmetry is real and undocumented**: the pair is on the log argv only.
+- **`GIT_CONFIG_*` in the parent environment.** `GIT_ENV_REMOVED` omits
+  `GIT_CONFIG_GLOBAL`, `GIT_CONFIG_SYSTEM` and the
+  `GIT_CONFIG_COUNT`/`GIT_CONFIG_KEY_n`/`GIT_CONFIG_VALUE_n` triple,
+  which inject configuration at the same rank as `-c`. Measured:
+  `GIT_CONFIG_GLOBAL` pointed at a file setting `core.fsmonitor` DOES
+  take effect (positive control fires on `git status`), and neither of
+  this file's two invocations can be made to run it. Not exploitable
+  today; the list is nine long and could be twelve.
+- **Aliases, pagers, external diff, hooks, textconv.** An alias cannot
+  shadow a builtin; stdout is a pipe so no pager runs; `git log` does not
+  honour `diff.external`/textconv without `--ext-diff`, which is absent;
+  `log` and `rev-parse` run no hooks. Nothing else in a repository's
+  config reaches an exec through these two argvs.
+- **`--relative` containment.** Built a repository with `topsecret.txt`
+  and `sib/` above an `inner/` project folder and ran the exact
+  `LOG_ARGV` from `inner/`: output is `i.txt` and nothing else. The
+  criterion's containment holds, and the wire shape the card measured
+  reproduces byte for byte (`\x01<ct>\0`, then a single `\n` glued to the
+  first path of the commit).
+- **A hostile byte on git's stderr.** Unreachable **by type**, not by
+  filter: `ChurnOutcome::Disabled` carries a fieldless `ChurnDisabled`,
+  the `Measured` arm carries only numbers and containment-checked path
+  strings, and the TS mirror reads exactly `kind` and `reason`, folding
+  anything outside a five-word set to `unreadable`. `churnDisabledSentence`
+  is a total switch over seven literals. I traced every consumer of
+  `ChurnState`: **no churn path string reaches the DOM** — `attributeChurn`
+  uses paths as Map keys only, and `MapPanel`/`map-visuals` render counts.
+  The claim holds; note that it is a cross-language property no test pins.
+- **`acl_pin.rs`**: **0-line diff**, sha256
+  `8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`,
+  **92** entries between the declaration and its `];`. `Cargo.lock`,
+  `Cargo.toml`, `package.json`, `tauri.conf.json`, the capability files
+  and `tokens.css` are **0 paths** in the diff — no dependency, no grant,
+  no new token.
+- **IPC census 13 → 14, CORRECTED and not widened.** Both bodies use
+  exhaustive `toEqual` over sorted arrays; the frontend list gains
+  `repo_churn` (10 → 11 named, plus the three that go through a variable)
+  and the Rust list gains it (13 → 14). A fifteenth command fails both by
+  name. **`T-013-s2` reproduces exactly**: over the census regex,
+  `invoke<unknown>("name")` inside a COMMENT yields a phantom command
+  `name`, and `invoke("evil_cmd")` without a type argument yields nothing.
+  The Rust end strips `//` before splitting; the frontend end does not.
+  The silent direction is the untyped call, and the loud direction is the
+  comment — so the census can HIDE a frontend call site but cannot
+  quietly gain one. Suggestion-grade, correctly filed, and the mismatch
+  between the two ends is the one-line shape of the fix.
+- **No control byte in any of the 24 paths** (scanned as raw bytes for
+  `\x00-\x08\x0b\x0c\x0e-\x1f`), which is the P5 hazard the card names.
+
+---
+
+### F2 — BLOCKING. The sibling-push rule is pinned in column 0 and nowhere else
+
+**My own mutant, and it survives the whole suite.** In `assignYs`, apply
+the expansion height only in column 0:
+
+    -    for (const ids of byColumn.values()) {
+    +    for (const [column, ids] of byColumn.entries()) {
+    -        y += (heights.get(id) ?? NODE_H) + (SLOT_H - NODE_H);
+    +        y += (column === 0 ? (heights.get(id) ?? NODE_H) : NODE_H) + (SLOT_H - NODE_H);
+
+    npm test from app/  ->  906/906, 46 files, exit 0
+
+Under that mutant a container in any column but the first **overlaps the
+node below it** — the same defect `M2` catches in column 0 — and nothing
+reds. The cause is the fixture: `zoomFixture`'s second column holds
+exactly ONE node, so *"pushes only that column"* is exercised in one
+column only. The card's notes see half of this ("the fixture's other
+column has no row below the expanded one") and use it to argue for the
+sibling-column body; the complementary hole is one step further on and is
+not closed.
+
+This is not a hypothetical. The criterion at stake is criterion 1's own
+sentence, and the card nominates this pin as the thing that kills the
+natural mistake. **The fix is one node and one assertion**: give column 1
+a second component below the expandable one, and assert it moves by
+exactly the extra height when its own column's node expands.
+
+**M1 re-run and confirmed.** Row heights made GLOBAL across columns
+(per-row max) reds **exactly 1 of 906**, and it is
+*"EXPANDING A DIFFERENT COLUMN LEAVES THIS ONE ALONE — the mutant's other
+side"*. The card's account of M1 is accurate. **A second mutant of mine,
+`h: expanded.get(c.id) ?? NODE_H` → `h: NODE_H`, reds 3** — so the box
+height that edge routing and the canvas extent read is genuinely pinned.
+Both mutants were read back with `git diff` before the suite ran, planted
+in a detached scratch worktree at `a2173f8`, and restored by byte copy
+from that commit with an empty `git status` and sha256 back to
+`9bfc57ef834a07988d533d048df93d0fa58e69ac476b885d7ea774e406f078d8`.
+
+---
+
+### F3 — non-blocking. The disabled treatment is not the one the card says it reuses
+
+Both the code comment in `MapView.tsx` and the card justify shipping a
+disabled segment as *"wearing the disabled treatment the pane's Re-index
+button already uses"*. It is not. Re-index is the `Button` primitive at
+`disabled:pointer-events-none disabled:opacity-50`; the churn segment is
+`cursor-not-allowed opacity-45`. **Both of those utilities are NEW to the
+shipped stylesheet on this branch** — they are two of the added selectors
+in the CSS diff below, so nothing in this pane wore them before. The
+treatment was designed here, which is a legitimate smallest-reasonable
+choice, but it must be recorded as one: the reuse claim is the entire
+argument that the state is not undesigned, and it is the argument
+T-012's amendment asked for.
+
+---
+
+### F4 — non-blocking. `CHURN_WINDOW_DAYS` cites a record that does not exist
+
+The constant's doc comment reads *"The plan's §4.6 draft said 90 days;
+the design bundle that supersedes it draws 30 … 30 wins, and the
+divergence is recorded in the card."* The divergence is real —
+`docs/design/map-technical-plan.md` §4.6 spells `git log --since=90d` —
+and **the card records nothing**: `grep -in "day\|90"` over
+`T-013-semantic-zoom-overlays.md` returns no line about the window. A
+sentence in shipped source pointing at a record that was never written
+is the shape CONVENTIONS calls out twice (the succession rule, and
+"a rule goes unwritten while everyone believes it exists"). One
+paragraph in the notes closes it.
+
+**The label and the code do agree**, which is the other half of the
+question and is better than T-012's: `churnLabel` renders
+`churn · ${state.windowDays}d` from the payload rather than a literal, so
+`CHURN_WINDOW_DAYS`, `ARG_SINCE` and the panel heading cannot drift, and
+a disabled read shows a bare `churn` instead of a stale `30d`.
+`the_window_literals_agree_with_the_window_constant_and_with_themselves`
+pins both the derived and the literal spelling, which is T-063's rule
+obeyed rather than cited.
+
+---
+
+### F5 — non-blocking. Three figures in the notes do not reproduce
+
+The notes open with *"Every figure below is derived at this branch's own
+tip"*. Three are not.
+
+1. **`app/src-tauri/src/churn.rs` (+520)** — the file is **792** lines at
+   the tip and **787** at `d52521e`, its first commit. No commit on this
+   lane and no metric I could construct yields 520 (non-blank 737,
+   non-blank-non-comment 563, production half 413).
+2. **"20 added, 0 removed" selectors** — both true, under different
+   metrics, and neither is stated. Re-derived myself in a detached
+   worktree at `2036fb2` (which reproduces `index-CwYF5FQb.css` at 43.95
+   kB byte for byte): **19 DISTINCT selectors added, 20 rule OCCURRENCES
+   added** — `.bg-background\/60` emits twice — and **0 removed** on both
+   metrics. The card's own parenthetical lists exactly the 19. This is the
+   "a score without its metric is not a figure" rule, applied to the
+   card's own headline number.
+3. **"four assertions across three bodies in two files"** — measured by
+   regenerating the graph and running both dogfood suites: **four failing
+   BODIES**, three in `architecture-dogfood.test.ts` and one in
+   `map-dogfood-render.test.tsx`, and the first of them carries two
+   distinct edits. The card's own bullet list enumerates four bodies; only
+   the summary sentence says three.
+
+**The substance behind all three is sound**, which is why this is not
+blocking: no accidental utility was minted (I traced all 19 added
+selectors to a shipped file under `app/src`, none test-only), and the
+regen forecast is exact.
+
+---
+
+### GRAPH REGEN — the forecast, re-derived independently
+
+`index --check --root ../..` exits **1** with `585305 → 639904 bytes,
+119 → 126 files, 1018 → 1111 symbols, 1539 → 1687 edges`, `files +7 -0
+~7` — the card's shape exactly. I then regenerated into a detached
+worktree at `a2173f8` (never into the lane) and ran the two dogfood
+suites against the fresh graph. Confirmed, value for value:
+
+- `fileComponent.size` **119 → 126**; the per-component array **`C-05`
+  56 → 59** and **`C-12` 14 → 18** (obtained by advancing the size
+  assertion in the scratch tree only);
+- the `C-05 → C-06` D1 gains **three** `fileEdges` — `map-churn.test.ts`,
+  `map-t1-t2-dom.test.tsx`, `map-zoom.test.ts`, each importing
+  `@nputer/parser`;
+- the relation table's `observedCount` **10 → 13, 22 → 32, 6 → 7**;
+- `map-dogfood-render`'s header hint **119 → 126 files**, and its node and
+  edge counts **HOLD** — that file reds one body and one only;
+- **the parser pin holds**: `lib/parser/test/smoke.test.ts` is untouched.
+
+Restored by byte copy from the drill commit: `git status --porcelain`
+empty and sha256 back to
+`b5d1cf2c7beb99d3b0b4974b3b21b87a95163c62bfb011ad5ec7974ade56f038`.
+Nothing regenerated is committed on this branch.
+
+---
+
+### The budget floor, at the boundary and one past it
+
+Derived with a scratch body against `expansionFor`, then deleted:
+
+| fixture | mode | groups | hidden | depth | height |
+|---|---|---|---|---|---|
+| 48 files, one directory (**at** `FILE_BUDGET`) | `files` | 1 | 0 | 1 | 1166 |
+| 49 files, one directory (**one past**) | `grouped` | 1 | 0 | 1 | 90 |
+| 72 files, 24 top dirs (**at** `GROUP_BUDGET`) | `grouped` | 24 | 0 | 1 | 711 |
+| 75 files, 25 top dirs (**one past**) | `paginated` | 24 | **1** | 1 | 711 |
+| 49 bare filenames (**depth 0**) | `grouped` | 1 | 0 | 0 | 90 |
+| no files at all | `files` | 0 | 0 | 0 | 68 |
+
+**Both degraded states are DEFINED on both sides of both boundaries**,
+each naming itself in a `note`, and the depth-0 case — which the floor
+argument turns on — lands in `grouped` under `(root)` rather than in
+unreachable code. The floor reasoning is correct: without it the loop
+always terminates at one group and `paginated` could never be produced.
+`M5` reproduces the card's account.
+
+One shape worth recording rather than fixing: **48 files in 48 distinct
+directories is `files` mode at 2153 px**, because the budget counts FILE
+ROWS while the height is rows *plus* directory labels. Inside the
+criterion (nothing exceeds the budget) and not a freeze, but it is the
+worst case at budget and it is 14× the fixture the DOM body measures.
+
+### M7's fix — the positive control cannot rot
+
+The replacement body reads the heuristic edge out of the parsed graph
+and asserts `toHaveLength(1)` **before** asserting `refs === 0`. Delete
+the `x` symbol declaration from the fixture and `parseGraph`'s
+referential-integrity check drops the edge, so the control fails first
+and by name. That is a control that pins the fixture shape rather than
+one that quietly evaporates with it — the T-077-s5 shape, closed. The
+`NO CANVAS SYMBOLS IN V1` body has the same structure: it requires the
+symbol name to be ABSENT from the canvas and PRESENT in the panel, so
+absence cannot be satisfied by the fixture simply not having one.
+
+---
+
+### Ruling 1 — the fence widening was RIGHT, and stopping would have been wrong
+
+`touches:` was dispatched `[app-map]` and reads `[app-map, app-shell]`
+in this branch. I rule the widening correct, on the direction of error.
+
+`method/tasks/TASK-FORMAT.md` makes `touches:` the ORCHESTRATOR's
+serialization input — *"Tasks with overlapping `touches:` never run
+concurrently."* A fence that is too WIDE can only ever cause more
+serialization; a fence that is too NARROW is the one that misleads the
+next dispatch. The executor moved the record in the safe direction and
+made it true about its own diff, which is the only thing an executor can
+do about a fence it does not own.
+
+The alternative was worse in every branch. There is no in-fence route,
+and this is proved rather than asserted: the webview ships no
+`@types/node` by decision (ADR-017 / T-073), so a subprocess needs a
+Tauri command, and registering one edits `lib.rs` — C-05, `app-shell`.
+The only other route, riding `index_repo`, needs `watcher-store.ts`,
+which is also `app-shell` **and is the file the live T-064 lane is
+actually editing**. So stopping would have blocked a criterion that
+cannot be built inside its fence, and building under the narrow fence
+would have shipped a `touches:` line the diff contradicts — consumed by
+the board and by the map's own status rollup, so the lie renders twice.
+
+The precedent settles the value, not just the direction: **T-012 — the
+card this one is `blocked_by` — declared exactly `[app-map, app-shell]`
+for exactly one Tauri command.** The widening restores a known-correct
+value rather than inventing one, and `T-013-s1` costs both routes, names
+the collision it avoided, and addresses the ask to the PLANNER, which is
+the role that owns fences. That is the whole obligation discharged.
+
+**The residual, named because nothing else names it**: the widening
+changed the dispatch's premise while T-064 was in flight, and a finding
+on a card is read at triage, not in flight. This method has no
+in-flight channel for "my fence just grew"; `docs/rooms/` is the nearest
+thing. Not this card's defect, and worth one line somewhere.
+
+#### What the INTEGRATOR must re-check, now that two live lanes hold `app-shell`
+
+Measured at `ea7ea0a` against every live lane — **T-061 `ed0c622`
+(0 paths), T-064 `cdaf5b7` (17), T-070 `1e0b940` (11), T-089 `b416efb`
+(14)** — the file overlap with T-013's 24 paths is **EMPTY in all four**,
+and none of them touches `lib.rs`, `crescendo-dom.test.tsx` or
+`acl_pin.rs` (T-064's `crescendo.test.ts` is a different file). Still:
+
+1. **Re-derive the overlap at the merge**, not from this verdict — the
+   right-hand endpoint is what goes stale, and it moved twice while I was
+   reviewing.
+2. **`lib.rs` is the collision surface, and the census is a COUNT.**
+   Whoever merges second must re-derive **both ends** of the IPC census,
+   not re-run the test: `generate_handler!` is a textual conflict magnet
+   and "exactly fourteen" is a number two lanes can move. **Correct the
+   pins, never widen them** — both bodies are exhaustive `toEqual` and
+   must stay that way.
+3. **`acl_pin.rs` must still be a 0-file diff at 92 grants** at the
+   merge; any lane that adds a webview grant invalidates this card's
+   "zero new grants" claim as well as its own.
+4. **The regen forecast above is stated against `2036fb2`'s graph.** If
+   another lane merges indexed files first, re-derive the three-fixture
+   reconciliation rather than applying these numbers.
+5. **All three gates re-derived at the merge's own PAIR**, and DOCS GATE
+   fed the same list — it computes no range of its own by design.
+
+### Ruling 2 — disabled, not absent: the CARD governs, and there is no deviation to forgive
+
+The executor recorded this as a deviation from a ratified ruling. It is
+not one, and the record should say so.
+
+Both texts come from **the same ratified amendment** — T-012's plan
+§1(b), one paragraph, one pen, one commit. It writes *"the segment is
+absent, not disabled, **until T-013**"* and, four lines later, writes
+T-013's criterion: *"IF the project is not a git repo THEN the churn
+overlay SHALL be disabled, not broken."* The trailing clause **is** the
+scope boundary. The architect ruled absent for T-012 and disabled for
+T-013, and the executor obeyed both. Shipping ABSENT here would have
+violated T-013's criterion, and it would have violated it in the worse
+direction: a segment that appears and disappears with the project hides
+that churn exists and moves the header's own layout.
+
+So: **acceptable, and not a deviation.** What survives the ruling is the
+narrower objection T-012's sentence actually raised — that a disabled
+segment has no *designed* treatment — and that objection is answered by
+reuse or not at all. It is not answered by reuse (**F3**), so it needs a
+recorded smallest-reasonable choice instead. That is a one-sentence
+correction, not a rebuild.
+
+---
+
+### Three observations, filed as neither findings nor blockers
+
+- **`repo_churn` has no server-side single-flight.** The frontend
+  single-flights; the command does not, so N invokes spawn N children,
+  each unbounded in wall clock (`T-013-s3` has the timeout half). The
+  webview is first-party, so this is a robustness note, not a hole —
+  but the two halves belong in one finding.
+- **`is_safe_repo_relative` refuses Unicode `Cc` and not `Cf`**, so a
+  path carrying `U+202E` RIGHT-TO-LEFT OVERRIDE is accepted. Harmless
+  today precisely because no churn path renders; it stops being harmless
+  the day one does, and the doc comment that says none does is the only
+  thing holding it.
+- **The `-c core.fsmonitor=` pair is on `LOG_ARGV` only.** Not
+  exploitable through `PROBE_ARGV` on git 2.50.1, and I could not make it
+  fire on either argv. Worth one clause in the comment so the next
+  reader does not conclude both invocations carry it.
+
+### What reached the human's running app
+
+**Nothing.** All work was in `../nputer-T-013` and two detached scratch
+worktrees at named commits (`2036fb2` for the stylesheet baseline,
+`a2173f8` for the mutants and the regen), each with its own copied
+`node_modules` rather than a shared or symlinked one, heeding
+`T-013-s7`; the mutant runs used the drill worktree's own tree
+throughout and the only in-lane edit was the F1 probe, restored by byte
+copy with a clean `git status` and a matching sha256. No `npm ci` or
+`npm install` in the main checkout. No `pkill`. Port 1420 was read with
+`lsof` only and is unchanged, and the ONE socket it names is `node` pid
+82549 — a listener is all that command can see, so it is not evidence
+about the app process beside it. `git status` in the main checkout
+carries exactly one untracked entry, an empty file `z` with mtime
+2026-08-23 17:34, an hour before this review opened; it is not mine and
+I left it alone.
+
+### Verdict
+
+**REJECTED** on **F1** and **F2**. Neither is a rebuild: F1 is a
+resolve-then-spawn plus a pinned positive control, F2 is one fixture
+node and one assertion. F3, F4 and F5 are corrections to the record and
+should ride the same commit. Everything else on this card — the argv
+surface, the environment clearing, the wire-format measurement, the
+laundering refusal, the closed reason vocabulary, the containment of an
+opened subfolder, the two census ends, the budget's two arms, M7's
+repaired control, the regen forecast and the range arithmetic — I
+attacked and could not break.
