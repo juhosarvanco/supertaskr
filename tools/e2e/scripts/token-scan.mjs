@@ -1119,7 +1119,6 @@ function controlFloorChecks(controlFiles) {
   const byClass = trackedBy(suffixClass);
   const byTop = trackedBy((rel) => (rel.includes("/") ? `${rel.split("/")[0]}/` : "(root files)"));
 
-
   return [
     // RUNG A, positive: a covered class keeps every one of its files.
     ...byClass
