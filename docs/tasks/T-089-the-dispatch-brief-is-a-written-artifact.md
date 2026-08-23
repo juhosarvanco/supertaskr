@@ -523,12 +523,21 @@ suggestion backlog reaches ZERO*), **70 paths, every one under
 `docs/tasks/`, 19 added and 51 deleted**. Re-derived at that tip, not at
 the one in the brief:
 
-    git merge-tree --write-tree f306ee9 011c02d  -> tree 976137dc…, exit 0
+    git merge-tree --write-tree f306ee9 88f75d9  -> tree c47422e8…, exit 0
     git diff --name-only f306ee9 <TREE>                        -> 14   THE PRESCRIBED PRE-MERGE FORM
-    git diff --name-only f306ee9...011c02d  (THREE dots)       -> 14
-    git diff --name-only f306ee9..011c02d   (TWO dots)         -> 84   THE FORBIDDEN PRE-MERGE FORM
+    git diff --name-only f306ee9...88f75d9  (THREE dots)       -> 14
+    git diff --name-only f306ee9..88f75d9   (TWO dots)         -> 84   THE FORBIDDEN PRE-MERGE FORM
     git diff --name-only 4d2f03c..main      (main's advance)   -> 70
-    git diff --name-only 4d2f03c..011c02d   (branch-only)      -> 14
+    git diff --name-only 4d2f03c..88f75d9   (branch-only)      -> 14
+
+**THE RIGHT-HAND REF IS `88f75d9` AND THIS PARAGRAPH IS NOT IN IT** —
+recording these figures moves the tip by one path (this card), so the
+commit carrying them supersedes the commit they describe. That is
+T-077's `702dcee` lesson, obeyed rather than quoted: a hash quoted
+inside the tree it describes is stale by construction. The path COUNT is
+unchanged at 14 across that move (the card is already one of the
+fourteen), and the TREE hash is not — re-derive both at whatever tip you
+are reading, with the command above, before trusting either.
 
 `merge-tree`'s exit was read from `$?` and not swallowed by the command
 substitution. The forecast list `cmp`s byte-identical against the
