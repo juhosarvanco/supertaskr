@@ -339,10 +339,93 @@ paths sha256-MATCH `git show cce52e0:<path>`
 ### Standing gates — derived from the diff, not from the brief
 
 Range by the PRESCRIBED pre-merge form (`merge-tree --write-tree`),
-never `merge-base..HEAD`; **dot count stated on every range command**;
-figures at the refs named. See the gate section appended below for the
-measured numbers, which were taken after this notes commit so that the
-docs paths are inside the range they gate.
+never `merge-base..HEAD`; **dot count stated on every range command**.
+Measured AFTER the notes commit so the docs paths sit inside the range
+they gate.
+
+**MAIN MOVED TWICE WHILE I MEASURED, and the first forecast was stale
+because of it.** At dispatch main was `a15b78e`; my first
+`merge-tree --write-tree` ran against `4c6ae7a`; by the very next
+command main was `11c82a1` (T-089 merged and checkpointed), and I
+reused the tree hash forecast against the older tip — which reported
+**8** paths instead of 7. Re-derived from scratch at `11c82a1`, the
+tree is `f5a579e…` and the count is **7**. A forecast tree is bound to
+the tip it was computed against, and the ref must be re-read, not
+cached.
+
+Main tip **`11c82a1`**, my HEAD **`afecbad`**, merge-base **`a15b78e`**
+(my cut, and an ancestor of the tip).
+
+    git merge-tree --write-tree 11c82a1 HEAD -> tree f5a579e…, exit 0 ($?)
+    git diff --name-only 11c82a1 <TREE>       (NO dots, PRESCRIBED)  ->  7
+    git diff --name-only 11c82a1...HEAD       (THREE dots)           ->  7
+    git diff --name-only a15b78e..HEAD        (TWO dots, branch-only)->  7
+    git diff --name-only 11c82a1..HEAD        (TWO dots, FORBIDDEN)  -> 28
+
+**The forbidden 28 is left-endpoint drift, not this branch.** Main
+advanced **21** paths from my cut, the branch **7**, `comm -12` over
+the sorted lists is **EMPTY**, and 21 + 7 = 28 — that arithmetic IS the
+disjointness check.
+
+### The three gates — ALL THREE FIRE, all three RUN
+
+| gate | trigger | of the prescribed 7 |
+|---|---|---|
+| GRAPH REGEN (`*.ts/*.tsx/*.js/*.jsx` outside docs/) | 4 code paths | **FIRES** |
+| BOOT GATE (`app/src/**`, `app/src-tauri/**`, either manifest) | 2 paths | **FIRES** |
+| DOCS GATE (a `docs/` path a code suite reads) | 3 paths | **FIRES** |
+
+The two `app/test/*.ts(x)` paths are GRAPH triggers but **NOT** boot
+triggers — boot is `app/src/**`, and `app/test/` is neither that nor a
+manifest.
+
+**GRAPH REGEN — a REAL RED, and the discriminator is on both halves.**
+`cargo run -q -p nputer-index -- index --check --root ../..` from
+`app/src-tauri` exits **1** with BOTH count lines present (committed
+*588891 bytes · 119 files · **1023** symbols · **1550** edges*; fresh
+*590881 · 119 · **1027** · **1555***) and `files +0 -0 ~4` — four
+CONTENT changes, zero adds or deletes. **Not** the `--root` false red,
+which prints `committed: MISSING`. **+4 symbols / +5 edges** (edges +7
+−2): the new symbols are `featureAliasIndex` and `spreadAlias`
+(board-model.ts, 17 -> 19) and two in the test file (7 -> 9), and the
+two removed edges are the same two imports re-emitted with wider
+symbol lists (`ParseIssue` added; `BoardColumn`/`BoardModel`/
+`UNMAPPED_KEY` added).
+
+**THE REGEN IS NOT IN THIS BRANCH — the checkpoint owes it.**
+`docs/architecture/graph.json` is a **0-path** diff across
+`a15b78e..HEAD`, deliberately.
+
+**THE COMPOUNDING TRAP DOES NOT FIRE FOR THIS LANE, and that was
+checked rather than assumed.** Main's 21-path advance since my cut
+contains **ZERO** `.ts/.tsx/.js/.jsx` outside docs/ (T-089 is `method/`
++ `docs/CONVENTIONS.md`) and `graph.json` itself is a 0-path diff on
+main, so the base is still 1023/1550 and this delta lands at
+**1027/1555**. **THAT IS CONDITIONAL ON MERGE ORDER**: T-013 is
+integrating with `[app-map, app-shell, app-agent]`, which WILL move the
+base — if T-013 lands first, re-derive rather than reuse 1027/1555.
+
+**BOOT GATE — OWED at 2 of 7, RUN, exit 0.** `NPUTER_BOOT_PORT=14761
+npm run boot:check` from `tools/e2e` exits **0** with both `[nputer]`
+lines (*project folder: /Users/ujju/Projects/nputer-T-097* and *window
+"main" created*), child pid 86161, captured group 86161 (setsid, pgid
+== pid), tree stopped on SIGTERM. Port **14761** was bind-probed free
+on all four stacks (`127.0.0.1`, `0.0.0.0`, `::1`, `::`) before use and
+is free after.
+
+**DOCS GATE — FIRES, exit 1**, invoked DIRECTLY with the three paths
+and never through `xargs`. It owes **three** suites, all run:
+`npm test from app/`, `npm test from tools/e2e/`,
+`npx vitest run from lib/parser/`. `cargo test from app/src-tauri/` is
+correctly NOT owed — its two readers resolve
+`docs/architecture/components` and `docs/CONVENTIONS.md`, neither
+touched. Reported: **11 derived readers across 4 suites**, **0
+frontmatter issues**, a census of **118 docs-shaped sites in 22 files,
+11 root-anchored in 9 files**, and *every live task card's frontmatter
+parses, with a legal status* — which is the machine check that this
+card's `status: done` / `review: self-verified` stamps and the two new
+finding files are legal. All three owed suites were run again after
+this gate section was appended.
 
 ### What I did not do
 
