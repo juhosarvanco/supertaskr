@@ -247,6 +247,16 @@ EMPTY, and 21 + 3 = 24 — the arithmetic that proves them disjoint. The
 three paths are `interview-model.ts`, `interview-turns.tsx`,
 `interview-chat-dom.test.tsx`.
 
+**RE-DERIVED at `6834287`** — main advanced again while this lane was
+built (T-013 has now MERGED), and the card+finding are committed, so the
+forecast is **5 paths**: the three above plus this card and `T-101-s1`.
+Three-dot `6834287...HEAD` agrees at 5; the forbidden two-dot
+`6834287..HEAD` is **52** (main advanced 47, branch 5, `comm -12` EMPTY,
+47 + 5 = 52 — disjoint). Merge-base is still `a15b78e`. The gate triggers
+are unchanged: GRAPH REGEN on the 3 `.ts/.tsx`, BOOT GATE on the 2
+`app/src/**`, DOCS GATE on the 2 `docs/tasks/`. Main keeps moving; the
+verifier must re-derive at their own tip and state it.
+
 - **GRAPH REGEN — FIRES on all 3** (`.ts/.tsx` outside `docs/`), and
   `index --check --root ../..` from `app/src-tauri` is a **REAL RED**
   (exit 1): both count lines present (committed *1023 symbols · 1550
