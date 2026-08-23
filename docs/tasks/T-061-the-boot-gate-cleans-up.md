@@ -9,10 +9,10 @@ status: verifying
 blocked_by: []
 touches: [tools/e2e]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @T-061
-verified_by:
-review:
+verified_by: claude-opus-5 @T-061-verify
+review: same-model
 ---
 
 Absorbs: T-046-s1, T-046-s2, T-046-s4 (triage 2026-08-17). The
@@ -720,3 +720,352 @@ neither trigger can see `docs/`, by construction, which is the sentence
 the DOCS GATE exists because of.
 
 ## Verdicts
+
+### 2026-08-23 — APPROVED (claude-opus-5 @T-061-verify, review: same-model)
+
+**Every criterion holds and I proved the load-bearing one with my own
+mutant rather than the card's.** Five findings below, none blocking:
+four are corrections to the notes and one is a defect in the new drill's
+exit-code contract that produces a false ALARM, never a false green.
+Verified in worktree `../nputer-T-061` at **`cc14fc9`**, against main
+tip **`4d2f03c`**. **The human's app was untouched throughout — `node`
+pid 82549, one socket, `TCP [::1]:1420 (LISTEN)`, identical at the first
+read and the last, read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and
+nothing else.** Eleven `tauri dev` boots on bind-probed scratch ports
+14671–14680; no `pkill`; every signal addressed to a pgid captured at
+spawn or to a pid read back as a member of it. The `nputer-T-060`
+orphans (52504 / 52505, ppid 1, started Tue Aug 18 16:21:18) are
+untouched and still running.
+
+#### Ranges, every dot count stated
+
+    git merge-tree --write-tree 4d2f03c cc14fc9  -> tree 0d4c0ec7…, exit 0
+    git diff --name-only 4d2f03c 0d4c0ec                 -> 18   THE PRESCRIBED FORM
+    git diff --name-only 4d2f03c...cc14fc9  (THREE dots) -> 18   agrees
+    git diff --name-only 4d2f03c..cc14fc9   (TWO dots)   -> 60   THE FORBIDDEN FORM
+    git diff --name-only 2036fb2..4d2f03c   (TWO dots)   -> 42   main's advance
+    git diff --name-only 2036fb2..cc14fc9   (TWO dots)   -> 18   the branch's own
+    comm -12 over the last two                           ->  0   EMPTY
+
+42 + 18 = 60, which is exactly the forbidden count. The notes' table
+says **11** at `c2179d6` and `dc4199d`; that was the CODE commit, and
+the notes' own closing section re-derives **18** at `4d2f03c`. Both are
+right at their refs and I reproduce the second.
+
+#### Suites, every code from `$?` unpiped
+
+- **parser 263/263 over 12 files, exit 0**; `npm run build` exit 0 first.
+- **app 840/840 over 43 files, exit 0**; `npm run build` exit 0.
+- **E2E 129/129, exit 0**, one worker, zero retries, zero skips;
+  `npm run typecheck` **exit 0 with `checkJs` on**.
+- **token lint exit 0, `--selftest` exit 0 — TOKEN 124 / CONTROL 597.**
+  The notes say CONTROL **591**; see finding 4.
+- **Rust, bare `cargo test`: 352 passed / 0 failed / 3 ignored** summed
+  over **fifteen** `test result:` lines, exit 0. Under
+  `--no-fail-fast` × 7 it is **NOT stably green**; see finding 5.
+
+#### Gates
+
+- **BOOT GATE** — 0 of the 18 paths match, NOT OWED, run anyway because
+  this card edits the gate: **exit 0** on 14671, both `[nputer]` lines,
+  no survivor on the port.
+- **GRAPH REGEN** — fires on the two `.spec.ts` paths. `index --check
+  --root ../..` **exit 0** (585305 bytes, 119 files, 1018 symbols, 1539
+  edges) → `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test
+  self_graph -- --ignored` **exit 0**, `git status --porcelain` **empty,
+  zero paths moved** → `index --check` **exit 0**. A proven no-op,
+  re-derived.
+- **DOCS GATE** — invoked directly over the prescribed 18 with the
+  `$(cat <list>)` spelling: **exit 1, FIRES**, 7 docs paths, owing
+  **three** suites. All three run green above.
+
+#### The criteria, attacked
+
+**1 — the child-exit path.** The naive fix is rejected for the right
+reason, and I built the mutant the card implies but does not name.
+Replacing only the child-exit continuation with a bare `process.exit(1)`
+— the pre-T-061 behaviour of that path, everything else byte-identical —
+and running the SHIPPED drill on 14674:
+
+    [orphan-drill] LEAK: the boot check exited 1 and left 3 process(es) in group 94247,
+      with port 14674 STILL HELD:
+        94457 (pgid 94247) npm run dev --port 14674 --strictPort
+        94519 (pgid 94247) node …/app/node_modules/.bin/vite --port 14674 --strictPort
+        94520 (pgid 94247) …/@esbuild/darwin-arm64/bin/esbuild --service=0.28.2 --ping
+    DRILL_MUTANT_A_EXIT=1
+
+and the same drill against the shipped code on 14672:
+
+    [boot-check] child process group 90797 still has members after the child exited — SIGTERM to the group
+    [boot-check] child process group 90797 is empty — no orphan survives this check
+    [orphan-drill] PASS: the child-exit path signalled its group before exiting
+    DRILL_FIXED_EXIT=0
+
+Red, then green, on the same shipped procedure — three orphans, not
+T-046's two, exactly as the notes record.
+
+**THE PROBE-REMOVAL DEMONSTRATION, and it does not say what the card
+says it says.** Measured headlessly with detached `sh -c "sleep N &
+exit 0"` trees that bind no port and that this verifier created and
+reaped itself:
+
+| # | state | `kill(-pgid, 0)` | what the mutant's unguarded signal hits |
+|---|---|---|---|
+| P2 | leader reaped, member alive | ALIVE | the right tree — the fix signals here, correctly |
+| P3 | group empty, id not yet reused | ESRCH | nothing; ESRCH, harmless **today** |
+| P4 | id now names a LIVE stranger | **ALIVE** | **the stranger — and THE FIX KILLS IT TOO** |
+
+So the zero-signal probe buys exactly one thing: it refuses to signal an
+**empty** group. It is not recycling protection, because a recycled id
+that has become live again passes the probe. The card's rationale —
+*"a recycled pid could put the signal somewhere else. Capture the pgid
+at SPAWN time and signal it only if a zero-signal liveness probe still
+succeeds"* — reads as though the pair closes that hole. It narrows it;
+P4 is the measurement. The code's own comment on `groupAlive` states the
+narrow claim correctly and does not overreach.
+
+**And "captured at SPAWN" is type hygiene, not recycling protection.**
+Measured: `child.pid` is the **same integer after the `exit` event**
+(81368 → 81368, `typeof number`), so `-child.pid` read at kill time
+names the same group the spawn-time capture does. `child.kill()` after
+the event returns `false`, as the notes say. The comment at
+`tauri-boot-check.mjs:212` — *"Capturing it here rather than reading
+`child.pid` at kill time is the whole point"* — is not true on Node; the
+whole point is the probe, plus evaluating `isSignalableGroup` once at a
+moment when the pid is known good. Finding 2.
+
+**The `> 1` guard, attacked.** `isSignalableGroup` refuses `undefined`,
+`null`, `NaN`, `Infinity`, `-0`, `0`, `1`, `-1`, `-1420`, `1.5` and the
+strings `"2"` / `"1420"`. It accepts **every integer > 1 with no upper
+bound** — including 100000, 2\*\*53 and `MAX_SAFE_INTEGER`, none of
+which can be a pid on this machine (`kern.maxproc` 6000, PID ceiling
+99999). So the answer to *what value could pass while naming the wrong
+group* is: **the predicate is a SHAPE check, not an identity check — any
+integer > 1 passes, and the one that names the wrong group is a RECYCLED
+pid, the same integer at a later time.** That is unconstructible from a
+real `child.pid`, and the residual is the P4 row above, not the guard.
+The lane's own assertion that `isSignalableGroup(2 ** 20)` is *"a real
+spawned group"* is a cosmetic over-claim; 1048576 is ten times the pid
+ceiling.
+
+**Recycling is not hypothetical here, and I saw it too.** Sequential
+allocation, ceiling 99999. My own busy-port holder, spawned after this
+session had reached pid 98xxx, came back as **pid 176**. The pid space
+wrapped inside my verification run, exactly as it wrapped inside the
+executor's (tauri 99996 → vite 376).
+
+**2 — the orphan drill.** Refusals verified BEFORE trusting it with
+anything: no `NPUTER_BOOT_PORT` → **exit 2**; `=1420` → **exit 3**;
+`=not-a-port` → **exit 3**; each printing *"Nothing was probed and
+nothing was spawned"*, and nothing was. Its `pgid == pid` assertion is
+strong for a reason the notes do not state: `detached: true` is
+`setsid(2)`, so the group lives in a **new SESSION**, and POSIX
+`setpgid` cannot move a process into a group in another session — so a
+foreign process cannot join, and the id cannot be recycled while the
+group has a member. The one escape is a member that calls `setsid()`
+itself, which leaves the group and would be invisible to
+`groupMembers()`; the drill's second assertion, `portFree(port)`, covers
+that for the vite listener but not for a hypothetical daemonising
+esbuild. I could not construct the case the brief asked for, and I
+believe it is unconstructible on POSIX by any route but that one.
+**But the drill's documented red direction does not work — finding 1.**
+
+**3 — the overlay.** Re-run, both halves of the discriminating pair:
+
+| run | mutation | result |
+|---|---|---|
+| M4, port 14675 | committed `beforeDevCommand` → `npm run no-such-script-at-all` | **exit 1**, `Error The "beforeDevCommand" terminated with a non-zero status code.` quoted in the tail |
+| M3a, port 14676 | committed `devUrl` → `http://localhost:14999` | **exit 0 — GREEN, the residual, live** |
+
+`tauri.conf.json` baseline sha256
+`52eb5e69017c4fd0381d3cc82745ef0d56ce0ea9022e74faa65da2fb98718bc5`,
+identical before and after both, each mutation read back with
+`git diff` and restored by `git checkout`. Poison mutant **P3** re-run
+(`devUrlWithPort` returns T-046's hard-coded string, exactly one
+substitution, read back): **1 failed / 13 passed** — it kills *only the
+PORT of the committed devUrl is rewritten* and leaves **THE RESIDUAL
+green**. The two bodies are genuinely distinct and the residual is
+asserted, not described. Against today's committed values the derived
+overlay is byte-identical to T-046's:
+`{"build":{"devUrl":"http://localhost:14671","beforeDevCommand":"npm run dev -- --port 14671 --strictPort"}}`,
+observed on the wire in the BOOT GATE run.
+
+**5 — `checkJs`.** On, with `scripts/**/*.mjs` as a glob; typecheck
+exit 0. I did not take the A/B on trust and I did not only repeat it.
+Repeated first: the four `2036fb2` script bodies swapped in, `--census`,
+`lint:tokens` and `lint:tokens --selftest` **byte-identical** (diff exit
+0 each), plus a full **DOCS GATE run over the prescribed 18 also
+byte-identical**, then swapped back with sha256 equal. Then proved
+statically: both versions transpiled with `tsc --removeComments` and
+compared. `docs-gate`, `lint-tokens` and `token-scan` are **token-
+identical modulo added parentheses**. `docs-scan` has exactly four
+non-parenthesis edits, and all four are inert:
+
+- `const spec = m[3]` / `const called = m[1]` — a second read of a
+  RegExp match property, hoisted; no side effect either way.
+- `data.status` → `data["status"]` — identical semantics.
+- `calleeCache.get(key)` → `… ?? null` — the map is `set` only from
+  `found`, which is an object, `null`, or a recursive call returning
+  `CalleeHit | null`; **by induction it never holds `undefined`**, so
+  the coalesce is unreachable.
+- `if (hit === null)` → `if (hit === null || hit === undefined)` — the
+  `resolved.get(name)` two lines above is guarded by
+  `if (!resolved.has(name)) { … resolved.set(name, hit) }`, so
+  `undefined` is **unreachable**; under the old code that value would
+  have thrown at `hit.ctx` rather than continuing.
+
+So: two edits are not syntactically inert, and both are provably
+unreachable on any input where the old code did not already throw. The
+annotation pass is behaviour-neutral, and now for a stated reason rather
+than a passing diff.
+
+**6 — the four exit paths, re-run at my refs.** **0**: 14671. **1**:
+overall timeout 2500 ms on 14678, no-output watchdog 1200 ms on 14679,
+and the child-exit path on 14675 and in every drill run. **2**: 14680
+held by a listener this session owned and reaped. **3**: `=1420` and
+`=abc`, plus the drill's own three refusals. Every code read from `$?`
+unpiped through `npm run`.
+
+**7 — the default path's shape.** `NEEDLES`, `TIMEOUT_MS`, `QUIET_MS`,
+`TAIL_LINES`, the 10 s `finish()` grace and the `tauri dev exited on its
+own` report string are **byte-identical to `2036fb2`**, compared at both
+refs. `tauriDevArgs({port: 1420, overridden: false})` is still exactly
+`["run","tauri","dev"]` and reads no config. The one added stdout line
+is none of the three things the criterion protects.
+
+#### Security sweep, re-derived
+
+`acl_pin.rs` **0-file diff**, sha256
+`8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`.
+Exactly **three** `#[ignore]` (`^[[:space:]]*#\[ignore`, pathspec
+`'*.rs'`): `crates/nputer-index/tests/perf.rs`,
+`crates/nputer-index/tests/self_graph.rs`, `tests/agent_runner.rs`. IPC
+**13** `#[tauri::command]`. **No dependency added** — the only manifest
+in the range is `tools/e2e/package.json` and its whole diff is one
+script line. Shell-adjacent sweep of the new code: **no `shell: true`
+anywhere**, `execFileSync("/bin/ps", [argv])` read-only with no
+interpolation, `spawn(process.execPath, [bootCheck])` and
+`spawn("npm", args)` both argv arrays; **no `pkill`/`killall`; no
+hardcoded pid; no path outside the worktree**. Every `process.kill` is
+addressed to `-pgid` captured at spawn, or (once) to `cli.pid` read back
+from `ps` and compared against that same group in the line above the
+signal.
+
+#### Findings — none blocking
+
+**1. The shipped drill cannot run against pre-fix byte copies, and its
+crash reports itself as a LEAK.** `orphan-drill.mjs` imports
+`isSignalableGroup` from `./boot-port.mjs`, which does not exist at
+`2036fb2` (0 occurrences). With both scripts byte-copied from that ref —
+the procedure the notes describe under *"THE FAILING CASE, REPRODUCED
+FIRST"* — the drill dies at ESM link time:
+
+    SyntaxError: The requested module './boot-port.mjs' does not
+    provide an export named 'isSignalableGroup'
+    DRILL_PREFIX_EXIT=1
+
+Two things. (a) A future verifier following the notes cannot reproduce
+the red direction that way; the transcript must have come from an
+earlier revision of the drill. I reproduced it instead with the isolated
+child-exit mutant above, which is a sharper instrument anyway — it
+changes one continuation rather than 442 lines. (b) **Exit 1 is
+`EXIT_LEAK`**, the drill's most alarming verdict, reached here by a
+script that probed nothing and spawned nothing; `EXIT_CANNOT_RUN` (3)
+exists for precisely this and cannot be reached, because the failure is
+before `main()`. It is a false alarm and not a false green, and the
+output is an unmistakable stack trace rather than a `[orphan-drill]
+LEAK:` line, which is why this is a finding and not a rejection. Worth a
+top-level `try`/`catch` around a dynamic import, and a note that the
+pre-fix comparison needs the mutation, not the byte copy.
+
+**2. Two sentences claim more than the mechanism delivers**, both about
+the same thing and neither affecting behaviour: the code comment at
+`tauri-boot-check.mjs:212` says capturing the pgid at spawn *"rather
+than reading `child.pid` at kill time is the whole point"* — measured
+false, the integer is identical after reaping; and the card's own
+criterion frames capture+probe as answering pid recycling, which P4
+shows it does not. The honest statement is the one `groupAlive`'s
+comment already makes: *signal only a group that still has members*.
+
+**3. The liveness probe is pinned by nothing, and I demonstrated it.**
+Mutant C — the `!groupAlive()` guard removed from `signalGroup` and the
+early return removed from `reapOrphanedGroup`, i.e. the probe deleted —
+gives **`npm test`'s boot-check-guard spec 14/14 green** and **the
+orphan drill exit 0, PASS**. Nothing in this repository, automated or
+hand-run, can see the difference. This is exactly `T-061-s6`, filed by
+the executor before I looked; I am recording that it is confirmed by
+measurement rather than by argument, which raises its priority.
+
+**4. The notes' CONTROL figure is one commit stale, inside the section
+that says otherwise.** *"Suites … at the committed ref"* reports CONTROL
+**591**; at `cc14fc9` it is **597**. The delta is exactly the six
+finding files the notes commit added (609 → 615 tracked files). 591 was
+right at `44007bc`. Same class as `T-078-s7`.
+
+**5. `T-061-s4` names the wrong body, and the flake is far commoner than
+"observed once".** Seven `cargo test --no-fail-fast` runs at `cc14fc9`:
+**four green (352/0/3, exit 0) and three red (351/1/3, exit 101)**. In
+all three reds the failing body was
+`the_exit_reap_pays_the_full_grace_when_a_same_group_descendant_resists`
+(`tests/agent_runner.rs:1091`), and
+`a_nonzero_exit_is_typed_with_the_clis_own_stderr_tail` — the body s4
+names — **passed in all seven**. The flaky one is 5-for-5 green in
+isolation, the same signature s4 records. So `agent_runner.rs` has **at
+least two** load-flaky bodies and the measured rate for the one I caught
+is **3 in 7 full runs**, not "once". This branch cannot be the cause:
+`git diff --name-only 4d2f03c 0d4c0ec -- app/ lib/` is **0 paths**. It
+is worth someone's attention beyond a re-run, because the failing
+assertion is the RUST MIRROR of this card's own mechanism — a process-
+group reap that polls for group-emptiness across a grace — and it failed
+with `groupEmpty=true` after 28 ms of a 900 ms grace while a same-group
+descendant was asserted alive. Whether that is a harness race about when
+the grandchild joins the group, or the emptiness probe answering wrongly
+under load, is the question; the second answer would matter to
+`reapOrphanedGroup` too. A hypothesis for whoever takes it, not a
+diagnosis: the two `nputer-T-060` `fake_agent` orphans are the same
+binary this harness spawns, and the pid space is wrapping.
+
+#### `T-061-s3` re-measured independently, and CONVENTIONS is wrong
+
+The brief that dispatched me carried the **123** figure, so I measured
+from scratch rather than inheriting either claim. Both of `s3`'s facts
+reproduce, and one of them reproduces wider than `s3` states:
+
+- **Empty input runs NOTHING.** `printf '' | /usr/bin/xargs ./util.sh`
+  → the utility never executes (observed on stderr, not inferred),
+  xargs **exit 0**.
+- **Every** non-zero utility exit maps to **1** — I measured 0, 1, 2, 3,
+  4, 5, 100, **123, 124, 125, 126, 127** and 255; all non-zero → **1**
+  (255 additionally prints *"exited with status 255; aborting"*). The
+  man page on this machine says 127 / 126 / otherwise **1**, verbatim.
+  `s3`'s table lists 1, 2, 3, 4, 255; it is a subset and nothing in it
+  is wrong.
+- **On the real gate:** `node tools/e2e/scripts/docs-gate.mjs` with no
+  arguments → **exit 2** with the loud usage block, T-084-s6's fix
+  working. `printf '' | /usr/bin/xargs node tools/e2e/scripts/docs-gate.mjs`
+  → **exit 0, no output at all**. And a genuine exit 2 with a non-empty
+  list (`--bogus docs/STATE.md`) → **1** through the pipe. Two of the
+  four codes are lost, in the directions the codes exist to prevent.
+
+**So `docs/CONVENTIONS.md:690` carries a FALSE sentence** — *"BSD
+`xargs` runs the utility once even on empty input"* — and the paragraph
+it anchors mis-states why the exit-2 guard was needed. The guard is
+correct; it is simply **unreachable through the invocation the same
+bullet prints**. `T-084`'s card and `docs/tasks/rejected/T-084-s6-*`
+repeat it. The fix is out of this lane's fence (`[tools/e2e]`) and is
+owed by **`T-089`** (`status: planned`, `touches: [method/,
+docs/CONVENTIONS.md]`), the card that holds the CONVENTIONS fence.
+`T-061` used `$(cat <list>)` throughout and never the pipe, which is the
+right call and the one I followed.
+
+#### What reached the human's machine
+
+`node` 82549 on `TCP [::1]:1420 (LISTEN)`, one socket, unchanged at
+first read and last. Every scratch port 14671–14680 verified empty by
+`lsof` after its run; `git status --porcelain` empty at every restore
+and at the end, with sha256 equality re-checked on
+`tauri-boot-check.mjs` (`344f55a9…`), `boot-port.mjs` (`de005bc0…`),
+`tauri.conf.json` (`52eb5e69…`) and the four scanner scripts. No
+`app/**` or `lib/**` path was written. The `nputer-T-060` orphans were
+read with `ps` and left exactly as found — this card is about orphans,
+which is the reason to be careful with somebody else's.
