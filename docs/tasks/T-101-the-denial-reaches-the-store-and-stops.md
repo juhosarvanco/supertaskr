@@ -669,8 +669,17 @@ app/src, app/test or tools/e2e — it edits three that already existed.
 
 **No cargo suite is owed**: this diff has no Rust and does not touch
 `docs/CONVENTIONS.md`, which is why the DOCS GATE names three suites and
-not four. All three owed suites were run AFTER the last doc edit
-(T-081-s9), and the run recorded here is that one.
+not four.
+
+**AND THEY WERE RE-RUN AFTER THIS SECTION WAS WRITTEN, which is
+T-081-s9's whole point.** Writing the table above is itself an edit to a
+flat `docs/tasks/T-*.md`, so the gate is owed again: invoked directly on
+this card's own path it FIRES at exit **1** and names the same three
+suites, and the run that validates the sentence you are reading is
+**parser 263/263 exit 0 · app 863/863 exit 0 · e2e 129/129 exit 0** on a
+third scratch port, **14768**, bind-probed free on all four stacks before
+use and free again after. Three independent runs of each suite across
+this rebuild, all identical.
 
 **Port hygiene.** Two scratch ports, **14766** (boot gate) and **14767**
 (e2e), each bind-probed FREE on `127.0.0.1`, `0.0.0.0`, `::1` and `::`
