@@ -59,13 +59,33 @@
   (+ `-- --selftest`; CI's FIRST step — exit 0 clean, 1 the gate RAN
   and found something, 3 the gate COULD NOT run, 2 reserved and
   unused, legended at the end of this bullet) ·
+  `npm run lint:docs` (T-090 — the DOCS GATE's NAMED form and a CI step;
+  it runs that gate's WHOLE-TREE half and judges no diff, so it answers
+  with the four codes the DOCS GATE bullet legends, and the DIFF half
+  stays the integrator's hand run) ·
+  `npm run boot:orphan-drill` (T-061 — the shipped procedure that proves
+  the boot check's child-exit path signals its captured process group and
+  leaves no orphaned vite listener; LOCAL ONLY, deliberately, and the CI
+  bullet says why) ·
   `npm run boot:check` (spawns `tauri dev` and
   asserts the two `[nputer]` startup lines; NOT part of `npm test` —
   it opens a real window). Beside a live app, give it a scratch port:
   `NPUTER_BOOT_PORT=14521 npm run boot:check` (T-046 — see PORT RULE;
   1420 is refused, not borrowed). Exit 0 booted · 1 the boot failed,
-  with the child's last output quoted · 2 the port is busy · 3 the
-  override was refused. THE TOKEN LINT HAS THREE CODES, AND THIS IS THE
+  with the child's last output quoted · 2 the port is busy · 3 the check
+  REFUSED to run before probing or spawning anything. THE ORPHAN DRILL
+  ANSWERS IN THE SAME FOUR CODES, which is why it needed no legend of its
+  own: 0 clean, 1 the leak, 2 called wrong, 3 the drill could not run.
+  **CODE 3 HAS TWO REASONS AND THIS LEGEND USED TO NAME ONE** (T-061-s5,
+  measured at `9b03ae6` against the script's own header): `NPUTER_BOOT_PORT`
+  is 1420 or not a port at all, OR the committed build config the
+  scratch-port overlay is DERIVED from cannot be read. There is
+  deliberately no fallback for the second, because the only value to fall
+  back to is the committed port and on this repository that is 1420 — so
+  a fallback would boot this check onto the human's app. Both refusals
+  happen before anything is probed or spawned; that is what the code
+  means, and it is why "the override was refused" was the wrong summary
+  of it. THE TOKEN LINT HAS THREE CODES, AND THIS IS THE
   SECOND ROW T-078 PROMISED — written at T-080's merge, by the
   integrator whose merge is what made the promise come due, because
   T-080's own approved diff does not reach this file. **0** the gate ran
@@ -158,8 +178,20 @@
   tools/e2e — still the job's FIRST step, ahead of every `npm ci`,
   because `npm run` needs no installed node_modules (it only extends
   PATH; measured on npm 11.12.1 against an uninstalled tools/e2e) — and
-  still two steps, because `--selftest` short-circuits the walk. The
-  boot check runs as `xvfb-run -a npm run boot:check` from tools/e2e:
+  still two steps, because `--selftest` short-circuits the walk.
+  THE DOCS GATE runs as `npm run lint:docs` from tools/e2e and it CANNOT
+  hold the token lint's position — do not "fix" the ordering (T-090).
+  `token-scan.mjs` is deliberately zero-dependency and `npm run` only
+  extends PATH, which is the whole reason the lint can run against a bare
+  checkout ahead of every `npm ci`; `docs-gate.mjs` imports `yaml`, a
+  tools/e2e devDependency chosen because it is the SAME package
+  lib/parser parses task cards with, so a block parses for both or for
+  neither (T-057). It therefore sits immediately after `npm ci` in
+  tools/e2e and before that package's other steps, which is the earliest
+  position its own dependency allows and still ahead of the 250MB browser
+  download. `scripts/docs-scan.mjs` stays zero-dependency so this
+  constraint belongs to the wrapper alone, and its header says so.
+  The boot check runs as `xvfb-run -a npm run boot:check` from tools/e2e:
   the wrapper is real, since a headless runner has no display, but what
   it wraps is now the documented command rather than a second spelling
   of it. CI also runs `cargo install cargo-audit --locked` (the one-time
@@ -169,7 +201,15 @@
   bundle; the xvfb boot step covers the dev path — nor
   `cargo run -p nputer-index -- index --watch --root ../..`, which runs
   until stopped, nor `cargo run -p nputer-index -- arch --root ../..`,
-  which reports rather than gates.
+  which reports rather than gates, nor `npm run boot:orphan-drill`
+  (T-061-s5, ruled here): it opens a window and builds the app, so it
+  roughly DOUBLES the boot step's cost, and it deliberately SIGKILLs a
+  process mid-boot, which on a shared runner is a different risk profile
+  from a laptop. It is a REGRESSION drill rather than a release gate —
+  the property it pins cannot drift without somebody editing
+  `tauri-boot-check.mjs`'s exit path — so it takes the disposition
+  `index --watch` and `arch` already have, and the ruling is written here
+  rather than left to the next editor to re-derive.
   ONE TYPOGRAPHIC RULE GOVERNS EVERY EDIT TO THIS SECTION, and it lives
   in THIS bullet because this is what the next editor of ci.yml opens
   (measured at T-054, promoted out of that card's implementation notes
@@ -185,15 +225,40 @@
   its own, which is structure and not decoration. THE COST, MEASURED
   TWICE — once in T-054's draft and again at T-078 against this wording:
   putting that separator inside the `index --check` parenthetical drops
-  the section's exposed commands from NINETEEN to SIXTEEN, taking
-  `cargo audit`, `index --watch` and `arch` with it. AND THE TRUNCATION
+  the section's exposed commands by THREE, taking `cargo audit`,
+  `index --watch` and `arch` with it — 19 to 16 when it was measured, 21
+  to 18 when T-090 re-measured it after adding two commands to the
+  tools/e2e bullet, which is why the figure is stated as a DELTA and the
+  endpoints are left to whoever asks the derivation. AND THE TRUNCATION
   IS NOT MOSTLY SILENT, which is what tells you how to check your own
   edit: the derivation runs in BOTH directions, so every command the
   SPEC claims and the doc stops exposing reds BY NAME — that mutation
-  fails the lane 2 of 14 at exit 1, naming all three keys. It is silent
-  in exactly ONE case, a command the DOC gains that the spec does not
-  yet claim; so a NEW command is the edit to enumerate rather than
-  eyeball. Change a command here, change it there, or the lane fails.
+  fails the lane 2 of 14 at exit 1, naming all three keys.
+  **THE SENTENCE THAT USED TO SIT HERE WAS FALSE AND IS RETRACTED**
+  (T-090, absorbing T-084-s2). It said the derivation *"is silent in
+  exactly ONE case, a command the DOC gains that the spec does not yet
+  claim"*. That is the case it is LOUDEST about. `deriveExpectedSteps`'
+  `for (const key of doc.keys())` loop — the one that asks whether
+  anything CLAIMS each command the doc lists — pushes a problem naming
+  the command and both dispositions open to it. T-090 walked into it on
+  purpose while adding `npm run lint:docs` to the bullet above, and the
+  lane failed **1 of 14 at exit 1**: *"docs/CONVENTIONS.md 'Build & test'
+  lists [tools/e2e] npm run lint:docs, which this spec has no entry for —
+  add it to CI_SEQUENCE (verbatim or mapped, with the workflow step) or
+  to LOCAL_ONLY with the reason CI does not run it."*
+  **WHAT IS SILENT IS A SHAPE, NEVER A DIRECTION**: a command the
+  derivation cannot SEE. T-045's verifier found two such shapes and
+  `structuralProblems` now names both (an INDENTED bullet, a fenced
+  block). The third is a command written into a bullet carrying no
+  `run from <dir>/:` marker at all — invisible to every loop above by
+  construction, because that marker is what makes a bullet a command
+  list — and it is pinned by a fixture in the spec rather than left as a
+  claim in prose. **So a NEW command is still the edit to ENUMERATE
+  rather than eyeball**, for a better reason than the retracted one: not
+  because the lane will stay quiet about it, but because the lane can
+  only speak about commands it can see, and a new command is exactly the
+  thing that arrives in an unread shape. Change a command here, change it
+  there, or the lane fails.
 
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
@@ -764,41 +829,87 @@
   this gate: the failure mode is not that a suite goes red, it is that
   the red arrives detached from its edit and gets attributed to whatever
   lane is nearest.
-  RUN IT: `node tools/e2e/scripts/docs-gate.mjs <changed path>...` from
-  the repo root, fed the RANGE RULE's own path list (it deliberately
-  computes no range of its own — a second opinion about which two
-  commits the diff means is the failure that rule exists to prevent).
-  Exit 0 nothing owed, 1 the gate HAS a verdict (suites owed, or a live
-  card the parser will refuse, or the root-anchor account and the tree
-  disagree), 2 called wrong, 3 the gate could not run — the same four
-  codes `index --check` and `boot:check` use. **AN EMPTY PATH LIST IS
-  EXIT 2, NOT EXIT 0** (T-084-s6) — and that remedy only reaches you if
-  you call the gate DIRECTLY, with the paths as ARGUMENTS, which is what
-  the RUN IT line above prints.
-  **NEVER PIPE IT THROUGH `xargs`, AND DISTRUST ANY SENTENCE THAT NAMES
-  AN EXIT MAPPING WITHOUT NAMING THE PLATFORM** (T-061-s3, measured
-  independently by that card's executor and its verifier, and
-  re-measured here at T-089 on Darwin 25.6.0 against `/usr/bin/xargs`).
-  TWO OF THE FOUR CODES DO NOT SURVIVE THE PIPE ON THIS MACHINE. An
-  EMPTY list never invokes the utility at all and the pipeline exits 0,
-  so a range command that FAILED arrives as "nothing owed" — silence
-  wearing a clean gate's costume, which is the exact outcome T-084-s6
-  exists to remove, reached by the opposite mechanism from the one that
-  clause describes. And EVERY nonzero utility exit collapses to 1
-  (measured one invocation per code over 1, 2, 3, 4, 5, 100, 123, 125,
-  126, 127 and 255), so "called wrong" and "could not run" both arrive
-  as "has a verdict". The direct call is the control: no arguments is
-  **2** direct and **0** piped; an unknown flag is **2** direct and
-  **1** piped; a docs path with a reader is **1** either way. The
-  widely-quoted **123** is GNU's mapping — what CI's ubuntu runner will
-  use — so the contract breaks in two DIFFERENT ways on the two
-  platforms and a mapping quoted without its platform is wrong on one of
-  them. **T-090 OWNS THE FIX** — a named command, a CI step, one
-  spelling shared with `docs-gate.mjs`'s own header comment, and the
-  full two-platform matrix; this clause is only the true minimum until
-  that lands, and it deliberately builds no matrix of its own. IF it
-  cannot run THEN say so LOUDLY in the checkpoint, naming the reason and
-  the exit code; a skipped gate is news, never silence.
+  RUN IT — from the repo root, and this is THE ONE SPELLING, character
+  for character the same string `tools/e2e/scripts/docs-gate.mjs`'s own
+  header prints (T-057: a recipe in two places is two chances to
+  disagree, and for six weeks these two disagreed):
+
+      TREE=$(git merge-tree --write-tree <main tip> HEAD)   # read $? FIRST
+      node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only <main tip> "$TREE")
+
+  It is fed the RANGE RULE's own path list and deliberately computes no
+  range of its own — a second opinion about which two commits the diff
+  means is the failure that rule exists to prevent. Exit 0 nothing owed,
+  1 the gate HAS a verdict (suites owed, or a live card the parser will
+  refuse, or the root-anchor account and the tree disagree), 2 called
+  wrong, 3 the gate could not run — the same four codes `index --check`
+  and `boot:check` use.
+  **THERE IS NO `xargs` IN THAT SPELLING AND THAT IS THE POINT** (T-090,
+  absorbing T-061-s3; every figure below measured at `9b03ae6` on Darwin
+  25.6.0 against `/usr/bin/xargs`, which `which -a xargs` confirms is the
+  only one on this machine's PATH). A pipe through `xargs` destroys two
+  of the four codes, in the direction the codes exist to prevent, and it
+  destroys them DIFFERENTLY on the two platforms — so the doc prints a
+  spelling that has no `xargs` layer at all rather than one that is wrong
+  on one platform. THE MATRIX, each code produced deliberately and each
+  observed code read from `$?` on an unpiped command:
+
+  | the gate means | `$(…)` form, BSD | `$(…)` form, GNU | piped, BSD | piped, GNU |
+  |---|---|---|---|---|
+  | 0 nothing owed | **0** | **0** | 0 | 0 |
+  | 1 has a verdict | **1** | **1** | 1 | **123** |
+  | 2 called wrong | **2** | **2** | **1**, or **0** on an empty list | **123**, or **0** |
+  | 3 could not run | **3** | **3** | **1** | **123** |
+
+  THE BSD COLUMNS ARE MEASURED HERE; THE GNU ONES ARE NOT, AND SAYING SO
+  IS THE POINT OF THE COLUMN. This machine has no GNU `xargs` and no
+  container runtime to borrow one from (both probed at `9b03ae6`), so the
+  GNU piped column is GNU findutils' DOCUMENTED mapping — utility exits
+  1–125 become 123 — and it closes for real at the repo's first push,
+  when the ubuntu runner executes the `npm run lint:docs` step for the
+  first time. The `$(…)` column needs no second measurement to be honest
+  about: it has no `xargs` process in it, so nothing platform-dependent
+  stands between this gate's `process.exit` and the shell that reads it.
+  **THAT ASYMMETRY IS THE ARGUMENT.** A spelling whose correctness has to
+  be re-measured per platform is one nobody will re-measure.
+  What BSD `xargs` does, measured one invocation per code over 1, 2, 3,
+  4, 5, 100, 123, 125, 126, 127 and 255: every one collapses to **1**, as
+  its own man page says (*"If any other error occurs, xargs exits with a
+  value of 1"* — 126 and 127 are reserved for a utility xargs cannot
+  EXECUTE or FIND, not for one that exits 126 or 127, and both were
+  measured separately). And on EMPTY input it never invokes the utility
+  at all, so the pipeline exits **0** — a range command that FAILED
+  arrives as "nothing owed", silence wearing a clean gate's costume,
+  which is the exact outcome T-084-s6 exists to remove, reached by the
+  opposite mechanism from the one that clause used to describe.
+  **AN EMPTY PATH LIST IS EXIT 2, NOT EXIT 0** (T-084-s6), and the `$(…)`
+  form above is what makes that remedy reachable: a FAILED range
+  substitutes to nothing, which is zero arguments, which is exit 2.
+  THREE MORE SHAPES REACH EXIT 2 rather than a clean answer, each one
+  measured being answered "not owed" at 0 before T-090: an argument that
+  is EMPTY or BLANK (`"$(git diff …)"` on a failed range is a list of
+  length ONE, so the zero-argument guard cannot see it, T-064-s7); an
+  argument carrying NEWLINES (the same quoting, on a range that
+  SUCCEEDED, hands the whole list over as one blob, T-064-s7); and a
+  path that resolves OUTSIDE this repository, which is what `../../docs/…`
+  typed from tools/e2e/ used to mean (T-101-s3). A `./`-prefixed or
+  ABSOLUTE spelling is NOT refused — it is normalised to its
+  root-relative form, printed, and answered, because it names a file this
+  gate can identify. A PLAIN relative path away from the repo root is
+  refused as ambiguous rather than guessed at, because resolving it
+  either way just moves the false-clean to the other spelling.
+  **`npm run lint:docs` FROM tools/e2e IS THE NAMED FORM AND CI'S STEP**
+  (T-090). BE PRECISE ABOUT WHAT THAT BUYS, because the difference is the
+  whole of what is still owed by hand: the CI step runs the WHOLE-TREE
+  half — every live card's frontmatter, the root-anchor account, the
+  unlinkable-reader tripwire — and judges NO diff, because a workflow has
+  no "merge's diff" to be handed and this tool will not compute one. Both
+  incidents this gate exists for (`9c64cd8`, `fede266`) are in the half
+  CI now holds. THE DIFF HALF IS STILL A RITUAL: nothing but the
+  integrator running the two lines above makes a merge answer for the
+  suites it owes. IF it cannot run THEN say so LOUDLY in the checkpoint,
+  naming the reason and the exit code; a skipped gate is news, never
+  silence.
   `tools/e2e/tests/docs-input-gate.spec.ts` is the enforcing copy and it
   runs inside the lane TODAY, which makes this the one standing gate
   whose written form is already held by something other than discipline.

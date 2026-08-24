@@ -602,12 +602,22 @@ test("a path names the readers that read it, not a generic list", () => {
 
 test("the hand-run gate's exit codes hold, and an EMPTY path list is 2 and not 0", () => {
   // T-084-s6, as a pin, driving the real binary the way an integrator
-  // does. The documented invocation pipes a range through `xargs`, and
-  // BSD `xargs` runs the utility once even when its input is empty — so
-  // a range command that FAILED arrived here as zero paths and was
-  // answered "this gate is not owed" at exit 0. A gate that reports
-  // CLEAN because it was told nothing is the exact costume this card
-  // exists to strip off silence.
+  // does. A range command that FAILED arrives here as zero paths and was
+  // answered "this gate is not owed" at exit 0. A gate that reports CLEAN
+  // because it was told nothing is the exact costume T-084-s6 exists to
+  // strip off silence.
+  //
+  // THE PREMISE THIS COMMENT USED TO CARRY WAS FALSE AND IS CORRECTED
+  // (T-090, absorbing T-061-s3). It said "the documented invocation pipes
+  // a range through `xargs`, and BSD `xargs` runs the utility once even
+  // when its input is empty". Both halves are wrong on this platform:
+  // BSD `xargs` NEVER runs the utility on empty input — measured with an
+  // on-disk marker, so "did it run" is observed and not inferred — which
+  // means the exit-2 remedy below was UNREACHABLE through the very
+  // invocation the doc printed, arrived at by the opposite mechanism from
+  // the one this comment described. The doc no longer prints a pipe, the
+  // matrix below is why, and the empty-list trap is re-proved against the
+  // new spelling three bodies down.
   const run = (args: string[]): { code: number; out: string } => {
     try {
       const out = execFileSync("node", ["tools/e2e/scripts/docs-gate.mjs", ...args], {
@@ -632,6 +642,303 @@ test("the hand-run gate's exit codes hold, and an EMPTY path list is 2 and not 0
   expect(census.code, "--census reports and judges no diff").toBe(0);
   expect(census.out).toContain("docs-gate: census —");
   expect(census.out).toContain("no diff judged");
+});
+
+// ── 3b. the path vocabulary and the four codes (T-090) ────────────────
+
+/** The gate, run for real from a chosen directory, with a chosen PATH.
+ *  `process.execPath` rather than "node", so the child still starts when
+ *  the environment is stripped to produce a GATE COULD NOT RUN. */
+function runGate(
+  args: string[],
+  opts: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
+): { code: number; out: string } {
+  const script = path.join(repoRoot, "tools", "e2e", "scripts", "docs-gate.mjs");
+  try {
+    const out = execFileSync(process.execPath, [script, ...args], {
+      cwd: opts.cwd ?? repoRoot,
+      env: opts.env ?? process.env,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    return { code: 0, out };
+  } catch (err) {
+    const e = err as { status?: number; stdout?: string; stderr?: string };
+    return { code: e.status ?? -1, out: `${e.stdout ?? ""}${e.stderr ?? ""}` };
+  }
+}
+
+test("EVERY SPELLING of one docs path answers the same, or is REFUSED — never `not owed`", () => {
+  // T-101-s3 and T-064-s7, absorbed by T-090 and pinned here. The gate
+  // matched `docs/`-prefixed strings and nothing else, so four other
+  // spellings of a file that owes two suites were answered "none under
+  // docs/ — this gate is not owed" at exit 0. Measured at 9b03ae6 before
+  // the fix; each row below is one of those measurements, kept.
+  //
+  // THE DISTINCTION THIS DEFENDS is the gate's whole reason for having
+  // four codes: "I looked and nothing is owed" must never wear the same
+  // number as "I could not tell what you asked about".
+  const OWED = "docs/CONVENTIONS.md";
+  const e2e = path.join(repoRoot, "tools", "e2e");
+
+  // ANSWERED — the same verdict as the root-relative spelling, 1.
+  expect(runGate([OWED]).code, "root-relative, the RANGE RULE's own form").toBe(1);
+  expect(runGate([`./${OWED}`]).code, "./ prefixed — T-101-s3").toBe(1);
+  expect(runGate([path.join(repoRoot, OWED)]).code, "absolute — T-101-s3").toBe(1);
+  expect(
+    runGate([`../../${OWED}`], { cwd: e2e }).code,
+    "../../ from tools/e2e, where the two neighbouring commands are run — T-101-s3",
+  ).toBe(1);
+  // ...and the normalisation SHOWS ITS WORK, because one that answers
+  // correctly and silently is one an operator cannot check.
+  expect(runGate([`./${OWED}`]).out).toContain(`./${OWED}  ->  ${OWED}`);
+
+  // REFUSED — called wrong, and never a clean gate.
+  expect(runGate([""]).code, "an empty argument is a list of length ONE — T-064-s7").toBe(2);
+  expect(runGate(["   "]).code, "a blank argument, same shape").toBe(2);
+  expect(
+    runGate([`${OWED}\ndocs/ROADMAP.md`]).code,
+    'a QUOTED substitution hands the whole list over as one blob — T-064-s7',
+  ).toBe(2);
+  expect(runGate(["/etc/passwd"]).code, "a path outside this repository").toBe(2);
+  expect(
+    runGate([OWED], { cwd: e2e }).code,
+    "a PLAIN relative path away from the root is ambiguous, and is refused rather than guessed",
+  ).toBe(2);
+
+  // THE MESSAGES NAME THE MECHANISM, not just the refusal — this gate's
+  // whole complaint about silence is that a code without a cause makes
+  // the reader guess.
+  expect(runGate([""]).out).toContain("empty or blank");
+  expect(runGate([`${OWED}\ndocs/ROADMAP.md`]).out).toContain("newline-joined blob");
+  expect(runGate([OWED], { cwd: e2e }).out).toContain("PLAIN RELATIVE");
+  expect(runGate([OWED], { cwd: e2e }).out, "both readings are printed").toContain(
+    "tools/e2e/docs/CONVENTIONS.md",
+  );
+
+  // A COVERAGE FLOOR, not a printed count: both verdicts are exercised
+  // and every refusal shape reaches USAGE. Without this, deleting a row
+  // above would shrink the drill silently.
+  const answered = [OWED, `./${OWED}`, path.join(repoRoot, OWED)].map((s) => runGate([s]).code);
+  expect(new Set(answered), "every answered spelling gives ONE verdict").toEqual(new Set([1]));
+  const refused = ["", "   ", `${OWED}\nx`, "/etc/passwd"].map((s) => runGate([s]).code);
+  expect(refused.length, "four refusal shapes, each measured").toBe(4);
+  expect(new Set(refused)).toEqual(new Set([2]));
+});
+
+test("THE EXIT MATRIX — all four codes survive the invocation the doc prints", () => {
+  // THE CARD'S CENTRAL CRITERION. For each of 0, 1, 2, 3: produce it
+  // deliberately, run what CONVENTIONS' DOCS GATE bullet prints, and read
+  // the code the reader observes. The doc prints a spelling with no
+  // `xargs` in it, and this body is the demonstration that the spelling
+  // carries the contract — measured, not argued.
+  //
+  // WHY NO `xargs` COLUMN IS ASSERTED HERE: a pipe destroys 2 and 3 on
+  // BSD (empty input never invokes the utility, so 2 arrives as 0; every
+  // nonzero exit collapses to 1) and destroys them differently on GNU
+  // (1–125 become 123). A matrix over a spelling the doc does not print
+  // would pin behaviour nobody should rely on; what is pinned is the
+  // spelling that WORKS, and CONVENTIONS carries the comparison.
+  const cases: { code: number; meaning: string; run: () => { code: number; out: string } }[] = [
+    {
+      code: 0,
+      meaning: "ran, nothing owed",
+      run: () => runGate(["app/src/main.tsx"]),
+    },
+    {
+      code: 1,
+      meaning: "ran and FOUND something",
+      run: () => runGate(["docs/ROADMAP.md"]),
+    },
+    {
+      code: 2,
+      meaning: "called wrong",
+      run: () => runGate([]),
+    },
+    {
+      code: 3,
+      meaning: "the gate COULD NOT RUN",
+      // Every throw out of docs-scan.mjs lands on 3. `trackedFiles`
+      // shells out to git, so a PATH with no git in it is the cheapest
+      // honest way to make this gate unable to answer — it is a claim
+      // about the gate, not about the tree, which is what 3 means.
+      run: () => runGate(["docs/ROADMAP.md"], { env: { ...process.env, PATH: "/nonexistent-dir" } }),
+    },
+  ];
+
+  const observed = new Map<number, number>();
+  for (const c of cases) {
+    const result = c.run();
+    observed.set(c.code, result.code);
+    expect(result.code, `${c.code} (${c.meaning}) must reach the reader as ${c.code}`).toBe(c.code);
+  }
+
+  // A COVERAGE FLOOR over the CONTRACT, not a printed tally: all four
+  // codes are exercised and each arrives as itself. A body that measured
+  // three of them and said "the matrix holds" is the shape this asserts
+  // against.
+  expect(new Set(observed.keys()), "all four codes exercised").toEqual(new Set([0, 1, 2, 3]));
+  expect([...observed.entries()].filter(([want, got]) => want !== got)).toEqual([]);
+
+  // And each code's OUTPUT distinguishes it, because the standing advice
+  // in CONVENTIONS is READ THE MESSAGE, NOT THE CODE.
+  expect(cases[2]!.run().out).toContain("NO PATHS GIVEN");
+  expect(cases[3]!.run().out).toContain("GATE COULD NOT RUN");
+  expect(cases[3]!.run().out).toContain("not a claim about the tree");
+});
+
+test("THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED POSITIVE", () => {
+  // T-084-s6's remedy was unreachable through the invocation the doc
+  // printed: BSD `xargs` never invokes the utility on empty input, so a
+  // FAILED range exited 0 with the gate never running. This drives the
+  // spelling the doc prints NOW, through a real shell, so the command
+  // substitution is the real thing rather than a description of one.
+  const sh = (script: string): { code: number; out: string } => {
+    try {
+      const out = execFileSync("/bin/sh", ["-c", script], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      return { code: 0, out };
+    } catch (err) {
+      const e = err as { status?: number; stdout?: string; stderr?: string };
+      return { code: e.status ?? -1, out: `${e.stdout ?? ""}${e.stderr ?? ""}` };
+    }
+  };
+  const gate = `"${process.execPath}" tools/e2e/scripts/docs-gate.mjs`;
+
+  // THE PLANTED POSITIVE, and the criterion's own words: a range command
+  // that FAILS, fed to the documented invocation, must reach the reader
+  // as a non-zero code that is not "not owed". The rev does not exist, so
+  // `git diff` fails, so the substitution is empty.
+  const failedRange = sh(`${gate} $(git diff --name-only no-such-rev-90 HEAD 2>/dev/null)`);
+  expect(failedRange.code, "a FAILED range must not read as a clean gate").not.toBe(0);
+  expect(failedRange.code, "it reads as CALLED WRONG").toBe(2);
+  expect(failedRange.out).toContain("NO PATHS GIVEN");
+  expect(failedRange.out).toContain("a range that produced nothing");
+
+  // THE CONTROL THE NEGATIVE NEEDS. Without it, a typo in the script
+  // above — a mis-spelled path, a shell that never ran the gate at all —
+  // also produces "not 0", and the assertion passes for the wrong
+  // reason. Same spelling, a range that SUCCEEDS and names a docs path.
+  //
+  // THE RANGE IS DETERMINISTIC AND THE FIRST ONE WAS NOT, which this
+  // lane's own drill caught. It read `HEAD~1 HEAD`, which names whatever
+  // the previous commit happened to touch: green at the commit the first
+  // drill ran at (a CONVENTIONS edit) and RED at the next one (a
+  // spec-only edit), where the gate answered "not owed" at 0 and was
+  // right to. The EMPTY TREE against HEAD, restricted to one path, names
+  // that path at every commit this repository will ever have.
+  const emptyTree = "$(git hash-object -t tree /dev/null)";
+  const realRange = sh(`${gate} $(git diff --name-only ${emptyTree} HEAD -- docs/ROADMAP.md)`);
+  expect(realRange.code, "a range that SUCCEEDS still reaches a verdict").toBe(1);
+  expect(realRange.out).toContain("docs-gate: FIRES");
+
+  // And a range that succeeds with NO docs path in it is the third arm:
+  // a real answer of "nothing owed", so exit 0 still means something.
+  const codeOnly = sh(`${gate} $(echo app/src/main.tsx)`);
+  expect(codeOnly.code, "0 is still reachable, or the gate is just a red light").toBe(0);
+  expect(codeOnly.out).toContain("this gate is not owed");
+
+  // THE PIPE, MEASURED ONCE, so the doc's claim is held by a body and not
+  // only by a paragraph: through `xargs` the SAME failed range reaches
+  // the reader as a clean gate. Skipped where `xargs` is absent rather
+  // than asserted blind.
+  const hasXargs = sh("command -v xargs").code === 0;
+  if (hasXargs) {
+    const piped = sh(`git diff --name-only no-such-rev-90 HEAD 2>/dev/null | xargs ${gate}`);
+    expect(piped.code, "THE DEFECT: the pipe reports a clean gate for a failed range").toBe(0);
+    expect(piped.out, "and it reports it by never running the gate at all").not.toContain(
+      "docs-gate:",
+    );
+  }
+});
+
+test("ONE SPELLING, TWO PLACES — the doc and the script print the same recipe", () => {
+  // T-057 as a pin rather than as a hope. The DOCS GATE bullet and
+  // `docs-gate.mjs`'s header each print the invocation an integrator is
+  // to run, and for six weeks they printed DIFFERENT ones: the doc said
+  // call it directly, the script's own header said pipe it through
+  // `xargs` — the very pipe that destroys the codes the script exists to
+  // distinguish. A recipe in two places is two chances to disagree, and
+  // this is the body that makes the second chance cost something.
+  const script = readFileSync(
+    path.join(repoRoot, "tools", "e2e", "scripts", "docs-gate.mjs"),
+    "utf8",
+  );
+  // The recipe, lifted from each side by its own comment/indent
+  // convention and compared as text. Anchored on the gate's own
+  // invocation line rather than on a whole block, so reflowing prose
+  // around it does not red this.
+  const recipe = (text: string, strip: RegExp): string[] =>
+    text
+      .split("\n")
+      .filter((l) => l.includes("docs-gate.mjs $(git diff") || l.includes("TREE=$(git merge-tree"))
+      .map((l) => l.replace(strip, "").trim());
+
+  // THE DOC SIDE IS SCOPED TO THE DOCS GATE BULLET, and finding out why
+  // is worth the two lines: the RANGE RULE's own table three hundred
+  // lines up states the merge-tree half too, correctly, in its own
+  // typography. An unscoped filter reads that row as a third copy of the
+  // recipe and reds — which is a false alarm about a real property, the
+  // most expensive kind. `conventionsBullet` cannot be used here because
+  // it normalises whitespace, and this body compares LINES.
+  const start = CONVENTIONS.indexOf("- DOCS GATE (T-084");
+  expect(start, "the DOCS GATE bullet is found by its own opening").toBeGreaterThan(-1);
+  const rest = CONVENTIONS.slice(start + 1);
+  const end = rest.indexOf("\n- ");
+  const bulletRaw = end === -1 ? rest : rest.slice(0, end);
+
+  const fromScript = recipe(script, /^\s*\*\s?/);
+  const fromDoc = recipe(bulletRaw, /^\s*/);
+
+  expect(fromScript.length, "the script's header prints the recipe").toBe(2);
+  expect(fromDoc, "the doc prints the SAME two lines").toEqual(fromScript);
+
+  // AND NEITHER PRINTS THE DESTRUCTIVE FORM. The whole card is that a
+  // pipe through `xargs` eats two of the four codes, differently on each
+  // platform — so the recipe must not merely agree, it must agree on a
+  // spelling that carries the contract.
+  for (const line of fromScript) {
+    expect(line, "the printed recipe pipes through nothing").not.toMatch(/\|\s*xargs/);
+  }
+  expect(DOCS_GATE_BULLET, "and the bullet says why, so nobody re-adds it").toContain("xargs");
+});
+
+test("THE `EXIT` OBJECT IS THE SINGLE AUTHORITY — the npm script re-types no numbers", () => {
+  // The rule the token lint already lives under (T-078/T-080), applied to
+  // the new script: the codes are owned by the frozen object beside the
+  // gate that produces them, and every other place POINTS at it. A number
+  // in package.json would be a second authority, and the two would
+  // disagree the first time a code was added.
+  const pkg = JSON.parse(
+    readFileSync(path.join(repoRoot, "tools", "e2e", "package.json"), "utf8"),
+  ) as { scripts: Record<string, string> };
+  const script = pkg.scripts["lint:docs"];
+  expect(script, "the DOCS GATE is a named command (T-084-s2)").toBeDefined();
+  expect(script).toContain("scripts/docs-gate.mjs");
+  // No exit code, and no shell doing arithmetic on one: the script's only
+  // job is to start the gate and let its status propagate.
+  expect(script, "no re-typed exit code").not.toMatch(/\d/);
+  expect(script, "no shell chaining that could rewrite the status").not.toMatch(/[|;&]|\bexit\b/);
+
+  const source = readFileSync(
+    path.join(repoRoot, "tools", "e2e", "scripts", "docs-gate.mjs"),
+    "utf8",
+  );
+  // ONE frozen declaration, naming all four codes.
+  const decls = [...source.matchAll(/Object\.freeze\(\{[^}]*CLEAN[^}]*\}\)/g)];
+  expect(decls.length, "exactly one EXIT declaration").toBe(1);
+  for (const name of ["CLEAN: 0", "FOUND: 1", "USAGE: 2", "CANNOT_RUN: 3"]) {
+    expect(decls[0]![0], `EXIT names ${name}`).toContain(name);
+  }
+  // And nothing else in the file exits on a bare number — every return
+  // and every process.exit goes through the object.
+  expect(source, "no numeric literal reaches process.exit").not.toMatch(/process\.exit\(\s*\d/);
+  expect(source.match(/return EXIT\./g)?.length ?? 0, "the returns go through EXIT").toBeGreaterThan(
+    2,
+  );
 });
 
 // ── 4. the frontmatter vocabulary ─────────────────────────────────────
