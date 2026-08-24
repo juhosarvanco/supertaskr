@@ -15,11 +15,13 @@ verified_by:
 review:
 ---
 
-> **DRAFTER'S NOTE — for the architect, remove before landing.** This
-> card and `T-102` (planned, `[app-agent]`, priority 58) cannot both be
-> right; the collision is stated in the body under THE COLLISION and is
-> the reason this card is sequenced first. **T-102's criterion 6 needs
-> amending and this drafter did not amend it.** Everything below was
+> **RESOLVED (architect, 2026-08-24).** The drafter's note that stood
+> here asked the architect to amend `T-102`'s criterion 6 before either
+> card dispatched. Ruled the same day, in the commit carrying this
+> sentence: T-102's criteria 4–6 are amended to the post-T-113 tree,
+> its drill list names the ring-note restoration instead of the
+> narrowing revert, and T-102 carries `blocked_by: [T-113]` — see THE
+> COLLISION below and the amendment note on T-102. Everything below was
 > re-derived at `6b0cf47` (the seventh triage commit; its whole diff is
 > `docs/tasks/`, so every source reading also holds at `d41456b`).
 
@@ -107,6 +109,15 @@ its mutant red is re-introducing the double report under a green suite.
 The amendment is the architect's; this card does not edit T-102, and a
 lane fenced `[app-agent]` that edited `docs/tasks/T-102-*.md` would be
 widening its own fence from inside (executor.md).
+
+**RULED (architect, 2026-08-24, on main — the commit carrying this
+sentence).** Criterion 6 now pins exactly the surviving property this
+section names — a denial delivered as its own live event is NOT also in
+the tail — criteria 4–5 are re-targeted off the deleted note, and
+`T-102` carries `blocked_by: [T-113]`, so the sequencing this section
+could only argue is a parsed fact the board's waves enforce. The
+superseded criterion text survives only inside T-102's amendment note,
+the T-085 retraction shape.
 
 What T-102 keeps is unaffected: its cumulative-`ToolDenied` half is a
 different question and is asserted separately here too, and its

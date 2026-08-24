@@ -6,7 +6,7 @@ milestone: 4
 priority: 58
 size: M
 status: planned
-blocked_by: []
+blocked_by: [T-113]
 touches: [app-agent]
 builder:
 verifier:
@@ -27,6 +27,24 @@ review:
 > fixture edit from opposite directions: one wants a second denial, the
 > other wants an in-band line. One scenario satisfies both.
 > `T-069-s1`'s "at least four bodies" reads **six** at `4d2f03c`.
+
+> **ARCHITECT'S AMENDMENT (2026-08-24, re-derived at `4095219`).**
+> Criteria 4–6 below were drafted against the pre-`T-113` tree. T-113
+> deletes the `permission_denials:` ring note for the `unannounced` set
+> — the exact producer the original criterion 6 pinned — so that
+> criterion's mutant would have had no subject, and a builder making it
+> red by reverting `denial_names(unannounced…)` to
+> `denial_names(&denials)` would be re-introducing the double report
+> under a green suite (T-113, THE COLLISION). The three criteria are
+> re-targeted at what SURVIVES T-113, and this card now carries
+> `blocked_by: [T-113]`, so the ordering the shared `[app-agent]` fence
+> only implied is a parsed fact the board's waves enforce. The
+> superseded criterion 6 is kept only inside this retraction (the T-085
+> shape): *"THE NARROWING SHALL BE PINNED: the tail names the
+> UNANNOUNCED set only, and the `denial_names(&denials)` revert SHALL
+> be re-run and shown RED."* IF the builder finds the ring note still
+> present in `run_turn`'s `StreamLine::Result` arm THEN T-113 has not
+> landed and the blocker was bypassed — stop and open a room.
 
 Absorbs: T-069-s2, T-069-s3, T-069-s1, T-081-s10, T-081-s4 (sixth
 triage, 2026-08-20). All five files removed in this commit.
@@ -154,15 +172,29 @@ neither text nor tool use.
 - **ONE FIXTURE SHALL CLOSE BOTH DENIAL GAPS AT ONCE**: give
   `denied-fatal-not-flagged` (or a sibling scenario) a SECOND denial AND
   an in-band line for one of them, so the turn is `ExitNonZero`, the
-  tail is rendered, the join has two names, and the announced/unannounced
-  split is observable.
-- **THE JOIN, THE SEPARATOR AND THE ORDER SHALL BE ASSERTED IN ONE
-  BODY**, and the first-name-only mutant SHALL be re-run and shown RED.
-- **THE NARROWING SHALL BE PINNED**: the tail names the UNANNOUNCED set
-  only, and the `denial_names(&denials)` revert SHALL be re-run and
-  shown RED. Assert the cumulative `ToolDenied` record separately — the
-  two are different questions and a body that conflates them pins
-  neither.
+  tail is rendered, and the announced/unannounced split is observable in
+  the LIVE `Denied` events — the announced entry emits at its in-band
+  moment and is NOT re-emitted at `Result` time, the unannounced one
+  emits at `Result` time — while the tail names NEITHER (T-113's
+  deletion). T-113's own pin drives a single result-only denial, so this
+  split pair is a distinct body, not shape six; say so at the body.
+- **THE ORDER AND THE COMPLETENESS OF THE SURVIVING RECORD SHALL BE
+  ASSERTED IN ONE BODY**: `denial_names(&denials)` feeding the
+  cumulative `ToolDenied` record is the one runner-side producer of a
+  multi-name record left after T-113, and no fixture drives it with more
+  than one name (re-measure; the note above already orders that). Drive
+  it with two names on whichever scenario classifies `ToolDenied`, and
+  the first-name-only mutant SHALL be re-run and shown RED. The
+  separator lives render-side (`failureDetail`'s join, `app-interview`)
+  and is outside this fence — do not reach across for it.
+- **THE ABSENCE SHALL BE PINNED, NOT THE NARROWING** (amended by the
+  architect, 2026-08-24 — the superseded text is quoted only inside the
+  amendment note above): a denial delivered as its own live event is NOT
+  also in the tail, asserted on criterion 4's split-pair fixture. The
+  restoration of the deleted `permission_denials:` ring note SHALL be
+  re-run as a mutant and shown RED. Assert the cumulative `ToolDenied`
+  record separately — the two are different questions and a body that
+  conflates them pins neither.
 - **THE SIX MIRRORED NEGATIVES SHALL BE RESOLVED ONE WAY OR THE OTHER,
   as a family rather than one at a time**: replaced by a positive
   `assert_eq!` on the whole settled error — which would red if
@@ -185,8 +217,9 @@ Verification: headless — bare `cargo test` from app/src-tauri
 `test result:` lines rather than eyeballed), plus `npm test` from app/
 if any payload shape moves. **POISON DRILL on every new or changed
 assertion**, one side only, producer mutated and never the assertion:
-the first-name-only relay, the narrowing revert, the `Activity` flag
-removed, one constant raised above the cap. Every mutated text read back
+the first-name-only relay, the deleted ring note RESTORED (the
+amended criterion 6's mutant), the `Activity` flag removed, one
+constant raised above the cap. Every mutated text read back
 with `git diff` before its run; restores per-path, proved by sha256
 against the drill's own commit. Then T-092's shape-six check on each new
 body. The BOOT GATE trigger fires on `app/src-tauri/**` — run the boot

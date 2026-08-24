@@ -1,7 +1,8 @@
 # State
 
 Updated: 2026-08-24 by integrator (T-101 merged and checkpointed), then
-amended by the architect through the SEVENTH TRIAGE (`6f2f8ea`).
+amended by the architect through the SEVENTH TRIAGE (`6f2f8ea`) and the
+T-113/T-102 ruling (the commit carrying this sentence).
 
 **READ THIS FIRST IF YOU ARE PICKING THE PROJECT UP: there are NO LIVE
 LANES.** `git worktree list` returns one entry, the main checkout —
@@ -696,7 +697,7 @@ quotation that no file contains, a relaunch prediction wrong for three
 checkpoints — and finally the discovery *about* unverified relay,
 itself relayed unverified, improving with each retelling.
 
-## A LIVE CONTRADICTION BETWEEN TWO PLANNED CARDS — RULE BEFORE EITHER DISPATCHES
+## A LIVE CONTRADICTION BETWEEN TWO PLANNED CARDS — RULED 2026-08-24
 
 **`T-113` deletes the runner-side narrowing that `T-102`'s criterion 6
 pins.** Both hold `[app-agent]`, so the fence serialises them and T-113
@@ -704,6 +705,14 @@ is sequenced first (p57). A T-102 executor must find criterion 6
 amended or stop. T-113 quotes it verbatim; it was deliberately NOT
 amended from inside a draft, because quietly editing another planned
 card is the class of change this pipeline exists to prevent.
+**RULED by the architect in the commit carrying this sentence**:
+T-102's criteria 4–6 are amended to the post-T-113 tree — criterion 6
+pins the ABSENCE (a denial delivered as its own live event is not also
+in the tail) rather than the narrowing, whose superseded text is kept
+only inside its own retraction on the card (the T-085 shape) — and
+T-102 now carries `blocked_by: [T-113]`, so the ordering the shared
+fence only implied is a parsed fact the board's waves enforce. Both
+cards are dispatchable in their stated order.
 
 ## OUTSTANDING @HUMAN — one look, and it closes a three-card question
 
