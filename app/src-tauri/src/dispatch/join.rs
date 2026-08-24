@@ -509,6 +509,22 @@ mod tests {
         assert_eq!(orphan.card, None, "a lane on no card has no card");
         assert_eq!(orphan.lanes.len(), 1);
 
+        // **THE POSITIVE CONTROL THE DRILL DEMANDED.** `card: None` above
+        // is a negative assertion, and this body's first draft had no
+        // positive beside it: `card: Some(card.clone())` -> `card: None`
+        // in the producer SURVIVED the whole suite, because every other
+        // body reads `state` and `lanes` and none read `card`. A row
+        // built FROM a card must carry it.
+        let carded = rows(&join)
+            .iter()
+            .find(|row| row.task_id == "T-100")
+            .expect("the carded row");
+        assert_eq!(
+            carded.card,
+            Some(BoardStamp::new("T-100", "planned")),
+            "a row built from a card must carry the card verbatim"
+        );
+
         // POSITIVE CONTROL: the same lane WITH a card produces ONE row,
         // not two. The no-card pass must not double-count.
         let board = [
