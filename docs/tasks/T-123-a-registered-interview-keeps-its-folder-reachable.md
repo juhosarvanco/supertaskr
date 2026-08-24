@@ -728,3 +728,429 @@ two failures reproduce with nothing but a fixture — a stage-0 tree plus a
 `native_session_id` — driven through `apply_genesis_pick`. Add that shape
 as a third positive control beside arms 2 and 3, and make the routing
 predicate mean *resumable*, not *present*.
+
+## Implementation notes — REBUILD, after the REJECTED verdict above
+
+Rebuilt by a FRESH executor (`claude-opus-5 @T-123-rebuild`) in
+`../nputer-T-123`, branch `task/T-123-interview-reentry`, on top of the
+verdict commit `02a1b29`. **Nothing above this heading was edited.** The
+first executor's notes and the verifier's verdict are the record of what
+was built and why it was refused, and a rebuild that erases them erases
+the evidence (T-101's precedent). Every figure below was re-derived in
+this worktree at the ref it names.
+
+### THE VERDICT WAS TESTED BEFORE IT WAS BELIEVED — AND IT HOLDS
+
+The brief invited me to conclude the verifier was wrong. **They are
+right**, and the finding was reproduced through the real
+`apply_genesis_pick` before a line was changed, in a detached worktree at
+the REJECTED tip `02a1b29`:
+
+```
+REBUILD-PROBE-A record: native=None rejected=None status=idle
+REBUILD-PROBE-A: ROUTED TO GENESIS
+REBUILD-PROBE-C record: native=None rejected=Some("it begins with '-', which
+                        the CLI would parse as a FLAG rather than as the value of --resume")
+REBUILD-PROBE-C: ROUTED TO GENESIS
+REBUILD-PROBE-D: ROUTED TO GENESIS          (the control: a usable id)
+```
+
+and at the same tip, through the real commands:
+
+```
+REBUILD-PROBE-START-REJECTED:        SessionIdRejected { registry_path: ".nputer/sessions.json", … }
+REBUILD-PROBE-FRESH-AFTER-REJECTED:  AlreadyPlanned { path: … }
+```
+
+So the screen's one offered action — *"start a fresh session"*, the only
+control the session-unusable block renders — is refused by
+`fresh_genesis` on the same folder the routing just sent the user to.
+**The verdict's frontend claims were re-derived independently and are
+also right**: `App.tsx` passes the genesis screen exactly one prop
+(`onOpenBoard`), so there is no rail; `BoardCrescendo.tsx:95` gates that
+CTA behind `{complete && …}`; and `completionOf` returns
+`{complete: false, blocker: "noTurns"}` at zero turns. And the "before"
+half is confirmed at the base: `git show d46f71f:…/docs_watch.rs` has
+`if probe.has_plan() { … open_as_project }` with no registry in it, so no
+plan-holding folder could reach `Genesis` at all. **The diff really did
+create a new dead end, on the reproduction's own folder shape.**
+
+**AND THE SUITE WAS BLIND TO IT, MEASURED RATHER THAN ASSERTED.** With
+the fix applied and before a single new body was added,
+`cargo test --no-fail-fast` was **389 passed / 0 failed / 3 ignored, exit
+0** — identical to the rejected tip. A change of routing semantics that
+no existing body could see is precisely the verifier's point about the
+missing third control.
+
+### WHAT THE FIX IS — AND IT IS NOT ONLY THE ONE-LINE GATE
+
+The verdict proposed gating on `record.native_session_id.is_some()`. That
+is the right *semantics* and it is built. But taking only that would have
+left the accessor named `has_genesis_session` while no longer answering
+"has a genesis session", and — more importantly — **would have left the
+predicate a `bool`, which cannot express the distinction the rebuild
+exists to make.** CONVENTIONS' A NEGATIVE ASSERTION NEEDS A POSITIVE
+CONTROL says a refusal must be shown to differ from an absence. `false`
+from *"nothing of ours is here"* and `false` from *"present, and no way
+back in"* are **literally the same value**, so no test could ever show
+them differing. That collapse is the defect's habitat, not just its
+symptom.
+
+**`app/src-tauri/src/agent/sessions.rs` (C-14).**
+`has_genesis_session` is GONE. In its place:
+
+- `GenesisReachability { NoSession, NotResumable, Resumable }`;
+- `reachability_of(Option<&GenesisRecord>) -> GenesisReachability` — the
+  ONE classification, usable by a caller that has already read the file;
+- `genesis_reachability(project_dir)` — `reachability_of` over
+  `genesis_record`, ONE read, the accessor `docs_watch` asks.
+
+Criterion 2's IF-branch is what this is: *"IF the accessor's current
+shape does not answer this question THEN the new one lives in C-14 beside
+it."* It did not, and it does.
+
+**`app/src-tauri/src/docs_watch.rs` (C-05).** `routes_to_genesis(probe,
+reach)` = `!probe.has_plan() || reach == Resumable`. The decline arm now
+**names its two ways apart on stdout** — *"holds a plan and registers an
+interview with no usable session id - nothing to resume"* against
+*"already has a plan"* — because stdout is this app's only trace of a
+routing decision and collapsing those two is the same mistake one layer
+up. The `genesis reachable:` line says **RESUMABLE** now.
+
+**`app/src-tauri/src/agent/mod.rs` (C-14).** `start_genesis` reads the
+registry **ONCE** and spends it on both the routing guard and the offer —
+the shape `resume_genesis` has always had. **The `if planned` backstop
+the first pass added is REMOVED, and that is the honest consequence of
+fixing the defect at its source.** Two reads are what made it necessary:
+with a predicate that admitted a planner it could not resume, this
+command could reach the fresh spawn on a plan. With one read and only
+`Resumable` admitted past a plan, that state is *unreachable* rather than
+*caught* — proved by construction (reaching the spawn requires
+`record == None` or `(None, None)`, both of which are non-`Resumable`,
+and the guard already refused those on a plan). A guard no input can
+reach is a guard no drill can red and no reader can trust.
+`resume_genesis` asks the same reachability, so the two guards cannot
+drift. `fresh_genesis` is **byte-unchanged**.
+
+**ZERO frontend change, re-derived rather than inherited**: `app/src/**`
+is a 0-file diff, `generate_handler!` and `acl_pin.rs` are untouched, and
+no payload shape moves — the app suite is unmoved at 940/940 and the CSS
+hash is main's `index-C86RloYb.css` / 45.06 kB.
+
+### THE THIRD CONTROL, WHICH IS THE POINT OF THIS REBUILD
+
+Four new bodies, **each carrying its ACCEPTANCE PROOF one JSON field away
+from its refusals**, because CONVENTIONS is explicit that a test
+asserting a refusal must first prove the fixture would otherwise have
+been accepted:
+
+| body | file | what it drives |
+|---|---|---|
+| `reachability_tells_a_refused_session_id_from_an_absent_one_and_both_from_no_session` | sessions.rs | all five states — no file, resumable, no id, refused id, `dead` — acceptance asserted FIRST |
+| `a_registered_interview_with_no_way_back_into_it_is_not_a_way_back_in` | docs_watch.rs | **THE THIRD CONTROL** at the routing seam: no-id and refused-id both `Picked`, the same fixture with a usable id `Genesis`, plus a docs-less folder that must stay genesis regardless |
+| `start_refuses_a_plan_whose_registered_interview_cannot_be_resumed` | agent/mod.rs | both shapes → `AlreadyPlanned` with the registry byte-unchanged; acceptance → `ResumeAvailable`; **and the T-039 notice is not silenced, only moved** — the same poisoned entry on an UNPLANNED folder still answers `SessionIdRejected`, where `genesis_fresh` really can act |
+| `resume_refuses_a_plan_whose_registered_interview_cannot_be_resumed` | agent/mod.rs | the offer's own command refuses exactly what the routing refuses, so no button can answer no |
+
+Arms 2 and 3 of the first executor's reproduction body now also assert
+`GenesisReachability::NoSession` **as a value**, so the ABSENCE they
+drive is visibly a different thing from the REFUSAL the new body drives.
+Both answer `Picked`; only the reachability tells them apart.
+
+### Criterion by criterion, re-checked at this ref
+
+1. **Plan + registered session routes to genesis, decided from the
+   registry — NOW WITH ITS PURPOSE CLAUSE SERVED.** Met, and narrowed:
+   the arm fires only where *"T-029's existing resume offer is
+   reachable"* is true, which is what the verdict found it was not. The
+   reproduction (`~/nputer-genesis-probe`'s shape, a live
+   `native_session_id`) still routes to genesis — arm 1 of the first
+   executor's body and arm 3 of the new one both pin it.
+2. **One owner for the registry read.** Met, and strengthened.
+   `docs_watch.rs` still holds no `.nputer` production string and no JSON
+   parse; `start_genesis` went from TWO registry reads to one for the
+   routing question. The fresh-spawn path's `sessions::load` is taken
+   where `next_id` needs it and can never feed a routing answer.
+3. **The no-overwrite guarantee pinned unmoved, with its positive
+   control.** Met and widened from two controls to four (absent, `dead`,
+   no id, refused id). Mutant **M2** (`routes_to_genesis → true`) reds
+   **10** bodies including T-026's own
+   `genesis_pick_of_a_folder_that_already_has_a_plan_opens_it_as_a_project`.
+4. **Content-blindness not traded away.** Met, untouched. `probe_plan`
+   is byte-unchanged and `PlanProbe::has_plan`'s three-count refusal
+   paragraph stands as the first executor wrote it.
+5. **The reproduction is the pin.** Met. Unchanged, and the new body
+   drives the same `stage_zero_tree` shape with only the registry
+   varying. **No frontend change was needed, so criterion 5's IF-branch
+   still does not fire** — and the one rendering finding this rebuild
+   turned up is routed as `T-123-s4`, not reached for.
+6. **The veto-only property, re-derived and stated.** **IT STILL HOLDS**,
+   and the rebuild does not weaken the argument — it strengthens it.
+   (a) The re-read is reached only where `routes_to_genesis` already said
+   genesis; (b) `reach` is read once and CARRIED; and (c) narrowing the
+   admitted set from *any non-dead planner* to *`Resumable`* narrows what
+   can hold the route OPEN, which is the veto's own direction. Mutant
+   **M7** (the carried `reach` replaced by `Resumable`) reds 2 bodies
+   including T-064's own race pin.
+7. **Resume and never a fresh interview; `genesis_fresh` shown still
+   refusing.** Met. `fresh_genesis` is byte-unchanged and mutant **M10**
+   (its guard deleted) reds exactly one body. The cloned-repository case
+   the criterion names is now answered *better*: a clone carrying a
+   `.nputer/` with a resumable planner routes to resume, and one carrying
+   a non-resumable planner opens as the project it is instead of landing
+   the user on a screen with nothing on it.
+
+### Commands, in the order run, exits read UNPIPED from `$?`
+
+The lane worktree already carried `node_modules`, `lib/parser/dist` and a
+built `target/`; **verified rather than assumed** (`ls` on all three, plus
+a `cargo check` at exit 0) rather than re-installed.
+
+| # | command | cwd | exit |
+|---|---|---|---|
+| 1 | probe: `cargo test --lib rebuild_probe -- --nocapture` at `02a1b29` | detached probe worktree | **0** (the reproduction above) |
+| 2 | `cargo check --all-targets` (0 warnings, 0 errors) | app/src-tauri | **0** |
+| 3 | `cargo test --no-fail-fast` (fix only, no new bodies) | app/src-tauri | **0** — 389/0/3, THE BLINDNESS MEASURED |
+| 4 | `npm run build` | app | **0** (269 modules) |
+| 5 | `npm test` | app | **0** |
+| 6 | `npx vitest run` | lib/parser | **0** |
+| 7 | `cargo run -p nputer-index -- index --check --root ../..` | app/src-tauri | **0** |
+| 8 | `NPUTER_BOOT_PORT=15030 npm run boot:check` | tools/e2e | **0** |
+| 9 | `NPUTER_E2E_PORT=15031 npm test` | tools/e2e | **0** |
+| 10 | `cargo test --no-fail-fast` (with the four new bodies) | app/src-tauri | **0** |
+| 11 | drill sweep 1: 12 mutants at `895324a` | detached worktree | 101 ×11, **0 ×1 — one SURVIVOR** |
+| 12 | `cargo test --no-fail-fast` (after closing the survivor) | app/src-tauri | **0** |
+| 13 | drill sweep 2: **13 mutants at `9390b0e`, ALL RED** | detached worktree | 101 ×13 |
+| 14 | `node tools/e2e/scripts/docs-gate.mjs <8 root-relative paths>` | repo root | **1** (the gate's verdict: FIRES) |
+| 15 | the three owed suites again on the FINAL card content | — | see below |
+
+**Figures, each at its ref.**
+
+- **cargo, at the rebuild tip: 393 passed / 0 failed / 3 ignored, exit
+  0**, summed programmatically over **15** `test result:` lines. **+4
+  bodies over the rejected tip's 389 and no file added**: 1 in
+  `sessions.rs`, 1 in `docs_watch.rs`, 2 in `agent/mod.rs`. The 3 ignored
+  are unmoved — the `#[ignore]`d smoke stays ignored, no real CLI runs.
+- **app: 940/940 across 46 files, exit 0** — UNMOVED, which a 0-file
+  `app/src` diff requires.
+- **parser: 263/263 across 12 files, exit 0** — unmoved.
+- **E2E: 143/143, exit 0**, scratch port **15031** — unmoved; this lane
+  adds no spec file.
+- **This paragraph deliberately names no tip hash**, following the first
+  executor's reasoning: a note that names its own commit is stale the
+  moment the commit is amended.
+
+### Gates, DERIVED from this rebuild's own diff
+
+Through the prescribed pre-merge form, the **exit read FIRST**:
+`TREE=$(git merge-tree --write-tree e27673d HEAD)` → **exit 0**, tree
+`7b3ead1b…`, then `git diff --name-only e27673d "$TREE"`.
+
+**MAIN MOVED AGAIN, AND PAST WHAT THE BRIEF SAID.** The brief states main
+is *"`c6ef751` or later and is docs-only since `cd79f97`"*. **The
+docs-only half is now FALSE**: main is **`e27673d`**, which merges T-096
+into `lib/parser` (plus the eighth triage and T-121). It is still
+disjoint from this lane — `git merge-tree` exits 0, no conflict — and no
+gate answer moves, but an integrator must re-derive rather than inherit
+that sentence.
+
+| gate | trigger | on this diff |
+|---|---|---|
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **3 of 8 — FIRES, and was RUN** |
+| GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` outside `docs/` | **0 of 8 — NOT OWED, and the gate was ASKED anyway** |
+| DOCS GATE | a `docs/` path a code suite reads | **5 of 8 — FIRES**, three suites owed |
+
+- **BOOT GATE — exit 0**, scratch port **15030**, both `[nputer]` lines
+  captured: `[nputer] project folder: /Users/ujju/Projects/nputer-T-123`
+  and `[nputer] window "main" created`.
+- **GRAPH REGEN — NOT OWED, 0 of 8** (three `.rs`, five markdown).
+  **ASKED rather than reasoned from the brief's sentence**, exactly as
+  the brief instructed, because T-010's Rust extraction is in
+  verification tonight and could have landed first: `index --check
+  --root ../..` exits **0**, *"graph.json is CURRENT"* at **648863
+  bytes · 126 files · 1126 symbols · 1712 edges** — byte-identical to
+  the figure at the rejected tip, so T-010 has NOT landed on main and a
+  Rust-only diff still moves nothing.
+- **DOCS GATE — exit 1 (the gate's verdict: FIRES)**, invoked from the
+  repo root with the eight ROOT-RELATIVE paths as ARGUMENTS and never
+  through `xargs`. **5 of 8 under docs/** — this card, the first
+  executor's `T-123-s1` and `T-123-s2`, the verifier's `T-123-s3` and
+  this rebuild's `T-123-s4`. It reports **12 derived readers across 4
+  suites**, **0 frontmatter issues**, *"every live task card's
+  frontmatter parses, with a legal status"*, a census of **125
+  docs-shaped sites in 22 files, 12 of them in 10 files resolving into
+  this repo's docs/**, **25 files holding the repository root** (11
+  derived, 0 unlinked, 14 with no linkable site), **1 package-relative
+  site**, and the root-anchor ledger at 6 entries. **THREE suites owed
+  and all three run green** (app, lib/parser, tools/e2e). `cargo test` is
+  not owed by these paths and was run anyway because the Rust diff owes
+  it on its own.
+
+### The poison drill — THIRTEEN mutants, ALL RED, and it corrected this rebuild
+
+Arm (c): a **detached** scratch worktree with its own `CARGO_TARGET_DIR`
+**inside it** (`<drill>/.drilltarget`), never sharing the lane's
+`target/`. **Everything is named for this lane, not just the worktree** —
+`drill-T-123-rebuild`, `drill-T-123-rebuild.py`,
+`drill-T-123-rebuild-results.json`, `drill-T-123-rebuild-log.txt`. That
+is T-088-s3's fifth data point and the brief's own instruction: last
+night two lanes' *drivers and results files* collided in the shared
+scratchpad even though their worktree names differed.
+
+Every mutation is **ONE SIDE ONLY and always the PRODUCER**, applied by a
+driver that REFUSES any path outside a directory named
+`drill-T-123-rebuild` and requires a match count of **exactly 1**; every
+mutated TEXT was read back with `git diff --unified=0` **before** its
+suite ran (the driver asserts that diff is non-empty, so a mutation that
+silently failed to land cannot be scored as a red). Baseline
+`cargo test --lib --no-fail-fast`: **158 + 123 = 281 passed / 0 failed,
+exit 0.**
+
+| # | producer mutated | the red |
+|---|---|---|
+| M1 | `routes_to_genesis` → `!probe.has_plan()` (registry input dropped) | 101, **7 bodies** |
+| M2 | `routes_to_genesis` → `true` | 101, **10 bodies**, incl. T-026's own pin and T-064's race body |
+| M3 | **THE REJECTED PREDICATE RESTORED** — `reach != NoSession` | 101, **4 bodies**, and the ONLY docs_watch body among them is the new third control |
+| M4 | the classifier inverted (`is_some` → `is_none`) | 101, **9 bodies** |
+| M5 | a REFUSAL collapsed into an ABSENCE (`NotResumable` → `NoSession`) | 101, **2 bodies**: the accessor pin + the third control |
+| M6 | an ABSENCE reported as a REFUSAL (M5's mirror) | 101, **2 bodies**: the accessor pin + the reproduction body |
+| M7 | the post-ack re-read's carried `reach` → `Resumable` | 101, **2 bodies** (T-064's race pin among them) |
+| M8 | `start_genesis`'s guard admits everything | 101, **3 bodies** |
+| M9 | `resume_genesis`'s guard admits everything | 101, **2 bodies** |
+| M10 | `fresh_genesis`'s bare plan refusal deleted | 101, **1 body** |
+| M11 | `start_genesis` stops consulting the recorded REFUSAL | 101, **1 body** |
+| M12 | the offer's `model` field dropped | 101, **1 body** — see below |
+| M13 | `genesis_record` stops telling a refused id from an absent one | 101, **2 bodies** |
+
+**M5 AND M6 ARE THE PAIR THIS REBUILD IS FOR.** They collapse the
+distinction in opposite directions, and they red **different** routing
+bodies — M5 the third control, M6 the reproduction. A `bool` predicate
+could not have expressed either mutation, which is the argument for the
+enum stated as a measurement instead of as taste.
+
+**THE DRILL CAUGHT A DEFECT IN THIS REBUILD'S OWN NEW CODE — and this is
+the second time in two passes that a drill has corrected the notes it was
+written to support.** Sweep 1 (12 mutants at `895324a`) had **one
+survivor**: `model: record.model.clone()` in `start_genesis`'s
+`ResumeAvailable` arm mutated to `None` passed at **exit 0 with no body
+red**. The gap was pre-existing — the old spelling
+`existing.model_for_display()` was equally unasserted — but the line was
+rewritten here, so it was **closed rather than disclosed**: the mod.rs
+fixture now carries a `model` the way the live probe folder's registry
+does, and the acceptance arm asserts it. Sweep 2 re-ran **all thirteen**
+at the new commit `9390b0e`, because the producer moved under every
+mutant — which is exactly the lesson this whole card is being rebuilt
+for.
+
+**SHAPE SIX, ASKED PER BODY AND ANSWERED FROM THE DRILL'S OWN LISTS.**
+
+- `start_refuses_a_plan_whose_registered_interview_cannot_be_resumed`
+  **kills two mutants alone** — M11 and M12.
+- `a_registered_interview_with_no_way_back_into_it_is_not_a_way_back_in`
+  (the third control) **kills none alone, and it is kept on a measured
+  argument rather than a hopeful one**: it is the ONLY `docs_watch` body
+  in M3's red list and one of only two in M5's. Delete it and **M3 — the
+  exact predicate this card was rejected for — becomes invisible at the
+  routing seam**, red only at the commands. The seam is where @human met
+  the dead end.
+- `reachability_tells_a_refused_session_id_from_an_absent_one_and_both_from_no_session`
+  kills none alone, and is **the only body red under BOTH mirrors** (M5
+  and M6), i.e. the only one that can tell the two collapse directions
+  apart by itself.
+- `resume_refuses_a_plan_whose_registered_interview_cannot_be_resumed`
+  kills none alone, and is **the only `resume_genesis` body in M3's
+  list** — `resuming_the_plan_your_own_interview_wrote_is_not_an_overwrite`
+  is not, because it never drives a non-resumable registry.
+
+**Restoration proved per path after EVERY mutant**: `git checkout --`,
+then sha256 of the working file against `git show HEAD:<path>` from the
+drill's **own** commit — MATCH all thirteen times — plus an EMPTY tracked
+`git diff` at the end and a clean re-run at **281/281, exit 0**. The
+three hashes at `9390b0e`: `docs_watch.rs` `3c7e35f3…`, `agent/mod.rs`
+`8ba0c1e1…`, `agent/sessions.rs` `b905bc42…`. All thirteen mutants
+COMPILED (asserted by the driver), so no "red" is a compile error wearing
+a test failure's clothes. The drill worktree was removed and
+`git worktree prune` run.
+
+**ONE THING IS HONESTLY UNPINNED**: the two `genesis declined:` stdout
+lines and the `genesis reachable:` line. No body in this repository
+captures stdout, so mutating those strings reds nothing. That was true of
+the first pass's line too; it is recorded rather than left for a verifier
+to find.
+
+### Findings routed rather than reached for
+
+- **`T-123-s4` (new, this rebuild)** — the resume offer renders TWO
+  buttons and the second one, *"Start a fresh session"*, calls
+  `genesis_fresh`, which refuses a planned folder **by design**
+  (criterion 7). So on the very folder the offer exists for, one rendered
+  control cannot succeed. It is the same class as the rejection, one
+  screen over, and it is **not introduced by this rebuild** — it has been
+  there since T-029 and only becomes ordinarily reachable now that a
+  planned folder reaches the screen. The fix needs `app-interview` (and
+  `app-agent` if the plan fact must ride the payload), which is OUTSIDE
+  `touches: [app-shell, app-agent]` and was held by the live T-031 lane.
+  Three candidate answers are written on the card, including "leave it".
+- **`T-123-s3` (the verifier's) — POINTER CORRECTED, finding untouched.**
+  It cited `sessions::has_genesis_session`, which this rebuild deletes.
+  The call chain is now `genesis_reachability -> genesis_record -> load`,
+  one read, same rename-aside on the same line, so the finding is
+  **entirely intact and still open**; only the first name in the chain
+  moved. A suggestion whose symbol no longer exists is a pointer nobody
+  can follow, and the correction is marked with its own provenance rather
+  than smuggled in.
+- `T-123-s1` and `T-123-s2` (the first executor's) were re-read and need
+  no correction — neither names a symbol this rebuild moved.
+
+### Prohibitions honoured
+
+Port **1420** was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and
+nothing else, never bind-probed: holder `node` pid **82549**, one socket
+`TCP [::1]:1420 (LISTEN)`. The human's app pid **88272** (started
+2026-08-24 14:02:15) is unchanged, matched with the anchored
+`awk '$NF=="target/debug/nputer"'`. Only scratch ports **15030** (boot
+gate) and **15031** (e2e) of the 15030–15034 range were used — `lsof`
+FIRST (zero rows on all five), then bind-confirmed free on `127.0.0.1`,
+`0.0.0.0`, `::1` and `::` before use. **No `pkill` at any point.** No
+sibling worktree (`../nputer-T-110`, `../nputer-T-010`, `../nputer-T-031`,
+`../nputer-T-096`) was opened; the untracked `z` in the main checkout was
+not touched; **nothing was written in `/Users/ujju/Projects/nputer`**.
+**`~/nputer-genesis-probe` was never opened at all** — every fixture in
+this rebuild is built in a temp directory, and the probe folder's shape
+was taken from the card and the first executor's fixtures rather than
+from the live folder. No real CLI spawn, no model call, no screen
+control; headless throughout. The known load-dependent flake
+`docs_watch::tests::startup_arm_watches_the_initial_root` (T-088-s4)
+**did not fire in any of the runs above** — no re-run, silent or
+otherwise, was performed on any suite.
+
+### Where this brief, the card and the VERDICT were wrong
+
+- **The brief's account of main is stale in the half that matters.** It
+  says main *"has moved to `c6ef751` or later and is docs-only since
+  `cd79f97`"*. Main is **`e27673d`** and it is **NOT docs-only**: T-096
+  merged into `lib/parser`. No figure or gate answer here changes (the
+  diffs are disjoint and `merge-tree` exits 0), but the sentence must not
+  be inherited.
+- **The brief's baseline for cargo — "389/0/3 over 15 result lines" — is
+  right, and it is right for the WRONG REASON if read as a check.** It
+  is *also* what the suite reports with the defect fixed and no new body
+  added. A baseline that cannot move under the change it is guarding is
+  not a check, and this one is the clearest instance the card has
+  produced.
+- **The verdict is right on the defect and slightly under-scoped on the
+  fix.** `record.native_session_id.is_some()` is the correct semantics,
+  but taking only it leaves the accessor's NAME lying and the predicate a
+  `bool` — and a `bool` cannot express "refused" as distinct from
+  "absent", which is the very thing the verdict then asks a third control
+  to demonstrate. The rename and the three-valued type are not polish;
+  they are what makes the requested control assertable.
+- **The verdict says the `if planned` backstop "genuinely closes the
+  fresh-spawn hole" and marks criterion 7 MET as written.** True of the
+  build it judged. After the predicate is fixed at its source that
+  backstop is **unreachable**, and it is removed here rather than kept as
+  an unpinnable guard — a change the verdict did not anticipate and the
+  next verifier should attack directly.
+- **The card's mechanism hop 3 names `pick_project`, which does not
+  exist.** Confirmed for a third time (`git grep 'fn pick_project\b'` at
+  `d46f71f` finds nothing); the first executor's correction and the
+  verifier's independent re-derivation both stand.

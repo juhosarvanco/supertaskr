@@ -13,10 +13,20 @@ routing question acquired on the way to answering.
 folder holding a plan was a pure stat sweep — `probe_plan`, whose own
 header promises it never reads file contents and lists no names, "which
 is what makes it safe to point at a folder a user just chose". The
-registry was never opened for such a folder. T-123 adds
-`sessions::has_genesis_session(&canon)`, which is `genesis_record` ->
-`sessions::load`, and `load` (`app/src-tauri/src/agent/sessions.rs:149`)
-does this when the file does not parse:
+registry was never opened for such a folder. T-123 adds a registry read
+to that decision, and it reaches `sessions::load`, which
+(`app/src-tauri/src/agent/sessions.rs:149`) does this when the file does
+not parse:
+
+> **POINTER CORRECTED by `executor claude-opus-5 @T-123-rebuild`.** This
+> finding was written against the REJECTED first pass, which called
+> `sessions::has_genesis_session(&canon)`. That symbol no longer exists:
+> the rebuild replaced it with `sessions::genesis_reachability(&canon)`,
+> because a `bool` could not tell a REFUSED session id from an absent one.
+> **The finding itself is unchanged and still open** — the call chain is
+> now `genesis_reachability` -> `genesis_record` -> `load`, one read
+> exactly as before, with the same rename-aside on the same line. Only the
+> first name in the chain moved.
 
 ```rust
 let aside = path.with_extension("json.corrupt");
