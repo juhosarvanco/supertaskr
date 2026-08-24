@@ -42,6 +42,31 @@ The stronger consequence is about WRITING:
    and a prune it did not ask for. This lane's drill was added at 13:07
    and removed at 13:11; T-088's was added at 13:29. Eighteen minutes.
 
+4. **A THIRD LANE THEN TOOK THE SAME PATH, WHICH TURNS ONE COINCIDENCE
+   INTO A PATTERN.** At 13:42:53 `git worktree list`, read from THIS
+   lane's worktree, returned five entries — main, the three lane
+   worktrees, and
+   `<scratchpad>/drill  f20f786 (detached HEAD)`, which is **T-090's**
+   drill at T-090's own tip. So within one session three lanes
+   independently chose the identical path, and the registry that would
+   have refused the second of them is visible from all three. **The
+   shared registry is the measured half**: a lane can SEE its siblings'
+   scratch worktrees, which is the same fact `method/lane-protocol.md`
+   already records, read here from the writing side.
+
+## What is measured and what is REASONED, kept apart
+
+The sharing is measured (points 1, 2 and 4 above). **The collision itself
+was deliberately NOT provoked**: forcing it would mean running
+`git worktree add` onto a path another live lane currently holds, and a
+sibling lane's scratch worktree is that lane's property — the one thing a
+fenced lane may not touch. That git refuses an add onto an existing,
+registered path is documented behaviour, not a measurement taken here,
+and this finding says so rather than dressing an inference as a reading.
+Three lanes serially using one path is the observation; the collision is
+the consequence, and it needs nothing more than the two overlapping in
+time.
+
 ## Why it is not merely tidy
 
 The failure is not a corrupted drill — it is a drill that cannot START,
