@@ -513,8 +513,13 @@ NOTICE rather than the ROW hid refusals the block could not name — the
 nameless ones the runner announces precisely so they will not be silent
 — so a turn with two refusals showed one. Suppression is per refusal
 now, keyed on the names the failure block actually printed. One report
-is still duplicated, on the exit-code path, and it is disclosed in the
-code and routed rather than argued away (T-101-s1). What is NOT here:
+was still duplicated, on the exit-code path, and it was disclosed in the
+code and routed rather than argued away (T-101-s1) — **and T-113 closed
+it on 2026-08-24 (`e231e79`), which is what that routing was for**: the
+runner's `permission_denials:` tail note is deleted, so a result-only
+refusal on a failing turn now reaches the screen exactly once, as its own
+notice row, with the failure block no longer repeating the tool name
+underneath. What is NOT here:
 the notice is live-only, so a restart still forgets what the planner was
 refused (T-081-s3, which needs both fences). **@human still owes this
 card one look** — the question T-081 could not ask is now askable.

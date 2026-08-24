@@ -5,14 +5,14 @@ feature: F-03
 milestone: 4
 priority: 57
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [app-agent]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @T-113
 verified_by:
-review:
+review: self-verified
 ---
 
 > **RESOLVED (architect, 2026-08-24).** The drafter's note that stood

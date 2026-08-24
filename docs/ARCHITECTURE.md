@@ -519,7 +519,8 @@ ADR-014/015).
   notice a human would see lives in C-13's chat, outside this fence
   (`T-081-s1`) — **and since T-101 it EXISTS, so the denial channel now
   reaches the screen end to end**; see C-13's entry below for what the
-  screen does with it and for the one report it still duplicates.
+  screen does with it, and T-113's entry for the one report it duplicated
+  until `e231e79` and no longer does.
   **T-070 BOUNDS THE ONE READ IN THIS COMPONENT THAT HAD NO BOUND, and
   like T-081 it moves the GRAPH while moving no IPC.** Since T-029 the
   arrival at the interview screen rehydrated its transcript by reading
@@ -595,18 +596,26 @@ ADR-014/015).
   SCREEN rather than what kind of error it was, and the notice can lose
   a row but can never lose the notice. `denialToolName` gives the
   printed name and the suppression key ONE owner, on T-057's rule.
-  **ONE DEFECT SHIPS, DISCLOSED IN THE CODE.** On the `exitNonZero`
-  path a single result-only refusal is reported twice — once as a notice
-  row and again inside `stderrTail`, where `runner.rs` pushes
+  **ONE DEFECT SHIPPED, DISCLOSED IN THE CODE — AND T-113 CLOSED IT.**
+  *(True as written at T-101's merge `5b80d32`; false as of T-113's merge
+  `e231e79`, corrected in place on T-101's own precedent for T-081's
+  paragraph rather than deleted, because the reasoning is what a later
+  reader needs and only the tense was wrong.)* On the `exitNonZero` path
+  a single result-only refusal WAS reported twice — once as a notice row
+  and again inside `stderrTail`, where `runner.rs` pushed
   `permission_denials: <names>` for the same `unannounced` vector it
-  emits live `Denied` events from. No honest key exists on this side:
+  emits live `Denied` events from. No honest key existed on this side:
   matching the tail's text would put a copy of a `runner.rs` `format!`
   string in `interview-model.ts`, the tail is a bounded 64 KiB RING that
   can hold the note in part, and the empty-`message` proxy is ambiguous
-  on inputs the runner really produces. The fix is a DELETION in C-14
-  and it is routed as `T-101-s1`; the gap is named in `visibleDenials`'
-  own doc comment so the next reader meets it rather than rediscovers
-  it. **No IPC, no grant, no event, no Rust and no store change** —
+  on inputs the runner really produces. **All three reasons still
+  stand, and they are why the fix was C-14's rather than C-13's** — see
+  C-14's T-113 entry below. `T-101-s1` routed it; the seventh triage
+  `6f2f8ea` promoted that finding into `T-113`, which deleted the ring
+  note. `visibleDenials`' doc comment still describes the defect in the
+  present tense and still routes to the removed `T-101-s1` — a stale
+  disclosure of a closed defect, filed as `T-113-s1` because
+  `app/src/genesis/**` was outside T-113's `[app-agent]` fence. **No IPC, no grant, no event, no Rust and no store change** —
   `agent-store.ts` is a 0-file diff, IPC still FOURTEEN at both ends,
   `acl_pin.rs` a 0-file diff at the same 92-grant `8d24cbad…` — but the
   GRAPH moves, the T-081/T-070 shape again: +6 symbols / +9 edges
@@ -617,6 +626,41 @@ ADR-014/015).
   `rehydrate` still writes `denials: []`, and banking a denial record
   needs both `app-agent` and `app-interview` (T-081-s3, unpark condition
   now met).
+
+  **T-113 IS A DELETION, AND WHAT IT DELETES IS ONE OF TWO REPORTS OF ONE
+  FACT.** T-069 gave C-14 a diagnostic ring note — `permission_denials:
+  <names>` pushed into `stderr_tail` — because at that tree NOTHING
+  rendered a denial and a declined diagnosis relayed nothing. T-081 then
+  gave every denial its own live `Denied` event and NARROWED that note to
+  the `unannounced` set. **The narrowing selected exactly the set the
+  emit loop three statements above had just announced**: it removed the
+  note for the denials that did not need it and kept it for the ones that
+  did not either. Latent until T-101 built the second surface, then live
+  — one result-only refusal rendering as a `DenialNotice` row AND inside
+  `FailureBlock`'s verbatim `stderrTail`, which is T-081's own criterion
+  4 (*the same denial shall not be reported twice*) broken by the code
+  written to keep it.
+  **THE ARCHITECTURAL CONTENT IS THAT ONE OF THE TWO REPORTS WAS STRICTLY
+  WEAKER, so this is a deletion rather than a choice between surfaces.**
+  The live events are emitted FROM THE SAME VECTOR, in the same
+  iteration, onto the same channel, so their coverage is identical BY
+  CONSTRUCTION rather than by two lists agreeing; each additionally
+  carries its own `tool_use_id`, which a joined `format!` string cannot
+  spell; and each survives a missing `tool_name`, which `denial_names`'
+  `filter_map` drops — so a refusal the CLI never named contributed
+  NOTHING to the note and the note was never that shape's surface. The
+  note was also the only one of the two that could be LOST: the ring is
+  bounded at `MAX_STDERR_RING` and `stderr_tail` exists only on
+  `ExitNonZero`, so on a turn that SUCCEEDED it reached nobody. **The
+  partition, the `tool_use_id` join and the cumulative
+  `denial_names(&denials)` feeding `TurnError::ToolDenied` are
+  untouched** — the two are different questions, and `ToolDenied` carries
+  no `stderr_tail` field at all. **No IPC, no grant, no event, no store
+  and no graph movement**: IPC still FOURTEEN at both ends reconciled by
+  name, `acl_pin.rs` a 0-file diff at the same 92-grant `8d24cbad…`,
+  `agent-store.ts` a 0-file diff, and the graph is byte-identical because
+  `languages: ["ts"]` still hides `app/src-tauri/src/agent/**` — the
+  T-043/T-069 shape, and the fourth standing argument for T-010.
   area app-agent since T-025,
   where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
   `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and
