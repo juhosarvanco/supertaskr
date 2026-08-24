@@ -1137,10 +1137,29 @@ to find.
 
 Port **1420** was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and
 nothing else, never bind-probed: holder `node` pid **82549**, one socket
-`TCP [::1]:1420 (LISTEN)`. The human's app pid **88272** (started
-2026-08-24 14:02:15) is unchanged, matched with the anchored
-`awk '$NF=="target/debug/nputer"'`. Only scratch ports **15030** (boot
-gate) and **15031** (e2e) of the 15030–15034 range were used — `lsof`
+`TCP [::1]:1420 (LISTEN)`, identical before and after.
+
+**THE HUMAN'S APP DID RELAUNCH, AND THIS LANE DID NOT DO IT — MEASURED
+RATHER THAN CLAIMED EITHER WAY.** Matched with the anchored
+`awk '$NF=="target/debug/nputer"'`, the app was pid **88272** (started
+2026-08-24 14:02:15) at the start of this rebuild and is pid **5686**
+(started **2026-08-25 02:10:08**) at the end, same parent **82364**. The
+cause is on main and is timestamped: **T-010's merge `d64c673` was
+committed at 02:10:07** — one second earlier — and it carries
+`app/src-tauri/crates/nputer-index/**` plus `Cargo.lock`, which is
+`tauri dev`'s restart trigger in the MAIN checkout it watches. This
+lane's own work never touched that tree: every `cargo` invocation ran in
+`../nputer-T-123/app/src-tauri/target`, the drill and the graph forecast
+each had their own `CARGO_TARGET_DIR`, and this lane's `tauri dev` (the
+BOOT GATE) ran in its own worktree on port **15030** and finished at
+**02:05:05**, five minutes before the relaunch, reporting its own process
+tree stopped. **The temptation here was to write "pid unchanged" from the
+figure the first executor recorded and never look again; the pid had
+moved, and the honest account is that another lane's integrator moved
+it.**
+
+Only scratch ports **15030** (boot
+gate), **15031** and **15032** (e2e, before and after the card edits) of the 15030–15034 range were used — `lsof`
 FIRST (zero rows on all five), then bind-confirmed free on `127.0.0.1`,
 `0.0.0.0`, `::1` and `::` before use. **No `pkill` at any point.** No
 sibling worktree (`../nputer-T-110`, `../nputer-T-010`, `../nputer-T-031`,
