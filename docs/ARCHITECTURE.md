@@ -26,7 +26,31 @@ graph TD
 Task `touches:` slugs map here: `app-shell` = C-05 shell/window/watcher
 plumbing · `app-board` = C-05 board pane · `app-map` = C-05 map pane
 (F-06) · `app-interview` = C-13 genesis pane (F-03) · `app-agent` =
-C-14 agent runner (F-03) · `lib-parser` = C-06 · `crate-index` = C-07.
+C-14 agent runner (F-03) · `app-dispatch` = C-15 dispatch (F-04, T-088)
+· `lib-parser` = C-06 · `crate-index` = C-07.
+
+**THAT SENTENCE IS A SIGNPOST AND NOT THE MAP, and this paragraph says
+so because a fence is derived from it.** The AUTHORITY is each component
+file's own `touch_slugs:` field; the line above names the component a
+slug is ABOUT, which is not the same as the set of components that CLAIM
+it. Derived mechanically from `docs/architecture/components/C-*.md` at
+this checkpoint — read the field, never this prose:
+
+    app-agent    -> C-14          app-interview -> C-13
+    app-board    -> C-08, C-09, C-11   app-map  -> C-12
+    app-dispatch -> C-15          app-shell     -> C-05, C-10, C-11
+    crate-index  -> C-07          lib-parser    -> C-06
+
+So **three slugs are claimed by more than one component** and the line
+above understates all three: `app-shell` is C-05 *plus* the docs watcher
+and the design tokens, `app-board` is C-08/C-09/C-11 rather than C-05,
+and `app-map` is C-12 rather than C-05. A fence computed from the prose
+would call two overlapping cards disjoint — the exact failure a fence
+exists to prevent. This is `T-089-s7`'s row-5 finding (the slug map is
+this paragraph plus every component's `touch_slugs:`, named nowhere),
+which rides **T-104**; the derived table above is a stopgap that goes
+stale the day a component file changes, and T-111's frontier is the
+thing that should compute it instead of reading it.
 
 Component intent files: docs/architecture/components/ (same
 C-namespace, one file per mapped component; parsed by C-06 — T-008,

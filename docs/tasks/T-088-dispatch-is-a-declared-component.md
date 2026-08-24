@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 1
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [docs/architecture/components/, lib-parser, app-shell]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @T-088
 verified_by:
-review:
+review: self-verified
 ---
 
 F-04's first card, per `docs/design/dispatch-technical-plan.md` (D1
