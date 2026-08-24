@@ -667,10 +667,26 @@
   by this bullet — the retirement condition it carried, "when T-014's
   `index --check` becomes the gate", is met in the same commit that
   makes `index --check` a CI step): at any merge whose diff touches
-  `*.ts/*.tsx/*.js/*.jsx` outside docs/, regenerate the committed
-  graph — `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test
-  self_graph -- --ignored` — and commit docs/architecture/graph.json
-  **with the CHECKPOINT**. **"The merge's diff" is the PAIR OF COMMITS
+  `*.ts/*.tsx/*.js/*.jsx` **or `*.rs`** outside docs/, regenerate the
+  committed graph — `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index
+  --test self_graph -- --ignored` — and commit docs/architecture/graph.json
+  **with the CHECKPOINT**.
+  **`*.rs` WAS ADDED 2026-08-25 AND THE GAP IT CLOSES WAS LIVE FOR ONE
+  NIGHT** (`T-123-s5`, architect, at main `8776326`). T-010's merge
+  `d64c673` made `Lang::for_extension("rs")` answer `Some`, so Rust joined
+  the walk — and this trigger still named only the four TS/JS suffixes,
+  which is the ONE direction the "deliberately wider than the walk"
+  argument below does not protect: a trigger wider than the walk
+  over-fires harmlessly, a trigger NARROWER than the walk **misses a real
+  movement**. Measured that night by T-123's rebuild, which asked the gate
+  because this bullet told it to rather than reasoning from the suffix
+  list: a Rust-only diff of three files moved the graph **+4 symbols and
+  +1 edge** (890866 → 892093 bytes) while this trigger matched **0 of 9**
+  paths. Two lanes with Rust-only diffs were in flight when it was found.
+  THE STANDING LESSON IS THE ONE THE BULLET ALREADY GAVE: the suffix list
+  is a signpost that goes stale the day a language is added, and
+  `index --check` is the authority — **ASK THE GATE**, which is why the
+  gap cost nothing. **"The merge's diff" is the PAIR OF COMMITS
   THE RANGE RULE above names, and it is not the same pair before the
   merge exists as at it** — that bullet states the reason once for both
   gates, and names the notation that spells the forbidden range while
