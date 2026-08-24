@@ -324,3 +324,38 @@ describe("selectTaskDetail — suggestions (minimal ghost variant)", () => {
     expect(refLabel({ kind: "file", file: path("x") })).toBe(path("x"));
   });
 });
+
+describe("the panel's soft issues (T-031, absorbing T-019-s1)", () => {
+  // ONE body, not two. A first draft split this into "carries the
+  // sentences for THIS file" and "a re-targeted panel never inherits
+  // them"; this lane's drill measured their kill sets IDENTICAL — the
+  // same three mutants, nothing either killed alone — which is shape six
+  // (CONVENTIONS' POISON DRILL bullet): a body that reds under a poison
+  // while killing no mutant another body does not already kill. Merged
+  // rather than kept, on that bullet's second question.
+  it("issues follow the FILE: each task gets its own sentences, and a clean one gets []", () => {
+    const model = parseProjectFromFiles([
+      { path: "docs/ROADMAP.md", content: ROADMAP },
+      { path: path("T-430"), content: task("T-430", [["blocked_by", "[T-777]"]]) },
+      { path: path("T-431"), content: task("T-431") },
+      { path: path("T-432"), content: task("T-432", [["feature", "F-99"]]) },
+    ]);
+    const flagged = selectTaskDetail(model, { kind: "id", id: "T-430" });
+    expect(flagged?.issues).toEqual(
+      model.issues.filter((i) => "file" in i && i.file === path("T-430")).map((i) => i.message),
+    );
+    expect(flagged?.issues.length).toBe(1);
+    expect(flagged?.issues[0]).toContain("T-777");
+
+    // A different file and a different KIND, with no leakage in either
+    // direction — the union of this model's issues is three.
+    const other = selectTaskDetail(model, { kind: "id", id: "T-432" });
+    expect(other?.issues.length).toBe(1);
+    expect(other?.issues[0]).toContain("F-99");
+    expect(other?.issues[0]).not.toContain("T-777");
+
+    // Same model, same call, nothing to say: [] rather than absent,
+    // matching blockedBy/touches — the panel decides on the length.
+    expect(selectTaskDetail(model, { kind: "id", id: "T-431" })?.issues).toEqual([]);
+  });
+});

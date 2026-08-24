@@ -124,6 +124,19 @@ export interface BoardCard {
    * when > 0: zero verdicts (or zero rejections) is ABSENCE, never ×0.
    * The face renders it as the design's `rejected ×N` status word. */
   rejectedCount?: number;
+  /**
+   * The parser's own sentences about THIS card's file (T-019-s1), in
+   * issue order — the soft issues that flag a record without withholding
+   * it (a dangling `blocked_by`, a `feature` outside the backbone, a
+   * malformed optional field). The face wears a mark; the detail panel
+   * lists them verbatim.
+   *
+   * ABSENT, never `[]`, on a clean card — the same absence discipline
+   * `rejectedCount` and `BoardColumn.aliasedWith` take (T-017), so a
+   * consumer asking `card.issues !== undefined` is asking exactly "does
+   * this card have something to disclose".
+   */
+  issues?: string[];
   file: string;
 }
 
@@ -173,6 +186,53 @@ export interface BoardModel {
   empty: boolean;
 }
 
+/**
+ * The parser's issues indexed by the ONE file each names (T-019-s1).
+ *
+ * A pure lens, and the only join between `model.issues` and a card. It
+ * is the board's answer to the gap T-019 left: a flagged record still
+ * renders, so a task whose `blocked_by` dangles looked identical to a
+ * clean one and the reader had to go hunting. `App.tsx`'s aggregate
+ * count and T-077's strip are UNCHANGED and stay the whole-model view —
+ * this is the same facts, one level closer to where the eye already is.
+ *
+ * READ THE FIELD, NEVER THE KIND (the discipline `issueFiles` in
+ * docs-model.ts already states for the strip): `ParseIssue` carries
+ * paths in two shapes, and this lens joins on the SINGULAR `file` — the
+ * issues that are ABOUT one record. The cross-file kinds (`duplicate-id`,
+ * `aliased-id`, `dependency-cycle`, `ambiguous-mapping`) carry `files`
+ * and are deliberately NOT joined here: they are statements about a
+ * RELATION between records, they already have their own surfaces (the
+ * column's `aliasedWith` for a padding-aliased backbone, T-097; T-077's
+ * strip for all of them), and marking two cards with a sentence about
+ * their pair would say something neither card's file is wrong. Widening
+ * to `files` is a separate decision with its own design question, filed
+ * rather than taken (T-031-s2).
+ *
+ * ADR-009: keyed by a path read off disk — a Map, never an object
+ * literal. Messages are the parser's own, VERBATIM: the board is a
+ * reading surface, never a summary (T-005).
+ */
+export function issuesByFile(issues: readonly ParseIssue[]): Map<string, string[]> {
+  const byFile = new Map<string, string[]>();
+  for (const issue of issues) {
+    // `in` narrows the union structurally, so a kind added tomorrow that
+    // carries `file` joins the day it lands — no list to remember.
+    const file = "file" in issue ? issue.file : undefined;
+    if (file === undefined) continue;
+    const existing = byFile.get(file);
+    if (existing === undefined) byFile.set(file, [issue.message]);
+    else existing.push(issue.message);
+  }
+  return byFile;
+}
+
+/** `{ issues }` when the file has any, `{}` when it does not — the
+ * `spreadAlias` shape, so a clean card never grows the key at all. */
+function spreadIssues(issues: string[] | undefined): { issues?: string[] } {
+  return issues === undefined || issues.length === 0 ? {} : { issues };
+}
+
 const isDoneish = (status: TaskStatus): boolean => status === "done" || status === "merging";
 
 function modelBadge(task: TaskRecord): ModelBadgeInfo | undefined {
@@ -183,9 +243,10 @@ function modelBadge(task: TaskRecord): ModelBadgeInfo | undefined {
   return { short: shortModelName(chosen.model), full: chosen.raw };
 }
 
-function toCard(task: TaskRecord): BoardCard {
+function toCard(task: TaskRecord, issues: Map<string, string[]>): BoardCard {
   const rejections = rejectedVerdictCount(task.sections.verdicts);
   return {
+    ...spreadIssues(issues.get(task.file)),
     key: task.file,
     id: task.id,
     title: task.title,
@@ -299,6 +360,8 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
   const byFeature = new Map<string, MutableColumn>();
   const featureColumns: MutableColumn[] = [];
   const aliasedWith = featureAliasIndex(model.issues);
+  // T-019-s1: one pass over the issues, joined to cards below by file.
+  const issuesByPath = issuesByFile(model.issues);
 
   for (const feature of model.features) {
     if (byFeature.has(feature.id)) continue; // duplicate backbone id: first wins, issue already flagged
@@ -368,7 +431,7 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
     // `app/test/board-truth.test.tsx`.
     const column =
       (task.feature !== undefined ? byFeature.get(task.feature) : undefined) ?? unmapped;
-    const card = toCard(task);
+    const card = toCard(task, issuesByPath);
     if (task.status === "parked") {
       column.parked.push(card);
     } else if (task.status === "suggested") {

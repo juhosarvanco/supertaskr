@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
 import {
+  issuesByFile,
   selectBoard,
   shortModelName,
   statusVisual,
@@ -664,5 +665,76 @@ describe("selectBoard — empty states", () => {
         file: path("T-011"),
       }),
     ]);
+  });
+});
+
+describe("soft issues join to their card by file (T-031, absorbing T-019-s1)", () => {
+  // The lens is `issuesByFile`, and it is the ONE join between
+  // `model.issues` and a card — the board face and the detail panel both
+  // read it, so a mark and a list can never disagree (verdicts.ts's
+  // rule, applied to a second derivation).
+  const model = withRoadmap([
+    [path("T-410"), task("T-410", "F-01", 1, "planned", [["blocked_by", "[T-999, T-01]"]])],
+    [path("T-411"), task("T-411", "F-99", 2)],
+    [path("T-412"), task("T-412", "F-01", 3)],
+  ]);
+
+  const cardById = (board: BoardModel, id: string) =>
+    board.columns.flatMap((c) => c.cards).find((c) => c.id === id);
+
+  it("indexes every issue that names ONE file, in issue order, keyed by that file", () => {
+    const index = issuesByFile(model.issues);
+    expect([...index.keys()].sort()).toEqual([path("T-410"), path("T-411")]);
+    expect(index.get(path("T-410"))).toEqual(
+      model.issues
+        .filter((i) => "file" in i && i.file === path("T-410"))
+        .map((i) => i.message),
+    );
+    expect(index.get(path("T-410"))?.length).toBe(2);
+    // The messages are the parser's own, verbatim — never rewritten.
+    expect(index.get(path("T-411"))?.[0]).toContain("F-99");
+    // The clean file is ABSENT from the index rather than mapped to [].
+    expect(index.has(path("T-412"))).toBe(false);
+  });
+
+  it("reads the FIELD, not the kind: a cross-file issue carrying `files` joins to nobody", () => {
+    // A duplicate id is a statement about a PAIR of records, so neither
+    // card's own file is wrong and neither wears the mark. The pair has
+    // its own surfaces already (the column's aliasedWith, T-097; the
+    // header strip, T-077).
+    const duplicates = withRoadmap([
+      [path("T-420"), task("T-420", "F-01", 1)],
+      [path("T-420-b"), task("T-420", "F-01", 2)],
+    ]);
+    const cross = duplicates.issues.filter((i) => i.kind === "duplicate-id");
+    expect(cross.length).toBe(1); // positive control: it really is reported
+    expect(issuesByFile(duplicates.issues).size).toBe(0);
+    // …and the board still renders both records, flagging not hiding.
+    expect(selectBoard(duplicates).columns[0]?.cards.length).toBe(2);
+  });
+
+  // ONE body, not two. A first draft added "the join adds a surface and
+  // never a filter" beside this; the drill measured its kill set to be a
+  // strict SUBSET of this one's, which is shape six. The arithmetic it
+  // asserted is worth keeping and is folded in below, where it costs no
+  // second body.
+  it("a flagged card carries its own messages, a clean card omits the key, and nothing is dropped", () => {
+    const board = selectBoard(model);
+    expect(cardById(board, "T-410")?.issues?.length).toBe(2);
+    expect(cardById(board, "T-411")?.issues?.[0]).toContain("F-99");
+    // ABSENT, never [] — the aliasedWith/rejectedCount discipline, so
+    // `toStrictEqual` and `in` agree with the doc comment.
+    const clean = cardById(board, "T-412");
+    expect(clean?.issues).toBeUndefined();
+    expect("issues" in (clean ?? {})).toBe(false);
+
+    // The join is a SURFACE, never a filter: every issue in the model
+    // that names a card's file reaches that card, and every card is
+    // still on the board. The header's own count reads model.issues
+    // directly, and this is the selector-level half of that pin.
+    const marked = board.columns.flatMap((c) => c.cards).flatMap((c) => c.issues ?? []).length;
+    expect(model.issues.length).toBe(3);
+    expect(marked).toBe(3);
+    expect(board.columns.flatMap((c) => c.cards).length).toBe(3);
   });
 });

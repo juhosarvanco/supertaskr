@@ -384,3 +384,59 @@ describe("updates ride the existing store (no polling, no new IPC)", () => {
     expect(q("[data-testid=genesis-pane]")?.getAttribute("data-stage")).toBe("5");
   });
 });
+
+// ---- T-031 (T-024-s4): the pane's one unbounded text surface -----------
+
+describe("the north-star title contains a mid-write vision", () => {
+  // Every other text surface here is bounded — chips clip at CHIP_CLIP on
+  // a word boundary, artifact rows and backbone names carry `truncate`.
+  // This one is not, and `firstSentence` returns the WHOLE collapsed blob
+  // when the vision holds no `.`, `!` or `?` — which a NORTH_STAR.md
+  // caught mid-write routinely does, since the terminator arrives after
+  // the prose. Rendering that state live is what this pane is FOR.
+  const UNBROKEN = "V".repeat(10_000);
+
+  const visionState = (vision: string): DocsModelState =>
+    docsState([
+      {
+        path: "docs/NORTH_STAR.md",
+        content: `# North star\n\n## Vision\n${vision}\n`,
+      },
+    ]);
+
+  it("an unterminated 10k-char vision renders WHOLE, wrapped, with nothing clipped", () => {
+    renderPane(visionState(UNBROKEN), () => 0);
+    const title = q("[data-testid=genesis-north-star-title]");
+    // Positive control first: firstSentence really did hand the whole
+    // blob through, so this is containment and not an empty fixture.
+    expect(title?.textContent).toBe(UNBROKEN);
+    expect(title?.children.length).toBe(0); // one text node
+
+    // T-017's treatment, not a third policy.
+    expect(title?.classList.contains("break-words")).toBe(true);
+    expect(title?.classList.contains("min-w-0")).toBe(true);
+    // …and DELIBERATELY not clipped: the design's hero line is one
+    // sentence, and a clipped hero reads worse than a wrapped one.
+    for (const clamp of ["truncate", "text-ellipsis", "overflow-hidden", "whitespace-nowrap"]) {
+      expect(title?.classList.contains(clamp)).toBe(false);
+    }
+    // The flex ancestor the utility needs to actually constrain.
+    expect(q("[data-testid=genesis-north-star]")?.classList.contains("min-w-0")).toBe(true);
+  });
+
+  it("an ordinary terminated vision wears the same containment (the utility is unconditional)", () => {
+    renderPane(visionState("A habit tracker that lives in the terminal. More prose."), () => 0);
+    const title = q("[data-testid=genesis-north-star-title]");
+    expect(title?.textContent).toBe("A habit tracker that lives in the terminal.");
+    expect(title?.classList.contains("break-words")).toBe(true);
+  });
+
+  it("the surfaces that ARE bounded stay bounded — this changes one of them, not all", () => {
+    // The discriminating half: `truncate` is still the answer for the
+    // backbone names and artifact rows, so this is a targeted exception
+    // rather than a policy change across the pane.
+    renderPane(docsState(fixtureTree("streak")), () => 50_000);
+    const built = qa("[data-testid=genesis-feature]")[0];
+    expect(built?.querySelector(".truncate")).not.toBeNull();
+  });
+});

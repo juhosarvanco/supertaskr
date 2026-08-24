@@ -234,16 +234,34 @@ export function GenesisPane({ docs, now }: { docs: DocsModelState; now?: () => n
       )}
 
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6.5 py-5.5">
+        {/* T-031 (T-024-s4): this card's title is the pane's ONE unbounded
+            text surface. Every other one is bounded — chips clip at
+            CHIP_CLIP characters on a word boundary, artifact rows and
+            backbone names carry `truncate` — while
+            `northStar.title = firstSentence(vision)` returns the WHOLE
+            collapsed blob when the vision holds no `.`, `!` or `?`, which
+            a NORTH_STAR.md caught mid-write routinely does: the sentence
+            terminator arrives after the prose, and rendering that state
+            live is the entire point of this pane.
+            The treatment is T-017's, not a third policy — `break-words`
+            plus `min-w-0` on the flex ancestor, and deliberately NO
+            `truncate`/`line-clamp`, because the design's hero line is one
+            sentence and a clipped hero reads worse than a wrapped one.
+            Whether it should ALSO clip is a design call, not a
+            correctness one. */}
         <div
           data-testid="genesis-north-star"
-          className="flex flex-col gap-2.25 rounded-lg border border-border bg-card px-5 py-4.5 shadow-card"
+          className="flex min-w-0 flex-col gap-2.25 rounded-lg border border-border bg-card px-5 py-4.5 shadow-card"
         >
           <span className={OVERLINE}>north star</span>
           {model.northStar === null ? (
             <span className="text-sm text-muted-foreground">forming…</span>
           ) : (
             <>
-              <span className="text-2xl font-semibold tracking-heading text-foreground">
+              <span
+                data-testid="genesis-north-star-title"
+                className="min-w-0 text-2xl font-semibold tracking-heading break-words text-foreground"
+              >
                 {model.northStar.title}
               </span>
               {model.northStar.chips.length > 0 && (
