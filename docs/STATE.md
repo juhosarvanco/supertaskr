@@ -21,14 +21,25 @@ scratch worktree and not a lane (the T-089 correction in CONVENTIONS).
 Four scratch worktrees belonging to other lanes' verifiers were live
 beside these and hold no fence.
 
-| lane | fence (`touches:`) | worktree tip | where it is |
-|---|---|---|---|
-| **T-123** | `[app-shell, app-agent]` | `02a1b29` | rebuild in flight after a REJECTED verdict — the first fix introduced a second dead end |
-| **T-110** | `[app-dispatch]` | `6fea6a1` | under independent verification |
-| **T-010** | `[crate-index, docs/architecture/components/]` | `cb13957` | under independent verification — the Rust extraction, which takes the graph to roughly 89% of its size budget |
-| **T-031** | `[app-board, app-interview]` | `765362e` | building |
+| lane | fence (`touches:`) | where it is |
+|---|---|---|
+| **T-123** | `[app-shell, app-agent]` | rebuild in flight after a REJECTED verdict — the first fix introduced a second dead end |
+| **T-110** | `[app-dispatch]` | under independent verification |
+| **T-010** | `[crate-index, docs/architecture/components/]` | under independent verification — the Rust extraction, which takes the graph to roughly 89% of its size budget |
+| **T-031** | `[app-board, app-interview]` | building |
 
-**THE BOARD CANNOT TELL YOU THE THIRD COLUMN AND THIS CHECKPOINT SAYS SO
+**THERE IS NO TIP COLUMN, AND ITS ABSENCE IS THE POINT — THIS TABLE
+CARRIED ONE FOR EIGHT MINUTES AND IT WENT STALE INSIDE THE CHECKPOINT
+THAT WROTE IT.** Tips read at the merge were T-123 `02a1b29`, T-110
+`6fea6a1`, T-010 `cb13957`, T-031 `765362e`; by the time this lane's own
+worktree was removed, three of the four had moved (`895324a`, `6fea6a1`,
+`9cce194`, `fe7ffc6`). **A live lane's tip is a live-environment fact, not
+a function of a tree**: it changes while you are writing about it, and a
+checkpoint is exactly the wrong place to freeze one. What is stable is
+WHICH lanes hold WHICH fences, which is what this table now carries. For a
+tip, run `git worktree list` — it takes a second and it is never wrong.
+
+**THE BOARD CANNOT TELL YOU THE LAST COLUMN AND THIS CHECKPOINT SAYS SO
 RATHER THAN PRETENDING OTHERWISE.** All four cards read `status: building`
 with an empty `verifier:` — derived from disk here — so "under
 independent verification" and "rebuild after a rejection" come from the
