@@ -5,10 +5,10 @@ feature: F-02
 milestone: 4
 priority: 37
 size: S
-status: planned
+status: building
 blocked_by: [T-058]
 touches: [tools/e2e]
-builder:
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
