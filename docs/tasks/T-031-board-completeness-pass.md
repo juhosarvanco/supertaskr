@@ -288,3 +288,245 @@ surfaces in the same class), `T-031-s4` (C-05 claims `app/test/**` for
 it — derived at `765362e` by walking every merge on main).
 
 ## Verdicts
+
+2026-08-25 — `claude-opus-5 @T-031-verify` (independent verifier):
+**APPROVED.** Six of seven criteria are met and I did not take that on a
+class list — every criterion here is a claim about LAYOUT, so I measured
+CONTAINERS in real Chromium at 1280×720 with a positive control on every
+negative assertion. Criterion 3 is NOT built; the fence reason is
+correct, I re-derived it from the registry rather than reading it, and it
+is routed as a real file. Verified in a detached scratch worktree
+`drill-T-031-verify` at `75afa0a`; the lane's own worktree was never
+built in or tested in.
+
+**THE BLINDNESS WAS TAKEN BY THE REF.** The spec was read at the BASE
+`765362e` (`git show 765362e:docs/tasks/…`), and the whole attack below —
+fixture, measurements, ablations and all seventeen mutants — was formed
+AND RUN before the lane's implementation notes or test files were opened.
+
+**SUITES, at the tip `75afa0a`, every exit off its own `$?` on an
+unpiped command.** app `npm run build` **0** then `npm test`
+**958/958 across 46 files, exit 0**; lib/parser `npx vitest run`
+**263/263 across 12, exit 0** and `npx tsc --noEmit` **0**; tools/e2e
+`npm test` **143/143, exit 0** on scratch port 15060, `npm run typecheck`
+**0**, `npm run lint:tokens -- --selftest` **0**, `npm run lint:tokens`
+**0**; `cargo test` **0**; `NPUTER_BOOT_PORT=15061 npm run boot:check`
+**0**, both `[nputer]` lines.
+
+**THE MEASUREMENT, NOT THE CLASS.** jsdom does no layout, so the lane's
+own pins can only hold a class contract — which the notes say honestly.
+I drove a hostile docs tree through `__nputerDocsHarness` into the real
+bundle and read `scrollWidth`/`clientWidth`/`getBoundingClientRect`:
+
+| criterion | measured | positive control |
+|---|---|---|
+| 1 board | hostile column **377px == clean column 377px**, column overflow **0**, page 1280 == viewport | 10k title and 10k `suggested_by` both whole in the DOM |
+| 1 panel | panel `scrollWidth − clientWidth` = **0** with a 10k title, 10k blocker id, 10k touches slug and two 10k stamps live | each surface's `textContent.length` asserted first |
+| 1 ref line | id-less ghost, **916-char** file path in `detail-ref` and in the footer, panel overflow **0** | length pinned to the path's own length |
+| 2 verdicts | verdict body `scrollWidth` **74 398 > clientWidth**, `overflow-x: auto`, panel overflow **0** — it SCROLLS IN PLACE | the 10k REJECTED repro is in the DOM |
+| 5 genesis | north-star card overflow **0**, page 1280 | `firstSentence` returned the whole **10 000**-char blob |
+| 6 badge | badge **96px** (`max-w-24`), badge `scrollWidth > clientWidth` (clipping), hostile card **377px == clean card 377px** | full raw stamp on `title=` |
+
+**AND THE ADJACENT FEATURE THE SWEEP COULD HAVE BROKEN DID NOT BREAK.**
+`detail-ref` deliberately lost `shrink-0`. With a 10k title beside it, an
+ordinary `T-902` still lays out in **one** client rect — it does not wrap
+mid-id. The notes' claim that ordinary ids are too short for the shrink
+to reach them is measured, not asserted.
+
+**CRITERION 4 — I ATTACKED THE JOIN AND IT HELD.** Two files differing
+ONLY in the case of their slug (`T-906-alpha.md`, `T-906-ALPHA.md`), both
+declaring `id: T-906`: the DIRTY one wears `data-issue-count="3"`, the
+CLEAN case twin wears **no mark at all**. A `./`-prefixed path draws
+**zero** cards, so there is no join asymmetry to exploit. One issue gives
+`data-issue-count="1"` with `aria-label="1 parser issue on this file"`;
+a clean card has no mark and its panel grows **no** issues section.
+**THE AGGREGATE DID NOT MOVE**: the header still counts the whole model,
+strictly more than the sum of the per-card marks, because the cross-file
+kinds the lens correctly skips are still in it.
+
+**SECURITY SWEEP — ALL CLEAR, BOTH WAYS.** Source: **zero**
+`dangerouslySetInnerHTML`, `innerHTML`, `insertAdjacentHTML`, `eval`,
+`__html`, `href=` or `src=` in the added lines; zero secrets; **zero**
+dependency additions (no manifest in the diff). Runtime: an
+`<img src=x onerror=…>`, an attribute-breakout string
+(`" onmouseover="…`) and a `javascript:` URL driven through `title`,
+`blocked_by`, `touches`, `built_by`, `verified_by`, `suggested_by` and a
+verdict body all reached the DOM as **text nodes only** — 0 `<img>`,
+0 elements carrying an injected attribute, 0 `javascript:` hrefs, no
+handler fired — with the literal `<img src=x` visible as text as the
+positive control. `ModelBadge` has exactly **one** consumer, so its new
+bound cannot reach another surface.
+
+**TOKENS — ZERO NEW, BOTH SCHEMES, MEASURED IN THE BROWSER.**
+`app/src/styles/tokens.css` is a **0-file diff** and no added line
+carries an arbitrary value. Every utility resolves in the compiled sheet:
+`break-words -> break-word`, `min-w-0 -> 0px`, `max-w-24 -> 96px`,
+`truncate -> ellipsis`, `overflow-x-auto -> auto`,
+`whitespace-pre-wrap -> pre-wrap`, `shrink-0 -> 0`, `font-bold -> 700`,
+`px-3.75 -> 15px`, `py-2.5 -> 10px`, `gap-1.5 -> 6px`, and the three
+colour utilities to real colours. **The probe carries its own negative
+control** — `max-w-999999` resolves to `none`, so it can tell a live
+utility from a dead one. Both schemes, off the rendered mark's own
+computed style: light `--warning rgb(179,96,10)`, dark `rgb(240,166,60)`;
+chip bg `rgb(253,244,232)` / `rgb(28,22,8)`; chip border
+`rgb(230,196,154)` / `rgb(90,67,24)`.
+
+**THE POISON DRILL — SEVENTEEN MUTANTS OF MY OWN, SEVENTEEN REDS, ZERO
+SURVIVORS.** Derived from the CRITERIA with the lane's test files
+unopened. One side only, always the PRODUCER, never a shared literal.
+Driver `t031-verify-drill.sh` (per-lane named, `T-088-s3`) REFUSES any
+path outside the drill, REFUSES a test file without `--allow-test` and
+requires a substitution count of exactly 1 — all three refusals were
+exercised as self-checks. The mutated TEXT was read back with
+`git diff --unified=0` BEFORE every suite run. Baseline **958/958,
+exit 0**.
+
+**ONE CONTAMINANT WAS FOUND AND REMOVED RATHER THAN LIVED WITH**: three
+`is not stale: the build is at least as new as …` bodies compare source
+mtimes against `app/dist`, and `git checkout` bumps an mtime, so after
+the first restore they redden on every subsequent mutant regardless of
+the mutation. Touching `app/dist` before each run returns the ambient to
+**958/958, exit 0**, and every count below is against that control.
+
+| # | mutation (producer only) | reds | the body it kills |
+|---|---|---|---|
+| M1 | GhostCard provenance loses `break-words` | 1 | the ghost's provenance line wraps a 10k-char `suggested_by`, whole |
+| M2 | panel `h2` loses `break-words` | 1 | the panel's h2 title and its id/ref line both wrap |
+| M3 | touches `li` loses `break-words` | 1 | both blocker chips, the touches slugs, the stamps and the file footer wrap |
+| M4 | `Stamp`'s `dd` loses `break-words` | 1 | (the same body as M3) |
+| M5 | `detail-ref` loses `min-w-0` | 1 | (the same body as M2) |
+| M6 | `detail-ref` reverted to the pre-lane `shrink-0` | 1 | (the same body as M2) |
+| M7 | `VerdictBlock` loses `overflow-x-auto` | 1 | the REJECTED repro's text container scrolls in place instead of widening the panel |
+| M8a | `spreadIssues` returns `{}` always | **4** | both face bodies, the aggregate body, the lens body |
+| M8b | `selectTaskDetail`'s `issues` becomes `[]` | **2** | both panel-list bodies |
+| M9 | the lens widened to join `files` as well | 1 | reads the FIELD, not the kind |
+| M10 | north-star title loses `break-words` | **2** | both north-star bodies |
+| M11 | north-star card loses `min-w-0` | 1 | the unterminated 10k vision body |
+| M12 | `ModelBadge` loses `max-w-24` | 1 | the model badge is bounded (T-024-s6) |
+| M13 | `ModelBadge` loses `truncate` | 1 | (the same body) |
+| M14 | `ModelBadge` loses `min-w-0` | 1 | (the same body) |
+| M16 | `data-issue-count` off by one | 1 | the flagged card wears a mark carrying its own messages |
+| M17 | the panel's issues section never renders | 1 | the panel lists the parser's own sentences VERBATIM |
+
+**SHAPE SIX, ASKED RATHER THAN ASSUMED, and the answer is good in the
+direction that matters**: M8a reds the face and aggregate bodies and NOT
+the panel bodies, M8b reds the panel bodies and NOT the face bodies, and
+M9 reds only the field-vs-kind body — so each of criterion 4's three
+halves has its own killer and none is a duplicate of another.
+Restoration proved THREE ways: per-path `sha256` against the drill's own
+commit after every mutant (**17 MATCH, 0 MISMATCH**), an empty tracked
+`git diff` at the end, and a clean re-run at **958/958, exit 0**. All
+eight touched source files sha256-MATCH `75afa0a`.
+
+**CRITERION 3 IS NOT BUILT, IT IS LIVE-BROKEN, AND THE FENCE RULING IS
+CORRECT.**
+
+`app/src/lib/verdicts.ts` and `app/test/detail-presentation.test.ts` are
+both **0-file diffs**. I did not take the routing on the notes' word.
+
+**THE DEFECT IS REAL AND I MEASURED IT.** A card whose `## Verdicts`
+carries ONE column-0 rejection plus two verbatim quotes of earlier
+headers renders `data-rejected-count="2"` and splits into **2** panel
+entries, both tinted `rejected`. **Only ONE of the two quote forms the
+criterion names is actually broken**: `VERDICT_DATE.test(line.trim())`
+means an INDENTED quote starts a new entry, while a blockquote `>` quote
+already folds correctly, because `>` survives `.trim()` and fails
+`^\d{4}-\d{2}-\d{2}`. The criterion asks for both to be PINNED; one of
+the two needs only the pin.
+
+**THE FENCE, RE-DERIVED FROM THE REGISTRY AT MY OWN REF.**
+`docs/architecture/components/C-05-app.md` lists `app/src/lib/verdicts.ts`
+in `paths:` and carries `touch_slugs: [app-shell]`. This card's fence is
+`[app-board, app-interview]`, which resolves to C-08/C-09/C-11 and C-13 —
+**none of which claims `verdicts.ts`**. STATE records `app-shell` as held
+by the live lane T-123 at dispatch, so widening was not available either.
+The routing is correct, and `T-031-s1` is a REAL file with legal
+frontmatter and `suggested_by:` set — the docs gate parses all four.
+This is the disposition main already has two precedents for (T-010's
+verdict; T-101's checkpoint).
+
+**AND THE FIX IS UNPINNED IN BOTH DIRECTIONS, WHICH THE NEXT LANE SHOULD
+KNOW.** I applied the one-token fix (`line.trim()` -> `line`) in the
+drill: the app suite stays at **958/958, exit 0**. Nothing in the tree
+pins the current broken behaviour, and nothing would catch the fix — so
+`T-031-s1`'s lane owes the pins as much as the token.
+
+**THE LANE'S OWN app/test/** EDITS ARE NOT A FENCE BREACH**, derived
+rather than accepted: criterion 1 of this very card commissions "a
+board-truth-style class pin per surface", and `board-truth.test.tsx`
+lives in `app/test/`. Walking the 20 most recent merges that touched
+`app/test/**`, six were fenced without `app-shell` — T-097 `[app-board]`
+(this card's exact fence shape), T-070, T-072, T-081, T-056 and T-029.
+`T-031-s4` carries the registry disagreement, correctly.
+
+**ONE CLAIM IN THE SHIPPED SOURCE IS REFUTED BY MEASUREMENT.**
+
+`ModelBadge.tsx`'s header says *"All three parts are load-bearing
+together … `max-w-24` alone loses to that same automatic minimum (min
+beats max in the cascade)"*, and the notes repeat it. **Measured, that is
+false for `min-w-0`.** Ablating one class at a time on a live compound
+stamp:
+
+| ablation | badge | card `scrollWidth` / `clientWidth` | column |
+|---|---|---|---|
+| as shipped | 96px | 375 / 375 | 377px |
+| `truncate` removed | 96px | **3346** / 375 | 377px |
+| `max-w-24` removed | **304px** | 375 / 375 | 377px |
+| `min-w-0` removed | 96px | 375 / 375 | 377px |
+| all three removed | 3314px | **3374** / 375 | 377px |
+
+`truncate` and `max-w-24` are each load-bearing; removing `min-w-0`
+alone changes **nothing at any level**. The mechanism is the opposite of
+the one stated: per CSS Flexbox §4.5 a flex item's automatic minimum size
+is clamped by its specified `max-width`, so `max-w-24` already defeats
+`min-width: auto` and `min-w-0` is redundant on this element. The same
+ablation over the panel shows `min-w-0` load-bearing on the `h2`, the ref
+line and the `Stamp` `dd` (which sit in ROW flex contexts) and inert on
+the touches slug, the blocker chip, the file footer and the genesis
+north-star card (COLUMN flex, where the inline axis is not constrained).
+`min-w-0` on the genesis ancestor is card-mandated by criterion 5, so it
+stays regardless.
+
+**THIS IS NOT A FAILURE AND DOES NOT BLOCK.** The criterion is that the
+badge SHALL be bounded, and it is — 96px, clipping, card unmoved, raw
+stamp preserved on `title=`. What is wrong is a justification, and the
+pin cannot tell the three classes apart (M12/M13/M14 all red the same
+single body). Filed as **`T-031-s5`** with the table and the
+discriminating remedy.
+
+**FIGURE CORRECTED.** The notes report the token lint at *"TOKEN 131 /
+CONTROL 611"*. At the tip it is **TOKEN 131 / CONTROL 615**: CONTROL
+derives from `git ls-files`, the base `765362e` holds 629 tracked files
+and the lane 633, so the reading was taken while the four suggestion
+files were still untracked — the T-010-s10 hazard, one gate over. The
+lint is clean either way and the card itself calls the figure printed and
+never pinned.
+
+**GATES, DERIVED AT MY OWN REF.** `merge-tree --write-tree d64c673
+75afa0a` exits **0** -> tree `3f0faa7b…`; `git diff --name-only d64c673
+3f0faa7b…` is **16 paths**. GRAPH REGEN: **11 of 16 FIRE** (7 `app/src`
++ 4 `app/test`). BOOT GATE: **7 of 16 FIRE** — run, exit 0. DOCS GATE:
+**5 of 16 FIRE**, exit 1, THREE suites owed (app, tools/e2e, lib/parser),
+all three green above; 12 derived readers across 4 suites, **0
+frontmatter issues**. **The lane's graph delta is HONEST and carries no
+T-010 contamination**, because I asked it at the LANE TIP rather than
+against a moving main: committed `648863 bytes · 126 files · 1126 symbols
+· 1712 edges` -> fresh `652661 · 126 · 1137 · 1718`, `files +0 −0 ~11`,
+`edges +8 −2` — and the eleven named files are exactly this lane's
+eleven, nothing else. The regen is the integrator's at the checkpoint,
+against endpoints T-096's checkpoint and T-010's merge have both moved.
+
+**@HUMAN — the three looks the notes name are correct and I add none.**
+The mark's amber ink against six status fills in both schemes; the
+`issues` section sitting first in the panel body; the `max-w-24` clip at
+roughly ten mono characters. All three are taste or perception, not
+measurement, and this pass deliberately looked at no screen.
+
+**PROCESS.** 1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` only,
+before and after — holder `node` pid 82549, one socket `TCP [::1]:1420
+(LISTEN)`, identical. Scratch ports 15060/15061/15062 were `lsof`-read
+first (zero rows), bind-confirmed free on `127.0.0.1`, `0.0.0.0`, `::1`
+and `::`, and all three are free again. No `pkill`. No screen control, no
+model call, no CLI spawn. `CARGO_TARGET_DIR` was set inside the
+scratchpad, so the human's shared `target/` was never written. The
+untracked `z` was left alone.
