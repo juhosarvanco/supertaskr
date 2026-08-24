@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 46
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [tools/e2e, .github/, docs/CONVENTIONS.md]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @T-090
 verified_by:
-review:
+review: self-verified
 ---
 
 Absorbs (seventh triage, 2026-08-24): T-061-s3, T-064-s7, T-101-s3, T-061-s5 — files removed in this commit.
