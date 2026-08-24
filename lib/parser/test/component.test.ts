@@ -754,6 +754,75 @@ describe('parseComponentsFromFiles — ambiguous mapping (provable glob overlap)
     ]);
   });
 
+  it('the DECLARED WINNER is id order at EVERY id length, never file order (T-096)', () => {
+    // T-076 fixed `compareComponentIds` and pinned `compareComponentIds`.
+    // The property that fix exists to protect lives one layer out, at the
+    // CONSUMER: the winner this issue DECLARES — "first by id, '<id>',
+    // wins file mapping" — is the smaller id however long the digit run.
+    // The sort site is `compareComponentIds(a.id, b.id) || <file order>`,
+    // and `NaN` IS FALSY, so the moment the comparator cannot weigh two
+    // ids numerically the tiebreak swallows the NaN and the declared
+    // winner silently becomes the id in the first-sorting FILE —
+    // deterministic, reproducible, and wrong. Every other pin on this
+    // issue uses two- and three-digit ids, where the branch-point and the
+    // fixed comparator agree on every pair, so none of them can tell the
+    // two bodies apart.
+    //
+    // ONE ARRANGEMENT CANNOT SAY THIS. The same two ids are parsed TWICE
+    // with the spellings swapped between two file names that sort in
+    // OPPOSITE orders, so an implementation that answers with the file
+    // order agrees with only one of the two runs. The digits are chosen so
+    // STRING order also DISAGREES with id order ('9…' sorts after '1…'
+    // while 400 digits are fewer than 401), which makes this discriminate
+    // a fall-through to the string fallback as well as the file tiebreak.
+    //
+    // ITS TWIN ON THE OTHER CONSUMER of this comparator is the body
+    // "the slot's OWN ids array is ordered past the double range too
+    // (T-076)" above. That one T-076 built; this one it did not, which is
+    // why a mutant restoring the pre-T-076 comparator AT THIS SORT SITE
+    // ALONE survived the entire suite.
+    const smaller = `C-${'9'.repeat(400)}`; // 400 digits
+    const larger = `C-${'1'.repeat(401)}`; // 401 digits — the longer run is greater
+    const declared = (
+      inAaa: string,
+      inZzz: string,
+    ): { ids: string[]; files: string[]; message: string } => {
+      const result = parseComponentsFromFiles(
+        new Map([
+          // Identical patterns: the overlap is provable from the pattern
+          // text alone, so nothing here depends on glob semantics.
+          [path('C-aaa.md'), componentSrc(inAaa, ['app/src/**'])],
+          [path('C-zzz.md'), componentSrc(inZzz, ['app/src/**'])],
+        ]),
+      );
+      const ambiguous = result.issues.filter((i) => i.kind === 'ambiguous-mapping');
+      expect(ambiguous).toHaveLength(1);
+      const issue = ambiguous[0];
+      return issue !== undefined && issue.kind === 'ambiguous-mapping'
+        ? { ids: issue.ids, files: issue.files, message: issue.message }
+        : { ids: [], files: [], message: '' };
+    };
+
+    const smallerInFirstFile = declared(smaller, larger);
+    const smallerInLastFile = declared(larger, smaller);
+
+    // A POSITIVE CONTROL that these really are two different arrangements
+    // and not the same one run twice: the WINNER'S FILE moves between the
+    // runs. Without it a fixture that quietly stopped swapping would leave
+    // both assertions below passing for the wrong reason.
+    expect(smallerInFirstFile.files).toEqual([path('C-aaa.md'), path('C-zzz.md')]);
+    expect(smallerInLastFile.files).toEqual([path('C-zzz.md'), path('C-aaa.md')]);
+
+    // …and the winning ID does not move.
+    expect(smallerInFirstFile.ids).toEqual([smaller, larger]);
+    expect(smallerInLastFile.ids).toEqual([smaller, larger]);
+
+    // The structured field and the SENTENCE a human acts on cannot
+    // disagree about who won.
+    expect(smallerInFirstFile.message).toContain(`first by id, '${smaller}', wins file mapping`);
+    expect(smallerInLastFile.message).toContain(`first by id, '${smaller}', wins file mapping`);
+  });
+
   it('leading ./ and / are normalized away for comparison; declared text is reported', () => {
     const result = parseComponentsFromFiles(
       new Map([

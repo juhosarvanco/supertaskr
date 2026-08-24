@@ -15,12 +15,6 @@ verified_by:
 review:
 ---
 
-> **DRAFTER'S NOTE — remove before landing.** Line-number drift, cited
-> per CONVENTIONS' own rule: `T-076-s5` cites `lib/parser/src/files.ts:181`
-> for the layer-order comment; at `4d2f03c` it sits at line **157**. The
-> SUBSTANCE reproduces exactly and the SYMBOL is what I have cited
-> below. `project.ts:202` and `component.ts:412` both still resolve.
-
 Absorbs: T-076-s4, T-076-s5 (sixth triage, 2026-08-20). Both files
 removed in this commit.
 
@@ -140,3 +134,209 @@ read back with `git diff` before each run, restore proved by sha256
 against the drill's own commit. The parser suite's smoke body parses the
 live `docs/` tree, so the DOCS GATE also fires on any card file this
 lane writes — run what it owes. @human: none.
+
+## Implementation notes
+
+Built by `claude-opus-5 @T-096` in `../nputer-T-096` on
+`task/T-096-parser-properties`, base **`765362e`**. Fence `[lib-parser]`
+= C-06 = `lib/parser/**`, **never widened**; the whole diff is four test
+files plus one new fixture file, and `lib/parser/src/**` is a **0-file
+diff**, so the parser's `dist/` is unmoved and the app compiles against
+exactly what it compiled against before.
+
+**BOTH MUTANTS RE-DERIVED AT MY OWN BASE BEFORE ANYTHING WAS BUILT**, in
+a detached worktree at `765362e` (`drill-T-096-base`), because a card's
+premise is a figure like any other. Baseline **263 passed (263), exit 0**.
+The pre-T-076 comparator inlined at the `ambiguous-mapping` sort site with
+`compareComponentIds` left total: **263 passed (263), exit 0** — survives.
+The disk assembly reordered to component-before-roadmap: **263 passed
+(263), exit 0** — survives. The card was right about both.
+
+### ONE — the winner is pinned through the consumer
+
+`lib/parser/test/component.test.ts` gains ONE body, `the DECLARED WINNER
+is id order at EVERY id length, never file order (T-096)`, inside the
+existing `ambiguous mapping` describe. Two components with 400- and
+401-digit ids and the SAME `paths` pattern (`app/src/**` — the
+`na === nb` arm, so the overlap is provable from the pattern text alone
+and nothing depends on glob semantics), parsed TWICE with the spellings
+swapped between `C-aaa.md` and `C-zzz.md`, asserting the smaller id wins
+in the structured `ids` field AND in the message's own sentence, both
+times.
+
+Two properties of the fixture are deliberate. The digits are chosen so
+**string order DISAGREES with id order** (`'9…'` sorts after `'1…'` while
+400 digits are fewer than 401), so the body discriminates a fall-through
+to the string fallback as well as the file tiebreak. And the `files`
+array is asserted in both runs as a **POSITIVE CONTROL that the two runs
+really are different arrangements** — the winner's FILE moves while the
+winning ID does not. Without it a fixture that quietly stopped swapping
+would leave every other assertion passing for the wrong reason.
+
+### TWO — the fixture widened, and no second body was added
+
+`lib/parser/test/fixtures/broken-project` now carries one issue from EACH
+of the three layers: `yaml-error` + `missing-field` (task, both
+pre-existing), a `roadmap-error` from a malformed backbone line added to
+`docs/ROADMAP.md`, and a `missing-field` for `paths` from a new
+`docs/architecture/components/C-90-missing-paths.md`. **Four issues, one
+per layer plus the task layer's second**, verified through `parseProject`
+before a line of test was edited.
+
+**Criterion 6 is NOT triggered and this is why**: the fixture fix was
+taken, not refused. A second parity body on the disk side would fix the
+symptom — it would remember the order — while leaving `toEqual` blind to
+every layer the fixture still lacks, which is the defect. The fixture
+carrying all three layers makes the EXISTING assertion hold the whole
+contract, and it does so for any layer property nobody has thought of yet.
+
+Three reconciliations came with it, each checked, none loosened:
+
+- `loadFixture` in `files.test.ts` loads a components directory when a
+  fixture declares one, guarded by `existsSync`, so the pure side is
+  handed the same three layers the disk side reads. Fixtures with no
+  components directory are untouched.
+- The parity body passes `componentsDir` and gains an **order-INDEPENDENT
+  fixture-shape control** (a `Set` of the three layers). It is
+  order-independent on purpose: the ORDER stays held by
+  `toEqual(fromDisk)` and by nothing else, so the fixture cannot narrow
+  back to one layer without failing, and the widening does not smuggle in
+  a second copy of the order.
+- `project.test.ts`'s reader of the same fixture: `toHaveLength(2)` ->
+  `toHaveLength(4)`, the two new layer issues asserted by their field and
+  file, and the `missing-field` lookup named by `field === 'size'` because
+  the kind now has two candidates.
+
+### THE CARD'S OWN PROBLEM STATEMENT IS WRONG IN ONE PLACE, AND THE ERROR IS LOAD-BEARING
+
+Section ONE says *"T-076's own new pins all assert the comparator in
+isolation rather than through the consumer."* **That is false at
+`765362e`.** T-076 built exactly one CONSUMER-side pin — `the slot's OWN
+ids array is ordered past the double range too (T-076)` in
+`component.test.ts` — which is the same two-arrangement shape this card
+asked for, on the comparator's OTHER consumer. The true statement is
+narrower and sharper: **T-076 pinned one of the comparator's two consumers
+through the consumer and left the other pinned only in isolation.** That
+matters because it changes what this card is: not "T-076 forgot the
+consumer" but "T-076 found the shape and applied it to one site of two".
+
+### CRITERION 3 — RULED, AND THE RULING IS A MEASUREMENT
+
+The component-space `aliased-id` `ids` array **does** degrade by the same
+mechanism at the same threshold — `Number()` fuses both spellings of a
+>309-digit slot to `Infinity`, the difference is `NaN`, and here there is
+no `||` to swallow it, so the NaN reaches `Array.prototype.sort` directly
+and V8 leaves the pair in arrival order, which is sorted FILE order. **It
+needs no new treatment because it already HAS the treatment**: mutant
+`D5` — the pre-T-076 comparator passed to `aliasedIdSlots` at its call
+site in `parseComponentSet` — reds **exactly ONE body**, T-076's, at 1
+failed / 263 passed, exit 1. Ruled, with the mutant that proves it, rather
+than asserted.
+
+That measurement is also half of criterion 7's answer: `D5` reds T-076's
+body and NOT this card's, while `D1` and `D3` red this card's and NOT
+T-076's. The two are the same shape on two different producers, which is
+the opposite of a duplicate.
+
+### THE POISON DRILL — ten mutants, one side only, always the producer
+
+Detached scratch worktree **`drill-T-096`** at `3d870bb` (named for the
+card, not the shared literal `drill` — `T-088-s3`), `node_modules`
+symlinked in, no `CARGO_TARGET_DIR` hazard because no Rust body is
+drilled. Baseline **264 passed (264), exit 0**. Every mutation applied by
+a driver that REFUSES a path outside the drill, refuses a test file
+without an explicit flag, and requires a substitution count of exactly
+**1**; every mutated TEXT read back with `git diff --unified=0` BEFORE its
+suite ran.
+
+| # | mutation (producer only) | suite | failing BODIES |
+|---|---|---|---|
+| D1 | pre-T-076 comparator inlined at the `ambiguous-mapping` sort site, `compareComponentIds` left total | 1 failed / 263, exit 1 | **1** — the new body |
+| D2 | disk assembly: component issues before roadmap issues | 1 failed / 263, exit 1 | **1** — the parity body |
+| D3 | sort site: the `compareComponentIds(...) \|\|` term DELETED, file order alone | 1 failed / 263, exit 1 | **1** — the new body |
+| D4 | sort site: comparator NEGATED | 5 failed / 259, exit 1 | 5 — the new body and four existing `ambiguous-mapping` pins |
+| D5 | pre-T-076 comparator passed to `aliasedIdSlots` | 1 failed / 263, exit 1 | **1** — T-076's aliased-id body |
+| D8 | component parser stops emitting `missing-field` for `paths` | 3 failed / 261, exit 1 | 3 |
+| D9 | `ambiguous-mapping`'s `files` array reversed | 2 failed / 262, exit 1 | 2 |
+| D10 | roadmap parser stops emitting the malformed-bullet `roadmap-error` | 4 failed / 260, exit 1 | 4 |
+| D13 | BOTH assemblers reordered the SAME way (parity preserved) | 1 failed / 263, exit 1 | **1** — T-076's pure-side layer-order pin |
+| D14 | pure assembly: component issues before roadmap issues | 2 failed / 262, exit 1 | 2 |
+
+**D3 IS THE CRITERION-8 MUTANT.** It was derived from criterion 1's text
+with `component.test.ts` and `files.test.ts` NEVER OPENED — written down
+before either file was read, together with `D4` and `D2`'s shape — and it
+is not the mutant the card supplied. It reds, and it reds exactly one
+body.
+
+**T-092's SHAPE-SIX CHECK, per new or changed body.** The new
+`ambiguous-mapping` body: `D1` and `D3` each red it and nothing else. The
+widened parity body: `D2` reds it and nothing else. Both are ONE.
+
+**D13 IS THE ANSWER TO THE OBVIOUS OBJECTION**, and it is measured rather
+than reasoned: a parity assertion cannot see a reorder applied to BOTH
+sides, so widening the fixture would be worth little if that case were
+uncovered. It is not — T-076's pure-side pin catches it, alone, at
+exactly one failing body. The three cases are therefore all covered by
+two bodies between them: disk-only by the parity body (`D2`), pure-only by
+both (`D14`), symmetric by the pure-side pin (`D13`).
+
+**RESTORATION PROVED THREE WAYS** after every mutant and at the end of the
+drill: an empty tracked `git diff`, `sha256` of all five touched files
+against the drill's own commit `3d870bb` (all MATCH), and a clean re-run
+at **264 passed (264), exit 0**.
+
+### A JUSTIFICATION I WROTE, THEN REFUTED WITH ITS OWN COUNTERFACTUAL
+
+The comment on `project.test.ts`'s reconciled `missing-field` lookup first
+claimed the bare `find` "would have redded this body under a disk-side
+reorder". **Measured, that is false**: counterfactual `C1` (the OLD bare
+lookup restored, `D2`'s producer mutation applied — deliberately
+two-sided, therefore NOT a drill) leaves `project.test.ts` GREEN, because
+the TASK layer still comes first under that transposition and the bare
+`find` still lands on `size`. The 2x2, all four cells measured at
+`3d870bb`:
+
+| disk mutation | named lookup (as landed) | bare lookup (as it was) |
+|---|---|---|
+| component before roadmap | 1 body (parity) | 1 body (parity) |
+| component before TASK | 1 body (parity) | **2 bodies** (parity + `project.test.ts`) |
+
+So the naming IS load-bearing, for a transposition one step away from the
+one I named. The comment in the file now states the measured reason and
+says the first one was refuted, because the next reader needs to know
+which reorder it protects against. **A reason that sounds right is not a
+measurement**, which is this card's own subject arriving one layer down.
+
+### FILED, NOT BUILT
+
+`T-096-s1` — a THIRD body in the same suite, `component issues surface in
+the project model after task and roadmap issues`, TITLES the pure layer's
+order and carries ONE issue, so it cannot check it (`D14` reds two bodies
+and neither is that one). The fix is the TITLE, not the fixture: widening
+it would build exactly the second order-remembering body this card
+refused. In fence, outside the criteria, one line.
+
+### OWED AT THE MERGE — READ THIS BEFORE INTEGRATING
+
+**GRAPH REGEN FIRES AND IS GENUINELY OWED.** Three of the five diff paths
+are `.ts` outside `docs/`, and unlike the `tools/**` worked examples these
+ARE indexed — `lib/parser/test/**` carries 12 of the graph's 126 files.
+The gate was ASKED rather than predicted:
+`cargo run -p nputer-index -- index --check --root ../..` from
+`app/src-tauri` in this worktree exits **1**, STALE:
+
+    committed:   648863 bytes · 126 files · 1126 symbols · 1712 edges
+    fresh index: 648886 bytes · 126 files · 1126 symbols · 1712 edges
+    files  +0  -0  ~3   (component.test.ts, files.test.ts, project.test.ts — content + loc)
+    edges  +1  -1       (files.test.ts -> node:fs gains `existsSync` in its symbol list)
+
+**THE DELTA IS +23 BYTES AND ONE EDGE RESPELLED**; symbol and edge COUNTS
+and the file count do not move. Per GRAPH REGEN the regen belongs to the
+CHECKPOINT, not the merge, so it is stated here and not performed.
+
+**BOOT GATE — NOT OWED, 0 of 5.** Derived, not assumed: this fence cannot
+produce `app/src-tauri/**`, `app/src/**` or either manifest, and the
+count is stated.
+
+**DOCS GATE — fires on this card and on `T-096-s1`.** Run at the merge
+with the range rule's own path list.
