@@ -261,6 +261,26 @@ pub fn genesis_record(project_dir: &Path) -> Option<GenesisRecord> {
     })
 }
 
+/// IS ONE OF OUR INTERVIEWS RUNNING ON THIS FOLDER? (T-123.)
+///
+/// The routing question the front door has never asked. It is
+/// [`genesis_record`] and nothing else — `.is_some()` over the ONE place
+/// the fact lives — so a caller can ask the cheap yes/no without holding a
+/// record it has no use for, and the two answers cannot disagree, because
+/// there is only one read to disagree about. C-05's `docs_watch` asks THIS
+/// rather than statting `.nputer/` or re-parsing that JSON itself: a rule
+/// with two implementations is two chances to disagree (T-057).
+///
+/// `false` therefore carries [`genesis_record`]'s own meanings and no new
+/// ones — no registry file, no planner entry, or a planner entry the user
+/// explicitly abandoned (`status: "dead"`, which [`find_planner`] skips).
+/// A registry that does not parse is renamed aside by [`load`] and answers
+/// `false`, which is the losable-by-charter direction: it costs a resume
+/// offer, never a fact about the project.
+pub fn has_genesis_session(project_dir: &Path) -> bool {
+    genesis_record(project_dir).is_some()
+}
+
 /// Mark the recorded planner session ABANDONED — `status: "dead"`, which
 /// `find_planner` skips, so the next start is a fresh one.
 ///
