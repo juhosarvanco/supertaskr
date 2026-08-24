@@ -713,7 +713,12 @@ describe("soft issues join to their card by file (T-031, absorbing T-019-s1)", (
     expect(selectBoard(duplicates).columns[0]?.cards.length).toBe(2);
   });
 
-  it("a flagged card carries its own messages; a clean card omits the key entirely", () => {
+  // ONE body, not two. A first draft added "the join adds a surface and
+  // never a filter" beside this; the drill measured its kill set to be a
+  // strict SUBSET of this one's, which is shape six. The arithmetic it
+  // asserted is worth keeping and is folded in below, where it costs no
+  // second body.
+  it("a flagged card carries its own messages, a clean card omits the key, and nothing is dropped", () => {
     const board = selectBoard(model);
     expect(cardById(board, "T-410")?.issues?.length).toBe(2);
     expect(cardById(board, "T-411")?.issues?.[0]).toContain("F-99");
@@ -722,15 +727,12 @@ describe("soft issues join to their card by file (T-031, absorbing T-019-s1)", (
     const clean = cardById(board, "T-412");
     expect(clean?.issues).toBeUndefined();
     expect("issues" in (clean ?? {})).toBe(false);
-  });
 
-  it("the join adds a surface and never a filter — nothing is dropped from the model", () => {
-    // The header's aggregate count reads model.issues directly; this is
-    // the selector-level half of that pin.
-    const board = selectBoard(model);
-    const marked = board.columns
-      .flatMap((c) => c.cards)
-      .flatMap((c) => c.issues ?? []).length;
+    // The join is a SURFACE, never a filter: every issue in the model
+    // that names a card's file reaches that card, and every card is
+    // still on the board. The header's own count reads model.issues
+    // directly, and this is the selector-level half of that pin.
+    const marked = board.columns.flatMap((c) => c.cards).flatMap((c) => c.issues ?? []).length;
     expect(model.issues.length).toBe(3);
     expect(marked).toBe(3);
     expect(board.columns.flatMap((c) => c.cards).length).toBe(3);
