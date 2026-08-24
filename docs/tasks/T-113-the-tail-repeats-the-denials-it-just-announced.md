@@ -449,12 +449,20 @@ channel over an empty `permission_denials`.
 
 - **`T-113-s1`** — `visibleDenials`' doc comment describes this defect as
   live and routes it to a removed file. The criterion's own instruction.
-- **`T-113-s2`** — concurrent lanes share ONE scratchpad directory while
-  the drill convention names a fixed `drill` path inside it, and every
-  lane worktree is a worktree of the SAME repository, so two lanes
-  drilling in one window collide on the worktree registration. Observed
-  live: this lane's driver script was overwritten by T-088's at the same
-  filename twenty minutes after this drill finished. `T-090`'s fence
+- **`T-113-s2`** — the shared-scratch drill collision, **and it is
+  explicitly NOT an independent finding**. `T-088-s3` landed on main in
+  `9f12769` (merged `bd5864b`) WHILE this lane was running and is the
+  same defect, measured between T-088 and T-090; it is the primary and
+  this file says so in its own first paragraph and asks triage to FOLD
+  rather than park both. What this seat adds is two details: it is
+  **three** lanes of three, not two — this lane held
+  `<scratchpad>/drill` from 13:07 to 13:11, before either of them — and
+  the PREFIX defect `T-088-s3` names (each driver's path guard asks "is
+  this A drill" rather than "is this MY drill") is true of THIS lane's
+  independently-written driver as well, which is worth owning rather
+  than only citing. Three sessions wrote the same guard and all three
+  got it wrong the same way, which is the argument that the convention
+  is under-specified rather than the sessions careless. `T-090`'s fence
   already contains `docs/CONVENTIONS.md`, so absorbing it needs no
   widening.
 
