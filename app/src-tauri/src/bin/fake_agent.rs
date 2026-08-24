@@ -568,6 +568,63 @@ fn main() {
             );
             std::process::exit(1);
         }
+        // T-113: THE FULL SHAPE OF THE DOUBLE REPORT, AND ITS OWN
+        // POSITIVE CONTROL IN ONE STREAM.
+        //
+        // `denied-then-end-turn` above is the same family and cannot
+        // carry this card's pin, for a reason that is the pin's whole
+        // point: it writes NOTHING to stderr and its `result` line is
+        // `is_error: false`, so once the `permission_denials:` ring note
+        // is deleted its tail is EMPTY. "The tail does not name the
+        // tool" is then satisfied by a tail that names nothing at all —
+        // the bare "expected absent, got absent" CONVENTIONS' A NEGATIVE
+        // ASSERTION NEEDS A POSITIVE CONTROL rules out.
+        //
+        // So this stream keeps every property that matters and adds the
+        // control: the denials are RESULT-ONLY (no in-band
+        // `permission_denied` line, so the join treats both as
+        // unannounced and the deleted note would have covered exactly
+        // them), the process exits NON-ZERO (so `stderr_tail` exists at
+        // all — it rides `ExitNonZero` and nothing else), and the CLI
+        // writes a real diagnostic to STDERR, which the runner's stderr
+        // pump puts in the same ring the deleted note used. The tail is
+        // therefore demonstrably CARRYING something on this turn while
+        // demonstrably not carrying the tool name.
+        //
+        // The SECOND entry has no `tool_name`, which is the shape
+        // criterion 6 names: `denial_names` is a `filter_map` over
+        // `tool_name`, so this entry contributed NOTHING to the deleted
+        // note and the note was never its surface. Its live `Denied`
+        // event keeps it. No existing fixture puts a nameless entry on
+        // the `result` line — `denied-partial-fields` puts one on the
+        // IN-BAND channel over an EMPTY `permission_denials`.
+        //
+        // The stderr sentence deliberately names neither "WebFetch" nor
+        // "permission_denials", so the two assertions cannot be
+        // satisfied by one another.
+        "denied-result-only-nonzero" => {
+            emit_init(&session_id, &model);
+            // Written BEFORE the delta on purpose: the relay coalesces
+            // text for `cfg.coalesce` before it flushes, so the stderr
+            // pump has that whole window to reach the ring ahead of the
+            // terminal read. The `nonzero` scenario relies on the same
+            // pump; this only widens its margin.
+            eprintln!("fake-agent: transport closed before the session could be saved");
+            emit_delta("I could not fetch that, so I will ask you instead.");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": false,
+                    "terminal_reason": "end_turn", "num_turns": 1,
+                    "permission_denials": [
+                        { "tool_name": "WebFetch", "tool_use_id": "tu_113" },
+                        { "tool_use_id": "tu_113_nameless" }
+                    ],
+                    "result": "Here is your first question."
+                })
+            );
+            std::process::exit(1);
+        }
         // T-029-s6's counter-pin: the case the fix must NOT break. A
         // diagnostic-only auth failure — status 403, and the CLI dies
         // before it writes any `result` line at all, so there is no
