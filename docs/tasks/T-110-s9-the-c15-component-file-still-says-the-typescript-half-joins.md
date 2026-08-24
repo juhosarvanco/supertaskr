@@ -1,9 +1,14 @@
 ---
 id: T-110-s9
-title: C-15's component file still says the TypeScript half joins, and after T-110's rebuild the join is Rust
+title: C-15's component file owes two edits after T-110's rebuild — the TS half no longer joins, and the test shim is now the tree's only unmapped file
 status: suggested
 suggested_by: executor claude-opus-5 @T-110-rebuild
 ---
+
+**TWO EDITS TO ONE FILE, in one fence.** The second is the one that reds
+a suite, and it did not exist until T-010 merged.
+
+## EDIT ONE — the prose says the TypeScript half joins, and it no longer does
 
 `docs/architecture/components/C-15-dispatch.md` describes the component
 as *"the Rust half READS those files and runs no subprocess, and the TS
@@ -36,10 +41,59 @@ division, and `docs/design/dispatch-technical-plan.md`'s D2 rules only
 that C-15 is declared with those two paths — it never rules which half
 does the joining, which is why the move was an executor's to make.
 
-Fence: `[docs/architecture/components/]` — T-010's slug, HELD by a live
-lane at T-110's rebuild, which is why this is routed instead of fixed.
-It is prose only: the file's frontmatter, `paths:`, `depends_on:`,
-`decisions:` and `touch_slugs:` do not move, so it changes no fixture in
+## EDIT TWO — `paths:` owes `app/src-tauri/tests/dispatch_lanes.rs`, and this one REDS A BODY
+
+**T-010 merged into main at `d64c673` while T-110's rebuild was running,
+and it changed what the test shim COSTS.** The indexer now collects
+Rust, so `app/src-tauri/tests/**` went from *unclaimed and invisible* to
+*unclaimed and INDEXED*. T-010 saw this coming and settled it for the
+files it could reach: `C-14-agent-runner.md` gained
+`app/src-tauri/src/bin/fake_agent.rs` and
+`app/src-tauri/tests/agent_runner.rs`, each with the comment
+`# T-010 settlement, see below`, and `C-05-app.md` gained `acl_pin.rs`,
+`churn.rs` and `index_cmd.rs` the same way. **It could not settle
+`tests/dispatch_lanes.rs`, because that file did not exist on main.**
+
+Measured at the forecast merge of `0c521d5` into `d64c673` — the tree
+`git merge-tree --write-tree` predicts, `b0efae0`, built in a throwaway
+worktree and confirmed byte-identical — with the graph regenerated:
+
+- **`app/src-tauri/tests/dispatch_lanes.rs` is the ONE unmapped file in
+  the whole tree.** 178 indexed files against 48 component globs; every
+  other file matches one.
+- `app/test/map-dogfood-render.test.tsx` → *"renders all twelve declared
+  components in full mode, no unmapped bucket, no banner"* fails
+  **13 nodes, expected 12** — the thirteenth IS the unmapped bucket.
+- That body PASSES at `d64c673` alone with the same regen, so the cause
+  is this lane and nothing else.
+
+The one-line fix follows T-010's own settled shape:
+
+    paths:
+      - app/src-tauri/src/dispatch/**
+      - app/src-tauri/tests/dispatch_lanes.rs   # T-010 settlement, see below
+      - app/src/lib/dispatch-store.ts
+
+**THE FENCE ARGUMENT FOR THE SHIM IS STILL SOUND AND THIS DOES NOT
+RETRACT IT.** `app/src-tauri/tests/**` was claimed by no component when
+T-110 was dispatched, T-113 had set the precedent, and T-110's verifier
+ruled the placement legitimate — all true at the time. What changed is
+downstream: after T-010 the same file is visible on the map. **And it
+argues for `T-110-s1` rather than against the shim**: the commit that
+declares `pub mod dispatch;` in `lib.rs` DELETES `tests/dispatch_lanes.rs`,
+which removes the unmapped file rather than claiming it. If s1 lands
+first, edit two is unnecessary; if this lane's merge lands first, edit
+two is owed at that checkpoint or the map ships a bucket.
+
+## Fence
+
+`[docs/architecture/components/]` — T-010's slug. It was HELD by a live
+lane when this rebuild began (T-010 has since merged; the checkpoint had
+not landed), which is why both edits are routed instead of made.
+
+Edit one is prose only. **Edit two moves `paths:`**, so it is a REGISTRY
+change: T-024's three-fixture rule fires and
 `lib/parser/test/smoke.test.ts`, `app/test/architecture-dogfood.test.ts`
-or `app/test/map-dogfood-render.test.tsx` — but the DOCS GATE fires on
-it and owes those suites a run anyway.
+and `app/test/map-dogfood-render.test.tsx` must all be reconciled
+together. Taking it removes the 13th node and takes C-15's file list from
+five to six.

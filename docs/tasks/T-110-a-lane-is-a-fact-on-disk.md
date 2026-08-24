@@ -652,3 +652,406 @@ unpinned, and the allocation the comment disclaims), `T-110-s7` (the
 un-normalised, possibly relative `worktree_path` and the cwd-dependent
 `exists_on_disk`), `T-110-s8` (`parse_head` accepts a multi-line `HEAD`
 and a trailing tab while claiming a whole-shape match).
+
+## Implementation notes — THE REBUILD (second executor, after the rejection)
+
+Executor `claude-opus-5 @T-110-rebuild`, a FRESH session that did not
+write the build it repaired, lane `task/T-110-lane-reader`, previous tip
+`6fea6a1` (the verdict commit), rebuild tips `a54433d` and `0c521d5`.
+**APPENDED, never rewritten**: the first pass's notes and the verifier's
+verdict above are byte-untouched (T-101's precedent). Understanding was
+confirmed in one paragraph before a single file was opened for writing —
+written to the session's scratchpad at 23:00:18Z with `git status
+--short` EMPTY in this worktree at that moment.
+
+### THE REJECTION IS RIGHT, AND IT REPRODUCES
+
+Re-run before anything was built, in a detached worktree
+`drill-T-110-rebuild-pre` at `6fea6a1`, baseline `npm run build` 0 and
+`npm test` **940/940** exit 0. Each mutation producer-side, one side
+only, read back with `git diff --unified=0` BEFORE its run:
+
+| # | mutation | build | test | verdict |
+|---|---|---|---|---|
+| R1 | `classify`: swap the `died` / `stampSkipped` arms | 0 | 0, 940/940 | **SURVIVED** |
+| R2 | `IN_FLIGHT_STATUSES` → `[]` | 0 | 0, 940/940 | **SURVIVED** |
+| R3 | `joinLanes`: `if (rows.has(taskId))` → `if (true)` | 0 | 0, 940/940 | **SURVIVED** |
+| R4 | `describeRefusal`: two refusals, one sentence | 0 | 0, 940/940 | **SURVIVED** |
+
+Restoration proved by sha256 after every one:
+`5215098ab6125a0dda820e48215b382da855fa58cc089d6643113891db4c5249`
+MATCH against both the pre-mutation file and the HEAD blob — the same
+`5215098a…` the verdict recorded, independently. **The "zero importers"
+claim is confirmed too**: `grep -rn dispatch-store app/src app/test lib
+tools` returns three hits and every one is a STRING in a comment or a
+declared-path list, not an import.
+
+### WHAT CHANGED — the join is a Rust fact, and the fence was NOT widened
+
+**`app/src-tauri/src/dispatch/join.rs`** (new, 
+`app/src-tauri/src/dispatch/**` = C-15's own path) carries
+`IN_FLIGHT_STATUSES`, `is_in_flight`, `classify`, `BoardStamp`,
+`DispatchState`, `LaneRegistration`, `DispatchRow`, `LaneScanRefusal`
+(with `of` and `sentence`), `DispatchJoin`, `join_lanes` and
+`count_by_state` — every one of them the same rule the TypeScript file
+held, in the only place in this repository where a suite can reach it.
+**`app/src-tauri/src/dispatch/fixtures.rs`** (new, `#[cfg(test)]`) holds
+`scratch` / `repo` / `repo_with_worktrees_dir` / `register` /
+`branch_head`, moved out of `lanes.rs`'s test module so **the join's
+bodies drive the REAL reader over the SAME fixture shape** — a join
+proved against a hand-built `LaneScan` value would be proved against a
+fiction, and two copies of `register` would be two definitions of what
+git writes down.
+
+**`app/src/lib/dispatch-store.ts` is now a MIRROR and only a mirror.**
+`classify`, `joinLanes`, `isInFlight`, `IN_FLIGHT_STATUSES`,
+`countByState` and `describeRefusal` are GONE from it. What remains is
+the mirrored types, `DispatchJoinWire` (the wire form, rows as an array)
+and `hydrateJoin`, which turns that array into the `ReadonlyMap` ADR-009
+requires and decides nothing. **Deleting them rather than leaving them
+beside the Rust is the point**: two spellings of one rule with a pin
+under only one of them is exactly the divergence this card exists to
+remove one layer up. The four refusal SENTENCES travel on the wire from
+`LaneScanRefusal::sentence`, so the board renders the one spelling that
+has a pin under it — keeping the `switch` in TypeScript is what let R4
+survive.
+
+**FOUR THINGS THIS REBUILD DID NOT TOUCH, deliberately**:
+`app/src-tauri/src/lib.rs` (still no `pub mod dispatch;` — `app-shell`,
+`T-110-s1`), `app/test/**` and `app/vitest.config.ts` (both `app-shell`,
+and held by T-123 all night), `docs/architecture/components/` (T-010's,
+and it is owed two edits — `T-110-s9`), and the existing
+`tests/dispatch_lanes.rs` shim, whose two `#[path]` lines the verifier
+ruled legitimate and which now reaches four files instead of two.
+
+### Each acceptance criterion, re-checked at `0c521d5`
+
+1. **One Rust-side reader, no subprocess, no grant — STILL MET, and the
+   sweep grew with the module.** `no_subprocess_in_this_module` now
+   sweeps `join.rs` and `fixtures.rs` as well as `lanes.rs` and `mod.rs`,
+   with a positive control per file (each file's own entry point is
+   asserted present, so the sweep cannot pass on an empty string).
+   Mutant **D23** — a planted `std::process::Command::new` in `join.rs` —
+   reds. `acl_pin.rs` is still a 0-file diff.
+2. **Positive shape — STILL MET**, and now bounded on both sides:
+   `the_size_bounds_are_pinned_by_literals_rather_than_by_themselves`
+   asserts a 255-character branch is ACCEPTED and a 256-character branch
+   is `TooLong { len: 256 }`, both literals (D5, D22 red).
+3. **ADR-009 on the TS side — MET, and it is now the file's whole job.**
+   `hydrateJoin` builds `ReadonlyMap<string, DispatchRow>`; there is no
+   plain object literal keyed by file-derived text in the file. The one
+   plain object left, `DISPATCH_STATE_KEYS`, is keyed by an AUTHORED
+   vocabulary and exists so `satisfies Record<DispatchState, true>` makes
+   a state added to the union without a line there a compile error.
+   `DispatchRow.lanes` is a LIST, and `two_lanes_carrying_one_task_id_both_survive`
+   drives it.
+4. **THE DISAGREEMENT IS FIRST-CLASS AND A PIN DRIVES EACH — THE
+   REJECTION IS CLOSED.** Thirteen bodies in `join.rs`, all driving
+   `read_lanes` over real temp-directory fixtures:
+   - `a_building_stamp_with_no_worktree_is_a_lane_that_died` — **THE
+     FIXTURE THE CARD NAMES BY NAME.** A repository whose `worktrees/`
+     exists and is EMPTY (asserted to be a SUCCESSFUL empty scan, not a
+     refusal) plus a card stamped `building` → `Died`; positive control
+     registers the lane and the SAME card becomes `Live`.
+   - `the_four_states_are_four_different_answers_on_one_fixture` — one
+     repository, one board, all four states, asserted as an exact list
+     AND asserted to be four DISTINCT values, so a collapse reds.
+   - `in_flight_is_exactly_three_statuses_named_as_literals` — the three
+     spelled out, nine settled statuses refused (including `Building` and
+     `"building "`), `IN_FLIGHT_STATUSES` asserted as a literal array.
+   - `a_lane_on_no_card_becomes_its_own_row_rather_than_vanishing` —
+     R3's half, with a positive control that the same lane WITH a card
+     produces one row rather than two.
+   - `every_refusal_has_its_own_sentence_and_no_two_are_equal` and
+     `the_refusal_vocabulary_is_total_over_the_scan_and_scanned_is_not_one`
+     — R4's half, twice: distinctness kills a COLLAPSE, per-arm
+     substrings kill a SWAP, and `Scanned` is asserted to have no refusal.
+   - plus `a_row_carries_the_readers_five_lane_fields_and_the_same_json`,
+     `a_pruned_but_not_removed_lane_is_still_a_lane_and_says_so_on_the_row`,
+     `worktrees_that_are_not_lanes_are_carried_rather_than_dropped`,
+     `rows_come_back_sorted_by_task_id_whatever_order_the_board_was_in`,
+     `the_counts_seed_every_state_and_tally_the_rows`,
+     `a_scan_that_refused_makes_the_join_unavailable_rather_than_all_not_dispatched`
+     and `truncation_is_carried_from_the_scan_onto_the_join`.
+
+   **The judgement the first pass disclosed is KEPT and is now
+   arguable-with rather than reverse-engineerable**: `IN_FLIGHT_STATUSES`
+   is `building | verifying | merging`, because the lane protocol keeps
+   the worktree alive past the handoff. A live worktree under a
+   `verifying` card is this repository's ordinary state, and scoring it
+   `StampSkipped` would make the board cry wolf on its healthiest lane.
+   The constant and the body that names all three are one edit apart.
+5. **Typed refusals — STILL MET, and now they reach the board.**
+   `LaneScanRefusal::of` is total over the four non-`Scanned` arms and
+   returns `None` for `Scanned`; D15 (conflating two arms) reds.
+6. **A gone path is `exists_on_disk: false` — STILL MET**, and now
+   asserted at the JOIN too: a pruned-but-not-removed lane is still a
+   lane (`Live` under a `building` stamp) and the row carries the fact
+   the directory is gone. D11 and D25 red.
+7. **The seven fixture repositories — STILL MET**, and the join adds
+   more, all in temp directories. **NOTHING IN THE SUITE READS THIS
+   REPOSITORY'S OWN `.git`**; five worktrees were live while this ran.
+8. **The write set — STILL MET.** `the_reader_writes_nothing` is
+   untouched and green; the diff changes no Rust file outside
+   `src/dispatch/**`, so `the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not`
+   in `tests/agent_runner.rs` still passes inside the sweep.
+
+### THE VERIFIER'S FIVE SURVIVORS — four closed, one is the OPERATING SYSTEM
+
+Which I judged IN and which OUT, as the rebuild brief asks:
+
+- **`T-110-s5`'s two bounds: IN, and closed.** Strictly they are not
+  criterion 4's business, but `BRANCH_MAX_LEN` is part of criterion 2's
+  grammar (its `TooLong` refusal) and `MAX_METADATA_BYTES` part of
+  criterion 1's defect vocabulary, and CONVENTIONS makes the shape a
+  standing rule rather than a preference. Two literal, two-sided rows
+  beside the derived ones — 255 accepted / 256 refused, a 4096-byte HEAD
+  read / a 4097-byte HEAD `HeadTooLarge { len: 4097 }`. **D5 and D6 now
+  RED.**
+- **`T-110-s6`'s entry ceiling and `truncated`: IN, and two of three
+  closed.** The `truncated` field is mirrored onto `DispatchJoin` and its
+  whole meaning is "this list is a floor" — criterion 5's "never an empty
+  list meaning two different things", one layer up. A 4097-entry fixture
+  drives it end to end and asserts a list of exactly 4096, with the
+  entries kept being the first 4096 BY NAME. **D7, D9 and D21 now RED.**
+- **The third is UNREACHABLE ON DARWIN, measured.** s6 asks for a
+  fixture "whose entry name is invalid UTF-8". `os.mkdir(b'bad\xff\xfename')`
+  fails with **`OSError 92, Illegal byte sequence`** on Darwin 25.6.0 /
+  APFS — the filesystem validates the name before the entry exists, so
+  the `read_dir` result that arm handles cannot be produced here. **D8
+  SURVIVES and is expected to**, and pretending otherwise would be
+  worse than saying so. Filed as `T-110-s10` with three ranked
+  dispositions.
+- **AND s6'S SUGGESTED PRODUCER FIX IS THE WRONG HALF.** It offers
+  "bound the collection as it is built ... or correct the comment". The
+  first would break a property the suite already pins: `read_lanes`
+  collects, SORTS, then truncates, so the entries kept are the first 4096
+  by NAME; truncating as names arrive keeps whichever 4096 `read_dir`
+  handed back first, which is filesystem order.
+  `entries_come_back_sorted_by_name_whatever_the_filesystem_says` is the
+  body that would have to be deleted to take that trade. The comment was
+  corrected instead, and now says what the ceiling actually bounds (the
+  two file reads per entry) and why the obvious repair is refused.
+- `T-110-s7` and `T-110-s8` are **OUT**: neither is an acceptance
+  criterion, both are hardening on paths the criteria do not name, and
+  taking them would be annexing scope. They stand as filed.
+
+### THE DRILL — 28 mutants at `0c521d5`, 25 RED, 3 survivors and every one accounted for
+
+Detached worktree **`drill-T-110-rebuild`** with its own
+`CARGO_TARGET_DIR` INSIDE it (arm (c)); driver
+**`drill-T-110-rebuild-driver.sh`**, batch
+**`drill-T-110-rebuild-run.sh`**, results
+**`drill-T-110-rebuild-results.txt`** — **every artefact named per-lane,
+not only the worktree** (T-088-s3, whose fifth data point is that naming
+only the directory let a sibling overwrite THIS lane's driver). Baseline
+`cargo test --test dispatch_lanes` **31/31 exit 0**. Every mutation
+producer-side and one side only, applied by a driver that refuses any
+path outside the drill and requires a match count of exactly **1**, read
+back with `git diff --unified=0` BEFORE its suite ran, restored with
+`git checkout --` and proved by sha256 against **both** the pre-mutation
+file and the drill's own HEAD blob — 28 times, all MATCH.
+
+**RED (25):** D1 the `died`/`stampSkipped` swap · D2a `is_in_flight`
+always false · D2b the constant loses `building` · D3 the no-card half
+short-circuited · D4 two refusals one sentence · D5 `BRANCH_MAX_LEN`
+255→256 · D6 `MAX_METADATA_BYTES` 4096→40960 · D7 the truncation block
+deleted · D9 `truncated: false` hardcoded · D10 `live` becomes `died` ·
+D11 `exists_on_disk` pinned true in the conversion · D12 the row drops
+its card · D13 the row sort deleted · D14 `count_by_state` stops seeding
+· D15 two scan arms conflated · D16 the wire sentence stops coming from
+the refusal · D17 the row's lane serialized under a different tag · D18
+the board half stops seeing lanes · D19 non-lane worktrees dropped · D20
+the entry-name sort deleted · D21 `MAX_WORKTREE_ENTRIES` 4096→4095 · D22
+the branch bound off by one · D23 a subprocess in `join.rs` · D24 the
+`parent()` climb dropped · D25 `exists_on_disk` pinned true in the reader
+· D26 a not-a-lane reported as detached. **All at exit 101, all still
+COMPILING** — a mutant that fails to build proves nothing.
+
+**SURVIVED (3), and none is unexplained:** D10b and D26b are **no-op
+CONTROLS**, one per producer file, which MUST stay green or the driver is
+reporting red for everything; D8 is the Darwin-unreachable arm above.
+
+**THE DRILL FOUND A DEFECT IN THE REBUILD'S OWN BODY, and it is the
+best thing it did.** At `a54433d`, **D12** — `card: Some(card.clone())`
+→ `card: None` — **SURVIVED**. `a_lane_on_no_card_becomes_its_own_row_rather_than_vanishing`
+asserted `card == None` for the orphan row and NOTHING asserted the other
+direction, so every row on the board could have lost its card in
+silence. That is CONVENTIONS' *"a negative assertion needs a positive
+control"* failing inside the body written to honour it. Fixed at
+`0c521d5`, where D12 reds; the fix is its own commit so the sequence is
+readable.
+
+**D27, THE TS HALF, MEASURED RATHER THAN INFERRED AND IT STILL
+SURVIVES.** `hydrateJoin`'s `rows.set(row.taskId, row)` → drop every
+`notDispatched` row: `npm run build` **0**, `npm test` **0, 940/940**.
+Nothing imports the file, so nothing can. **This is `T-110-s3`'s
+remaining content and it is smaller than it was**: the file now holds no
+DECISION — every state on every row was decided by `join.rs` and is
+carried across verbatim — so what an unpinned mutation can still do is
+lose rows in transit, not misname a state. Reported rather than hidden.
+
+### Suites and gates, every exit read from `$?` UNPIPED, at `0c521d5`
+
+- **cargo `test --no-fail-fast`: 414 passed / 0 failed / 3 ignored, exit
+  0**, summed programmatically over **SIXTEEN** `test result:` lines,
+  **zero warnings**. The arithmetic closes: the rejected tip's 399 plus
+  this rebuild's 15 new bodies (31 in `dispatch_lanes` against 16) = 414.
+- **app: `npm run build` exit 0, `npm test` 940/940 across 46 files, exit
+  0.** **THE BUNDLE HASHES STILL DO NOT MOVE** — `index-C86RloYb.css` /
+  45.06 kB and `index-DEkJr3K8.js` / 526.42 kB, byte-identical to main's:
+  nothing imports the store, so `tsc` typechecks it in both programs and
+  vite tree-shakes it out.
+- **parser: 263/263 across 12 files, exit 0.**
+- **E2E: 143/143, exit 0** on scratch port **15041**; `npm run typecheck`
+  **0**.
+- **THE MERGE'S DIFF IS 17 PATHS**, derived the prescribed way at BOTH
+  main tips this lane saw: `TREE=$(git merge-tree --write-tree <main>
+  HEAD)` with `$?` read FIRST (**0** both times), then `git diff
+  --name-only <main> "$TREE"`. 17 at `e27673d` and 17 at `d64c673`; the
+  forbidden two-dot form reads **37** and then **68**. Main advanced 51
+  paths between the two and `comm -12` against the lane's 17 is EMPTY.
+- **BOOT GATE — FIRES, 6 of 17** (`fixtures.rs`, `join.rs`, `lanes.rs`,
+  `mod.rs`, `tests/dispatch_lanes.rs`, `dispatch-store.ts`). **RUN, exit
+  0** on scratch port **15040**: `[nputer] project folder:
+  /Users/ujju/Projects/nputer-T-110` and `[nputer] window "main"
+  created`.
+- **GRAPH REGEN — FIRES, 1 of 17** (`dispatch-store.ts` — the `.rs`
+  files do not match the trigger's four extensions). ASKED rather than
+  predicted; see below, because the answer changed under this lane.
+- **DOCS GATE — FIRES, exit 1, 11 of 17**, invoked DIRECTLY with
+  ROOT-RELATIVE arguments and never through `xargs`. **Three suites
+  owed** (app, tools/e2e, lib/parser), all three run and green above. 12
+  derived readers across 4 suites, **0 frontmatter issues**, census 119
+  docs-shaped sites in 22 files with 12 in 10 files resolving into
+  `docs/`, 25 files holding the repository root (11 derived, 0 unlinked,
+  14 with no linkable site), 1 package-relative site derived, ledger at 6
+  entries. Every live card parses with a legal status.
+
+### T-010 LANDED MID-LANE AND IT CHANGES THE REGEN ANSWER COMPLETELY
+
+Main moved **`e27673d` → `d64c673`** while this rebuild ran, and
+`d64c673` is *"Merge T-010: the indexer collects Rust"*. **The forecast
+in the notes above is now wrong in every figure, and so was mine an hour
+earlier.** Re-derived by building the merge `git merge-tree` predicts
+(tree **`b0efae0`**) in a throwaway worktree and confirming the real
+merge's `HEAD^{tree}` is byte-identical, with `CARGO_TARGET_DIR` placed
+OUTSIDE the worktree so `T-110-s4`'s phantom cannot apply:
+
+| tree | committed | fresh index |
+|---|---|---|
+| `d64c673` (main alone) | 648886 B · 126 f · 1126 s · 1712 e | 890866 B · **172** f · 1874 s · 1842 e |
+| the merge `b0efae0` | 648886 B · 126 f · 1126 s · 1712 e | 913381 B · **178** f · 1936 s · 1871 e |
+
+**MAIN IS ALREADY STALE BY +46 FILES ON ITS OWN** — T-010's merge landed
+without its checkpoint regen — so most of the movement at this merge is
+not this lane's. **This lane's own contribution is +6 files, +62 symbols,
++29 edges**, and the six are named rather than counted:
+`dispatch/fixtures.rs`, `dispatch/join.rs`, `dispatch/lanes.rs`,
+`dispatch/mod.rs`, **`tests/dispatch_lanes.rs`** and
+`app/src/lib/dispatch-store.ts`. All five `.rs` files are indexed now;
+none was before.
+
+**THE FIXTURE MOVEMENT, MEASURED ON BOTH SIDES SO THE LANE'S SHARE IS
+SEPARABLE** (graph regenerated, `npm run build` run first so the
+build-freshness bodies are not counted as regen movement):
+
+| tree, regenerated | app suite |
+|---|---|
+| `d64c673` alone | **9 failed / 931 passed**, 2 files |
+| the merge `b0efae0` | **11 failed / 929 passed**, 2 files |
+
+**THE LANE'S DELTA IS TWO ASSERTIONS, NOT FIVE** — the verdict's figure
+was correct against the old indexer and is now superseded:
+
+1. `architecture-dogfood.test.ts` → *"C-15 is DECLARED-ONLY"*: C-15's
+   `files` goes `[]` → **five** entries (the four `src/dispatch/*.rs`
+   plus the store), `declaredOnly` false, `D3:C-15` clears.
+2. `map-dogfood-render.test.tsx` → *"renders all twelve declared
+   components in full mode, **no unmapped bucket**, no banner"*:
+   **13 nodes, expected 12.**
+
+**AND THE THIRTEENTH NODE IS THIS LANE'S TEST SHIM.** Derived rather
+than guessed: 178 indexed files against 48 component globs leaves
+**exactly one unmapped file, `app/src-tauri/tests/dispatch_lanes.rs`**.
+T-010 settled every other previously-unclaimed Rust file by NAME —
+`C-14` gained `src/bin/fake_agent.rs` and `tests/agent_runner.rs`, `C-05`
+gained `acl_pin.rs`, `churn.rs` and `index_cmd.rs`, each commented
+`# T-010 settlement` — and could not settle this one because it did not
+exist on main. **The verifier's ruling that the shim is legitimate and
+the fence was not widened still stands**; what changed is its
+consequence, and that consequence is a one-line `paths:` entry in a file
+this fence cannot reach. Routed as `T-110-s9`, which also carries the
+prose edit. **If `T-110-s1` lands first the entry is unnecessary, because
+the commit that writes `pub mod dispatch;` DELETES the shim.**
+
+`lib/parser` at the merge with the regenerated graph is **264/264 exit
+0** — main gained a body; the parser pin does not move for a regen, which
+is CONVENTIONS' three-fixture rule behaving exactly as written.
+
+### WHERE THE BRIEF, THE CARD AND THE VERDICT WERE WRONG
+
+1. **The brief's main tip and baselines are stale, twice over.** It names
+   base `d46f71f` and baselines cargo 399/0/3, app 940/940, parser
+   263/263, e2e 143/143 — all correct at `6fea6a1` and re-derived here.
+   But main was `e27673d` when this session began and `d64c673` when it
+   ended, and **T-010's Rust extraction — which the brief flagged as
+   "under verification and may land first" — LANDED**, which changes the
+   graph figures, the indexed-file set and the fixture movement entirely.
+   The brief was right to warn; the warning fired.
+2. **The verdict's fixture-movement figure is superseded, not wrong.**
+   *"FIVE assertions in TWO files, `1 failed | 44 passed` → 935/940"* is
+   what I measured too against the OLD indexer at `a54433d` — except
+   that **two** test files fail, not one (2 + 44 = 46 files; 1 + 44 = 45,
+   which is not the file count). Against `d64c673` the lane's delta is
+   **two** assertions.
+3. **The verdict's own drill misses a survivor that its successor
+   found.** D12 (`card: Some(card.clone())` → `card: None`) survives at
+   `6fea6a1` too — the TS `joinLanes` had the identical asymmetry. It is
+   not a criticism of a 22-mutant drill; it is the argument for drilling
+   the same producer twice from different hands.
+4. **`T-110-s6`'s suggested producer fix would trade determinism for the
+   bound** (above), and one of its three mutants cannot be redded on this
+   platform at all. Both filed as `T-110-s10`.
+5. **The card's problem statement is still wrong about `gitdir`** and
+   both earlier passes said so; recorded a third time only because the
+   card is the spec and has not been corrected.
+6. **`docs/STATE.md` is still dated 2026-08-24 and still opens "there are
+   NO LIVE LANES"** while four task worktrees and a sibling drill are
+   live. The verifier said this; it is still true. Not this card's
+   business — noted because STATE names itself as the first thing a
+   reader picks up.
+
+### For the second verifier
+
+- **The one thing to attack first**: whether moving the join out of
+  TypeScript was an executor's call. My argument is that
+  `docs/design/dispatch-technical-plan.md`'s D2 rules only that C-15 is
+  declared with its two paths and never rules which half joins — I read
+  it to check — and that the C-15 component file's "the TS half ... joins
+  it against the board" is descriptive prose written by T-088 before this
+  card was built. If that reads as a ruling rather than a description,
+  the fix is not to move the code back (the pin would vanish again) but
+  to widen the fence deliberately, which is a DISPATCH decision.
+- The four rejection mutants are D1–D4 in
+  `drill-T-110-rebuild-run.sh`; re-run them.
+- **Nothing pins the Rust vocabulary equal to the TS mirror across the
+  language boundary** — still `T-110-s3` arm 5. What the rebuild DID
+  close is the Rust-internal half: `LaneRegistration` and
+  `WorktreeEntry::Lane` are held equal by serializing both, and D17 reds.
+- `T-110-s3`'s arms 1–4 are now BUILT, in Rust rather than in vitest.
+  Arm 5 stands. `T-110-s1` is unchanged and now has a second argument
+  behind it (the unmapped bucket, above).
+- **Live-environment facts, read at 2026-08-24/25 on this host, never
+  off a commit**: port 1420 read with `lsof -nP -iTCP:1420 -sTCP:LISTEN`
+  and nothing else, before and after — holder `node` pid **82549**, one
+  socket `TCP [::1]:1420 (LISTEN)`, identical throughout; no bind, no
+  connect, no signal. Scratch ports **15040** (boot gate) and **15041**
+  (e2e) were `lsof`-read first (zero rows) then bind-confirmed free on
+  `127.0.0.1`, `0.0.0.0`, `::1` and `::` before use and again after. **No
+  `pkill` at any point.** No sibling worktree touched, and the untracked
+  `z` in the main checkout left alone. Three throwaway worktrees were
+  created and all three removed and pruned
+  (`drill-T-110-rebuild-pre`, `drill-T-110-rebuild`,
+  `forecast-T-110-rebuild`); their symlinks were UNLINKED rather than
+  deleted, with all three targets verified present afterwards.
