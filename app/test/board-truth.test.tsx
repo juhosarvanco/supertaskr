@@ -655,17 +655,18 @@ describe("verdict blocks contain an unbroken run like the notes body (T-017-s2)"
     expect(text.classList.contains("break-words")).toBe(false);
   });
 
-  it("the notes body it copies still carries the same containment", () => {
-    // The other half of the parity claim, in the same body: if the notes
-    // container ever loses `overflow-x-auto` this pin stops meaning what
-    // it says, and nothing else would notice.
-    render(<Board model={model} />);
-    press(q('[data-testid="task-card"][data-task-id="T-105"] button') as Element);
-    press(q('[data-testid="detail-notes-toggle"]') as Element);
-    expect(q('[data-testid="detail-notes-text"]')?.classList.contains("overflow-x-auto")).toBe(
-      true,
-    );
-  });
+  // THE OTHER HALF OF THE PARITY CLAIM IS DELIBERATELY NOT A SECOND BODY
+  // HERE. A pin that the notes container still carries `overflow-x-auto`
+  // reds under exactly one mutation, and the T-005-s2 disclosure body
+  // three describes up — "renders collapsed by default; expanding shows
+  // the notes VERBATIM in a mono scroll container" — already asserts that
+  // exact class on that exact element. Writing it again is shape six
+  // (CONVENTIONS' POISON DRILL bullet): a body that reds under a poison
+  // while killing no mutant another body does not already kill. Measured
+  // rather than assumed — this lane's drill ran the duplicate and it and
+  // the T-005-s2 body redded together on the same mutant and on nothing
+  // else. The claim above is "verdicts get what the notes body has"; the
+  // notes body's own pin is what holds the other end.
 });
 
 describe("the model badge is bounded (T-024-s6)", () => {
