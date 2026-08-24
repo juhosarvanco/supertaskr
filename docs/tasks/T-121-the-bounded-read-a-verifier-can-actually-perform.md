@@ -73,6 +73,28 @@ surfaces, and whichever arm eventually wins must govern all three.**
 > Rust, so it is routed, not built here — and the ruling governs all
 > THREE contradicted surfaces named above, the architect's brief
 > included.
+>
+> **AND THE INTERIM IS BETTER THAN THIS CARD PROPOSES — THE BOUNDARY IS
+> THE REF, NOT A HEADING.** Measured the same night by T-123's verifier,
+> which was briefed to read up to the first `## Implementation notes`
+> heading and found the instruction **unperformable**: `grep -n '^##
+> Implementation notes'` over the card **exits 1** in the main checkout,
+> because main carries the PLANNER'S copy — the executor's notes exist
+> only on the lane's branch. It took blindness the honest way instead,
+> by reading the card **at the base ref**, and reported the correction.
+> That formulation strictly dominates every arm-4 variant this card
+> refutes: it needs no heading to exist, no line number to be right, and
+> no restraint from the reader, because the bytes simply are not in the
+> tree the verifier reads. It is also FREE — `git show <base>:<card>` is
+> one command — and it composes with arm 2 rather than competing (once
+> the notes are a separate artifact, both mechanisms withhold the same
+> thing). **The interim discipline this card writes down SHALL be the
+> ref-based read, with the heading form recorded only as the weaker
+> fallback for a reader who has no base ref to hand.** The architect's
+> brief carried the heading form to two verifiers tonight; one of them
+> refuted it in passing, which is the whole argument for writing the
+> discipline where a verifier reads it rather than relaying it in a
+> brief.
 
 ## What this card is, and what it is not
 
