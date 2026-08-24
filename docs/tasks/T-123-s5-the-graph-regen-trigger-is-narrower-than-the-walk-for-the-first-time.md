@@ -51,15 +51,21 @@ landed. The delta above is the honest measure of this lane's
 contribution, taken as the difference between two FRESH indexes so the
 outstanding regen cancels out of both sides.)
 
-**WHY IT IS NOT URGENT TONIGHT AND IS URGENT SOON.** T-010's checkpoint
-must regenerate anyway, and a regen taken after this lane merges absorbs
-this delta for free. The exposure opens at the FIRST Rust-only lane that
-merges *after* that checkpoint: its integrator derives GRAPH REGEN as NOT
-OWED from the suffix table, skips the regen, and leaves the committed
-graph stale with nothing red. The tripwires CONVENTIONS lists for the
-retired hand-run do not catch it either — `index --check` is a written CI
-step on a repository with **zero remotes**, so nothing executes it but a
-human who decided to ask.
+**IT IS URGENT AT THIS LANE'S OWN MERGE, AND THAT IS OBSERVED RATHER
+THAN FORECAST.** T-010's checkpoint is in progress in the main checkout
+while this is being written, and the graph it has just regenerated there
+reads **890866 bytes · 172 files · 1842 edges** — byte-for-byte the
+"main alone" row above. **So the very next merge of T-123 leaves the
+committed graph stale at 1874 symbols against a tree that indexes 1878,
+and GRAPH REGEN's trigger fires on 0 of T-123's 9 paths.**
+
+**THE INTEGRATOR WHO MERGES T-123 MUST REGENERATE ANYWAY**, against the
+gate's own answer, and the same applies to every Rust-carrying lane
+behind it (T-110 among them). Whoever writes the CONVENTIONS edit should
+treat that as the first worked example rather than a hypothetical. The
+tripwires CONVENTIONS lists for the retired hand-run do not catch it
+either — `index --check` is a written CI step on a repository with
+**zero remotes**, so nothing executes it but a human who decided to ask.
 
 **WHAT SAVES IT MEANWHILE, AND WHY THAT IS NOT ENOUGH.** The same bullet
 says **"ASK THE GATE INSTEAD OF PREDICTING"**, and an integrator who asks
