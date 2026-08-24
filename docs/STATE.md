@@ -516,13 +516,36 @@ technicality. Reason 2 is a second, different mismatch: it reached for a
 shell REDIRECT to write a file, where `--permission-mode acceptEdits`
 would have auto-approved the same write through the Write tool.
 
-**THE CARD IS DELIBERATELY NOT CUT YET, and that is a judgement rather
-than an omission.** The interview was still live when this was written
-and the next denials are expected at the BANKING boundary (`git add` /
-`git commit`, the same `-C` spelling), so a card cut now would carry
-half the evidence. Cut it when the interview yields that second set —
-fence `[app-agent]` (`adapter.rs`), and it is an adapter/kit question,
-**not a defect in T-101's render**, which is working exactly as designed.
-Note the direction of the finding: the gap is visible AT ALL only because
-T-101 put those rows on screen, which is the notice earning its keep on
-its first real day.
+**THE CARD IS CUT: `T-124`**, fence `[app-agent]` (`adapter.rs`),
+priority 6. It is an adapter/kit question, **not a defect in T-101's
+render**, which is working exactly as designed. Note the direction of the
+finding: the gap is visible AT ALL only because T-101 put those rows on
+screen, which is the notice earning its keep on its first real day. The
+card can be precise WITHOUT spending a model call, because the three
+captured reasons name their own mechanisms — one is our allowlist, two
+are the CLI's own guards — and it forbids widening a grant just to look
+productive.
+
+## AND THE LOOK FOUND A DEAD END NOBODY HAD MET — `T-123`, PRIORITY 2
+
+Going back to the app after the interview, @human could not get back INTO
+it: both doors landed on an empty board. **That is not a bug in the
+doors; it is the guard working and trapping the session behind it.**
+Stage 0 writes `docs/ROADMAP.md`; `probe_plan` STATS it and never reads
+content, so a template carrying ZERO features makes `has_plan()` true;
+T-026 criterion 5 then correctly routes a folder-with-a-plan to the
+ordinary open, forever; and `resumeGenesis` has exactly one caller, inside
+the chat that only mounts on the genesis screen. **So the interview's own
+first act strands it**, with a live session (`S1`, one turn, a real
+native session id) registered in the folder's own
+`.nputer/sessions.json` and unreachable from the UI.
+
+The routing has never asked *"is one of our interviews running on this
+folder?"* — though T-029 gave that fact an owner and T-070 named the
+accessor (`sessions::genesis_record`). A guard built to stop you
+overwriting SOMEONE ELSE'S plan cannot tell it from the plan its own live
+session wrote thirty seconds ago. It is the inverse of T-050's ruling
+that no reachable screen is a dead end: the reachable screen is a dead
+end for the SESSION. **Milestone 4 rather than a residual, because a real
+user meets it on their first interview** — which is exactly how this one
+was found. The two hand-driven ways back in are recorded on the card.
