@@ -846,6 +846,57 @@ test("THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED PO
   }
 });
 
+test("ONE SPELLING, TWO PLACES — the doc and the script print the same recipe", () => {
+  // T-057 as a pin rather than as a hope. The DOCS GATE bullet and
+  // `docs-gate.mjs`'s header each print the invocation an integrator is
+  // to run, and for six weeks they printed DIFFERENT ones: the doc said
+  // call it directly, the script's own header said pipe it through
+  // `xargs` — the very pipe that destroys the codes the script exists to
+  // distinguish. A recipe in two places is two chances to disagree, and
+  // this is the body that makes the second chance cost something.
+  const script = readFileSync(
+    path.join(repoRoot, "tools", "e2e", "scripts", "docs-gate.mjs"),
+    "utf8",
+  );
+  // The recipe, lifted from each side by its own comment/indent
+  // convention and compared as text. Anchored on the gate's own
+  // invocation line rather than on a whole block, so reflowing prose
+  // around it does not red this.
+  const recipe = (text: string, strip: RegExp): string[] =>
+    text
+      .split("\n")
+      .filter((l) => l.includes("docs-gate.mjs $(git diff") || l.includes("TREE=$(git merge-tree"))
+      .map((l) => l.replace(strip, "").trim());
+
+  // THE DOC SIDE IS SCOPED TO THE DOCS GATE BULLET, and finding out why
+  // is worth the two lines: the RANGE RULE's own table three hundred
+  // lines up states the merge-tree half too, correctly, in its own
+  // typography. An unscoped filter reads that row as a third copy of the
+  // recipe and reds — which is a false alarm about a real property, the
+  // most expensive kind. `conventionsBullet` cannot be used here because
+  // it normalises whitespace, and this body compares LINES.
+  const start = CONVENTIONS.indexOf("- DOCS GATE (T-084");
+  expect(start, "the DOCS GATE bullet is found by its own opening").toBeGreaterThan(-1);
+  const rest = CONVENTIONS.slice(start + 1);
+  const end = rest.indexOf("\n- ");
+  const bulletRaw = end === -1 ? rest : rest.slice(0, end);
+
+  const fromScript = recipe(script, /^\s*\*\s?/);
+  const fromDoc = recipe(bulletRaw, /^\s*/);
+
+  expect(fromScript.length, "the script's header prints the recipe").toBe(2);
+  expect(fromDoc, "the doc prints the SAME two lines").toEqual(fromScript);
+
+  // AND NEITHER PRINTS THE DESTRUCTIVE FORM. The whole card is that a
+  // pipe through `xargs` eats two of the four codes, differently on each
+  // platform — so the recipe must not merely agree, it must agree on a
+  // spelling that carries the contract.
+  for (const line of fromScript) {
+    expect(line, "the printed recipe pipes through nothing").not.toMatch(/\|\s*xargs/);
+  }
+  expect(DOCS_GATE_BULLET, "and the bullet says why, so nobody re-adds it").toContain("xargs");
+});
+
 test("THE `EXIT` OBJECT IS THE SINGLE AUTHORITY — the npm script re-types no numbers", () => {
   // The rule the token lint already lives under (T-078/T-080), applied to
   // the new script: the codes are owned by the frozen object beside the
