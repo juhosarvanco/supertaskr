@@ -302,3 +302,13 @@ spawn, no screen control — verification is headless throughout.
 - **`T-088-s2`** — four `it()` TITLES carried counts this commit
   falsified, and nothing pins a title; they were corrected by hand
   because they were read, not because anything failed.
+- **`T-088-s3`** — a NEAR MISS, measured: T-088 and T-090 both drilled
+  into the literal path `<scratchpad>/drill` and both wrote
+  `<scratchpad>/mutate.py`, because the scratch directory is shared
+  between concurrent lanes and its UUID makes it look private. Each
+  driver's post-T-085 path refusal guards a shared PREFIX, so it cannot
+  tell its own drill from a sibling's. `git worktree add`'s refusal of
+  an existing path is what kept it safe, and that protects the create,
+  not the mutate. T-088's drill was removed and pruned before T-090's
+  existed and all nine restorations proved against `a2a691b`, so nothing
+  was corrupted. Fix: name the drill `drill-T-NNN`.
