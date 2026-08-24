@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -21,6 +21,19 @@ const loadFixture = (
     const abs = join(tasksAbs, file);
     map.set(toKey(`docs/tasks/${file}`, abs), readFileSync(abs, 'utf8'));
   }
+  // The COMPONENT layer is loaded when a fixture declares one (T-096).
+  // Without this, a fixture carrying component issues would hand the pure
+  // layer two layers where the disk layer sees three, and the parity
+  // assertion would red for the loader's reason instead of the parser's.
+  // Fixtures with no components directory are untouched: the guard is
+  // false and the loop does not run.
+  const componentsAbs = join(root, 'docs', 'architecture', 'components');
+  if (existsSync(componentsAbs)) {
+    for (const file of readdirSync(componentsAbs)) {
+      const abs = join(componentsAbs, file);
+      map.set(toKey(`docs/architecture/components/${file}`, abs), readFileSync(abs, 'utf8'));
+    }
+  }
   return map;
 };
 
@@ -41,7 +54,33 @@ describe('parseProjectFromFiles — mirrors the filesystem layer exactly', () =>
     const fromFiles = parseProjectFromFiles(loadFixture('broken-project', (_rel, abs) => abs), {
       tasksDir: join(root, 'docs', 'tasks'),
       roadmapFile: join(root, 'docs', 'ROADMAP.md'),
+      componentsDir: join(root, 'docs', 'architecture', 'components'),
     });
+    // A PARITY ASSERTION CAN ONLY SEE THE LAYERS IT HAS ISSUES FROM, and
+    // until T-096 this one had exactly ONE. Both assemblers declare the
+    // same LAYER ORDER — task -> roadmap -> component, said in
+    // parseProject's doc and again in parseProjectFromFiles' — and this
+    // fixture's issues were all task-layer, so the order was outside what
+    // `toEqual` could check: a disk-side reorder left the whole suite at
+    // 263 passed, exit 0, while the two entry points returned different
+    // lists on one fixture. The fixture now carries one issue from EACH
+    // layer, so the assertion below holds the whole contract.
+    //
+    // THIS CONTROL IS DELIBERATELY ORDER-INDEPENDENT: it asserts what the
+    // fixture COVERS and never what order the layers arrive in, so the
+    // order stays held by the parity assertion and by nothing else. It is
+    // here because that assertion is only as strong as the fixture behind
+    // it, and a fixture quietly narrowed back to one layer would make it
+    // vacuous again without failing anything.
+    const layerOf = (issue: (typeof fromDisk.issues)[number]): string => {
+      const file = 'file' in issue ? issue.file : '';
+      if (file.includes('/tasks/')) return 'task';
+      if (file.includes('/components/')) return 'component';
+      return 'roadmap';
+    };
+    expect(new Set(fromDisk.issues.map(layerOf))).toEqual(
+      new Set(['task', 'roadmap', 'component']),
+    );
     expect(fromFiles).toEqual(fromDisk);
   });
 

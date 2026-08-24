@@ -70,14 +70,39 @@ describe('parseProject — broken files never stop the rest', () => {
     const yamlIssue = result.issues.find((i) => i.kind === 'yaml-error');
     expect(yamlIssue?.file).toBe(join(root, 'docs', 'tasks', 'T-202-broken-yaml.md'));
 
-    // missing required field: error names file and field
-    const missing = result.issues.find((i) => i.kind === 'missing-field');
+    // missing required field: error names file and field.
+    //
+    // RECONCILED AT T-096, which widened this fixture so its issues span
+    // all three layers. `missing-field` now has TWO candidates — a task's
+    // `size` and a component's `paths` — so this lookup names the one it
+    // means instead of taking whichever the assembly order delivers
+    // first. Tightened, never loosened: the bare `find` was an accidental
+    // dependence on exactly the order the parity body now exists to check,
+    // and it would have redded this body under a disk-side reorder that
+    // has nothing to do with what this body is about.
+    const missing = result.issues.find((i) => i.kind === 'missing-field' && i.field === 'size');
     expect(missing).toMatchObject({
       field: 'size',
       file: join(root, 'docs', 'tasks', 'T-203-missing-size.md'),
     });
 
-    expect(result.issues).toHaveLength(2);
+    // The two issues the widened fixture adds, one from the ROADMAP layer
+    // and one from the COMPONENT layer — so the fixture demonstrably
+    // carries all three and cannot narrow back without failing here.
+    // THE LAYER ORDER IS DELIBERATELY NOT ASSERTED IN THIS BODY: it is the
+    // disk/pure parity assertion's to hold (files.test.ts), and a second
+    // body remembering it is precisely what T-096 refused to add.
+    const roadmapIssue = result.issues.find((i) => i.kind === 'roadmap-error');
+    expect(roadmapIssue).toMatchObject({ file: join(root, 'docs', 'ROADMAP.md') });
+    const componentIssue = result.issues.find(
+      (i) => i.kind === 'missing-field' && i.field === 'paths',
+    );
+    expect(componentIssue).toMatchObject({
+      field: 'paths',
+      file: join(root, 'docs', 'architecture', 'components', 'C-90-missing-paths.md'),
+    });
+
+    expect(result.issues).toHaveLength(4);
   });
 });
 
