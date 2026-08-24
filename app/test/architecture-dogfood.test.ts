@@ -1009,6 +1009,48 @@ import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 //     edit, so it stales the measuring regen; the graph is regenerated a
 //     final time after it and then proven deterministic by regenerating
 //     once more and `cmp`-ing.
+//
+// RECONCILED AT T-088 (2026-08-24, executor claude-opus-5, IN THE LANE —
+// not at a merge). EVERY ENTRY ABOVE RECORDS A REGEN MOVING THE GRAPH;
+// THIS ONE RECORDS THE OTHER TRIGGER, and it is the first in this ledger
+// to fire alone: the REGISTRY changed and the graph did not. The branch
+// declares C-15 dispatch (`app/src-tauri/src/dispatch/**` +
+// `app/src/lib/dispatch-store.ts`, slug `app-dispatch`) per
+// docs/design/dispatch-technical-plan.md's D2. docs/ is .nputerignored,
+// so a component .md moves no indexed file and `index --check` is exit 0
+// at the base with the file added; what moves is the INTENT layer alone.
+//   · DERIVED BEFORE ANYTHING WAS RUN, by a throwaway probe `it()`
+//     appended to this describe, run once against the live tree with
+//     C-15 present and REMOVED (removal proved by an empty `git status`
+//     for app/test/, not by memory) — the T-073 technique above, reused.
+//     EIGHT assertions move, across SIX bodies in THREE files, and TWO
+//     of the eight are SECOND assertions in a body whose first also
+//     moves, which is the shape this ledger keeps warning about:
+//     the registry body (ids array, then the declared-count) and the
+//     drift body (drift, then declaredOnly).
+//   · C-15 IS DECLARED-ONLY, NOT TERRITORY, and that is the whole reason
+//     the counts hold: neither declared path matches a file on disk, so
+//     fileComponent.size stays 126, the per-component tally gains NO row
+//     (a component with zero files contributes no entry), C-12's file
+//     list is byte-identical, derived.issues stays [], unmappedFiles
+//     stays [], mode stays "full" and map-dogfood's `126 files` hint does
+//     not move. A paths-glob that matches nothing is INTENT, never a
+//     defect — the property the new pin below asserts by name.
+//   · WHAT DOES MOVE, exactly: the id array 11 -> 12 and the declared
+//     count 11 -> 12 (this body); findings gain D3:C-15, appended after
+//     D3:C-11 in id order; the relation table gains ONE row,
+//     C-15->C-10 planned 0, appended in from-id order, taking planned
+//     9 -> 10 while confirmed (13) and undeclared (10) hold; drift gains
+//     C-15 and declaredOnly gains C-15. In map-dogfood-render.test.tsx:
+//     the node count 11 -> 12 and the edge count 32 -> 33 — and the
+//     SECOND assertion in that edge body, the undeclared tally, HOLDS at
+//     10, which is the same trap read the other way round. In
+//     lib/parser/test/smoke.test.ts: the live-tree id array alone.
+//   · T-024's THREE-FIXTURE RULE FIRES HERE, in full, and a FOURTH was
+//     checked rather than assumed: app/src-tauri/crates/nputer-index/
+//     tests/arch.rs drives the same live registry from Rust and pins no
+//     count on purpose (its own header says so), so `cargo test` does not
+//     move. Nothing else in the tree reads this registry live.
 const ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
 
 function read(path: string): string {
@@ -1055,7 +1097,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(graphResult.graph).toBeDefined();
   });
 
-  it("the live registry is the eleven known components", () => {
+  it("the live registry is the twelve known components", () => {
     expect((project.components ?? []).map((c) => c.id)).toEqual([
       "C-01",
       "C-05",
@@ -1068,10 +1110,42 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       "C-12",
       "C-13",
       "C-14",
+      // T-088: C-15 dispatch, declared before its directory exists. It is
+      // the SECOND assertion below — the declared count — that hides
+      // behind this array when both move, which is why both were derived
+      // from the live probe rather than read off the first red.
+      "C-15",
     ]);
     expect(derived.mode).toBe("full");
-    expect(derived.components.filter((c) => c.kind === "declared")).toHaveLength(11);
+    expect(derived.components.filter((c) => c.kind === "declared")).toHaveLength(12);
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
+  });
+
+  // T-088's own criterion, pinned by NAME rather than left to the
+  // whole-array assertions that happen to contain it: a component whose
+  // declared paths match NO file on disk is INTENT, not a defect. The
+  // paths assertion is what makes this body more than a restatement —
+  // nothing else in this tree pins C-15's globs, so widening them to
+  // anything that still matches nothing (say app/src/lib/dispatch-*.ts)
+  // reds here and NOWHERE else, while widening them to something that
+  // matches reds half the fixture. The intent layer exists to carry
+  // components that are not built yet; C-07 has done so since T-009.
+  it("C-15 is DECLARED-ONLY, never a defect: declared paths, zero files, one D3", () => {
+    expect(project.components?.find((c) => c.id === "C-15")?.paths).toEqual([
+      "app/src-tauri/src/dispatch/**",
+      "app/src/lib/dispatch-store.ts",
+    ]);
+    const c15 = derived.components.find((c) => c.id === "C-15");
+    expect(c15?.kind).toBe("declared");
+    expect(c15?.files).toEqual([]);
+    expect(c15?.declaredOnly).toBe(true);
+    expect([...derived.fileComponent.values()].filter((id) => id === "C-15")).toEqual([]);
+    // and the derivation says so as a FINDING, not as an issue or an
+    // unmapped bucket — the difference between "not built yet" and "wrong".
+    expect(derived.findings.filter((f) => "component" in f && f.component === "C-15")).toEqual([
+      { rule: "D3", id: "D3:C-15", component: "C-15" },
+    ]);
+    expect(derived.issues).toEqual([]);
   });
 
   it("all 126 files map — zero unclaimed territory after the §2 amendments", () => {
@@ -1245,7 +1319,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: ten undeclared dependencies, three declared-only components, no unclaimed territory", () => {
+  it("THE FINDINGS: ten undeclared dependencies, four declared-only components, no unclaimed territory", () => {
     expect(derived.findings).toEqual([
       {
         rule: "D1",
@@ -1517,10 +1591,20 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       { rule: "D3", id: "D3:C-01", component: "C-01" },
       { rule: "D3", id: "D3:C-07", component: "C-07" },
       { rule: "D3", id: "D3:C-11", component: "C-11" },
+      // NEW at T-088, and it does NOT arrive by a regen: the branch
+      // declares C-15 dispatch whose two paths match no file on disk, so
+      // the fourth declared-only component appears the moment the .md
+      // lands. It is the same arc C-13 walked at T-024 and C-14 at
+      // T-025, both of which cleared their D3 at the NEXT regen when a
+      // file appeared under the glob; C-15's clears when T-110 writes
+      // app/src-tauri/src/dispatch/** — and NOT before, since Rust is
+      // invisible to the indexer until T-010 (`languages: ["ts"]`), so
+      // the store is what will clear it.
+      { rule: "D3", id: "D3:C-15", component: "C-15" },
     ]);
   });
 
-  it("the full relation table: 13 confirmed, 10 undeclared, 9 planned", () => {
+  it("the full relation table: 13 confirmed, 10 undeclared, 10 planned", () => {
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
       // 8 → 10 at the T-034 merge regen: both new map suites import
@@ -1681,6 +1765,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // honest state C-12→C-07 carries. It flips at the merge regen only
       // if agent-store.ts grows an import into C-10, which it does not.
       ["C-14", "C-10", "planned", 0],
+      // NEW at T-088 and honestly PLANNED, exactly as C-14->C-10 was at
+      // T-025: C-15 declares C-10 because the board half of the lane
+      // join arrives on the docs watcher's existing DocsModelState, and
+      // no TS import can confirm an edge out of a component that has no
+      // TS file yet. It flips to confirmed when dispatch-store.ts is
+      // written and imports docs-model.ts, and not before.
+      ["C-15", "C-10", "planned", 0],
     ]);
   });
 
@@ -1726,9 +1817,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // FILES, and it comes back because it gained OUTGOING undeclared
     // edges — the first time it is a D1 source rather than only a target
     // (→C-05 via components/ui/button.tsx, →C-14 via agent-store.ts).
-    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11", "C-13"]);
+    // C-15 JOINS BOTH LISTS AT T-088, by the D3 route the three
+    // non-code components already take — it is declared with no file
+    // under either glob, so it is a D3 subject and therefore drifts.
+    // THESE ARE TWO ASSERTIONS IN ONE BODY AND BOTH MOVE: a red on the
+    // first hides the second, so both were derived from the live probe
+    // before the suite was run rather than read off the failure output.
+    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11", "C-13", "C-15"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
-    expect(declaredOnly).toEqual(["C-01", "C-07", "C-11"]);
+    expect(declaredOnly).toEqual(["C-01", "C-07", "C-11", "C-15"]);
   });
 
   it("stable rollup structure (values live in the unit tables, not here)", () => {
