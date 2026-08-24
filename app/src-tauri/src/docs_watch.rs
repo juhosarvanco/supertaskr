@@ -9,6 +9,11 @@ use notify_debouncer_mini::{
 };
 use serde::Serialize;
 
+// T-123: the routing question's SECOND input. The fact itself stays in
+// C-14 — this module names the type and calls the accessor, and never
+// learns to read `.nputer/` for itself (T-057).
+use crate::agent::sessions::GenesisReachability;
+
 /// Docs watcher + snapshot pipeline (T-003), re-armable per project (T-007).
 ///
 /// The Rust side never parses: it watches `<project>/docs` and ships raw
@@ -524,12 +529,28 @@ impl PlanProbe {
 /// is T-026's criterion 5 exactly as it was. Nothing here reads a byte of
 /// any plan — see [`PlanProbe::has_plan`] for why that stays true.
 ///
+/// **AND THE SECOND INPUT IS *RESUMABLE*, NOT *REGISTERED* — T-123's
+/// FIRST PASS GOT THIS WRONG AND WAS REJECTED FOR IT.** It asked
+/// `sessions::has_genesis_session`, `genesis_record(..).is_some()`, which
+/// is TRUE for a planner entry with no `native_session_id` and for one
+/// whose recorded id the T-039 read boundary refuses. Neither can be
+/// resumed, and both were routed to a genesis screen carrying no resume
+/// offer, no rail and one CTA gated behind a completion that zero turns
+/// can never reach — a dead end newly created by the change that exists to
+/// remove one. The predicate now takes
+/// [`crate::agent::sessions::GenesisReachability`] and admits only
+/// `Resumable`, so the arm fires only where criterion 1's purpose clause —
+/// *"so T-029's existing resume offer is reachable"* — can actually be
+/// served. A folder holding a plan whose registered interview cannot be
+/// resumed opens as the project it is, which is where it went before
+/// T-123 and where its plan is legible.
+///
 /// ONE RULE, ONE IMPLEMENTATION, FOUR CALLERS (T-057): both readings
 /// inside [`apply_genesis_folder`] and both plan guards in C-14's
 /// `start_genesis` / `resume_genesis`. `fresh_genesis` deliberately does
 /// NOT call it — see its own note.
-pub fn routes_to_genesis(probe: &PlanProbe, registered: bool) -> bool {
-    !probe.has_plan() || registered
+pub fn routes_to_genesis(probe: &PlanProbe, reach: GenesisReachability) -> bool {
+    !probe.has_plan() || reach == GenesisReachability::Resumable
 }
 
 /// The part of a project-relative POSIX path that sits under `docs/`,
@@ -905,10 +926,13 @@ fn open_as_project(state: &WatchState, canon: &Path) -> PickOutcome {
 /// 2. ask [`routes_to_genesis`]: a folder that already holds a plan is
 ///    NOT offered genesis (criterion 5) — route to the ordinary open
 ///    instead, which is the only writer of a project switch either way —
-///    **UNLESS one of our own interviews is registered on it (T-123), in
+///    **UNLESS one of our own interviews is RESUMABLE on it (T-123), in
 ///    which case the plan is very probably the one that interview just
-///    wrote and routing away from genesis is what strands it.** The
-///    registry is read ONCE, here, through C-14's own accessor;
+///    wrote and routing away from genesis is what strands it.** Resumable
+///    and not merely registered: routing to a screen whose resume offer
+///    cannot render is a dead end of its own, which is what the first pass
+///    of this card built and a verifier rejected. The registry is read
+///    ONCE, here, through C-14's own accessor;
 /// 3. rendezvous with the watcher thread (`ArmGenesis`): the root
 ///    sentinel goes on the project root, so the interview's first
 ///    `mkdir docs` re-arms the docs watch and lights the existing
@@ -955,25 +979,37 @@ pub fn apply_genesis_folder(
     // not own this fact and must not learn to read it (T-057). Read ONCE
     // and carried to the post-ack re-read below, exactly as `probe.git`
     // is.
-    let registered = crate::agent::sessions::has_genesis_session(&canon);
-    if !routes_to_genesis(&probe, registered) {
+    let reach = crate::agent::sessions::genesis_reachability(&canon);
+    if !routes_to_genesis(&probe, reach) {
         // Criterion 5: there is no overwrite path in this app. A folder
-        // that already has a plan, and that no interview of ours is
-        // running on, opens as the normal project it is.
-        println!(
-            "[nputer] genesis declined: {} already has a plan - opening it as a project",
-            canon.display()
-        );
+        // that already has a plan, and that no interview of ours can be
+        // RESUMED on, opens as the normal project it is.
+        //
+        // The two ways of getting here are named apart, because stdout is
+        // this app's only trace of a routing decision and "we found your
+        // interview and could not get back into it" is a different fact
+        // from "nothing of ours was ever here". Collapsing them is exactly
+        // what the rejected first pass did one layer down.
+        match reach {
+            GenesisReachability::NotResumable => println!(
+                "[nputer] genesis declined: {} holds a plan and registers an interview with no usable session id - nothing to resume, so opening it as a project",
+                canon.display()
+            ),
+            _ => println!(
+                "[nputer] genesis declined: {} already has a plan - opening it as a project",
+                canon.display()
+            ),
+        }
         return open_as_project(state, &canon);
     }
     if probe.has_plan() {
         // The T-123 arm, said out loud: this folder DOES hold a plan and
-        // is being routed to genesis anyway, because the registry says an
-        // interview of ours is running on it. stdout is this app's only
-        // trace of a routing decision, so the new arm names itself rather
-        // than looking like the old one.
+        // is being routed to genesis anyway, because the registry holds an
+        // interview of ours we can get back INTO. stdout is this app's
+        // only trace of a routing decision, so the new arm names itself
+        // rather than looking like the old one.
         println!(
-            "[nputer] genesis reachable: {} holds a plan AND registers an interview - routing to genesis so the resume offer is reachable",
+            "[nputer] genesis reachable: {} holds a plan AND registers a RESUMABLE interview - routing to genesis so the resume offer is reachable",
             canon.display()
         );
     }
@@ -1055,17 +1091,16 @@ pub fn apply_genesis_folder(
         // argument is now two-part because "off" has two inputs. (a) The
         // arm is reached only where `routes_to_genesis` above already said
         // genesis, so it can turn genesis OFF and never ON — unchanged.
-        // (b) `registered` is the SAME boolean that reading used, carried
-        // in rather than re-read, so the only thing that can differ
-        // between the two readings is the DOCS half, and the docs half can
-        // only move `has_plan` from false toward true. A second read of
-        // the registry here could have flipped the answer back ON — which
-        // is precisely why there is not one.
+        // (b) `reach` is the SAME value that reading used, carried in
+        // rather than re-read, so the only thing that can differ between
+        // the two readings is the DOCS half, and the docs half can only
+        // move `has_plan` from false toward true. A second read of the
+        // registry here could have flipped the answer back ON — which is
+        // precisely why there is not one. THE REBUILD DOES NOT WEAKEN
+        // THIS: narrowing the admitted reachability to `Resumable` narrows
+        // what can hold the route OPEN, which is the veto's own direction.
         Some(snap)
-            if !routes_to_genesis(
-                &PlanProbe::from_docs_snapshot(&snap, probe.git),
-                registered,
-            ) =>
+            if !routes_to_genesis(&PlanProbe::from_docs_snapshot(&snap, probe.git), reach) =>
         {
             println!(
                 "[nputer] genesis declined at the snapshot: {} gained a plan between the probe and the collect - opening it as a project",
@@ -2704,12 +2739,26 @@ mod tests {
     /// writer that produces it could not tell a schema change from a
     /// rename.
     fn register_planner(t: &TempTree, status: &str) {
+        register_planner_entry(t, status, Some("00000000-1111-2222-3333-444444444444"));
+    }
+
+    /// The same writer, with the ONE field the rebuilt routing predicate
+    /// turns on left open (T-123 rebuild). `None` writes the key out
+    /// entirely — the shape `start_genesis` puts on disk before the CLI's
+    /// init line has reported an id — and any other value is written
+    /// verbatim, so a refused id can be planted the way something with disk
+    /// access would plant it.
+    fn register_planner_entry(t: &TempTree, status: &str, native: Option<&str>) {
+        let id_line = match native {
+            Some(id) => format!("\"native_session_id\": \"{id}\",\n      "),
+            None => String::new(),
+        };
         t.write(
             ".nputer/sessions.json",
             &format!(
                 "{{\n  \"sessions\": [\n    {{\n      \"id\": \"S1\",\n      \
                  \"agent\": \"claude\",\n      \"model\": \"claude-opus-5\",\n      \
-                 \"native_session_id\": \"00000000-1111-2222-3333-444444444444\",\n      \
+                 {id_line}\
                  \"created\": \"2026-08-24T18:32:51Z\",\n      \"turns\": 1,\n      \
                  \"tasks\": [],\n      \"roles\": [\n        \"planner\"\n      ],\n      \
                  \"status\": \"{status}\"\n    }}\n  ]\n}}\n"
@@ -2807,6 +2856,14 @@ mod tests {
             !control.root().join(".nputer").exists(),
             "no registry: nothing of ours is running here"
         );
+        // Said as a VALUE and not only as an outcome, so the ABSENCE this
+        // arm drives is distinguishable from the REFUSAL the body below
+        // drives. Both answer `Picked`; only the reachability tells them
+        // apart, and a `bool` predicate could not (T-123's rebuild).
+        assert_eq!(
+            crate::agent::sessions::genesis_reachability(control.root()),
+            GenesisReachability::NoSession
+        );
         let (state, _emits) = live_state(None);
         match apply_genesis_pick(&state, control.root()) {
             PickOutcome::Picked { snapshot } => {
@@ -2821,6 +2878,12 @@ mod tests {
         // abandoned. "A registry file is present" is not the question.
         let dead = stage_zero_tree("t123-control-dead");
         register_planner(&dead, "dead");
+        // An abandoned session is an ABSENCE too — the same value arm 2
+        // carries, reached by a different route.
+        assert_eq!(
+            crate::agent::sessions::genesis_reachability(dead.root()),
+            GenesisReachability::NoSession
+        );
         let (state, _emits) = live_state(None);
         match apply_genesis_pick(&state, dead.root()) {
             PickOutcome::Picked { .. } => {}
@@ -2840,6 +2903,115 @@ mod tests {
                 assert!(snapshot.is_none(), "no docs/ here, so no tree rides");
             }
             other => panic!("expected Genesis for an in-flight interview, got {other:?}"),
+        }
+    }
+
+    /// **THE THIRD CONTROL — THE ONE WHOSE ABSENCE LET THE FIRST PASS OF
+    /// T-123 SHIP A NEW DEAD END** (rebuild, after a REJECTED verdict).
+    ///
+    /// The body above varies the registry two ways: ABSENT, and a planner
+    /// the user ABANDONED. Both are "nothing of ours is here", so both
+    /// exercised the same half of a predicate that was really asking *"is
+    /// a planner entry present?"* — and nothing drove **present but with
+    /// no way back in**. That is the state the first pass routed to the
+    /// genesis screen, where `genesis_start` answers `AlreadyPlanned` or
+    /// `SessionIdRejected`, no resume offer renders, and the one CTA on
+    /// that full-bleed screen sits behind a completion zero turns can
+    /// never reach. Measured through this very call before the fix: both
+    /// shapes ROUTED TO GENESIS. Before T-123 they opened as projects.
+    ///
+    /// **THE ACCEPTANCE PROOF IS ARM 3 AND IT IS ONE JSON FIELD AWAY FROM
+    /// ARMS 1 AND 2** (CONVENTIONS: A NEGATIVE ASSERTION NEEDS A POSITIVE
+    /// CONTROL — a refusal must be shown to differ from an absence, and
+    /// the fixture must be proved acceptable first). Same tree, same
+    /// registry, same `status`, same everything: only `native_session_id`
+    /// moves, and the route moves with it.
+    #[test]
+    fn a_registered_interview_with_no_way_back_into_it_is_not_a_way_back_in() {
+        // ---- ARM 1: a planner entry with NO id recorded. Present, and
+        // there is nothing to resume from.
+        let no_id = stage_zero_tree("t123-notresumable-noid");
+        register_planner_entry(&no_id, "running", None);
+        assert!(
+            probe_plan(no_id.root()).has_plan(),
+            "the folder really does hold the stage-0 plan"
+        );
+        assert_eq!(
+            crate::agent::sessions::genesis_reachability(no_id.root()),
+            GenesisReachability::NotResumable,
+            "PRESENT, and not a way in - the value arms 2 and 3 of the body \
+             above cannot produce"
+        );
+        let (state, _emits) = live_state(None);
+        match apply_genesis_pick(&state, no_id.root()) {
+            PickOutcome::Picked { snapshot } => assert!(
+                snapshot.files.iter().any(|f| f.path == "docs/ROADMAP.md"),
+                "and the plan it wrote rides the ordinary open, where it is legible"
+            ),
+            other => panic!(
+                "a plan with nothing to resume must open as the project it is, got {other:?}"
+            ),
+        }
+
+        // ---- ARM 2: an id IS recorded and the T-039 read boundary
+        // refuses it. `genesis_record` still answers `Some` — which is
+        // exactly what the rejected predicate asked — and there is still
+        // nothing to resume, because `resume_id` refused the value.
+        let refused = stage_zero_tree("t123-notresumable-refused");
+        register_planner_entry(&refused, "idle", Some("--dangerously-skip-permissions"));
+        assert!(
+            crate::agent::sessions::genesis_record(refused.root()).is_some(),
+            "the REJECTED predicate's own question still answers yes here - which is \
+             why asking it was the defect"
+        );
+        assert_eq!(
+            crate::agent::sessions::genesis_reachability(refused.root()),
+            GenesisReachability::NotResumable
+        );
+        let (state, _emits) = live_state(None);
+        match apply_genesis_pick(&state, refused.root()) {
+            PickOutcome::Picked { .. } => {}
+            other => panic!("a refused id is not a way back in either, got {other:?}"),
+        }
+
+        // ---- ARM 3: THE ACCEPTANCE PROOF. The same fixture with one
+        // field changed to an id the boundary accepts. Without this the
+        // two refusals above are satisfied by a router that sends
+        // EVERYTHING to the ordinary open - which is the pre-T-123 defect.
+        let resumable = stage_zero_tree("t123-notresumable-control");
+        register_planner_entry(
+            &resumable,
+            "idle",
+            Some("00000000-1111-2222-3333-444444444444"),
+        );
+        assert_eq!(
+            crate::agent::sessions::genesis_reachability(resumable.root()),
+            GenesisReachability::Resumable
+        );
+        let (state, _emits) = live_state(None);
+        match apply_genesis_pick(&state, resumable.root()) {
+            PickOutcome::Genesis { .. } => {}
+            other => panic!(
+                "the fixture must be ACCEPTED when the one field that moved is a usable \
+                 id, or the two refusals above prove nothing: got {other:?}"
+            ),
+        }
+
+        // ---- ARM 4: and the narrowing costs a folder with NO plan
+        // nothing. An interview in flight before stage 0 has landed has no
+        // id recorded yet either, and it must still reach its own screen -
+        // `routes_to_genesis`'s first term never consults the registry.
+        let inflight = bare_tree("t123-notresumable-inflight");
+        register_planner_entry(&inflight, "running", None);
+        assert!(!probe_plan(inflight.root()).has_plan());
+        assert_eq!(
+            crate::agent::sessions::genesis_reachability(inflight.root()),
+            GenesisReachability::NotResumable
+        );
+        let (state, _emits) = live_state(None);
+        match apply_genesis_pick(&state, inflight.root()) {
+            PickOutcome::Genesis { .. } => {}
+            other => panic!("a docs-less folder is genesis whatever the registry says, got {other:?}"),
         }
     }
 
