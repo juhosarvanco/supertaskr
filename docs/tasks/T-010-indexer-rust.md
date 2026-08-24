@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 3
 size: M
-status: verifying
+status: done
 blocked_by: [T-009]
 touches: [crate-index, docs/architecture/components/]
 builder: claude-opus-5
 verifier:
-built_by:
-verified_by:
-review:
+built_by: claude-opus-5 @T-010
+verified_by: claude-opus-5 @T-010-verify
+review: same-model
 ---
 
 REGISTRY DECISION REQUIRED BEFORE DISPATCH (triage 2026-08-16, from
@@ -662,3 +662,86 @@ the title corrected.
 
 **Three findings routed by me: `T-010-s8`, `T-010-s9`, `T-010-s10`. None
 blocks.**
+
+## Integration — merged to main at `d64c673`, 2026-08-25
+
+Merged `--no-ff` from main-before **`b7b4213`** with the approved tip
+**`9cce194`**; parents are exactly those two and **nothing was written
+into the merge commit**. The merge's diff is **47 paths**; the checkpoint
+is the commit after it.
+
+**MAIN MOVED UNDER THIS INTEGRATION, DURING THE MERGE ITSELF, AND THE
+RANGE RULE CAUGHT IT.** `git rev-parse main` answered `bbcbc39` and the
+`merge-tree` forecast was taken against that; fifty-one seconds later
+another session committed `b7b4213` (a docs-only STATE.md correction) and
+the merge's real first parent became that. The stale forecast's tree and
+the merge's own tree differ by **exactly one path, `docs/STATE.md`** —
+main's own one-commit advance, arriving as pure left-endpoint drift. Re-run
+against `b7b4213`, `merge-tree --write-tree` returns
+`54b886076e94e19d5efbaf8d1fded99c2fc2d07f`, which **IS** the merge's
+`HEAD^{tree}` byte for byte.
+
+**CRITERION 5's FIXTURE HALF IS PAID, RECONCILED AND NOT LOOSENED.** The
+verifier measured 9 red bodies against a regenerated graph and assigned
+them here. The full set was derived from the fresh graph by a throwaway
+probe BEFORE the suite was run — 15 assertions across 9 bodies, 3 body
+titles and 2 stale comments — and the app suite came back **940/940 at
+exit 0 on the first run**, with no hidden second assertion surfacing.
+
+The reconciliation, assertion by assertion:
+
+| fixture | assertion | from | to |
+|---|---|---|---|
+| dogfood | `fileComponent.size` | 126 | **172** |
+| dogfood | per-component tally, C-05 | 59 | **65** |
+| dogfood | per-component tally, C-07 | *(absent)* | **32, a NEW row** |
+| dogfood | per-component tally, C-10 | 2 | **3** |
+| dogfood | per-component tally, C-14 | 1 | **8** |
+| dogfood | `findings` | — | `D1:C-05->C-07` INSERTED, `D3:C-07` REMOVED, `D1:C-05->C-14` 6 → **8** fileEdges |
+| dogfood | relation table | 33 rows | **34** — new `C-05→C-07 undeclared 1`; `C-05→C-10` 34 → **38**; `C-05→C-14` 6 → **8**; **`C-14→C-10` planned 0 → confirmed 2** |
+| dogfood | `drift` | 8 ids | **7** — C-07 out |
+| dogfood | `declaredOnly` | 4 ids | **3** — C-07 out |
+| map | C-05 drift chip | `drift 4` | **`drift 5`** |
+| map | rendered edges | 33 | **34** |
+| map | rendered undeclared | 10 | **11** |
+| map | panel chip | `4 drift findings` | **`5 drift findings`**, plus the C-07 sentence asserted |
+| map | header hint | `126 files` | **`172 files`** |
+| map | the C-07 body | *"declared-only, zero TS files match its globs"* | **inverted whole** |
+
+**THE C-07 BODY IS THE ONE THAT COULD ONLY BE REWRITTEN.** Its premise was
+false by design after this merge, so each of its three assertions is now
+the negation of the one it replaced (no declared-only border, no
+"declared · no files yet", and `32 files` on the face), with the D3 ring
+and `data-drift` newly asserted ABSENT. Its status word is derived LIVE on
+the C-12 body's own rule rather than pinned, because T-010's card is what
+rolls C-07 up and a literal there would red on the pipeline moving the
+card rather than on the map being wrong.
+
+**`C-14→C-10` IS A PREDICTION MADE AT T-025 COMING TRUE UNEDITED.** The
+fixture comment beside that row has read *"no TS import can confirm a
+Rust-side dependency until T-010 extracts Rust"* since 2026-08-16. It
+flips here on `agent/mod.rs` and `tests/agent_runner.rs` reaching
+`docs_watch.rs` — planned 10 → 9, confirmed 13 → 14 — and it is the only
+relation in the table whose KIND moves.
+
+**THE SECOND REGEN WAS NEEDED AND A BYTE COMPARISON WOULD HAVE MISSED
+IT.** The graph was regenerated once to derive the fixture values and
+again after they were written, per the checkpoint rule. Both regens report
+**890 866 bytes**; the graph is NOT the same file — `architecture-dogfood`
+goes `loc` 1852 → **1949** and `map-dogfood-render` 418 → **483** inside
+it, and only `index --check`, which compares content, can tell. It is
+exit **0, CURRENT** after the second.
+
+**THE VERDICT'S SIZE FIGURES ARE CONFIRMED AND THEY ARE 23 BYTES LARGER
+AT THIS REF, WHICH IS NOT A DISAGREEMENT.** 890 843 → **890 866** and the
+floor 186 865 → **186 888**: the same +23 on both, exactly what T-096's
+merge added to the tree between the verifier's base and this one. The
+floor was re-derived independently, and the re-serializer was proved
+first — `JSON.stringify(g, null, 2) + "\n"` reproduces the committed file
+at 890 866 = 890 866 before it is used to measure anything.
+
+**WHERE THE VERDICT AND THE NOTES WERE WRONG.** The verifier's "ONE
+IN-FENCE NIT" about the crate's stale `description` is **two sites**, not
+one — the manifest's header comment says it as well; filed as
+`T-010-s11`. Everything else the verdict states re-derived here.
+

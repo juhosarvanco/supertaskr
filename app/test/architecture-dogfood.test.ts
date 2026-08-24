@@ -1148,8 +1148,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 126 files map — zero unclaimed territory after the §2 amendments", () => {
-    expect(derived.fileComponent.size).toBe(126);
+  it("all 172 files map — zero unclaimed territory after the §2 amendments", () => {
+    // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
+    // move this row has ever taken and the only one whose cause is a new
+    // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
+    // answers, so every `.rs` under app/src-tauri/ enters the index at
+    // once: +46 files, every one of them Rust, and NOT ONE of them is new
+    // on disk. The registry was settled ahead of the regen (the card's own
+    // problem statement demanded it), so `unmappedFiles` below stays [] —
+    // the regen CONFIRMS a decision instead of discovering a bucket.
+    expect(derived.fileComponent.size).toBe(172);
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -1231,7 +1239,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // POSITIVE CONTROL — the same matcher reproduces this array's
       // previous value exactly against the graph committed at 11c82a1 —
       // before the suite was run, never off the failure output.
-      ["C-05", 59],
+      // 59 → 65 at the T-010 merge regen, and for the first time in this
+      // log the reason is NOT a new file: C-05 declares lib.rs, main.rs,
+      // build.rs BY NAME and took acl_pin.rs, churn.rs and index_cmd.rs
+      // in the §5 settlement, and all six became VISIBLE the moment the
+      // walk learned `.rs`. Derived from the regenerated graph's own
+      // file→component map before the suite was run, never off a red.
+      ["C-05", 65],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under
@@ -1249,9 +1263,17 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // `lib/parser/**` glob. The four other parser files are modifications,
       // so they can move hash/loc/symbols but cannot move this count.
       ["C-06", 25],
+      // C-07 JOINS THE MAPPING AT THE T-010 MERGE REGEN WITH THIRTY-TWO
+      // FILES AND NO NEW FILE ON DISK — the row this whole card exists to
+      // create, and the inverse of every C-05 entry above. Its D3 clears
+      // in the same breath (see the drift body below), which is the arc
+      // C-13 walked at T-024 and C-14 at T-025, one language later.
+      ["C-07", 32],
       ["C-08", 10],
       ["C-09", 3],
-      ["C-10", 2],
+      // 2 → 3 at the T-010 merge regen: docs_watch.rs, which C-10 has
+      // claimed by name since T-003 and which no walk could see.
+      ["C-10", 3],
       // 11 → 14 at the T-034 merge regen: TasksLens.tsx, map-lens.ts and
       // task-waves.ts all land under app/src/architecture/**, C-12's own
       // glob and its only claimant. The FILE LIST below moves with it —
@@ -1281,7 +1303,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // (app/src-tauri/src/agent/**, five .rs files) is invisible to the
       // indexer until T-010 lands Rust extraction — languages is still
       // ["ts"]. The same arc C-13 walked at T-024, one language short.
-      ["C-14", 1],
+      // 1 → 8 at the T-010 merge regen, and it is the clause "invisible to
+      // the indexer until T-010 lands Rust extraction" above that stops
+      // being true — the FIVE is still five, re-derived here rather than
+      // trusted: agent/** holds adapter.rs, kit.rs, mod.rs, runner.rs and
+      // sessions.rs. The §5 settlement adds C-14's test double
+      // `src/bin/fake_agent.rs` and its suite `tests/agent_runner.rs`, on
+      // the rule that already puts app/test/** under C-05, so
+      // 1 + 5 + 2 = 8. The map stops under-reporting this component.
+      ["C-14", 8],
     ]);
     // The map pane joined its engine at the T-012 merge regen
     // (T-011-s1 option a keeps the trio in place under lib/).
@@ -1319,7 +1349,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: ten undeclared dependencies, four declared-only components, no unclaimed territory", () => {
+  it("THE FINDINGS: eleven undeclared dependencies, three declared-only components, no unclaimed territory", () => {
     expect(derived.findings).toEqual([
       {
         rule: "D1",
@@ -1344,6 +1374,26 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           { from: "app/test/map-zoom.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/select-board.test.ts", to: LIB_PARSER, package: PARSER_PKG },
           { from: "app/test/select-task-detail.test.ts", to: LIB_PARSER, package: PARSER_PKG },
+        ],
+      },
+      {
+        // NEW at the T-010 merge regen and the ELEVENTH undeclared row.
+        // It is the first D1 in this list whose BOTH ENDS are Rust:
+        // app/src-tauri/src/index_cmd.rs (C-05's by the §5 settlement)
+        // calls into the indexer crate's own lib.rs (C-07's). The edge
+        // has existed in the source since T-014 and no walk could see it;
+        // the registry does not declare it, so it lands as drift the
+        // ARCHITECT rules on rather than something to drain at the merge
+        // that surfaced it. Routed as `T-010-s4`.
+        rule: "D1",
+        id: "D1:C-05->C-07",
+        from: "C-05",
+        to: "C-07",
+        fileEdges: [
+          {
+            from: "app/src-tauri/src/index_cmd.rs",
+            to: "app/src-tauri/crates/nputer-index/src/lib.rs",
+          },
         ],
       },
       {
@@ -1475,7 +1525,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         // (line 5) and dynamically (line 65) and contributes exactly ONE
         // file edge. observedCount is the number of DISTINCT (from,to) file
         // pairs, not the number of import statements.
+        // T-010 merge regen: 6 → 8, and BOTH additions are Rust-to-Rust —
+        // the first entries in any list in this body whose two ends are
+        // both `.rs`. They sort ABOVE the six app/test/** rows, which is
+        // the half a value read off a failure diff by position gets wrong.
         fileEdges: [
+          { from: "app/src-tauri/src/churn.rs", to: "app/src-tauri/src/agent/runner.rs" },
+          { from: "app/src-tauri/src/lib.rs", to: "app/src-tauri/src/agent/mod.rs" },
           { from: "app/test/agent-store.test.ts", to: "app/src/lib/agent-store.ts" },
           { from: "app/test/crescendo-dom.test.tsx", to: "app/src/lib/agent-store.ts" },
           { from: "app/test/crescendo.test.ts", to: "app/src/lib/agent-store.ts" },
@@ -1588,8 +1644,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // three that remain are the genuinely code-less components — C-01
       // is method/ (not code), C-07 is Rust-only until T-010, C-11 is
       // still planned.
+      // D3:C-07 CLEARED AT THE T-010 MERGE REGEN, and it is the only D3
+      // in this ledger ever cleared by a change to the WALK rather than
+      // by a file being written: C-07's 32 files were on disk the whole
+      // time and the sentence above ("Rust-only until T-010") named the
+      // condition exactly. Four declared-only components become THREE —
+      // the SECOND assertion in the drift body below moves with it, in a
+      // different it(), and so does the D3 face on the map fixture.
       { rule: "D3", id: "D3:C-01", component: "C-01" },
-      { rule: "D3", id: "D3:C-07", component: "C-07" },
       { rule: "D3", id: "D3:C-11", component: "C-11" },
       // NEW at T-088, and it does NOT arrive by a regen: the branch
       // declares C-15 dispatch whose two paths match no file on disk, so
@@ -1604,13 +1666,19 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
   });
 
-  it("the full relation table: 13 confirmed, 10 undeclared, 10 planned", () => {
+  it("the full relation table: 14 confirmed, 11 undeclared, 9 planned", () => {
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
       // 8 → 10 at the T-034 merge regen: both new map suites import
       // @nputer/parser, riding the T-009 package.path seam like the
       // eight before them. The fileEdges LIST above moves with it.
       ["C-05", "C-06", "undeclared", 13],
+      // NEW ROW at the T-010 merge regen — the eleventh undeclared and the
+      // first row in this table with a Rust file at BOTH ends
+      // (index_cmd.rs -> the indexer crate's lib.rs). Its fileEdges LIST
+      // lives in the findings body above, a different assertion in a
+      // different it(): the row appearing does not make the list right.
+      ["C-05", "C-07", "undeclared", 1],
       ["C-05", "C-08", "confirmed", 4],
       ["C-05", "C-09", "undeclared", 3],
       // 10 → 13 at the T-024 merge regen: both genesis suites import
@@ -1665,7 +1733,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // component tally in that same body, then this row, then map-dogfood's
       // hint. The ledger entry above warns of exactly this and the integrator
       // still had to learn it once, which is now five cards deep.
-      ["C-05", "C-10", "confirmed", 34],
+      // 34 → 38 at the T-010 merge regen, and every one of the four is a
+      // Rust source edge that has existed since the watcher was written:
+      // acl_pin.rs, churn.rs, index_cmd.rs and lib.rs all reach
+      // docs_watch.rs, which is C-10's by name. Derived from the
+      // regenerated graph's own file-edge set, not read off a red.
+      ["C-05", "C-10", "confirmed", 38],
       ["C-05", "C-11", "planned", 0],
       // 20 → 22 at the T-034 merge regen: map-task-waves.test.ts imports
       // task-waves.ts and map-tasks-lens-dom.test.tsx imports MapView.tsx.
@@ -1695,7 +1768,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // store directly. THREE observedCounts move in this one toEqual and
       // no row is created — the whole merge is eleven MODIFIED indexed
       // files and one NEW one, and only a new file can move a row.
-      ["C-05", "C-14", "undeclared", 6],
+      // 6 → 8 at the T-010 merge regen: churn.rs -> agent/runner.rs (the
+      // shared resolved-binary gate T-013 extracted) and lib.rs ->
+      // agent/mod.rs (the command registration). Both are Rust-to-Rust.
+      ["C-05", "C-14", "undeclared", 8],
       ["C-06", "C-01", "planned", 0],
       ["C-08", "C-05", "undeclared", 4],
       ["C-08", "C-06", "confirmed", 4],
@@ -1764,7 +1840,17 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // the indexer cannot see until T-010 extracts Rust — the same
       // honest state C-12→C-07 carries. It flips at the merge regen only
       // if agent-store.ts grows an import into C-10, which it does not.
-      ["C-14", "C-10", "planned", 0],
+      // AND AT THE T-010 MERGE REGEN IT FLIPS — planned 0 -> CONFIRMED 2,
+      // by the OTHER route that sentence names. agent-store.ts still has
+      // no import into C-10; what confirms the edge is the Rust half the
+      // clause above says the indexer cannot see: agent/mod.rs and
+      // tests/agent_runner.rs both reach docs_watch.rs. This is the ONLY
+      // relation in the table whose KIND moves at this merge (planned
+      // 10 -> 9, confirmed 13 -> 14), and it is a prediction written down
+      // at T-025 coming true unedited. C-12->C-07 is the sibling that
+      // does NOT flip: C-12's TS map sources still make no call into the
+      // indexer crate, so it stays honestly planned.
+      ["C-14", "C-10", "confirmed", 2],
       // NEW at T-088 and honestly PLANNED, exactly as C-14->C-10 was at
       // T-025: C-15 declares C-10 because the board half of the lane
       // join arrives on the docs watcher's existing DocsModelState, and
@@ -1807,7 +1893,10 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
 
   it("drift flags land on the right nodes", () => {
     const drift = derived.components.filter((c) => c.hasDrift).map((c) => c.id);
-    // D1 sources: C-05, C-08, C-09; D3: C-01, C-07, C-11. C-13 left the
+    // D1 sources: C-05, C-08, C-09; D3: C-01, C-11 (and C-15 below).
+    // That D3 list read "C-01, C-07, C-11" until the T-010 merge regen
+    // and is corrected in place rather than left beside a moved
+    // assertion. C-13 left the
     // set at the T-024 merge regen and C-14 at the T-025 one — both have
     // files now, and both are the TARGET of a D1 from C-05, never its
     // source. C-14 was in this list on the branch, before the regen it
@@ -1823,9 +1912,17 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // THESE ARE TWO ASSERTIONS IN ONE BODY AND BOTH MOVE: a red on the
     // first hides the second, so both were derived from the live probe
     // before the suite was run rather than read off the failure output.
-    expect(drift).toEqual(["C-01", "C-05", "C-07", "C-08", "C-09", "C-11", "C-13", "C-15"]);
+    // C-07 LEAVES BOTH LISTS AT THE T-010 MERGE REGEN, and it is the
+    // first component to leave the drift set without gaining or losing a
+    // single file on disk — the walk learned `.rs`, its 32 files became
+    // visible, its D3 cleared, and it is a D1 TARGET (from C-05) and
+    // never a source, which is exactly the C-13-at-T-024 and
+    // C-14-at-T-025 route one language later. Both assertions were
+    // derived from the live probe before the suite ran, for the same
+    // reason the sentence above gives.
+    expect(drift).toEqual(["C-01", "C-05", "C-08", "C-09", "C-11", "C-13", "C-15"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
-    expect(declaredOnly).toEqual(["C-01", "C-07", "C-11", "C-15"]);
+    expect(declaredOnly).toEqual(["C-01", "C-11", "C-15"]);
   });
 
   it("stable rollup structure (values live in the unit tables, not here)", () => {

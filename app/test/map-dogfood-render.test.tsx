@@ -101,11 +101,37 @@ describe("the nputer repo on its own map", () => {
     expect(c01.textContent).toContain("pin");
   });
 
-  it("C-07 is declared-only: zero TS files match its globs", () => {
+  it("C-07 is a REAL face at last: thirty-two Rust files match its globs", () => {
+    // THE ASSERTION THAT INVERTS AT THE T-010 MERGE REGEN (2026-08-25),
+    // and the one this whole card exists to invert. This body read
+    // "C-07 is declared-only: zero TS files match its globs" from T-012
+    // to T-096 — true, and true for a reason the title said out loud:
+    // the indexer collected TS/JS only, so the crate that WRITES the
+    // graph was the one component the graph could not see. Nothing was
+    // written to close it. `Lang::for_extension("rs")` now answers, the
+    // 32 files that were always on disk enter the index, and every one
+    // of the three assertions below is the negation of the one it
+    // replaced. Its D3 finding and its drift ring go with them.
     const c07 = node("C-07");
-    expect(c07.className).toContain("bg-transparent");
-    expect(c07.className).toContain("border-map-declared-only-border");
-    expect(c07.textContent).toContain("declared · no files yet");
+    expect(c07.className).not.toContain("border-map-declared-only-border");
+    expect(c07.textContent).not.toContain("declared · no files yet");
+    expect(c07.textContent).toContain("32 files");
+    // The D3 ring is gone with the finding that drew it — the visible
+    // half of architecture-dogfood's declaredOnly list losing C-07.
+    expect(c07.className).not.toContain("map-drift-ring");
+    expect(c07.getAttribute("data-drift")).toBeNull();
+    // The status word is derived LIVE rather than pinned, on the C-12
+    // body's rule below: T-010's own card is what rolls C-07 up, so
+    // pinning a literal here would red on the pipeline moving the card
+    // rather than on the map being wrong.
+    const model = parseProjectFromFiles(liveFiles());
+    const status = deriveArchitecture({
+      components: model.components ?? [],
+      tasks: model.tasks,
+    }).components.find((c) => c.id === "C-07")?.status;
+    expect(status).toBeDefined();
+    expect(c07.getAttribute("data-status")).toBe(status);
+    expect(c07.className).toContain(`bg-status-${status}`);
   });
 
   it("the reconciled findings light the right faces (D1 sources + D3 rings)", () => {
@@ -113,8 +139,17 @@ describe("the nputer repo on its own map", () => {
     // regen, and →C-14 since the T-025 one), C-08, C-09. D3: C-01,
     // C-07, C-11 — C-13's D3 cleared when the indexer first saw
     // app/src/genesis/, C-14's when it first saw agent-store.ts.
+    // 4 → 5 at the T-010 merge regen: C-05 gains a FIFTH D1 finding,
+    // →C-07, because index_cmd.rs (C-05's by the §5 settlement) calls
+    // into the indexer crate's lib.rs and neither end was visible before.
+    // A drift COUNT moves when the NUMBER of a component's D1 findings
+    // moves — the T-028 lesson — and this merge is the first time that
+    // number moves for C-05 since the T-025 regen. C-08, C-09 and C-13
+    // hold: no Rust file is claimed by any of them, and C-13's four
+    // findings are all TS-to-TS. Derived from the live derivation before
+    // the suite was run.
     expect(node("C-05").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
-      "drift 4",
+      "drift 5",
     );
     expect(node("C-08").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
       "drift 1",
@@ -176,7 +211,7 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 33-edge relation table", () => {
+  it("draws the full 34-edge relation table", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
@@ -206,17 +241,30 @@ describe("the nputer repo on its own map", () => {
     // code can only ever add planned rows. Both numbers were derived
     // from the live derivation before the suite ran, because a red on
     // the first assertion hides the second either way round.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(33);
+    // 33 → 34 at the T-010 merge regen, and BOTH numbers move this time —
+    // the trap in this body running the ordinary way round after T-088
+    // ran it backwards. The one new row is C-05→C-07 (undeclared, the
+    // eleventh), so undeclared goes 10 → 11. A THIRD number moves that
+    // neither assertion here can see and architecture-dogfood's relation
+    // table does: C-14→C-10 flips planned → confirmed on Rust file edges,
+    // so planned goes 10 → 9 and confirmed 13 → 14 with the ROW COUNT
+    // moving only by the C-05→C-07 row. 14 + 11 + 9 = 34. Both numbers
+    // were derived from the live derivation before the suite ran.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(34);
     expect(
       container.querySelectorAll('[data-testid=map-edge][data-relation="undeclared"]'),
-    ).toHaveLength(10);
+    ).toHaveLength(11);
   });
 
   it("opens the C-05 panel on its real findings", () => {
     act(() => node("C-05").click());
     const panel = container.querySelector("[data-testid=map-panel]") as HTMLElement;
+    // 4 → 5 at the T-010 merge regen, with the fifth sentence asserted
+    // below rather than only counted, on the same rule the C-14 comment
+    // states: a renumbered chip must never be able to pass on a
+    // different finding.
     expect(panel.querySelector("[data-testid=map-panel-drift-chip]")?.textContent).toContain(
-      "4 drift findings",
+      "5 drift findings",
     );
     expect(panel.textContent).toContain("C-05 imports C-06 without declaring the dependency.");
     expect(panel.textContent).toContain("C-05 imports C-09 without declaring the dependency.");
@@ -226,6 +274,10 @@ describe("the nputer repo on its own map", () => {
     // just counted, so the renumbering above can never pass on a
     // different finding.
     expect(panel.textContent).toContain("C-05 imports C-14 without declaring the dependency.");
+    // The fifth, since the T-010 merge regen: the shell's own index
+    // command reaching the indexer crate. Both ends are Rust, so this
+    // sentence could not be rendered by any graph before this one.
+    expect(panel.textContent).toContain("C-05 imports C-07 without declaring the dependency.");
     // The dependency grid shows the observed-only rows in warning ink
     // and the header hint counts the committed graph.
     expect(panel.querySelector("[data-testid=map-panel-dependencies]")).not.toBeNull();
@@ -411,8 +463,21 @@ describe("the nputer repo on its own map", () => {
     // node count above moves 11 → 12 and the edge count 32 → 33 while
     // this hint does not move at all — the exact inverse of T-073's
     // entry, where a file joined the index and moved ONLY this hint.
+    // 126 → 172 at the T-010 merge regen (2026-08-25) — the largest jump
+    // this hint has ever taken, +46, and the ONLY entry in this ledger
+    // where not one of the joining files is new on disk. The walk learned
+    // a LANGUAGE: `Lang::for_extension("rs")` answers, so every `.rs`
+    // under app/src-tauri/ enters the index at once, `languages` goes
+    // ["ts"] → ["rust","ts"], and the committed graph goes 648 886 →
+    // 890 866 bytes / 1126 → 1874 symbols / 1712 → 1842 edges. Unlike
+    // T-073's and T-088's entries, EVERYTHING moves with it: the node
+    // count holds at 12 (no component is declared here) but the relation
+    // table gains a row and flips a relation, C-05's drift chip goes 4 →
+    // 5, C-07 stops being a declared-only face, and architecture-dogfood
+    // records the full per-component delta. Derived from the regenerated
+    // graph before the suite was run.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 126 files",
+      "committed graph · 172 files",
     );
   });
 });

@@ -434,16 +434,28 @@
 
   | walk | authority (the file that decides) | what it sees |
   |---|---|---|
-  | the GRAPH — `nputer-index` | `.nputerignore`, plus `Lang::for_extension` and `walk_root` in app/src-tauri/crates/nputer-index/src/{graph,walk}.rs | `.ts .tsx .mts .cts .js .jsx` anywhere not ignored; `.git` and node_modules hard-skipped whatever the ignore files say; symlinks skipped outright |
+  | the GRAPH — `nputer-index` | `.nputerignore`, plus `Lang::for_extension` and `walk_root` in app/src-tauri/crates/nputer-index/src/{graph,walk}.rs | `.ts .tsx .mts .cts .js .jsx` **and, since T-010, `.rs`** anywhere not ignored; `.git` and node_modules hard-skipped whatever the ignore files say; symlinks skipped outright |
   | lint TOKEN — P1–P4, over MASKED source | `TOKEN_ROOTS`, `TOKEN_EXTENSIONS`, `SKIP_DIRS`, `TOKEN_EXCLUDED_FILES` in tools/e2e/scripts/token-scan.mjs | `.ts .tsx .mjs` under app/src, app/test, tools/e2e, minus the two lint implementation files by NAME |
   | lint CONTROL — P5, over RAW bytes | `git ls-files -z` minus `SKIP_DIRS` minus `CONTROL_BINARY_EXTENSIONS`, same file (T-058) | every TRACKED first-party text file — docs, method, .github, Rust, both lockfiles, dotfiles and extensionless fixtures included |
   | the PARSER's live docs | lib/parser/src/project.ts, pinned by lib/parser/test/smoke.test.ts | docs/tasks/`T-*.md` and docs/architecture/components/`C-*.md`, both FLAT and non-recursive, plus docs/ROADMAP.md |
 
   WHAT THAT MEANS AT A DIFF, which is when the question is always asked:
   a new `.ts` under tools/ is seen by TOKEN and CONTROL and NOT by the
-  graph (tools/ is `.nputerignore`d). A new `.rs` is seen by CONTROL
-  ONLY — the indexer deliberately does not collect Rust
-  (`Lang::Rust` maps to no extension). A new `.md` under docs/ is seen by
+  graph (tools/ is `.nputerignore`d). **A new `.rs` is seen by CONTROL AND
+  BY THE GRAPH, and it is a CODE INPUT to `cargo test` besides** — which
+  is a correction, dated 2026-08-25 at T-010's merge `d64c673` and made in
+  place rather than quietly (`T-010-s1`). This row read *"A new `.rs` is
+  seen by CONTROL ONLY — the indexer deliberately does not collect Rust
+  (`Lang::Rust` maps to no extension)"* from T-078 until that merge, and
+  both halves are now false: `Lang::for_extension("rs")` returns
+  `Some(Lang::Rust)` and `IndexOptions::default().languages` is
+  `[Ts, Js, Rust]`. **THE AUTHORITY COLUMN NEEDED NOTHING**, which is this
+  bullet's own design working — it already named `Lang::for_extension` and
+  `walk_root`, which is exactly where the change landed, so the SIGNPOST
+  went stale and the gate did not. The second-order effect is nil: GRAPH
+  REGEN cites this row (*"No suffix rule can match the walk"*) and its
+  argument is unaffected, because `.nputerignore` still excludes docs/,
+  tools/ and the indexer's own fixture trees. A new `.md` under docs/ is seen by
   CONTROL, and by the PARSER only if it is a flat `docs/tasks/T-*.md` or
   `docs/architecture/components/C-*.md`. THIS FILE is seen by CONTROL
   only: the parser never reads it, which is why an edit here cannot move

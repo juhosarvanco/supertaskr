@@ -41,6 +41,18 @@
   naming none. It is the first thing the map shows that does not come
   out of a file — and on a folder that is not a git repository the
   segment is DISABLED with the reason on it, not quietly missing
+  Since T-010 (2026-08-25) the REALITY half is no longer one language.
+  The indexer collects `.rs` on the same walk as `.ts`, so the map
+  finally draws the part of this repository that was never on it: the
+  crate that WRITES the graph (C-07, zero files → 32), the shell's Rust
+  half, and the agent runner at 8 files instead of 1. Two things follow
+  that a bigger picture would not have given on its own — a declared
+  relation the map could only call PLANNED is now CONFIRMED by real
+  edges (C-14 → C-10, predicted in the fixture at T-025 and left there
+  unedited), and drift becomes symmetrical: `app/src-tauri/**` can
+  create and clear findings where before it could do neither. The
+  committed graph pays 648 886 → 890 866 bytes for it, 89.09% of its
+  own budget, which is now F-06's tightest live constraint
 
 ## Milestones
 ### Milestone 0 — planning (current)
@@ -570,10 +582,24 @@ Of the four cards milestone 3 promised would "re-enter after it"
 indexer binary landed with watch and check modes, and **T-013 landed
 2026-08-23** (merge `6834287`, checkpoint `d673039`): semantic zoom
 T1/T2 plus the churn overlay, which gave the map pane a third data
-source that is not a file. T-010 and T-015 remain planned and remain
-backlog rather than slice content. (This paragraph read "the other
-three remain planned" for two checkpoints after T-013 merged; corrected
-at T-085's.)
+source that is not a file. **THREE ARE DONE SINCE 2026-08-25: T-010
+LANDED** (merge `d64c673`), and it is the one of the four that changes
+what the map IS rather than what it can do. F-06's own line above
+promises "intent + reality overlaid"; the REALITY half was TypeScript
+only, so the crate that writes the graph could not appear in it, the
+agent runner rendered as one file out of eight, and every merge under
+`app/src-tauri/**` could truthfully report "the graph is byte-identical"
+because the graph could not see Rust at all. It can now: `languages`
+goes `["ts"]` → `["rust","ts"]`, 46 `.rs` files enter the index without
+one of them being new on disk, C-07 goes from a declared-only face with
+ZERO files to 32, and a relation the registry declared at T-025 and the
+map could only call PLANNED — C-14 → C-10 — is confirmed by evidence for
+the first time. The cost is recorded with it and it is the number this
+milestone now has to watch: the committed graph is **890 866 bytes,
+89.09% of its own budget** (`T-010-s3`). **T-015 alone remains planned**
+and remains backlog rather than slice content. (This paragraph read "the
+other three remain planned" for two checkpoints after T-013 merged;
+corrected at T-085's.)
 Open before any card dispatches: **D3** (may the app ever write into
 `docs/`? — it never has; gates the selector card only, not the slice)
 and **D5** (what can `model@session` mean, given `--model` is
