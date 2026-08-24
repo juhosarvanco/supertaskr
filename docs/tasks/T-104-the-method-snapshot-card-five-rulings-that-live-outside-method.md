@@ -150,8 +150,69 @@ buried:
 `T-089-s11` records the same two rows from the verdict side; both are
 absorbed here.
 
+## TWO MORE RULINGS ARRIVED 2026-08-25, AND THEY ARE THE SAME SHAPE — RATIFIED EVERYWHERE EXCEPT `method/`
+
+Both were ruled by @human on 2026-08-25 (*"All of your decisions are
+great — solidify them into the way we/nputer works"*), and both land in
+`method/` files this card's fence is the only one that can reach. They
+are carried here rather than given their own card precisely because a
+second card would reproduce the deferral this one exists to end.
+
+**SIX — THE CEREMONY TABLE'S SIZE-S ROW IS TOO WIDE.**
+`method/tasks/TASK-FORMAT.md` gives size S "executor + tests; the
+executor is its OWN integrator. No verifier, no *separate* integrator."
+The ruling narrows it: **an S card that touches SHIPPED CODE gets a
+verifier; an S card whose diff is docs, method or tooling keeps
+self-integration.** The evidence is this project's own record —
+**13 of 75 done cards are `self-verified` at `d43455b`**, and the
+figure's own movement is the argument: it was **10** at T-090's
+checkpoint and the three S cards that self-integrated on 2026-08-24/25
+are exactly the delta, two of them (`T-090`, `T-113`) into shipped
+surfaces. (Derived from disk here and corrected in the writing — the
+architect first transcribed the stale 10, which is the same failure the
+first criterion below guards against.) A fourth, `T-015`, turned out to be
+UNBUILDABLE in a way only a careful executor caught. Nothing went wrong;
+the point is that nothing adversarial was watching the two that touched
+shipped code. **The rung is cheap** — it adds one session to a minority
+of S cards and leaves the docs/tooling majority untouched.
+
+**SEVEN — THE INDEPENDENCE THAT PAYS IS INFORMATIONAL, NOT MODEL
+DIVERSITY, AND `review:` SHOULD SAY SO.** Derived from disk at
+`d43455b`: of 75 done cards, **56 `same-model`, 5 `independent`, 10
+`self-verified`, 1 empty**. `method/roles/verifier.md` and the `review:`
+vocabulary both read as though a DIFFERENT MODEL were the guarantee —
+yet the sharpest verdict this project has recorded, T-101's rejection
+with three blocking findings none of which appeared in the executor's
+own eleven-row matrix, was **`same-model`**. What produced it was the
+INFORMATIONAL constraint (card + diff, never the executor's reasoning),
+which is the same property `T-121`'s arm 2 is about. **The method should
+say that the blindness is the guarantee and the model string is
+provenance** — so a `same-model` verdict stops reading as a weaker
+verdict than it is, and nobody is tempted to buy diversity instead of
+blindness. This is prose, not a new status: the four `review:` values do
+not change.
+
+**BOTH DEPEND ON THE BUMP QUESTION BELOW**, and the two look different
+under it: six changes a NORMATIVE sentence (the ceremony table decides
+what a pipeline owes), while seven is a clarification of what an
+existing field already means. Answer them per item, as the first
+criterion requires.
+
 ## Acceptance criteria
 
+- **THE SIZE-S CEREMONY ROW SHALL BE NARROWED AS RULED**, and the
+  boundary SHALL be stated in terms a dispatcher can apply without
+  judgement — "touches shipped code" needs to name how it is decided
+  (the card's `touches:` against the component registry is the obvious
+  mechanism, since a slug already distinguishes `app-*`/`lib-parser`/
+  `crate-index` from `method/`, `docs/*` and `tools/e2e`). IF the
+  boundary cannot be made mechanical THEN say so and give the dispatcher
+  the rule of thumb plus the reason it is not a gate.
+- **`review:`'s MEANING SHALL BE CORRECTED IN PROSE WITHOUT ADDING A
+  VALUE**: the guarantee is the INFORMATIONAL constraint, the model
+  string is provenance, and the figures above SHALL be re-derived at the
+  lane's own ref rather than transcribed (a count in a method file is a
+  line number by another name).
 - **THE BUMP QUESTION SHALL BE ANSWERED FIRST AND IN WRITING**: are
   these CLARIFICATIONS of the existing three moves and the existing
   format — in which case they are prose in `method/` and no version
