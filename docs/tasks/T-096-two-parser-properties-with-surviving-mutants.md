@@ -5,14 +5,14 @@ feature: F-02
 milestone: 4
 priority: 52
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [lib-parser]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @T-096
 verified_by:
-review:
+review: self-verified
 ---
 
 Absorbs: T-076-s4, T-076-s5 (sixth triage, 2026-08-20). Both files

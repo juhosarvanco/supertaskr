@@ -12006,8 +12006,8 @@
       "id": "f:lib/parser/test/component.test.ts",
       "path": "lib/parser/test/component.test.ts",
       "lang": "ts",
-      "hash": "blake3:d2d6601cc8ce45d4f2f61d732ce54587ae1ec51125ccbea9f17ee191c8afbbdc",
-      "loc": 956,
+      "hash": "blake3:791f1650d440210ec67463442daa5153f71cc349b2647da7e586d27e49c5f011",
+      "loc": 1025,
       "symbols": [
         {
           "id": "s:lib/parser/test/component.test.ts#FILE",
@@ -12075,8 +12075,8 @@
       "id": "f:lib/parser/test/files.test.ts",
       "path": "lib/parser/test/files.test.ts",
       "lang": "ts",
-      "hash": "blake3:23a1037dba07073817536b017bbfb62c339bc5295fe7d4f2fcc54f67bace0867",
-      "loc": 221,
+      "hash": "blake3:893879d3ad7a0df5f2e9ceb5f2d6a3741215c6a9c9280ea96ca82c1e0996feaf",
+      "loc": 260,
       "symbols": [
         {
           "id": "s:lib/parser/test/files.test.ts#fixture",
@@ -12095,7 +12095,7 @@
           "exported": false,
           "range": [
             11,
-            25
+            38
           ]
         }
       ]
@@ -12139,8 +12139,8 @@
       "id": "f:lib/parser/test/project.test.ts",
       "path": "lib/parser/test/project.test.ts",
       "lang": "ts",
-      "hash": "blake3:9ea15cd9b6e581a78c23c7d1d6acff18cac01c23b3cae149c0b45ba051faeadb",
-      "loc": 121,
+      "hash": "blake3:9edd362aa1b94c8548025dd749cd26c186b54a6ce4e97b28e88fdbbdae006168",
+      "loc": 156,
       "symbols": [
         {
           "id": "s:lib/parser/test/project.test.ts#fixture",
@@ -16924,6 +16924,7 @@
       "to": "p:node:fs",
       "kind": "import",
       "symbols": [
+        "existsSync",
         "readFileSync",
         "readdirSync"
       ]
