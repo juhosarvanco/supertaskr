@@ -3561,13 +3561,23 @@ mod tests {
     /// readings is the DOCS half, and the docs half can only move
     /// `has_plan` from false toward true. A SECOND registry read here
     /// could have flipped the answer back ON, which is precisely why there
-    /// is not one — and mutating the carried `registered` to a literal
-    /// `false` reds this body and nothing else in the suite.
+    /// is not one.
     ///
     /// Driven on T-064's own relay, so the write lands EXACTLY in the
     /// window rather than approximately. The unregistered column is the
     /// in-body positive control this negative needs: without it, "the veto
     /// did not fire" is indistinguishable from "the veto never fires".
+    ///
+    /// **SHAPE SIX, ASKED AND ANSWERED ON THE RECORD** (T-123's drill,
+    /// nine mutants at `8558352`): every mutant that reds this body also
+    /// reds
+    /// `a_planned_folder_that_registers_an_interview_is_still_reachable_as_genesis`,
+    /// and none reds this one alone — that body reaches BOTH readings,
+    /// because its plan is on disk before the probe runs. This body is
+    /// kept anyway, and the reason is the state it drives rather than a
+    /// mutant it kills: it is the only place where the two readings of one
+    /// folder DISAGREE about `has_plan` and the registry is what settles
+    /// it, which is the property criterion 6 requires pinned.
     #[test]
     fn a_plan_written_in_the_window_by_our_own_registered_interview_stays_genesis() {
         // REGISTERED: the plan that appears mid-rendezvous is the
