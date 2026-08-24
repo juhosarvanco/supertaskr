@@ -5,7 +5,7 @@ import type {
   TaskSize,
   TaskStatus,
 } from "@nputer/parser/pure";
-import { statusVisual, type BoardCard, type StatusVisual } from "./board-model";
+import { issuesByFile, statusVisual, type BoardCard, type StatusVisual } from "./board-model";
 
 /**
  * Card detail model (T-005): a pure function of the T-003 store's
@@ -90,6 +90,19 @@ export interface TaskDetail {
   verdicts?: string;
   blockedBy: BlockerLink[];
   touches: string[];
+  /**
+   * The parser's own sentences about this task's file, VERBATIM and in
+   * issue order (T-019-s1) — the panel lists them, the card face only
+   * marks that they exist. Joined by `issuesByFile`, the ONE lens the
+   * board face and this panel share, so the mark and the list can never
+   * disagree about which card is flagged (the verdicts.ts rule applied
+   * to a second derivation).
+   *
+   * `[]` rather than absent, matching `blockedBy` and `touches` in this
+   * interface: the panel decides whether to render a section from the
+   * length, and every other list here is always present.
+   */
+  issues: string[];
   /** Raw `built_by` / `verified_by` stamp values (e.g. `codex/gpt-5.2
    * @S3`); undefined renders as a visibly empty stamp. */
   builtBy?: string;
@@ -196,6 +209,7 @@ export function selectTaskDetail(model: ProjectParseResult, ref: TaskRef): TaskD
     verdicts: section(task.sections.verdicts),
     blockedBy,
     touches: task.touches,
+    issues: issuesByFile(model.issues).get(task.file) ?? [],
     builtBy: task.builtBy?.raw,
     verifiedBy: task.verifiedBy?.raw,
     review: task.review,

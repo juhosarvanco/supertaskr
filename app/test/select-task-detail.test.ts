@@ -324,3 +324,34 @@ describe("selectTaskDetail — suggestions (minimal ghost variant)", () => {
     expect(refLabel({ kind: "file", file: path("x") })).toBe(path("x"));
   });
 });
+
+describe("the panel's soft issues (T-031, absorbing T-019-s1)", () => {
+  it("carries the parser's own sentences for THIS file, and [] for a clean task", () => {
+    const model = parseProjectFromFiles([
+      { path: "docs/ROADMAP.md", content: ROADMAP },
+      { path: path("T-430"), content: task("T-430", [["blocked_by", "[T-777]"]]) },
+      { path: path("T-431"), content: task("T-431") },
+    ]);
+    const flagged = selectTaskDetail(model, { kind: "id", id: "T-430" });
+    expect(flagged?.issues).toEqual(
+      model.issues.filter((i) => "file" in i && i.file === path("T-430")).map((i) => i.message),
+    );
+    expect(flagged?.issues.length).toBe(1);
+    expect(flagged?.issues[0]).toContain("T-777");
+    // Same model, same call, nothing to say: [] rather than absent,
+    // matching blockedBy/touches — the panel decides on the length.
+    expect(selectTaskDetail(model, { kind: "id", id: "T-431" })?.issues).toEqual([]);
+  });
+
+  it("issues follow the FILE, so a panel re-targeted to another task never inherits them", () => {
+    const model = parseProjectFromFiles([
+      { path: "docs/ROADMAP.md", content: ROADMAP },
+      { path: path("T-432"), content: task("T-432", [["feature", "F-99"]]) },
+      { path: path("T-433"), content: task("T-433", [["blocked_by", "[T-888]"]]) },
+    ]);
+    expect(selectTaskDetail(model, { kind: "id", id: "T-432" })?.issues[0]).toContain("F-99");
+    expect(selectTaskDetail(model, { kind: "id", id: "T-433" })?.issues[0]).toContain("T-888");
+    // …and each has exactly its own, not the union.
+    expect(selectTaskDetail(model, { kind: "id", id: "T-432" })?.issues.length).toBe(1);
+  });
+});

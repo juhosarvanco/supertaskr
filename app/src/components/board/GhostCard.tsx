@@ -8,7 +8,11 @@ import { cardRef, type TaskRef } from "@/lib/task-detail";
  * when present. T-005: clicking opens the detail panel's minimal
  * suggestion variant (id-less ghosts open by file ref). T-017
  * (T-004-s1): the title span breaks pathological unbroken runs instead
- * of bleeding across columns — same containment as TaskCard. */
+ * of bleeding across columns — same containment as TaskCard. T-031
+ * (T-017-s1): the provenance line is the OTHER file-derived text on this
+ * face — `suggested_by` is free-form attribution the parser only checks
+ * for non-emptiness — so it wears the same treatment rather than a
+ * second policy. */
 export function GhostCard({ card, onOpen }: { card: BoardCard; onOpen: (ref: TaskRef) => void }) {
   return (
     <li
@@ -30,7 +34,10 @@ export function GhostCard({ card, onOpen }: { card: BoardCard; onOpen: (ref: Tas
             {card.title}
           </span>
         </span>
-        <span className="font-mono text-xs tracking-tag text-muted-foreground uppercase">
+        <span
+          data-testid="ghost-provenance"
+          className="min-w-0 font-mono text-xs tracking-tag break-words text-muted-foreground uppercase"
+        >
           {card.suggestedBy === undefined ? "suggested" : `suggested · ${card.suggestedBy}`}
         </span>
       </button>

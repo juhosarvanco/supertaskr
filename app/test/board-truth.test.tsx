@@ -462,3 +462,375 @@ describe("header controls do not dismiss the panel (T-005-s3, full App)", () => 
     expect(panel()).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------
+// T-031: the containment sweep's remaining surfaces, the soft-issue join,
+// and the model badge's bound. Same discipline as the T-017 block above —
+// jsdom does no layout, so what is pinned here is the CLASS contract plus
+// the fact that the whole hostile run really is in the DOM (a containment
+// assertion over a fixture that never rendered would pass for the wrong
+// reason). The compiled stylesheet defining the rules is probed from
+// dist/ at build time; the launch look stays @human's.
+// ---------------------------------------------------------------------
+
+/** The T-004-s1 repro generalized to frontmatter FIELDS (T-017-s1). */
+const HOSTILE = "H".repeat(10_000);
+/** A second one, so the resolved and unresolved blocker chips — two
+ * different render paths — each get their own unbroken run. */
+const HOSTILE_DANGLING = "U".repeat(10_000);
+/** The file path is file-derived text too (the panel's footer prints it,
+ * and an id-less ghost's ref line IS it). Kept to 200 rather than 10k
+ * because a path is the one field with a real-world ceiling. */
+const HOSTILE_PATH = `docs/tasks/T-300-${"P".repeat(200)}.md`;
+
+/** Utilities that would HIDE glyphs. T-017's ruling is that the board
+ * tells the whole truth: a hostile field makes a taller surface, never
+ * hidden text. The one deliberate exception is the model badge, whose
+ * own describe below states why a chip may clip where prose may not. */
+const CLAMPING = ["truncate", "text-ellipsis", "overflow-hidden", "whitespace-nowrap", "text-nowrap"];
+
+const expectWraps = (el: Element | null): void => {
+  if (el === null) throw new Error("surface not rendered");
+  expect(el.classList.contains("break-words")).toBe(true);
+  expect(el.classList.contains("min-w-0")).toBe(true);
+  for (const clamp of CLAMPING) expect(el.classList.contains(clamp)).toBe(false);
+};
+
+const HOSTILE_VERDICT = [
+  "",
+  "## Verdicts",
+  "2026-08-20 — codex (verifier): REJECTED — repro below.",
+  "",
+  `    ${"R".repeat(2_000)}`,
+  "",
+].join("\n");
+
+const HOSTILE_MODEL = parseProjectFromFiles([
+  { path: "docs/ROADMAP.md", content: ROADMAP },
+  {
+    path: HOSTILE_PATH,
+    content: src(
+      [
+        ["id", "T-300"],
+        ["title", HOSTILE],
+        ["feature", "F-01"],
+        ["milestone", 1],
+        ["priority", 1],
+        ["size", "M"],
+        ["status", "done"],
+        ["blocked_by", `[T-301, ${HOSTILE_DANGLING}]`],
+        ["touches", `[${HOSTILE}, "<img src=x onerror=alert(1)>"]`],
+        ["built_by", HOSTILE],
+        ["verified_by", HOSTILE],
+        ["review", "same-model"],
+      ],
+      HOSTILE_VERDICT,
+    ),
+  },
+  {
+    // The RESOLVED half of the blocker pair, and it is deliberately an
+    // ORDINARY id. A resolved chip cannot carry a hostile run BY
+    // CONSTRUCTION — resolution requires a declared task, and the
+    // parser's identity gate refuses any `id` that is not shaped like
+    // `T-016`/`T-016-s2` (measured: an id of 10k `H` is an
+    // `invalid-field` and the record is withheld). So the unbounded
+    // chip is the UNRESOLVED one, and the resolved one gets the same
+    // treatment as defense in depth against the day that grammar moves.
+    path: "docs/tasks/T-301.md",
+    content: src([
+      ["id", "T-301"],
+      ["title", "the resolvable blocker"],
+      ["feature", "F-01"],
+      ["milestone", 1],
+      ["priority", 2],
+      ["status", "planned"],
+    ]),
+  },
+  {
+    path: "docs/tasks/T-302-ghost.md",
+    content: src([
+      ["title", "hostile ghost"],
+      ["feature", "F-01"],
+      ["status", "suggested"],
+      ["suggested_by", HOSTILE],
+    ]),
+  },
+]);
+
+const openHostilePanel = (): void => {
+  press(q('[data-testid="task-card"][data-task-id="T-300"] button') as Element);
+};
+
+describe("the remaining file-derived surfaces contain hostile fields (T-017-s1)", () => {
+  it("the ghost's provenance line wraps a 10k-char suggested_by, whole", () => {
+    render(<Board model={HOSTILE_MODEL} />);
+    const provenance = q('[data-testid="ghost-provenance"]');
+    // Positive control FIRST: the surface is really holding the run.
+    expect(provenance?.textContent).toBe(`suggested · ${HOSTILE}`);
+    expectWraps(provenance);
+  });
+
+  it("the panel's h2 title and its id/ref line both wrap", () => {
+    render(<Board model={HOSTILE_MODEL} />);
+    openHostilePanel();
+    const heading = container.querySelector("h2");
+    expect(heading?.textContent).toBe(HOSTILE);
+    expectWraps(heading);
+    // The id case is short by nature; the SAME line prints a file path
+    // for an id-less ghost, which is the case that needed the fix.
+    expect(q('[data-testid="detail-ref"]')?.textContent).toBe("T-300");
+
+    press(q('[data-testid="ghost-card"] button') as Element);
+    expect(panel()?.getAttribute("data-ref-kind")).toBe("file");
+    const ref = q('[data-testid="detail-ref"]');
+    expect(ref?.textContent).toBe("docs/tasks/T-302-ghost.md");
+    expectWraps(ref);
+    // …and the panel's own suggested_by row, the ghost line's twin.
+    expect(q('[data-testid="detail-suggested-by"]')?.textContent).toContain(HOSTILE);
+    expectWraps(q('[data-testid="detail-suggested-by"]'));
+  });
+
+  it("both blocker chips, the touches slugs, the stamps and the file footer wrap", () => {
+    render(<Board model={HOSTILE_MODEL} />);
+    openHostilePanel();
+
+    // The resolved chip is bounded by the parser (see the fixture note):
+    // its treatment is unconditional so the class cannot be lost, but
+    // the run it must survive lands on its sibling below.
+    const resolved = q('[data-testid="blocker-link"]');
+    expect(resolved?.getAttribute("data-blocker-id")).toBe("T-301");
+    expectWraps(resolved);
+
+    const unresolved = q('[data-testid="blocker-unresolved"]');
+    expect(unresolved?.getAttribute("data-blocker-id")).toBe(HOSTILE_DANGLING);
+    expect(unresolved?.textContent).toBe(HOSTILE_DANGLING);
+    expectWraps(unresolved);
+
+    const touches = [...container.querySelectorAll('[data-testid="detail-touch"]')];
+    expect(touches.map((t) => t.textContent)).toEqual([
+      HOSTILE,
+      "<img src=x onerror=alert(1)>",
+    ]);
+    for (const touch of touches) expectWraps(touch);
+
+    for (const testid of ["stamp-built-by", "stamp-verified-by"]) {
+      const stamp = q(`[data-testid="${testid}"]`);
+      expect(stamp?.textContent).toBe(HOSTILE);
+      expectWraps(stamp);
+    }
+
+    const footer = q('[data-testid="detail-file"]');
+    expect(footer?.textContent).toBe(HOSTILE_PATH);
+    expectWraps(footer);
+  });
+
+  it("hostile field content reaches the DOM as text nodes only", () => {
+    render(<Board model={HOSTILE_MODEL} />);
+    openHostilePanel();
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("script")).toBeNull();
+    // The literal bytes are visible as text — escaped, not swallowed.
+    expect(panel()?.textContent).toContain("<img src=x onerror=alert(1)>");
+    const slug = [...container.querySelectorAll('[data-testid="detail-touch"]')][1];
+    expect(slug?.children.length).toBe(0); // one text node, no elements
+  });
+});
+
+describe("verdict blocks contain an unbroken run like the notes body (T-017-s2)", () => {
+  it("the REJECTED repro's text container scrolls in place instead of widening the panel", () => {
+    render(<Board model={HOSTILE_MODEL} />);
+    openHostilePanel();
+
+    const block = q('[data-verdict-kind="rejected"]');
+    expect(block).not.toBeNull();
+    const text = q('[data-testid="detail-verdict-text"]') as HTMLElement;
+    // Positive control: the whole 2k run really is inside this block.
+    expect(text.textContent).toContain("R".repeat(2_000));
+    // The containment the notes body has had since T-017 — same three
+    // classes, so the two file-derived surfaces answer the same way.
+    expect(text.classList.contains("overflow-x-auto")).toBe(true);
+    expect(text.classList.contains("whitespace-pre-wrap")).toBe(true);
+    expect(text.classList.contains("font-mono")).toBe(true);
+    // SCROLL, not BREAK: a verbatim quotation must not be re-flowed.
+    expect(text.classList.contains("break-words")).toBe(false);
+  });
+
+  it("the notes body it copies still carries the same containment", () => {
+    // The other half of the parity claim, in the same body: if the notes
+    // container ever loses `overflow-x-auto` this pin stops meaning what
+    // it says, and nothing else would notice.
+    render(<Board model={model} />);
+    press(q('[data-testid="task-card"][data-task-id="T-105"] button') as Element);
+    press(q('[data-testid="detail-notes-toggle"]') as Element);
+    expect(q('[data-testid="detail-notes-text"]')?.classList.contains("overflow-x-auto")).toBe(
+      true,
+    );
+  });
+});
+
+describe("the model badge is bounded (T-024-s6)", () => {
+  // The stamp is LIVE: it is `built_by` in docs/tasks/T-024-genesis-lens.md,
+  // this project's first cross-model build. The PARSE half of the finding
+  // is T-030's and is pinned in lib/parser/test/model-session.test.ts;
+  // what is pinned here is the DISPLAY half — the chip that had no bound
+  // of any kind behind it.
+  const COMPOUND =
+    "claude-fable-5 @fresh (WIP through ad2716f) + claude-opus-5 @fresh ×2 (completion + rejection-fix sessions)";
+  /** No `@` anywhere, so the parser's representative is the whole string:
+   * the case the bound actually earns its keep on. */
+  const UNSPLITTABLE = "M".repeat(200);
+
+  const badgeModel = parseProjectFromFiles([
+    { path: "docs/ROADMAP.md", content: ROADMAP },
+    {
+      path: "docs/tasks/T-310.md",
+      content: task("T-310", [["status", "done"], ["priority", 1], ["built_by", COMPOUND]]),
+    },
+    {
+      path: "docs/tasks/T-311.md",
+      content: task("T-311", [["status", "done"], ["priority", 2], ["built_by", UNSPLITTABLE]]),
+    },
+  ]);
+
+  const badgeFor = (id: string): HTMLElement => {
+    const found = q(`[data-testid="task-card"][data-task-id="${id}"] [data-testid="model-badge"]`);
+    if (found === null) throw new Error(`no badge on ${id}`);
+    return found as HTMLElement;
+  };
+
+  it("a live compound stamp shows the parser's representative model and keeps the whole stamp on hover", () => {
+    render(<Board model={badgeModel} />);
+    const badge = badgeFor("T-310");
+    // T-030's fix is the load-bearing half and it is working: the badge
+    // reads the LAST token of the model side, not the 59-char prefix.
+    expect(badge.textContent).toBe("opus");
+    // Nothing is lost — the raw stamp rides the hover title…
+    expect(badge.getAttribute("title")).toBe(COMPOUND);
+    // …and the panel's provenance row prints it verbatim.
+    press(q('[data-testid="task-card"][data-task-id="T-310"] button') as Element);
+    expect(q('[data-testid="stamp-built-by"]')?.textContent).toBe(COMPOUND);
+  });
+
+  it("a stamp the split cannot help still cannot widen the card", () => {
+    render(<Board model={badgeModel} />);
+    const badge = badgeFor("T-311");
+    // Positive control: the long name really did reach the chip — this
+    // is a bound doing its job, not a fixture that failed to render.
+    expect(badge.textContent).toBe(UNSPLITTABLE);
+    // All three are load-bearing: `truncate` alone cannot shrink a flex
+    // item whose automatic minimum is its content, and `max-w-24` alone
+    // loses to that same minimum (min beats max).
+    expect(badge.classList.contains("truncate")).toBe(true);
+    expect(badge.classList.contains("max-w-24")).toBe(true);
+    expect(badge.classList.contains("min-w-0")).toBe(true);
+  });
+});
+
+describe("soft issues reach the affected card (T-019-s1)", () => {
+  // The gap T-019 left: a flagged record still renders, so a task whose
+  // blocked_by dangles looked identical to a clean one and the only
+  // surface that moved was a number in the header. These are the same
+  // facts one level closer to where the eye already is.
+  const ISSUE_MODEL = parseProjectFromFiles([
+    { path: "docs/ROADMAP.md", content: ROADMAP },
+    {
+      path: "docs/tasks/T-320.md",
+      content: task("T-320", [["priority", 1], ["blocked_by", "[T-999, T-01]"]]),
+    },
+    {
+      path: "docs/tasks/T-321.md",
+      content: task("T-321", [["priority", 2], ["feature", "F-99"]]),
+    },
+    { path: "docs/tasks/T-322.md", content: task("T-322", [["priority", 3]]) },
+  ]);
+
+  const markOn = (id: string): Element | null =>
+    q(`[data-testid="task-card"][data-task-id="${id}"] [data-testid="card-issue-mark"]`);
+
+  it("the flagged card wears a mark carrying its own messages; the clean card beside it wears none", () => {
+    render(<Board model={ISSUE_MODEL} />);
+    // Two dangling blocked_by entries on one file = two messages.
+    const flagged = markOn("T-320");
+    expect(flagged?.getAttribute("data-issue-count")).toBe("2");
+    expect(flagged?.getAttribute("title")).toContain("T-999");
+    expect(flagged?.getAttribute("title")).toContain("T-01");
+    // The off-backbone feature is a different KIND on a different file
+    // and lands on ITS card, not on the first one.
+    const offBackbone = markOn("T-321");
+    expect(offBackbone?.getAttribute("data-issue-count")).toBe("1");
+    expect(offBackbone?.getAttribute("title")).toContain("F-99");
+    // The discriminating half: same board, same render, no mark.
+    expect(markOn("T-322")).toBeNull();
+  });
+
+  it("the panel lists the parser's own sentences VERBATIM, and a clean card grows no section", () => {
+    render(<Board model={ISSUE_MODEL} />);
+    press(q('[data-testid="task-card"][data-task-id="T-320"] button') as Element);
+    const rows = [...container.querySelectorAll('[data-testid="detail-issue"]')];
+    expect(rows.map((r) => r.textContent)).toEqual(
+      ISSUE_MODEL.issues
+        .filter((i) => "file" in i && i.file === "docs/tasks/T-320.md")
+        .map((i) => i.message),
+    );
+    // Verbatim means verbatim: the parser's whole sentence, not a
+    // summary, and the containment the rest of this panel wears.
+    expect(rows[0]?.textContent).toBe(
+      "docs/tasks/T-320.md: blocked_by names 'T-999' but no task in the model declares it (reference preserved on the record)",
+    );
+    expectWraps(rows[0] ?? null);
+
+    press(q('[data-testid="task-card"][data-task-id="T-322"] button') as Element);
+    expect(panel()?.getAttribute("data-task-ref")).toBe("T-322");
+    expect(q('[data-testid="detail-issues"]')).toBeNull();
+  });
+
+  it("the mark rides the id row, so density and the below-slice variant cannot drop it", () => {
+    // The meta row is conditional and sheds the model badge past 40
+    // cards; a disclosure that disappears when the board gets busy is
+    // not a disclosure. Below-slice cards have no meta row at all.
+    const belowSlice = parseProjectFromFiles([
+      { path: "docs/ROADMAP.md", content: ROADMAP },
+      {
+        path: "docs/tasks/T-330.md",
+        content: task("T-330", [["milestone", 2], ["blocked_by", "[T-999]"]]),
+      },
+      { path: "docs/tasks/T-331.md", content: task("T-331", [["milestone", 1]]) },
+    ]);
+    render(<Board model={belowSlice} />);
+    const card = q('[data-testid="task-card"][data-task-id="T-330"]');
+    expect(card?.getAttribute("data-below-slice")).toBe("true");
+    expect(card?.querySelector('[data-testid="card-issue-mark"]')).not.toBeNull();
+    // Positive control in the same body: the mark is not simply painted
+    // on every card of this fixture.
+    expect(markOn("T-331")).toBeNull();
+  });
+
+  it("the header's aggregate count is UNCHANGED — the card join adds a surface, never a filter", async () => {
+    render(<App />);
+    await act(async () => {});
+    const harness = window.__nputerDocsHarness;
+    if (harness === undefined) throw new Error("dev harness missing");
+    const files = [
+      { path: "docs/ROADMAP.md", content: ROADMAP },
+      { path: "docs/tasks/T-320.md", content: task("T-320", [["priority", 1], ["blocked_by", "[T-999, T-01]"]]) },
+      { path: "docs/tasks/T-321.md", content: task("T-321", [["priority", 2], ["feature", "F-99"]]) },
+      { path: "docs/tasks/T-322.md", content: task("T-322", [["priority", 3]]) },
+    ];
+    // A seq ABOVE the one the exemption test above applied: the store
+    // is a module singleton across this file and drops a snapshot that
+    // is not newer, so seq 1 would silently leave the previous board up.
+    act(() => {
+      harness.apply({ seq: 42, projectDir: "/proj", generatedAtMs: Date.now(), files });
+    });
+    expect(q('[data-testid="docs-model"]')?.getAttribute("data-screen")).toBe("board");
+
+    // The board is live and the marks are on it…
+    expect(markOn("T-320")).not.toBeNull();
+    // …and the header still counts the WHOLE model, including the
+    // cross-file kinds this join deliberately does not touch.
+    expect(q('[data-testid="model-counts"]')?.textContent).toContain(
+      `${ISSUE_MODEL.issues.length} issues`,
+    );
+    expect(ISSUE_MODEL.issues.length).toBe(3);
+  });
+});

@@ -98,7 +98,44 @@ const DOT_CLASSES: Partial<Record<StatusToken, string>> = {
  * rejection count — `rejected ×2` — from card.rejectedCount (derived in
  * selectBoard from the verdict history's classifier). No count on the
  * face means no rejected verdicts recorded: absence, never ×0.
+ *
+ * T-031 (T-019-s1): a card whose file drew soft issues wears IssueMark
+ * between the id and the title. Both variants carry it, and it sits in
+ * the id row rather than the meta row on purpose — the meta row is
+ * conditional (`hasMeta`) and drops the model badge under density, and
+ * a disclosure that disappears when the board gets busy is not a
+ * disclosure. The mark says only THAT there is something; the messages
+ * are in the panel, one click away, verbatim.
  */
+/**
+ * The soft-issue mark (T-031, T-019-s1): present exactly when the card's
+ * file drew issues, absent otherwise — `card.issues` is ABSENT rather
+ * than `[]` on a clean card, so this renders nothing without a length
+ * check to get wrong.
+ *
+ * `text-warning` is the sanctioned consumer of the warning family:
+ * tokens.css states that warning is a STROKE and never a fill, so the
+ * mark is ink on the card's own status paper rather than a second fill
+ * competing with it (status is a fill — it always wins). The messages
+ * ride `title=` for hover, the same idiom as the model badge's raw
+ * stamp, and the count rides `data-issue-count` so a probe never has to
+ * read the glyph.
+ */
+function IssueMark({ issues }: { issues?: string[] }) {
+  if (issues === undefined) return null;
+  return (
+    <span
+      data-testid="card-issue-mark"
+      data-issue-count={issues.length}
+      title={issues.join("\n")}
+      aria-label={`${issues.length} parser issue${issues.length === 1 ? "" : "s"} on this file`}
+      className="shrink-0 font-mono text-sm font-bold text-warning"
+    >
+      !
+    </span>
+  );
+}
+
 export function TaskCard({
   card,
   onOpen,
@@ -134,6 +171,7 @@ export function TaskCard({
             {card.id !== undefined && (
               <span className="shrink-0 font-mono text-sm text-muted-foreground">{card.id}</span>
             )}
+            <IssueMark issues={card.issues} />
             <span className="min-w-0 text-sm break-words text-status-planned-foreground">
               {card.title}
             </span>
@@ -182,6 +220,7 @@ export function TaskCard({
           {card.id !== undefined && (
             <span className="shrink-0 font-mono text-sm">{card.id}</span>
           )}
+          <IssueMark issues={card.issues} />
           <span
             className={cn(
               "min-w-0 text-base font-semibold tracking-title break-words",

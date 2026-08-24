@@ -36,6 +36,25 @@ import { ReviewBadge } from "./badges/ReviewBadge";
  * The disclosure is keyed by task ref, so re-targeting the panel
  * (blocker click, another card) starts the new task collapsed again.
  *
+ * T-031 (T-017-s1, T-017-s2): every remaining surface here that prints
+ * FILE-DERIVED text now contains a pathological unbroken run, and the
+ * two answers are deliberately different because the surfaces are.
+ * Prose that WRAPS — the h2 title, the id/ref line, blocker id chips,
+ * touches slugs, the provenance stamps, the file-path footer — takes
+ * T-017's `min-w-0 break-words`, so a hostile field makes a taller
+ * panel and never a panel-wide horizontal scrollbar. Text that is
+ * PREFORMATTED and must keep its own columns — the verdict blocks —
+ * takes the notes body's `overflow-x-auto` instead, because breaking a
+ * verbatim quote is not containment, it is editing. Every one of them is
+ * class-pinned in board-truth.test.tsx against a hostile-fields fixture;
+ * jsdom does no layout, so the CLASS contract is what the suite holds
+ * and the launch look stays @human's.
+ *
+ * T-031 (T-019-s1): the panel is where a soft issue is SAID. The card
+ * face only marks that one exists; the `issues` section here lists the
+ * parser's own sentences verbatim, joined by the single `issuesByFile`
+ * lens the face uses, so mark and list can never disagree.
+ *
  * Pure-lens note: the open/closed ref is ephemeral VIEW state (like a
  * scroll position), never project state — nothing here writes files.
  */
@@ -93,11 +112,23 @@ export function TaskDetailPanel({
       <div className="flex items-start justify-between gap-4 border-b border-hairline px-6.5 pt-5.5 pb-4">
         <div className="flex min-w-0 flex-col gap-2.25">
           <div className="flex items-baseline gap-2.5">
-            <p className="shrink-0 font-mono text-sm text-muted-foreground">
+            {/* T-031 (T-017-s1): NOT `shrink-0`. This line is an id for a
+                real card and the FILE PATH for an id-less suggestion
+                (refLabel), so it is file-derived text of unbounded
+                length; a flex item that refuses to shrink cannot be
+                contained by any break utility, because its flex basis
+                stays its content width. Ordinary ids are short enough
+                that shrinking never reaches them. */}
+            <p
+              data-testid="detail-ref"
+              className="min-w-0 font-mono text-sm break-words text-muted-foreground"
+            >
               {detail?.id ?? refLabel(taskRef)}
             </p>
             {detail !== undefined && (
-              <h2 className="min-w-0 text-2xl font-semibold tracking-heading">{detail.title}</h2>
+              <h2 className="min-w-0 text-2xl font-semibold tracking-heading break-words">
+                {detail.title}
+              </h2>
             )}
           </div>
           {detail !== undefined && (
@@ -121,7 +152,10 @@ export function TaskDetailPanel({
             </div>
           )}
           {detail?.suggested === true && (
-            <p data-testid="detail-suggested-by" className="text-xs text-muted-foreground">
+            <p
+              data-testid="detail-suggested-by"
+              className="min-w-0 text-xs break-words text-muted-foreground"
+            >
               suggested by{" "}
               <span className="font-mono">{detail.suggestedBy ?? "(unattributed)"}</span>
             </p>
@@ -149,6 +183,34 @@ export function TaskDetailPanel({
         </div>
       ) : (
         <div className="flex flex-1 flex-col gap-5.5 px-6.5 py-5">
+          {/* T-031 (T-019-s1): FIRST in the body, and rendered only when
+              there is something to say. Every other section renders
+              always and shows `(empty)` — that is right for a section
+              the reader came looking for, and wrong for a defect
+              notice, which would then say "(empty)" on every clean card
+              in the project and stop being read within a week. Absence
+              here means exactly "the parser had nothing to say about
+              this file", the same absence discipline the card face's
+              mark takes. */}
+          {detail.issues.length > 0 && (
+            <Section
+              title="issues · verbatim"
+              meta={`${detail.issues.length} issue${detail.issues.length === 1 ? "" : "s"}`}
+              testid="detail-issues"
+            >
+              <ul className="flex flex-col gap-1.5">
+                {detail.issues.map((message, index) => (
+                  <li
+                    key={index}
+                    data-testid="detail-issue"
+                    className="min-w-0 rounded-lg border border-warning-chip-border bg-warning-chip px-3.75 py-2.5 font-mono text-xs break-words whitespace-pre-wrap text-foreground"
+                  >
+                    {message}
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
           {detail.suggested && (
             // T-019 (absorbing T-002-s2): a suggestion's context paragraph
             // is its ENTIRE content, so the ghost variant leads with it —
@@ -200,7 +262,7 @@ export function TaskDetailPanel({
             ) : (
               <ul className="flex flex-wrap gap-1.75">
                 {detail.blockedBy.map((blocker, index) => (
-                  <li key={`${blocker.id}#${index}`}>
+                  <li key={`${blocker.id}#${index}`} className="min-w-0">
                     {blocker.resolved && blocker.visual !== undefined ? (
                       <button
                         type="button"
@@ -209,7 +271,7 @@ export function TaskDetailPanel({
                         title={`${blocker.title ?? blocker.id} — ${blocker.status ?? ""}`}
                         onClick={() => onOpen({ kind: "id", id: blocker.id })}
                         className={cn(
-                          "rounded-chip border px-2.25 py-0.75 font-mono text-xs underline-offset-2 outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                          "min-w-0 rounded-chip border px-2.25 py-0.75 font-mono text-xs break-words underline-offset-2 outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                           STATUS_CLASSES[blocker.visual.token],
                           CHIP_BORDER_CLASSES[blocker.visual.token],
                         )}
@@ -223,7 +285,7 @@ export function TaskDetailPanel({
                         data-testid="blocker-unresolved"
                         data-blocker-id={blocker.id}
                         title="not in the current model"
-                        className="rounded-chip border border-dashed border-ghost-border px-2.25 py-0.75 font-mono text-xs text-muted-foreground"
+                        className="min-w-0 rounded-chip border border-dashed border-ghost-border px-2.25 py-0.75 font-mono text-xs break-words text-muted-foreground"
                       >
                         {blocker.id}
                       </span>
@@ -240,7 +302,9 @@ export function TaskDetailPanel({
             ) : (
               <ul className="flex flex-col gap-1 font-mono text-xs text-secondary-foreground">
                 {detail.touches.map((slug, index) => (
-                  <li key={`${slug}#${index}`}>{slug}</li>
+                  <li key={`${slug}#${index}`} data-testid="detail-touch" className="min-w-0 break-words">
+                    {slug}
+                  </li>
                 ))}
               </ul>
             )}
@@ -308,7 +372,10 @@ export function TaskDetailPanel({
             </Section>
           )}
 
-          <p className="mt-auto border-t border-hairline pt-2.5 font-mono text-xs text-muted-foreground">
+          <p
+            data-testid="detail-file"
+            className="mt-auto min-w-0 border-t border-hairline pt-2.5 font-mono text-xs break-words text-muted-foreground"
+          >
             {detail.file}
           </p>
         </div>
@@ -363,7 +430,22 @@ function NotesDisclosure({ notes }: { notes: string }) {
   );
 }
 
-/** One verdict entry: a tinted reading surface, text verbatim. */
+/** One verdict entry: a tinted reading surface, text verbatim.
+ *
+ * T-031 (T-017-s2): the text container carries `overflow-x-auto`, the
+ * same containment `NotesDisclosure` has had since T-017 — the criterion
+ * that built the notes body said "scrollable like verdicts" while the
+ * verdict blocks were the one file-derived surface in this panel that
+ * had no containment at all. A long unbroken run in a REJECTED repro (a
+ * path, a URL, a minified snippet) used to widen the panel's own scroll
+ * context into ONE panel-wide horizontal scrollbar, while the notes
+ * section directly below it scrolled neatly inside its own box.
+ *
+ * SCROLL rather than BREAK, and the two are not interchangeable here.
+ * A verdict is a verbatim quotation of somebody's judgement, often
+ * preformatted; `break-words` would re-flow it and change what the
+ * reader sees, which is the one thing a verbatim surface may not do
+ * (T-005). `whitespace-pre-wrap` is unchanged for the same reason. */
 function VerdictBlock({ entry }: { entry: VerdictEntry }) {
   const tint =
     entry.kind === "rejected"
@@ -391,7 +473,12 @@ function VerdictBlock({ entry }: { entry: VerdictEntry }) {
       <span className={cn("font-mono text-xs font-bold uppercase", label)}>
         {entry.kind === "note" ? "entry" : entry.kind}
       </span>
-      <div className={cn("font-mono text-sm whitespace-pre-wrap", ink)}>{entry.text}</div>
+      <div
+        data-testid="detail-verdict-text"
+        className={cn("overflow-x-auto font-mono text-sm whitespace-pre-wrap", ink)}
+      >
+        {entry.text}
+      </div>
     </div>
   );
 }
@@ -436,7 +523,7 @@ function Stamp({ label, testid, value }: { label: string; testid: string; value?
   return (
     <div className="flex items-baseline gap-2">
       <dt className="w-24 shrink-0 font-mono text-xs text-muted-foreground">{label}</dt>
-      <dd data-testid={testid} className="font-mono text-sm">
+      <dd data-testid={testid} className="min-w-0 font-mono text-sm break-words">
         {value ?? <span className="text-muted-foreground">—</span>}
       </dd>
     </div>
