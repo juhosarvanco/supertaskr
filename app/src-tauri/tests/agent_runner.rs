@@ -1669,16 +1669,136 @@ fn a_result_only_denial_with_no_in_band_line_is_still_reported() {
         "a result entry carries `tool_input`, never a message - the app says what it \
          HAS and invents nothing"
     );
-    // …and T-069's tail relay is untouched: this turn still fails with
-    // the refused tool named in the CLI's own diagnostic tail.
+    // …and T-113 CHANGED WHAT THE TAIL DOES HERE. This assertion read
+    // `stderr_tail.contains("WebFetch")` from T-069 until T-113: the
+    // runner pushed a `permission_denials: <names>` ring note for the
+    // SAME `unannounced` vector the event above came from, so this one
+    // refusal reached the screen twice once T-101 built the second
+    // surface. The note is deleted; the event above is the report.
+    //
+    // THIS BODY IS THE WEAK HALF OF THAT PROPERTY AND SAYS SO: with the
+    // note gone this fixture's tail is EMPTY (`is_error: false` keeps the
+    // result text out of the ring and the CLI writes no stderr), so
+    // "does not name it" here is satisfied equally by a dead ring. The
+    // pin with a POSITIVE CONTROL is
+    // `a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail`.
     match seen.last() {
         Some(RunEvent::Failed { error: TurnError::ExitNonZero { code, stderr_tail }, .. }) => {
             assert_eq!(*code, Some(1));
-            assert!(stderr_tail.contains("WebFetch"), "{stderr_tail:?}");
+            assert!(
+                !stderr_tail.contains("WebFetch"),
+                "the refusal is already on screen as its own `Denied` event: {stderr_tail:?}"
+            );
         }
         other => panic!("expected ExitNonZero, got {other:?}"),
     }
     settle(&h.agent);
+}
+
+/// **T-113: ONE REFUSAL, ONE REPORT — AND THE TAIL IS SHOWN CARRYING
+/// SOMETHING ELSE, SO THE ABSENCE MEANS SOMETHING.**
+///
+/// `T-081`'s criterion 4 reads THE SAME DENIAL SHALL NOT BE REPORTED
+/// TWICE, and the runner broke it on exactly one path. ONE partition drove
+/// TWO reports over ONE vector: a live `Denied` event per entry, and —
+/// sixty lines further down the same arm — a `permission_denials: <names>`
+/// note pushed into the diagnostic ring, which becomes `ExitNonZero`'s
+/// `stderr_tail` and is rendered verbatim by `failureDetail` inside
+/// `FailureBlock`. T-069 added that note when NOTHING rendered a denial
+/// and it was right then; T-081 added the live events and narrowed the
+/// note to the `unannounced` set — which is precisely the set the emit
+/// loop three statements up had just announced. The narrowing removed the
+/// note for the denials that did not need it and kept it for the ones that
+/// did not either. It went LIVE rather than latent at T-101, which built
+/// the second surface: one result-only refusal produced a `DenialNotice`
+/// row AND a failure block reading `permission_denials: WebFetch`.
+///
+/// **BOTH HALVES SIT IN THIS ONE BODY BECAUSE EACH IS SATISFIABLE WITHOUT
+/// THE OTHER.** "The tail does not name it" is satisfied by a runner that
+/// emits nothing at all; "the event fired" is satisfied by one that also
+/// still writes the note. Only the conjunction is the property.
+///
+/// **AND THE NEGATIVE HAS ITS POSITIVE CONTROL** (CONVENTIONS: A NEGATIVE
+/// ASSERTION NEEDS A POSITIVE CONTROL). `denied-result-only-nonzero`'s CLI
+/// writes a real sentence to stderr, so the tail is measured CARRYING
+/// something ON THIS TURN. Against a merely EMPTY tail,
+/// `!contains("WebFetch")` cannot tell a fixed double report from a dead
+/// ring, a dead stderr pump, or a turn that never reached `ExitNonZero` at
+/// all — and the two `denied-then-end-turn` bodies have exactly that empty
+/// tail, which is why neither of them can be this pin.
+///
+/// The SECOND entry has no `tool_name`, which answers criterion 6 with a
+/// measurement instead of a promise: `denial_names` is a `filter_map` over
+/// `tool_name`, so that entry contributed NOTHING to the deleted note —
+/// the note was never its surface, and restoring the note would not have
+/// covered it. Its live event carries it.
+///
+/// SHAPE SIX, asked and answered — no other body drives this call. The two
+/// `denied-then-end-turn` bodies have no control (empty tail);
+/// `one_denial_on_each_channel_is_reported_once_each` exits ZERO on
+/// purpose, so it has no `stderr_tail` to inspect at all; and
+/// `a_denial_missing_its_fields_still_reaches_the_screen_bounded_and_stripped`
+/// puts its nameless denial on the IN-BAND channel over an EMPTY
+/// `permission_denials`, so it never reaches this partition.
+#[test]
+fn a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail() {
+    let h = harness(
+        "deniedonce",
+        Options { scenario: "denied-result-only-nonzero", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let seen = collect_turn(&h.events);
+
+    // HALF ONE — the refusal reached the screen, live, one event per
+    // denial, the nameless entry included.
+    let denied = denied_events(&seen);
+    assert_eq!(
+        denied.iter().map(|d| (d.1.clone(), d.2.clone())).collect::<Vec<_>>(),
+        vec![
+            (Some("WebFetch".to_string()), Some("tu_113".to_string())),
+            (None, Some("tu_113_nameless".to_string())),
+        ],
+        "every result-only entry gets its own event, and the one `denial_names` \
+         drops for having no name is kept: {seen:#?}"
+    );
+
+    // HALF TWO — …and the tail does not say it a second time.
+    match seen.last() {
+        Some(RunEvent::Failed { error: TurnError::ExitNonZero { code, stderr_tail }, .. }) => {
+            assert_eq!(*code, Some(1));
+            // THE POSITIVE CONTROL, ASSERTED FIRST: this tail is carrying
+            // the CLI's own stderr on this very turn, so the two absences
+            // below are absences rather than silence.
+            assert!(
+                stderr_tail.contains("transport closed before the session could be saved"),
+                "the ring relayed the CLI's own stderr, so this tail is LIVE and the \
+                 absences below mean something: {stderr_tail:?}"
+            );
+            assert!(
+                !stderr_tail.contains("WebFetch"),
+                "the tool is already on screen as its own `Denied` event and is NOT \
+                 repeated in the tail: {stderr_tail:?}"
+            );
+            assert!(
+                !stderr_tail.contains("permission_denials"),
+                "…and the deleted note's own label went with it: {stderr_tail:?}"
+            );
+        }
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+
+    // The CUMULATIVE record is a DIFFERENT question and is pinned on its
+    // own stream by
+    // `a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code`.
+    // Here `is_error` is false, so nothing claims the denial killed the
+    // turn — and `ToolDenied` carries no `stderr_tail` field at all, which
+    // is why its record is not what this body is about.
+    let status = settle(&h.agent);
+    assert!(
+        !matches!(status.last_error, Some(TurnError::ToolDenied { .. })),
+        "a denial the turn routed around is not the cause of its death: {:?}",
+        status.last_error
+    );
 }
 
 /// **A DENIAL THE APP CANNOT FULLY DESCRIBE IS NOT A DENIAL THE USER
@@ -2009,14 +2129,30 @@ fn a_denial_the_planner_routed_around_is_not_blamed_for_an_unrelated_exit() {
         Options { scenario: "denied-then-end-turn", ..Options::default() },
     );
     agent::start_genesis(&h.watch, &h.agent);
-    match wait_failed(&h.events) {
-        TurnError::ExitNonZero { code, stderr_tail } => {
-            assert_eq!(code, Some(1));
-            // T-069: the declined diagnosis still relays what it parsed.
+    let seen = collect_turn(&h.events);
+    // T-113 MOVED THE RELAY'S SURFACE, NOT THE PROPERTY. This body
+    // asserted `stderr_tail.contains("WebFetch")` from T-069 until T-113.
+    // The declined diagnosis STILL relays what it parsed — it does it as
+    // the denial's own live event, which carries the `tool_use_id` the
+    // note could not spell — and the tail no longer repeats it. The
+    // assertion is moved rather than dropped so this body still holds
+    // T-069's user-facing half: the tool is NAMED.
+    let denied = denied_events(&seen);
+    assert_eq!(
+        denied.iter().map(|d| d.1.clone()).collect::<Vec<_>>(),
+        vec![Some("WebFetch".to_string())],
+        "the tool the CLI refused is named even though the classifier declined \
+         to blame it: {seen:#?}"
+    );
+    match seen.last() {
+        Some(RunEvent::Failed { error: TurnError::ExitNonZero { code, stderr_tail }, .. }) => {
+            assert_eq!(*code, Some(1));
             assert!(
-                stderr_tail.contains("WebFetch"),
-                "the tool the CLI refused is named in the tail even though the \
-                 classifier declined to blame it: {stderr_tail:?}"
+                !stderr_tail.contains("WebFetch"),
+                "…and it is named ONCE: the tail does not repeat the event above \
+                 (positive control in \
+                 `a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail`): \
+                 {stderr_tail:?}"
             );
         }
         other => panic!("expected ExitNonZero, got {other:?}"),
@@ -2055,12 +2191,26 @@ fn a_fatal_denial_the_cli_did_not_flag_as_an_error_still_names_the_tool() {
         Options { scenario: "denied-fatal-not-flagged", ..Options::default() },
     );
     agent::start_genesis(&h.watch, &h.agent);
-    match wait_failed(&h.events) {
-        TurnError::ExitNonZero { code, stderr_tail } => {
-            assert_eq!(code, Some(1));
+    let seen = collect_turn(&h.events);
+    // T-113: the same move as the body above, on the sharpest relay case.
+    // This assertion read `stderr_tail.contains("Bash")` from T-069 until
+    // T-113. The turn with the most to lose from a declined diagnosis
+    // still loses nothing — the user is told which tool, by a variant that
+    // never claimed the tool killed anything — and is told ONCE.
+    let denied = denied_events(&seen);
+    assert_eq!(
+        denied.iter().map(|d| d.1.clone()).collect::<Vec<_>>(),
+        vec![Some("Bash".to_string())],
+        "the refused tool is relayed even when nothing claimed it: {seen:#?}"
+    );
+    match seen.last() {
+        Some(RunEvent::Failed { error: TurnError::ExitNonZero { code, stderr_tail }, .. }) => {
+            assert_eq!(*code, Some(1));
             assert!(
-                stderr_tail.contains("Bash"),
-                "the refused tool is relayed even when nothing claimed it: {stderr_tail:?}"
+                !stderr_tail.contains("Bash"),
+                "…and the tail does not repeat the event above (positive control in \
+                 `a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail`): \
+                 {stderr_tail:?}"
             );
         }
         other => panic!("expected ExitNonZero, got {other:?}"),

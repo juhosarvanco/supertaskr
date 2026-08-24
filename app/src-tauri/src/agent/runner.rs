@@ -1672,10 +1672,14 @@ fn denial_entries(value: Option<&serde_json::Value>) -> Vec<ResultDenial> {
 }
 
 /// The names view of those entries — what [`TurnError::ToolDenied`]
-/// carries, and what the diagnostic ring note lists. An entry the CLI
-/// wrote without a readable tool name contributes nothing here, exactly
-/// as it did before T-081; it still exists as an entry, because the
-/// denial happened whether or not the app can name it.
+/// carries, and since T-113 the ONLY thing it carries: the diagnostic
+/// ring note that used to list the unannounced set is deleted, because
+/// those entries are already emitted as their own `Denied` events. An
+/// entry the CLI wrote without a readable tool name contributes nothing
+/// here, exactly as it did before T-081; it still exists as an entry,
+/// because the denial happened whether or not the app can name it — and
+/// that gap is precisely why the live event, which keeps it, is strictly
+/// more than the deleted note was.
 fn denial_names<'a>(entries: impl IntoIterator<Item = &'a ResultDenial>) -> Vec<String> {
     entries.into_iter().filter_map(|d| d.tool_name.clone()).collect()
 }
@@ -2073,45 +2077,57 @@ pub fn run_turn(
                                     String::new(),
                                 );
                             }
-                            // T-069: RELAYING IS NOT DIAGNOSING, and this
-                            // push is the difference. The classification
-                            // below may DECLINE these names — it does
-                            // whenever the CLI did not flag its own
-                            // result an error — and declining is right:
-                            // a cumulative record of what was refused is
-                            // not a statement that a refusal ended the
-                            // turn. But a declined DIAGNOSIS was also
-                            // relaying nothing. `is_error: false` means
+                            // T-113: THE RING NOTE FOR THIS SET IS GONE,
+                            // AND NOTHING REPLACES IT, BECAUSE THE LOOP
+                            // THREE STATEMENTS UP ALREADY SAID MORE.
+                            //
+                            // T-069 pushed `permission_denials: <names>`
+                            // here because a declined DIAGNOSIS was also
+                            // relaying nothing: `is_error: false` means
                             // the branch above never pushed the result
                             // text either, so the turn arrived as
                             // `ExitNonZero { code: Some(1), stderr_tail:
-                            // "" }`, `failureDetail` returned null for an
-                            // empty trimmed detail, and the screen read
-                            // "the planner exited with code 1" with
-                            // nothing under it — while the names sat
-                            // parsed, bounded and control-stripped in
-                            // this very `Vec`.
+                            // "" }` and the screen read "the planner
+                            // exited with code 1" with nothing under it,
+                            // while the names sat parsed, bounded and
+                            // control-stripped in this very `Vec`. That
+                            // was true of a tree where NOTHING rendered
+                            // a denial. T-081 then gave each entry its
+                            // own live `Denied` event and narrowed this
+                            // push to the `unannounced` set — and the
+                            // narrowing selected exactly the set the
+                            // emit loop had just announced, so T-101's
+                            // renderer put one refusal on the screen
+                            // TWICE: once as a `DenialNotice` row and
+                            // again inside `FailureBlock`'s verbatim
+                            // `stderrTail`.
                             //
-                            // The `api_retry` note below is the
-                            // precedent: the ring already carries
-                            // diagnostics the classifier does not act
-                            // on, because the ring is a DIAGNOSTIC ring
-                            // and not a claim. Bounded by `denial_names`
-                            // (16 × 128 bytes) and sanitized there, then
-                            // sanitized again with the whole tail.
+                            // THE LIVE EVENTS ARE STRICTLY MORE THAN THE
+                            // NOTE WAS, which is what makes this a
+                            // deletion and not a trade. They are emitted
+                            // FROM THIS VECTOR, in the same iteration,
+                            // onto the same channel, so their coverage
+                            // is identical by construction — and each
+                            // one additionally carries its own
+                            // `tool_use_id`, which the joined note could
+                            // never spell, and each one SURVIVES a
+                            // missing `tool_name`, which `denial_names`
+                            // drops on the floor (it is a `filter_map`
+                            // over `tool_name`, so a refusal the CLI did
+                            // not name contributed NOTHING to the note
+                            // and still reaches the screen as an event).
+                            // The note was also the only one of the two
+                            // that could be lost: the ring is bounded at
+                            // `MAX_STDERR_RING`, and it rides
+                            // `stderr_tail`, which exists only on
+                            // `ExitNonZero` — so on a turn that
+                            // SUCCEEDED it reached nobody at all.
                             //
-                            // T-081 NARROWS IT TO THE UNANNOUNCED SET
-                            // for the same no-double-reporting reason:
-                            // a name already delivered as its own event
-                            // does not need repeating in the tail.
-                            let unreported = denial_names(unannounced.iter().copied());
-                            if !unreported.is_empty() {
-                                let note =
-                                    format!("permission_denials: {}", unreported.join(", "));
-                                let mut ring = stderr_ring.lock().expect("stderr ring poisoned");
-                                ring.push(note.as_bytes());
-                                ring.push(b"\n");
-                            }
+                            // What is NOT deleted is the partition, the
+                            // emit loop or the cumulative record below.
+                            // This narrows what the UNANNOUNCED branch
+                            // DOES; it does not remove the branch.
+                            //
                             // The CUMULATIVE record, whole and unjoined:
                             // `ToolDenied` names every tool the turn was
                             // refused, which is a different question from
