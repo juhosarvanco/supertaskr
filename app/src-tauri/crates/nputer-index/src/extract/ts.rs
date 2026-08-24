@@ -59,6 +59,7 @@ impl Extractor for TsExtractor {
             imports: cx.imports,
             calls: cx.calls.into_iter().collect(),
             type_refs: cx.type_refs.into_iter().collect(),
+            mods: Vec::new(), // Rust only (T-010)
         }
     }
 }

@@ -5,11 +5,12 @@
 //! candidates. Records are pre-resolution and cacheable per file;
 //! resolution is global and always re-runs (plan §4).
 //!
-//! T-010 implements [`Extractor`] for Rust; T-009 ships the TS/JS one.
+//! T-009 ships the TS/JS extractor; T-010 adds the Rust one.
 
 use serde::{Deserialize, Serialize};
 use tree_sitter::Tree;
 
+pub(crate) mod rust;
 pub(crate) mod ts;
 
 /// One file's extraction output. Everything here is deterministic in the
@@ -21,6 +22,27 @@ pub(crate) struct ExtractRecord {
     pub imports: Vec<RawImport>,
     pub calls: Vec<Candidate>,
     pub type_refs: Vec<Candidate>,
+    /// Rust only (T-010): the `mod` declarations this file makes, in
+    /// document order. Empty for TS/JS, so a cache written before T-010
+    /// still deserializes — and could only hold TS/JS entries anyway,
+    /// because `.rs` was not a walked extension until this task.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mods: Vec<RawMod>,
+}
+
+/// One `mod` declaration inside a Rust file (T-010) — the edge of the
+/// module tree the resolver walks.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub(crate) struct RawMod {
+    /// The INLINE module path this declaration sits under inside its own
+    /// file (`[]` at file level, `["tests"]` inside `mod tests { … }`).
+    pub inside: Vec<String>,
+    pub name: String,
+    /// `#[path = "…"]` verbatim, when the declaration carries one.
+    pub file: Option<String>,
+    /// `mod x { … }` — the module's items live in THIS file, so the
+    /// module path maps back to the declaring file.
+    pub inline: bool,
 }
 
 /// A module-scope declaration, post-merge (TS declaration merging: names

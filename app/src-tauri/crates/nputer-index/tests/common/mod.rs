@@ -2,11 +2,14 @@
 //!
 //! Materialization rule (plan §8): fixtures are copied to a temp tree
 //! first, renaming `_gitignore` -> `.gitignore`, `_nputerignore` ->
-//! `.nputerignore`, `_node_modules/` -> `node_modules/` at copy time —
-//! committed dotted forms would really apply (the repo's root gitignore
-//! ignores node_modules/, and a fixture's own .gitignore would hide
-//! fixture files from git itself). No symlinks are ever committed in
-//! fixtures; symlink tests build theirs at runtime.
+//! `.nputerignore`, `_node_modules/` -> `node_modules/`, `_Cargo.toml` ->
+//! `Cargo.toml` at copy time — committed real forms would really apply
+//! (the repo's root gitignore ignores node_modules/, a fixture's own
+//! .gitignore would hide fixture files from git itself, and a committed
+//! `Cargo.toml` under this crate's own tests/ is a manifest cargo could
+//! stumble into: a fixture must never be a build input, T-010). No
+//! symlinks are ever committed in fixtures; symlink tests build theirs at
+//! runtime.
 
 #![allow(dead_code)] // each integration test binary uses a subset
 
@@ -76,6 +79,7 @@ fn copy_dir(from: &Path, to: &Path) {
             "_gitignore" => ".gitignore",
             "_nputerignore" => ".nputerignore",
             "_node_modules" => "node_modules",
+            "_Cargo.toml" => "Cargo.toml",
             other => other,
         };
         let src = entry.path();

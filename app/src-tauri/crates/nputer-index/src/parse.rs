@@ -1,9 +1,9 @@
 //! tree-sitter setup + grammar-per-dialect selection (plan §5).
 //!
 //! Grammar selection: `.ts/.mts/.cts` -> TYPESCRIPT; `.tsx` -> TSX;
-//! `.js/.jsx` -> JAVASCRIPT (its grammar includes JSX). Languages are
-//! loaded once at `index()` start; a load failure is
-//! `IndexError::Grammar` (fail fast, not per file).
+//! `.js/.jsx` -> JAVASCRIPT (its grammar includes JSX); `.rs` -> RUST
+//! (T-010). Languages are loaded once at `index()` start; a load failure
+//! is `IndexError::Grammar` (fail fast, not per file).
 
 use tree_sitter::{Parser, Tree};
 
@@ -14,6 +14,7 @@ pub(crate) enum Dialect {
     Ts,
     Tsx,
     Js,
+    Rust,
 }
 
 /// Dialect by file extension (rel path). Callers only pass allowlisted
@@ -24,6 +25,7 @@ pub(crate) fn dialect_for(rel: &str) -> Option<Dialect> {
         "ts" | "mts" | "cts" => Some(Dialect::Ts),
         "tsx" => Some(Dialect::Tsx),
         "js" | "jsx" => Some(Dialect::Js),
+        "rs" => Some(Dialect::Rust),
         _ => None,
     }
 }
@@ -33,6 +35,7 @@ pub(crate) struct Parsers {
     ts: Parser,
     tsx: Parser,
     js: Parser,
+    rust: Parser,
 }
 
 impl Parsers {
@@ -46,7 +49,10 @@ impl Parsers {
         let mut js = Parser::new();
         js.set_language(&tree_sitter_javascript::LANGUAGE.into())
             .map_err(|_| IndexError::Grammar("javascript"))?;
-        Ok(Self { ts, tsx, js })
+        let mut rust = Parser::new();
+        rust.set_language(&tree_sitter_rust::LANGUAGE.into())
+            .map_err(|_| IndexError::Grammar("rust"))?;
+        Ok(Self { ts, tsx, js, rust })
     }
 
     /// tree-sitter always yields a tree (error nodes included); `None`
@@ -57,6 +63,7 @@ impl Parsers {
             Dialect::Ts => &mut self.ts,
             Dialect::Tsx => &mut self.tsx,
             Dialect::Js => &mut self.js,
+            Dialect::Rust => &mut self.rust,
         };
         parser.parse(source, None)
     }
@@ -75,7 +82,8 @@ mod tests {
         assert_eq!(dialect_for("a/b.tsx"), Some(Dialect::Tsx));
         assert_eq!(dialect_for("a/b.js"), Some(Dialect::Js));
         assert_eq!(dialect_for("a/b.jsx"), Some(Dialect::Js));
-        assert_eq!(dialect_for("a/b.rs"), None);
+        assert_eq!(dialect_for("a/b.rs"), Some(Dialect::Rust));
+        assert_eq!(dialect_for("a/b.md"), None);
     }
 
     #[test]
@@ -91,5 +99,11 @@ mod tests {
             .parse(Dialect::Ts, "export const = ;;; function {")
             .expect("parse broken");
         assert!(broken.root_node().has_error());
+        // T-010: the Rust grammar loads in the same constructor.
+        let rust = parsers
+            .parse(Dialect::Rust, "pub fn main() {}")
+            .expect("parse rust");
+        assert_eq!(rust.root_node().kind(), "source_file");
+        assert!(!rust.root_node().has_error());
     }
 }

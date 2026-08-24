@@ -61,8 +61,8 @@ pub struct IndexOptions {
     /// dir…). `None` = no cache, always full parse. Disposable by
     /// contract: deleting it only costs a re-parse, never changes bytes.
     pub cache_dir: Option<PathBuf>,
-    /// Languages to collect. Default `[Ts, Js]`; `Rust` is inert until
-    /// T-010.
+    /// Languages to collect. Default `[Ts, Js, Rust]` — `Rust` was inert
+    /// until T-010 registered its extractor.
     pub languages: Vec<Lang>,
     /// Serialized-size budget. Default 1_000_000 — headroom under the
     /// docs collector's 1 MiB/file cap (a graph landing exactly at the
@@ -75,7 +75,7 @@ impl Default for IndexOptions {
         Self {
             root: PathBuf::new(),
             cache_dir: None,
-            languages: vec![Lang::Ts, Lang::Js],
+            languages: vec![Lang::Ts, Lang::Js, Lang::Rust],
             max_graph_bytes: 1_000_000,
         }
     }
@@ -133,10 +133,18 @@ pub fn index(opts: &IndexOptions) -> Result<Graph, IndexError> {
             // hash stays over raw bytes; rows are unaffected).
             let source = text.strip_prefix('\u{feff}').unwrap_or(&text);
             let loc = source.lines().count();
-            let record = match parse::dialect_for(&file.rel).and_then(|d| parsers.parse(d, source))
-            {
-                Some(tree) => extract::ts::TsExtractor.extract(source, &tree),
-                None => extract::ExtractRecord::default(), // degrade, never fail
+            let record = match parse::dialect_for(&file.rel) {
+                Some(dialect) => match parsers.parse(dialect, source) {
+                    // One extractor per LANGUAGE, chosen by the same
+                    // dialect the parser was: TS/TSX/JS share theirs, Rust
+                    // has its own (T-010).
+                    Some(tree) => match dialect {
+                        parse::Dialect::Rust => extract::rust::RustExtractor.extract(source, &tree),
+                        _ => extract::ts::TsExtractor.extract(source, &tree),
+                    },
+                    None => extract::ExtractRecord::default(), // degrade, never fail
+                },
+                None => extract::ExtractRecord::default(),
             };
             cache::CacheEntry {
                 hash: content_hash.clone(),
@@ -150,7 +158,11 @@ pub fn index(opts: &IndexOptions) -> Result<Graph, IndexError> {
         new_cache.insert(file.rel.clone(), entry);
     }
 
-    let resolved = resolve::resolve_all(&canon_root, &records);
+    let langs: BTreeMap<String, Lang> = prepared
+        .iter()
+        .map(|(rel, lang, _, _)| (rel.clone(), *lang))
+        .collect();
+    let resolved = resolve::resolve_all(&canon_root, &records, &langs);
 
     let files: Vec<FileEntry> = prepared
         .iter()

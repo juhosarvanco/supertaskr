@@ -128,7 +128,10 @@ mod tests {
         t.write("f.jsx", "var f = 1;");
         t.write("skip.mjs", "var g = 1;"); // deliberately excluded
         t.write("skip.cjs", "var h = 1;"); // deliberately excluded
-        t.write("native.rs", "fn main() {}"); // not collected in T-009
+        // `.rs` IS an allowlisted extension since T-010; it is absent from
+        // the list below only because `rels` asks for [Ts, Js] — the
+        // languages_option test one body down is where that is pinned.
+        t.write("native.rs", "fn main() {}");
         t.write("notes.md", "# nope");
         assert_eq!(
             rels(t.root()),
@@ -148,12 +151,19 @@ mod tests {
         let t = TempTree::new("walk-langs");
         t.write("a.ts", "export const a = 1;");
         t.write("b.js", "var b = 1;");
+        t.write("c.rs", "fn main() {}");
         let canon = t.root().canonicalize().unwrap();
-        let ts_only: Vec<String> = walk_root(&canon, &[Lang::Ts])
-            .into_iter()
-            .map(|f| f.rel)
-            .collect();
-        assert_eq!(ts_only, vec!["a.ts"]);
+        let rels = |langs: &[Lang]| -> Vec<String> {
+            walk_root(&canon, langs).into_iter().map(|f| f.rel).collect()
+        };
+        assert_eq!(rels(&[Lang::Ts]), vec!["a.ts"]);
+        // T-010: Rust is collected when asked for, and asking for it does
+        // not drag the others in.
+        assert_eq!(rels(&[Lang::Rust]), vec!["c.rs"]);
+        assert_eq!(
+            rels(&[Lang::Ts, Lang::Js, Lang::Rust]),
+            vec!["a.ts", "b.js", "c.rs"]
+        );
     }
 
     #[test]

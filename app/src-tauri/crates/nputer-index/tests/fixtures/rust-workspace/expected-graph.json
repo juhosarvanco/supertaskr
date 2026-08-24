@@ -1,0 +1,758 @@
+{
+  "schema": 1,
+  "root": ".",
+  "languages": [
+    "rust",
+    "ts"
+  ],
+  "files": [
+    {
+      "id": "f:app/build.rs",
+      "path": "app/build.rs",
+      "lang": "rust",
+      "hash": "blake3:7631c45375e93da6555832af116706285f6b36bd4795a64fb1074f5625e619cf",
+      "loc": 4,
+      "symbols": [
+        {
+          "id": "s:app/build.rs#main",
+          "name": "main",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            4,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/bin/helper.rs",
+      "path": "app/src/bin/helper.rs",
+      "lang": "rust",
+      "hash": "blake3:66051c8d022c6f79d4bf00f73c629b76b0ae037059ababbdfe17679de380344a",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:app/src/bin/helper.rs#assist",
+          "name": "assist",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/bin/tool.rs",
+      "path": "app/src/bin/tool.rs",
+      "lang": "rust",
+      "hash": "blake3:c87410e66d507208ac39fe55ef718dd235fee87a5e37a75a91b985d8ed226182",
+      "loc": 8,
+      "symbols": [
+        {
+          "id": "s:app/src/bin/tool.rs#helper",
+          "name": "helper",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            3,
+            3
+          ]
+        },
+        {
+          "id": "s:app/src/bin/tool.rs#main",
+          "name": "main",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            8,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/engine/mod.rs",
+      "path": "app/src/engine/mod.rs",
+      "lang": "rust",
+      "hash": "blake3:72e72057c10dfb4f509f9183408716aadcd57eab1346819fe71c3c4751890c59",
+      "loc": 10,
+      "symbols": [
+        {
+          "id": "s:app/src/engine/mod.rs#Engine",
+          "name": "Engine",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            6,
+            6
+          ]
+        },
+        {
+          "id": "s:app/src/engine/mod.rs#impl Engine",
+          "name": "impl Engine",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            8,
+            10
+          ]
+        },
+        {
+          "id": "s:app/src/engine/mod.rs#runner",
+          "name": "runner",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/engine/runner.rs",
+      "path": "app/src/engine/runner.rs",
+      "lang": "rust",
+      "hash": "blake3:78954d39e09dae099376a420d61ba70971ad1e522806667fb836f10eaa84bdfe",
+      "loc": 22,
+      "symbols": [
+        {
+          "id": "s:app/src/engine/runner.rs#RunEvent",
+          "name": "RunEvent",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            6,
+            9
+          ]
+        },
+        {
+          "id": "s:app/src/engine/runner.rs#inner",
+          "name": "inner",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            13,
+            15
+          ]
+        },
+        {
+          "id": "s:app/src/engine/runner.rs#run",
+          "name": "run",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            11,
+            11
+          ]
+        },
+        {
+          "id": "s:app/src/engine/runner.rs#tests",
+          "name": "tests",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            18,
+            22
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/lib.rs",
+      "path": "app/src/lib.rs",
+      "lang": "rust",
+      "hash": "blake3:ba9c3157565dbcdf6521c7ecff5e248a697367294999006a559d00b83e2c5939",
+      "loc": 59,
+      "symbols": [
+        {
+          "id": "s:app/src/lib.rs#Alias",
+          "name": "Alias",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            19,
+            19
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#COUNTER",
+          "name": "COUNTER",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            18,
+            18
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#Describe",
+          "name": "Describe",
+          "kind": "trait",
+          "exported": true,
+          "range": [
+            31,
+            33
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#Mode",
+          "name": "Mode",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            26,
+            29
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#Root",
+          "name": "Root",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            21,
+            24
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#VERSION",
+          "name": "VERSION",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            17,
+            17
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#boot",
+          "name": "boot",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            51,
+            51
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#engine",
+          "name": "engine",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            3,
+            3
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#impl Describe for Root",
+          "name": "impl Describe for Root",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            35,
+            39
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#impl Root",
+          "name": "impl Root",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            41,
+            45
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#moved",
+          "name": "moved",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            7,
+            7
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#private_by_restriction",
+          "name": "private_by_restriction",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            53,
+            53
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#shout",
+          "name": "shout",
+          "kind": "macro",
+          "exported": false,
+          "range": [
+            47,
+            49
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#tests",
+          "name": "tests",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            56,
+            59
+          ]
+        },
+        {
+          "id": "s:app/src/lib.rs#util",
+          "name": "util",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            4,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/main.rs",
+      "path": "app/src/main.rs",
+      "lang": "rust",
+      "hash": "blake3:93eeb1c55a97af79cf86b0ab219fff1fecaa4291f701cbdde1942034fdea70ff",
+      "loc": 5,
+      "symbols": [
+        {
+          "id": "s:app/src/main.rs#main",
+          "name": "main",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            5,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/relocated/elsewhere.rs",
+      "path": "app/src/relocated/elsewhere.rs",
+      "lang": "rust",
+      "hash": "blake3:68fc6e91f99ddcfb88946bf39cacd14d1be7af66fd112cc70e4ca517093673b5",
+      "loc": 5,
+      "symbols": [
+        {
+          "id": "s:app/src/relocated/elsewhere.rs#Moved",
+          "name": "Moved",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            5,
+            5
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src/util.rs",
+      "path": "app/src/util.rs",
+      "lang": "rust",
+      "hash": "blake3:63f683830cd77cfaade95d965fd6a638b84a01f714b63472d6c5bdbbeee85355",
+      "loc": 3,
+      "symbols": [
+        {
+          "id": "s:app/src/util.rs#Helper",
+          "name": "Helper",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        },
+        {
+          "id": "s:app/src/util.rs#help",
+          "name": "help",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/tests/common/mod.rs",
+      "path": "app/tests/common/mod.rs",
+      "lang": "rust",
+      "hash": "blake3:92aa2c8f7139991f7b9226af8399099bdce2700c44203b9c536f47b9ad668d1b",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:app/tests/common/mod.rs#Fixture",
+          "name": "Fixture",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/tests/integration.rs",
+      "path": "app/tests/integration.rs",
+      "lang": "rust",
+      "hash": "blake3:80c228a700cff848d8129afb94b319c2427d9e7772f4feff09322f01ae8f8772",
+      "loc": 9,
+      "symbols": [
+        {
+          "id": "s:app/tests/integration.rs#common",
+          "name": "common",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            3,
+            3
+          ]
+        },
+        {
+          "id": "s:app/tests/integration.rs#nothing",
+          "name": "nothing",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            9,
+            9
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/web/panel.ts",
+      "path": "app/web/panel.ts",
+      "lang": "ts",
+      "hash": "blake3:b6bf038a4dcbb8a738c3cc46d4ec8599445c9f0290831e2766f73e56be7b1950",
+      "loc": 1,
+      "symbols": [
+        {
+          "id": "s:app/web/panel.ts#panel",
+          "name": "panel",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:core/src/lib.rs",
+      "path": "core/src/lib.rs",
+      "lang": "rust",
+      "hash": "blake3:3d720907ef7219c96a980b6503bde54a04600ec81b2bf52edf61f99523f0e9d8",
+      "loc": 5,
+      "symbols": [
+        {
+          "id": "s:core/src/lib.rs#Shared",
+          "name": "Shared",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            5,
+            5
+          ]
+        },
+        {
+          "id": "s:core/src/lib.rs#types",
+          "name": "types",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:core/src/types.rs",
+      "path": "core/src/types.rs",
+      "lang": "rust",
+      "hash": "blake3:ff18b7f3ea3f3edc0f0090ebd02cf121fc39563d96bef8a727da5f618e05bfff",
+      "loc": 7,
+      "symbols": [
+        {
+          "id": "s:core/src/types.rs#COUNT",
+          "name": "COUNT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            7,
+            7
+          ]
+        },
+        {
+          "id": "s:core/src/types.rs#Raw",
+          "name": "Raw",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            3,
+            5
+          ]
+        },
+        {
+          "id": "s:core/src/types.rs#Shape",
+          "name": "Shape",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:orphan/stray.rs",
+      "path": "orphan/stray.rs",
+      "lang": "rust",
+      "hash": "blake3:69591332511a00c253b2a472810abe4eabf13248f87e22a547bf304b8ade9bcb",
+      "loc": 8,
+      "symbols": [
+        {
+          "id": "s:orphan/stray.rs#stray",
+          "name": "stray",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            8,
+            8
+          ]
+        }
+      ]
+    }
+  ],
+  "packages": [
+    {
+      "id": "p:cargo:serde",
+      "name": "cargo:serde",
+      "ecosystem": "cargo"
+    },
+    {
+      "id": "p:cargo:std",
+      "name": "cargo:std",
+      "ecosystem": "cargo"
+    }
+  ],
+  "edges": [
+    {
+      "from": "f:app/build.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "env"
+      ]
+    },
+    {
+      "from": "f:app/src/bin/tool.rs",
+      "to": "f:app/src/bin/helper.rs",
+      "kind": "import",
+      "symbols": [
+        "assist"
+      ]
+    },
+    {
+      "from": "f:app/src/bin/tool.rs",
+      "to": "f:app/src/lib.rs",
+      "kind": "import",
+      "symbols": [
+        "Root"
+      ]
+    },
+    {
+      "from": "f:app/src/engine/mod.rs",
+      "to": "f:app/src/engine/runner.rs",
+      "kind": "import",
+      "symbols": [
+        "*",
+        "RunEvent"
+      ]
+    },
+    {
+      "from": "f:app/src/engine/mod.rs",
+      "to": "f:app/src/util.rs",
+      "kind": "import",
+      "symbols": [
+        "Helper"
+      ]
+    },
+    {
+      "from": "f:app/src/engine/runner.rs",
+      "to": "f:app/src/engine/mod.rs",
+      "kind": "import",
+      "symbols": [
+        "Engine"
+      ]
+    },
+    {
+      "from": "f:app/src/engine/runner.rs",
+      "to": "f:app/src/lib.rs",
+      "kind": "import",
+      "symbols": [
+        "VERSION"
+      ]
+    },
+    {
+      "from": "f:app/src/engine/runner.rs",
+      "to": "f:app/src/util.rs",
+      "kind": "import",
+      "symbols": [
+        "Helper"
+      ]
+    },
+    {
+      "from": "f:app/src/engine/runner.rs",
+      "to": "f:core/src/lib.rs",
+      "kind": "import",
+      "symbols": [
+        "Shared"
+      ]
+    },
+    {
+      "from": "f:app/src/engine/runner.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "BTreeMap"
+      ]
+    },
+    {
+      "from": "f:app/src/lib.rs",
+      "to": "f:app/src/engine/runner.rs",
+      "kind": "import",
+      "symbols": [
+        "RunEvent"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:app/src/lib.rs",
+      "to": "f:app/src/util.rs",
+      "kind": "import",
+      "symbols": [
+        "Helper"
+      ]
+    },
+    {
+      "from": "f:app/src/lib.rs",
+      "to": "f:core/src/types.rs",
+      "kind": "import",
+      "symbols": [
+        "Shape"
+      ]
+    },
+    {
+      "from": "f:app/src/lib.rs",
+      "to": "p:cargo:serde",
+      "kind": "import",
+      "symbols": [
+        "Serialize"
+      ]
+    },
+    {
+      "from": "f:app/src/lib.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "BTreeMap"
+      ]
+    },
+    {
+      "from": "f:app/src/main.rs",
+      "to": "f:app/src/lib.rs",
+      "kind": "import",
+      "symbols": [
+        "Root"
+      ]
+    },
+    {
+      "from": "f:app/src/main.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "process"
+      ]
+    },
+    {
+      "from": "f:app/src/relocated/elsewhere.rs",
+      "to": "f:app/src/util.rs",
+      "kind": "import",
+      "symbols": [
+        "Helper"
+      ]
+    },
+    {
+      "from": "f:app/tests/integration.rs",
+      "to": "f:app/src/engine/mod.rs",
+      "kind": "import",
+      "symbols": [
+        "Engine"
+      ]
+    },
+    {
+      "from": "f:app/tests/integration.rs",
+      "to": "f:app/src/lib.rs",
+      "kind": "import",
+      "symbols": [
+        "Describe"
+      ]
+    },
+    {
+      "from": "f:app/tests/integration.rs",
+      "to": "f:app/tests/common/mod.rs",
+      "kind": "import",
+      "symbols": [
+        "Fixture"
+      ]
+    },
+    {
+      "from": "f:core/src/lib.rs",
+      "to": "f:core/src/types.rs",
+      "kind": "import",
+      "symbols": [
+        "Shape"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:orphan/stray.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "fmt"
+      ]
+    }
+  ],
+  "unresolved": [
+    {
+      "from": "f:orphan/stray.rs",
+      "specifier": "crate::missing::Thing",
+      "reason": "not_found"
+    }
+  ],
+  "stats": {
+    "files": 15,
+    "symbols": 40,
+    "edges": 23
+  }
+}

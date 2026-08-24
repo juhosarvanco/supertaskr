@@ -6,6 +6,7 @@
 //! `unresolved`. The closed reason taxonomy: `not_found`, `outside_root`,
 //! `unsupported`, `asset`.
 
+pub(crate) mod rust;
 pub(crate) mod ts;
 pub(crate) mod tsconfig;
 
@@ -14,7 +15,9 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use crate::extract::ExtractRecord;
-use crate::graph::{file_id, package_id, symbol_id, Edge, Package, Unresolved};
+use crate::graph::{file_id, package_id, symbol_id, Edge, Lang, Package, Unresolved};
+
+use rust::{RustOutcome, RustWorld};
 
 use ts::{
     candidates_for, is_asset, is_relative, is_unsupported, match_paths, normalize_join,
@@ -217,10 +220,21 @@ struct EdgeAcc {
 pub(crate) fn resolve_all(
     canon_root: &Path,
     records: &BTreeMap<String, ExtractRecord>,
+    langs: &BTreeMap<String, Lang>,
 ) -> Resolved {
     let walked: BTreeSet<&str> = records.keys().map(String::as_str).collect();
     let mut tsconfigs = TsconfigIndex::new(canon_root);
     let mut pkg_index = PackageIndex::new(canon_root);
+    // T-010: Rust resolves against a MODULE TREE rather than filename
+    // candidates, so it gets its own world — built once, from the walked
+    // Rust files and the `mod` declarations already in the records.
+    let rust_files: BTreeSet<&str> = langs
+        .iter()
+        .filter(|(_, lang)| **lang == Lang::Rust)
+        .map(|(rel, _)| rel.as_str())
+        .collect();
+    let rust_world = (!rust_files.is_empty())
+        .then(|| RustWorld::build(canon_root, &rust_files, records));
 
     // Exported symbol names per file, for candidate gating rule (b).
     let exported: BTreeMap<&str, BTreeSet<&str>> = records
@@ -246,6 +260,60 @@ pub(crate) fn resolve_all(
     for (rel, record) in records {
         let from_id = file_id(rel);
         let dir = parent_dir_of(rel);
+
+        if let Some(world) = rust_world.as_ref().filter(|_| rust_files.contains(rel.as_str())) {
+            // Rust: import edges, packages and unresolved only — no
+            // call/type_ref candidates are extracted (see resolve::rust).
+            for import in &record.imports {
+                match world.resolve(rel, &import.specifier) {
+                    RustOutcome::File { target, name } => accumulate_one(
+                        &mut import_edges,
+                        from_id.clone(),
+                        file_id(&target),
+                        Some(&name),
+                        import.reexport,
+                    ),
+                    RustOutcome::Pkg { name } => {
+                        let id = package_id(&name);
+                        // A package edge names the LAST segment — the name
+                        // the `use` actually binds — because the crate's
+                        // own module split is outside the walked set.
+                        let bound = import
+                            .specifier
+                            .rsplit("::")
+                            .next()
+                            .filter(|s| !s.is_empty())
+                            .unwrap_or("*")
+                            .to_string();
+                        accumulate_one(
+                            &mut import_edges,
+                            from_id.clone(),
+                            id.clone(),
+                            Some(&bound),
+                            import.reexport,
+                        );
+                        packages.entry(id.clone()).or_insert(Package {
+                            id,
+                            name,
+                            ecosystem: "cargo".to_string(),
+                            path: None,
+                        });
+                    }
+                    // A path that resolved back to its own file carries no
+                    // edge — `use super::*` inside `mod tests` is the
+                    // ordinary case, and a self-edge says nothing.
+                    RustOutcome::SelfRef => {}
+                    RustOutcome::Unresolved(reason) => {
+                        unresolved.insert((
+                            from_id.clone(),
+                            import.specifier.clone(),
+                            reason.to_string(),
+                        ));
+                    }
+                }
+            }
+            continue;
+        }
         // Local name -> (target file, source name) for resolved named
         // imports; feeds candidate gating rule (b). Document order;
         // a later binding of the same local wins (deterministic).
@@ -355,14 +423,39 @@ fn accumulate(
     to: String,
     import: &crate::extract::RawImport,
 ) {
+    if import.names.is_empty() {
+        accumulate_one(edges, from, to, None, import.reexport);
+        return;
+    }
+    for binding in &import.names {
+        accumulate_one(
+            edges,
+            from.clone(),
+            to.clone(),
+            Some(&binding.source),
+            import.reexport,
+        );
+    }
+}
+
+/// One (from, to) occurrence with at most one imported name.
+///
+/// `reexport` survives dedupe only if ALL merged occurrences are
+/// re-exports (a plain import subsumes) — the same rule for `export … from`
+/// on the TS side and `pub use` on the Rust side.
+fn accumulate_one(
+    edges: &mut BTreeMap<(String, String), EdgeAcc>,
+    from: String,
+    to: String,
+    name: Option<&str>,
+    reexport: bool,
+) {
     let acc = edges.entry((from, to)).or_insert(EdgeAcc {
         symbols: BTreeSet::new(),
         all_reexport: true,
     });
-    // `reexport` survives dedupe only if ALL merged occurrences are
-    // re-exports (a plain import subsumes).
-    acc.all_reexport &= import.reexport;
-    for binding in &import.names {
-        acc.symbols.insert(binding.source.clone());
+    acc.all_reexport &= reexport;
+    if let Some(name) = name {
+        acc.symbols.insert(name.to_string());
     }
 }

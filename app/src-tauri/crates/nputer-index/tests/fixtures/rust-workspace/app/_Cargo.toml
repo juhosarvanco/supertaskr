@@ -1,0 +1,12 @@
+[package]
+name = "demo-app"          # hyphens: the crate ident is demo_app
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "demo_lib"          # a lib name that is NOT the package name
+crate-type = ["rlib"]
+
+[dependencies]
+demo-core = { path = "../core" }
+serde = "1"
