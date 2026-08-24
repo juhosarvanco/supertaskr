@@ -11,6 +11,7 @@
     "test": "playwright test",
     "typecheck": "tsc --noEmit",
     "lint:tokens": "node scripts/lint-tokens.mjs",
+    "lint:docs": "node scripts/docs-gate.mjs --census",
     "boot:check": "node scripts/tauri-boot-check.mjs",
     "boot:orphan-drill": "node scripts/orphan-drill.mjs"
   },

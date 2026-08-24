@@ -2231,11 +2231,144 @@ function covers(prefix, changed) {
 }
 
 /**
+ * THE PATH VOCABULARY (T-090, absorbing T-101-s3 and T-064-s7).
+ *
+ * `docsGate` matches ROOT-RELATIVE spellings and nothing else, because
+ * that is the only spelling a git range emits. Every OTHER spelling of
+ * the same file used to be answered *"none under docs/ — this gate is
+ * not owed"* at exit **0**, which is the one answer this gate exists to
+ * make impossible: *"I looked and nothing is owed"* and *"I could not
+ * tell what you asked about"* shared a code. Measured at `9b03ae6`, all
+ * five on `docs/CONVENTIONS.md`, a path that owes two suites:
+ *
+ *   docs/CONVENTIONS.md                     -> 1   the true answer
+ *   ./docs/CONVENTIONS.md                   -> 0   T-101-s3
+ *   /abs/path/to/repo/docs/CONVENTIONS.md   -> 0   T-101-s3
+ *   ../../docs/CONVENTIONS.md (tools/e2e)   -> 0   T-101-s3
+ *   ""  or  "   "                           -> 0   T-064-s7
+ *
+ * The third is the LIKELIEST operator error and not the rarest: the
+ * bullet says run the gate from the repo root, but the two neighbouring
+ * commands in the same workflow (`npm run lint:tokens`, `npm run
+ * boot:check`) are both run FROM tools/e2e, so reaching for a `../../`
+ * path there is the natural mistake — T-101's verifier made it and only
+ * caught it because the output named a count worth comparing.
+ *
+ * So: express every argument relative to the repository root, and refuse
+ * — never answer — the ones that cannot be read as one path in this
+ * repository. PURE: it takes the cwd and the root rather than reading
+ * them, so a pin can drive every spelling from one place without a chdir.
+ *
+ * A PLAIN RELATIVE ARGUMENT IS AMBIGUOUS AWAY FROM THE ROOT, AND THAT IS
+ * REFUSED RATHER THAN GUESSED. `docs/CONVENTIONS.md` typed from
+ * tools/e2e/ could mean the file the RANGE RULE named or a file under
+ * tools/e2e/; resolving it against the cwd answers "not owed" for a path
+ * that owes two suites, and resolving it against the root answers a
+ * question about a file the caller may not have meant. Both readings are
+ * printed and the run is CALLED WRONG. Fixing T-101-s3 by resolving
+ * against the cwd alone would have moved the false-clean from one
+ * spelling to the other rather than removing it — measured both ways
+ * while building T-090.
+ *
+ * `./` and `../` are NOT ambiguous: those prefixes mean "from here" in
+ * every shell, so they resolve against the cwd. An ABSOLUTE path is not
+ * ambiguous either. Those three spellings are the ones an operator
+ * reaches for away from the root, and they are the ones T-101-s3
+ * measured being answered "not owed" at exit 0.
+ *
+ * WHAT IS DELIBERATELY NOT CHECKED IS EXISTENCE. A merge's diff names
+ * paths the working tree standing at either endpoint does not have —
+ * everything the lane ADDED is absent from the main checkout before the
+ * merge, and everything it DELETED is absent after — so a gate that
+ * demanded a file on disk would refuse the pre-merge forecast the RANGE
+ * RULE prescribes. T-101-s3 suggested "not tracked is exit 2"; this is
+ * the half of that suggestion the range rule forbids, and it is left
+ * undone on purpose rather than overlooked.
+ *
+ * @param {string[]} args
+ * @param {{ cwd: string, root: string }} where
+ * @returns {{ paths: string[], problems: string[], rewritten: { from: string, to: string }[] }}
+ */
+export function normalisePaths(args, { cwd, root }) {
+  /** @type {string[]} */
+  const paths = [];
+  /** @type {string[]} */
+  const problems = [];
+  /** @type {{ from: string, to: string }[]} */
+  const rewritten = [];
+  for (const arg of args) {
+    const shown = JSON.stringify(arg);
+    // A NEWLINE-JOINED BLOB IS NOT A PATH (T-064-s7). `node …/docs-gate.mjs
+    // "$(git diff --name-only A B)"` — the quoting one reaches for to
+    // survive paths with spaces — hands the gate exactly ONE argument
+    // holding the whole list. It is not an empty list, so the guard below
+    // never fires; it matches no path, so the gate reports a clean tree it
+    // was asked nothing about.
+    if (/[\n\r\0]/.test(arg)) {
+      problems.push(
+        `${shown} is not a path — it carries ${arg.split(/\r?\n/).length} lines. ` +
+          "That is a newline-joined blob from a QUOTED command substitution: the " +
+          "range's whole output arrived as ONE argument. Drop the quotes so the " +
+          "list arrives as separate arguments.",
+      );
+      continue;
+    }
+    // AN EMPTY OR BLANK ARGUMENT IS A FAILED RANGE WEARING A LIST'S
+    // COSTUME (T-064-s7). `"$(git diff …)"` on a range that FAILED is the
+    // empty string, which is a list of LENGTH ONE — so T-084-s6's
+    // zero-argument guard cannot see it, and every branch below reads
+    // clean. It is the same failure that guard closed, one layer over.
+    if (arg.trim() === "") {
+      problems.push(
+        `${shown} is not a path — it is empty or blank. A list whose entries are ` +
+          "blank is a range that produced nothing, not a clean gate; re-run the " +
+          "RANGE RULE's own command and read ITS exit code first.",
+      );
+      continue;
+    }
+    const explicit = path.isAbsolute(arg) || /^\.\.?(\/|$)/.test(arg);
+    const atRoot = path.resolve(cwd) === path.resolve(root);
+    if (!explicit && !atRoot) {
+      const asTyped = path.relative(root, path.resolve(cwd, arg)).split(path.sep).join("/");
+      problems.push(
+        `${shown} is a PLAIN RELATIVE path and this is not the repository root, so ` +
+          "it has two readings and this gate will not pick one: from where you are " +
+          `it means ${JSON.stringify(asTyped || arg)}, and as the RANGE RULE's own ` +
+          `root-relative list it means ${JSON.stringify(arg)}. Run from the ` +
+          "repository root, or spell it with ./ or ../ or as an absolute path.",
+      );
+      continue;
+    }
+    const rel = path
+      .relative(root, explicit ? path.resolve(cwd, arg) : path.resolve(root, arg))
+      .split(path.sep)
+      .join("/");
+    if (rel === "" || rel === ".." || rel.startsWith("../") || path.isAbsolute(rel)) {
+      problems.push(
+        `${shown} does not name a path INSIDE this repository (it resolves to ` +
+          `${JSON.stringify(path.resolve(cwd, arg))}, and the repository root is ` +
+          `${JSON.stringify(root)}). This gate takes the RANGE RULE's own path ` +
+          "list, which is root-relative; it never answers about a tree it was not " +
+          "pointed at.",
+      );
+      continue;
+    }
+    if (rel !== arg) rewritten.push({ from: arg, to: rel });
+    paths.push(rel);
+  }
+  return { paths, problems, rewritten };
+}
+
+/**
  * THE GATE. Given a diff's changed paths, which suites does it owe?
  *
  * Pure: no I/O, no git, no clock — the readers are passed in, so the
  * answer for a synthetic diff is as derivable as for a real one, and a
  * pin can drive a docs-only diff with no code file in it at all.
+ *
+ * IT MATCHES ROOT-RELATIVE SPELLINGS ONLY, and `normalisePaths` above is
+ * what makes that safe rather than fragile: a caller that hands this
+ * function raw argv is handing it whatever the operator typed.
  */
 /**
  * @param {string[]} changedPaths

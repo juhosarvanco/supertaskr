@@ -168,6 +168,38 @@ jobs:
       - name: e2e install
         working-directory: tools/e2e
         run: npm ci
+
+      # ---- docs gate (T-090) -------------------------------------------
+      # THE THIRD STANDING GATE, ARRIVING AS A STEP. `docs/` is a CODE
+      # INPUT and neither of the other two triggers can see it: a commit
+      # whose whole diff is `docs/tasks/*.md` matches neither, and twice
+      # such a commit turned a suite red — 9c64cd8 (two card titles opened
+      # with a backtick, so two cards stopped parsing and a
+      # scroll-containment body reported Expected "60") and fede266 (a
+      # `status:` outside the parser's vocabulary took the app suite to
+      # 830 of 831). Both were found three layers from the cause.
+      #
+      # It runs the WHOLE-TREE half — every live card's frontmatter, the
+      # root-anchor account, the unlinkable-reader tripwire — and judges NO
+      # diff: a workflow has no "merge's diff" to be handed, and this gate
+      # deliberately computes no range of its own. The DIFF half stays the
+      # integrator's hand run, spelled in CONVENTIONS' DOCS GATE bullet.
+      #
+      # WHY IT IS NOT FIRST. The token lint runs ahead of every `npm ci`
+      # because token-scan.mjs is zero-dependency and `npm run` only
+      # extends PATH. docs-gate.mjs imports `yaml` — the same package
+      # lib/parser parses cards with, so a block parses for both or for
+      # neither (T-057) — so it needs tools/e2e installed and CANNOT hold
+      # that position. This is the earliest slot its own dependency allows,
+      # and still ahead of the 250MB browser download. Do not "fix" it.
+      #
+      # Exit 0 clean, 1 the gate HAS a verdict, 2 called wrong, 3 the gate
+      # could not run. The frozen EXIT object in the script owns those
+      # numbers and nothing here re-types them.
+      - name: docs gate (whole-tree half)
+        working-directory: tools/e2e
+        run: npm run lint:docs
+
       # T-045: CONVENTIONS lists `npm run typecheck` for tools/e2e and this
       # job never ran it — the hole that appears the moment the step list is
       # DERIVED from the doc instead of mirrored. Placed before the browser

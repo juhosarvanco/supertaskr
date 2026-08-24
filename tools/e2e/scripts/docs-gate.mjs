@@ -2,20 +2,54 @@
 /**
  * THE DOCS GATE (T-084) — the hand-run half.
  *
- *   node tools/e2e/scripts/docs-gate.mjs <changed path>...
+ * THE ONE SPELLING, and it is the same string docs/CONVENTIONS.md's
+ * DOCS GATE bullet prints (T-090; T-057 — a recipe in two places is two
+ * chances to disagree, and these two disagreed):
+ *
+ *   TREE=$(git merge-tree --write-tree <main tip> HEAD)   # read $? FIRST
+ *   node tools/e2e/scripts/docs-gate.mjs $(git diff --name-only <main tip> "$TREE")
  *
  * Feed it the changed paths of the diff the RANGE RULE names — this
  * tool deliberately computes no range of its own, because a second
  * opinion about which two commits "the merge's diff" means is exactly
- * the failure docs/CONVENTIONS.md's range rule exists to prevent. From
- * the integrator, that is
+ * the failure docs/CONVENTIONS.md's range rule exists to prevent.
  *
- *   TREE=$(git merge-tree --write-tree <main tip> HEAD)   # read $?
- *   git diff --name-only <main tip> "$TREE" | xargs node tools/e2e/scripts/docs-gate.mjs
+ * NO `xargs`, AND THAT IS THE WHOLE OF WHY THE SPELLING CHANGED. This
+ * header used to print `… | xargs node …/docs-gate.mjs`. A pipe through
+ * `xargs` DESTROYS two of the four codes below, differently on each
+ * platform, in the direction the codes exist to prevent (T-090's matrix,
+ * measured at `9b03ae6` on Darwin 25.6.0 against `/usr/bin/xargs`): BSD
+ * `xargs` never invokes the utility on EMPTY input, so a range command
+ * that FAILED exits **0** — the gate never ran and the reader is told
+ * nothing is owed — and it collapses EVERY nonzero utility exit to **1**,
+ * so "called wrong" and "GATE COULD NOT RUN" both arrive as "has a
+ * verdict". GNU `xargs` on CI's ubuntu runner breaks it the OTHER way
+ * (1–125 map to 123). A MAPPING QUOTED WITHOUT ITS PLATFORM IS WRONG ON
+ * ONE OF THEM. The `$(…)` form above has no such layer: the shell reports
+ * this process's own status, and a FAILED range substitutes to nothing,
+ * which is zero arguments, which is EXIT 2 below.
+ *
+ * The unquoted substitution splits on whitespace, so a tracked path
+ * containing a space would arrive as fragments. This tree has none, and
+ * that failure direction is loud rather than silent: a fragment under
+ * docs/ makes the gate OVER-fire (the `docs` prefix covers `docs/my`),
+ * and a fragment that leaves the repository is refused as called-wrong.
+ * QUOTING the substitution is the spelling that is not safe — one
+ * argument holding the whole newline-joined list reads as a clean tree
+ * (T-064-s7), which is why that shape is refused by name.
+ *
+ * `npm run lint:docs` from tools/e2e/ is the NAMED form and CI's step
+ * (T-090). It runs the WHOLE-TREE half — the frontmatter vocabulary, the
+ * root-anchor account and the unlinkable-reader tripwire — and judges NO
+ * diff, because a workflow has no "merge's diff" to be handed and this
+ * tool will not compute one. Both incidents this gate was built for
+ * (`9c64cd8`, `fede266`) live in the half CI now holds; the DIFF half is
+ * still the integrator's hand run, and the bullet says so.
  *
  * `node tools/e2e/scripts/docs-gate.mjs --census` prints the derivation
  * and judges no diff — the figures docs/CONVENTIONS.md used to carry as
- * digits, which went stale at their own named ref.
+ * digits, which went stale at their own named ref. Paths may be given
+ * BESIDE it, in which case it prints the derivation and judges them too.
  *
  * It answers two questions and nothing else:
  *
@@ -37,12 +71,25 @@
  *   1  ran and FOUND something: suites are owed, or a card is illegal,
  *      or the root-anchor account disagrees with the tree, or several.
  *      Read the message — they are printed apart.
- *   2  called wrong: an unknown flag, or NO PATHS AT ALL. The second is
- *      T-084-s6 and it is not pedantry — the documented invocation pipes
- *      a range through `xargs`, BSD xargs runs the utility once even on
- *      empty input, and a range command that failed therefore used to
- *      arrive here as zero paths and be answered "not owed" at exit 0.
- *      Same meaning `index --check` gives 2.
+ *   2  called wrong: an unknown flag, NO PATHS AT ALL, or a path list
+ *      this gate cannot read as paths in this repository. Same meaning
+ *      `index --check` gives 2, and it is the code that keeps "I looked
+ *      and nothing is owed" separate from "I could not tell what you
+ *      asked about". Four shapes reach it, each measured arriving as a
+ *      CLEAN GATE before it did (T-084-s6, T-064-s7, T-101-s3):
+ *        - zero arguments — a range command that failed, or a
+ *          `merge-tree` whose exit was eaten by a command substitution;
+ *        - an argument that is empty or blank — the same failed range,
+ *          QUOTED, which is a list of length ONE and so slips past the
+ *          zero-argument guard;
+ *        - an argument carrying newlines — a quoted substitution handing
+ *          the whole list over as one blob;
+ *        - a path that resolves OUTSIDE this repository — `../../docs/…`
+ *          typed from tools/e2e/, where the two neighbouring commands in
+ *          the same workflow are run.
+ *      A `./`-prefixed or ABSOLUTE spelling is not in that list: it is
+ *      normalised to its root-relative form and ANSWERED, because it
+ *      names a file in this repository and the gate knows which.
  *   3  the gate COULD NOT RUN, so this run is not a claim about the
  *      tree at all. Every throw out of docs-scan.mjs lands here.
  *
@@ -58,7 +105,9 @@ import {
   docsGate,
   docsReaders,
   liveTaskCards,
+  normalisePaths,
   packageRelativeSites,
+  repoRoot,
   rootAnchoredFiles,
   siteCensus,
   taskCardIssues,
@@ -75,29 +124,50 @@ const CENSUS_FLAG = "--census";
 /** @param {string[]} argv */
 function main(argv) {
   const flags = argv.filter((a) => a.startsWith("-"));
-  const censusOnly = argv.length === 1 && argv[0] === CENSUS_FLAG;
-  if (flags.length > 0 && !censusOnly) {
+  const unknown = flags.filter((a) => a !== CENSUS_FLAG);
+  if (unknown.length > 0) {
     console.error(
-      `docs-gate: unknown flag ${flags[0]} — usage: node tools/e2e/scripts/docs-gate.mjs <changed path>...\n` +
+      `docs-gate: unknown flag ${unknown[0]} — usage: node tools/e2e/scripts/docs-gate.mjs <changed path>...\n` +
         "It takes PATHS, never a git range: the range is the RANGE RULE's answer, not this tool's.\n" +
-        `The one flag is ${CENSUS_FLAG}, which prints the derivation and judges no diff.`,
+        `The one flag is ${CENSUS_FLAG}, which prints the derivation; paths may be given beside it.`,
+    );
+    return EXIT.USAGE;
+  }
+  const wantsCensus = flags.includes(CENSUS_FLAG);
+
+  // THE PATH LIST IS NORMALISED BEFORE IT IS JUDGED (T-090, absorbing
+  // T-064-s7 and T-101-s3). `normalisePaths` owns the vocabulary and the
+  // measured evidence; what matters here is that anything it refuses is
+  // EXIT 2 and never an answer. The one thing this gate must never do is
+  // give "I looked and nothing is owed" to a question it could not read.
+  const { paths, problems, rewritten } = normalisePaths(
+    argv.filter((a) => !a.startsWith("-")),
+    { cwd: process.cwd(), root: repoRoot },
+  );
+  if (problems.length > 0) {
+    console.error(
+      `docs-gate: ${problems.length} argument(s) are not paths in this repository — ` +
+        "usage: node tools/e2e/scripts/docs-gate.mjs <changed path>...",
+    );
+    for (const p of problems) console.error(`  ${p}`);
+    console.error(
+      "  This is CALLED WRONG, deliberately, and never a clean gate: a run that " +
+        "could not read its question is not a claim about the tree.",
     );
     return EXIT.USAGE;
   }
 
   // T-084-s6. AN EMPTY PATH LIST IS A FAILED RANGE, NOT A CLEAN GATE.
-  // The documented invocation is `git diff --name-only … | xargs node
-  // …/docs-gate.mjs`, and BSD xargs runs the utility once even when its
-  // input is empty — so a range command that failed, or a `merge-tree`
-  // whose exit was eaten by a command substitution, used to arrive here
-  // as ZERO PATHS and be answered "this gate is not owed" at exit 0.
-  // That is silence wearing a clean gate's costume, which is the exact
-  // thing this card exists to strip off. Exit 2 is "called wrong".
-  if (!censusOnly && argv.length === 0) {
+  // A range command that failed, or a `merge-tree` whose exit was eaten
+  // by a command substitution, arrives here as ZERO PATHS — and used to
+  // be answered "this gate is not owed" at exit 0. That is silence
+  // wearing a clean gate's costume, which is the exact thing T-084-s6
+  // exists to strip off. Exit 2 is "called wrong".
+  if (!wantsCensus && paths.length === 0) {
     console.error(
       "docs-gate: NO PATHS GIVEN — usage: node tools/e2e/scripts/docs-gate.mjs <changed path>...\n" +
         "  An empty path list is not a clean gate; it is a range that produced nothing.\n" +
-        "  Re-run the RANGE RULE's own command and read ITS exit code before piping it here.\n" +
+        "  Re-run the RANGE RULE's own command and read ITS exit code before feeding it here.\n" +
         `  To see the derivation without judging a diff, run with ${CENSUS_FLAG}.`,
     );
     return EXIT.USAGE;
@@ -112,7 +182,19 @@ function main(argv) {
   const climbingUnlinked = unlinkedSites();
   const statuses = taskStatuses();
   const issues = taskCardIssues(liveTaskCards(), { statuses, parseYaml });
-  const gate = docsGate(censusOnly ? [] : argv, readers);
+  const gate = docsGate(paths, readers);
+
+  // WHAT THE GATE DECIDED YOUR QUESTION WAS, printed whenever it is not
+  // what you typed. A normalisation that answers correctly and silently
+  // is one an operator cannot check; this line is how `./docs/x` and an
+  // absolute path show their work.
+  if (rewritten.length > 0) {
+    console.log(
+      `docs-gate: ${rewritten.length} path(s) normalised to their root-relative spelling ` +
+        "(this gate matches the RANGE RULE's own form, and answers no other):",
+    );
+    for (const r of rewritten) console.log(`  ${r.from}  ->  ${r.to}`);
+  }
 
   console.log(
     `docs-gate: ${readers.length} derived docs readers across ` +
@@ -201,11 +283,13 @@ function main(argv) {
     found += unlinked.length;
   }
 
-  if (censusOnly) {
+  if (paths.length === 0) {
+    // Only reachable WITH the census flag: without it, zero paths is the
+    // failed range refused above.
     console.log(`\ndocs-gate: ${CENSUS_FLAG} — the derivation above, no diff judged.`);
   } else if (gate.docsPaths.length === 0) {
     console.log(
-      `\ndocs-gate: ${argv.length} changed path(s) given, none under docs/ — this gate is not owed.`,
+      `\ndocs-gate: ${paths.length} changed path(s) given, none under docs/ — this gate is not owed.`,
     );
   } else if (!gate.fires) {
     console.log(

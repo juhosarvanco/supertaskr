@@ -264,6 +264,17 @@ const CI_SEQUENCE: Correspondence[] = [
   },
   { kind: "verbatim", dir: "app/src-tauri", cmd: "cargo audit" },
   { kind: "verbatim", dir: "tools/e2e", cmd: "npm ci" },
+  // THE DOCS GATE (T-090), immediately after tools/e2e's install — the
+  // earliest slot its own dependency allows. It CANNOT hold the token
+  // lint's bare-checkout position: `token-scan.mjs` is zero-dependency
+  // and `npm run` only extends PATH, while `docs-gate.mjs` imports
+  // `yaml`, chosen because it is the same package lib/parser parses cards
+  // with (T-057). The step runs the gate's WHOLE-TREE half and judges no
+  // diff — a workflow has no "merge's diff" to be handed. VERBATIM, and
+  // the named command IS the point: this gate was a hand-run ritual with
+  // no step at all because T-084's fence could not reach ci.yml
+  // (T-084-s2), which is the whole of why nobody was obliged to run it.
+  { kind: "verbatim", dir: "tools/e2e", cmd: "npm run lint:docs" },
   { kind: "verbatim", dir: "tools/e2e", cmd: "npm run typecheck" },
   {
     kind: "ci-only",
@@ -322,6 +333,21 @@ const LOCAL_ONLY: { dir: string; cmd: string; why: string }[] = [
       "(ADR-014). Its gating form is `arch drift --fail-on <sev>`, deliberately " +
       "unwired while the registry carries live undeclared edges — wiring it " +
       "would red CI on drift the architect is holding open on purpose (T-054).",
+  },
+  {
+    dir: "tools/e2e",
+    cmd: "npm run boot:orphan-drill",
+    why:
+      "T-061-s5, ruled at T-090. The drill was SHIPPED at T-061 with a four-code " +
+      "contract and CONVENTIONS never named it, so a shipped procedure went " +
+      "unmet — and naming it forced this disposition, because the derivation " +
+      "makes every documented command either a step or an argued exclusion. " +
+      "NOT a step: it opens a window and builds the app, roughly doubling the " +
+      "boot step's cost, and it deliberately SIGKILLs a process mid-boot, which " +
+      "on a shared runner is a different risk profile from a laptop. It is a " +
+      "REGRESSION drill rather than a release gate — the property it pins " +
+      "cannot drift without somebody editing tauri-boot-check.mjs's exit path — " +
+      "so it takes the disposition `index --watch` and `arch` already have.",
   },
 ];
 
@@ -526,11 +552,12 @@ test("the expected commands derive cleanly from docs/CONVENTIONS.md", () => {
     "the workflow's expected commands are PARSED out of docs/CONVENTIONS.md " +
       '"Build & test" — these are the ways the doc and this spec disagree',
   ).toEqual([]);
-  // A floor on the derivation itself: NINETEEN documented commands today
-  // (T-054 added three nputer-index ones), fifteen of them CI commands —
-  // three of those via a mapping, one of which expands to two steps —
-  // plus two CI-only steps, so eighteen expected steps.
-  expect(steps.length, "derived step count").toBeGreaterThanOrEqual(18);
+  // A FLOOR on the derivation itself, never a count — the doc gains
+  // commands (T-054 added three nputer-index ones; T-090 added
+  // `npm run lint:docs` as a step and `npm run boot:orphan-drill` as an
+  // argued exclusion), and a floor stays true while an equality would
+  // make every such edit a two-file change for no property.
+  expect(steps.length, "derived step count").toBeGreaterThanOrEqual(19);
 });
 
 test("every CONVENTIONS command is a step, verbatim and in CI order", () => {
@@ -672,10 +699,14 @@ test("FIXTURE: a restructured section fails loudly, never with an empty expectat
   const unmarked = md.replace(/run from\s+([A-Za-z0-9._/-]+)\/:/g, "run in $1 like so —");
   const { steps, problems } = deriveExpectedSteps(unmarked);
   expect(problems.join("\n")).toContain("no longer carries exactly the four");
-  // Every command the spec claims is now missing from the doc —
-  // NINETEEN complaints, not silence — and nothing derived from a doc
-  // command survives into the expectation.
-  expect(problems.filter((p) => p.startsWith("this spec expects")).length).toBe(19);
+  // Every command the spec claims is now missing from the doc — one
+  // complaint each, not silence — and nothing derived from a doc command
+  // survives into the expectation. Asserted against the spec's OWN
+  // claimed set rather than a transcribed digit: the count was 19 until
+  // T-090 added two commands to the doc, and a hard 19 made a
+  // conventions-only edit red HERE, three files from its cause.
+  const claimedCount = CI_SEQUENCE.filter((e) => e.kind !== "ci-only").length + LOCAL_ONLY.length;
+  expect(problems.filter((p) => p.startsWith("this spec expects")).length).toBe(claimedCount);
   expect(steps.map(stepKey)).toEqual([
     "[app/src-tauri] cargo install cargo-audit --locked",
     "[tools/e2e] npx playwright install --with-deps chromium",
@@ -754,4 +785,110 @@ test("FIXTURE: a fenced block after a bullet is named, not read as prose", () =>
   const fenceProblems = after.problems.filter((p) => p.includes("carries a CODE FENCE"));
   expect(fenceProblems.length, "both fence lines are flagged").toBe(2);
   expect(fenceProblems[0]).toContain("never looks inside a fence");
+});
+
+// ── the retracted sentence, from both sides (T-090, absorbing T-084-s2) ─
+//
+// CONVENTIONS' CI bullet used to say this derivation "is silent in
+// exactly ONE case, a command the DOC gains that the spec does not yet
+// claim". That is the case it is LOUDEST about, and the first fixture
+// below is the disproof kept as a body rather than as a paragraph.
+//
+// The corrected sentence makes a second claim — that what IS silent is a
+// SHAPE the derivation cannot see, and that the one shape still unnamed
+// is a command written into a bullet carrying no `run from <dir>/:`
+// marker. That claim is a liability in prose and evidence here, so the
+// second fixture measures it. Both were measured while T-090 was built;
+// neither is transcribed from another document.
+
+test("FIXTURE: a command the DOC gains that the spec does not claim reds BY NAME", () => {
+  const md = readConventions();
+  // Spliced into a bullet the derivation DOES read, in the doc's own
+  // typography, so the command genuinely arrives in the command list.
+  const gained = md.replace("· `npm run typecheck` ", "· `npm run typecheck` · `npm run smuggled` ");
+  expect(gained, "the fixture must actually change the doc").not.toBe(md);
+
+  const before = deriveExpectedSteps(md);
+  const after = deriveExpectedSteps(gained);
+
+  // NOT SILENT: the problem names the command and both dispositions.
+  expect(after.problems.join("\n")).toContain(
+    "lists [tools/e2e] npm run smuggled, which this spec has no entry for",
+  );
+  expect(after.problems.join("\n")).toContain("add it to CI_SEQUENCE");
+  expect(after.problems.join("\n")).toContain("or to LOCAL_ONLY");
+  // And the derivation refuses to invent a step for it — the doc grew a
+  // command, the expectation did not, and the lane said so. Both halves,
+  // because "it complained" and "it did not silently expect a new step"
+  // are different properties and only one of them was ever in doubt.
+  expect(after.steps.map(stepKey)).toEqual(before.steps.map(stepKey));
+  expect(before.problems, "the live doc derives cleanly").toEqual([]);
+});
+
+test("FIXTURE: the shape that IS silent — a command in a bullet with no `run from` marker", () => {
+  const md = readConventions();
+  // The AUDIT GATE POLICY bullet is prose about a policy: it carries no
+  // `run from <dir>/:` marker, so `commandBullets` never looks at it,
+  // and it is neither indented nor fenced, so `structuralProblems` has
+  // nothing to say either. A command written here is invisible to every
+  // loop in the derivation — by construction, because the marker is what
+  // makes a bullet a command list.
+  const attacked = md.replace(
+    "- AUDIT GATE POLICY",
+    "- AUDIT GATE POLICY: run `cargo audit --deny warnings` first.",
+  );
+  expect(attacked, "the fixture must actually change the doc").not.toBe(md);
+
+  const before = deriveExpectedSteps(md);
+  const after = deriveExpectedSteps(attacked);
+
+  // THE SILENCE, PINNED. Not "we think this is quiet" — the problems are
+  // empty and the step list has not moved, which together are exactly
+  // what "the doc grew a command and nothing noticed" means.
+  expect(after.problems, "this shape is genuinely silent — that is the finding").toEqual([]);
+  expect(after.steps.map(stepKey)).toEqual(before.steps.map(stepKey));
+  // The positive control, so the fixture cannot pass because the splice
+  // failed: the same command in a bullet the derivation DOES read is
+  // loud. Without this, a typo in the replace above reads as silence.
+  const control = deriveExpectedSteps(
+    md.replace("· `npm run typecheck` ", "· `npm run typecheck` · `cargo audit --deny warnings` "),
+  );
+  expect(control.problems.join("\n")).toContain(
+    "lists [tools/e2e] cargo audit --deny warnings, which this spec has no entry for",
+  );
+});
+
+test("FIXTURE: a middle dot inside a parenthetical drops every command behind it", () => {
+  // The typographic rule's own cost, DERIVED rather than transcribed.
+  // CONVENTIONS states it as a DELTA (three commands) because the
+  // endpoints move whenever the doc gains a command — they were 19 -> 16
+  // when T-054 and T-078 measured it and 21 -> 18 after T-090 added two.
+  // A card that quotes the endpoints goes stale; this asks the parser.
+  const md = readConventions();
+  const truncated = md.replace(
+    "(T-014's\n  GRAPH-CURRENCY GATE, and a CI step since T-054 — exit 0 current, 1",
+    "(T-014's\n  GRAPH-CURRENCY GATE, and a CI step since T-054 · exit 0 current, 1",
+  );
+  expect(truncated, "the fixture must actually change the doc").not.toBe(md);
+
+  const count = (text: string): number =>
+    commandBullets(buildAndTestSection(text)).reduce((n, b) => n + b.commands.length, 0);
+  const exposed = count(md);
+  const afterTruncation = count(truncated);
+  expect(exposed - afterTruncation, "three commands leave CI parity").toBe(3);
+  // WHICH three, by name — a delta of 3 could be any three, and the
+  // three that vanish are the ones BEHIND the separator in that bullet.
+  const names = (text: string): string[] =>
+    commandBullets(buildAndTestSection(text)).flatMap((b) => b.commands.map((c) => docKey(b.dir, c)));
+  const lost = names(md).filter((k) => !names(truncated).includes(k));
+  expect(lost).toEqual([
+    "[app/src-tauri] cargo audit",
+    "[app/src-tauri] cargo run -p nputer-index -- index --watch --root ../..",
+    "[app/src-tauri] cargo run -p nputer-index -- arch --root ../..",
+  ]);
+  // And it is LOUD in this direction, which is the half the retracted
+  // sentence got right: every command the spec still claims reds by name.
+  expect(deriveExpectedSteps(truncated).problems.join("\n")).toContain(
+    "this spec expects [app/src-tauri] cargo audit",
+  );
 });
