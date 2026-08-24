@@ -1435,7 +1435,7 @@ mod tests {
             dir.join(".nputer/sessions.json"),
             format!(
                 "{{\n  \"sessions\": [\n    {{\n      \"id\": \"S1\",\n      \
-                 \"agent\": \"claude\",\n      {id_line}\
+                 \"agent\": \"claude\",\n      \"model\": \"claude-opus-5\",\n      {id_line}\
                  \"created\": \"2026-08-24T18:32:51Z\",\n      \"turns\": 1,\n      \
                  \"tasks\": [],\n      \"roles\": [\n        \"planner\"\n      ],\n      \
                  \"status\": \"idle\"\n    }}\n  ]\n}}\n"
@@ -1641,7 +1641,19 @@ mod tests {
         let watch = detached_watch(Some(usable.clone()));
         let agent = silent_agent(RunnerConfig::default());
         match start_genesis(&watch, &agent) {
-            StartOutcome::ResumeAvailable { turns, .. } => assert_eq!(turns, 1),
+            StartOutcome::ResumeAvailable { turns, model, .. } => {
+                assert_eq!(turns, 1);
+                // The offer's whole payload comes off the ONE record this
+                // command now reads, so the field that rides furthest from
+                // the routing question is asserted too — a drill mutant
+                // that dropped it survived the first sweep of this rebuild,
+                // and a field nothing asserts is a field anything may do to.
+                assert_eq!(
+                    model.as_deref(),
+                    Some("claude-opus-5"),
+                    "through T-047-s3's display boundary, off the same single read"
+                );
+            }
             other => panic!(
                 "the same fixture with a usable id must be ACCEPTED, or arms 1 and 2 \
                  prove nothing: got {other:?}"
