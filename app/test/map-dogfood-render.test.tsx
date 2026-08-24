@@ -78,11 +78,17 @@ const node = (id: string): HTMLElement => {
 };
 
 describe("the nputer repo on its own map", () => {
-  it("renders all eleven declared components in full mode, no unmapped bucket, no banner", () => {
+  it("renders all twelve declared components in full mode, no unmapped bucket, no banner", () => {
     // Ten since T-024 declared C-13 (genesis pane); ELEVEN since T-025
     // declared C-14 (agent runner). See the reconciliation blocks in
     // architecture-dogfood.test.ts for both enumerated deltas.
-    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(11);
+    // TWELVE since T-088 declared C-15 (dispatch), and this one arrives
+    // WITHOUT a regen: docs/ is .nputerignored, so a component .md moves
+    // no indexed file and the hint below still reads 126. C-15 renders
+    // as a declared-only face — zero files match either declared glob —
+    // which is the C-07 treatment three bodies down, on a component that
+    // has no code at all rather than code the indexer cannot see.
+    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(12);
     expect(container.querySelector('[data-component-id="unmapped"]')).toBeNull();
     expect(container.querySelector("[data-testid=map-degraded]")).toBeNull();
   });
@@ -170,7 +176,7 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 32-edge relation table", () => {
+  it("draws the full 33-edge relation table", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
@@ -193,7 +199,14 @@ describe("the nputer repo on its own map", () => {
     // unchanged (two assertions, one it()), so both were forecast rather
     // than read off a red: a row is created only by a component PAIR that
     // had none, and every new edge here lands on an existing pair.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(32);
+    // 32 → 33 at T-088, and the trap runs the OTHER WAY this time: the
+    // row count moves and the undeclared tally does NOT. C-15's single
+    // declared edge (→C-10) lands PLANNED, so planned goes 9 → 10 while
+    // confirmed and undeclared hold — a component declared before it has
+    // code can only ever add planned rows. Both numbers were derived
+    // from the live derivation before the suite ran, because a red on
+    // the first assertion hides the second either way round.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(33);
     expect(
       container.querySelectorAll('[data-testid=map-edge][data-relation="undeclared"]'),
     ).toHaveLength(10);
@@ -389,6 +402,15 @@ describe("the nputer repo on its own map", () => {
     // NOT THE ROW ITS POSITION SUGGESTS: C-05→C-14 also reads 6, so a
     // value read off the failure diff by position corrupts two rows.
     // Key on (from, to, relation), never on the printed order.
+    // 126 → 126 at T-088 (2026-08-24), and this is the FIRST entry in
+    // this ledger written from a LANE rather than at a merge regen —
+    // because T-088's trigger is the other one. Declaring C-15 changes
+    // the REGISTRY and cannot change the graph: `.nputerignore` excludes
+    // docs/, so a component .md is not an indexed file, and
+    // `index --check --root ../..` is exit 0 with C-15 on disk. So the
+    // node count above moves 11 → 12 and the edge count 32 → 33 while
+    // this hint does not move at all — the exact inverse of T-073's
+    // entry, where a file joined the index and moved ONLY this hint.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
       "committed graph · 126 files",
     );

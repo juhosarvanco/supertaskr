@@ -61,6 +61,23 @@ describe('smoke — the real docs/ tree parses cleanly', () => {
     // and app/test/map-dogfood-render.test.tsx. Changed, never loosened:
     // still a whole-array toEqual, every pre-existing id byte-unchanged,
     // C-14 appended in registry order.
+    //
+    // RECONCILED AGAIN AT T-088 (2026-08-24, executor claude-opus-5): the
+    // branch declares C-15 dispatch (app/src-tauri/src/dispatch/** +
+    // app/src/lib/dispatch-store.ts, slug app-dispatch) per
+    // docs/design/dispatch-technical-plan.md's D2, so this live-tree pin
+    // lists TWELVE ids. THE MOVED SET WAS DERIVED BEFORE ANYTHING WAS RUN,
+    // by running the live derivation through a throwaway probe and diffing
+    // it against the three fixtures — eight assertions across six bodies in
+    // these three files, two of them SECOND assertions in a body whose
+    // first also moves (architecture-dogfood's registry body and its drift
+    // body). C-15's declared paths match NO file on disk, so it is
+    // declared-only rather than territory: derived.fileComponent.size,
+    // every per-component tally and map-dogfood's file hint are all
+    // UNCHANGED at 126, and this file's own assertion is the only one that
+    // moves outside app/test. Changed, never loosened: still a whole-array
+    // toEqual, every pre-existing id byte-unchanged, C-15 appended in
+    // registry order. No lib/parser/src/** byte moved.
     expect(components.map((c) => c.id)).toEqual([
       'C-01',
       'C-05',
@@ -73,6 +90,7 @@ describe('smoke — the real docs/ tree parses cleanly', () => {
       'C-12',
       'C-13',
       'C-14',
+      'C-15',
     ]);
 
     const parser = components.find((c) => c.id === 'C-06');
