@@ -821,8 +821,17 @@ test("THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED PO
   // THE CONTROL THE NEGATIVE NEEDS. Without it, a typo in the script
   // above — a mis-spelled path, a shell that never ran the gate at all —
   // also produces "not 0", and the assertion passes for the wrong
-  // reason. Same spelling, a range that SUCCEEDS and names docs paths.
-  const realRange = sh(`${gate} $(git diff --name-only HEAD~1 HEAD)`);
+  // reason. Same spelling, a range that SUCCEEDS and names a docs path.
+  //
+  // THE RANGE IS DETERMINISTIC AND THE FIRST ONE WAS NOT, which this
+  // lane's own drill caught. It read `HEAD~1 HEAD`, which names whatever
+  // the previous commit happened to touch: green at the commit the first
+  // drill ran at (a CONVENTIONS edit) and RED at the next one (a
+  // spec-only edit), where the gate answered "not owed" at 0 and was
+  // right to. The EMPTY TREE against HEAD, restricted to one path, names
+  // that path at every commit this repository will ever have.
+  const emptyTree = "$(git hash-object -t tree /dev/null)";
+  const realRange = sh(`${gate} $(git diff --name-only ${emptyTree} HEAD -- docs/ROADMAP.md)`);
   expect(realRange.code, "a range that SUCCEEDS still reaches a verdict").toBe(1);
   expect(realRange.out).toContain("docs-gate: FIRES");
 
