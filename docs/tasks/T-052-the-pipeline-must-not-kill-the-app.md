@@ -15,6 +15,85 @@ verified_by:
 review:
 ---
 
+> **@HUMAN RULING 2026-08-25 — THE TWO-CHECKOUT RECOMMENDATION IS
+> ADOPTED, AND THE MECHANISM IS A DETACHED WORKTREE.** The card's
+> `@human:` clause asked for a workflow choice; here it is, with the
+> criteria @human gave, because the criteria change which arguments
+> count: **"It doesn't bother me as a user if the app restarts. The only
+> thing I'm concerned about is if something breaks or if development
+> work suffers."** So the RESTART — the ladder's rungs 1–4 and 6 below —
+> is explicitly NOT a cost, and every argument resting on it is void.
+> What survives is rung 8 (a fresh install removing `node_modules` under
+> the running vite: the one true BREAKAGE channel) and cargo's exclusive
+> lock on `app/src-tauri/target/`, which the app and the pipeline share
+> (the one true THROUGHPUT channel).
+>
+> **MEASURED BEFORE RECOMMENDING**, as the card's own criterion demands,
+> at `765362e` on this machine: `app/src-tauri/target` **7.5 GB**, the
+> three `node_modules` **330 MB** together, `.git` **46 MB**, free disk
+> **420 GB**. Disk is not a constraint. The decisive figure is that
+> solving the cargo contention WITHOUT a second checkout — giving
+> pipeline runs their own `CARGO_TARGET_DIR` — costs that same 7.5 GB,
+> so **full isolation costs about 400 MB more than the half-measure**.
+>
+> **THE MECHANISM IS `git worktree`, NOT `git clone`**, and this
+> repository's own facts decide it: `git remote` returns **ZERO**
+> remotes, so a clone would need a local-path origin and a second object
+> store, while a worktree shares `.git` entirely. It cannot sit on
+> `main` (git refuses a branch already checked out), so it is
+> **detached**:
+>
+>     git worktree add --detach ../nputer-app main
+>
+> **HOW IT UPDATES — the question that decides the whole shape.** One
+> command, run when the human chooses:
+>
+>     git -C ../nputer-app checkout --detach main
+>
+> No fetch, no pull, no remote: the object store is shared, so `main`
+> is already there. **Being detached is the feature, not a wart** — the
+> app's code CANNOT move on its own, so the pipeline may merge all night
+> and the running app is untouched. And when the human does run that
+> command, vite and `tauri dev` see the files change and reload exactly
+> as they do today: **the second checkout does not stop the app
+> updating, it puts the human in control of WHEN.** That is precisely
+> the property the criteria ask for — restarts are fine, surprises are
+> not.
+>
+> **THE APP STILL WATCHES MAIN, so the founding demo survives.** The app
+> runs from `../nputer-app` but OPENS `/Users/ujju/Projects/nputer` as
+> its project (⌘O). Code and watched folder are independent — @human
+> demonstrated this accidentally on 2026-08-24 by running the app from
+> the main checkout while it had `~/nputer-genesis-probe` open. So every
+> merge still lands on the board live; only the app's own binary is
+> pinned.
+>
+> **THE LANE PROTOCOL ALREADY ACCOMMODATES THE EXTRA ENTRY.** A
+> permanent detached worktree appears in `git worktree list`, which
+> lane-protocol rule 7 makes the authority on held fences — and that
+> rule already says to read it as entries on a `task/T-NNN-*` branch
+> rather than as a row count, with transient drill worktrees as the
+> standing precedent. The app worktree is one more non-lane entry and
+> needs no new rule, but the bullet SHALL name it so nobody counts it as
+> a lane.
+>
+> **WHAT THIS DOES NOT EXCUSE.** The two safety rules the card already
+> demands are ratified INDEPENDENTLY of the second checkout, because the
+> human may be on one checkout at any moment and a rule that only works
+> when the setup is right is not a rule: (1) the pipeline SHALL NOT run
+> a fresh dependency install in a checkout serving a live dev server —
+> detect and REFUSE LOUDLY, the T-046 form, never silently; (2) an
+> integrator whose own work would disturb a running app SHALL record it
+> in the checkpoint, which is the practice nine incidents already
+> established. Rung 5's `lib/parser/dist` path and rung 9's stray probe
+> file keep their criteria unchanged.
+>
+> **NOT YET CREATED, DELIBERATELY.** Five lanes were live when this was
+> ruled, and adding a worktree entry while running lanes read that list
+> as the fence authority is a needless perturbation. The setup is two
+> commands (the `worktree add` above, then the fresh-clone ORDER from
+> CONVENTIONS inside it) and belongs to a quiet tree.
+
 Nine instances across 2026-08-16/17, escalating from cosmetic to
 fatal. The project's founding demo is "open the app and watch nputer
 build itself on its own board" — and the pipeline that does the
