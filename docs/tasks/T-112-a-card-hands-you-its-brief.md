@@ -86,20 +86,26 @@ a named source or reports the row as unassemblable.
   card whose implementation-notes section throws on read, and require a
   verifier brief.
 
-  **AND THE CLAIM THAT THE LEAK IS UNAVOIDABLE IS FALSE — MEASURED.**
-  Three verifiers this session declared exposure unavoidable "via a
-  single `cat`", and each was one command from not having it:
-  `sed -n '1,86p'` reads frontmatter through the last criterion and
-  stops one line short of `## Implementation notes`. T-085's verifier
-  found this, read only to the boundary, formed its mutant set first,
-  and **did not declare a leak because it did not have one**. The
-  belief was self-fulfilling — and it propagated because the architect's
-  own briefs asserted it. **This card SHALL record the bounded read as
-  the interim discipline** (a hand-driven verifier can have blindness
-  today, without waiting for the assembler), and the assembler's
-  exclusion SHALL be the durable version of the same rule rather than
-  its only form. A capability that exists and is disbelieved is worse
-  than one that does not exist, because nobody looks for it.
+  **AND THE CLAIM THAT THE LEAK IS UNAVOIDABLE IS FALSE** — three
+  verifiers declared exposure unavoidable "via a single `cat`" and each
+  was one command from not having it. **The interim discipline is
+  `T-121`'s and this card SHALL NOT restate it**; read it there and
+  cross-reference, because a rule with two implementations is two
+  chances to disagree (T-057) and this paragraph has already been one
+  of them.
+
+  **CORRECTED 2026-08-24, seventh triage.** An earlier revision of this
+  criterion named `sed -n '1,86p'` as the boundary. **T-121 measured
+  that number and refuted it in both directions** over all 166 flat
+  cards: of the 88 carrying `## Implementation notes`, **41 have it at
+  or before line 86** — so the read leaks the reasoning anyway — and
+  **47 have it after**, where it truncates the criteria the verifier
+  exists to attack. Exactly two land where the number works. The
+  boundary must be **derived** (the first `## Implementation notes` or
+  `## Verdicts` heading), not numeric. The architect wrote the wrong
+  number into this card and relayed it through five briefs, which is
+  the same defect T-085 and T-086 exist to fix — a claim retracted in
+  one place and still asserted in another.
 - THE detail panel SHALL render the brief in a copyable block **only for
   a card whose T-111 disposition is `dispatchable`** — a brief for a
   card you must not dispatch is an invitation to break the fence — and

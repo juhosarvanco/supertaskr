@@ -1,6 +1,7 @@
 # State
 
-Updated: 2026-08-24 by integrator (T-101 merged and checkpointed).
+Updated: 2026-08-24 by integrator (T-101 merged and checkpointed), then
+amended by the architect through the SEVENTH TRIAGE (`6f2f8ea`).
 
 **READ THIS FIRST IF YOU ARE PICKING THE PROJECT UP: there are NO LIVE
 LANES.** `git worktree list` returns one entry, the main checkout —
@@ -629,12 +630,90 @@ the one look T-101 owes is @human's.
 
 ## The board, derived from disk at this checkpoint
 
-**188 flat task files, 72 done / 36 planned / 28 parked / 52 suggested /
-0 verifying / 0 building**; 72 + 36 + 28 + 52 = 188. Twenty-two files
-sit in `docs/tasks/rejected/`, counted separately. The deltas from
-`9949250` are T-101 verifying → done and the five merged
-`T-101-s1…s5`. Every flat card's `status:` is in the parser's vocabulary
-(the docs gate confirms it whole-tree, 0 frontmatter issues).
+**161 flat task files, 72 done / 49 planned / 40 parked / 0 SUGGESTED /
+0 verifying / 0 building; 26 in `rejected/`** — re-derived from disk at
+`6f2f8ea`. The 188/36/28/52 figures above are T-101's checkpoint and
+were true then; three commits have landed since and the seventh triage
+disposed all 52 suggestions.
+
+## What landed after T-101's checkpoint (architect, no lanes)
+
+- **`d41456b` — F-04's slice is fully specified.** T-110 (lane reader),
+  T-111 (frontier), T-112 (brief assembler) join T-088 and the merged
+  T-089. **T-110 INVERTS the decomposition plan's D4**: the plan argued
+  the board must read lanes and never `status:`, on the ground that
+  `status: building` had never been used — a current-tree grep, which
+  cannot see a transient state. 77 commits moved that field, and T-089
+  ruled the pre-cut stamp back into the method. So the board reads
+  BOTH, and their disagreement is the product: stamped with no worktree
+  is a lane that died; a worktree with no stamp is a dispatch that
+  skipped the stamp. Tonight's network drop killed three lanes at once
+  and one left a shared fixture mutated on disk, with nothing in the
+  app able to show it.
+- **`6b0cf47` — seventh triage, batches 1–3.** 12 parked with triggers,
+  4 rejected (status flipped BEFORE `git mv`, so the exclusion pin
+  passed rather than catching it as at the sixth), 21 folded into 11
+  targets. **Two residuals were rescued before their own files could
+  bury them** — the triage encoding moves a whole file, but a finding
+  can be half-true: `T-089-s7`'s row-5 fix (the slug map is
+  `docs/ARCHITECTURE.md` plus each component's `touch_slugs:`, named
+  nowhere) went to T-104, and `T-013-s7`'s live stale figure
+  (CONVENTIONS says five files fail on an unbuilt worktree; the tree is
+  at six) rides T-117. **T-087's fence was corrected in place** — it
+  declared `[app-shell]` while its own criterion 5 edits CONVENTIONS.
+- **`6f2f8ea` — seventh triage, batch 4.** T-113…T-122 promoted, 15
+  absorbed findings removed, backlog to zero.
+
+## THE SESSION'S BEST PROCESS FINDING WAS REFUTED BY ITS OWN PROMOTION
+
+The architect spent the day relaying `sed -n '1,86p'` as the command
+that lets a verifier read a card's criteria without its reasoning.
+**T-121 measured it over all 166 flat cards and refuted it in both
+directions**: of the 88 carrying `## Implementation notes`, **41 have
+it at or before line 86** (the read leaks the reasoning anyway, up to
+59 lines on T-003 and T-007) and **47 have it after** (it truncates the
+criteria the verifier exists to attack). Exactly two land where the
+number works.
+
+**The attribution was wrong too.** T-085's verifier used `1,86p` and
+was lucky — its card's notes began at 87. **T-101's FIRST verifier read
+lines 1–110** against notes at 111, and is the one that reported three
+blocking findings none of which appeared in the executor's own
+eleven-row matrix. That evidence was credited to the wrong lane in five
+briefs.
+
+The remedy is **derived, not numeric**: read to the first
+`## Implementation notes` or `## Verdicts` heading — zero leaks and
+zero truncations across all 166. `T-121` owns the interim discipline;
+`T-112` owned a restatement of the refuted number and **was corrected
+at this triage** to route to T-121 instead, with the old claim kept
+only inside its own retraction (the shape T-085 landed).
+
+**The lesson is the one the whole session kept teaching, and this is
+its sharpest instance: everything the architect relayed without
+deriving was the weakest thing in the brief.** Six figures, one
+quotation that no file contains, a relaunch prediction wrong for three
+checkpoints — and finally the discovery *about* unverified relay,
+itself relayed unverified, improving with each retelling.
+
+## A LIVE CONTRADICTION BETWEEN TWO PLANNED CARDS — RULE BEFORE EITHER DISPATCHES
+
+**`T-113` deletes the runner-side narrowing that `T-102`'s criterion 6
+pins.** Both hold `[app-agent]`, so the fence serialises them and T-113
+is sequenced first (p57). A T-102 executor must find criterion 6
+amended or stop. T-113 quotes it verbatim; it was deliberately NOT
+amended from inside a draft, because quietly editing another planned
+card is the class of change this pipeline exists to prevent.
+
+## OUTSTANDING @HUMAN — one look, and it closes a three-card question
+
+T-101's denial notice is **hot-swapped into the running window** (vite
+HMR; this merge touched no Rust, so no relaunch — see the BOOT-GATE
+distinction now recorded in T-052). Provoke a refusal in a genesis turn
+and look once: the notice should read as quiet monospace furniture
+below the activity line, and the turn should still read as COMPLETED.
+If it reads as an error, that is a copy/treatment fix, not a logic one.
+T-081 asked this and could not answer it; T-101 makes it answerable.
 
 **T-101 WAS NEVER STAMPED `building`** — it went planned → verifying —
 which is the same lapse the merged TASK-FORMAT bullet rules on, live on
