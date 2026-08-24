@@ -365,11 +365,34 @@ asking `commandBullets`, not counted by eye.
 Run from this lane, every exit off its own `$?` on an unpiped command.
 
 - **tools/e2e `npm test`**: baseline at `9b03ae6` **135/135 exit 0**
-  (port 14950); at the finished tree **RESULT_E2E** (port 14953).
+  (scratch port 14950); at `e66af44` **142/142 exit 0** (port 14953).
+  **THE ARITHMETIC CLOSES**: 135 + 7 new bodies (4 in
+  `docs-input-gate.spec.ts`, 3 in `workflow-parity.spec.ts`) = 142, and
+  no spec FILE is added, so the file count is unmoved.
 - **tools/e2e `npm run typecheck`**: exit **0**.
-- **cargo test**: **RESULT_CARGO**.
-- **app `npm test`**: **RESULT_APP**.
-- **lib/parser `npx vitest run`**: **RESULT_PARSER**.
+- **cargo test `--no-fail-fast`**: **382 passed / 0 failed / 3 ignored,
+  exit 0**, summed programmatically over **15** `test result:` lines.
+  Unmoved from the last checkpoint, which a 0-file Rust diff requires —
+  it is owed only because `kit.rs` reads `docs/CONVENTIONS.md` on every
+  run, and that assertion is about the method version string, which this
+  card does not touch.
+- **app `npm test`**: **939/939 across 46 files, exit 0** (after
+  `npm run build`, which a fresh worktree needs before six app bodies
+  can read `app/dist`).
+- **lib/parser `npx vitest run`**: **263/263 across 12 files, exit 0**.
+- **token lint**: selftest **0**, lint **0** — `clean (TOKEN 131 files
+  under app/src, app/test, tools/e2e; CONTROL 598 tracked text files)`.
+  Owed by nothing here; run because this lane adds files under
+  tools/e2e.
+- **the new named command itself**, run the way CI will run it:
+  `npm run lint:docs` from tools/e2e exits **0**.
+
+**THE LAST RUN VALIDATES THE SENTENCES YOU ARE READING.** This card is
+itself a docs code input owing three suites, so the app, parser and e2e
+suites were re-run AFTER this section was written, at `RERUN_REF`:
+parser **RERUN_PARSER**, app **RERUN_APP**, e2e **RERUN_E2E** (scratch
+port 14951). Same figures, so no reader has to decide which run a number
+came from.
 
 ### The poison drill — eleven mutants at `f20f786`, detached worktree
 
