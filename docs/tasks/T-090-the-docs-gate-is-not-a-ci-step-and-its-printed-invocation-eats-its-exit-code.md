@@ -365,9 +365,9 @@ asking `commandBullets`, not counted by eye.
 Run from this lane, every exit off its own `$?` on an unpiped command.
 
 - **tools/e2e `npm test`**: baseline at `9b03ae6` **135/135 exit 0**
-  (scratch port 14950); at `e66af44` **142/142 exit 0** (port 14953).
-  **THE ARITHMETIC CLOSES**: 135 + 7 new bodies (4 in
-  `docs-input-gate.spec.ts`, 3 in `workflow-parity.spec.ts`) = 142, and
+  (scratch port 14950); at the finished tree **143/143 exit 0** (port
+  14953). **THE ARITHMETIC CLOSES**: 135 + 8 new bodies (5 in
+  `docs-input-gate.spec.ts`, 3 in `workflow-parity.spec.ts`) = 143, and
   no spec FILE is added, so the file count is unmoved.
 - **tools/e2e `npm run typecheck`**: exit **0**.
 - **cargo test `--no-fail-fast`**: **382 passed / 0 failed / 3 ignored,
@@ -387,14 +387,16 @@ Run from this lane, every exit off its own `$?` on an unpiped command.
 - **the new named command itself**, run the way CI will run it:
   `npm run lint:docs` from tools/e2e exits **0**.
 
-**THE LAST RUN VALIDATES THE SENTENCES YOU ARE READING.** This card is
-itself a docs code input owing three suites, so the app, parser and e2e
-suites were re-run AFTER this section was written, at `RERUN_REF`:
-parser **RERUN_PARSER**, app **RERUN_APP**, e2e **RERUN_E2E** (scratch
-port 14951). Same figures, so no reader has to decide which run a number
-came from.
+**THE LAST RUN VALIDATES THE SENTENCES YOU ARE READING**, and it cannot
+validate itself — the honest limit, stated rather than papered over. This
+card is a docs code input owing three suites, so after the notes were
+written the owed set was re-run at `e96260b`: parser **263/263 exit 0**,
+app **939/939 exit 0**, e2e **142/142 exit 0** (scratch port 14951) —
+every figure identical to the first pass, so no reader has to decide
+which run a number came from. The two commits after it add one spec body
+and one deterministic range, which is why the e2e figure above is 143.
 
-### The poison drill — eleven mutants at `f20f786`, detached worktree
+### The poison drill — fourteen mutants across two detached worktrees
 
 Detached scratch worktree at `f20f786` (CONVENTIONS arm (c)); no
 `CARGO_TARGET_DIR` hazard applies because no Rust body is drilled, and
@@ -438,10 +440,38 @@ exit code in the same file, and they red DIFFERENT sets — N5 three
 bodies, N6 exactly one — so the EXIT MATRIX body is not the empty-list
 body restated.
 
-**Restoration proved THREE ways after every mutant and again at the
-end**: `git checkout -- .` with a tracked-change count of 0, sha256 of
-each of the seven touched files against `git show f20f786:<path>` (all
-seven MATCH), and a clean re-run at **57/57 exit 0**. The symlinks were
+**A SECOND DRILL RAN AT `cb9acfb`** for the two bodies added after the
+first, and it is the one that earned its keep:
+
+| # | mutant (producer side only) | exit | tally | reds |
+|---|---|---|---|---|
+| N12 | the SCRIPT's header re-adds the `xargs` pipe | 1 | 1F/40P | **ONE SPELLING only** |
+| N13 | the DOC's recipe line gains a trailing comment | 1 | 1F/40P | **ONE SPELLING only** |
+| N5 (re-run) | zero paths returns CLEAN | 1 | 3F/38P | the same three as before |
+
+N12 and N13 red the same body from OPPOSITE sides, which is what a
+two-copy pin has to do: moving either copy is caught, so neither can
+drift quietly toward the other's stale text.
+
+**AND THE DRILL CAUGHT A DEFECT IN THIS LANE'S OWN NEW BODY**, which is
+the whole argument for drilling at a commit rather than in place. The
+EMPTY-LIST TRAP's planted positive first read
+`$(git diff --name-only HEAD~1 HEAD)` — a range naming whatever the
+previous commit happened to touch. It was GREEN at `f20f786` (whose
+parent edit included `docs/CONVENTIONS.md`) and RED at `f7ea31c` (a
+spec-only edit), where the gate answered "not owed" at 0 and was
+entirely right to. A positive control that depends on history is a
+control that will fail on somebody else's commit and be read as a real
+defect. It now uses the EMPTY TREE against HEAD restricted to one path,
+which names that path at every commit this repository will ever have.
+**The body was not wrong about the gate; it was wrong about the world**,
+and only a second worktree at a second commit could tell the difference.
+
+**Restoration proved THREE ways after every mutant and again at the end
+of BOTH drills**: `git checkout -- .` with a tracked-change count of 0,
+sha256 of each of the seven touched files against the drill's own commit
+(`f20f786`, then `cb9acfb`) — all seven MATCH in both — and a clean
+re-run (**57/57** and **41/41**, exit 0). The symlinks were
 UNLINKED rather than deleted and all four targets verified present
 afterwards; the worktree was removed and pruned. The main checkout was
 never touched.
