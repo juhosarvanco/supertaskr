@@ -5,10 +5,10 @@ feature: F-06
 milestone: 4
 priority: 8
 size: S
-status: building
+status: planned
 blocked_by: [T-012]
-touches: [app-map]
-builder: claude-opus-5
+touches: [app-map, app-shell]
+builder:
 verifier:
 built_by:
 verified_by:
@@ -28,6 +28,25 @@ review:
 - Pinned nodes SHALL show the faint pin hint from the design spec;
   un-pinning (affordance per design) SHALL remove the entry, and an
   empty layout.json SHALL be deleted rather than committed.
+
+> **ARCHITECT'S RULING 2026-08-25 — THE FENCE WAS WRONG AND THE CARD IS
+> RETURNED TO `planned`.** The lane below built nothing and was RIGHT to;
+> `T-015-s1` is accepted in full. `touches:` is corrected in place from
+> `[app-map]` to **`[app-map, app-shell]`**, which is what T-012 declared
+> and what T-013's widening was ruled right for, and the dispatch fields
+> are unlocked (TASK-FORMAT: fields lock at `building`, unlock on
+> `planned`). **The dispatch defect was the ARCHITECT'S**, not the
+> lane's: the brief also mis-stated the fence's own path as
+> `app/src/components/map/**`, a directory that does not exist — the map
+> is `app/src/architecture/**`, and the component file's `touch_slugs:`
+> was the authority all along. That is this session's own standing lesson
+> (everything relayed without deriving is the weakest thing in the brief)
+> arriving one more time, from the seat that writes the briefs.
+> **Re-dispatch only when `app-shell` is free**, and note the lane below
+> has already done the expensive half: the read path needs no delivery
+> code, the residue is one Rust command plus one `generate_handler!`
+> line, and `T-015-s3`'s `pin pin` collision wants a ruling BEFORE the
+> hint is built.
 
 ## Implementation notes
 

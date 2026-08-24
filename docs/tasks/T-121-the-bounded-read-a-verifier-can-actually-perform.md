@@ -54,12 +54,34 @@ executor ALONE and says nothing about executor-derived content arriving
 in the verifier's brief. **So the blindness is contradicted on three
 surfaces, and whichever arm eventually wins must govern all three.**
 
+> **@HUMAN RULING 2026-08-25 — ARM 2 WINS: THE NOTES MOVE TO A SEPARATE
+> ARTIFACT.** Asked and answered directly. The reasoning, recorded so the
+> implementing lane inherits it rather than re-litigating: arm 2 is the
+> only one a PROGRAM can enforce, and it composes with `T-112`'s
+> assembler instead of competing with it — *a human cannot un-read; the
+> assembler can simply not send*. Arms 1 and 4 depend on the reader's
+> restraint, and this very card exists because the numeric form of arm 4
+> was measured and refuted in both directions. Arm 3 needs a judgment
+> call at every write about where evidence ends and reasoning begins.
+> **THE RIDER IS PART OF THE RULING**: the evidence half — commands,
+> exits, measured figures, restoration proofs — SHALL stay reachable to
+> the verifier ON REQUEST, after it has formed its own attack, because
+> this project's verdicts already depend on it. Blindness is about
+> ORDER OF FORMATION, not about withholding evidence forever.
+> **THIS CARD STILL DOES NOT IMPLEMENT IT**: the arm lands in
+> `method/roles/*.md` and needs a method version bump whose third file is
+> Rust, so it is routed, not built here — and the ruling governs all
+> THREE contradicted surfaces named above, the architect's brief
+> included.
+
 ## What this card is, and what it is not
 
 **It is not the resolution.** The four arms — describe what actually
 happens; move the notes to a separate artifact; split evidence from
 reasoning; or order the reads — are the architect's or the human's
 choice, and they live in `method/roles/*.md`, **outside this fence.**
+**Arm 2 is now CHOSEN** (the ruling above); what remains outside this
+fence is writing it into the role files.
 A `[docs/CONVENTIONS.md]` fence cannot edit `method/` and cannot carry a
 method version bump (T-078-s3 — the third file is Rust). **The card
 SHALL route that, not decide it.**
