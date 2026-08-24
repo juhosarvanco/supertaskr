@@ -17,6 +17,26 @@ review:
 
 Absorbs (seventh triage, 2026-08-24): T-070-s1 — files removed in this commit.
 
+Absorbs (eighth triage, 2026-08-25): T-113-s1 — file removed in this
+commit. **It is an unrelated one-line correction riding this card
+because it shares the fence**, which is how this project ships small
+in-fence corrections (the seventh triage did the same twice); it is
+listed separately here so no reader mistakes it for part of the CLI
+subject above.
+
+- **`visibleDenials`' DOC COMMENT SHALL STOP DESCRIBING A DEFECT THAT NO
+  LONGER EXISTS, and it is TWO stale claims rather than one.** In
+  `app/src/genesis/interview-model.ts` that comment says the
+  `exitNonZero` double report is LIVE and routes the fix to
+  **`T-101-s1`** — a file the seventh triage removed when T-113 absorbed
+  it. T-113 deleted the runner-side note, so the defect is closed and the
+  routing target does not exist. T-113's own last criterion predicted
+  this exactly (*"IF the comment's routing sentence goes stale because
+  this card lands THEN say so and route the one-line correction rather
+  than editing across the fence"*) and routed it here rather than
+  widening its own fence. Correct BOTH claims: the report is closed, and
+  the citation names T-113 (or nothing) rather than a removed file.
+
 Absorbs: T-082-s4 (sixth triage, 2026-08-20). That file is removed in
 this commit.
 

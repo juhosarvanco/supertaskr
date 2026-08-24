@@ -1,9 +1,29 @@
 ---
 id: T-088-s4
 title: A watcher startup-arm test reds under concurrent load, and it is the second flake this suite has produced
-status: suggested
+status: parked
 suggested_by: integrator claude-opus-5 @T-088
 ---
+
+> **PARKED at the eighth triage, 2026-08-25 — and the trigger is
+> ARMED rather than hypothetical.** A timeout-based assertion that reds
+> under load is a real test defect, and the condition that produces it is
+> now the ORDINARY case: five lanes ran concurrently on the night this
+> was parked, against the one or two this suite was written under.
+> **UNPARK THE MOMENT IT REDS A VERDICT OR A MERGE** — not a lane's own
+> re-run, which every session has so far handled correctly with an honest
+> tally, but the first time it costs a verifier a false REJECTED or an
+> integrator a false red at a checkpoint. **UNPARK ANYWAY AT THE NEXT
+> PLANNING PASS** if that has not happened, because a flake nobody has
+> been bitten by is still a flake every session must now be briefed
+> about, and that briefing cost is already being paid on every dispatch.
+> Promotion is deliberately NOT taken tonight for one reason: every
+> observation so far is an honest tally of 1 in 8 with no verdict harmed,
+> so the evidence supports a fix but not an interruption. **DO NOT
+> "FIX" IT BY WIDENING THE TIMEOUT** — that converts a visible flake into
+> a slow suite that still fails on a loaded machine; the honest close is
+> a deterministic rendezvous, which is what the surrounding code already
+> uses everywhere else.
 
 **Observed at T-088's merge `bd5864b`, 2026-08-24.** Bare `cargo test
 --no-fail-fast` from `app/src-tauri/` exited **101** with exactly one

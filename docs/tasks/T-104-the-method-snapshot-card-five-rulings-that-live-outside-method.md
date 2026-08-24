@@ -17,6 +17,22 @@ review:
 
 Absorbs (seventh triage, 2026-08-24): T-089-s1, T-089-s9, T-089-s10, T-089-s11, T-061-s1 — files removed in this commit.
 
+Absorbs (eighth triage, 2026-08-25): T-088-s1 — file removed in this
+commit. **A CARD'S CRITERION TRANSCRIBED A DERIVED COUNT AND DISPATCHED
+IT STALE.** T-088's last criterion promised the docs gate would name
+*"five readers, three suites"*; the tree said **seven readers across four
+suites**, and the missing suite was `cargo test` — the one no TypeScript
+reader would have guessed. CONVENTIONS already forbids this for its OWN
+prose (*"NO COUNT IS TRANSCRIBED INTO THIS BULLET, AND THAT IS THE
+POINT"*, and *"CITE THE SHAPE, NOT THE TALLY"*), and the gate prints its
+census on every run precisely so nobody writes it down. The rule was
+applied to the bullet and never to the SEAT THAT WRITES CRITERIA.
+**A criterion SHALL name the gate's COMMAND, never its OUTPUT** — a
+count in an acceptance criterion is a line number by another name, and it
+goes stale under other people's merges exactly the way a line number
+does. This belongs in `method/tasks/TASK-FORMAT.md` beside the criteria
+guidance, which is why it rides this card rather than a docs fence.
+
 > **DRAFTER'S NOTE — remove before landing.** The `touches:` above is
 > the card's whole point and should not be trimmed. `T-078-s3` measured
 > that a `method/` FORMAT change is a THREE-file commit whose third file

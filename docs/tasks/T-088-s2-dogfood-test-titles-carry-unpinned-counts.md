@@ -1,9 +1,22 @@
 ---
 id: T-088-s2
 title: The dogfood test TITLES carry counts nothing pins, and three went stale in one commit
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-088
 ---
+
+> **PARKED at the eighth triage, 2026-08-25, WITH A TRIGGER THAT FIRES
+> OFTEN.** Real, small, and genuinely un-pinnable by construction: an
+> `it()` title is a string literal in an argument position, so no mutant
+> reds it and no drill can find it — which is exactly why it is parked
+> rather than rejected. **UNPARK WITH THE NEXT CARD THAT MOVES A DOGFOOD
+> FIXTURE**, which is any card declaring a component or adding a file the
+> indexer walks; that lane is already reconciling the assertions beside
+> these titles and is the cheapest possible moment to fix them. It is NOT
+> promoted now because a card whose whole content is "correct four
+> strings" would cost a full lane ceremony for a change any passing lane
+> makes for free. T-010's Rust extraction, in verification as this was
+> written, moves the file counts again and is the likely first trigger.
 
 Declaring C-15 at T-088 moved eight assertions across six bodies. It
 also falsified **four `it()` TITLES**, none of which any assertion

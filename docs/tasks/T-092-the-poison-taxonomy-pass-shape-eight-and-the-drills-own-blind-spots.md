@@ -17,6 +17,42 @@ review:
 
 Absorbs (seventh triage, 2026-08-24): T-097-s2 — files removed in this commit.
 
+Absorbs (eighth triage, 2026-08-25): T-088-s3 (primary) and T-113-s2
+(its corroboration, filed independently from a third seat and explicitly
+subordinate) — both files removed in this commit.
+
+## THE DRILL CONVENTION NAMES A FIXED PATH, AND CONCURRENT LANES COLLIDE ON IT
+
+**Measured live across FOUR lanes on 2026-08-24/25, not anticipated.**
+CONVENTIONS' POISON DRILL bullet says *"DRILL IN A DETACHED SCRATCH
+WORKTREE AT A NAMED COMMIT"* and every session independently chose the
+same literal path — `<scratchpad>/drill` — plus the same driver name.
+T-088 and T-090 collided first: the second `git worktree add` was saved
+only by git refusing an existing path, and `git worktree list` from
+inside T-088's lane showed a `drill` worktree detached at T-090's tip.
+T-113 reproduced it from a third seat. **Then naming the WORKTREE
+per-lane proved insufficient**: T-110 used `drill-T-110` and still had
+its `drill.py` and `drill-results.json` overwritten by a sibling, because
+the collision simply moved from the directory to the FILES beside it.
+
+**What the drill's own path guard cannot do**, which is the sharp half:
+each driver's post-T-085 refusal guards the shared PREFIX, so it answers
+*"is this A drill"* and never *"is this MY drill"*. Three sessions wrote
+that guard independently and all three made the same mistake, which
+argues the convention is under-specified rather than that the sessions
+were careless. Nothing was corrupted in any instance — every restoration
+was sha256-proved against its own commit — but the protection was git's,
+not the discipline's.
+
+- **THE POISON DRILL BULLET SHALL NAME A PER-LANE SCRATCH IDENTITY**
+  covering the worktree, the driver script AND any results file, and the
+  driver's own guard SHALL be able to distinguish its drill from a
+  sibling's rather than merely recognising the shared prefix. IF the
+  scratch directory is genuinely shared between concurrent sessions
+  (it is — the session UUID in its path makes it LOOK private and it is
+  not) THEN the bullet SHALL say so in as many words, because every
+  session so far has assumed the opposite.
+
 > **DRAFTER'S NOTE — remove before landing.** Two things for the
 > architect. **(1) ORDINALS MUST BE MINTED IN ONE PLACE.** This card is
 > the taxonomy pass, so it should assign every outstanding ordinal —

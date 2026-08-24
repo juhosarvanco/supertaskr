@@ -7,7 +7,7 @@ priority: 8
 size: S
 status: planned
 blocked_by: [T-012]
-touches: [app-map, app-shell]
+touches: [app-map, app-shell, tools/e2e]
 builder:
 verifier:
 built_by:
@@ -47,6 +47,54 @@ review:
 > code, the residue is one Rust command plus one `generate_handler!`
 > line, and `T-015-s3`'s `pin pin` collision wants a ruling BEFORE the
 > hint is built.
+
+Absorbs (eighth triage, 2026-08-25): T-015-s1, T-015-s2, T-015-s3,
+T-015-s4 — all four files removed in this commit. They are this card's
+own lane reporting what the card actually needs, so they fold back into
+it rather than becoming cards of their own.
+
+## WHAT THE FOUR ABSORBED FINDINGS ADD, AND THE ONE RULING THEY FORCED
+
+**THE FENCE IS NOW `[app-map, app-shell, tools/e2e]`** — widened twice.
+`app-shell` because every test collector this repository has belongs to
+another component, so a card fenced `[app-map]` can add no test at all
+(`T-015-s1`, and T-012 and T-013 both declared the same pair for the same
+reason). `tools/e2e` because of `T-015-s4`: a pin drag is
+`pointerdown → pointermove* → pointerup` with React state updating
+between events and the node re-rendering under the pointer — **the same
+hazard class as the dismissal listener**, which CONVENTIONS already
+records as unreproducible under synthetic dispatch (*"no unit/jsdom probe
+will warn you"*, and it cost T-005 a rejection). A jsdom body would prove
+the drag was CLAIMED, never that it works. The real-input lane is the
+only proof.
+
+**THE WRITE PATH IS SETTLED AND IT OPENS AN ADR-012 QUESTION**
+(`T-015-s2`). The webview cannot write — measured, with its positive
+control — and no existing command writes into the project, so the fix is
+a new Rust command. **It would be the first Tauri command in this app to
+take a webview-supplied argument**; all fourteen today are
+zero-argument, which is ADR-012's narrowness expressed in the signature.
+The builder SHALL either justify the argument against ADR-012 in the
+command's own doc comment — naming what is validated and where — or find
+a zero-argument shape, and SHALL NOT simply add the parameter and move
+on. The read path needs no delivery code at all: `is_collected_docs_path`
+already admits `.json` under `docs/architecture/`, and
+`churn-source.ts` is the in-fence precedent for a map-owned source that
+invokes for itself, so no `App.tsx` edit is required.
+
+**ARCHITECT'S RULING ON THE PIN COLLISION (`T-015-s3`), because criterion
+3 cannot be built without it.** The design gives the LAYOUT pin and the
+STATUS pin the same face — the word `pin`, mono, muted, top-right — and
+the status one already ships (`MapNode.tsx`, from `derive.ts`'s
+`component.status !== "auto"`). A node carrying both would render
+**`pin pin`**, which is not a design decision anyone made. **The status
+pin keeps the word `pin`**: it is built, it is documented in
+`MapPanel.tsx`'s own prose, and it is the older claim. The layout pin
+therefore takes a DIFFERENT treatment, and a node carrying both SHALL
+render both distinguishably. Choosing that treatment is a design call,
+not a coding one: propose one, pin it, and if no obvious candidate
+survives the design handoff's constraints, say so and route it to
+@human rather than inventing a second meaning for one word.
 
 ## Implementation notes
 
