@@ -697,7 +697,7 @@ mod tests {
              impl Foo {\n\
                  fn a(&self) {}\n\
              }\n\
-             pub impl_marker!();\n\
+             impl_marker!();\n\
              impl Foo {\n\
                  fn b(&self) {}\n\
              }\n",

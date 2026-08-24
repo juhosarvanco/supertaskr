@@ -491,7 +491,7 @@ fn build_module_tree(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::extract::{Extractor, RawMod};
+    use crate::extract::Extractor;
     use crate::parse::{Dialect, Parsers};
     use crate::testutil::TempTree;
 
@@ -790,35 +790,28 @@ mod tests {
         );
     }
 
+    /// The SEAM: a module declared inside an inline `mod` block is a real
+    /// edge of the tree, and its file lives one directory deeper. The
+    /// extractor's own body pins the RECORD; this pins that the tree
+    /// builder consumes it — a different call, and the only one that can
+    /// see an inline prefix being dropped between the two.
     #[test]
-    fn module_declarations_survive_the_record_round_trip_the_tree_is_built_from() {
-        let (_t, _w, records) = world(&[
+    fn an_inline_nested_module_is_a_real_branch_of_the_tree() {
+        let (_t, w, records) = world(&[
             ("Cargo.toml", MANIFEST),
-            ("src/lib.rs", "mod a;\n#[cfg(test)]\nmod tests { mod deep; }\n"),
-            ("src/a.rs", ""),
+            ("src/lib.rs", "#[cfg(test)]\nmod tests { mod deep; }\n"),
+            ("src/tests/deep.rs", "pub struct Deep;\n"),
+            // The DECOY: where the file would be if the inline prefix were
+            // dropped on the way into the tree.
+            ("src/deep.rs", "pub struct Wrong;\n"),
         ]);
         assert_eq!(
-            records["src/lib.rs"].mods,
-            vec![
-                RawMod {
-                    inside: vec![],
-                    name: "a".into(),
-                    file: None,
-                    inline: false
-                },
-                RawMod {
-                    inside: vec![],
-                    name: "tests".into(),
-                    file: None,
-                    inline: true
-                },
-                RawMod {
-                    inside: vec!["tests".into()],
-                    name: "deep".into(),
-                    file: None,
-                    inline: false
-                },
-            ]
+            records["src/lib.rs"].mods.last().map(|m| m.inside.as_slice()),
+            Some(["tests".to_string()].as_slice()),
+        );
+        assert_eq!(
+            w.resolve("src/lib.rs", "crate::tests::deep::Deep"),
+            file("src/tests/deep.rs", "Deep")
         );
     }
 }
