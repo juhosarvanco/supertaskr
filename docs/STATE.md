@@ -463,9 +463,66 @@ absolutes this session and none went stale in its delta.
    case-sensitive regex over one file; a whitespace- and
    case-insensitive sweep across BOTH scripts closes the three measured
    escapes.
-8. **@human owes T-101 one look** — the only outstanding @human item this
-   session created. Does a live denial notice read as INFORMATION rather
-   than ALARM on a turn that then COMPLETES? T-113 has since removed the
-   duplicate report from the failure block, so the notice is now the
-   single surface for a result-only refusal, which makes the look
-   cleaner than when it was asked.
+8. **@human's T-101 look is ANSWERED — see the section below. There is no
+   outstanding @human item.**
+
+## THE T-101 LOOK IS CLOSED, AND THE LOOP MET A REAL MODEL FOR THE FIRST TIME
+
+**@HUMAN RULING 2026-08-24: the denial notice reads as INFORMATION, not
+ALARM.** Judged on a live genesis interview against the user's own
+`claude` **2.1.226**, in the app running as pid 88272 — the build T-113's
+merge relaunched, so it carried both T-101's notice and T-113's
+single-report fix. All three questions answered yes: the rows read as
+quiet monospace furniture rather than in the failure treatment, the turn
+they sit under still reads COMPLETED, and they sit below the planner's
+answer without outranking it. **T-081 asked this question and could not
+answer it; T-101 made it answerable; it is now answered and needs no
+further look.**
+
+**AND THE OCCASION MATTERS AS MUCH AS THE VERDICT: this is the first time
+the genesis loop has EVER run against a real model.** Every prior proof
+was the `fake_agent` fixture or a scripted lane, and STATE has said so
+since T-025. The refusals were **not provoked** — a probe prompt was
+prepared and never needed, because the planner earned three refusals
+doing its own stage-0 work, which is stronger evidence than a staged one:
+this is the ORDINARY case.
+
+**NOTHING WAS LOST TO THEM, VERIFIED ON DISK RATHER THAN BELIEVED.** The
+turn banked stage 0 in full — `.git`, five `docs/*.md` (853, 489, 770,
+711 and 770 bytes), the three empty subdirectories, `CLAUDE.md`,
+`AGENTS.md`, `.gitignore` and `.nputer/` — with three refusals on the
+same turn. **A denial is not a death, measured against a real model
+rather than a fixture.**
+
+## THE REAL-MODEL EVIDENCE THE LOOK PRODUCED — the adapter's grant does not fit the planner's spelling
+
+The three refusal reasons are the first real-CLI permission text this
+project has ever captured, and they say something no fixture could:
+
+1. *"This command changes directory before running git, which can execute
+   untrusted hooks from the target directory."*
+2. *"Redirect target concatenation contains `$`/`` ` `` — unanalyzable gap
+   or substitution"*
+3. *"This Bash command contains multiple operations. The following part
+   requires approval: `git -C <projectdir> status --short`"*
+
+`CLAUDE_V1`'s `spawn_args` grants six Bash patterns — `git init`,
+`git add`, `git commit`, `git status`, `mkdir`, `cp` — as T-023's verdict
+recorded the kit's imperative surface, spelled BARE. **The real planner
+spells them `git -C <projectdir> …`**, which matches none of the six and
+separately trips a CLI safety heuristic about changing directory before
+git. So the planner was refused ITS OWN GRANTED SURFACE on a spelling
+technicality. Reason 2 is a second, different mismatch: it reached for a
+shell REDIRECT to write a file, where `--permission-mode acceptEdits`
+would have auto-approved the same write through the Write tool.
+
+**THE CARD IS DELIBERATELY NOT CUT YET, and that is a judgement rather
+than an omission.** The interview was still live when this was written
+and the next denials are expected at the BANKING boundary (`git add` /
+`git commit`, the same `-C` spelling), so a card cut now would carry
+half the evidence. Cut it when the interview yields that second set —
+fence `[app-agent]` (`adapter.rs`), and it is an adapter/kit question,
+**not a defect in T-101's render**, which is working exactly as designed.
+Note the direction of the finding: the gap is visible AT ALL only because
+T-101 put those rows on screen, which is the notice earning its keep on
+its first real day.
