@@ -1,0 +1,8 @@
+# A VIRTUAL workspace manifest: [workspace] with no [package], so it
+# declares no crate of its own. Committed as `_Cargo.toml` and renamed at
+# materialization for the same reason `_gitignore` is — a real Cargo.toml
+# nested under this crate's own tests/ would be a manifest cargo could
+# stumble into, and a fixture must never be a build input.
+[workspace]
+members = ["app", "core"]
+resolver = "2"

@@ -20,9 +20,9 @@
 
 use serde::{Deserialize, Serialize};
 
-/// Languages the indexer can be asked to collect. `Rust` exists for schema
-/// stability but maps to no extensions until T-010 registers the extractor
-/// (plan §3: `.rs` is deliberately NOT collected in T-009).
+/// Languages the indexer can be asked to collect. T-010 registered the
+/// Rust extractor, so `Rust` maps to `.rs` and is collected by default —
+/// it was a schema-stability placeholder from T-009 until then.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Lang {
     Ts,
@@ -39,13 +39,14 @@ impl Lang {
         }
     }
 
-    /// File-type allowlist (plan §3, the §5.1 list verbatim, minus `.rs`).
-    /// `.mjs`/`.cjs` are deliberately excluded — an import of one lands in
-    /// `unresolved[]` rather than vanishing.
+    /// File-type allowlist (plan §3, the §5.1 list verbatim, plus `.rs`
+    /// since T-010). `.mjs`/`.cjs` are deliberately excluded — an import
+    /// of one lands in `unresolved[]` rather than vanishing.
     pub(crate) fn for_extension(ext: &str) -> Option<Lang> {
         match ext {
             "ts" | "tsx" | "mts" | "cts" => Some(Lang::Ts),
             "js" | "jsx" => Some(Lang::Js),
+            "rs" => Some(Lang::Rust),
             _ => None,
         }
     }
@@ -197,12 +198,12 @@ mod tests {
             ("cts", Lang::Ts),
             ("js", Lang::Js),
             ("jsx", Lang::Js),
+            ("rs", Lang::Rust),
         ] {
             assert_eq!(Lang::for_extension(ext), Some(lang), "{ext}");
         }
-        // .rs deliberately not collected in T-009; .mjs/.cjs excluded;
-        // matching is byte-exact (no case folding).
-        for ext in ["rs", "mjs", "cjs", "TS", "d", "json", "md", ""] {
+        // .mjs/.cjs excluded; matching is byte-exact (no case folding).
+        for ext in ["mjs", "cjs", "TS", "RS", "d", "json", "md", ""] {
             assert_eq!(Lang::for_extension(ext), None, "{ext}");
         }
     }
