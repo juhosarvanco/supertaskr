@@ -922,12 +922,19 @@ a `cargo check` at exit 0) rather than re-installed.
 | 13 | drill sweep 2: **13 mutants at `9390b0e`, ALL RED** | detached worktree | 101 ×13 |
 | 14 | `node tools/e2e/scripts/docs-gate.mjs <8 root-relative paths>` | repo root | **1** (the gate's verdict: FIRES) |
 | 15 | `index --check` at the MERGED tree (`git archive` of the merge-tree tree, merged indexer, own `CARGO_TARGET_DIR`) | scratch | **1** — see GRAPH REGEN below |
-| 16 | the three owed suites again on the FINAL card content: app **0** (940/940), lib/parser **0** (263/263), tools/e2e **0** (143/143, port **15032**) | — | **0** |
+| 16 | the three owed suites on the card as of the notes commit: app **0** (940/940), lib/parser **0** (263/263), tools/e2e **0** (143/143, port **15032**) | — | **0** |
+| 17 | the three owed suites ONE more time, after the prohibitions correction below: app **0** (940/940), lib/parser **0** (263/263), tools/e2e **0** (143/143, port **15033**) | — | **0** |
+| 18 | docs gate again through the RANGE invocation at the final tip | repo root | **1** (FIRES on 6, 0 frontmatter issues) |
 
-Every card edit re-owes the three docs-gate suites, so all three were run
-again on the final content and all three are green there. The Rust tree
-is byte-identical to command 12's, so `cargo test` was not re-run on that
-last pass — stated rather than implied.
+**THE TABLE STOPS AT 18 ON PURPOSE, AND THE REASON IS A RECURSION.**
+Every card edit re-owes the three docs-gate suites, and recording that
+re-run is itself a card edit. Rows 16 and 17 are two full passes over two
+different card texts, and **the numbers are identical across both** —
+which is what makes stopping honest rather than lazy: the suites were
+SHOWN to be invariant under a docs-only edit before that invariance was
+relied on, rather than assumed because it seemed obvious. The Rust tree
+is byte-identical to command 12's on both passes, so `cargo test` was not
+re-run on either — stated rather than implied.
 
 **Figures, each at its ref.**
 
