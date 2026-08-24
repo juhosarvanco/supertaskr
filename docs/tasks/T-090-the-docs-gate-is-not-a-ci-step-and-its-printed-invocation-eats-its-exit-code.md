@@ -17,20 +17,6 @@ review:
 
 Absorbs (seventh triage, 2026-08-24): T-061-s3, T-064-s7, T-101-s3, T-061-s5 — files removed in this commit.
 
-> **DRAFTER'S NOTE — remove before landing.** T-084-s2 names ONE false
-> sentence. I measured a SECOND while verifying it, and it is sharper
-> than the first: the DOCS GATE bullet's empty-list clause states a BSD
-> `xargs` premise that is false on this machine in BOTH halves, and the
-> consequence is that `T-084-s6`'s remedy never fires through the
-> invocation the bullet prints. Every figure below is measured at HEAD
-> `4d2f03c` on Darwin 25.6.0 with `/usr/bin/xargs`. The exit-mapping
-> figure the T-084 integrator recorded in STATE (*"BSD `xargs` maps a
-> utility exit of 1–125 to 123"*) does NOT reproduce here — see the
-> third bullet — and the fifth triage assigned that figure to T-091 as
-> a reader fixture. Both cards can carry it: this one CORRECTS the
-> sentence, T-091 builds the thing that would have caught it. Flagged
-> so the overlap is deliberate rather than accidental.
-
 Absorbs: T-084-s2 (sixth triage, 2026-08-20). That file is removed in
 this commit.
 
@@ -166,7 +152,7 @@ only `xargs` on PATH, `which -a xargs`), node v22.22.0, npm 11.12.1.
 Nothing is carried over from the drafter's note at `4d2f03c`; where the
 card and the tree disagreed, the tree won and it is said so below.
 
-### The drafter's note is removed, and one of its two sentences was ALREADY FIXED
+### The drafter's note is removed (it asked to be), and one of its two sentences was ALREADY FIXED
 
 **FALSE SENTENCE 2 WAS NOT LIVE AT MY BASE, AND THE CARD DID NOT KNOW.**
 The card says the DOCS GATE bullet carries *"the invocation above pipes
