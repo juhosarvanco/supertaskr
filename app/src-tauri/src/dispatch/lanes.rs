@@ -78,8 +78,21 @@ pub const MAX_METADATA_BYTES: u64 = 4_096;
 
 /// Most worktree entries this reader will return. Same reason: git's
 /// bookkeeping directory is small by nature, and a repository that says
-/// otherwise gets a FLOOR with `truncated: true` rather than an
-/// unbounded allocation.
+/// otherwise gets a FLOOR with `truncated: true`.
+///
+/// **WHAT THIS BOUNDS IS THE EXPENSIVE HALF, AND THE COMMENT USED TO
+/// CLAIM MORE THAN THE CODE DOES.** It said the ceiling bought a floor
+/// *"rather than an unbounded allocation"*. It does not: [`read_lanes`]
+/// pushes every entry NAME into a `Vec<String>` and applies this ceiling
+/// after the sort, so the name allocation is unbounded and what the
+/// ceiling actually bounds is the two file reads and the entry struct per
+/// entry — the part that costs syscalls. Bounding the collection as it is
+/// built is the obvious repair and it is the WRONG one: truncating before
+/// the sort returns whichever entries the filesystem happened to hand back
+/// first, which trades a deterministic answer for a smaller `Vec` of
+/// short strings. `entries_come_back_sorted_by_name_whatever_the_filesystem_says`
+/// is the body that would have to be deleted to take that trade. The
+/// sentence is corrected instead (T-110-s6).
 pub const MAX_WORKTREE_ENTRIES: usize = 4_096;
 
 /// What `<repo>/.git/worktrees` had to say.
@@ -532,9 +545,9 @@ pub fn lane_task_id(branch: &str) -> Result<String, BranchRejection> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::fixtures::{branch_head, register, repo, scratch};
     use super::*;
     use std::collections::BTreeMap;
-    use std::sync::atomic::{AtomicU32, Ordering};
 
     // ---- fixtures, all of them in a temp directory ---------------------
     //
@@ -543,56 +556,12 @@ mod tests {
     // worktree were live while this was written, so a suite that read the
     // live tree would go red on its colleagues' work and green again when
     // they merged. Every byte below is written by the test that reads it.
-
-    static NEXT: AtomicU32 = AtomicU32::new(0);
-
-    /// A fresh temp directory nobody else in the process is using.
-    fn scratch(label: &str) -> PathBuf {
-        let n = NEXT.fetch_add(1, Ordering::SeqCst);
-        let dir = std::env::temp_dir().join(format!(
-            "nputer-t110-{label}-{}-{}-{n}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_nanos())
-                .unwrap_or(0)
-        ));
-        fs::create_dir_all(&dir).expect("scratch dir");
-        dir
-    }
-
-    /// A project root with a `.git` DIRECTORY and no worktrees yet.
-    fn repo(label: &str) -> PathBuf {
-        let root = scratch(label);
-        fs::create_dir_all(root.join(".git")).expect(".git");
-        root
-    }
-
-    /// Register a worktree the way git does: an entry directory holding
-    /// `gitdir` (the worktree's own `.git` FILE) and `HEAD`.
-    ///
-    /// `on_disk` decides whether the worktree directory is actually
-    /// created — the pruned-but-not-removed shape is this argument set
-    /// to false, and nothing else.
-    fn register(root: &Path, name: &str, head: &str, on_disk: bool) -> PathBuf {
-        let entry = root.join(".git").join("worktrees").join(name);
-        fs::create_dir_all(&entry).expect("entry dir");
-        let worktree = root
-            .parent()
-            .expect("scratch has a parent")
-            .join(format!("{}-{name}", root.file_name().unwrap().to_string_lossy()));
-        if on_disk {
-            fs::create_dir_all(&worktree).expect("worktree dir");
-        }
-        fs::write(entry.join("gitdir"), format!("{}\n", worktree.join(".git").display()))
-            .expect("gitdir");
-        fs::write(entry.join("HEAD"), format!("{head}\n")).expect("HEAD");
-        worktree
-    }
-
-    fn branch_head(branch: &str) -> String {
-        format!("ref: refs/heads/{branch}")
-    }
+    //
+    // The helpers moved to `super::fixtures` in T-110's rebuild so that
+    // `join.rs`'s bodies drive the REAL reader over the SAME fixture
+    // shape. Two copies of `register` would be two definitions of what
+    // git writes down, which is the divergence this card removes one
+    // layer up.
 
     fn entries(scan: &LaneScan) -> &[WorktreeEntry] {
         match scan {
@@ -958,6 +927,67 @@ mod tests {
     }
 
     #[test]
+    fn the_size_bounds_are_pinned_by_literals_rather_than_by_themselves() {
+        // **EVERY NUMBER IN THIS BODY IS A LITERAL, AND THAT IS THE WHOLE
+        // POINT.** `docs/CONVENTIONS.md` (T-063): *"A TEST PARAMETRISED BY
+        // THE CONSTANT IT CHECKS CANNOT PIN THAT CONSTANT."* The rows
+        // above build their fixture FROM `BRANCH_MAX_LEN` and assert
+        // AGAINST it, so both sides move together and the bound survived
+        // 255 -> 256 in T-110's verification drill; the same for
+        // `MAX_METADATA_BYTES` at 4_096 -> 40_960. These sit BESIDE those
+        // rows rather than instead of them: the derived rows say the
+        // reader is self-consistent, and these say WHERE the bound is.
+        // Both sides of each bound are named, so widening reds and
+        // narrowing reds.
+
+        // BRANCH_MAX_LEN = 255. `task/T-1-` is nine characters.
+        let at_the_bound = format!("task/T-1-{}", "a".repeat(246));
+        assert_eq!(at_the_bound.len(), 255);
+        assert_eq!(lane_task_id(&at_the_bound), Ok("T-1".to_string()));
+
+        let one_over = format!("task/T-1-{}", "a".repeat(247));
+        assert_eq!(one_over.len(), 256);
+        assert_eq!(
+            lane_task_id(&one_over),
+            Err(BranchRejection::TooLong { len: 256 })
+        );
+
+        // MAX_METADATA_BYTES = 4_096, measured through the reader rather
+        // than against the constant: a HEAD of exactly the bound is READ
+        // (and refused for its CONTENT, which is a different answer), and
+        // one byte more is refused for its SIZE.
+        let root = repo("bounds");
+        let base = root.join(".git").join("worktrees");
+        for (name, len) in [("aexact", 4096usize), ("bover", 4097usize)] {
+            fs::create_dir_all(base.join(name)).expect("dir");
+            fs::write(base.join(name).join("gitdir"), b"/tmp/somewhere/.git\n").expect("gitdir");
+            fs::write(base.join(name).join("HEAD"), vec![b'a'; len]).expect("HEAD");
+        }
+        let scan = read_lanes(&root);
+        let defects: Vec<(&str, &EntryDefect)> = entries(&scan)
+            .iter()
+            .filter_map(|entry| match entry {
+                WorktreeEntry::Unreadable { name, defect } => Some((name.as_str(), defect)),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            defects,
+            [
+                ("aexact", &EntryDefect::HeadUnrecognised),
+                ("bover", &EntryDefect::HeadTooLarge { len: 4097 }),
+            ]
+        );
+
+        // MAX_WORKTREE_ENTRIES = 4_096. The BEHAVIOUR at this ceiling is
+        // driven end to end by `truncation_is_carried_from_the_scan_onto_the_join`
+        // in `join.rs`, which builds 4097 entries and asserts a list of
+        // 4096; this line pins the number itself so the two cannot drift
+        // apart silently.
+        assert_eq!(MAX_WORKTREE_ENTRIES, 4_096);
+    }
+
+    #[test]
     fn the_id_is_built_from_validated_digits_and_never_stripped_off_a_prefix() {
         // THE COUNTEREXAMPLE THE CRITERION IS ABOUT. A prefix strip
         // (`branch.strip_prefix("task/")` then take up to the first
@@ -1065,9 +1095,15 @@ mod tests {
     #[test]
     fn no_subprocess_in_this_module() {
         // The module's own source, read at COMPILE time — this body opens
-        // no file and runs no process to make its point.
+        // no file and runs no process to make its point. EVERY file of
+        // the module is swept, not only the reader: the rebuild added
+        // `join.rs` and `fixtures.rs`, and a sweep that named its files
+        // one at a time would have gone quietly out of date the moment
+        // the module grew.
         const SOURCE: &str = include_str!("lanes.rs");
         const MOD_SOURCE: &str = include_str!("mod.rs");
+        const JOIN_SOURCE: &str = include_str!("join.rs");
+        const FIXTURES_SOURCE: &str = include_str!("fixtures.rs");
 
         // Assembled at runtime so the needles never appear literally in
         // the file being swept — otherwise this body would find itself.
@@ -1084,6 +1120,11 @@ mod tests {
                 "{needle} appears in the reader: this module is a FILE READ (ADR-003)"
             );
             assert!(!MOD_SOURCE.contains(needle.as_str()), "{needle} appears in mod.rs");
+            assert!(!JOIN_SOURCE.contains(needle.as_str()), "{needle} appears in join.rs");
+            assert!(
+                !FIXTURES_SOURCE.contains(needle.as_str()),
+                "{needle} appears in fixtures.rs"
+            );
         }
 
         // POSITIVE CONTROL: the sweep's predicate is not inert.
@@ -1092,8 +1133,10 @@ mod tests {
             needles.iter().any(|needle| planted.contains(needle.as_str())),
             "the sweep would not notice a subprocess if one were added"
         );
-        // And the sweep is looking at the real file rather than an empty
-        // string: the reader's own entry point is in it.
+        // And the sweep is looking at the real files rather than empty
+        // strings: each one's own entry point is in it.
         assert!(SOURCE.contains("pub fn read_lanes"));
+        assert!(JOIN_SOURCE.contains("pub fn join_lanes"));
+        assert!(FIXTURES_SOURCE.contains("pub fn register"));
     }
 }

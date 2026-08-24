@@ -31,11 +31,31 @@
 //! it lands this module is compiled and proven through
 //! `app/src-tauri/tests/dispatch_lanes.rs`, whose header carries the
 //! argument.
+//!
+//! **THE JOIN IS HERE AND NOT IN TYPESCRIPT, AND THAT IS THIS CARD'S
+//! REBUILD.** [`join`] takes what [`lanes`] read plus the board's stamps
+//! and names the four states the card is about. The first pass wrote it
+//! in `app/src/lib/dispatch-store.ts`, where no suite could reach it —
+//! `app/vitest.config.ts` collects `test/**` only, and both that config
+//! and `app/test/**` are C-05's `app-shell`, outside this card's fence —
+//! so four one-side-only producer mutants survived the whole app suite at
+//! exit 0. The same rule under `src/dispatch/**` is inside C-15's own
+//! path and runs under `cargo test`. The TypeScript half keeps the
+//! mirrored types and the `Map` hydration ADR-009 requires, and holds no
+//! second copy of the rule.
 
-//! Callers reach the reader as `dispatch::lanes::read_lanes`. There is
-//! deliberately no `pub use` re-export block here: until `lib.rs`
-//! declares this module there is no caller to be ergonomic for, and a
-//! re-export nothing imports is a warning in every build that compiles
-//! this file through the test entry point.
+//! Callers reach the two halves as `dispatch::lanes::read_lanes` and
+//! `dispatch::join::join_lanes`. There is deliberately no `pub use`
+//! re-export block here: until `lib.rs` declares this module there is no
+//! caller to be ergonomic for, and a re-export nothing imports is a
+//! warning in every build that compiles this file through the test entry
+//! point.
 
+pub mod join;
 pub mod lanes;
+
+/// The fixture repositories BOTH halves are proved against, in ONE place
+/// — a temp-directory `.git/worktrees` written byte for byte the way git
+/// writes it. Test-only, so the app binary carries none of it.
+#[cfg(test)]
+pub mod fixtures;

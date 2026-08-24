@@ -1,17 +1,32 @@
 /**
  * C-15 (F-04) — the dispatch surface, TS half (T-110).
  *
- * The Rust reader (`app/src-tauri/src/dispatch/lanes.rs`) enumerates the
- * lanes git wrote down; this file mirrors that typed answer and JOINS it
- * against the board.
+ * **THIS FILE IS A MIRROR, AND AFTER T-110's REBUILD IT IS ONLY A
+ * MIRROR.** The Rust half (`app/src-tauri/src/dispatch/`) reads the lanes
+ * git wrote down and JOINS them against the board; this file types that
+ * answer for the webview and hydrates it into the `Map`s ADR-009
+ * requires. It makes no decision of its own.
  *
- * **THE JOIN'S PRODUCT IS THE DISAGREEMENT, and that is the whole point
- * of the card.** `docs/design/dispatch-technical-plan.md`'s D4 argued
- * the in-flight set must come from lanes and never from `status:`,
- * because `status: building` had allegedly never been used. That was a
- * grep of the CURRENT tree, which cannot see a transient state — 77
- * commits moved the field and T-089 ruled the pre-cut stamp back into
- * the method. So this file reads BOTH and reports where they disagree:
+ * **WHY THE JOIN IS NOT HERE ANY MORE — the whole content of this card's
+ * rebuild.** T-110's first pass put `classify`, `joinLanes`,
+ * `IN_FLIGHT_STATUSES` and `describeRefusal` in this file. They were
+ * correct and **nothing tested them**: no file in the repository imports
+ * this module, `app/vitest.config.ts` collects `test/**` only, and both
+ * that config and `app/test/**` are C-05's `app-shell` — outside T-110's
+ * `[app-dispatch]` fence. Four one-side-only producer mutants, measured
+ * at `6fea6a1`, ALL SURVIVED `npm run build` and `npm test` at exit 0:
+ * swapping the `died` and `stampSkipped` arms; emptying the in-flight
+ * set (which makes `died` unreachable — the very fixture the card names);
+ * short-circuiting the no-card half of the join; and giving two refusals
+ * one sentence. **Exhaustiveness checking is not a substitute and the
+ * fourth is the proof: `assertNever` catches a MISSING arm, never a
+ * WRONG one.**
+ *
+ * `app/src-tauri/src/dispatch/**` is C-15's own path, so the same rule
+ * written there is inside the fence AND inside a suite. It now lives in
+ * `join.rs` with one pin per state. Two copies of one rule with a pin
+ * under only one of them is precisely the divergence T-110 exists to
+ * remove one layer up, so this file keeps NO second copy.
  *
  * | the card says | git says | state |
  * |---|---|---|
@@ -20,35 +35,25 @@
  * | anything else | a lane | `stampSkipped` — a dispatch that skipped the stamp |
  * | anything else | nothing | `notDispatched` |
  *
- * A board that shows only one of the two sources can report neither
- * failure.
+ * **ADR-009 IS A CRITERION HERE, NOT ADVICE.** Task ids, branch names and
+ * worktree directory names are strings this project does not author — git
+ * writes two of the three — so every collection keyed by one is a `Map`.
+ * That is what {@link hydrateJoin} is for: the wire carries rows as an
+ * ARRAY (serde has no other honest shape for a list of records) and this
+ * file turns it into a `ReadonlyMap`. There is not a plain object literal
+ * keyed by file-derived text anywhere below.
  *
- * **ADR-009 IS A CRITERION HERE, NOT ADVICE.** Task ids, branch names
- * and worktree directory names are strings this project does not author
- * — git writes two of the three — so every collection keyed by one is a
- * `Map`. There is not a plain object literal keyed by file-derived text
- * anywhere in this file.
+ * **THIS FILE IMPORTS NOTHING, DELIBERATELY.** It is C-15's first indexed
+ * file, so every import it carries becomes a component edge on the
+ * architecture map. The board's task records are described by the
+ * structural {@link BoardStamp} rather than by importing `TaskRecord`
+ * from `@nputer/parser`, which would declare a C-15 → C-06 dependency the
+ * component file does not claim, for two fields.
  *
- * **THIS FILE IMPORTS NOTHING, DELIBERATELY.** It is C-15's first
- * indexed file, so every import it carries becomes a component edge on
- * the architecture map. The board's task records are described by the
- * structural {@link BoardStamp} below rather than by importing
- * `TaskRecord` from `@nputer/parser`, which would declare a C-15 → C-06
- * dependency the component file does not claim, on a type this join
- * needs three fields of.
- *
- * **WHAT IS NOT HERE, AND WHERE IT WENT.** Nothing calls
- * {@link joinLanes} yet and no Tauri command delivers a {@link LaneScan}
- * to it: registering one edits `app/src-tauri/src/lib.rs`, which is
- * C-05's `app-shell` — outside T-110's `[app-dispatch]` fence and held
- * by a live lane at that dispatch (`T-110-s1` carries it). The vitest
- * pins for this file are `T-110-s3`: `app/vitest.config.ts` includes
- * `test/**` only, and `app/test/**` is also `app-shell`, so a test file
- * for this store cannot be written inside this card's fence. Until that
- * suggestion lands, the guarantees this file has are the two `tsc`
- * programs `npm run build` gates on — every union below is exhaustive
- * and {@link assertNever} makes a missing arm a compile error, not a
- * runtime surprise.
+ * **WHAT IS STILL NOT HERE.** No Tauri command delivers a
+ * {@link DispatchJoinWire} to this file yet: registering one edits
+ * `app/src-tauri/src/lib.rs`, which is `app-shell` — outside this card's
+ * fence and held by a live lane at dispatch. `T-110-s1` carries it.
  */
 
 // ---------------------------------------------------------------------
@@ -57,8 +62,10 @@
 // THE AUTHORITY IS THE RUST ENUM, NEVER THIS FILE: `LaneScan`,
 // `WorktreeEntry`, `EntryDefect` and `BranchRejection` in
 // `app/src-tauri/src/dispatch/lanes.rs`, serialized by serde with
-// `tag = "kind"` and camelCase fields. Nothing pins the two vocabularies
-// equal today — `T-110-s3` carries that too.
+// `tag = "kind"` and camelCase fields. Nothing pins the two VOCABULARIES
+// equal across the language boundary — `T-110-s3` carries that — but the
+// two Rust spellings of a lane registration ARE pinned equal, by
+// serializing both (`a_row_carries_the_readers_five_lane_fields_and_the_same_json`).
 // ---------------------------------------------------------------------
 
 /** A lane: a worktree whose branch matches `task/T-NNN-<slug>`. */
@@ -71,8 +78,8 @@ export interface LaneRegistration {
   readonly worktreePath: string;
   /**
    * The worktree directory is still there. `false` is a lane registered
-   * but pruned-but-not-removed, which is NOT folded into `died` below —
-   * see {@link DispatchRow.lanes}.
+   * but pruned-but-not-removed, which is NOT folded into `died` — see
+   * {@link DispatchRow.lanes}.
    */
   readonly existsOnDisk: boolean;
 }
@@ -115,58 +122,38 @@ export type WorktreeEntry =
  */
 export type LaneScan =
   | { readonly kind: "scanned"; readonly entries: readonly WorktreeEntry[]; readonly truncated: boolean }
+  | LaneScanRefusal;
+
+/**
+ * The four refusals — a scan that produced no list. Its own type in Rust
+ * too (`join::LaneScanRefusal`), so `unavailable` below cannot be handed
+ * a successful scan.
+ */
+export type LaneScanRefusal =
   | { readonly kind: "notAGitRepository" }
   | { readonly kind: "gitIsAFile" }
   | { readonly kind: "noWorktreesDirectory" }
   | { readonly kind: "worktreesUnreadable" };
 
-/** The four refusals, as their own type — a scan that produced no list. */
-export type LaneScanRefusal = Exclude<LaneScan, { kind: "scanned" }>;
-
 // ---------------------------------------------------------------------
-// The board's half.
+// The board's half, and the join's answer — both mirrored from
+// `app/src-tauri/src/dispatch/join.rs`.
 // ---------------------------------------------------------------------
 
 /**
- * One card, as much of it as this join reads. Structural on purpose:
+ * One card, as much of it as the join reads. Structural on purpose:
  * `TaskRecord` from `@nputer/parser` satisfies it, and so does a fixture.
+ *
+ * The statuses that COUNT as in flight are `join.rs`'s
+ * `IN_FLIGHT_STATUSES` — `building`, `verifying` and `merging`, spelled
+ * once, over there, with a pin under them. This file deliberately holds
+ * no copy: a second list is a second answer.
  */
 export interface BoardStamp {
   readonly id: string;
   /** The card's `status:` frontmatter field, verbatim. */
   readonly status: string;
-  /** The card's `builder:` field, when it carries one. */
-  readonly builder?: string | null;
 }
-
-/**
- * The statuses that SAY A LANE EXISTS.
- *
- * `building` is the dispatch stamp itself — `method/tasks/TASK-FORMAT.md`
- * owns the field and T-089 ruled the practice back in: the architect
- * stamps it on the integration branch BEFORE the cut, so the lane
- * inherits it and never writes that line.
- *
- * **`verifying` AND `merging` ARE INCLUDED, AND THAT IS A JUDGEMENT THE
- * CARD DID NOT MAKE.** T-110's four rows are written against `building`
- * alone, but `method/lane-protocol.md` keeps the worktree alive past the
- * handoff: the executor stamps `verifying` and STOPS, and the integrator
- * removes the worktree only after the merge. A live worktree under a
- * `verifying` card is therefore the ORDINARY state of this repository
- * between handoff and merge — treating it as a skipped stamp would make
- * the board cry wolf on its own healthiest lane. The membership is a
- * constant so it can be argued with rather than reverse-engineered.
- */
-export const IN_FLIGHT_STATUSES: readonly string[] = ["building", "verifying", "merging"];
-
-/** Does this card claim a lane exists? */
-export function isInFlight(status: string): boolean {
-  return IN_FLIGHT_STATUSES.includes(status);
-}
-
-// ---------------------------------------------------------------------
-// The four states.
-// ---------------------------------------------------------------------
 
 /**
  * The disagreement, by name. Each is a different failure or a different
@@ -183,13 +170,25 @@ export type DispatchState =
   /** Neither. The ordinary state of every card on the board. */
   | "notDispatched";
 
-/** Every state, so a renderer can enumerate them without a switch. */
-export const DISPATCH_STATES: readonly DispatchState[] = [
-  "live",
-  "died",
-  "stampSkipped",
-  "notDispatched",
-];
+/**
+ * Every state, so a renderer can enumerate them without a switch.
+ *
+ * `satisfies Record<DispatchState, true>` is what makes this list keep up
+ * with the union: adding a state to {@link DispatchState} without a line
+ * here is a compile error in both `tsc` programs. A bare array literal
+ * would not be — which is the same class of gap that made the first pass
+ * untested, one size smaller.
+ */
+const DISPATCH_STATE_KEYS = {
+  live: true,
+  died: true,
+  stampSkipped: true,
+  notDispatched: true,
+} satisfies Record<DispatchState, true>;
+
+export const DISPATCH_STATES: readonly DispatchState[] = Object.keys(
+  DISPATCH_STATE_KEYS,
+) as DispatchState[];
 
 /** One task id, and what the card and the disk together say about it. */
 export interface DispatchRow {
@@ -212,14 +211,41 @@ export interface DispatchRow {
 }
 
 /**
- * The join's result.
+ * **THE WIRE FORM, exactly as serde emits it** — rows as an ARRAY,
+ * sorted by task id on the Rust side. Named separately from
+ * {@link DispatchJoin} so the difference between "what crossed the
+ * boundary" and "what this app holds" is a type rather than a habit.
+ */
+export type DispatchJoinWire =
+  | {
+      readonly kind: "joined";
+      readonly rows: readonly DispatchRow[];
+      readonly notLanes: readonly WorktreeEntry[];
+      readonly truncated: boolean;
+    }
+  | {
+      readonly kind: "unavailable";
+      readonly because: LaneScanRefusal;
+      /**
+       * One sentence naming which case it hit, from
+       * `LaneScanRefusal::sentence` — the ONE spelling of these four
+       * sentences, and it travels on the wire precisely so this file does
+       * not hold a second copy. The first pass kept the `switch` here,
+       * where a mutant giving two refusals one sentence survived both
+       * `tsc` programs.
+       */
+      readonly sentence: string;
+    };
+
+/**
+ * The join's result, as this app holds it.
  *
  * **`unavailable` IS THE POINT OF THIS BEING A UNION.** When the scan
  * refused — no `.git`, a `.git` FILE, no `worktrees/` — the app knows
  * NOTHING about lanes. Rendering every card as `notDispatched` would be
- * the same lie one layer up that "an empty list meaning two things" is
- * one layer down, so the join refuses to classify and names the case it
- * hit.
+ * the same lie one layer up that "an empty list meaning two different
+ * things" is one layer down, so the join refuses to classify and names
+ * the case it hit.
  */
 export type DispatchJoin =
   | {
@@ -231,107 +257,57 @@ export type DispatchJoin =
       /** The reader hit its entry ceiling: the answer is a floor. */
       readonly truncated: boolean;
     }
-  | { readonly kind: "unavailable"; readonly because: LaneScanRefusal };
+  | {
+      readonly kind: "unavailable";
+      readonly because: LaneScanRefusal;
+      readonly sentence: string;
+    };
 
 /**
- * Join the lane list against the board.
+ * Turn the wire form into the shape ADR-009 requires.
  *
- * Every task id on the board gets a row, and so does every lane whose id
- * is on no card — that second half is the `stampSkipped` case with
- * `card: null`, and it is the shape a dispatch that skipped the stamp
- * leaves when nobody has written the card yet either.
+ * This is the ONE thing this file does. It classifies nothing: the state
+ * on every row was decided by `join.rs` and is carried across verbatim.
+ * The rows arrive as an array and become a `Map` keyed by task id,
+ * because a task id is a string this project reads out of a file name and
+ * a branch ref, and ADR-009 forbids such a key on a plain object.
+ *
+ * A duplicate task id on the wire would be a defect in the producer —
+ * `join_lanes` emits one row per id — and the last one would win here.
+ * That is stated rather than guarded, because a guard would be a second
+ * opinion about the producer's invariant with no test on this side of the
+ * boundary to keep it honest.
  */
-export function joinLanes(scan: LaneScan, board: Iterable<BoardStamp>): DispatchJoin {
-  if (scan.kind !== "scanned") {
-    return { kind: "unavailable", because: scan };
-  }
-
-  // Task id → its lane registrations. Keyed by a string git wrote, so a
-  // Map (ADR-009) — and one that keeps every registration.
-  const lanesByTask = new Map<string, LaneRegistration[]>();
-  const notLanes: WorktreeEntry[] = [];
-  for (const entry of scan.entries) {
-    if (entry.kind === "lane") {
-      const existing = lanesByTask.get(entry.taskId);
-      if (existing === undefined) {
-        lanesByTask.set(entry.taskId, [entry]);
-      } else {
-        existing.push(entry);
+export function hydrateJoin(wire: DispatchJoinWire): DispatchJoin {
+  switch (wire.kind) {
+    case "joined": {
+      const rows = new Map<string, DispatchRow>();
+      for (const row of wire.rows) {
+        rows.set(row.taskId, row);
       }
-    } else {
-      notLanes.push(entry);
+      return {
+        kind: "joined",
+        rows,
+        notLanes: wire.notLanes,
+        truncated: wire.truncated,
+      };
     }
-  }
-
-  const rows = new Map<string, DispatchRow>();
-  for (const card of board) {
-    const lanes = lanesByTask.get(card.id) ?? [];
-    rows.set(card.id, {
-      taskId: card.id,
-      state: classify(isInFlight(card.status), lanes.length > 0),
-      card,
-      lanes,
-    });
-  }
-  // A lane whose task id is on no card. Reported for the same reason a
-  // non-lane worktree is: the board cannot report what it drops.
-  for (const [taskId, lanes] of lanesByTask) {
-    if (rows.has(taskId)) continue;
-    rows.set(taskId, {
-      taskId,
-      state: classify(false, lanes.length > 0),
-      card: null,
-      lanes,
-    });
-  }
-
-  return { kind: "joined", rows, notLanes, truncated: scan.truncated };
-}
-
-/** The whole disagreement, as one total function of two booleans. */
-export function classify(inFlight: boolean, hasLane: boolean): DispatchState {
-  if (inFlight) return hasLane ? "live" : "died";
-  return hasLane ? "stampSkipped" : "notDispatched";
-}
-
-/**
- * Count the rows in each state. A Map keyed by a DispatchState — an
- * authored vocabulary, so a plain object would be legal here; it is a
- * Map anyway so that one lookup shape covers this file.
- */
-export function countByState(join: DispatchJoin): ReadonlyMap<DispatchState, number> {
-  const counts = new Map<DispatchState, number>(DISPATCH_STATES.map((state) => [state, 0]));
-  if (join.kind === "unavailable") return counts;
-  for (const row of join.rows.values()) {
-    counts.set(row.state, (counts.get(row.state) ?? 0) + 1);
-  }
-  return counts;
-}
-
-/**
- * One sentence naming why the lane list is unavailable. The board needs
- * to say WHICH case it hit; this is the only place that spelling lives.
- */
-export function describeRefusal(refusal: LaneScanRefusal): string {
-  switch (refusal.kind) {
-    case "notAGitRepository":
-      return "this folder is not a git repository, so it has no lanes to read";
-    case "gitIsAFile":
-      return "this folder is itself a git worktree (its .git is a file), so its lanes live in the repository it was cut from";
-    case "noWorktreesDirectory":
-      return "this repository has never registered a worktree";
-    case "worktreesUnreadable":
-      return "this repository's .git/worktrees could not be read";
+    case "unavailable":
+      return wire;
     default:
-      return assertNever(refusal);
+      return assertNever(wire);
   }
 }
 
 /**
- * The exhaustiveness check. With no vitest file reachable inside this
- * card's fence, the type checker is the pin this file has: adding a
- * refusal to {@link LaneScan} without answering it here fails
- * `npm run build` at `tsc`, in both programs.
+ * The exhaustiveness check.
+ *
+ * **IT IS A GUARANTEE ABOUT SHAPE AND NOTHING ELSE, and T-110's rebuild
+ * is the record of why that distinction matters.** Adding an arm to
+ * {@link DispatchJoinWire} without answering it here fails `npm run
+ * build` at `tsc`, in both programs. It has never been able to catch a
+ * WRONG answer, and the four mutants that survived this file's first pass
+ * were all wrong answers with every arm present.
  */
 function assertNever(value: never): never {
   throw new Error(`unhandled variant: ${JSON.stringify(value)}`);
