@@ -921,7 +921,13 @@ a `cargo check` at exit 0) rather than re-installed.
 | 12 | `cargo test --no-fail-fast` (after closing the survivor) | app/src-tauri | **0** |
 | 13 | drill sweep 2: **13 mutants at `9390b0e`, ALL RED** | detached worktree | 101 ×13 |
 | 14 | `node tools/e2e/scripts/docs-gate.mjs <8 root-relative paths>` | repo root | **1** (the gate's verdict: FIRES) |
-| 15 | the three owed suites again on the FINAL card content | — | see below |
+| 15 | `index --check` at the MERGED tree (`git archive` of the merge-tree tree, merged indexer, own `CARGO_TARGET_DIR`) | scratch | **1** — see GRAPH REGEN below |
+| 16 | the three owed suites again on the FINAL card content: app **0** (940/940), lib/parser **0** (263/263), tools/e2e **0** (143/143, port **15032**) | — | **0** |
+
+Every card edit re-owes the three docs-gate suites, so all three were run
+again on the final content and all three are green there. The Rust tree
+is byte-identical to command 12's, so `cargo test` was not re-run on that
+last pass — stated rather than implied.
 
 **Figures, each at its ref.**
 
@@ -942,39 +948,59 @@ a `cargo check` at exit 0) rather than re-installed.
 ### Gates, DERIVED from this rebuild's own diff
 
 Through the prescribed pre-merge form, the **exit read FIRST**:
-`TREE=$(git merge-tree --write-tree e27673d HEAD)` → **exit 0**, tree
-`7b3ead1b…`, then `git diff --name-only e27673d "$TREE"`.
+`TREE=$(git merge-tree --write-tree <main tip> HEAD)` → **exit 0**, then
+`git diff --name-only <main tip> "$TREE"` → **9 paths**.
 
-**MAIN MOVED AGAIN, AND PAST WHAT THE BRIEF SAID.** The brief states main
-is *"`c6ef751` or later and is docs-only since `cd79f97`"*. **The
-docs-only half is now FALSE**: main is **`e27673d`**, which merges T-096
-into `lib/parser` (plus the eighth triage and T-121). It is still
-disjoint from this lane — `git merge-tree` exits 0, no conflict — and no
-gate answer moves, but an integrator must re-derive rather than inherit
-that sentence.
+**MAIN MOVED TWICE UNDERNEATH THIS REBUILD, AND PAST WHAT THE BRIEF
+SAID.** The brief states main is *"`c6ef751` or later and is docs-only
+since `cd79f97`"*. **The docs-only half is FALSE, twice over.** Main was
+**`e27673d`** when the suites were run (T-096 merged into `lib/parser`)
+and is **`d64c673`** at this tip — **T-010's merge, the indexer that
+collects Rust**. `git merge-tree` exits **0** against both, the path sets
+are disjoint, and nothing in the suites moves. **One gate answer does
+move, and it is the interesting finding of this section.**
 
 | gate | trigger | on this diff |
 |---|---|---|
-| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **3 of 8 — FIRES, and was RUN** |
-| GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` outside `docs/` | **0 of 8 — NOT OWED, and the gate was ASKED anyway** |
-| DOCS GATE | a `docs/` path a code suite reads | **5 of 8 — FIRES**, three suites owed |
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **3 of 9 — FIRES, and was RUN** |
+| GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` outside `docs/` | **0 of 9 — NOT OWED by the trigger, AND THE TRIGGER IS NOW WRONG** |
+| DOCS GATE | a `docs/` path a code suite reads | **6 of 9 — FIRES**, three suites owed |
 
 - **BOOT GATE — exit 0**, scratch port **15030**, both `[nputer]` lines
   captured: `[nputer] project folder: /Users/ujju/Projects/nputer-T-123`
   and `[nputer] window "main" created`.
-- **GRAPH REGEN — NOT OWED, 0 of 8** (three `.rs`, five markdown).
-  **ASKED rather than reasoned from the brief's sentence**, exactly as
-  the brief instructed, because T-010's Rust extraction is in
-  verification tonight and could have landed first: `index --check
+- **GRAPH REGEN — THE BRIEF TOLD THIS LANE TO ASK RATHER THAN REASON,
+  AND ASKING IS WHAT FOUND IT.** In the lane worktree `index --check
   --root ../..` exits **0**, *"graph.json is CURRENT"* at **648863
-  bytes · 126 files · 1126 symbols · 1712 edges** — byte-identical to
-  the figure at the rejected tip, so T-010 has NOT landed on main and a
-  Rust-only diff still moves nothing.
+  bytes · 126 files · 1126 symbols · 1712 edges**. **That answer is
+  local and no longer forecasts the merge**, because T-010 landed on main
+  between the suites and this tip. Asked again at the MERGED tree — the
+  `git merge-tree` tree `git archive`d to a scratch directory and indexed
+  with the merged tree's OWN indexer:
+
+  | tree | fresh index |
+  |---|---|
+  | main `d64c673` alone | 890866 bytes · 172 files · **1874** symbols · **1842** edges |
+  | main + this lane | 892093 bytes · 172 files · **1878** symbols · **1843** edges |
+
+  **This lane's three `.rs` files move the graph by +1227 bytes, +4
+  symbols and +1 edge — and the trigger fires on 0 of 9 paths.** Both
+  trees also report the committed graph STALE at 126 files / 1126
+  symbols; **that staleness is T-010's own**, owed at T-010's checkpoint
+  (GRAPH REGEN puts the regen there), which is why the lane's
+  contribution is taken as the DIFFERENCE of two fresh indexes so the
+  outstanding regen cancels out of both sides. **Nothing is regenerated
+  here**: the graph is not in this fence, this lane's own indexer is the
+  pre-T-010 one, and a regen taken now would be stale again at T-010's
+  checkpoint by that bullet's own reasoning. **Routed as `T-123-s5`**,
+  which refutes `T-010-s1`'s closing note (*"the trigger is still
+  deliberately wider than the walk"*) with the figures above: it is wider
+  by INCLUSION and, for the first time, NARROWER by EXTENSION.
 - **DOCS GATE — exit 1 (the gate's verdict: FIRES)**, invoked from the
-  repo root with the eight ROOT-RELATIVE paths as ARGUMENTS and never
-  through `xargs`. **5 of 8 under docs/** — this card, the first
-  executor's `T-123-s1` and `T-123-s2`, the verifier's `T-123-s3` and
-  this rebuild's `T-123-s4`. It reports **12 derived readers across 4
+  repo root with the ROOT-RELATIVE paths as ARGUMENTS and never through
+  `xargs`. **6 of 9 under docs/** — this card, the first executor's
+  `T-123-s1` and `T-123-s2`, the verifier's `T-123-s3`, and this
+  rebuild's `T-123-s4` and `T-123-s5`. It reports **12 derived readers across 4
   suites**, **0 frontmatter issues**, *"every live task card's
   frontmatter parses, with a legal status"*, a census of **125
   docs-shaped sites in 22 files, 12 of them in 10 files resolving into
@@ -1098,6 +1124,12 @@ to find.
   moved. A suggestion whose symbol no longer exists is a pointer nobody
   can follow, and the correction is marked with its own provenance rather
   than smuggled in.
+- **`T-123-s5` (new, this rebuild)** — GRAPH REGEN's suffix trigger stops
+  covering the walk the moment T-010 lands, measured on this lane's own
+  three `.rs` files (+4 symbols, +1 edge, trigger fires on 0 of 9 paths).
+  It **refutes the closing note of `T-010-s1`**, which states the
+  bullet's argument is unaffected. Fence `[docs/CONVENTIONS.md]`, outside
+  `touches: [app-shell, app-agent]`.
 - `T-123-s1` and `T-123-s2` (the first executor's) were re-read and need
   no correction — neither names a symbol this rebuild moved.
 
@@ -1125,12 +1157,21 @@ otherwise, was performed on any suite.
 
 ### Where this brief, the card and the VERDICT were wrong
 
-- **The brief's account of main is stale in the half that matters.** It
-  says main *"has moved to `c6ef751` or later and is docs-only since
-  `cd79f97`"*. Main is **`e27673d`** and it is **NOT docs-only**: T-096
-  merged into `lib/parser`. No figure or gate answer here changes (the
-  diffs are disjoint and `merge-tree` exits 0), but the sentence must not
-  be inherited.
+- **The brief's account of main is stale in the half that matters, and
+  it went stale TWICE while this lane ran.** It says main *"has moved to
+  `c6ef751` or later and is docs-only since `cd79f97`"*. Main reached
+  **`e27673d`** (T-096 into `lib/parser`) and then **`d64c673`**
+  (**T-010's merge**), so it is **NOT docs-only** by two separate merges.
+  No suite figure changes and `merge-tree` exits 0 against both, but
+  **one gate answer does**: see `T-123-s5`.
+- **The brief's GRAPH REGEN sentence — *"a Rust-only change does NOT
+  match (`Lang::Rust` maps to no extension)"* — is now false, and the
+  brief knew it might be.** It said so in the same breath (*"T-010's
+  Rust extraction is in verification tonight and may land before you, so
+  ASK `index --check` rather than reasoning from that sentence"*), and
+  that instruction is the reason this lane has a measurement instead of
+  an assumption. **The instruction was right and the sentence beside it
+  was wrong; obeying the first is what caught the second.**
 - **The brief's baseline for cargo — "389/0/3 over 15 result lines" — is
   right, and it is right for the WRONG REASON if read as a check.** It
   is *also* what the suite reports with the defect fixed and no new body
