@@ -348,3 +348,307 @@ from the other side.
 - `roles/executor.md`'s own last bullet records that this section and
   `roles/verifier.md` cannot both hold. Nothing here is addressed to the
   executor alone; the conflict is noted, not resolved.
+
+## Verdicts
+
+2026-08-25 — `claude-opus-5 @T-110-verify` (verifier, same-model as
+builder, independent session): **REJECTED** — acceptance criterion 4 is
+unmet and the failure is reproducible in four commands. Everything else
+verified green, the Rust reader is correct against REAL git, and the
+security sweep is clear. The fix is a placement change, not a redesign.
+
+### The failure — criterion 4: "a pin SHALL drive each"
+
+The criterion reads: *"THE DISAGREEMENT SHALL BE FIRST-CLASS, not a
+derived afterthought. The reader's output joined against the board SHALL
+distinguish the four states above by name, **and a pin SHALL drive
+each** — including a fixture with a `building` stamp and no worktree,
+which is the shape a killed lane leaves and the one nothing in the tree
+can currently see."*
+
+The four states are BUILT (`classify`, `joinLanes`, `DispatchState` in
+`app/src/lib/dispatch-store.ts`) and **not one of them is driven by any
+pin.** Zero test files in this repository import that module; the whole
+file executes in no suite. Four one-side-only PRODUCER mutants, each read
+back with `git diff --unified=0` before running, each restored and proved
+by sha256 (`5215098a…` MATCH after every one). Run from `app/` in a
+detached worktree at `c2fc3c6`:
+
+| # | mutation (producer only) | `npm run build` | `npm test` |
+|---|---|---|---|
+| T1 | `classify`: swap the `died` and `stampSkipped` arms | **0** | **0**, 940/940 |
+| T2 | `IN_FLIGHT_STATUSES` → `[]` | **0** | **0**, 940/940 |
+| T3 | `joinLanes`: `if (rows.has(taskId)) continue;` → `if (true) continue;` | **0** | **0**, 940/940 |
+| T4 | `describeRefusal`: give `noWorktreesDirectory` the `notAGitRepository` sentence | **0** | **0**, 940/940 |
+
+Expected: at least one red per state. Actual: **all four survive, exit 0
+on both commands.** What each survivor means, in the card's own terms:
+
+- **T1 inverts both named failures.** A lane that died reports as a
+  dispatch that skipped the stamp, and vice versa. The card's two
+  headline products swap identities and nothing notices.
+- **T2 makes `died` unreachable.** With no status in flight, every live
+  lane scores `stampSkipped` and the killed-lane row — *"the one nothing
+  in the tree can currently see"* — can never be produced at all. This is
+  precisely the fixture the criterion names, and it is absent.
+- **T3 deletes the `stampSkipped`-with-no-card half of the join.** Every
+  lane whose task id is on no card silently vanishes from `rows`, which
+  is the exact silent loss the card forbids one layer down.
+- **T4 collapses two of the four refusals onto one sentence** — *"an
+  empty list meaning two different things"*, reproduced one layer up.
+
+**`assertNever` is not a substitute, and T4 is the proof.** The file's own
+header offers the type checker as the guarantee it has. Exhaustiveness
+catches a MISSING arm; it cannot catch a WRONG one. T4 changes a returned
+string with every arm still present and `tsc` is exit 0 in both programs.
+
+**THE FENCE DID NOT BLOCK THIS PIN — THE PLACEMENT DID, and that is why
+this is a rejection rather than a routed finding.** The notes argue the
+pin is unreachable because `app/vitest.config.ts` collects `test/**` and
+`app/test/**` is C-05's `app-shell`. Both halves of that are true (I
+re-derived every component's `paths:` block). But the same notes
+establish — correctly — that `app/src-tauri/tests/**` is claimed by NO
+component, and use it as a compile hook. `app/src-tauri/src/dispatch/**`
+is C-15's OWN path. So a join written in Rust beside the reader, with
+inline `#[cfg(test)]` bodies reached through the shim that already
+exists, would have been entirely inside `[app-dispatch]` and would have
+driven all four states plus the named `building`-with-no-worktree
+fixture. The criterion was satisfiable inside the fence; a TypeScript-only
+join is what put it out of reach. `T-110-s3` records the gap honestly and
+does not discharge it.
+
+### A note on criterion 1, measured — and deliberately NOT a reason for this rejection
+
+The reader is correct and well pinned, but **the app binary does not
+compile it.** `lib.rs` declares no `pub mod dispatch;` (zero hits), so
+`src/dispatch/**` reaches the compiler only through the test shim.
+Measured rather than reasoned: a hard type error planted in `lanes.rs`
+leaves `cargo build` at **exit 0**, while the control
+`cargo test --test dispatch_lanes` on the identical tree is **exit 101**
+with `error[E0308]`. So `cargo build` is not a gate on this module, and
+the criterion's *"THE app SHALL gain one Rust-side reader"* is true of
+the repository rather than of the app. This is DISCLOSED in the module
+header and routed as `T-110-s1`, the executor argued the fence honestly,
+and I have ruled that argument sound — so it does not carry the
+rejection. It is recorded because the net effect of it and the failure
+above is that **neither half of C-15 executes anywhere except a test
+binary**, and a checkpoint should say so rather than let "built" imply
+otherwise.
+
+Criterion 8's second half is green and NAMED rather than assumed:
+`the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not`
+in `app/src-tauri/tests/agent_runner.rs` ran `... ok` inside the 399/0/3
+sweep, and the diff changes no Rust file outside `src/dispatch/**`.
+
+### The drill — 22 mutants, 17 RED, 5 SURVIVED
+
+Detached worktree `drill-T-110-verify` at `c2fc3c6`, its own
+`CARGO_TARGET_DIR` inside it, driver and results file named per-lane
+(T-088-s3: scope the FILES, not only the directory). Baseline
+`cargo test --test dispatch_lanes` **16/16, exit 0**. Every mutation
+producer-side and one side only, applied by a driver that refuses any
+path outside the drill and requires a match count of exactly 1, read back
+with `git diff --unified=0` before its suite ran. Restoration proved
+after EVERY mutant by sha256 against the drill's own commit —
+`f7a2f2b2…` MATCH, 22 times — and again three ways at the end: empty
+tracked diff, sha256 of all four touched files, clean re-run at 16/16.
+
+Seventeen redded at exit 101, including every one that attacks a
+criterion: the `parent()` climb (2 killed), `exists_on_disk` pinned true,
+`GitIsAFile`/`NotAGitRepository` conflated, `NoWorktreesDirectory`
+answered as an empty `Scanned`, `WorktreesUnreadable` conflated, entry
+order reversed AND the sort deleted outright (the body is load-bearing
+both ways), `NotALane` entries filtered out, a prefix-strip id derivation
+(6 killed), a widened digit bound, a loosened object-id length, three
+distinct entry defects, a planted write, and a planted `Command::new`.
+
+**FIVE SURVIVED, and the five are one finding in two shapes.**
+
+1. **`BRANCH_MAX_LEN` 255 → 256: SURVIVES at 16/16, exit 0.**
+2. **`MAX_METADATA_BYTES` 4_096 → 40_960: SURVIVES at 16/16, exit 0.**
+
+   Both are the shape `docs/CONVENTIONS.md` names by name — *"A TEST
+   PARAMETRISED BY THE CONSTANT IT CHECKS CANNOT PIN THAT CONSTANT"*
+   (T-063). The bodies BUILD the fixture from the constant
+   (`"a".repeat(BRANCH_MAX_LEN)`, `vec![b'a'; MAX_METADATA_BYTES as usize
+   + 1]`) and assert against the constant (`TooLong { len:
+   BRANCH_MAX_LEN + 9 }`, `HeadTooLarge { len: MAX_METADATA_BYTES + 1 }`),
+   so both sides move together. These are the two bounds this module's own
+   doc comment calls *"a safety property rather than tidiness"*, and they
+   are held by nothing. `TASK_ID_MAX_DIGITS` is the only one of the three
+   that IS pinned — it reds — because its row hardcodes
+   `"task/T-1234567-x"` and `TooManyDigits { len: 7 }` instead of deriving
+   them. One line of the same treatment closes the other two.
+
+3. **`MAX_WORKTREE_ENTRIES`' truncation block deleted entirely: SURVIVES.**
+4. **`Err(_) => truncated = true` (a non-UTF-8 entry name) → `Err(_) => {}`:
+   SURVIVES.**
+5. **`LaneScan::Scanned { entries, truncated }` → `truncated: false`:
+   SURVIVES.**
+
+   `truncated` is a PUBLIC field on `LaneScan::Scanned`, mirrored into
+   `DispatchJoin.truncated` and documented on the TS side as *"the answer
+   is a floor"*. No test anywhere makes it `true`, so the entry ceiling
+   and the whole truncation channel can be removed without a red.
+   Related, and stated because the comment claims otherwise: the code
+   pushes every entry name into an UNBOUNDED `Vec<String>` and applies
+   `MAX_WORKTREE_ENTRIES` only afterwards, while the constant's doc
+   comment says a large repository gets a floor *"rather than an unbounded
+   allocation"*. The expensive per-entry work IS bounded; the allocation
+   the comment disclaims is not.
+
+None of 3–5 is an acceptance criterion, and the rejection does not rest
+on them. They are recorded here because CONVENTIONS requires a drill to
+name what it could not poison.
+
+### What is RIGHT, measured rather than granted
+
+- **THE CARD'S PROBLEM STATEMENT IS WRONG AND THE CODE IS RIGHT.** The
+  card says `gitdir` *"names the worktree's path"*. It does not: it names
+  the worktree's own `.git` FILE. Derived independently, from a throwaway
+  `git init` + `git worktree add` in a temp directory before any of the
+  lane's prose was read — `gitdir` = `<worktree>/.git`, and `<worktree>/.git`
+  is an ASCII file reading `gitdir: <repo>/.git/worktrees/<name>`. The
+  `parent()` call is load-bearing and correct; mutant M01 (dropping it)
+  reds two bodies.
+- **THE READER IS CORRECT END-TO-END AGAINST REAL GIT, which no body in
+  the suite tests.** A temp repository with six real worktrees — a lane, a
+  detached drill, a worktree-of-a-worktree, a `hotfix/urgent` branch, the
+  older `t042-old-spelling` branch, and one directory deleted without
+  `git worktree prune` — classifies six for six: `Lane T-777
+  exists_on_disk: true`; `Detached` twice; `NotALane
+  NotTheLaneNamespace` twice; and **`Lane T-888 exists_on_disk: false`**
+  for the entry git's own `worktree list` calls `prunable`. Opening the
+  lane worktree itself as the project answers `GitIsAFile`. The suite's
+  hand-built fixtures match git's real byte format exactly.
+- Suites, every exit read from `$?` on an unpiped command, all in a fresh
+  detached worktree at `c2fc3c6`: **cargo `test --no-fail-fast` 399
+  passed / 0 failed / 3 ignored, exit 0** over SIXTEEN `test result:`
+  lines · **app `npm run build` 0, `npm test` 940/940 across 46 files,
+  exit 0**, bundle `index-C86RloYb.css` 45.06 kB / `index-DEkJr3K8.js`
+  526.42 kB **byte-identical to main's** · **parser 263/263, exit 0** ·
+  **E2E 143/143, exit 0** on scratch port 15010 · **`npm run typecheck`
+  0**. No adjacent feature moved. The known T-088-s4 flake
+  (`docs_watch::tests::startup_arm_watches_the_initial_root`) did not
+  appear; no suite was re-run.
+- **BOOT GATE — FIRES on 4 of the merge's 9 paths, RUN, exit 0** on
+  scratch port 15011, both lines: `[nputer] project folder: …` and
+  `[nputer] window "main" created`.
+- **GRAPH REGEN — FIRES on 1 of 9. `index --check` exit 1, STALE**,
+  naming `+ app/src/lib/dispatch-store.ts` and nothing else. Main at
+  `765362e` is exit **0** at 648863 bytes · 126 files · 1126 symbols ·
+  1712 edges; the lane forecasts 658702 · 127 · 1145 · 1738, a delta of
+  **+9839 bytes · +1 file · +19 symbols · +26 edges**, every edge with
+  both endpoints inside the one file. The lane leaving the graph
+  unregenerated is CORRECT — that regen is the integrator's, at the
+  checkpoint — and the notes' forecast is exact.
+- **THE REGEN'S FIXTURE MOVEMENT, DERIVED RATHER THAN READ**: regenerated
+  in a throwaway clean worktree and run against the app suite, it is
+  **FIVE assertions in TWO files**, `1 failed | 44 passed` → 935/940.
+  `architecture-dogfood.test.ts` (four bodies): C-15's `files` `[]` →
+  `["app/src/lib/dispatch-store.ts"]` with `declaredOnly` true → false
+  and the `D3:C-15` finding clearing; `fileComponent.size` 126 → 127;
+  findings 14 → 13; drift 8 → 7. `map-dogfood-render.test.tsx` (one):
+  `committed graph · 126 files` → `127`. **`lib/parser/test/smoke.test.ts`
+  does NOT move** — 263/263 against the regenerated graph — which is
+  CONVENTIONS' three-fixture gotcha behaving exactly as written: a regen
+  alone moves the two app fixtures, the parser pin holds unless the
+  REGISTRY changed. Reconcile all five, corrected and never loosened.
+- **DOCS GATE — FIRES, exit 1**, invoked directly with ROOT-RELATIVE
+  arguments and no `xargs`: 5 of 9 paths under `docs/`, three suites owed
+  (app, tools/e2e, lib/parser), all three run and green above. 12 derived
+  readers across 4 suites, 0 frontmatter issues, every live card parses
+  with a legal status.
+- **THE `tests/dispatch_lanes.rs` QUESTION, RULED as the notes ask: the
+  shim is legitimate and the fence was NOT widened.** Verified by reading
+  every `paths:` block in `docs/architecture/components/`:
+  `app/src-tauri/tests/**` is claimed by no component, C-05 claims
+  `src/lib.rs`, `src/main.rs`, `build.rs`, `tauri.conf.json` and
+  `capabilities/**` but not `tests/`, and ARCHITECTURE names
+  `tests/agent_runner.rs` among the four `.rs` files under
+  `app/src-tauri/` that no component claims. T-113's precedent holds.
+  Widening `lib.rs` while T-123 held `app-shell` would have been the
+  breach; this is not one.
+
+### The security sweep — MANDATORY, and it is CLEAR at REJECTED level
+
+No injection into a path join, no authz surface, no secret, no
+dependency addition (the diff carries no manifest and `serde` was already
+present), no webview grant (`acl_pin.rs` is a 0-file diff). ADR-009 holds
+by inspection: `lanesByTask`, `rows` and `counts` are `Map`s and there is
+no computed-key write to a plain object anywhere in the file. Four probes
+against hostile bytes the project does not author, all in temp
+directories:
+
+- An entry directory that is a SYMLINK to `/etc` is refused
+  `NotADirectory` — `symlink_metadata` does not follow it. **Correct.**
+- A `gitdir` that is a symlink to a 2.4 MB file is refused
+  `GitdirTooLarge { len: 2493885 }` — the bound holds through the
+  symlink. **Correct.**
+- The reader wrote nothing outside its fixture; a canary directory beside
+  it was untouched.
+- Entry names come from `read_dir`, so they are single path components and
+  cannot traverse.
+
+Three residuals, none of which grants a capability the caller lacks, and
+none of which is an acceptance criterion — routed as suggestions, not
+folded into this verdict: a crafted `gitdir` makes the reader `stat` an
+arbitrary un-normalised path and report it as a live lane
+(`…/repo/../CANARY/../../../../../../etc` came back `exists_on_disk:
+true`; `/.git` reports `/`); a RELATIVE `gitdir` yields a relative
+`worktree_path` whose `exists_on_disk` is resolved against the PROCESS
+cwd, which is the shape `validate_resolved_binary` refuses one door down;
+and `parse_head` trims only trailing `\n`/`\r`, so a two-line `HEAD`
+yields `Branch("task/T-1-x\nref: refs/heads/main")` and a trailing TAB
+survives, while the module's doc comment claims both shapes are *"matched
+as WHOLE shapes"*. Every such string is refused by `lane_task_id` and
+lands as `NotALane`, so **no forged LANE is reachable by any of them** —
+but they are carried to the board verbatim, and F-04's product is a brief
+a human pastes into a shell.
+
+### What the card and the brief got wrong
+
+1. **The card**: `gitdir` does not name the worktree's path (above). The
+   executor caught this too; I confirmed it independently against git.
+2. **The notes' gate denominators**: BOOT GATE is stated as *"4 of 4"* and
+   GRAPH REGEN as *"1 of 4"*. The merge's diff is **9** paths, so they are
+   4 of 9 and 1 of 9; the DOCS GATE's 5 are the rest. Both conclusions are
+   unchanged and both gates were run.
+3. **The dispatch brief**: base `d46f71f` and main-tip figures are stale —
+   main is `765362e`, two commits past the `cd79f97` the notes measured
+   against. Re-derived at `765362e`: the same 9 paths, and the brief's
+   base graph figures (648863 · 126 · 1126 · 1712) reproduce exactly at
+   exit 0.
+4. **`docs/STATE.md`**: dated 2026-08-24 and opens *"there are NO LIVE
+   LANES"*. Five worktrees on `task/` branches and two drill checkouts are
+   live right now. Not this card's business; noted because the file names
+   itself as the first thing a reader picks up.
+5. **The brief's warning about the drill's own `CARGO_TARGET_DIR` is
+   live, and I walked into it before the executor's note could warn me**:
+   the first `index --check` run inside the drill worktree reported an
+   extra indexed file and flipped the header `languages [ts] -> [js, ts]`,
+   because `.drilltarget/debug/build/*/out/__global-api-script.js` is not
+   `.nputerignore`d. `T-110-s4` names the mechanism; the honest delta
+   above was re-derived in a clean worktree with no target directory.
+
+### What a fresh executor owes
+
+`method/roles/verifier.md` sends a rejected card to a FRESH executor.
+One change closes it: **drive the four states from a pin inside
+`[app-dispatch]`.** The cheapest form is a `join` beside the reader in
+`app/src-tauri/src/dispatch/`, with inline bodies reached by the existing
+`tests/dispatch_lanes.rs` shim — one body per state, and the
+`building`-stamp-with-no-worktree fixture the criterion names by name.
+If the architect prefers the join to stay TypeScript, then the card
+cannot be built inside its fence as written and that is a DISPATCH
+decision, not an executor's: either widen the fence deliberately to reach
+`app/test/**`, or re-cut the card. Nothing else in the diff needs to
+change — the Rust reader is correct, well pinned, and proved against real
+git.
+
+Filed as suggestions, blocking nothing: `T-110-s5` (the two bounds their
+own bodies cannot pin), `T-110-s6` (`truncated` and the entry ceiling,
+unpinned, and the allocation the comment disclaims), `T-110-s7` (the
+un-normalised, possibly relative `worktree_path` and the cwd-dependent
+`exists_on_disk`), `T-110-s8` (`parse_head` accepts a multi-line `HEAD`
+and a trailing tab while claiming a whole-shape match).
