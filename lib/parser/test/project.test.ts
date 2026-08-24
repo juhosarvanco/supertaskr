@@ -76,10 +76,20 @@ describe('parseProject — broken files never stop the rest', () => {
     // all three layers. `missing-field` now has TWO candidates — a task's
     // `size` and a component's `paths` — so this lookup names the one it
     // means instead of taking whichever the assembly order delivers
-    // first. Tightened, never loosened: the bare `find` was an accidental
-    // dependence on exactly the order the parity body now exists to check,
-    // and it would have redded this body under a disk-side reorder that
-    // has nothing to do with what this body is about.
+    // first. Tightened, never loosened.
+    //
+    // WHY IT IS LOAD-BEARING IS NARROWER THAN IT LOOKS, AND IT IS STATED
+    // AS MEASURED RATHER THAN AS REASONED — the obvious justification was
+    // written first and then REFUTED by its own counterfactual. Both
+    // spellings of the lookup are indifferent to the roadmap/component
+    // transposition, because the TASK layer still comes first there and
+    // the bare `find` still lands on `size`: one failing body either way.
+    // The transposition that separates them is the one that moves the
+    // COMPONENT layer ahead of the TASK layer — with the bare `find` that
+    // reds TWO bodies, this one and the parity body, and only the parity
+    // body's failure is about the order. So the naming does not add a
+    // check; it stops this body from answering a question that is not
+    // its own.
     const missing = result.issues.find((i) => i.kind === 'missing-field' && i.field === 'size');
     expect(missing).toMatchObject({
       field: 'size',
