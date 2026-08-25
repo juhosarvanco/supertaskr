@@ -23,6 +23,39 @@ more intelligent at the same quality. This card is the answer with the
 measurements attached, and **it is `@human: yes` because adopting any of
 it changes how every future card is dispatched.**
 
+## @HUMAN'S RULING — 2026-08-25: ALL FIVE ADOPTED
+
+**Asked which of the five to adopt, and shown the architect's objection to
+item 5 in the question itself, @human adopted ALL FIVE, item 5 included.**
+The adoption decision this card called its deliverable is therefore made,
+and this card becomes the record plus the method prose. The mechanisms are
+separate cards, because prose is precisely what failed:
+
+| item | mechanism | card |
+|---|---|---|
+| 1 — briefs carry the ask, never the state | a command that emits the contract's rows, each from its named source | **`T-133`** |
+| 2 — STATE's volatile sections derived | same command; the lane list is the row both consumers get wrong | **`T-133`** |
+| 3 — a convention that could be a gate should be a gate | a writing rule, not a build | **`T-132`** (prose) |
+| 4 — fences name paths; slugs are shorthand | disjointness over expanded path sets | **`T-134`** |
+| 5 — ceremony scales with blast radius | the graph must first be able to answer it | **`T-135`** |
+
+**ITEM 5 CARRIES A PREREQUISITE THAT WAS NOT KNOWN WHEN THE QUESTION WAS
+ASKED**, and it is not an objection but a fact: `T-126-s4`, verified three
+ways this session, established that the indexer records `use` imports only,
+so a Rust `mod` declaration produces **zero edges** — and `T-010-s6`
+records that Rust emits no `call` or `type_ref` edges at all. **A
+blast-radius number computed against today's graph would under-count Rust
+dependencies silently, marking risky cards cheap.** `T-135` carries that
+work and states that shipping the rule before the graph can answer it
+would be worse than not shipping it.
+
+**AND ITEM 1'S FRAMING IN THIS CARD WAS WRONG, WHICH `T-132` CORRECTS.**
+It is not a rule to adopt. `method/roles/orchestrator.md` already requires
+that a brief be *"assembled to the contract in roles/executor.md — every
+row, from the sources that row names."* **The contract exists and the
+architect violated it all night.** The remedy for a violated contract is a
+check, not more prose — which is why item 1's mechanism is a command.
+
 ## THE MEASUREMENT
 
 Subagent token totals, read from completion notices across **16 runs**
@@ -121,6 +154,38 @@ read its answer before ruling.
 author has not read IN the record.** A lane's conversational report and
 its committed notes are two different documents, and only one of them is
 evidence.
+
+## TWO LIMITS OF THE THIN FORMAT, FOUND BY THE INTEGRATORS IT WAS TRIALLED ON
+
+**Both were found by the format's own subjects, which is the point of
+having asked them.**
+
+**LIMIT ONE — it does not protect an ARGUMENT.** T-104's integrator: a
+brief of mine claimed *"T-091 has landed, so the reader will red if anyone
+breaks the bullet — that reader is the whole point."* False. **The reader
+guards FIGURES**, and neither routed edit changes a figure, so the suite
+passes whether the new prose is right or wrong. Its diagnosis, which is
+the rule: **"a thin brief carrying no figures can still carry an argument,
+and an argument is not one command away."** Removing transcribed state
+removes one error class and leaves reasoning errors entirely untouched.
+Filed as `T-104-s5`.
+
+**LIMIT TWO — ATMOSPHERE FIGURES SLIP THROUGH, AND THEY ARE THE WRONG
+ONES TO GET WRONG.** T-126's integrator found a transcription in a brief
+that promises none: *"the ratio swung 8:5 to 1:5"*, *"up to 20.75×
+tonight"* — **numbers carried for colour rather than for use.** Its real
+ratio was 6.33×. The load-bearing figures had all been removed and the
+decorative ones survived precisely *because* they were decorative and
+nobody, including the author, treated them as claims.
+
+**A figure carried to make a point vivid is still a figure, and it is the
+one nobody checks.** The rule needs the clause: **a brief carries no
+number at all, including the ones it is not relying on.**
+
+**THE FORMAT STILL WON, AND ALL THREE SUBJECTS SAID SO.** *"I needed
+nothing you withheld. Every figure was one command away."* — and from the
+third: *"it saved the thing that mattered … what only you could carry was
+exactly the work."*
 
 ### 2. STATE'S VOLATILE SECTIONS SHALL BE DERIVED, NOT WRITTEN
 
@@ -239,10 +304,14 @@ them by symmetry:
 
 ## Acceptance criteria
 
-- **@HUMAN SHALL RULE ON WHICH OF THE FIVE ARE ADOPTED, one by one.**
-  This card SHALL NOT implement any of them unruled. Items 1 and 2 are
-  cheap and the evidence is strong; item 5 SHALL NOT change dispatch
-  without its own ADR.
+- **DISCHARGED 2026-08-25: @human adopted all five.** What remains of
+  this criterion is that **item 5 still owes its own ADR** — not as a gate
+  on the decision, which is made, but as the reasoning, and it SHALL carry
+  the architect's recorded objection and what would falsify the change.
+  `T-135` holds that obligation.
+- **THIS CARD SHALL CARRY THE METHOD PROSE AND NONE OF THE MECHANISMS.**
+  Four mechanism cards exist (`T-132`, `T-133`, `T-134`, `T-135`). **IF
+  this lane finds itself writing a check, it is in the wrong card.**
 - **EVERY FIGURE IN THIS CARD SHALL BE RE-DERIVED AT THE EXECUTING
   LANE'S OWN REF**, not carried forward. It is a card about transcribed
   state and it must not become an instance of its own subject. **The
