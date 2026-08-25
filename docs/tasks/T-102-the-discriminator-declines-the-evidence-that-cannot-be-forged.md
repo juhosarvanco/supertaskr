@@ -9,9 +9,9 @@ status: verifying
 blocked_by: [T-113]
 touches: [app-agent]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by:
-verified_by:
+verified_by: "claude-opus-5 @T-102-verify"
 review:
 ---
 
@@ -380,3 +380,500 @@ with three dispositions and the fixture consequences of each.
   touched**: no payload shape moves, no `TurnError` variant gains or
   loses a field, so the app suite is unaffected (958/958, unchanged).
 
+
+## Verdicts
+
+2026-08-25 — `claude-opus-5 @T-102-verify` (verifier, same-model as
+builder): **APPROVED**, with two RECORD defects the integrator owes a
+correction (neither is a behaviour defect and neither blocks the merge —
+they are named at the end).
+
+Verified from the card at its BASE ref `c4c15c8` — the copy that carries
+the drafter's note and the architect's amendment and NOT the executor's
+notes — plus the diff, per T-121 arm 2. The mutant set below was derived
+from the CRITERIA with `tests/agent_runner.rs` unopened and written down
+before any of it ran; the lane's notes were read only afterwards, to
+check the EVIDENCE half. Every figure is re-derived at this verifier's
+own refs in a fresh detached worktree `/Users/ujju/Projects/drill-T-102-verify`
+at `935a78d`. Nothing was taken on report.
+
+### The range, checked as SETS and not as counts
+
+    git merge-tree --write-tree 9b9c997 935a78d  ->  tree 17c8c178…, exit 0 (read off $? first)
+    git diff --name-only 9b9c997 <TREE>            ->  7   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only c4c15c8..935a78d          ->  7   branch-only
+    git diff --name-only 9b9c997...935a78d         ->  7   THREE dots — AGREES, SIXTH MERGE RUNNING
+    git diff --name-only 9b9c997..935a78d          -> 16   two dots, FORBIDDEN
+    git diff --name-only c4c15c8..9b9c997          ->  9   main's advance under this lane
+
+`diff` over sorted lists: prescribed vs three-dot **exit 0**, prescribed
+vs branch-only **exit 0**. `comm -12` over branch and main-advance is
+**EMPTY**; the union is byte-identical to the forbidden two-dot set under
+`diff` (exit 0), and 7 + 9 = 16. Ratio **2.29x**, pure left-endpoint
+drift. **Main's 9 paths contain ZERO `.rs`**, which is what makes the
+base reconstruction below legitimate.
+
+### Suites — every exit off its own `$?` on the next token, count derived as well as exit
+
+- **cargo (bare, `--no-fail-fast`) — 460 passed / 0 failed / 3 ignored,
+  exit 0**, summed over **SIXTEEN** `test result:` lines. Lib suite
+  **3.96 s** — the isolated-target-dir band, so `T-088-s4`'s cliff is not
+  in play. Green first time, nothing discarded.
+- **`cargo test --test agent_runner` — 80 passed / 0 failed / 1 ignored,
+  exit 0** (base is 76/0/1, re-derived below).
+- **app `npm run build` exit 0**, **`npm test` — 958/958 across 46 files,
+  exit 0.**
+- **lib/parser `npx vitest run` — 264/264 across 12 files, exit 0.**
+- **tools/e2e `npm test` on scratch port 15280 — TWO RUNS, BOTH
+  DECLARED.** Run 1 **exit 1, 145 passed / 1 failed**; run 2 **exit 0,
+  146/146**. The single red is `T-120-s3` at
+  `tools/e2e/tests/token-scan.spec.ts:201`, WITH THE SIGNATURE:
+  `Expected: 1787659054258.047 / Received: 1787659054258`. A fractional
+  millisecond against a whole number is the identification, this was a
+  fresh checkout, and the rule was obeyed — one further run, not
+  re-running until green.
+- **`NPUTER_BOOT_PORT=15281 npm run boot:check` — exit 0**, both lines:
+  `[nputer] project folder: /Users/ujju/Projects/drill-T-102-verify` and
+  `[nputer] window "main" created`.
+
+**THE INTERMITTENT TALLY, HONESTLY.** Across 1 bare `cargo test`, 15
+`--test agent_runner` runs, 4 `--lib`/full runs and 2 E2E runs:
+`a_hostile_session_id…` (`T-086-s1`) fired **ZERO** times spuriously — it
+appears only under mutant M9, where it is a genuine kill.
+`a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail`
+(`T-124-s3`) fired **ZERO** times spuriously — it appears only under M3,
+genuinely. `T-102-s3`'s subject did not reproduce here.
+
+### The three gates, each with its derived path count
+
+| gate | derived | verdict |
+|---|---|---|
+| GRAPH REGEN | **3 of 7** `.rs` outside `docs/` | **FIRES** |
+| BOOT GATE | **3 of 7** under `app/src-tauri/**` | **FIRES** |
+| DOCS GATE | **4 of 7** under `docs/` | **FIRES**, exit 1 |
+
+- **GRAPH REGEN — `cargo run -p nputer-index -- index --check --root ../..`
+  is exit 1, STALE**, and it is a REAL red, not the missing-`--root`
+  false one: the second line prints both counts and a `~` file diff.
+  Committed **920 597 · 178 · 1959 · 1878** → fresh **922 888 · 178 ·
+  1966 · 1878**: **+7 symbols, edges unmoved**, the three moved files
+  being exactly the three `.rs` in this diff. The regen is the
+  INTEGRATOR's and the lane correctly did not take it. Against
+  `max_graph_bytes` 1 000 000 the fresh figure is **92.29%**.
+- **DOCS GATE** — invoked from the repo root with the prescribed path
+  list as `$(…)` arguments, **never through `xargs`**: exit 1, **12
+  derived readers across 4 suites**, census **130 docs-shaped sites in 22
+  files**, **0 frontmatter issues**, *"every live task card's frontmatter
+  parses, with a legal status"*. Suites owed: `npm test from app/`,
+  `npm test from tools/e2e/`, `npx vitest run from lib/parser/` — all
+  three run and green above. `cargo test` is owed anyway by the `.rs`
+  paths and is green.
+
+### Every criterion, and how it was attacked
+
+**C1 — the `Activity` arm sets the discriminator; the probe scenario is a
+fixture; a body asserts it is not `AuthFailed`. MET.**
+`retry-401-then-tool-use-no-result` rides the EXISTING `no_result_after`
+emitter on a new `Evidence` axis, so it is the delta stream minus exactly
+one line by construction. Attacked three ways, all producer-side:
+**V1** (delete the two lines in the `Activity` arm) reds
+`a_recovered_auth_retry_followed_by_a_tool_call_and_no_result_line_is_not_an_auth_failure`
+**ALONE** — 79/1/1, exit 101. **V11b** (move the `tool_use` BEFORE the
+401, so `auth_status` is still `None` when it arrives) reds the same body
+alone — the `auth_status.is_some()` scoping is real, not decorative.
+**V15** (flip the control's `with_retry` on) reds
+`the_same_tool_use_stream_without_the_retry_line_has_nothing_to_relay`
+alone, so the control is a control.
+
+**C2 — the counter-pin shown still red-able, and named. MET.**
+`a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed`.
+**V2** (drop `| Some(403)` from the guard) reds it **ALONE** — 79/1/1,
+exit 101. Its standing after the widening is not inherited: verified in
+the source that `auth-403-no-result` streams neither content-block type,
+so there is no evidence of either kind for the widened flag to read.
+
+**C3 — one flag or two, decided in writing. MET, and I agree with the
+refusal.** There is exactly one reader of this flag and it WITHDRAWS a
+claim; withdrawal has no degrees, and the direction of error is identical
+for both sources. The condition under which it must split — an arm making
+a POSITIVE claim from unforgeable evidence — is named at the declaration,
+so the absence is recorded as checked. Two flags today would differ in
+nothing but name.
+
+**C4 — one fixture closing both denial gaps. MET.**
+`denied-announced-and-silent-nonzero` is genuinely the intersection: I
+confirmed in the fake agent that every other denial fixture either
+carries no in-band line or exits zero. The body asserts two events not
+three, their ORDER against an `Activity` liveness witness, and the
+control FIRST. **V5** (delete the `unannounced` partition, so every
+denial re-emits at `Result` time) reds 4 bodies including this one —
+76/4/1, exit 101.
+
+**C5 — order AND completeness of the surviving record, in one body, with
+the first-name-only mutant re-run and shown RED. MET — and the LANE'S
+READING OF THE CARD IS CORRECT.** I reproduced both halves at BASE by
+reconstructing `c4c15c8`'s three `.rs` files in the drill worktree (legal
+because main's advance carries zero `.rs`; the three blobs were checked
+`git hash-object`-for-`rev-parse` identical, and base pristine is
+**76/0/1, exit 0**).
+
+- **V6 / first-name-only at TIP**: reds **two** bodies — the new
+  `the_cumulative_record_keeps_every_name_in_the_order_the_cli_listed_them`
+  AND the pre-existing
+  `a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code`.
+- **V6 at BASE: 75 passed / 1 failed, exit 101**, and the one red is that
+  same pre-existing body — on LENGTH.
+- **V7 / reversal at BASE: 76 passed / 0 failed, exit 0. IT SURVIVES.**
+
+So the card's pin 1 is **half wrong at this card's own base**: its
+measurement (*"reducing the relay to the first name only left … 66 passed
+/ 0 failed"*) was about the RING-NOTE relay at `4d2f03c`, which T-113 has
+since deleted, and it does not transfer to the surviving `ToolDenied`
+producer. `tool-denied` DOES drive that producer with two entries, so
+first-name-only already reds there. **The palindrome reading is right**:
+`["Bash", "Bash"]` reversed is itself. The real gap is ORDER.
+
+And the lane's shape-six answer for that body is right for a reason
+sharper than "reverse `denial_names`": a **lib** unit test
+(`result_denial_entries_carry_the_join_key_beside_the_name`) already pins
+that function's order over `["WebFetch", "Legacy"]` — **V7 under
+`cargo test -p nputer --lib` reds exactly that test, 160/1**. So the
+unique mutant has to be at the `TurnError::ToolDenied` construction site.
+**M6b** (`names.reverse()` at `permission_denials = names`) run over the
+WHOLE workspace: **459 passed / 1 failed / 3 ignored, exit 101**, the one
+red being the new body. Unique-kill, workspace-wide.
+
+**C6 — the ABSENCE pinned, the ring-note restoration re-run and shown
+RED, the cumulative record asserted separately. MET, and the unique-kill
+separation reproduces exactly.**
+
+- **M3** — restore the note over the **UNANNOUNCED** set: **75/5/1, exit
+  101**, five bodies including T-113's own pin.
+- **M4** — restore it over the **ANNOUNCED** set only: **79/1/1, exit
+  101**, reds
+  `an_announced_denial_is_not_repeated_at_result_time_and_neither_name_reaches_the_tail`
+  **ALONE**, with T-113's pin GREEN. The failure message carries the
+  proof: `stderr_tail` = `"…transport closed…\npermission_denials: Bash\n"`.
+
+That separation is what makes criterion 6 a pin and not a restatement,
+and it is the mutant a careless revert to the pre-T-081 shape lands on.
+
+**C7 — the mirrored negatives resolved as a family. MET. SEVEN, not six —
+the CARD is stale at its own base.**
+`grep -c "matches!(status.last_error"` over `tests/agent_runner.rs` reads
+**7 at `c4c15c8`** and **7 at main `9b9c997`**, against the card's *"reads
+**6** at `4d2f03c`"*. At the tip it reads **1**, and that one is inside
+the replacement helper's doc comment quoting the retired form. All seven
+live sites are replaced; `assert_settled_error_is` has **10 call sites**.
+
+**THE REPLACEMENT IS NOT THE SAME TAUTOLOGY IN A NEW COSTUME, AND THE
+MEASUREMENT IS THE PROOF.** M9 (`guard.last_error = outcome.error.clone()`
+→ `= None` in `agent/mod.rs`, a file this diff does not touch):
+
+- at the **TIP**: **69 passed / 11 failed / 1 ignored, exit 101**;
+- at the **BASE**: **75 passed / 1 failed / 1 ignored, exit 101**.
+
+Every one of the seven mirrored negatives is GREEN under the storage bug
+they look like they would catch; the ten converted-and-new sites all red.
+The single base red is
+`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+— **and I checked its panic rather than assuming it was `T-086-s1`**: it
+is `left: None / right: Some(RejectedSessionId {…})`, the POSITIVE
+equality already in the file since T-039. So the lane generalised the one
+assertion that could already catch a dropped classification, which is a
+better provenance than inventing a form.
+
+**One precision the lane's notes owe.** They say M9 gives *"ten bodies
+red"* at the build commit. The measured total at the tip is **ELEVEN** —
+the ten new kills plus that same pre-existing positive, which reds at the
+tip for the identical reason it reds at the base. Ten is the count of
+NEW kills, which is the number that carries the argument; the total is
+one higher.
+
+**The honest residual, recorded and NOT blocking.** The equality is
+against the failure EVENT, so it pins the
+`run_turn` → `out.error` → `AgentState::last_error` → `GenesisStatus`
+seam and cannot see a MISCLASSIFICATION inside `run_turn` — the match arm
+above each call site already does that, and the helper says so. The
+consequence is that all ten sites kill one mutant class, so nine are
+redundant with respect to M9. They are no longer bodies that CANNOT fail,
+which is what the criterion asked for; they are ten copies of one kill.
+
+**C8 — the bound rule written where the bounds live and asserted over the
+constants, with a test that reds if EITHER file moves. MET, and the
+derivation genuinely binds BOTH constants.** Drilled in three directions,
+all `cargo test -p nputer --lib`:
+
+- **V8** — `MAX_DENIAL_MESSAGE_BYTES` 768 → 2048 (a bound here raised
+  past the cap): **159/2, exit 101**, message *"768 … is above the
+  800-character log cap"* with the cap DERIVED, not named.
+- **V9** — `docs_watch::MAX_ECHO_LOG_CHARS` 800 → **700** (THE OTHER
+  FILE, downward): **159/2, exit 101**.
+- **V9b** — the same constant 800 → **4096** (THE OTHER FILE, upward):
+  **159/2, exit 101**, this time on the ADVISORY arm.
+
+So it is not "only observing one": the LIVE arm reds when either file
+moves the pair apart downward, and the ADVISORY arm reds when either
+moves it apart upward. I also confirmed the test measures the composition
+that actually RUNS: all three constants are applied through
+`sanitize_for_log(truncate_utf8(raw, N))` in production —
+`MAX_DENIAL_BYTES` and `MAX_DENIAL_MESSAGE_BYTES` via the
+`bounded_stream_string` helper, `MAX_AUTH_MESSAGE_BYTES` via the same
+composition written out inline at the `AuthFailed` construction. Nothing
+about the pin is synthetic.
+
+**MY INDEPENDENT RULING ON THE DECLINE: THE REFUSAL IS CORRECT, AND IT
+DOES NOT DODGE THE CRITERION.**
+
+1. **Read as EARS, the criterion does not ask for the lowering.** Its
+   SHALL is *write the rule where the bounds live* and *assert it over
+   the constants with a test that reds if either file moves*. The second
+   sentence is an `IF … THEN` whose antecedent is *"IF
+   `MAX_AUTH_MESSAGE_BYTES` is **instead** lowered"* — a conditional
+   obligation triggered only by taking that option. Declining an option
+   is not declining a requirement, and the mandatory half is built and
+   measurably pinned above.
+2. **The reason given is a real measurement and I reproduced it.**
+   `sanitize_for_log` appends `…(truncated)`; `truncate_utf8` appends
+   nothing (`docs_watch.rs`, read directly). So a bound BELOW the cap
+   wins and cuts SILENTLY; a bound ABOVE it loses for ASCII and inherits
+   a MARKED cut. Lowering `MAX_AUTH_MESSAGE_BYTES` under 800 would make
+   "hard stop" literally true and would remove the disclosure from the
+   one string a user reads when their login is refused. That is a trade,
+   and the criterion asks for no trade.
+3. **The THEN-clause's own obligation is discharged anyway.** The doc
+   comment names which cap outranks it, retracts "hard stop" in as many
+   words, and states what the bound still does (multi-byte text, where
+   2048 bytes can be 512 characters; and it is what stops a hostile
+   stream handing `sanitize_for_log` an unbounded allocation). The
+   comment was corrected instead of the constant, which is the honest
+   half of the finding.
+4. **AND THE DECLINE IS ENFORCED, NOT MERELY DOCUMENTED — this is the
+   part that settles it.** I ran the criterion's own IF-arm as a mutant:
+   **V14**, `MAX_AUTH_MESSAGE_BYTES` 2048 → 700, over the WHOLE
+   workspace: **459 passed / 1 failed / 3 ignored, exit 101**, reddening
+   `every_byte_bound_here_is_classified_against_the_log_cap_that_outranks_it`
+   **ALONE**, with a message that tells the next editor exactly what they
+   just gave up. A future card that wants the trade the other way cannot
+   take it silently. That is a stronger outcome than either arm of the
+   criterion asked for.
+
+On `T-102-s1`: the workaround is sound. `MAX_ECHO_LOG_CHARS` is a bare
+private `const` in a sibling module, so the named form does not compile
+without widening a fence to assert a number; deriving the cap from
+`sanitize_for_log`'s own public behaviour asserts the BEHAVIOUR that
+governs rather than the number, and V8/V9/V9b prove it reds from both
+files. The finding is correctly filed rather than papered over.
+
+**C9 — the order inversion routed to its own card. MET vacuously and
+correctly.** `T-102-s2` is that routing.
+
+### Unhappy paths the criteria imply but do not spell out
+
+- **A `tool_use` BEFORE the status must not withdraw the claim.** V11b:
+  reds. The `auth_status.is_some()` guard holds.
+- **A NEW status must supersede earlier evidence, for the new source as
+  well as the old.** **V13** — delete `evidence_after_auth_status = false`
+  from the `Diagnostic` arm: **79/1/1, exit 101**, reddening
+  `a_second_auth_retry_behind_the_recovered_one_is_still_an_auth_failure`
+  ALONE. **So the lane's refusal to add a `tool_use` twin of that fixture
+  is CORRECT under SHAPE SIX**: the one reset line is shared by both
+  sources and the existing delta body already kills its only mutant. A
+  twin would kill nothing that body does not.
+- **Is the new body vacuous?** No: it asserts the `Activity` ARRIVED and
+  that NO `TextDelta` rode with it, before asserting the classification —
+  so it cannot pass by the old arm's route.
+
+### Security sweep — MANDATORY, and this card is squarely on it
+
+- **Can a CLI that fabricates or replays a `tool_use` block now suppress
+  a real auth failure? YES — and it could already, at identical cost.**
+  `StreamLine::Activity` is produced by `classify_line` from exactly two
+  shapes, both genuine model-response block types: a `stream_event` /
+  `content_block_start` whose `content_block.type` is `tool_use`, and an
+  `assistant` message with a `tool_use` block. One line of CLI stdout
+  after the last status-bearing line withdraws the classification. But
+  **one `text_delta` line did exactly that before T-102**, so the flag is
+  **not settable more cheaply than before** — it is settable by a second
+  shape at the same cost, and a replay from BEFORE the status is
+  ineffective (V11b) as is a replay behind a NEW status (V13).
+- **The consequence is a downgrade, never an escalation.** The flag has
+  exactly one reader, a `!`-guard that WITHDRAWS. When it is wrong the
+  turn still fails: `ExitNonZero` with the 401/403 still legible in
+  `stderr_tail`, and the only user-visible change is *Try again* instead
+  of `claude login`. Nothing authenticates, no credential is accepted, no
+  write is enabled, no state is persisted. The trust boundary does not
+  move: the party who can write this stream is the CLI, which the app
+  already trusts to report its own outcome and which is resolved through
+  `validate_resolved_program`'s absolute / traversal-free / name-matched
+  gate.
+- **No new bound admits an unbounded string.** The addition is a `bool`.
+  All three byte constants keep their values; the new caps-block text is
+  a comment and the new lib body is a test.
+- **`ENV_ALLOWLIST` byte-identical** (16 entries, `diff` exit 0 between
+  `9b9c997` and `935a78d`); **`ENV_ALLOWLIST_LINUX` unchanged**.
+- **`acl_pin.rs` UNTOUCHED** — the blob is `53aa795b…` at main and at the
+  tip, a 0-file diff. No new grant, no new IPC command, no manifest and
+  no lockfile in the diff, therefore **no dependency addition to argue
+  about**.
+- **`docs_watch.rs` is a 0-file diff** — the bound rule reaches across a
+  module boundary by reading behaviour, not by editing the other file.
+- **No secrets, keys or tokens in the diff** (scanned; the two `token`
+  hits are prose about a source token).
+- **ONE OBSERVATION, PRE-EXISTING, FILED RATHER THAN CHARGED HERE.**
+  `RunEvent::Activity { label }` reaches the webview through **neither**
+  bound: no `bounded_stream_string`, no `cap_text`, no
+  `sanitize_for_log`, so its only ceiling is `MAX_LINE_BYTES` (1 MiB) and
+  control characters are not stripped — while the SAME `tool_use` block's
+  name, read on the denial path, is capped at `MAX_DENIAL_BYTES` (128)
+  and stripped. That asymmetry predates this diff and is not a
+  regression, but T-102 makes it newly relevant (the `Activity` arm is
+  now load-bearing for the auth discriminator) and the new caps-block
+  header states a universal — *"Every stream-borne string in this module
+  reaches the app through `bounded_stream_string`"* — that this label,
+  the `TextDelta` relay and `terminal_reason` each falsify. Filed as
+  **`T-102-s4`**.
+
+### The capture fixture, before and after everything
+
+`docs/research/captures/real-planner-turn-2026-08-19.jsonl` —
+sha256 **`273a3d33593a53614101489b9cd3e9574010beae3830a60f43a8e65f74da47ac`**
+read BEFORE any command in this pass (in main and in the lane's worktree,
+identical) and again AFTER the last mutant was restored. The git blob is
+`72e2c939…` at BOTH `c4c15c8` and `935a78d`.
+
+### The drill's own hygiene
+
+Detached worktree `/Users/ujju/Projects/drill-T-102-verify` at `935a78d`,
+OUTSIDE the repository, named per-lane, with `CARGO_TARGET_DIR` set
+explicitly inside it. Every mutant is PRODUCER-side, one side only, never
+an assertion and never a literal the two share. Every mutated text was
+read back with `git diff` BEFORE its run. Restores are per-path and
+proved by sha256 against the drill's own baseline —
+`runner.rs fa526b0a…`, `fake_agent.rs b0bd0728…`, `docs_watch.rs
+3c7e35f3…`, `agent/mod.rs 8ba0c1e1…`, `tests/agent_runner.rs 4fbdfc97…`
+— all six hashes identical before and after, `git status --porcelain`
+empty. DID-NOT-COMPILE was judged on `error[E` / `could not compile`,
+never on a bare `^error`: **every mutant compiled, 0 and 0 on both counts
+in all fourteen runs.**
+
+**NO SURVIVORS, THEREFORE NO DEAD MUTANT AMONG THEM.** Fourteen mutants,
+fourteen reds — V1, V2, M3, M4, V5, V6, V7 (tip), V7 (lib), M6b, V8, V9,
+V9b, V14, V13, V11b, V15 — plus three deliberate SURVIVALS at the BASE
+which are the point rather than a defect (V7 base 76/0/1 exit 0 proves
+criterion 5's gap was real; M9 base 75/1 proves criterion 7's was). The
+lane's own dead-mutant catch (M2 overwritten by an existing reset,
+replaced by M2b) is not reproducible from the record — see defect 1.
+
+### The drafter's note marked "remove before landing", which criterion 5 cites
+
+**THE LANE'S DISPOSITION IS CORRECT AND I RATIFY IT.** Criterion 5 ends
+*"(re-measure; the note above already orders that)"*, a live
+cross-reference from the ACCEPTANCE CRITERIA into the note. Deleting the
+note without rewriting that clause would leave a dangling reference in
+the criteria themselves — strictly worse than a note that outstays its
+own instruction — and rewriting an acceptance criterion is not an
+executor's edit to make mid-build. The debt is recorded in the lane's own
+handoff. **It is now doubly cited**: the implementation notes reference it
+too. Whoever removes it owes criterion 5's sentence a rewrite in the same
+commit, and this verdict is the third place saying so.
+
+### Where this brief and the CARD were wrong
+
+- **THE CARD, criterion 7 and its pin 3: "SIX MIRRORED NEGATIVE
+  ASSERTIONS".** It is **SEVEN** at this card's own base `c4c15c8`, and
+  seven at main. The card's six is a figure carried from `4d2f03c`;
+  T-113 added the seventh. `T-069-s1`'s *"at least four bodies"* reads
+  seven too. The lane re-derived and is right.
+- **THE CARD, pin 1 and criterion 5's premise.** *"THE JOIN IS NEVER
+  DRIVEN WITH TWO NAMES"* and its measurement are true of the RING-NOTE
+  relay at `4d2f03c` and NOT of the producer that survives T-113:
+  `tool-denied` drives `denial_names` with two entries, and
+  first-name-only already reds at the base (measured, 75/1). The real gap
+  is order, and the card's own instruction to re-measure is what caught
+  it.
+- **THE BRIEF, item 4, third bullet.** It describes M4 as reddening "its
+  body alone" and M3 as reddening five — both reproduce exactly. But it
+  also asks whether the M9 figure of "ten bodies" holds: the measured tip
+  total is **eleven**, ten of them new. The brief inherits the lane's
+  one-short total.
+- **THE BRIEF, item 9's reference figures** are all confirmed at my own
+  ref: cargo 460/0/3 over 16 lines, base 455/0/3 (main), `--test
+  agent_runner` 80/0/1 against a base of 76, app 958/958, parser 264/264,
+  e2e 146/146 on the second run.
+- **THE BRIEF, item 10's gate figures** are all confirmed:
+  920 597 · 178 · 1959 · 1878 → 922 888 · 178 · 1966 · 1878, +7 symbols,
+  edges unmoved; boot gate exit 0 with both lines; docs gate 4 of 7.
+
+### The two RECORD defects the integrator owes a correction
+
+Neither is a behaviour defect, neither is reproducible as a test failure,
+and neither blocks the merge. Both are in the deliverable's own account
+of itself, which is the thing this repository treats as load-bearing.
+
+1. **THE POISON DRILL'S RECORD IS INCOMPLETE AND CARRIES A DANGLING
+   CROSS-REFERENCE.** The implementation notes say *"Shown still red-able
+   by drill **M2b** (below)"* — and there is no table below, on this card
+   or anywhere on the branch (`git log -p c4c15c8..935a78d` over the card
+   returns no drill table; the two suggestion files that mention mutants
+   only cite them by label). The labels **M1, M2, M3 and M6 are never
+   defined anywhere in the deliverable**, and the Verification section's
+   own hand-named list of four required mutants is only three-quarters
+   reported: the first-name-only relay (M5), the restored ring note (M4)
+   and the raised constant (M7) each have a result in prose, but **"the
+   `Activity` flag removed" has no reported result at all** — criterion
+   1's section names no mutant. I ran it myself (V1, reds one body) so
+   the property holds; what is missing is the lane's record of it. Under
+   the succession rule, the M2/M2b dead-mutant account exists only in a
+   dispatch message and therefore did not happen.
+2. **A NEW UNIVERSAL IN SHIPPED SOURCE IS FALSE AS WRITTEN.** The new
+   caps-block header asserts *"Every stream-borne string in this module
+   reaches the app through `bounded_stream_string`"*. There are exactly
+   **three** production call sites of that helper, all on the denial
+   path. The `Activity` label reaches the webview through no bound in
+   this module at all; the `TextDelta` relay goes through `cap_text`
+   (32 KiB) instead; `terminal_reason` goes through `sanitize_for_log`
+   alone, with no byte bound here — a third class the new two-class
+   scheme (LIVE / ADVISORY) has no name for. `T-102-s2` repeats the same
+   sentence. This is the `CLOSED AT TWO` class of defect arriving in a
+   comment: an unfalsifiable-as-written universal that no test asserts
+   and that was already false when it was typed. The narrow repair is one
+   clause — *every stream-borne string THIS BLOCK BOUNDS* — and the wide
+   one is `T-102-s4`.
+
+**VERDICT: APPROVED.** All nine criteria are met; every pin the card asks
+for reds under a producer-side mutant I derived independently from the
+criteria before opening the test file; the unique-kill separations the
+lane claims (M4 against M3, M6b workspace-wide, V1 alone) all reproduce;
+the criterion-8 decline is correct, is not a dodge, and is enforced by a
+body that reds if anyone takes the other side of it silently; the seven
+replaced negatives are a real replacement and not the old tautology in a
+new costume, proved by a mutant that reds ten new bodies at the tip and
+leaves all seven of their predecessors green at the base; and the
+security sweep finds nothing this diff introduced.
+
+### ADDENDUM — MAIN MOVED UNDER THIS PASS, AND THE RANGE WAS RE-DERIVED
+
+Every figure above is at the ref it names, and the ref this pass began
+against — main `9b9c997` — is no longer main's tip: **T-107 merged and
+checkpointed while this verification ran, taking main to `5230152`.**
+Re-derived at the new tip against the verdict commit `c0ff888`:
+
+    git merge-tree --write-tree 5230152 c0ff888 -> tree e973c924…, exit 0
+    git diff --name-only 5230152 <TREE>          ->  8   PRESCRIBED
+    git diff --name-only 5230152...c0ff888       ->  8   three dots — `diff` exit 0 against it
+    git diff --name-only c4c15c8..5230152        -> 21   main's advance since this card's base
+
+`comm -12` over the lane's 8 and main's 21 is still **EMPTY**, so this
+lane and main remain disjoint and the merge is still clean. Main's 21
+carry **zero `.rs`**, which is what kept the base reconstruction used for
+criteria 5 and 7 above legitimate.
+
+**BUT ONE BASELINE IN THIS VERDICT IS NOW STALE AND THE INTEGRATOR MUST
+NOT QUOTE IT.** T-107's checkpoint regenerated the committed graph:
+`docs/architecture/graph.json` is **921 608 bytes** at `5230152` against
+the **920 597** this pass measured `index --check` STALE against. The
+`+7 symbols / edges unmoved` finding is about this lane's three `.rs`
+files and still holds as a DELTA; the absolute forecast does not.
+Re-run `cargo run -p nputer-index -- index --check --root ../..` at the
+merge and read its own numbers.
