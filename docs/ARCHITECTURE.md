@@ -704,6 +704,84 @@ ADR-014/015).
   needs both `app-agent` and `app-interview` (T-081-s3, unpark condition
   now met).
 
+  **T-107 GIVES C-13's OTHER FAILURE FAMILY AN ACTION, AND THE
+  ARCHITECTURAL CONTENT IS THAT IT IS NOT A SECOND `hint`/`command`
+  PAIR.** Two families of "this went wrong" reach this pane and only one
+  of them could ever carry an action: a `TurnError` goes through
+  `failureAction` to `FailureBlock` and gets
+  `hint`/`command`/`retry`/`fallback`, while `StartOutcome`/`SendOutcome`
+  go to `OutcomeNotice`, **which had no action slot at all** — so
+  `unsupportedVersion` rendered a correct, typed, verified diagnosis and
+  offered the user nothing to do about it. Giving the notice family its
+  own `hint`/`command` pair would have been this card's own defect
+  arrived at from the other side (two notions of an action that can
+  drift), so what it gains instead is a BOOLEAN over the affordance both
+  renderers ALREADY share — the hand-driven route, which is
+  `FailureAction.fallback` under the other one. **`FailureAction` is
+  byte-untouched**, and `OutcomeNotice` computes the element ONCE and
+  renders it in all three of its shapes, the generic notice included, so
+  an arm ruled routable later reaches the screen instead of quietly doing
+  nothing.
+  **THE RULING IS THE COMPONENT'S, AND IT IS EXHAUSTIVE OVER THE UNION
+  RATHER THAN OVER A SWITCH.** `noticeRoutesToHandDriven` in
+  `interview-model.ts` owns which outcomes offer the route, for all
+  THIRTEEN kinds across the two payload unions, with a `default` that
+  assigns to `never` — so an arm added to either union is a **build
+  error** until somebody rules on it, verified by adding one arm to each
+  union and reading `error TS2322` out of `npm run build` at exit 2.
+  `noticeSentence`'s ten arms are a strict SUBSET and are disclaimed in
+  the source as not the enumeration: its own `default` degrades to the
+  bare kind, which is right for a SENTENCE (a bare kind on screen beats a
+  crashed pane) and wrong for a RULING.
+  **THE SCREEN REFUSES TO NAME AN UPDATE COMMAND, AND THE REFUSAL IS
+  RECORDED AT THE RENDERER RATHER THAN ONLY IN A CARD.**
+  `UnsupportedVersion { found }` carries the first line of `--version`
+  and nothing else — no resolved path, no manager, no channel, the
+  resolved `path` deliberately left behind in `ResolvedCli` — so the app
+  cannot know whether the answer is `claude install`, `claude update`,
+  `brew upgrade` or a package manager's own verb, and an app that prints
+  one it never ran is T-082's defect one layer up. **The minimum version
+  is likewise not named, and that is criterion 3's PROHIBITION met with
+  its POSITIVE OBLIGATION ROUTED — not the criterion satisfied.**
+  `pub struct AgentAdapter` derives `Clone, Copy, Debug` and **no
+  `Serialize`**, so `CLAUDE_V1.min_major` cannot cross IPC by any
+  `#[tauri::command]` return; the only way to "name it from the adapter"
+  is to transcribe it, which is the one act the criterion itself calls
+  the defect. The shipped screen therefore creates **ZERO**
+  implementations of that number and cannot disagree with the adapter,
+  which is stronger than avoiding the failure mode — but the plumbing
+  that would let the notice name the floor from its authority is
+  `T-107-s1`, outside `[app-interview]`. The source comment beside
+  `noticeRoutesToHandDriven` calls this *"criterion 3 SATISFIED rather
+  than dodged"*; **the honest word is the lane's own word for criterion
+  5 — routed** — and the verifier corrected the record rather than
+  rejecting over an adjective nothing downstream reads.
+  **ONE CRITERION SHIPS UNMET AND DISCLOSED, ON T-101's PRECEDENT.** No
+  assertion can live inside this card's fence: C-13 declares ONE
+  path glob, `app/src/genesis/**`, and it is source-only, while
+  `app/test/**` and `app/vitest.config.ts` are both C-05 `app-shell` —
+  held by a live lane. `vitest.config.ts` reads
+  `include: ["test/**/*.test.{ts,tsx}"]`, so a body colocated under
+  `app/src/genesis/` is **not collected** by `npm test` while still being
+  compiled into the program bare `tsc` gates on: worse than no pin. That
+  was proved by positive control rather than read off a config — the same
+  red body is INVISIBLE at 958/958 under the shipped collector and reds
+  at 1 failed under a collector that can see the glob, **and A↔B is the
+  finding: the green was invisibility, not vacuity.** Routed as
+  `T-107-s4`. What IS held is the MECHANISM, indirectly and by its
+  sibling arm: flipping the `cliNotFound` arm reds seven existing bodies
+  across two files. What is NOT held is the new arm's own answer —
+  deleting the behaviour from either side leaves the tree fully green.
+  **No IPC, no grant, no event, no Rust, no store and no new token** —
+  `agent-store.ts` is a 0-file diff, IPC still FOURTEEN at both ends,
+  `acl_pin.rs` untouched at the same 92-grant set, and the card reuses
+  the `status-verifying` token family `cliNotFound` already uses, which
+  is why `app/src/styles/**` never had to be routed — **but the GRAPH
+  moves**, the T-081/T-070/T-101 shape once more: **+1 symbol / +5 −2
+  edges** (`noticeRoutesToHandDriven`, plus the import and `type_ref`
+  edges it draws), both endpoints of every new edge inside C-13 and C-05,
+  so no component relation moves and the registry still stops at C-14.
+
   **T-113 IS A DELETION, AND WHAT IT DELETES IS ONE OF TWO REPORTS OF ONE
   FACT.** T-069 gave C-14 a diagnostic ring note — `permission_denials:
   <names>` pushed into `stderr_tail` — because at that tree NOTHING

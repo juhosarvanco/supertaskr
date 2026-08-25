@@ -11347,8 +11347,8 @@
       "id": "f:app/src/genesis/InterviewChat.tsx",
       "path": "app/src/genesis/InterviewChat.tsx",
       "lang": "ts",
-      "hash": "blake3:40e6c7ee9c1a3a0912528afb654c3becf14d7aedb8331e0aaf0f6771f8923c35",
-      "loc": 779,
+      "hash": "blake3:a5cc4b93053fe09cd8e5a65eb61e19707ff2f2163785de0e25e84090d0252b1b",
+      "loc": 858,
       "symbols": [
         {
           "id": "s:app/src/genesis/InterviewChat.tsx#HandDrivenBlock",
@@ -11356,8 +11356,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            596,
-            672
+            597,
+            673
           ]
         },
         {
@@ -11366,8 +11366,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            55,
-            545
+            56,
+            546
           ]
         },
         {
@@ -11376,8 +11376,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            687,
-            749
+            697,
+            814
           ]
         },
         {
@@ -11386,8 +11386,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            573,
-            576
+            574,
+            577
           ]
         },
         {
@@ -11396,8 +11396,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            752,
-            779
+            827,
+            858
           ]
         },
         {
@@ -11406,8 +11406,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            551,
-            555
+            552,
+            556
           ]
         }
       ]
@@ -11904,8 +11904,8 @@
       "id": "f:app/src/genesis/interview-model.ts",
       "path": "app/src/genesis/interview-model.ts",
       "lang": "ts",
-      "hash": "blake3:935f114befa5896b602e61883decc6a1961d58d95aaa50070d646b26d69ce1c8",
-      "loc": 862,
+      "hash": "blake3:ce21e86a54de9b62316dd07ce658dbbdcf824c53392de5048ca820c069613762",
+      "loc": 1040,
       "symbols": [
         {
           "id": "s:app/src/genesis/interview-model.ts#BankBaseline",
@@ -11913,8 +11913,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            68,
-            77
+            70,
+            79
           ]
         },
         {
@@ -11923,8 +11923,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            108,
-            111
+            110,
+            113
           ]
         },
         {
@@ -11933,8 +11933,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            263,
-            263
+            265,
+            265
           ]
         },
         {
@@ -11943,8 +11943,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            265,
-            272
+            267,
+            274
           ]
         },
         {
@@ -11953,8 +11953,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            113,
-            116
+            115,
+            118
           ]
         },
         {
@@ -11963,8 +11963,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            631,
-            636
+            633,
+            638
           ]
         },
         {
@@ -11973,8 +11973,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            343,
-            343
+            345,
+            345
           ]
         },
         {
@@ -11983,8 +11983,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            248,
-            248
+            250,
+            250
           ]
         },
         {
@@ -11993,8 +11993,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            584,
-            584
+            586,
+            586
           ]
         },
         {
@@ -12003,8 +12003,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            481,
-            481
+            483,
+            483
           ]
         },
         {
@@ -12013,8 +12013,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            844,
-            844
+            1022,
+            1022
           ]
         },
         {
@@ -12023,8 +12023,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            304,
-            309
+            306,
+            311
           ]
         },
         {
@@ -12033,8 +12033,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            340,
-            340
+            342,
+            342
           ]
         },
         {
@@ -12043,8 +12043,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            397,
-            400
+            399,
+            402
           ]
         },
         {
@@ -12053,8 +12053,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            79,
-            84
+            81,
+            86
           ]
         },
         {
@@ -12063,8 +12063,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            411,
-            417
+            413,
+            419
           ]
         },
         {
@@ -12073,8 +12073,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            544,
-            577
+            546,
+            579
           ]
         },
         {
@@ -12083,8 +12083,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            125,
-            132
+            127,
+            134
           ]
         },
         {
@@ -12093,8 +12093,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            173,
-            188
+            175,
+            190
           ]
         },
         {
@@ -12103,8 +12103,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            289,
-            298
+            291,
+            300
           ]
         },
         {
@@ -12113,8 +12113,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            252,
-            256
+            254,
+            258
           ]
         },
         {
@@ -12123,8 +12123,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            750,
-            757
+            915,
+            922
           ]
         },
         {
@@ -12133,8 +12133,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            781,
-            784
+            946,
+            949
           ]
         },
         {
@@ -12143,8 +12143,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            638,
-            688
+            640,
+            690
           ]
         },
         {
@@ -12153,8 +12153,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            699,
-            717
+            701,
+            719
           ]
         },
         {
@@ -12163,8 +12163,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            591,
-            612
+            593,
+            614
           ]
         },
         {
@@ -12173,8 +12173,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            138,
-            140
+            140,
+            142
           ]
         },
         {
@@ -12183,8 +12183,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            691,
-            695
+            693,
+            697
           ]
         },
         {
@@ -12193,8 +12193,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            508,
-            527
+            510,
+            529
+          ]
+        },
+        {
+          "id": "s:app/src/genesis/interview-model.ts#noticeRoutesToHandDriven",
+          "name": "noticeRoutesToHandDriven",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            783,
+            882
           ]
         },
         {
@@ -12203,8 +12213,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            214,
-            244
+            216,
+            246
           ]
         },
         {
@@ -12213,8 +12223,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            383,
-            386
+            385,
+            388
           ]
         },
         {
@@ -12223,8 +12233,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            447,
-            479
+            449,
+            481
           ]
         },
         {
@@ -12233,8 +12243,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            495,
-            503
+            497,
+            505
           ]
         },
         {
@@ -12243,8 +12253,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            490,
-            493
+            492,
+            495
           ]
         },
         {
@@ -12253,8 +12263,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            855,
-            862
+            1033,
+            1040
           ]
         },
         {
@@ -12263,8 +12273,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            331,
-            338
+            333,
+            340
           ]
         },
         {
@@ -12273,8 +12283,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            374,
-            379
+            376,
+            381
           ]
         },
         {
@@ -12283,8 +12293,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            354,
-            361
+            356,
+            363
           ]
         },
         {
@@ -12293,8 +12303,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            829,
-            839
+            1007,
+            1017
           ]
         }
       ]
@@ -23954,6 +23964,7 @@
         "activeTurn",
         "assembleTranscript",
         "mergeRehydrated",
+        "noticeRoutesToHandDriven",
         "observeBanking",
         "shouldStickToBottom",
         "stageOf",
@@ -24069,6 +24080,8 @@
       "symbols": [
         "GenesisDenial",
         "GenesisTurn",
+        "SendOutcomePayload",
+        "StartOutcomePayload",
         "TranscriptLinePayload",
         "TurnErrorPayload"
       ]
@@ -29833,6 +29846,12 @@
     },
     {
       "from": "s:app/src/genesis/InterviewChat.tsx#OutcomeNotice",
+      "to": "s:app/src/genesis/interview-model.ts#noticeRoutesToHandDriven",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/InterviewChat.tsx#OutcomeNotice",
       "to": "s:app/src/lib/agent-store.ts#SendOutcomePayload",
       "kind": "type_ref",
       "confidence": "resolved"
@@ -30278,6 +30297,18 @@
     {
       "from": "s:app/src/genesis/interview-model.ts#mergeRehydrated",
       "to": "s:app/src/lib/agent-store.ts#TranscriptLinePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#noticeRoutesToHandDriven",
+      "to": "s:app/src/lib/agent-store.ts#SendOutcomePayload",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/genesis/interview-model.ts#noticeRoutesToHandDriven",
+      "to": "s:app/src/lib/agent-store.ts#StartOutcomePayload",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -35019,7 +35050,7 @@
   ],
   "stats": {
     "files": 178,
-    "symbols": 1959,
-    "edges": 1878
+    "symbols": 1960,
+    "edges": 1881
   }
 }

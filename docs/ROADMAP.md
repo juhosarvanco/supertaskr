@@ -568,6 +568,38 @@ underneath. What is NOT here:
 the notice is live-only, so a restart still forgets what the planner was
 refused (T-081-s3, which needs both fences). **@human still owes this
 card one look** — the question T-081 could not ask is now askable.
+T-107 merged 2026-08-25 and it closes the last dead end in the family
+the two paragraphs above are about — **the app knew exactly what was
+wrong, the user could fix it in one command, and the screen did not say
+which command.** A `claude` too old to drive rendered one correct, typed
+sentence (*"the agent CLI reports X, which is older than this app can
+drive"*) and offered nothing to do about it, because the two families of
+"this went wrong" have different renderers and only one of them could
+ever carry an action: a `TurnError` goes through `failureAction` to a
+block with a hint and a command, while a `StartOutcome` reached a notice
+with no action slot at all. **The fix deliberately does not give the
+second family a second hint/command pair** — that would be this card's
+own defect arrived at from the other side — it gives it a BOOLEAN over
+the one affordance both renderers already shared, the hand-driven route.
+**AND THE SCREEN REFUSES TO GUESS THE UPDATE COMMAND, WHICH IS THE
+PRODUCT CONTENT.** `claude install`, `claude update`, `brew upgrade`,
+`npm i -g` — which one is right depends entirely on how the user
+installed, and the typed outcome carries the `--version` line and
+nothing else: no path, no manager, no channel. So the notice says what
+is true, says in words why it is not saying more, and hands over the one
+mode that needs no CLI at all. That is T-082's lesson applied one layer
+up, where the shipped `claude login` sent the word "login" to a model
+the user could not reach. **The other eleven arms were enumerated from
+the union TYPE rather than by reading a switch** — a `never` guard makes
+a twelfth arm a build error until somebody rules on it — and two of them
+name a fixable problem and offer no fix, filed as `T-107-s2` and
+`T-107-s3` rather than built, which is the same disposition T-082 took
+and which is what produced this card. **What is NOT here is a pin**: no
+assertion can live inside `[app-interview]`, so criterion 5 ships unmet
+and disclosed, routed as `T-107-s4`, with the behaviour verified by a
+verifier who drove the routed body itself. **@human owes this card one
+look, and it is about wording rather than facts** — whether three
+sentences and a button read as help or as a wall.
 **The milestone is NOT complete, and what it waits on is not a task.**
 Every card on milestone 3's list — T-023 → T-024 → T-026 → T-037 →
 T-025 → T-039 → T-041 → T-042 → T-048 → T-049 → T-050 → T-027 → T-051 →

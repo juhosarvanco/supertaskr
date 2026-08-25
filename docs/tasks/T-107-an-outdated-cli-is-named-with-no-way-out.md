@@ -5,14 +5,14 @@ feature: F-03
 milestone: 4
 priority: 63
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [app-interview]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5 @T-107 — code commit 458237a
+verified_by: claude-opus-5 @T-107-verify — APPROVED, 2026-08-25 — verdict commit 78ee1c3
+review: same-model
 ---
 
 Absorbs (seventh triage, 2026-08-24): T-070-s1 — files removed in this commit.
@@ -915,3 +915,145 @@ enforced by the compiler rather than promised, the security answer is
 clean, and the one criterion that is not met on the tree could not have
 been met inside the fence — it is disclosed, routed with its body, and
 discharged by measurement in this verdict.
+
+## Integration
+
+2026-08-25 — merged by an independent integrator hand, a THIRD hand that
+neither built nor verified this card. Main-before **`765924d`**, lane tip
+**`6a61c6b`**, merge **`b505fca`** (`--no-ff`, parents exactly those two
+and nothing else), checkpoint after it. **NOTHING WAS WRITTEN INTO THE
+MERGE COMMIT**: `merge-tree --write-tree 765924d 6a61c6b` returned tree
+`e6ab4a4b99c6e109f7bcd355d3460b89ced6e90b` (exit read off `$?` FIRST at
+**0**) and `git rev-parse HEAD^{tree}` returns the same afterwards.
+
+**THE RANGE IS EIGHT PATHS, NOT THE SEVEN THE DISPATCH BRIEF CARRIED**,
+and the brief disagreed with itself about it — its range paragraph says
+seven while its DOCS GATE paragraph says *"6 of 8 after it filed
+`T-107-s5`"*. Eight is right at the tip: the verifier's `T-107-s5` is the
+eighth file, and the seven was measured before it was filed.
+
+    git merge-tree --write-tree 765924d 6a61c6b -> e6ab4a4b…, exit 0 (read from $? FIRST)
+    git diff --name-only 765924d <TREE>                 ->  8   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 765924d..b505fca (THE MERGE)   ->  8   the only one that means anything
+    git diff --name-only c4c15c8..6a61c6b (branch-only) ->  8   IDENTICAL SET under `diff`
+    git diff --name-only c4c15c8..765924d (main's advance) -> 10
+    git diff --name-only 765924d..6a61c6b (TWO dots, FORBIDDEN) -> 18
+
+**THE BRIEF'S OTHER TWO RANGE FIGURES ARE WRONG AT THIS REF AND THE
+ERROR IS IN MAIN'S HALF.** It states main's advance as **4** and the
+forbidden two-dot form as **11** (1.57x). At `765924d` main's advance is
+**10** — T-086's card and suggestion, T-088-s4, T-104, T-111 and its
+three suggestions, `docs/CONVENTIONS.md` and `docs/STATE.md` — and the
+forbidden form is **18**, a **2.25x** overstatement. The 4 and the 11 are
+the verifier's own figures measured at `29c0f4f`, three commits earlier,
+relayed into the brief without their ref. **A COUNT COPIED OUT OF AN
+EARLIER PASS IS A COUNT ABOUT A DIFFERENT TREE** — this file's own
+standing rule, happening to a brief that quotes it.
+The sets are disjoint, checked as SETS and not as counts: `comm -12` over
+the sorted lists is **EMPTY**, the union is **byte-identical** to the
+forbidden two-dot set under `diff`, and 10 + 8 = 18. Ratios so far:
+T-110 7.0x, T-120 1.2x, T-124 5.6x, T-052 5.3x, T-086 2.67x, T-107
+**2.25x**. **The ratio is weather; the left endpoint is the signal.**
+
+**THE FULL SUITE AFTER THE MERGE — GREEN FIRST TIME, NOTHING RE-RUN AND
+NOTHING DISCARDED**, every exit read from `$?` on the very next token on
+an unpiped command, with the COUNT read as well as the exit. app
+`npm run build` **0**; app `npm test` **958/958 across 46 files, 0**;
+parser **264/264 across 12 files, 0**; cargo `--no-fail-fast`
+**455 passed / 0 failed / 3 ignored, exit 0**, SUMMED over **SIXTEEN**
+`test result:` lines and DERIVED rather than read off the exit, lib suite
+**3.99s**; E2E **146/146, exit 0** on scratch port **15280**, ONE run;
+`npm run typecheck` **0**; `npm run lint:tokens` **0** at TOKEN **132** /
+CONTROL **694**; `npm run lint:docs` **0**.
+
+**NEITHER KNOWN INTERMITTENT FIRED, AND BOTH WERE CHECKED BY NAME RATHER
+THAN BY SILENCE.** `docs_watch::tests::startup_arm_watches_the_initial_root`
+reads `ok` with the lib suite at **3.99s** — under the 9.5s green band,
+against main's `app/src-tauri/target` at **2.7 GB**;
+`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+reads `ok` too. `T-120-s3` did not appear: main is not a fresh checkout,
+which is exactly what STATE predicts, and **one E2E run means one E2E run
+— there was no second one to declare.**
+
+**ALL THREE GATES FIRE, EACH DERIVED FROM THE MERGE'S OWN 8 PATHS AT MY
+REF RATHER THAN QUOTED FROM THE VERDICT.**
+
+| gate | trigger | on these 8 | result |
+|---|---|---|---|
+| GRAPH REGEN | `*.ts/tsx/js/jsx` or `*.rs` outside `docs/` | **2 — FIRES** | exit **1, STALE** → regenerated → **0, CURRENT** |
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **2 — FIRES** | exit **0** |
+| DOCS GATE | a `docs/` path a code suite reads | **6 — FIRES** | exit **1**, three suites owed, all green |
+
+- **GRAPH REGEN — a REAL stale and not the `--root` false red**, which is
+  read off the SECOND line as this project's own trap says: it printed
+  both counts and a `~` file diff rather than `committed: MISSING`.
+  Committed **920 597 bytes · 178 files · 1959 symbols · 1878 edges** →
+  fresh **921 608 · 178 · 1960 · 1881**: **+1 symbol**
+  (`noticeRoutesToHandDriven`), edges **+5 −2**, files **+0 −0 ~2**.
+  **Every figure the verifier reported reproduces exactly.** Regenerated
+  with `NPUTER_UPDATE_GOLDEN=1 cargo test -p nputer-index --test
+  self_graph -- --ignored` and committed **with the checkpoint, not the
+  merge**; `index --check` is **exit 0, CURRENT** afterwards.
+  **921 608 of `max_graph_bytes` 1 000 000 = 92.16%, 78 392 bytes of
+  headroom** — the highest this repository has ever been, and nothing
+  reports it.
+- **NO FIXTURE RECONCILIATION WAS OWED, AND IT WAS DERIVED RATHER THAN
+  ASSUMED.** The regen moves symbols and edges but **not FILES** (178,
+  `+0 −0 ~2`), and no component is declared here — so CONVENTIONS' *"a
+  MERGE REGEN alone moves only the two app fixtures"* had nothing to
+  move. Checked by running them: app **958/958** and parser **264/264**,
+  both exit 0, AFTER the regen.
+- **BOOT GATE — exit 0**, `NPUTER_BOOT_PORT=15281 npm run boot:check`
+  from tools/e2e, both `[nputer]` lines observed:
+  `[nputer] project folder: /Users/ujju/Projects/nputer` and
+  `[nputer] window "main" created`. Captured process group **72312**,
+  stopped by SIGTERM, no orphan.
+- **DOCS GATE — exit 1, FIRES on 6 of 8, THREE suites owed** (`npm test
+  from app/`, `npm test from tools/e2e/`, `npx vitest run from
+  lib/parser/`), all three green above. Invoked from the repo root with
+  ROOT-RELATIVE `$(…)` arguments and **never through `xargs`**, in the
+  one documented spelling, fed the RANGE RULE's own path list. It reports
+  **12 derived readers across 4 suites**, a census of **130** docs-shaped
+  sites in 22 files, and **0 frontmatter issues** — which is this card's
+  own `done` stamp and the five new `suggested` files checked rather than
+  assumed. **`cargo test from app/src-tauri/` is NOT owed** and that is
+  derived: this diff carries no `docs/CONVENTIONS.md`, no
+  `docs/architecture/components` and no `docs/research/` capture. It was
+  run anyway, green.
+
+**WHAT THE INTEGRATOR DID NOT DO, SAID PLAINLY.** The five suggestion
+files `T-107-s1`…`T-107-s5` are left exactly as filed at
+`status: suggested`. Triage is not an integrator's move (T-083's ruling:
+discharging a finding is not the integrator's call to record as done),
+and `T-107-s5` is flagged in STATE to be read beside `T-123-s9` rather
+than dispositioned here. **The @human look is NOT discharged** — four
+questions, carried into STATE.
+
+**ONE RESIDUAL IS RECORDED RATHER THAN EDITED, ON THE STANDING RULE THAT
+AN INTEGRATOR LEAVES A CARD'S CALL TO A CARD.** The doc comment above
+`noticeRoutesToHandDriven` still heads its paragraph *"THE MINIMUM
+VERSION IS NOT NAMED, AND THAT IS CRITERION 3 SATISFIED RATHER THAN
+DODGED."* The verdict corrects that in as many words — **the prohibition
+is met and the positive obligation is ROUTED to `T-107-s1`**, which is
+the lane's own vocabulary for criterion 5 two sections earlier. Nothing
+downstream reads the adjective, the routing card exists and is correct,
+and the surrounding sentences state the true mechanism; the checkpoint
+and ARCHITECTURE both carry the corrected word, and the source comment is
+left for whoever takes `T-107-s1`.
+
+**PROHIBITIONS OBSERVED.** No real model call in any suite, no CLI spawn,
+no backtick inside a shell string, no screen control, no `pkill`, no
+`cargo clean`, no `npm ci` — all three `node_modules` trees, both
+`dist/` directories and `target/` were already present, so
+`integrator.md` rule 1's trigger never fired. **No sibling worktree was
+entered** and no other lane's branch was touched. Port **1420** was read
+with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else — no bind, no
+connect, on any interface. Scratch ports **15280** (e2e) and **15281**
+(boot gate) were each `lsof`-read FIRST (zero rows), then bind-confirmed
+free on `127.0.0.1`, `0.0.0.0`, `::1` and `::` in that order and never
+the reverse, with a probe this session wrote itself rather than trusting
+one by name from the shared scratch directory — the lane's own warning,
+heeded. Both were free again afterwards. The untracked **`z`** at the
+repository root is not this merge's and not this integrator's; it was
+left alone, not staged and not deleted, for the fifteenth checkpoint
+running. No path was staged by wildcard.
