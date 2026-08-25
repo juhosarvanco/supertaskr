@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parseProject } from '../src/index.js';
@@ -34,9 +35,15 @@ describe('smoke — the real docs/ tree parses cleanly', () => {
     expect(f02?.description).toContain('story map');
   });
 
-  it('parses the dogfood component registry (T-008): same C-namespace as ARCHITECTURE.md', () => {
+  it('parses the dogfood component registry (T-008): the parsed set IS the directory', () => {
     const components = result.components ?? [];
     expect(components.length).toBeGreaterThanOrEqual(5);
+    // THE THREE BLOCKS BELOW DOCUMENT A HAND-WRITTEN ID ARRAY THAT NO
+    // LONGER EXISTS HERE (T-033) — they are kept because they are the
+    // record of what that pin cost and of the three-fixture rule it
+    // taught, not because the array survives. Read the T-033 block after
+    // them for what this body asserts today.
+    //
     // RECONCILED AT T-024 (2026-08-16, fix pass, executor claude-opus-5
     // @fresh): the branch declares C-13 genesis pane in
     // docs/architecture/components/ per the task spec and the T-012 §2
@@ -78,20 +85,53 @@ describe('smoke — the real docs/ tree parses cleanly', () => {
     // moves outside app/test. Changed, never loosened: still a whole-array
     // toEqual, every pre-existing id byte-unchanged, C-15 appended in
     // registry order. No lib/parser/src/** byte moved.
-    expect(components.map((c) => c.id)).toEqual([
-      'C-01',
-      'C-05',
-      'C-06',
-      'C-07',
-      'C-08',
-      'C-09',
-      'C-10',
-      'C-11',
-      'C-12',
-      'C-13',
-      'C-14',
-      'C-15',
-    ]);
+    //
+    // T-033 (2026-08-25, executor claude-opus-5): THE ARRAY IS REPLACED BY
+    // THE PROPERTY IT WAS STANDING IN FOR, and the census it froze did not
+    // disappear — it stayed where a component-declaring card's fence
+    // already reaches. Four reconciliations in four months (T-008, T-024,
+    // T-025, T-088) each cost a lane a red in a package it had no reason
+    // to open, behind a task fence reading "zero diff under lib/parser/**"
+    // — and none of them was ever a lib-parser DEFECT. The census lives on
+    // in app/test/architecture-dogfood.test.ts ("the live registry is the
+    // twelve known components", plus its declared-count assertion beside
+    // it) and in app/test/map-dogfood-render.test.tsx's node count; both
+    // sit under app/test/**, which is C-05's app-shell slug — the same
+    // fence a card declaring a component already has to hold. CONVENTIONS'
+    // three-fixture gotcha is therefore NOT weakened: it becomes "declaring
+    // a component moves the two app fixtures, and this one only if you got
+    // the id or the filename wrong".
+    //
+    // WHAT THIS BODY ASSERTS NOW, exactly, so the title is not a claim it
+    // cannot check (the T-096 lesson): for every C-*.md in
+    // docs/architecture/components/, the id the PARSER read out of that
+    // file's FRONTMATTER equals the id spelled in its FILENAME, and the
+    // parser drops none of them and invents none. Two independent readings
+    // — a `id:` field and a directory entry — so the assertion still has
+    // two sides and still reds: on a frontmatter id that disagrees with
+    // its filename (either direction), on a registry file the parser
+    // silently fails to produce a record for, and on a record with no file
+    // behind it. What it deliberately does NOT check is the FILTER or the
+    // ORDER: parseComponentDirectory selects /^C-.*\.md$/ and sorts, and
+    // this derivation uses the same two on purpose, because a body that
+    // disagreed about which files count would red on legitimate registry
+    // work rather than on a defect.
+    const componentsDir = fileURLToPath(
+      new URL('../../../docs/architecture/components/', import.meta.url),
+    );
+    const filenameIds: string[] = [];
+    for (const name of readdirSync(componentsDir)
+      .filter((n) => /^C-.*\.md$/.test(n))
+      .sort()) {
+      // REFUSE RATHER THAN GUESS (ADR-015's addendum applied to a
+      // filename): a registry file is C-<digits>-<slug>.md, and a name
+      // this cannot read fails HERE, by name, instead of contributing a
+      // silently truncated id that would then "agree" with nothing.
+      const id = /^(C-\d+)-.+\.md$/.exec(name)?.[1];
+      expect(id, `registry filename is not C-<digits>-<slug>.md: ${name}`).toBeDefined();
+      if (id !== undefined) filenameIds.push(id);
+    }
+    expect(components.map((c) => c.id)).toEqual(filenameIds);
 
     const parser = components.find((c) => c.id === 'C-06');
     expect(parser).toMatchObject({
