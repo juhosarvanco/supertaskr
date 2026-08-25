@@ -48,11 +48,12 @@ this file is a project's actual name.
    case this rule forbids. Whoever cuts the lane owns this, and a lane
    that discovers it should report the real path rather than move itself.
 
-4. **The executor never touches the integration branch.** No commit, no
-   merge, no push, no branch move, no dependency install run against
-   that checkout. If the lane needs something that exists only there, it
-   waits for the integrator or opens a room. **The one exception is the
-   smallest ceremony tier**: a size-S card has no separate integrator
+4. **NO SEAT BUT THE INTEGRATOR'S WORKS IN THE INTEGRATION BRANCH'S
+   CHECKOUT.** No commit, no merge, no push, no branch move, **no
+   dependency install and no test-suite run** against that checkout. If
+   the lane needs something that exists only there, it waits for the
+   integrator or opens a room. **The one exception is the smallest
+   ceremony tier**: a size-S card has no separate integrator
    (tasks/TASK-FORMAT.md), so its executor plays integrator for its OWN
    work once its tests pass — it merges, checkpoints and removes its own
    worktree. Every larger tier keeps the two roles in different hands.
@@ -62,6 +63,59 @@ this file is a project's actual name.
    executor waits for the VERDICT before playing integrator. "No separate
    integrator" has never meant "no verification"; read the table's row,
    not the tier letter.
+   **THIS RULE SAID "THE EXECUTOR" UNTIL THE SEAT IT NEVER NAMED BROKE IT
+   TWICE IN ONE SESSION.** `architect` appeared nowhere in this file nor
+   in roles/orchestrator.md, and the seat that dispatches, triages and
+   files cards is the one that writes to that checkout most often — so it
+   read a rule addressed to somebody else and obeyed it exactly. **A
+   prohibition that enumerates seats grows a hole for every seat added
+   after it.** The complement of ONE seat has none, which is why the rule
+   is now spelled that way round.
+   **THE TEST RUN IS THE ADDITION AND IT IS THE WORSE HALF.** An install
+   is the destructive case everyone anticipates. **A test run only READS,
+   so it looks harmless — and it is the one that actually collided.**
+   Every other shared surface a lane can corrupt obstructs or confuses;
+   **this one CERTIFIES.** An integrator's suite result is what a merge is
+   signed off on, and a second runner corrupts it in both directions at
+   once: a spurious RED the integrator spends its time investigating, or a
+   spurious GREEN that prompts no second look at all. **Nothing in the
+   tree records that a second runner was present** — status is clean, no
+   lock exists, and the checkout looks idle.
+   **THE REMEDY IS TO SEPARATE THE WRITE FROM THE VERIFICATION, NOT TO
+   FORBID THE CHECKOUT.** A blanket "never touch it" is wrong and will be
+   ignored, because it is contradicted by practice every day: an atomic
+   commit is safe, and has been performed under a running integrator at
+   that integrator's own request. **What collides is the long-lived suite
+   run.** So a seat with standing to write there writes DIRECTLY and
+   briefly, and runs its gate-owed suites **in a checkout of its own** — a
+   sibling detached worktree (rule 3) carrying its own installed
+   dependencies. That checkout is cut and installed once and costs nothing
+   afterwards; the first card on this method's own project to be gated
+   from outside the integration tree is the card that added this clause.
+   **DETECT-AND-REFUSE IS THE BACKSTOP AND IS DELIBERATELY NOT SPECIFIED
+   HERE.** roles/integrator.md rule 1 already carries that shape in full,
+   with the positive control that makes it a check rather than a ritual —
+   read it there rather than re-deriving it. Note what it does and does
+   not cover: it detects a live PRODUCT, and a live INTEGRATOR is a
+   different holder needing a different probe. **Build that probe only if
+   the clause above and the habit beside it leak.** It is machinery; the
+   other two are a clause and a habit, and machinery is the expensive
+   answer to a problem the cheap ones have not yet failed at.
+   **RECORDED WITH ATTRIBUTION, BECAUSE AN UNATTRIBUTED RULE READS AS
+   ADVICE.** Both violations are the ARCHITECT's, hours apart in one
+   session on this method's own project. **(a)** Staging into the
+   integration checkout's index while an integrator held it; that
+   integrator spent about four minutes deciding whether the tree was safe
+   to write. **(b)** Running the full end-to-end suite in that checkout
+   while a *second* integrator worked there: **2 failed / 169 passed** — a
+   thirty-second click timeout, and an `Invalid package config` naming a
+   manifest that was valid and that the checkout's own status reported
+   untouched. **Re-run alone: 171 / 171, exit 0.** Both failures were
+   collision artifacts and neither was a defect. **The finding about (a)
+   was filed three hours before (b) was committed**, by the same seat,
+   which is the fact that decides the shape of this rule: the seat had
+   read the finding, agreed with it, and still could not see itself in a
+   sentence that named the executor.
 
 5. **Concurrent lanes have disjoint `touches:`** — the orchestrator's
    guardrail (tasks/TASK-FORMAT.md), and the executor's too. An executor

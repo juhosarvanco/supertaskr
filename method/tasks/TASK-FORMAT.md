@@ -60,6 +60,36 @@ Discipline, not a gate — nothing can tell a live figure from a stale one
 without re-running the thing that produced it, which is precisely why the
 criterion should name that thing.
 
+**A CRITERION MAY NOT ORDER WORK OUTSIDE ITS OWN CARD'S `touches:`.**
+The reader's half of this is already unconditional and lives in
+`roles/executor.md`: a criterion that cannot be built inside the fence is
+not built, it is recorded and routed. **Nothing bound the seat WRITING
+the criterion**, so the entire burden of refusal sat on the lane — the
+card said do it, the fence said do not, and the executor had to disobey
+its own spec in order to obey the protocol. **A card whose criterion and
+whose fence disagree is a DEFECTIVE CARD, not a hard call for the lane.**
+So: test every criterion against `touches:` as you write it, and where
+one needs a path the fence does not carry, **either widen the fence
+BEFORE dispatch — which is this seat's to do and no lane's — or write the
+criterion as a ROUTE**: *IF this path is outside the fence THEN record it,
+route it as a suggestion naming the fence it needs, and say so.* That is a
+criterion a lane can satisfy exactly instead of approximately, and it
+keeps the finding rather than losing it.
+
+**WHY THE CLAUSE IS HERE AND NOT IN THE EXECUTOR'S FILE.** Putting it
+there would be a third sentence telling the reader to refuse, in a file
+that already says so twice, and it would reproduce the very defect it
+fixes — the rule was never missing from the reader's side.
+**Recorded with attribution, because an unattributed rule reads as
+advice**: on this method's own project a card written by the ARCHITECT
+ordered a deletion outside its own fence, the lane performed it on the
+card's authority, and the verifier ruled that an existing rule had been
+violated rather than that the method had left a question open. **The card
+was the defect.** A criterion-shaped exception cannot be granted, either,
+and the reasoning is worth keeping: *every* out-of-fence edit is made
+because some criterion seemed to want it, so an exception for criteria
+nullifies the fence entirely.
+
 ## Session syntax
 
 `codex` = default session policy (fresh) · `codex@fresh` = explicit fresh ·
@@ -219,6 +249,20 @@ the version bump this file's own format changes carry.
   FIELD (what the stamp is and what its absence means); the dispatch step
   in `roles/orchestrator.md` (5b) is authoritative for the ACT (who
   writes it and in what order). The two must agree where they overlap.
+  **BROKEN ON THIS METHOD'S OWN PROJECT BY THE SEAT THAT OWNS IT, AND
+  RECORDED BESIDE THE RULE RATHER THAN ONLY IN THE INCIDENT.** The
+  ARCHITECT stamped two cards AFTER their lanes were cut, believing that a
+  separate rule — do not leave staged state in a checkout somebody else is
+  holding — forbade the write to the integration branch. **It did not.**
+  The two rules were never jointly unsatisfiable: an atomic write of two
+  frontmatter lines satisfies both, and the workaround was chosen without
+  saying that it had been chosen. **The cost was not the latent merge
+  conflict this bullet warns about.** Both cards went on reading a STALE
+  `touches:` on the integration branch while their lanes built under a
+  narrower one, and other lanes computed fence disjointness from the stale
+  copy and got the wrong answer. **A stamp written late is not a late
+  stamp; it is a FALSE one, for as long as the lane runs** — and this is
+  the second reason for the order, discovered by breaking it.
 - **WHAT ITS ABSENCE MEANS — nothing about the work.** A card at
   `status: planned` whose lane exists means the stamp was not written,
   not that the task is undispatched. The authority on what is being
