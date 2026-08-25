@@ -4,7 +4,7 @@ import type {
   DerivedStatus,
   DriftFinding,
 } from "@/lib/architecture/derive";
-import { UNMAPPED_ID } from "@/lib/architecture/derive";
+import { isDriftFinding, UNMAPPED_ID } from "@/lib/architecture/derive";
 import { churnBarPercent, type ChurnAttribution } from "@/lib/architecture/churn";
 
 /**
@@ -429,18 +429,12 @@ export function edgeVisual(
 // ---------------------------------------------------------------------
 
 /**
- * TRUE when a finding counts as DRIFT (T-033 decision 2). Every finding
- * does except an INFORMATIONAL D3 — a component whose file opts into
- * `non_code:`, where "declared but matching no indexed file" is a
- * statement about what the component IS rather than a divergence. The
- * finding is still reported and still explained; it just stops lighting
- * amber. ONE predicate, three callers (the ring set, the drift flag in
- * derive.ts, the pane footer), so the three cannot disagree about what
- * drift means — T-057's rule.
+ * Re-exported from the ENGINE, never redefined here (T-033). The ring
+ * set, the pane footer and `derive.ts`'s own `hasDrift` flag are three
+ * callers of ONE predicate — T-057's rule, and the thing this lane's
+ * drill caught when there were briefly two copies.
  */
-export function isDriftFinding(finding: DriftFinding): boolean {
-  return !(finding.rule === "D3" && finding.informational);
-}
+export { isDriftFinding };
 
 /** Findings attributed to a node — exactly the set that lights its ring
  * (D1/D5 by source, D3 by subject, D2 on the unmapped bucket). D4 keeps

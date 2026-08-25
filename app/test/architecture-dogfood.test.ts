@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parseProjectFromFiles, type FileEntry } from "@nputer/parser/pure";
-import { deriveArchitecture, UNMAPPED_ID } from "../src/lib/architecture/derive";
+import { deriveArchitecture, isDriftFinding, UNMAPPED_ID } from "../src/lib/architecture/derive";
 import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 
 // THE DOGFOOD CHECK (T-011 acceptance criterion 4): run the derivation on
@@ -1723,6 +1723,11 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // in, and the flag is read off the record rather than inferred from
     // the empty file list they share with nobody else today.
     expect(derived.components.filter((c) => c.nonCode).map((c) => c.id)).toEqual(["C-01", "C-11"]);
+    // AND THE PREDICATE ITSELF, asserted here because this is the fixture
+    // that reads the live registry: `hasDrift` above and the map's rings
+    // are the SAME rule, exported once from the engine. The drill caught
+    // the moment they were two.
+    expect(derived.findings.filter(isDriftFinding).map((f) => f.id)).toEqual(["D1:C-10->C-14"]);
   });
 
   it("stable rollup structure (values live in the unit tables, not here)", () => {

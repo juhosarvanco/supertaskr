@@ -134,6 +134,25 @@ export interface DerivedComponent {
   record?: ComponentRecord;
 }
 
+/**
+ * TRUE when a finding counts as DRIFT (T-033 decision 2). Every finding
+ * does except an INFORMATIONAL D3 — a component whose file opts into
+ * `non_code:`, where "declared but matching no indexed file" is a
+ * statement about what the component IS rather than a divergence. The
+ * finding is still reported and still explained; it just stops lighting
+ * amber.
+ *
+ * IT LIVES HERE, IN THE ENGINE, AND THE RENDERER RE-EXPORTS IT. The first
+ * cut of this change put it in `map-visuals.ts` and left `hasDrift` below
+ * testing `!finding.informational` inline, which is TWO implementations of
+ * one rule — T-057's disease. The drill found it: mutating the visuals
+ * copy reddened the ring tests and left the dogfood's `hasDrift`
+ * assertion green, which is the two copies disagreeing in miniature.
+ */
+export function isDriftFinding(finding: DriftFinding): boolean {
+  return !(finding.rule === "D3" && finding.informational);
+}
+
 /** Drift findings (§4.5), each with a stable content-derived id. */
 export type DriftFinding =
   | { rule: "D1"; id: string; from: string; to: string; fileEdges: ObservedFileEdge[] }
@@ -520,7 +539,7 @@ function deriveDeclared(
   const driftSources = new Set<string>();
   for (const finding of findings) {
     if (finding.rule === "D1" || finding.rule === "D5") driftSources.add(finding.from);
-    else if (finding.rule === "D3" && !finding.informational) driftSources.add(finding.component);
+    else if (finding.rule === "D3" && isDriftFinding(finding)) driftSources.add(finding.component);
     else if (finding.rule === "D2") driftSources.add(UNMAPPED_ID);
   }
 
