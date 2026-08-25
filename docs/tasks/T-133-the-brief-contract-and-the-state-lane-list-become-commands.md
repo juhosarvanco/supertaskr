@@ -270,3 +270,311 @@ has derivers; a verifier's or integrator's brief follows the same
 thirteen-row contract with role-specific rows substituted, and this
 command would print `NOT DERIVED` for those rows rather than assembling
 them. That is honest and it is not complete.
+
+## Verdict: REJECTED — claude-opus-5, 2026-08-26
+
+One defect blocks, it is inside `touches: [tools/e2e]`, and it is two lines
+plus a pin. Everything else in this card is sound and several parts of it
+are better than their own notes claim.
+
+**Bounded read declared.** I read the card at its base ref `5036958` and
+wrote my attack set down BEFORE opening the diff or the notes commit, at
+`2026-08-25T20:51Z`. Lane tip verified `64d148396f65b8e7138650d64af63e3577affd0d`
+by `git rev-parse`. Detached verifier worktree cut from the tip, outside
+the repository, under the session scratch root.
+
+### THE BLOCKING FINDING — two moving figures are stamped as TREE facts
+
+`deriveLane` emits both of these stamped `<- @ 64d148396f65`:
+
+    base commit: 4f3de7e5bb18e6a7dd375b6cbfc7325b3e78479f  <- @ 64d148396f65 ; ... newest Checkpoint
+    integration tip right now: 1d3838b955d194d1e5b1c2f7f1097cc2331acb9e  <- @ 64d148396f65 ; git log --first-parent main
+
+**Neither is a function of the tree it is stamped at.** Both are reads of
+the mutable `main` REF. Re-derive them at the stamped ref and you get
+different commits:
+
+| figure | printed | re-derived AT the stamped ref `64d1483` |
+|---|---|---|
+| newest Checkpoint | `4f3de7e5bb18` | **`93f86562b96a`** |
+| first-parent tip | `1d3838b955d1` | **`64d148396f65`** |
+
+This is not hypothetical. **`main` moved during this verification pass** —
+`4f3de7e` at 20:51Z, `1d3838b` at 20:58Z, when T-132 merged. The same
+command, in the same checkout, at the same HEAD, printed a different
+`integration tip` before and after, under an identical `@ 64d148396f65`
+stamp. The card's own split rules this: *"a TREE fact … carries `@ <ref>`;
+a LIVE-ENVIRONMENT fact carries `read <ISO> on <host>` and never a
+commit."* A branch tip is live for exactly the reason a worktree is, and
+the tool's own prose says *"right now"* on the line while the stamp claims
+otherwise.
+
+**Why this blocks rather than discloses.** The affected figure is the BASE
+COMMIT, which the same row feeds into `create: git worktree add … <base>`.
+`lane-protocol.md` rule two says **STATE THE BASE AS A HASH** precisely
+because *"latest" names a different commit for every reader*. This tool
+states a hash and then attaches a ref that does not determine it, which
+reintroduces the same ambiguity one level up and wearing a provenance
+stamp. A dispatcher who trusts the stamp and re-derives gets `93f8656`
+where the brief said `4f3de7e`. **A figure carrying a wrong ref is worse
+than a bare figure, which is this card's own argument.**
+
+**AND NOTHING PINS IT — MEASURED, NOT ASSERTED.** My M5 probe re-stamped
+both lines `live(...)` (the fix) and ran the whole suite: **192 passed,
+exit 0.** The suite is green with the defect and green with the fix, so no
+body constrains the property in this direction. The existing
+`a TREE fact carries a ref and a LIVE fact carries a clock` body checks
+only that *worktree* lines are live; it never checks that a `<- @ >` line
+is tree-derivable.
+
+**THE FIX, inside the fence.** In `deriveLane`, change the `tree(ctx, …)`
+on `base commit` and on `integration tip right now` to `live(ctx, …)`, and
+add a body asserting that every line whose `via` names a `git log … <ref>`
+of the integration branch carries `<- read `. Verified rendering after the
+change:
+
+    base commit: 4f3de7e5bb…  <- read 2026-08-25T21:11:07.748Z on Mac.lan ; git log --first-parent … newest Checkpoint
+
+### SECOND, also in fence — `stamp()` treats any non-`"tree"` kind as live
+
+`value()` rejects only `undefined`/`null`; it does not check the prov's
+SHAPE, and `stamp()`'s ternary sends everything that is not exactly
+`"tree"` down the live branch. The realistic authoring slip — an object
+literal instead of the constructor — therefore renders a plausible stamp
+and **slips `unstampedLines()`, the tool's own provenance floor**:
+
+    value("the suite is 973 bodies", { ref: "64d148396f65", via: "git rev-parse HEAD" })
+    -> "the suite is 973 bodies  <- read undefined on undefined ; git rev-parse HEAD"   unstamped=0
+
+Same for `{kind:"Tree"}`, `{kind:"tree "}`, `{}`, `0`, `false`. A bad TREE
+ref is caught (the floor requires `[0-9a-f]{7,}`); a bad KIND is not.
+**Latent, not live** — every shipped call site goes through `tree()`/`live()`
+and so through `treeProv`/`liveProv`, which do validate. One line closes
+it: a `default: throw` in `stamp()`. So provenance today is structural
+against OMISSION and merely careful against MALFORMATION.
+
+### The parser: I could not make it silently wrong
+
+**27 mutations of `executor.md`'s normative table, none of which produced a
+partial answer with no finding.** Every claimed throw fired, by name:
+
+- renamed column, changed heading casing, duplicated table, table removed,
+  separator removed → `found N tables headed …, expected exactly one`
+- wrong cell count, literal `|` in a cell, escaped `\|` → `has N cells, expected 4`
+- non-consecutive numbering, rows reordered without renumbering → `numbered consecutively`
+- duplicate label → `two contract rows carry the label`
+- empty or whitespace-only source cell → `names no source`
+- bold not at cell start, `****` → `opens with no bold label`
+- all rows deleted → `the contract table has no rows`
+
+**The label-binding claim holds under the hardest form of it.** With the
+table **fully REVERSED and renumbered 1..13**, all thirteen answers followed
+their labels. With a NEW row inserted at position 3 and the table
+renumbered, the twelve remaining answers did not move and the new row came
+back `NOT DERIVED` with a finding. Rows 4 and 5 swapped: unchanged answers.
+
+**Mid-table truncation is the one thing `contractRows` does not itself
+detect** — a blank or prose line inside the table ends the row loop and
+returns a short set (I got 4, 6 and 7 rows from three such injections).
+It is never silent, because the two-way coverage check in `assembleBrief`
+fires 8, 6 and 5 orphan-deriver findings respectively and the CLI exits 1.
+Worth a `default`-style guard someday; **not a defect today**, since all
+thirteen rows have derivers so every truncation is loud.
+
+**Exit 1 verified end-to-end**, one side only, document mutated:
+relabelling row 9 `**House rules**` produced exactly two findings — the
+unbound row AND the orphaned deriver — and `FOUND_EXIT=1`. Restore proved,
+sha256 `14d3177…5bdc`.
+
+### The lane list: criterion two discharged LITERALLY, not only by fixture
+
+I ruled the fixture resolution SOUND, and then supplied the missing half.
+The fixture drives `laneWorktrees(porcelain, spellings)`, which is the
+identical pure function `context()` calls, and a second body drives the
+LIVE porcelain through the same parser — so the fixture is not a parallel
+implementation. It carries a real POSITIVE CONTROL (T-901 present) before
+any absence claim, which is the property that matters.
+
+Then I created a **real detached worktree at a lane-shaped path** in the
+live tree, outside the repository:
+
+    .../scratchpad/T-133-verify/nputer-T-901   64d1483 (detached HEAD)
+
+    lanes live right now: T-132 T-133      <- before
+    lanes live right now: T-132 T-133      <- with nputer-T-901 live
+    a path filter would have called these lanes: nputer-T-132 nputer-T-133 nputer-T-901
+
+Worktree removed, list restored. **The criterion is met on the live tree
+and not only on a fixture.** The card's criteria did conflict — "a pin
+SHALL drive a detached worktree" against "the command writes nothing" —
+and the resolution was not a weakening: the no-write clause constrains the
+COMMAND, not the test, but a test that adds worktrees to the shared
+administration mutates the very list other lanes' tools read, on a
+repository that demonstrably runs concurrent lanes. Fixture plus live
+parse check was the right call.
+
+### The drill: the vacuity is real and the repair holds
+
+**I reproduced the original bug exactly.** `[ "$a" = "$b" ]` with both
+empty prints `same=YES`. The lane's account of its own first drill is
+accurate and it is the most valuable thing in the pass.
+
+**Every guard positively controlled, in both directions** — a guard that
+never fires is indistinguishable from one that does not exist:
+
+| guard | vacuous input | genuine input |
+|---|---|---|
+| empty-diff abort | empty diff → **FIRED** | non-empty → proceeds |
+| hash is 64 chars | len 0, 3, 63 → **FIRED** | len 64 → passes |
+| per-path restore | `("","")`, `(h,"")`, `(h,h')` → **FIRED** | `(h,h)` → OK |
+| tool resolvable | missing `node` → **FIRED** | real `node` → proceeds |
+
+**No other check in my drill can pass vacuously**: every hash is
+length-checked before comparison, the mutation aborts if its own
+`replace` matched nothing, the diff is read back with `git diff` BEFORE
+the run, and both `node` and `git` are absolute paths — the second cause
+the lane found hiding behind the first.
+
+**Note for the record: the lane's drill script is not in the diff**, so it
+cannot be re-run as shipped. I therefore wrote my own and verified the
+lane's RESULTS rather than its script. They reproduce.
+
+### M4 reproduced at both trees — the pre-fix criterion holds
+
+One side only, producer (`docs/CONVENTIONS.md`) mutated, never an
+assertion; mutation read back with `git diff` before each run.
+
+| arm | tree | result |
+|---|---|---|
+| CONTROL | `64d1483` | **192 passed, exit 0** |
+| M4 `branch \`lane/T-NNN-<slug>\`` | `64d1483` | **exit 1 · 3 failed / 189 passed** |
+| M4, identical mutation | **`5036958`** | **exit 0 · 171/171 · ZERO killed** |
+| CONTROL | `5036958` | **171 passed, exit 0** |
+| M5 (pin-coverage probe, tree→live) | `64d1483` | **192 passed, exit 0 — unpinned** |
+
+**Uniqueness of kill MEASURED against the whole suite, not asserted.** The
+three that died at the fix, named:
+
+    brief.spec.ts:178 THE LANE LIST FILTERS ON THE BRANCH, NEVER THE PATH
+    brief.spec.ts:210 the branch filter is DERIVED from the spelling CONVENTIONS publishes
+    brief.spec.ts:229 the lane spellings refuse a near-miss rather than answering with it
+
+**M4's claim about the repository is TRUE**: at `5036958` the project's
+published lane branch spelling had no reader in any suite — zero killed of
+171. Three read it now.
+
+Restores proved per path by sha256, `git status --porcelain` empty after
+every arm. **All four of the lane's recorded hashes verified byte-exact:**
+
+    docs/CONVENTIONS.md                    b0528df4e231d0ac949c85feaa9e080c21eb6ffe5746fdbb594968bc04f02e3c
+    tools/e2e/scripts/dispatch-brief.mjs   d7deed4fb13544a9b432a8e49a901feb9ca31de4d28f175b3eab2e7799ffde91
+    tools/e2e/scripts/brief.mjs            f50572fa0545715bac52cf7f51cd67e13bc2ae974bcbbf3bfdb04a56699e65ae
+    tools/e2e/tests/brief.spec.ts          00429552acb53a1e932a0294dd8a254637592610c8369199ed7cf2912d1aabe9
+
+`docs/CONVENTIONS.md`'s blob is `a815fe96` at BOTH `5036958` and `64d1483`,
+so the pre-fix arm's target is genuinely the same file. Confirmed.
+
+### The range, with its refs
+
+`git merge-tree --write-tree 1d3838b 64d1483` → **exit 0, read BEFORE the
+substitution**; merged tree `b91ce15fe93624c7c7e7e24685f27d7266d6a7cd`.
+
+**THE RANGE: 8 files, +3000, −1**, against main at `1d3838b`.
+
+The forbidden spelling INFLATED here rather than annihilating, as
+predicted: `main..HEAD` gives 36 files / +3851 / −4926 — **4.50× by files,
+2.92× by churn**. Derived, not expected.
+
+Fence: `tools/e2e` (3 files) plus this card and four suggestion files.
+Nothing outside `touches: [tools/e2e]` but the lane's own ceremony.
+
+### Suites and gates, exits read unpiped from `$?`
+
+Counts derived by counting numbered bodies against green lines — Playwright
+prints no `running N tests` header, so the CARGO-shaped advice does not
+apply here.
+
+| gate | exit | note |
+|---|---|---|
+| `npm test` (tools/e2e) @ `64d1483` | **0** | 192 bodies, 192 green |
+| `npm test` (tools/e2e) @ `5036958` | **0** | 171 bodies, 171 green |
+| `npm run lint:docs` (DOCS GATE) | **0** | not 3; the gate ran |
+| `npm run lint:tokens` | **0** | clean |
+| `npm run typecheck` (tools/e2e) | **0** | |
+| `npm run typecheck` from `app/` | **1** | `Missing script` — the trap, confirmed |
+
+**GRAPH REGEN: asked, not predicted.** Its trigger FIRES (`brief.spec.ts`
+is `*.ts` outside `docs/`), and the regen is a **provable no-op**: the
+committed graph indexes 179 files under `app/src`, `app/src-tauri`,
+`app/test`, `lib/parser` and two configs — **zero under `tools/`**. Nothing
+this lane moved is indexed. BOOT GATE not owed (no `app/**`, no manifest).
+**The lane's notes never record asking**, which the card explicitly
+required; the answer happens to be "nothing owed".
+
+### Security sweep (role step 3) — clean
+
+- `roleText` allowlists `/^[a-z][a-z-]*$/`. `--role ../../../../etc/passwd`,
+  `--role 'executor;id'` and `--role 'a$(id)'` all → **exit 3**, no read
+  outside `method/roles/`, no traversal.
+- `git()` uses `execFileSync("git", [...argv])`. **No `shell: true`, no
+  `execSync`, no string-built command anywhere in the diff.**
+- **Zero dependency changes** — `package.json` and the lockfile are not in
+  the range. No secrets or keys.
+- Exit codes hold: 2 unknown flag / positional / no arm / unknown card,
+  3 could-not-run, 0 clean, 1 found.
+
+### It is a read — proved
+
+Repository state **byte-identical** before and after
+`--task T-133 --state --full`: `git status --porcelain`, `HEAD`, the
+sha256 of every file under `.git/worktrees`, and the sha256 of `.git/index`.
+Runnable with no lane: my checkout is detached and not a task branch, and
+the command exits 0 in it.
+
+### What this brief and the card got wrong
+
+1. **The card's notes misdescribe the tool's own behaviour on other roles.**
+   They say a verifier's brief *"would print `NOT DERIVED` for those rows
+   rather than assembling them."* It does not. `method/roles/verifier.md`
+   carries no four-column table, so `--role verifier` **throws — exit 3,
+   `found 0 tables headed …`**. Honest in spirit, wrong in mechanism, and
+   the mechanism is this card's own subject.
+2. **The dispatching brief's self-correction is itself correct, verified.**
+   It said *"two checkpoints removed a live row count from STATE"*, then
+   corrected to one, and not a checkpoint. Confirmed independently:
+   **`14bc505`**, whose diff removes *"The row count is weather — it has
+   been 14, 7, 6, 5, 4 and now 6"*, and whose subject is **"STATE
+   correction in place"**. Exactly one, and not a checkpoint. The origin of
+   the "two" is visible in that same subject — *"went stale TWICE inside
+   the checkpoint that derived it"* — two staleness events, one removal.
+3. **Would the tool have caught it? No — and this bounds the card's claim.**
+   No contract row carries "what past editions of STATE did"; that sentence
+   is narrative. The tool removes the NEED for the figure it was about, but
+   it would not have flagged the wrong digit or the wrong noun.
+4. **The brief's live-tree figure moved again while I verified.** It said
+   "five rows against two lanes"; it was six against two with my worktree,
+   seven with the T-901 probe, and `main` advanced `4f3de7e`→`1d3838b`
+   mid-pass. Third independent measurement that a typed lane list is a
+   snapshot of something faster than the file — which argues FOR this card.
+5. **`note()`'s digit rule is ASCII-only and over-broad in the other
+   direction.** `note("T-133")` THROWS — the tool can never name a card in
+   its own prose — while `note("１９２ tests")` (fullwidth) and
+   `note("one hundred ninety-two")` pass. Minor; the shipped notes are
+   digit-free.
+6. **Findings carry bare digits on stderr** (`FOUND 2 thing(s)`,
+   `contract row 9 …`), outside the record system entirely. Disclosure, not
+   a defect: stderr is diagnostics and stdout is what a dispatcher pastes.
+7. **`**   **` yields an empty label** where `****` throws. Still loud —
+   two findings, exit 1 — so cosmetic.
+
+### Frontmatter deliberately untouched
+
+I stamped no `verifier:`, `verified_by:` or `review:`, and I did **not**
+move `status:`. Per `TASK-FORMAT.md`, `status: rejected` means the file
+MOVES to `docs/tasks/rejected/`, which is emphatically not what this
+rejection means — the fix is two lines inside the existing fence. The
+status transition belongs to whoever routes this.
+
+**Verdict measured at `64d1483`. This verdict is itself a write**, so the
+DOCS GATE was re-run at my own tip (role rule 7) and the result is recorded
+in the commit that carries this section.
