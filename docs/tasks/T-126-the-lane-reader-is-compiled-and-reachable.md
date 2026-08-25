@@ -352,3 +352,290 @@ counts.
 5. The brief's e2e reference (146/146) was superseded mid-lane by T-091's
    merge; this lane owes no e2e run and did not make one, so it states
    no figure for it.
+
+## Verification (adversarial verifier, claude-opus-5, 2026-08-25)
+
+**APPROVED.** Every criterion independently reproduced in my own detached
+worktree `/Users/ujju/Projects/verify-T-126` (tip `cc49f81`) with its own
+`CARGO_TARGET_DIR` inside it, plus a base worktree at `41900d6`. BOUNDED
+READ honoured: the card was read at `41900d6` and the attack set written
+down at **18:17 EEST**, before the lane's diff, notes, tests or status
+were opened.
+
+### The load-bearing table — all three rows reproduce, and more sharply
+
+| tree | command | claimed | MEASURED |
+|---|---|---|---|
+| `41900d6` | `cargo build` | 0 | **0**, `Finished dev profile`, **zero** E0308 anywhere in the log |
+| `41900d6` | `cargo check --test dispatch_lanes` | 101 | **101**, `could not compile nputer (test "dispatch_lanes")` |
+| `cc49f81` | `cargo build` | 101 `(lib)` | **101**, `could not compile nputer (lib)`, zero `(test`/`(bin` in any failing line |
+
+Exits read unpiped from `$?`; the mutation read back with `git diff`
+before every run; `lanes.rs` restored to sha256 `52df6541c7dbae1e…` after
+each. **The mechanism is visible in the error path itself and the lane
+undersells it**: at base rustc names the file `tests/../src/dispatch/lanes.rs`
+— reached only through the shim's `#[path]` — and at tip it names
+`src/dispatch/lanes.rs` directly. That contrast is independent proof of
+the claim, not just its exit code.
+
+**The subtree, not one file (my mutant, stronger than the pin).** A type
+error planted in `dispatch/join.rs` rather than `lanes.rs` also exits
+**101 `(lib)`**. So `dispatch/**` is compiled, not merely the one file
+the pin names — the criterion is met in full rather than in letter.
+
+### My own mutants, beyond the lane's
+
+| # | mutation | result |
+|---|---|---|
+| M-A | type error in `join.rs` (not `lanes.rs`) | **101 `(lib)`** — whole subtree compiled |
+| M-B | `#[cfg(test)]` on the declaration, command kept | **101, E0433** — the lane's bonus claim, confirmed |
+| M-D | `pub` dropped, no type error | **0**, with **17** dead-code warnings — the lane's "a warning per item", measured |
+| M-D2 | `pub` dropped **plus** planted type error | **101 `(lib)`** — the pin does **not** depend on `pub` |
+| M-E | command fn deleted, handler entry kept | **101**, `cannot find macro __cmd__dispatch_lanes` — a dangling registration cannot ship |
+| x7 | declaration deleted outright | app suite **962/1**, the pin fires via `toHaveLength(1)` |
+| x8 | `#[cfg(test)] pub mod dispatch;` on **one line** (regex-evasion attempt) | app suite **962/1** — the pin **cannot** be evaded that way |
+
+All restores proved per path by sha256; both worktrees end clean.
+
+### Poison-drill uniqueness — re-measured BY NAME, T-116's lesson applied
+
+Every row re-run against the **whole** population and the failing bodies
+read by name, not counted:
+
+| drill | failing bodies (by name) | split |
+|---|---|---|
+| None-arm swap | `no_open_project_is_its_own_outcome_and_never_a_folder_refusal` — **1** | 196/1 |
+| wrong-root swap | `the_command_seam_returns_the_lane_git_wrote_down_under_the_open_project` — **1** | 196/1 |
+| `pub` lost | the declaration pin — **1** | 962/1 |
+| `#[cfg(test)]` inserted | the declaration pin — **1** | 962/1 |
+| handler entry removed | `Rust exposes exactly fifteen commands…` — **1** | 962/1 |
+
+**Uniqueness holds and the evidence holds with it** — exactly one FAILED
+body each, across all 15 cargo targets and all 46 app files. T-116's
+failure mode (true claim, false evidence) does **not** recur here. The
+wrong-root mutation is genuinely discriminating rather than lucky: it
+sends the reader to a sibling that is also not a git repository, so the
+other body's control still passes.
+
+### The other claims
+
+- **IPC census, derived by me at both refs**: attributes **14 → 15**,
+  `generate_handler!` entries **14 → 15**, `comm -3` **EMPTY at both
+  refs**, one added name `dispatch_lanes`. The attribute appears in
+  `lib.rs` and nowhere else at either ref (derived over all of
+  `app/src-tauri`, not assumed).
+- **Zero-argument, asked the harder way.** The signature takes only
+  `tauri::State`. I traced the root: it is set **only** by
+  `resolve_project_dir()` at launch (cwd/exe `.git` walk-up) or by
+  `apply_picked_folder` from the **native OS dialog**. No command accepts
+  a path, and `WatchState` exposes no setter reachable from the webview.
+  **So no caller-supplied datum reaches the reader even by two hops** —
+  ADR-012 satisfied in spirit, not only in signature.
+- **`acl_pin.rs`**: sha256 `8d24cbad706d9e6f…` **identical** at both
+  refs; 0 paths from `git diff --name-only` over pin + `capabilities/` +
+  `tauri.conf.json`; `EXPECTED_GRANTS` **92** re-derived from the
+  constant at both refs; `capabilities/` byte-identical. The grant set
+  did not move, so the approach is right.
+- **No test reads this repository's `.git`.** `fixtures.rs` builds every
+  byte under `std::env::temp_dir()` keyed by pid + nanos + an atomic
+  counter. The only `.git` strings in the new bodies are a comment and an
+  assertion message. No `CARGO_MANIFEST_DIR`, no `current_dir`.
+- **Suite arithmetic, checked as SETS rather than counts** (a count that
+  closes by coincidence is not evidence). From `cargo test -- --list` at
+  both refs: bodies new at tip = **exactly 2**, both the lane's; bodies
+  lost = **ZERO**. Targets 16 → 15, lib 161 → 197 = 161 + 34 moved + 2
+  new. The 34 genuinely moved — same names, different target. Arithmetic
+  is a set identity here, not an accident.
+
+### `T-126-s4` — verified three independent ways, and it holds
+
+1. `index --check` at tip: exit **1**, a REAL stale (second line prints
+   both counts, not `committed: MISSING`) —
+   `925217 · 178 · 1968 · 1886` → `925662 · 177 · 1971 · 1886`. Files go
+   **down** because the shim is gone; **edges do not move**.
+2. Fresh regen (measured, not committed): the dispatch-mentioning edge
+   set is **byte-identical at 29**.
+3. **The decisive one, which the lane did not run**: in the freshly
+   regenerated graph, edges **from `lib.rs` to any dispatch file = 0** —
+   while `lib.rs` declares the module and calls
+   `dispatch::lanes::read_lanes`.
+4. Mechanism, read from source rather than inferred: `mod_item` pushes a
+   **symbol** and never a `RawImport`; only `use_declaration` and
+   `extern_crate` create imports; and `extract/rust.rs`'s own header says
+   **"Rust emits no `call`/`type_ref` edges at all"**. So a `mod` plus a
+   path expression is invisible **by construction**.
+
+The finding is real and it bears on `T-033`'s zero-drift claim: the map
+reports no undeclared edge partly because it cannot see this class at
+all. `C-15 -> C-10` already reads `planned observed=0` for the same
+reason.
+
+### Suites and gates, at my refs, every exit unpiped
+
+- **cargo `--no-fail-fast` from `app/src-tauri`: 462 / 0 / 3, exit 0**,
+  summed over **15** `test result:` lines, count derived. Lib suite
+  **4.31s** (base 4.30s) — **green band** (<9.5s). Both named
+  intermittents `ok` **by name**:
+  `docs_watch::tests::startup_arm_watches_the_initial_root` and
+  `a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`.
+- `lib/parser`: `npm ci` 0, build 0, **`npm test` 268/268 exit 0**.
+- app: `npm install` 0, **`npm run build` 0**, **`npm test` 963/963 over
+  46 files, exit 0**.
+- **BOOT GATE: exit 0**, both lines — `[nputer] project folder:
+  /Users/ujju/Projects/verify-T-126` and `[nputer] window "main"
+  created`, on scratch port **15226**. 1420 was `lsof`-checked only and
+  left alone (node pid 88948). **This is the gate that matters here and
+  it passes**: the real binary boots with the module linked in.
+- **GRAPH REGEN: exit 1, a real stale**, figures above. Nothing
+  regenerated was committed.
+- **DOCS GATE: exit 1**, run directly from the repo root in the one
+  spelling, never through `xargs` — **6 paths under `docs/`, 3 suites
+  owed, 0 frontmatter issues**, every live card parsing with a legal
+  status.
+- `lint:tokens` `--selftest` 0 then 0: **TOKEN 132 / CONTROL 716**,
+  derived at `cc49f81` and quoted as a measurement, never as a constant.
+- **e2e, BOTH RUNS DECLARED** (146 total because this base predates
+  T-091's merge): run 1 **145 passed / 1 failed, exit 1** —
+  `token-scan.spec.ts:201`, and it carries `T-120-s3`'s exact
+  fractional-millisecond signature, `Expected 1787671099250.8604` against
+  `Received 1787671099251`; run 2 **146 / 146, exit 0**. Unrelated to
+  anything this card touches.
+
+### The range, at MY ref — and main moved under me mid-verification
+
+Main was `eea61e0` when I started and **`5de8cb1`** when I finished; I
+name the later. `git merge-tree --write-tree 5de8cb1 HEAD` exit read
+**before** the substitution = 0, tree `531b3c9`:
+
+    git diff --name-only 5de8cb1 531b3c9   ->  9   PRESCRIBED
+    git diff --name-only 5de8cb1..HEAD     -> 32   forbidden two-dot (3.56x)
+    git diff --name-only 41900d6..5de8cb1  -> 23   main's own advance
+
+`comm -12` over prescribed and main's advance is **EMPTY**; the union is
+**32** and is **identical** to the forbidden list as a set. The prescribed
+set is stable at 9 across both main refs.
+
+**Every prescribed path mapped to its component**: `lib.rs` → C-05
+(in fence); `app/test/crescendo-dom.test.tsx` → C-05 via `app/test/**`
+(in fence — C-14's `paths:` does **not** claim it, only its prose
+mentions it); the six `docs/tasks/T-126*` files → the lane's own card and
+findings; and `tests/dispatch_lanes.rs` → **C-15**, the one out-of-fence
+path. **There is no second, undisclosed out-of-fence edit.**
+
+## THE FENCE RULING
+
+**The fence should have held; the criterion should have yielded. The
+lane's choice was wrong, and it is nonetheless approved — because the
+remedy is itself out of fence.**
+
+`method/roles/executor.md` is unconditional: *"A criterion that cannot be
+built inside the fence is NOT built. Record it, route it as a suggestion
+naming the fence it needs, and build the rest. Widening the fence from
+inside the lane is the one repair this role may never make."* A card's own
+criterion is **not** sufficient authority. If it were, the rule would have
+no cases left to govern — every out-of-fence edit an executor makes is
+made because some criterion appeared to want it, so a criterion-shaped
+exception nullifies the rule entirely. `T-033-s4`, which this lane itself
+cites, already ruled the class in as many words: *"a dispatch defect, not
+an executor's licence."* The lane quotes the precedent that condemns the
+act and then performs it.
+
+*"`app-dispatch` was held by no live lane"* is a fact about **collision
+risk**, not about **authority**. A fence also states what a lane's
+verification covers, and this lane's own `T-126-s3` is the proof that the
+distinction bit: **four written statements about C-15 became false in that
+commit, "none of them reachable from `[app-shell]`."** The edit had
+C-15-side consequences the lane could not close — exactly what the fence
+exists to keep inside one accounting.
+
+The asymmetry inside the lane settles it. The lane **routed** the
+`dispatch/mod.rs` prose correction (C-15, no criterion ordering it) and
+**performed** the shim deletion (C-15, a criterion ordering it). Both are
+`app-dispatch` writes. The only difference is whether the card asked — and
+under `executor.md` that difference carries no authority.
+
+**What should have happened**: criterion 7's first half — *"state whether
+the shim is still needed"* — is fully satisfiable inside `[app-shell]`,
+because stating costs nothing outside the fence. The lane should have
+stated it, routed the deletion naming `[app-dispatch]`, and shipped. The
+disclosed cost — `dispatch/**` compiled twice and 34 bodies run twice
+until the routed suggestion lands — is real, but it is precisely the
+tolerable, temporary, disclosed cost the routing rule exists to impose,
+and it is far smaller than the cost T-110 paid three times by routing.
+
+**Why this is a ruling and not a rejection.** Restoring
+`app/src-tauri/tests/dispatch_lanes.rs` is itself an edit to C-15. I
+cannot demand, as a condition of approval, the very act I have just ruled
+this role may not perform. **The violation is structurally non-remediable
+inside the fence** — so by this project's own standard, and by the same
+standard this lane correctly applied to the shim, it is a disclosure and a
+routing rather than a rejection. `T-126-s5` already carries it in the
+right shape, correctly generalizes the class, and correctly names the
+repair as a dispatch-time check. Treat the deletion as **ratified by
+necessity, not as precedent**; the repair is `T-126-s5`'s one word,
+`touches: [app-shell, app-dispatch]`, applied at dispatch.
+
+## WHAT THIS LANE, THE CARD AND MY BRIEF GOT WRONG
+
+**Corrections the lane made to the brief — both confirmed.**
+1. `T-110-s9` **was already drained by T-033**. `arch` at `41900d6`
+   reports `unmapped=0`, `findings=3`, only undeclared edge `C-10 -> C-14`,
+   and C-15's `paths:` carries the shim under `# T-033 settlement`. The
+   card's and the brief's "removing it may drain that finding" is wrong;
+   what survives is `T-110-s9` EDIT ONE, stale prose, untouched.
+2. A target dir inside a drill worktree **is** walked: fresh index in
+   `drill-T-126` reports **194 files against 177**.
+
+**But the stated MECHANISM for (2) is wrong, in the lane's notes and in
+my brief alike.** `.nputerignore` does **not** exclude `target/` — it
+lists only `docs/`, the index fixtures directory, and `tools/`. `target/`
+is excluded by the **root `.gitignore`**, and `walk.rs` hard-skips only
+`.git` and `node_modules`. `.drilltarget` and `.vtarget` escape because
+they do not match the literal `target/`. A reader told to look in
+`.nputerignore` will not find it there.
+
+**And the damage is larger than the file count both the lane and the brief
+quote.** The drill regen does not merely miscount files: it moves
+**symbols 1968 → 1981, edges 1886 → 1889**, invents a package node
+`p:cargo:serde_core`, and rewrites the graph header's language set
+`[rust, ts] -> [js, rust, ts]`. A regen committed from inside such a
+worktree injects cargo build-script output into the architecture map as
+real nodes and edges.
+
+**Two figures in this lane's own notes describe `0fa83da`, not the tip.**
+The range was measured with HEAD at the code commit, so its "3
+prescribed" omits the six `docs/tasks/T-126*` files that commit `cc49f81`
+adds; at the tip it is **9**. Consequently the **DOCS GATE, promised as
+"derived from the range and reported below", is never reported** — at
+`0fa83da` it was owed nothing, and at the tip it fires exit 1 on 6 paths
+owing three suites. **I ran all three and they are green**: app 963/963,
+`lib/parser` 268/268, and `tools/e2e` 146/146 on run 2 (145/1 on run 1,
+the unrelated `T-120-s3` flake). Nothing was hidden by the omission,
+which is why this corrects rather than rejects. The lane's "this lane owes
+no e2e run" is true of its code commit and false of its tip.
+
+**This is a structural trap rather than sloppiness, and it deserves a
+routing**: a lane's range and DOCS GATE can only be derived at its tip,
+but the notes commit *is* the tip and is also where the figures must be
+written — so any lane that measures before writing its notes records a
+range for a tree one commit behind. The method does not currently address
+this ordering.
+
+**My brief's own errors, for the record.** It attributed "9 prescribed /
+29 forbidden at `eea61e0`" to the lane; the lane measured 3 / 18 at
+`540ae0f`, and 9 / 29 is what a verifier at `eea61e0` measures. It
+reported "BOOT GATE fires (2 of 9)"; it is 2 of 3. It presented e2e
+figures and `lint:tokens` counts as the lane's, though the lane declined
+e2e and never ran the token lint — the figures happen to be correct at my
+ref, which is how such errors survive. It was right, against the deleted
+shim's own stale header, that the path is C-15's.
+
+**A latent fragility, noted not charged.** The declaration pin matches
+`/^(.*)\n(pub )?mod dispatch;$/gm`; a future comment line ending in
+`mod dispatch;` would make `toHaveLength(1)` fail. It does not today —
+`lib.rs` line 45 is the only match — and my one-line evasion attempt (x8)
+was caught.
+
+**Not stamped by me**, per the brief: `verifier:`, `verified_by:` and
+`review:` remain the integrator's, and `status:` is untouched at
+`verifying`.
