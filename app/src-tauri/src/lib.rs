@@ -14,6 +14,35 @@ pub mod docs_watch;
 /// the seam is driven directly by tests. src/churn.rs states the four
 /// properties its argv, its environment and its output parser hold.
 pub mod churn;
+/// T-126 (C-15's data, C-05's registration): the dispatch surface's Rust
+/// half — the lane reader T-110 built, verified three times, and merged
+/// into nothing.
+///
+/// **THIS ONE LINE IS THE WHOLE OF WHY THIS CARD EXISTS.** `rustc`
+/// compiles no file that no module declares, so from T-110's merge until
+/// this commit `app/src-tauri/src/dispatch/**` reached a compiler only
+/// through `app/src-tauri/tests/dispatch_lanes.rs`, a two-line `#[path]`
+/// shim compiled as part of a TEST target. Measured at `41900d6` in a
+/// detached scratch worktree with its own target dir: a planted type
+/// error in `dispatch/lanes.rs` left `cargo build` at exit **0** with
+/// zero errors and "Finished `dev` profile", while
+/// `cargo check --test dispatch_lanes` over the same mutated byte exited
+/// **101** with `error[E0308]: mismatched types`. The suite proved the
+/// code worked and proved nothing about the app containing it.
+///
+/// **THE FENCE, RECORDED SO THE ROUTING IS NOT READ AS AN OVERSIGHT.**
+/// T-110's `touches:` was `[app-dispatch]`; this line lives in C-05's
+/// `app-shell`, held by a live lane at all three of that card's
+/// dispatches. Its executors routed the wiring rather than widening —
+/// the right call three times over. The defect was never the routing; it
+/// was that the routing had nowhere to land until `app-shell` came free.
+///
+/// `pub` for the reason `docs_watch` and `churn` are, plus one this
+/// module adds: `join.rs`'s surface has no non-test caller yet, so a
+/// PRIVATE module would make every one of its `pub` items dead code and
+/// the declaration that ends the silence would arrive wearing a warning
+/// per item.
+pub mod dispatch;
 mod index_cmd;
 
 /// T-021: the pinned webview ACL surface (test-only module — the pin
@@ -353,6 +382,80 @@ async fn repo_churn(app: tauri::AppHandle) -> ChurnOutcome {
     })
 }
 
+/// T-126: what the lane reader had to say, plus the one fact it cannot
+/// express about itself.
+///
+/// [`dispatch::lanes::LaneScan`] answers five ways about a FOLDER, and
+/// every one of them presumes there is a folder. "No project is open" is
+/// a fact about the APP, so it is named here rather than smuggled in as
+/// a sixth kind of empty — the `ChurnDisabled::NoProject` precedent, and
+/// the same argument `LaneScan`'s own header makes: no two of these are
+/// the same empty list, and a board that renders one string for two of
+/// them can report neither.
+///
+/// It is declared HERE and not in `dispatch/` because that is C-15's
+/// path and this lane's fence is `[app-shell]`. The consequence is
+/// disclosed rather than hidden: `app/src/lib/dispatch-store.ts` (C-15)
+/// mirrors `LaneScan` and does NOT yet mirror this wrapper, which is
+/// `T-126-s1`.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+enum DispatchLanesOutcome {
+    /// Nothing resolved at launch and nothing picked.
+    NoProject,
+    /// The reader ran over the open project. Everything it is able to
+    /// say — including its own four refusals — is inside `scan`.
+    Answered { scan: dispatch::lanes::LaneScan },
+}
+
+/// The seam [`dispatch_lanes`] is a one-line wrapper over: everything
+/// the command does once `WatchState` has been asked which project is
+/// open.
+///
+/// The `churn::churn_at` precedent, and it exists for the same reason: a
+/// `tauri::State` cannot be constructed in a unit test, so a command
+/// whose whole body reads state is a command nothing can drive. The
+/// decision lives where a test can reach it.
+fn dispatch_lanes_at(project_root: Option<&Path>) -> DispatchLanesOutcome {
+    match project_root {
+        None => DispatchLanesOutcome::NoProject,
+        Some(root) => DispatchLanesOutcome::Answered {
+            scan: dispatch::lanes::read_lanes(root),
+        },
+    }
+}
+
+/// T-126: THE FIFTEENTH COMMAND, and F-04's first.
+///
+/// **ZERO ARGUMENTS, AND THAT IS ADR-012 APPLIED RATHER THAN CITED.**
+/// The project root comes from `WatchState` — the same source
+/// `repo_churn` and `index_repo` read — so no path, no branch name and
+/// no task id crosses the boundary inbound. `tauri::State` is an
+/// extractor Tauri fills in, not a caller-supplied datum: the webview's
+/// whole call is `invoke("dispatch_lanes")`. And an app command is not a
+/// webview grant, so `acl_pin.rs` is a 0-file diff at the same 92-grant
+/// `core:default` set (ADR-012, applied rather than reopened).
+///
+/// **SYNCHRONOUS, WHERE ITS TWO NEAREST SIBLINGS ARE NOT, AND THE
+/// DIFFERENCE IS THE WORK.** `repo_churn` spawns a subprocess and
+/// `index_repo` parses a tree, so both go through `spawn_blocking`.
+/// This reads one directory listing plus two files per entry, each
+/// bounded by `MAX_METADATA_BYTES` (4 KiB) with the listing bounded by
+/// `MAX_WORKTREE_ENTRIES` — strictly less work than `docs_snapshot`,
+/// which walks the whole of docs/ on this same thread and has since
+/// T-003.
+///
+/// **WHAT IT DELIBERATELY DOES NOT DO IS JOIN.**
+/// `dispatch::join::join_lanes` needs the board's stamps, and the board
+/// is parsed in TypeScript — so a joining command would have to take
+/// them as an argument, which is the one thing this criterion forbids.
+/// The reader is what the card asks to be reachable; the join stays
+/// reachable to Rust callers and is `T-126-s2`.
+#[tauri::command]
+fn dispatch_lanes(state: tauri::State<'_, WatchState>) -> DispatchLanesOutcome {
+    dispatch_lanes_at(state.project_dir().as_deref())
+}
+
 /// T-025 criterion 1: start the genesis interview. ZERO ARGUMENTS — the
 /// kickoff prompt is assembled Rust-side from the compiled-in method
 /// snapshot plus the open project from `WatchState`, never from the
@@ -540,6 +643,13 @@ pub fn run() {
             // T-013: the fourteenth. A SUBPROCESS surface, still zero
             // arguments and still zero grants (see repo_churn above).
             repo_churn,
+            // T-126: the fifteenth, and F-04's first. Registered in the
+            // SAME commit that declares `pub mod dispatch;` — a module
+            // the binary compiles but the webview cannot reach is half
+            // the defect this card fixes. Zero arguments (the project
+            // root is `WatchState`'s) and zero grants; see the doc
+            // comment on `dispatch_lanes` above.
+            dispatch_lanes,
             // T-025: four app commands, ZERO new webview grants — app
             // commands are not grants, which is the whole ADR-012 point.
             genesis_start,
@@ -757,5 +867,81 @@ mod tests {
         // find it — system temp dirs do not.)
         assert_eq!(git_walk_up(&nested), None);
         let _ = fs::remove_dir_all(&base);
+    }
+
+    // ---- T-126: the lane reader's one door -----------------------------
+    //
+    // NEITHER BODY READS THIS REPOSITORY'S OWN `.git`, and that is the
+    // card's criterion rather than a preference: six lane worktrees and a
+    // drill were live on this machine while these were written, appearing
+    // and disappearing, so a body asserting against the live worktree
+    // list is non-deterministic by construction. Both drive
+    // `dispatch::fixtures`, the temp-directory tree C-15's own bodies use
+    // — one definition of what git writes, not two.
+
+    /// **THE TWO EMPTIES ARE DIFFERENT FACTS.**
+    ///
+    /// `NoProject` is a fact about the APP and every `LaneScan` refusal
+    /// is a fact about a FOLDER, so a wrapper that collapsed them would
+    /// tell a user with no project open that their project is not a git
+    /// repository. The assertion that this is refused needs its POSITIVE
+    /// CONTROL beside it (docs/CONVENTIONS.md's rule): the second half
+    /// proves a real directory DOES reach the reader, so `NoProject`
+    /// cannot be satisfied by "the seam never calls anything".
+    #[test]
+    fn no_open_project_is_its_own_outcome_and_never_a_folder_refusal() {
+        assert_eq!(dispatch_lanes_at(None), DispatchLanesOutcome::NoProject);
+
+        // The control: a real directory, built the way the producer's own
+        // fixtures build one, reaches the reader and comes back as the
+        // reader's own answer about a folder.
+        let root = dispatch::fixtures::scratch("t126-no-project-control");
+        assert_eq!(
+            dispatch_lanes_at(Some(&root)),
+            DispatchLanesOutcome::Answered {
+                scan: dispatch::lanes::LaneScan::NotAGitRepository
+            },
+            "an open folder with no .git must reach the READER's refusal, not the app's"
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// The seam really reaches the reader, and what comes back is the
+    /// lane git wrote down — id, branch and all. A wrapper that returned
+    /// a constant empty scan would satisfy the body above and fail this
+    /// one, which is the whole reason both exist.
+    #[test]
+    fn the_command_seam_returns_the_lane_git_wrote_down_under_the_open_project() {
+        let root = dispatch::fixtures::repo_with_worktrees_dir("t126-seam");
+        dispatch::fixtures::register(
+            &root,
+            "nputer-T-126",
+            &dispatch::fixtures::branch_head("task/T-126-lane-reader-compiled"),
+            true,
+        );
+
+        let outcome = dispatch_lanes_at(Some(&root));
+        let DispatchLanesOutcome::Answered {
+            scan: dispatch::lanes::LaneScan::Scanned { entries, truncated },
+        } = outcome
+        else {
+            panic!("expected a scan of the open project, got {outcome:?}");
+        };
+        assert!(!truncated, "one registered worktree is not a truncated answer");
+        assert_eq!(entries.len(), 1);
+        let dispatch::lanes::WorktreeEntry::Lane {
+            task_id,
+            branch,
+            exists_on_disk,
+            ..
+        } = &entries[0]
+        else {
+            panic!("expected a lane, got {:?}", entries[0]);
+        };
+        assert_eq!(task_id, "T-126");
+        assert_eq!(branch, "task/T-126-lane-reader-compiled");
+        assert!(exists_on_disk);
+
+        let _ = fs::remove_dir_all(&root);
     }
 }

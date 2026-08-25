@@ -536,7 +536,7 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
     ]);
   });
 
-  it("Rust exposes exactly fourteen commands, and T-013 added the subprocess one", () => {
+  it("Rust exposes exactly fifteen commands, and T-126 added F-04's first", () => {
     const lib = readFileSync(resolve("src-tauri/src/lib.rs"), "utf8");
     const handler = /invoke_handler\(tauri::generate_handler!\[([\s\S]*?)\]\)/.exec(lib);
     expect(handler, "the handler list must be findable").not.toBeNull();
@@ -544,7 +544,16 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
       .split("\n")
       .map((line) => line.replace(/\/\/.*$/, "").trim().replace(/,$/, ""))
       .filter((line) => line.length > 0);
+    // T-126 ADDS ONE — `dispatch_lanes`, the lane reader's one door and
+    // the first command F-04 has ever had. Zero arguments (the project
+    // root is `WatchState`'s, never the webview's) and zero webview
+    // grants, which is ADR-012 applied rather than reopened: the 92-grant
+    // `core:default` set is a 0-file diff across the change. It is
+    // deliberately NOT in `frontendCommands()` above — the card asks for
+    // the reader to be REACHABLE, and no criterion asks the shell to call
+    // it yet.
     expect(names.sort()).toEqual([
+      "dispatch_lanes",
       "docs_snapshot",
       "genesis_cancel",
       "genesis_fresh",
@@ -560,6 +569,37 @@ describe("zero new IPC and zero telemetry, counted rather than claimed", () => {
       "repo_churn",
       "start_genesis_here",
     ]);
+  });
+
+  it("the lane reader is declared in the BINARY crate, not only in a test target (T-126)", () => {
+    // **THE ONE ASSERTION THAT SURVIVES THE COMMAND'S DISAPPEARANCE, AND
+    // THE WHOLE OF WHAT T-126 IS.** `rustc` compiles no file that no
+    // module declares. From T-110's merge until this commit,
+    // `app/src-tauri/src/dispatch/**` reached a compiler ONLY through
+    // `app/src-tauri/tests/dispatch_lanes.rs`, a two-line `#[path]` shim
+    // compiled as part of a TEST target — so a planted type error in
+    // `dispatch/lanes.rs` left `cargo build` at exit 0 with zero errors
+    // (measured at `41900d6`), while `cargo check --test dispatch_lanes`
+    // over the same mutated byte exited 101 with E0308. The suite proved
+    // the code worked and proved nothing about the app containing it.
+    //
+    // **WHY THIS BODY IS HERE AND NOT IN `cargo test`.** No body inside
+    // the crate can tell "compiled into the binary" from "compiled under
+    // `cfg(test)`" — under `cargo test` both are true, so the Rust suite
+    // is green either way. That is exactly how the defect survived three
+    // verification passes. A reader of the SOURCE can tell, and this file
+    // already reads `lib.rs` for the handler list one test up.
+    //
+    // `cfg(test)` is named rather than implied because it is the mutation
+    // that restores the defect in full while leaving every Rust body
+    // green: `#[cfg(test)] mod dispatch;` compiles under `cargo test` and
+    // vanishes from `cargo build`.
+    const lib = readFileSync(resolve("src-tauri/src/lib.rs"), "utf8");
+    const declarations = [...lib.matchAll(/^(.*)\n(pub )?mod dispatch;$/gm)];
+    expect(declarations, "lib.rs must declare the dispatch module exactly once").toHaveLength(1);
+    const [previousLine, pubKeyword] = declarations[0]!.slice(1);
+    expect(pubKeyword, "the declaration must be `pub mod dispatch;`").toBe("pub ");
+    expect(previousLine, "the declaration must not sit under a cfg attribute").not.toMatch(/#\[cfg/);
   });
 
   it("the app program still holds the read-only node surface T-073 restored", () => {
