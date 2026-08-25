@@ -103,7 +103,7 @@ values actually seen (`subcommandResults`, `other`) which nobody guessed.
   it SHALL still be surfaced with what it has — a denial the app cannot
   fully describe is not a denial the user should be denied.
 - THE existing `an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code`
-  pin (`app/src-tauri/tests/agent_runner.rs:1347`) SHALL stay green, and
+  pin (`app/src-tauri/tests/agent_runner.rs`) SHALL stay green, and
   the three `#[ignore]` attributes SHALL remain exactly three.
   **NAME CORRECTED 2026-08-25 (T-108, at `43f995a`).** This criterion
   cited `an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail`,
@@ -118,6 +118,31 @@ values actually seen (`subcommandResults`, `other`) which nobody guessed.
   line number and no line COUNT is written into that pointer, on this
   correction's own rule — the section is named instead, because a
   heading survives an edit above it and a digit does not.)
+  **THE POINTER ABOVE LANDED CARRYING A LINE NUMBER ANYWAY, AND T-108's
+  INTEGRATOR REMOVED IT AT MERGE `188262e` (2026-08-25). ITS SHORT LIFE
+  IS THE FINDING, NOT THE TYPO.** The criterion shipped from the lane
+  reading `agent_runner.rs:1347`, and **1347 was correct** — it is the
+  definition's line at the lane's base `765924d` and at its own ref
+  `43f995a`, measured rather than guessed. Then `a9ed33d`, **Merge
+  T-102**, landed at 15:54:46 — **thirty-one minutes after the lane wrote
+  the digit and ten minutes after the lane's tip `baba41b`** — and moved
+  the definition to **1409**. Line 1347 today is an
+  `assert!(out.error.is_none(), …)` inside a different body: it still
+  resolves, and it points at the wrong thing, which is the exact failure
+  mode `docs/CONVENTIONS.md`'s *A CITATION NAMES A SYMBOL, NOT A LINE*
+  gotcha describes and which the clause immediately above states as its
+  own rule. **So the card written to remove stale citations from the
+  archive shipped a fresh one that went stale before its own merge, in a
+  thirty-one-minute window, against a rule it was quoting.** The digit is
+  DELETED rather than refreshed, on that rule; the file path and the
+  function name survive another lane's merge and a digit does not.
+  Re-derived at `188262e`, **from the repository ROOT**:
+  `git grep -n "fn an_in_band_auth_failure" -- '*.rs'` returns exactly
+  one definition, `app/src-tauri/tests/agent_runner.rs:1409`, exit **0**.
+  (The ROOT matters and is not decoration — the same command run from
+  `app/src-tauri/` scopes itself silently to that subdirectory, which is
+  this file's own third trap and the one that made an unrestricted search
+  for the phantom read as exit 1 when it is exit 0.)
 - **A CRITERION THAT NAMES A TEST SHALL NAME IT BY A STRING
   `git grep -- '*.rs'` FINDS AS A DEFINITION**, and **THE PATHSPEC IS
   PART OF THE RULE.** Written here, beside the criterion it governs,

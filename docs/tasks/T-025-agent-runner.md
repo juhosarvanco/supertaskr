@@ -507,7 +507,7 @@ it. Fixed in scope: `classify_line` reads `is_error` and never trusts
 reports the CLI's own words when stderr is silent. The new fake scenario
 `auth-error` transcribes the observed lines verbatim as the regression
 pin (`an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code`,
-`app/src-tauri/tests/agent_runner.rs:1347`).
+`app/src-tauri/tests/agent_runner.rs`).
 
 > **NAME CORRECTED 2026-08-25 (T-108, at `43f995a`). THIS SENTENCE COINED
 > A PIN NAME NO FUNCTION EVER CARRIED**, and T-081's planner copied it
@@ -528,6 +528,17 @@ pin (`an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code`,
 > out` at exit **0** — **the same exit code for a pin that passes and a
 > pin that is not there.** Read the counts; the exit cannot tell them
 > apart.
+>
+> **AND THE LINE NUMBER THIS POINTER CARRIED IS DELETED (T-108's
+> integrator, 2026-08-25, at merge `188262e`).** It landed reading
+> `agent_runner.rs:1347` — true at `43f995a`, false thirty-one minutes
+> later when `a9ed33d`, Merge T-102, moved the definition to 1409. The
+> derivation sits on T-081's criterion 7, beside the rule it broke.
+> **The two filter counts quoted above carry their ref and are therefore
+> still honest, and they have already moved**: at `188262e` the same two
+> runs print `0 passed … 81 filtered out` and `1 passed … 80 filtered
+> out`, both still exit **0**. The trap is the invariant; the digits
+> never were.
 
 Re-run against the real CLI, the failure now reads `api_retry:
 authentication_failed 401 … Failed to authenticate. API Error: 401 OAuth
