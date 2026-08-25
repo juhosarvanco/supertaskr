@@ -5,10 +5,10 @@ feature: F-06
 milestone: 4
 priority: 44
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
-builder:
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
