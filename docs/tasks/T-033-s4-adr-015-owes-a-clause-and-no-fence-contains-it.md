@@ -62,3 +62,26 @@ word the way `docs/CONVENTIONS.md` and `method/` already have one, and
 say so in ARCHITECTURE's slug paragraph. Doing neither leaves a standing
 criterion shape — "amend the ADR in the same change" — that no fence can
 satisfy, and the next card to carry it will hit this again.
+
+---
+
+**HALF DISCHARGED, and the surviving half is the one that generalises.**
+
+The CLAUSE is written: ruling `bb26a93` chose arm (a), and build
+`1baed94` amended both documents —
+`docs/decisions/015-indexer-rust-derivation-ts.md` gains the ownership
+sentence in its Decision section plus a dated addendum, and C-07 says the
+same thing. Arm (b) was refused, arm (c) retained, **T-059 does not
+dissolve**.
+
+**The FENCE half is untouched.** `docs/decisions/` still sits in no
+component's `paths:` and therefore in no `touch_slugs:` and no card's
+`touches:`. T-033's fence was corrected at `bb26a93` to add `app-shell`
+and `docs/decisions/` was not added with it, so this lane wrote an ADR
+clause its fence does not name — done on the authority of the card's own
+ruling (*"Amend C-07 and ADR-015"*), disclosed rather than assumed, and
+still the first time an executor lane has edited an ADR in this
+repository's history. The suggestion above stands unchanged: either give
+`docs/decisions/` a fence word and say so in ARCHITECTURE's slug
+paragraph, or rule that ADR clauses are written at checkpoints and stop
+putting *"in the same change as"* into criteria that no fence can satisfy.

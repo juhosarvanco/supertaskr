@@ -42,3 +42,22 @@ carrying less than the card asked for (`T-089-s7`'s row-5 finding is the
 sibling shape: a fact the brief must transcribe that lives nowhere
 mechanical). Worth considering alongside T-104/T-111, which already
 compute things a dispatcher currently eyeballs.
+
+---
+
+**DISCHARGED by `bb26a93` + `5e6fc8c` (2026-08-25), recorded here rather
+than re-triaged** (CONVENTIONS: a finding resolved by other work keeps
+`status: suggested` and records the discharge in its own body). The
+architect made all three rulings on T-033's card under THE THREE RULINGS,
+corrected the fence to add `app-shell` in the same commit, and stated in
+writing that *"the dispatch defect is the architect's"* and that the lane
+*"correctly refused to supply them from inside a worktree"*. @human then
+overturned one of them (the cycle) at `5e6fc8c`, which is the mechanism
+working rather than a second defect.
+
+**What is NOT discharged is the general point**, and it is left here for
+triage rather than smuggled into the discharge: nothing verifies a card's
+own stated dispatch preconditions, and `status: building` is not evidence
+that they were met. The cost was measured this time — the lane held
+`app-shell` and `docs/architecture/components/` while idle, blocking two
+other cards, until the delay was noticed by hand.

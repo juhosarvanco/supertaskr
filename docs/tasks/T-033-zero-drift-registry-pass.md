@@ -242,6 +242,255 @@ what stops one clause in two documents from drifting into two answers.
 
 ## Implementation notes
 
+**PHASE 1B SUPERSEDES PHASE 1 BELOW. ALL FIVE CRITERIA ARE NOW MET.** The
+phase-1 notes are kept verbatim under their own heading because they are
+the record of what the lane did before the rulings existed, and because
+the fence ruling they contain is the reason the rulings were made at all.
+Read this section first; everything under *PHASE 1 (superseded)* is
+history with its own dated refs.
+
+---
+
+# PHASE 1B — the rulings arrive, and the repo reaches zero drift
+
+Built by `claude-opus-5 @T-033` on `task/T-033-zero-drift-registry`.
+**The lane was REBASED onto `ad5a0df`** — main had moved thirty-plus
+commits (T-110, T-123, T-124, T-052, T-120 merged; the rulings landed on
+this card at `bb26a93` and @human's overturn at `5e6fc8c`), and this card
+is *about the finding set*, so building against the old base would have
+produced fixture values that were wrong at the merge. The rebase replayed
+three commits with **no conflict**, and the card in this lane now carries
+the architect's ruling text byte-for-byte. The pre-rebase tip is kept as
+`lane-backup-T-033-9b9472b`.
+
+## WHAT THE THREE RULINGS ASKED FOR, AND WHAT EACH ONE COST
+
+| ruling | built | where it went beyond, or stopped short |
+|---|---|---|
+| (1) umbrella, arm (a) then declare | C-16 shared primitives; every surviving edge declared | claims a THIRD path, `lib/verdicts.ts` — `T-033-s6` |
+| (2) `non_code`, opt-in never inferred | parser field + derivation + renderer, tests in both layers | its stated example (C-15) evaporated — `T-033-s9` |
+| (3) ADR-015/C-07, arm (a) | both documents amended, T-059 kept | `docs/decisions/` is still in no fence — `T-033-s4` |
+
+**THE RESULT, derived at `ad5a0df` before and after, by both engines.**
+
+| | at `ad5a0df` | after |
+|---|---|---|
+| findings | **15** (12 D1, 1 D2, 2 D3) | **3** (1 D1, 2 informational D3) |
+| undeclared | 12 | **1** |
+| unmapped | 1 | **0** |
+| relation rows / tally | 35 · 14 conf / 12 undecl / 9 planned | **36 · 26 / 1 / 9** |
+| components with drift | 7 | **1** |
+| registry | 12 components | **13** |
+| indexed files | 178 | **178** — unchanged, which is the point |
+
+The one undeclared row left is `D1:C-10->C-14`, and it is left on purpose:
+declaring it writes this registry's first cycle against the confirmed
+`C-14 -> C-10`, @human ruled that out, and the extraction is **T-125**.
+C-10's component file names T-125 as its owner, so the card's completion
+condition — *every remaining undeclared edge either declared or owned by a
+named card* — holds with one row outstanding.
+
+## THE FOUR PLACES THE REPOSITORY CONTRADICTED THE RULINGS
+
+Every one is derived, and each is filed rather than absorbed silently.
+
+1. **`verdicts.ts` had to move too, or the ruling contradicts itself.**
+   The path list names `components/ui/**` and `lib/utils.ts`; the same
+   ruling enumerates the surviving rows as `C-05->C-13` and `C-05->C-14`
+   *and no others*. Measured: `C-08->C-05` is 3 `cn` edges plus
+   `board-model.ts -> verdicts.ts`, and `C-09->C-05` is 1 `cn` plus
+   `TaskDetailPanel.tsx -> verdicts.ts`. Extract only the two named paths
+   and both rows survive on `verdicts.ts` alone — and then declaring them
+   writes cycles against the declared `C-05->C-08`, while leaving them
+   misses zero drift. `verdicts.ts` passes every test `utils.ts` passes
+   (three consumers, **zero imports of its own**, and T-017 split it out
+   *"to keep the dependency graph acyclic"*). Extended, disclosed in
+   C-16's own prose, reversal costed in **`T-033-s6`**.
+2. **C-15 is no longer the ruling's example.** Decision (2) says *"C-15
+   has none either, and its D3 is honest not-yet-built amber that must
+   survive"*. Both halves are false at my ref: T-110 merged **seven hours
+   and twenty minutes after the rulings** (`dce93b0` 04:18 → `1223543`
+   11:38, `merge-base --is-ancestor` exit 0), C-15 has **six** files, and
+   its D3 had already cleared on its own. The rule survives its example;
+   what it costs is **`T-033-s9`**.
+3. **A D2 appeared that no ruling could have covered**, for the same
+   reason — `app/src-tauri/tests/dispatch_lanes.rs`, this repository's
+   first. Settled onto C-15 by T-010's own stated rule (a component's
+   suite belongs to the component it exercises), disclosed in C-15's prose
+   and in **`T-033-s8`**.
+4. **`C-12 -> C-05` became a lie and was dropped.** All seven of its
+   observed edges were `cn`/`verdicts`, so after the extraction it
+   measured `planned observed=0` — a declared dependency with nothing
+   behind it, which the map draws as INTENT. Dropping it also closed
+   `C-05 <-> C-12`, a cycle @human's rule forbids and which nobody had
+   noticed. Argued in C-12's own prose.
+
+**AND ONE CYCLE SURVIVES THAT THIS CARD DID NOT CREATE AND COULD NOT
+FIX**: `C-08 <-> C-09`, declared in both directions since T-012's §2
+amendments and confirmed in both (6 edges and 3). It predates @human's
+rule by nine days, its fix is an extraction like T-125's, and
+`app/src/components/board/**` was `app-board`, held live. **`T-033-s10`**.
+
+## CRITERION BY CRITERION
+
+1. **MET.** The umbrella D1s drain, per the recorded decision, with the
+   registry edits and both dogfood fixture deltas in ONE change — the
+   fence gained `app-shell` for exactly this. Every expectation delta is
+   listed below; changed, never loosened.
+2. **MET.** `non_code: true` on C-01 and C-11, each carrying its reason in
+   its own prose. The map's findings on this repo are now exactly the
+   honest set: one owned by T-125, two informational.
+3. **MET, and it is no longer vacuous.** A format field WAS added, so the
+   condition fires: every existing component file parses unchanged
+   (additive only), pinned by the live-tree smoke discipline — the parser
+   suite is 268/268 and the whole-record `toEqual` in `component.test.ts`
+   asserts `nonCode: false` on a fixture that never mentions the key, so a
+   default of `true` or a field that fails to reach the record reds there.
+4. **MET in phase 1 and unchanged here** — and the derived pin paid off
+   immediately: declaring C-16 moved the two app fixtures and **did not
+   red `lib/parser`**, which is the whole reason the pin was rewritten.
+5. **MET.** Arm (a) is written into BOTH documents. Arm (b) refused, arm
+   (c) retained, **T-059 does not dissolve** and stays
+   `blocked_by: [T-033]` — stated explicitly because the criterion asks
+   for the opposite statement if (b) had been chosen.
+
+## THE FENCE, RE-DERIVED AT MY OWN REF
+
+`touches: [docs/architecture/components/, lib-parser, app-map, app-shell]`.
+**Not widened.** The lane list moved twice under this phase; at the last
+read (`git worktree list`, live) it is **T-086 `[docs/CONVENTIONS.md]`,
+T-091 `[tools/e2e]`, T-102 `[app-agent]`, T-107 `[app-interview]`** — all
+four disjoint from mine. The registry files for C-13 and C-14 were edited
+under the LITERAL `docs/architecture/components/` fence, which is why
+`app-interview` and `app-agent` being live is not a collision: T-010's
+precedent is that a slug fences a component's `paths:`, and the registry
+directory is fenced separately by name.
+
+**ONE PATH OUTSIDE THE FENCE, NAMED PLAINLY**:
+`docs/decisions/015-indexer-rust-derivation-ts.md`. Criterion 5 requires
+it and the ruling says *"Amend C-07 and ADR-015"*, so it was written on
+the card's own authority — but `docs/decisions/` is in no component's
+`paths:`, no `touch_slugs:` and no card's `touches:`, and the fence
+correction at `bb26a93` did not add it. Every previous ADR edit in this
+repository's history is a checkpoint, a promotion or the milestone-0
+baseline. `T-033-s4` carries it.
+
+## THE POISON DRILL — `drill-T-033-b`, detached at `1baed94`
+
+Driver and results named per-lane and living **outside the repository**.
+Baseline: parser 268/268, architecture-derive 52/52, map-visuals 41/41,
+dogfood 10/10, map-dogfood 8/8 — all exit 0. Every mutation is
+producer-side, read back with `git diff` before its run, restored and
+proved per-path by sha256 against the drill's own commit.
+
+| # | one-sided producer mutation | result |
+|---|---|---|
+| M1 | `component.ts`: refusal → `Boolean()` coercion | **RED** parser 1/268, the *"string 'false' is the trap"* body alone |
+| M2 | `derive.ts`: `informational: component.nonCode` → `true` | **RED** architecture-derive 4/52 — **and dogfood GREEN**, which is the finding |
+| M3 | `isDriftFinding` → always true | **RED** map-visuals 2/41, map-dogfood 1/8 — **and dogfood GREEN**, which is a DEFECT, fixed below |
+| M4 | drop `non_code: true` from C-11's file | **RED** dogfood 2/10, map-dogfood 2/8 |
+| M5 | return `verdicts.ts` to C-05 | **RED** dogfood 4/10, map-dogfood 2/8 |
+
+Restorations: `component.ts` `3f832849…`, `derive.ts` `146fcdda…`,
+`map-visuals.ts` `bd9b4bc7…`, `C-11-design-tokens.md` `6343056e…`,
+`C-16-shared-primitives.md` `57a6c3b4…`, `C-05-app.md` `1b9dd184…`, each
+equal to the drill commit's own blob; final tracked `git status` empty;
+post-drill parser 268/268 and dogfood 10/10 at exit 0.
+
+**M3 IS THE DRILL EARNING ITS KEEP, AND IT FOUND A REAL DEFECT IN MY OWN
+CHANGE.** `isDriftFinding` was written in `map-visuals.ts` while
+`derive.ts` kept testing `!finding.informational` inline — **two
+implementations of one rule**, T-057's disease, and my own comment claimed
+*"ONE predicate, three callers"*, which was prose the suite could not
+check (the T-096 lesson, committed by the person quoting it). The mutant
+proved it: the visuals copy reddened the rings and left the dogfood's
+`hasDrift` assertion green. The predicate moved into `derive.ts` beside
+the finding type, `map-visuals` re-exports it, the live fixture now pins
+that the two agree — and **re-drilled at `784dad9` the same mutation reds
+all three layers** (map-visuals 2, dogfood 1, map-dogfood 2), which is the
+two copies becoming one, measured.
+
+**M2 IS A GAP RATHER THAN A DEFECT, AND IT IS DISCLOSED.** The inferring
+mutant — the exact bug decision (2) is written to prevent — survives BOTH
+live-registry fixtures, because after this card the only two file-less
+components are the two that are flagged, so "read" and "infer" agree on
+every component that exists. The property is pinned in unit fixtures in
+both layers, on synthetic unflagged components. `T-033-s9`.
+
+## EVERY EXPECTATION DELTA, changed and never loosened
+
+`lib/parser/test/component.test.ts` — `nonCode: false` joins the
+whole-record `toEqual`; four new bodies (true, false, the C-15 property,
+non-boolean refusal over five spellings).
+`app/test/architecture-derive.test.ts` — two D3 literals gain
+`informational: false`; two new bodies (the downgrade with C-02 as its
+positive control in the same body; "never comes from an empty file list").
+`app/test/map-visuals.test.ts` — the component factory gains
+`nonCode: false`, the D3 fixture gains `informational: false`; two new
+bodies (ring set vs panel; the footer).
+`app/test/architecture-dogfood.test.ts` — SEVEN bodies: the census 12 → 13
+ids and declared count; C-15's paths gain a third glob and its files
+5 → 6; `fileComponent.size` HOLDS at 178 (asserted as a non-move, because
+an extraction that changed it would have widened something) and
+`unmappedFiles` → `[]`; the tally gains `["C-16", 3]`, C-05 65 → 62, C-15
+5 → 6, and `["unmapped", 1]` leaves; the findings array 15 rows → 3; the
+relation table 35 rows → 36 with the tally 14/12/9 → 26/1/9; the
+package.path seam body's fourth consumer flips undeclared → confirmed
+(with its count asserted beside it so "confirmed" cannot be reached by the
+edge emptying); the drift array 8 → 1 with `declaredOnly` UNCHANGED as the
+control that proves the two facts came apart rather than both vanishing.
+`app/test/map-dogfood-render.test.tsx` — FOUR bodies: node count HOLDS at
+13 while the bucket leaves and C-16 arrives (asserted by identity, since
+the total is a coincidence); the drift-face body loses every count it
+carried and gains C-10 as its positive control, plus the two D3 rings
+going out while their findings remain; the edge table 35 → 36 with
+undeclared 12 → 1, asserted by `data-edge` identity; the C-05 panel body
+inverts whole — no chip, no `"without declaring the dependency"` sentence,
+with C-10's panel and C-11's informational explanation as controls.
+
+**ONE ASSERTION IS DELIBERATELY LEFT AT ITS PRE-REGEN VALUE**, marked in
+the file with an `*** INTEGRATOR ***` banner: `["C-05","C-12","confirmed",
+32]` **goes to 33 at the checkpoint regen**, because this lane's own
+fixture edit adds `import { edgeKey } from "../src/architecture/MapEdge"`
+to `map-dogfood-render.test.tsx`. Measured, not forecast: the graph was
+regenerated in a throwaway probe, the whole app suite ran **962/962 with
+that row at 33**, the probe was reverted and the committed graph proved
+byte-identical by sha256 (`b99f819b…`). **Nothing else in either fixture
+moves under that regen.**
+
+## GATES, DERIVED FROM MY OWN DIFF
+
+- **GRAPH REGEN — FIRES**, and the gate was ASKED rather than predicted:
+  `index --check --root ../..` exits **1**, a real red printing both count
+  lines — committed `920597 · 178 files · 1959 symbols · 1878 edges`
+  against fresh `921664 · 178 · 1960 · 1882`, **12 files modified, 0 added
+  or removed**. The regen is the integrator's at the checkpoint and is
+  deliberately NOT committed here.
+- **BOOT GATE — OWED and NOT RUN, said loudly.** The diff touches
+  `app/src/**` (four files), which is the trigger. See below.
+- **DOCS GATE — FIRES.** Run from the repo root with root-relative
+  arguments, never through `xargs`, with every new card `git add`ed first.
+
+## COMMANDS AND SUITES — exits off `$?` unpiped, counts derived
+
+`npm ci` + `npm run build` lib/parser **0**/**0** · `npm install` +
+`npm run build` app **0**/**0** (**rebuilt**, not touched) · `npx vitest
+run` lib/parser **0** — **268 passed (268)**, up from 264 by the four new
+bodies · `npx tsc --noEmit` lib/parser **0** · `npm test` app **0** —
+**962 passed (962) across 46 files**, up from 958 by the four new bodies ·
+`cargo test --no-fail-fast` **0** — **455 passed / 0 failed / 3 ignored**
+summed over **16** `test result:` lines · `index --check` **1** (the real
+red above) · regen probe **0**, re-check **0**, app **962/962** against
+the fresh graph, restored and proved.
+
+**THE CARGO SUITE IS GREEN AND THAT IS NOW NEWS RATHER THAN NOISE.** The
+`docs_watch` intermittent was settled at `43803fe` as an 8.7 GB build
+cache rather than a flake; the baseline is a cleaned cache and **no
+`cargo clean` was run by this lane**. 455/0/3 on the first and only full
+run.
+
+## PHASE 1 (superseded) — the notes written before the rulings existed
+
 Built by `claude-opus-5 @T-033` on `task/T-033-zero-drift-registry`, base
 `25a9e2c`. **TWO of five criteria are met, one is vacuous, one is met in
 part, and one is NOT BUILT — and the reason is the same for all of them,

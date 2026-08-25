@@ -81,3 +81,19 @@ distinguish "will never contain indexed code" from "does not contain it
 yet", or C-15's honest signal goes out with the noise. If it is
 accept-and-record, it is in fence for any card holding
 `docs/architecture/components/` and costs nothing else.
+
+---
+
+**DISCHARGED by the T-033 lane itself** (ruling `bb26a93`, build
+`1baed94`). Decision (2) was ruled as the downgrade, opt-in and never
+inferred, and built as a parser field, a derivation flag and a renderer
+change with tests in both layers. This file's central correction — that
+the D3 set is THREE and only two of them are the non-code story — is in
+the ruling verbatim, with C-15 named as the reason the flag must not be
+inferred.
+
+**That example has since evaporated and the rule survives it**: T-110
+merged seven hours after the ruling, C-15 gained six files and its D3
+cleared, so the live tree now has NO unflagged file-less component.
+`T-033-s9` measures what that costs — the inferring mutant survives both
+live-registry fixtures and is killed only by the unit pins.

@@ -110,3 +110,19 @@ the drain on a fence that holds `app/test/**`, at a moment when T-123 is
 not holding it. If the ruling is accept-and-record instead, the same
 table above is the record to paste into C-05's, C-08's, C-09's and
 C-13's prose, and no fixture moves at all.
+
+---
+
+**DISCHARGED by the T-033 lane itself** (ruling `bb26a93`, build
+`1baed94`). Arm (a) was ruled and built: C-16 shared primitives extracts
+the primitives, every surviving edge is declared, and the drain is
+measured at **findings 15 → 3, undeclared 12 → 1, relation tally
+14/12/9 → 26/1/9**. The refutation this file carries — that
+`C-05 -> C-13` and `C-05 -> C-14` are not test-umbrella rows — is quoted
+in the ruling as the reason arm (c) was taken off the table.
+
+Two things this file predicted did NOT survive contact and are corrected
+in the newer findings rather than edited here: the maximal-drain figures
+above were taken at `25a9e2c`, before T-110 and T-123 merged, so the live
+set is larger (12 undeclared, plus a D2); and the extraction needed a
+third path, which `T-033-s6` argues.
