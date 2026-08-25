@@ -74,6 +74,19 @@ pub const SESSION_ID_SLOT: &str = "{session_id}";
 ///   `mkdir` (the empty docs/ subdirectories), `cp` (docs-templates and
 ///   the adapter files copied verbatim). Nothing wider: no `Bash(*)`, no
 ///   `rm`, no `git push`, no network verbs.
+///   **AND THE GRANT IS SPELLING-SENSITIVE, WHICH THIS BULLET USED TO
+///   READ AS THOUGH IT WERE NOT (T-124).** Each pattern is a PREFIX over
+///   a fixed verb, so it covers a command's TEXT and not its EFFECT. A
+///   planner that writes `git -C <projectdir> status --short` — the same
+///   operation, spelled with a directory flag — reaches NONE of the six:
+///   the four git grants begin `git init` / `git add` / `git commit` /
+///   `git status`, and `git -C …` begins with none of those. **All four
+///   git grants are lost to that one spelling, not merely `git status`.**
+///   Measured, not reasoned: [`OBSERVED_PLANNER_REFUSALS`] below carries
+///   the real refusal the real CLI returned for exactly this command.
+///   THE GAP IS NOT CLOSED BY WIDENING, and that conclusion is recorded
+///   with the evidence rather than left to the next reader — see that
+///   const's own doc comment.
 /// - `--disallowedTools WebFetch WebSearch` — free ADR-010 narrowing; a
 ///   genesis interview has zero web business, and denying loudly beats
 ///   discovering it later.
@@ -149,6 +162,190 @@ pub const ADAPTERS: &[&AgentAdapter] = &[&CLAUDE_V1];
 /// growth (§9), not this task.
 pub fn planner_adapter() -> &'static AgentAdapter {
     &CLAUDE_V1
+}
+
+// ---- T-124: the observed refusals, classified where the grants live ----
+//
+// T-101 put the CLI's denial rows on screen, and on their first real day
+// they showed that the planner is refused ITS OWN GRANTED SURFACE. The
+// classification lives HERE, next to the grants it is about, because a
+// finding kept only in a task file is a finding the next author of this
+// table will not meet.
+
+/// WHOSE MECHANISM REFUSED A COMMAND — the question that decides where a
+/// fix can possibly go, and the reason "widen the allowlist" is an answer
+/// to at most one third of what was observed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RefusalMechanism {
+    /// **OURS.** The command reached no pattern in [`CLAUDE_V1`]'s
+    /// `--allowedTools`, so the CLI asked for approval. This is the only
+    /// class an argv change can even address.
+    OurAllowlist,
+    /// **THE CLI'S OWN SAFETY HEURISTIC**, which fires on what a command
+    /// DOES regardless of what we allowlisted. No `--allowedTools`
+    /// pattern switches it off and no flag this adapter may pass reaches
+    /// it — the only bypass is the one [`ADAPTERS`]' own pin forbids.
+    CliSafetyHeuristic,
+    /// **THE CLI'S OWN COMMAND ANALYSER** declining to reason about a
+    /// command's text at all. Same containment as the heuristic: it is
+    /// upstream of the allowlist, so nothing in argv moves it.
+    CliCommandAnalyser,
+}
+
+impl std::fmt::Display for RefusalMechanism {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::OurAllowlist => "our own --allowedTools patterns",
+            Self::CliSafetyHeuristic => "the CLI's own safety heuristic",
+            Self::CliCommandAnalyser => "the CLI's own command analyser",
+        })
+    }
+}
+
+/// What can actually move a refusal, once its mechanism is known.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RefusalRemedy {
+    /// A change to THIS TABLE's argv. Nothing observed carries this, and
+    /// [`tests::every_captured_refusal_is_classified_and_none_is_fixed_by_argv`]
+    /// is what makes that a measured claim rather than a summary.
+    AdapterArgv,
+    /// A change to what the PLANNER WRITES — the kit's own instructions,
+    /// `method/roles/planner.md` and `method/interview/plan-interview.md`.
+    /// OUT OF THIS FENCE by construction: editing them is a method
+    /// version bump whose third file is Rust (`METHOD_SNAPSHOT_VERSION`
+    /// in `kit.rs`), routed to T-104 as `T-124-s1`.
+    PlannerInstruction,
+}
+
+/// One refusal the real CLI returned, with what it is about.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ObservedRefusal {
+    /// The CLI's own reason text. EVIDENCE — see the const's provenance.
+    pub reason: &'static str,
+    pub mechanism: RefusalMechanism,
+    pub remedy: RefusalRemedy,
+    /// Why that remedy and not the other one.
+    pub why: &'static str,
+}
+
+/// **THE THREE REFUSALS A REAL `claude` 2.1.226 RETURNED TO THE PLANNER**
+/// on a live genesis interview, 2026-08-24, and the classification each
+/// one's own text supports.
+///
+/// # Provenance, stated exactly, because these strings cannot be regenerated
+///
+/// `real_cli_arms_forbidden` structurally forbids a test from resolving
+/// the user's CLI (T-047-s6, T-060), so nothing in this suite can produce
+/// them again; a fresh capture costs a real model call. They are data
+/// here rather than prose in a comment for that reason.
+///
+/// They are transcribed from the CLI's rows AS RENDERED BY T-101's denial
+/// notice, not from a JSONL capture — this project holds one of those
+/// (`docs/research/captures/real-planner-turn-2026-08-19.jsonl`, five
+/// days earlier) and it is a different turn. Two consequences, said out
+/// loud so neither is mistaken for transcription:
+///
+/// - `<projectdir>` in the third reason is the TRANSCRIBER'S REDACTION of
+///   the user's real project path (the 2026-08-19 capture shows the CLI
+///   writes real paths);
+/// - the source transcription wraps quoted fragments in markdown code
+///   spans. Those backticks are the transcriber's and are removed here.
+///   **That reading is not a guess**: the third reason's first 85 bytes
+///   are byte-identical to the 2026-08-19 capture's own
+///   `subcommandResults` message, which carries no backticks around the
+///   command it quotes. `the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture`
+///   in `tests/agent_runner.rs` asserts that agreement against the file,
+///   so a paraphrase here reds against real captured bytes.
+///
+/// # The classification, and why it does NOT end in a wider grant
+///
+/// Only ONE of the three is ours, and even that one is not fixed by argv.
+/// The reason is refusal 1: it establishes that this CLI carries a
+/// hook-safety guard on directory-changing git which fires INDEPENDENTLY
+/// of the allowlist. Refusal 3's command IS directory-changing git. So a
+/// pattern admitting it would still meet refusal 1's guard — **the
+/// widening would be both wider and ineffective**, which is the strongest
+/// possible reason not to make it.
+///
+/// And the only patterns that COULD admit it are worse than the gap:
+/// `Bash(git -C:*)` grants every git subcommand in every directory on
+/// disk (`push`, `reset --hard`, `clean -fdx`), and a runtime-substituted
+/// project path would put a `/`-bearing user-controlled string into a
+/// permission grant — the exact class [`validate_session_id`] refuses
+/// from argv on purpose. ADR-012's narrowness lives in the signature;
+/// there is no narrow spelling of "this directory" here.
+///
+/// **THE ADAPTER THEREFORE DID NOT MOVE.** `spawn_args` is byte-identical
+/// to what T-023's verdict recorded, pinned by
+/// [`tests::allowed_tools_are_exactly_the_kits_imperative_surface`].
+pub const OBSERVED_PLANNER_REFUSALS: &[ObservedRefusal] = &[
+    ObservedRefusal {
+        reason: "This command changes directory before running git, which can execute \
+                 untrusted hooks from the target directory. Approve only if you trust it.",
+        mechanism: RefusalMechanism::CliSafetyHeuristic,
+        remedy: RefusalRemedy::PlannerInstruction,
+        why: "The reason names the CLI's OWN guard: changing directory before git can run \
+              hooks from the target tree. It is a judgement about what the command DOES, \
+              taken before ours is consulted, so no --allowedTools pattern and no other \
+              flag can switch it off. The only thing that avoids it is not writing the \
+              directory-changing spelling - and the planner never needs to, because its \
+              cwd already IS the project directory.",
+    },
+    ObservedRefusal {
+        reason: "Redirect target concatenation contains $/` — unanalyzable gap or substitution",
+        mechanism: RefusalMechanism::CliCommandAnalyser,
+        remedy: RefusalRemedy::PlannerInstruction,
+        why: "The CLI's own analyser declining to parse a shell REDIRECT target that \
+              carries a `$` or a backtick - upstream of any allowlist, so argv cannot \
+              reach it. And the write should not have gone through the shell at all: \
+              `--permission-mode acceptEdits` already auto-accepts a file write inside \
+              the cwd through the Write tool, with no Bash grant involved. The adapter \
+              ALREADY passes the flag that makes this unnecessary; what is missing is \
+              the instruction to use it.",
+    },
+    ObservedRefusal {
+        reason: "This Bash command contains multiple operations. The following part requires \
+                 approval: git -C <projectdir> status --short",
+        mechanism: RefusalMechanism::OurAllowlist,
+        remedy: RefusalRemedy::PlannerInstruction,
+        why: "OURS, and it names our narrowness exactly: it quotes the command and says \
+              it requires approval. `git -C <dir> status --short` reaches no grant, \
+              because every pattern here is a PREFIX over a fixed verb and none of the \
+              four git prefixes is a prefix of it. THE REMEDY IS STILL NOT ARGV: refusal \
+              1 above shows the same command meets a hook-safety guard our allowlist \
+              cannot reach, so a widened pattern buys a wider grant and changes nothing. \
+              The bare spelling is already granted; writing it is a planner instruction.",
+    },
+];
+
+/// The command prefix a `Bash(<prefix>:*)` grant covers, or `None` if the
+/// pattern is not that shape. Parses OUR OWN literal — no claim about the
+/// CLI is involved in this function.
+pub fn bash_grant_prefix(pattern: &str) -> Option<&str> {
+    pattern.strip_prefix("Bash(")?.strip_suffix(":*)")
+}
+
+/// Which of [`AgentAdapter::allowed_tools`]'s grants a command's TEXT
+/// reaches, under the prefix rule the grant's own spelling states.
+///
+/// **THE ONE CLAIM ABOUT THE CLI HERE IS THE PREFIX RULE, AND IT IS
+/// CALIBRATED RATHER THAN ASSUMED.** The single real data point this
+/// project holds is [`OBSERVED_PLANNER_REFUSALS`]'s third entry: the real
+/// CLI refused `git -C <projectdir> status --short` while `Bash(git
+/// status:*)` was granted. A prefix rule predicts exactly that, and
+/// nothing else among the six explains it. Note what does NOT depend on
+/// the rule being exactly right: the classification above rests on the
+/// captured text, which names its own mechanism.
+///
+/// The boundary is checked so `mkdir` cannot be claimed to cover
+/// `mkdirfoo` — a grant over a verb ends at a word boundary or at the end
+/// of the command.
+pub fn granted_prefix_reached(adapter: &AgentAdapter, command: &str) -> Option<&'static str> {
+    adapter.allowed_tools().iter().copied().find_map(|pattern| {
+        let prefix = bash_grant_prefix(pattern)?;
+        let rest = command.strip_prefix(prefix)?;
+        (rest.is_empty() || rest.starts_with(' ')).then_some(prefix)
+    })
 }
 
 // ---- T-039: the session-id gate ----------------------------------------
@@ -640,6 +837,28 @@ impl AgentAdapter {
     /// argv for the one-shot version probe (§6).
     pub fn version_argv(&self) -> Vec<String> {
         vec!["--version".to_string()]
+    }
+
+    /// The values this adapter grants after `--allowedTools`, derived from
+    /// the spawn template rather than transcribed (T-124).
+    ///
+    /// ONE derivation, so the classification bodies and the production
+    /// code cannot disagree about what is granted — the same reason T-047
+    /// moved the argv length rule out of its pin and into
+    /// [`check_no_data_borne_flag`]. The slice ends at `--disallowedTools`
+    /// because that is the next flag in this template; a template without
+    /// one yields everything to the end, which is the honest answer for a
+    /// shape this table does not currently have.
+    pub fn allowed_tools(&self) -> &'static [&'static str] {
+        let Some(start) = self.spawn_args.iter().position(|a| *a == "--allowedTools") else {
+            return &[];
+        };
+        let rest = &self.spawn_args[start + 1..];
+        let end = rest
+            .iter()
+            .position(|a| a.starts_with("--"))
+            .unwrap_or(rest.len());
+        &rest[..end]
     }
 }
 
@@ -1254,6 +1473,175 @@ mod tests {
         }
         let denied: Vec<&str> = argv[end + 1..].iter().map(String::as_str).collect();
         assert_eq!(denied, vec!["WebFetch", "WebSearch"]);
+    }
+
+    /// T-124: THE GRANT COVERS A SPELLING, NOT AN OPERATION — and the
+    /// positive control is what makes that a measurement.
+    ///
+    /// A body asserting a command is NOT covered cannot tell "refused" from
+    /// "there was nothing there" (CONVENTIONS: a negative assertion needs a
+    /// positive control). So each refused spelling is asserted BESIDE the
+    /// accepted twin that differs from it only by the directory flag: the
+    /// twin reaching its grant is what proves the miss is about the
+    /// spelling and not about the fixture.
+    #[test]
+    fn the_granted_spelling_and_the_planners_spelling_are_not_the_same_command() {
+        let reach = |command: &str| granted_prefix_reached(&CLAUDE_V1, command);
+
+        // --- THE POSITIVE CONTROL: the bare spellings DO reach a grant ---
+        for (command, prefix) in [
+            ("git status --short", "git status"),
+            ("git init -q", "git init"),
+            ("git add -A", "git add"),
+            ("git commit -m \"genesis\"", "git commit"),
+            ("mkdir -p docs/decisions docs/tasks docs/rooms", "mkdir"),
+            ("cp .nputer/genesis/kit/adapters/CLAUDE.md .", "cp"),
+        ] {
+            assert_eq!(reach(command), Some(prefix), "the granted spelling: {command:?}");
+        }
+
+        // --- AND THE `-C` SPELLING OF THE SAME OPERATION REACHES NONE ----
+        // Not merely `git status`: ALL FOUR git grants are lost to it,
+        // which is more than the finding that opened this card claimed.
+        for command in [
+            "git -C /Users/x/proj status --short",
+            "git -C /Users/x/proj init -q",
+            "git -C /Users/x/proj add -A",
+            "git -C /Users/x/proj commit -m \"genesis\"",
+        ] {
+            assert_eq!(
+                reach(command),
+                None,
+                "T-124: the planner's own spelling must reach no grant - if this passes, \
+                 the six patterns are no longer prefixes over fixed verbs: {command:?}"
+            );
+        }
+
+        // THE REASON, asserted rather than narrated: every grant is a
+        // prefix over a FIXED VERB. There is no directory slot to fill, so
+        // no spelling that begins with one can reach any of them.
+        for pattern in CLAUDE_V1.allowed_tools() {
+            let prefix = bash_grant_prefix(pattern)
+                .unwrap_or_else(|| panic!("every grant is `Bash(<prefix>:*)`: {pattern}"));
+            assert!(
+                !prefix.contains('/') && !prefix.contains(" -"),
+                "a grant prefix is a fixed verb, never a path or a flag: {prefix:?} - a \
+                 pattern admitting an arbitrary DIRECTORY is a wider grant than the one it \
+                 replaces (ADR-012: narrowness lives in the signature)"
+            );
+        }
+        // …and the check discriminates: the two widenings T-124 considered
+        // and REJECTED are exactly what it catches.
+        for rejected in ["Bash(git -C:*)", "Bash(cp /:*)"] {
+            let prefix = bash_grant_prefix(rejected).expect("shaped like a grant");
+            assert!(
+                prefix.contains('/') || prefix.contains(" -"),
+                "the fixed-verb check must be able to fail: {rejected:?}"
+            );
+        }
+
+        // The boundary is real: a grant over a verb does not cover a
+        // longer word that merely starts with it.
+        assert_eq!(reach("mkdirfoo bar"), None);
+        assert_eq!(reach("cpio -i"), None);
+        assert_eq!(reach("mkdir"), Some("mkdir"));
+        // And nothing outside the surface reaches anything.
+        assert_eq!(reach("rm -rf /"), None);
+        assert_eq!(reach("git push origin main"), None);
+    }
+
+    /// T-124: EVERY CAPTURED REFUSAL CARRIES ITS MECHANISM, AND NONE OF
+    /// THEM IS FIXED BY AN ARGV CHANGE.
+    ///
+    /// The card's premise was that the classification drives the fix. It
+    /// does — and it drives it OUT of this file: one refusal is ours and
+    /// two are the CLI's own, and the one that is ours meets a second,
+    /// independent guard that our allowlist cannot reach. This body is
+    /// what stops that conclusion from being a paragraph somebody can
+    /// quietly disagree with while widening a pattern.
+    #[test]
+    fn every_captured_refusal_is_classified_and_none_is_fixed_by_argv() {
+        // A CARDINALITY FLOOR (poison shape five): deleting a refusal must
+        // not delete its own check.
+        assert_eq!(
+            OBSERVED_PLANNER_REFUSALS.len(),
+            3,
+            "three refusals were captured; a fourth needs classifying and a missing one is \
+             evidence this project cannot regenerate"
+        );
+
+        // THEY CLASSIFY THEMSELVES, AND INTO THREE DIFFERENT MECHANISMS —
+        // the card's central claim, pinned. If two collapsed into one, the
+        // "the fix is therefore not one fix" reasoning would not hold.
+        // Pairwise rather than by `dedup`, which only removes ADJACENT
+        // duplicates and would have reported three distinct mechanisms for
+        // a list whose first and last agreed.
+        for (i, a) in OBSERVED_PLANNER_REFUSALS.iter().enumerate() {
+            for b in &OBSERVED_PLANNER_REFUSALS[i + 1..] {
+                assert_ne!(
+                    a.mechanism, b.mechanism,
+                    "three refusals, three DIFFERENT mechanisms - that is what makes \
+                     \"the fix is therefore not one fix\" true rather than rhetorical"
+                );
+            }
+        }
+        assert_eq!(
+            OBSERVED_PLANNER_REFUSALS
+                .iter()
+                .filter(|r| r.mechanism == RefusalMechanism::OurAllowlist)
+                .count(),
+            1,
+            "EXACTLY ONE is ours - a classification that found none of them ours would be \
+             the comfortable answer rather than the measured one"
+        );
+
+        // THE CONCLUSION THAT KEPT THE ADAPTER STILL.
+        for refusal in OBSERVED_PLANNER_REFUSALS {
+            assert_ne!(
+                refusal.remedy,
+                RefusalRemedy::AdapterArgv,
+                "T-124 measured that no argv change helps: the two CLI-side mechanisms are \
+                 upstream of --allowedTools, and the one allowlist miss is the SAME command \
+                 the hook-safety heuristic refuses independently. If a future capture is \
+                 genuinely argv-fixable, change this line deliberately and widen with a \
+                 reason - do not widen and then relax the pin. Refusal: {}",
+                refusal.mechanism
+            );
+            assert!(!refusal.why.is_empty(), "a classification carries its reason");
+        }
+
+        // THE EVIDENCE IS INTACT: each reason is the CLI's own text, and
+        // each carries the phrase its classification turns on.
+        for (refusal, phrase) in OBSERVED_PLANNER_REFUSALS.iter().zip([
+            "changes directory before running git",
+            "unanalyzable",
+            "requires approval",
+        ]) {
+            assert!(
+                refusal.reason.contains(phrase),
+                "the mechanism is read out of the CLI's own words: {phrase:?} is missing from \
+                 {:?}",
+                refusal.reason
+            );
+        }
+
+        // AND THE THIRD ONE'S COMMAND IS THE ONE THE GRANTS CANNOT REACH.
+        // This is the join between the evidence and the table above it:
+        // the refused command, lifted out of the CLI's own sentence,
+        // reaches no grant - while its bare twin does.
+        let refused = OBSERVED_PLANNER_REFUSALS[2]
+            .reason
+            .rsplit_once("requires approval: ")
+            .expect("the third reason quotes the command it refused")
+            .1;
+        assert_eq!(refused, "git -C <projectdir> status --short");
+        assert_eq!(granted_prefix_reached(&CLAUDE_V1, refused), None);
+        assert_eq!(
+            granted_prefix_reached(&CLAUDE_V1, "git status --short"),
+            Some("git status"),
+            "the twin the planner should have written is already granted, which is why the \
+             fix is an instruction and not a wider pattern"
+        );
     }
 
     /// The resume template substitutes the id as ONE argv element, and the

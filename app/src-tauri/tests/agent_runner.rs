@@ -1962,6 +1962,96 @@ fn the_tool_denied_fixture_is_a_transcription_not_a_construction() {
     );
 }
 
+/// T-124: THE 2026-08-24 TRANSCRIPTION IS CHECKED AGAINST REAL CAPTURED
+/// BYTES, FOR THE ONE REASON THAT CAN BE CHECKED AT ALL.
+///
+/// `adapter::OBSERVED_PLANNER_REFUSALS` carries three refusals transcribed
+/// from the CLI's rows AS RENDERED on screen — there is no JSONL capture
+/// of that turn, and `real_cli_arms_forbidden` means there never can be
+/// one from a test. So two of the three are unverifiable by construction
+/// and this body does not pretend otherwise.
+///
+/// **THE THIRD ONE IS VERIFIABLE, AND IT IS WORTH THE BODY.** The CLI
+/// emits a fixed sentence ahead of the command it refuses, and the
+/// 2026-08-19 capture on disk contains that same sentence from the same
+/// CLI version. Asserting the transcription reproduces it byte for byte
+/// does two things a comment cannot: it reds on a paraphrase, and it
+/// settles the one transcription question the rendered form leaves open —
+/// whether the backticks in the source are the CLI's or the transcriber's
+/// markdown. **The capture carries none**, so they are the transcriber's,
+/// and the const strips them.
+///
+/// The precedent is the body directly above: a cargo test reading a docs
+/// file, after `snapshot_version_matches_the_live_method_stamps`. This
+/// adds NO new reader — it is the same capture that body already reads.
+#[test]
+fn the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture() {
+    use nputer_lib::agent::adapter::{
+        RefusalMechanism, OBSERVED_PLANNER_REFUSALS,
+    };
+
+    let capture = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../docs/research/captures/real-planner-turn-2026-08-19.jsonl");
+    let raw = fs::read_to_string(&capture)
+        .unwrap_or_else(|err| panic!("{} corroborates the transcription: {err}", capture.display()));
+    let captured_messages: Vec<String> = raw
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str::<serde_json::Value>(l).expect("every capture line is JSON"))
+        .filter(|v| v.get("subtype").and_then(|t| t.as_str()) == Some("permission_denied"))
+        .filter_map(|v| v.get("message").and_then(|m| m.as_str()).map(str::to_owned))
+        .collect();
+
+    // The CLI's fixed sentence, LIFTED OUT OF THE CAPTURE rather than
+    // written down here: a literal in this file would be a third copy of
+    // the same string and would move with any edit to the const.
+    let preamble = captured_messages
+        .iter()
+        .find_map(|m| {
+            m.split_inclusive("requires approval: ")
+                .next()
+                .filter(|p| *p != m.as_str())
+        })
+        .expect("the capture's subcommandResults denial quotes a command after a fixed preamble");
+    assert!(
+        preamble.len() > 40,
+        "a preamble short enough to match by accident proves nothing: {preamble:?}"
+    );
+
+    let ours = OBSERVED_PLANNER_REFUSALS
+        .iter()
+        .find(|r| r.mechanism == RefusalMechanism::OurAllowlist)
+        .expect("one captured refusal is our own allowlist's");
+    assert!(
+        ours.reason.starts_with(preamble),
+        "T-124: the transcribed reason must reproduce the CLI's own sentence byte for byte.\n\
+         capture: {preamble:?}\n\
+         ours:    {:?}",
+        ours.reason
+    );
+
+    // THE DISCRIMINATING HALF: the capture's own quoted command is a
+    // DIFFERENT command from the one 2026-08-24 refused, so this is a
+    // corroboration of the SENTENCE and not of the whole message. Said
+    // out loud, and asserted, so the body cannot be read as claiming more
+    // than it proves.
+    assert!(
+        !captured_messages.iter().any(|m| m == ours.reason),
+        "the two turns refused different commands; if these ever match, one of the two \
+         fixtures is quoting the wrong turn"
+    );
+    // And the backtick question, settled against the file: the CLI writes
+    // the command it refuses PLAIN, so a transcription carrying markdown
+    // code spans would be quoting its own rendering.
+    for message in &captured_messages {
+        assert!(
+            !message.contains('`'),
+            "the CLI's own denial text carries no backticks: {message:?}"
+        );
+    }
+    assert!(!ours.reason.contains('`'), "…and neither does the transcription: {:?}", ours.reason);
+}
+
 // ---- T-029-s6/s7: THE RECOVERED RETRY, AND THE DENIAL THAT WAS NOT THE
 //      CAUSE ---------------------------------------------------------
 //
