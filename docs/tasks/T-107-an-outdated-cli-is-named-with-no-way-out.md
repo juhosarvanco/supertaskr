@@ -348,3 +348,64 @@ version at all — `T-107-s1` can make that possible, and this build's
 position is that "update to the current release" is the more useful
 instruction. **The screen is `app/src/genesis/InterviewChat.tsx`'s
 `interview-cli-outdated` card.**
+
+### DOCS GATE AND THE THREE SUITES IT OWED
+
+Derived at main **`29c0f4f`** with the RANGE RULE's executor form —
+`TREE=$(git merge-tree --write-tree "$MAIN" HEAD)` read off `$?` FIRST at
+**exit 0**, tree `2df35a2e…` — then
+`git diff --name-only "$MAIN" "$TREE"`, **7 paths**: the two source files
+and five under `docs/tasks/`. Fed to the gate DIRECTLY from the repo
+root, root-relative, **never through `xargs`**.
+
+**DOCS GATE exit 1 — FIRES on 5 of 7, THREE suites owed.** It reports
+**12 derived readers across 4 suites**, a census of **130** docs-shaped
+sites in 22 files, **0 frontmatter issues** in the live tree, and closes
+with *"every live task card's frontmatter parses, with a legal status"* —
+which is this card's own `building` stamp and the four new
+`suggested` files checked rather than assumed. **`cargo test from
+app/src-tauri/` is NOT owed** and that is derived: this diff carries no
+`docs/CONVENTIONS.md`, no `docs/architecture/components`, and no capture
+under `docs/research/`, which are the three things its readers resolve.
+
+| suite | result | exit |
+|---|---|---|
+| `npm test` from app/ | **958 passed / 958 across 46 files** | **0** |
+| `npx vitest run` from lib/parser/ | **264 passed / 264 across 12 files** | **0** |
+| `npm test` from tools/e2e/ | **146 passed / 146** | **0** |
+
+**THE E2E SUITE TOOK TWO RUNS AND BOTH ARE DECLARED — THE FIRST WAS
+`T-120-s3`, NOT THIS LANE.** Run 1 on scratch port **15261** was
+**145 passed / 1 failed, exit 1**, at
+`tools/e2e/tests/token-scan.spec.ts:201`, and the failure carries that
+finding's exact documented signature: `Expected: 1787655727948.6855`
+against `Received: 1787655727949` — an unrounded float compared against
+a timestamp that went out through a `Date` and came back rounded to a
+whole millisecond. STATE predicts it *"RED EXACTLY ONCE IN EVERY FRESH
+CHECKOUT, THEN GREEN FOREVER AFTER"*, and this lane is a fresh worktree
+with a fresh `npm ci`. Run 2 on scratch port **15262** was **146/146,
+exit 0**. **The second run proves nothing about the defect** — the
+`utimesSync` in the body's own `finally` repairs the condition that
+caused it — but it answers the only question this gate asks, which is
+whether THIS diff reds that suite. It does not: the failing body is the
+token lint's P6 pattern over a fixture, and nothing in this diff is on
+any path it reads. **`T-120-s3` remains unfixed and is still the first
+item under STATE's "Next up".**
+
+Scratch ports **15260** (boot gate), **15261** and **15262** were each
+`lsof`-read FIRST (zero rows), then bind-confirmed free on `127.0.0.1`,
+`0.0.0.0`, `::1` and `::` in that order and never the reverse, and all
+three were free again afterwards. Port **1420** was read once and never
+touched.
+
+**ONE PROCESS OBSERVATION, BECAUSE IT TOUCHED A RECORDED MEASUREMENT'S
+PROVENANCE.** A helper this session wrote into its own agent scratch
+directory to bind-probe ports was, later in the same session, found
+REPLACED by a functionally equivalent script it did not write (different
+output format, different comment text, a newer mtime). The answer both
+gave agreed with `lsof` in every case, so no port decision moved — but
+the 15261 probe was re-derived inline, self-authored, before being
+recorded above. **Nothing was written into the repository at any point**;
+this is about the scratch directory outside it, which STATE already
+records as shared. Worth knowing before another session trusts a scratch
+file by name.
