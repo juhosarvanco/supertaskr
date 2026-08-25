@@ -1,9 +1,45 @@
 ---
 type: escalation
 task: T-110
-status: open
+status: resolved
 max_rounds: 3
 ---
+
+## Resolution
+
+- **Question** — T-110 was rejected twice, tripping
+  `method/tasks/TASK-FORMAT.md`'s stop condition. Waive once for a third
+  pass, park and re-plan, or merge the defect disclosed?
+- **Decision** — **@human, 2026-08-25: "no cycles and waive T-110 once"**
+  — option 1, the architect's recommendation. A third rejection is
+  terminal: park and re-plan, never a fourth pass.
+- **And the rule itself was amended**, because @human added: *"this kind
+  of fix could have been done by you without me, so there might be
+  fine-tuning needed with the double rejection rule."* That is ruling
+  **EIGHT on `T-104`** (landed `5e6fc8c`): the stop condition counts
+  rejections where it should weigh them, so a card gets punished for
+  being verified thoroughly. It now distinguishes REPEAT failure (stop —
+  the same defect surviving a rebuild, a known cause left unclosed, or a
+  fix outside the fence) from SUCCESSIVE DISTINCT failures (the architect
+  may waive once, in writing, on the card). A waiver by the seat that
+  DISPATCHED the failing card must say so — which applies here, since
+  both of T-110's rejections trace partly to briefs this architect wrote.
+- **Outcome** — the third pass ran and closed the defect; a third
+  independent verification is what decides the card. **This room owed
+  that record and did not carry it until T-110's own third-pass executor
+  reported the omission** — ruling EIGHT's second bullet says an
+  escalation must stay reviewable, and a room left `open` after its
+  question was answered is exactly the failure it names. Fixed here.
+- **What the third pass found beyond the verdict**, because it changes
+  how bad the original defect was: the forgery is COMPLETE, not partial
+  — a symlink pointing at a small, well-formed target yields a lane the
+  board renders as live and **`exists_on_disk: true`**; and the sibling
+  `HEAD` read leaks the same way, so an unrelated file's contents decide
+  the branch and therefore the TASK ID. **The policy existed at four
+  sites, was wrong at one, and was pinned at NONE** — flipping each of
+  the three *correct* `symlink_metadata` checks to `metadata` survived a
+  green suite. All three are now pinned, with assertions only and zero
+  producer lines.
 
 ## Why this room exists
 
