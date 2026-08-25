@@ -956,16 +956,32 @@
   a number: solving the cargo contention WITHOUT a second checkout, by
   giving pipeline runs their own `CARGO_TARGET_DIR`, costs the same
   target dir either way, so full isolation costs about one `node_modules`
-  set more than the half-measure. **THE RULING DEFERRED THE SETUP TO A
-  QUIET TREE AND THE TREE WAS NOT QUIET WHEN IT HAPPENED** — recorded
-  because the caution was a real one and skipping it cost nothing
-  measurable, which is worth knowing next time. The reasoning was that
-  adding an entry while live lanes read `git worktree list` as the fence
-  authority is a needless perturbation; it was created on 2026-08-25 with
-  five lanes live, and the only observed effect is that the list now
-  carries TWO detached non-lane entries at once (this one and a lane's
-  transient drill), which is precisely the reading the bullet above
-  already prescribes. **AND IT EXCUSES NOTHING ABOVE**: the human may be
+  set more than the half-measure. **IT IS BUILT, SWITCHED TO AND IN USE
+  SINCE 2026-08-25, AND BOTH PROPERTIES WERE OBSERVED RATHER THAN
+  PREDICTED** — measured from outside the app, read-only, while T-052's
+  own lane ran. The human's app now runs out of it: the binary is
+  `/Users/ujju/Projects/nputer-app/app/src-tauri/target/debug/nputer` and
+  the vite serving 1420 has that checkout's `app/` as its cwd, both read
+  with `lsof -p <pid>` rather than assumed.
+  **THE PINNING WORKS**: the running app sat at the detached commit while
+  `main` advanced past it, so the app carried strictly fewer commits than
+  the integration branch and did not move when main did — which is the
+  whole of "the app's code cannot move on its own", stated as a relation
+  so it stays true. **AND THE THROUGHPUT CHANNEL IS CLOSED**: the main
+  checkout's `app/src-tauri/target/` mtime did not move for the whole of
+  a session in which a lane ran `cargo test` twice and the graph gate
+  once, because three checkouts now hold three target directories and
+  cargo's exclusive lock is no longer contended. **RE-DERIVE BOTH** —
+  `git -C ../nputer-app rev-parse HEAD` against `main`, and the two
+  target mtimes — rather than trusting this paragraph; they are
+  live-environment facts.
+  **THE RULING DEFERRED THE SETUP TO A QUIET TREE AND THE TREE WAS NOT
+  QUIET**, recorded because the caution was a real one and skipping it
+  cost nothing measurable: it was created with five lanes live, and the
+  observed effect is that `git worktree list` now carries TWO detached
+  non-lane entries at once (this one and a lane's transient drill), which
+  is precisely the reading the bullet above already prescribes.
+  **AND IT EXCUSES NOTHING ABOVE**: the human may be
   on one checkout at any moment, and @human's ruling ratifies every rule
   in this bullet INDEPENDENTLY of the second checkout for that reason, so
   they bind whether or not `../nputer-app` exists.

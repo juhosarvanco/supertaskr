@@ -437,6 +437,41 @@ fixture was left sha256-identical to `HEAD:tools/e2e/fixtures/shell.ts`
 (`2e55d8e5…`) with a whole-millisecond clock. Routed as `T-052-s4` with
 the one-token fix and the probe that shows it round-trips.
 
+### The ruling stopped being a recommendation while this lane ran
+
+**@human switched to the second checkout mid-lane, so the card's own
+proposal is now an observed property rather than an argument.** Read
+from outside the app, read-only, and NOT guessed from a restart:
+
+- the app's pid and start time changed between two `lsof`/`ps` reads
+  (82593 started 03:17:33, then 89201 started 10:54:33), and **the cause
+  is measured rather than inferred** — `lsof -p 89201` puts the binary at
+  `/Users/ujju/Projects/nputer-app/app/src-tauri/target/debug/nputer`
+  with cwd in that checkout, and the vite holding 1420 has
+  `/Users/ujju/Projects/nputer-app/app` as its cwd. **The app moved
+  house; it was not killed.** This is exactly the distinction rule 3 of
+  the new method section asks an integrator to make instead of reporting
+  a pid change as a disturbance.
+- **THE PINNING PROPERTY HOLDS, LIVE.** The running app sits at the
+  detached `c4cfe52` while main advanced to `ce8b8e7` — one commit the
+  integration branch has that the running app does not — and the app did
+  not move when main did.
+- **THE THROUGHPUT CHANNEL IS CLOSED, MEASURED.** The MAIN checkout's
+  `app/src-tauri/target/` mtime stayed at **04:16:09** through a session
+  in which this lane ran `cargo test` twice and `index --check` once
+  (its own target dir, 11:09:49) and the app checkout built its own
+  (10:44:56). Three checkouts, three target directories, no contention —
+  which is the second of the two channels @human's ruling names.
+- **AND THIS LANE DID NOT DISTURB IT.** Port 1420 was read with
+  `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else, before, during and
+  after — no bind, no connect, no signal. Every scratch server ran on
+  15140-15144, each `lsof`-checked then bind-confirmed on `127.0.0.1`,
+  `0.0.0.0`, `::1` and `::` before use and free again after, and each was
+  stopped by its own exact pid. No `pkill` at any point.
+
+Recorded in CONVENTIONS as a RELATION rather than as commit hashes, so it
+stays true; the hashes are here, where a dated note belongs.
+
 ### Where the brief and the card were wrong
 
 - **The worktree path.** The brief said `/Users/ujju/Projects/nputer-T-052`.
