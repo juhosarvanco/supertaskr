@@ -1531,22 +1531,23 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["C-05", "C-09", "confirmed", 3],
       ["C-05", "C-10", "confirmed", 38],
       ["C-05", "C-11", "planned", 0],
-      // *** INTEGRATOR: THIS ROW GOES TO 33 AT YOUR REGEN, AND IT IS THE
-      // ONLY ASSERTION IN EITHER APP FIXTURE THAT MOVES. *** It is 32
-      // here because this file tracks the COMMITTED graph (the fixture's
-      // own maintenance contract), and T-033's lane deliberately does not
-      // commit a regenerated one. The cause is this lane's own fixture
-      // edit: map-dogfood-render.test.tsx — C-05's, under the app/test
-      // umbrella — gains `import { edgeKey } from
-      // "../src/architecture/MapEdge"` so it can assert the surviving
-      // undeclared row by IDENTITY rather than by count, and a test file
-      // importing the pane it renders is exactly the umbrella edge this
-      // row has always counted. MEASURED, not forecast: the lane
-      // regenerated the graph in a throwaway probe, ran the whole app
-      // suite against it (962/962 with this row at 33), then restored the
-      // committed graph and proved it by sha256. Nothing else in this
-      // file or in map-dogfood-render.test.tsx moves under that regen.
-      ["C-05", "C-12", "confirmed", 32],
+      // *** DISCHARGED AT T-033's CHECKPOINT: 32 -> 33. *** The lane left
+      // this row at 32 because the file tracks the COMMITTED graph (the
+      // fixture's own maintenance contract) and deliberately committed no
+      // regenerated one; the integrator's regen is what moves it. The
+      // cause is this lane's own fixture edit: map-dogfood-render.test.tsx
+      // — C-05's, under the app/test umbrella — gains `import { edgeKey }
+      // from "../src/architecture/MapEdge"` so it can assert the
+      // surviving undeclared row by IDENTITY rather than by count, and a
+      // test file importing the pane it renders is exactly the umbrella
+      // edge this row has always counted.
+      // THE LANE'S FORECAST HELD EXACTLY, AND IT WAS ASKED RATHER THAN
+      // TRUSTED: the checkpoint regen (923899 -> 925217 bytes, symbols
+      // +1, edges +5, files ~12) left the app suite at 961/962 with this
+      // ONE row red at `expected 32, received 33` — the single deferred
+      // assertion the verdict promised — and 962/962 once moved. Nothing
+      // else in this file or in map-dogfood-render.test.tsx moved.
+      ["C-05", "C-12", "confirmed", 33],
       ["C-05", "C-13", "confirmed", 17],
       ["C-05", "C-14", "confirmed", 8],
       // NEW at T-033: `components/shell/PaneRail.tsx -> lib/utils.ts` and

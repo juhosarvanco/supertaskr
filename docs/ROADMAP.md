@@ -53,6 +53,32 @@
   create and clear findings where before it could do neither. The
   committed graph pays 648 886 → 890 866 bytes for it, 89.09% of its
   own budget, which is now F-06's tightest live constraint
+  Since T-033 (2026-08-25) the map finally tells the truth about ITSELF.
+  F-06's whole premise is "drift as a first-class signal", and this
+  repository's own map had been carrying **fifteen findings** — twelve of
+  them undeclared edges the registry simply never wrote down — for long
+  enough that the amber had become scenery rather than signal. It is now
+  **three**, and every one of the three is honest: **one** undeclared row
+  (`C-10 → C-14`, routed to T-125) and **two** informational D3s. The
+  relation table goes **14 confirmed / 12 undeclared / 9 planned → 26 /
+  1 / 9**, `unmapped` goes 1 → **0**, and 178 of 178 indexed files map to
+  a component. Three things made it possible and each is reusable: a
+  **thirteenth component**, C-16 Shared primitives, extracted out of C-05
+  so the `ui/` element set, `cn` and the verdict classifier are a LEAF
+  every pane may depend on — which is what lets the real edges be
+  declared without writing a cycle; a `non_code:` field, additive and
+  opt-in, that downgrades D3 to informational for the two components
+  which are conventions rather than code (C-01, C-11) instead of leaving
+  a permanent amber nobody could ever clear; and ADR-015 finally RULED
+  rather than tolerated — the crate owns the reality-side join,
+  TypeScript owns intent ⨝ tasks, so the map and the two engines stop
+  being describable by two incompatible sentences. **The honest residual
+  is stated rather than rounded away**: three of the four declared cycles
+  die, ONE survives (`C-08 ↔ C-09`, which predates this card by nine days
+  — T-008, `8c1da7d`), the file-level import graph is a DAG on both refs
+  so that survivor is a node-boundary artifact and not a real import
+  cycle, and T-127 carries it with a criterion written over the CENSUS
+  rather than over one cycle by name
 
 ## Milestones
 ### Milestone 0 — planning (current)
@@ -723,6 +749,17 @@ milestone now has to watch: the committed graph is **890 866 bytes,
 and remains backlog rather than slice content. (This paragraph read "the
 other three remain planned" for two checkpoints after T-013 merged;
 corrected at T-085's.)
+**AND THE F-06 BACKLOG'S OWN GATE LANDED 2026-08-25 — T-033**, merge
+`8f8ec31`, which is inherited backlog by the ruling above and NOT F-04
+slice content, but is the card the plan's §10 "zero drift before launch"
+gate was waiting on: findings 15 → 3, unmapped 1 → 0, a thirteenth
+component. **It unblocks by FENCE rather than by `blocked_by:`**, which
+is the distinction to read carefully here — T-125, T-126 and T-111 all
+carry `blocked_by: []` or `[T-110]` and were held only because T-033
+owned `app-shell`; **T-127 is the one card with a literal `blocked_by:
+[T-033]`**. Derived at this checkpoint: **22 of 38 planned cards want
+`app-shell` and 9 want nothing else**, so releasing that one slug is the
+largest single unblocking this board has had.
 Open before any card dispatches: **D3** (may the app ever write into
 `docs/`? — it never has; gates the selector card only, not the slice)
 and **D5** (what can `model@session` mean, given `--model` is

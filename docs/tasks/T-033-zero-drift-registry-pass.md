@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 17
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [docs/architecture/components/, lib-parser, app-map, app-shell]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5 @T-033 — code commits 344a0d5, 1baed94, 784dad9
+verified_by: claude-opus-5 @T-033-verify — APPROVED, 2026-08-25 — verdict commits c259f87 and 642577e
+review: same-model
 ---
 
 Absorbs: T-008-s2, T-011-s2, T-024-s5 (the derive-the-pin half; the
@@ -1395,3 +1395,99 @@ verdict without writing a byte, and nothing a concurrent session does can
 reach them.
 
 **THE VERDICT IS UNCHANGED: APPROVED at `935693f`.**
+
+## Integration
+
+Merged 2026-08-25 by a third hand that neither built nor verified this
+card. Main-before **`1ed6ae9`** (T-102's checkpoint), lane tip
+**`642577e`**, merge **`8f8ec31`**, checkpoint the commit after it.
+`review: same-model` per T-104's ruling SEVEN — the independence that
+pays is INFORMATIONAL, not model diversity.
+
+**THE TIP WAS NOT THE ONE I WAS DISPATCHED AGAINST, AND THAT IS THE
+FIRST THING THIS SECTION SHOULD SAY.** The brief named `c259f87` as the
+verdict commit. The branch was at **`642577e`** — the verifier's second
+pass, which re-derived every range and count inline after a
+shared-scratch hazard and corrected one figure (`--stat` totals read as
+insertions: `+199/+47` is `173/26` and `40/7` by `--numstat`). I merged
+the TIP, having proved `c259f87` is an ancestor of it and that the
+advance touches exactly one file — this card. Merging the brief's sha
+would have discarded a verifier's own correction and shipped a figure
+already known wrong.
+
+**THE PROCESS VIOLATION HAPPENED TWICE ON THIS LANE, NOT ONCE.** Both
+verdict commits were written by repointing the shared branch ref with
+`git update-ref` from a detached worktree rather than committing inside
+the lane. **The proof is in the reflog and it is unambiguous**:
+`task/T-033-zero-drift-registry@{0}` and `@{1}` carry EMPTY reflog
+messages, while `@{2}` and every entry below it read `commit:`. The
+second one landed AFTER the dispatching pass had already repaired the
+worktree, so it re-staled the same index a second time. When I arrived
+the lane worktree reported a staged deletion of 114 lines from this
+card — which was **staleness, not dirt**, proved rather than assumed: the
+working file's sha256 (`976040fc…`) is byte-identical to `c259f87`'s
+blob while HEAD was `642577e`. One `git add -A` there would have
+committed a revert of the verifier's second pass. Nothing was lost:
+`935693f` and `c259f87` are both ancestors of `642577e`. Routed to
+**`T-128`** and **`T-104`**; the verification was NOT re-run, because the
+mechanism was wrong and the finding was not.
+
+**THE RANGE, AT MY OWN REFS.** `git merge-tree --write-tree 1ed6ae9
+642577e` exit **0** (read from `$?` BEFORE the substitution), tree
+`f6ba7731…`; prescribed `git diff --name-only 1ed6ae9 <TREE>` = **36**;
+three-dot = 36, `diff` exit 0; main's advance `ad5a0df..1ed6ae9` = **34**;
+intersection **EMPTY**; forbidden two-dot = **70**, and 36 + 34 = 70 with
+the union byte-identical to the two-dot set, so the two are disjoint as
+SETS and not merely as counts. The merge's own diff `1ed6ae9..8f8ec31` is
+**36**, identical to the forecast, and `git rev-parse HEAD^{tree}` equals
+the forecast tree byte for byte — **nothing was written into the merge
+commit.**
+
+**ALL THREE GATES FIRED.** GRAPH REGEN 12 of 36 → regenerated at the
+checkpoint, and **TWICE**, which is the reusable finding: the first regen
+went CURRENT at 925 217 bytes, then reconciling the deferred fixture
+assertion moved `architecture-dogfood.test.ts` from `loc 1754` to `1755`
+and `index --check` went STALE again **with every headline count
+identical** — same bytes, same 178 files, same 1968 symbols, same 1886
+edges. A checkpoint that regenerated once and compared byte counts would
+have shipped a stale graph and had no number that could tell it. BOOT
+GATE 4 of 36, exit **0**, port 15296. DOCS GATE 24 of 36, exit **1**,
+**all FOUR suites owed** and all four green, 0 frontmatter issues.
+
+**THE ONE DEFERRED ASSERTION WAS EXACTLY ONE, AS PROMISED.** The lane
+left `["C-05","C-12","confirmed", 32]` with a comment addressed to the
+integrator. Asked rather than predicted: the post-regen app suite came
+back **961/962 with that single row red** at `expected 32, received 33`,
+and **962/962** once moved. `map-dogfood-render.test.tsx` did not move
+and the parser pin held at 268/268 — the lane's forecast was exact.
+
+**ONE THING THE BRIEF AND THE VERDICT BOTH MISSED, AND IT BLOCKS THE
+SUITE.** `npm run build` from `app/` fails at **exit 2** on a merged main
+with `TS2339: Property 'nonCode' does not exist on type
+'ComponentRecord'` — because this card adds `nonCode` to
+`lib/parser/src/types.ts` and `lib/parser/dist` is a BUILD ARTIFACT that
+no merge updates. CONVENTIONS' fresh-clone ORDER already governs it
+(lib/parser first, then app) and it bit in a fully-installed checkout,
+which is the case that order is not usually read as covering. `npm run
+build` from `lib/parser/` clears it. This is also `integrator.md` rule
+2's channel — and it is CLOSED here by measurement rather than by
+assumption: both `@nputer/parser` symlinks are RELATIVE
+(`../../../lib/parser`), so each resolves inside its own checkout and the
+human's app has its own `dist/`. Rebuilding main's parser cannot reach
+the running product.
+
+**THE FENCE WAS NOT WIDENED, AND THE ONE PATH OUTSIDE IT IS THE
+VERIFIER'S OWN DISCLOSURE**, carried forward rather than smoothed over:
+`docs/decisions/015-indexer-rust-derivation-ts.md` is in no component's
+`paths:`, no `touch_slugs:` and no card's `touches:`. Criterion 5 and the
+architect's ruling both require the edit, so it was written on the card's
+own authority and routed as **`T-033-s4`**.
+
+**`docs/ARCHITECTURE.md`'s derived slug block did not know C-16 existed**
+— correction 4 of the verdict's four, out of fence for the lane and
+therefore the checkpoint's by written rule. Fixed here: `app-shell ->
+C-05, C-10, C-11, C-16`. **No gate in this repository reads that block**,
+which is `T-089-s7`'s argument for computing it instead.
+
+The eleven `T-033-s*` findings stay `status: suggested` exactly as filed,
+`T-033-s11` included — triage is not the integrator's (T-083's ruling).
