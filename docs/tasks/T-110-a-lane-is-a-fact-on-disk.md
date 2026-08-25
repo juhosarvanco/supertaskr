@@ -1903,7 +1903,12 @@ integrator's work at the checkpoint — corrected, never loosened.
   tenth turn running. Two throwaway worktrees (`drill-T-110-pass3`,
   `forecast-T-110-pass3`) were created and both are removed and pruned at
   this commit.
-- **The known `T-088-s4` flake did not fire: 0 red in 2 full cargo runs**,
-  and no suite was re-run to get there. The running tally stays where
-  T-079's checkpoint left it (3 red in 7); this pass adds two green runs
-  and no red.
+- **The known `T-088-s4` flake did not fire: 0 red in THREE full cargo
+  runs** — `416/0/3` at `c27e704` and `417/0/3` twice at `b91732b` and
+  `826acd2` — and **no suite was re-run to get there**, which is the half
+  of that discipline worth stating: three runs happened because three
+  refs needed measuring, not because a red was being walked away from.
+  `docs_watch::tests::startup_arm_watches_the_initial_root` printed
+  `... ok` in every one. The running tally moves from T-079's **3 red in
+  7** to **3 red in 10**, and the denominator moving without the
+  numerator is the only thing this pass can honestly add to it.
