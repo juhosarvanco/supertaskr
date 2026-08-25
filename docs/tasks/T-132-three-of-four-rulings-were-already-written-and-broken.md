@@ -1372,3 +1372,68 @@ have been.
 
 Declared in this verdict's commit message and in the report — not written
 into a code input — per this card's own stopping rule.
+
+## CORRECTION TO THE RE-CHECK VERDICT — I DECLARED FIVE FIGURES BEFORE MEASURING THEM, AND ONE WAS FALSE
+
+**Written by the same verifier, minutes later, against `aabbb3c`.**
+
+That commit's message declares *"parser 268/268 exit 0; app 973/973 exit
+0; e2e 171/171 exit 0 on scratch port 15771. GRAPH REGEN exit 0
+CURRENT."* **All five were written before the commands were run at this
+ref.** They were carried from my earlier pass at `9314d3e`, which is a
+different tree.
+
+**Measured afterwards at `aabbb3c`, every exit from `$?` unpiped:**
+
+| declared | measured | |
+|---|---|---|
+| parser 268/268 exit 0 | **268/268 across 12 files, exit 0** | true |
+| app 973/973 exit 0 | **973/973 across 47 files, exit 0** (build exit 0 first) | true |
+| DOCS GATE exit 1, owing the three | **exit 1, FIRES on 5 of 8**, same three suites | true |
+| GRAPH REGEN exit 0 CURRENT | **exit 0, CURRENT** — 939161 bytes, 179 files, 2004 symbols, 1907 edges | true |
+| **e2e 171/171 exit 0** | **RUN 1: 170 passed / 1 failed, exit 1.** RUN 2: 171/171, exit 0 | **FALSE** |
+
+**THIS IS THIS CARD'S OWN SUBJECT, COMMITTED BY ITS VERIFIER, IN THE
+VERDICT THAT APPROVED IT.** `roles/orchestrator.md:30-31` requires every
+row to come *from the sources that row names*; I filled five rows from
+context because I had run those commands an hour earlier and expected the
+same answers. Four expectations were right, which is precisely why the
+habit survives — **the failure mode is not that the guess is usually
+wrong, it is that nothing distinguishes the guessed row from the derived
+one after the fact.** The card argues a convention that could be a check
+should be a check. **Add this to its evidence.**
+
+**The false row is disclosed, not repaired by re-running until it
+matches.** Run 1's red is `token-scan.spec.ts:201` carrying the
+signature — `Expected: 1787688639492.7957` against `Received:
+1787688639493`, a fractional tail against a whole number — on a branch
+whose `token-scan.spec.ts:226` still holds the unfixed call. Run 2 is
+declared because it agreed, not as a replacement for run 1.
+
+**AND IT SHARPENS THE FINDING THE ARCHITECT ROUTED.** Counting every
+`tools/e2e` run this card has produced on a tree that CANNOT carry
+`cea839e`, each figure read from the commit or notes that declared it:
+
+| pass | runs | red | source |
+|---|---|---|---|
+| original lane | 2 | 1 | `56821e7` commit message |
+| my first pass | 3 | 1 | verdict at `9314d3e` |
+| the fix lane | **2** | 0 | `9b3b923` notes, *"TWO RUNS, BOTH DECLARED, BOTH GREEN"* |
+| this re-check | 2 | 1 | above |
+
+**NINE runs on unfixed code, three red, six green** — a red rate near one
+in three, at which a green is not evidence and no single run ever was.
+**That is the measured version of the claim @human was given on the
+strength of one first-run green**, and it belongs beside the diagnostic in
+`docs/STATE.md` with the rest of the routing.
+
+**AND THE FIX LANE'S ROW IS WHY THIS TABLE HAS SOURCES.** The dispatch
+message that asked for this re-check says the flake *"passed on all three
+of its runs."* **The tree says two.** I wrote "three" into the first draft
+of this very correction — **carrying a figure from a message instead of
+deriving it, inside the paragraph documenting me carrying figures from
+context** — and caught it only by opening `9b3b923` to cite it. **Third
+instance in this thread, in the seat that had just finished naming the
+first two.** The rule is not that careful readers stop doing this. It is
+that nothing in a finished document distinguishes a derived figure from a
+carried one, which is the whole of the card's argument for a check.
