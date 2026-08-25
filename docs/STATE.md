@@ -207,20 +207,18 @@ here rather than assumed), but **the declared fence and the practised one
 are different sets**, which is this project's signpost-versus-authority
 pattern in a new place. Read the field, never the summary.
 
-**SEVEN DETACHED NON-LANE ENTRIES EXIST RIGHT NOW AND ONLY ONE IS
-PERMANENT.** THREE OF THEM SIT AT LANE-SHAPED PATHS —
-`nputer-T-104-verify`, `nputer-T-129-verify` and `nputer-T-129-base` —
-**which is exactly why the filter is on the BRANCH and never on the
-path**. A lane list derived by counting rows would read FOURTEEN entries
-against FIVE lanes.
+**SEVEN DETACHED NON-LANE ENTRIES EXISTED WHEN THIS WAS WRITTEN AND EIGHT
+NINETY SECONDS LATER — SEE THE CORRECTION BELOW — AND ONLY ONE IS
+PERMANENT.** FIVE OF THEM SIT AT LANE-SHAPED PATHS —
+`nputer-T-104-verify`, `nputer-T-129-verify`, `nputer-T-129-base`,
+`verify-T-126` and `verify-T-126-base` — **which is exactly why the filter
+is on the BRANCH and never on the path**. A lane list derived by counting
+rows would read THIRTEEN entries against FIVE lanes.
 
 - **`/Users/ujju/Projects/nputer-app`, detached at `c4cfe52`** —
   **@human's app checkout, and the one serving port 1420.** Permanent, by
   @human's ruling of 2026-08-25. It holds no fence, is named after no
   card, and must not be removed after a merge.
-- **`/Users/ujju/Projects/drill-T-102-verify`, detached at `d12efac`** —
-  still on disk, **outliving its verification for the fourth checkpoint
-  running**. Not the integrator's to remove.
 - **`drill-T-126`, `drill-T-130`** — two live lanes' own drill checkouts,
   correctly detached and correctly OUTSIDE the repository root.
 - **`nputer-T-104-verify`, `nputer-T-129-verify`, `nputer-T-129-base`** —
@@ -229,9 +227,22 @@ against FIVE lanes.
 - **T-104's two scratch worktrees inside the shared scratch root are
   GONE** since the last checkpoint, and `nputer-T-116-verify` — which the
   previous checkpoint and this integrator's brief both discussed — **does
-  not exist**: T-116's verifier removed its own. **A worktree's existence
-  is a LIVE-ENVIRONMENT fact like a pid or a port holder, so this list is
-  stale for you by construction.** Derive the membership; do not quote it.
+  not exist**: T-116's verifier removed its own.
+
+**AND THIS PARAGRAPH WENT STALE BETWEEN THE CHECKPOINT COMMIT AND THE
+WORKTREE REMOVAL NINETY SECONDS LATER, WHICH IS THE THIRD CONSECUTIVE
+CHECKPOINT TO SAY SO ABOUT ITSELF.** It was written at SEVEN, correct at
+18:12. Re-derived at 19:03, immediately after
+`git worktree remove ../nputer-T-116`, it is **EIGHT**:
+`drill-T-102-verify` — which the list above called out as outliving its
+verification for the fourth checkpoint running — **is gone**, and
+**`verify-T-126` and `verify-T-126-base` have arrived**, two more detached
+entries at lane-shaped paths, taking that trap's membership from three to
+five. **A worktree's existence is a LIVE-ENVIRONMENT fact like a pid or a
+port holder, so this list is stale for you by construction** — that is not
+a caveat on the list, it is the list's whole content. Derive the
+membership; do not quote it. The LANE count is the stable half and it is
+stable for a reason: it is a function of the branches, and five is five.
 
 **NO LANE WORKTREE SITS AT A NON-STANDARD PATH.** **`app-map` IS RELEASED
 BY THIS CHECKPOINT.** **`tools/e2e` IS NEWLY HELD** by T-130, less than
