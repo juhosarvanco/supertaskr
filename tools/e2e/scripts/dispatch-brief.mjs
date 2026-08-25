@@ -39,7 +39,14 @@
  *    and host it was READ at — never a commit ref". A worktree's
  *    existence is a live fact by that test (docs/CONVENTIONS.md says so
  *    in as many words), so the LANE LIST is stamped with a clock and a
- *    host and never with a commit.
+ *    host and never with a commit. **AND SO IS A READ OF A MUTABLE REF.**
+ *    The base commit and the integration tip are reads of the integration
+ *    BRANCH, not functions of the tree they sit beside; this module
+ *    stamped them `@ <ref>` until a verifier watched that branch move
+ *    three times inside one pass and print three values under one
+ *    identical stamp. The test is not "is it a hash" — a hash is the
+ *    shape a tree fact usually has — it is "does the stamped ref
+ *    DETERMINE it". See `integrationRefs`.
  * 4. THE LANE LIST IS FILTERED ON THE BRANCH, NEVER THE PATH, and the
  *    branch pattern is itself derived from the spelling CONVENTIONS
  *    publishes rather than typed here. Detached scratch worktrees sit at
@@ -595,6 +602,50 @@ export function laneWorktrees(porcelain, spellings) {
   return lanes.sort((a, b) => a.taskId.localeCompare(b.taskId));
 }
 
+/**
+ * THE TWO FIGURES ROW 4 TAKES FROM THE INTEGRATION BRANCH — the base
+ * commit and the tip — out of ONE read of that branch. **Both are LIVE
+ * facts.** They are reads of a MUTABLE REF, so neither is a function of
+ * the tree the rest of the brief is stamped at: re-derive them at that
+ * ref and you get different commits. Measured rather than argued — the
+ * integration branch moved FOUR times while this card was built, twice
+ * inside one verification pass, and the same command in the same checkout
+ * at the same HEAD printed different values under an identical stamp.
+ * **A figure carrying a ref that does not determine it is worse than a
+ * bare figure**, which is this card's own argument; row 4's base is the
+ * hash that feeds `git worktree add`, and lane-protocol rule 2 asks for a
+ * hash there precisely because "latest" names a different commit for
+ * every reader.
+ *
+ * PURE, and separated from the read for the same reason
+ * `laneWorktrees(porcelain, spellings)` is: the pin drives one ctx at ONE
+ * ref through TWO reads of the branch, which is the only way to show that
+ * these figures move while the ref they would be stamped at does not.
+ *
+ * @param {string} logText  `git log --first-parent --format=%H %s <branch>`
+ * @param {string} branch
+ * @returns {{ tip: string, base: string }}
+ */
+export function integrationRefs(logText, branch) {
+  const lines = logText.split(/\r?\n/).filter((l) => l.trim() !== "");
+  const first = lines[0] ?? "";
+  if (!/^[0-9a-f]{40} /.test(first)) {
+    throw new Error(
+      `dispatch-brief: the first-parent log of ${branch} does not open with a line of the shape ` +
+        "`<40 hex> <subject>`, so this module cannot read a tip or a base from it. An empty read " +
+        "here would print an empty hash into a `git worktree add` command.",
+    );
+  }
+  const checkpoint = lines.find((l) => l.slice(41).startsWith("Checkpoint:"));
+  if (checkpoint === undefined) {
+    throw new Error(
+      `dispatch-brief: no "Checkpoint:" commit on ${branch} — the base rule names one, and this ` +
+        "module will not substitute a different commit for it.",
+    );
+  }
+  return { tip: first.slice(0, 40), base: checkpoint.slice(0, 40) };
+}
+
 /* ────────────────────────────────────────────────────────────────────
  * Cards, components and the fence.
  * ──────────────────────────────────────────────────────────────────── */
@@ -777,10 +828,9 @@ export function fenceOverlaps(a, b, slugs, comps) {
  * Records — the only way a figure leaves this module.
  * ──────────────────────────────────────────────────────────────────── */
 
-/**
- * @typedef {{ kind: "tree", ref: string, via: string }
- *   | { kind: "live", at: string, host: string, via: string }} Prov
- */
+/** @typedef {{ kind: "tree", ref: string, via: string }} TreeProv */
+/** @typedef {{ kind: "live", at: string, host: string, via: string }} LiveProv */
+/** @typedef {TreeProv | LiveProv} Prov */
 
 /**
  * @typedef {{ kind: "note", text: string }
@@ -789,9 +839,14 @@ export function fenceOverlaps(a, b, slugs, comps) {
  */
 
 /** A TREE fact: a count, a hash, a path list, a range. Carries its ref. */
-/** @param {string} ref @param {string} via @returns {Prov} */
+/** @param {string} ref @param {string} via @returns {TreeProv} */
 export function treeProv(ref, via) {
-  if (ref === "" || via === "") throw new Error("dispatch-brief: a tree provenance needs a ref and a source");
+  if (typeof ref !== "string" || ref === "" || typeof via !== "string" || via === "") {
+    throw new Error(
+      `dispatch-brief: a tree provenance needs a ref and a source, and got ${String(JSON.stringify(ref))} ` +
+        `with ${String(JSON.stringify(via))}`,
+    );
+  }
   return { kind: "tree", ref, via };
 }
 
@@ -804,11 +859,21 @@ export function treeProv(ref, via) {
  * @param {string} at
  * @param {string} host
  * @param {string} via
- * @returns {Prov}
+ * @returns {LiveProv}
  */
 export function liveProv(at, host, via) {
-  if (at === "" || host === "" || via === "") {
-    throw new Error("dispatch-brief: a live provenance needs a time, a host and a source");
+  if (
+    typeof at !== "string" ||
+    at === "" ||
+    typeof host !== "string" ||
+    host === "" ||
+    typeof via !== "string" ||
+    via === ""
+  ) {
+    throw new Error(
+      "dispatch-brief: a live provenance needs a time, a host and a source, and got " +
+        `${String(JSON.stringify(at))} on ${String(JSON.stringify(host))} via ${String(JSON.stringify(via))}`,
+    );
   }
   return { kind: "live", at, host, via };
 }
@@ -818,13 +883,44 @@ export function liveProv(at, host, via) {
  * repository this size and keep the line readable; the FULL ref is
  * printed once, as its own stamped value, at the top of every report.
  *
+ * THE VOCABULARY IS CLOSED, and it is closed here rather than trusted.
+ * This was a ternary, so every kind that was not exactly `"tree"` went
+ * down the LIVE branch: the realistic authoring slip — an object literal
+ * instead of the constructor — rendered
+ * `<- read undefined on undefined ; ...` and SLIPPED `unstampedLines()`,
+ * the provenance floor rule 2 is built on. The floor was structural
+ * against OMISSION and merely careful against MALFORMATION. Latent, since
+ * every call site goes through `treeProv`/`liveProv`, which validate —
+ * and a latent hole in the one mechanism the rest of this module leans on
+ * is worth one `default`.
+ *
+ * THE SHAPE IS RE-VALIDATED THROUGH THE CONSTRUCTORS THEMSELVES rather
+ * than by a second copy of what a provenance is: a closed KIND alone
+ * still lets `{ kind: "live" }` render `read undefined on undefined`, and
+ * two definitions of one rule is the defect this module reads its row set
+ * to avoid.
+ *
  * @param {Prov} prov
  * @returns {string}
  */
 export function stamp(prov) {
-  return prov.kind === "tree"
-    ? `<- @ ${prov.ref.slice(0, 12)} ; ${prov.via}`
-    : `<- read ${prov.at} on ${prov.host} ; ${prov.via}`;
+  switch (prov?.kind) {
+    case "tree": {
+      const { ref, via } = treeProv(prov.ref, prov.via);
+      return `<- @ ${ref.slice(0, 12)} ; ${via}`;
+    }
+    case "live": {
+      const { at, host, via } = liveProv(prov.at, prov.host, prov.via);
+      return `<- read ${at} on ${host} ; ${via}`;
+    }
+    default:
+      throw new Error(
+        `dispatch-brief: ${String(JSON.stringify(prov))} is not a provenance — a record carries a ` +
+          "TREE fact from treeProv() or a LIVE fact from liveProv(), and nothing else. Any other " +
+          "shape used to render as a live stamp reading `read undefined on undefined`, which the " +
+          "provenance floor accepts, so the malformation left this tool looking stamped.",
+      );
+  }
 }
 
 /**
@@ -912,6 +1008,10 @@ export function unstampedLines(rendered) {
  * @property {Map<string, string[]>} slugs
  * @property {Lane[]} lanes
  * @property {string} porcelain
+ * @property {string} integrationLog  one read of the integration BRANCH, held
+ *   beside the porcelain and for the same reason: it is a read of something
+ *   MUTABLE, so the figures taken from it are live facts and a pin has to be
+ *   able to drive a second read of it at one ref
  * @property {LaneSpellings} spellings
  * @property {string} conventions
  * @property {string} roleMd
@@ -1031,21 +1131,8 @@ function deriveReadFirst(ctx) {
 /** @param {Ctx} ctx @returns {Rec[]} */
 function deriveLane(ctx) {
   const s = ctx.spellings;
-  const log = git(ctx.root, [
-    "log",
-    "--first-parent",
-    "--format=%H %s",
-    s.integrationBranch,
-  ]).split(/\r?\n/);
-  const checkpoint = log.find((l) => l.slice(41).startsWith("Checkpoint:"));
-  const tip = /** @type {string} */ (/** @type {string} */ (log[0] ?? "").slice(0, 40));
-  if (checkpoint === undefined) {
-    throw new Error(
-      `dispatch-brief: no "Checkpoint:" commit on ${s.integrationBranch} — the base rule names ` +
-        "one, and this module will not substitute a different commit for it.",
-    );
-  }
-  const base = checkpoint.slice(0, 40);
+  const logVia = `git log --first-parent --format=%H %s ${s.integrationBranch}`;
+  const { tip, base } = integrationRefs(ctx.integrationLog, s.integrationBranch);
   const laneBullet = rawBullet(ctx.conventions, "THE LANE PROTOCOL");
   const dispatchBullet = rawBullet(ctx.conventions, "DISPATCH FROM THE LAST CHECKPOINT").replace(
     /\s+/g,
@@ -1061,6 +1148,10 @@ function deriveLane(ctx) {
     ctx.taskId === ""
       ? s.createCommand
       : s.createCommand.split("T-NNN").join(ctx.taskId).replace("<base>", base);
+  // DERIVED, not assumed: whether this line carries the moving hash is
+  // what decides its stamp. With no task named it is the document's own
+  // text, `<base>` placeholder and all, and a transcription is a tree fact.
+  const carriesBase = create.includes(base);
   return [
     value(`integration branch: ${s.integrationBranch}`, tree(ctx, "docs/CONVENTIONS.md lane bullet")),
     value(`branch: ${branch}`, tree(ctx, "docs/CONVENTIONS.md lane bullet branch spelling")),
@@ -1068,15 +1159,20 @@ function deriveLane(ctx) {
       `worktree (absolute, per lane-protocol rule three): ${absolute}`,
       tree(ctx, "docs/CONVENTIONS.md lane bullet worktree spelling"),
     ),
+    // THE THREE MOVING FIGURES. Each is a read of the integration REF, so
+    // each carries the time and host it was read at and never a commit —
+    // see `integrationRefs`. The create command is the third because the
+    // base is SUBSTITUTED INTO IT: the document it is otherwise a
+    // transcription of cannot produce that hash, and the line a dispatcher
+    // pastes is the one rule 2 is about.
+    value(`base commit: ${base}`, live(ctx, `${logVia}, newest Checkpoint`)),
+    value(`integration tip right now: ${tip}`, live(ctx, logVia)),
     value(
-      `base commit: ${base}`,
-      tree(ctx, `git log --first-parent --format=%H %s ${s.integrationBranch}, newest Checkpoint`),
+      `create: ${create}`,
+      carriesBase
+        ? live(ctx, `docs/CONVENTIONS.md lane bullet create command, base substituted from ${logVia}`)
+        : tree(ctx, "docs/CONVENTIONS.md lane bullet create command"),
     ),
-    value(
-      `integration tip right now: ${tip}`,
-      tree(ctx, `git log --first-parent ${s.integrationBranch}`),
-    ),
-    value(`create: ${create}`, tree(ctx, "docs/CONVENTIONS.md lane bullet create command")),
     value(`lane-protocol rule two: ${rule2}`, tree(ctx, "method/lane-protocol.md rule two")),
     value(`lane-protocol rule three: ${rule3}`, tree(ctx, "method/lane-protocol.md rule three")),
     value(`base rule: ${dispatchBullet}`, tree(ctx, "docs/CONVENTIONS.md dispatch bullet")),
@@ -1672,6 +1768,12 @@ export function context(opts = {}) {
     slugs: slugMapFromFields(comps),
     lanes: laneWorktrees(porcelain, spellings),
     porcelain,
+    integrationLog: git(root, [
+      "log",
+      "--first-parent",
+      "--format=%H %s",
+      spellings.integrationBranch,
+    ]),
     spellings,
     conventions,
     roleMd: roleText(role, root),

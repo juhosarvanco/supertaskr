@@ -18,6 +18,7 @@ import {
   frontmatterFields,
   laneSpellings,
   laneWorktrees,
+  liveProv,
   namedDisciplines,
   note,
   packageCommands,
@@ -307,6 +308,132 @@ test("a TREE fact carries a ref and a LIVE fact carries a clock — never the ot
   for (const line of cardLines) expect(line).toContain("<- @ ");
 
   expect(() => value("x", treeProv("", "somewhere"))).toThrow(/needs a ref/);
+});
+
+test("a figure read from the MOVING integration ref is a LIVE fact — two reads at ONE ref disagree", () => {
+  // THE REJECTION THIS BODY PINS. `base commit` and `integration tip
+  // right now` shipped stamped `<- @ <ref>` as TREE facts, and both are
+  // reads of the mutable integration BRANCH. Re-derive them at the ref
+  // they name and you get different commits; the verifier watched that
+  // branch move three times inside one pass and print three values under
+  // one identical stamp, and it moved a fourth time before this fix. The
+  // affected figure is the base hash that feeds `git worktree add`, which
+  // lane-protocol rule 2 wants as a hash precisely because "latest" is a
+  // different commit for every reader.
+  //
+  // NOTHING PINNED IT: the suite was 192 green with the defect and 192
+  // green with it re-stamped by hand. The body above checks only that
+  // WORKTREE lines are live; it never asked whether a `<- @ >` line is
+  // derivable at the ref it wears.
+  const ctx = context({ taskId: "T-133" });
+  const branch = laneSpellings(conventions()).integrationBranch;
+
+  // The second read is DERIVED from the first rather than typed: drop the
+  // newest Checkpoint and everything above it, which is exactly what the
+  // branch moving does to this log.
+  const lines = ctx.integrationLog.split("\n").filter((l) => l.trim() !== "");
+  const cut = lines.findIndex((l) => l.slice(41).startsWith("Checkpoint:"));
+  expect(cut, `${branch} carries no Checkpoint, so this body has no subject`).toBeGreaterThanOrEqual(0);
+  const older = lines.slice(cut + 1);
+  expect(
+    older.some((l) => l.slice(41).startsWith("Checkpoint:")),
+    `${branch} carries only one Checkpoint here, so a second read cannot be built out of it`,
+  ).toBe(true);
+
+  // ONE VARIABLE. The same ctx object: the same ref, the same clock, the
+  // same worktree list, the same cards — only the read of the branch
+  // differs. Anything whose TEXT moves between these two renders was
+  // never a function of the tree they are both stamped at.
+  const moved = { ...ctx, integrationLog: older.join("\n"), findings: [] };
+  const before = render(assembleBrief(ctx).recs).split("\n");
+  const after = render(assembleBrief(moved).recs).split("\n");
+  expect(after.length, "the two renders have different shapes, so they are not comparable").toBe(
+    before.length,
+  );
+
+  const bare = (l: string) => l.replace(/ {2}<- .*$/, "");
+  const changed = before.filter((l, i) => bare(l) !== bare(after[i] ?? ""));
+  expect(
+    changed.length,
+    "moving the integration branch changed no line, so this body is not driving the figures it " +
+      "exists to pin",
+  ).toBeGreaterThan(1);
+  for (const line of changed) {
+    expect(
+      line,
+      "this line's VALUE moved while the ref it is stamped at did not, so the ref does not " +
+        "determine it. A figure carrying a ref that does not determine it is worse than a bare " +
+        "figure — this card's own argument, turned on this card's own output",
+    ).toContain("  <- read ");
+  }
+
+  // AND THE RULE STATED DIRECTLY, against the real report rather than only
+  // against the experiment: every line whose SOURCE names the integration
+  // branch carries a clock. Positive control first — without it, "they are
+  // all live" is satisfied by a report that reads the branch nowhere.
+  const via = (l: string) => l.replace(/^.*? {2}<- /, "");
+  const refReads = before.filter((l) => l.includes("  <- ") && new RegExp(`\\b${branch}\\b`).test(via(l)));
+  expect(
+    refReads.length,
+    "no emitted line names the integration branch as its source, so the rule below has no subject",
+  ).toBeGreaterThan(1);
+  for (const line of refReads) expect(line).toContain("  <- read ");
+
+  // THE OTHER DIRECTION, or "stamp everything live" would pass. With no
+  // task named, the create command is the document's own text — `<base>`
+  // placeholder and all — so it is a transcription, and a transcription is
+  // a tree fact. The stamp follows whether the moving hash is IN the line.
+  const noTask = render(assembleBrief(context({})).recs).split("\n");
+  const createLines = noTask.filter((l) => /^\s*create: /.test(l));
+  expect(createLines.length, "the lane row emitted no create command").toBe(1);
+  const createLine = createLines[0] ?? "";
+  expect(createLine, "the create command was substituted for a card nobody named").toContain("<base>");
+  expect(
+    createLine,
+    "an unsubstituted create command is a verbatim transcription of CONVENTIONS at this ref, and " +
+      "a live stamp on a tree fact is the same defect facing the other way",
+  ).toContain("  <- @ ");
+});
+
+test("a provenance that is neither SHAPE throws at render, rather than rendering `read undefined`", () => {
+  // The realistic authoring slip: an object literal instead of the
+  // constructor. `stamp()` was a ternary, so every kind that was not
+  // exactly "tree" went down the LIVE branch and this rendered as
+  //
+  //   the suite is nine hundred bodies  <- read undefined on undefined ; git rev-parse HEAD
+  //
+  // which SLIPS `unstampedLines()` — the provenance floor the body above
+  // drives. So the floor was structural against OMISSION and merely
+  // careful against MALFORMATION, and a malformed stamp is the one shape
+  // that looks stamped. Latent rather than live: every shipped call site
+  // goes through treeProv/liveProv, which validate.
+  const asProv = (x: unknown) => x as unknown as ReturnType<typeof treeProv>;
+  const slips: unknown[] = [
+    { ref: "64d148396f65", via: "git rev-parse HEAD" },
+    { kind: "Tree", ref: "64d148396f65", via: "git rev-parse HEAD" },
+    { kind: "tree ", ref: "64d148396f65", via: "git rev-parse HEAD" },
+    { kind: "live" },
+    { kind: "tree" },
+    {},
+    0,
+    false,
+    "tree",
+  ];
+  for (const slip of slips) {
+    expect(
+      () => render([value("the suite is nine hundred bodies", asProv(slip))]),
+      `${String(JSON.stringify(slip))} rendered a stamp instead of throwing`,
+    ).toThrow(/provenance/);
+  }
+
+  // POSITIVE CONTROL: the two real shapes still render, so the closure is
+  // discriminating rather than total.
+  expect(render([value("x", treeProv("64d148396f65", "git rev-parse HEAD"))])).toContain(
+    "<- @ 64d148396f65 ; git rev-parse HEAD",
+  );
+  expect(render([value("x", liveProv("2026-08-26T00:00:00.000Z", "a-host", "lsof"))])).toContain(
+    "<- read 2026-08-26T00:00:00.000Z on a-host ; lsof",
+  );
 });
 
 test("THE SLUG MAP COMES FROM THE FIELD, and the prose block is compared rather than trusted", () => {
