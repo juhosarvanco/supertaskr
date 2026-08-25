@@ -103,6 +103,35 @@
   alternative was refused because its only compliant repair overwrites
   the five merges the correction rests on: **a gate that launders
   history**
+  Since T-116 (2026-08-25) the map's ONE REMEMBERING LAYER stops lying
+  about which repository it is describing, and this one IS map content.
+  Churn was the only layer of the pane that is not a pure function of the
+  docs snapshot: measured once from a mount effect, frozen after that, and
+  silent about when. Two consequences, and the second is a truthfulness
+  defect the rest of the pane does not have — a commit made while the map
+  is open never moved the bars, and **a project switch kept the previous
+  repository's entries and painted them onto the new repository's
+  components**, with nothing on screen saying so. The age the payload has
+  carried since T-013 is now rendered through the index hint's OWN
+  `relativeTime`, so the pane has one spelling of "how old is this" and
+  not a second; a `measuredAtMs` of `0` — what the untrusted-shape
+  boundary substitutes for anything it cannot read, and it folds
+  negative, NaN, Infinity, a string, a float and an absent field alike —
+  renders NO age, because an age computed from the epoch is a wrong
+  timestamp and a wrong timestamp is worse than none. The re-measure
+  subscribes to the shell store at MODULE scope rather than from a mount
+  effect, because the property owed is about the STORE: a switch while the
+  map is closed must still invalidate. **"Not for one paint" holds by
+  construction rather than by luck** — the module-eval subscription always
+  precedes React's, so insertion order guarantees the store invalidates
+  before the pane is notified — and a `generation` counter means a
+  `repo_churn` still out for repository A can no longer fold onto B. The
+  honest residuals are on the card rather than rounded away: the trigger
+  is LAZY by a deliberate narrowing (nothing asked yet means no stale
+  answer to drop), it does NOT inherit the single-flight latch its own
+  comment claims it does, and a browser-bundle switch replaces a folded
+  state — a real conflict between two criteria, resolved the right way,
+  because serving A's numbers under B is the defect the card exists to fix
 
 ## Milestones
 ### Milestone 0 — planning (current)

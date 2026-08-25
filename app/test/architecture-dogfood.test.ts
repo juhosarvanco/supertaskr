@@ -1199,7 +1199,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 178 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
+  it("all 179 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
     // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
     // move this row has ever taken and the only one whose cause is a new
     // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
@@ -1226,7 +1226,11 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // index — so this stays 178 while C-05 drops 3 and C-16 gains them.
     // A count that moved here would mean the extraction had accidentally
     // widened or narrowed the claimed set.
-    expect(derived.fileComponent.size).toBe(178);
+    // 178 → 179 at the T-116 merge regen (2026-08-25), and this one IS a
+    // new file rather than a change of owner: `app/test/map-churn-age
+    // .test.tsx`, which C-05's `app/test/**` glob claims, so the tally
+    // below moves with it and `unmappedFiles` stays [].
+    expect(derived.fileComponent.size).toBe(179);
     // AND THE BUCKET IS EMPTY AGAIN, one day after it first appeared:
     // C-15 claims `tests/dispatch_lanes.rs` by name (T-033 settlement).
     expect(derived.unmappedFiles).toEqual([]);
@@ -1321,7 +1325,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // `lib/utils.ts` and `lib/verdicts.ts` leave for C-16. An
       // extraction, not a deletion — the three files are on disk, indexed,
       // and counted three rows below.
-      ["C-05", 62],
+      // 62 → 63 at the T-116 merge regen (2026-08-25), by ONE and by the
+      // app/test/** route an eleventh time: map-churn-age.test.tsx is
+      // C-05's alone. It is the ONLY file the regen added (`index --check`
+      // printed `files +1 -0 ~2`), and it is the THIRD assertion in this
+      // body — below the size check and the empty-bucket checks — so
+      // vitest never reaches it while any of those is red. Derived from
+      // the indexed added-file list before the suite was run, which is
+      // what the note nine entries up asks for.
+      ["C-05", 63],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under
@@ -1525,11 +1537,21 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // really does consume the parser, so the registry says so. The
       // observed count is untouched, which is the tell that this row moved
       // by a DECLARATION and not by code.
-      ["C-05", "C-06", "confirmed", 13],
+      // 13 -> 14 at the T-116 merge regen: map-churn-age.test.tsx imports
+      // `@nputer/parser`, so this time the row moves by CODE and not by a
+      // declaration — the opposite tell to the one above. THE LANE'S OWN
+      // FORECAST MISSED THIS ROW while recording the D1 entry the same
+      // edge produces; the D1 entry no longer moves at all, because T-033
+      // took this pair from `undeclared` to `confirmed` and the findings
+      // list stopped holding it.
+      ["C-05", "C-06", "confirmed", 14],
       ["C-05", "C-07", "confirmed", 1],
       ["C-05", "C-08", "confirmed", 4],
       ["C-05", "C-09", "confirmed", 3],
-      ["C-05", "C-10", "confirmed", 38],
+      // 38 -> 39 at the T-116 merge regen: map-churn-age.test.tsx imports
+      // `startDocsWatcher` from app/src/lib/watcher-store.ts, which is
+      // C-10's.
+      ["C-05", "C-10", "confirmed", 39],
       ["C-05", "C-11", "planned", 0],
       // *** DISCHARGED AT T-033's CHECKPOINT: 32 -> 33. *** The lane left
       // this row at 32 because the file tracks the COMMITTED graph (the
@@ -1547,7 +1569,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // ONE row red at `expected 32, received 33` — the single deferred
       // assertion the verdict promised — and 962/962 once moved. Nothing
       // else in this file or in map-dogfood-render.test.tsx moved.
-      ["C-05", "C-12", "confirmed", 33],
+      // 33 -> 35 at the T-116 merge regen, by TWO: map-churn-age.test.tsx
+      // imports BOTH MapView.tsx and churn-source.ts, and both are C-12's.
+      // THREE REFS, THREE DIFFERENT FORECASTS FOR THIS ONE ROW, and none
+      // of them is what landed here: the lane forecast 32 -> 34 at a tree
+      // without T-033, the verifier measured 32 -> 35 against T-033's
+      // MERGE commit, and on main after T-033's CHECKPOINT the baseline is
+      // 33. All three were right where they were measured. Derived here at
+      // this merged tree, which is the only ref that governs this line.
+      ["C-05", "C-12", "confirmed", 35],
       ["C-05", "C-13", "confirmed", 17],
       ["C-05", "C-14", "confirmed", 8],
       // NEW at T-033: `components/shell/PaneRail.tsx -> lib/utils.ts` and
@@ -1582,7 +1612,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["C-12", "C-06", "confirmed", 6],
       ["C-12", "C-07", "planned", 0],
       ["C-12", "C-09", "confirmed", 5],
-      ["C-12", "C-10", "confirmed", 1],
+      // 1 -> 2 at the T-116 merge regen, and this is the card's own
+      // architectural content on the map: churn-source.ts now imports
+      // `getShellState`/`subscribeShell` from watcher-store.ts, so the map
+      // pane reads the shell's project-switch signal directly. C-12 ALREADY
+      // DECLARES C-10, so the new edge is confirmed rather than drift —
+      // which is why the fence question the card raised about that import
+      // was never a fence question.
+      ["C-12", "C-10", "confirmed", 2],
       ["C-12", "C-11", "planned", 0],
       // NEW at T-033: the map pane is the heaviest consumer of the
       // primitives — five `cn` sites plus `task-waves.ts -> verdicts.ts`.
@@ -1645,7 +1682,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // so "confirmed" cannot be reached by the edge quietly emptying.
     const c05 = derived.edges.find((e) => e.from === "C-05" && e.to === "C-06");
     expect(c05?.relation).toBe("confirmed");
-    expect(c05?.observedCount).toBe(13);
+    // 13 -> 14 at the T-116 merge regen: map-churn-age.test.tsx is a
+    // fourteenth C-05 file importing `@nputer/parser`. This body is
+    // T-033's, so the lane could not have forecast it — and the count
+    // moving here while the relation holds is exactly what this body was
+    // written to make visible.
+    expect(c05?.observedCount).toBe(14);
   });
 
   it("drift flags land on the right nodes", () => {

@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 43
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [app-map]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5 @T-116 — code commit f59f57e
+verified_by: claude-opus-5 @T-116-verify — APPROVED, 2026-08-25 — verdict commit 4cc4142
+review: same-model
 ---
 
 ## ARCHITECT'S FENCE RULING — 2026-08-25, at `765924d`
@@ -787,3 +787,175 @@ list above, or re-derive it, and not the lane's.
 
 Not stamped here: `verifier:`, `verified_by:`, `review:` — the
 integrator's.
+
+## Integration — 2026-08-25, third hand `claude-opus-5`
+
+Main-before **`540ae0f`**, lane tip **`4cc4142`**, merge **`eea61e0`**,
+checkpoint after it. The lane's notes and the verdict above are preserved
+BYTE-UNTOUCHED; everything in this section is the integrator's.
+
+**MAIN MOVED TWICE UNDER THIS INTEGRATION AND THE PRE-WRITE CHECK IS WHY
+IT COST NOTHING.** The brief named main at `a649766`; on arrival
+`git diff --cached --name-only` returned TWO rows — a live triage pass
+staging the promotion of `T-120-s3` + `T-052-s4` into `T-130`. The
+checkpoint WAITED. That writer committed `7221629`, then a second hand
+began writing `T-130`'s dispatch stamp (`status: planned -> building`,
+`builder: -> claude-opus-5`) and committed `540ae0f`. **Every range,
+gate and suite figure below was derived at `540ae0f`**, and the merge was
+taken with both `git diff --cached --name-only` and `git diff
+--name-only` empty. `??` alone is not a ceremony and there was exactly
+one (`z`).
+
+### THE RANGE — every dot count at its own ref
+
+    git merge-tree --write-tree 540ae0f 4cc4142 -> tree d5491e95…, exit 0 (read from $? FIRST)
+    git diff --name-only 540ae0f <TREE>          ->   5   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 540ae0f..eea61e0        ->   5   THE MERGE'S DIFF, the only one that means anything
+    git diff --name-only 540ae0f...4cc4142       ->   5   (branch-only, three dots)
+    git diff --name-only 765924d..540ae0f        ->  74   main's advance under this lane
+    git diff --name-only 540ae0f..4cc4142        ->  79   TWO DOTS, FORBIDDEN
+
+**THE FORBIDDEN TWO-DOT FORM OVERSTATES BY 74 PATHS — 15.80x — WHICH IS
+THE WIDEST RATIO THIS PROJECT HAS RECORDED**, nearly double T-091's
+8.78x, and it is pure left-endpoint drift. Proved as SETS and not only as
+counts: `comm -12` over the two sorted lists is **EMPTY**, the union is
+**byte-identical** to the forbidden two-dot set under `diff`, and
+74 + 5 = 79. **A five-path lane that the naive range would report as
+having rewritten seventy-nine files.**
+
+**THE FORECAST TREE IS THE MERGE'S TREE, BYTE FOR BYTE.**
+`merge-tree --write-tree` returned `d5491e955c77c5adc5c1d3050a826209d73f15e4`
+before the merge and `git rev-parse HEAD^{tree}` returns the same after.
+Parents are `540ae0f` and `4cc4142` and nothing else; **NOTHING WAS
+WRITTEN INTO THE MERGE COMMIT.**
+
+### THE RECONCILIATION WAS DERIVED HERE, AND IT IS A THIRD LIST
+
+The verifier's central instruction was that the lane's forecast must not
+be used and that the merged-tree list must be re-derived. It was — by
+regenerating and running both dogfood bodies at THIS merged tree — and
+the answer matches neither earlier list, which is the whole point:
+
+| assertion | from | to |
+|---|---|---|
+| `architecture-dogfood` · `fileComponent.size` | 178 | **179** |
+| `architecture-dogfood` · the C-05 tally row | 62 | **63** |
+| relation table · `C-05 -> C-06` | 13 | **14** |
+| relation table · `C-05 -> C-10` | 38 | **39** |
+| relation table · `C-05 -> C-12` | 33 | **35** |
+| relation table · `C-12 -> C-10` | 1 | **2** |
+| `architecture-dogfood` · the T-009 seam body's `observedCount` | 13 | **14** |
+| `map-dogfood-render` · the header hint | 178 files | **179 files** |
+
+**SEVEN VALUES IN FOUR BODIES ACROSS TWO FILES, plus one body title.**
+The relation table stays **36 rows at 26 confirmed / 1 undeclared / 9
+planned** — no row added, removed or flipped. **The D1 findings body does
+not move at all**, exactly as the verifier predicted: T-033 took
+`C-05 -> C-06` from `undeclared` to `confirmed`, so the evidence list the
+lane appended to no longer holds that edge.
+
+**THE C-05 TALLY ROW IS THE ONE NOBODY FORECAST — three refs running.**
+It is the THIRD assertion in its body, below the size check, so vitest
+never reaches it while that one is red; the fixture's own comment says to
+derive it from the indexed added-file list and never off the failure
+output, and that is how it was taken here.
+
+**`C-05 -> C-12` HAS NOW BEEN FORECAST THREE TIMES AND LANDED ON A
+FOURTH PAIR OF NUMBERS.** The lane said 32 -> 34 at a tree without T-033;
+the verifier said 32 -> 35 against T-033's MERGE commit; on main after
+T-033's CHECKPOINT the baseline is 33, so it is **33 -> 35** here. Every
+one was right where it was measured. **A fixture forecast carries its
+tree the way a figure carries its ref.**
+
+### FIVE CORRECTIONS THE VERIFIER FOUND, CARRIED HERE
+
+1. **SHAPE SIX HOLDS AND ITS OFFERED EVIDENCE DOES NOT.** All ten bodies
+   do kill a mutant no other body kills — but `P8` kills THREE bodies and
+   `P13` kills two, so only `P15`/`P16` are unique as written. Three
+   mutants the verifier had to DESIGN settled the rest, and one of them —
+   the trigger parking on `disabled` instead of `loading` — is the
+   criterion's own wording, which nothing in the lane's drill aimed at.
+   **A body's kill being unique is a claim to be MEASURED, not asserted.**
+2. **THE RE-MEASURE TRIGGER DOES NOT INHERIT THE SINGLE-FLIGHT LATCH,
+   CONTRARY TO ITS OWN SOURCE COMMENT.** `onProjectMaybeChanged` sets
+   `inFlight = null` immediately before calling `loadChurn()`, so five
+   switches spawn five `repo_churn`. The CRITERION is still met in
+   substance — a stampede is many concurrent asks for the SAME answer and
+   a same-folder notify adds zero — and abandoning is NECESSARY, since
+   A's flight must never answer as B's. **The behaviour is right and the
+   stated reason is wrong.** ROUTED, not corrected here — see the
+   checkpoint's Next up for the reason and the exact clause.
+3. **A BROWSER-BUNDLE PROJECT SWITCH DOES REPLACE A FOLDED STATE**, which
+   is an undisclosed narrowing of a SHALL-BE-UNCHANGED. Fold `measured`,
+   switch project, and the store ends `{kind:"disabled",
+   reason:"notTauri"}` having spawned nothing. The two criteria are in
+   direct conflict — you cannot both drop A's entries "not for one paint"
+   and preserve a folded state — and **the lane resolved it the right
+   way**: invalidation beats preservation, because serving A's numbers
+   under B is the defect this card exists to fix. Said here because the
+   lane never said it.
+4. **TWO DRILL SURVIVORS, BOTH CORRECT-BUT-UNPINNED**: the generation
+   guard's `.catch` half (a `repo_churn` REJECTED for A after a switch to
+   B leaves the state `loading`, never `disabled/gitFailed` under B's
+   name) and the changed-folder guard (a same-folder notify adds zero
+   measurements). Probes confirm both WORK. **They are unpinned, not
+   broken** — recorded so they do not read as covered.
+5. **ONE OF THE SEVEN QUOTED PRE-FIX MESSAGES CANNOT BE EMITTED.** Body 4
+   aborts at the earlier assertion, so the quoted line-304 message is
+   unreachable pre-fix. Counts and exit reproduce exactly; one
+   transcription does not. The dispatch brief inherited the same error.
+
+### TWO RECORD DEFECTS LEFT AS FOUND
+
+An integrator cannot author a drill it did not run, so both are RECORDED
+rather than repaired: the notes' **"6 at the tip"** double-counts the
+card (the implementation notes live inside a file the four already
+contained — it is **5**), and **`P17` is cited in the shape-six prose and
+never defined** in the poison table, which stops at P16.
+
+### GATES AND SUITES — every exit read from `$?` UNPIPED
+
+- **GRAPH REGEN — FIRES** (3 of 5 paths are `.ts`/`.tsx` outside docs/).
+  **ASKED, NOT PREDICTED.** `index --check` was exit **0, CURRENT** at
+  main `a649766` BEFORE the merge (925 217 B · 178 files · 1968 symbols ·
+  1886 edges), so this merge's staleness is attributable to T-116 alone
+  and the `~14` main-side drift the verifier saw at `8f8ec31` is gone.
+  After the merge: exit **1, genuinely STALE** and the REAL red — both
+  count sets AND a `+`/`~` file diff, which is the discriminator
+  CONVENTIONS names. Fresh **933 486 B · 179 · 1987 · 1903**, files
+  `+1 -0 ~2`, edges `+17 -0`. Regenerated INTO THE CHECKPOINT.
+- **BOOT GATE — FIRES** (2 of 5 paths under `app/src/**`). Port
+  **15312**, `lsof`-read first (zero rows): exit **0**, both lines —
+  `[nputer] project folder: /Users/ujju/Projects/nputer` and
+  `[nputer] window "main" created`.
+- **DOCS GATE — FIRES**, exit **1** with a real verdict, run DIRECTLY on
+  the range's own five paths and **never through `xargs`**. **13** derived
+  readers across 4 suites (the verifier saw 12; the thirteenth is
+  `range-rule.spec.ts`, which T-091's merge added), census 130 sites in
+  22 files, **0 frontmatter issues**, THREE commands owed — all three run.
+- **cargo 460 / 0 failed / 3 ignored, exit 0** over SIXTEEN `test result:`
+  lines, lib suite **4.17s** (green band, under 9.5s). Unchanged from
+  main's 460 — this merge contains zero `.rs` files. Both known
+  intermittents READ BY NAME as `ok`.
+- **app `npm run build` exit 0** · **`npm test` 972/972 across 47 files,
+  exit 0**. Main was 962/46; the delta is this card's ten bodies in one
+  new file. **Derived, not matched against the brief's figure.**
+- **parser 268/268 across 12 files, exit 0** — after `npm run build` from
+  lib/parser/, run FIRST regardless.
+- **E2E 171/171, exit 0**, scratch port **15311**, **ONE run** — there was
+  no second run to declare. `token-scan.spec.ts:201` passed; main is not
+  a fresh checkout.
+- **typecheck exit 0**, **lint:docs exit 0**, **lint:tokens exit 0** at
+  **TOKEN 135 / CONTROL 721**, both exactly derivable: 134 -> 135 and
+  720 -> 721 are the one new tracked file, which is both a TOKEN-root
+  file and a CONTROL file.
+
+### THE @HUMAN LOOK IS STILL OWED AND NEITHER HAND CAN DISCHARGE IT
+
+Whether the age line reads as **information rather than clutter**. The
+directions, confirmed from source by the verifier: open the map pane,
+click the **churn** segment — genuinely the **4th** in the overlay
+control, `MAP_OVERLAYS` being `["status","provenance","drift","churn"]` —
+and the `map-churn-age` span sits in the **`map-legend` strip beside
+`map-churn-footer`**, visible only while churn is the active overlay and
+only when the timestamp is non-zero. **NOT DISCHARGED.**

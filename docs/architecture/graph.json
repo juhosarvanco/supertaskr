@@ -8933,8 +8933,8 @@
       "id": "f:app/src/architecture/MapView.tsx",
       "path": "app/src/architecture/MapView.tsx",
       "lang": "ts",
-      "hash": "blake3:23bdd9ac2c1da8344587ec250d5a443b4d25e9fe05c76454bd1583be1222c8d7",
-      "loc": 1003,
+      "hash": "blake3:54eecfdb699b9ce08b546b9ed92bcd2c15a0ea7c10fd4a430196117ecf6c65b4",
+      "loc": 1023,
       "symbols": [
         {
           "id": "s:app/src/architecture/MapView.tsx#COLLECTOR_CAP_BYTES",
@@ -8952,8 +8952,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            996,
-            1003
+            1016,
+            1023
           ]
         },
         {
@@ -8983,7 +8983,7 @@
           "exported": true,
           "range": [
             120,
-            994
+            1014
           ]
         },
         {
@@ -9141,8 +9141,8 @@
       "id": "f:app/src/architecture/churn-source.ts",
       "path": "app/src/architecture/churn-source.ts",
       "lang": "ts",
-      "hash": "blake3:2cf3ed68540f06c97e43c48f77874e838f1287e08f0209752accde7e3178b92c",
-      "loc": 255,
+      "hash": "blake3:f330b6117be9911a6dc2ee0c1e715b803a232f31ba830315affd3ad04e637d55",
+      "loc": 341,
       "symbols": [
         {
           "id": "s:app/src/architecture/churn-source.ts#ChurnDisabledReason",
@@ -9150,8 +9150,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            33,
-            42
+            34,
+            43
           ]
         },
         {
@@ -9160,8 +9160,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            73,
-            87
+            74,
+            88
           ]
         },
         {
@@ -9170,8 +9170,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            44,
-            50
+            45,
+            51
           ]
         },
         {
@@ -9180,8 +9180,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            89,
-            89
+            90,
+            90
           ]
         },
         {
@@ -9190,8 +9190,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            251,
-            255
+            332,
+            341
           ]
         },
         {
@@ -9200,8 +9200,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            199,
-            201
+            200,
+            202
           ]
         },
         {
@@ -9210,8 +9210,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            54,
-            71
+            55,
+            72
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#generation",
+          "name": "generation",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            227,
+            227
           ]
         },
         {
@@ -9220,8 +9230,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            191,
-            193
+            192,
+            194
           ]
         },
         {
@@ -9230,8 +9240,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            209,
-            211
+            210,
+            212
           ]
         },
         {
@@ -9240,8 +9250,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            213,
-            213
+            214,
+            214
           ]
         },
         {
@@ -9250,8 +9260,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            100,
-            101
+            101,
+            102
           ]
         },
         {
@@ -9260,8 +9270,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            93,
-            94
+            94,
+            95
           ]
         },
         {
@@ -9270,8 +9280,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            178,
-            178
+            179,
+            179
           ]
         },
         {
@@ -9280,8 +9290,28 @@
           "kind": "function",
           "exported": true,
           "range": [
-            222,
-            247
+            236,
+            268
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#measuredFor",
+          "name": "measuredFor",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            304,
+            304
+          ]
+        },
+        {
+          "id": "s:app/src/architecture/churn-source.ts#onProjectMaybeChanged",
+          "name": "onProjectMaybeChanged",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            306,
+            326
           ]
         },
         {
@@ -9290,8 +9320,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            97,
-            98
+            98,
+            99
           ]
         },
         {
@@ -9300,8 +9330,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            107,
-            173
+            108,
+            174
           ]
         },
         {
@@ -9310,8 +9340,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            180,
-            184
+            181,
+            185
           ]
         },
         {
@@ -9320,8 +9350,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            177,
-            177
+            178,
+            178
           ]
         },
         {
@@ -9330,8 +9360,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            186,
-            189
+            187,
+            190
           ]
         }
       ]
@@ -15732,8 +15762,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:20745dfb82d9d9cd9d6ce06b59a87127b250e33b9c73afb9309fc0227f4da3cc",
-      "loc": 1755,
+      "hash": "blake3:b6eb694fe9cfcf3eb6ddf5cb7d7ae6804a0307a5b57e61b3267f4138cf6cceed",
+      "loc": 1797,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -18107,6 +18137,175 @@
       ]
     },
     {
+      "id": "f:app/test/map-churn-age.test.tsx",
+      "path": "app/test/map-churn-age.test.tsx",
+      "lang": "ts",
+      "hash": "blake3:892c00f957417321c473aad116697d04392b155b7b3d21eea770ec9c7c6da81a",
+      "loc": 402,
+      "symbols": [
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#NOW",
+          "name": "NOW",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            84,
+            84
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#TAURI",
+          "name": "TAURI",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            57,
+            57
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#ageText",
+          "name": "ageText",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            216,
+            217
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#attributedCount",
+          "name": "attributedCount",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            212,
+            214
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#componentFile",
+          "name": "componentFile",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            121,
+            137
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#container",
+          "name": "container",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            86,
+            86
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#docsHarness",
+          "name": "docsHarness",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            89,
+            89
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#fixture",
+          "name": "fixture",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            154,
+            160
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#graphJson",
+          "name": "graphJson",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            139,
+            149
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#ipc",
+          "name": "ipc",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            62,
+            65
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#measuredPayload",
+          "name": "measuredPayload",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            165,
+            178
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#openProject",
+          "name": "openProject",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            197,
+            202
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#renderMap",
+          "name": "renderMap",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            180,
+            193
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#root",
+          "name": "root",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            87,
+            87
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#segment",
+          "name": "segment",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            204,
+            208
+          ]
+        },
+        {
+          "id": "s:app/test/map-churn-age.test.tsx#seq",
+          "name": "seq",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            88,
+            88
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/test/map-churn.test.ts",
       "path": "app/test/map-churn.test.ts",
       "lang": "ts",
@@ -18159,8 +18358,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:64a55961f3097e83e06c3fe9178e0d0d88cfe5ca1bd0f4701f1abe98b12f3776",
-      "loc": 561,
+      "hash": "blake3:07f1b2e9aa8de27cf93d2bdd5f378609e75b4a4e2c263a3d411e95b1f6318311",
+      "loc": 569,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -23436,6 +23635,15 @@
     },
     {
       "from": "f:app/src/architecture/churn-source.ts",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "getShellState",
+        "subscribeShell"
+      ]
+    },
+    {
+      "from": "f:app/src/architecture/churn-source.ts",
       "to": "p:@tauri-apps/api",
       "kind": "import",
       "symbols": [
@@ -25613,6 +25821,75 @@
     },
     {
       "from": "f:app/test/interview-resume-dom.test.tsx",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "afterEach",
+        "beforeEach",
+        "describe",
+        "expect",
+        "it",
+        "vi"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn-age.test.tsx",
+      "to": "f:app/src/architecture/MapView.tsx",
+      "kind": "import",
+      "symbols": [
+        "MapView"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn-age.test.tsx",
+      "to": "f:app/src/architecture/churn-source.ts",
+      "kind": "import",
+      "symbols": [
+        "ChurnState",
+        "__resetChurnForTests",
+        "applyChurnPayload",
+        "getChurnState",
+        "loadChurn",
+        "subscribeChurn"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn-age.test.tsx",
+      "to": "f:app/src/lib/watcher-store.ts",
+      "kind": "import",
+      "symbols": [
+        "startDocsWatcher"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn-age.test.tsx",
+      "to": "p:@nputer/parser",
+      "kind": "import",
+      "symbols": [
+        "FileEntry",
+        "ProjectParseResult",
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn-age.test.tsx",
+      "to": "p:react",
+      "kind": "import",
+      "symbols": [
+        "act"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn-age.test.tsx",
+      "to": "p:react-dom",
+      "kind": "import",
+      "symbols": [
+        "Root",
+        "createRoot"
+      ]
+    },
+    {
+      "from": "f:app/test/map-churn-age.test.tsx",
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
@@ -28164,6 +28441,12 @@
     },
     {
       "from": "s:app/src/architecture/MapView.tsx#MapView",
+      "to": "s:app/src/architecture/MapView.tsx#relativeTime",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/MapView.tsx#MapView",
       "to": "s:app/src/architecture/churn-source.ts#churnDisabledSentence",
       "kind": "call",
       "confidence": "resolved"
@@ -28427,6 +28710,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/architecture/churn-source.ts#__resetChurnForTests",
+      "to": "s:app/src/lib/watcher-store.ts#getShellState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/architecture/churn-source.ts#applyChurnPayload",
       "to": "s:app/src/architecture/churn-source.ts#ChurnState",
       "kind": "type_ref",
@@ -28483,6 +28772,30 @@
     {
       "from": "s:app/src/architecture/churn-source.ts#loadChurn",
       "to": "s:app/src/architecture/churn-source.ts#set",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#measuredFor",
+      "to": "s:app/src/lib/watcher-store.ts#getShellState",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#onProjectMaybeChanged",
+      "to": "s:app/src/architecture/churn-source.ts#loadChurn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#onProjectMaybeChanged",
+      "to": "s:app/src/architecture/churn-source.ts#set",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/architecture/churn-source.ts#onProjectMaybeChanged",
+      "to": "s:app/src/lib/watcher-store.ts#getShellState",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -33905,6 +34218,24 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/map-churn-age.test.tsx#fixture",
+      "to": "s:app/test/map-churn-age.test.tsx#componentFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-churn-age.test.tsx#fixture",
+      "to": "s:app/test/map-churn-age.test.tsx#graphJson",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/map-churn-age.test.tsx#renderMap",
+      "to": "s:app/test/map-churn-age.test.tsx#fixture",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/map-churn.test.ts#entry",
       "to": "s:app/src/lib/architecture/churn.ts#ChurnPathEntry",
       "kind": "type_ref",
@@ -35167,8 +35498,8 @@
     }
   ],
   "stats": {
-    "files": 178,
-    "symbols": 1968,
-    "edges": 1886
+    "files": 179,
+    "symbols": 1987,
+    "edges": 1903
   }
 }

@@ -554,8 +554,16 @@ describe("the nputer repo on its own map", () => {
     // rendered face. That combination is new in this ledger: a merge
     // that adds six indexed files, moves this hint, adds a NODE, and
     // leaves every edge and every drift count untouched.
+    // 178 → 179 at the T-116 merge regen (2026-08-25): ONE file,
+    // app/test/map-churn-age.test.tsx. The graph goes 925 217 → 933 486
+    // bytes / 1968 → 1987 symbols / 1886 → 1903 edges. WHAT MOVES WITH IT:
+    // four observedCounts in architecture-dogfood (C-05→C-06, C-05→C-10,
+    // C-05→C-12, C-12→C-10) and nothing else — the node count holds at 13,
+    // the relation table stays 36 rows at 26/1/9 with no row added,
+    // removed or flipped, and no ring lights or clears. Derived from the
+    // regenerated graph before the suite was run.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 178 files",
+      "committed graph · 179 files",
     );
   });
 });
