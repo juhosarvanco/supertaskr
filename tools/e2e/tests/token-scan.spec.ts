@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
@@ -169,16 +169,47 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
  *
  * Restoration is proved by sha256 against the bytes read before the
  * write, never by a clean `git status`.
+ *
+ * ── THE PLANT TARGET IS IN THIS PACKAGE, AND THAT IS A CORRECTION ────
+ * It was `app/src/architecture/MapNode.tsx` when this body was written,
+ * and T-079's own integration measured what that costs. **A
+ * content-exact restore is not a complete one when a sibling suite reads
+ * the CLOCK.** `app/test/map-t1-t2-dom.test.tsx`'s body *"the build is
+ * newer than the sources it is evidence about"* compares `dist/`'s mtime
+ * against four files and `MapNode.tsx` is one of them, so a plant that
+ * restored every byte left the file `git diff --quiet` clean and the APP
+ * SUITE RED — 957/958 at merge `91398f9`, with `dist/` at 03:50:54 and
+ * the plant target at 03:54:34.
+ *
+ * Restoring the mtime with `utimesSync` fixes THAT, and the assertion
+ * below still pins it — but it is not the whole answer, for two measured
+ * reasons. **SEVEN files under `app/test/` read mtimes**, so the guard
+ * found was one of a surface, not the surface. And `utimesSync` cannot
+ * restore `ctime`, which git compares under the default
+ * `core.trustctime`, so the restore trades a stale-build red for a
+ * stat-cache interaction with the `git diff` two lines down — observed
+ * red once and green on re-run, and an intermittent gate is worse than
+ * the bug it replaces.
+ *
+ * **So the plant moved INSIDE THIS PACKAGE'S OWN FENCE.** `tools/e2e` is
+ * one of the three TOKEN_ROOTS, so the corpus, the walk and the wrapper
+ * path being exercised are identical — and nothing under `app/` is
+ * touched by a lint test at all. The `app/src` plant is still on the
+ * record: T-079's Implementation notes carry it, run by hand, red at
+ * exit 1 with its twin silent and restoration proved by sha256.
  */
 test("P6 reds a planted bare motion utility and leaves its motion-safe twin alone", () => {
-  const relative = "app/src/architecture/MapNode.tsx";
+  const relative = "tools/e2e/fixtures/shell.ts";
   const target = path.join(repoRoot, relative);
   const original = readFileSync(target);
   const before = sha256(original);
+  const clock = statSync(target);
   // Assembled, never written whole: a literal here would be the very
   // ungated candidate this file forbids, minted into a TOKEN-walked
   // source by the test that guards against it (T-028's scanner-hygiene
   // trap, and the reason app/test/map-view-dom.test.tsx splits its own).
+  // It also keeps THIS file out of its own gate, which is the point of
+  // TOKEN_EXCLUDED_FILES one rung up.
   const utility = `animate-status${"-"}pulse`;
   const gate = `motion${"-"}safe:`;
   const plant = `\nconst t079Gated = "${gate}${utility}";\nconst t079Bare = "${utility}";\n`;
@@ -192,11 +223,22 @@ test("P6 reds a planted bare motion utility and leaves its motion-safe twin alon
     result = { status: planted.status, stdout: planted.stdout ?? "", stderr: planted.stderr ?? "" };
   } finally {
     writeFileSync(target, original);
+    utimesSync(target, clock.atime, clock.mtime);
   }
 
+  // THE HASH IS THE PROOF, and deliberately not a `git diff --quiet` the
+  // way the T-058 body above uses one. `--quiet` answers from the index's
+  // cached STAT INFO, which is exactly what `utimesSync` rewrites: it
+  // cannot restore `ctime`, so the first call after the restore reports a
+  // difference on stat alone, and the call itself refreshes the index so
+  // the next one passes. Measured here three runs in a row, red-green-green.
+  // docs/CONVENTIONS.md already prefers the hash for this reason —
+  // "restoration proved by hash rather than by a clean `git status`".
   expect(sha256(readFileSync(target)), `${relative} restored byte-exact`).toBe(before);
-  const diff = spawnSync("git", ["diff", "--quiet", "--", relative], { cwd: repoRoot });
-  expect(diff.status, "the plant target restores to an empty diff").toBe(0);
+  expect(
+    statSync(target).mtimeMs,
+    `${relative} restored its MTIME too — a content-exact restore that moves the clock reds an mtime guard`,
+  ).toBe(clock.mtimeMs);
 
   expect(result).toBeDefined();
   expect(result!.status, result!.stdout + result!.stderr).toBe(1);

@@ -5,14 +5,14 @@ feature: F-02
 milestone: 4
 priority: 37
 size: S
-status: building
+status: done
 blocked_by: [T-058]
 touches: [tools/e2e]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @T-079
 verified_by:
-review:
+review: self-verified
 ---
 
 Absorbs: T-028-s4 (fourth triage, 2026-08-19). The suggestion file is
@@ -245,5 +245,42 @@ rather than spelling it, so the spec guarding against a minted ungated
 candidate does not mint one. The rebuilt bundle is byte-identical to
 main's — `index-C86RloYb.css` 45 061 and `index-DEkJr3K8.js` 526 423 —
 which is the check that this held.
+
+## Integration
+
+Merged at **`91398f9`** onto main-before **`3f9bef2`**, lane tip
+**`2c21377`**, checkpoint after it. `merge-tree --write-tree` returned
+`291da8aa…` before the merge and `HEAD^{tree}` is the same tree
+afterwards; parents are the two commits and nothing was written into the
+merge. Gates derived from the merge's own **5** paths: GRAPH REGEN
+**FIRES on 1** and was ASKED — `index --check` exit **0, CURRENT** at
+895 891 · 172 · 1889 · 1849, no regen owed; BOOT GATE **0, not owed**;
+DOCS GATE **3, fires**, three suites, and a fourth (`cargo`) once the
+checkpoint's CONVENTIONS edit joined the diff.
+
+**THE MERGE FOUND A REAL DEFECT IN THIS CARD'S OWN LANE BODY, AND IT WAS
+FIXED HERE RATHER THAN SHIPPED.** The end-to-end body planted into
+`app/src/architecture/MapNode.tsx` and restored every byte — sha256
+identical, `git diff --quiet` clean — and **the app suite went 957/958**.
+`app/test/map-t1-t2-dom.test.tsx` compares `dist/`'s mtime against four
+files and that is one of them, so a content-exact restore that moved the
+CLOCK fired a stale-build guard on a build that was not stale. A
+`utimesSync` restore was added and then found insufficient on its own:
+it cannot restore `ctime`, and `git diff --quiet` answers from the
+index's cached stat info, so the first call after it reports a difference
+and the run refreshes the index — **red, green, green over three
+consecutive runs.** The fix that held was to move the plant INSIDE the
+fence, to `tools/e2e/fixtures/shell.ts`: `tools/e2e` is one of the three
+`TOKEN_ROOTS`, so the corpus and the wrapper path exercised are
+identical and no lint test touches `app/` at all. Four consecutive green
+runs after the move; the `utimesSync` is kept and the weaker git
+assertion dropped, which is what CONVENTIONS already asks for. The
+`app/src` plant survives on the record as the hand-run proof above.
+Routed as **`T-079-s3`**, which names the live sibling: T-058's
+seven-path body uses the same technique and restores no clock either.
+
+`T-079-s1` is **discharged in the checkpoint** — CONVENTIONS' FOUR WALKS
+row reads *"P1–P4 and P6"* — and the file stays filed rather than being
+deleted. `T-079-s2` stays open, fence `[app-shell]`, now free.
 
 ## Verdicts

@@ -435,7 +435,7 @@
   | walk | authority (the file that decides) | what it sees |
   |---|---|---|
   | the GRAPH — `nputer-index` | `.nputerignore`, plus `Lang::for_extension` and `walk_root` in app/src-tauri/crates/nputer-index/src/{graph,walk}.rs | `.ts .tsx .mts .cts .js .jsx` **and, since T-010, `.rs`** anywhere not ignored; `.git` and node_modules hard-skipped whatever the ignore files say; symlinks skipped outright |
-  | lint TOKEN — P1–P4, over MASKED source | `TOKEN_ROOTS`, `TOKEN_EXTENSIONS`, `SKIP_DIRS`, `TOKEN_EXCLUDED_FILES` in tools/e2e/scripts/token-scan.mjs | `.ts .tsx .mjs` under app/src, app/test, tools/e2e, minus the two lint implementation files by NAME |
+  | lint TOKEN — P1–P4 **and P6**, over MASKED source | `TOKEN_ROOTS`, `TOKEN_EXTENSIONS`, `SKIP_DIRS`, `TOKEN_EXCLUDED_FILES` in tools/e2e/scripts/token-scan.mjs | `.ts .tsx .mjs` under app/src, app/test, tools/e2e, minus the two lint implementation files by NAME |
   | lint CONTROL — P5, over RAW bytes | `git ls-files -z` minus `SKIP_DIRS` minus `CONTROL_BINARY_EXTENSIONS`, same file (T-058) | every TRACKED first-party text file — docs, method, .github, Rust, both lockfiles, dotfiles and extensionless fixtures included |
   | the PARSER's live docs | lib/parser/src/project.ts, pinned by lib/parser/test/smoke.test.ts | docs/tasks/`T-*.md` and docs/architecture/components/`C-*.md`, both FLAT and non-recursive, plus docs/ROADMAP.md |
 
@@ -455,7 +455,22 @@
   went stale and the gate did not. The second-order effect is nil: GRAPH
   REGEN cites this row (*"No suffix rule can match the walk"*) and its
   argument is unaffected, because `.nputerignore` still excludes docs/,
-  tools/ and the indexer's own fixture trees. A new `.md` under docs/ is seen by
+  tools/ and the indexer's own fixture trees.
+  **THE SAME THING HAPPENED TO THE TOKEN ROW ONE DAY LATER, WHICH MAKES
+  IT A PATTERN RATHER THAN AN INCIDENT.** That row read *"P1–P4"* until
+  T-079's merge `91398f9` added **P6**, the ungated-motion-utility rule
+  (`T-079-s1`, discharged in the checkpoint that merged it). The gap at
+  P5 is deliberate and not an omission: P5 is the CONTROL row's
+  literal-control-byte rule, and a pattern id a checkpoint has already
+  quoted is not reused. **THE AUTHORITY COLUMN NEEDED NOTHING AGAIN** —
+  it names the four walk constants, and P6 moved none of them; it is a
+  pattern applied to the same masked text over the same corpus, which is
+  why the lint stayed green through a change the signpost could not
+  describe. TWO SIGNPOSTS IN TWO DAYS, both caught by the lane that
+  falsified them and neither by a gate: **a pattern COUNT in this table
+  is a fact with no owner**, and the next reader to touch this row should
+  decide whether to keep enumerating at all rather than correct it a
+  third time. A new `.md` under docs/ is seen by
   CONTROL, and by the PARSER only if it is a flat `docs/tasks/T-*.md` or
   `docs/architecture/components/C-*.md`. THIS FILE is seen by CONTROL
   only: the parser never reads it, which is why an edit here cannot move
