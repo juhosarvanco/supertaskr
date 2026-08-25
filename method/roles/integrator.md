@@ -23,7 +23,10 @@ You merge one approved task and leave the docs true.
    rule for which two commits that is, and reference it rather than
    restating it.
 2. Run the FULL suite after merging. Two tasks that each passed alone can
-   break together; that is your problem to catch.
+   break together; that is your problem to catch. **IF that suite opens
+   with a fresh dependency install THEN read "The checkout you merge
+   into may be in use" below BEFORE you run one** — that step is the one
+   that can break a product a human is running out of this same tree.
 3. Checkpoint ritual, in order, as ONE commit distinct from the merge:
    - STATE.md: rewrite (it is a snapshot, not a log)
    - ROADMAP.md: tick progress
@@ -32,4 +35,78 @@ You merge one approved task and leave the docs true.
    - task file: status done, stamp built_by / verified_by / review
    - regenerate whatever the project derives from the tree, and commit it
      here rather than in the merge
+   - anything your own work did to a product a human was running — see
+     the last rule of the section below
 4. Commit. Remove the worktree (../lane-protocol.md rule 6). Stop.
+
+## The checkout you merge into may be in use
+
+**The integration branch's working tree is not only yours.** Where a
+project's product RUNS from that tree — a dev server, a file watcher, a
+desktop shell rebuilt on change — a human may be using it while you
+merge. Every rule involved is individually right: a fresh install proves
+a merge on a clean tree, a dev server must watch its own sources, and
+the human must be able to run the product while work proceeds. Nothing
+reconciles them, so the collision is invisible until something dies —
+which is why it is written here rather than left to each session.
+
+**FIRST, SEPARATE THE TWO KINDS OF DISTURBANCE, because they are not
+equally bad and treating them alike gets the trade wrong.** A product
+that RESTARTS or reloads was interrupted; a product whose dependencies,
+build outputs or sources are pulled out from under it while it reads
+them was BROKEN. Interruption is a cost the project's own human may
+decide to accept. Breakage is never one. Rules 1 and 2 are the breakage
+channels; rules 3 and 4 are what makes either kind attributable.
+
+1. **A FRESH DEPENDENCY INSTALL SHALL NOT RUN IN A CHECKOUT SERVING A
+   LIVE PRODUCT.** A clean install DELETES the dependency tree the
+   running process is reading from, so this is breakage and not a
+   restart. Run it somewhere that is not the human's dependency tree, or
+   DETECT the live process and REFUSE LOUDLY — naming the step skipped,
+   the evidence, and what has to happen before it can run. **A skipped
+   step is news, never silence**, and the two wrong repairs are worth
+   naming because both look like helpfulness: do not detect and continue
+   anyway, and do not detect and kill — the process is not yours to end.
+   Detect by asking the operating system what holds the port or the
+   binary, never by connecting to the product or by binding its port to
+   see whether the bind fails; taking the port for a microsecond to prove
+   it is busy is still taking it. A check that CANNOT tell a live product
+   from an absent one is not a check — prove it lets the ordinary case
+   through as well as stopping the live one.
+2. **A MERGE CAN CHANGE WHAT THE RUNNING PRODUCT SERVES WITHOUT TOUCHING
+   ONE FILE THE PRODUCT OWNS.** Wherever a project links one of its own
+   packages into another out of the working tree — a path dependency, a
+   symlink, a generated bundle, any artifact built from sources the
+   product does not contain — rebuilding the DEPENDENCY changes the
+   running product, and the merge's diff names none of the product's
+   files. **"My diff is docs-only" is not an answer to this question**;
+   the question is which build outputs the running product reads, and it
+   is answered from the project's own build order, not from the diff.
+3. **WHEN YOUR OWN WORK WOULD DISTURB A RUNNING PRODUCT, RECORD IT IN
+   THE CHECKPOINT** — what you did, what it did to the product, and how
+   you know. Say WHICH change reached it and which did not: a project
+   whose product reloads on one set of paths and restarts on another has
+   TWO trigger sets, they overlap, and a checkpoint that conflates them
+   reports a restart that never happened as readily as it misses one
+   that did. Read the product's process identity BEFORE and AFTER, and
+   state when you read it — **a pid, a port holder and a start time are
+   live-environment facts, not functions of a tree**, so one quoted from
+   an earlier session or an earlier brief is already stale, and a
+   process-name match that is not anchored will match a longer name that
+   merely begins the same way.
+4. **DO NOT WRITE INTO THE INTEGRATION CHECKOUT ANYTHING THE MERGE DID
+   NOT PUT THERE.** A probe, a scratch file, an experiment, a second
+   checkout parked inside the tree — each is a change to a working tree
+   somebody else may be building from, and an untracked file with no
+   author is precisely the shape that cannot be attributed afterwards.
+   Scratch work belongs in a throwaway checkout of the project's own
+   kind, a sibling directory and detached (../lane-protocol.md rule 3).
+   IF an unexplained file IS found there THEN say so in the checkpoint
+   and leave it alone: whose it is, is evidence.
+
+**A SECOND CHECKOUT FOR THE HUMAN DOES NOT RETIRE ANY OF THE FOUR.** A
+project may give the human their own checkout of the product so the
+ordinary case stops depending on anyone remembering — and that is worth
+doing, because it converts a discipline into a property. But the human
+may be on one checkout at any moment, and **a rule that only holds when
+the setup is right is not a rule.** The four above bind either way.
