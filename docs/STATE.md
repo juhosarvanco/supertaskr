@@ -746,11 +746,36 @@ by hand.**
 
 **No process from this integration survives.** Scratch ports **15431**
 (boot gate) and **15432** (e2e) were `lsof`-read back at zero rows.
-**ONE UNTRACKED FILE SITS IN THE MAIN CHECKOUT AND IT IS NOT THIS
-INTEGRATION'S.** The zero-byte `z` (dated 2026-08-23) is still there for
-the **twenty-second** checkpoint running — not this integrator's, not
-this merge's, not staged, **left alone**, and named here because
-`integrator.md` rule 4 asks for exactly that. **No `pkill`. No `npm ci`.
+**TWO UNTRACKED FILES SIT IN THE MAIN CHECKOUT AND NEITHER IS THIS
+INTEGRATION'S**, both named here because `integrator.md` rule 4 asks for
+exactly that and because **whose a file is, is evidence**.
+
+1. The zero-byte `z` (dated 2026-08-23) is still there for the
+   **twenty-second** checkpoint running — not this integrator's, not this
+   merge's, not staged, **left alone**.
+2. **`docs/tasks/T-133-…-become-commands.md` ARRIVED DURING THIS
+   INTEGRATION**, at **20:55:28**, between this checkpoint's commit and
+   its second correction. **It is not unexplained and it is not a
+   violation**: it is `status: planned`, which only the architect writes,
+   and it says so itself. It was **left alone and never staged** — this
+   checkpoint's writes all used `git commit -- <named paths>`, which is
+   the mechanism that made sweeping it impossible rather than merely
+   unlikely.
+
+**AND IT MAKES ONE STATEMENT IN THIS FILE STALE, WHICH IS SAID HERE
+RATHER THAN QUIETLY FIXED.** "Next up" below lists `T-131` as *the one
+@human owes a ruling on*. `T-133`'s own frontmatter says **@human adopted
+items 1 and 2 of `T-131`'s five process changes on 2026-08-25**, and
+names `T-132` as the prose half. **So T-131 is at least half ruled and
+this file's item 9 is behind the tree.** `T-133` is `touches:
+[tools/e2e]`, **held by T-130**, so it cannot dispatch until that lane
+merges. Read the cards, not this paragraph — they were written after it.
+
+**THE BOARD CENSUS BELOW IS STATED AT THIS CHECKPOINT AND IS ALREADY ONE
+FILE BEHIND.** 267 flat files were on disk when it was derived; `T-133`
+makes 268, untracked at that moment. **A count is a function of a tree
+and of a MOMENT**, and this is the first checkpoint able to say so with
+the two timestamps in hand. **No `pkill`. No `npm ci`.
 No `cargo clean`. No `git update-ref`, no force-push, no history
 rewriting.** Be precise rather than claiming more than is true: this
 integration's `cargo test`, the boot gate's build, the graph regen, the
