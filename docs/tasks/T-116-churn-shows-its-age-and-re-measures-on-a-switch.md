@@ -5,30 +5,78 @@ feature: F-06
 milestone: 4
 priority: 43
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [app-map]
-builder:
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
 review:
 ---
 
-> **DRAFTER'S NOTE — for the architect, remove before landing.**
-> **EVERY APP TEST LIVES OUTSIDE THIS FENCE BY THE REGISTRY AND INSIDE
-> IT BY PRACTICE.** Measured at `6b0cf47`: `app/vitest.config.ts` has
-> `include: ["test/**/*.test.{ts,tsx}"]` and there are **zero** test
-> files under `app/src`, so any pin this card owes lands in
-> `app/test/**` — which C-05's `paths:` glob claims, and C-05's
-> `touch_slugs` is `app-shell`. The PRACTICE says otherwise: T-034 was
-> fenced `touches: [app-map]` and added
-> `app/test/map-tasks-lens-dom.test.tsx`. Both readings are live in the
-> tree; this is `T-089-s9`'s row-5 residual with a second instance
-> (`T-115`'s note carries the first). **Either widen this fence to
-> `[app-map, app-shell]` or let the precedent stand — but the executor
-> must not decide it silently**, which is what the last criterion below
-> makes explicit.
+## ARCHITECT'S FENCE RULING — 2026-08-25, at `765924d`
+
+The drafter asked the architect to choose between widening this fence to
+`[app-map, app-shell]` and letting T-034's precedent stand. **The
+precedent stands: this card's fence is `[app-map]`, and the pins it owes
+land in `app/test/` under map-owned names.** The drafter's measurement
+is accepted as correct — `app/vitest.config.ts` has
+`include: ["test/**/*.test.{ts,tsx}"]`, there are zero test files under
+`app/src`, and C-05's `paths:` claims `app/test/**` with
+`touch_slugs: [app-shell]`. What is being ruled is which of the two live
+readings governs, not what the tree says.
+
+**The reason is what a fence is FOR.** A fence exists so two concurrent
+lanes cannot write the same file. It is a collision-avoidance device,
+not a statement about ownership, authorship or taste. A new file named
+for the map pane cannot collide with a shell lane's work, so widening
+buys no collision that the narrow fence misses.
+
+**And widening is not free, which is the half that makes this a
+decision rather than a preference.** `app-shell` is held by a live lane
+(T-033) as this is written, so "widen the fence" and "wait for T-033"
+are the same instruction. **A rule that makes a card wait on a collision
+that cannot happen is not caution; it is a tax paid in serialisation.**
+That is the concrete cost, and there is no concrete benefit on the other
+side of the scale.
+
+**THE PRECEDENT IS A PRACTICE, NOT AN ACCIDENT.** Three instances are
+now on the record: T-034 shipped `app/test/map-tasks-lens-dom.test.tsx`
+under `touches: [app-map]`, verified and merged; `T-115`'s note carries
+the second; this card is the third. Three occurrences with no reported
+collision is evidence about the rule, and the rule the tree has been
+following is the narrow one.
+
+**THE RULING IS NARROWED SO IT IS CHECKABLE RATHER THAN A LICENCE.**
+The executor may CREATE files under `app/test/` whose names begin `map-`
+and whose subject is the map pane. **It SHALL NOT modify any existing
+`app/test/**` file that is not already map-owned**, and it SHALL NOT
+touch `app/vitest.config.ts`, `app/index.html`, `app/vite.config.ts`, or
+anything else in C-05's glob. If the work needs one of those, that is
+the routing case the last criterion already covers. **A ruling that
+cannot be checked from the diff is not a ruling** — this one can:
+every added path under `app/test/` must begin `map-`, and the count of
+modified pre-existing `app/test/**` paths must be zero unless the file
+is already a map body.
+
+**THE REGISTRY IS WHERE THE ACTUAL DEFECT IS, and it is routed rather
+than fixed here.** C-05's glob over-claims: it swallows `app/test/**`
+whole, including bodies that exercise C-12. C-14's own file already
+records the principle that cuts the other way — that a test belongs to
+the component it exercises — so the registry contradicts itself in
+writing, one file apart. **The fix is to split `app/test/**` so map
+bodies resolve to `app-map`, and this card SHALL NOT make it**:
+`docs/architecture/components/` is held by T-033, and a lane that
+edits the registry to legalise its own fence has widened its fence by
+another route. File it as a suggestion.
+
+**THIS RULING HAS A KNOWN EXPIRY.** T-033 is in flight over the
+registry right now. If it lands a change to C-05's or C-12's `paths:`
+or `touch_slugs:`, **the ruling above is superseded by whatever the
+registry then says**, and the executor SHALL re-read C-05 and C-12 at
+its own base ref rather than trusting this paragraph. Say which reading
+was in force at the ref you measured.
 
 Absorbs (seventh triage, 2026-08-24): T-013-s5 — file removed in this
 commit.
