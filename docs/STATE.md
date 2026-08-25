@@ -278,8 +278,12 @@ state, not an achievement — it re-opens at the next dispatch.
 **DERIVE THE MEMBERSHIP BY FILTERING ON THE BRANCH; DO NOT QUOTE THIS
 TABLE.** The one command that answers it:
 `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`.
-The row count is weather — it has been 14, 7, 6, 5, 4 and now **3** in
-three hours while the lane count moved by one each time.
+The row count is weather — it has been 14, 7, 6, 5, 4 and now **4** in
+three hours while the lane count moved by one each time. **THE
+INSTRUCTION EARNED ITSELF AGAIN AT THE LAST MINUTE OF THIS INTEGRATION**:
+a detached worktree appeared at `21:26` that was not there at `21:07`, and
+the filter above still returns exactly one row. **TWO detached non-lanes
+now, against one lane.**
 
 - **`/Users/ujju/Projects/nputer-app`, detached** — **@human's app
   checkout, and the one serving port 1420.** Permanent, by @human's
@@ -289,6 +293,17 @@ three hours while the lane count moved by one each time.
   so it is now **three merges and three checkpoints** behind main, and
   updating it is @human's one command to run when they choose, not this
   integrator's.
+- **`/Users/ujju/Projects/arch-verify`, detached — NOT THIS
+  INTEGRATOR'S, and it FOLLOWS MAIN.** It appeared during this
+  integration (directory dated **21:26**) and is somebody else's; it holds
+  no fence, is on no `task/` branch and is named after no card, so it is
+  **not a lane** and was left alone. **It is not static, either**: it read
+  `2749256` — this merge — at **21:35:59** and `0e76452` — this
+  checkpoint — at **21:36:24**, thirty seconds later, so a live session is
+  re-pointing it as main advances. **Do not remove it and do not count it
+  as a lane**; `integrator.md` rule 4 asks that an unexplained entry in
+  this checkout be recorded rather than tidied, and this is that record.
+  Whose it is, is evidence.
 
 **NO LANE WORKTREE SITS AT A NON-STANDARD PATH.** Free: `method/`,
 `docs/CONVENTIONS.md`, `app-agent`, `app-map`, `app-board`, `app-shell`,
@@ -701,13 +716,18 @@ this paragraph deliberately does not carry it.
 
 ## The lane worktree is removed and the branch is kept
 
-`/Users/ujju/Projects/nputer-T-129` was removed with `git worktree
-remove`, after the merge and after the checkpoint (lane-protocol rule 6),
-and `git worktree prune` was run behind it. **The BRANCH survives**, read
-off disk rather than assumed: `task/T-129-nesting-abort` still resolves to
-**`73651cb`**, so the verdict's own commit remains diffable.
-`git worktree list` now returns **three rows — main, one lane and
-@human's app checkout.**
+`/Users/ujju/Projects/nputer-T-129` was removed at **21:36:02** with
+`git worktree remove`, after the merge and after the checkpoint
+(lane-protocol rule 6), and `git worktree prune` was run behind it. **The
+BRANCH survives**, read off disk rather than assumed:
+`git branch --list 'task/*'` returns **59**, unchanged by the removal, and
+`task/T-129-nesting-abort` still resolves to **`73651cb`**, so the
+verdict's own commit remains diffable. `git worktree list` now returns
+**four rows — main, ONE lane and TWO detached non-lanes** (@human's app
+checkout and the `arch-verify` entry that arrived mid-integration; see the
+lane list above). **That is one row MORE than before the removal**, which
+is the row-count-is-weather point arriving as an event rather than as a
+warning: this checkpoint removed a worktree and the list got longer.
 
 ## The board, derived from disk at this checkpoint
 
