@@ -1221,3 +1221,481 @@ otherwise, was performed on any suite.
   exist.** Confirmed for a third time (`git grep 'fn pick_project\b'` at
   `d46f71f` finds nothing); the first executor's correction and the
   verifier's independent re-derivation both stand.
+
+## Verdicts (continued) — THE SECOND PASS
+
+The verdict below is appended BELOW the one in `## Verdicts` above and
+replaces nothing; both stay on the record (T-101's precedent). It sits
+here rather than beside its predecessor because it judges the rebuild
+notes that physically separate them, and a verdict placed above the work
+it read would misstate the order of events.
+
+### Adversarial verification, second pass — `claude-opus-5 @T-123-verify2`, 2026-08-25 — **APPROVED**
+
+A fresh session, not bound by the first verdict. **THE BOUNDED READ WAS
+TAKEN.** The card was read at its BASE REF —
+`git show d46f71f:docs/tasks/T-123-…md` — and my whole attack was formed
+AND RUN from that text alone; the lane's copy, the first verdict and the
+rebuild notes were opened only afterwards, to check the EVIDENCE half.
+Verified in my own detached worktree `verify-T-123-pass2` at `338a7e2`
+(fresh install: parser `npm ci` + build, app `npm install` + build,
+tools/e2e `npm ci`) and drilled in a second, `drill-T-123-verify2`, with
+its own `CARGO_TARGET_DIR` inside it. **Nothing was built in
+`../nputer-T-123`**; only this section and `T-123-s6`…`s9` were added to it.
+
+**THE DIFF, RE-DERIVED TWICE, BECAUSE MAIN MOVED UNDER ME.**
+`TREE=$(git merge-tree --write-tree <main tip> 338a7e2)`, exit read
+BEFORE the substitution was used — **0** both times — then
+`git diff --name-only <main tip> "$TREE"`: **9 paths** at `d64c673`
+(main when I started) and **the same 9** at `e1f3023` (main when I
+finished). Three `.rs`, this card, five `T-123-s*`. Never
+`<merge-base>..<tip>`, never `main..HEAD`.
+
+**MAIN ADVANCED TWO COMMITS DURING THIS PASS AND ONE OF THEM IS THIS
+LANE'S OWN FINDING.** `d64c673` → `8776326` (T-010's checkpoint) →
+`e1f3023` (*"GRAPH REGEN's trigger gains `*.rs` … (T-123-s5)"*). At
+`d64c673` main was sitting between T-010's merge and its checkpoint —
+`index --check` there reports the committed graph at 648 886 bytes /
+126 files against a fresh 890 866 / 172, which is T-010's own outstanding
+regen and nothing to do with this lane. **At `e1f3023` main is CURRENT**,
+exit **0**, *"graph.json is CURRENT"* at **890 866 bytes · 172 files ·
+1874 symbols · 1842 edges**. Re-derive at your own ref; this one moved
+twice in three hours.
+
+---
+
+#### The first rejection IS CLOSED, and here is the proof rather than the claim
+
+The first pass rejected because the predicate admitted a planner entry
+that could not be resumed. I built both shapes MYSELF, from the card's
+criteria, as a hostile author of `.nputer/sessions.json` would build them
+— registry written as TEXT, never through `upsert` — and drove them
+through the real `apply_genesis_pick`. **Six not-resumable shapes and one
+acceptance control, one JSON field apart:**
+
+| fixture (plan present in every row) | route |
+|---|---|
+| `"native_session_id": "abc-123"` — THE ACCEPTANCE CONTROL | **GENESIS** |
+| key absent entirely | PICKED |
+| `"native_session_id": null` | PICKED |
+| `"--dangerously-skip-permissions"` (leading dash) | PICKED |
+| `""` (empty) | PICKED |
+| 4097 bytes (past `SESSION_ID_MAX_LEN`) | PICKED |
+| `"a/../../etc/passwd"` (slash outside the class) | PICKED |
+
+**AND THE PREDICATE THAT WAS REJECTED IS PINNED BY NAME.** Drill mutant
+**M6** restores it verbatim —
+`reach == Resumable` → `reach != GenesisReachability::NoSession` — and
+the suite goes **exit 101, four bodies red**, three of them the rebuild's
+own. Re-introducing the rejected defect is now caught at the routing seam
+AND at both commands. That is the strongest single answer to "is it
+closed".
+
+#### IS THE CLASSIFICATION TOTAL? — the harder question, asked and answered
+
+`reachability_of` is a three-arm match over `Option<&GenesisRecord>`, and
+its soundness rests on a fact one function away: `genesis_record` builds
+`native_session_id` ONLY from `entry.resume_id()`, so `Some(id)` implies
+the T-039 boundary ACCEPTED it, and `native_session_id` and
+`session_id_rejected` are mutually exclusive BY CONSTRUCTION. That is
+what makes `start_genesis`'s `(Some(id), _)` arm safe rather than lucky.
+**Mutant M12** cuts that link (`match entry.resume_id()` →
+`match Ok(entry.native_session_id.as_deref())`, the raw field): **exit
+101, 4 bodies red.** The link is pinned.
+
+Then the fourth shapes, every one driven through the real pick at
+`338a7e2`:
+
+| shape | route | note |
+|---|---|---|
+| registry that does not parse | PICKED | **and the file is RENAMED — see the sweep** |
+| entry with `roles: ["executor"]` | PICKED | not a planner |
+| entry with `roles: []` | PICKED | |
+| TWO live planners, first no-id, second resumable | PICKED | `find_planner` is FIRST-match; routing and `resume_genesis` read the same record, so the two AGREE and no dead end results |
+| `dead` planner FIRST, resumable second | **GENESIS** | dead skipped |
+| resumable FIRST, `dead` second | **GENESIS** | |
+| `"sessions": []` | PICKED | |
+| `{}` — key absent (serde default) | PICKED | |
+| `.nputer/sessions.json` is a DIRECTORY | PICKED | read fails, default returned |
+| 300 000-byte `model` beside a valid id | **GENESIS** | model dropped at T-047-s3's boundary with its log line; the ROUTE is unaffected |
+| `"status": "DEAD"` (wrong case) | **GENESIS** | `find_planner` compares `!= "dead"` exactly — pre-existing, not this card's |
+
+**No shape I could form lands in the wrong bucket**, and none of them
+produces a state where the routing and the two commands disagree.
+
+#### THE TWO GUARDS AGREE — asserted as a property, not sampled
+
+The shape of the first rejection was routing and command disagreeing. I
+drove five registry/plan combinations and asserted
+`routes_to_genesis(...) == !start_refused == !resume_refused` in the body
+itself:
+
+    V2-AGREE both-plan-ok       reach=Resumable    routes=true   start=ResumeAvailable  resume=CliNotFound
+    V2-AGREE both-plan-noid     reach=NotResumable routes=false  start=AlreadyPlanned   resume=AlreadyPlanned
+    V2-AGREE both-plan-refused  reach=NotResumable routes=false  start=AlreadyPlanned   resume=AlreadyPlanned
+    V2-AGREE both-noplan-ok     reach=Resumable    routes=true   start=ResumeAvailable  resume=CliNotFound
+    V2-AGREE both-noplan-noid   reach=NotResumable routes=true   start=CliNotFound      resume=NothingToResume
+
+Registry byte-unchanged after every one.
+
+---
+
+#### Criterion by criterion, attacked literally
+
+**1 — MET, purpose clause served.** The table above. The reproduction's
+own shape (template ROADMAP with zero features, EMPTY `docs/tasks/`, one
+idle planner with a live id) routes to `Genesis`; the routing decision
+comes from the registry (M4, dropping the second input, reds 7 bodies).
+
+**2 — MET.** `docs_watch.rs` carries `.nputer` in three COMMENTS and
+three TEST fixtures and nowhere else, and `serde_json::from` appears
+**0** times in it. The rule has one implementation in C-14 and four
+callers. *The architectural consequence is real and is not the lane's
+fault* — see `T-123-s8`.
+
+**3 — MET, and the control discriminates.** Plan + no registry →
+`Picked`; mutant M5 (`routes_to_genesis` → `true`) reds **10** bodies
+including T-026's own
+`genesis_pick_of_a_folder_that_already_has_a_plan_opens_it_as_a_project`.
+
+**4 — MET, and I asserted it as a PROPERTY rather than reading the
+comment.** `probe_plan` is byte-unchanged; an EMPTY `docs/ROADMAP.md`
+and one holding `[0xFF,0xFE,0x00,0x01]` both still answer `has_plan()`
+true, so nothing anywhere reads a byte of a plan to decide a route. The
+three-count refusal is written on `has_plan` itself, where the next
+reader meets it.
+
+**5 — MET.** The reproduction is driven end to end and no frontend
+change was reached for; the two rendering findings are ROUTED (`s1`,
+`s4`), which is what criterion 5's IF-branch prescribes.
+
+**6 — MET, and I drove the row the lane does not.** The veto-only
+property holds, and the derivation is structural: the arm is reached only
+where `routes_to_genesis` already said genesis, so it can only produce
+`Picked`. With `reach == Resumable` the veto can never fire — deliberate,
+and the veto's own direction; with `reach != Resumable` the first check
+required `!has_plan()`, so it is T-064 unchanged. **The row nothing else
+drives — `NotResumable` plus a plan written INSIDE the T-064 window —
+does fire the veto**, measured on T-064's own relay, against a resumable
+control on the identical window that does not. Mutant M7 (the veto guard
+forced false) reds 2 bodies. **Residual: `T-123-s6`** — the "read ONCE
+and CARRIED" half of the argument is unpinned; a mutant that re-reads the
+registry inside the window SURVIVES the whole suite.
+
+**7 — MET.** `fresh_genesis` is byte-unchanged, refuses a planned folder
+with a session registered (M11 reds it, alone), and `start_genesis`'s
+FRESH SPAWN is now UNREACHABLE on a planned folder rather than guarded —
+proved for all three id shapes: registry byte-identical, no
+`.nputer/genesis` kit, `Phase::Idle`. **The first verdict said the
+removed `if planned` backstop "genuinely closes the fresh-spawn hole";
+the rebuild removed it and the rebuild is right** — with the predicate
+fixed at its source, `(None, None)` is only reachable where
+`!has_plan()`, so the backstop guarded a state no input can produce, and
+a guard no test can reach is worse than no guard. **Residual:
+`T-123-s7`** — the body's *second* assertion (the registry was not
+marked dead) is satisfied identically by its own missing control, because
+`resolve_cli` refuses before `mark_planner_dead` under `cargo test`.
+
+---
+
+#### Security sweep — MANDATORY. One measurement, three all-clears, two filed
+
+- **INJECTION — clear, and now unreachable rather than merely
+  validated.** The only file-borne value that can reach a subprocess is
+  `native_session_id`, and `validate_session_id` bounds it to
+  `[A-Za-z0-9][A-Za-z0-9._-]*` under a length cap with a leading `-`
+  refused by name. I drove a flag, a traversal, an empty and an
+  over-long id through the REAL pick: all four now classify
+  `NotResumable` and route to the ordinary open, so they no longer reach
+  a resume at all.
+- **DESTRUCTIVE DOOR — clear.** `fresh_genesis` is byte-unchanged and
+  refuses; the registry does not open it. `start_genesis` cannot reach a
+  fresh spawn on a plan (above). Nothing new writes `docs/`.
+- **NO NEW SURFACE — clear.** `lib.rs`, `acl_pin.rs`,
+  `app/src-tauri/Cargo.toml`, `Cargo.lock`, `app/package.json` and all of
+  `app/src` are **0-file** in this diff. No IPC command, no grant, no
+  dependency, no secret. `cargo audit` is not owed and was not run:
+  the lock is untouched.
+- **THE ROUTING READ STILL WRITES (`T-123-s3`) AND THE REBUILD DID NOT
+  CHANGE ITS REACH — reproduced at THIS tip.** Picking a plan-holding
+  folder whose `.nputer/sessions.json` does not parse:
+  `corrupt-exists=true original-gone=true`, outcome `Picked`. Correct
+  routing, mutated folder. `genesis_reachability` is called
+  UNCONDITIONALLY before the routing decision, so every genesis pick can
+  rename. Confined to `.nputer/`, losable by charter, loud, destroys
+  nothing, forbidden by no criterion — the finding stands as filed and
+  still does not block.
+- **NEW, FILED AS `T-123-s9`: the registry read has NO SIZE CAP and this
+  card moves it earlier.** `load` is a bare
+  `fs::read_to_string`, downstream of which every T-039/T-047 boundary
+  sits — they bound what a FIELD contains, never what the FILE weighs —
+  and `read_to_string` follows symlinks, so a shipped link to a pipe
+  blocks the pick itself. The class of readable input is unchanged (a
+  folder the user picked through the genesis door), which is why this is
+  a suggestion; what changed is that the read now happens for folders
+  that route AWAY from genesis, where before `.nputer/` was untouched.
+
+---
+
+#### THE RESIDUAL THE HUMAN'S ONE LOOK SHOULD TEST — stated loudly, and NOT a rejection
+
+`kickoff` still refuses a planned folder outright. Measured:
+
+    V2-KICKOFF-PLANNED-RESUMABLE: AlreadyPlanned
+
+So on the screen this card newly makes reachable, a user with **no
+supported CLI** meets three controls and none of them can succeed:
+resume → `CliNotFound`; *"Start a fresh session"* → `AlreadyPlanned`
+(`T-123-s4`); the hand-driven escape that `cliNotFound`'s own card
+offers → `AlreadyPlanned` (`T-123-s1`), rendering *"<path> already holds
+a plan."* with no prompt.
+
+**I considered rejecting on this and did not, for reasons I will state
+so the next reader can disagree with them.** (a) The class is different
+from the first rejection's: there, the offer could not render for ANY
+user; here it renders and WORKS wherever a CLI exists, which is the
+card's whole purpose. (b) The screen is not sealed —
+`acceleratorsFor("genesis", …)` claims BOTH `openFolder` and
+`startInterview`, so ⌘O/⌘N work, and the lens/board renders the plan on
+the right half. It is keyboard-only, because the header's *"Open
+folder…"* pair is gated on `screen === "board"` — the same "keyboard
+reach is sufficient" shape @human already ruled on at T-020-s1. (c) None
+of the three is inside this card's criteria: 1 governs THE PICK, 7 names
+`genesis_fresh`, and 5 explicitly routes frontend work outside the fence
+rather than reaching for it. (d) All three are disclosed AT THE SITE in
+`kickoff`'s own body and routed as suggestions.
+
+**@human, this is the one look**: open a folder whose interview banked
+stage 0 and confirm the resume offer is there and takes you back in — and
+if you are ever on a machine without the CLI, notice that the second
+button and the hand-driven block both answer no.
+
+---
+
+#### The poison drill — FIFTEEN mutants of my own, THIRTEEN RED, TWO SURVIVORS
+
+Detached worktree `drill-T-123-verify2` at `338a7e2`, `CARGO_TARGET_DIR`
+**inside it** (`<drill>/.drilltarget`); driver and results files named
+per-lane too — `drill-T-123-verify2-driver.sh`,
+`drill-T-123-verify2-results.txt` (T-088-s3, sixth data point). Every
+mutation is ONE SIDE ONLY and always the PRODUCER; the driver requires a
+substitution count of exactly **1** and refuses otherwise (it did, once,
+on `find_planner` — re-formed with more context rather than forced); each
+mutated TEXT was read back with `git diff` BEFORE its run. Baseline
+`cargo test --lib`: **158 + 123 = 281 passed, exit 0.**
+
+| # | producer mutated | result |
+|---|---|---|
+| M1 | `reachability_of`: everything present is `Resumable` | 101, 5 bodies |
+| M2 | `reachability_of`: nothing is ever `Resumable` | 101, 8 bodies |
+| M3 | `reachability_of`: `None` → `Resumable` | 101, 7 bodies |
+| M4 | `routes_to_genesis` → `!probe.has_plan()` (input dropped) | 101, 7 bodies |
+| M5 | `routes_to_genesis` → `true` | 101, 10 bodies |
+| M6 | **THE REJECTED PREDICATE RESTORED** (`!= NoSession`) | 101, **4 bodies** |
+| M7 | the post-ack veto guard forced `false` | 101, 2 bodies |
+| M8 | the carried `reach` replaced by a FRESH read in the window | **0 — SURVIVOR** |
+| M9 | `start_genesis`'s routing guard removed | 101, 3 bodies |
+| M10 | `resume_genesis`'s routing guard removed | 101, 2 bodies |
+| M11 | `fresh_genesis`'s bare plan refusal removed | 101, 1 body |
+| M12 | `genesis_record` uses the RAW id, not `resume_id()` | 101, 4 bodies |
+| M13 | the offer's `model` field dropped | 101, 1 body |
+| M14 | `find_planner` stops skipping `dead` | 101, 2 bodies |
+| M15 | the two `genesis declined:` log lines swapped | **0 — SURVIVOR** |
+
+**M13 CONFIRMS THE REBUILD'S OWN SELF-CORRECTION LANDED**: the survivor
+its first sweep found is dead at this tip. **M8 IS NEW AND IS FILED AS
+`T-123-s6`** — the property is right, and nothing holds it. **M15 is the
+one the rebuild already disclosed** (no body captures stdout); I
+reproduced it rather than taking it on trust, and it is not a finding —
+log strings are unpinned throughout this repository.
+
+**Restoration proved after EVERY mutant**: `git checkout --`, then
+sha256 of the working file against `git show HEAD:<path>` from the
+drill's own commit — **MATCH 15 of 15**. `docs_watch.rs`
+`3c7e35f3…`, `agent/mod.rs` `8ba0c1e1…`, `agent/sessions.rs`
+`b905bc42…`. My own attack bodies lived in `verify-T-123-pass2` and were
+removed; `git status --porcelain` there is **EMPTY** and the full suite
+re-ran clean afterwards.
+
+**SHAPE SIX, asked of the bodies the notes did not ask it of** — two of
+them kill nothing that `start_refuses_…` does not already kill. Filed as
+the second half of `T-123-s7`; the notes' own four answers reproduce.
+
+---
+
+#### Commands, in order, every exit read UNPIPED off `$?` on the very next token
+
+| # | command | cwd | exit |
+|---|---|---|---|
+| 1 | `git merge-tree --write-tree d64c673 338a7e2` | root | **0** |
+| 2 | `git diff --name-only d64c673 <TREE>` | root | **0** (9 paths) |
+| 3 | `npm ci` + `npm run build` | lib/parser | **0** |
+| 4 | `npm ci` | tools/e2e | **0** |
+| 5 | `npm install` | app | **0** |
+| 6 | `cargo build --tests` | app/src-tauri | **0** |
+| 7 | `cargo test --no-fail-fast` | app/src-tauri | **0** — 393/0/3 over 15 lines |
+| 8 | my attack, 9 bodies (5 docs_watch + 4 agent) | app/src-tauri | **0** — all pass |
+| 9 | `npm run build` | app | **0** |
+| 10 | `npm test` | app | **0** — 940/940 across 46 files |
+| 11 | `npx vitest run` | lib/parser | **0** — 263/263 across 12 files |
+| 12 | `NPUTER_E2E_PORT=15070 npm test` | tools/e2e | **0** — 143 passed |
+| 13 | `npm run typecheck` | tools/e2e | **0** |
+| 14 | `NPUTER_BOOT_PORT=15071 npm run boot:check` | tools/e2e | **0** |
+| 15 | `index --check --root <main e1f3023>` | scratch | **0** — CURRENT |
+| 16 | `index --check --root <MERGED tree>` | scratch | **1** — a REAL red, see below |
+| 17 | `arch --root` on both trees | scratch | **0** / **0** |
+| 18 | drill: 15 mutants, read back, run, restored, sha256-proved | `drill-T-123-verify2` | 101 ×13, **0 ×2** |
+| 19 | `node tools/e2e/scripts/docs-gate.mjs <9 root-relative paths>` | repo root | **1** (FIRES) |
+| 20 | `cargo test --no-fail-fast` (after restoration) | app/src-tauri | **0** — 393/0/3, `git status` EMPTY |
+
+**Figures, each at its own ref (`338a7e2` unless stated).** cargo **393
+passed / 0 failed / 3 ignored**, summed over **15** `test result:` lines,
+exit 0, **twice**. app **940/940 across 46 files**, exit 0, after a build
+whose bundle is byte-identical to main's (`index-C86RloYb.css` 45.06 kB,
+`index-DEkJr3K8.js` 526.42 kB) — which a 0-file `app/src` diff requires.
+parser **263/263 across 12 files** (main is at 264 since T-096; this lane
+is based before it). e2e **143 passed**. Every one matches the rebuild
+notes figure for figure.
+
+#### Gates, DERIVED on this merge's own 9 paths — at the CURRENT main tip
+
+| gate | trigger | on these 9 |
+|---|---|---|
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **3 — FIRES, and was RUN** |
+| GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` **or `*.rs`** outside docs/ | **3 — FIRES, and is OWED** |
+| DOCS GATE | a `docs/` path a code suite reads | **6 — FIRES**, three suites owed |
+
+- **BOOT GATE — exit 0**, scratch port **15071**, both `[nputer]` lines
+  observed: `[nputer] project folder: …/verify-T-123-pass2` and
+  `[nputer] window "main" created`.
+- **GRAPH REGEN — THE BRIEF'S PREMISE IS STALE AND THE GAP IS ALREADY
+  CLOSED ON MAIN.** The brief warned that the trigger no longer matches
+  the walk. It did not, at `d64c673`; at `e1f3023` the bullet reads
+  *"`*.ts/*.tsx/*.js/*.jsx` **or `*.rs`** outside docs/"* — main absorbed
+  this lane's own `T-123-s5` while I was verifying. So the trigger now
+  FIRES on 3 of 9 honestly. **And it was ASKED, not reasoned.** Indexed
+  with main's own indexer, `CARGO_TARGET_DIR` kept OUTSIDE the tree (my
+  first attempt put it inside and indexed three of its own build-script
+  `.rs` files — recorded because the transcribed-figure defect is this
+  repo's recurring one):
+
+  | tree | `index --check` |
+  |---|---|
+  | main `e1f3023` | **exit 0 — CURRENT**, 890 866 B · 172 files · 1874 sym · 1842 edges |
+  | main + this lane (the merge-tree tree, `git archive`d) | **exit 1 — STALE**, fresh **892 093 B · 172 files · 1878 sym · 1843 edges**, `~3` files, `+2 −1` edges, **no file added** |
+
+  The lane's contribution is **+1 227 bytes, +4 symbols, +1 net edge**,
+  reproducing the rebuild notes exactly. **A regen is owed at the
+  checkpoint** and this lane correctly did not take one (the graph is not
+  in its fence and its own indexer is the pre-T-010 one).
+- **DOCS GATE — exit 1 (its verdict: FIRES)**, invoked from the repo root
+  with the 9 paths as ARGUMENTS, root-relative, never through `xargs`.
+  **6 of 9 under docs/**; **three suites owed — app, lib/parser,
+  tools/e2e — and all three run green above.** **0 frontmatter issues**,
+  *"every live task card's frontmatter parses, with a legal status"*, 12
+  derived readers across 4 suites, a census of **125 docs-shaped sites in
+  22 files, 12 of them in 10 files** resolving into this repo's docs/,
+  **25 files holding the repository root** (11 derived, 0 unlinked, 14
+  with no linkable site), 1 package-relative site, root-anchor ledger at
+  6 entries. My own four suggestion files were `git add`ed before the
+  gate was trusted on their frontmatter (T-010-s10).
+
+#### THE FLAKE — an honest tally, never a silent re-run
+
+`docs_watch::tests::startup_arm_watches_the_initial_root` (T-088-s4,
+unparked at T-010's checkpoint) **did NOT fire in either of my two full
+`cargo test --no-fail-fast` runs**, both taken with three lanes live.
+Nothing was re-run to make a red go away, because nothing was red.
+Running tally including mine: **2 red in 6 full-suite runs.**
+
+#### Prohibitions honoured
+
+Port **1420** read ONLY with `lsof -nP -iTCP:1420 -sTCP:LISTEN`, never
+bind-probed, and **RE-READ rather than quoted** as the brief instructed:
+holder `node` pid **82549**, one socket `TCP [::1]:1420 (LISTEN)`,
+identical at the start and at the end. (The vite listener's pid is not
+the app binary's, which the rebuild notes correctly record as having
+relaunched at 02:10 under T-010's merge.) Only **15070** (e2e) and
+**15071** (boot check) of the 15070–15074 range were used — `lsof` FIRST
+(zero rows on all five), then bind-confirmed free on `127.0.0.1`,
+`0.0.0.0`, `::1` and `::` in that order, and both free again after. **No
+`pkill`.** `../nputer-T-110` and `../nputer-T-031` were never opened;
+`~/nputer-genesis-probe` was **never read or written** — every fixture is
+built in a temp directory; the untracked `z` was left alone; nothing was
+written in `/Users/ujju/Projects/nputer`. `../nputer-T-123` was never
+built in and its source is byte-unchanged. No real CLI spawn, no model
+call, no screen control.
+
+#### Where this brief, the card and both previous verdicts were wrong
+
+- **The brief's load-bearing warning about GRAPH REGEN is STALE, and
+  obeying its instruction is what showed that.** It says the trigger
+  *"no longer matches what the walk indexes"* so *"a Rust-only diff can
+  now move the graph while the trigger fires on zero paths"*. True at
+  `d64c673`; **false at `e1f3023`**, where main carries the widened
+  trigger that absorbs this lane's `T-123-s5`. The gap is closed and the
+  gate now FIRES on 3 of 9 by its own words. The instruction — *ASK
+  rather than reason from the trigger* — was right both times.
+- **The brief names main's tip as `d64c673` by implication; main was two
+  commits further on before I finished.** `8776326` then `e1f3023`. This
+  is STATE's own standing observation (a concurrent session writes to
+  main in this checkout) reproduced for the third checkpoint running, and
+  it changed a gate's answer, not only a hash.
+- **The brief says the first pass filed `T-123-s3` on "the loader renames
+  a non-parsing registry aside" and asks whether the rebuild changed its
+  reach. It did not** — `genesis_reachability` is called unconditionally
+  ahead of the routing decision, exactly as `has_genesis_session` was, so
+  the reach is identical and the finding is intact. Reproduced at this
+  tip rather than inherited.
+- **The brief asks for the survivor the rebuild reports and warns against
+  hunting for it. Correct instruction**: my own sweep found a DIFFERENT
+  survivor (M8) that the rebuild's thirteen do not cover, and confirmed
+  the reported one is closed (M13). Hunting for the named one would have
+  found neither.
+- **The first verdict's criterion-7 finding is superseded by the rebuild
+  and the rebuild is right.** It marked the `if planned` backstop as
+  genuinely closing the fresh-spawn hole; with the predicate fixed at its
+  source that state is unreachable, so the backstop could not be redded
+  by any input. Removing it is correct, and the rebuild's own note names
+  the reason.
+- **The first verdict's security sweep says of the rename-aside finding
+  that it is "confined to `.nputer/` … destroys nothing".** True, and
+  incomplete in one respect it did not check: `fs::rename` OVERWRITES an
+  existing `sessions.json.corrupt`, so a second malformed registry
+  discards the first one's copy. Still losable by charter; recorded so
+  the next reader does not have to re-derive it.
+- **The card's own criterion 2 is what creates the C-10 ⇄ C-14 cycle**,
+  and neither the card nor either previous pass says so. Filed as
+  `T-123-s8` with both `arch` reports; it is the architect's call, and it
+  is an obligation at the checkpoint either way.
+- **The rebuild notes' shape-six section answers four bodies of ten.**
+  Two of the six unexamined ones kill no mutant another body does not
+  already kill (`T-123-s7`).
+
+#### Findings filed, none of them blocking
+
+`T-123-s6` (the carried registry read is unpinned — my drill survivor),
+`T-123-s7` (a non-event asserted without its control, plus the shape-six
+gap), `T-123-s8` (the merge's new C-10 ⇄ C-14 cycle and C-10's first
+drift row), `T-123-s9` (the registry read has no size cap and this card
+moves it earlier). The lane's own `s1`, `s2`, `s4`, `s5` and the first
+verifier's `s3` were re-read and all five still stand as filed.
+
+#### VERDICT: **APPROVED**
+
+The defect the first pass rejected is closed at its source, pinned by
+name, and the fix is narrower rather than wider than the criterion —
+which is the right direction. Every criterion is met under literal
+attack; the classification is total over every registry shape I could
+form; the two guards provably agree; the no-overwrite guarantee and the
+destructive door are unmoved and mutant-confirmed; the veto still holds
+and I drove the row that proves it. The security sweep is an all-clear on
+every destructive question, with two bounded, non-blocking findings
+filed. **This card has NOT reached the two-rejection stop condition.**
+
+**The integrator owes three things this lane correctly did not do:**
+regenerate the graph (`index --check` at the merged tree is **exit 1**,
++1 227 bytes / +4 symbols / +1 edge) and reconcile the two live-registry
+fixtures it moves; put the new **`C-10 -> C-14` undeclared** row and
+C-10's first **D1** in front of the architect; and re-run the three
+docs-gate suites after the checkpoint's own doc writes.
