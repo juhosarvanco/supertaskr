@@ -465,13 +465,16 @@ from a suite that did not run.
   its use. Free at all four reads.
 - **`npm run typecheck` exit 0**, **`npm run lint:docs` exit 0**,
   **`npm run lint:tokens -- --selftest` exit 0** and **`npm run
-  lint:tokens` exit 0** at **TOKEN 135 / CONTROL 722 — measured at the
-  MERGE `188262e`**. **DERIVE IT AT YOUR OWN REF; it is not a constant**,
-  and it is about to move for a reason this paragraph can name rather
-  than predict: CONTROL's corpus is `git ls-files`, so **the four
-  suggestion files this checkpoint commits are invisible to it until the
-  commit exists.** See above for why the earlier +1 on CONTROL
+  lint:tokens` exit 0** at **TOKEN 135 / CONTROL 722 at the MERGE
+  `188262e`**, and **TOKEN 135 / CONTROL 726 at the CHECKPOINT
+  `f5e6907`**, re-run there rather than predicted. **DERIVE IT AT YOUR
+  OWN REF; it is not a constant** — and the +4 is exactly derivable:
+  CONTROL's corpus is `git ls-files`, so **the four suggestion files this
+  checkpoint commits were invisible to it until the commit existed**, and
+  none of them is a TOKEN-root file. See above for why the earlier +1
   (721 → 722) is the architect's `723cfec` and not this merge's.
+  **`index --check` was asked a FOURTH time at the checkpoint commit and
+  is exit 0, CURRENT at the same four figures.**
 - **BOTH KNOWN CARGO INTERMITTENTS WERE READ BY NAME**, not inferred from
   a green exit: `startup_arm_watches_the_initial_root` `ok`,
   `a_hostile_session_id…` `ok`. So was the card's own corrected pin:
