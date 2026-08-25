@@ -226,22 +226,44 @@ memory** (lane-protocol rule 7).
 ### **THE BOARD-TRUTH WINDOW IS OPEN, AND THIS IS WHAT IT LOOKS LIKE**
 
 **`T-132` reads `status: planned` on the board while holding a worktree
-on its own `task/` branch, with one commit (`b1783a6`) on it.** Its own
-lane base carries `planned` too, so the `building` stamp was never
-written on the integration branch before the branch was cut — which is
-the exact ordering `method/lane-protocol.md`'s last section fixes, and
-the exact shape the previous edition of this file said was absent. **It
-is not a defect in `T-132`'s work and nothing reds**; it is the window
-being open, and it is recorded because `integrator.md` rule 4 asks that
-an unexplained state be recorded rather than tidied. **Whoever owns
-`T-132` should stamp it `building` on main.** Do not read `planned` on
-that card as "free to dispatch".
+on its own `task/` branch.** Its own lane base carries `planned` too, so
+the `building` stamp was never written on the integration branch before
+the branch was cut — which is the exact ordering
+`method/lane-protocol.md`'s last section fixes, and the exact shape the
+previous edition of this file said was absent. **It is not a defect in
+`T-132`'s work and nothing reds**; it is the window being open, and it is
+recorded because `integrator.md` rule 4 asks that an unexplained state be
+recorded rather than tidied. **Whoever owns `T-132` should stamp it on
+main.** Do not read `planned` on that card as "free to dispatch".
+
+**AND THE GAP WIDENED WHILE THIS CHECKPOINT WAS BEING WRITTEN**, which is
+the sharpest form the finding takes: the lane advanced `b1783a6` →
+**`56821e7`** and stamped itself **`verifying`** in its own worktree
+(correctly, per ruling NINE), and a detached verifier checkout
+`/Users/ujju/Projects/nputer-T-132-verify` appeared at **22:17**. **So
+the board says `planned` about a card that is IN VERIFICATION with two
+worktrees open on it.** Read the branch, never the card, for what a lane
+is doing.
 
 **DERIVE THE MEMBERSHIP BY FILTERING ON THE BRANCH; DO NOT QUOTE THIS
 TABLE.** The one command that answers it:
 `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`.
-The row count is weather — it has been 14, 7, 6, 5, 4 and now **6** in
-four hours. **TWO detached non-lanes, against two lanes.**
+**THIS EDITION DELIBERATELY CARRIES NO ROW COUNT, AND THAT IS A CHANGE
+OF POLICY EARNED BY MEASUREMENT RATHER THAN A STYLE PREFERENCE.** Every
+previous edition printed one (14, 7, 6, 5, 4 …) with the warning that it
+was weather. **This checkpoint watched its own figure go stale TWICE
+inside forty minutes**: two detached non-lanes when the lane list above
+was derived, three when the worktree was removed sixteen minutes later
+(`T-132`'s verifier checkout), and four two minutes after that (a
+`T-127` POISON DRILL checkout, correctly placed OUTSIDE the repository
+under the session scratch root — lane-protocol rule 3). **A figure that
+cannot survive the document that derives it should not be in the
+document.** Run the command. **What does NOT move on that timescale is
+the LANE membership** — the two-row table above was still exactly right
+at every one of those three readings, because a lane is a `task/` branch
+entry and everything else is somebody's scratch. **This checkpoint
+removed a worktree and the list got LONGER, for the second checkpoint
+running.**
 
 - **`/Users/ujju/Projects/nputer-app`, detached** — **@human's app
   checkout, and the one serving port 1420.** Permanent, by @human's
@@ -257,6 +279,14 @@ four hours. **TWO detached non-lanes, against two lanes.**
   last one. It is on no `task/` branch and is named after no card, so it
   is **not a lane**; it was read with `git -C … rev-parse` and nothing
   else, and left alone.
+- **`/Users/ujju/Projects/nputer-T-132-verify`, detached at `56821e7`** —
+  **`T-132`'s VERIFIER checkout, and it arrived at 22:17**, between this
+  checkpoint's lane derivation and its worktree removal. It is detached
+  and on no `task/` branch, so **it is not a lane and holds no fence** —
+  the fence is `T-132`'s branch entry, not this one. **A path named after
+  a card is not evidence that it is a lane**, and this is the clearest
+  case yet: two worktrees, one card, one fence. Not removed, not counted,
+  read with `git -C … rev-parse` only.
 
 **NO LANE WORKTREE SITS AT A NON-STANDARD PATH.** Free: **`tools/e2e`**,
 `docs/CONVENTIONS.md`, `app-agent`, `app-map`, `app-board`, `app-shell`,
@@ -692,9 +722,10 @@ which was not hypothetical tonight, with two lanes live.
 
 **NOTHING IS BROKEN.** TWO lanes hold fences — **T-127** (`building`,
 `[crate-index, docs/architecture/components/]`) and **T-132**
-(`planned` on the board, which is the open board-truth window above,
-holding three `method/` files). Read `git worktree list` and each branch
-tip rather than any table here.
+(`planned` on the board, `verifying` in its own lane and holding a
+verifier checkout beside it — the open board-truth window above; three
+`method/` FILES). Read `git worktree list` and each branch tip rather
+than any table here.
 
 **`tools/e2e` IS RELEASED.**
 
@@ -743,13 +774,16 @@ tip rather than any table here.
    *repair what the merge INTRODUCES, file what the merge merely
    REVEALS.* **Verified ABSENT from `method/` and `docs/CONVENTIONS.md`
    again at this ref** — `git grep` returns zero rows — and it is
-   unmerged in the T-132 lane at `b1783a6`, so **it is still not
+   unmerged in the T-132 lane, whose `method/roles/integrator.md` carries
+   it at line 40 at tip **`56821e7`**, so **it is written and still not
    citable.** This checkpoint applied it anyway: it **REPAIRED** nothing,
    because this merge introduces no defect; it **FILED NOTHING AND
    REPAIRED NOTHING** about `T-130-s1`'s stale routing line or the card's
    narrow trigger sentence, which it merely reveals — both are recorded
-   above instead. **Whoever owns `T-132` should also stamp the card
-   `building` on main** (the open window, above).
+   above instead. **The card reads `planned` on main and `verifying` in
+   its own lane, and it is in verification with a second worktree open on
+   it** (the open window, above) — so the board understates it by two
+   states, not one.
 6. **`T-091-s4` — THE PREDICTED-TREE COMPARISON IS PRACTISED EVERYWHERE
    AND WRITTEN NOWHERE.** `git grep -n "merge-tree" method/` still
    returns zero rows, re-checked at this ref. Fence `method/` — **NOW
@@ -878,9 +912,12 @@ brief's most useful sentence was the one about its own unreliability.**
    check whether it is there yet rather than assuming, since `T-132` is a
    card and may not have been built."* **It has NOT landed.** `git grep`
    over `method/` and `docs/CONVENTIONS.md` returns zero rows at this
-   ref; the rule is unmerged in the `T-132` lane at `b1783a6`. **The
-   hedge is what made the claim safe**, and it is the difference between
-   a brief that is wrong and a brief that is merely early.
+   ref; the rule is WRITTEN but unmerged, in the `T-132` lane's own
+   `method/roles/integrator.md` at tip `56821e7`. **The hedge is what
+   made the claim safe**, and it is the difference between a brief that
+   is wrong and a brief that is merely early — the brief said *"it
+   landed"* and then said *"check"*, and only the second clause was
+   true.
 4. **A FACT THAT WAS STALE BEFORE IT WAS WRITTEN, AND STALER BY THE
    MERGE.** The brief called T-130 *"the last card in tonight's
    integration queue"* and inherited this file's *"the only lane left"*.
