@@ -559,10 +559,30 @@ from a suite that did not run.
   reason the graph goes in the CHECKPOINT and not the merge), run 3 after
   the reconciliation (**973/973**), run 4 after all doc writes and the
   second regen (**973/973**). **The parser suite ran TWICE** (268/268,
-  268/268) and **`tools/e2e` TWICE** (171/171, 171/171, same scratch port
-  15432, re-probed immediately before each bind). **All runs agree on
-  every derived count except run 2, whose disagreement is the fixture
-  reconciliation itself.**
+  268/268) and **`tools/e2e` THREE times** (171/171, 171/171, 171/171,
+  same scratch port 15432, re-probed immediately before each bind). **All
+  runs agree on every derived count except app run 2, whose disagreement
+  is the fixture reconciliation itself.**
+
+### **THE DECLARE-EVERY-RUN RULE DOES NOT TERMINATE ON ITS OWN, AND HERE IS WHERE IT STOPS**
+
+**This is worth one paragraph because every checkpoint meets it and none
+has named it.** `docs/STATE.md` is a code input — two `tools/e2e` specs
+walk the whole of `docs/` — so **a checkpoint that writes its own suite
+counts into this file owes the suite that reads this file, and running it
+produces a new count to write down.** Asked rather than assumed: the
+DOCS GATE on this checkpoint's own correction commit exits **1** and owes
+exactly one suite, `npm test from tools/e2e/`. That was run — the third —
+and it is **171/171**.
+
+**THE REGRESS TERMINATES ON AN INVARIANT, NOT ON A COUNT.** A fourth run
+is owed by the correction that records the third, and the honest stopping
+rule is this: **stop when a run AGREES with its predecessor and no figure
+in the file moves**, because at that point every further run only
+re-confirms an unchanged number and the sentence "every run agreed"
+survives them all. What may never be done is stopping because the loop is
+tiresome, or writing a run's result before running it. **171/171 three
+times, on the same port, each re-probed.**
 - **`range-rule.spec.ts` PRINTED ITS DISCLOSURE AGAINST THIS MERGE COMMIT
   BY NAME** on the second e2e run — *"`/Users/ujju/Projects/nputer @
   4983174` — GRAPH REGEN's published flip figures are stated at
