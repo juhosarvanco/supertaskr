@@ -5,14 +5,14 @@ feature: F-01
 milestone: 4
 priority: 5
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [method/lane-protocol.md, method/roles/integrator.md, method/tasks/TASK-FORMAT.md]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5 @T-132-verify
+built_by: claude-opus-5 @T-132 — first build b1783a6, fix 0c6a0a3 by a fresh executor; notes 56821e7, 9b3b923
+verified_by: claude-opus-5 @T-132-verify — REJECTED 9314d3e, re-check APPROVED 2026-08-25 — verdict commit aabbb3c, self-correction 83a85cc
+review: same-model
 ---
 
 Absorbs (2026-08-25, at @human's instruction): **`T-123-s10`** and
@@ -1437,3 +1437,128 @@ instance in this thread, in the seat that had just finished naming the
 first two.** The rule is not that careful readers stop doing this. It is
 that nothing in a finished document distinguishes a derived figure from a
 carried one, which is the whole of the card's argument for a check.
+
+## Integration
+
+**Merged 2026-08-26 by a third `claude-opus-5` session that neither wrote
+nor reviewed this lane's commits before opening them.** Main-before
+`4f3de7e`, lane tip `83a85cc` (derived with `git rev-parse`, not
+assumed — the tip is the verifier's SELF-CORRECTION and sits one commit
+above the verdict `aabbb3c`), merge **`1d3838b`**, checkpoint its direct
+child. `review: same-model`.
+
+**EVERYTHING ABOVE THIS HEADING IS BYTE-UNTOUCHED.** The lane's text, the
+rejection verdict, the re-check verdict and the verifier's self-correction
+were all preserved exactly as written, including the false sentence
+corrected below. The ruling for that is the one this merge makes citable:
+**an integrator repairs what the merge INTRODUCES and files what it
+merely REVEALS**, and T-108's fence ruling limits a card's own-file
+exemption to PROTOCOL writes — `status`, `builder`, `built_by`,
+`verified_by`, `review`. **A closing stamp is a protocol write; rewriting
+another hand's analysis is a lane write, and this integrator holds no
+lane.**
+
+### THE CONFLICT ARRIVED, ON THIS CARD, AND IT IS THE BEST EVIDENCE THE RULE HAS
+
+`git merge-tree --write-tree 4f3de7e 83a85cc` exited **1** — one
+`CONFLICT (content)`, one file, one hunk, one line: base `planned`, main
+`building`, this lane `verifying`. **Resolved to `verifying`**, which is
+`TASK-FORMAT.md`'s own account of the window (`building` at the merge's
+parent, `verifying` at the merge commit, `done` at the checkpoint) and
+`executor.md` step 6's stamp to make. The resolved file is byte-identical
+to the lane tip.
+
+**THE MECHANISM IS `orchestrator.md` 5b, SKIPPED, MEASURED IN MINUTES.**
+The base `74feb67` is 21:46:54 and reads `planned`; this lane's first
+commit `b1783a6` is 21:56:51; main's dispatch stamp `e7db842` is
+**22:42:41 — fifty-five minutes and forty-seven seconds after the base**.
+A base that predates the stamp gives the line two writers. Had 5b been
+obeyed the base would read `building`, only the lane would have moved it,
+and the merge would have been clean.
+
+**AND THE ARITHMETIC IS THE PART THE NOTES COULD NOT SEE FROM INSIDE THE
+LANE.** Main advanced **26** paths under this card and the lane wrote
+**8**; `comm -12` of the two sorted lists returns **one row, not empty**,
+and that row is this file. **8 + 26 − 1 = 33**, which is exactly the
+forbidden two-dot count. **This is the first merge in this project's
+record where the two sides are not disjoint**, and the intersection is
+the card filed about the step that prevents it.
+
+**ONE FURTHER FACT, BECAUSE THE NOTES' ACCOUNT IS TRUE AND INCOMPLETE.**
+Main's stamp commit moved **two** lines, not one — `status:` and
+`builder:`. Only `status:` conflicted. `builder: claude-opus-5` merged
+clean **because this lane adopted main's value rather than leaving it
+empty**, which the notes record as a choice. So one of the two two-writer
+lines was saved by a lane's courtesy and not by anything structural.
+
+### THE CARD'S CLAIM AT LINE 139 IS FALSE, AND IT IS NOW FALSE ON MAIN
+
+*"One clause; it is `T-123-s10`'s entire ask."* **It is not.**
+`T-123-s10` was filed for the staging incident and absorbed here, its
+file deleted; `git grep -i 'staged\|staging' -- method/` returned **zero
+rows at the merge's parent** and returns **two** now, **and neither is a
+rule** — violation (a) itself at `lane-protocol.md:128`, and a citation
+to a rule nobody wrote at `TASK-FORMAT.md:255`, leaned on again at `:257`.
+**Staging was never in rule 4's list in any spelling**, so no version of
+this clause discharges `T-123-s10`.
+
+The refutation already stands in this file, in the verifier's own section
+about eleven hundred lines below the claim. **It is repeated here because
+a reader who stops in section one meets the claim and not the correction**,
+and because `docs/STATE.md` is a snapshot that will be rewritten at the
+next merge while this file is permanent.
+
+### `T-132-s4` — FILED, NOT REPAIRED, WITH THE REASONS AND THE GAP IT FOUND
+
+The dangling citation ships. `method/tasks/TASK-FORMAT.md` is one of
+**exactly fourteen** `method/` files cargo compiles into the binary —
+derived at this merge from the debug dep-info rather than from reading
+`kit.rs` — and `lane-protocol.md` and `roles/integrator.md` are **not**
+among them, so of this card's three fenced files exactly ONE is a code
+input. In a project that is not this one, the reader gets a sentence
+saying a rule exists that their `method/` does not contain.
+
+**It is still filed rather than fixed, for three reasons.** The verifier
+already took the disposition and disposition belongs to triage (T-083).
+The repair is a lane write — `T-132-s4`'s preferred fix is to WRITE A NEW
+RULE into `lane-protocol.md`, and its alternative is to STRIKE another
+hand's sentences in `TASK-FORMAT.md`; neither is a protocol write. And
+`T-132-s4` itself asks for a positive control on any new rule — *state it
+so an atomic stamp-and-commit under a running integrator still passes* —
+**which an integrator cannot supply at a checkpoint**, for text that
+materialises into other projects' kits.
+
+**THE GAP, WHICH IS THIS CHECKPOINT'S ONE FINDING ABOUT THE CLAUSE IT
+LANDS.** Ruling thirteen's test is *"Ask whether the thing was true one
+commit ago. Yes: repair it. No: file it."* For `TASK-FORMAT.md:255` the
+honest answer is **NEITHER** — one commit ago the sentence did not exist.
+Read the TEST and you file; read the HEADLINE (*"a citation that THIS
+merge made false"*) and you repair. **The rule sorts defects by WHEN they
+became false and never by WHO may write the fix**, and the second axis is
+what both this checkpoint and T-127's actually decided on. Recorded here
+and in STATE; filing it is a triage's call and not an integrator's.
+
+### THE DISCRIMINATOR HOLDS AND ITS SUPPORTING SENTENCE OVERSTATES
+
+Confirmed as the verifier found it, and repeated here because STATE is a
+snapshot. `lane-protocol.md`'s *"A commit does not contend; it is
+atomic"* is **true of a completed commit and false of the staging step**,
+and the counterexample is violation (a) thirty-six lines below it in the
+same rule. **Atomicity is an obligation on the WRITER, not a property of
+git.** The collision/authority test itself was attacked and does not
+over-reach; only this sentence does. Not repaired, on the ruling above.
+
+### GATES AND SUITES AT THE MERGE
+
+DOCS GATE **exit 1**, FIRES on 5 of the merge's 8 paths, naming three
+suites — and **exit 0 on the three `method/` paths alone** (*"none under
+docs/ — this gate is not owed"*), which reproduces `T-132-s2` a fourth
+time. GRAPH REGEN not owed by its trigger, **asked twice anyway**, exit 0
+CURRENT both times, so no regen. BOOT GATE 0 of 8, not owed.
+`cargo test` **494 / 0 / 3 exit 0** over sixteen result lines with headers
+summing 497 — owed by the `include_str!` derivation and named by no gate.
+parser **268/268**, app build exit 0 then **973/973**, e2e **171/171** on
+scratch port 15920. `arch cycles` exit 1 by design. METHOD_SNAPSHOT_VERSION
+stays **0.1.6** and `snapshot_version_matches_the_live_method_stamps` is
+`ok` — **and this card's fence could not have bumped it in any case**,
+because a bump's third file is `app/src-tauri/src/agent/kit.rs`.

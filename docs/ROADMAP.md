@@ -910,7 +910,17 @@ moved in opposite directions at one regen, and **939 161 bytes —
 new indexed file (`files +1 -0 ~8`), and **944 590 bytes — 94.46%,
 55 410 bytes of headroom** at T-127's, which spends **5 429** on ONE new
 indexed file (`crates/nputer-index/src/arch/cycles.rs`, `files +1 -0
-~4`). Derive it at your own ref.
+~4`). **AND IT DOES NOT MOVE AT ALL AT T-132's** — still **944 590
+bytes — 94.46%, 55 410 bytes of headroom** — which makes T-132 the FIRST
+merge in this series to spend NOTHING: its eight paths are five markdown
+cards under `docs/` and three files under `method/`, and neither
+directory is in the walk that feeds the graph (`.nputerignore` excludes
+`docs/`; `method/` was never in it). `index --check` was asked twice and
+answered CURRENT twice, so the regen was not owed and not performed.
+**A merge that changes a file the Rust binary `include_str!`s can
+recompile the crate and still move the graph by zero bytes**, because the
+graph indexes SOURCE and the included file is DATA. Derive it at your own
+ref.
 **AND THE MILESTONE-4 CENSUS IS RE-DERIVED HERE RATHER THAN CARRIED**:
 **96** cards on disk carry `milestone: 4` at T-129's checkpoint, of which
 **7 are F-04** (92 and 7 at T-126's, 86 and 6 at T-110's) — F-01 9,
@@ -924,6 +934,16 @@ because `T-127` is **F-06** and inherited backlog on the same ruling, and
 its **five** suggestions carry no `milestone:` at all. So the F-04
 progress line does not move for it either, for the third consecutive
 merge.
+**AND RE-DERIVED ON DISK A THIRD TIME AT T-132'S CHECKPOINT, IDENTICAL
+AGAIN** — 96 total, F-01 9, F-02 43, F-03 12, F-04 7, F-06 25 — for a
+different reason worth naming, because it is the one a future reader will
+get wrong: `T-132` is **F-01** and carries `milestone: 4`, so it was
+ALREADY IN THIS COUNT before its own merge, and stamping it `done` moves
+no census figure. Its **four** suggestions carry no `milestone:` at all.
+**FOURTH CONSECUTIVE MERGE WHERE THE F-04 PROGRESS LINE DOES NOT MOVE**,
+and the three reasons have all been different: inherited-backlog feature
+(T-129, T-127), and now a card that was counted before it landed. **A
+census that does not move is not evidence that nothing merged.**
 Decomposition pass complete 2026-08-19
 (design/dispatch-technical-plan.md); D1 ruled by @human the same day.
 
