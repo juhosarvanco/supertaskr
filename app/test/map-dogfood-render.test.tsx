@@ -120,7 +120,7 @@ describe("the nputer repo on its own map", () => {
     expect(c01.textContent).toContain("pin");
   });
 
-  it("C-07 is a REAL face at last: thirty-three Rust files match its globs", () => {
+  it("C-07 is a REAL face at last: thirty-four Rust files match its globs", () => {
     // THE ASSERTION THAT INVERTS AT THE T-010 MERGE REGEN (2026-08-25),
     // and the one this whole card exists to invert. This body read
     // "C-07 is declared-only: zero TS files match its globs" from T-012
@@ -143,7 +143,12 @@ describe("the nputer repo on its own map", () => {
     // derived from `arch` over the regenerated graph before the suite was
     // run. **THE TITLE MOVED WITH THE DIGIT**, because a body whose name
     // carries a count is a count in two places (T-126's precedent).
-    expect(c07.textContent).toContain("33 files");
+    // 33 → 34 at the T-127 merge regen (2026-08-25), the second file this
+    // component has gained on disk and the same shape as T-129's:
+    // `crates/nputer-index/src/arch/cycles.rs`, the registry cycle gate.
+    // Derived from `arch` over the regenerated graph before the suite was
+    // run, and the title moved with the digit again.
+    expect(c07.textContent).toContain("34 files");
     // The D3 ring is gone with the finding that drew it — the visible
     // half of architecture-dogfood's declaredOnly list losing C-07.
     expect(c07.className).not.toContain("map-drift-ring");
@@ -596,8 +601,21 @@ describe("the nputer repo on its own map", () => {
     // That is the reading to keep: a merge can add four component-level
     // edges to the graph and move no component relation at all. Derived
     // from the regenerated graph and `arch` before the suite was run.
+    // 179 → 180 at the T-127 merge regen (2026-08-25): ONE file,
+    // `app/src-tauri/crates/nputer-index/src/arch/cycles.rs`. The graph
+    // goes 939 161 → 944 590 bytes / 2004 → 2018 symbols / 1907 → 1911
+    // edges, and `index --check` printed `files +1 -0 ~4` naming EXACTLY
+    // this merge's five code paths, one for one. WHAT MOVES WITH IT:
+    // `fileComponent.size` and the C-07 tally row in
+    // architecture-dogfood (33 → 34) and this hint — and NOTHING ELSE,
+    // for the same reason as T-129's entry above: all four new edges are
+    // `import` (zero `call`, zero `type_ref`), three have both endpoints
+    // inside C-07 and the fourth lands on `p:cargo:std`, so the node
+    // count holds at 13, the relation table stays 36 rows at 26/1/9,
+    // findings hold at 3 and no ring lights or clears. Derived from the
+    // regenerated graph and `arch` before the suite was run.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 179 files",
+      "committed graph · 180 files",
     );
   });
 });

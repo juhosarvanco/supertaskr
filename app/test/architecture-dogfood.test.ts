@@ -1212,7 +1212,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 179 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
+  it("all 180 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
     // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
     // move this row has ever taken and the only one whose cause is a new
     // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
@@ -1263,7 +1263,20 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // can happen when a lane's base sits between a merge and its
     // checkpoint. The eight `~` are content-only. Derived from the
     // regenerated graph and `arch` BEFORE the suite was run.
-    expect(derived.fileComponent.size).toBe(179);
+    // 179 → 180 at the T-127 merge regen (2026-08-25), the same plain
+    // shape as the entry above: ONE new file,
+    // `app/src-tauri/crates/nputer-index/src/arch/cycles.rs`, which
+    // C-07's `app/src-tauri/crates/nputer-index/**` glob claims, so the
+    // C-07 row in the tally below moves with it (33 → 34) and
+    // `unmappedFiles` stays []. `index --check` printed `files +1 -0 ~4`
+    // and the five paths it names are EXACTLY this merge's five code
+    // paths, one for one — no foreign staleness rode along. THE `~4` IS
+    // WORTH READING BESIDE THE LANE'S OWN NOTES, which record `~3` and
+    // `+3`: those figures were taken one commit before the lane's own
+    // last commit and are stale by `tests/arch.rs -> cycles.rs`. Derived
+    // fresh here from the regenerated graph and `arch` BEFORE the suite
+    // was run, which is the instruction that caught it.
+    expect(derived.fileComponent.size).toBe(180);
     // AND THE BUCKET IS STILL EMPTY, for a second reason than the one it
     // had yesterday: T-033's settlement kept `tests/dispatch_lanes.rs` out
     // of the bucket by CLAIMING it, and T-126 keeps it out by DELETING it.
@@ -1397,7 +1410,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // pins every bounded traversal, and the FIRST file this component
       // has gained on disk since it joined the mapping. Derived from
       // `arch` over the regenerated graph before the suite was run.
-      ["C-07", 33],
+      // 33 → 34 at the T-127 merge regen (2026-08-25):
+      // `crates/nputer-index/src/arch/cycles.rs`, the registry cycle
+      // gate — the SECOND file this component has gained on disk, and
+      // the only component whose count moves at this merge. Derived from
+      // `arch` over the regenerated graph before the suite was run.
+      ["C-07", 34],
       ["C-08", 10],
       ["C-09", 3],
       // 2 → 3 at the T-010 merge regen: docs_watch.rs, which C-10 has

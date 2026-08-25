@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 6
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [crate-index, docs/architecture/components/]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5 @T-127-verify
+built_by: claude-opus-5 @T-127 — code d0494fc, 1b51d61, 6839450; notes e7d597a
+verified_by: claude-opus-5 @T-127-verify — APPROVED, 2026-08-25 — verdict commit 33cc8de
+review: same-model
 ---
 
 Absorbs (when filed): `T-033-s10` and `T-033-s7`, both of which land with
@@ -1121,3 +1121,168 @@ line each, and both should be corrected before hand-off; the integrator
 should derive GRAPH REGEN fresh and ignore the notes' figures. Findings
 **3** and **4** are latent, fail safe, and are worth routing rather than
 blocking.
+
+## Integration — 2026-08-25, `claude-opus-5`, THIRD HAND
+
+Merge **`ad3ac8a`**, main-before **`e7db842`**, lane tip **`33cc8de`**
+(`git rev-parse`, never quoted). Checkpoint its direct child. **The
+lane's own text and the verdict are preserved BYTE-UNTOUCHED** — this
+section is the integrator's own record beside them, not a rewrite of
+either, and the ruling below says why.
+
+### WHAT THE GATE'S GREEN MEANS, AND WHY A READER WILL OVER-READ IT
+
+`nputer-index arch cycles` reads the **REGISTRY ONLY** — no graph, no
+index — so a stale graph cannot falsely redden it, and its verdict is
+about **declared `depends_on:` and nothing else.** Every run, green
+included, prints on stdout that the observed side sees `import` edges
+only. **That disclosure is load-bearing rather than decoration, and the
+verifier proved it by construction**: a `use`-based mutual pair fires two
+D1s, while a `crate::b::pong()` path-expression pair fires **nothing on
+either side** — and it compiles, failing with `E0425` when broken, so the
+dependency is real. **A cycle made of Rust `mod`/path dependencies is
+invisible to BOTH sides at once.**
+
+**THE SUBCOMMAND IS RED ON MAIN TODAY AND THAT IS THE DESIGNED STATE.**
+Re-run at this merge: exit **1**, the whole 529-byte report on **stderr**
+with stdout **empty**, `cycle C-08 -> C-09 -> C-08`, `components=13
+declared_edges=35`. The ENFORCING copy is `cargo test`, which is
+**green**, because `tests/arch.rs` pins the census against
+`KNOWN_DECLARED_CYCLES` — an EXACT SET holding exactly this cycle, so a
+new cycle reds today and a stale entry reds the day `T-127-s1` lands.
+**A reader who runs `arch cycles` on main and reads exit 1 as breakage is
+reading it right and concluding wrong.**
+
+### THE CENSUS IS 1 BEFORE AND 1 AFTER, AND THE REASON IS THE FENCE
+
+Criterion 3 is **NOT BUILT**, disclosed with its measurement, routed as
+`T-127-s1` with a recommended partition. The smallest acyclic
+re-partition takes the app suite to **6 failed / 967 passed of 973**,
+because the fixtures live in `app/test/**` — C-05's `app-shell`, outside
+`[crate-index, docs/architecture/components/]`. The verifier reproduced
+it verbatim, to the failing-body count and the failure message. **This is
+`T-101`'s precedent: a disclosed defect above a widened fence.** The
+census did not move because a fence forbade the move, not because the
+gate failed to see it.
+
+### GRAPH REGEN — DERIVED FRESH HERE, AND THE VERIFIER'S FINDING 1 REPRODUCES
+
+The notes record `943006 bytes · 180 files · 2014 symbols · 1910 edges`,
+`~3` changed, `+3` edges. **Derived at this merge instead of carried:**
+**944 590 bytes · 180 files · 2018 symbols · 1911 edges**, `files +1 -0
+~4`, `edges +4 -0`. The fourth file and the fourth edge are `tests/arch.rs`
+and `tests/arch.rs -> cycles.rs` — the docs-gate fix at `6839450`, the
+lane's own last code commit. **So the notes' figures predate the lane's
+own last commit and the bullet above them — "ASKED, never predicted, and
+asked AGAIN after every write" — is contradicted by its own numbers.**
+The substance survives and is stronger: **all four new edges are
+`import`, still zero `call` and zero `type_ref`**, so the consequence the
+notes draw is right and only the digits are stale. The notes also say
+`index --check` reports **three** edges `cycles.rs` adds; at the tip it
+is **four**.
+
+### THE RULING ON THE CARD'S OWN WRONG ANALYSIS — FILE, DO NOT REPAIR
+
+**Section ONE of this card is wrong in the specifics, I re-derived it
+from source rather than taking either hand's word, and I did NOT rewrite
+it.** Derived at this merge by reading the import lines and the registry
+`paths:` globs:
+
+- **None of the four alternation hops matches a real edge in the
+  direction drawn.** `board-model.ts` imports only `@nputer/parser/pure`
+  and `./verdicts`; the real edge is `task-detail.ts -> board-model.ts`.
+  `task-detail.ts` imports only the parser and `./board-model`; the real
+  edge is `TaskCard.tsx -> task-detail.ts`. `TaskCard.tsx` does not
+  import `TaskDetailPanel.tsx`; the real edge is the reverse.
+  `TaskDetailPanel.tsx` imports neither `FeatureColumn.tsx` nor
+  `Board.tsx`; the real edges are `Board.tsx -> TaskDetailPanel.tsx` and
+  `FeatureColumn.tsx -> TaskCard.tsx`. **Four hops, four reversals** —
+  worse than the lane's correction, which named one.
+- **The card names two closing edges and there are three in the C-09 →
+  C-08 direction**: `TaskDetailPanel.tsx -> TaskCard.tsx` (the class
+  constants), `TaskDetailPanel.tsx -> badges/ReviewBadge.tsx` (unnamed by
+  the card; `badges/**` is C-08's) and `task-detail.ts -> board-model.ts`.
+  `arch` agrees at this merge: **`C-08 -> C-09 observed=6`** and
+  **`C-09 -> C-08 observed=3`**. **A fix severing only the class
+  constants would leave the component cycle standing**, which is the one
+  consequence that changes what a future lane would do.
+- **The card's "TWO cycles" went STALE rather than miscounting.** It was
+  TRUE at `b505fca`, the ref the card's own table names as main; T-033
+  dropped `C-12 -> C-05`. The criterion was written over the CENSUS
+  rather than over a named pair, and that is exactly what kept it
+  checkable under a history that moved.
+
+**THE RULING, and the rule it applies is the one this project landed
+tonight**: *repair what the merge INTRODUCES, file what the merge merely
+REVEALS.* **That analysis predates this merge by the whole life of the
+card** — it was written when the card was authored, from a walk of
+`app/src/**` whose own LIMITS paragraph disclosed what it could not see.
+This merge does not introduce it; the lane's derivation and the
+verifier's sharpening REVEAL it. **So it is filed, not repaired.**
+
+**Two further reasons make this stronger than ruling thirteen alone, and
+they are worth more than the ruling here because the ruling is still not
+citable** (`git grep` over `method/` and `docs/CONVENTIONS.md` returns
+**zero rows** at this ref, for the second checkpoint running — it is
+written and unmerged in `T-132`'s lane):
+
+1. **`T-108`'s OWN PRECEDENT POINTS THE SAME WAY, AND IT IS THE SHARPER
+   ARGUMENT.** This project's established remedy for a wrong claim in a
+   landed card is a **card**, fenced on the specific card paths and
+   dispatched by the architect — that is what `T-108` was, and its fence
+   ruling says in as many words that a card's own file is exempt from its
+   fence **for PROTOCOL WRITES**: `status`, `builder`, `built_by`,
+   `verified_by`, `review`. **An integrator's closing stamp is a protocol
+   write. Rewriting a card's technical analysis is a LANE write**, and
+   this integrator holds no lane. The archive-accuracy problem `T-108`
+   merged to fix is real, and `T-108` is also the evidence for who may
+   fix it.
+2. **THE CORRECTION IS ALREADY IN THIS FILE, TWICE.** The lane's *"Where
+   the card and the brief were wrong"* items 2–4 and the verdict's *"THE
+   CARD'S CLOSING EDGES"* section both land in this same file at this
+   merge, and this section is the third. **The archive is not left
+   teaching the wrong thing; it is left teaching the wrong thing FIRST
+   and the right thing three times over, further down a 1 288-line
+   card.** That residual — a reader who stops at section ONE — is the
+   real cost of this ruling, it is stated rather than argued away, and it
+   is why the correction is written here in permanent form rather than
+   only in `STATE`, which is a snapshot and will be rewritten at the next
+   merge.
+
+**NO SUGGESTION IS FILED FOR IT BY THIS CHECKPOINT** (T-083: disposition
+belongs to a triage pass, not to an integrator), and **it is NOT covered
+by `T-127-s3`**, which carries only the DAG claim. **It has no owner and
+that is recorded rather than tidied.**
+
+### THE VERIFIER'S OTHER THREE FINDINGS, ALL CONFIRMED AS ROUTED OR RECORDED
+
+- **`T-127-s5` is routed on the branch and named nowhere in the notes**,
+  which enumerate s1–s4. Confirmed: the merge carries five suggestion
+  cards and the notes mention `s5` zero times. Recorded here rather than
+  edited into the notes, on the same ruling. (Its *"covered by 22 test
+  bodies"* is also off by one — derived at this merge, the lane adds
+  **23**: the cargo suite goes 471 → **494** passed with ignored held at
+  3.)
+- **The truncation flag is off by one at exactly 64** — a false sentence,
+  never a false verdict, erring toward warning; the boundary is untested.
+  Latent, fails safe.
+- **The live positive control is brittle to a shared closing hop** — it
+  reds with a misleading message. Fails safe, unreachable at one cycle.
+
+Both are defects in code this merge INTRODUCES, so ruling thirteen would
+have them repaired; **the verifier recommended routing rather than
+blocking, and an integrator writing new Rust with new bodies at a
+checkpoint is a lane write by another name.** They are carried in `STATE`
+for the eleventh triage.
+
+### THE DRILL-POLLUTION CLASS, SELF-CAUGHT — AND THE PROTECTION IS THE NAME
+
+The verifier reported its own two false starts, including a **fabricated
+staleness reading** caused by naming its scratch target dir `.vtarget`,
+which `.gitignore`'s `target/` does not match, so `index --check` walked
+its build artefacts and reported `serde_core-*/out/private.rs` as tree
+staleness. **The protection is the NAME, not the location**: a scratch
+`CARGO_TARGET_DIR` inside a worktree must be named to match an ignore
+rule or the staleness gate reports the verifier. Worth a line in
+`docs/CONVENTIONS.md`'s POISON DRILL bullet, where the other three queued
+edits already sit.

@@ -26,6 +26,75 @@
       ]
     },
     {
+      "id": "f:app/src-tauri/crates/nputer-index/src/arch/cycles.rs",
+      "path": "app/src-tauri/crates/nputer-index/src/arch/cycles.rs",
+      "lang": "rust",
+      "hash": "blake3:791eed6614712bf832720a3b44a7fcb7c40d3040db393baadaa3cfb089c6dd23",
+      "loc": 427,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/cycles.rs#CycleReport",
+          "name": "CycleReport",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            60,
+            73
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/cycles.rs#MAX_CYCLES",
+          "name": "MAX_CYCLES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            56,
+            56
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/cycles.rs#cycles",
+          "name": "cycles",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            99,
+            191
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/cycles.rs#impl CycleReport",
+          "name": "impl CycleReport",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            75,
+            85
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/cycles.rs#render",
+          "name": "render",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            199,
+            237
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/cycles.rs#tests",
+          "name": "tests",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            240,
+            427
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/src-tauri/crates/nputer-index/src/arch/glob.rs",
       "path": "app/src-tauri/crates/nputer-index/src/arch/glob.rs",
       "lang": "rust",
@@ -168,8 +237,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/arch/mod.rs",
       "path": "app/src-tauri/crates/nputer-index/src/arch/mod.rs",
       "lang": "rust",
-      "hash": "blake3:01a9806ccae70c1d2f3239bdd9cbf1ff399db97d501b01be15e4aaf8bc2d65b2",
-      "loc": 966,
+      "hash": "blake3:e2dd8b37b8fde118b785ced1ae5fe57d6daa8fe04e2f7a140e3689808a6e49f5",
+      "loc": 967,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#ArchModel",
@@ -177,8 +246,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            157,
-            165
+            158,
+            166
           ]
         },
         {
@@ -187,8 +256,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            83,
-            89
+            84,
+            90
           ]
         },
         {
@@ -197,8 +266,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            73,
-            80
+            74,
+            81
           ]
         },
         {
@@ -207,8 +276,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            96,
-            120
+            97,
+            121
           ]
         },
         {
@@ -217,8 +286,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            53,
-            60
+            54,
+            61
           ]
         },
         {
@@ -227,8 +296,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            437,
-            441
+            438,
+            442
           ]
         },
         {
@@ -237,33 +306,13 @@
           "kind": "const",
           "exported": true,
           "range": [
-            50,
-            50
+            51,
+            51
           ]
         },
         {
-          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#fails",
-          "name": "fails",
-          "kind": "fn",
-          "exported": true,
-          "range": [
-            648,
-            650
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#finding_subject",
-          "name": "finding_subject",
-          "kind": "fn",
-          "exported": false,
-          "range": [
-            536,
-            544
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#glob",
-          "name": "glob",
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#cycles",
+          "name": "cycles",
           "kind": "mod",
           "exported": true,
           "range": [
@@ -272,68 +321,28 @@
           ]
         },
         {
-          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#impl ArchModel",
-          "name": "impl ArchModel",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            167,
-            210
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#impl Finding",
-          "name": "impl Finding",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            122,
-            153
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#impl Relation",
-          "name": "impl Relation",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            62,
-            70
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#impl Severity",
-          "name": "impl Severity",
-          "kind": "impl",
-          "exported": false,
-          "range": [
-            443,
-            468
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#join",
-          "name": "join",
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#fails",
+          "name": "fails",
           "kind": "fn",
           "exported": true,
           "range": [
-            226,
-            433
+            649,
+            651
           ]
         },
         {
-          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#model",
-          "name": "model",
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#finding_subject",
+          "name": "finding_subject",
           "kind": "fn",
-          "exported": true,
+          "exported": false,
           "range": [
-            213,
-            216
+            537,
+            545
           ]
         },
         {
-          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#registry",
-          "name": "registry",
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#glob",
+          "name": "glob",
           "kind": "mod",
           "exported": true,
           "range": [
@@ -342,13 +351,83 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#impl ArchModel",
+          "name": "impl ArchModel",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            168,
+            211
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#impl Finding",
+          "name": "impl Finding",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            123,
+            154
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#impl Relation",
+          "name": "impl Relation",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            63,
+            71
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#impl Severity",
+          "name": "impl Severity",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            444,
+            469
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#join",
+          "name": "join",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            227,
+            434
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#model",
+          "name": "model",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            214,
+            217
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#registry",
+          "name": "registry",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            41,
+            41
+          ]
+        },
+        {
           "id": "s:app/src-tauri/crates/nputer-index/src/arch/mod.rs#render_arch",
           "name": "render_arch",
           "kind": "fn",
           "exported": true,
           "range": [
-            471,
-            533
+            472,
+            534
           ]
         },
         {
@@ -357,8 +436,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            547,
-            645
+            548,
+            646
           ]
         },
         {
@@ -367,8 +446,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            653,
-            966
+            654,
+            967
           ]
         }
       ]
@@ -733,8 +812,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/cli.rs",
       "path": "app/src-tauri/crates/nputer-index/src/cli.rs",
       "lang": "rust",
-      "hash": "blake3:da8dd830e1bb109eb340e10291aeccf0d387cfb4d3f28b98357b1586a48bb494",
-      "loc": 621,
+      "hash": "blake3:909b28fab143ae054326ccdee28d52bc5fb98e76c54f3b55b15159b2ddff6241",
+      "loc": 737,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/cli.rs#Args",
@@ -742,8 +821,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            122,
-            129
+            137,
+            144
           ]
         },
         {
@@ -752,8 +831,8 @@
           "kind": "enum",
           "exported": false,
           "range": [
-            111,
-            119
+            125,
+            134
           ]
         },
         {
@@ -803,7 +882,7 @@
           "exported": true,
           "range": [
             54,
-            108
+            122
           ]
         },
         {
@@ -822,8 +901,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            226,
-            241
+            243,
+            258
           ]
         },
         {
@@ -832,8 +911,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            214,
-            224
+            230,
+            241
           ]
         },
         {
@@ -842,8 +921,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            411,
-            417
+            449,
+            455
           ]
         },
         {
@@ -852,8 +931,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            419,
-            422
+            457,
+            460
           ]
         },
         {
@@ -862,8 +941,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            132,
-            212
+            147,
+            228
           ]
         },
         {
@@ -872,8 +951,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            382,
-            409
+            420,
+            447
           ]
         },
         {
@@ -882,8 +961,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            246,
-            380
+            263,
+            418
           ]
         },
         {
@@ -892,8 +971,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            425,
-            621
+            463,
+            737
           ]
         }
       ]
@@ -2615,17 +2694,37 @@
       "id": "f:app/src-tauri/crates/nputer-index/tests/arch.rs",
       "path": "app/src-tauri/crates/nputer-index/tests/arch.rs",
       "lang": "rust",
-      "hash": "blake3:d0a4f8b77bfb71c83e70b4679ca2c8fd5ac5455b77fe82a65e2e7da651e1dad3",
-      "loc": 204,
+      "hash": "blake3:69e1d0d59cd73067d0f7b90bb2b8b7f953f42335f4fe92bf9961caf1c990e8ff",
+      "loc": 323,
       "symbols": [
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/arch.rs#KNOWN_DECLARED_CYCLES",
+          "name": "KNOWN_DECLARED_CYCLES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            228,
+            228
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/arch.rs#a_cycle_reintroduced_into_the_live_registry_is_caught_and_named_today",
+          "name": "a_cycle_reintroduced_into_the_live_registry_is_caught_and_named_today",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            283,
+            323
+          ]
+        },
         {
           "id": "s:app/src-tauri/crates/nputer-index/tests/arch.rs#a_registry_directory_that_is_a_symlink_is_refused_not_followed",
           "name": "a_registry_directory_that_is_a_symlink_is_refused_not_followed",
           "kind": "fn",
           "exported": false,
           "range": [
-            185,
-            204
+            186,
+            205
           ]
         },
         {
@@ -2644,8 +2743,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            164,
-            182
+            165,
+            183
           ]
         },
         {
@@ -2654,8 +2753,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            114,
-            128
+            115,
+            129
           ]
         },
         {
@@ -2664,8 +2763,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            27,
-            31
+            28,
+            32
           ]
         },
         {
@@ -2674,8 +2773,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            33,
-            35
+            34,
+            36
           ]
         },
         {
@@ -2684,8 +2783,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            84,
-            90
+            85,
+            91
           ]
         },
         {
@@ -2694,8 +2793,28 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            93,
-            111
+            94,
+            112
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/arch.rs#the_live_registry_declares_exactly_the_cycles_this_crate_still_allows",
+          "name": "the_live_registry_declares_exactly_the_cycles_this_crate_still_allows",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            231,
+            246
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/arch.rs#the_live_registry_minus_one_hop_per_reported_cycle_is_acyclic",
+          "name": "the_live_registry_minus_one_hop_per_reported_cycle_is_acyclic",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            249,
+            280
           ]
         },
         {
@@ -2704,8 +2823,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            38,
-            55
+            39,
+            56
           ]
         },
         {
@@ -2714,8 +2833,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            58,
-            79
+            59,
+            80
           ]
         },
         {
@@ -2724,8 +2843,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            131,
-            161
+            132,
+            162
           ]
         }
       ]
@@ -2734,8 +2853,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/tests/cli.rs",
       "path": "app/src-tauri/crates/nputer-index/tests/cli.rs",
       "lang": "rust",
-      "hash": "blake3:a8d465b84665089d6247bec7719e8da9771da9b159efe7edf4c31851b08e053e",
-      "loc": 343,
+      "hash": "blake3:c7094997ffd720ab207ecb2b34591ea03780b3e141705136eaaae623ac34b2ab",
+      "loc": 409,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/tests/cli.rs#BIN",
@@ -2768,13 +2887,23 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/cli.rs#a_cycle_planted_into_a_fixture_reds_the_real_process_and_is_named_as_a_path",
+          "name": "a_cycle_planted_into_a_fixture_reds_the_real_process_and_is_named_as_a_path",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            300,
+            319
+          ]
+        },
+        {
           "id": "s:app/src-tauri/crates/nputer-index/tests/cli.rs#a_gate_that_cannot_run_is_exit_three_never_exit_one",
           "name": "a_gate_that_cannot_run_is_exit_three_never_exit_one",
           "kind": "fn",
           "exported": false,
           "range": [
-            294,
-            314
+            360,
+            380
           ]
         },
         {
@@ -2783,8 +2912,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            317,
-            329
+            383,
+            395
           ]
         },
         {
@@ -2795,6 +2924,26 @@
           "range": [
             248,
             275
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/cli.rs#arch_cycles_is_green_on_an_acyclic_fixture_and_needs_no_graph",
+          "name": "arch_cycles_is_green_on_an_acyclic_fixture_and_needs_no_graph",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            280,
+            297
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/cli.rs#arch_cycles_says_on_every_run_what_it_cannot_see",
+          "name": "arch_cycles_says_on_every_run_what_it_cannot_see",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            322,
+            341
           ]
         },
         {
@@ -2883,8 +3032,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            332,
-            343
+            398,
+            409
           ]
         },
         {
@@ -2923,8 +3072,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            280,
-            291
+            346,
+            357
           ]
         }
       ]
@@ -15932,8 +16081,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:cfe1a4765cc89c9caf80467c7657ad41b2c6e98cb13a3cc73d84a10fb96424cb",
-      "loc": 1850,
+      "hash": "blake3:cb2d6ccf0c03c99d4506e2a36393160ae0c2413acbbd329120eb3b9ff8b8d2ea",
+      "loc": 1868,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -18528,8 +18677,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:3d147a3dcdba596d08ab4c95ad69d7d781a5d6a5e59df7b1af4ed37ec824e39c",
-      "loc": 603,
+      "hash": "blake3:b4a31676db7a8ed2e4a8f92b17c4a51f38b2ba0a9ed111f321e63ac186cb386f",
+      "loc": 621,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -21772,6 +21921,33 @@
   ],
   "edges": [
     {
+      "from": "f:app/src-tauri/crates/nputer-index/src/arch/cycles.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/arch/registry.rs",
+      "kind": "import",
+      "symbols": [
+        "*",
+        "Component",
+        "RegistryError",
+        "compare_component_ids"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/src/arch/cycles.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/testutil.rs",
+      "kind": "import",
+      "symbols": [
+        "TempTree"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/src/arch/cycles.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "BTreeMap"
+      ]
+    },
+    {
       "from": "f:app/src-tauri/crates/nputer-index/src/arch/mod.rs",
       "to": "f:app/src-tauri/crates/nputer-index/src/arch/registry.rs",
       "kind": "import",
@@ -22471,6 +22647,14 @@
         "Path",
         "PathBuf",
         "mpsc"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/tests/arch.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/arch/cycles.rs",
+      "kind": "import",
+      "symbols": [
+        "*"
       ]
     },
     {
@@ -35705,8 +35889,8 @@
     }
   ],
   "stats": {
-    "files": 179,
-    "symbols": 2004,
-    "edges": 1907
+    "files": 180,
+    "symbols": 2018,
+    "edges": 1911
   }
 }
