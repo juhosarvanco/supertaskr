@@ -208,11 +208,58 @@ verdict than it is, and nobody is tempted to buy diversity instead of
 blindness. This is prose, not a new status: the four `review:` values do
 not change.
 
-**BOTH DEPEND ON THE BUMP QUESTION BELOW**, and the two look different
-under it: six changes a NORMATIVE sentence (the ceremony table decides
-what a pipeline owes), while seven is a clarification of what an
-existing field already means. Answer them per item, as the first
-criterion requires.
+**EIGHT — THE TWO-REJECTION STOP CONDITION COUNTS REJECTIONS AND SHOULD
+WEIGH THEM.** `method/tasks/TASK-FORMAT.md` says *"Two rejections →
+stop; open a room, escalate to the human."* It fired on `T-110` on
+2026-08-25 and **over-triggered**, which @human named on being handed
+the room: *"this kind of fix could have been done by you without me, so
+there might be fine-tuning needed with the double rejection rule."*
+They were right, and the waiver they then granted is the evidence.
+
+**WHAT THE RULE CANNOT CURRENTLY TELL APART**, measured on the card that
+tripped it:
+
+- **A card in trouble** — the same defect surviving two attempts, or
+  rejections whose causes compound, or a spec nobody can build to. That
+  is what the escalation is FOR: a human decides whether the card is
+  wrong rather than the builders.
+- **A card being built well under an adversarial process** — T-110's two
+  rejections were on **different** defects, each **novel**, each carrying
+  a **concrete named fix inside the fence** (pass 1: four states with no
+  pin driving them; pass 2: a two-token symlink follow). Nothing repeated
+  and nothing compounded. Escalating that spends a human on a decision
+  the architect already had the evidence to make.
+
+The rule counts EVENTS where it should weigh WHAT THEY SAY, so a card
+gets punished for being verified thoroughly — which is the opposite of
+the incentive this pipeline wants, and it is worse the better the
+verifiers get.
+
+- **THE STOP CONDITION SHALL DISTINGUISH REPEAT FAILURE FROM SUCCESSIVE
+  DISTINCT FAILURES.** Two rejections stop the card when the SAME defect
+  survives a rebuild, when a rejection's cause was known and not closed,
+  or when the fix lies outside the card's fence. Where each rejection is
+  a distinct, newly-found defect with a named in-fence remedy, **the
+  ARCHITECT may waive once, in writing, on the card**, and the waiver
+  SHALL record which distinction it relied on. A THIRD rejection is
+  terminal in every case: park and re-plan, never a fourth pass.
+- **AN ESCALATION SHALL STILL BE WRITTEN EVEN WHEN THE ARCHITECT
+  WAIVES.** The room is what makes the judgement reviewable, and it cost
+  almost nothing on T-110 — @human read it and ruled in one line. What
+  changes is that the room says *"waiving, here is why"* rather than
+  *"stopped, awaiting you"*, so the pipeline keeps moving while the
+  human keeps the veto.
+- IF the architect is the seat that DISPATCHED the failing card THEN the
+  waiver SHALL name that, because a dispatcher waiving a stop on its own
+  dispatch is exactly the conflict the human escalation exists to catch —
+  T-110's own two rejections both trace partly to briefs this architect
+  wrote.
+
+**ALL THREE DEPEND ON THE BUMP QUESTION BELOW**, and they look different
+under it: six and eight change NORMATIVE sentences (the ceremony table
+decides what a pipeline owes; the stop condition decides when it halts),
+while seven is a clarification of what an existing field already means.
+Answer them per item, as the first criterion requires.
 
 ## Acceptance criteria
 

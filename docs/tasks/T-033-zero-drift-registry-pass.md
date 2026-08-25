@@ -129,18 +129,46 @@ wired to always-on; after this, any undeclared edge is news. That is the
 whole argument, and it is why "keep the amber as the standing drift
 demo" is refused: a demo that never turns off is not a demo.
 
-**ONE CYCLE SURVIVES AND IS THE ARCHITECT'S TO OWN.** T-123's merge
-created `C-10 -> C-14` (routing in `docs_watch.rs` asking C-14's session
-registry, newly visible because T-010 made Rust indexed) beside the
-declared `C-14 -> C-10` — this repository's first component cycle, and
-C-10's first D1. **Declare it and record it as an ARGUED cycle**: it is
-real, it is the direct consequence of T-123's criterion 2 (give the
-registry read ONE owner), and hiding it by leaving it undeclared would
-defeat the zero-drift property this card exists to create. Its honest
-resolution — extracting the session-registry fact into its own
-component so both sides depend on it — is a SEPARATE card, not this
-one. **@human: this is the ruling in the set most worth overturning if
-you disagree; the others are bookkeeping, this one sets a precedent.**
+**ONE CYCLE SURVIVES, AND @HUMAN RULED IT OUT — THIS REGISTRY HOLDS NO
+CYCLES (2026-08-25).** T-123's merge created `C-10 -> C-14` (routing in
+`docs_watch.rs` asking C-14's session registry, newly visible because
+T-010 made Rust indexed) beside the declared `C-14 -> C-10` — this
+repository's first component cycle, and C-10's first D1.
+
+**The architect first ruled "declare it as an argued cycle" and @human
+OVERTURNED that. The overturn is right and the reasoning is recorded
+because it now governs every future case.** The cycle is not a drawing
+artifact: `docs_watch.rs` really does call into `agent/sessions.rs`
+today, and `agent/` really does reach back. Declaring it would have
+changed one markdown line and left the tangle in the source. It costs
+nothing MECHANICALLY right now — both files sit in one crate, so rustc
+does not object and no test gets harder — but the cost is future-tense
+comprehension, and, decisively, **this project's entire product is
+showing people tangles in their own code. A tool that ships a
+"cycles are fine here" precedent is arguing against itself**, and a
+cycle is cheapest to remove at fifteen components.
+
+**THE STANDING RULE THIS SETS**, applied to both halves of decision (1)
+so they stop looking inconsistent: **EXTRACT WHEN THE TANGLE IS AN
+ACCIDENT, EXTRACT WHEN IT IS REAL — THE REGISTRY HOLDS NO CYCLES.** The
+`Button` case and the session-registry case get the same answer by the
+same rule, which is Martin's Acyclic Dependencies Principle and its two
+sanctioned remedies (invert the dependency, or extract a component both
+sides depend on).
+
+**AND OWNERSHIP IS NOT DEPENDENCY DIRECTION**, which is what makes the
+extraction cheap rather than a betrayal of T-029: giving C-14 sole
+ownership of "an interview was registered for this folder" bought ONE
+READER of that fact (T-057's rule), and that property survives the fact
+moving to its own component. One reader is preserved; the arrow stops
+pointing both ways.
+
+**THE WORK IS `T-125`, NOT THIS CARD.** T-033 SHALL declare no cycle and
+SHALL NOT perform the extraction; it records `C-10 -> C-14` as the one
+row that does not drain here and names T-125 as its owner. **Zero drift
+is therefore reached in two commits rather than one**, and this card's
+own criterion is met by having every remaining undeclared edge either
+declared or owned by a named card.
 
 ### (2) NON-CODE — add the field, opt-in, argued per component
 
