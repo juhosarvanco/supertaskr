@@ -5,10 +5,10 @@ feature: F-06
 milestone: 4
 priority: 6
 size: M
-status: planned
-blocked_by: [T-033]
+status: building
+blocked_by: []
 touches: [crate-index, docs/architecture/components/]
-builder:
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
