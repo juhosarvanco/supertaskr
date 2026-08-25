@@ -625,6 +625,123 @@ fn main() {
             );
             std::process::exit(1);
         }
+        // T-102 criteria 4 and 6: **THE SPLIT PAIR ON A FAILING TURN —
+        // THE ONE SHAPE THAT MAKES THE ANNOUNCED/UNANNOUNCED PARTITION
+        // AND THE TAIL VISIBLE AT THE SAME TIME.**
+        //
+        // `T-069-s3` and `T-081-s10` wanted the same fixture edit from
+        // opposite directions — one a SECOND denial, the other an
+        // IN-BAND line — and one scenario satisfies both. The three
+        // conditions the reachable case needs have until now lived in
+        // different fixtures, which is exactly why nothing drove it:
+        //
+        //   a denial announced IN BAND — `denied-then-end-turn` and
+        //   `denied-fatal-not-flagged` carry none, and
+        //   `denied-result-only-nonzero` carries none either;
+        //
+        //   the `result` line listing it as well — always true, the
+        //   array is cumulative;
+        //
+        //   and the turn classified `ExitNonZero` rather than
+        //   `ToolDenied`, so a `stderr_tail` exists at all —
+        //   `denied-live-and-silent` and `denied-same-tool-one-announced`
+        //   are the fixtures with an in-band line and both exit ZERO.
+        //
+        // So: `is_error: false` (which is what declines `ToolDenied`,
+        // T-029-s7's narrow guard) with a NON-ZERO exit, one denial on
+        // BOTH channels and one on the `result` line only.
+        //
+        // **THE STDERR LINE IS THE POSITIVE CONTROL** (CONVENTIONS: A
+        // NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL). Two of this
+        // body's assertions are absences — neither tool is in the tail —
+        // and `is_error: false` means the `result` text never reaches
+        // the ring, so without this line the tail would be EMPTY and
+        // "the tail does not name it" would be satisfied by a dead ring,
+        // a dead stderr pump, or a turn that never reached
+        // `ExitNonZero`. The sentence deliberately names neither tool
+        // and not the string `permission_denials`, so it cannot satisfy
+        // the absences it exists to make meaningful.
+        //
+        // **THE `emit_tool_use` BETWEEN IS THE LIVENESS WITNESS**, for
+        // the reason `denied-then-completed` records at length: an
+        // `Activity` event is emitted the instant it arrives while a
+        // delta is coalesced and therefore dates nothing. It is what
+        // makes "the announced one arrived at its in-band moment and the
+        // silent one arrived at `result` time" an ORDER fact rather than
+        // a pair of counts.
+        //
+        // CONSTRUCTED, and openly, on the same footing as
+        // `denied-live-and-silent`: 2.1.226 announces every denial it
+        // makes, so a partial announcement cannot be captured from it. A
+        // lost line, an older build, or the runner's own `MAX_DENIALS`
+        // cap on live emits all produce this shape.
+        "denied-announced-and-silent-nonzero" => {
+            emit_init(&session_id, &model);
+            // Ahead of everything else for the reason
+            // `denied-result-only-nonzero` records: the stderr pump then
+            // has the whole relay window to reach the ring before the
+            // terminal read.
+            eprintln!("fake-agent: transport closed before the session could be saved");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "system", "subtype": "permission_denied",
+                    "tool_name": "Bash", "tool_use_id": "tu_102_announced",
+                    "decision_reason_type": "subcommandResults",
+                    "message": "This Bash command contains multiple operations.",
+                    "session_id": session_id
+                })
+            );
+            emit_tool_use("Write");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": false,
+                    "terminal_reason": "refusal", "num_turns": 1,
+                    "permission_denials": [
+                        { "tool_name": "Bash", "tool_use_id": "tu_102_announced" },
+                        { "tool_name": "WebFetch", "tool_use_id": "tu_102_never_announced" }
+                    ],
+                    "result": "I was not permitted to run the tools this stage needs."
+                })
+            );
+            std::process::exit(1);
+        }
+        // T-102 criterion 5: **TWO DISTINCT NAMES, IN A KNOWN ORDER, ON
+        // A TURN THAT CLASSIFIES `ToolDenied`.**
+        //
+        // After T-113 deleted the ring note, `denial_names(&denials)`
+        // feeding the cumulative `ToolDenied` record is the LAST
+        // runner-side producer of a multi-name record — and no fixture
+        // could see it work. `retry-401-then-tool-denied` drives it with
+        // ONE entry. `tool-denied` drives it with two, but both are
+        // `Bash` (the real capture refused the same tool twice), so its
+        // list is a palindrome: reverse the join and the assertion still
+        // passes.
+        //
+        // This stream is deliberately NOT a transcription and says so.
+        // Its job is to be the shape the capture is not: two DIFFERENT
+        // names whose order is checkable. `is_error: true` and a
+        // non-empty `permission_denials` are what put a turn on the
+        // `ToolDenied` arm at all, and exit 1 is the terminal state that
+        // arm is bound to.
+        "tool-denied-two-names" => {
+            emit_init(&session_id, &model);
+            emit_delta("Let me fetch the schema and then scaffold the tree.");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "result", "subtype": "success", "is_error": true,
+                    "terminal_reason": "refusal", "num_turns": 1,
+                    "permission_denials": [
+                        { "tool_name": "WebFetch", "tool_use_id": "tu_102_first" },
+                        { "tool_name": "Bash", "tool_use_id": "tu_102_second" }
+                    ],
+                    "result": "I was not permitted to run the tools this stage needs."
+                })
+            );
+            std::process::exit(1);
+        }
         // T-029-s6's counter-pin: the case the fix must NOT break. A
         // diagnostic-only auth failure — status 403, and the CLI dies
         // before it writes any `result` line at all, so there is no
@@ -653,8 +770,41 @@ fn main() {
         // control is the failing stream minus exactly one line by
         // construction rather than by two fixtures agreeing to stay in
         // step.
-        "retry-401-then-no-result" => no_result_after(&session_id, &model, true, false),
-        "no-result-no-retry" => no_result_after(&session_id, &model, false, false),
+        "retry-401-then-no-result" => {
+            no_result_after(&session_id, &model, true, false, Evidence::Delta)
+        }
+        "no-result-no-retry" => {
+            no_result_after(&session_id, &model, false, false, Evidence::Delta)
+        }
+        // T-102: **THE PROBE THAT MEASURED THE SURVIVING FALSE POSITIVE**
+        // — `retry-401-then-no-result` with its delta replaced by a
+        // `tool_use` block and nothing else changed.
+        //
+        // Against the shipped tip this stream classified
+        // `AuthFailed { status: Some(401), message: "the agent CLI could
+        // not authenticate" }`, because T-069 set its discriminator in
+        // the `TextDelta` arm ALONE while `StreamLine::Activity` — the
+        // same model response in a different content block — set
+        // nothing. The family it costs is not exotic: a planner that
+        // reads the repo before it speaks opens exactly like this, so
+        // every turn that recovered a 401 and then called a tool without
+        // saying anything first lost its Try again button.
+        //
+        // ONE EMITTER, one axis, for the reason `no_result_after`
+        // records: this stream and the delta one differ by exactly one
+        // line by construction, so the body that classifies them the
+        // same way is measuring the block type and nothing else.
+        "retry-401-then-tool-use-no-result" => {
+            no_result_after(&session_id, &model, true, false, Evidence::ToolUse)
+        }
+        // …and its own control, the same stream minus the 401. A turn
+        // that dies with no `result` line is an `ExitNonZero` whether or
+        // not anything authenticated, so without this row "not
+        // `AuthFailed`" is satisfied by a runner that never classified
+        // this shape at all.
+        "tool-use-no-result-no-retry" => {
+            no_result_after(&session_id, &model, false, false, Evidence::ToolUse)
+        }
         // …and the third of the family, which keeps the discriminator
         // from over-reaching: the CLI recovers one 401, answers, and
         // then hits ANOTHER one it does not recover from. The budget
@@ -663,7 +813,9 @@ fn main() {
         // evidence about the FIRST and says nothing about the second —
         // which is why the runner scopes its flag to the LAST
         // status-bearing line rather than to any status ever seen.
-        "retry-401-text-then-401-no-result" => no_result_after(&session_id, &model, true, true),
+        "retry-401-text-then-401-no-result" => {
+            no_result_after(&session_id, &model, true, true, Evidence::Delta)
+        }
         // T-039: an init line carrying a HOSTILE session id — the fixture
         // for the capture-side gate. The id is the test's own choice
         // (`NPUTER_FAKE_SESSION_ID`), defaulting to the exact injection the
@@ -992,16 +1144,57 @@ fn auth_error(session_id: &str, model: &str, with_retry_line: bool, with_text: b
 /// `second_retry` adds a SECOND 401 after the text, which the text
 /// cannot be evidence about — the row that keeps the discriminator from
 /// eating a genuine auth failure it has no business claiming.
-fn no_result_after(session_id: &str, model: &str, with_retry: bool, second_retry: bool) {
+///
+/// **T-102 ADDED THE `evidence` AXIS, AND IT IS THE WHOLE POINT OF
+/// REUSING THIS EMITTER RATHER THAN WRITING A FOURTH SCENARIO.** The
+/// runner's discriminator is a claim about MODEL RESPONSES, and a model
+/// response reaches the stream in two block types: a `text_delta` and a
+/// `tool_use`. T-069 built the delta arm and read only that one. Putting
+/// both here means the two streams differ by EXACTLY ONE LINE BY
+/// CONSTRUCTION — same init, same 401, same missing `result` line, same
+/// exit — so a body that classifies them differently is measuring the
+/// block type and nothing else. Two hand-written scenarios could drift
+/// into differing in some second thing and nobody would notice.
+fn no_result_after(
+    session_id: &str,
+    model: &str,
+    with_retry: bool,
+    second_retry: bool,
+    evidence: Evidence,
+) {
     emit_init(session_id, model);
     if with_retry {
         emit_api_retry_401(session_id, 1);
     }
-    emit_delta("Right, let me start on the north star.");
+    match evidence {
+        Evidence::Delta => emit_delta("Right, let me start on the north star."),
+        // T-102: THE PLANNER THAT READS BEFORE IT SPEAKS. No delta at
+        // all — the first thing this turn does after the recovered 401
+        // is call a tool, which is an ordinary opening for a planner
+        // that looks at the repo before it says anything. `Read` rather
+        // than a write tool because that is what such an opening is.
+        Evidence::ToolUse => emit_tool_use("Read"),
+    }
     if second_retry {
         emit_api_retry_401(session_id, 2);
     }
     std::process::exit(1);
+}
+
+/// T-102: WHICH KIND OF MODEL RESPONSE a `no_result_after` stream carries
+/// after its recovered 401 — the one axis the discriminator turns on.
+///
+/// Both are the model speaking and both are streamed only by a request
+/// that SUCCEEDED. They differ in FORGEABILITY, which is why the widening
+/// was worth taking: the CLI writes its own prose into the nominally-model
+/// text field, so a delta can be the CLI rather than the model, while a
+/// `tool_use` block naming a tool is not prose and the CLI has no reason
+/// to fabricate one.
+enum Evidence {
+    /// A `stream_event`/`content_block_delta` carrying `text_delta`.
+    Delta,
+    /// An `assistant` message whose content is a `tool_use` block.
+    ToolUse,
 }
 
 /// The `api_retry` diagnostic, byte-for-byte the transcribed one apart
