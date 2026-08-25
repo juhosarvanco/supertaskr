@@ -24,13 +24,49 @@
 //! text; no candidate is ever probed on disk, and manifests are read
 //! through the same contained reader every other file read uses.
 //!
+//! # THE `mod` DECLARATION IS ITSELF A DEPENDENCY (T-135)
+//!
+//! Step 3 above walks `mod` declarations to build the tree, and until
+//! T-135 that was ALL it did with them: the tree was consumed only to
+//! answer `use` paths, so a file reached by `mod` and never named in a
+//! `use` produced no edge at all. That is the strongest dependency Rust
+//! has — `mod x;` is what compiles `x` into the crate, and removing it
+//! deletes the module from the build — and the graph rated it zero
+//! (`T-126-s4`: `lib.rs` gained a real dependency on the dispatch
+//! component and the edge count did not move).
+//!
+//! [`RustWorld::mod_edges`] now carries every resolved declaration as a
+//! `(declaring file, target file)` pair, and [`super::resolve_all`] feeds
+//! those pairs through the SAME `import` accumulator a `use` goes
+//! through. Two consequences are deliberate:
+//!
+//! - **The pair is recorded at the DECLARATION, never at the queue push.**
+//!   [`build_module_tree`] guards on `visited` before pushing, so a
+//!   declaration whose target another file already pulled into the walk
+//!   pushes nothing — and a push-site recording would silently drop that
+//!   declarer. The dependency belongs to whoever wrote `mod`, not to
+//!   whoever got there first.
+//! - **A `mod` occurrence binds no name and asserts no re-export.** It
+//!   contributes no entry to the edge's `symbols` and leaves `reexport`
+//!   to the `use` occurrences on the same pair (`super::EdgeAcc`), so a
+//!   pair that already carried a `use` edge is emitted byte-identically
+//!   and a pair that carries only `mod` declarations is a bare
+//!   `{from, to, kind: "import"}`.
+//!
 //! WHAT IS DELIBERATELY NOT DONE, so the silence is legible: no `call` or
 //! `type_ref` edges are emitted for Rust. Those need name resolution
 //! inside bodies, and their volume is governed by ADR-014's size budget —
 //! the committed graph rides the docs collector's 1 MiB per-file cap, and
 //! this task already takes it from 126 files to every `.rs` in the tree.
-//! Import edges, packages, re-exports and `unresolved[]` are the whole
-//! contract T-010's criteria name.
+//! T-135 RULED ON that omission rather than widening it: for the
+//! FILE-granularity dependent count `arch blast` computes it is safe (of
+//! this repository's 1 256 TypeScript `call`/`type_ref` edges, the number
+//! adding a file pair no `import` edge already carries is zero), and for
+//! any SYMBOL-granularity question it is not. What Rust still cannot see
+//! is a cross-module PATH EXPRESSION with no `use` — `crate::a::b::f()`
+//! written inline — and `arch::cycles::render` says so on every run.
+//! Import edges (from `use` and now from `mod`), packages, re-exports and
+//! `unresolved[]` are the whole contract T-010's criteria name.
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::path::Path;
@@ -192,6 +228,12 @@ pub(crate) struct RustWorld {
     homes: BTreeMap<String, Vec<(usize, Vec<String>)>>,
     /// Crate ident -> the index of that crate's LIB root.
     crate_idents: BTreeMap<String, usize>,
+    /// Every `mod` declaration that resolved to a WALKED file, as
+    /// (declaring file, target file) — the T-135 edge source. A set, so a
+    /// module declared once but reached from several cargo targets is one
+    /// pair, and the order is a function of the paths rather than of the
+    /// walk.
+    mod_edges: BTreeSet<(String, String)>,
 }
 
 impl RustWorld {
@@ -202,68 +244,22 @@ impl RustWorld {
         rust_files: &BTreeSet<&str>,
         records: &BTreeMap<String, ExtractRecord>,
     ) -> Self {
-        let manifests = manifest_dirs(canon_root, rust_files);
         let mut roots: Vec<Root> = Vec::new();
         let mut idents: BTreeMap<String, usize> = BTreeMap::new();
-
-        // (root file, lib ident) pairs, collected then sorted so the root
-        // ORDER — and therefore every "first root wins" tie below — is a
-        // function of the tree and not of directory iteration.
-        let mut discovered: BTreeSet<(String, Option<String>)> = BTreeSet::new();
-        for (dir, manifest) in &manifests {
-            let Some(package) = &manifest.package else {
-                continue; // a virtual workspace manifest declares no crate
-            };
-            let ident = manifest
-                .lib_name
-                .clone()
-                .unwrap_or_else(|| package.replace('-', "_"));
-            let lib = join_dir(dir, manifest.lib_path.as_deref().unwrap_or("src/lib.rs"));
-            if let Some(lib) = lib.filter(|p| rust_files.contains(p.as_str())) {
-                discovered.insert((lib, Some(ident)));
-            }
-            let mut others: Vec<String> = manifest
-                .bin_paths
-                .iter()
-                .filter_map(|p| join_dir(dir, p))
-                .collect();
-            for fixed in ["src/main.rs", "build.rs"] {
-                others.extend(join_dir(dir, fixed));
-            }
-            for (sub, nested) in [
-                ("src/bin", true),
-                ("tests", true),
-                ("examples", true),
-                ("benches", true),
-            ] {
-                let base = match join_dir(dir, sub) {
-                    Some(base) => base,
-                    None => continue,
-                };
-                for file in rust_files {
-                    let Some(tail) = file.strip_prefix(&format!("{base}/")) else {
-                        continue;
-                    };
-                    // `<sub>/x.rs` is a target; `<sub>/x/main.rs` is a
-                    // target; `<sub>/x/helper.rs` is a MODULE of one.
-                    let is_target = !tail.contains('/')
-                        || (nested && tail.matches('/').count() == 1 && tail.ends_with("/main.rs"));
-                    if is_target && tail.ends_with(".rs") {
-                        others.push((*file).to_string());
-                    }
-                }
-            }
-            for file in others {
-                if rust_files.contains(file.as_str()) {
-                    discovered.insert((file, None));
-                }
-            }
-        }
+        let discovered = cargo_target_roots(canon_root, rust_files);
 
         let mut homes: BTreeMap<String, Vec<(usize, Vec<String>)>> = BTreeMap::new();
+        let mut mod_edges: BTreeSet<(String, String)> = BTreeSet::new();
         for (file, ident) in discovered {
             let index = roots.len();
-            let modules = build_module_tree(&file, rust_files, records, &mut homes, index);
+            let modules = build_module_tree(
+                &file,
+                rust_files,
+                records,
+                &mut homes,
+                index,
+                &mut mod_edges,
+            );
             if let Some(ident) = &ident {
                 idents.entry(ident.clone()).or_insert(index);
             }
@@ -274,7 +270,17 @@ impl RustWorld {
             roots,
             homes,
             crate_idents: idents,
+            mod_edges,
         }
+    }
+
+    /// Every resolved `mod` declaration as (declaring file, target file),
+    /// sorted. A declaration whose file is not walked is absent — the same
+    /// rule the module tree itself applies — and a declaration that
+    /// resolves back to its own file is dropped, because a self-edge says
+    /// nothing (the `RustOutcome::SelfRef` rule, one layer down).
+    pub(crate) fn mod_edges(&self) -> &BTreeSet<(String, String)> {
+        &self.mod_edges
     }
 
     /// True when this file sits under no cargo target at all — an honest
@@ -376,6 +382,79 @@ fn finish(
     RustOutcome::Unresolved("not_found")
 }
 
+/// Every cargo TARGET ROOT among the walked Rust files, as (root file,
+/// lib ident) — step 2 of the module doc's four.
+///
+/// (root file, lib ident) pairs, collected into a set so the root ORDER —
+/// and therefore every "first root wins" tie in [`RustWorld::resolve`] —
+/// is a function of the tree and not of directory iteration.
+///
+/// IT IS `pub(crate)` BECAUSE THERE IS EXACTLY ONE COPY OF THIS FACT.
+/// `arch::blast` needs the same set for T-135's floor rule — reverse
+/// reachability terminates at a build target, so a root has zero
+/// dependents BY CONSTRUCTION and a zero there means something different
+/// from a zero anywhere else. A second implementation of "what is a cargo
+/// target" that could disagree with this one is the T-057 failure the
+/// blast-radius card names in its own criteria, so the caller reads this
+/// function rather than re-deriving the rules.
+pub(crate) fn cargo_target_roots(
+    canon_root: &Path,
+    rust_files: &BTreeSet<&str>,
+) -> BTreeSet<(String, Option<String>)> {
+    let manifests = manifest_dirs(canon_root, rust_files);
+    let mut discovered: BTreeSet<(String, Option<String>)> = BTreeSet::new();
+    for (dir, manifest) in &manifests {
+        let Some(package) = &manifest.package else {
+            continue; // a virtual workspace manifest declares no crate
+        };
+        let ident = manifest
+            .lib_name
+            .clone()
+            .unwrap_or_else(|| package.replace('-', "_"));
+        let lib = join_dir(dir, manifest.lib_path.as_deref().unwrap_or("src/lib.rs"));
+        if let Some(lib) = lib.filter(|p| rust_files.contains(p.as_str())) {
+            discovered.insert((lib, Some(ident)));
+        }
+        let mut others: Vec<String> = manifest
+            .bin_paths
+            .iter()
+            .filter_map(|p| join_dir(dir, p))
+            .collect();
+        for fixed in ["src/main.rs", "build.rs"] {
+            others.extend(join_dir(dir, fixed));
+        }
+        for (sub, nested) in [
+            ("src/bin", true),
+            ("tests", true),
+            ("examples", true),
+            ("benches", true),
+        ] {
+            let base = match join_dir(dir, sub) {
+                Some(base) => base,
+                None => continue,
+            };
+            for file in rust_files {
+                let Some(tail) = file.strip_prefix(&format!("{base}/")) else {
+                    continue;
+                };
+                // `<sub>/x.rs` is a target; `<sub>/x/main.rs` is a
+                // target; `<sub>/x/helper.rs` is a MODULE of one.
+                let is_target = !tail.contains('/')
+                    || (nested && tail.matches('/').count() == 1 && tail.ends_with("/main.rs"));
+                if is_target && tail.ends_with(".rs") {
+                    others.push((*file).to_string());
+                }
+            }
+        }
+        for file in others {
+            if rust_files.contains(file.as_str()) {
+                discovered.insert((file, None));
+            }
+        }
+    }
+    discovered
+}
+
 /// Every `Cargo.toml` at or above a walked `.rs` file, keyed by its
 /// root-relative directory ("" for the repo root).
 fn manifest_dirs(canon_root: &Path, rust_files: &BTreeSet<&str>) -> BTreeMap<String, Rc<Manifest>> {
@@ -427,6 +506,7 @@ fn build_module_tree(
     records: &BTreeMap<String, ExtractRecord>,
     homes: &mut BTreeMap<String, Vec<(usize, Vec<String>)>>,
     root_index: usize,
+    mod_edges: &mut BTreeSet<(String, String)>,
 ) -> BTreeMap<Vec<String>, String> {
     let mut modules: BTreeMap<Vec<String>, String> = BTreeMap::new();
     let mut visited: BTreeSet<String> = BTreeSet::new();
@@ -479,6 +559,16 @@ fn build_module_tree(
             let Some(target) = target else {
                 continue; // declared but not walked: the module is absent
             };
+            // T-135: THE EDGE BELONGS TO THE DECLARATION. Recorded here,
+            // before the `visited` guard below, because that guard answers
+            // "has the walk already been here?" and this answers "who
+            // wrote `mod`?" — two different questions with two different
+            // answers whenever a file is declared from more than one
+            // place. Recording it at the push site instead drops every
+            // declarer but the first and still passes every other pin.
+            if target != file {
+                mod_edges.insert((file.clone(), target.clone()));
+            }
             modules.entry(full.clone()).or_insert(target.clone());
             if !visited.contains(&target) {
                 queue.push_back((full, target));
@@ -788,6 +878,105 @@ mod tests {
             w.resolve("src/lib.rs", "crate::missing::X"),
             RustOutcome::SelfRef
         );
+    }
+
+    /// Every shape a `mod` declaration takes, as (declarer, target)
+    /// pairs (T-135). The tree builder already resolved all of these to
+    /// answer `use` paths; this pins that the DEPENDENCY they represent
+    /// is now recorded too.
+    #[test]
+    fn every_resolved_mod_declaration_is_recorded_as_a_pair() {
+        let (_t, w, _) = world(&[
+            ("Cargo.toml", MANIFEST),
+            (
+                "src/lib.rs",
+                "pub mod agent;\nmod util;\n#[path = \"odd/place.rs\"]\nmod moved;\nmod absent;\nmod inline_only { pub fn f() {} }\n",
+            ),
+            ("src/agent/mod.rs", "pub mod runner;\n"),
+            ("src/agent/runner.rs", "pub struct R;\n"),
+            ("src/util.rs", "pub struct Helper;\n"),
+            ("src/odd/place.rs", "pub struct Moved;\n"),
+        ]);
+        let pairs: Vec<(&str, &str)> = w
+            .mod_edges()
+            .iter()
+            .map(|(from, to)| (from.as_str(), to.as_str()))
+            .collect();
+        assert_eq!(
+            pairs,
+            vec![
+                // `mod.rs` form, one level down.
+                ("src/agent/mod.rs", "src/agent/runner.rs"),
+                // ordinary `pub mod` from the crate root…
+                ("src/lib.rs", "src/agent/mod.rs"),
+                // …a `#[path]` relocation, based on the DECLARER's dir…
+                ("src/lib.rs", "src/odd/place.rs"),
+                // …and a private sibling `mod`.
+                ("src/lib.rs", "src/util.rs"),
+            ],
+            "`mod absent;` has no walked file and an INLINE `mod` names no other file: neither is a pair"
+        );
+    }
+
+    /// THE DISCRIMINATOR between recording the pair at the DECLARATION
+    /// and recording it at the queue push.
+    ///
+    /// `build_module_tree` pushes a target only when `visited` does not
+    /// already hold it, and `visited` fills at POP time. So the
+    /// declaration order below is load-bearing: `shared` is declared
+    /// first, so it is popped before `one` is, and by the time `one`'s
+    /// own `#[path]` declaration of the same file is read the push is
+    /// suppressed. A push-site implementation records two pairs here and
+    /// passes every other body in this file; this one records three.
+    #[test]
+    fn a_declaration_of_an_already_visited_module_is_still_that_files_dependency() {
+        let (_t, w, _) = world(&[
+            ("Cargo.toml", MANIFEST),
+            (
+                "src/lib.rs",
+                "#[path = \"shared.rs\"]\nmod shared;\npub mod one;\n",
+            ),
+            ("src/one.rs", "#[path = \"shared.rs\"]\nmod aliased;\n"),
+            ("src/shared.rs", "pub struct S;\n"),
+        ]);
+        let pairs: Vec<(&str, &str)> = w
+            .mod_edges()
+            .iter()
+            .map(|(from, to)| (from.as_str(), to.as_str()))
+            .collect();
+        assert_eq!(
+            pairs,
+            vec![
+                ("src/lib.rs", "src/one.rs"),
+                ("src/lib.rs", "src/shared.rs"),
+                ("src/one.rs", "src/shared.rs"),
+            ],
+            "the third pair is the whole point: src/one.rs really does declare src/shared.rs"
+        );
+    }
+
+    /// A module shared by several cargo TARGETS is a dependency of each
+    /// of them. `tests/common/mod.rs` is the live case — eight test roots
+    /// declare it in this repository — and each root is walked with its
+    /// own `visited` set, so this pins the ACCUMULATION across roots
+    /// rather than within one.
+    #[test]
+    fn a_module_declared_by_several_targets_is_a_dependency_of_every_one_of_them() {
+        let (_t, w, _) = world(&[
+            ("Cargo.toml", MANIFEST),
+            ("src/lib.rs", "pub struct Lib;\n"),
+            ("tests/a.rs", "mod common;\n"),
+            ("tests/b.rs", "mod common;\n"),
+            ("tests/c.rs", "mod common;\n"),
+            ("tests/common/mod.rs", "pub struct Fixture;\n"),
+        ]);
+        let declarers: Vec<&str> = w
+            .mod_edges()
+            .iter()
+            .filter(|(_, to)| to == "tests/common/mod.rs")
+            .map(|(from, _)| from.as_str())
+            .collect();
+        assert_eq!(declarers, vec!["tests/a.rs", "tests/b.rs", "tests/c.rs"]);
     }
 
     /// The SEAM: a module declared inside an inline `mod` block is a real

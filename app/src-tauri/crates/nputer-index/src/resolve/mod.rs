@@ -210,7 +210,18 @@ fn first_hit(base: &str, walked: &BTreeSet<&str>) -> Option<String> {
 
 struct EdgeAcc {
     symbols: BTreeSet<String>,
-    all_reexport: bool,
+    /// `None` until an IMPORT occurrence lands on this pair; `Some(true)`
+    /// while every one of them has been a re-export.
+    ///
+    /// It became an `Option` at T-135, when a second kind of occurrence
+    /// arrived that makes no claim either way: a Rust `mod` declaration
+    /// creates the pair but says nothing about re-export. A plain `bool`
+    /// seeded `true` would have emitted `reexport: true` on every
+    /// `mod`-only edge, and seeded `false` would have STRIPPED
+    /// `reexport: true` off `pub mod x;` + `pub use x::Item;` — which is
+    /// three live edges in this repository's own graph and one assertion
+    /// in `tests/golden.rs`.
+    reexport: Option<bool>,
 }
 
 /// Resolve every import + gate every call/type_ref candidate across the
@@ -377,6 +388,23 @@ pub(crate) fn resolve_all(
         }
     }
 
+    // T-135: a Rust `mod` declaration is a dependency edge. It goes
+    // through the SAME accumulator a `use` goes through — which buys the
+    // merge with an existing `use` edge on the same pair, the dedupe, and
+    // `edges.sort_by`'s determinism, none of which a second edge vector
+    // would inherit — and it deliberately does NOT get its own `kind`:
+    // `GRAPH_EDGE_KINDS` in `app/src/lib/architecture/graph.ts` is a
+    // CLOSED vocabulary whose reader skips an unknown kind while emitting
+    // a parse issue, and `arch::join` filters `kind != "import"`, so a
+    // `kind: "mod"` would be invisible to the map pane and to every drift
+    // finding while adding one error-strip entry per edge. Widening that
+    // vocabulary is `app-map`'s, not this crate's.
+    if let Some(world) = rust_world.as_ref() {
+        for (from, to) in world.mod_edges() {
+            accumulate_mod(&mut import_edges, file_id(from), file_id(to));
+        }
+    }
+
     let mut edges: Vec<Edge> = Vec::with_capacity(import_edges.len() + candidate_edges.len());
     for ((from, to), acc) in import_edges {
         edges.push(Edge {
@@ -384,7 +412,7 @@ pub(crate) fn resolve_all(
             to,
             kind: "import".to_string(),
             symbols: (!acc.symbols.is_empty()).then(|| acc.symbols.into_iter().collect()),
-            reexport: acc.all_reexport.then_some(true),
+            reexport: (acc.reexport == Some(true)).then_some(true),
             confidence: None,
         });
     }
@@ -450,12 +478,39 @@ fn accumulate_one(
     name: Option<&str>,
     reexport: bool,
 ) {
-    let acc = edges.entry((from, to)).or_insert(EdgeAcc {
-        symbols: BTreeSet::new(),
-        all_reexport: true,
-    });
-    acc.all_reexport &= reexport;
+    let acc = entry_for(edges, from, to);
+    acc.reexport = Some(acc.reexport.unwrap_or(true) & reexport);
     if let Some(name) = name {
         acc.symbols.insert(name.to_string());
     }
+}
+
+/// One Rust `mod` declaration as an occurrence of its (declaring file,
+/// target file) pair (T-135).
+///
+/// It is deliberately the WEAKEST possible occurrence: it creates the
+/// pair and touches nothing else. No `symbols` entry, because a `mod`
+/// binds no name OUT of the target file — it binds the target file INTO
+/// the tree, which is what the edge itself already says. No `reexport`
+/// claim, because `pub mod`-ness is a property of the module's
+/// visibility rather than of this dependency, and the extractor does not
+/// record it.
+///
+/// The measurable consequence, and the reason the design is spelled this
+/// way: every pair that already carried a `use` edge is emitted
+/// BYTE-IDENTICALLY, so the whole graph delta of the `mod` fix is the
+/// pairs that had no edge at all.
+fn accumulate_mod(edges: &mut BTreeMap<(String, String), EdgeAcc>, from: String, to: String) {
+    let _ = entry_for(edges, from, to);
+}
+
+fn entry_for<'a>(
+    edges: &'a mut BTreeMap<(String, String), EdgeAcc>,
+    from: String,
+    to: String,
+) -> &'a mut EdgeAcc {
+    edges.entry((from, to)).or_insert(EdgeAcc {
+        symbols: BTreeSet::new(),
+        reexport: None,
+    })
 }

@@ -638,12 +638,22 @@
     },
     {
       "from": "f:app/src/lib.rs",
+      "to": "f:app/src/engine/mod.rs",
+      "kind": "import"
+    },
+    {
+      "from": "f:app/src/lib.rs",
       "to": "f:app/src/engine/runner.rs",
       "kind": "import",
       "symbols": [
         "RunEvent"
       ],
       "reexport": true
+    },
+    {
+      "from": "f:app/src/lib.rs",
+      "to": "f:app/src/relocated/elsewhere.rs",
+      "kind": "import"
     },
     {
       "from": "f:app/src/lib.rs",
@@ -753,6 +763,6 @@
   "stats": {
     "files": 15,
     "symbols": 40,
-    "edges": 23
+    "edges": 25
   }
 }

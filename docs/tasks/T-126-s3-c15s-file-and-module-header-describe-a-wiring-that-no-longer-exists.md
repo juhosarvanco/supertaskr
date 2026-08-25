@@ -65,3 +65,34 @@ rule fires: `lib/parser/test/smoke.test.ts`,
 `app/test/architecture-dogfood.test.ts` and
 `app/test/map-dogfood-render.test.tsx` reconcile together, changed and
 never loosened.
+
+## ITEM 4, FILED BY T-135: `C-05`'s `depends_on:` DOES NOT DECLARE C-15, AND `arch drift` CAN NOW SEE IT
+
+**T-135 Half A made `mod` declarations carry graph edges, and the very
+first thing the fix found is a fourth false statement about C-15 — this
+one in `C-05-app.md` rather than in C-15's own file.**
+
+Measured at `5547f02` with the fix applied, `arch drift --root ../..`,
+exit **0** read unpiped:
+
+    finding  D1  D1:C-05->C-15  C-05 -> C-15  file_edges=1
+      file-edge  app/src-tauri/src/lib.rs -> app/src-tauri/src/dispatch/mod.rs
+
+and `arch` moves `edges=36 -> 37`, `findings=3 -> 4`,
+`drift_components=3 -> 4`, with `C-05` going `drift=- -> drift=D1` and
+`observed_deps=9 -> 10`.
+
+**THE FIX DOES NOT CREATE THIS DRIFT. IT REVEALS DRIFT THAT HAS BEEN REAL
+AND INVISIBLE SINCE T-126** — `lib.rs` has declared `pub mod dispatch;`
+since that merge, and no gate could see it because a `mod` declaration
+produced no edge at all (`T-126-s4`).
+
+**The one-line repair is `depends_on:` in
+`docs/architecture/components/C-05-app.md`**, which is this card's
+existing fence and not T-135's (`[crate-index]`). Take it with items 1-3.
+
+**AND IT CANNOT BE TAKEN ALONE.** `app/test/architecture-dogfood.test.ts`
+pins `derived.findings` and the whole relation table as exact literals, so
+the row moves either way: with the declaration it becomes a
+**confirmed** `C-05 -> C-15` row, without it a **fifth D1**. Whoever takes
+this reconciles that suite in the same commit — changed, never loosened.

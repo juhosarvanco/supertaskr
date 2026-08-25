@@ -61,6 +61,7 @@ USAGE
   nputer-index arch [--root DIR]
   nputer-index arch drift [--root DIR] [--fail-on undeclared|unmapped|any]
   nputer-index arch cycles [--root DIR]
+  nputer-index arch blast PATH|SLUG... [--root DIR]
 
   --check and --watch are also accepted at the top level as shorthand for
   `index --check` / `index --watch`.
@@ -76,10 +77,17 @@ COMMANDS
   arch cycles   Print every DECLARED dependency cycle as a path
                 (`C-08 -> C-09 -> C-08`) and a verdict. Exit 1 when the
                 registry is not acyclic.
+  arch blast    Print how many files DEPEND ON each file a path or a
+                `touch_slugs:` fence names - the forward graph reversed
+                AT READ TIME, so nothing is stored and no reverse index
+                can disagree with the forward one (T-135). A REPORTER:
+                it prints counts, build-target roots and a coverage
+                class, never a ceremony rung, and always exits 0 unless
+                it could not run.
 
-  arch and arch drift READ the committed graph (ADR-014) - they never
-  index and never write. `index --check` is the one staleness gate;
-  chain it first if the answer must be about the working tree.
+  arch, arch drift and arch blast READ the committed graph (ADR-014) -
+  they never index and never write. `index --check` is the one staleness
+  gate; chain it first if the answer must be about the working tree.
 
   arch cycles reads the REGISTRY ONLY - no graph, no index - so it
   cannot be a false red from a stale graph, and it says nothing about
@@ -96,15 +104,24 @@ OPTIONS
   --fail-on SEV      arch drift only. `undeclared` gates on D1,
                      `unmapped` on D2, `any` on any finding. Omitted:
                      report only, always exit 0.
+  PATH|SLUG          arch blast only, one or more. A bare name (no `/`,
+                     no `.`) is a fence SLUG, resolved through each
+                     component's own `touch_slugs:`; anything else is a
+                     path, matched as a file or a directory prefix. An
+                     unknown SLUG is exit 2 - answering a typo with a
+                     confident zero is the failure this command exists
+                     to avoid. A path with no graph entry is not an
+                     error: it is a coverage class.
   -h, --help         This text.
   -V, --version      Print the crate version.
 
 EXIT CODES
   0  clean    graph current / no findings at the requested severity /
-              the declared registry is acyclic
+              the declared registry is acyclic / the blast report printed
   1  finding  graph.json is STALE, or arch drift matched --fail-on, or
               arch cycles found a declared cycle
-  2  usage    called wrong (unknown flag, bad --fail-on value)
+  2  usage    called wrong (unknown flag, bad --fail-on value, arch blast
+              with no inputs or an undeclared slug)
   3  failed   could not run (invalid root, unreadable registry, IO)
 
   index --check, arch drift and arch cycles share this range
@@ -131,6 +148,7 @@ enum Command {
     Arch,
     ArchDrift,
     ArchCycles,
+    ArchBlast,
 }
 
 #[derive(Debug)]
@@ -141,6 +159,8 @@ struct Args {
     cache_dir: Option<PathBuf>,
     debounce: Duration,
     fail_on: Option<Severity>,
+    /// `arch blast`'s positional inputs, in the order written.
+    targets: Vec<String>,
 }
 
 /// Parse argv (without the program name). `Err` is a usage message.
@@ -152,6 +172,7 @@ fn parse(argv: &[String]) -> Result<Args, String> {
     let mut cache_dir: Option<PathBuf> = None;
     let mut debounce = watch::DEBOUNCE;
     let mut fail_on: Option<Severity> = None;
+    let mut targets: Vec<String> = Vec::new();
 
     let mut it = argv.iter().enumerate().peekable();
     while let Some((position, arg)) = it.next() {
@@ -170,7 +191,9 @@ fn parse(argv: &[String]) -> Result<Args, String> {
             }
         };
         match name {
-            "-h" | "--help" => return Ok(args_for(Command::Help, root_label, None, debounce, None)),
+            "-h" | "--help" => {
+                return Ok(args_for(Command::Help, root_label, None, debounce, None))
+            }
             "-V" | "--version" => {
                 return Ok(args_for(Command::Version, root_label, None, debounce, None))
             }
@@ -195,7 +218,11 @@ fn parse(argv: &[String]) -> Result<Args, String> {
             "arch" if position == 0 => command = Some(Command::Arch),
             "drift" if command == Some(Command::Arch) => command = Some(Command::ArchDrift),
             "cycles" if command == Some(Command::Arch) => command = Some(Command::ArchCycles),
+            "blast" if command == Some(Command::Arch) => command = Some(Command::ArchBlast),
             other if other.starts_with('-') => return Err(format!("unknown flag {other:?}")),
+            // `arch blast` is the one command taking POSITIONAL inputs,
+            // and it is the one place a bare word is not a mistake.
+            other if command == Some(Command::ArchBlast) => targets.push(other.to_string()),
             other => return Err(format!("unknown command {other:?}")),
         }
     }
@@ -216,6 +243,15 @@ fn parse(argv: &[String]) -> Result<Args, String> {
     if fail_on.is_some() && command != Command::ArchDrift {
         return Err("--fail-on belongs to `arch drift`".to_string());
     }
+    if command == Command::ArchBlast && targets.is_empty() {
+        return Err("`arch blast` needs at least one PATH or SLUG".to_string());
+    }
+    if !targets.is_empty() && command != Command::ArchBlast {
+        return Err(format!(
+            "unknown command {:?}",
+            targets.first().expect("non-empty")
+        ));
+    }
 
     Ok(Args {
         root: PathBuf::from(&root_label),
@@ -224,6 +260,7 @@ fn parse(argv: &[String]) -> Result<Args, String> {
         cache_dir,
         debounce,
         fail_on,
+        targets,
     })
 }
 
@@ -237,6 +274,7 @@ fn command_name(command: &Command) -> &'static str {
         Command::Arch => "arch",
         Command::ArchDrift => "arch drift",
         Command::ArchCycles => "arch cycles",
+        Command::ArchBlast => "arch blast",
     }
 }
 
@@ -254,6 +292,7 @@ fn args_for(
         cache_dir,
         debounce,
         fail_on,
+        targets: Vec::new(),
     }
 }
 
@@ -352,7 +391,7 @@ pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
                 EXIT_OK
             }
         }
-        Command::Arch | Command::ArchDrift => {
+        Command::Arch | Command::ArchDrift | Command::ArchBlast => {
             // `arch` reads the COMMITTED graph rather than indexing
             // fresh (ADR-014: "`nputer arch` greps it"). Two reasons it
             // matters: the report then describes the same bytes the app
@@ -387,6 +426,48 @@ pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
                     )
                 }
             };
+            if args.command == Command::ArchBlast {
+                // `arch blast` needs the registry for slug resolution and
+                // for the component column, and NOTHING else joins here —
+                // it is a reverse walk of the graph it just read, not a
+                // second model.
+                let components = match arch::registry::read_registry(&args.root) {
+                    Ok(components) => components,
+                    Err(e) => return fail(err, &e.to_string()),
+                };
+                let report =
+                    match arch::blast::blast(Some(&args.root), &components, &graph, &args.targets) {
+                        Ok(report) => report,
+                        Err(unknown) => {
+                            let _ = writeln!(
+                                err,
+                                "[nputer-index] usage: {:?} is not a declared touch_slugs: value - the registry declares [{}]",
+                                unknown.slug,
+                                unknown.known.join(", ")
+                            );
+                            let _ = writeln!(
+                                err,
+                                "[nputer-index] a slug nobody declares would otherwise report a confident zero"
+                            );
+                            let _ = writeln!(
+                                err,
+                                "[nputer-index] a bare word is read as a SLUG; write a directory with a trailing `/` to mean a path"
+                            );
+                            return EXIT_USAGE;
+                        }
+                    };
+                let _ = write!(
+                    out,
+                    "{}",
+                    arch::blast::render(
+                        &report,
+                        &args.root_label,
+                        &display_target(&args.root_label, &target),
+                        raw.len(),
+                    )
+                );
+                return EXIT_OK;
+            }
             let model = match arch::model(&args.root, &graph) {
                 Ok(model) => model,
                 Err(e) => return fail(err, &e.to_string()),
@@ -513,6 +594,13 @@ mod tests {
             (vec!["index", "--check", "--watch"], "mutually exclusive"),
             (vec!["arch", "--check"], "belong to `index`"),
             (vec!["index", "--debounce-ms", "soon"], "wants a number"),
+            (vec!["arch", "blast"], "needs at least one PATH or SLUG"),
+            (vec!["arch", "blast", "--fail-on", "any"], "--fail-on belongs to"),
+            // A positional word outside `arch blast` is still an unknown
+            // command — the one command that takes them must not make
+            // every other command tolerant of stray arguments.
+            (vec!["arch", "drift", "crate-index"], "unknown command"),
+            (vec!["index", "crate-index"], "unknown command"),
         ] {
             let (code, out, err) = run_capture(&flags);
             assert_eq!(code, EXIT_USAGE, "{flags:?} -> {err}");
@@ -720,6 +808,63 @@ mod tests {
         let (code, _, err) = run_capture(&["arch", "cycles", "--fail-on", "any"]);
         assert_eq!(code, EXIT_USAGE);
         assert!(err.contains("--fail-on belongs to"), "{err}");
+    }
+
+    /// `arch blast` end to end through the binary's own surface: a real
+    /// tree, a real registry, a real committed graph, and the three
+    /// answers it owes — the count, the slug resolution, and the refusal.
+    #[test]
+    fn arch_blast_reads_the_committed_graph_and_reports_rather_than_gating() {
+        let t = TempTree::new("cli-blast");
+        t.write("src/hub.ts", "export const hub = 1;\n");
+        t.write("src/a.ts", "import { hub } from './hub';\nexport const a = hub;\n");
+        t.write("src/b.ts", "import { hub } from './hub';\nexport const b = hub;\n");
+        t.write(
+            "docs/architecture/components/C-05-app.md",
+            "---\nid: C-05\nname: App\npaths:\n  - src/**\ndepends_on: []\ntouch_slugs: [app-shell]\n---\n",
+        );
+        let root = t.root().display().to_string();
+        assert_eq!(run_capture(&["index", "--root", &root]).0, EXIT_OK);
+        let graph_path = t.root().join(GRAPH_REL_PATH);
+        let before = std::fs::read(&graph_path).unwrap();
+
+        let (code, out, err) = run_capture(&["arch", "blast", "src/hub.ts", "--root", &root]);
+        assert_eq!(code, EXIT_OK, "a reporter is exit 0: {out}{err}");
+        assert!(out.contains("dependents=2"), "{out}");
+        assert!(out.contains("computed from the COMMITTED graph"), "{out}");
+        assert!(err.is_empty(), "{err}");
+        assert_eq!(
+            std::fs::read(&graph_path).unwrap(),
+            before,
+            "arch blast must never write - the number is DERIVED"
+        );
+
+        // A fence SLUG resolves through the component's own touch_slugs:.
+        let (code, out, err) = run_capture(&["arch", "blast", "app-shell", "--root", &root]);
+        assert_eq!(code, EXIT_OK, "{err}");
+        assert!(out.contains("kind=slug  components=C-05  files=3"), "{out}");
+
+        // A slug nobody declares is exit 2, never a confident zero.
+        let (code, out, err) = run_capture(&["arch", "blast", "app-shel", "--root", &root]);
+        assert_eq!(code, EXIT_USAGE, "{out}");
+        assert!(err.contains("not a declared touch_slugs:"), "{err}");
+        assert!(err.contains("app-shell"), "it names what IS declared: {err}");
+        assert!(out.is_empty(), "{out}");
+
+        // A PATH with no graph entry is not an error: it is a class.
+        let (code, out, err) = run_capture(&["arch", "blast", "method/x.md", "--root", &root]);
+        assert_eq!(code, EXIT_OK, "{err}");
+        assert!(out.contains("coverage=non-code"), "{out}");
+    }
+
+    #[test]
+    fn arch_blast_without_a_committed_graph_is_exit_three_not_an_empty_report() {
+        let t = TempTree::new("cli-blast-nograph");
+        t.write("src/a.ts", "export const a = 1;\n");
+        let root = t.root().display().to_string();
+        let (code, out, err) = run_capture(&["arch", "blast", "src/a.ts", "--root", &root]);
+        assert_eq!(code, EXIT_FAILED, "silence would read as zero dependents: {out}{err}");
+        assert!(err.contains("no committed graph"), "{err}");
     }
 
     #[test]

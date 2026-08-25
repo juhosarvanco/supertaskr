@@ -129,11 +129,40 @@ fn rust_workspace_carries_every_shape_the_criteria_name() {
         ("app/tests/integration.rs", "app/tests/common/mod.rs"),
         ("app/src/lib.rs", "core/src/types.rs"),
         ("app/src/main.rs", "app/src/lib.rs"),
+        // T-135: THE `mod` DECLARATION IS ITSELF AN EDGE. Both of these
+        // are declared by `mod` and named in no `use` anywhere, so both
+        // are ABSENT from the pre-T-135 graph — which is what makes this
+        // pair of rows a pin rather than a restatement (`T-080-s1`: a pin
+        // that passes against the pre-fix tree pins nothing).
+        //
+        //   `pub mod engine;`                       -> engine/mod.rs
+        //   `#[path = "relocated/elsewhere.rs"]`    -> the relocation, and
+        //                                              the only inbound
+        //                                              edge that file has
+        ("app/src/lib.rs", "app/src/engine/mod.rs"),
+        ("app/src/lib.rs", "app/src/relocated/elsewhere.rs"),
     ] {
         assert!(edge(from, to).is_some(), "no file edge {from} -> {to}");
     }
 
+    // A `mod`-ONLY edge is the weakest occurrence there is: it binds no
+    // name out of the target and asserts no re-export, so it carries
+    // neither field. `pub mod engine;` is `pub`, and this is the row that
+    // says `pub`-ness is NOT what `reexport` means.
+    let mod_only = edge("app/src/lib.rs", "app/src/engine/mod.rs").expect("mod edge");
+    assert_eq!(mod_only.kind, "import", "the `mod` edge rides the closed kind vocabulary");
+    assert_eq!(mod_only.symbols, None, "`mod x;` imports no name");
+    assert_eq!(mod_only.reexport, None, "`pub mod x;` is not an `export … from`");
+
     // `pub use` is a re-export; a plain `use` on the same pair is not.
+    //
+    // AND THE T-135 REGRESSION THIS PAIR NOW ALSO GUARDS: `core/src/lib.rs`
+    // writes BOTH `pub mod types;` and `pub use types::Shape;`, so the
+    // `mod` occurrence merges into an existing all-reexport edge. It must
+    // change NOTHING — not the flag, not the symbol list. A `mod`
+    // occurrence spelled with `reexport: false` clears the flag here, and
+    // one spelled with the module's own name adds "types" to the list;
+    // both were live alternatives and both are wrong.
     let reexport = edge("core/src/lib.rs", "core/src/types.rs").expect("core reexport edge");
     assert_eq!(reexport.reexport, Some(true));
     assert_eq!(reexport.symbols, Some(vec!["Shape".to_string()]));
@@ -141,6 +170,11 @@ fn rust_workspace_carries_every_shape_the_criteria_name() {
     assert_eq!(
         mixed.reexport, None,
         "`pub use util::Helper` merged with `use crate::util::Helper` is not all-reexport"
+    );
+    assert_eq!(
+        mixed.symbols,
+        Some(vec!["Helper".to_string()]),
+        "and `pub mod util;` on the same pair adds no name of its own"
     );
 
     // External crates are cargo package nodes, id == "p:" + name.
