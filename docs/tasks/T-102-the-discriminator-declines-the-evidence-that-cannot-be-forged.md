@@ -5,7 +5,7 @@ feature: F-03
 milestone: 4
 priority: 58
 size: M
-status: building
+status: verifying
 blocked_by: [T-113]
 touches: [app-agent]
 builder: claude-opus-5
@@ -224,3 +224,159 @@ with `git diff` before its run; restores per-path, proved by sha256
 against the drill's own commit. Then T-092's shape-six check on each new
 body. The BOOT GATE trigger fires on `app/src-tauri/**` — run the boot
 check and record the exit and both `[nputer]` lines. @human: none.
+
+## Implementation notes (executor `claude-opus-5` @T-102)
+
+Lane `task/T-102-auth-discriminator`, base `c4c15c8`, build commit
+`023ab3b`. **Main moved to `63099f1` during the lane** — every figure
+below is re-derived at the lane's own refs and the drift is named.
+
+### THE BLOCKER'S PRECONDITION WAS VERIFIED, NOT ASSUMED
+
+The amendment says to stop and open a room if the `permission_denials:`
+ring note is still in `run_turn`'s `StreamLine::Result` arm. **It is
+gone at `c4c15c8`** — the arm carries T-113's `THE RING NOTE FOR THIS
+SET IS GONE` comment where the push was (added at `55f9b1b`), the
+`unannounced` partition and its emit loop survive, and the only
+remaining producer is `denial_names(&denials)` feeding the cumulative
+record. No room was needed.
+
+### Criteria 1 and 3 — one flag, and the difference refused in writing
+
+`text_after_auth_status` is renamed **`evidence_after_auth_status`** and
+the `Activity` arm now sets it under the same `auth_status.is_some()`
+guard the `TextDelta` arm uses. The rename is part of the finding: the
+old name said `text`, so the missing arm read as a different subject
+rather than as a missing case.
+
+**Criterion 3 is answered as an explicit written REFUSAL**, recorded at
+the flag's declaration. Two flags earn their keep only if some reader
+makes a different decision from the stronger evidence, and there is
+exactly one reader — a guard that WITHDRAWS a claim and never makes one.
+Withdrawal has no degrees, and the direction of error is identical for
+both sources, so two flags would differ in nothing but name. The
+condition under which it splits (a future arm making a POSITIVE claim
+from unforgeable evidence) is named at the declaration so the absence is
+on the record as checked rather than overlooked.
+
+The probe scenario is `retry-401-then-tool-use-no-result`, built as a
+new `Evidence::{Delta, ToolUse}` axis on the EXISTING `no_result_after`
+emitter — so the tool-use stream and the delta stream differ by exactly
+one line **by construction**, and a body classifying them alike is
+measuring the block type and nothing else. Its own control
+(`tool-use-no-result-no-retry`) is the same stream minus the 401.
+
+### Criterion 2 — the counter-pin, re-derived rather than inherited
+
+`a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed`
+is the named body. Its doc comment now records that T-069's ground
+("this stream carries no DELTA") had to be re-derived after the
+widening, and that it holds on a WIDER foot: `auth-403-no-result` is an
+init, a diagnostic and an exit, so it streams NEITHER content-block type.
+**Shown still red-able by drill M2b** (below).
+
+### Criterion 4 and 6 — the split pair
+
+`denied-announced-and-silent-nonzero` is the intersection no fixture
+occupied: an in-band denial, a cumulative `result` line, `is_error:
+false` (so `ToolDenied` is declined and the turn is `ExitNonZero`, which
+is the only variant with a `stderr_tail`), a NON-ZERO exit, and the CLI's
+own stderr as the positive control. The body asserts two events not
+three, their ORDER against an `Activity` liveness witness, and that the
+tail names neither tool nor the deleted note's label — with the control
+asserted FIRST.
+
+**The shape-six answer is measured rather than promised.** Over T-113's
+`denied-result-only-nonzero` every denial is unannounced, so restoring
+the note NARROWLY and restoring it WIDELY are the same mutant. Over this
+stream they are two, and **the announced-only restoration (M4) reds this
+body alone** while T-113's own pin stays green.
+
+### Criterion 5 — the card's own note is half right, re-measured
+
+The note orders a re-measurement and it was owed. At `c4c15c8`:
+`retry-401-then-tool-denied` drives the join with ONE entry;
+`tool-denied` drives it with **TWO**, so a first-name-only mutant
+already reds there on LENGTH (M5 confirms: it reds
+`a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code`
+too). **But both entries are `Bash`** — the real capture refused one
+tool twice — so the census is a PALINDROME and blind to a reversal. The
+gap is narrower and sharper than "more than one name": it is ORDER.
+
+`tool-denied-two-names` supplies two distinct names in a known order.
+Its unique mutant is **not** a reordering of `denial_names` (a lib unit
+test, `result_denial_entries_carry_the_join_key_beside_the_name`,
+already pins that function's order over `["WebFetch", …, "Legacy"]`) but
+a reordering at the **`TurnError::ToolDenied` construction site** (M6b),
+which no function-level test can see. That distinction is stated at the
+body.
+
+### Criterion 7 — SEVEN, not six, and the family is replaced by a positive
+
+`grep -c "matches!(status.last_error"` reads **7** at `c4c15c8`, against
+the card's **6** at `4d2f03c`: T-113 added one at `55f9b1b`. All seven
+are replaced by `assert_settled_error_is(&status, &failed, why)`, an
+equality against the failure event itself — which entails the old
+inequality and much more. Each call site still NAMES the variant its
+turn must not be confused with, in the message, so the original claim
+survives rather than being traded away.
+
+**The measurement that justifies it is the best thing in this lane.**
+Drill M9 drops `guard.last_error = outcome.error.clone()` in
+`agent/mod.rs`:
+
+- at the build commit `023ab3b`: **exit 101, ten bodies red** (all seven
+  converted sites plus the three new ones);
+- at the BASE `c4c15c8`, same mutant, same file, same token:
+  **75 passed / 1 failed** — every one of the seven mirrored negatives
+  GREEN, run twice.
+
+And the single red at base is
+`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`,
+whose settling assertion is already
+`assert_eq!(status.last_error.as_ref(), Some(&error))` — **the positive
+form, in this same file since T-039**. So T-102 did not invent the
+replacement; it generalised the one assertion in the file that could
+already catch a dropped classification.
+
+### Criterion 8 — the rule where the bounds live, and a class per constant
+
+The caps block in `runner.rs` now heads with the rule, and each of the
+three bounds states its CLASS. `MAX_AUTH_MESSAGE_BYTES` is **deliberately
+NOT lowered**, and the reason is a finding `T-081-s4` did not reach:
+`sanitize_for_log` MARKS its cut and `truncate_utf8` does not, so a
+bound that LOSES to the cap truncates visibly and a bound that WINS
+truncates SILENTLY. Lowering it under the cap makes "hard stop" true and
+removes the `…(truncated)` disclosure from the one string a user reads
+when their login is refused. The doc comment was corrected instead;
+`T-102-s2` carries the trade.
+
+The test DERIVES the cap behaviourally rather than naming it, because
+`MAX_ECHO_LOG_CHARS` is private to `docs_watch` and reaching it means
+widening a fence to assert a number (`T-102-s1`). It reds from **both**
+sides — M7 raises a bound here, M8 lowers the cap there, both exit 101.
+
+### Criterion 9 — not built, and that is the criterion being obeyed
+
+Inverting the order (escape first, bound last) is a BEHAVIOUR change and
+the criterion routes it to its own card. `T-102-s2` is that routing,
+with three dispositions and the fixture consequences of each.
+
+### For the verifier
+
+- **The drafter's note says "remove before landing" and CRITERION 5
+  CITES IT** — *"re-measure; the note above already orders that"*.
+  Removing the note breaks a live cross-reference in the acceptance
+  criteria, so this lane left both notes in place rather than half-doing
+  it. Whoever removes it owes criterion 5's sentence a rewrite.
+- **`T-069-s1`'s "at least four bodies" reads SEVEN at this base**, not
+  six. Re-derive at your own ref; T-113 moved it once already.
+- **STATE's third intermittent fired in a FRESH drill worktree with a
+  small `CARGO_TARGET_DIR`** — the configuration STATE's hypothesis
+  calls green — once in thirteen full runs, with the identical mutant
+  re-run immediately afterwards as its control. Filed as `T-102-s3`.
+  Expect it; it is not this lane's.
+- `app/src/lib/agent-store.ts` is inside the fence and **was not
+  touched**: no payload shape moves, no `TurnError` variant gains or
+  loses a field, so the app suite is unaffected (958/958, unchanged).
+
