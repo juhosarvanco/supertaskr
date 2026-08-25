@@ -5,10 +5,10 @@ feature: F-06
 milestone: 4
 priority: 7
 size: L
-status: planned
-blocked_by: [T-132]
-touches: [crate-index, method/]
-builder:
+status: building
+blocked_by: []
+touches: [crate-index, method/tasks/TASK-FORMAT.md]
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
