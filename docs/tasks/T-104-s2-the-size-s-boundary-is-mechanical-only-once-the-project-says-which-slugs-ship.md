@@ -27,6 +27,30 @@ than enforcement.
 `docs/CONVENTIONS.md` beside the slug map, and it needs to say which of
 this repository's slugs are code-bearing:
 
+> **INTEGRATOR, at the merge `f309405` — `docs/CONVENTIONS.md` HAS NO
+> SLUG MAP, and the cheaper repair is already on disk.** `git grep -n
+> slug -- docs/CONVENTIONS.md` returns two hits, both the
+> `task/T-NNN-<slug>` BRANCH spelling — a different sense of the word.
+> **The slug map is `docs/ARCHITECTURE.md`'s derived block plus each
+> component's `touch_slugs:` field, with the FIELD authoritative** —
+> which is exactly what this same lane's `roles/executor.md` row 5 edit
+> now states, so **the finding contradicts the ruling it rides beside**,
+> and it does so in the shape of ruling FOUR: proposed prose carrying no
+> measurement. Consequently the proposed fence `[docs/CONVENTIONS.md]`
+> below is probably wrong on its own; **`T-104-s1`'s fence is the right
+> one and s1 and s2 can ride a single card.**
+>
+> **AND THE PARTITION IS ALREADY DERIVABLE FROM THE REGISTRY**, which
+> this finding misses: all 13 components carry `touch_slugs:`, and the
+> only empty one is C-01 (`method/`). Every other slug ships.
+> `tools/e2e`, `docs/**` and `.github/` have no component at all. So the
+> trap case this finding raises falls out for free and needs neither a
+> new field nor a prose list — one sentence does it: *a `touches:` entry
+> that is a registry slug is shipped code; a bare path is not.*
+> **The `non_code:` warning below is correct and well-founded and is NOT
+> superseded** — C-11 carries `non_code: true` and two slugs, so it is
+> provably a different axis.
+
 - **ship** — `app-shell`, `app-board`, `app-map`, `app-interview`,
   `app-agent`, `app-dispatch`, `lib-parser`, `crate-index`
 - **do not** — `method/`, `docs/**`, `tools/e2e`, `.github/`

@@ -5,14 +5,14 @@ feature: F-01
 milestone: 4
 priority: 4
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [method/, docs/CONVENTIONS.md, app-agent]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5 @fresh
+built_by: claude-opus-5 @T-104 — code commits aea8b9e and 51fb002
+verified_by: claude-opus-5 @fresh — verdict 7d95f79
+review: same-model
 ---
 
 Absorbs (seventh triage, 2026-08-24): T-089-s1, T-089-s9, T-089-s10, T-089-s11, T-061-s1 — files removed in this commit.
@@ -432,7 +432,20 @@ assertion with the uniqueness hole T-092 closes — coordinate if both
 land in the same window. @human: none.
 
 
-## Implementation notes — executor, 2026-08-25, lane tip measured at `aea8b9e`
+## Implementation notes — executor, 2026-08-25, measured at `aea8b9e` (NOT the lane tip)
+
+> **SEVEN INTEGRATOR REPAIRS, MARKED IN PLACE, AND THE RULE THAT PICKED
+> THEM.** Every figure in these notes was measured at `aea8b9e`, and the
+> lane then committed `51fb002` on top — notes, three findings and three
+> more `method/` files — so several of them were stale before the verdict
+> was written. The verifier caught four and listed them as REQUIRED
+> CORRECTIONS; a fifth is its section G1. **They are repaired here rather
+> than filed because this merge is what writes them onto main**, and the
+> rule this integration used throughout is *repair what the merge
+> INTRODUCES, file what the merge merely REVEALS*. The heading above is
+> the first repair: `aea8b9e` was never the lane tip. The executor's
+> prose is otherwise byte-untouched, and each repair below is marked
+> `[INTEGRATOR …]` so the record still reads as the executor's.
 
 Base `fbae94a`. **Main moved under this lane mid-run**: it was `fbae94a`
 at dispatch and is `ca5fb96` now, because **T-091 merged while this card
@@ -480,7 +493,20 @@ a line, and TASK-FORMAT.md — the sole drifting file — is the file this
 card edits most.
 
 After this card the same fourteen sources total **38 407 bytes**, a
-**+12 989** move against `fbae94a`. A version that did not follow that
+**+12 989** move against `fbae94a`.
+**[INTEGRATOR — both figures are right at `aea8b9e` and stale at the tip
+this card hands over.** Re-derived at the merge `f309405` over the same
+fourteen enumerated sources: **38 471 bytes**, a **+13 053** move against
+`fbae94a` — whose own total is `25 418` at that ref and at main-before
+`212543c` alike, since main's 33-path advance under this lane contains no
+`method/` file. The `+64` is `51fb002`'s own edit to `TASK-FORMAT.md`.
+**Per file, derived rather than inferred from the total**: TASK-FORMAT.md
+`6 925 → 18 246` (+11 321) and `interview/decomposition.md`
+`3 658 → 5 390` (+1 732); the other twelve sources are byte-identical
+across the merge, and 11 321 + 1 732 = 13 053. This is ruling FIVE's
+FIGURE case landing on the lane that wrote ruling FIVE — the second arm
+was honoured (the ref is named), and the first was not.]
+A version that did not follow that
 would not be bookkeeping in arrears; it would be false.
 
 **THE THREE PINNED FILES MOVED IN ONE COMMIT** (`aea8b9e`), as the gotcha
@@ -503,6 +529,17 @@ stamps and the const). The unpinned references are:
 - `app/src/genesis/genesis-derive.ts`'s `(v0.1.5, T-023)` comment — **OUT OF FENCE**
 - twelve `methodVersion: "0.1.5"` FIXTURE literals across five
   `app/test/**` files and `tools/e2e/tests/shell-harness.ts` — **OUT OF FENCE**
+  **[INTEGRATOR — the count is ELEVEN, and the file list is right.**
+  Enumerated at the merge `f309405`, `git grep -n 'methodVersion:
+  "0\.1\.5"'` returns **11** — `agent-store` 1, `crescendo-dom` 1,
+  `interview-chat-dom` 1, `interview-harness` 2, `interview-resume-dom`
+  5, `shell-harness.ts` 1. Two further lines are
+  `expect(…).toBe("0.1.5")` assertions, which gives 13 if they are
+  counted and never 12. **The corrected CONVENTIONS bullet this lane
+  wrote says DERIVE THE LIST, NEVER QUOTE IT, and this sentence quotes a
+  count** — the same defect as ruling SEVEN's, one section away from the
+  rule that forbids it. The substance is untouched: none of the eleven
+  reds at the bump.]
 
 **The fixtures and the references want opposite treatment**, which is why
 the corrected gotcha states the SHAPE and a derivation command instead of
@@ -696,6 +733,23 @@ of its asserts read, so it is drilled.
   parser and app suites were run anyway and are green, so the difference
   costs nothing here, but it is the card's own "ask the gate, never
   predict the output" rule failing in the card's own closing paragraph.
+  **[INTEGRATOR — THE GATE SAYS FOUR AT THE MERGE, AND THE CHARGE IS
+  WITHDRAWN.** Run at `f309405` from the repo root, on the RANGE RULE's
+  own 13-path list, never through `xargs`: **exit 1, FIRES, 13 derived
+  docs readers across 4 suites, 0 frontmatter issues**, and **5 paths
+  under `docs/` are code inputs** — `docs/CONVENTIONS.md` plus the four
+  `docs/tasks/T-104*` files, which became inputs the moment `51fb002`
+  committed the notes and the three findings. Owed: `cargo test from
+  app/src-tauri/`, `npm test from app/`, `npm test from tools/e2e/`,
+  `npx vitest run from lib/parser/`. **The card's Verification section
+  named exactly those four**, so at the tip this lane hands over the
+  prediction is correct and the charge above is refuted. The reader count
+  is **13** here against the executor's 12 and the verifier's 12 — a
+  third figure at a third ref, which is the bullet's own point. The card
+  remains open to the narrower criticism that it predicted a gate's
+  output at all; it is not open to the one filed. **This is the sharpest
+  thing in the pass: the lane measured a gate, was right at its own ref,
+  and the gate's answer was changed by the lane's own next commit.**]
 - **GRAPH REGEN: FIRES, AND THE GRAPH IS STALE — exit 1.** The trigger is
   `*.ts/*.tsx/*.js/*.jsx` or `*.rs` outside `docs/`, and this diff
   carries one `.rs` file. **ASKED rather than predicted**, twice, and the
@@ -783,6 +837,18 @@ copied — and because this card is *about* stale and unverified writing.
    bump question is the THIRD criterion.** The brief inherited this and
    repeated it. Harmless, and worth fixing before the next reader plans
    around criterion 1.
+   **[INTEGRATOR — THREE TIMES, AND ONE OF THE THREE MEANS A DIFFERENT
+   CRITERION.** Enumerated at the merge: line 44 (the drafter's note) and
+   line 361 (the architect's section) cite it for the bump question,
+   which is criterion **3**; **line 237 cites it for transcribing a stale
+   count**, which is criterion **2** (*"the figures above SHALL be
+   re-derived at the lane's own ref rather than transcribed"*).
+   Criterion 1 is the size-S ceremony row and is none of them. The lane,
+   the brief and this note all said "twice" — a fourth occurrence at
+   line 105 is `T-080`'s first criterion and is correctly not one of
+   these. **A miscount in a list of miscounts**, filed forward as
+   `T-104-s4` for the card-prose half, which this merge does not
+   introduce.]
 4. **The card's Verification paragraph predicts FOUR suites; the gate says
    TWO.** It names `cargo test`, `npm test` from app/, `npx vitest run`
    from lib/parser and `npm test` from tools/e2e. `docs-gate.mjs` on this
@@ -791,6 +857,12 @@ copied — and because this card is *about* stale and unverified writing.
    `docs/CONVENTIONS.md`. All four were run and all four are green, so it
    cost nothing — but it is *"name the gate's COMMAND, never its OUTPUT"*
    violated in the closing paragraph of the card that writes that rule.
+   **[INTEGRATOR — WITHDRAWN. The gate says FOUR at `f309405` and the
+   card named exactly those four**; see the DOCS GATE bullet above for
+   the full derivation. The card's Verification section is correct at the
+   tip this lane hands over, and it was the lane's own notes commit that
+   moved the gate's answer from two to four by turning four
+   `docs/tasks/T-104*` files into code inputs.]
 5. **"THE DECOMPOSITION RULES SHALL CARRY THE TAUTOLOGY RULE, beside the
    poison shapes" cannot be honoured literally**: `grep -ri poison
    method/` returns **0**. The poison shapes live in
@@ -1249,3 +1321,48 @@ that, which is the most useful place for it to happen.
 *Verified by claude-opus-5 as an independent adversarial session, from
 the card and the diff. `verifier:`, `verified_by:` and `review:` are
 deliberately left unstamped — they are the integrator's.*
+
+## Integration — third-hand integrator, claude-opus-5, 2026-08-25
+
+Main before **`212543c`** · lane tip **`7d95f79`** (both `git rev-parse`)
+· merge **`f309405`** · this checkpoint its direct child.
+**Range: `212543c..f309405` — 13 paths**, byte-identical to the
+`merge-tree --write-tree` forecast set. **The forecast tree `8954d56` IS
+the merge's tree**, re-read with `git rev-parse HEAD^{tree}` afterwards;
+parents are `212543c` and `7d95f79` and nothing was written into the
+merge commit.
+
+**SUITES AT THE MERGE, every exit from `$?` unpiped, every count
+DERIVED**: cargo **460 passed / 0 failed / 3 ignored, exit 0**, summed
+over **16** `test result:` lines and cross-checked against **463**
+declared bodies from the `running N tests` headers (460 + 3 ignored — the
+check that would catch an abort printing no result line); lib suite
+**4.23s**, green band; parser **268/268** exit 0; app build **0** and
+**972/972** across 47 files exit 0; `tools/e2e` **171/171 exit 0, ONE
+run**. Both watched intermittents read BY NAME as `ok`, and so was
+`agent::kit::tests::snapshot_version_matches_the_live_method_stamps` —
+the pin that proves the bump.
+
+**GATES**: DOCS GATE **exit 1, FIRES, FOUR suites** (see the correction
+on the notes' DOCS GATE bullet). BOOT GATE **exit 0** on scratch port
+15401, both `[nputer]` lines. GRAPH REGEN **exit 1, STALE** — owed on the
+one `.rs` path — **and every headline figure was identical on both
+sides**, so it was regenerated rather than argued about.
+
+**FOUR JUDGEMENT CALLS, ALL DECIDED BY ONE RULE.** *Repair what the merge
+INTRODUCES, file what the merge merely REVEALS.* Taken: the two
+`T-104-s1` version claims (true before this merge, false after it) and
+seven in-place repairs to figures this merge writes onto main. Filed:
+`T-104-s4` (four card-prose defects that predate the merge) and
+`T-104-s5` (three CONVENTIONS edits with named targets, plus the finding
+that T-091's reader does not cover either edit it was said to guard).
+
+**`review: same-model`, AND IT IS THE FIRST STAMP WRITTEN UNDER RULING
+SEVEN.** The verdict opens *"Verified by claude-opus-5 as an independent
+adversarial session"*, and that sentence describes the INFORMATIONAL
+constraint — a bounded read at the base ref with the attack set written
+down first — which ruling SEVEN, landed by this very merge, says is the
+guarantee that pays. **The `review:` field is PROVENANCE, not a strength
+ranking**, and the provenance here is one model on both sides. Reading
+the verdict's own adjective as licensing `review: independent` is exactly
+the conflation ruling SEVEN exists to end, on the card that lands it.
