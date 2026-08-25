@@ -890,3 +890,362 @@ project has begun writing prohibitions at a finer grain than a path.**
 Routing by "which lane holds this file" will keep producing routings that
 are correct at the fence and impossible at the card, and the failure is
 silent — the receiving lane finds it only by reading its own card closely.
+
+## VERDICT — APPROVED — adversarial verifier, claude-opus-5, 2026-08-25
+
+Branch `task/T-104-method-snapshot`, tip **`51fb002`** (`git rev-parse`,
+confirmed). Verified from a detached worktree at
+`/Users/ujju/Projects/nputer-T-104-verify`, cut from the lane tip,
+outside the repository. **Every figure below re-derived at `51fb002`,
+not at `aea8b9e`** — which is what turned up the two stale figures in
+section D.
+
+**BOUNDED READ, DECLARED.** The card was read at its BASE REF
+(`git show fbae94a:docs/tasks/T-104-…md`) at **15:05Z**, and the attack
+set was written down at **15:06Z**, before the lane's diff, notes or
+findings were opened. Nine rulings were derived from the card in my own
+words for semantic search, plus **two obligations the brief never
+mentioned** — T-088-s1's criterion rule and T-089-s7's ROW 5 residual.
+
+### A. RANGE — 13 paths, and my ref is not the brief's
+
+`merge-tree --write-tree` exit read from `$?` **before** substitution:
+**exit 0**, tree `be67d6e`.
+
+    MAIN=eea61e0   (NOT the brief's 540ae0f — main moved; T-116 merged)
+    prescribed:  13 paths
+    forbidden `main..HEAD`:  34 paths, of which 11 are PHANTOM DELETIONS
+
+The brief measured 29 under the forbidden form at `540ae0f`; at
+`eea61e0` it is **34**, a 2.62× drift. The phantom deletions include
+T-091's `range-rule.mjs` and `range-rule.spec.ts` and T-130's card —
+main's advance appearing as deletions through a drifted left endpoint.
+**The lane deletes nothing.** All 13 paths are inside
+`[method/, docs/CONVENTIONS.md, app-agent]` plus the card's own
+`docs/tasks/T-104*` files.
+
+### B. THE RULINGS — read for MEANING, never for the card's phrasing
+
+All nine land, plus both unlisted obligations. **None is wider than
+ratified.** Located by reading, not grepping:
+
+| # | landed in | verdict |
+|---|---|---|
+| 1 disposition | TASK-FORMAT.md | EXACT — keeps `status: suggested`, discharge in its own body, disposition is triage's |
+| 2 title/YAML | TASK-FORMAT.md | EXACT + enumerates the reserved indicators; no incident counts restated |
+| 3 tautology | decomposition.md step 3 | EXACT + adds the "try to red it" procedure and the two-criteria-contradict sibling |
+| 4 proposed prose | TASK-FORMAT.md | EXACT |
+| 5 role owes gates | verifier.md rule 7 + new section | EXACT, and the FIGURE case is explicit |
+| 6 size-S ceremony | TASK-FORMAT.md table + prose | correct; IF/THEN branch taken (see C) |
+| 7 `review:` | TASK-FORMAT.md | EXACT, and it **corrects the card**: "The three `review:` values" |
+| 8 stop condition | TASK-FORMAT.md | EXACT — all four sub-clauses, including the dispatcher-conflict IF |
+| 9 `verifying` lane-state | TASK-FORMAT.md + executor.md | EXACT — refusal documented, worktree list named |
+| T-088-s1 | TASK-FORMAT.md | EXACT — **and obeys itself**: it states no count |
+| T-089-s7 ROW 5 | executor.md row 5 | **SATISFIED** — map located AND precedence named |
+
+**Attacks that found nothing, reported because they found nothing:**
+
+- **Did landing ruling NINE restate the status vocabulary** (criterion 5
+  forbids it)? **No** — the lane added no vocabulary listing.
+- **Did any census count get transcribed into `method/`?** **No.** Every
+  numeral in the added method text is a structural reference (rule 4/6/7,
+  step 8, row 5/11) or the version stamp. The ruling is applied to itself.
+- **Did anything add a status or a stamp-earlier fix** (both REFUSED by
+  ruling NINE)? **No.**
+- **Is ruling NINE's `T-111` IF clause owed?** **No** — T-111 returned to
+  `planned` at `29c0f4f`; antecedent false. The lane flagged it correctly.
+
+### C. THE DECLINE — CORRECT, and the routing seat is the real finding
+
+Measured independently at `51fb002`: the RANGE RULE bullet starts at
+**558** and the next top-level bullet (GRAPH REGEN) at **731**, so it
+spans **558–730** — the lane's figure exactly. At base `fbae94a` the
+same span is **546–718**. Line **659** is the command-recipe sentence
+*"an EMPTY forecast wearing the costume of a clean gate"*; **667, 682,
+686, 688, 713** are the GRAPH REGEN flip figures. Both routed edits land
+inside two of the four categories the prohibition names verbatim.
+
+**RULED: the decline is CORRECT, not over-cautious.** There is no
+reading under which those edits sit outside "its flip lists, or its
+command recipes". The prohibition honoured, **proved by bytes rather
+than intent** — both sha256 claims reproduce:
+
+    RANGE RULE bullet   308176748241376b99fbf10153b0299178e977a6c46a89c79afe01ff83a51b33
+    bullet → EOF        cafc225d313a14019cc5f32b2e47b54eceec62846f6101887a0e705eeb8a5cc4
+
+**On "a fence names paths, never paragraphs":** a real gap, and narrow.
+Two instances exist (this card, and T-091 forbidden the file it wrote a
+reader for). `T-104-s3` is right to put the repair at the routing seat
+rather than in the fence format.
+
+**The card's IF/THEN was honoured on the arm that actually applied.**
+T-091 merged mid-lane, so the reader was owed and was run. I ran it too,
+against the merged content — and did **not** need a `commit-tree`
+checkout, because the equivalence is provable by sha256: the merged
+tree's `docs/CONVENTIONS.md` is byte-identical to the lane's
+(`b0528df4…`) and the merged tree's reader is byte-identical to main's
+(`47190eec…`), since main never touched CONVENTIONS and the lane never
+touched `tools/e2e`. **Result: 25 passed, exit 0** — and the reader
+printed exactly the trigger-beside-the-ref DISCLOSURE the lane reported,
+which is `T-091-s3`'s own subject. The residue is observed, not theoretical.
+
+### D. TWO FIGURES ARE STALE AT THE HANDOFF TIP — ruling FIVE, biting its author
+
+Both were measured at `aea8b9e` and both moved when `51fb002` committed
+notes, findings **and three `method/` files**. The notes header names
+`aea8b9e`, which is ruling FIVE's second arm ("or name the ref you
+measured at"), so this is a disclosure rather than a breach — but it
+labels `aea8b9e` as "lane tip" when the tip is `51fb002`.
+
+**D1 — THE DOCS GATE OWES FOUR SUITES, NOT TWO, AND THE CARD WAS RIGHT.**
+Run at the merged tree from the repo root, prescribed spelling, no
+`xargs`: **exit 1, FIRES**, 12 derived readers across 4 suites, 0
+frontmatter issues, and **5 paths under `docs/` are code inputs** — not
+one. The four T-104 cards joined `docs/CONVENTIONS.md` the moment the
+notes commit landed. Owed:
+
+    cargo test from app/src-tauri/ · npm test from app/
+    npm test from tools/e2e/ · npx vitest run from lib/parser/
+
+The notes say the gate "owes **TWO**" and use that to charge the card
+with predicting four — *"the card's own 'ask the gate, never predict the
+output' rule failing in the card's own closing paragraph."* **At the tip
+this lane hands over, the gate says FOUR and the card's Verification
+section named exactly those four.** The charge is refuted at the merge.
+The card is still open to the narrower criticism that it predicted at
+all; it is not open to the one filed. **Correct notes item 4.**
+
+**D2 — THE KIT BYTE TOTAL.** `38 407` is right at `aea8b9e` (I reproduce
+it exactly) and is **38 471** at `51fb002`, because the notes commit
+edited `TASK-FORMAT.md`. The delta against base is **+13 053**, not
++12 989. The bump argument is unaffected — `23 890 → 25 418` and
+TASK-FORMAT's `5 397 → 6 925` (+1 528, all of it) both reproduce exactly.
+
+**Neither defect cost anything substantive: all four suites were run and
+all four are green at `51fb002`**, which I re-measured rather than
+inherited.
+
+### E. TWO WRONG SENTENCES IN THE FINDINGS — both in-fence, both actionable
+
+**E1 — `T-104-s2` NAMES A LOCATION THAT DOES NOT EXIST.** It says the
+missing sentence *"belongs in `docs/CONVENTIONS.md` beside the slug
+map"*. **There is no slug map in `docs/CONVENTIONS.md`** — `grep -n slug`
+returns two hits, both the `task/T-NNN-<slug>` branch spelling, a
+different sense of the word. The slug map is `docs/ARCHITECTURE.md`'s
+block plus each component's `touch_slugs:`, exactly as **this lane's own
+`executor.md` row 5 edit now states**. The finding contradicts the ruling
+it rides beside, and it is the shape of **ruling FOUR** — proposed prose
+carrying no measurement. Consequence: s2's proposed fence
+`[docs/CONVENTIONS.md]` is likely wrong; the right fence is s1's.
+**s1 and s2 can ride one card.**
+
+**A cheaper repair than s2 proposes, derived from the registry:** all 13
+components carry `touch_slugs:`, and the only `[]` is C-01 (`method/`).
+Every other slug ships. `tools/e2e`, `docs/**` and `.github/` have no
+component at all — so **s2's own trap case falls out for free**: the
+partition needs neither a new field nor a prose list, only *"a `touches:`
+entry that is a registry slug is shipped code; a bare path is not."*
+s2 offers only "add a field or write the prose list" and misses this.
+**s2's warning about `non_code:` is correct and well-founded** — C-11
+carries `non_code: true` and two slugs, so it is provably a different axis.
+
+**E2 — "TWELVE `methodVersion` FIXTURE LITERALS" IS ELEVEN.** Derived at
+`51fb002`: `methodVersion: "0.1.5"` appears **11** times across the five
+`app/test/**` files and `shell-harness.ts` (the file list is right); two
+further lines are `expect(...).toBe("0.1.5")` assertions, giving 13 if
+counted. Neither is 12. The substance of `T-104-s1` is untouched — but
+the corrected CONVENTIONS bullet this lane wrote says **"DERIVE THE LIST,
+NEVER QUOTE IT"** and "deliberately states no count", and the finding
+beside it quotes a wrong one.
+
+### F. WHAT I COULD NOT BREAK
+
+**`T-104-s1` IS TRUE AND THE INTEGRATOR MUST ACT ON IT.** Both claims
+verified at `51fb002`: `docs/ARCHITECTURE.md:18` reads
+`built (v0.1.5)` and `docs/architecture/components/C-01-method.md:9`
+reads `# pinned: built and versioned (v0.1.5)`. **This merge ships two
+newly-false statements.** Both are outside `touches:`; declining to widen
+the fence was right (lane-protocol rule 5).
+
+**THE GENESIS-KIT JUDGEMENT IS SOUND.** The lane overrode a written
+instruction (*a bump "must hand-update"* the `(v0.1.5, T-023)`
+reference) and reinterpreted it as a ratification record. The analogy it
+rests on holds: `(v0.1.4, T-016)` sits in the same file at a version two
+bumps stale and has never moved. Declaring it rather than burying it was
+the right call.
+
+**THE DRILL REPRODUCES, INCLUDING THE SHADOWING CLAIM.** Three mutations,
+in my own worktree, assertion bodies never touched:
+
+| # | mutation | result |
+|---|---|---|
+| 1 | CONVENTIONS `v0.1.6`→`v0.1.5`, const left at 0.1.6 | **RED, exit 101, `kit.rs:450:9`** — the CONVENTIONS arm |
+| 2 | plan-interview `v0.1.6`→`v0.1.5` only | **RED, exit 101, `kit.rs:443:9`** — arm 1 |
+| 3a | const only, `0.1.6`→`0.1.7` | **RED, exit 101, `kit.rs:443:9`** |
+| 3b | then fix ONLY the file the panic named | **RED, exit 101, `kit.rs:450:9`** — a SECOND red, not a green |
+
+**The shadowing claim is CONFIRMED and the drill proves what it claims.**
+The asserts are ordered — plan-interview at 443, CONVENTIONS at 450 — so
+mutating CONVENTIONS alone passes arm 1 and genuinely exercises arm 2.
+Drill 3 additionally verifies the CONVENTIONS gotcha's own sentence
+about const-only bumps yielding a second red. **Restored per path,
+proved by three matching sha256** (`b0528df4…`, `86053229…`,
+`8a56ccc5…`), worktree clean.
+
+**THE ARITHMETIC.** Derived independently at three refs:
+
+| ref | done | same-model | independent | self-verified | empty |
+|---|---|---|---|---|---|
+| `d43455b` | **75** | 56 | 5 | **13** | 1 |
+| `fbae94a` | **88** | 65 | 5 | 17 | 1 |
+| `eea61e0` | **89** | 66 | 5 | 17 | 1 |
+
+**Ruling SEVEN is self-refuting exactly as reported**: 56+5+10+1 = **72**
+against its own "75 done". The true `self-verified` at `d43455b` is
+**13**, and ruling SIX's "13 of 75" is **right** — so the architect's
+correction was applied to SIX and never to SEVEN. **The lane's own
+re-derivation (88 — 65/17/5/1 at `fbae94a`) reproduces exactly.**
+
+**SUITES AND GATES — every exit from `$?`, unpiped; counts derived.**
+
+| suite / gate | result | exit |
+|---|---|---|
+| `cargo test --no-fail-fast` (app/src-tauri) | **460 passed / 0 failed / 3 ignored**, summed over **16** `test result:` lines | **0** |
+| lib suite clock | **3.98s** — GREEN band (<9.5s) | — |
+| `npx vitest run` (lib/parser) | **268/268**, 12 files | **0** |
+| `npm run build` (app) | after the parser build | **0** |
+| `npm test` (app) | **962/962**, 46 files | **0** |
+| `npm test` (tools/e2e) run 1 | 145 passed, **1 failed** | **1** |
+| `npm test` (tools/e2e) run 2 | **146 passed** | **0** |
+| `range-rule.spec.ts` vs merged content | **25/25** | **0** |
+| DOCS GATE | **FIRES**, 4 suites owed (see D1) | **1** |
+| GRAPH REGEN | **STALE** | **1** |
+| BOOT GATE (port 15296) | both `[nputer]` lines, no orphan | **0** |
+
+`lib/parser` was built FIRST; the TS2339 trap never arose. Both watched
+intermittents read **BY NAME**, not inferred from a green exit:
+`docs_watch::tests::startup_arm_watches_the_initial_root` `ok` and
+`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+`ok`. No `cargo clean`.
+
+**BOTH E2E RUNS DECLARED.** Run 1's single red is `token-scan.spec.ts:201`
+= `T-120-s3`, identified by STATE's signature rather than by re-running
+until green — `Expected: 1787670420302.8657` against
+`Received: 1787670420303`, a fractional millisecond against a whole
+number, in a minutes-old checkout. **Note the count: the lane's tree is
+146, not 171.** 171 is the MERGED count (146 + T-091's 25) and the lane
+says so; the brief's bare "171/171" hides both the merge and the two runs.
+
+**GRAPH REGEN — THE ONE-CHARACTER STALE, REPRODUCED EXACTLY:**
+
+    committed:   925217 bytes · 178 files · 1968 symbols · 1886 edges
+    fresh index: 925217 bytes · 178 files · 1968 symbols · 1886 edges
+    files  +0  -0  ~1
+    | ~ app/src-tauri/src/agent/kit.rs  (content)
+
+Every headline figure identical; only the `~` line differs — from the
+`5` of `"0.1.5"` becoming a `6`. **A session that confirmed the graph by
+comparing byte, file, symbol and edge counts would ship a stale graph
+with no figure capable of showing it.** `graph.json` is outside
+`touches:` and CONVENTIONS puts the regen on the INTEGRATOR at the
+checkpoint: **correctly flagged, correctly not taken.**
+
+Port **1420** was read once with `lsof`, read-only: `node` pid **88948**,
+one socket `TCP [::1]:1420 (LISTEN)`. No bind, no connect, no signal.
+
+### G. WHAT THE CARD GOT WRONG — including four the lane did not catch
+
+Confirmed from the lane's list: ruling SEVEN's figures (G/above);
+*"the four `review:` values"* — `REVIEW_MODES` in
+`lib/parser/src/types.ts` holds **three**, and the lane corrected it in
+the landed prose; *"beside the poison shapes"* is **unbuildable**,
+`grep -ri poison method/` returns **0** and the poison shapes live in
+`docs/CONVENTIONS.md` (6 hits) — `interview/decomposition.md` step 3 was
+the right home; and the three-file coupling was **already satisfied at
+`fbae94a`** by T-089, correctly reported as satisfied-and-untouched.
+
+**New, and the lane did not catch these:**
+
+1. **"THE FIRST CRITERION" IS CITED THREE TIMES, NOT TWICE, AND THEY DO
+   NOT ALL MEAN THE SAME CRITERION.** Base lines **44** and **361** cite
+   it for the bump question, which is the **THIRD**. Base line **237**
+   cites it for transcribing a stale count — that is the **SECOND**
+   ("figures SHALL be re-derived … rather than transcribed"). The lane
+   and the brief both said "twice", and both missed that one of the three
+   points somewhere else entirely.
+2. **CRITERION 5's UNIQUENESS CLAIM IS FALSE.** It asserts *"this tree
+   has exactly one [status vocabulary], in `lib/parser/src/types.ts`"*.
+   **`method/tasks/TASK-FORMAT.md:15` restates it** —
+   `status: planned  # suggested | planned | building | verifying | …` —
+   byte-identical at base, so the criterion is premised on a false claim
+   about the very file it governs. The lane added nothing, so the
+   operative half is satisfied; the premise is still wrong.
+3. **CRITERION 11 SAYS "EACH OF THE FIVE" WHEN THERE ARE NINE.** The
+   title was corrected five → NINE and this numeral was not.
+4. **THE CARD'S OWN "CLEAN ZERO AT `8f8ec31`" IS A PHRASE-MATCH.** All
+   five shorthand phrases do return 0 there — I reproduce it — but a
+   phrase-match is not an absence test, which is the trap the brief warns
+   about and the card commits. The conclusion happens to hold; the method
+   does not support it. **The lane's fix is the honest counter-move**: it
+   added the literal phrase *"informational independence"* to
+   TASK-FORMAT.md, so the next such search finds meaning where the card
+   only found words.
+
+### H. WHERE THE BRIEF WAS WRONG — five, and one is a fabrication
+
+1. **"THE LANE NOTES ITS OWED-SUITE COUNT WENT 2 → 4 … AND IT RE-RAN
+   EVERYTHING AT THE FINAL TIP. VERIFY IT DID."** **It does not, and it
+   did not.** The card records **TWO** throughout and contains no 2→4
+   discussion and no final-tip re-run. I found the 2→4 move myself (D1)
+   by running the gate at `51fb002`. The brief credited the lane with an
+   observation it never made — the most consequential brief error here,
+   because it would have had a verifier tick a box instead of running
+   a gate.
+2. **"89 done — 66 same-model / 17 self-verified / 5 independent /
+   1 empty"** attributed to the lane's re-derivation. **The lane never
+   claims this.** It re-derived at `fbae94a`: **88 — 65/17/5/1**, which I
+   confirm exactly. 89/66/17/5/1 is correct at main `eea61e0` — it is the
+   *brief's own* measurement, wearing the lane's name and carrying no
+   ref. That is ruling FIVE's FIGURE case committed in the brief that
+   commissions ruling FIVE.
+3. **"The card cites 'the first criterion' twice; it is the third."**
+   Three times, and one of them is the second. See G1.
+4. **"13 paths … the forbidden two-dot form gives 29."** 13 reproduces at
+   my ref, but the forbidden form now gives **34** with **11** phantom
+   deletions. The brief's `540ae0f` is two merges stale.
+5. **"lane reports … lib 4.13s"** — the notes say **4.00s** (main's
+   reference is 4.06s). I measured **3.98s**. Minor, but this card is
+   about transcribed figures.
+
+**The brief was RIGHT about the thing it flagged hardest**: measuring
+these rulings by phrase would have produced a false negative. Ruling
+NINE and EIGHT are at `TASK-FORMAT.md:232`/`:254` in the executor's own
+wording, and reading for meaning is what found them.
+
+### I. REQUIRED CORRECTIONS — none blocking, all inside the fence
+
+1. Notes item 4: the docs gate owes **FOUR** at `51fb002`; withdraw the
+   charge against the card's Verification section (D1).
+2. Notes: kit total **38 471** at the tip, delta **+13 053** (D2).
+3. `T-104-s2`: strike *"beside the slug map"* — CONVENTIONS has none;
+   name `docs/ARCHITECTURE.md` + `touch_slugs:`, revisit the proposed
+   fence, and add the registry-derived option (E1).
+4. `T-104-s1` and notes: **eleven** fixture literals, not twelve (E2).
+
+**FOR THE INTEGRATOR:** the GRAPH REGEN is owed at the checkpoint and
+must be asked AFTER the last write, not the first. `T-104-s1` is
+verified true — `docs/ARCHITECTURE.md`'s C-01 row and
+`C-01-method.md`'s status comment ship stale at v0.1.6 and need a fence
+this card never held.
+
+**APPROVED.** The nine rulings say what was ratified and no more, the
+bump is correct in all three pinned places and survives four mutations,
+the hard prohibition was honoured to the byte, and every suite and gate
+is green or correctly disclosed at the tip I measured. What I found is a
+record that is stale in two figures and two findings that carry an
+unmeasured sentence each — on a card whose whole subject is exactly
+that, which is the most useful place for it to happen.
+
+*Verified by claude-opus-5 as an independent adversarial session, from
+the card and the diff. `verifier:`, `verified_by:` and `review:` are
+deliberately left unstamped — they are the integrator's.*
