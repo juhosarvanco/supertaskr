@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 4
 size: M
-status: building
+status: verifying
 blocked_by: [T-110]
 touches: [app-board]
 builder: claude-opus-5
@@ -97,3 +97,261 @@ shown RED at a commit. The DOCS GATE fires on the card; run what it
 owes. **@human: whether the reason text reads as a help rather than a
 scold** — listed explicitly, since a frontier that lectures gets
 ignored.
+
+## Implementation notes
+
+Executor `claude-opus-5 @T-111`, lane `task/T-111-dispatchable-board`,
+worktree `/Users/ujju/Projects/nputer-T-111`, base `e04f5b3`.
+**Understanding was confirmed in one paragraph before a single file was
+created**, with `git status --short` empty in this worktree at that
+moment (10:47Z).
+
+### THE HEADLINE: SEVEN OF EIGHT CRITERIA ARE NOT BUILT, AND THAT IS THE FINDING RATHER THAN A SHORTFALL
+
+**NO PIN CAN LIVE INSIDE `[app-board]`, AND IT IS MEASURED WITH A
+POSITIVE CONTROL RATHER THAN REASONED FROM THE CONFIG.** Every
+derivation this card asks for lands under `app/src/**`. The app's only
+test collector is `app/vitest.config.ts` with
+`include: ["test/**/*.test.{ts,tsx}"]`, and **both that config and
+`app/test/**` are in C-05's `paths:` — slug `app-shell`**, held right now
+by live lane T-033. So this card's fence contains no suite, and three of
+its criteria name a pin in their own text (criterion 2 *"A pin SHALL
+drive all four states"*, criterion 3 *"in one function with its own
+pin"*, criterion 5 *"a named constant with its own assertion"*).
+
+`method/roles/executor.md` rules the case in one sentence: *"A criterion
+that cannot be built inside the fence is NOT built. Record it, route it
+as a suggestion naming the fence it needs, and build the rest. Widening
+the fence from inside the lane is the one repair this role may never
+make."* **T-015 is the same situation with the architect's ruling already
+on it** — *"The lane below built nothing and was RIGHT to … **The
+dispatch defect was the ARCHITECT'S**, not the lane's … Re-dispatch only
+when `app-shell` is free"* — and its `touches:` was corrected in place
+from `[app-map]` to `[app-map, app-shell]`. **T-111 needs the same
+correction: `[app-board, app-shell]`.**
+
+**AND THE ALTERNATIVE IS A KNOWN REJECTION, NOT AN UNTRIED OPTION.**
+T-110's first pass shipped exactly this card's shape — a correct,
+unpinned TypeScript derivation under `app/src/**` — and was REJECTED for
+it, with four one-sided producer mutants all surviving `npm run build`
+and `npm test` at exit 0. Its rebuild's entire content was relocating
+that logic into Rust where a pin could reach it. **T-111 has no such
+relocation available**: all thirteen globs in `[app-board]` are
+`app/src/**` TypeScript, styles and assets. `assertNever` and two `tsc`
+programs catch a MISSING arm and have never caught a WRONG one.
+
+**SO NO SOURCE FILE WAS CHANGED. `app/src/**` IS A 0-FILE DIFF, AND SO IS
+EVERY OTHER CODE PATH IN THE REPOSITORY.** The whole diff is this card
+and three suggestion files.
+
+### The fence, derived from the component files — never from ARCHITECTURE's prose
+
+`[app-board]` is C-08 ∪ C-09 ∪ C-11, read from each file's own
+`touch_slugs:` at `e04f5b3`. Thirteen globs:
+`app/src/components/board/{Board,FeatureColumn,GhostCard,ParkedRow,SliceLine,TaskCard,TaskDetailPanel}.tsx`,
+`app/src/components/board/badges/**`,
+`app/src/components/board/panel-dismissal.ts`,
+`app/src/lib/board-model.ts`, `app/src/lib/task-detail.ts`,
+`app/src/styles/**`, `app/src/assets/**`. **Not one is a collector and
+not one is read by one.**
+
+### THE MEASUREMENT — two arms, and the second is what makes the first mean anything
+
+A body asserting `expect("collected").toBe("not collected")` written to
+`app/src/components/board/badges/t111-collector-probe.test.ts` — inside
+the fence, under C-08's own `badges/**` glob — untracked throughout and
+removed afterwards:
+
+| arm | collector | result |
+|---|---|---|
+| **A** | the SHIPPED `app/vitest.config.ts`, unchanged | **exit 0 — 46 files / 958 tests, unchanged from baseline** |
+| **B** | a throwaway config OUTSIDE the repository naming that exact path | **exit 1 — 1 failed / 1**, `AssertionError: expected 'collected' to be 'not collected'` |
+
+Restoration: `git status --short` EMPTY, the directory back to its three
+`.tsx` files, and `npm test` re-run at **958/958, exit 0**.
+
+**A FALSE POSITIVE CONTROL WAS CAUGHT ON THE WAY.** Arm B's first run
+also exited 1 — on `Error: Cannot find module 'vitest/config'`, a STARTUP
+error from a config in a directory with no `node_modules`, not the
+assertion. **The exit code alone could not tell the two apart**; the
+message could. The config was rewritten with no import and the second run
+carried the assertion text. This project's "derive the count as well as
+the exit" rule, arriving in a probe rather than in a suite.
+
+### Each acceptance criterion
+
+1. **One disposition per card, six values.** NOT BUILT — routed
+   (`T-111-s2`). Buildable in `app/src/lib/board-model.ts`, which is in
+   fence; unpinnable there.
+2. **The lane set joined with `status:`, disagreement visible, a pin
+   driving all four states.** NOT BUILT — routed. **AND THE RE-CUT CARD
+   SHOULD CONSUME RATHER THAN RESPELL**: T-110's rebuild already holds
+   `live`/`died`/`stampSkipped`/`notDispatched` in
+   `app/src-tauri/src/dispatch/join.rs` with a pin under each, and
+   `hydrateJoin` in `app/src/lib/dispatch-store.ts` carries them to the
+   webview verbatim. A second spelling of that rule in `board-model.ts`
+   is precisely the divergence T-110 exists to remove.
+3. **Normalisation, one function, its own pin, from the live board's own
+   tokens.** NOT BUILT — routed, **and the criterion is partly wrong**:
+   see `T-111-s3` and the corrections section below.
+4. **The reason rendered as TEXT.** NOT BUILT — routed. The negative
+   control it needs is named in `T-111-s2`.
+5. **The ceiling as a named constant with its own assertion.** NOT BUILT
+   — routed. `orchestrator.md` step 4 reads *"Ceiling: 3–5
+   concurrent."*, verified at this ref; the assertion must hardcode the
+   bound rather than derive it from the constant (CONVENTIONS' rule, and
+   the shape that let `BRANCH_MAX_LEN` survive T-110's first drill).
+6. **A dangling `blocked_by` is `blocked`, consuming the parser's
+   `dangling-reference`.** NOT BUILT — routed, with two facts derived
+   that the re-cut card needs. **NO PLUMBING IS OWED**:
+   `parseProjectFromFiles` already pushes `validateProject`'s issues into
+   `result.issues` (`lib/parser/src/project.ts`), so `selectBoard(model)`
+   already receives `dangling-reference` with its `nearMiss` hint and
+   `board-model.ts` already consumes `ParseIssue[]` through
+   `issuesByFile`. **And the case cannot be driven from the live board**:
+   at `e04f5b3`, 31 cards carry a `blocked_by` and **ZERO** name an id
+   that is not on the board, so criterion 6 needs a synthetic fixture.
+7. **`done`/`parked` carry no reason at all.** NOT BUILT — routed.
+8. **NO DISPATCH AFFORDANCE LANDS — MET, and trivially so, since no
+   source file changed.** Both guards named as the criterion asks, so
+   T-112 knows what it is moving: `it("6. the completion state renders —
+   board ready, elapsed, ONE CTA (criterion 2)")` in
+   `app/test/crescendo-dom.test.tsx`, which counts the completion panel's
+   buttons (`toHaveLength(1)`, `data-testid` `genesis-open-board`) and
+   greps its text for `dispatch` / `run task` / `assign`; and
+   `TaskDetailPanel.tsx`'s module doc comment, which records that *"the
+   mockup's dispatch footer belongs to F-04 and is deliberately absent"*.
+   **Both green** inside the 958/958 run.
+
+### THE FINDING THE CARD DID NOT ANTICIPATE — and it is this lane's own dispatch
+
+**`[app-board]` AND `[app-shell]` ARE NOT DISJOINT.** C-11 carries
+`touch_slugs: [app-shell, app-board]`, so at `e04f5b3`:
+
+    T-033  [docs/architecture/components/, lib-parser, app-map, app-shell]
+    T-111  [app-board]
+
+    STRING-EQUALITY fence    -> intersection EMPTY  -> reported DISJOINT
+    COMPONENT-EXPANDED fence -> intersection {C-11} -> OVERLAPPING
+                                (app/src/styles/**, app/src/assets/**)
+
+C-11 is the ONLY component in the registry carrying two slugs, so this is
+the only pair in the vocabulary that can collide this way — and
+ARCHITECTURE's own derived table prints both rows containing C-11, four
+lines apart. **The data was never missing; nothing joined it.** Nothing
+was breached (neither lane wrote under those globs), which is exactly why
+it survived a whole lane undetected. Full account and three arms in
+`T-111-s1`. **The card's criterion about the reason string covers the
+converse case only** — a coarse slug refusing a disjoint card — and no
+reason string helps here, because no reason is computed.
+
+### The drill — NOT OWED, and that is derived rather than skipped
+
+**This diff contains ZERO new or changed assertions**, so CONVENTIONS'
+poison-drill trigger does not fire: `app/src/**`, `app/test/**`,
+`lib/parser/**`, `tools/e2e/**` and `app/src-tauri/**` are all 0-file
+diffs. The collector measurement above is the discipline applied anyway,
+to the one claim this lane does make, and it carries the positive control
+a negative claim requires. **No `drill-T-111` worktree was created**, and
+the class is therefore empty from this lane.
+
+### Suites and gates, every exit read from `$?` unpiped, count derived as well as exit
+
+All at `e04f5b3` in this lane's worktree, in the order run. Setup first,
+as a fresh worktree has nothing: lib/parser `npm ci` **0** then
+`npm run build` **0**; app `npm install` **0**; tools/e2e `npm ci` **0**.
+**The fresh-install rule was DERIVED, not skipped**: port 1420's holder
+was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else (node
+pid **88948**, one socket `TCP [::1]:1420 (LISTEN)`, read 10:47Z), and
+`lsof -a -p 88948 -d cwd` puts its cwd at
+`/Users/ujju/Projects/nputer-app/app` — **a different checkout**, so
+`integrator.md` rule 1's operative condition (the CHECKOUT serving a live
+product) is not this one. That is arm B of STATE's first-reader table,
+applied from a lane.
+
+- **app `npm run build` exit 0** · **`npm test` 958/958 across 46 files,
+  exit 0** — three times: baseline, with the probe present (unchanged,
+  which is the measurement), and after its removal.
+- **parser `npx vitest run` 264/264 across 12 files, exit 0.**
+- **cargo `test --no-fail-fast` 455 passed / 0 failed / 3 ignored, exit
+  0**, summed over **SIXTEEN** `test result:` lines. Identical to
+  main's 455/0/3 over 16 — this diff adds no test body and no test
+  target. **GREEN FIRST TIME, NO RE-RUN, AND THE CLOCK TABLE GAINS A
+  NINTH ROW**: the lib binary reads **`ok. 160 passed … finished in
+  3.99s`**, inside STATE's green band (every green under 9.5s) and on
+  the post-clean mean of 3.97s. Neither `docs_watch::tests::
+  startup_arm_watches_the_initial_root` nor
+  `a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+  fired. **A lane worktree has its own small target directory, which is
+  what STATE's `T-088-s4` account predicts** — this is the prediction
+  holding, not evidence the cliff is gone.
+
+**THE THREE STANDING GATES, DERIVED FROM THIS LANE'S OWN DIFF (4 paths,
+all under `docs/`):**
+
+- **GRAPH REGEN — NOT OWED, 0 of 4**, and **ASKED rather than predicted**
+  as its bullet demands.
+- **BOOT GATE — NOT OWED, 0 of 4.** No `app/src/**`, no
+  `app/src-tauri/**`, neither manifest. **The dispatch brief asserted
+  "your edits will match" and instructed the gate be RUN; the outcome
+  falsified the premise**, so it is derived not-owed rather than run —
+  STATE's own precedent for a docs-only diff.
+- **DOCS GATE — FIRES, 4 of 4 under `docs/`.** Invoked directly from the
+  repo root with ROOT-RELATIVE arguments and never through `xargs`, with
+  the new files `git add`ed first so it can see them (`T-010-s10`).
+
+### For the verifier
+
+- **Rule the fence question first** — everything else is downstream of
+  it. The claim is that `[app-board]` contains no test collector, hence
+  no criterion naming a pin can be built in it. The two-arm measurement
+  above is reproducible in four commands and the positive control is the
+  half worth attacking.
+- **The second thing worth attacking is whether "build nothing" was
+  right.** The alternative is shipping the derivation into
+  `board-model.ts` with the pins routed — which is T-110's first pass
+  verbatim, and was rejected. If the architect prefers that shape, it is
+  a DISPATCH decision, not an executor's.
+- Three findings routed: `T-111-s1` (the C-11 double claim — the live
+  fence overlap), `T-111-s2` (no pin can live in `[app-board]`, with the
+  pins the re-cut card owes listed so they are not re-derived), and
+  `T-111-s3` (the `touches:` vocabulary is three kinds of token).
+- `roles/executor.md`'s own last bullet records that this section and
+  `roles/verifier.md` cannot both hold. Nothing here is addressed to the
+  executor alone; the conflict is noted, not resolved.
+
+### Where the CARD and the BRIEF were wrong
+
+1. **THE CARD, criterion 3 — the trailing-slash rule does not reach the
+   card's own third example.** The criterion names `tools/e2e` beside
+   `tools/e2e/`, `method/` beside `method`, and *"one card carries a
+   bare `docs`"*. Censused at `e04f5b3` over 124 cards and 19 raw
+   tokens: the first two DO collide under a trailing-slash rule (27 and
+   8 cards); **`docs` does NOT** — it normalises to `docs` while
+   `docs/tasks/` normalises to `docs/tasks`, so 25 cards fenced under
+   `docs/` are still reported disjoint from it. Containment needs a
+   prefix rule. And a fourth collision the card does not mention exists:
+   `ci` (1 card) against `.github/` (4), which shares no substring at
+   all. `T-111-s3` carries it, with T-054 as the single live fixture
+   that exhibits three of the four.
+2. **THE CARD, header citation.** `method/roles/orchestrator.md:16` is a
+   LINE citation; CONVENTIONS requires a SYMBOL. The rule is
+   `orchestrator.md`'s **step 4**, and its text is quoted accurately.
+3. **THE CARD, criterion 2's premise is already discharged in part.**
+   The four states and their pins exist in `join.rs` as of T-110's
+   rebuild. The criterion reads as though they must be built here.
+4. **THE BRIEF, item 8 — "your edits will match" the GRAPH REGEN
+   trigger.** They do not: this lane changes no `.ts/.tsx/.js/.jsx/.rs`
+   file. GRAPH REGEN and BOOT GATE are both NOT OWED.
+5. **THE BRIEF, item 4 — the base is right and the main tip moved under
+   it.** Base `e04f5b3` confirmed. Main was `e04f5b3` at 10:46Z and
+   **`ad5a0df` by 10:51Z** (the ninth triage's first batch, promoting
+   T-126). Every pre-merge range is derived against the tip read at that
+   moment and will need re-deriving again at the merge — the brief's own
+   rule 2 about live-environment facts, arriving within the hour.
+6. **STATE's board tally, re-derived and moved by this card's own
+   dispatch.** STATE says 39 planned / 1 building; at `e04f5b3` the
+   board is **84 done / 38 planned / 41 parked / 56 suggested / 0
+   verifying / 2 building**, total 221. The dispatch commit that created
+   this lane is what moved planned 39→38 and building 1→2 — the
+   staleness is the stamp, not an error.
