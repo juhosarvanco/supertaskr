@@ -36,6 +36,7 @@
 //! live tree. Where a permanent cross-engine pin should live is filed as
 //! T-014-s2, and whether this join belongs in Rust at all as T-014-s1.
 
+pub mod cycles;
 pub mod glob;
 pub mod registry;
 
