@@ -401,6 +401,18 @@ mod tests {
     }
 
     #[test]
+    fn the_enumeration_cap_is_the_documented_constant() {
+        // A TEST PARAMETRISED BY THE CONSTANT IT CHECKS CANNOT PIN THAT
+        // CONSTANT (CONVENTIONS, T-063). Every assertion in the body
+        // below is written in terms of `MAX_CYCLES`, so the whole family
+        // stays green at ANY value the constant takes — measured on
+        // T-127's drill, raising it from 64 to 100 000 killed **zero** of
+        // 217 bodies and the suite exited 0. This line is the only thing
+        // that reds when the cap moves, which is the whole of its job.
+        assert_eq!(MAX_CYCLES, 64);
+    }
+
+    #[test]
     fn enumeration_is_capped_and_says_so_rather_than_running_forever() {
         // A complete digraph on 9 nodes carries far more than MAX_CYCLES
         // simple cycles. The VERDICT must survive the cap.
