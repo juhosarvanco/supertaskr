@@ -618,3 +618,346 @@ test, tauri`, and its absence reads exactly like a compile failure.
 **@human's look is owed at §6 and §7** before the ceremony section binds
 anything, because where the rungs sit — and whether they bind at all — is a
 judgement about how much this project is willing to pay for safety.
+
+## Implementation notes — HALF A ONLY (executor claude-opus-5, 2026-08-26)
+
+**Built in lane `task/T-135-blast-radius-ceremony`, fence `crate-index`
+alone. `method/tasks/TASK-FORMAT.md` is UNTOUCHED and no file under
+`method/` was written.** Half B — the ceremony section and the ADR — is
+not built and is not routed: it waits on **@human's look at §6 and §7**,
+which is what the card's own Verification section asks for. `status:`
+therefore stays `building`; the conflict that creates with
+`method/roles/executor.md` step 6 is filed as `T-135-s4` rather than
+decided here.
+
+Every figure below was derived in this lane at the ref named beside it,
+with the command shown, exits read **unpiped from `$?`**.
+
+### What Half A discharges, criterion by criterion
+
+- **Criterion 1 — `mod` declarations are edges, with a pin that fails
+  against the pre-fix tree.** Four pins, three of them new bodies and one
+  a fixture: `resolve::rust::tests::every_resolved_mod_declaration_is_recorded_as_a_pair`,
+  `…::a_declaration_of_an_already_visited_module_is_still_that_files_dependency`,
+  `…::a_module_declared_by_several_targets_is_a_dependency_of_every_one_of_them`,
+  `self_graph::a_mod_declaration_is_an_edge_in_this_repositorys_own_graph`
+  (the live `lib.rs -> dispatch/mod.rs` case, asserted against a FRESH
+  index), and two new rows in
+  `golden::rust_workspace_carries_every_shape_the_criteria_name`. All six
+  are zero-edge facts before this commit, so none can pass by accident
+  (`T-080-s1`).
+- **Criterion 2 — Rust edge coverage enumerated and ruled.** After this
+  card Rust emits `import` from `use` **and** `import` from `mod`. It
+  still emits **no `call` and no `type_ref`** — `T-010-s6` cited, not
+  rediscovered. The ruling is written where a reader meets it: the module
+  doc of `resolve/rust.rs`, and `arch::cycles::render`'s note, **narrowed
+  rather than deleted** (below). §4's arithmetic is cited and was not
+  re-derived; I did not disagree with it.
+- **Criterion 3 — dependents DERIVED, never stored.** `arch blast
+  <path|slug>…`, a new subcommand on the `arch cycles` precedent. It
+  reads the COMMITTED graph, reverses the forward `import` edges **at
+  read time**, writes nothing, and adds no schema field. There is no
+  reverse index, so the T-057 disagreement cannot arise.
+- **Criteria 4–8 — Half B**, and §11's fence widening to
+  `docs/decisions/` is still owed before criterion 6 can be built at all.
+
+### The one in-fence spelling, and what it bought
+
+**`mod` edges ride the existing `import` kind.** The brief is right that
+this has exactly one in-fence spelling: `GRAPH_EDGE_KINDS` in
+`app/src/lib/architecture/graph.ts` is CLOSED and its reader skips an
+unknown kind **while emitting a `graph-entry` issue**, and
+`arch::join` filters `kind != "import"` — so a `kind: "mod"` would be
+invisible to the map pane, to `arch`, to `arch drift` and to D1–D5, while
+adding one error-strip entry per edge. Filed as `T-135-s2`.
+
+**Inside that spelling the executor's call was how STRONG the occurrence
+is, and I made it the weakest possible one: no `symbols` entry, no
+`reexport` claim, no provenance field.** `EdgeAcc.all_reexport: bool`
+became `reexport: Option<bool>` to carry "no import occurrence has
+spoken yet".
+
+**The reason is measured, and it is the strongest property this change
+has.** Against the base graph the whole final diff is **32 edges added,
+0 removed and 0 CHANGED IN PLACE**. Both live alternatives break that:
+
+- a `mod` occurrence spelled `reexport: false` CLEARS `reexport: true`
+  off three live edges (`lib.rs -> {diff,error,graph}.rs`, each a
+  `pub mod` + `pub use` pair) and off the fixture's
+  `core/src/lib.rs -> core/src/types.rs`;
+- a `mod` occurrence spelled with the module's own name ADDS that name to
+  the `symbols` array of every one of the 17 pairs that already carried a
+  `use` edge.
+
+`tests/golden.rs` already asserted both of those facts before this card
+touched it, which is why the wrong choice would have been caught — and
+both are now poisoned deliberately (M3, M4 below).
+
+### The measurements, all at `7d386f0` unless stated
+
+**GRAPH REGEN, asked twice and never predicted.**
+
+    cd app/src-tauri && cargo run -q -p nputer-index -- index --check --root ../..
+    BEFORE (at base 5547f02):  exit 0  CURRENT  944590 bytes · 180 files · 2018 symbols · 1911 edges
+    BEFORE (at 7d386f0):       exit 1  STALE    fresh 955710 · 181 · 2038 · 1943
+    regen: NPUTER_UPDATE_GOLDEN=1 cargo test -q -p nputer-index --test self_graph -- --ignored   exit 0, 1 passed
+    AFTER:                     exit 0  CURRENT  955710 bytes · 181 files · 2038 symbols · 1943 edges
+
+**The deltas, which this card says are the deliverable:**
+
+| | base | final | delta |
+|---|---|---|---|
+| bytes | 944 590 | 955 710 | **+11 120** |
+| files | 180 | 181 | +1 (`arch/blast.rs`) |
+| symbols | 2 018 | 2 038 | +20 |
+| edges | 1 911 | 1 943 | **+32** |
+
+**And the +32 attributes exactly**: **27** are the `mod` fix on files that
+already existed — the plan's figure, reproduced — **4** are `blast.rs`'s
+own outbound `use` edges, and **1** is `arch/mod.rs -> arch/blast.rs`,
+which is itself a `mod` edge produced by this card's own
+`pub mod blast;`. Measured in isolation before `blast.rs` existed, the
+`mod` fix alone moved the graph 944 590 → **949 507** bytes (**+4 917**,
+against the plan's forecast of ~4 350) for 27 edges and 0 other movement.
+
+**THE FINDING THE FIX REVEALS.** `arch --root ../..`, exit **0**:
+
+    component  C-05  App  … observed_deps=9 -> 10  drift=- -> drift=D1
+    edge  C-05 -> C-15  undeclared  observed=1
+    summary  … edges=36 -> 37  findings=3 -> 4  drift_components=3 -> 4
+
+    arch drift, exit 0:
+    finding  D1  D1:C-05->C-15  C-05 -> C-15  file_edges=1
+      file-edge  app/src-tauri/src/lib.rs -> app/src-tauri/src/dispatch/mod.rs
+
+**Not a regression. The drift has been real since T-126 and invisible
+because a `mod` declaration produced no edge** (`T-126-s4`, now
+discharged). Routed to `T-126-s3` as item 4.
+
+**`arch cycles --root ../..` — exit 1, BY DESIGN**, the surviving
+`C-08 -> C-09 -> C-08`, whole report on stderr, stdout empty. Read
+unpiped.
+
+### The three obligations the card does not name — my ruling on each
+
+1. **`arch/cycles.rs`'s disclosure — NARROWED, not deleted and not
+   widened.** Its `mod` half became false with this commit; its
+   path-expression half stands. The note and the module doc now name both
+   halves, and the module doc records WHY narrowing is the only honest
+   move when a fix makes a disclosure half-true. Its test
+   (`every_green_and_every_red_carries_what_the_gate_cannot_see`) now
+   asserts BOTH halves — the fix by its card id and the surviving gap by
+   its finding id — because asserting only the survivor would let a future
+   widening pass unnoticed.
+2. **The golden fixtures — ONE moved, not two.** See the corrections
+   below; the card and the brief both say two.
+3. **`GRAPH_EDGE_KINDS` — taken as the one in-fence spelling**, with the
+   sub-choice argued above and the alternative routed as `T-135-s2`.
+
+**And a FOURTH the plan did not name, which decided the design**: the
+`reexport`/`symbols` merge semantics of a `mod` occurrence, three live
+edges and one existing fixture assertion deep. It is written up above
+because it is the reason the graph delta is purely additive.
+
+### Poison drills — eleven arms, every one RED
+
+Detached scratch worktree **outside the repository at a SHORT path**,
+`/private/tmp/t135d` (19 characters), cut at the tip under test, with
+`CARGO_TARGET_DIR=/private/tmp/t135d/target`. **NOT `.vtarget` — see the
+corrections.** Producer mutated in every arm, never an assertion; the
+diff read with `git diff` BEFORE each run; the whole suite run with
+`--no-fail-fast`; restore proved per path by `sha256` against a baseline
+taken before the first arm, plus an empty `git status --porcelain`.
+
+**Control first**: unmutated, `cargo test --no-fail-fast` in that
+worktree, **exit 0**. **And a control on the arm itself**: every arm shows
+exactly one `Compiling nputer-index` line and **zero `error[E…]`**, so no
+arm was a compile failure wearing a kill's exit code. (My first pass at
+that check reported a compile error on all eleven — it was matching
+cargo's own `error: test failed` summary line. The guard was wrong, not
+the arms.)
+
+| # | mutation (producer) | suite | killed |
+|---|---|---|---|
+| M1 | the `mod` pair is never recorded | 101 | 6 |
+| M2 | the pair is recorded at the QUEUE PUSH instead of the DECLARATION | 101 | **1** |
+| M3 | a `mod` occurrence claims `reexport: false` | 101 | 2 |
+| M4 | a `mod`-only edge claims `reexport: true` | 101 | 2 |
+| M5 | `arch blast` drops the `kind != "import"` filter | 101 | 1 |
+| M6 | the package seam is not marked | 101 | 1 |
+| M7 | every input is classed `measured` | 101 | 2 |
+| M8 | an unknown slug answers zero instead of refusing | 101 | 2 |
+| M9 | a build-target root is never marked | 101 | 1 |
+| M10 | the disclosure reverts to its half-false form | 101 | 1 |
+| M11 | `touch_slugs:` is not read | 101 | 1 |
+
+**Uniqueness measured against the whole 512-body suite**, not against the
+file under test. Seven arms kill a body nothing else kills. M2, M3, M4 and
+M11 kill only bodies another arm also kills — each is a NARROWING of a
+neighbouring mutation, which is what makes that expected rather than a
+gap: M1 subsumes M2's body, M3 and M4 are the two directions of one
+`reexport` decision and both land on the same fixture pair, and M11's
+single body is also M7's and M8's.
+
+**M2 IS THE ARM WORTH READING, AND IT CORRECTS THE PLAN.** It kills
+**exactly one body in 512** —
+`a_declaration_of_an_already_visited_module_is_still_that_files_dependency`
+— and it changes the live graph **not at all**: with M2 applied, a fresh
+index of this repository is `955710 bytes · 181 files · 2038 symbols ·
+1943 edges`, byte-identical to the correct implementation. So the trap is
+real, latent, and guarded by a single synthetic body. See the corrections
+for why the plan's stated discriminator does not discriminate.
+
+### Standing gates, derived from the merge's own diff
+
+**THE RANGE RULE**, exit read BEFORE the substitution. Main had moved off
+this lane's base while it built (`70b1d40` → `2a0652a`, the T-133 merge):
+
+    MAIN=2a0652aff5b84210185f8bdeb939b3be3a0ddbc0
+    TREE=$(git merge-tree --write-tree "$MAIN" HEAD)   # $? = 0
+    git diff --name-only "$MAIN" "$TREE"               # 16 paths
+
+- **GRAPH REGEN — FIRES** (9 of 16 paths are `*.rs` outside `docs/`). Run
+  above; `graph.json` is **regenerated and left UNCOMMITTED**, because 55
+  of the 57 commits that ever touched it are checkpoints. The deltas are
+  stated above; the file is the checkpoint's to commit.
+- **BOOT GATE — FIRES** (10 of 16 under `app/src-tauri/**`).
+  `NPUTER_BOOT_PORT=14521 npm run boot:check` from `tools/e2e/`, **exit
+  0**, both lines: `[nputer] project folder: /Users/ujju/Projects/nputer-T-135`
+  and `[nputer] window "main" created`. Port 1420 was read once,
+  read-only — `lsof -nP -iTCP:1420 -sTCP:LISTEN` at 2026-08-26 02:07:44
+  EEST names `node` pid 88948 on `[::1]:1420` — and never touched.
+- **DOCS GATE — FIRES**, exit **1**, 6 paths under `docs/`, naming three
+  suites. All three run, all green:
+
+      npx vitest run  from lib/parser/   exit 0   12 files / 268 tests
+      npm test        from app/          exit 0   47 files / 973 tests
+      npm test        from tools/e2e/    exit 0   Running 171 tests, 171 passed
+
+  The gate also reports *"every live task card's frontmatter parses, with
+  a legal status"*, which is the check the four new suggestion cards owed.
+
+**AND THE `app/` SUITE HAS A CONTROL IN BOTH DIRECTIONS, WHICH IS THE
+FINDING.** Run with the REGENERATED graph in the tree it is **6 failed /
+967 passed**, and all six are the `C-05 -> C-15` D1 arriving in
+`architecture-dogfood.test.ts` (3) and `map-dogfood-render.test.tsx` (3).
+Run with the committed graph — which is what the merge's own diff carries
+— it is **973 / 973, exit 0**. So the merge is green and the CHECKPOINT's
+graph commit is not, and no standing gate is positioned to say so. Filed
+as `T-135-s3`, measured rather than predicted.
+
+`cargo test --no-fail-fast` from `app/src-tauri`, exit **0**: 16 `running`
+headers summing **515**, 16 `test result:` lines totalling **512 passed /
+0 failed / 3 ignored**. The two reconcile, so no body vanished into an
+abort. `cargo audit` was not run: no manifest or lockfile is in the diff.
+
+### Routed, not built
+
+`T-126-s3` item 4 (the `C-05 -> C-15` declaration), `T-135-s1` (the
+cross-package file-level seam), `T-135-s2` (a distinct `mod` edge kind),
+`T-135-s3` (the checkpoint's graph commit reds two `app/` suites),
+`T-135-s4` (a half-dispatched card has no true `status:`).
+
+### WHERE THE CARD, THE PLAN AND THE BRIEF WERE WRONG
+
+1. **"Two golden fixtures move (`rust-workspace`, `mixed`)" — §12 and the
+   brief. ONE moves.** Measured before regenerating: `cargo test -p
+   nputer-index --test golden` reds **1 of 9**, and it is
+   `rust_workspace_matches_golden`; `mixed_matches_golden` PASSES.
+   `tests/fixtures/mixed/native.rs` is `fn main() { println!(…) }` and
+   declares no `mod` at all, so that tree has no pair to add.
+   `rust-workspace` goes 23 → 25 edges. **The trap the plan drew from this
+   is still real and still fired**: `NPUTER_UPDATE_GOLDEN=1` WRITES all
+   four fixture files unconditionally, and three of them came back
+   byte-identical — `git status` and a sha256 comparison are what
+   distinguish a write from a change, and a byte count is not.
+2. **The `.vtarget` instruction is INVERTED, in §12 and in the brief.**
+   Both say to name the drill's `CARGO_TARGET_DIR` `.vtarget` *"to match
+   an ignore rule"*. `.vtarget` matches **no** ignore rule in this
+   repository — `git check-ignore -v .vtarget` exits 1 — and it is the
+   exact name that FAILED for T-127's verifier, whose own notes say so and
+   whose fix was **renaming it to `target`**. `.gitignore:4` is `target/`.
+   I used `target`, verified with `git check-ignore -v target` → matched
+   at `.gitignore:4`. **A drill following the card as written reproduces
+   T-127's fabricated staleness reading.**
+3. **§3's multi-declarer trap names a case that does not discriminate.**
+   The plan says *"`tests/common/mod.rs` is declared by six different test
+   roots and is visited once … a push-site implementation would report
+   2 → 3"*. Measured: **eight** test roots declare `mod common;`, the
+   count goes 2 → **8**, and **a push-site implementation also reports
+   8** — `build_module_tree` is called once per cargo target with a FRESH
+   `visited` set, so a declaration in a different root is never suppressed.
+   Proved by running the whole suite with the push-site mutation applied
+   (M2): `a_module_declared_by_several_targets_…` **survives**, and a
+   fresh index is byte-identical at 1943 edges.
+   **The trap is real and the plan is right to name it — the
+   DISCRIMINATING case is different.** A push-site recording loses a
+   declaration only when the declaring file is processed after its target
+   has already been popped, which needs two declarers **inside one root's
+   walk**. `…a_declaration_of_an_already_visited_module_is_still_that_files_dependency`
+   builds exactly that (a `#[path]` alias declared by the crate root
+   before the sibling that also declares it) and is the only body in 512
+   that kills M2.
+4. **§3's paths are one component short.** The crate is at
+   `app/src-tauri/crates/nputer-index/`, not `crates/nputer-index/`. Every
+   `crates/nputer-index/…` reference in the plan needs that prefix. The
+   LINE numbers beside them are correct.
+5. **TWO CORRECTIONS I DRAFTED AND THEN RETRACTED, BECAUSE I CHECKED THEM
+   AND THEY WERE MINE.** I had written that §3's `arch/mod.rs:281` and
+   §4's `cycles.rs:231–234` / `cycles.rs:303` had drifted. **They have
+   not — all three are exact at `5547f02`**, verified with
+   `git show 5547f02:<path> | sed -n '<n>p'`: 281 is
+   `if edge.kind != "import" {`, 231–234 is the two-line `mod`
+   plus-path-expression note, and 303 is `text.contains("T-126-s4")`. I
+   had measured them against my own already-edited tree, which is the
+   error the correction clause exists to catch, committed inside the
+   correction clause itself. **The plan's line references are the most
+   precisely checkable thing in it and they all hold.**
+6. **The plan's byte forecast is 13% low.** ~4 350 predicted for the 27
+   edges; **4 917** measured, at 944 590 → 949 507. The per-edge model
+   (~161 bytes) is close; the paths in this repository are longer than the
+   sample it was fitted on.
+7. **§5 requires `arch blast` to resolve slugs through `touch_slugs:` and
+   does not say that the crate cannot read that field.**
+   `arch::registry::Component` carried `id`, `name`, `layer`, `status`,
+   `paths`, `depends_on` and `file` only; `touch_slugs:` fell through the
+   reader's `_ => {}`. Half A adds it, with the same strictness
+   `depends_on:` gets — which **widens the refusal surface of `arch`,
+   `arch drift` and `arch cycles` by one field**, measured first: all
+   thirteen component files carry the inline-list form today.
+8. **§5 asks `arch blast` to print "whether any input is a build-target
+   root" and §7 says the indexer already computes crate roots — but that
+   computation was buried inside `RustWorld::build`,** which needs the
+   extracted records and is index-time. Half A factors it out as
+   `resolve::rust::cargo_target_roots` so `arch blast` reads the SAME
+   definition rather than re-deriving one (the T-057 hazard this card's
+   own criterion 3 names). **The TS half of the floor rule is NOT
+   answered**: this crate computes no TypeScript entry points, and
+   `arch blast` marks no TS file as a root. §7's list of eight roots
+   includes three TS files; a rule that binds on §7 needs that gap closed
+   or stated.
+9. **§6's metric is "internal edges only, cross-package edges excluded"
+   and §4 says to say so in the output — but neither says what to say.**
+   `arch blast` prints `pkg-seam=p:@nputer/parser(importers=28)` beside
+   every file of a repo-internal package, so the internal count and the
+   reason it is not the whole answer arrive together. Filed as `T-135-s1`.
+10. **The brief says the card's Verification section reads as ordering the
+    lane to commit `graph.json`.** It does not, quite — it says the file
+    "SHALL be regenerated and its movement stated", which is exactly what
+    a lane can do. §11 already reads it that way. No correction needed;
+    recorded because the brief asked.
+11. **The brief's own claim that `arch cycles` prints on stderr with
+    stdout empty holds only on RED.** On this repository it is red by
+    design, so the claim is true here — but `cycles.rs`'s `render` is
+    printed to **stdout** on green (`cli.rs`), and a reader who greps
+    stderr on a green registry will find nothing.
+12. **"`status:` has a closed vocabulary" — confirmed, and the DOCS GATE
+    is what checks it.** `docs-gate.mjs` reports *"every live task card's
+    frontmatter parses, with a legal status"*, so the four new suggestion
+    cards are checked rather than assumed.
+13. **`method/roles/executor.md` step 6 says a brief telling the executor
+    to skip the `verifying` stamp is wrong; this brief says to leave
+    `building`.** I followed the brief, because `verifying` on a card
+    whose Half B is unwritten is a false statement and the vocabulary has
+    no true value. **Recorded and routed rather than decided** — that is
+    what the same role file requires of a conflict — as `T-135-s4`.
