@@ -11,7 +11,7 @@ paths:
   - app/src/components/board/TaskCard.tsx
   - app/src/components/board/badges/**
   - app/src/lib/board-model.ts
-depends_on: [C-06, C-09, C-11]
+depends_on: [C-06, C-09, C-11, C-16]
 decisions: [ADR-008, ADR-016]
 status: auto
 touch_slugs: [app-board]

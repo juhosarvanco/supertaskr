@@ -9,6 +9,7 @@ import {
   findingText,
   hasVisibleMark,
   independentLine,
+  isDriftFinding,
   nodeVisual,
   panelFindings,
   provenanceLabel,
@@ -31,6 +32,7 @@ function component(partial: Partial<DerivedComponent>): DerivedComponent {
     autoStatus: "planned",
     files: [],
     declaredOnly: false,
+    nonCode: false,
     hasDrift: false,
     tasks: [],
     ...partial,
@@ -349,7 +351,7 @@ describe("finding attribution + text", () => {
       { from: "app/test/b.test.ts", to: "lib/parser" },
     ] },
     { rule: "D2", id: "D2:unmapped", files: ["src/x.ts", "src/y.ts"] },
-    { rule: "D3", id: "D3:C-07", component: "C-07" },
+    { rule: "D3", id: "D3:C-07", component: "C-07", informational: false },
     { rule: "D4", id: "D4:src/shared.ts", path: "src/shared.ts", ids: ["C-05", "C-08"] },
     { rule: "D5", id: "D5:C-05->C-99", from: "C-05", to: "C-99" },
   ];
@@ -393,6 +395,46 @@ describe("finding attribution + text", () => {
       evidence: "first by component id order wins (C-05)",
     });
     expect(findingText(findings[4] as DriftFinding).sentence).toContain("no component file declares");
+  });
+
+  it("AN INFORMATIONAL D3 LEAVES THE RING SET AND STAYS IN THE PANEL (T-033)", () => {
+    // The positive control is `findings` above: D3:C-07 is the SAME rule
+    // with informational:false, and it rings. Only the flag differs, so a
+    // filter that dropped every D3 would fail here rather than pass.
+    const informational: DriftFinding = {
+      rule: "D3",
+      id: "D3:C-01",
+      component: "C-01",
+      informational: true,
+    };
+    const set = [...findings, informational];
+    expect(isDriftFinding(informational)).toBe(false);
+    expect(isDriftFinding(findings[2] as DriftFinding)).toBe(true);
+    expect(driftCount(set, "C-01")).toBe(0);
+    expect(driftCount(set, "C-07")).toBe(1);
+    expect(attributedFindings(set, "C-01")).toEqual([]);
+    // still explained where a human can read it
+    expect(panelFindings(set, "C-01").map((f) => f.id)).toEqual(["D3:C-01"]);
+    expect(findingText(informational)).toEqual({
+      label: "D3",
+      sentence: "C-01 declares no code the indexer walks — informational, not drift.",
+      evidence: "non_code: true in its component file",
+    });
+  });
+
+  it("the footer counts DRIFT, so an informational D3 moves neither half (T-033)", () => {
+    const informational: DriftFinding = {
+      rule: "D3",
+      id: "D3:C-01",
+      component: "C-01",
+      informational: true,
+    };
+    const before = driftFooter(findings, []);
+    expect(before).toBe(driftFooter([...findings, informational], []));
+    // and the control: a NON-informational D3 on the same component does
+    // move it, so this is not a footer that ignores D3 entirely.
+    const real: DriftFinding = { rule: "D3", id: "D3:C-01", component: "C-01", informational: false };
+    expect(driftFooter([...findings, real], [])).not.toBe(before);
   });
 
   it("evidence lists cap at four leaves", () => {

@@ -12,9 +12,9 @@ paths:                    # the shell/umbrella only — panes and plumbing own t
   - app/src/index.css
   - app/src/vite-env.d.ts
   - app/src/components/shell/**
-  - app/src/components/ui/**
-  - app/src/lib/utils.ts
-  - app/src/lib/verdicts.ts
+  # components/ui/**, lib/utils.ts and lib/verdicts.ts left for C-16 at
+  # T-033 — shared primitives, extracted so children stop depending on
+  # the shell to import a Button. No file moved on disk.
   - app/src-tauri/src/lib.rs
   - app/src-tauri/src/main.rs
   - app/src-tauri/src/acl_pin.rs      # T-010 settlement, see below
@@ -23,7 +23,7 @@ paths:                    # the shell/umbrella only — panes and plumbing own t
   - app/src-tauri/build.rs
   - app/src-tauri/tauri.conf.json
   - app/src-tauri/capabilities/**
-depends_on: [C-01, C-08, C-10, C-11, C-12]
+depends_on: [C-01, C-06, C-07, C-08, C-09, C-10, C-11, C-12, C-13, C-14, C-16]
 decisions: [ADR-007, ADR-008, ADR-010, ADR-012]
 status: auto
 touch_slugs: [app-shell]

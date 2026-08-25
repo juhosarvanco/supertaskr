@@ -6,7 +6,7 @@ paths:
   - app/src/components/board/TaskDetailPanel.tsx
   - app/src/components/board/panel-dismissal.ts
   - app/src/lib/task-detail.ts
-depends_on: [C-06, C-08, C-11]
+depends_on: [C-06, C-08, C-11, C-16]
 decisions: [ADR-016]
 status: auto
 touch_slugs: [app-board]

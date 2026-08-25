@@ -5,6 +5,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseProjectFromFiles, type FileEntry } from "@nputer/parser/pure";
+import { edgeKey } from "../src/architecture/MapEdge";
 import { MapView } from "../src/architecture/MapView";
 import { deriveArchitecture } from "../src/lib/architecture/derive";
 import { GRAPH_FILE } from "../src/lib/docs-model";
@@ -78,7 +79,7 @@ const node = (id: string): HTMLElement => {
 };
 
 describe("the nputer repo on its own map", () => {
-  it("renders all twelve declared components in full mode PLUS an unmapped bucket, no banner", () => {
+  it("renders all thirteen declared components in full mode, and the bucket is gone again", () => {
     // Ten since T-024 declared C-13 (genesis pane); ELEVEN since T-025
     // declared C-14 (agent runner). See the reconciliation blocks in
     // architecture-dogfood.test.ts for both enumerated deltas.
@@ -98,8 +99,16 @@ describe("the nputer repo on its own map", () => {
     // Both assertions were derived from the live derivation before this
     // suite was run; the second one INVERTS rather than moving a number,
     // which no count check can see.
+    // 13 → 13 AT T-033, AND THE COUNT HOLDING IS A COINCIDENCE THIS BODY
+    // MUST NOT REST ON: the unmapped bucket LEAVES (C-15 claims
+    // `tests/dispatch_lanes.rs`) and C-16 shared primitives ARRIVES, so
+    // one node is swapped for another and 13 stays 13. The two assertions
+    // below are what actually move — the bucket must be absent and C-16
+    // must be present — and they are asserted by IDENTITY rather than by
+    // the total for exactly this reason.
     expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(13);
-    expect(container.querySelector('[data-component-id="unmapped"]')).not.toBeNull();
+    expect(container.querySelector('[data-component-id="unmapped"]')).toBeNull();
+    expect(container.querySelector('[data-component-id="C-16"]')).not.toBeNull();
     expect(container.querySelector("[data-testid=map-degraded]")).toBeNull();
   });
 
@@ -158,15 +167,21 @@ describe("the nputer repo on its own map", () => {
     // hold: no Rust file is claimed by any of them, and C-13's four
     // findings are all TS-to-TS. Derived from the live derivation before
     // the suite was run.
-    expect(node("C-05").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
-      "drift 5",
-    );
-    expect(node("C-08").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
+    // T-033 EMPTIES THIS BODY OF EVERY COUNT IT USED TO CARRY. C-05, C-08,
+    // C-09 and C-13 stop being D1 sources — declared, or extracted onto
+    // C-16 — so the chip is ABSENT rather than zero, which is a stronger
+    // statement than "drift 0" and the one the renderer actually makes.
+    for (const id of ["C-05", "C-08", "C-09", "C-13"]) {
+      expect(node(id).querySelector("[data-testid=map-drift-count]"), id).toBeNull();
+      expect(node(id).className, id).not.toContain("map-drift-ring");
+    }
+    // THE POSITIVE CONTROL, and the only ring left on this map: C-10, on
+    // the cycle T-125 owns. Without this the four assertions above would
+    // pass equally against a renderer that had stopped drawing chips.
+    expect(node("C-10").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
       "drift 1",
     );
-    expect(node("C-09").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
-      "drift 1",
-    );
+    expect(node("C-10").className).toContain("map-drift-ring");
     // NEW at the T-027 merge regen: C-13 is a D1 SOURCE for the first
     // time (→C-05 via components/ui/button.tsx, →C-14 via
     // agent-store.ts), so it gains a count of its own beside the three
@@ -190,19 +205,23 @@ describe("the nputer repo on its own map", () => {
     // (C-05→C-10, C-05→C-13, C-05→C-14), so two fileEdges LISTS grow and
     // no ring does. Derived by re-running the live derivation and diffing
     // against this fixture BEFORE anything was run, not by reading counts.
-    expect(node("C-13").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
-      "drift 4",
-    );
-    expect(node("C-05").className).toContain("map-drift-ring");
-    expect(node("C-01").className).toContain("map-drift-ring"); // D3, non-code
-    expect(node("C-11").className).toContain("map-drift-ring"); // D3, non-code
+    // AND THE TWO D3 RINGS INVERT — the second half of the card. C-01 and
+    // C-11 carried `map-drift-ring` from T-012 to here, on findings that
+    // could never clear; `non_code: true` makes those findings
+    // informational, so the ring goes out while the FINDING REMAINS (it
+    // is still in architecture-dogfood's findings array, and still
+    // rendered in the panel). A ring that went out because the finding
+    // vanished would be a different change, which is why both files
+    // assert their half.
+    expect(node("C-01").className).not.toContain("map-drift-ring");
+    expect(node("C-11").className).not.toContain("map-drift-ring");
+    expect(node("C-01").getAttribute("data-drift")).toBeNull();
+    expect(node("C-11").getAttribute("data-drift")).toBeNull();
+    // and the face stops promising files that are never coming
+    expect(node("C-01").textContent).not.toContain("no files yet");
+    expect(node("C-11").textContent).toContain("not indexed by design");
     // The map pane itself is clean after the §2 amendments.
     expect(node("C-12").className).not.toContain("map-drift-ring");
-    // THE ASSERTION THAT INVERTS at the T-027 merge regen, and the one no
-    // count check can see: the genesis pane was clean while it was only
-    // the TARGET of C-05's undeclared edge. T-027 gives it outgoing
-    // undeclared edges of its own, so the ring lights.
-    expect(node("C-13").className).toContain("map-drift-ring");
   });
 
   it("C-12 renders its LIVE rollup — this task, on its own map (churn-proof)", () => {
@@ -221,7 +240,7 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 35-edge relation table", () => {
+  it("draws the full 36-edge relation table, with ONE undeclared row left", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
@@ -271,37 +290,63 @@ describe("the nputer repo on its own map", () => {
     // see — C-10 gains its first drift ring — and architecture-dogfood's
     // drift assertion is where that is pinned. Said here rather than left
     // silent, so a reader of this body knows what it is NOT asserting.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(35);
-    expect(
-      container.querySelectorAll('[data-testid=map-edge][data-relation="undeclared"]'),
-    ).toHaveLength(12);
+    // 35 → 36 AT T-033, and the row count moving by ONE hides a nine-row
+    // churn underneath it: five `-> C-16` rows arrive and four leave
+    // (C-08→C-05, C-09→C-05, C-13→C-05 lose their file edges to C-16 and
+    // stop existing; C-12→C-05 was dropped from the registry once the
+    // extraction took its last observed edge). The SECOND assertion is
+    // where the card actually lands — 12 undeclared rows become ONE.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(36);
+    const undeclared = container.querySelectorAll(
+      '[data-testid=map-edge][data-relation="undeclared"]',
+    );
+    expect(undeclared).toHaveLength(1);
+    // asserted by IDENTITY, not only by count: "one undeclared edge" must
+    // not be reachable by some other row surviving in its place.
+    expect(undeclared[0]?.getAttribute("data-edge")).toBe(edgeKey({ from: "C-10", to: "C-14" }));
   });
 
-  it("opens the C-05 panel on its real findings", () => {
+  it("the C-05 panel has NOTHING left to report, and C-10's still does", () => {
+    // T-033 INVERTS THIS BODY WHOLE. It carried five "C-05 imports X
+    // without declaring the dependency." sentences and a "5 drift
+    // findings" chip; every one of those five is now DECLARED, so the
+    // chip is absent and no such sentence can be rendered for C-05 at
+    // all. Absence is asserted by the sentence STEM rather than by the
+    // chip alone — a chip that merely stopped rendering would pass a
+    // count check while the findings were still there.
     act(() => node("C-05").click());
-    const panel = container.querySelector("[data-testid=map-panel]") as HTMLElement;
-    // 4 → 5 at the T-010 merge regen, with the fifth sentence asserted
-    // below rather than only counted, on the same rule the C-14 comment
-    // states: a renumbered chip must never be able to pass on a
-    // different finding.
-    expect(panel.querySelector("[data-testid=map-panel-drift-chip]")?.textContent).toContain(
-      "5 drift findings",
+    const c05Panel = container.querySelector("[data-testid=map-panel]") as HTMLElement;
+    expect(c05Panel.querySelector("[data-testid=map-panel-drift-chip]")).toBeNull();
+    expect(c05Panel.textContent).not.toContain("without declaring the dependency");
+    // the panel itself is still rendering — the grid is the control that
+    // says this is an empty finding list and not an empty panel
+    expect(c05Panel.querySelector("[data-testid=map-panel-dependencies]")).not.toBeNull();
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+
+    // THE POSITIVE CONTROL, in the same body so the two cannot drift
+    // apart: C-10 still reports the one row this card deliberately left,
+    // by its rendered sentence and not only by a count.
+    act(() => node("C-10").click());
+    const c10Panel = container.querySelector("[data-testid=map-panel]") as HTMLElement;
+    expect(c10Panel.querySelector("[data-testid=map-panel-drift-chip]")?.textContent).toContain(
+      "1 drift finding",
     );
-    expect(panel.textContent).toContain("C-05 imports C-06 without declaring the dependency.");
-    expect(panel.textContent).toContain("C-05 imports C-09 without declaring the dependency.");
-    expect(panel.textContent).toContain("C-05 imports C-13 without declaring the dependency.");
-    // The fourth, since the T-025 merge regen: C-05's own suite reaching
-    // the agent runner's store. Asserted by its rendered sentence, not
-    // just counted, so the renumbering above can never pass on a
-    // different finding.
-    expect(panel.textContent).toContain("C-05 imports C-14 without declaring the dependency.");
-    // The fifth, since the T-010 merge regen: the shell's own index
-    // command reaching the indexer crate. Both ends are Rust, so this
-    // sentence could not be rendered by any graph before this one.
-    expect(panel.textContent).toContain("C-05 imports C-07 without declaring the dependency.");
-    // The dependency grid shows the observed-only rows in warning ink
-    // and the header hint counts the committed graph.
-    expect(panel.querySelector("[data-testid=map-panel-dependencies]")).not.toBeNull();
+    expect(c10Panel.textContent).toContain(
+      "C-10 imports C-14 without declaring the dependency.",
+    );
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+
+    // AND THE INFORMATIONAL D3 IS STILL EXPLAINED WHERE A HUMAN READS IT
+    // — the downgrade moves the ring, never the explanation.
+    act(() => node("C-11").click());
+    const c11Panel = container.querySelector("[data-testid=map-panel]") as HTMLElement;
+    expect(c11Panel.querySelector("[data-testid=map-panel-drift-chip]")).toBeNull();
+    expect(c11Panel.textContent).toContain("declares no code the indexer walks");
+    expect(c11Panel.textContent).toContain("non_code: true in its component file");
     act(() => {
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     });

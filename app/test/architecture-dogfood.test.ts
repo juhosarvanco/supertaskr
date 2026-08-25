@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parseProjectFromFiles, type FileEntry } from "@nputer/parser/pure";
-import { deriveArchitecture, UNMAPPED_ID } from "../src/lib/architecture/derive";
+import { deriveArchitecture, isDriftFinding, UNMAPPED_ID } from "../src/lib/architecture/derive";
 import { GRAPH_PATH, parseGraph } from "../src/lib/architecture/graph";
 
 // THE DOGFOOD CHECK (T-011 acceptance criterion 4): run the derivation on
@@ -1097,7 +1097,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(graphResult.graph).toBeDefined();
   });
 
-  it("the live registry is the twelve known components", () => {
+  it("the live registry is the thirteen known components", () => {
     expect((project.components ?? []).map((c) => c.id)).toEqual([
       "C-01",
       "C-05",
@@ -1115,9 +1115,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // behind this array when both move, which is why both were derived
       // from the live probe rather than read off the first red.
       "C-15",
+      // T-033: C-16 shared primitives, EXTRACTED from C-05 rather than
+      // written — app/src/components/ui/**, lib/utils.ts and
+      // lib/verdicts.ts change owner and no file moves on disk. It is the
+      // first component this registry has gained that adds no territory:
+      // fileComponent.size below is UNCHANGED at 178 while C-05 goes
+      // 65 -> 62 and C-16 takes the 3.
+      "C-16",
     ]);
     expect(derived.mode).toBe("full");
-    expect(derived.components.filter((c) => c.kind === "declared")).toHaveLength(12);
+    expect(derived.components.filter((c) => c.kind === "declared")).toHaveLength(13);
     expect(derived.components.filter((c) => c.kind === "placeholder")).toHaveLength(0);
   });
 
@@ -1130,7 +1137,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
   // reds here and NOWHERE else, while widening them to something that
   // matches reds half the fixture. The intent layer exists to carry
   // components that are not built yet; C-07 has done so since T-009.
-  it("C-15 HAS TERRITORY AT LAST: five files under its declared globs, D3 cleared", () => {
+  it("C-15 HAS TERRITORY AT LAST: six files under its declared globs, D3 cleared", () => {
     // THE ASSERTION THAT INVERTS AT THE T-110 MERGE REGEN (2026-08-25).
     // This body read "C-15 is DECLARED-ONLY, never a defect: declared
     // paths, zero files, one D3" from T-088 until here, and its own
@@ -1146,26 +1153,35 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // regenerated graph BEFORE this suite was run (the T-088 technique),
     // never read off a failure — the first red in this body hides the
     // three below it.
+    // T-033: a THIRD glob, and this assertion is where it is pinned.
+    // `tests/dispatch_lanes.rs` is claimed here by the rule T-010 used for
+    // `tests/agent_runner.rs` — a component's suite belongs to the
+    // component it exercises — which drains the D2 below. This was NOT in
+    // T-033's rulings; they were made seven hours before T-110 merged,
+    // when neither this file nor C-15's five source files existed.
     expect(project.components?.find((c) => c.id === "C-15")?.paths).toEqual([
       "app/src-tauri/src/dispatch/**",
       "app/src/lib/dispatch-store.ts",
+      "app/src-tauri/tests/dispatch_lanes.rs",
     ]);
     const c15 = derived.components.find((c) => c.id === "C-15");
     expect(c15?.kind).toBe("declared");
-    // FIVE files, not six: `app/src-tauri/tests/dispatch_lanes.rs` — the
-    // two-line compile shim that is the only reason `cargo test` can
-    // reach this module at all — matches NEITHER declared glob, so it
-    // lands in the unmapped bucket instead. That is `T-110-s9`'s subject
-    // and it is asserted, with the bucket, in the body below.
+    // SIX files since T-033: `app/src-tauri/tests/dispatch_lanes.rs` —
+    // the two-line compile shim that is the only reason `cargo test` can
+    // reach this module at all — matched NEITHER declared glob and spent
+    // one day as this repository's first D2. It is claimed now, and the
+    // unmapped bucket below is empty again.
     expect(c15?.files).toEqual([
       "app/src-tauri/src/dispatch/fixtures.rs",
       "app/src-tauri/src/dispatch/join.rs",
       "app/src-tauri/src/dispatch/lanes.rs",
       "app/src-tauri/src/dispatch/mod.rs",
+      "app/src-tauri/tests/dispatch_lanes.rs",
       "app/src/lib/dispatch-store.ts",
     ]);
     expect(c15?.declaredOnly).toBe(false);
     expect([...derived.fileComponent.values()].filter((id) => id === "C-15")).toEqual([
+      "C-15",
       "C-15",
       "C-15",
       "C-15",
@@ -1183,7 +1199,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 178 files map — and ONE of them is unclaimed territory, for the first time since the §2 amendments", () => {
+  it("all 178 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
     // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
     // move this row has ever taken and the only one whose cause is a new
     // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
@@ -1205,15 +1221,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // Routed as `T-110-s9`. THREE assertions move in this body's head and
     // two more in the tally below; all five were derived from a throwaway
     // probe against the regenerated graph before the suite was run.
+    // T-033: THE SIZE DOES NOT MOVE AND THAT IS THE ASSERTION. C-16 is an
+    // extraction — three paths change owner, no file joins or leaves the
+    // index — so this stays 178 while C-05 drops 3 and C-16 gains them.
+    // A count that moved here would mean the extraction had accidentally
+    // widened or narrowed the claimed set.
     expect(derived.fileComponent.size).toBe(178);
-    expect(derived.unmappedFiles).toEqual(["app/src-tauri/tests/dispatch_lanes.rs"]);
-    // The bucket is now DEFINED, and it is asserted by shape rather than
-    // by mere existence — a bucket that appeared holding some OTHER file
-    // would be a different fact and must not pass here.
-    const unmapped = derived.components.find((c) => c.id === UNMAPPED_ID);
-    expect(unmapped).toBeDefined();
-    expect(unmapped?.kind).toBe("unmapped");
-    expect(unmapped?.files).toEqual(["app/src-tauri/tests/dispatch_lanes.rs"]);
+    // AND THE BUCKET IS EMPTY AGAIN, one day after it first appeared:
+    // C-15 claims `tests/dispatch_lanes.rs` by name (T-033 settlement).
+    expect(derived.unmappedFiles).toEqual([]);
+    expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
     for (const id of derived.fileComponent.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
     expect([...counts.entries()].sort()).toEqual([
@@ -1299,7 +1316,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // in the §5 settlement, and all six became VISIBLE the moment the
       // walk learned `.rs`. Derived from the regenerated graph's own
       // file→component map before the suite was run, never off a red.
-      ["C-05", 65],
+      // 65 → 62 at T-033, and for the first time this row moves DOWNWARD
+      // and without the graph moving at all: `components/ui/button.tsx`,
+      // `lib/utils.ts` and `lib/verdicts.ts` leave for C-16. An
+      // extraction, not a deletion — the three files are on disk, indexed,
+      // and counted three rows below.
+      ["C-05", 62],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under
@@ -1374,7 +1396,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // the registry globs BEFORE the suite ran — this is the FOURTH
       // assertion in this body, below the size check, the unmappedFiles
       // check and the bucket check, so three separate reds can hide it.
-      ["C-15", 5],
+      // 5 → 6 at T-033: `tests/dispatch_lanes.rs`, claimed by name.
+      ["C-15", 6],
       // AND THE ROW NOBODY DECLARED. `app/src-tauri/tests/dispatch_lanes.rs`
       // is the two-line `#[path]` shim that lets `cargo test` compile
       // `src/dispatch/**` at all — the placement T-110's verifier RULED
@@ -1387,7 +1410,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // than hiding it: it is `T-110-s9`'s subject, and it clears the
       // moment either a component claims `tests/**` or `T-110-s1` lands
       // the real wiring, whose commit DELETES this shim.
-      ["unmapped", 1],
+      // AND THE ROW T-033 CREATES. C-16 shared primitives, EXTRACTED from
+      // C-05: `components/ui/button.tsx`, `lib/utils.ts`,
+      // `lib/verdicts.ts`. The first component in this ledger to arrive
+      // with files and add none — every other new row above either grew
+      // the index or waited for a language.
+      ["C-16", 3],
+      // AND THE ROW THAT LEAVES. `["unmapped", 1]` stood here for exactly
+      // one day: `app/src-tauri/tests/dispatch_lanes.rs`, this
+      // repository's first and so far only D2, settled onto C-15 at T-033
+      // by the rule T-010 used for `tests/agent_runner.rs`.
     ]);
     // The map pane joined its engine at the T-012 merge regen
     // (T-011-s1 option a keeps the trio in place under lib/).
@@ -1425,561 +1457,160 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: twelve undeclared dependencies, ONE unclaimed file, two declared-only components", () => {
+  it("THE FINDINGS: ZERO DRIFT BUT ONE ROW, WHICH IS THE POINT OF THE CARD", () => {
+    // T-033 TAKES THIS ARRAY FROM FIFTEEN ROWS TO THREE, and the shape of
+    // what is left is the whole deliverable. Eleven undeclared rows were a
+    // warning light wired to always-on; after this, an undeclared edge is
+    // news. What survives, and why each one is deliberate:
+    //
+    //   · D1:C-10->C-14 — the ONE undeclared row left, and it is left on
+    //     purpose. T-123 made `docs_watch.rs` ask C-14's session registry
+    //     whether a folder is already registered, which is real and which
+    //     sits opposite the declared `C-14 -> C-10`: this repository's
+    //     first component CYCLE. @human ruled 2026-08-25 that the registry
+    //     holds no cycles, so declaring it is forbidden and the fix is an
+    //     EXTRACTION — `T-125`. The amber stays visible until that lands.
+    //   · D3:C-01 and D3:C-11 — both now INFORMATIONAL. `method/**` is
+    //     markdown and C-11 is stylesheets and fonts; neither will ever
+    //     hold a file this walk collects, so the finding is reported and
+    //     explained but no longer counts as drift (`hasDrift` below).
+    //
+    // WHAT LEFT, each by a different mechanism, so a single cause cannot
+    // explain the drop: eight D1 rows drained because C-16's extraction
+    // moved `cn`/`Button`/`verdicts` out of the shell's paths (C-08->C-05,
+    // C-09->C-05, C-13->C-05 vanish outright), and the rest because the
+    // registry now DECLARES dependencies that were always real
+    // (C-05->C-06/-C-07/-C-09/-C-13/-C-14, C-13->C-06/-C-08/-C-14). The
+    // D2 left because C-15 claims its own test shim by name.
+    //
+    // Derived from a throwaway probe against the live registry and the
+    // committed graph BEFORE this suite was run (the T-088 technique),
+    // never read off a failure — the first red here hides everything under
+    // it. The probe was deleted and its removal proved by `git status`.
     expect(derived.findings).toEqual([
       {
-        rule: "D1",
-        id: "D1:C-05->C-06",
-        from: "C-05",
-        to: "C-06",
-        fileEdges: [
-          { from: "app/test/architecture-derive.test.ts", to: LIB_PARSER, package: PARSER_PKG },
-          { from: "app/test/architecture-dogfood.test.ts", to: LIB_PARSER, package: PARSER_PKG },
-          { from: "app/test/board-truth.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
-          { from: "app/test/map-churn.test.ts", to: LIB_PARSER, package: PARSER_PKG },
-          { from: "app/test/map-dogfood-render.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
-          { from: "app/test/map-search.test.ts", to: LIB_PARSER, package: PARSER_PKG },
-          { from: "app/test/map-t1-t2-dom.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
-          // Both NEW at the T-034 merge regen: 8 → 10 file edges. This
-          // LIST is a separate assertion from the relation table's
-          // observedCount below and lives in a different it() body — the
-          // count going right does not make the list right.
-          { from: "app/test/map-task-waves.test.ts", to: LIB_PARSER, package: PARSER_PKG },
-          { from: "app/test/map-tasks-lens-dom.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
-          { from: "app/test/map-view-dom.test.tsx", to: LIB_PARSER, package: PARSER_PKG },
-          { from: "app/test/map-zoom.test.ts", to: LIB_PARSER, package: PARSER_PKG },
-          { from: "app/test/select-board.test.ts", to: LIB_PARSER, package: PARSER_PKG },
-          { from: "app/test/select-task-detail.test.ts", to: LIB_PARSER, package: PARSER_PKG },
-        ],
-      },
-      {
-        // NEW at the T-010 merge regen and the ELEVENTH undeclared row.
-        // It is the first D1 in this list whose BOTH ENDS are Rust:
-        // app/src-tauri/src/index_cmd.rs (C-05's by the §5 settlement)
-        // calls into the indexer crate's own lib.rs (C-07's). The edge
-        // has existed in the source since T-014 and no walk could see it;
-        // the registry does not declare it, so it lands as drift the
-        // ARCHITECT rules on rather than something to drain at the merge
-        // that surfaced it. Routed as `T-010-s4`.
-        rule: "D1",
-        id: "D1:C-05->C-07",
-        from: "C-05",
-        to: "C-07",
-        fileEdges: [
-          {
-            from: "app/src-tauri/src/index_cmd.rs",
-            to: "app/src-tauri/crates/nputer-index/src/lib.rs",
-          },
-        ],
-      },
-      {
-        rule: "D1",
-        id: "D1:C-05->C-09",
-        from: "C-05",
-        to: "C-09",
-        fileEdges: [
-          { from: "app/test/detail-presentation.test.ts", to: "app/src/lib/task-detail.ts" },
-          { from: "app/test/panel-dismissal.test.ts", to: "app/src/components/board/panel-dismissal.ts" },
-          { from: "app/test/select-task-detail.test.ts", to: "app/src/lib/task-detail.ts" },
-        ],
-      },
-      {
-        // T-024 merge regen: C-05's own suites reach into the genesis
-        // pane under the app/test/** umbrella — real drift, same shape
-        // as C-05→C-06 and C-05→C-09 above.
-        // T-037 merge regen: 2 → 4 file edges, and the finding CHANGES
-        // CHARACTER. The first entry below is a SOURCE edge — the shell
-        // screen importing the lens — where before this merge the pair
-        // carried only test-suite edges. That import is the whole point
-        // of T-037; T-026's merge measured its absence as proof the lens
-        // was unmounted. Left UNDECLARED deliberately (see the dated
-        // T-037 addendum above for the integrator's reasoning); this row
-        // is the drift signal the architect is meant to rule on, not a
-        // blemish to drain at the merge that created it.
-        // T-027 merge regen: 4 → 10 file edges, the largest growth this
-        // list has taken, and it is a LIST that moves — the relation
-        // table's observedCount below is a different assertion in a
-        // different it() body, so the count going right does not make
-        // this right. Two of the six additions are SOURCE edges, not
-        // suite edges: App.tsx now starts the interview subscription and
-        // GenesisScreen.tsx mounts the chat beside the lens.
-        rule: "D1",
-        id: "D1:C-05->C-13",
-        from: "C-05",
-        to: "C-13",
-        // T-028 merge regen: 10 → 13 file edges. GenesisScreen.tsx gains
-        // TWO (BoardCrescendo.tsx and crescendo.ts — the screen now picks
-        // which renderer fills the slot, so it imports both the decision
-        // and the board half) and crescendo.test.ts adds the third.
-        // T-029 merge regen: 13 → 15. Both additions are the ONE new
-        // indexed file reaching two C-13 modules, and both are DYNAMIC
-        // `await import(...)` references — the indexer resolves them to
-        // ordinary file edges, the same thing T-050 established for
-        // startup-recovery.test.ts. The list GROWS but the FINDING COUNT
-        // does not, which is why no drift ring moves at this merge.
-        // T-056 merge regen: 15 → 17. The existing resume DOM suite now
-        // imports interview-model and interview-turns directly to pin
-        // stable live + rehydrated turn identity without adding a new
-        // indexed test file. The finding count still does not move.
-        fileEdges: [
-          { from: "app/src/App.tsx", to: "app/src/genesis/interview-source.ts" },
-          {
-            from: "app/src/components/shell/GenesisScreen.tsx",
-            to: "app/src/genesis/BoardCrescendo.tsx",
-          },
-          {
-            from: "app/src/components/shell/GenesisScreen.tsx",
-            to: "app/src/genesis/GenesisPane.tsx",
-          },
-          {
-            from: "app/src/components/shell/GenesisScreen.tsx",
-            to: "app/src/genesis/InterviewChat.tsx",
-          },
-          {
-            from: "app/src/components/shell/GenesisScreen.tsx",
-            to: "app/src/genesis/crescendo.ts",
-          },
-          { from: "app/test/crescendo.test.ts", to: "app/src/genesis/crescendo.ts" },
-          { from: "app/test/genesis-derive.test.ts", to: "app/src/genesis/genesis-derive.ts" },
-          {
-            from: "app/test/genesis-pane-boundary.test.tsx",
-            to: "app/src/genesis/GenesisPane.tsx",
-          },
-          { from: "app/test/genesis-pane-dom.test.tsx", to: "app/src/genesis/GenesisPane.tsx" },
-          {
-            from: "app/test/interview-chat-dom.test.tsx",
-            to: "app/src/genesis/InterviewChat.tsx",
-          },
-          {
-            from: "app/test/interview-chat-dom.test.tsx",
-            to: "app/src/genesis/interview-source.ts",
-          },
-          { from: "app/test/interview-harness.test.ts", to: "app/src/genesis/interview-source.ts" },
-          { from: "app/test/interview-model.test.ts", to: "app/src/genesis/interview-model.ts" },
-          {
-            from: "app/test/interview-resume-dom.test.tsx",
-            to: "app/src/genesis/InterviewChat.tsx",
-          },
-          {
-            from: "app/test/interview-resume-dom.test.tsx",
-            to: "app/src/genesis/interview-model.ts",
-          },
-          {
-            from: "app/test/interview-resume-dom.test.tsx",
-            to: "app/src/genesis/interview-source.ts",
-          },
-          {
-            from: "app/test/interview-resume-dom.test.tsx",
-            to: "app/src/genesis/interview-turns.tsx",
-          },
-        ],
-      },
-      {
-        // NEW at the T-025 merge regen, and the SIXTH undeclared row:
-        // C-05's app/test/** umbrella reaches into C-14's store the
-        // moment the store joins the index. Exactly the shape C-13 took
-        // at T-024 and for the same structural reason — the suite is
-        // C-05's by umbrella, the module it drives belongs to the child
-        // component. Left UNDECLARED, same reasoning as C-05→C-13 above:
-        // the integrator regenerates, the ARCHITECT rules on the
-        // registry, and draining a finding at the merge that created it
-        // destroys the signal. Filed for triage.
-        // T-027 merge regen: 1 → 3 file edges, the SECOND grown list at
-        // this merge and the one most easily missed — both additions are
-        // new interview suites reaching the store directly rather than
-        // through C-13.
-        rule: "D1",
-        id: "D1:C-05->C-14",
-        from: "C-05",
-        to: "C-14",
-        // T-028 merge regen: 3 → 5, the same shape a THIRD time — both new
-        // crescendo suites drive the store directly rather than through
-        // C-13.
-        // T-029 merge regen: 5 → 6, a FOURTH time, and this entry is worth
-        // a sentence because it settles how observedCount is counted:
-        // interview-resume-dom.test.tsx imports agent-store BOTH statically
-        // (line 5) and dynamically (line 65) and contributes exactly ONE
-        // file edge. observedCount is the number of DISTINCT (from,to) file
-        // pairs, not the number of import statements.
-        // T-010 merge regen: 6 → 8, and BOTH additions are Rust-to-Rust —
-        // the first entries in any list in this body whose two ends are
-        // both `.rs`. They sort ABOVE the six app/test/** rows, which is
-        // the half a value read off a failure diff by position gets wrong.
-        fileEdges: [
-          { from: "app/src-tauri/src/churn.rs", to: "app/src-tauri/src/agent/runner.rs" },
-          { from: "app/src-tauri/src/lib.rs", to: "app/src-tauri/src/agent/mod.rs" },
-          { from: "app/test/agent-store.test.ts", to: "app/src/lib/agent-store.ts" },
-          { from: "app/test/crescendo-dom.test.tsx", to: "app/src/lib/agent-store.ts" },
-          { from: "app/test/crescendo.test.ts", to: "app/src/lib/agent-store.ts" },
-          { from: "app/test/interview-chat-dom.test.tsx", to: "app/src/lib/agent-store.ts" },
-          { from: "app/test/interview-model.test.ts", to: "app/src/lib/agent-store.ts" },
-          { from: "app/test/interview-resume-dom.test.tsx", to: "app/src/lib/agent-store.ts" },
-        ],
-      },
-      {
-        rule: "D1",
-        id: "D1:C-08->C-05",
-        from: "C-08",
-        to: "C-05",
-        fileEdges: [
-          { from: "app/src/components/board/TaskCard.tsx", to: "app/src/lib/utils.ts" },
-          { from: "app/src/components/board/badges/ModelBadge.tsx", to: "app/src/lib/utils.ts" },
-          { from: "app/src/components/board/badges/SizeBadge.tsx", to: "app/src/lib/utils.ts" },
-          { from: "app/src/lib/board-model.ts", to: "app/src/lib/verdicts.ts" },
-        ],
-      },
-      {
-        rule: "D1",
-        id: "D1:C-09->C-05",
-        from: "C-09",
-        to: "C-05",
-        fileEdges: [
-          { from: "app/src/components/board/TaskDetailPanel.tsx", to: "app/src/lib/utils.ts" },
-          { from: "app/src/components/board/TaskDetailPanel.tsx", to: "app/src/lib/verdicts.ts" },
-        ],
-      },
-      {
-        // NEW at the T-123 merge regen, and it is this repository's FIRST
-        // COMPONENT CYCLE: C-14 already declares C-10 and the registry has
-        // carried `C-14 -> C-10 confirmed` since T-025, so this row closes
-        // a two-node loop, C-10 ⇄ C-14. It is also C-10's FIRST drift
-        // finding in this repository's life — the node joins the drift set
-        // below for the first time, which is why that array grows here and
-        // `declaredOnly` does not.
-        // THE EDGE IS THE CARD'S OWN INSTRUCTION, not an executor's choice:
-        // T-123 criterion 2 requires the shell to ask C-14's accessor for
-        // the session registry and forbids `docs_watch.rs` from reading
-        // `.nputer/` itself, and `docs_watch.rs` is C-10. Any spelling that
-        // obeys that sentence puts this edge in the graph. Left UNDECLARED
-        // on the standing rule — the integrator regenerates, the ARCHITECT
-        // rules on the registry. Routed as `T-123-s8`.
         rule: "D1",
         id: "D1:C-10->C-14",
         from: "C-10",
         to: "C-14",
         fileEdges: [
-          { from: "app/src-tauri/src/docs_watch.rs", to: "app/src-tauri/src/agent/sessions.rs" },
-        ],
-      },
-      {
-        // NEW at the T-027 merge regen, and the row the branch's own
-        // forecast did NOT predict: the first genesis-side use of a
-        // SHARED UI PRIMITIVE. Both new chat components import
-        // components/ui/button.tsx, which is C-05's by umbrella — so
-        // C-13 becomes a D1 SOURCE for the first time, which is also why
-        // it joins the drift set below.
-        rule: "D1",
-        id: "D1:C-13->C-05",
-        from: "C-13",
-        to: "C-05",
-        // T-028 merge regen: 2 → 3 — BoardCrescendo.tsx's completion CTA
-        // is the same shared primitive, so the row grows by the same
-        // route it was created by.
-        fileEdges: [
-          { from: "app/src/genesis/BoardCrescendo.tsx", to: "app/src/components/ui/button.tsx" },
-          { from: "app/src/genesis/InterviewChat.tsx", to: "app/src/components/ui/button.tsx" },
-          { from: "app/src/genesis/interview-turns.tsx", to: "app/src/components/ui/button.tsx" },
-        ],
-      },
-      {
-        // NEW at the T-028 merge regen, and the FIRST time the genesis
-        // pane reaches the PARSER directly: crescendo.ts counts task
-        // RECORDS rather than files, so the switch is a parse result and
-        // not a filename match. That is criterion 1's whole point showing
-        // up as a component edge.
-        rule: "D1",
-        id: "D1:C-13->C-06",
-        from: "C-13",
-        to: "C-06",
-        fileEdges: [
-          { from: "app/src/genesis/crescendo.ts", to: "lib/parser", package: "p:@nputer/parser" },
-        ],
-      },
-      {
-        // NEW at the T-028 merge regen, and the row that IS the task: the
-        // genesis pane mounts C-08's real Board. One import, read-only —
-        // `git diff` over app/src/components/board/ is a 0-file diff, so
-        // the board was composed rather than copied. Left UNDECLARED on
-        // the standing reasoning: the integrator regenerates, the
-        // ARCHITECT rules on the registry, and draining a finding at the
-        // merge that created it destroys the signal.
-        rule: "D1",
-        id: "D1:C-13->C-08",
-        from: "C-13",
-        to: "C-08",
-        fileEdges: [
           {
-            from: "app/src/genesis/BoardCrescendo.tsx",
-            to: "app/src/components/board/Board.tsx",
+            from: "app/src-tauri/src/docs_watch.rs",
+            to: "app/src-tauri/src/agent/sessions.rs",
           },
         ],
       },
-      {
-        // NEW at the T-027 merge regen and forecast: all four new genesis
-        // modules read C-14's store, because T-027 adds no reducer of its
-        // own — the store already folds the genesis-turn channel and the
-        // chat renders turn.text as given. Left UNDECLARED on the
-        // standing reasoning: the integrator regenerates, the ARCHITECT
-        // rules on the registry, and draining a finding at the merge that
-        // created it destroys the signal. Flagged for triage.
-        rule: "D1",
-        id: "D1:C-13->C-14",
-        from: "C-13",
-        to: "C-14",
-        // T-028 merge regen: 4 → 5 — crescendo.ts reads the store too,
-        // which is how it sees turns without ever reading turn TEXT.
-        fileEdges: [
-          { from: "app/src/genesis/InterviewChat.tsx", to: "app/src/lib/agent-store.ts" },
-          { from: "app/src/genesis/crescendo.ts", to: "app/src/lib/agent-store.ts" },
-          { from: "app/src/genesis/interview-model.ts", to: "app/src/lib/agent-store.ts" },
-          { from: "app/src/genesis/interview-source.ts", to: "app/src/lib/agent-store.ts" },
-          { from: "app/src/genesis/interview-turns.tsx", to: "app/src/lib/agent-store.ts" },
-        ],
-      },
-      // D3:C-13 cleared at the T-024 merge regen exactly as predicted,
-      // and D3:C-14 cleared at the T-025 one on the same arc and inside
-      // a single merge: the branch declared C-14 with no indexed file
-      // (D3 appears), this regen indexed agent-store.ts (D3 clears). The
-      // three that remain are the genuinely code-less components — C-01
-      // is method/ (not code), C-07 is Rust-only until T-010, C-11 is
-      // still planned.
-      // D3:C-07 CLEARED AT THE T-010 MERGE REGEN, and it is the only D3
-      // in this ledger ever cleared by a change to the WALK rather than
-      // by a file being written: C-07's 32 files were on disk the whole
-      // time and the sentence above ("Rust-only until T-010") named the
-      // condition exactly. Four declared-only components become THREE —
-      // the SECOND assertion in the drift body below moves with it, in a
-      // different it(), and so does the D3 face on the map fixture.
-      // D2 ARRIVES AT THE T-110 MERGE REGEN — THE FIRST D2 THIS LEDGER
-      // HAS EVER CARRIED. Every entry above records a D1 or a D3; the
-      // "D2 STAYS EMPTY" clause appears in four separate reconciliation
-      // blocks in this file's header, and it stops being true here.
-      // `app/src-tauri/tests/dispatch_lanes.rs` is the compile shim
-      // T-110's verifier ruled legitimate; `app/src-tauri/tests/**` is
-      // claimed by no component, and T-010's settlement could not name a
-      // file that did not exist on main yet. `T-110-s9`.
-      // ORDER MATTERS AND IS DERIVED, NOT CHOSEN: D2 sorts between the
-      // D1 block and the D3 block, so this row is inserted here rather
-      // than appended.
-      { rule: "D2", id: "D2:unmapped", files: ["app/src-tauri/tests/dispatch_lanes.rs"] },
-      // D3:C-15 CLEARED AT THE T-110 MERGE REGEN, exactly as the entry
-      // that used to sit below this line predicted: it said the D3
-      // "clears when T-110 writes app/src-tauri/src/dispatch/**". It
-      // did, and with T-010's Rust extraction already on main it is the
-      // four .rs files rather than the store that clear it. Three
-      // declared-only components become TWO — the SECOND assertion in
-      // the drift body below moves with it, in a different it().
-      // THE COUNT OF THIS ARRAY DOES NOT MOVE: fifteen rows before and
-      // fifteen after, because D3:C-15 leaving and D2:unmapped arriving
-      // cancel exactly. A body that asserted `findings.length` would be
-      // GREEN across this merge while both ends of the list changed —
-      // which is why this fixture pins the whole array and why the title
-      // above carries the composition rather than the total.
-      { rule: "D3", id: "D3:C-01", component: "C-01" },
-      { rule: "D3", id: "D3:C-11", component: "C-11" },
+      // `informational: true` is READ from each component file's opt-in
+      // `non_code:` key, never derived from the empty file list — the two
+      // are asserted apart in architecture-derive.test.ts, where a second
+      // component with no files and no flag keeps `informational: false`.
+      { rule: "D3", id: "D3:C-01", component: "C-01", informational: true },
+      { rule: "D3", id: "D3:C-11", component: "C-11", informational: true },
     ]);
   });
 
-  it("the full relation table: 14 confirmed, 12 undeclared, 9 planned", () => {
+  it("the full relation table: 26 confirmed, 1 undeclared, 9 planned", () => {
+    // T-033: 35 rows -> 36, and the TALLY is where the card lands.
+    // 14/12/9 becomes 26/1/9 — eleven undeclared rows become confirmed or
+    // disappear, and the single survivor is the cycle T-125 owns.
+    // FIVE ROWS ARRIVE, all of them `-> C-16`, and FOUR LEAVE: C-08->C-05,
+    // C-09->C-05 and C-13->C-05 stop existing (their file edges moved to
+    // C-16, and nothing declares them), and C-12->C-05 was dropped from
+    // the registry because the extraction took its last observed edge and
+    // left a `planned 0` row asserting a dependency that is not there.
+    // Derived from a throwaway probe before the suite ran.
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
-      // 8 → 10 at the T-034 merge regen: both new map suites import
-      // @nputer/parser, riding the T-009 package.path seam like the
-      // eight before them. The fileEdges LIST above moves with it.
-      ["C-05", "C-06", "undeclared", 13],
-      // NEW ROW at the T-010 merge regen — the eleventh undeclared and the
-      // first row in this table with a Rust file at BOTH ends
-      // (index_cmd.rs -> the indexer crate's lib.rs). Its fileEdges LIST
-      // lives in the findings body above, a different assertion in a
-      // different it(): the row appearing does not make the list right.
-      ["C-05", "C-07", "undeclared", 1],
+      // undeclared -> CONFIRMED at T-033: the shell's own test umbrella
+      // really does consume the parser, so the registry says so. The
+      // observed count is untouched, which is the tell that this row moved
+      // by a DECLARATION and not by code.
+      ["C-05", "C-06", "confirmed", 13],
+      ["C-05", "C-07", "confirmed", 1],
       ["C-05", "C-08", "confirmed", 4],
-      ["C-05", "C-09", "undeclared", 3],
-      // 10 → 13 at the T-024 merge regen: both genesis suites import
-      // docs-model, and the DOM suite also drives watcher-store.
-      // 13 → 16 at the T-026 merge regen: GenesisScreen.tsx takes a
-      // DocsModelState (the first shell-side src edge into C-10), and
-      // genesis-entry.test.tsx drives both docs-model and watcher-store.
-      // 16 → 19 at the T-037 merge regen: both new suites import
-      // docs-model, and genesis-pane-boundary.test.tsx also drives
-      // watcher-store. All three in the DECLARED direction.
-      // 19 → 20 at the T-041 merge regen: shell-harness.test.ts drives
-      // watcher-store — the ONLY observedCount this merge moves.
-      // 20 → 21 at the T-048 merge regen: shell-frame.test.tsx imports
-      // docs-model (a DocsSnapshotPayload type import) — again the only
-      // observedCount that moves.
-      // 21 → 23 at the T-049 merge regen: accelerators.test.tsx imports
-      // BOTH docs-model and watcher-store, so this one edge takes both
-      // new imports. Still the only observedCount that moves.
-      // 23 → 24 at the T-050 merge regen: startup-recovery.test.ts
-      // reaches watcher-store through a DYNAMIC import — the indexer
-      // resolves it to the same file edge, which is worth knowing and
-      // was checked rather than assumed. Again the only one that moves.
-      // 24 → 25 at the T-042 merge regen: genesis-switch-truth.test.tsx
-      // type-imports DocsSnapshotPayload from app/src/lib/docs-model.ts,
-      // which is C-10's by name. Its other module reference is
-      // ../src/App, which is C-05's own — intra-component, so it adds no
-      // row. Once again the only observedCount that moves.
-      // 25 → 27 at the T-027 merge regen: interview-chat-dom.test.tsx and
-      // interview-harness.test.ts both reach docs-model / watcher-store.
-      // 27 → 31 at the T-028 merge regen: the two new crescendo suites
-      // plus GenesisScreen and BoardCrescendo all read C-10's docs model,
-      // on the already CONFIRMED edge.
-      // 31 → 32 at the T-029 merge regen: interview-resume-dom.test.tsx
-      // imports docs-model, on the already CONFIRMED edge.
-      // 32 → 33 at the T-063 merge regen: startup-screen.test.tsx now
-      // reaches watcher-store TWICE — a type import of StartupFailure and
-      // a dynamic `await import` of STARTUP_DEADLINE_MS — and the indexer
-      // folds both into the one file edge, so the count moves by one and
-      // not by two. The dynamic arm is the CONSTANT PIN the executor added
-      // to close the green poison (raising STARTUP_DEADLINE_MS 1000× left
-      // every deadline test passing, because they all advance the fake
-      // clock BY the constant): the guard against a test that cannot pin
-      // its own constant is the very import that moves this number.
-      // THE ONLY observedCount this merge moves, forecast before the regen
-      // and confirmed by a throwaway probe against the fresh graph — the
-      // node picture, the 32-row edge table, the ten D1 findings, the three
-      // D3s and all eight per-component file counts are unchanged.
-      // 33 → 34 at the T-077 merge regen (2026-08-20): app/test/cross-file-rows.test.tsx
-      // joins C-05 (app/test/** is its glob alone) and imports from C-10, so the
-      // file join and this row move together. FOUR assertions moved, in three
-      // bodies, and vitest surfaced them ONE AT A TIME — size, then the per-
-      // component tally in that same body, then this row, then map-dogfood's
-      // hint. The ledger entry above warns of exactly this and the integrator
-      // still had to learn it once, which is now five cards deep.
-      // 34 → 38 at the T-010 merge regen, and every one of the four is a
-      // Rust source edge that has existed since the watcher was written:
-      // acl_pin.rs, churn.rs, index_cmd.rs and lib.rs all reach
-      // docs_watch.rs, which is C-10's by name. Derived from the
-      // regenerated graph's own file-edge set, not read off a red.
+      ["C-05", "C-09", "confirmed", 3],
       ["C-05", "C-10", "confirmed", 38],
       ["C-05", "C-11", "planned", 0],
-      // 20 → 22 at the T-034 merge regen: map-task-waves.test.ts imports
-      // task-waves.ts and map-tasks-lens-dom.test.tsx imports MapView.tsx.
+      // *** INTEGRATOR: THIS ROW GOES TO 33 AT YOUR REGEN, AND IT IS THE
+      // ONLY ASSERTION IN EITHER APP FIXTURE THAT MOVES. *** It is 32
+      // here because this file tracks the COMMITTED graph (the fixture's
+      // own maintenance contract), and T-033's lane deliberately does not
+      // commit a regenerated one. The cause is this lane's own fixture
+      // edit: map-dogfood-render.test.tsx — C-05's, under the app/test
+      // umbrella — gains `import { edgeKey } from
+      // "../src/architecture/MapEdge"` so it can assert the surviving
+      // undeclared row by IDENTITY rather than by count, and a test file
+      // importing the pane it renders is exactly the umbrella edge this
+      // row has always counted. MEASURED, not forecast: the lane
+      // regenerated the graph in a throwaway probe, ran the whole app
+      // suite against it (962/962 with this row at 33), then restored the
+      // committed graph and proved it by sha256. Nothing else in this
+      // file or in map-dogfood-render.test.tsx moves under that regen.
       ["C-05", "C-12", "confirmed", 32],
-      // 2 → 4 at the T-037 merge regen, and one of the two additions is
-      // the shell's own SOURCE import of the lens — the mount. Still
-      // undeclared: the integrator's reasoning is in the dated addendum.
-      // 4 → 10 at the T-027 merge regen — six new file edges, two of them
-      // SOURCE edges (App.tsx → interview-source.ts and
-      // GenesisScreen.tsx → InterviewChat.tsx). The fileEdges LIST above
-      // moves with it, in a different it() body.
-      // 10 → 13 at the T-028 merge regen (see the D1 list above).
-      // 13 → 15 at the T-029 merge regen: the one new suite reaches
-      // InterviewChat.tsx and interview-source.ts. The fileEdges LIST
-      // above moves with it, in a different it() body.
-      // 15 → 17 at the T-056 merge regen: the same suite reaches
-      // interview-model.ts and interview-turns.ts to pin both identity
-      // paths. No new test file, component or finding.
-      ["C-05", "C-13", "undeclared", 17],
-      // NEW at the T-025 merge regen: the sixth undeclared row, one file
-      // edge (agent-store.test.ts → agent-store.ts). See the D1 above.
-      // 1 → 3 at the T-027 merge regen: two new interview suites drive
-      // the store directly. Its fileEdges list moves too.
-      // 3 → 5 at the T-028 merge regen: both crescendo suites drive the
-      // store directly.
-      // 5 → 6 at the T-029 merge regen: the same new suite drives the
-      // store directly. THREE observedCounts move in this one toEqual and
-      // no row is created — the whole merge is eleven MODIFIED indexed
-      // files and one NEW one, and only a new file can move a row.
-      // 6 → 8 at the T-010 merge regen: churn.rs -> agent/runner.rs (the
-      // shared resolved-binary gate T-013 extracted) and lib.rs ->
-      // agent/mod.rs (the command registration). Both are Rust-to-Rust.
-      ["C-05", "C-14", "undeclared", 8],
+      ["C-05", "C-13", "confirmed", 17],
+      ["C-05", "C-14", "confirmed", 8],
+      // NEW at T-033: `components/shell/PaneRail.tsx -> lib/utils.ts` and
+      // two siblings. The shell is now a CONSUMER of the primitives it
+      // used to own, which is the extraction working in both directions.
+      ["C-05", "C-16", "confirmed", 3],
       ["C-06", "C-01", "planned", 0],
-      ["C-08", "C-05", "undeclared", 4],
       ["C-08", "C-06", "confirmed", 4],
       ["C-08", "C-09", "confirmed", 6],
       ["C-08", "C-11", "planned", 0],
-      ["C-09", "C-05", "undeclared", 2],
+      // NEW at T-033, and it REPLACES `["C-08","C-05","undeclared",4]`:
+      // three `cn` imports plus `board-model.ts -> verdicts.ts`, all four
+      // now landing on C-16. Declaring C-08 -> C-05 instead would have
+      // written a cycle against the already-declared C-05 -> C-08.
+      ["C-08", "C-16", "confirmed", 4],
       ["C-09", "C-06", "confirmed", 2],
       ["C-09", "C-08", "confirmed", 3],
       ["C-09", "C-11", "planned", 0],
+      // NEW at T-033, replacing `["C-09","C-05","undeclared",2]`: `cn` and
+      // `verdicts` from TaskDetailPanel.tsx.
+      ["C-09", "C-16", "confirmed", 2],
       ["C-10", "C-06", "confirmed", 1],
-      // NEW ROW at the T-123 merge regen — the twelfth undeclared, and the
-      // row that closes this repository's FIRST COMPONENT CYCLE: read it
-      // against `["C-14", "C-10", "confirmed", 2]` further down, which the
-      // registry has DECLARED since T-025. C-10 ⇄ C-14. Its fileEdges LIST
-      // lives in the findings body above, a different assertion in a
-      // different it(): the row appearing does not make the list right.
+      // THE ONE UNDECLARED ROW LEFT IN THIS REPOSITORY, and it is left on
+      // purpose: declaring it would write this registry's first cycle
+      // (C-14 -> C-10 is declared and confirmed two rows down). @human
+      // ruled no cycles; the extraction is T-125.
       ["C-10", "C-14", "undeclared", 1],
-      // 4 → 6 at the T-034 merge regen: task-waves.ts imports
-      // lib/verdicts.ts and TasksLens.tsx imports lib/utils.ts — both
-      // C-05's by NAME in the registry, not by umbrella. SIX and not the
-      // seven the branch forecast: the third new app/src/lib/** edge
-      // (TasksLens.tsx → lib/task-detail.ts) belongs to C-09, which
-      // declares that file explicitly. See C-12→C-09 below.
-      ["C-12", "C-05", "confirmed", 7],
-      // 4 → 6: task-waves.ts and TasksLens.tsx both import
-      // @nputer/parser, the package.path seam again.
+      // `["C-12","C-05","confirmed",7]` is GONE. All seven were `cn` and
+      // `verdicts`, so the extraction took the row to `planned 0` and the
+      // registry dropped the declaration rather than assert an intent that
+      // is not there — which also closed C-05 <-> C-12.
       ["C-12", "C-06", "confirmed", 6],
       ["C-12", "C-07", "planned", 0],
-      // 4 → 5 at the T-034 merge regen, and this is the assertion the
-      // branch did not forecast at all: TasksLens.tsx imports
-      // app/src/lib/task-detail.ts, which C-09-detail-panel.md names.
-      // The notes cite MapPanel.tsx → task-detail.ts as the precedent
-      // proving type-only imports create edges — the right file, the
-      // wrong component. Already DECLARED (C-12 depends_on C-09), so it
-      // is a bigger count on a confirmed row, not a new finding.
       ["C-12", "C-09", "confirmed", 5],
       ["C-12", "C-10", "confirmed", 1],
       ["C-12", "C-11", "planned", 0],
-      // T-024's declared edges, met by reality at the merge regen: the
-      // graph now indexes app/src/genesis/, so the docs-model edge is
-      // CONFIRMED by both genesis sources. C-13→C-11 stays planned —
-      // no TS import can confirm a token stylesheet, the same honest
-      // state C-12→C-11 carries.
-      // NEW at the T-027 merge regen and the SEVENTH undeclared row — the
-      // one the branch's forecast missed. C-13 becomes a dependency
-      // SOURCE for the first time: both new chat components import the
-      // shared components/ui/button.tsx, which is C-05's.
-      // 2 → 3 at the T-028 merge regen: BoardCrescendo.tsx's CTA is the
-      // same shared primitive.
-      ["C-13", "C-05", "undeclared", 3],
-      // 2 → 4 at the T-027 merge regen: interview-model.ts and
-      // interview-source.ts both import docs-model, on the already
-      // DECLARED edge.
-      // NEW at the T-028 merge regen and the NINTH undeclared row:
-      // crescendo.ts imports the PARSER, because the lens→board switch
-      // counts task RECORDS and not filenames.
-      ["C-13", "C-06", "undeclared", 1],
-      // NEW at the T-028 merge regen and the TENTH — the row that IS this
-      // task: the genesis pane mounts C-08's real Board, read-only, with
-      // a 0-file diff under app/src/components/board/.
-      ["C-13", "C-08", "undeclared", 1],
-      // 4 → 6 at the T-028 merge regen: crescendo.ts and BoardCrescendo.tsx
-      // both read docs-model, on the already DECLARED edge.
+      // NEW at T-033: the map pane is the heaviest consumer of the
+      // primitives — five `cn` sites plus `task-waves.ts -> verdicts.ts`.
+      ["C-12", "C-16", "confirmed", 7],
+      ["C-13", "C-06", "confirmed", 1],
+      ["C-13", "C-08", "confirmed", 1],
       ["C-13", "C-10", "confirmed", 6],
       ["C-13", "C-11", "planned", 0],
-      // NEW at the T-027 merge regen and the EIGHTH undeclared row, this
-      // one forecast: all four new genesis modules read C-14's store.
-      // T-027 adds no reducer — the store already folds the turns.
-      // 4 → 5 at the T-028 merge regen: crescendo.ts reads the store too.
-      ["C-13", "C-14", "undeclared", 5],
-      // T-025's declared edge, honestly PLANNED: the runner's Rust half
-      // consumes C-10's WatchState, which no TS import can confirm and
-      // the indexer cannot see until T-010 extracts Rust — the same
-      // honest state C-12→C-07 carries. It flips at the merge regen only
-      // if agent-store.ts grows an import into C-10, which it does not.
-      // AND AT THE T-010 MERGE REGEN IT FLIPS — planned 0 -> CONFIRMED 2,
-      // by the OTHER route that sentence names. agent-store.ts still has
-      // no import into C-10; what confirms the edge is the Rust half the
-      // clause above says the indexer cannot see: agent/mod.rs and
-      // tests/agent_runner.rs both reach docs_watch.rs. This is the ONLY
-      // relation in the table whose KIND moves at this merge (planned
-      // 10 -> 9, confirmed 13 -> 14), and it is a prediction written down
-      // at T-025 coming true unedited. C-12->C-07 is the sibling that
-      // does NOT flip: C-12's TS map sources still make no call into the
-      // indexer crate, so it stays honestly planned.
+      ["C-13", "C-14", "confirmed", 5],
+      // NEW at T-033, replacing `["C-13","C-05","undeclared",3]` — three
+      // `Button` imports. This is the row the ruling named as the proof
+      // that the arrow was an artifact of WHERE the primitives lived:
+      // genesis never depended on the shell, it depended on a button.
+      ["C-13", "C-16", "confirmed", 3],
       ["C-14", "C-10", "confirmed", 2],
-      // NEW at T-088 and honestly PLANNED, exactly as C-14->C-10 was at
-      // T-025: C-15 declares C-10 because the board half of the lane
-      // join arrives on the docs watcher's existing DocsModelState, and
-      // no TS import can confirm an edge out of a component that has no
-      // TS file yet. It flips to confirmed when dispatch-store.ts is
-      // written and imports docs-model.ts, and not before.
       ["C-15", "C-10", "planned", 0],
     ]);
+    const tally = new Map<string, number>();
+    for (const e of derived.edges) tally.set(e.relation, (tally.get(e.relation) ?? 0) + 1);
+    expect([...tally.entries()].sort()).toEqual([
+      ["confirmed", 26],
+      ["planned", 9],
+      ["undeclared", 1],
+    ]);
+    // AND THE INVARIANT THE CARD EXISTS TO RESTORE: every undeclared edge
+    // is now either declared or owned by a named card. One row, one owner.
+    expect(
+      derived.edges.filter((e) => e.relation === "undeclared").map((e) => `${e.from}->${e.to}`),
+    ).toEqual(["C-10->C-14"]);
   });
 
   it("the T-009 package.path seam is consumed: C-0x→C-06 edges are real, never absent", () => {
@@ -2006,10 +1637,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(c10?.fileEdges).toEqual([
       { from: "app/src/lib/docs-model.ts", to: LIB_PARSER, package: PARSER_PKG },
     ]);
-    // The undeclared fourth consumer is C-05 (test files) — drift, not absence.
-    expect(derived.edges.find((e) => e.from === "C-05" && e.to === "C-06")?.relation).toBe(
-      "undeclared",
-    );
+    // The fourth consumer is C-05 (its test umbrella), and at T-033 it
+    // stops being drift and becomes DECLARED — the seam's own point, that
+    // a file:-dep edge must render as real, now holds for every consumer
+    // instead of three of four. The COUNT is asserted beside the relation
+    // so "confirmed" cannot be reached by the edge quietly emptying.
+    const c05 = derived.edges.find((e) => e.from === "C-05" && e.to === "C-06");
+    expect(c05?.relation).toBe("confirmed");
+    expect(c05?.observedCount).toBe(13);
   });
 
   it("drift flags land on the right nodes", () => {
@@ -2067,9 +1702,32 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // against the regenerated graph before the suite ran — a red on the
     // first would otherwise hide the second, which this body's own
     // comment has warned about since T-088.
-    expect(drift).toEqual(["C-01", "C-05", "C-08", "C-09", "C-10", "C-11", "C-13", "unmapped"]);
+    // T-033 TAKES THIS ARRAY FROM EIGHT TO ONE, and the three mechanisms
+    // are deliberately different so no single change explains it:
+    //   · C-05, C-08, C-09, C-13 leave as D1 SOURCES — either the edge was
+    //     declared, or C-16's extraction took it away entirely.
+    //   · "unmapped" leaves because the bucket is empty: C-15 claims
+    //     `tests/dispatch_lanes.rs`, so there is no D2 subject at all.
+    //   · C-01 and C-11 leave WITHOUT their findings leaving. This is the
+    //     new route and the one to read carefully: both are still
+    //     `declaredOnly` and both still carry a D3 in the findings body
+    //     above — the finding is INFORMATIONAL, so it stops feeding
+    //     `hasDrift`. `declaredOnly` below is the control that proves the
+    //     two facts came apart rather than both vanishing.
+    //   · C-10 stays, alone, on the cycle T-125 owns.
+    expect(drift).toEqual(["C-10"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
     expect(declaredOnly).toEqual(["C-01", "C-11"]);
+    // THE CONTROL FOR THE DOWNGRADE, stated as its own assertion: the two
+    // components that left the drift set are exactly the two that opted
+    // in, and the flag is read off the record rather than inferred from
+    // the empty file list they share with nobody else today.
+    expect(derived.components.filter((c) => c.nonCode).map((c) => c.id)).toEqual(["C-01", "C-11"]);
+    // AND THE PREDICATE ITSELF, asserted here because this is the fixture
+    // that reads the live registry: `hasDrift` above and the map's rings
+    // are the SAME rule, exported once from the engine. The drill caught
+    // the moment they were two.
+    expect(derived.findings.filter(isDriftFinding).map((f) => f.id)).toEqual(["D1:C-10->C-14"]);
   });
 
   it("stable rollup structure (values live in the unit tables, not here)", () => {

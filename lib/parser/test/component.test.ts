@@ -46,10 +46,57 @@ describe('parseComponentFile — valid component', () => {
       decisions: ['ADR-008'],
       touchSlugs: ['app-board'],
       status: 'auto',
+      // T-033: `non_code` is absent from this fixture and lands false. The
+      // whole-record toEqual is what makes the field ADDITIVE-and-CHECKED
+      // rather than additive-and-assumed: a default of `true`, or the key
+      // never reaching the record, reds HERE.
+      nonCode: false,
       responsibility:
         'Renders the story map board from the parsed model. Owns column layout,\ncard faces, slice line. Never writes.',
       extra: {},
       file: FILE,
+    });
+  });
+
+  describe('non_code — opt-in, never inferred (T-033 decision 2)', () => {
+    it('an explicit true is carried onto the record, and stops being an unknown key', () => {
+      const withFlag = VALID.replace('status: auto', 'status: auto\nnon_code: true');
+      const { component, issues } = parseComponentFile(withFlag, FILE);
+      expect(issues).toEqual([]);
+      expect(component?.nonCode).toBe(true);
+      expect(component?.extra).toEqual({});
+    });
+
+    it('an explicit false is carried too, so the flag can be written down and denied', () => {
+      const withFlag = VALID.replace('status: auto', 'status: auto\nnon_code: false');
+      const { component, issues } = parseComponentFile(withFlag, FILE);
+      expect(issues).toEqual([]);
+      expect(component?.nonCode).toBe(false);
+    });
+
+    it('A NOT-YET-BUILT COMPONENT DOES NOT INFER IT — the C-15 property', () => {
+      // The whole reason the flag is opt-in: a component whose globs match
+      // nothing may be non-code OR simply unbuilt, and this parser could
+      // not tell them apart even in principle — it never sees the graph.
+      // Nothing about `paths` may move this field.
+      const notYetBuilt = `---\nid: C-15\nname: Dispatch\npaths: [app/src-tauri/src/dispatch/**]\n---\nDeclared before it is a directory.\n`;
+      const { component, issues } = parseComponentFile(notYetBuilt, FILE);
+      expect(issues).toEqual([]);
+      expect(component?.nonCode).toBe(false);
+    });
+
+    it('a NON-BOOLEAN is refused, never coerced — the string "false" is the trap', () => {
+      // A truthy coercion reads `non_code: "false"` as TRUE, which is the
+      // exact inversion this field must never make silently.
+      for (const raw of ['"false"', '"true"', '0', '1', '[]']) {
+        const bad = VALID.replace('status: auto', `status: auto\nnon_code: ${raw}`);
+        const { component, issues } = parseComponentFile(bad, FILE);
+        expect(issues, `non_code: ${raw} must be refused`).toHaveLength(1);
+        expect(issues[0]?.message).toContain('non_code');
+        expect(issues[0]?.message).toContain('opt-in and never inferred');
+        // collect-don't-throw: the record still parses, with the flag off
+        expect(component?.nonCode).toBe(false);
+      }
     });
   });
 

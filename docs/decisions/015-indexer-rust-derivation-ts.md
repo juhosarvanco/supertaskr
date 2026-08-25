@@ -21,12 +21,21 @@ below.
 
 ## Decision
 - `nputer-index` (Rust, tree-sitter, app/src-tauri/crates/, no tauri
-  dependency) emits `graph.json` ONLY. Code parsing is its entire job.
+  dependency) emits `graph.json`, and **owns the REALITY-SIDE join** —
+  file→component mapping, observed component edges including the
+  package.path seam, the three relations, D1–D5 — as a narrow READER
+  that refuses rather than guesses (**amended 2026-08-25 by T-033's
+  decision (3), arm (a)**; the T-014 addendum below is the account of
+  what it may and may not do, and this clause is what makes it a
+  decision rather than a tolerated exception).
 - Component files are parsed by @nputer/parser (ComponentRecord
   module, node + pure entries).
-- The intent⨝reality⨝tasks derivation (mapping, edge relations,
-  status/provenance rollups, drift findings) is pure TypeScript in
-  the app — unit-testable, DOM-free, the T-004 selector pattern.
+- **TypeScript owns the intent ⨝ tasks half**: status and provenance
+  rollups, the task join, and everything the map renders on top. The
+  reality⨝intent derivation the app runs (mapping, edge relations, drift
+  findings) is pure TypeScript there too — unit-testable, DOM-free, the
+  T-004 selector pattern — so the crate's reader is a SECOND computation
+  of a strict SUBSET, never of the whole.
 - The future Node CLI (C-02, ADR-007) shells out to the crate's small
   `nputer-index` binary (ADR-003 spirit); `nputer index` stays a Node
   command wrapping it.
@@ -78,3 +87,31 @@ or the first live divergence, or a consumer that needs the Rust side
 to answer a question the reader deliberately does not (rollups, the
 task join). Any of those means the two-engine question is no longer
 narrow and wants its own ADR rather than an addendum.
+
+## Addendum (2026-08-25, T-033 decision (3)) — the split is now DECIDED, not tolerated
+
+The 2026-08-17 addendum recorded a tension and left the ownership
+question open; `docs/architecture/components/C-07-nputer-index.md` mean-
+while still said *"Emitting graph.json is its entire job (parsing and
+derivation live in TypeScript)"*, so the registry and this ADR could be
+read as two incompatible sentences. **T-033's decision (3) rules arm
+(a)**, and the Decision section above now carries it: the crate owns the
+reality-side join, TypeScript owns intent ⨝ tasks.
+
+**Why not arm (b) — "move `arch` to the Node CLI".** It is the purest
+reading of this ADR and it costs the capability. C-02 does not exist, the
+engine lives inside `app/src/lib/architecture/` rather than in a
+shareable package, and until both change `nputer arch` could not exist at
+all — which is exactly what T-014's criterion was written to prevent. A
+purer document that deletes a working command is a worse document.
+
+**Arm (c) is not an alternative and is retained.** Pinning the two
+engines' agreement is `T-059`; it is worth doing under (a) regardless,
+and it is what stops one rule in two documents from drifting into two
+answers. **T-059 therefore does not dissolve** — it stays
+`blocked_by: [T-033]`, and this arm is the reason it is still owed.
+
+**What did NOT change**: the single-parser discipline, the refusal
+contract (exit 3, naming the file), and the three latent divergence
+classes the addendum above names. Arm (a) decides WHO OWNS the join, not
+whether the join may guess — it still may not.
