@@ -5,10 +5,10 @@ feature: F-01
 milestone: 4
 priority: 5
 size: S
-status: planned
+status: building
 blocked_by: []
 touches: [method/lane-protocol.md, method/roles/integrator.md, method/tasks/TASK-FORMAT.md]
-builder:
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
