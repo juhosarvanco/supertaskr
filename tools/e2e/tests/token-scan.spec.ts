@@ -117,6 +117,14 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
     targets.map((relative) => [relative, readFileSync(path.join(repoRoot, relative))] as const),
   );
   const hashes = new Map([...originals].map(([relative, raw]) => [relative, sha256(raw)] as const));
+  // T-130. Captured AFTER the reads above, exactly as the P6 body captures
+  // its own — so this file holds ONE answer to what restoring a fixture
+  // means. A CONTENT-EXACT RESTORE IS NOT A RESTORE: this body plants into
+  // seven tracked files across four packages, and until T-130 it put every
+  // byte back and left all seven clocks on the moment of the plant.
+  const clocks = new Map(
+    targets.map((relative) => [relative, statSync(path.join(repoRoot, relative))] as const),
+  );
   const prefix = Buffer.from("\nT-058 runtime plant é ", "utf8");
   const poison = Buffer.from([0x00]);
   const offsets = new Map<string, number>();
@@ -135,7 +143,12 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
     };
   } finally {
     for (const [relative, original] of originals) {
-      writeFileSync(path.join(repoRoot, relative), original);
+      const absolute = path.join(repoRoot, relative);
+      writeFileSync(absolute, original);
+      const clock = clocks.get(relative)!;
+      // SECONDS AS A NUMBER, never `clock.atime, clock.mtime`: a `Date` holds
+      // whole milliseconds, so the Date form rounds the restore (T-130).
+      utimesSync(absolute, clock.atimeMs / 1000, clock.mtimeMs / 1000);
     }
   }
 
@@ -144,6 +157,19 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
       expectedHash,
     );
   }
+  for (const [relative, clock] of clocks) {
+    expect(
+      statSync(path.join(repoRoot, relative)).mtimeMs,
+      `${relative} restored its MTIME too — a content-exact restore that moves the clock reds an mtime guard`,
+    ).toBe(clock.mtimeMs);
+  }
+  // The clock restore above does NOT put this proof at risk, which was
+  // measured rather than assumed (T-130): `git diff --quiet` answers from the
+  // index's cached stat info and `utimesSync` cannot restore `ctime`, so the
+  // P6 comment below records a red-green-green intermittent from exactly this
+  // pairing. Replayed over these seven targets, both arms — with and without
+  // the clock restore — exit 0 in 12 of 12 cycles across two checkouts, one of
+  // them a freshly-cut worktree with an unrefreshed index.
   const diff = spawnSync("git", ["diff", "--quiet", "--", ...targets], { cwd: repoRoot });
   expect(diff.status, "all seven plant targets restore to an empty diff").toBe(0);
 
@@ -223,7 +249,13 @@ test("P6 reds a planted bare motion utility and leaves its motion-safe twin alon
     result = { status: planted.status, stdout: planted.stdout ?? "", stderr: planted.stderr ?? "" };
   } finally {
     writeFileSync(target, original);
-    utimesSync(target, clock.atime, clock.mtime);
+    // T-130. NOT `clock.atime, clock.mtime`: `Stats.mtime` is a `Date` and a
+    // `Date` holds WHOLE MILLISECONDS, so a Date-valued restore writes back a
+    // ROUNDED timestamp while the assertion below compares the unrounded float
+    // the capture holds. `utimesSync` takes SECONDS as a number and carries the
+    // fraction into the timespec, so this round-trips exactly (50 of 50 fresh
+    // writes on APFS/Darwin/node 22; the Date form: 0 of 50).
+    utimesSync(target, clock.atimeMs / 1000, clock.mtimeMs / 1000);
   }
 
   // THE HASH IS THE PROOF, and deliberately not a `git diff --quiet` the
