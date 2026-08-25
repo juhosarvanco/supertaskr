@@ -261,6 +261,70 @@ pub fn genesis_record(project_dir: &Path) -> Option<GenesisRecord> {
     })
 }
 
+/// CAN WE GET BACK INTO AN INTERVIEW ON THIS FOLDER? (T-123, REBUILT.)
+///
+/// **THE FIRST PASS OF T-123 ASKED THE WRONG QUESTION AND A VERIFIER
+/// CAUGHT IT.** It asked *"is one of our interviews registered here?"* —
+/// `genesis_record(..).is_some()` — and routed every folder that answered
+/// yes to the genesis screen. But [`genesis_record`] answers `Some` for
+/// ANY non-dead planner entry, including two that cannot be resumed at
+/// all: one with no `native_session_id` recorded, and one whose recorded
+/// id [`SessionEntry::resume_id`]'s T-039 boundary REFUSES. For those two,
+/// the screen the routing sent the user to has no resume offer on it and
+/// nothing else that can succeed — a dead end newly created by the change
+/// that existed to remove one (T-050). Measured through the real
+/// `apply_genesis_pick`, both shapes routed to genesis.
+///
+/// So the routing predicate means RESUMABLE, not PRESENT, and this type
+/// says which of the three states a folder is in rather than collapsing
+/// two of them into one `false`. **The collapse is what let the defect
+/// through**: a bool cannot tell a REFUSAL from an ABSENCE, and CONVENTIONS'
+/// A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL is precisely the rule
+/// that a refusal must be shown to differ from an absence. Two values that
+/// are literally the same value cannot be shown to differ by any test.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GenesisReachability {
+    /// Nothing of ours is here: no registry file, no planner entry, or a
+    /// planner entry the user explicitly abandoned (`status: "dead"`,
+    /// which [`find_planner`] skips). A registry that does not parse is
+    /// renamed aside by [`load`] and lands here too, which is the
+    /// losable-by-charter direction: it costs a resume offer, never a fact
+    /// about the project.
+    NoSession,
+    /// A planner entry IS registered and there is no way back into it —
+    /// no id was ever recorded, or the recorded one was refused on the way
+    /// out of the file. **Not a way in, so not a reason to route to the
+    /// interview screen.** The folder's plan is on disk and the board is
+    /// the honest destination for it.
+    NotResumable,
+    /// A planner entry with an id [`SessionEntry::resume_id`] accepted.
+    /// THIS is the state the card was written for: the interview that
+    /// banked stage 0 thirty seconds ago and can be picked back up.
+    Resumable,
+}
+
+/// THE CLASSIFICATION, over a record already in hand. ONE implementation
+/// (T-057), so a caller that has read the registry for another reason —
+/// `resume_genesis` and `start_genesis` both have — spends that one read
+/// on the routing question too instead of opening the file twice. Two
+/// reads of a losable file are two chances to disagree about it.
+pub fn reachability_of(record: Option<&GenesisRecord>) -> GenesisReachability {
+    match record {
+        None => GenesisReachability::NoSession,
+        Some(record) if record.native_session_id.is_some() => GenesisReachability::Resumable,
+        Some(_) => GenesisReachability::NotResumable,
+    }
+}
+
+/// [`reachability_of`] over the ONE place the fact lives, for a caller
+/// that wants the routing answer and nothing else. C-05's `docs_watch`
+/// asks THIS rather than statting `.nputer/` or re-parsing that JSON
+/// itself: a rule with two implementations is two chances to disagree
+/// (T-057).
+pub fn genesis_reachability(project_dir: &Path) -> GenesisReachability {
+    reachability_of(genesis_record(project_dir).as_ref())
+}
+
 /// Mark the recorded planner session ABANDONED — `status: "dead"`, which
 /// `find_planner` skips, so the next start is a fresh one.
 ///
@@ -657,6 +721,72 @@ mod tests {
         assert_eq!(file.sessions[0].status, "idle");
         assert_eq!(file.sessions[1].id, "S2");
         assert_eq!(next_id(&file), "S3");
+    }
+
+    /// **T-123's REBUILT PREDICATE, PINNED AT THE LEVEL IT LIVES ON.**
+    ///
+    /// The first pass of T-123 routed on `genesis_record(..).is_some()`
+    /// and a verifier rejected it: that answers TRUE for a planner entry
+    /// with no id recorded and for one whose id the T-039 boundary
+    /// refuses, and neither can be resumed. Routing those to the interview
+    /// screen puts the user somewhere nothing can happen.
+    ///
+    /// **THE ACCEPTANCE IS ASSERTED BEFORE EITHER REFUSAL, AND EVERY ARM
+    /// IS ONE FIELD AWAY FROM IT** (CONVENTIONS: A NEGATIVE ASSERTION
+    /// NEEDS A POSITIVE CONTROL — "a test that asserts something is
+    /// REFUSED must first prove the fixture would otherwise have been
+    /// ACCEPTED"). And the two refusals are asserted to differ from the
+    /// two ABSENCES by VALUE and not only by outcome, which a `bool`
+    /// predicate could not express at all — that collapse is what let the
+    /// defect through.
+    #[test]
+    fn reachability_tells_a_refused_session_id_from_an_absent_one_and_both_from_no_session() {
+        let t = TempTree::new("reach");
+
+        // ABSENCE (a): no registry file at all.
+        assert_eq!(genesis_reachability(&t.0), GenesisReachability::NoSession);
+        assert_eq!(reachability_of(None), GenesisReachability::NoSession);
+
+        // THE ACCEPTANCE, first: one planner with a usable id.
+        upsert(&t.0, entry("S1")).expect("resumable");
+        assert_eq!(genesis_reachability(&t.0), GenesisReachability::Resumable);
+
+        // REFUSAL (a): the same entry with the id field GONE. Nothing to
+        // resume — and this is the shape `start_genesis` writes before the
+        // CLI's init line has reported an id, so it is the ordinary
+        // mid-flight state and not an exotic one.
+        upsert(&t.0, SessionEntry { native_session_id: None, ..entry("S1") })
+            .expect("no id");
+        assert_eq!(
+            genesis_reachability(&t.0),
+            GenesisReachability::NotResumable,
+            "a planner with no recorded id is present, and is not a way back in"
+        );
+
+        // REFUSAL (b): an id present and REFUSED by the T-039 boundary.
+        upsert(
+            &t.0,
+            SessionEntry {
+                native_session_id: Some("--dangerously-skip-permissions".into()),
+                ..entry("S1")
+            },
+        )
+        .expect("refused id");
+        assert_eq!(genesis_reachability(&t.0), GenesisReachability::NotResumable);
+        // …and the refusal is still NAMED on the record, so narrowing the
+        // routing predicate loses no information about why.
+        assert!(
+            genesis_record(&t.0)
+                .expect("a record")
+                .session_id_rejected
+                .is_some(),
+            "the record still says the id was refused rather than absent"
+        );
+
+        // ABSENCE (b): a session the user explicitly abandoned is an
+        // absence again, not a refusal — `find_planner` skips it.
+        upsert(&t.0, SessionEntry { status: "dead".into(), ..entry("S1") }).expect("dead");
+        assert_eq!(genesis_reachability(&t.0), GenesisReachability::NoSession);
     }
 
     #[test]

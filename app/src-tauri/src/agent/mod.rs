@@ -35,7 +35,9 @@ use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 
-use crate::docs_watch::{probe_plan, WatchState};
+// `self` so the T-123 routing rule reads `docs_watch::routes_to_genesis`
+// at its call sites: it is C-05's rule, called and never copied.
+use crate::docs_watch::{self, probe_plan, WatchState};
 use adapter::planner_adapter;
 use runner::{
     now_ms, ChildHandle, Emitter, ResolveError, ResolvedCli, RunEvent, RunnerConfig, TurnError,
@@ -284,32 +286,45 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
     // T-026's plan-eligibility predicate, re-checked here. The webview
     // could call this out of turn; the answer must not depend on the
     // screen the user is looking at.
+    //
+    // T-123: THE SAME ROUTING RULE THE SHELL USES, by call and not by
+    // copy — `docs_watch::routes_to_genesis` has one implementation and
+    // this is one of its four callers. A folder whose plan our own
+    // resumable interview wrote is not an overwrite target, so the command
+    // that carries the resume OFFER must not refuse it before the registry
+    // has been looked at.
+    //
+    // **ONE READ OF THE REGISTRY, SPENT ON BOTH QUESTIONS** (T-123's
+    // rebuild). The first pass read it twice here — once through the
+    // routing accessor and again through `sessions::load` — and the two
+    // reads are what forced the `if planned` backstop that used to sit
+    // below: with a predicate that admitted a planner it could not resume,
+    // this command could reach a folder's fresh spawn on a plan. Reading
+    // once, and admitting only `Resumable`, makes that state unreachable
+    // rather than caught, and `resume_genesis` has always had this shape.
     let probe = probe_plan(&project_dir);
-    if probe.has_plan() {
+    let record = sessions::genesis_record(&project_dir);
+    if !docs_watch::routes_to_genesis(&probe, sessions::reachability_of(record.as_ref())) {
         return StartOutcome::AlreadyPlanned { path: project_dir.display().to_string() };
     }
 
     // A recorded planner session for this project is a CHOICE, not an
-    // auto-resume (T-029 renders it) — and the id it offers is read
-    // through T-039's registry gate, never straight off the field. The
-    // file is runtime state in the user's project dir; anything with disk
-    // access can write it, and T-029 spawns from what it says.
-    let registry = sessions::load(&project_dir);
-    if let Some(existing) = sessions::find_planner(&registry) {
-        match existing.resume_id() {
-            Ok(Some(id)) => {
+    // auto-resume (T-029 renders it) — and the id it offers came through
+    // T-039's registry gate inside `genesis_record`, never straight off the
+    // field. The file is runtime state in the user's project dir; anything
+    // with disk access can write it, and T-029 spawns from what it says.
+    if let Some(record) = &record {
+        match (&record.native_session_id, &record.session_id_rejected) {
+            (Some(id), _) => {
                 return StartOutcome::ResumeAvailable {
-                    native_session_id: id.to_string(),
-                    turns: existing.turns,
+                    native_session_id: id.clone(),
+                    turns: record.turns,
                     // THE READ BOUNDARY, not the raw field (T-047-s3). A
                     // registry written by a pre-T-047 build can hold ~1 MiB
                     // of `model`; upgrading does not clean it.
-                    model: existing.model_for_display(),
+                    model: record.model.clone(),
                 }
             }
-            // A planner entry with no id recorded: nothing to resume from,
-            // so genesis proceeds as a fresh start.
-            Ok(None) => {}
             // LOUD, never silent: refusing to resume is the safe half, but
             // starting a fresh interview while a poisoned entry sits on
             // disk would hide the fact that something wrote it.
@@ -318,18 +333,36 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
             // "your saved session is unusable — start fresh" rather than
             // to a generic error toast, which it could not do while this
             // shared an envelope with "the registry could not be written".
-            Err(rejection) => {
+            //
+            // T-123's rebuild moved WHERE this can be reached, not whether
+            // it is reachable: on a folder that holds a plan the routing
+            // guard above has already answered `AlreadyPlanned`, because
+            // the one action this notice offers (`genesis_fresh`) refuses a
+            // planned folder by design and the notice would be inert. On a
+            // folder with no plan it renders exactly as T-029 built it, and
+            // "start fresh" works.
+            (None, Some(why)) => {
                 return StartOutcome::SessionIdRejected {
                     registry_path: sessions::SESSIONS_REL.to_string(),
                     why: format!(
-                        "refusing to resume session '{}': {rejection}. \
+                        "refusing to resume session '{}': {why}. \
                          That file is runtime state, losable by charter - starting fresh loses nothing about the project.",
                         // The entry's own id is file-borne data too: bounded
                         // and escaped, like everything else that came off disk.
-                        sessions::truncate_utf8(&existing.id, 32).escape_debug(),
+                        sessions::truncate_utf8(&record.registry_id, 32).escape_debug(),
                     ),
                 }
             }
+            // A planner entry with no id recorded: nothing to resume from,
+            // so genesis proceeds as a fresh start. THE FOLDER HAS NO PLAN
+            // — the routing guard above admits only `Resumable` past a
+            // plan, and this arm is `NotResumable` — so the fresh spawn
+            // below is the T-026 case it always was. That is why the
+            // `if planned` backstop the first pass added here is GONE
+            // rather than kept: it guarded a state the predicate now makes
+            // unreachable, no input could red it, and a guard no test can
+            // reach is a guard the next reader cannot trust.
+            (None, None) => {}
         }
     }
 
@@ -350,6 +383,11 @@ pub fn start_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
         };
     }
 
+    // THE FRESH-SPAWN PATH'S OWN READ, taken here rather than beside the
+    // routing question above: `next_id` needs the whole file, and this
+    // line is reached only where nothing was resumable, so it cannot
+    // disagree with a routing answer it does not feed.
+    let registry = sessions::load(&project_dir);
     let id = sessions::next_id(&registry);
     let entry = SessionEntry {
         id: id.clone(),
@@ -414,15 +452,32 @@ pub fn resume_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
     let Some(project_dir) = watch.project_dir() else {
         return StartOutcome::NoProject;
     };
+    // THE ONE PLACE the fact lives (criterion "exactly ONE place"), read
+    // ONCE and used for both questions below (T-123): the routing guard
+    // and the resume itself. Two reads would be two chances to disagree
+    // about one file.
+    let record = sessions::genesis_record(&project_dir);
+
     // Same defense in depth as `start_genesis`: the answer must not depend
-    // on which screen the user is looking at.
+    // on which screen the user is looking at — and since T-123 it is the
+    // SAME rule, `docs_watch::routes_to_genesis`, by call and not by copy.
+    // **THIS IS THE COMMAND THE WHOLE CARD IS FOR.** T-029 built the
+    // resume offer; the plan guard here refused it for exactly the folders
+    // the offer exists to rescue, so a session that banked stage 0 could
+    // be routed to its own screen and still be refused at the button.
+    // Resuming an interview that AUTHORED a plan is not an overwrite; it
+    // is the opposite. A folder with a plan and NO RESUMABLE session is
+    // still refused, unmoved — and "no resumable session" is the rebuilt
+    // predicate's phrasing, so this command refuses exactly the folders the
+    // shell's routing refuses. When the two disagree the user reaches a
+    // screen whose button answers no, which is the shape of dead end this
+    // whole card exists to remove.
     let probe = probe_plan(&project_dir);
-    if probe.has_plan() {
+    if !docs_watch::routes_to_genesis(&probe, sessions::reachability_of(record.as_ref())) {
         return StartOutcome::AlreadyPlanned { path: project_dir.display().to_string() };
     }
 
-    // THE ONE PLACE the fact lives (criterion "exactly ONE place").
-    let Some(record) = sessions::genesis_record(&project_dir) else {
+    let Some(record) = record else {
         return StartOutcome::NothingToResume;
     };
     if let Some(why) = record.session_id_rejected {
@@ -502,6 +557,18 @@ pub fn resume_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
 /// the next stage from disk instead of re-asking what is already banked.
 ///
 /// `docs/` is untouched by any of this. Nothing the user answered is lost.
+///
+/// **T-123 DELIBERATELY DID NOT TOUCH THIS GUARD** (criterion 7). Its
+/// two siblings above now ask `docs_watch::routes_to_genesis`, so a folder
+/// holding a plan its own RESUMABLE interview wrote is reachable and
+/// resumable again. This one keeps the BARE `has_plan` refusal, because
+/// this is the destructive door: it marks the recorded session `dead` and
+/// spawns a NEW planner at stage 0. The case that makes the difference
+/// concrete is a CLONED repository that happens to carry a `.nputer/` —
+/// a registered session that did NOT write the plan sitting beside it. For
+/// that folder the right answer is resume and never a fresh interview,
+/// which is why T-029 kept `genesis_fresh` off `genesis_start`'s flag in
+/// the first place, and why the registry does not open this door.
 pub fn fresh_genesis(watch: &WatchState, agent: &AgentState) -> StartOutcome {
     let Some(flight) = agent.begin_turn() else {
         return StartOutcome::Busy;
@@ -680,6 +747,16 @@ pub fn kickoff(watch: &WatchState) -> KickoffOutcome {
     let Some(project_dir) = watch.project_dir() else {
         return KickoffOutcome::NoProject;
     };
+    // T-123 NAMED THIS AND DID NOT BUILD IT (`T-123-s1`). The two spawn
+    // commands now ask `docs_watch::routes_to_genesis`; this one still
+    // refuses a planned folder outright, so the user with no supported CLI
+    // — the one class that reaches this command and nothing else — still
+    // meets the dead end on a folder their own registered interview
+    // planned. It is a routing decision the card's criteria do not cover
+    // and it is left for a ruling rather than widened here: this command
+    // MATERIALIZES the kit and assembles a prompt, and which prompt
+    // (`assemble_kickoff_for` already forks on `has_banked_docs`) is a
+    // second question the same ruling has to answer.
     let probe = probe_plan(&project_dir);
     if probe.has_plan() {
         return KickoffOutcome::AlreadyPlanned { path: project_dir.display().to_string() };
@@ -1321,6 +1398,338 @@ mod tests {
         // Nothing was written: no kit, no registry.
         assert!(!dir.join(".nputer").exists(), "a refused start writes nothing");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // ---- T-123: the commands behind the offer, and the door that stays
+    // shut ---------------------------------------------------------------
+
+    /// A folder in the reproduction's shape: the scaffolded stage-0
+    /// ROADMAP (zero features, every example commented) and an EMPTY
+    /// `docs/tasks/`. Returned unregistered; each arm decides that.
+    fn planned_dir(tag: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "nputer-t123-{}-{}-{}",
+            tag,
+            std::process::id(),
+            now_ms()
+        ));
+        std::fs::create_dir_all(dir.join("docs/tasks")).expect("mkdirs");
+        std::fs::write(
+            dir.join("docs/ROADMAP.md"),
+            "# Roadmap\n\n## Backbone\n<!-- one bullet per feature, e.g.\n     - F-01: Capture -->\n",
+        )
+        .expect("roadmap");
+        dir
+    }
+
+    /// One idle planner with a usable native session id, written as TEXT
+    /// in the shape the live reproduction's registry carries. `native` is
+    /// `None` for the entry that has nothing to resume from.
+    fn register_planner(dir: &std::path::Path, native: Option<&str>) {
+        std::fs::create_dir_all(dir.join(".nputer")).expect("mkdir .nputer");
+        let id_line = match native {
+            Some(id) => format!("\"native_session_id\": \"{id}\",\n      "),
+            None => String::new(),
+        };
+        std::fs::write(
+            dir.join(".nputer/sessions.json"),
+            format!(
+                "{{\n  \"sessions\": [\n    {{\n      \"id\": \"S1\",\n      \
+                 \"agent\": \"claude\",\n      \"model\": \"claude-opus-5\",\n      {id_line}\
+                 \"created\": \"2026-08-24T18:32:51Z\",\n      \"turns\": 1,\n      \
+                 \"tasks\": [],\n      \"roles\": [\n        \"planner\"\n      ],\n      \
+                 \"status\": \"idle\"\n    }}\n  ]\n}}\n"
+            ),
+        )
+        .expect("registry");
+    }
+
+    /// **T-123 CRITERION 1, AT THE COMMAND THE OFFER COMES OUT OF.**
+    ///
+    /// Routing the pick to the genesis screen is only half a rescue: the
+    /// chat auto-starts, `genesis_start` answers, and `resumeAvailable` IS
+    /// the resume offer. While this command refused a planned folder
+    /// outright, a session that banked stage 0 could be routed to its own
+    /// screen and still be refused at the button.
+    ///
+    /// The positive control is the body directly above — the same call on
+    /// the same shape of folder with no registry answers `AlreadyPlanned`
+    /// and writes nothing.
+    #[test]
+    fn a_registered_interview_gets_the_resume_offer_on_the_plan_it_wrote() {
+        let dir = planned_dir("start-offer");
+        register_planner(&dir, Some("00000000-1111-2222-3333-444444444444"));
+        let watch = detached_watch(Some(dir.clone()));
+        let agent = silent_agent(RunnerConfig::default());
+        match start_genesis(&watch, &agent) {
+            StartOutcome::ResumeAvailable {
+                native_session_id,
+                turns,
+                ..
+            } => {
+                assert_eq!(native_session_id, "00000000-1111-2222-3333-444444444444");
+                assert_eq!(turns, 1, "the turn the interview really banked");
+            }
+            other => panic!("expected ResumeAvailable, got {other:?}"),
+        }
+        // The OFFER is not a spawn: nothing ran, nothing was materialized.
+        assert!(matches!(status(&agent).phase, Phase::Idle));
+        assert!(
+            !dir.join(".nputer/genesis").exists(),
+            "an offer writes no kit"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// **T-123 CRITERION 7 — A PLANNED FOLDER NEVER REACHES A FRESH
+    /// SPAWN.**
+    ///
+    /// The registry re-opened `genesis_start`'s door, and the shape that
+    /// tests whether it opened too far is a registered planner with NO
+    /// native id: there is nothing to resume, and before the guard below
+    /// existed the command would have fallen straight through to
+    /// materializing a kit and spawning a planner at stage 0 — on a folder
+    /// that already holds a plan. The route is resume or nothing.
+    #[test]
+    fn a_registered_session_with_nothing_to_resume_never_starts_a_fresh_one_on_a_plan() {
+        let dir = planned_dir("start-no-id");
+        register_planner(&dir, None);
+        let before = std::fs::read(dir.join(".nputer/sessions.json")).expect("registry");
+        let watch = detached_watch(Some(dir.clone()));
+        let agent = silent_agent(RunnerConfig::default());
+        match start_genesis(&watch, &agent) {
+            StartOutcome::AlreadyPlanned { path } => assert_eq!(path, dir.display().to_string()),
+            other => panic!("expected AlreadyPlanned, got {other:?}"),
+        }
+        assert!(matches!(status(&agent).phase, Phase::Idle));
+        assert!(!dir.join(".nputer/genesis").exists(), "no kit was written");
+        assert_eq!(
+            std::fs::read(dir.join(".nputer/sessions.json")).expect("registry"),
+            before,
+            "and no second session was registered - a fresh start would have upserted S2"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// **T-123 CRITERION 7's OTHER HALF — `genesis_fresh` STILL REFUSES A
+    /// PLANNED FOLDER, and that is deliberate rather than overlooked.**
+    ///
+    /// It is the destructive door: it marks the recorded session `dead`
+    /// and spawns a NEW planner at stage 0. The case that makes the
+    /// difference concrete is a CLONED repository carrying a `.nputer/` —
+    /// a registered session that did NOT write the plan beside it — where
+    /// the right answer is resume and never a fresh interview. So the
+    /// registry opens `start` and `resume` and does NOT open this.
+    #[test]
+    fn fresh_genesis_still_refuses_a_planned_folder_even_with_a_session_registered() {
+        let dir = planned_dir("fresh-refused");
+        register_planner(&dir, Some("00000000-1111-2222-3333-444444444444"));
+        let before = std::fs::read(dir.join(".nputer/sessions.json")).expect("registry");
+        let watch = detached_watch(Some(dir.clone()));
+        let agent = silent_agent(RunnerConfig::default());
+        match fresh_genesis(&watch, &agent) {
+            StartOutcome::AlreadyPlanned { path } => assert_eq!(path, dir.display().to_string()),
+            other => panic!("expected AlreadyPlanned from the destructive door, got {other:?}"),
+        }
+        assert_eq!(
+            std::fs::read(dir.join(".nputer/sessions.json")).expect("registry"),
+            before,
+            "the recorded session was NOT marked dead"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// **T-123 CRITERION 1, AT THE COMMAND THE OFFER LEADS TO** — with its
+    /// positive control in the same body.
+    ///
+    /// `genesis_resume` carried the same bare plan guard, so taking the
+    /// offer would have answered `AlreadyPlanned` on exactly the folders
+    /// the offer exists for. Past the guard the command resolves a CLI,
+    /// and under `cargo test` that arm is STRUCTURALLY refused (T-060), so
+    /// `CliNotFound` is what "the guard let this through" looks like here
+    /// — a typed refusal from two functions further on, naming the guard
+    /// that refused it. Nothing spawns either way.
+    #[test]
+    fn resuming_the_plan_your_own_interview_wrote_is_not_an_overwrite() {
+        let dir = planned_dir("resume-allowed");
+        register_planner(&dir, Some("00000000-1111-2222-3333-444444444444"));
+        let watch = detached_watch(Some(dir.clone()));
+        let agent = silent_agent(RunnerConfig::default());
+        match resume_genesis(&watch, &agent) {
+            StartOutcome::CliNotFound { probed } => assert!(
+                probed.iter().any(|line| line.contains("refused")),
+                "past the plan guard and stopped by the CLI gate: {probed:?}"
+            ),
+            other => panic!("expected the resume to get past the plan guard, got {other:?}"),
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+
+        // THE POSITIVE CONTROL: the same call, the same shape of folder,
+        // no registry. The no-overwrite guarantee is unmoved.
+        let bare = planned_dir("resume-refused");
+        let watch = detached_watch(Some(bare.clone()));
+        let agent = silent_agent(RunnerConfig::default());
+        match resume_genesis(&watch, &agent) {
+            StartOutcome::AlreadyPlanned { path } => assert_eq!(path, bare.display().to_string()),
+            other => panic!("expected AlreadyPlanned with no registry, got {other:?}"),
+        }
+        let _ = std::fs::remove_dir_all(&bare);
+    }
+
+    /// **T-123 REBUILD — `genesis_start` REFUSES EXACTLY WHAT THE ROUTING
+    /// REFUSES, and the acceptance proof sits in this body.**
+    ///
+    /// The rejected first pass let a plan-holding folder past this guard
+    /// on the strength of a planner entry it could not resume. The webview
+    /// then met `AlreadyPlanned` or `SessionIdRejected` on a screen with no
+    /// resume offer and no working action. Both shapes are driven here,
+    /// and the third arm proves the fixture is otherwise ACCEPTED — one
+    /// JSON field apart (CONVENTIONS: A NEGATIVE ASSERTION NEEDS A
+    /// POSITIVE CONTROL).
+    ///
+    /// The registry is read back after every arm: a refusal that wrote a
+    /// session would be a fresh interview started on somebody's plan,
+    /// which is the thing criterion 7 exists to make impossible.
+    #[test]
+    fn start_refuses_a_plan_whose_registered_interview_cannot_be_resumed() {
+        // ---- ARM 1: registered, no id recorded.
+        let no_id = planned_dir("start-notresumable-noid");
+        register_planner(&no_id, None);
+        let before = std::fs::read(no_id.join(".nputer/sessions.json")).expect("registry");
+        let watch = detached_watch(Some(no_id.clone()));
+        let agent = silent_agent(RunnerConfig::default());
+        match start_genesis(&watch, &agent) {
+            StartOutcome::AlreadyPlanned { path } => assert_eq!(path, no_id.display().to_string()),
+            other => panic!("expected AlreadyPlanned, got {other:?}"),
+        }
+        assert!(matches!(status(&agent).phase, Phase::Idle));
+        assert!(!no_id.join(".nputer/genesis").exists(), "no kit was written");
+        assert_eq!(
+            std::fs::read(no_id.join(".nputer/sessions.json")).expect("registry"),
+            before,
+            "and no second session was registered - a fresh start would have upserted S2"
+        );
+        let _ = std::fs::remove_dir_all(&no_id);
+
+        // ---- ARM 2: registered with an id the T-039 boundary refuses.
+        // The first pass answered `SessionIdRejected` here, whose only
+        // affordance is "start a fresh session" - and `genesis_fresh`
+        // refuses a planned folder by design (criterion 7), so that notice
+        // could not be acted on. The honest answer is the one the folder
+        // got before T-123: it holds a plan, so it opens as a project.
+        let refused = planned_dir("start-notresumable-refused");
+        register_planner(&refused, Some("--dangerously-skip-permissions"));
+        let before = std::fs::read(refused.join(".nputer/sessions.json")).expect("registry");
+        let watch = detached_watch(Some(refused.clone()));
+        let agent = silent_agent(RunnerConfig::default());
+        match start_genesis(&watch, &agent) {
+            StartOutcome::AlreadyPlanned { path } => {
+                assert_eq!(path, refused.display().to_string())
+            }
+            other => panic!("expected AlreadyPlanned for a refused id on a plan, got {other:?}"),
+        }
+        assert_eq!(
+            std::fs::read(refused.join(".nputer/sessions.json")).expect("registry"),
+            before,
+            "the poisoned entry is left exactly as it was found"
+        );
+        let _ = std::fs::remove_dir_all(&refused);
+
+        // ---- ARM 3: THE ACCEPTANCE PROOF, one field away from arm 1.
+        let usable = planned_dir("start-notresumable-control");
+        register_planner(&usable, Some("00000000-1111-2222-3333-444444444444"));
+        let watch = detached_watch(Some(usable.clone()));
+        let agent = silent_agent(RunnerConfig::default());
+        match start_genesis(&watch, &agent) {
+            StartOutcome::ResumeAvailable { turns, model, .. } => {
+                assert_eq!(turns, 1);
+                // The offer's whole payload comes off the ONE record this
+                // command now reads, so the field that rides furthest from
+                // the routing question is asserted too — a drill mutant
+                // that dropped it survived the first sweep of this rebuild,
+                // and a field nothing asserts is a field anything may do to.
+                assert_eq!(
+                    model.as_deref(),
+                    Some("claude-opus-5"),
+                    "through T-047-s3's display boundary, off the same single read"
+                );
+            }
+            other => panic!(
+                "the same fixture with a usable id must be ACCEPTED, or arms 1 and 2 \
+                 prove nothing: got {other:?}"
+            ),
+        }
+        let _ = std::fs::remove_dir_all(&usable);
+
+        // ---- ARM 4: AND THE T-039 NOTICE IS NOT SILENCED, only moved to
+        // where it can be acted on. The same poisoned entry on a folder
+        // with NO plan still answers `SessionIdRejected`, and there
+        // `genesis_fresh` really can start over.
+        let unplanned = std::env::temp_dir().join(format!(
+            "nputer-t123-start-refused-noplan-{}-{}",
+            std::process::id(),
+            now_ms()
+        ));
+        std::fs::create_dir_all(&unplanned).expect("mkdirs");
+        register_planner(&unplanned, Some("--dangerously-skip-permissions"));
+        let watch = detached_watch(Some(unplanned.clone()));
+        let agent = silent_agent(RunnerConfig::default());
+        match start_genesis(&watch, &agent) {
+            StartOutcome::SessionIdRejected { registry_path, why } => {
+                assert_eq!(registry_path, sessions::SESSIONS_REL);
+                assert!(why.contains("S1"), "the entry names itself: {why}");
+            }
+            other => panic!("expected SessionIdRejected with no plan in the way, got {other:?}"),
+        }
+        let _ = std::fs::remove_dir_all(&unplanned);
+    }
+
+    /// **T-123 REBUILD — THE TWO GUARDS AGREE, WHICH IS THE WHOLE POINT.**
+    ///
+    /// `genesis_resume` is the command the offer leads to. If it refused
+    /// folders the routing sends to the interview screen — or accepted
+    /// folders the routing sends to the board — the user would meet a
+    /// button that answers no. Both commands now ask
+    /// `docs_watch::routes_to_genesis` with the same reachability, so the
+    /// pair cannot drift; this body drives the shape where the first pass
+    /// made them drift.
+    #[test]
+    fn resume_refuses_a_plan_whose_registered_interview_cannot_be_resumed() {
+        for (tag, native) in [
+            ("resume-notresumable-noid", None),
+            (
+                "resume-notresumable-refused",
+                Some("--dangerously-skip-permissions"),
+            ),
+        ] {
+            let dir = planned_dir(tag);
+            register_planner(&dir, native);
+            let watch = detached_watch(Some(dir.clone()));
+            let agent = silent_agent(RunnerConfig::default());
+            match resume_genesis(&watch, &agent) {
+                StartOutcome::AlreadyPlanned { path } => {
+                    assert_eq!(path, dir.display().to_string())
+                }
+                other => panic!("expected AlreadyPlanned for {tag}, got {other:?}"),
+            }
+            assert!(matches!(status(&agent).phase, Phase::Idle));
+            let _ = std::fs::remove_dir_all(&dir);
+        }
+
+        // THE ACCEPTANCE PROOF, one field away: past the plan guard and
+        // stopped two functions later by T-060's structural CLI refusal.
+        let usable = planned_dir("resume-notresumable-control");
+        register_planner(&usable, Some("00000000-1111-2222-3333-444444444444"));
+        let watch = detached_watch(Some(usable.clone()));
+        let agent = silent_agent(RunnerConfig::default());
+        match resume_genesis(&watch, &agent) {
+            StartOutcome::CliNotFound { probed } => assert!(
+                probed.iter().any(|line| line.contains("refused")),
+                "past the plan guard and stopped by the CLI gate: {probed:?}"
+            ),
+            other => panic!("the resumable fixture must get past the guard, got {other:?}"),
+        }
+        let _ = std::fs::remove_dir_all(&usable);
     }
 
     /// The outcome enums serialize in the PickOutcome shape the store
