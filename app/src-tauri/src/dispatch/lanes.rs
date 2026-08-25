@@ -415,8 +415,19 @@ enum SmallRead {
 }
 
 /// Read a bookkeeping file, bounded, as UTF-8 — never lossily.
+///
+/// **`symlink_metadata`, NOT `metadata`, AND THAT IS THE WHOLE POINT OF
+/// THE LINE.** `fs::metadata` follows symlinks; this function is called on
+/// two paths an attacker who hands over a repository controls by name
+/// (`gitdir` and `HEAD`), and following one reads up to `max` bytes of a
+/// file the reader was never pointed at and puts it on a `Lane`. Git
+/// writes both files itself and never symlinks either, so a symlink here
+/// is a defect by construction — it fails `is_file()` below and lands as
+/// `GitdirMissing` / `HeadMissing`: reported, never dropped. The three
+/// structural checks in [`read_lanes`] use the same call for the same
+/// reason, and this one was the odd one out for two verification passes.
 fn read_small(path: &Path, max: u64) -> Result<String, SmallRead> {
-    let meta = fs::metadata(path).map_err(|_| SmallRead::Missing)?;
+    let meta = fs::symlink_metadata(path).map_err(|_| SmallRead::Missing)?;
     if !meta.is_file() {
         return Err(SmallRead::Missing);
     }
@@ -844,6 +855,189 @@ mod tests {
         // Seven entries in, seven defects out: nothing was dropped on the
         // way, which is the property this body exists for.
         assert_eq!(entries(&scan).len(), named.len());
+    }
+
+    // ---- T-110 THIRD PASS: the symlink policy, both call sites ---------
+    //
+    // `read_small` stat'ed with `fs::metadata`, which FOLLOWS SYMLINKS,
+    // while the three structural checks above it (`.git`,
+    // `.git/worktrees`, the entry directory) use `symlink_metadata`, which
+    // does not. So the reader refused a symlinked `.git`, refused a
+    // symlinked `.git/worktrees`, refused a symlinked ENTRY DIRECTORY —
+    // and then chased a symlinked `gitdir`, read up to
+    // `MAX_METADATA_BYTES` of a file it was never pointed at, and shipped
+    // that file's first line onto a `Lane` as its `worktree_path`.
+    //
+    // `read_small` is called TWICE — once for `gitdir` and once for
+    // `HEAD` — so the defect existed twice and one edit closes both. Both
+    // call sites get a body, because "fixed once" is not the same claim as
+    // "closed everywhere" and this project keeps meeting the difference.
+    //
+    // **EACH BODY CARRIES A POSITIVE CONTROL, AND THAT IS WHY THIS PASS
+    // EXISTS.** The first verification pointed a symlinked `gitdir` at a
+    // 2.4 MB file, watched `GitdirTooLarge` refuse it, and concluded *"the
+    // bound holds through the symlink"*. The SIZE bound stopped that
+    // fixture before the symlink policy ever ran, so a smaller target
+    // sailed straight through and the all-clear was one-sided. Here the
+    // target is SMALL and WELL-FORMED, its length is asserted to be UNDER
+    // the bound, and THE SAME BYTES written as a real file are asserted to
+    // be ACCEPTED as a live lane — so the refusal is a refusal of the
+    // SYMLINK and of nothing else. (`docs/CONVENTIONS.md`: a negative
+    // assertion needs a positive control.)
+
+    /// A `gitdir` symlinked at a small, well-formed file is a typed defect
+    /// — and the same bytes in a real file are still read.
+    #[cfg(unix)]
+    #[test]
+    fn a_symlinked_gitdir_is_refused_while_the_same_bytes_in_a_real_file_are_read() {
+        use std::os::unix::fs::symlink;
+
+        let root = repo("symlinkgitdir");
+        let base = root.join(".git").join("worktrees");
+        fs::create_dir_all(&base).expect("worktrees");
+
+        // A file OUTSIDE the repository, holding bytes that are a
+        // perfectly good `gitdir`: an absolute path to a `.git` file whose
+        // parent directory EXISTS. If the reader ever opens this, it does
+        // not stumble — it succeeds, and reports a live lane.
+        let outside = scratch("gitdirtarget");
+        let victim = outside.join("victim-worktree");
+        fs::create_dir_all(&victim).expect("victim worktree");
+        let well_formed = format!("{}\n", victim.join(".git").display());
+        let target = outside.join("not-git-bookkeeping");
+        fs::write(&target, &well_formed).expect("target file");
+
+        // THE SIZE BOUND IS NOT WHAT DOES THE WORK HERE, and the body says
+        // so out loud rather than leaving it to be re-derived.
+        assert!(
+            (well_formed.len() as u64) < MAX_METADATA_BYTES,
+            "the target must be UNDER the bound or this body proves nothing: {} bytes vs {MAX_METADATA_BYTES}",
+            well_formed.len()
+        );
+
+        // THE POSITIVE CONTROL, written first on purpose: the same bytes,
+        // in a real file, at the path git would have written them.
+        fs::create_dir_all(base.join("acontrol")).expect("dir");
+        fs::write(base.join("acontrol").join("gitdir"), &well_formed).expect("gitdir");
+        fs::write(
+            base.join("acontrol").join("HEAD"),
+            b"ref: refs/heads/task/T-110-x\n",
+        )
+        .expect("HEAD");
+
+        // THE FIXTURE UNDER TEST: byte-identical content, reached through
+        // a SYMLINK instead of written in place.
+        fs::create_dir_all(base.join("bleak")).expect("dir");
+        symlink(&target, base.join("bleak").join("gitdir")).expect("symlink");
+        fs::write(
+            base.join("bleak").join("HEAD"),
+            b"ref: refs/heads/task/T-110-x\n",
+        )
+        .expect("HEAD");
+
+        let scan = read_lanes(&root);
+        let [control, leak] = entries(&scan) else {
+            panic!("expected two entries, got {:?}", entries(&scan))
+        };
+
+        // ACCEPTED — so the fixture would unquestionably have parsed as a
+        // valid lane if the symlink had been followed.
+        assert_eq!(
+            control,
+            &WorktreeEntry::Lane {
+                name: "acontrol".to_string(),
+                task_id: "T-110".to_string(),
+                branch: "task/T-110-x".to_string(),
+                worktree_path: victim.to_string_lossy().to_string(),
+                exists_on_disk: true,
+            },
+            "the control must be READ, or the refusal below proves nothing"
+        );
+
+        // REFUSED — reported as a typed defect, never dropped, which is
+        // this card's own rule for anything it cannot use.
+        assert_eq!(
+            leak,
+            &WorktreeEntry::Unreadable {
+                name: "bleak".to_string(),
+                defect: EntryDefect::GitdirMissing,
+            },
+            "a symlinked gitdir was followed and its target reached the board"
+        );
+
+        // The security property itself, stated against the entry rather
+        // than inferred from its variant: not one byte of the file the
+        // reader was never pointed at appears on the wire.
+        let rendered = format!("{leak:?}");
+        assert!(
+            !rendered.contains(&victim.to_string_lossy().to_string())
+                && !rendered.contains(&target.to_string_lossy().to_string()),
+            "the symlink target reached the entry: {rendered}"
+        );
+    }
+
+    /// The SIBLING call site. `read_small` reads `HEAD` too, so the same
+    /// split existed twice; one edit closes both and this body is how that
+    /// is known rather than assumed.
+    #[cfg(unix)]
+    #[test]
+    fn a_symlinked_head_is_refused_while_the_same_bytes_in_a_real_file_are_read() {
+        use std::os::unix::fs::symlink;
+
+        let root = repo("symlinkhead");
+        let base = root.join(".git").join("worktrees");
+        fs::create_dir_all(&base).expect("worktrees");
+
+        let outside = scratch("headtarget");
+        let victim = outside.join("victim-worktree");
+        fs::create_dir_all(&victim).expect("victim worktree");
+        let gitdir_bytes = format!("{}\n", victim.join(".git").display());
+
+        // Again small and well-formed: this is exactly what git writes
+        // into a branch checkout's HEAD.
+        let well_formed = "ref: refs/heads/task/T-110-x\n";
+        let target = outside.join("not-git-bookkeeping");
+        fs::write(&target, well_formed).expect("target file");
+        assert!(
+            (well_formed.len() as u64) < MAX_METADATA_BYTES,
+            "the target must be UNDER the bound or this body proves nothing"
+        );
+
+        // THE POSITIVE CONTROL: the same bytes in a real file.
+        fs::create_dir_all(base.join("acontrol")).expect("dir");
+        fs::write(base.join("acontrol").join("gitdir"), &gitdir_bytes).expect("gitdir");
+        fs::write(base.join("acontrol").join("HEAD"), well_formed).expect("HEAD");
+
+        // THE FIXTURE UNDER TEST: the same bytes behind a symlink.
+        fs::create_dir_all(base.join("bleak")).expect("dir");
+        fs::write(base.join("bleak").join("gitdir"), &gitdir_bytes).expect("gitdir");
+        symlink(&target, base.join("bleak").join("HEAD")).expect("symlink");
+
+        let scan = read_lanes(&root);
+        let [control, leak] = entries(&scan) else {
+            panic!("expected two entries, got {:?}", entries(&scan))
+        };
+
+        assert_eq!(
+            control,
+            &WorktreeEntry::Lane {
+                name: "acontrol".to_string(),
+                task_id: "T-110".to_string(),
+                branch: "task/T-110-x".to_string(),
+                worktree_path: victim.to_string_lossy().to_string(),
+                exists_on_disk: true,
+            },
+            "the control must be READ, or the refusal below proves nothing"
+        );
+
+        assert_eq!(
+            leak,
+            &WorktreeEntry::Unreadable {
+                name: "bleak".to_string(),
+                defect: EntryDefect::HeadMissing,
+            },
+            "a symlinked HEAD was followed and its target reached the board"
+        );
     }
 
     #[test]
