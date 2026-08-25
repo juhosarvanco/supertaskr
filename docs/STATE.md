@@ -1,79 +1,67 @@
 # State
 
-Updated: 2026-08-25 by the T-052 integrator.
+Updated: 2026-08-25 by the T-086 integrator.
 
-**READ THIS FIRST IF YOU ARE PICKING THE PROJECT UP: ONE LANE IS LIVE
-(T-033, building), NOTHING IS APPROVED AND WAITING, THE HUMAN'S WINDOW IS
-PINNED TO A CHECKOUT MAIN CANNOT REACH, AND `cargo test` REDS ABOUT HALF
-THE TIME IN THIS CHECKOUT FOR A REASON THAT IS NOT A BUG IN ANY TEST.**
-Nothing on main is broken. **But FOUR known intermittents will meet you
-before any real defect does — one of them filed for the first time at this
-checkpoint — so read the next four sections before you debug anything.**
+**READ THIS FIRST IF YOU ARE PICKING THE PROJECT UP: FOUR LANES ARE LIVE,
+NOTHING IS APPROVED AND WAITING, AND THE HUMAN'S WINDOW IS PINNED TO A
+CHECKOUT MAIN CANNOT REACH.** Nothing on main is broken — this merge was
+**455 / 958 / 264 / 146 green, first time, no re-runs**. But **two known
+intermittents will meet you before any real defect does**, and one of them
+was RE-CLASSIFIED at this merge by measurement rather than by argument.
+Read the next three sections before you debug anything.
 
 ## THE THING THAT WILL COST YOU AN HOUR IF NOBODY TELLS YOU — `T-120-s3`
 
 **`tools/e2e/tests/token-scan.spec.ts:201` IS RED EXACTLY ONCE IN EVERY
 FRESH CHECKOUT, THEN GREEN FOREVER AFTER, AND RE-RUNNING IT PROVES
 NOTHING.** It is still `status: suggested` and still unfixed — it is the
-first item under "Next up" for the FIFTH checkpoint running.
+first item under "Next up" for the SIXTH checkpoint running.
 
 The body captures `statSync(target)`, restores with
 `utimesSync(target, clock.atime, clock.mtime)`, then asserts
 `statSync(target).mtimeMs === clock.mtimeMs`. **`Stats.mtime` is a
 `Date`, and a `Date` holds whole milliseconds** — so the restore writes
-back a ROUNDED timestamp while the assertion compares the unrounded
-float it captured. **And the failure repairs the condition that caused
-it**: the `utimesSync` in the `finally` block leaves the mtime on a whole
+back a ROUNDED timestamp while the assertion compares the unrounded float
+it captured. **And the failure repairs the condition that caused it**: the
+`utimesSync` in the `finally` block leaves the mtime on a whole
 millisecond, so the next run passes. Red once, green forever, in that
 checkout.
 
-**IT DID NOT FIRE AT THIS MERGE EITHER — E2E was 146/146 first time.**
-Main is not a fresh checkout, so this is the prediction holding rather
-than the defect being gone. It fires in exactly the places this project
-creates most often: a fresh lane worktree and a fresh poison-drill
-worktree. **DO NOT "FIX" IT BY RE-RUNNING UNTIL GREEN.** The fix is one
-token:
+**THE SIGNATURE IS A FRACTIONAL MILLISECOND AND THIS MERGE CAUGHT IT WITH
+THE DIGITS**, which is what turns a warning into an identification.
+T-086's lane hit it on the FIRST E2E run in its fresh worktree:
+
+    Error: tools/e2e/fixtures/shell.ts restored its MTIME too
+    Expected: 1787655727832.5427
+    Received: 1787655727833
+
+**Match `.5427` against a whole number and you are looking at this and not
+at your own change.** It was green on the very next run in that same
+worktree, and it did NOT fire at this merge (146/146 first time), because
+main is not a fresh checkout. **DO NOT "FIX" IT BY RE-RUNNING UNTIL
+GREEN.** The fix is one token:
 
     - utimesSync(target, clock.atime, clock.mtime);
     + utimesSync(target, clock.atimeMs / 1000, clock.mtimeMs / 1000);
 
 **Keep the strict `toBe`** — weakening it to whole milliseconds deletes
-the property `T-079-s3` exists to defend.
+the property `T-079-s3` exists to defend. T-052's lane removed this
+finding's own "needs a fresh checkout to prove" prerequisite by
+reproducing the red ON DEMAND in a healed worktree, so whoever takes the
+fix can verify it anywhere.
 
-**T-052's lane added the one thing that unblocks the fix**: it reproduced
-the red ON DEMAND in an already-healed worktree by setting the fixture's
-mtime to a fractional millisecond (three greens, then a named red), which
-removes `T-120-s3`'s own "needs a fresh checkout to prove" prerequisite.
-Whoever takes the fix can now verify it anywhere.
+## `T-088-s4` — THE CACHE CLIFF IS REAL, IT IS SETTLED, AND MAIN IS OUT OF IT
 
-## `T-088-s4` IS NOT A FLAKE. IT IS AN 8.7 GB `target/` DIRECTORY, AND THAT IS MEASURED
+**PRESERVED ACROSS FOUR CHECKPOINTS BECAUSE IT IS THE MOST USEFUL THING
+IN THIS FILE FOR A SESSION THAT RUNS `cargo test` IN MAIN — and this
+checkpoint is the first that can report the cliff GONE from this
+checkout.**
 
-**PRESERVED FROM T-110's CHECKPOINT, WHICH DID THE EXPERIMENTS, WITH EACH
-LATER INTEGRATION'S TALLY ADDED AT THE END.** The account below is the
-most useful thing in this file for a session that runs `cargo test` in
-main.
-
-**`docs_watch::tests::startup_arm_watches_the_initial_root` has been
-carried as a flake with a "3 red in 12" tally since T-088. It is not one.
-It reds most of the time in THIS checkout and ~0% everywhere else, and
-the single variable is the size of the cargo target directory.**
-
-**STEP 1 — is it the merge?** `cargo test --lib` alone never builds or
-runs T-110's new `dispatch_lanes` binary, and it reds by itself. `lib.rs`
-declares `agent`, `docs_watch`, `churn`, `index_cmd`, `acl_pin` and
-**not** `dispatch`. Suggestive, not decisive.
-
-**STEP 2 — same TREE, two checkouts** (interleaved, so load is
-controlled; the throwaway has its own small target dir):
-
-| checkout of `1223543` | red | test time |
-|---|---|---|
-| clean worktree, own target dir | **0 / 5** | 3.85–3.93s |
-| main's own checkout | **4 / 5** | 8.85–15.14s |
-
-**STEP 3 — same CHECKOUT, two target dirs.** This is the one that
-names the cause. Identical source, identical checkout, identical load —
-only `CARGO_TARGET_DIR` differs:
+`docs_watch::tests::startup_arm_watches_the_initial_root` was carried as a
+flake for weeks. It is not one. **It reds when the cargo target directory
+is large and ~never when it is small, and the single variable is the size
+of that directory.** T-110's experiments named the cause: same TREE, two
+checkouts, and then same CHECKOUT, two target dirs —
 
 | target dir | red | test time |
 |---|---|---|
@@ -82,468 +70,321 @@ only `CARGO_TARGET_DIR` differs:
 
 **THE LIB TEST BINARY IS BYTE-IDENTICAL ACROSS THAT TABLE AND RUNS ~4x
 SLOWER**, and one body in it has a wall-clock deadline, so it is the one
-that reds.
+that reds. **A tally that mixes checkouts is not a flake rate** — the
+historical numbers moved with WHERE each session happened to run.
 
-**WHY THE HISTORICAL TALLY WAS ERRATIC, EXPLAINED RATHER THAN
-APOLOGISED FOR.** A lane worktree and a poison drill both start with a
-small target dir and see green; main's checkout has been accumulating
-since the project began and sees red. The tally moved with WHERE each
-session happened to run, which is why it looked like a coin flip. **A
-tally that mixes checkouts is not a flake rate.**
+### THE CLOCK TEST STILL SEPARATES GREEN FROM RED, AND MAIN NOW SITS IN THE GREEN BAND
 
-### THE CLOCK TEST NOW SEPARATES GREEN FROM RED ACROSS TWO INTEGRATIONS RUNNING
+T-124 found the lib suite's own `test result:` time sorts its runs
+perfectly — every green under 9.5s, every red over 14.6s, **a gap of more
+than five seconds with nothing in it** — and T-052 reproduced it. **MAIN'S
+TARGET DIRECTORY WAS RECLAIMED between that checkpoint and this one and
+the prediction held**: `du -sh app/src-tauri/target` reads **2.4 GB** here
+against the 8.7 GB the account was written about, and this merge's
+`cargo test` ran the lib suite in **3.94s** — not merely in the green band
+but down in the ISOLATED-target-dir band, with the watcher body `ok`.
+**Eleven runs across three integrations and not one lands between 9.5s and
+14.6s.** Read the lib suite's own time first; it tells you which regime
+you are in before any assertion does.
 
-T-124's checkpoint found that the lib suite's own `test result:` time
-sorts its five runs perfectly — every green under 9.5s, every red over
-14.6s, **a gap of more than five seconds with nothing in it**. That was
-derived from ordinary suite output rather than from an experiment, which
-is what makes it cheap to repeat. **THIS INTEGRATION REPEATED IT AND THE
-BANDS HELD:**
+**DO NOT `cargo clean` REFLEXIVELY.** The 8.7 GB reclaim was a MEASURED
+experiment, not a habit, and the objection that once headed this warning
+is gone (`target/debug/nputer` in this checkout is no longer the running
+binary — @human's app moved to its own checkout). What remains is that a
+lane may be building against this repository: `lsof` first.
 
-| integration | run | lib `test result:` | lib time |
-|---|---|---|---|
-| T-124 | 1 | ok. **160** passed | **9.48s** |
-| T-124 | 2 | FAILED. 159 passed; **1 failed** | 14.73s |
-| T-124 | 3 | FAILED. 159 passed; **1 failed** | 14.87s |
-| T-124 | 4 | FAILED. 159 passed; **1 failed** | 14.65s |
-| T-124 | 5 | ok. **160** passed | **8.94s** |
-| **T-052** | **1** | FAILED. 159 passed; **1 failed** | **16.85s** |
-| **T-052** | **2** | ok. **160** passed | **8.79s** |
-| **T-052** | **3** | ok. **160** passed | **9.09s** |
+## THE INTERMITTENT THAT WAS SETTLED AND IS NOT — `a_hostile_session_id…`, NOW KNOWN LIVE ON A CLEAN CACHE
 
-**Eight runs across two integrations, and not one lands between 9.5s and
-14.6s.** This checkpoint's red is the slowest yet recorded (16.85s) and
-its greens sit exactly in the green band. **The deadline is what is being
-crossed; the merge is not what crosses it** — this merge contains zero
-Rust paths, so it could not have moved a Rust test at all.
+**THIS IS THE ONE ITEM ON THIS PAGE THAT CHANGED CLASS AT THIS MERGE, AND
+IT CHANGED BY A LANE'S OBSERVATION BEATING AN INTEGRATOR'S ARITHMETIC.**
 
-**THIS INTEGRATION'S TALLY: 1 RED IN 3.** Declared rather than smoothed:
-the FIRST full run was the red one, and nothing was discarded on the way
-to a number.
+`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+(`app/src-tauri/tests/agent_runner.rs:2926`, T-039's, last touched by
+T-124) had been declared settled at better than 400-to-1 on 15 clean-cache
+runs that saw it zero times. **T-086's lane refuted that within the hour**:
+it redded **1 in 4** full `cargo test` runs in a FRESH lane worktree —
+with the `docs_watch` body GREEN and the lib suite at **3.97s**, inside
+the healthy band — so the cache cliff cannot be what crossed its deadline.
+Run alone the body is **5 green in 5** (0.18–0.45s). The lane's diff was
+markdown with **zero `.rs` paths**, so it cannot have moved it.
 
-**DO NOT `cargo clean` MAIN'S TARGET DIRECTORY TO "FIX" THIS RIGHT NOW**
-without checking `lsof` first: a lane is building against this
-repository, and reclaiming 8.7 GB is a system-state change no architect
-has ruled on. **The one reason that USED to head this warning is now
-gone** — `target/debug/nputer` in THIS checkout is no longer the running
-binary, because @human's app moved to its own checkout (see below). The
-remaining reasons stand. This wants a card, not a reflex — see "Next up".
-
-## A THIRD INTERMITTENT, FILED HERE FOR THE FIRST TIME — `a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
-
-**IT IS NEW TO THE RECORD, IT IS NOT ON ANY BRIEF'S LIST, AND THE NEXT
-SESSION TO MEET IT WILL OTHERWISE ATTRIBUTE IT TO ITS OWN MERGE.** That is
-the whole reason it is written down at this length.
-
-`app/src-tauri/tests/agent_runner.rs:2926` — introduced by **T-039**, last
-touched by **T-124** at `82eb2ed`. It failed in the FIRST full `cargo
-test` of this integration:
-
-    assertion failed: matches!(agent::send_turn(&h.watch, &h.agent, "answer".into()),
-        SendOutcome::NoSession)
-
-**IT IS NOT THIS MERGE'S, AND THAT IS DERIVED RATHER THAN ASSERTED**: the
-merge's diff is **9 paths, zero of them `.rs`**, and `agent_runner.rs` is
-not among them (`git diff --name-only aff1c36..eea466a | grep -c
-agent_runner` is **0**). A markdown-only merge cannot move a Rust
-assertion.
-
-**IT IS LOAD-SENSITIVE, NOT DETERMINISTIC — MEASURED BOTH WAYS.** Run
-alone it is **5 green in 5** (0.26–0.41s each). Under the full parallel
-suite it is **1 red in 3**. And it redded in the SAME run as the watcher
-body above and in neither of the two runs where the watcher body was
-green, which points at the same underlying condition — this checkout is
-slow under load and two bodies in it have deadlines. **That is a
-hypothesis with two data points, not a diagnosis**, and it wants the same
-controlled experiment T-110 ran for `T-088-s4` rather than another
-sighting.
-
-**No suggestion file was filed for it**, on T-110's and T-124's shared
-precedent: filing one here would move the board counts this checkpoint
-derives. It belongs to the architect, and this section is the handoff.
-
-## A FOURTH INTERMITTENT — `T-124-s3` — AND IT DID NOT FIRE HERE, 3 FOR 3
-
-**`a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail`
-in `app/src-tauri/tests/agent_runner.rs` (T-113's, added at `55f9b1b`)
-failed its POSITIVE CONTROL with an empty `stderr_tail` in 1 of 4 runs
-during T-124's verification.** It was proved not to be T-124's, and
-T-124's own integration then saw it zero times in five.
-
-**It read `ok` in all THREE full runs here, including the run that was red
-on two other bodies.** An intermittent that does not fire has told you
-nothing except how often it does not fire. Its own filing saw it once in
-four; T-124's checkpoint saw it zero in five; this one zero in three. The
-pooled count is **1 in 12**.
+**THE SETTLEMENT WAS RETRACTED IN PLACE at `086bf1c`** with the rule it
+produced: *a re-measurement can only settle a finding whose MECHANISM the
+intervention addresses.* Pooled clean-cache evidence is **1 red in 19**;
+seeing zero in fifteen at that rate has probability **0.44**. The card
+carries the whole account — this section is the pointer, not a second
+copy. **Live, load-sensitive, ~1-in-19 on a clean cache, and it is
+`T-086-s1`'s subject.** It did NOT fire at this merge, which is one more
+data point and not a reprieve.
 
 ## THE LANE LIST, DERIVED FROM `git worktree list` AT THIS COMMIT
 
-Read as **entries on a `task/T-NNN-*` branch** — a detached entry is not
-a lane (the T-089 correction in CONVENTIONS). **THERE IS NO TIP COLUMN
-AND THIS IS THE EIGHTH MEASUREMENT SAYING SO.** A live lane's tip is a
+Read as **entries on a `task/T-NNN-*` branch** — a detached entry is not a
+lane (the T-089 correction in CONVENTIONS). **THERE IS NO TIP COLUMN AND
+THIS IS THE NINTH MEASUREMENT SAYING SO.** A live lane's tip is a
 live-environment fact, not a function of a tree; what is stable is WHICH
 lane holds WHICH fence. For a tip, run `git worktree list`. **No scratch
-worktree is named here either** — the CLASS is recorded, the membership
-is the command.
+worktree is named here either** — the CLASS is recorded, the membership is
+the command.
 
 | lane | fence (`touches:`) | where it is |
 |---|---|---|
 | **T-033** | `[docs/architecture/components/, lib-parser, app-map, app-shell]` | building |
+| **T-091** | `[tools/e2e]` | building |
+| **T-102** | `[app-agent]` | building |
+| **T-107** | `[app-interview]` | **board says building; a verify pass is live — see below** |
 
-**ONE LANE. NOTHING IS APPROVED AND WAITING** — T-052 was the last
-approved card in its batch and this checkpoint closes it.
+**FOUR LANES. NOTHING IS APPROVED AND WAITING** — T-086 was the batch's
+last card and this checkpoint closes it.
 
-**EXACTLY ONE WORKTREE THAT IS NOT A LANE — RE-READ AFTER THE REMOVAL,
-WHICH IS THE POINT.** The ritual's order is merge, checkpoint, remove, so
-a checkpoint written before the removal describes a tree that no longer
-exists by the time anyone reads it. **Two consecutive checkpoints recorded
-their own worktree count going stale in exactly that gap; this one
-re-derived `git worktree list` AFTER removing its lane and corrected this
-section rather than becoming the third.** Three entries remain: this
-checkout, T-033's lane, and:
+**THE BOARD-TRUTH WINDOW WAS OBSERVED FROM A THIRD DIRECTION HERE, AND
+THAT IS NEW.** T-107's card on main reads `status: building` while a
+verification pass is genuinely running on it. Four earlier checkpoints
+recorded `verifying` reading 0 on the board because an executor stamps it
+in its LANE; this is the first time the checkpoint could point at a
+**detached `drill-*` worktree named after a lane's VERIFY pass** as an
+independent witness that the board is behind. Three sources — the
+dispatcher's message, the card, the worktree list — and **the card is the
+one that is wrong**. That strengthens disposition 2 below (read phase from
+the lane set) with evidence rather than with another ask.
+
+**TWO CLASSES OF NON-LANE WORKTREE EXIST RIGHT NOW AND ONLY ONE IS
+PERMANENT.** Derive the membership; do not quote it.
 
 - **`/Users/ujju/Projects/nputer-app`, detached at `c4cfe52`** —
   **@human's app checkout, and the one serving port 1420.** Permanent, by
-  @human's ruling of 2026-08-25, which this merge is the card for. It
-  holds no fence, is named after no card, and must not be removed after a
-  merge. See the running-app section below.
-**And one CLASS with no members at this moment** — detached
-`drill-T-NNN-*` entries, the scratch worktrees belonging to whichever
-passes are running. DO NOT QUOTE A LIST FROM HERE; the class is what is
-stable, the membership is the command. **This integration created none**
-— the card was already verified and needed no drill of its own, and the
-verifier removed its own `drill-T-052-verify` when it finished.
+  @human's ruling of 2026-08-25. It holds no fence, is named after no
+  card, and must not be removed after a merge. **`c4cfe52` is an ANCESTOR
+  of this merge** (`git merge-base --is-ancestor c4cfe52 63099f1` exits
+  **0**) and main is now **47 commits ahead of it**, which is the accurate
+  reason nothing merged here reaches that window — *not* a trigger that
+  failed to fire. Nothing reaches it until @human runs
+  `git -C ../nputer-app checkout --detach main`.
+- **Detached `drill-*` entries** — the scratch worktrees belonging to
+  whichever passes are running. **TWO were present at this checkpoint**,
+  one of them a verify pass (above). They come and go at other sessions'
+  keystrokes; the class is stable, the list is not.
 
-**NO LANE WORKTREE SITS AT A NON-STANDARD PATH ANY MORE.**
-`tools/nputer-T-052` was the last of the three the dispatcher cut INSIDE
-the repository on 2026-08-25, and this checkpoint removed it. **The count
-went three, two, one, zero across four consecutive checkpoints, and every
-one of those four dispatch briefs stated the count that was true when it
-was written and false by the time the checkpoint landed** (T-110 said
-three, T-124 said two, this one said one plus `z`). **Three checkpoints
-running have now recorded the same staleness. Derive it from `git worktree
-list` at your own moment; a worktree count is a live-environment fact.**
-
-**EVERY FENCE IS FREE EXCEPT T-033's.** `method/` and
-`docs/CONVENTIONS.md` were released by this checkpoint. Free too:
-`app-agent`, `app-dispatch`, `app-board`, `app-interview`, `crate-index`,
-`tools/e2e`, `.github/`.
+**NO LANE WORKTREE SITS AT A NON-STANDARD PATH.** Every lane entry is a
+`../nputer-T-NNN` sibling, which is the spelling CONVENTIONS gives.
+**EVERY FENCE IS FREE EXCEPT THE FOUR ABOVE**: `docs/CONVENTIONS.md` and
+`method/` were released by this checkpoint. Free too: `app-board`,
+`app-dispatch`, `crate-index`, `.github/`.
 
 ## Just completed
 
-**T-052 — the checkout you merge into may be in use, and the card's own
-fatal rung is refuted by measurement.** F-02, milestone 4, size M,
-`touches: [method/, docs/CONVENTIONS.md]`, **fence never widened**.
-Main-before **`aff1c36`**, lane tip **`7434f93`**, merge **`eea466a`**,
-this checkpoint after it. `built_by: claude-opus-5 @T-052`; one
-verification pass, `review: same-model`.
+**T-086 — a transcribed reader count is deleted rather than corrected, and
+the card's own title is the finding happening to the card that files it.**
+F-06, milestone 4, size S, `touches: [docs/CONVENTIONS.md]`, **fence never
+widened**. Main-before **`086bf1c`**, lane tip **`6e4f211`**, merge
+**`63099f1`**, this checkpoint after it. `built_by: claude-opus-5 @T-086`;
+size-S self-integration, `review: self-verified`.
 
-**THE HEADLINE IS A DOWNGRADE, AND IT IS THE BEST THING IN THE CARD.**
-The card catalogued nine instances of the pipeline disturbing or killing
-@human's running app, escalating from cosmetic to fatal. **The lane
-REFUTED ITS OWN RUNG 8** — the "fatal, mechanism B" entry, on the board
-since 2026-08-16, which blamed a fresh `npm ci` for removing
-`node_modules` under the running vite and killing the app. **It does not
-kill it.** With the guard removed, the floor
-(`app/node_modules/vite/package.json`) was absent for **eleven
-consecutive samples** while the server answered **200 throughout, same
-pid, same start time**.
+**WHAT LANDED.** `docs/CONVENTIONS.md`'s FOUR WALKS bullet said *"BUT TWO
+LIVE READERS SIT OUTSIDE ALL FOUR WALKS, AND THIS LIST IS CLOSED AT
+TWO"*. That sentence is gone. In its place: the same WARNING — an edit to
+this file can red a suite no walk row can see — plus **the command that
+answers it**, `node tools/e2e/scripts/docs-gate.mjs --census`, and the
+gate on your own diff for the suites you owe. The two mechanisms most
+likely to bite are kept **as SHAPES and explicitly not as the list**: a
+command-bullet edit reds `workflow-parity.spec.ts`, and the method stamp
+reds `snapshot_version_matches_the_live_method_stamps` in `kit.rs`. Those
+`kit.rs` sentences are load-bearing for gotcha one's three-file-bump
+ruling and for `T-078-s3`, which is why they survived a deletion card.
 
-**AND THE VERIFIER REPRODUCED IT HARDER RATHER THAN TAKING IT ON
-REPORT** — which is what makes the refutation stick. It held the deletion
-window open **4094 ms** with an atomic rename, and while `node_modules`
-did not exist at all the server served **44 of 44 cold source modules
-never fetched before** (1.5 MB), **8 of 8 optimized-dep URLs discovered
-DURING the window**, the index, `/@vite/client` and an HMR-shaped `?t=`
-re-request — with a **404 negative control** on a dep URL missing its
-`?v=` proving the server was DISCRIMINATING rather than blindly
-answering. A vite serves what it has already transformed, and measurably
-what it has NOT yet transformed, out of memory.
+**THE HEADLINE IS THE CARD'S OWN TITLE BEING WRONG, AND THAT IS THIS
+FILE'S RULE PROVING ITSELF AGAINST THE CARD THAT FILES IT.** The title
+says the reader list *"is four and counting"*. **The gate says FIVE** —
+`kit.rs`, `docs-input-gate.spec.ts`, `shell-frame.spec.ts`,
+`window-contract.spec.ts`, `workflow-parity.spec.ts` — re-derived at this
+merge. Three read the file's CONTENT; two `walk()` all of `docs/`. The
+card's number went stale between filing and building, which is exactly
+the failure it exists to fix. **So the shipped text prints no number at
+all**, and that is the answer rather than a smaller number.
 
-**SO THE RULE SURVIVES ON THE WINDOW OF EXPOSURE, NOT ON A KILL, AND THE
-GUARD IS STILL RIGHT.** A nine-day-old "fatal" entry was downgraded by
-measurement while the rule it justified stayed in force, on better
-footing than it had before. Three hedges carry the honesty and all three
-are in the shipped text: instance 8's cause stays **UNDETERMINED**
-between this and "the human quit"; what IS destroyed is
-`node_modules/.vite`, vite's optimize cache, **deleted and not
-recreated**, so a surviving process serves from memory over a tree that
-no longer matches it; and `tauri dev` is MORE than vite — the tauri CLI
-lives in `node_modules` and a cargo rebuild runs beside it — so the real
-exposure is wider than what anyone measured. **Neither the lane nor the
-verifier tested `tauri dev`, because it opens a window, and both say so.**
+**WHY DELETION AND NOT A THIRD CORRECTION, in the words of the people who
+built it.** T-078's executor filed the exact failure under WHAT I AM LEAST
+CONFIDENT ABOUT — *"if a third live reader of this file appears …
+'CLOSED AT TWO' [makes] it worse than the open version it replaced"* — and
+`T-078-s6`'s ask had **requested the closed form in as many words**
+(*"so the table's list of non-walk readers is closed rather than open"*).
+A card can specify a defect into existence and a faithful editor will
+build it: the POISON DRILL bullet's own T-057 lesson, arriving in a
+document instead of in a test. And **the reader that broke the sentence
+was added by the card that built the census** —
+`docs-input-gate.spec.ts`, T-084 — so it went stale as a direct
+consequence of the machinery that could have kept it true.
 
-**WHAT LANDED.** `method/roles/integrator.md` gains a section, "The
-checkout you merge into may be in use", with four numbered rules, reached
-from step 2 and step 3. **The existing steps 1–4 are NOT renumbered** —
-T-089's table cites them by number — and that was verified from both
-blobs rather than from the claim. Every nputer mechanism is in
-`docs/CONVENTIONS.md` instead: the app's two trigger sets and BOOT GATE's
-third, the anchored-`awk` pitfall, the `npm ci` correction, the
-`lib/parser/dist` symlink channel, the scratch-file rule, and @human's
-ruling with its quoted criteria. **The method text is product-agnostic,
-measured**: a grep of the added `method/` lines for `nputer|tauri|vite|
-npm|cargo|1420|node_modules|Users/ujju|rust|react` returns **zero rows**.
-
-**NO METHOD VERSION BUMP WAS TAKEN, AND THAT IS THE RULING RATHER THAN AN
-OMISSION.** CONVENTIONS' trigger is a **FORMAT** change; this diff adds no
-table, field, status, template or vocabulary term. **Neither edited file
-ships in `KIT_FILES`**, and the directory walk that forces new files into
-that table covers `docs-templates`, `adapters` and `tasks` — not `roles/`
-and not the top-level `lane-protocol.md`. The verifier checked the one
-thing that could have cut the other way: CONVENTIONS says in terms that
-*"T-089's OWN CHANGE TO method/ IS THEREFORE OWED A BUMP TO v0.1.6"* and
-T-089 edited **the same file** — but T-089's merge also carried
-`method/tasks/TASK-FORMAT.md`, which IS in `KIT_FILES` and IS a format
-file, so its debt is fully explained by that path and implies nothing
-here. **The residual was ROUTED, not decided**: by T-104's own criterion
-(clarification versus new normative sentence) this rule IS new, the two
-tests disagree, and a lane may not settle a method ruling. T-104 owns the
-owed v0.1.6 payment and is the seat that can answer it. **ARCHITECTURE's
-C-01 row still reads `built (v0.1.5)` and is therefore still true.**
-
-## THE FIRST-READER CHECK NOBODY ELSE COULD RUN — AND THE SECTION HAS ONE SOFT SPOT
-
-**A PREVIOUS INTEGRATOR READ THIS SECTION OFF THE BRANCH AND HONOURED IT
-BEFORE IT LANDED; THIS ONE IS THE FIRST TO MERGE IT, AND THEREFORE THE
-FIRST WHOSE OWN CONDUCT IT GOVERNS AS TRACKED TEXT.** Implemented from
-the text alone and run for real. **Three of the four rules were usable
-exactly as written. Rule 1's nputer MECHANISM has a gap, and @human's own
-adopted fix is what opened it.**
-
-**RULE 2 WAS USABLE AND ANSWERED A REAL QUESTION.** *"A merge can change
-what the running product serves without touching one file the product
-owns"* — so the question is which build outputs the running app reads.
-Answered from the build order, not the diff, and **without entering
-@human's tree**: `app/node_modules/@nputer/parser` is a **relative**
-symlink, `../../../lib/parser`, so it resolves inside whichever checkout
-it lives in. Rebuilding THIS checkout's `lib/parser/dist` therefore
-cannot reach an app serving from another one. **That derivation took one
-`ls -l` and it is the rule working**, on a docs-only diff that would
-otherwise have claimed exemption.
-
-**RULES 3 AND 4 WERE USABLE.** Rule 3's demand to read process identity
-before and after, to state when, and to anchor the process match is what
-this checkpoint's running-app section below does. Rule 4 is why the `z`
-file is recorded and left alone rather than deleted.
-
-**RULE 1 IS WHERE IT READS BETTER THAN IT WORKS, AND THE GAP IS ONE
-LINE.** The GENERIC sentence in `integrator.md` is right: *"A FRESH
-DEPENDENCY INSTALL SHALL NOT RUN IN A CHECKOUT SERVING A LIVE PRODUCT."*
-The operative condition is **the checkout**. But CONVENTIONS' DETECT AND
-REFUSE paragraph compresses the procedure to *"read the holder with
-`lsof -nP -iTCP:<port> -sTCP:LISTEN` … On a hit, name the step you are
-skipping … On no hit, PROCEED"* — **which tests the PORT and never the
-checkout.** Implemented literally and run at this merge:
-
-| arm | port 1420 | a port nothing holds |
-|---|---|---|
-| **A — the literal text**: any holder means refuse | **REFUSE** | proceed |
-| **B — rule 1's own sentence**: is the holder serving from THIS checkout? | **PROCEED** | proceed |
-
-**THE TWO ARMS DISAGREE ON THE LIVE CASE, AND ARM A IS THE WRONG ONE.**
-The holder of 1420 is pid **88948**, and `lsof -p 88948` puts its cwd at
-`/Users/ujju/Projects/nputer-app/app` — **another checkout entirely**. An
-install in main would not touch the dependency tree that process reads.
-Arm A refuses anyway, and because @human's app is now permanently up on
-1420, **arm A refuses forever in main**. That is precisely the failure
-rule 1's own last sentence names: *"A check that CANNOT tell a live
-product from an absent one is not a check."* It just arrives from the
-other direction — a check that always refuses is as useless as one that
-never does, and the verifier's positive control could not catch it
-because its drill ran in a worktree where the holder and the checkout
-were necessarily the same.
-
-**THE IRONY IS LOAD-BEARING RATHER THAN DECORATIVE: @HUMAN'S ADOPTED FIX
-IS WHAT BROKE THE DETECTOR.** Before the second checkout, port-holder and
-checkout-in-use were the same fact. After it, they are two, and only one
-of them is the one rule 1 governs. **The repair is one step, not a
-redesign** — after reading the holder, read `lsof -p <pid>` for its cwd
-and compare it against the checkout you are about to install into, which
-is the same `lsof -p` this checkpoint already uses to identify the app.
-**No suggestion file was filed** (it would move the board counts this
-checkpoint derives, T-110's and T-124's precedent); this section is the
-handoff and it is item 2 under "Next up".
-
-**WHAT THAT MEANT IN PRACTICE HERE: NOTHING WAS OWED.** All three
-`node_modules` trees were present in this checkout, so the full suite
-opened with no fresh install and rule 1's trigger — *"IF that suite opens
-with a fresh dependency install"* — never fired. **No `npm ci` was run at
-any point in this integration.**
+**TWO CORRECTIONS RODE ALONG, BOTH MEASURED, BOTH INSIDE THE ONE-FILE
+FENCE.** (1) The same bullet claimed the TOKEN row went stale *"ONE DAY
+LATER"* and closed *"TWO SIGNPOSTS IN TWO DAYS"*. `git log -1
+--format=%ci` puts `d64c673` at **02:10:07** and `91398f9` at **03:49:24
+the same morning** — **ninety-nine minutes, one day**. It is the identical
+error the RANGE RULE bullet already records about its own *"false for
+weeks"*, and this file's own rule names it: an unrefed DURATION goes stale
+exactly the way an unrefed count does. (2) The DOCS GATE bullet's three
+proportionality figures — rooms owes ONE command, `docs/CONVENTIONS.md`
+owes TWO, a flat task card owes THREE — were **swept and re-derived by
+asking the gate, and all three are TRUE**. They stay, because they count
+the gate's ANSWER rather than readers and the wide-trigger/narrow-answer
+argument collapses without them; what they gained is the ref they were
+measured at and a sentence saying they are the answer's SHAPE and not its
+census. **The class was checked; not every instance was false.**
 
 ## Ranges, every dot count stated, at their own refs
 
-    git merge-tree --write-tree aff1c36 7434f93 -> tree 4748a8b6…, exit 0 (read from $? FIRST)
-    git diff --name-only aff1c36 <TREE>                        ->   9   THE PRESCRIBED PRE-MERGE FORM
-    git diff --name-only aff1c36..eea466a  (THE MERGE'S DIFF)  ->   9   the only one that means anything
-    git diff --name-only c4cfe52..7434f93  (branch-only, TWO)  ->   9
-    git diff --name-only aff1c36...7434f93 (THREE dots)        ->   9   AGREES — FOURTH MERGE RUNNING
-    git diff --name-only aff1c36..7434f93  (TWO dots, FORBIDDEN)   ->  48
-    git diff --name-only c4cfe52..eea466a  (merge-base, FORBIDDEN) ->  48
-    git diff --name-only c4cfe52..aff1c36  (main's advance)        ->  39
+    git merge-tree --write-tree 086bf1c 6e4f211 -> tree 5c8b8f43…, exit 0 (read from $? FIRST)
+    git diff --name-only 086bf1c <TREE>                        ->   3   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 086bf1c..63099f1  (THE MERGE'S DIFF)  ->   3   the only one that means anything
+    git diff --name-only c4c15c8..6e4f211  (branch-only, TWO)  ->   3
+    git diff --name-only 086bf1c...6e4f211 (THREE dots)        ->   3   AGREES — FIFTH MERGE RUNNING
+    git diff --name-only 086bf1c..6e4f211  (TWO dots, FORBIDDEN)   ->   8
+    git diff --name-only c4c15c8..63099f1  (merge-base, FORBIDDEN) ->   8
+    git diff --name-only c4c15c8..086bf1c  (main's advance)        ->   5
 
-**THE FORBIDDEN TWO-DOT FORMS OVERSTATE BY 39 PATHS — 5.3x — AND BOTH ARE
-PURE LEFT-ENDPOINT DRIFT.** Main advanced **39** under this lane, the
-branch **9**, `comm -12` over the sorted lists is **EMPTY**, and
-39 + 9 = 48 — the arithmetic that proves the sets disjoint. Ratios so
-far: T-110 **7.0x**, T-120 **1.2x**, T-124 **5.6x**, T-052 **5.3x**. The
-ratio is weather; **the left endpoint is the signal.**
+**THE FORBIDDEN TWO-DOT FORMS OVERSTATE BY 5 PATHS — 2.67x — AND BOTH ARE
+PURE LEFT-ENDPOINT DRIFT.** Main advanced **5** under this lane, the
+branch **3**, `comm -12` over the sorted lists is **EMPTY**, the union of
+the two sets is **byte-identical to the forbidden two-dot set** under
+`diff`, and 5 + 3 = 8 — the arithmetic that proves them disjoint, checked
+as SETS and not only as counts. Ratios so far: T-110 **7.0x**, T-120
+**1.2x**, T-124 **5.6x**, T-052 **5.3x**, T-086 **2.67x**. The ratio is
+weather; **the left endpoint is the signal.**
 
-**THE THREE-DOT FORM RETURNED THE RIGHT ANSWER FOR THE FOURTH MERGE
-RUNNING, AND T-124's WARNING IS NOW MORE URGENT RATHER THAN LESS.**
-`A...B` is DEFINITIONALLY `$(git merge-base A B)..B`, so
-`aff1c36...7434f93` IS the branch-only range — **9, exactly right**,
-because this branch is purely additive and main's advance is disjoint
-from it. T-124's checkpoint said the quiet part: **a forbidden form that
-keeps giving the right answer is more dangerous than one that gives a
-wrong one**, because it agrees *only while the two path sets stay
-disjoint* and teaches a false lesson every time it works. **This
-integration adds a fourth agreement and deliberately does not treat it as
-a habit.** The set identity was checked, not just the count — `diff` over
-the two sorted lists is empty — and that is the check that would have
-caught a disagreement had one existed. **The day a lane and main touch the
-same file, this form silently drops main's side of that path with no
-signal that anything happened.**
+**THE THREE-DOT FORM RETURNED THE RIGHT ANSWER FOR THE FIFTH MERGE
+RUNNING, AND THE WARNING GETS MORE URGENT WITH EVERY AGREEMENT, NOT
+LESS.** `A...B` is DEFINITIONALLY `$(git merge-base A B)..B`, so
+`086bf1c...6e4f211` IS the branch-only range — 3, exactly right — because
+this branch is purely additive and main's advance is disjoint from it.
+**A forbidden form that keeps giving the right answer is more dangerous
+than one that gives a wrong one**, because it agrees *only while the two
+path sets stay disjoint* and teaches a false lesson every time it works.
+**This integration checked SET IDENTITY with `diff` over sorted lists in
+both directions rather than comparing counts** — prescribed vs three-dot
+is `diff` exit 0, prescribed vs branch-only is `diff` exit 0 — and that
+is the check that would have caught a disagreement had one existed. **The
+day a lane and main touch the same file, this form silently drops main's
+side of that path with no signal that anything happened.**
 
 **THE FORECAST TREE IS THE MERGE'S TREE, BYTE FOR BYTE.**
 `merge-tree --write-tree` returned
-`4748a8b679f94070c2222081025114ee1cd85fac` before the merge and
+`5c8b8f438727c1c1c69c11d3726c7d8c89a045ec` before the merge and
 `git rev-parse HEAD^{tree}` returns the same afterwards. Parents are
-`aff1c36` and `7434f93` and nothing else; **NOTHING WAS WRITTEN INTO THE
+`086bf1c` and `6e4f211` and nothing else; **NOTHING WAS WRITTEN INTO THE
 MERGE COMMIT.**
 
-**THE TWO TOOLS WANT OPPOSITE THINGS, AND THIS INTEGRATION USED EACH
-WHERE IT BELONGS.** `git merge-tree` reads **COMMITS** — it cannot see an
-index, so staging a file before measuring buys nothing. The DOCS GATE
-reads **TRACKED files** — so doc files must be `git add`ed before it can
-see them (`T-010-s10`). At the merge all nine paths were already
-committed by the merge itself, so the gate saw them without staging; this
-checkpoint's own doc writes were `git add`ed by explicit path before
-their gate run.
+## THREE standing gates — DERIVED from the merge's own 3 paths
 
-## THREE standing gates — DERIVED from the merge's own 9 paths
-
-| gate | trigger | on these 9 |
+| gate | trigger | on these 3 |
 |---|---|---|
 | GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` **or `*.rs`** outside `docs/` | **0 — NOT OWED** |
 | BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **0 — NOT OWED** |
-| DOCS GATE | a `docs/` path a code suite reads | **7 — FIRES**, four suites |
+| DOCS GATE | a `docs/` path a code suite reads | **3 — FIRES**, four suites |
 
-The nine are `docs/CONVENTIONS.md`, five `T-052-s*` suggestion files, the
-card, `method/lane-protocol.md` and `method/roles/integrator.md`. **A grep
-for `\.(ts|tsx|js|jsx|mjs|rs)$` over the whole nine returns 0** — this
+The three are `docs/CONVENTIONS.md`, the card, and `T-086-s1`. **A grep
+for `\.(ts|tsx|js|jsx|mjs|rs)$` over the whole three returns 0** — this
 merge is markdown only.
 
-- **GRAPH REGEN — NOT OWED, AND ASKED ANYWAY** as its own bullet demands.
-  `cargo run -p nputer-index -- index --check --root ../..` is **exit 0,
-  CURRENT** at **920 597 bytes / 178 files / 1959 symbols / 1878 edges**,
-  unmoved from T-124's regen. **This is the answer the gate gave, not a
-  prediction it was spared** — and it is why no regen is committed here.
-  Asking cost about a second; reasoning from the suffix list would have
-  reached the same answer with none of the authority.
-- **BOOT GATE — NOT OWED, 0 of 9.** No `app/src-tauri/**`, no
+- **GRAPH REGEN — NOT OWED on 0 of 3, AND ASKED ANYWAY** as its own bullet
+  demands. `cargo run -p nputer-index -- index --check --root ../..` is
+  **exit 0, CURRENT** at **920 597 bytes / 178 files / 1959 symbols / 1878
+  edges**, unmoved. **This is the answer the gate gave, not a prediction
+  it was spared** — and it is why no regen is committed here.
+- **BOOT GATE — NOT OWED, 0 of 3.** No `app/src-tauri/**`, no
   `app/src/**`, neither manifest. `npm run boot:check` was NOT run, and
   that is derived rather than skipped.
 - **DOCS GATE — exit 1**, invoked DIRECTLY from the repo root with the
-  merged paths as ROOT-RELATIVE arguments, **never through `xargs`**.
-  **7 of 9 under `docs/`, FOUR suites owed** — `cargo test from
+  merged paths as ROOT-RELATIVE `$(…)` arguments, **never through
+  `xargs`**. **3 of 3 under `docs/`, FOUR suites owed** — `cargo test from
   app/src-tauri/`, `npm test from app/`, `npm test from tools/e2e/`,
-  `npx vitest run from lib/parser/` — all four run and green, at the
-  merge and again after this checkpoint's doc writes. **THE DISPATCH
-  BRIEF SAID "6 of 8" AND IT WAS RIGHT AT THE VERIFIER'S REF AND WRONG AT
-  MINE**: the verdict commit `7434f93` added `T-052-s5`, so the diff is 9
-  paths and 7 of them are docs. **Re-derive; never quote a gate count
-  from a brief** — this is the second checkpoint running to record the
-  identical off-by-the-verdict-commit staleness.
-  **`cargo test` IS owed on this diff and that is the interesting one**:
-  `app/src-tauri/src/agent/kit.rs` reads `docs/CONVENTIONS.md` off disk,
-  so a markdown-only merge pulls the Rust suite in. The gate reports **12
-  derived readers across 4 suites**, a census of **130** docs-shaped sites
-  in 22 files, and **0 frontmatter issues** — every live card's
-  frontmatter parses with a legal status, which is this card's `done`
-  stamp checked rather than assumed.
+  `npx vitest run from lib/parser/` — all four run and green, at the merge
+  and again after this checkpoint's doc writes. **`cargo test` is owed on
+  a markdown-only merge and that is the point of this gate**:
+  `app/src-tauri/src/agent/kit.rs` reads `docs/CONVENTIONS.md` off disk.
+  The gate reports **12 derived readers across 4 suites**, a census of
+  **130** docs-shaped sites in 22 files, and **0 frontmatter issues** —
+  which is this card's `done` stamp and `T-086-s1`'s frontmatter checked
+  rather than assumed.
 
-## THE PARITY DERIVATION — THE THING MOST LIKELY TO BREAK QUIETLY, AND IT DID NOT MOVE
+## THE PARITY DERIVATION — THE THING MOST LIKELY TO BREAK QUIETLY, RE-DERIVED AT THE MERGE ITSELF
 
 `tools/e2e/tests/workflow-parity.spec.ts` derives CI's expectations from
 CONVENTIONS' "Build & test" section, and **a U+00B7 MIDDLE DOT inside a
 parenthetical silently truncates the exposed command list.** This merge
-adds **190 lines to that file**, so the derivation was re-implemented from
+adds **44 lines to that file**, so the derivation was re-implemented from
 its documented rules (`buildAndTestSection`, `commandBullets`,
-`structuralProblems`) and run over four texts:
+`structuralProblems`) and run on both sides of the merge:
 
 | ref | file lines | "Build & test" lines | bullets | exposed commands | structural problems | U+00B7 section / file |
 |---|---|---|---|---|---|---|
-| `c4cfe52` (base) | 1219 | 260 | 4/5/5/7 | **21** | 0 | 20 / 23 |
-| `aff1c36` (main before) | 1219 | 260 | 4/5/5/7 | **21** | 0 | 20 / 23 |
-| `7434f93` (lane tip) | **1409** | 260 | 4/5/5/7 | **21** | 0 | 20 / 23 |
-| **the merge, from disk** | **1409** | **260** | **4/5/5/7** | **21** | **0** | **20 / 23** |
+| `086bf1c` (main before), from the blob | 1408 | 259 | 4/5/5/7 | **21** | 0 | 20 / 23 |
+| **the merge, from disk** | **1452** | **259** | **4/5/5/7** | **21** | **0** | **20 / 23** |
 
-**190 LINES WERE ADDED AND THE SECTION DID NOT MOVE BY ONE LINE, ONE
-COMMAND OR ONE MIDDLE DOT**, and the 21 commands are identical by NAME on
-every row, not merely by count. **The added lines contain ZERO U+00B7**
-(`git diff … | grep '^+' | grep -c '·'` is **0**), so the truncation trap
-cannot fire from them; the new prose sits in `## Gotchas`, which the
-derivation cannot reach because `buildAndTestSection` splits on `^## `
-first. Confirmed live: the spec is green inside the 146/146 E2E run.
+**FORTY-FOUR LINES WERE ADDED AND THE SECTION DID NOT MOVE BY ONE LINE,
+ONE COMMAND OR ONE MIDDLE DOT**, and the 21 commands are identical by
+NAME on both rows, not merely by count. **The added lines contain ZERO
+U+00B7** (`git diff 086bf1c..63099f1 -- docs/CONVENTIONS.md | grep '^+' |
+grep -c '·'` is **0**), so the truncation trap cannot fire from them; the
+new prose sits in `## Gotchas` and in the DOCS GATE bullet, neither of
+which the derivation can reach because `buildAndTestSection` splits on
+`^## ` first. Confirmed live: the spec is **17 bodies green** inside the
+146/146 E2E run. The `currently v0.1.5` stamp `cargo test` reads off disk
+is present and untouched.
 
 ## Suites, every number derived here, exits read unpiped
 
-`${PIPESTATUS[0]}` is EMPTY in zsh; every exit below came off its own
-`$?` on an unpiped command captured on the very next token — **and the
-COUNT was read as well as the exit**, because an exit alone cannot tell a
-green suite from a suite that did not run.
+`${PIPESTATUS[0]}` is EMPTY in zsh; every exit below came off its own `$?`
+on an unpiped command captured on the very next token — **and the COUNT
+was read as well as the exit**, because an exit alone cannot tell a green
+suite from a suite that did not run.
 
 - **cargo: 455 passed / 0 failed / 3 ignored, exit 0**, summed over
-  **SIXTEEN** `test result:` lines. Unchanged from T-124's 455 — this
-  merge adds no test body and no test target, so 16 lines before and 16
-  after. Read at the merge and again after this checkpoint's doc writes.
-  **THE HONEST TALLY: three full runs in main's checkout, TWO green and
-  ONE red — the FIRST one — carrying TWO failing bodies**, the
-  `docs_watch` cliff and the newly filed `a_hostile_session_id…`. Both
-  sections above. **Every re-run is declared; none was a silent re-run to
-  reach green.**
+  **SIXTEEN** `test result:` lines, lib suite **3.94s**. **GREEN FIRST
+  TIME — no re-run, nothing discarded.** Unchanged from T-052's 455; this
+  merge adds no test body and no test target.
 - **parser: 264/264 across 12 files, exit 0.**
-- **app: `npm run build` exit 0, `npm test` 958/958 across 46 files, exit 0.**
-- **E2E: 146/146, exit 0**, on scratch port **15210** at the merge and
-  **15212** after the doc writes.
+- **app: `npm test` 958/958 across 46 files, exit 0.**
+- **E2E: 146/146, exit 0**, on scratch port **15253** at the merge and
+  **15254** after the doc writes.
 - **`npm run typecheck` exit 0**, **`npm run lint:docs` exit 0** run the
-  way CI runs it, **`npm run lint:tokens` exit 0** at **TOKEN 132 /
-  CONTROL 688**. **CONTROL is 688 here against the lane's 660 and the
-  verifier's 661** — the corpus is `git ls-files`, so it grows with every
-  tracked file main gains, and this merge adds six of its own. **Derive it
-  at your own ref; it is not a constant.**
+  way CI runs it, **`npm run lint:tokens -- --selftest` exit 0** (65 TOKEN
+  + 4 CONTROL samples, 87 walk-policy checks, 9 evidence-floor checks) and
+  **`npm run lint:tokens` exit 0** at **TOKEN 132 / CONTROL 689**.
+  **CONTROL is 689 here against T-086's lane at 685 and T-052's checkpoint
+  at 688** — the corpus is `git ls-files`, so it grows with every tracked
+  file main gains. **Derive it at your own ref; it is not a constant.**
+- **THE FIVE DERIVED READERS OF `docs/CONVENTIONS.md` RAN GREEN BY NAME**,
+  which is the one check this particular merge owed above all others:
+  `snapshot_version_matches_the_live_method_stamps` reads `ok`;
+  `workflow-parity.spec.ts` 17, `docs-input-gate.spec.ts` 42,
+  `shell-frame.spec.ts` 6 and `window-contract.spec.ts` 5, **with no
+  non-passing body among the five files**.
 - **Every suite ran AT the merge and again AFTER this checkpoint's doc
   writes** (T-081-s9).
 
-**AND THE "RE-RUN AFTER THE DOC WRITES" RULE HAS A REGRESS, WHICH IS
-SETTLED BY DERIVATION RATHER THAN BY ANOTHER RE-RUN.** Editing STATE
-after the suites pass appears to invalidate them, and editing it to say
-so invalidates them again. **NO SUITE IN THIS REPOSITORY READS
-`docs/STATE.md`'s CONTENT** — the two `docs`-wide readers
-(`shell-frame.spec.ts:65`, `window-contract.spec.ts:98`) `walk()` the tree
-and consume the FILE LIST, and every by-name occurrence of
-`docs/STATE.md` in `app/test/**` and `tools/e2e/**` is a synthetic genesis
-FIXTURE path, never the real file. So a content-only edit to STATE cannot
-move any suite's answer, while ADDING OR REMOVING a file under `docs/`
-can. **The rule bites on the file set, not on the prose.**
+**AND THE "RE-RUN AFTER THE DOC WRITES" RULE HAS A REGRESS, SETTLED BY
+DERIVATION RATHER THAN BY ANOTHER RE-RUN.** **NO SUITE IN THIS REPOSITORY
+READS `docs/STATE.md`'s CONTENT** — the two `docs`-wide readers
+(`shell-frame.spec.ts`, `window-contract.spec.ts`) `walk()` the tree and
+consume the FILE LIST, and every by-name occurrence of `docs/STATE.md` in
+`app/test/**` and `tools/e2e/**` is a synthetic genesis FIXTURE path,
+never the real file. So a content-only edit to STATE cannot move any
+suite's answer, while ADDING OR REMOVING a file under `docs/` can. **The
+rule bites on the file set, not on the prose.**
 
 ## NO REGEN AND NO FIXTURE RECONCILIATION WERE OWED
 
 **Both derived, neither assumed.** `index --check` is CURRENT at the
-merge, so nothing was regenerated into this checkpoint — the graph stays
-at **920 597 bytes / 178 files / 1959 symbols / 1878 edges**, T-124's
-numbers, because this merge contains no indexed file.
+merge, so nothing was regenerated — the graph stays at **920 597 bytes /
+178 files / 1959 symbols / 1878 edges**, because this merge contains no
+indexed file.
 
-**PRESERVED FROM T-124's CHECKPOINT BECAUSE IT IS THE MORE USEFUL HALF:
-NOT ONE FIXTURE IN THIS REPOSITORY PINS A SYMBOL OR EDGE COUNT** —
-grepped for, not remembered. The live-registry dogfood fixtures move when
-a component gains or loses indexed FILES, and nothing else. **The
-consequence is worth stating plainly: a regen that moves symbols without
-moving files cannot red any fixture in this repository.** The fixture set
-gates the FILE→COMPONENT map and nothing else about the graph, and a
-reader who assumes "the dogfood would have caught it" about a
-symbol-level regression is wrong.
+**PRESERVED BECAUSE IT IS THE MORE USEFUL HALF: NOT ONE FIXTURE IN THIS
+REPOSITORY PINS A SYMBOL OR EDGE COUNT** — grepped for, not remembered.
+The live-registry dogfood fixtures move when a component gains or loses
+indexed FILES, and nothing else. **A regen that moves symbols without
+moving files cannot red any fixture here**, and a reader who assumes "the
+dogfood would have caught it" about a symbol-level regression is wrong.
 
 **THE SIZE AGAINST THE CEILING IS UNCHANGED: 920 597 of `max_graph_bytes`
 1 000 000 = 92.06%, with 79 403 bytes of headroom.** Still the highest
@@ -551,47 +392,67 @@ this repository has ever been, and **NOTHING REPORTS IT** — no gate, no
 test, no line of output. A lane cut now owes its regen forecast against
 **1959 symbols / 1878 edges at 920 597 bytes / 178 files**.
 
-## THE BOARD-TRUTH QUESTION — T-124 PREDICTED THIS WOULD REPRODUCE, AND IT DID, EXACTLY
+## The board, derived from disk at this checkpoint
 
-Four checkpoints have recorded that **`verifying` reads 0 on the board
-while lanes are genuinely in verification**, because an executor stamps
-`verifying` in its LANE and that stamp only reaches main at the merge.
-T-124's checkpoint watched the window open and close for the first time,
-and closed by predicting that **the next integrator could reproduce the
-table exactly**. **It reproduced, on a different card, with a different
-fence, at a different commit:**
+**222 flat task files — 85 done / 36 planned / 41 parked / 56 suggested /
+0 verifying / 4 building; 26 in `rejected/`.**
+85 + 36 + 41 + 56 + 0 + 4 = 222. T-086's stamp moves done from 84 to 85
+and building from 5 to 4; its one suggestion file took `suggested` from
+55 to 56 and the flat total from 221 to 222.
 
-| ref | T-052's `status:` |
-|---|---|
-| main before the merge, `aff1c36` | `building` |
-| **the merge commit, `eea466a`** | **`verifying`** |
-| this checkpoint | `done` |
+**THE SUGGESTION BACKLOG IS FIFTY-SIX AND THE LAST TRIAGE WAS THE NINTH.**
+This merge added ONE, which is the smallest contribution in five merges —
+a one-file docs card that files one finding is what a lane looks like when
+it stays inside its fence. **The backlog is still outrunning the triage.**
 
-**THE `verifying` STAMP WAS OBSERVABLE ON MAIN FOR EXACTLY ONE COMMIT,
-AND THE SAME INTEGRATOR WHO OPENED THAT WINDOW CLOSED IT.** The field is
-not "unused" and it is not "one merge behind" — **it is one COMMIT wide,
-and the ritual guarantees nobody is looking during it**, because the merge
-and the checkpoint are the same person's consecutive actions. **Two
-independent reproductions make this a PROPERTY OF THE RITUAL rather than
-an observation about one card**, which is exactly what a ruling needs and
-what four asks have not produced.
+## Documents ticked
 
-The three dispositions are unchanged and none is free:
+- **ROADMAP — NOT TOUCHED, and that was derived rather than assumed.**
+  Grepped for a sentence this merge could falsify. The one hit that could
+  have moved is the milestone-4 paragraph citing *the "DERIVE THE COUNT AT
+  YOUR OWN REF" hazard docs/CONVENTIONS.md names* — that hazard is still
+  named, in the `AND THE COUNTS ARE PRINTED, NEVER PINNED` paragraph this
+  merge did not touch, so the citation still resolves. No ROADMAP entry
+  names T-086, the walk table, or the reader census.
+- **ARCHITECTURE — NOT TOUCHED, and this was checked at the two clauses
+  that could have moved.** Row **C-01 `method/` reads `built (v0.1.5)`**
+  and no `method/` path is in this diff, so no bump is owed and that row
+  is still true. The layout section already applies the ruling this card
+  applies — *"THE NUMBER OF THEM IS DELIBERATELY NOT WRITTEN HERE: it is
+  `node tools/e2e/scripts/docs-gate.mjs --census`"* — so the merge agrees
+  with it rather than falsifying it. **ONE RESIDUAL IS RECORDED RATHER
+  THAN EDITED**: that sentence calls T-085's ELEVEN→twelve *"the second
+  time a transcribed reader count in this tree went green and wrong"*, and
+  the CLOSED AT TWO count was a third instance of the same class that
+  predates it. The ordinal was imprecise before this merge and this merge
+  does not make it false, so an integrator ticking documents leaves it —
+  it is a card's call, not a checkpoint's.
+- **CONVENTIONS was touched BY THE MERGE and not by this checkpoint.**
+  44 lines, all inside T-086's fence.
+- **The card** is stamped `done`, with `built_by: claude-opus-5 @T-086`
+  and `review: self-verified` — **SELF-DECLARED, never read off a commit
+  trailer**, and written with em dashes because a colon-space in a YAML
+  plain scalar opens a nested mapping and has broken a card three times.
+  `verifier:` and `verified_by:` stay empty, which is the shape every
+  self-verified card in this repository uses. The lane's implementation
+  notes are preserved byte-untouched.
+- **`T-086-s1` stays as filed** (`status: suggested`).
 
-1. **The stamp moves on the integration branch at handoff**, the way
-   T-089 has the architect stamp `building` before the cut. Costs a write
-   to main per handoff.
-2. **The field goes**, and phase is read from the lane set — which T-110
-   now makes possible and T-111 would render.
-3. **It stays and is documented as lane-local.**
+## Provenance — SELF-DECLARED, never read off a trailer
 
-**Disposition 3 is the status quo and this table is the argument against
-describing it as "knowingly one merge behind"** — that phrasing implies a
-window a reader could observe, and there is none. **FIFTH ASK. It wants a
-ruling rather than a sixth observation, and the mechanism is now
-demonstrated twice rather than argued.**
+T-086 is **built and self-integrated by `claude-opus-5`** under the
+standing ruling that size-S cards touching docs, method or tooling keep
+self-integration while S cards touching SHIPPED CODE get a verifier. Its
+fence is one markdown file, so self-integration is correct. **The
+`Co-Authored-By` trailer on this lane's commits is a harness constant and
+is NOT evidence of a model** — T-085 proved it and T-101 sharpened the
+proof with a counterexample inside one session.
 
-## What ACTUALLY reached the human's running app — AND THIS CARD IS ABOUT NOT BECOMING ITS OWN ELEVENTH INSTANCE
+**85 done cards — 62 `same-model`, 17 `self-verified`, 5 `independent`, 1
+EMPTY (T-056)**; 62 + 17 + 5 + 1 = 85. T-086 moves `self-verified` from 16
+to 17.
+
+## What ACTUALLY reached the human's running app
 
 **Port 1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing
 else** — no bind, no connect, no signal, on any interface. Holder `node`
@@ -599,187 +460,128 @@ pid **88948**, one socket `TCP [::1]:1420 (LISTEN)`, **identical before
 and after this integration.** The app binary is pid **89201**, started
 **2026-08-25 10:54:33**, unchanged throughout, read with the **anchored**
 match `ps -eo pid,lstart,command | awk '$NF=="target/debug/nputer"'`.
-**The anchored and unanchored forms AGREED here, and that is not evidence
-the hazard is absent** — they agree whenever no index run is in flight,
-which is exactly the quiet reading CONVENTIONS warns against trusting.
+
+**RULE 1's DETECTOR WAS IMPLEMENTED THE WAY `integrator.md` MEANS IT
+RATHER THAN THE WAY CONVENTIONS' DETECT AND REFUSE PARAGRAPH SPELLS IT**,
+which is the defect T-052's checkpoint measured and item 2 below still
+carries. The literal text tests the PORT and refuses forever in main now
+that @human's app is permanently up. This integration read the holder's
+CWD — `lsof -p 88948` puts it at **`/Users/ujju/Projects/nputer-app/app`**,
+another checkout — and proceeded, which is rule 1's own sentence (*"A
+FRESH DEPENDENCY INSTALL SHALL NOT RUN IN A CHECKOUT SERVING A LIVE
+PRODUCT"*) applied to the CHECKOUT. **In the event nothing was owed
+anyway**: all three `node_modules` trees, both `dist/` directories and
+`target/` were already present in this checkout, so rule 1's trigger
+never fired. **No `npm ci` was run at any point in this integration.**
 
 **NOTHING FROM THIS MERGE REACHED THE APP'S CODE, AND THE REASON IS
 STRUCTURAL RATHER THAN A TRIGGER THAT DID NOT FIRE.** The window serves
-from `/Users/ujju/Projects/nputer-app`, **detached at `c4cfe52`**, which
-is an **ancestor** of this merge — re-verified with
-`git merge-base --is-ancestor c4cfe52 eea466a` at **exit 0**, and main is
-now **31 commits ahead of it**. So main is strictly ahead and nothing
-committed to main reaches that window **until @human runs
-`git -C ../nputer-app checkout --detach main`**, whatever any trigger
-does. **A session that answers "did my change reach the app?" by checking
-`app/src/**` triggers gets the right answer for the wrong reason today,
-and a wrong answer the moment @human switches back.**
+from `/Users/ujju/Projects/nputer-app`, detached at `c4cfe52`, an
+**ancestor** of this merge — re-verified at exit **0**, main now **47
+commits ahead**. A session that answers "did my change reach the app?" by
+checking `app/src/**` triggers gets the right answer for the wrong reason
+today, and a wrong answer the moment @human switches back.
 
-**THE PINNING PROPERTY AND THE THROUGHPUT PROPERTY BOTH HELD, MEASURED
-AGAIN HERE.** The app did not move when main did. And this checkout's
-`app/src-tauri/target/` was written by three full `cargo test` runs and a
-graph gate while the app built nothing and waited on nothing — three
-checkouts, three target directories, cargo's exclusive lock uncontended.
-**@human's tree was never entered at any point**; every fact about it in
-this section came from `lsof` against a pid or from `git` against the
-shared object store.
+**WHAT DID REACH @HUMAN IS THE FOUNDING DEMO WORKING.** The app RUNS from
+the pinned checkout but OPENS `/Users/ujju/Projects/nputer` as its
+project, so this merge's board changes — a card moving to `done`, one new
+suggestion file — land in the watched folder live. Code and watched folder
+are independent, which is the property @human's ruling preserves.
 
-**WHAT DID REACH @HUMAN, AND IT IS THE FOUNDING DEMO WORKING RATHER THAN
-A DISTURBANCE.** The app RUNS from the pinned checkout but OPENS
-`/Users/ujju/Projects/nputer` as its project, so this merge's board
-changes — a card moving to `done`, five new suggestion files — land in
-the watched folder live. **That is the demo, not an incident**: code and
-watched folder are independent, which is the property @human's ruling was
-chosen to preserve. **Rule 3 asks which change reached the app and which
-did not, and the honest answer here is "the board did, the binary could
-not".**
-
-**No process from this integration survives.** Scratch ports **15210**
-(e2e at the merge), **15211** (the guard's negative control) and **15212**
-(the post-checkpoint e2e re-run) were each `lsof`-read FIRST (zero rows),
-then bind-confirmed free on `127.0.0.1`, `0.0.0.0`, `::1` and `::` in that
-order and never the reverse, and all were free again after. **No `pkill`
-at any point.** **No `npm ci` at any point.** The sibling lane worktree
-`/Users/ujju/Projects/nputer-T-033` was not entered. **The untracked
+**No process from this integration survives.** Scratch ports **15253**
+(e2e at the merge) and **15254** (the post-checkpoint re-run) were each
+`lsof`-read FIRST (zero rows), then bind-confirmed free on `127.0.0.1`,
+`0.0.0.0`, `::1` and `::` in that order and never the reverse, and both
+were free again after. **No `pkill`. No `npm ci`. No `cargo clean`** — and
+be precise about the target directory rather than claiming more than is
+true: this integration's two full `cargo test` runs and the graph gate
+WROTE to main's 2.4 GB `app/src-tauri/target/`, as any cargo run must.
+What was not done is a reclaim or a clean, and nothing contended for it
+— @human's app builds in its own checkout, so cargo's exclusive lock was
+uncontended throughout. No sibling worktree was entered. **The untracked
 zero-byte file `z`** still sits in the main checkout — not this
-integrator's, not staged, **left alone for the thirteenth checkpoint
-running**, which is rule 4 of the new section being obeyed rather than
-merely quoted. **Main's 8.7 GB target directory was left exactly as
-found.**
-
-## The board, derived from disk at this checkpoint
-
-**221 flat task files — 84 done / 39 planned / 41 parked / 56 suggested /
-0 verifying / 1 building; 26 in `rejected/`.**
-84 + 39 + 41 + 56 + 0 + 1 = 221. T-052's stamp moves done from 83 to 84
-and verifying from 1 to 0; its five suggestion files took `suggested` from
-51 to 56 and the flat total from 216 to 221.
-
-**THE SUGGESTION BACKLOG IS FIFTY-SIX AND THE LAST TRIAGE WAS THE
-SEVENTH.** It has grown by **twenty-two across the last three merges**
-(T-110's thirteen, T-124's four, T-052's five). It grew by seventeen over
-the previous two. **The backlog is outrunning the triage.**
-
-## Documents ticked
-
-- **ROADMAP — NOT TOUCHED, and that was derived rather than assumed.**
-  Grepped for a sentence this merge could falsify: no ROADMAP entry names
-  T-052, the shared checkout, the running app, or a fresh install. F-02's
-  entry is about the app shell and board, which this merge does not
-  touch. **A method-and-docs card that changes no product behaviour ticks
-  no progress line.**
-- **ARCHITECTURE — NOT TOUCHED, and this was checked at the one clause
-  that could have moved.** Row **C-01 `method/` reads `built (v0.1.5)`**,
-  and the card's own ruling is that **no version bump is owed**, so that
-  row is still true. No interface moved — the diff has zero Rust and zero
-  TypeScript, no `#[tauri::command]`, no event, no dependency, no
-  manifest.
-- **CONVENTIONS was touched BY THE MERGE and not by this checkpoint.**
-  190 lines, all inside T-052's fence.
-- **The card** is stamped `done`, with `built_by: claude-opus-5 @T-052`,
-  `verified_by: claude-opus-5 @T-052-verify — APPROVED, 2026-08-25` and
-  `review: same-model` — **SELF-DECLARED, never read off a commit
-  trailer**, and written with em dashes because a colon-space in a YAML
-  plain scalar opens a nested mapping and has broken a card three times.
-  The lane's notes and the verdict are preserved byte-untouched, **the two
-  stale digits the verdict's §10 corrects included** — they are
-  corrections to the record, nothing downstream reads either, and
-  rewriting a verdict's subject after the fact is worse than leaving the
-  correction beside it.
-- **The lane's and the verifier's five suggestion files stay as filed**
-  (`T-052-s1` … `T-052-s5`).
-
-## Provenance — SELF-DECLARED, never read off a trailer
-
-T-052 is **built by `claude-opus-5` and verified by an independent
-`claude-opus-5` session** which did not write the build it judged, and
-which read the spec BOUNDED (from the base ref `c4cfe52`, forming and
-running its attack before opening the lane's own notes) under the ruling
-on T-121 arm 2. **The `Co-Authored-By` trailer on this lane's commits is a
-harness constant and is NOT evidence of a model** — T-085 proved it and
-T-101 sharpened the proof with a counterexample inside one session.
-
-**84 done cards — 62 `same-model`, 16 `self-verified`, 5 `independent`, 1
-EMPTY (T-056)**; 62 + 16 + 5 + 1 = 84. T-052 moves `same-model` from 61
-to 62.
+integrator's, not staged, **left alone for the fourteenth checkpoint
+running**.
 
 ## In progress / broken right now
 
-**NOTHING IS BROKEN.** One lane is live: **T-033, building**. `method/`
-and `docs/CONVENTIONS.md` were released by this checkpoint and **nothing
-is approved and awaiting an integrator** — the batch is empty. `git
-branch` still lists every lane this repo has ever run, which is the
-intended asymmetry: the BRANCH is kept and only the WORKTREE is removed.
+**NOTHING IS BROKEN.** Four lanes are live — **T-033**, **T-091**,
+**T-102** and **T-107** (the last with a verify pass running against a
+board that still reads `building`). `docs/CONVENTIONS.md` and `method/`
+were released by this checkpoint and **nothing is approved and awaiting an
+integrator** — the batch is empty. `git branch` still lists every lane
+this repo has ever run, which is the intended asymmetry: the BRANCH is
+kept and only the WORKTREE is removed.
 
 ## Next up
 
 1. **`T-120-s3` IS STILL THE ONE TO DISPATCH FIRST AMONG THE UNBUILT**,
-   and it is one token of code. FIFTH checkpoint running at the top of
-   this list. Fence `[tools/e2e]`, free. **T-052's lane removed its
-   fresh-checkout prerequisite**, so it can now be verified anywhere.
-2. **THE FRESH-INSTALL DETECTOR NEEDS ONE MORE STEP, AND THE SECTION IT
-   LIVES IN JUST LANDED.** CONVENTIONS' DETECT AND REFUSE paragraph tests
-   the PORT; `integrator.md` rule 1 governs the CHECKOUT; since @human's
-   app moved to its own checkout those are two different facts and the
-   literal procedure now refuses forever in main. Measured at this merge
-   — see the first-reader section above. Fence
-   `[docs/CONVENTIONS.md]`, free. **This is the newest finding in the file
-   and the cheapest fix on this list.**
-3. **THE NEW INTERMITTENT `a_hostile_session_id_in_the_init_line…` WANTS
-   THE `T-088-s4` TREATMENT**, not another sighting: 5/5 green alone,
-   1/3 red under the full suite, redding in the same run as the watcher
-   body. Two deadline-bearing bodies failing together in a slow checkout
-   is a hypothesis worth one controlled experiment.
+   and it is one token of code. SIXTH checkpoint running at the top of
+   this list. Fence `[tools/e2e]`, **held by T-091** — so it waits, or it
+   rides T-091's lane if that card's builder wants it. The fractional
+   millisecond in the head section is now the identification, not just the
+   diagnosis.
+2. **THE FRESH-INSTALL DETECTOR NEEDS ONE MORE STEP, AND THIS
+   INTEGRATION IMPLEMENTED THE FIX BY HAND RATHER THAN WRITING IT DOWN.**
+   CONVENTIONS' DETECT AND REFUSE paragraph tests the PORT;
+   `integrator.md` rule 1 governs the CHECKOUT; since @human's app moved
+   to its own checkout those are two different facts and the literal
+   procedure refuses forever in main. **The repair is one step —
+   `lsof -p <pid>` for the holder's cwd, compared against the checkout you
+   are installing into — and it has now been performed at two consecutive
+   merges without ever being added to the doc.** Fence
+   `[docs/CONVENTIONS.md]`, **free as of this checkpoint**. Cheapest fix
+   on this list.
+3. **`T-086-s1` — THE HOSTILE-SESSION-ID BODY IS LIVE AT ~1-IN-19 ON A
+   CLEAN CACHE** and wants the `T-088-s4` treatment aimed at the right
+   variable now that the target dir is excluded. Read it with the
+   retraction on `T-088-s4`, whose standing rule is the transferable part:
+   **a re-measurement can only settle a finding whose MECHANISM the
+   intervention addresses.** Fence `[app-agent]`, **held by T-102**.
 4. **`T-124-s1` — THE HALF OF T-124 THAT DID NOT LAND.** Two planner
-   instructions, quoted ready to paste, for **T-104**'s owed v0.1.6
-   method bump. **T-052 ROUTED A SECOND ITEM TO THE SAME SEAT**: whether a
-   new normative sentence in a role file is a bump when CONVENTIONS' own
+   instructions, quoted ready to paste, for **T-104**'s owed v0.1.6 method
+   bump. T-052 routed a second item to the same seat: whether a new
+   normative sentence in a role file is a bump when CONVENTIONS' own
    trigger is a FORMAT change. The debt is per-VERSION, not per-change, so
-   one three-file commit discharges T-089's, T-124's and T-052's
-   residual together. T-104 is `status: planned` with the three-way fence
-   the bump needs.
+   one three-file commit discharges T-089's, T-124's and T-052's residual
+   together. T-104 is `status: planned` with the three-way fence the bump
+   needs, and it also carries the standing ruling on S-card verification.
 5. **`T-110-s1` — THE LANE READER IS BUILT AND NOT WIRED.** `lib.rs`
    declares no `pub mod dispatch;`, so the shipped binary does not carry
    the module and `cargo build` is not a gate on it. **The commit that
    takes it DELETES the test shim**, which also drains the D2 bucket.
-   Fence `app-shell`, **held by T-033**.
-6. **THE BOARD-TRUTH RULING on `verifying`** — FIFTH ask, and now
-   reproduced twice by two integrators on two cards. It is a property of
-   the ritual, not an anecdote.
+   Fence `app-shell`, **held by T-033**. T-126 was promoted at the ninth
+   triage for this.
+6. **THE BOARD-TRUTH RULING on `verifying`** — SIXTH ask, and this
+   checkpoint adds a third kind of witness: a detached `drill-*` worktree
+   named after a lane's verify pass, standing beside a card that still
+   reads `building`. Three dispositions, none free: stamp on the
+   integration branch at handoff; drop the field and read phase from the
+   lane set; or keep it and document it as lane-local. **It wants a
+   ruling, not a seventh observation.**
 7. **THE GRAPH IS AT 92.06% OF ITS CEILING** with 79 403 bytes of
-   headroom, and **nothing reports that number**. It has moved 89.59% →
-   91.84% → 92.06% across the last three merges that moved it; this one
-   did not move it.
-8. **`T-088-s4` WANTS RE-FILING AND THEN A ONE-LINE CARD.** The
-   measurements are at the top of this file and this integration added an
-   eighth and ninth data point to the clock table. Two dispositions:
-   **(a)** reclaim the 8.7 GB target dir — **and the objection that
-   `target/debug/nputer` is a running binary has now EXPIRED**, since the
-   app runs from its own checkout, so `lsof` first and then this is
-   merely a big deletion; **(b)** give the body a deadline proportional
-   to what it is waiting for, which fixes the symptom in every checkout
-   and is the smaller change.
+   headroom, and **nothing reports that number**.
+8. **`T-111` RETURNED TO `planned` NOT BUILT** and its three findings are
+   fresh: `[app-board]` cannot hold a pin, and **C-11 is claimed by both
+   `app-board` and `app-shell`, so those two fences were never disjoint**.
+   That is a fence-arithmetic defect the dispatcher relies on; read
+   `T-111-s1` before cutting the next overlapping pair.
 9. **`T-052-s1` — THE FRESH-INSTALL REFUSAL COULD BE A GATE** rather than
    a ritual each session performs from prose. Read it together with item
-   2, which is the defect the prose form just exhibited.
-10. **`T-052-s2` — THE THREE INSIDE-THE-REPO LANE WORKTREES ARE ALL GONE
-    NOW**, so the card is about the MECHANISM (a relative worktree path
-    resolved against an unverified cwd) rather than about a live mess.
-    `lane-protocol.md` rule 3 carries the clarification as of this merge.
-    **Its present-tense "three lanes sit inside the repository" is stale
-    and the verdict already says so.**
-11. **`T-052-s5` — `integrator.md` NOW HOLDS TWO 1–4 LISTS**, disambiguated
-    by vocabulary (*steps* versus *rules*) that is nowhere written down.
-    Five citations in the tree cite by number and all five still resolve.
-12. **`T-110-s9`** — either a component claims `app/src-tauri/tests/**` or
+   2, which is the defect the prose form keeps exhibiting.
+10. **`T-110-s9`** — either a component claims `app/src-tauri/tests/**` or
     `T-110-s1` lands and the question dissolves. Fence
     `docs/architecture/components/`, held by T-033.
-13. **`T-120-s1`** — the pre-write exclusivity check still cannot
+11. **`T-120-s1`** — the pre-write exclusivity check still cannot
     discriminate; this integration used the replacement it derives
     (`git diff --cached --name-only` plus `git diff --name-only`, both
     empty), which is what made this turn provably exclusive rather than
-    judged. `??` lines alone are not a ceremony, and there were two.
-14. **A PATTERN COUNT IN THE FOUR WALKS TABLE STILL HAS NO OWNER**
-    (carried from T-079's checkpoint, undischarged).
-15. **The GNU `xargs` column still closes at the first push**, and
+    judged. `??` lines alone are not a ceremony, and there was exactly one
+    (`z`).
+12. **A PATTERN COUNT IN THE FOUR WALKS TABLE STILL HAS NO OWNER**
+    (carried from T-079's checkpoint, undischarged). **T-086 answered the
+    neighbouring question and deliberately did not answer this one**: the
+    reader sentence took the stop-enumerating option, and the walk table's
+    TOKEN row still enumerates `P1–P4` plus `P6` with nothing deriving it.
+13. **The GNU `xargs` column still closes at the first push**, and
     `git remote` still returns zero remotes.

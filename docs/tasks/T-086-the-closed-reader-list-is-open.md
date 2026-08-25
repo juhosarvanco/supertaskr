@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 44
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @T-086
 verified_by:
-review:
+review: self-verified
 ---
 
 Absorbs: T-081-s6, T-078-s10 (fifth triage, 2026-08-20). Both files
