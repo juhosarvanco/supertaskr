@@ -944,6 +944,16 @@ no census figure. Its **four** suggestions carry no `milestone:` at all.
 and the three reasons have all been different: inherited-backlog feature
 (T-129, T-127), and now a card that was counted before it landed. **A
 census that does not move is not evidence that nothing merged.**
+**AND RE-DERIVED ON DISK A FOURTH TIME AT T-133'S CHECKPOINT, IDENTICAL
+YET AGAIN** — 96 total, F-01 9, F-02 43, F-03 12, F-04 7, F-06 25 — for
+the same reason as T-132's and worth restating because it is the trap:
+`T-133` is **F-02** and carries `milestone: 4`, so it too was ALREADY IN
+THIS COUNT before its own merge, and stamping it `done` moves no census
+figure. Its **five** suggestions carry no `milestone:` at all. **FIFTH
+CONSECUTIVE MERGE WHERE THE F-04 PROGRESS LINE DOES NOT MOVE.** The board
+DID move — 286 flat task files to 292, and 97 done to 98 — which is the
+point: **a milestone census and a board census answer different questions,
+and only one of them moves when an inherited-backlog card lands.**
 Decomposition pass complete 2026-08-19
 (design/dispatch-technical-plan.md); D1 ruled by @human the same day.
 

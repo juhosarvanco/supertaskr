@@ -5,14 +5,14 @@ feature: F-02
 milestone: 4
 priority: 4
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5 @T-133-verify
+built_by: claude-opus-5 @T-133 — first build 9ddca48, fix 82e8ab4 by a fresh executor; notes 64d1483, 06c208a, f508fc1, 508bd2c
+verified_by: claude-opus-5 @T-133-verify — REJECTED 1b626e2, re-check APPROVED 2026-08-26 — verdict commit d843508
+review: same-model
 ---
 
 **@human adopted this on 2026-08-25** as items 1 and 2 of `T-131`'s five
@@ -1126,3 +1126,66 @@ files, none under `tools/`.
 
 Untouched again: no `verifier:`, `verified_by:` or `review:` stamped, and
 `status:` left at `verifying` for the seat that routes it.
+
+## Integration — claude-opus-5, 2026-08-26
+
+Main-before **`70b1d40`**, lane tip **`d843508`** derived with `git
+rev-parse` (**the RE-CHECK VERDICT commit, not the lane's last work
+commit** — `508bd2c` is), merge **`2a0652a`** with `--no-ff`, this
+checkpoint its direct child. `merge-tree --write-tree 70b1d40 d843508`
+exits **0** at tree `8952e837`; no conflict and nothing written into the
+merge commit. Range `70b1d4058ee1..2a0652aff5b8` → **9 files, +4166,
+−1** — 209 lines more than the verifier's forecast at `508bd2c`, which is
+exactly the re-check verdict this tip adds to this card.
+
+**NOTHING IN THIS CARD WAS REPAIRED IN PLACE**, including the sentence the
+fix pass deliberately left standing above its own correction. That is
+ruling thirteen's parent test answering FILE for everything this
+checkpoint met, and it answered cleanly every time — the first checkpoint
+in three with no quarrel with the rule (see `T-132-s5`).
+
+**SUITES AT THE MERGE, exits from `$?` unpiped, counts derived**: cargo
+**494/0/3** exit 0 (`running N` headers sum to **497** = 494 + 3), parser
+**268/268**, app build **0** then **973/973**, and e2e **194/194 on every
+run that started** — first on the default lane port **14520**, then on
+**15933** after T-135's own suite took 14520 mid-integration. **NO RUN
+TOTAL IS TRANSCRIBED HERE, DELIBERATELY**: the ledger lives in
+`docs/STATE.md` and its final entry in this checkpoint's commit message,
+because a count written into a file that is itself a code input goes stale
+on the next write of that file — which is what happened to a first draft
+of this very paragraph. **The e2e header was cross-checked against the
+body count on every run** — `Running 194 tests using 1 worker` against 194
+`✓` bodies — because the verdict above had to retract a claim that the
+header does not exist. **One e2e INVOCATION exited 1 with ZERO BODIES and
+is not counted as a run**; see `docs/STATE.md`. **GATES**: DOCS GATE exit **1**, fires on 6 of 9, names three
+suites, all green above; GRAPH REGEN **owed by its trigger** (a `*.ts`
+outside `docs/`) and **asked twice**, exit 0 CURRENT both times, with the
+no-op proved two ways (`.nputerignore` line 8 is `tools/`, and the graph
+holds zero `tools/` paths); BOOT GATE not owed, derived on the nine paths;
+`arch cycles` exit **1** by design; `lint:tokens`, `lint:docs` and both
+real `typecheck` scripts exit 0.
+
+**TWO THINGS THIS INTEGRATION FOUND, BOTH RECORDED IN `docs/STATE.md`
+RATHER THAN HERE**, because they are the project's and not this card's:
+
+1. **The tool guarantees a row's SOURCE and never its TRUTH.** ROW 6
+   republishes `docs/CONVENTIONS.md`'s stale unbuilt-app denominator under
+   a correct stamp at this merge's own commit. The tool is right; the
+   source is stale; **nothing in the output distinguishes the two cases.**
+   That is the honest boundary of what "derived" buys, and it belongs
+   beside the claim rather than under it.
+2. **The lane list moved under this integration and the new command is
+   what caught it** — `git worktree list` at 01:47 and `brief.mjs --state`
+   at 01:56 disagreed about the other live lane's tip and about how many
+   worktrees exist. Disjointness was recomputed at the moved tip and holds
+   as SETS, empty both times. **It is the first integration in this record
+   where quoting a hand-read lane list would have been wrong inside ten
+   minutes**, which is this card's argument, observed rather than asserted.
+
+**Arm two's STATE edit was NOT performed** — it is `T-133-s2`, it was
+outside the lane's fence and it is outside this merge's fence, and
+`docs/STATE.md` is rewritten here only as the checkpoint's own snapshot.
+The five routed suggestions land untriaged, `status: suggested` exactly as
+filed, because disposition is a triage's and not an integrator's (T-083).
+The worktree `/Users/ujju/Projects/nputer-T-133` is removed after this
+checkpoint and the branch is kept.
