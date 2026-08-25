@@ -1819,54 +1819,86 @@ export function rangeRuleChecks(d) {
       // A ref that cannot resolve, so the range command FAILS and the
       // substitution yields nothing. Not a figure — a fixture.
       const BROKEN = "no-such-ref-T-091";
-      const emptyPrinted = sh(root, printed(BROKEN, "HEAD")).status;
-      const emptyPiped = sh(root, piped(BROKEN, "HEAD")).status;
-      const realPrinted = sh(root, printed(c.t078MainBefore, c.t078Tip)).status;
-      const realPiped = sh(root, piped(c.t078MainBefore, c.t078Tip)).status;
+      const emptyRun = sh(root, printed(BROKEN, "HEAD"));
+      const emptyPipedRun = sh(root, piped(BROKEN, "HEAD"));
+      const realRun = sh(root, printed(c.t078MainBefore, c.t078Tip));
+      const realPipedRun = sh(root, piped(c.t078MainBefore, c.t078Tip));
+      const emptyPrinted = emptyRun.status;
+      const emptyPiped = emptyPipedRun.status;
+      const realPrinted = realRun.status;
+      const realPiped = realPipedRun.status;
 
-      if (emptyPrinted !== wrong.substitution) {
+      // A CODE THE GATE NEVER PRODUCED IS NOT THE GATE'S ANSWER, and the
+      // whole point of this criterion is that a code you cannot attribute
+      // is worthless. `docs-gate.mjs` imports `yaml`, so in a checkout
+      // where `tools/e2e/node_modules` is absent node never links it and
+      // exits **1** — the code this gate reserves for "HAS a verdict".
+      // Measured at T-091 in a detached drill worktree; the same shape
+      // T-080-s4 already names for the token lint, undocumented here, and
+      // filed as `T-091-s1`. Without this arm the reader would report a
+      // wrong code where the honest answer is "the gate never ran".
+      const neverLinked = [
+        ["on a failed range, printed", emptyRun],
+        ["on a failed range, piped", emptyPipedRun],
+        ["on a real range, printed", realRun],
+        ["on a real range, piped", realPipedRun],
+      ].filter(([, run]) => {
+        const r = /** @type {{stdout: string, stderr: string, status: number}} */ (run);
+        return r.stderr.includes("ERR_MODULE_NOT_FOUND") || r.stderr.includes("Cannot find package");
+      });
+      if (neverLinked.length > 0) {
         f.push(
-          `the DOCS GATE's PRINTED spelling on a failed range: the doc promises ` +
-            `${wrong.substitution} ("${wrong.meaning}"), this machine observes ${emptyPrinted}`,
+          `the DOCS GATE never LINKED in ${JSON.stringify(root)} ` +
+            `(${neverLinked.map(([w]) => w).join("; ")}): node could not resolve one of its ` +
+            "imports, so the code observed is node's and not the gate's. Run `npm ci` from " +
+            "tools/e2e/ in that checkout. This is reported instead of an exit-code mismatch " +
+            "because a code you cannot attribute is exactly what this criterion exists to reject",
         );
-      }
-      if (realPrinted !== verdict.substitution) {
-        f.push(
-          `the DOCS GATE's PRINTED spelling on a real range: the doc promises ` +
-            `${verdict.substitution} ("${verdict.meaning}"), this machine observes ${realPrinted}`,
-        );
-      }
-      if (wrong.pipedEmpty !== null && emptyPiped !== wrong.pipedEmpty) {
-        f.push(
-          `the FORBIDDEN piped spelling on a failed range: the doc's measured matrix says ` +
-            `${wrong.pipedEmpty} on an empty list, this machine observes ${emptyPiped}`,
-        );
-      }
-      if (realPiped !== verdict.piped) {
-        f.push(
-          `the FORBIDDEN piped spelling on a real range: the doc's measured matrix says ` +
-            `${verdict.piped}, this machine observes ${realPiped}`,
-        );
-      }
-      // POSITIVE CONTROL. "The observed codes match the promised ones" is
-      // satisfied equally by a matrix that discriminates and by one where
-      // every cell holds the same number. The doc's whole argument is that
-      // the pipe EATS a code, so require the two spellings to disagree
-      // somewhere and to agree somewhere.
-      if (emptyPrinted === emptyPiped) {
-        f.push(
-          "the printed and the piped spellings return the SAME code on a failed range, so this " +
-            "check cannot tell a recipe whose exit code survives from one the pipeline eats — " +
-            "which is the only thing it exists to tell",
-        );
-      }
-      if (realPrinted !== realPiped) {
-        f.push(
-          `the printed and the piped spellings disagree on a REAL range (${realPrinted} against ` +
-            `${realPiped}); the doc's matrix says the verdict row is where BSD's two spellings ` +
-            "agree, and that agreement is what makes the empty-list row's disagreement mean " +
-            "something",
-        );
+      } else {
+        if (emptyPrinted !== wrong.substitution) {
+          f.push(
+            `the DOCS GATE's PRINTED spelling on a failed range: the doc promises ` +
+              `${wrong.substitution} ("${wrong.meaning}"), this machine observes ${emptyPrinted}`,
+          );
+        }
+        if (realPrinted !== verdict.substitution) {
+          f.push(
+            `the DOCS GATE's PRINTED spelling on a real range: the doc promises ` +
+              `${verdict.substitution} ("${verdict.meaning}"), this machine observes ${realPrinted}`,
+          );
+        }
+        if (wrong.pipedEmpty !== null && emptyPiped !== wrong.pipedEmpty) {
+          f.push(
+            `the FORBIDDEN piped spelling on a failed range: the doc's measured matrix says ` +
+              `${wrong.pipedEmpty} on an empty list, this machine observes ${emptyPiped}`,
+          );
+        }
+        if (realPiped !== verdict.piped) {
+          f.push(
+            `the FORBIDDEN piped spelling on a real range: the doc's measured matrix says ` +
+              `${verdict.piped}, this machine observes ${realPiped}`,
+          );
+        }
+        // POSITIVE CONTROL. "The observed codes match the promised ones"
+        // is satisfied equally by a matrix that discriminates and by one
+        // where every cell holds the same number. The doc's whole argument
+        // is that the pipe EATS a code, so require the two spellings to
+        // disagree somewhere and to agree somewhere.
+        if (emptyPrinted === emptyPiped) {
+          f.push(
+            "the printed and the piped spellings return the SAME code on a failed range, so this " +
+              "check cannot tell a recipe whose exit code survives from one the pipeline eats — " +
+              "which is the only thing it exists to tell",
+          );
+        }
+        if (realPrinted !== realPiped) {
+          f.push(
+            `the printed and the piped spellings disagree on a REAL range (${realPrinted} against ` +
+              `${realPiped}); the doc's matrix says the verdict row is where BSD's two spellings ` +
+              "agree, and that agreement is what makes the empty-list row's disagreement mean " +
+              "something",
+          );
+        }
       }
     }
     add("docs-gate-recipe-exit-codes", [], f);
