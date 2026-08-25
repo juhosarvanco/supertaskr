@@ -434,8 +434,21 @@ same Expected/Received pair each time. It hides itself because its own
 `finally` writes a whole-millisecond mtime, so the next run is green —
 the red-green signature `T-079-s3` already records one level up. The
 fixture was left sha256-identical to `HEAD:tools/e2e/fixtures/shell.ts`
-(`2e55d8e5…`) with a whole-millisecond clock. Routed as `T-052-s4` with
-the one-token fix and the probe that shows it round-trips.
+(`2e55d8e5…`) with a whole-millisecond clock.
+
+**AND T-120'S LANE FOUND IT INDEPENDENTLY IN THE SAME HOUR**, filed as
+`T-120-s3` on main at `e5a8f6a` — found after this lane's own diagnosis
+was already written, which is how it is known to be independent. That
+account is FULLER (a 50-of-50 probe, a three-checkout table, the fix)
+and is the primary one. **`T-052-s4` was rewritten down to the single
+thing it adds rather than shipped as a duplicate**: `T-120-s3` concludes
+the fix needs a fresh checkout to prove, because a healed worktree
+cannot re-red — and this lane reproduced it ON DEMAND in an
+already-healed worktree by setting the fixture's mtime to a fractional
+millisecond, three greens then a named red. That removes the
+fresh-worktree prerequisite from whichever card takes the fix. **Two
+lanes paying a diagnosis for the same defect in one evening is itself
+the argument for dispatching it.**
 
 ### The ruling stopped being a recommendation while this lane ran
 

@@ -1,77 +1,68 @@
 ---
 id: T-052-s4
-title: The P6 plant-and-restore body restores its clock through a Date and asserts against a sub-millisecond float, so it reds on any filesystem finer than a millisecond
+title: The P6 mtime-restore defect reproduces on demand in an already-healed worktree, which is what makes its fix verifiable in place
 status: suggested
 suggested_by: executor claude-opus-5 @T-052
 ---
 
-**Found by T-052's own gate run, in a file T-052's diff never touches**
-(zero `tools/e2e/**` paths in its merge forecast, worktree clean at 0
-rows). `npm test` from `tools/e2e/` went **144 passed / 1 failed at exit
-1**:
+> **READ `T-120-s3` FIRST — IT IS THE PRIMARY ACCOUNT AND IT IS FULLER
+> THAN THIS ONE.** T-120's lane found the same defect independently,
+> within the same hour, and characterised it further: the `Date`
+> rounding, the one-token fix, a 50-of-50 probe showing fresh writes
+> almost always carry a sub-millisecond mtime, and a three-checkout
+> table. **This file is not a second report of that defect.** It keeps
+> only the one thing it adds, and it exists so triage sees both.
 
-    tests/token-scan.spec.ts:201
-      P6 reds a planted bare motion utility and leaves its motion-safe twin alone
+**THE DUPLICATION IS ITSELF THE FINDING.** Two independent lanes hit
+`tools/e2e/tests/token-scan.spec.ts:201` on their first full `npm test`
+from `tools/e2e/`, both spent a diagnosis on it, and both correctly
+concluded it was not theirs. That is the cost this defect charges per
+fresh worktree, paid twice in one evening — and it is the argument for
+dispatching the one-token fix rather than parking it a second time.
 
-    Error: tools/e2e/fixtures/shell.ts restored its MTIME too - a
-    content-exact restore that moves the clock reds an mtime guard
-      Expected: 1787642946850.1958
-      Received: 1787642946850
+## What this lane adds: it reproduces WITHOUT a fresh checkout
 
-## It is not a flake. It is a deterministic function of one file's mtime
+`T-120-s3` closes with *"HOW TO REPRODUCE, since the obvious way does
+not work"* — cut a fresh worktree, install, run once, because
+*"re-running in a worktree that has already gone red proves nothing"*.
+That is true of re-running. It is not true of the defect.
 
-The body captures `const clock = statSync(target)`, restores with
+**The precondition is one file's mtime, and you can set it.** Measured
+at T-052's tip in a worktree that had ALREADY healed itself:
 
-    utimesSync(target, clock.atime, clock.mtime)
+    node -e "const fs=require('fs'); const f='tools/e2e/fixtures/shell.ts';
+             const m=(fs.statSync(f).mtimeMs + 0.1958)/1000;
+             fs.utimesSync(f, m, m);"
+    npx playwright test tests/token-scan.spec.ts
 
-and then asserts against `clock.mtimeMs`.
-
-**`clock.mtime` is a `Date`, and a JavaScript `Date` holds INTEGER
-MILLISECONDS.** `clock.mtimeMs` is a float carrying the filesystem's
-finer resolution. So the body restores through the millisecond-precision
-view of the stat and checks against the sub-millisecond one — two
-different precisions of the same reading, and they disagree by
-construction whenever the file's mtime has a fractional millisecond.
-APFS stores nanoseconds, so that is the ORDINARY case for a file git has
-just written.
-
-**PROVED IN BOTH DIRECTIONS, at T-052's tip:**
-
-| fixture mtime | `tests/token-scan.spec.ts` |
+| fixture mtime | result |
 |---|---|
-| whole milliseconds | **10 passed**, three consecutive runs |
-| fractional millisecond, set deliberately | **1 failed / 9 passed**, same Expected/Received pair |
+| whole milliseconds (healed) | **10 passed**, three consecutive runs |
+| fractional millisecond, set as above | **1 failed / 9 passed**, named, same Expected/Received shape |
 
-**AND IT HIDES ITSELF, WHICH IS WHY IT READS AS INTERMITTENT.** The
-failed run's own `finally` block restores a whole-millisecond mtime, so
-the NEXT run captures a whole `mtimeMs` and passes. Red, then green,
-with nothing changed — the same self-healing signature `T-079-s3`
-records for the `git diff --quiet` assertion this body's own comment
-replaced, one notch deeper.
+So it is not a flake and not once-per-checkout-only: **it is a
+deterministic function of one file's mtime precision, and the precision
+is settable.** Three greens then a red on demand, in one worktree,
+without cutting anything.
 
-## The fix is one token, and it was measured rather than proposed
+## Why that matters for the card that fixes it
 
-    utimesSync(target, clock.atimeMs / 1000, clock.mtimeMs / 1000)
+`T-120-s3` argues the fix *"belongs to a card that can cut a fresh
+checkout to prove the fix"*, on the reasoning that a healed worktree
+cannot re-red. **It can**, so the fix is provable in place: set the
+fractional mtime, watch it red, apply the one-token change, set it
+again, watch it green. That removes the fresh-worktree prerequisite from
+the card's cost — a `npm ci` in three packages plus a cold build — and
+turns the proof into a POISON DRILL of the ordinary kind, one side only,
+on a file whose content never changes.
 
-`utimesSync` round-trips sub-millisecond values exactly — probed
-directly: asking for `1787642946850.1958` returns `1787642946850.1958`.
-So the assertion can stay as strict as it is; only the restore has to
-stop going through `Date`. Fence `[tools/e2e]`.
+**The fix itself is `T-120-s3`'s and is not restated here** beyond
+noting this lane's independent probe agreed: `utimesSync` round-trips a
+sub-millisecond value exactly when it is given seconds as a number, so
+the strict `toBe` can stay. Fence `[tools/e2e]`.
 
-## Why this belongs on T-079-s3 rather than beside it
-
-`T-079-s3` says *"A CONTENT-EXACT RESTORE IS NOT A COMPLETE RESTORE"*
-and names `utimesSync`'s one honest limit — it cannot restore `ctime`.
-This is the same sentence one level finer: **a clock restore is only as
-complete as the precision it is expressed in**, and the API hands you
-two views of the same timestamp with no hint that picking the wrong one
-is lossy. The finding generalises past this body — any restore written
-as `utimesSync(f, st.atime, st.mtime)` truncates, and CONVENTIONS' POISON
-DRILL bullet is where the next author of a plant-and-restore body will
-look for the shape.
-
-**Check the sibling before fixing only this one.** `T-079-s3` already
-names T-058's seven-path control-byte body as using the same technique
-over seven first-party roots; whether it restores through `Date` too is
-one grep and was not run here, because it is outside this lane's fence
-and outside its card.
+**Restoration proof for this lane's own probing**:
+`tools/e2e/fixtures/shell.ts` was left byte-identical to
+`HEAD:tools/e2e/fixtures/shell.ts`, sha256 `2e55d8e5…`, with a
+whole-millisecond clock and a clean `git status`; the full E2E suite is
+145/145 at exit 0 afterwards.
