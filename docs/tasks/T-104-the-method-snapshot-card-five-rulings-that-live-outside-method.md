@@ -255,11 +255,62 @@ verifiers get.
   T-110's own two rejections both trace partly to briefs this architect
   wrote.
 
-**ALL THREE DEPEND ON THE BUMP QUESTION BELOW**, and they look different
+**NINE — `verifying` IS UNREACHABLE ON THE BOARD, AND THE FIELD SHOULD
+SAY WHAT IT CAN ACTUALLY MEAN.** Four sessions asked the architect to
+rule on why `verifying` reads **0** while lanes are genuinely in
+verification. It is ruled here, and the answer is not a bug to fix:
+
+**THE WINDOW IS ONE COMMIT WIDE, MEASURED THREE WAYS.** An executor
+stamps `verifying` inside its LANE, and that stamp reaches `main` only
+when the merge lands — at which point the integrator's own checkpoint
+stamps `done` in the next commit. So a card reads `building` at the
+merge's parent, **`verifying` at the merge commit itself**, and `done`
+at the checkpoint. T-124's integrator caught it in the act, T-052's
+integrator **predicted and reproduced it exactly**, and T-086's
+integrator added a third, independent witness: a detached
+`drill-T-107-verify` worktree on disk while T-107's card on main still
+read `building`. **Three sources, and the card is the one that lies.**
+Re-measured at `9b9c997`: four live lanes, four worktrees, and **all
+four cards read `building`** — `verifying` appears nowhere on the board
+while two of the four are under verification right now.
+
+**SO `verifying` IS NOT A BOARD STATE. IT IS A LANE STATE.** The
+vocabulary in `method/tasks/TASK-FORMAT.md` presents all eight statuses
+as if they were equally observable on the integration branch, and two of
+them are not: `verifying` is visible on main for exactly one commit, and
+`merging` has never been observed at all. **This is not a defect in
+`git`, in the parser, or in any lane — it is the field claiming a
+reach it does not have.** It is also precisely what F-04 exists to
+expose: `T-110`'s lane reader reads the WORKTREE list, and the product
+is the DISAGREEMENT between that and `status:`.
+
+- **THE STATUS VOCABULARY SHALL SAY WHICH STATES ARE OBSERVABLE ON THE
+  INTEGRATION BRANCH AND WHICH ARE LANE-LOCAL**, so a reader of the
+  board stops treating `verifying: 0` as evidence that nothing is being
+  verified. `building` is durable on main from the pre-cut stamp until
+  the merge; `verifying` and `merging` are lane-local and transit main
+  in at most one commit.
+- **NO NEW STATUS AND NO STAMP-EARLIER FIX.** The obvious repair —
+  have the executor stamp `verifying` on the integration branch — is
+  REFUSED: it re-opens the two-writer merge conflict the pre-cut stamp
+  order exists to prevent (`lane-protocol.md`, "Why the branch carries
+  the dispatch stamp and the lane does not"), and would trade a legible
+  gap for a hand-resolved conflict on every card.
+- **THE HONEST READER IS THE WORKTREE LIST**, which lane-protocol rule 7
+  already makes the authority. The vocabulary SHALL point at it rather
+  than leaving each session to rediscover that the board cannot answer
+  the question — four have now had to.
+- IF `T-111`'s disposition work lands first THEN this clause SHALL
+  CITE it rather than restate it: the board will then say *dispatchable
+  / blocked / fenced* from the joined view, and the status field's job
+  shrinks to what it can actually carry.
+
+**ALL FOUR DEPEND ON THE BUMP QUESTION BELOW**, and they look different
 under it: six and eight change NORMATIVE sentences (the ceremony table
 decides what a pipeline owes; the stop condition decides when it halts),
-while seven is a clarification of what an existing field already means.
-Answer them per item, as the first criterion requires.
+nine is a clarification plus a documented refusal, and seven is a
+clarification of what an existing field already means. Answer them per
+item, as the first criterion requires.
 
 ## Acceptance criteria
 
