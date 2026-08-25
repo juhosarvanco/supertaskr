@@ -788,6 +788,25 @@ mod tests {
         s
     }
 
+    /// `use {{{ … Deep … }}};` — n BARE nested use lists. One
+    /// `use_tree` frame per level where the group form costs two
+    /// (`scoped_use_list` + `use_list`), which is why this shape is
+    /// here: at granularity two a one-unit change to the bound is
+    /// INVISIBLE, and the drill proved it — an off-by-one on
+    /// `use_tree`'s guard killed nothing until this arm existed.
+    fn bare_use_lists(n: usize) -> String {
+        let mut s = String::from("use ");
+        for _ in 0..n {
+            s.push('{');
+        }
+        s.push_str("Deep");
+        for _ in 0..n {
+            s.push('}');
+        }
+        s.push_str(";\n");
+        s
+    }
+
     /// `use s0::s1:: … ::s(n-1);` — one path, `n` segments.
     fn long_path(n: usize) -> String {
         let segments: Vec<String> = (0..n).map(|i| format!("s{i}")).collect();
@@ -835,7 +854,7 @@ mod tests {
     }
 
     #[test]
-    fn use_group_nesting_extracts_at_64_and_refuses_at_65() {
+    fn use_trees_extract_at_64_groups_or_128_bare_lists_and_refuse_one_level_deeper() {
         // POSITIVE CONTROL: the flattened path proves the walk reached
         // the innermost group rather than merely declining to refuse.
         let clean = extract(&nested_use_groups(64));
@@ -856,6 +875,19 @@ mod tests {
             refused.imports.is_empty(),
             "a refused tree yields no half-built specifier: {:?}",
             specifiers(&refused)
+        );
+
+        // THE SAME BOUND AT GRANULARITY ONE. A nested group costs TWO
+        // `use_tree` frames per level, so the two arms above cannot see
+        // a one-unit change to the bound; bare nested lists cost one,
+        // and 128/129 is the boundary spelled exactly.
+        let clean_flat = extract(&bare_use_lists(128));
+        assert_eq!(clean_flat.depth_refused, None, "128 bare nested use lists");
+        assert_eq!(specifiers(&clean_flat), vec!["Deep"], "the leaf is reached");
+        assert_eq!(
+            extract(&bare_use_lists(129)).depth_refused,
+            Some(DepthSite::RustUseTree),
+            "129 bare nested use lists"
         );
     }
 
@@ -905,5 +937,6 @@ mod tests {
         assert_eq!(merged.range, [2, 8]);
     }
 }
+
 
 

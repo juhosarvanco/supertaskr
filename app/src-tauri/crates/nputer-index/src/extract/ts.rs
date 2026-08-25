@@ -1025,6 +1025,25 @@ export class JsClass {}
         s
     }
 
+    /// `const [[[ … deepBinding … ]]] = arr;` — n nested ARRAY patterns.
+    /// One `pattern_names` frame per level where the object form costs
+    /// two (`object_pattern` + `pair_pattern`), which is why this shape
+    /// is here: at granularity two a one-unit change to the bound is
+    /// INVISIBLE, and the drill proved it — an off-by-one on
+    /// `pattern_names`' guard killed nothing until this arm existed.
+    fn nested_array_pattern(n: usize) -> String {
+        let mut s = String::from("const ");
+        for _ in 0..n {
+            s.push('[');
+        }
+        s.push_str("deepBinding");
+        for _ in 0..n {
+            s.push(']');
+        }
+        s.push_str(" = arr;\n");
+        s
+    }
+
     /// `export const deepValue = { k0: { … deepCall() … } };` — a VALUE,
     /// not a pattern, so only the candidate scan descends it.
     fn nested_object_value(n: usize) -> String {
@@ -1071,7 +1090,7 @@ export class JsClass {}
     }
 
     #[test]
-    fn nested_binding_patterns_extract_at_62_and_the_pattern_walk_refuses_at_65() {
+    fn binding_patterns_extract_at_62_object_pairs_and_the_pattern_walk_refuses_at_65_or_at_129_array_levels() {
         // POSITIVE CONTROL: the binding at the bottom of the pattern is
         // a module-scope symbol, which is the whole job of this walk.
         let clean = ts(&nested_binding_pattern(62));
@@ -1094,6 +1113,21 @@ export class JsClass {}
             Some(DepthSite::TsCandidateScan),
             "63 is past the scan's ceiling and short of the pattern walk's"
         );
+
+        // THE SAME BOUND AT GRANULARITY ONE. An object pair costs TWO
+        // `pattern_names` frames per level, so the arms above cannot see
+        // a one-unit change to the bound; an array level costs one, and
+        // 129 is where this walk takes the file back from the scan.
+        assert_eq!(
+            ts(&nested_array_pattern(129)).depth_refused,
+            Some(DepthSite::TsBindingPattern),
+            "129 nested array-pattern levels"
+        );
+        // Its own positive control: at the last depth NOTHING refuses,
+        // the binding at the bottom is still a module-scope symbol.
+        let clean_array = ts(&nested_array_pattern(125));
+        assert_eq!(clean_array.depth_refused, None, "125 nested array levels");
+        assert_eq!(sym(&clean_array, "deepBinding").kind, "const");
     }
 
     #[test]
