@@ -728,3 +728,396 @@ non-lanes: `../nputer-app` and `../arch-verify`. **Still no lane holds
 `app-shell` or `app-board`**, so `T-127-s1` and `T-127-s2` are both
 dispatchable — which is a live-environment fact to re-read at dispatch,
 never to quote from here.
+
+## Verdict: APPROVED — adversarial verifier, claude-opus-5, 2026-08-25
+
+Verified in a detached worktree `../nputer-T-127-verify` cut from the lane
+tip **`e7d597a`** (`git rev-parse`, never quoted), with its own
+`CARGO_TARGET_DIR` inside it. Two further detached drill worktrees at
+`d0494fc` and `e7d597a`, each with its own target dir. The lane's own
+worktree was never written into except for this section.
+
+**BOUNDED READ, declared.** The card was read at its base ref `afe23c1`
+and NOTHING else; the attack set was derived from its nine criteria and
+written to disk at **2026-08-25T19:46Z**, BEFORE the diff, the notes or
+any file at the tip was opened (`00-attack-set-PREREAD.md`, card extract
+sha256 `9100dd47…`). Then the notes commit `e7d597a` was read, then the
+diff. Every figure below is mine, derived at my own ref.
+
+### THE CENSUS, DERIVED AT FOUR REFS BY A WALKER THAT IS NOT THE TOOL
+
+A separate parser and a recursive Johnson-style enumeration (the crate's
+is iterative — deliberately a different implementation) over
+`depends_on:` from all `C-*.md` frontmatter:
+
+| ref | components | declared edges | declared cycles |
+|---|---|---|---|
+| `b505fca` (the card's "main") | 12 | 23 | **2** — `C-05 -> C-12 -> C-05`, `C-08 -> C-09 -> C-08` |
+| `935693f` (T-033 tip) | 13 | 35 | 1 |
+| `afe23c1` (lane base, BEFORE) | 13 | 35 | **1** |
+| `e7d597a` (lane tip, AFTER) | 13 | 35 | **1** |
+| `e7db842` (main at my ref) | 13 | 35 | 1 |
+
+**Before 1, after 1**, and the tool agrees with my walker exactly on all
+five (13 / 35 / `C-08 -> C-09 -> C-08`). **The card's "TWO" was TRUE at
+`b505fca`, which the card's own table names as main** — it did not
+mis-count, it went stale when T-033 dropped `C-12 -> C-05`. The lane's
+correction is right; its framing ("the card says TWO — there is ONE") is
+right at the lane's ref and slightly unkind to the card at the card's own.
+
+### THE GATE'S SCOPE — ATTACKED HARDEST, AND IT HOLDS
+
+**Registry-only: confirmed by reading and by running.** `arch cycles`
+calls `read_registry` and nothing else; no graph, no index. Proven at the
+process boundary: on a fixture with **no `graph.json` on disk**, `arch`
+is exit 3 and `arch cycles` is exit 0.
+
+**The disclosure survives green, and it is on STDOUT.** Streams split by
+hand against the LIVE registry and against a real acyclic control:
+
+- GREEN → exit 0, whole report incl. all three `note` lines on **stdout**
+  (529-byte red / stderr empty on green, and vice versa).
+- RED → exit 1, whole report on **stderr**, stdout **empty**.
+
+The red-to-stderr split is not a deviation: `index --check` does exactly
+this (stale→stderr, current→stdout). `arch drift` differs because it is a
+report with an optional `--fail-on`, not a gate. **Attack found nothing.**
+One note for readers: the transcript in the notes does not say the red
+half is stderr, so `arch cycles > out.txt` on a red yields an empty file.
+
+**The green never overclaims**: it says `ACYCLIC no declared cycle`, not
+"no cycles", and states its own corpus (components and edge count).
+
+**A REAL CYCLE THE GATE CANNOT SEE — CONSTRUCTED, WITH A WORKING CONTROL
+IN THE SAME TREE.** My first attempt was inconclusive and I say so: a
+fixture without a `Cargo.toml` emitted zero edges for *everything*,
+control included. Made a real crate, and the two halves separate cleanly:
+
+| pair | how the dependency is written | edges emitted | `arch drift --fail-on any` | `arch cycles` |
+|---|---|---|---|---|
+| `p.rs` ↔ `q.rs` (C-03/C-04) | `use crate::q::…` | **2 `import`** | **2 × D1**, both named | ACYCLIC |
+| `a.rs` ↔ `b.rs` (C-01/C-02) | `crate::b::pong()` path expression | **ZERO** | **nothing** | ACYCLIC |
+
+The invisible pair is a *genuine* mutual compile-time dependency, not a
+typo: it compiles clean, and breaking one side yields
+`error[E0425]: cannot find function … in module crate::a`. **So a real
+two-component cycle is invisible to BOTH sides at once**, exactly as the
+lane says, and the caveat line is load-bearing rather than decoration.
+Note the sharper form: even the VISIBLE undeclared cycle is reported by
+no command *as a cycle* — `arch drift` calls it two D1s and `arch cycles`
+is green because nothing is declared. The printed note covers this.
+
+**Edge kinds re-derived from the committed graph**: Rust **143**, every
+one an `import`, **zero** `call`, **zero** `type_ref`; TypeScript **1764**
+(508 / 552 / 704); 143 + 1764 = 1907 = `stats.edges`. The brief's "139"
+is wrong and the lane's 143 is right.
+
+### CRITERION 3 — NOT BUILT, AND THE REASON REPRODUCES EXACTLY
+
+I applied the lane's smallest acyclic re-partition myself (registry only,
+`git diff` read back before every run):
+
+| | baseline | re-partitioned |
+|---|---|---|
+| declared cycles (my walker AND the gate) | 1 | **0**, `verdict ACYCLIC … 34 declared edges` |
+| `npm test` from `app/` | **973 / 973, exit 0** | **6 failed / 967 passed of 973, exit 1** |
+| `npx vitest run` from `lib/parser` | 268 / 268 | **268 / 268, exit 0** |
+
+The six are in `test/architecture-dogfood.test.ts` and
+`test/map-dogfood-render.test.tsx`, and one of them prints
+`expected [ 'C-10', 'C-12' ] to deeply equal [ 'C-10' ]` — **verbatim the
+lane's quoted message.** Both files are under `app/test/**`, owned by
+C-05 (`app-shell`), and also claimed by C-09 (`app-board`) and C-14.
+Neither slug is in `[crate-index, docs/architecture/components/]`.
+
+**So the fence really does forbid it.** The registry edit is in fence; the
+fixtures it invalidates are not, and widening a fence from inside the lane
+it fences is the one repair this role may never make. The routing is
+correct and it is held to the standard of a rejection: it ships with the
+measurement, the recommended partition, and the reason a smaller one is
+wrong. Restored: `git diff` empty, sha256 per path identical —
+C-08 `46efdf15…` (**the lane's own recorded hash**), C-09 `8dd48f90…`.
+
+### THE FILE-LEVEL DAG CLAIM — THE ROUTE-IT CLAUSE GENUINELY DOES NOT FIRE
+
+Independent iterative Tarjan over the committed graph, both edge sets:
+
+- 179 file nodes, **379 distinct file import edges**, and **exactly ONE
+  SCC of size > 1**: `resolve/{mod,rust,ts,tsconfig}.rs`.
+- Under `import` + `call` + `type_ref`: **the same single SCC** (897 edge
+  instances projecting onto the same 379 file pairs).
+- **Its owner set is `['C-07']` and nothing else** — entirely inside one
+  component, as the lane says.
+- **No C-08 or C-09 file takes part in any SCC.** So criterion 2's "IF one
+  does THEN route it as a real design defect" clause does NOT fire, and
+  the lane's `T-127-s3` is a correct *disclosure* rather than a dodged
+  criterion. This was the brief's sharpest suspicion; it is laid to rest.
+
+My first pass reported the SCC owner set as EMPTY. **That was my bug, not
+a finding**: my frontmatter parser rejected C-07's `paths:` line because
+it carries a trailing YAML comment. Fixed and re-run. The lane's "166 file
+nodes" also reconciles exactly — it is *files touched by ≥1 non-self edge*
+(167 including `dispatch-store.ts`, which has only a self-edge).
+
+### THE CARD'S CLOSING EDGES — DERIVED FROM SOURCE, NOT FROM THE GRAPH
+
+C-08 → C-09 is **6** file edges; C-09 → C-08 is **3**:
+`TaskDetailPanel.tsx -> TaskCard.tsx`,
+`TaskDetailPanel.tsx -> badges/ReviewBadge.tsx`, and
+`task-detail.ts -> board-model.ts`. Confirmed at the import lines:
+
+- `board-model.ts` imports **only** `./verdicts`. It does **not** import
+  `task-detail.ts`. `task-detail.ts` imports `./board-model`. **The card's
+  first hop is drawn backwards**, and so is the chain it anchors.
+- `TaskDetailPanel.tsx` imports the class constants from `./TaskCard`
+  (line 12) **and** `ReviewBadge` from `./badges/ReviewBadge` (line 13).
+
+**The consequence the lane draws is correct and is the most useful of its
+corrections**: severing only the class constants leaves both the
+`ReviewBadge` hop and `task-detail.ts -> board-model.ts` standing, so the
+component cycle survives a fix aimed at the edge the card names.
+
+### THE POISON DRILL — SIX MUTANTS OF MY OWN, EVERY RESTORE PROVED
+
+Producer side only, never an assertion; `git diff` read back BEFORE each
+run; whole-suite counts, because uniqueness of kill is measured.
+
+| # | one side mutated | where | exit | killed / suite |
+|---|---|---|---|---|
+| **V1** | `env!`-shaped root added to `cycles.rs` | verify tree | 0 | **0 — MY MUTANT WAS WRONG**, reported |
+| **V1b** | the ACTUAL pre-fix `cycles.rs` restored in place | verify tree | **1** | docs gate RED, census **6 → 7**, `+ …/arch/cycles.rs — holds the root, unargued` |
+| **V6** | REGISTRY on disk — `C-01`'s `depends_on: []` → `[C-06]` | drillPOST | 101 | **2 / 218** |
+| **V7** | REGISTRY on disk — `C-08` removed from C-09 (cycle fixed, allowlist left) | drillPOST | 101 | **1 / 218** |
+| **M6** | `MAX_CYCLES` 64 → 100000 | drillPRE `d0494fc` | **0** | **ZERO / 217 — SURVIVED** |
+| **M6b** | `MAX_CYCLES` 64 → 100000 | drillPOST `e7d597a` | 101 | **exactly 1 / 218** |
+
+**M6 and M6b both reproduce, and the fix is genuine.** The pre-fix tree
+takes the mutation at **exit 0 with 217 bodies and zero kills**; the
+post-fix tree kills exactly one,
+`the_enumeration_cap_is_the_documented_constant`, printing
+**`left: 100000 / right: 64`** — which is the proof the fix pins a
+LITERAL and did not merely move the parametrisation one level up. The two
+baselines differ by exactly one body (217 → 218), i.e. the fix added one
+body and changed nothing else.
+
+**V6 is the card's prescribed drill and it reproduces the lane's M1
+verbatim**, including the coupling the lane disclosed rather than glossed:
+
+    left:  ["C-01 -> C-06 -> C-01", "C-08 -> C-09 -> C-08"]
+    right: ["C-08 -> C-09 -> C-08"]
+
+and the binary against the same mutated registry printed both cycles as
+paths at exit 1. **V7 is the other direction** and is why the allowlist
+cannot rot: `left: [] / right: ["C-08 -> C-09 -> C-08"]`, uniquely 1 body.
+**The ENFORCING copy really is `cargo test`, not the subcommand.**
+
+**RESTORATION PROVED PER PATH BY sha256**: `cycles.rs` `5258eb40…`
+(drillPRE) and `3791df26…` (drillPOST and verify tree) before and after;
+`C-01-method.md` `f002b3c3…`; `C-09-detail-panel.md` `8dd48f90…`;
+`C-08-board-pane.md` `46efdf15…`. `git status` clean but for target dirs
+in all three worktrees. **Three of those hashes are the lane's own
+recorded values**, which independently corroborates that its drill ran
+where it says it ran.
+
+### POSITIVE CONTROLS — INCLUDING ONE AGAINST THE LIVE TREE
+
+A negative assertion needs one, and a cycle gate needs a green it can
+actually say. Beyond the lane's three, I ran my own: **the real live
+registry with one hop removed** → exit 0, `verdict ACYCLIC no declared
+cycle among 13 components and 34 declared edges`, all three notes on
+stdout, stderr empty. The gate can say ACYCLIC about this tree.
+
+The lane's process-level controls are stronger than the card asked for:
+`arch_cycles_says_on_every_run_what_it_cannot_see` pins the caveat **on
+the green path, on stdout**, together with D5-is-not-a-cycle.
+
+### WHAT I FOUND — FOUR ITEMS, NONE OF THEM A FALSE GREEN
+
+**1. THE GRAPH REGEN FIGURES IN THE NOTES ARE ONE COMMIT STALE, AND THE
+CLAIM ABOVE THEM IS NOT TRUE AS WRITTEN.** The notes record
+`943006 bytes · 180 files · 2014 symbols · 1910 edges`, `~3` changed,
+`+3` edges. I pointed the tip binary at a worktree of `1b51d61` and got
+**those figures exactly, byte for byte**. At the actual tip `e7d597a` it
+is `944590 bytes · 180 files · 2018 symbols · 1911 edges`, `~4` changed,
+`+4` edges — the extra file and edge being `tests/arch.rs` and
+`tests/arch.rs -> cycles.rs`, i.e. **the docs-gate fix at `6839450`
+itself**. So the bullet's "**ASKED**, never predicted, and asked AGAIN
+after every write" is contradicted by its own numbers: the last write was
+not followed by a re-ask. Consequently "`index --check` reports the
+**three** edges `cycles.rs` adds" is also stale — at the tip it is
+**four**. **The substance survives intact and is if anything stronger:
+all four are `import`, still zero `call` and zero `type_ref`.** Asked
+twice at my ref, byte-identical both times, and `graph.json` unchanged on
+disk (the check never writes). ACTIONABLE: one edit to the notes, in
+fence. The integrator regenerates and commits the graph regardless, so
+the blast radius is a reader comparing against a stale number.
+
+**2. `T-127-s5` IS ROUTED ON THE BRANCH AND NAMED NOWHERE IN THE NOTES.**
+The diff carries five suggestions; the notes enumerate `s1`–`s4` and
+mention `s5` **zero** times. `T-127-s5` says `arch cycles` ships
+undocumented because the CONVENTIONS command bullet is out of fence —
+which is a real out-of-fence disclosure and exactly the kind the card
+demands be loud. A routing that ships unannounced in the record is the
+lane's own "a silent change is worse than a loud one", applied to itself.
+ACTIONABLE: one line. (Its "covered by 22 test bodies" is also off by one
+— the lane added **23**.)
+
+**3. THE TRUNCATION FLAG IS OFF BY ONE AT THE BOUNDARY.** Built registries
+of 63, 64 and 65 disjoint 2-cycles. At **exactly 64** the report prints
+all 64 cycles *and* `... enumeration stopped at 64; the list is incomplete
+and the verdict is not` — **the list is complete**. At 65 it is honest. A
+false sentence, never a false verdict, and it errs toward warning. The
+boundary is untested: `enumeration_is_capped_…` uses a complete digraph on
+9 nodes, far above the cap. Recommend routing, not blocking.
+
+**4. THE LIVE POSITIVE CONTROL IS BRITTLE TO A SHARED CLOSING HOP.**
+`the_live_registry_minus_one_hop_per_reported_cycle_is_acyclic` asserts
+`dropped == before.cycles.len()`. I built the shape that breaks it —
+`C-01 -> C-02 -> C-03 -> C-01` and `C-01 -> C-04 -> C-03 -> C-01`, which
+the gate correctly reports as two cycles sharing the hop `C-03 -> C-01`.
+One `retain` removes it, so `dropped` is 1 against 2 and the body reds
+with *"every reported hop must exist in the registry it was read from"* —
+a misleading message for a hop that did exist and was shared. **It fails
+SAFE (red, never green)** and is unreachable at one cycle. Recommend
+routing. The lane's claim that this body does not go vacuous when the last
+cycle is fixed is **correct**: at zero cycles the loop is empty and it
+asserts the live tree itself.
+
+### ATTACKS THAT FOUND NOTHING — REPORTED BECAUSE THEY ARE THE EVIDENCE
+
+- The enumeration is a correct Johnson-style restriction: `on_path` is
+  fully unwound at every start (and explicitly before `break 'starts`),
+  `next < start` guarantees each simple cycle once rotated to its lowest
+  member, and order-independence is pinned by a body I re-read.
+- Dangling `depends_on` is excluded from `declared_edges` and cannot close
+  a walk; a duplicate target is one edge; a self-declaration is
+  `C-01 -> C-01`. All confirmed against the live tool.
+- A missing registry is exit 3, never a cheerful ACYCLIC.
+- **The path format never degrades to "cycle detected"** — checked for
+  2-cycles, 3-cycles, self-loops, two independent cycles, two cycles
+  sharing a hop, and 64+ cycles. Every one printed as a closed walk.
+- `arch` / `arch drift` output is byte-unchanged: `arch/mod.rs` gains one
+  `pub mod cycles;` line and the `Arch | ArchDrift` arm is untouched.
+- **The registry edits are prose-only** — no `paths:`, `depends_on:` or
+  `touch_slugs:` field changed anywhere in the diff, so no fence moved
+  silently and the census could not have moved.
+- The `ROOT_ANCHOR_LEDGER` move weakened nothing: normalised body
+  comparison shows assert counts identical (2/2, 3/3, 6/6) and the only
+  differences are inlined `let` bindings. **My first comparison returned a
+  vacuous "IDENTICAL" because BSD `sed` errored and both sides were empty
+  — reported, and redone in Python.**
+
+### THE SLUG CENSUS AND THE BENEFIT, RE-DERIVED AT MY OWN REF
+
+Reproduces the lane exactly: `app-shell` **20**, `tools/e2e` **10**,
+`docs/CONVENTIONS.md` **9**, `app-agent` **5**, `app-map` **4**,
+`method/` **4**; demand side `app-shell` **57**, `tools/e2e` **22** (so
+"no other slug exceeding 21" is indeed false now). `crate-index` I make
+**3**, not the lane's 4 — the difference is T-127 itself moving from
+`building` to `verifying`, which is the card's own point about a census
+over a directory that changes as cards are filed. **`T-126` is `done`**,
+so the nine are **eight**, and the eight are exactly the lane's list.
+
+The benefit claim holds, having read what each of the eight touches:
+**not one** names `ui/**`, `utils.ts` or `verdicts.ts`, so `app-ui` would
+relieve **0 of 8** — the answer to `T-033-s7` is derived, not asserted.
+Exactly four name a C-10 path, and the split is right: **T-114** and
+**T-035** name only C-10 paths (freed outright), while **T-044** and
+**T-106** also name `Cargo.toml` / `lib.rs` (made honest, not freed).
+**Two of eight, said rather than buried.**
+
+### SUITES AND GATES — EVERY EXIT READ UNPIPED, EVERY COUNT DERIVED
+
+| command | result | exit |
+|---|---|---|
+| `cargo test --no-fail-fast`, `app/src-tauri/` | **16 headers summing 497; 494 passed + 3 ignored = 497**; 16 result lines | **0** |
+| `npm test`, `app/` | 47 files, **973 / 973** | 0 |
+| `npx vitest run`, `lib/parser/` | 12 files, **268 / 268** | 0 |
+| `npm test`, `tools/e2e/` — **RUN 1** | **170 passed / 1 failed** | **1** |
+| `npm test`, `tools/e2e/` — **RUN 2** | **171 / 171** | **0** |
+| `npm run lint:docs`, `tools/e2e/` | **6 root-anchored, all argued, 0 unlinked** | 0 |
+| `NPUTER_BOOT_PORT=14791 npm run boot:check` | both `[nputer]` lines, tree stopped, port freed | **0** |
+| `index --check --root ../..`, asked TWICE | STALE, byte-identical both asks | 1, 1 |
+| `npm run typecheck`, `app/` | **Missing script** — the documented trap, not a defect | 1 |
+
+**The cargo count is derived against the `running N tests` headers**: 16
+headers summing 497 against 16 result lines summing 494 + 3 = 497, so no
+binary vanished into a SIGABRT.
+
+**BOTH E2E RUNS DECLARED, AND RUN 1 IS NOT THIS LANE'S DEFECT — matched
+to signature before re-running.** `token-scan.spec.ts:201` failed with
+`Expected: 1787687153361.5767 / Received: 1787687153362`, a fractional
+millisecond against a whole number. `cea839e`, which fixes it, **is in
+main but is NOT an ancestor of this lane tip** (`merge-base --is-ancestor`,
+both directions checked), so the red is expected in this tree and would be
+news in one that carries the fix.
+
+**BOOT GATE FIRES AND THE CARD'S VERIFICATION OMITS IT** — the diff is
+under `app/src-tauri/**`. Derived from CONVENTIONS' trigger and run: exit
+**0**. Port **1420** read READ-ONLY with `lsof` only: `node` pid 88948,
+`[::1]:1420 (LISTEN)`, the human's app. Never bound, never connected.
+
+**GRAPH REGEN fires and is the INTEGRATOR's.** `graph.json` is outside
+this fence and correctly not committed. See finding 1 for the stale
+figures the integrator should ignore in favour of a fresh derivation.
+
+### THE RANGE, AT MY OWN MAIN
+
+Main moved again: **`e7db842`** at my ref, not the `5036958` the notes
+name. Exit read from `$?` BEFORE any substitution.
+
+    git merge-tree --write-tree e7db842 e7d597a  ->  exit 0 FIRST, tree 1ce9d65…
+    git diff --name-only e7db842 <TREE>          ->  14 paths
+
+Never `<merge-base>..<tip>`, never `main..HEAD`. The path set is identical
+to the lane's at its ref: 5 under `crate-index`, 3 under
+`docs/architecture/components/`, and 6 in `docs/tasks/` which are this
+card and its own five suggestions. **The fence is clean.**
+
+### A TRAP FOR THE NEXT VERIFIER, FOUND BY WALKING INTO IT
+
+I named my scratch target dir `.vtarget` inside the worktree. `.gitignore`
+ignores `target/`, which does **not** match `.vtarget`, so
+`index --check` walked my build artefacts and reported
+`serde_core-*/out/private.rs` as tree staleness — a completely fabricated
+GRAPH REGEN reading that I nearly filed. Renaming it to `target` fixed it.
+**A verifier's own `CARGO_TARGET_DIR` inside the worktree must be named to
+match an ignore rule, or the staleness gate reports the verifier.** I also
+poisoned one early reading by exporting `GIT_DIR` alongside `git -C`,
+which compared main's index against my worktree's files and printed a
+frightening list of "modifications" that did not exist.
+
+### WHERE THE BRIEF WAS WRONG
+
+- **"Rust emitted 139 edges" — it is 143** at this ref, as the lane says.
+- **"the card names TWO closing edges where there are THREE"** is right,
+  but the card names one edge *per direction*, which is how a 2-cycle
+  closes; the load-bearing correction is that the C-09 → C-08 direction
+  has **three** edges, so a class-constant-only fix leaves it standing.
+- **"the card draws the alternation backwards"** — confirmed, and it is
+  worse than one hop: none of the four hops in the card's chain matches a
+  real import edge in the direction drawn.
+- **"check the SCC hardest — if it does underlie the declared cycle, a
+  criterion fires that the lane says does not"** — checked; it does not.
+  The lane is right and the criterion correctly does not fire.
+- **"the census … an unchanged count is only acceptable if criterion 3's
+  non-construction is legitimate"** — it is legitimate, measured, and I
+  reproduced the measurement to the failing-body count.
+
+### THE RULING
+
+**APPROVED.** The gate is correct, its scope is stated on every run
+including the green one and on the stream a CI reader captures, and the
+scope statement is *true* — I built the cycle it cannot see and proved the
+dependency is real. The enforcing copy is the test suite, and it reds in
+both directions with an exact-set allowlist that cannot rot. Criterion 3
+is unbuilt for a reason I reproduced exactly rather than took on trust,
+and it ships as a disclosure with a measurement and a routing, which is
+the shape this project accepts. No attack produced a green where a red was
+owed.
+
+Findings **1** and **2** are record defects, both fixable in fence in a
+line each, and both should be corrected before hand-off; the integrator
+should derive GRAPH REGEN fresh and ignore the notes' figures. Findings
+**3** and **4** are latent, fail safe, and are worth routing rather than
+blocking.
