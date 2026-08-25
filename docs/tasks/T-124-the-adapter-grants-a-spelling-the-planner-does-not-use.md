@@ -426,3 +426,346 @@ directories now sit under `tools/` where a broad add would stage them.
   nothing else. This card's evidence exists because a human retyped it
   off a screen — which is why two of three reasons can never be
   corroborated.
+
+## Verdicts
+
+2026-08-25 — claude-opus-5 @T-124-verify (verifier, same-model as
+builder): **APPROVED**
+
+Read BOUNDED, by the ruling on T-121 arm 2: the spec was read at its base
+ref (`git show c4cfe52:docs/tasks/T-124-…`), the attack was formed and RUN
+from that alone, and the lane's own copy and notes were opened only
+afterwards to check the EVIDENCE half. Every figure below is re-derived at
+main `ce8b8e7` / tip `e896865`. Two findings routed as `T-124-s3` and
+`T-124-s4`; neither blocks.
+
+### DECLINING TO WIDEN WAS CORRECT, ARGUED FROM MY OWN ANALYSIS
+
+The card's fourth criterion makes "the adapter did not move" a legal
+outcome, so the thing to rule on is not whether a fix was applied but
+whether the refusal was right. **It was, and it does not need the lane's
+own strongest argument to be right.**
+
+The grants are prefixes over fixed verbs. The only patterns that could
+admit `git -C <dir> status --short` are two, and both are worse than the
+gap:
+
+1. **`Bash(git -C:*)`.** A `Bash(<prefix>:*)` grant covers a command's
+   text from its first byte, so this admits `git -C <anywhere>
+   <any-subcommand>` — `push`, `reset --hard`, `clean -fdx`, in every
+   directory on disk. It replaces four verb-scoped grants with one grant
+   over an arbitrary directory AND an arbitrary subcommand. That reaches
+   OUTSIDE the project, which is precisely what the deliberate absence of
+   `--add-dir` and the cwd scoping of `--permission-mode acceptEdits`
+   were chosen to prevent.
+2. **A runtime-substituted project path.** Not expressible without
+   changing what `spawn_args` IS: it is `&'static [&'static str]`, so a
+   project path needs a second substitution slot beside
+   `SESSION_ID_SLOT`, carrying a `/`-bearing user-controlled string into
+   a permission grant that `check_no_data_borne_flag` has no rule for.
+   This is a TYPE-LEVEL argument, not a taste one.
+
+And a third fact makes both unnecessary rather than merely unattractive:
+**the bare twin is already granted.** `git status --short` reaches
+`Bash(git status:*)` and the planner's cwd already IS the project
+directory, so an instruction costing ZERO grant surface reaches the same
+operation. When one remedy costs nothing and the other costs an
+arbitrary-directory git grant, ADR-012's narrowness settles it without
+needing any claim about the CLI's internals.
+
+**I ALSO CHECKED WHETHER A NARROW SPELLING EXISTS AND IT DOES NOT.** A
+literal like `Bash(git -C . status:*)` would only help a planner told to
+write `git -C .` — at which point telling it to write bare `git` is
+strictly better and cheaper. A settings- or hook-based rule needs
+`--settings`, which this adapter deliberately does not pass (the user's
+CLI configuration is the user's). There is no expressible pattern that
+admits the operation without admitting the directory.
+
+**WHERE I DIVERGE FROM THE LANE'S REASONING** — recorded because a
+verdict that only agrees is worth less. The lane leads with "refusal 1's
+hook-safety guard fires independently of the allowlist, so a widening
+would be wider AND ineffective." That is an inference about the CLI's
+internal ordering which the captured text does not establish, and the
+command behind refusal 1 was never recorded. The lane's card hedges one
+link of it; `adapter.rs`'s comment states it flat. The CONCLUSION is
+unaffected — arguments 1–3 above are independent of it — so this is
+`T-124-s4`, not a rejection.
+
+### CRITERION BY CRITERION, WITH THE ATTACK
+
+1. **Classified by mechanism from its own text, recorded where the grants
+   live — MET.** `adapter::OBSERVED_PLANNER_REFUSALS` sits under
+   `CLAUDE_V1`, `pub const`, three entries, three distinct
+   `RefusalMechanism` values, exactly one `OurAllowlist`. Attacked by
+   mutating the classification: **M3** (the OURS entry reclassified) reds
+   two bodies in two files; **M5** (one refusal deleted) reds the
+   cardinality floor. Each `reason` is checked to contain the phrase its
+   classification turns on.
+2. **Minimal widening, pinned; the bypass pin re-run green — MET BY
+   DECLINING.** Antecedent false. Checked positively rather than waved
+   through: the `CLAUDE_V1` const block is **byte-identical** to main's
+   (sha256 `2130e3f386d39a064d850ab7aac551618a7534b55ce2733c57b8ff3e36a0cd54`
+   at `ce8b8e7` and at `e896865`, `cmp` exit 0), which covers all six
+   grants, both templates and `--disallowedTools`.
+   `no_adapter_argv_can_ever_bypass_permissions` is byte-identical too
+   (`cmp` exit 0 over the whole body) and green in every run below. The
+   lane goes further than the criterion asks and ASSERTS no grant prefix
+   contains `/` or ` -`, with the two rejected widenings as the control
+   that proves the check can fail.
+3. **CLI-guard refusals routed as a planner instruction, exact wording,
+   naming T-104 — MET.** `T-124-s1` carries both texts ready to paste and
+   names T-104. Verified against the tree rather than the claim:
+   `docs/tasks/T-104-…` is live at `status: planned` with
+   `touches: [method/, docs/CONVENTIONS.md, app-agent]` — the three-way
+   fence a method bump needs, including the Rust third file.
+4. **Widening is not the default; say plainly if the adapter did not move
+   — MET.** Said in the header, in the const's doc comment, in the notes
+   and in the commit subject. **One imprecision worth a reader's
+   attention:** `adapter.rs` gained 388 lines, so "the adapter did not
+   move" is true only of the ARGV — every instance in this card scopes it
+   to `spawn_args` in the same breath, which is why it is noted and not
+   filed.
+5. **A fixture carries the real refusal text, reachable by the
+   classification bodies — MET.** `pub const` data read by bodies in two
+   files, never a comment. Attacked with **M6**, a ONE-CHARACTER
+   paraphrase (`This Bash command` → `This bash command`): the lib suite
+   stays **GREEN at 160** and only
+   `the_2026_08_24_transcription_agrees_with_the_2026_08_19_capture` reds,
+   against real captured bytes. **The lane's shape-six claim reproduces
+   under my own mutant** — that body kills a mutant nothing else kills.
+6. **Spelling-sensitivity stated where the grants are — MET.** The
+   `--allowedTools` bullet now says the grant is a prefix over a fixed
+   verb, covers TEXT and not EFFECT, and that `git -C <dir> …` reaches
+   none of the six — with the sharper number the card itself did not
+   claim, that ALL FOUR git grants are lost to that spelling.
+7. **IF the widened patterns change what a turn can do THEN … — VACUOUS,
+   and honestly so.** Nothing widened; a before/after fixture would have
+   measured a difference that does not exist.
+
+### THE SECURITY SWEEP — ALL CLEAR, BY MEASUREMENT
+
+The subject is a permission allowlist for a spawned process, so this pass
+is the centre of gravity and every line is a measurement.
+
+- **The six grants are byte-identical to main's** — the `CLAUDE_V1` block
+  `cmp`s clean, sha256 `2130e3f3…` both sides. `--disallowedTools
+  WebFetch WebSearch` is inside that block and therefore unmoved.
+- **`no_adapter_argv_can_ever_bypass_permissions` still means what it
+  says** — the body is byte-identical, and so is everything it reads:
+  `all_argv_strings()`, `ADAPTERS` (still one entry), `CLAUDE_V1`.
+- **No pattern admitting a `/`-bearing or user-controlled string entered
+  argv.** Nothing entered argv at all. `spawn_args` remains
+  `&'static [&'static str]` with `SESSION_ID_SLOT` as its only slot.
+- **Nothing new reaches the child's environment.**
+  `app/src-tauri/src/agent/runner.rs`, which owns `ENV_ALLOWLIST`, is a
+  **0-file diff** — sha256
+  `43b3d72bab5e055451f574d46d494004bbf5449c4c1d2aeb6fddf5f760426009` at
+  both ends.
+- **`acl_pin.rs` is a 0-file diff at its pinned 92-grant hash** — sha256
+  `8d24cbad706d9e6f09eca6888cf8a21d264039cac6153271093ea4847b60b00e`,
+  `EXPECTED_GRANTS` counted at **92** at the tip.
+- **No new webview surface.** Zero `#[tauri::command]` and zero
+  `generate_handler!` lines in the added diff; the new types are not
+  reachable from the webview.
+- **No new input path.** `granted_prefix_reached`, `bash_grant_prefix`
+  and `allowed_tools()` are `pub` but have **no production caller** — a
+  grep over the tree finds only the two adapter bodies and one
+  `agent_runner` body. No argv, spawn or permission decision reads them.
+- **No dependency added** — zero manifests or lockfiles in the diff.
+- **No secret, key, path or user identifier in the diff.** The one path
+  shaped string in the new const is the transcriber's redaction
+  `<projectdir>`, declared as such.
+- **THE MUTANT THAT MATTERS: a quiet widening cannot pass.** **M2**
+  replaced `Bash(git status:*)` with `Bash(git -C:*)` in `spawn_args` —
+  exactly the change this card claims it declined — and it reds **FOUR**
+  bodies, including `allowed_tools_are_exactly_the_kits_imperative_surface`
+  and `resume_substitutes_one_argv_element_and_spawn_carries_none`. The
+  worst outcome available on this card is ruled out by measurement, not
+  by reading.
+
+### SUITES — every exit read UNPIPED off `$?`, and every COUNT derived
+
+| command | where | exit | count |
+|---|---|---|---|
+| `cargo test --no-fail-fast` ×4 | lane `app/src-tauri` | **101 once, 0 three times** | **420/1/3 once, 421/0/3 three times**, 15 `test result:` lines each |
+| `cargo run -p nputer-index -- index --check --root ../..` | lane `app/src-tauri` | **1 — STALE** | see GRAPH REGEN |
+| `npx vitest run` | lane `lib/parser` | **0** | 264/264 across 12 files |
+| `npm run build` | lane `app` | **0** | — |
+| `npm test` | lane `app` | **0** | 958/958 across 46 files |
+| `NPUTER_E2E_PORT=15170 npm test` | lane `tools/e2e` | **0** | 145/145 |
+| `npm run typecheck` | lane `tools/e2e` | **0** | — |
+| `npm run lint:tokens -- --selftest` | lane `tools/e2e` | **0** | 65 TOKEN + 4 CONTROL samples, 87 walk-policy, 9 evidence-floor |
+| `npm run lint:tokens` | lane `tools/e2e` | **0** | clean, **TOKEN 131 / CONTROL 659** |
+| `npm run lint:docs` | lane `tools/e2e` | **0** | whole-tree half, no diff judged |
+| `NPUTER_BOOT_PORT=15171 npm run boot:check` | lane `tools/e2e` | **0** | both `[nputer]` lines |
+| `node tools/e2e/scripts/docs-gate.mjs <5 paths>` | lane root | **1 — FIRES** | 3 suites owed |
+
+**THE CARGO SUITE IS NOT 421/0/3; IT IS A RANGE, AND STATING THE RANGE IS
+THE MORE TRUE OF THE TWO.** The first full run came back **420 passed / 1
+failed / 3 ignored, exit 101**, on
+`a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail` —
+T-113's body, failing on its POSITIVE CONTROL with an empty `stderr_tail`.
+**IT IS NOT THIS LANE'S**, derived rather than hoped: `runner.rs`, which
+owns the stderr ring and the `ExitNonZero` path, is a 0-file diff. Green
+6/6 in isolation, 14/14 as a target on the lane's Rust and 14/14 on
+MAIN's Rust in a detached worktree. **`T-088-s4`'s watcher flake did NOT
+fire in any of my four full runs**; this is a SECOND, previously unfiled
+intermittent, and it is `T-124-s3`.
+
+**AND THE WRAPPER'S EXIT WAS 0 WHILE CARGO'S WAS 101** — the same trap
+the lane's own notes record, met from the other side. The count is what
+caught it: 420 against the 421 the lane reports. Derive the count as well
+as the exit.
+
+### THE THREE STANDING GATES, DERIVED AT MY OWN REF FROM 5 PATHS
+
+    git merge-tree --write-tree ce8b8e7 e896865 -> b239d367…, exit 0 (read from $? FIRST)
+    git diff --name-only ce8b8e7 <TREE>         -> 5   THE PRESCRIBED PRE-MERGE FORM
+
+**FIVE, not the four the notes' gate table states.** No contradiction —
+that table was derived at the intermediate commit `82eb2ed`, before the
+card itself joined the diff — but the same section then says "3 of 5"
+four bullets later, and a reader meeting both will have to work that out.
+Re-derive; do not quote either.
+
+**THE RANGE HAZARD, NAMED: `merge-tree` reads COMMITS and the docs gate
+reads the INDEX.** Both were run inside the lane worktree, where `git
+status --short` is EMPTY — index, commit and working tree agree — so the
+two requirements coincide here and the gate's answer is about the same
+tree the forecast is about. On a dirty worktree they would not.
+
+| gate | trigger | on these 5 |
+|---|---|---|
+| GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` **or `*.rs`** outside `docs/` | **2 — FIRES** |
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **2 — FIRES** |
+| DOCS GATE | a `docs/` path a code suite reads | **3 — FIRES** |
+
+- **GRAPH REGEN — FIRES on 2, ASKED rather than predicted.**
+  `index --check` exit **1, STALE**: committed **895 891 bytes · 172
+  files · 1889 symbols · 1849 edges**, fresh **898 082 · 172 · 1897 ·
+  1849**; `files +0 -0 ~2`, `adapter.rs` loc 1319→1707 symbols 24→31 and
+  `agent_runner.rs` loc 4517→4607 symbols 118→119. Identical to the
+  lane's figures. **The regen is the INTEGRATOR's at the checkpoint and
+  was NOT run here** — `docs/architecture/graph.json` is correctly absent
+  from this diff. This is the first lane on which `e1f3023`'s `*.rs`
+  clause does real work, and it earned it: without `.rs` the trigger
+  would match 0 of 5 while the graph moved by 8 symbols.
+- **BOOT GATE — FIRES on 2, RUN, exit 0**, scratch port **15171**.
+  `[nputer] project folder: /Users/ujju/Projects/nputer/tools/nputer-T-124`
+  and `[nputer] window "main" created`.
+- **DOCS GATE — exit 1**, invoked DIRECTLY with the five paths as
+  ROOT-RELATIVE arguments, never through `xargs`. **3 of 5 under
+  `docs/`, THREE suites owed** — `npm test` from `app/`, `npm test` from
+  `tools/e2e/`, `npx vitest run` from `lib/parser/`; all three run and
+  green above. **12 derived readers across 4 suites, 0 frontmatter
+  issues**, and both climb sites into the capture are reported
+  (`agent_runner.rs:1880` and the lane's new `:1993`). `cargo test` is
+  not owed BY the gate and is owed by the Rust in the diff; it ran.
+
+### THE POISON DRILL — MY OWN MUTANTS, EIGHT FOR EIGHT
+
+Detached scratch worktree **`drill-T-124-verify`** at `e896865`, created
+OUTSIDE the repository at `/Users/ujju/Projects/drill-T-124-verify`, with
+its own `CARGO_TARGET_DIR` at `.drilltarget-T-124-verify` INSIDE it (arm
+(c)); driver `drill-T-124-verify-driver.py` and results
+`drill-T-124-verify-results.txt`, both named per-lane. **ONE SIDE ONLY** —
+every mutation edits a PRODUCER (`spawn_args`, `OBSERVED_PLANNER_REFUSALS`,
+`granted_prefix_reached`, `allowed_tools`) and never an assertion. Each
+mutated text read back with `git diff` BEFORE its run; each restore proved
+by sha256 `ffe7a27314cdcdcad873d0324d71804c5ccfa6ee06ee68dec2a6dd94a6a63e67`
+against the drill's own commit. A DID-NOT-COMPILE reading is decided by
+`error[E` / `could not compile`, never by a bare `^error` grep. Baseline
+**lib 160/0/0, agent_runner 76/0/1**.
+
+| # | mutation (producer only) | lib | agent_runner |
+|---|---|---|---|
+| M1 | `granted_prefix_reached` taught to skip a `-C <dir>` segment — the plausible "just make it match" fix | **RED** 158/2 | green |
+| M2 | **THE QUIET WIDENING** — `Bash(git status:*)` → `Bash(git -C:*)` in `spawn_args` | **RED** 156/4 | green |
+| M3 | the one refusal that IS ours reclassified as the CLI's | **RED** 159/1 | **RED** 75/1 |
+| M4 | the hook-safety refusal claims an ARGV change fixes it | **RED** 159/1 | green |
+| M5 | **shape five** — one captured refusal DELETED outright | **RED** 159/1 | green |
+| M6 | **shape six** — ONE-CHARACTER paraphrase, `This Bash` → `This bash` | **GREEN 160** | **RED** 75/1 |
+| M7 | `allowed_tools()` forgets to stop at the next flag | **RED** 159/1 | green |
+| M8 | `granted_prefix_reached` forgets the word boundary | **RED** 159/1 | green |
+
+**M2 IS THE VERDICT'S LOAD-BEARING MUTANT.** A card whose whole claim is
+"I declined to widen" is worthless if a widening could pass unnoticed;
+this one reds four bodies. **M6 REPRODUCES THE LANE'S SHAPE-SIX CLAIM
+INDEPENDENTLY** — one character, lib green at 160, only the transcription
+body reds. **M1 turns the rejected fix into a killed mutant.** Restores
+proved per-path; the drill's `git status --short` over the adapter is
+clean.
+
+### THE CARD'S OWN FALSE CLAIM, CHECKED RATHER THAN INHERITED FROM EITHER
+SIDE
+
+The spec asserts the three refusals are *"the first real-CLI permission
+text this project holds"*. **False**, and the lane's own correction is
+right: `docs/research/captures/real-planner-turn-2026-08-19.jsonl`
+carries **two** `subtype: permission_denied` messages. The corroboration
+claim also holds, measured: the CLI's fixed preamble is **86 bytes**
+(*"This Bash command contains multiple operations. The following part
+requires approval: "*), the first **85** bytes of the transcribed reason
+and of the capture's own message are byte-identical, and **neither
+captured message contains a backtick** — so the backticks in the card's
+quotations are the transcriber's markdown and the const is right to strip
+them.
+
+**THE SHARED FIXTURE IS BYTE-UNCHANGED, BEFORE AND AFTER EVERYTHING.**
+sha256 `273a3d33593a53614101489b9cd3e9574010beae3830a60f43a8e65f74da47ac`
+at `c4cfe52`, at `ce8b8e7`, at `e896865`, in the main checkout's working
+tree, in this lane's worktree and in the drill worktree — six readings,
+one hash, and `git diff` over `docs/research/captures/` is empty.
+
+### PORTS, AND WHAT REACHED THE HUMAN'S APP
+
+**Nothing.** Port **1420** was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN`
+and nothing else, before and after — holder `node` pid **88948**, one
+socket `TCP [::1]:1420 (LISTEN)`, identical throughout, and
+`/Users/ujju/Projects/nputer-app` was never touched. Scratch ports
+**15170** (e2e) and **15171** (boot check) were `lsof`ed FIRST (zero rows)
+and then bind-confirmed free on `127.0.0.1`, `0.0.0.0`, `::1` and `::` in
+that order, and both were free again after. **No `pkill` at any point.**
+No sibling lane worktree was opened; the untracked `z` was left alone.
+This verification wrote nothing into the lane worktree except this verdict
+and the two suggestion files, and staged them by explicit path.
+
+### TWO FINDINGS, NEITHER BLOCKING
+
+- **`T-124-s3`** — a SECOND intermittent in the cargo suite, in code this
+  lane never touched, and the first thing to falsify the pipeline's
+  standing "green except `T-088-s4`" sentence.
+- **`T-124-s4`** — two sentences in the `adapter.rs` block state as
+  measured what the capture only makes plausible: the hook guard's
+  independence, and a prefix model that reports `Some("git status")` for
+  `git status && rm -rf /` while the project's own capture holds the CLI
+  refusing exactly that shape. Both err SAFE and neither is read by
+  production; measured through the shipped function in the drill
+  worktree, probe removed and restore proved.
+
+**THIS VERDICT'S OWN DOC WRITES WERE PUT THROUGH THE GATE THEY OWE**, with
+the three files `git add`ed by explicit path first (`T-010-s10`'s hole
+worked around rather than walked into). DOCS GATE **exit 1 — FIRES, 3 of
+3**, three suites owed and all three re-run AFTER the writes: `npx vitest
+run` from `lib/parser` **0**, 264/264 across 12 files · `npm test` from
+`app` **0**, 958/958 across 46 files · `NPUTER_E2E_PORT=15170 npm test`
+from `tools/e2e` **0**, 145/145. `npm run lint:tokens` **0**, clean at
+**TOKEN 131 / CONTROL 661** — CONTROL moved 659 → 661 on the two
+suggestion files, which is the printed-never-pinned count doing what it
+does. `npm run lint:docs` **0**. `cargo test` is NOT owed by these writes
+(they touch neither `docs/CONVENTIONS.md` nor the component registry) and
+ran four times anyway for the Rust in the diff.
+
+**MAIN MOVED UNDER THIS VERIFICATION AND THE FORECAST DID NOT.** Every
+figure above was derived at main **`ce8b8e7`**; by the time this verdict
+was committed main was **`19f93bb`** — T-120's merge and checkpoint, **6**
+paths (`docs/STATE.md`, four `docs/tasks/T-120*` files and
+`tools/e2e/tests/docs-input-gate.spec.ts`). Re-derived rather than
+assumed: `git merge-tree --write-tree 19f93bb <this commit>` exits **0**
+and `git diff --name-only 19f93bb "$TREE"` returns the SAME **7** paths as
+against `ce8b8e7`, so the two sets are disjoint and no gate's answer
+moves. The only figure that would shift is the graph's committed
+endpoints, which the integrator re-derives at the checkpoint anyway. **Do
+not quote any number here — re-derive it at your own ref**, which is the
+rule that produced this paragraph.
+
