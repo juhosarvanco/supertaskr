@@ -5,10 +5,10 @@ feature: F-03
 milestone: 4
 priority: 6
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [app-agent]
-builder:
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
