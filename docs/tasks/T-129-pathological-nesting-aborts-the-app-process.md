@@ -772,3 +772,178 @@ conflict report.
 14 + 52 = 66 and 14 + 60 = 74: the arithmetic closes at both refs, the
 two sets are disjoint under `comm -12`, and **the entire swing is
 left-endpoint drift** — this lane's own 14 paths never move.
+
+## Verdict: APPROVED — adversarial verifier, claude-opus-5, 2026-08-25
+
+Verified in `/Users/ujju/Projects/nputer-T-129-verify`, a detached worktree
+at `edbc28f` (`rev-parse` confirmed) OUTSIDE the repository, with its own
+`CARGO_TARGET_DIR`; a second detached worktree at `ae16fbe` supplied the
+pre-fix binary. Card read at its BASE REF and the attack set written down
+BEFORE the diff was opened (18:09 local). Nothing pathological was written
+into the repository: every fixture was generated into `mktemp -d` at run
+time. Every exit below is from `$?` on an unpiped command.
+
+**THE HEADLINE FINDING IS TRUE, AND THE CARD IS INCOMPLETE.** Same shape,
+one file each, pre-fix binary: `fn main() {` + 10 000 braces as `.rs` is
+**exit 0**; `function main() {` + 10 000 braces as `.ts` is **exit 134**
+(`thread 'main' has overflowed its stack`). The card's key negative result
+— the measurement that localises the bug away from tree-sitter — holds only
+for `.rs`, and the card states it without a language.
+
+**THE INVERSION IS REAL.** Bisected at `ae16fbe`: TS `namespace` green at
+1 900, **aborts at 2 000**; the tightest Rust threshold is use groups at
+3 000. 2 000 < 3 000, so TypeScript is the MORE exposed language. All three
+Rust rows reproduce EXACTLY on the card's own grid (4 000/5 000,
+2 000/3 000, 12 000/20 000) — the numbers did not drift from `cb13957`.
+**One correction to the lane, in its own favour**: the member chain is
+reported as "aborts 10 000"; I measure green at 5 000 and **abort at 6 000**,
+so that row understates the exposure (~8x below the card, not 5x).
+
+**THE SIX TRAVERSALS, DERIVED INDEPENDENTLY.** Mechanically enumerated
+every `fn` under `extract/` at the base and closed the call graph for
+self- and mutual-recursion: `declarations`<->`mod_item`, `use_tree`,
+`collect_segments`, `module_statement`<->`export_statement`,
+`pattern_names`, `scan`. Six cycles, no seventh, and six `MAX_DEPTH`
+guards. `require_bindings` read by hand and confirmed ITERATIVE (a `loop`
+walking `n = parent()`, one frame). `export_statement` confirmed to SHARE
+`module_statement`'s counter — it takes `depth` unincremented and returns
+at `depth + 1`, and `module_statement` is its only caller, so an
+alternating chain cannot reach twice the bound. Swept the whole crate:
+three genuine recursions outside `extract/` (`arch/glob.rs::go`,
+`resolve/mod.rs::nearest`, `resolve/tsconfig.rs::nearest`) — **the notes'
+"two in `resolve/` and one in `arch/glob.rs`" is right**.
+
+**BOTH MARGINS RE-DERIVED.** From below: rebuilt at 34 -> 2 files flagged
+(`MapView.tsx`, `TaskDetailPanel.tsx`), **35 -> 1** (`MapView.tsx`,
+`ts-candidate-scan`), **36 -> 0**. Deepest real traversal is 36; 128 is
+3.56x. From above, bisecting an explicit thread stack against the fixture
+the body actually builds: 640 KiB -> 0, **512 KiB -> 134**, so 512–640 KiB
+debug, ~3.2x under 2 MiB. The rejected 256 candidate: 1024 -> 0,
+**896 -> 134**, so 896–1024 KiB, ~2.0x. Both figures are exactly as
+documented and the rejection of 256 was measured, not asserted.
+
+**THE CONSTANT IS NOT PINNED BY A BODY PARAMETRISED BY IT** — structurally
+(`MAX_DEPTH` appears in the test regions only inside comments; `depth.rs`
+cannot see a `pub(crate)` const) and behaviourally: 128 -> 1024 reds the
+six boundary bodies BY NAME and leaves `the_worst_legal_nesting_…` green;
+128 -> 32 reds those six PLUS it. The joint property the notes claim for
+that pair is exactly what I measured.
+
+**MY OWN POISON DRILL** — producer side only, each mutation read back with
+`git diff` BEFORE its run, each restore proved by sha256 against
+`git show HEAD:<path>`, worktree left clean:
+
+| my mutant | exit | bodies redded, read off the `failures:` list |
+|---|---|---|
+| `use_tree` bound DELETED (M15) | lib 101 / **binary 134** | `use_trees_…` alone, **+ the `depth` binary aborts NAMING the body** |
+| refused record blanked, flag kept (M14) | 101 | `a_pathological_file_…` **alone**; unit suite stayed 152/0 |
+| `depth_limited` counts `is_none` (M5) | 101 | **7**: all 3 integration bodies + 4 goldens |
+| M5 against the PRE-`c5aa0b8` fixture | 101 | `a_pathological_file_…` **stayed `ok`** — the finding reproduced |
+| `use_tree` guard off-by-one (M12) | 101 | `use_trees_…` **alone** |
+| `pattern_names` guard off-by-one (M11) | 101 | `binding_patterns_…` **alone** |
+| `MAX_DEPTH` -> 1024 (M1) | 101 | the six, by name; worst-legal green |
+| `MAX_DEPTH` -> 32 (M2) | 101 | the six **+ `the_worst_legal_nesting_…`** |
+
+**M15 IS EVERYTHING THE CARD WARNS ABOUT, AND SHARPER THAN WRITTEN UP.**
+`cargo test --test depth` exits **101** while the binary itself exits
+**134**; the abort names
+`every_bounded_traversal_is_reachable_from_a_real_file_and_names_itself`;
+and that target emits **zero `test result:` lines**. In the whole
+`--no-fail-fast` run the summary reads 465 passed / 1 failed over **16**
+lines — so a harness reading pass/fail counts sees ONE ordinary red and
+cannot see that three bodies vanished and a process aborted. Deriving the
+count is what catches it: 465+1+3 = 469 against an expected 472. (The
+mutated binary even hashes to `depth-e1f4c7aa9db80883`, the name in the
+lane's own transcript.)
+
+**SUITES.** `cargo test --no-fail-fast` from `app/src-tauri`: **exit 0,
+469 passed / 0 failed / 3 ignored, summed over 17 `test result:` lines**.
+The arithmetic closes independently — the same command at `ae16fbe` gives
+**460 / 0 / 3 over 16 lines**, and 460 + 9 new bodies = 469, 16 + 1 target
+= 17. `docs_watch::tests::startup_arm_watches_the_initial_root` **ok by
+name**; lib suite **4.20s, green band** (under 9.5s). DOCS GATE suites, all
+three owed and all run: `npx vitest run` from `lib/parser/` **exit 0, 12
+files / 264 tests**; `npm test` from `app/` **exit 0, 46 files / 958 tests**
+(with `lib/parser` built first — `npm run build` from `app/` exit 0, so the
+stale-`dist` trap did not fire); `npm test` from `tools/e2e/` **run 1 exit 1**
+on the documented intermittent `token-scan.spec.ts:201` with its
+fractional-millisecond signature (`Expected 1787670631657.488, Received
+1787670631657`), 145 passed, **run 2 exit 0, 146 passed** — both runs
+declared.
+
+**GATES — all three, asked rather than predicted.** GRAPH REGEN **exit 1**,
+real stale at the tip (committed 921 608 · 178 · 1960 · 1881 -> fresh
+929 129 · 179 · 1981 · 1885) and **exit 1 at the BASE** naming exactly
+`agent/runner.rs`, `bin/fake_agent.rs`, `tests/agent_runner.rs` — which
+independently confirms `T-129-s4` by running the gate. The lane's share is
+929 129 − 923 899 = **+1 file / +14 symbols / +4 edges**, exactly as
+claimed. **BOOT GATE FIRES and the CARD IS WRONG about it**: the trigger is
+`app/src-tauri/**` and this crate lives at
+`app/src-tauri/crates/nputer-index/`, so the card's "the BOOT GATE does NOT
+fire on `crates/**`" is false and the lane's derivation is right. Ran it:
+`NPUTER_BOOT_PORT=14620 npm run boot:check` **exit 0**, both lines
+(`project folder:`, `window "main" created`). Port 1420 was read with
+`lsof` only. DOCS GATE **exit 1 on 5 paths, three suites owed** — and note
+its own arg validation is good: plain relative paths get **exit 2**,
+"called wrong", never a false clean.
+
+**CONTRACT — RE-PROVEN, NOT ACCEPTED.** Built both binaries and ran each
+over two pristine `git archive` corpora, one copy per binary so no cache
+could leak: `cmp` **exit 0** on both, sha256
+`42dba7c5f6941b62389c2a13eb31299f3dc8dc08714cecf5bcf9a42b9fcfe963`,
+**923 899 bytes · 178 files · 1967 symbols · 1881 edges** on the `ae16fbe`
+corpus — the lane's figures to the byte. `depth_refused` is empty over the
+whole repository at 128, and `index --root` then `index --check` on the
+same tree reports CURRENT at the same byte count, so the output is
+deterministic and the gate self-consistent.
+
+**RANGE.** `git merge-tree --write-tree <main> edbc28f`, exit read BEFORE
+the substitution (0), at **`eea61e0`** and again at **`5de8cb1`** — main
+moved under this verification — **14 paths, byte-identical at both**. The
+forbidden two-dot form gives **74** at both, 60 of them paths this lane
+never touched (`MapView.tsx` and its neighbours); the intersection with the
+lane's 14 is empty.
+
+**WHAT I GOT WRONG, RECORDED BECAUSE IT NEARLY BECAME A FINDING.** I twice
+read `index --check` reporting a fresh index 156 bytes larger than
+`index --root` wrote, and began writing it up as a determinism defect
+against ADR-014. It was mine: `cargo test` rebuilds the package's BINARIES,
+so my M2 drill (`MAX_DEPTH = 32`) left a mutated `nputer-index` behind, and
+at 32 exactly three repository files exceed the bound. Rebuilt from the
+restored source: 923 899 both ways, no refusals, `--check` CURRENT. **The
+crate is deterministic and `T-129-s4`'s quoted gate figures are exact.**
+A drill that mutates a constant poisons every later binary-level
+measurement in that target directory unless you rebuild.
+
+**WHAT THIS BRIEF GOT WRONG.** It said `T-129-s3` covers "two recursions
+outside `extract/`"; the notes say two in `resolve/` plus one in
+`arch/glob.rs`, and my sweep finds three — the notes are right. It
+paraphrased `T-129-s4` as claiming CONVENTIONS' "safe by practice,
+verified" parenthetical is FALSIFIED; the card claims something narrower
+and correct, and my check of the first-parent chain `05dd4d9..ae16fbe`
+confirms the card rather than the paraphrase: every non-merge first-parent
+commit there IS docs-only (4 of them), and the only source-bearing commit
+is the MERGE `a9ed33d`. The parenthetical holds; what fails is the premise
+that a non-merge base "carries the checkpoint's graph", which a merge
+below it breaks. It also attributed the BOOT GATE misprediction to itself;
+the sentence is in the CARD.
+
+**ONE DEFECT FOUND, AND IT IS NOT A FAILURE.** The comment in
+`the_worst_legal_nesting_completes_on_a_small_explicit_stack` describes
+256 inline modules / 128 groups / 257 segments where the code builds
+128 / 64 / 129 — the rejected `MAX_DEPTH = 256` fixture, every number
+exactly doubled. I measured that the input the comment names is REFUSED
+(`rust-mod-nesting`) and would fail the body's own assertion. No criterion
+fails and the stack figure beside it is correct, so per
+`method/roles/verifier.md` rule 6 this is filed as **`T-129-s5`** and
+deliberately NOT folded into the verdict.
+
+**EVERY ACCEPTANCE CRITERION IS MET**: the traversal set is derived and
+complete; each bounded traversal has a pin that fails against the pre-fix
+tree as exit 134; every refusal pin has a positive control asserting a fact
+that only exists if the walk reached the bottom; the thresholds were
+re-derived at this ref and the deltas stated; the constant is pinned by
+literals on both sides; arm 2 is ruled on with its question kept as a pin;
+arm 3 is routed as `T-129-s1` with the fence intact and `index_cmd.rs`
+untouched; and `graph.json` is byte-identical for every input that does not
+exceed a bound, proven binary-against-binary rather than asserted.
