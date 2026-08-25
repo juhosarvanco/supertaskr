@@ -1,7 +1,7 @@
 /**
  * Side-effect-free scanner for the token and literal-control gates.
  *
- * TOKEN (T-020/T-038/T-045) guards the Tailwind v4 escape hatches
+ * TOKEN (T-020/T-038/T-045/T-079) guards the Tailwind v4 escape hatches
  * documented in CONVENTIONS. CONTROL (T-058) guards the tracked text tree
  * against bytes that make binary-skipping searchers ignore a file.
  * UI work adds tokens to app/src/styles/tokens.css, never arbitrary
@@ -12,9 +12,18 @@
  * Plain node, zero deps — structural, not taste: this is CI's FIRST
  * step, ahead of every `npm ci` in the job, so it must run against a
  * bare checkout with nothing installed. TOKEN walks TOKEN_ROOTS below for
- * `*.{ts,tsx,mjs}` and applies P1-P4 to masked string text. CONTROL asks
- * git for every tracked path, excludes binary assets and generated/
+ * `*.{ts,tsx,mjs}` and applies P1-P4 and P6 to masked string text — the
+ * gap at P5 is deliberate, see the pattern's own note. CONTROL asks git
+ * for every tracked path, excludes binary assets and generated/
  * dependency directories, and applies P5 to raw Buffers.
+ *
+ * ── WHAT P6 GUARDS (T-079) ───────────────────────────────────────────
+ * The accessibility half. Tailwind emits the BARE animation rule beside
+ * the `motion-safe:` one and ships both, so an ungated motion utility is
+ * a one-character mistake that compiles, paints and ignores
+ * prefers-reduced-motion in silence. It is a TOKEN rule and stays off the
+ * CONTROL corpus: a motion utility named in a design document is prose.
+ * See MOTION_UTILITIES for why it matches NAMES rather than a shape.
  *
  * ── WHAT IT WALKS (T-045) ────────────────────────────────────────────
  * Until T-045 the walk was app/src alone, which left the one place a
@@ -26,7 +35,8 @@
  * boundaries argued in code, not mutes for a hit inside the corpus.
  *
  * ── WHAT IT LOOKS AT (T-038) ─────────────────────────────────────────
- * The four patterns below are UNCHANGED. What T-038 changed is the text
+ * The four patterns T-038 inherited are UNCHANGED (P6 joined them at
+ * T-079 and is bound by both rules below). What T-038 changed is the text
  * they are applied to, plus one grammar rule applied to their hits:
  *
  * 1. CONTEXT. A hand-written lexer masks every character that is not
@@ -74,6 +84,13 @@
  *   line is treated as a value (reported). A hard-coded breakpoint in
  *   variant position (`min-[600px]:`) is invisible to the lint by that
  *   rule — argued in T-038's notes, filed as T-038-s1.
+ * - P6 knows NAMES, so it cannot see a motion utility nobody listed. The
+ *   ones this tree declares are held by a derived floor
+ *   (`motionFloorChecks`); the six that come from Tailwind core and
+ *   `tw-animate-css` are held by samples or by nothing, which
+ *   MOTION_UTILITIES states in full. It also cannot see a class assembled
+ *   at runtime (`` `animate-${name}` ``) — the interpolation is masked, so
+ *   the utility is not text by the time P6 looks.
  * - Still zero allowlist, by design: no file, line or comment can mute
  *   it. A genuine future collision is a consultation, not an escape
  *   hatch (plan §5).
@@ -305,6 +322,84 @@ export const CONTROL_UNCOVERED_SUFFIXES = new Set([
  */
 export const MUST_CONTROL_COVER = [".rs", ".ts", ".tsx", ".md"];
 
+/**
+ * ── P6's ANIMATION UTILITY NAMES (T-079) ─────────────────────────────
+ * TAILWIND EMITS A BARE RULE FOR EVERY ANIMATION UTILITY ALONGSIDE THE
+ * GATED ONE, and both ship — measured in `app/dist/assets/`: the
+ * reduced-motion media block carries the `motion-safe:` variants and the
+ * ungated class sits outside it. Dropping the prefix is a ONE-CHARACTER
+ * mistake that compiles, paints and ignores the user's accessibility
+ * setting in silence. Nothing else here sees it: not `tsc`, not P1-P4
+ * (they are about arbitrary values and dead palette utilities), not the
+ * DOM suites and not the lane, because a spec that does not emulate
+ * reduced motion sees no difference at all.
+ *
+ * A NAME LIST RATHER THAN A BARE `animate-\w+` SHAPE, AND THAT IS A
+ * MEASUREMENT AND NOT A PREFERENCE. This tree has a hygiene idiom of its
+ * own: a spec ASSEMBLES a utility name so Tailwind's source scanner
+ * cannot mint an ungated candidate out of a test file —
+ * `app/test/map-view-dom.test.tsx` builds `"animate-status" + "-pulse"`
+ * and says so in a comment, and T-028's sweep joins `["board","rain"]`
+ * for the same reason. A shape rule reports that fragment: nothing in
+ * the text tells `animate-status` from a real utility. The allowlist is
+ * ZERO by this card and by plan §5, so the pattern has to be RIGHT
+ * rather than muted — and "a class token matching an animation utility"
+ * is what a name list means. `PALETTE` and `COLOR_PREFIXES` below are
+ * the same shape for the same reason.
+ *
+ * THE STALENESS A LIST BUYS IS CLOSED LOUDLY RATHER THAN ACCEPTED:
+ * `motionFloorChecks()` derives every animation this tree DECLARES from
+ * the tracked CSS and reds the selftest if one is missing here, so a new
+ * `--animate-*` cannot ship without either joining this list or being
+ * argued into MOTION_UTILITIES_OUT. That floor is ONE-DIRECTIONAL by
+ * design and the reverse must stay false: `bounce`, `ping`, `pulse` and
+ * `spin` come from Tailwind core and `in`/`out` from the
+ * `tw-animate-css` import at app/src/index.css:10, and not one of the
+ * six is declared anywhere in this repository. THE RESIDUAL HOLE IS
+ * NAMED RATHER THAN PAPERED OVER: deleting one of those six loses its
+ * coverage with nothing to red against, because there is no tree fact to
+ * derive them from. `status-pulse`, `map-teal-wipe` and `spin` are held
+ * by SAMPLES besides, and `card-rain` by the derived floor.
+ *
+ * `none` is deliberately absent: `animate-none` turns animation OFF, so
+ * demanding a motion gate on it would be backwards.
+ */
+export const MOTION_UTILITIES = [
+  // declared by this tree, in app/src/index.css's `@theme`
+  "status-pulse",
+  "map-teal-wipe",
+  "card-rain",
+  // Tailwind core
+  "bounce",
+  "ping",
+  "pulse",
+  "spin",
+  // tw-animate-css, imported at app/src/index.css:10
+  "in",
+  "out",
+];
+
+/**
+ * Animation utilities P6 deliberately does NOT match, with the reason —
+ * left in code because "we forgot" and "we decided" look identical in an
+ * absent list (TOKEN_ROOTS_OUT's argument, one rung down).
+ *
+ * `board-rain` is T-028's card-entrance transition: an `@utility` whose
+ * BODY animates, so its class name carries no `animate-` prefix and
+ * nothing about the token marks it as a utility at all. MEASURED at
+ * `25a9e2c`: adding it to P6 reds `app/test/genesis-mount.test.tsx` on
+ * the `"board-rain"` inside its shipped-bundle probe LIST — a needle
+ * searched for in built JS, never a class applied to an element. A
+ * custom-utility name is indistinguishable from an ordinary string, and
+ * a zero-allowlist gate cannot carry that.
+ *
+ * IT IS NOT LEFT UNGUARDED. T-028's character-exact sweep in
+ * `app/test/crescendo-dom.test.tsx` covers this one name over app/src
+ * and is KEPT for exactly that reason — see T-079's Implementation
+ * notes, criterion 5.
+ */
+export const MOTION_UTILITIES_OUT = ["board-rain"];
+
 /** The 22-name Tailwind default palette (P3). */
 const PALETTE =
   "red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|" +
@@ -342,6 +437,55 @@ export const TOKEN_PATTERNS = Object.freeze([
     id: "P4",
     what: "v4 var shorthand (`bg-(--x)` — compiles without a mapped utility)",
     source: String.raw`-\(--`,
+    flags: "g",
+  },
+  /**
+   * P6, and the GAP AT P5 IS DELIBERATE (T-079, blocked on T-058): P5 is
+   * CONTROL_PATTERN's literal-control-byte rule below, and a number a
+   * checkpoint has already quoted is not reused.
+   *
+   * P6 IS A TOKEN PATTERN AND ONLY A TOKEN PATTERN. It is Tailwind
+   * grammar, so it never reaches the CONTROL corpus — a motion utility
+   * NAMED in a design document, a task card or a Rust comment is prose
+   * and not a violation (T-058's fourth criterion, applied here).
+   *
+   * Two lookbehinds and no chain walk, which is what makes it survive
+   * nesting:
+   *
+   * 1. `(?<![\w=-])` — the utility must START a class token.
+   *    - a WORD or `-` before it means this is the tail of a longer name
+   *      (`do-not-animate-spin`), not a utility.
+   *    - `=` before it is an attribute selector or an assignment, never a
+   *      class-list position. MEASURED at `25a9e2c`: without this,
+   *      `"[class*=animate-status-pulse]"` reds four sites in
+   *      `app/test/genesis-pane-dom.test.tsx` that apply no class at all.
+   *    - `:` is deliberately NOT excluded, because that is exactly where
+   *      an ungated utility hides behind a variant. `data-[state=open]:`,
+   *      `[&_svg]:` and `[&_svg:not([class*='size-'])]:` all leave the
+   *      utility reportable — T-038's "a VARIANT never excuses the
+   *      utility it modifies", now P6's rule too, and it holds for the
+   *      NESTED variant a chain-parsing regex would have missed.
+   * 2. `(?<!(?:motion-safe|motion-reduce):[^\s"'` + "`" + `]*)` — the gate may sit
+   *    ANYWHERE in this token's variant chain, not merely last.
+   *    `motion-safe:group-hover:animate-spin` and
+   *    `group-hover:motion-safe:animate-spin` compile to the same rule,
+   *    so both are gated. The run cannot cross whitespace or a quote, so
+   *    one gated utility cannot excuse the next token in the same string.
+   *    (THE CARD SAID "immediately preceded by"; that spelling reports a
+   *    correctly gated class, so the repository takes the wider read —
+   *    see T-079's Implementation notes.)
+   *
+   * `isVariant` is left alone on purpose: the match is the bare utility
+   * and carries no group, so it reaches the same "no group inside the
+   * match — never a variant" branch P3 does.
+   */
+  {
+    id: "P6",
+    what: "ungated motion utility (`animate-x` with no `motion-safe:`/`motion-reduce:` gate)",
+    source:
+      String.raw`(?<![\w=-])(?<!(?:motion-safe|motion-reduce):[^\s"'` +
+      "`" +
+      String.raw`]*)animate-(?:${MOTION_UTILITIES.join("|")})(?![\w-])`,
     flags: "g",
   },
 ]);
@@ -934,6 +1078,43 @@ const SAMPLES = [
   // is a bracketed token sharing a line with a colon — P2's near-miss.
   { text: "await page.locator('[data-testid=\"task-card\"][data-task-id=\"T-101\"]').click();", expect: [] },
   { text: 'expect(stderr).toContain("[boot-check] REFUSED:");', expect: [] },
+  // ── T-079: P6, the ungated motion utility ──────────────────────────
+  // positives: the bare form, alone and inside a real class list.
+  { text: '<div className="animate-spin">', expect: ["P6"] },
+  { text: '"h-1.25 w-1.25 rounded-full animate-status-pulse"', expect: ["P6"] },
+  // a VARIANT never excuses the utility — T-038's rule, P6's turn. The
+  // second is the NESTED arbitrary variant, verbatim in shape from
+  // app/src/components/ui/button.tsx: a chain-parsing regex misses it
+  // and the lookbehind does not.
+  { text: '"data-[state=open]:animate-spin"', expect: ["P6"] },
+  { text: "\"[&_svg:not([class*='size-'])]:animate-map-teal-wipe\"", expect: ["P6"] },
+  // THE POSITIVE CONTROL FOR EVERY NEGATIVE BELOW: the gated twin of the
+  // first positive, in the same body, shown NOT to hit. A "this is
+  // refused" assertion that never proves the fixture would otherwise
+  // have been accepted cannot tell refusal from absence
+  // (docs/CONVENTIONS.md, T-060-s2).
+  { text: '<div className="motion-safe:animate-spin">', expect: [] },
+  { text: '"h-1.25 w-1.25 rounded-full motion-reduce:animate-status-pulse"', expect: [] },
+  // the gate need not be the LAST variant: these compile to one rule.
+  { text: '"motion-safe:group-hover:animate-spin"', expect: [] },
+  { text: '"group-hover:motion-safe:animate-spin"', expect: [] },
+  // ...but it cannot reach across whitespace into the next token.
+  { text: '"motion-safe:animate-spin animate-ping"', expect: ["P6"] },
+  // negatives, all three VERBATIM from app/test — the shapes a rule
+  // written as `animate-\w+` reports and this tree really contains.
+  // an attribute selector applies no class:
+  { text: 'expect(qa("[class*=animate-status-pulse]")).toHaveLength(0);', expect: [] },
+  // the assembled-name hygiene idiom — `animate-status` names nothing:
+  { text: 'const pulse = "animate-status" + "-pulse";', expect: [] },
+  // a bare prefix names no utility either:
+  { text: 'expect(JSON.stringify(v)).not.toContain("animate-");', expect: [] },
+  // MOTION_UTILITIES_OUT, verbatim from genesis-mount's bundle probes:
+  { text: '"board-rain",', expect: [] },
+  // the tail of a longer name is not a class token:
+  { text: '"do-not-animate-spin"', expect: [] },
+  // and the mask still governs: neither a comment nor a regex is a class.
+  { text: "// never write animate-spin without the motion-safe: gate", expect: [] },
+  { text: "const bare = /(^|\\s)animate-status-pulse/.test(cls);", expect: [] },
 ];
 
 /**
@@ -1064,6 +1245,105 @@ function walkPolicyChecks() {
       ),
     ],
     ...controlFloorChecks(controlFiles),
+    ...motionFloorChecks(),
+  ];
+}
+
+/**
+ * Every animation utility THIS TREE DECLARES, derived from the tracked
+ * `.css` files rather than from a hard-coded path, so a second stylesheet
+ * is covered the day it is tracked. Two producers, because Tailwind has
+ * two:
+ *
+ *   - `--animate-<name>:` in a `@theme` block, which mints `animate-<name>`
+ *   - `@utility <name> { … animation: … }`, which mints `<name>` with no
+ *     `animate-` prefix at all (T-028's `board-rain`)
+ *
+ * A READ of the variable (`animation: var(--animate-card-rain)`) is not a
+ * declaration: the `:` is what tells them apart.
+ *
+ * @returns {{ name: string, where: string }[]}
+ */
+export function declaredMotionUtilities() {
+  /** @type {{ name: string, where: string }[]} */
+  const found = [];
+  for (const rel of trackedFiles()) {
+    if (path.posix.extname(rel).toLowerCase() !== ".css") continue;
+    const text = readFileSync(path.join(repoRoot, rel), "utf8");
+    for (const m of text.matchAll(/--animate-([A-Za-z0-9-]+)\s*:/g)) {
+      found.push({ name: /** @type {string} */ (m[1]), where: rel });
+    }
+    for (const m of text.matchAll(/@utility\s+([A-Za-z0-9_-]+)\s*\{/g)) {
+      const open = /** @type {number} */ (m.index) + m[0].length - 1;
+      let depth = 0;
+      let end = open;
+      for (; end < text.length; end += 1) {
+        if (text[end] === "{") depth += 1;
+        else if (text[end] === "}") {
+          depth -= 1;
+          if (depth === 0) break;
+        }
+      }
+      if (/(?:^|[\s;{])animation(?:-name)?\s*:/.test(text.slice(open + 1, end))) {
+        found.push({ name: /** @type {string} */ (m[1]), where: rel });
+      }
+    }
+  }
+  return found;
+}
+
+/**
+ * ── P6's NAME FLOOR (T-079) ──────────────────────────────────────────
+ * MOTION_UTILITIES is a LIST, and a list goes stale in silence: add
+ * `--animate-shimmer` to the theme and P6 simply never sees
+ * `animate-shimmer`. Nothing prints and nothing reds — poison shape FIVE
+ * one level up from the sample set, where the thing that can be deleted
+ * without failing is a NAME rather than an assertion.
+ *
+ * So the names are derived TOO, from a source that moves with the tree,
+ * and the declared set must sit inside MOTION_UTILITIES ∪
+ * MOTION_UTILITIES_OUT — two lists that must agree, the shape
+ * MUST_TOKEN_COVER and MUST_CONTROL_COVER use above and for the same
+ * reason. A new animation then cannot ship without being either matched
+ * or argued out, and BOTH are loud.
+ *
+ * The per-name pair below is the "a negative assertion needs a positive
+ * control" rule applied once per name instead of once per family: bare
+ * hits, gated does not, for every name the list claims. It is what
+ * catches a regex that stopped working for one name while the three
+ * sampled ones still pass.
+ */
+function motionFloorChecks() {
+  const known = new Set([...MOTION_UTILITIES, ...MOTION_UTILITIES_OUT]);
+  const declared = declaredMotionUtilities();
+  return [
+    // positive: the derivation reaches real CSS at all. A floor that
+    // derives an EMPTY set passes vacuously, which is the shape it exists
+    // to close — a moved stylesheet would otherwise silence it.
+    [`tracked CSS declares motion utilities (${declared.length})`, declared.length > 0],
+    // ...and every one of them is accounted for by name.
+    ...declared.map(({ name, where }) => [
+      `declared motion utility ${name} (${where}) is matched by P6 or argued out`,
+      known.has(name),
+    ]),
+    // per-name positive AND negative, generated from the production list.
+    ...MOTION_UTILITIES.map((name) => [
+      `P6 matches a bare animate-${name} and not its motion-safe: twin`,
+      scanSource(`"animate-${name}"`).some((h) => h.id === "P6") &&
+        scanSource(`"motion-safe:animate-${name}"`).every((h) => h.id !== "P6"),
+    ]),
+    // negative: a name cannot be both matched and declared unmatchable.
+    [
+      "P6's matched and excluded name lists are disjoint",
+      !MOTION_UTILITIES.some((name) => MOTION_UTILITIES_OUT.includes(name)),
+    ],
+    // negative: an excluded name really is excluded. This is what reds if
+    // P6 is ever widened to a shape that swallows custom utilities, which
+    // is precisely the widening measured to red app/test.
+    ...MOTION_UTILITIES_OUT.map((name) => [
+      `P6 does not match the excluded utility ${name}`,
+      scanSource(`"${name}"`).every((h) => h.id !== "P6"),
+    ]),
   ];
 }
 
