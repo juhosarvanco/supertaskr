@@ -31,6 +31,36 @@ this way. `touch_slugs: [app-shell, app-board]` has been in
 was written; ARCHITECTURE's own derived table prints both rows containing
 C-11, four lines apart. **The data was never missing. Nothing joined it.**
 
+## IT IS ONE PAIR IN FIFTEEN ON THE LIVE BOARD, AND THE BOARD IS ALSO OVER ITS CEILING
+
+**The lane set went from TWO to SIX while this lane was working** — T-086,
+T-091, T-102 and T-107 were cut between 10:51Z and 11:08Z, and main moved
+three times in twenty-two minutes (`e04f5b3` → `ad5a0df` → `c4c15c8`). So
+the arithmetic below is a live-environment fact read at **11:10Z against
+main `c4c15c8`**, not a function of a tree. It was run by hand, because
+the thing that should run it is the card this lane could not build.
+
+    T-033  [docs/architecture/components/, lib-parser, app-map, app-shell]
+    T-086  [docs/CONVENTIONS.md]
+    T-091  [tools/e2e]
+    T-102  [app-agent]
+    T-107  [app-interview]
+    T-111  [app-board]
+
+**Fifteen pairs. Fourteen agree — disjoint under both computations.
+ONE disagrees, and it is the only one that can:**
+
+    T-033 x T-111 : string-equality = EMPTY        (reported DISJOINT)
+                    component-expanded = {C-11}    (OVERLAPPING)
+
+**AND THE BOARD IS AT OR OVER ITS CEILING.**
+`method/roles/orchestrator.md` step 4 reads *"Ceiling: 3–5 concurrent."*
+There are **six** lanes. This is T-111's criterion 5 — *"the disposition
+SHALL distinguish 'nothing is dispatchable' from 'the ceiling is
+reached'"* — live rather than hypothetical, and nothing in the tree
+reports it. The frontier would have said so on every dispatch after the
+fifth.
+
 ## Why this is a fence overlap and not a matter of taste
 
 `method/roles/orchestrator.md` step 4 dispatches a card "whose `touches:`

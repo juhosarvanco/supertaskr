@@ -245,6 +245,24 @@ it survived a whole lane undetected. Full account and three arms in
 converse case only** — a coarse slug refusing a disjoint card — and no
 reason string helps here, because no reason is computed.
 
+**AND IT IS ONE PAIR IN FIFTEEN, ON A BOARD THAT IS ALSO OVER ITS
+CEILING.** The lane set went from TWO to SIX while this lane worked
+(T-086, T-091, T-102, T-107 cut between 10:51Z and 11:08Z) and main moved
+three times in twenty-two minutes. Run by hand at **11:10Z against main
+`c4c15c8`** — by hand, because the thing that should run it is this card:
+
+    T-033 [docs/architecture/components/, lib-parser, app-map, app-shell]
+    T-086 [docs/CONVENTIONS.md]        T-102 [app-agent]
+    T-091 [tools/e2e]                  T-107 [app-interview]
+    T-111 [app-board]
+
+Fifteen pairs. **Fourteen agree; ONE disagrees** — `T-033 x T-111`,
+string-equality EMPTY against component-expanded `{C-11}` — and it is the
+only pair in the vocabulary that can. **And `orchestrator.md` step 4 reads
+"Ceiling: 3–5 concurrent." There are SIX.** That is criterion 5's
+"the ceiling is reached" branch, live rather than hypothetical, reported
+by nothing.
+
 ### The drill — NOT OWED, and that is derived rather than skipped
 
 **This diff contains ZERO new or changed assertions**, so CONVENTIONS'
@@ -286,6 +304,34 @@ applied from a lane.
   what STATE's `T-088-s4` account predicts** — this is the prediction
   holding, not evidence the cliff is gone.
 
+- **E2E — 145 passed / 1 FAILED, exit 1 on the FIRST run; 146/146 exit 0
+  on the second and third. BOTH DECLARED, NOTHING DISCARDED.** Scratch
+  ports **15220**, **15221**, **15222**, each `lsof`-read FIRST (zero
+  rows), then bind-confirmed on `127.0.0.1`, `0.0.0.0`, `::1` and `::` in
+  that order and never the reverse, and all free again after. No `pkill`.
+  **THE RED IS `T-120-s3`, IDENTIFIED BY ITS OWN SIGNATURE RATHER THAN
+  GUESSED AT** — `token-scan.spec.ts:201`, *"P6 reds a planted bare motion
+  utility and leaves its motion-safe twin alone"*, failing at its mtime
+  restore with **`Expected: 1787654289922.3904` / `Received:
+  1787654289922`**. **The `.3904` IS the diagnosis**: `Stats.mtime` is a
+  `Date` holding whole milliseconds, so `utimesSync(target, clock.atime,
+  clock.mtime)` writes back a rounded timestamp while the assertion
+  compares the unrounded float it captured.
+  **IT CANNOT BE THIS LANE'S, AND THAT IS DERIVED**: the change set is 4
+  paths, ALL `docs/tasks/*.md`, and `grep -c tools/e2e` over it is **0**.
+  A markdown-only diff cannot move an mtime assertion in a TypeScript
+  spec.
+  **AND IT IS THE FIRST TIME IN FIVE CHECKPOINTS THAT IT ACTUALLY
+  FIRED.** STATE has carried *"IT DID NOT FIRE AT THIS MERGE EITHER"* for
+  five checkpoints running while predicting it fires *"in exactly the
+  places this project creates most often: a fresh lane worktree and a
+  fresh poison-drill worktree."* **This is a fresh lane worktree and it
+  fired, red once then green twice, exactly as written.** The second run
+  was not a re-run to reach green — it is the prediction's own second
+  half being checked, and both halves are reported. **The one-token fix
+  in STATE is unchanged and still unbuilt**; it is still item 1 under
+  "Next up", now for the sixth checkpoint.
+
 **THE THREE STANDING GATES, DERIVED FROM THIS LANE'S OWN DIFF (4 paths,
 all under `docs/`):**
 
@@ -296,9 +342,42 @@ all under `docs/`):**
   "your edits will match" and instructed the gate be RUN; the outcome
   falsified the premise**, so it is derived not-owed rather than run —
   STATE's own precedent for a docs-only diff.
-- **DOCS GATE — FIRES, 4 of 4 under `docs/`.** Invoked directly from the
-  repo root with ROOT-RELATIVE arguments and never through `xargs`, with
-  the new files `git add`ed first so it can see them (`T-010-s10`).
+- **DOCS GATE — FIRES, exit 1, 4 of 4 under `docs/`.** Invoked directly
+  from the repo root with ROOT-RELATIVE arguments and never through
+  `xargs`, with the new files `git add`ed first so it can see them
+  (`T-010-s10`). **THREE suites owed** — `npm test from app/`,
+  `npm test from tools/e2e/`, `npx vitest run from lib/parser/` — all
+  three run and green, at the writes and AGAIN after the amendment
+  (T-081-s9). **`cargo test` is NOT owed on this diff** (no
+  `docs/CONVENTIONS.md`, no `docs/architecture/components`, no capture)
+  and was run anyway. The gate reports **12 derived readers across 4
+  suites**, a census of **130** docs-shaped sites in 22 files, and **0
+  frontmatter issues** — which is this card's `verifying` stamp parsed
+  rather than assumed.
+
+**THE RANGE, DERIVED AT MY OWN REF — and the left endpoint moved twice
+while I derived it.** Main was `e04f5b3` at 10:46Z, `ad5a0df` at 10:51Z
+and **`c4c15c8` at 11:08Z**: three tips in twenty-two minutes.
+
+    git merge-tree --write-tree c4c15c8 <tip> -> tree 64852bc…, exit 0 (read from $? FIRST)
+    git diff --name-only c4c15c8 <TREE>            ->  4   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only c4c15c8...<tip> (THREE)   ->  4   AGREES — FIFTH MERGE RUNNING
+    git diff --name-only c4c15c8..<tip>  (TWO, FORBIDDEN) -> 13
+    git diff --name-only e04f5b3..c4c15c8 (main's advance) ->  9
+
+**THE SET IDENTITY WAS CHECKED, NOT ONLY THE COUNT** — `diff` over the two
+sorted lists is exit 0, EMPTY — which is the check that would have caught a
+disagreement had one existed. `comm -12` over the branch's four and main's
+nine is **EMPTY**, and 9 + 4 = 13 is the arithmetic proving the sets
+disjoint. The forbidden two-dot form overstates by **9 paths, 3.25x**, pure
+left-endpoint drift. Ratios so far: T-110 7.0x, T-120 1.2x, T-124 5.6x,
+T-052 5.3x, T-111 **3.25x** — the ratio is weather; the left endpoint is
+the signal.
+
+**`lint:tokens` CONTROL IS 691 HERE AGAINST STATE's 688, AND THE
+DIFFERENCE IS EXACTLY THIS LANE.** The corpus is `git ls-files`, which
+reads the INDEX, so the three staged suggestion files join it: 688 + 3 =
+691. Derived, not quoted.
 
 ### For the verifier
 
