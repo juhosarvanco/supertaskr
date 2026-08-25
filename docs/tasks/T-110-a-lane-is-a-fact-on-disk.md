@@ -653,6 +653,406 @@ un-normalised, possibly relative `worktree_path` and the cwd-dependent
 `exists_on_disk`), `T-110-s8` (`parse_head` accepts a multi-line `HEAD`
 and a trailing tab while claiming a whole-shape match).
 
+---
+
+2026-08-25 — `claude-opus-5 @T-110-verify2` (verifier, SECOND PASS, a
+fresh session that wrote neither build nor either earlier verdict;
+same-model, independent hand): **REJECTED** — on the SECURITY SWEEP
+alone, and on nothing else.
+
+**THE FIRST REJECTION IS CLOSED. I proved that my own way and I am
+saying so first**, because a verdict that buries the thing it was sent to
+check is a bad verdict. Criterion 4 is met: each of the four states dies
+to its own one-sided producer mutant, and all four of the first pass's
+survivors — including the one that made the card's named fixture
+unreachable — now red at exit 101. Criteria 1, 2, 3, 5, 6, 7 and 8 are
+met. Every suite is green, all three standing gates were derived, fired
+and run, and 28 of 28 real mutants redded with a no-op control surviving.
+
+**THIS IS THE SECOND REJECTION, AND THAT IS THIS METHOD'S STOP
+CONDITION** — `method/tasks/TASK-FORMAT.md`: *"Two rejections → stop;
+open a room, escalate to the human."* This card should not go to a third
+executor on a verifier's say-so. The finding below is a two-token fix
+inside `[app-dispatch]`, so the room's question is a disposition
+question, not a design question.
+
+### THE BOUNDED READ, stated because it is what makes this pass worth having
+
+I read the card at its BASE REF — `git show
+d46f71f:docs/tasks/T-110-a-lane-is-a-fact-on-disk.md`, the planner's
+spec, free of every executor addition and both verdicts — formed my
+attack from that alone, and **RAN all 28 mutants and 11 probe bodies
+before opening the lane's copy of this file.** Everything below the
+mutant table was therefore found without knowing what either earlier
+pass had looked at. The consequence is the finding: the standing verdict
+records this exact area as *"CLEAR at REJECTED level"*, and it is not.
+
+### CRITERION 4 — CLOSED, reproduced independently
+
+Detached drill worktree `drill-T-110-verify2` at `2b20ea8`, its own
+`CARGO_TARGET_DIR` INSIDE it (arm (c)); driver
+`drill-T-110-verify2-driver.sh`, second batch
+`drill2-T-110-verify2-driver.sh`, results
+`mutants-T-110-verify2.txt` / `mutants2-T-110-verify2.txt` — every
+artefact named per-lane (T-088-s3), not only the worktree. Baseline
+`cargo test --test dispatch_lanes` **31/31 exit 0**. Every mutation is
+PRODUCER-side and one side only, read back with `git diff -U0` BEFORE
+its suite ran, restored with `git checkout --` and proved by sha256
+against the drill's own commit `2b20ea8` — **29 times, all MATCH**
+(`lanes.rs` `4548490f…`, `join.rs` `f83ccbcb…`).
+
+The four states, one arm at a time — this is the criterion, and it holds:
+
+| # | mutation (producer only) | outcome | killed by |
+|---|---|---|---|
+| M01 | `classify`: `(true,false)` → `Live` | **RED 101** | `a_building_stamp_with_no_worktree_is_a_lane_that_died` + 3 |
+| M02 | `classify`: `(false,true)` → `NotDispatched` | **RED 101** | `a_lane_on_no_card_becomes_its_own_row_rather_than_vanishing` + 2 |
+| M03 | `classify`: `(true,true)` → `StampSkipped` | **RED 101** | `the_four_states_are_four_different_answers_on_one_fixture` + 5 |
+| M04 | `classify`: `(false,false)` → `Died` | **RED 101** | `the_counts_seed_every_state_and_tally_the_rows` + 3 |
+
+And the first pass's four survivors, re-formed against the Rust:
+
+| # | the survivor, re-formed | outcome | killed by |
+|---|---|---|---|
+| M06 | swap the `died` / `stampSkipped` arms (was T1/R1) | **RED 101** | six bodies |
+| M05 | `IN_FLIGHT_STATUSES` → `["","",""]` (was T2/R2) | **RED 101** | `in_flight_is_exactly_three_statuses_named_as_literals` + 7 |
+| M07 | the no-card half short-circuited (was T3/R3) | **RED 101** | `a_lane_on_no_card_becomes_its_own_row_rather_than_vanishing` + 2 |
+| M08 | two refusals, one sentence (was T4/R4) | **RED 101** | `every_refusal_has_its_own_sentence_and_no_two_are_equal` |
+
+M05 is the one that matters most and it is worth naming: emptying the
+in-flight set makes `died` — *"the one nothing in the tree can currently
+see"* — unreachable, and it is now killed by eight bodies including the
+named fixture itself. **The relocation into `join.rs` is the right
+repair and it works.** `app/src-tauri/src/dispatch/**` is C-15's own
+path, the fence was not widened, and `acl_pin.rs` is still a 0-file diff.
+
+The other twenty-one, all RED at exit 101 and all still COMPILING (a
+mutant that fails to build proves nothing): M09 the `parent()` climb
+dropped · M10 `exists_on_disk` pinned true · M11 `truncated: false` ·
+M12 the entry-name sort deleted · M13 the size bound disabled · M14 the
+task-id letter check loosened · M15 `GitIsAFile` answered as
+`NotAGitRepository` · M16 the row drops its card · M17 the digit bound
+widened · M18 `BRANCH_MAX_LEN` 255→256 · M19 `MAX_METADATA_BYTES`
+4096→40960 · M20 `MAX_WORKTREE_ENTRIES` 4096→4095 · M21 a not-a-lane
+reported as detached · M23 a planted `fs::write` · M24 a planted
+`Command::new` · M25 slug digits joining the id · M26 `WorktreesUnreadable`
+answered as `NoWorktreesDirectory` · M27 `NoWorktreesDirectory` answered
+as `NotAGitRepository` · M28 the object-id length loosened to `>= 39` ·
+M29 `Scanned` gaining a refusal. **M22, a deliberate no-op control (one
+word of a doc comment), SURVIVED at exit 0** — so the harness
+discriminates rather than reporting red for everything.
+
+**M18, M19, M20 and M11 close four of the first verdict's five
+survivors**, which its own text asked for by name. The fifth —
+`Err(_) => truncated = true` on a non-UTF-8 entry name — I could not red
+either, and **the rebuild's Darwin claim is TRUE, tested rather than
+accepted**: `mkdir` and `open(O_CREAT)` on APFS at `/private/tmp` both
+fail **errno 92 EILSEQ** for a lone `0xFF`, a lone surrogate
+(`ED A0 80`), an overlong (`C0 AF`) and a truncated sequence (`E2 82`) —
+four shapes, eight syscalls, zero entries created. The arm is
+unreachable on this platform and `T-110-s10` says so honestly. It would
+be reachable on ext4.
+
+**One shape-six candidate, named because the drill has to ASK** (T-057):
+`the_id_is_built_from_validated_digits_and_never_stripped_off_a_prefix`
+is the only body of the 31 that killed nothing in my 28. I could not
+construct a mutant it kills alone — every prefix-strip mutation also
+reds the grammar table two bodies up. It is not a T-057 duplicate (it
+carries a meta-assertion the table cannot make: each counterexample must
+be one a prefix strip ACCEPTS, and its own comment records that control
+catching `task/-110-x`), and it adds `task/main` and `task/T-x-110`,
+which the table lacks. Recorded, not charged.
+
+### THE FAILURE — the security sweep: a symlinked `gitdir` is FOLLOWED, and an unrelated file's CONTENTS become a Lane's `worktree_path`
+
+`read_small` (`app/src-tauri/src/dispatch/lanes.rs`) opens with
+`fs::metadata(path)` — which **follows symlinks**. The three checks above
+it use `fs::symlink_metadata`, which does not. So the reader refuses a
+symlinked `.git`, refuses a symlinked `.git/worktrees`, refuses a
+symlinked ENTRY DIRECTORY — and then chases a symlinked `gitdir` and a
+symlinked `HEAD`, reads up to `MAX_METADATA_BYTES` of whatever is at the
+other end, and hands the result to the board **as a `Lane`**.
+
+Reproduce, in four commands, in a temp directory that reads nothing of
+this repository:
+
+    T=$(mktemp -d); mkdir -p "$T/repo/.git/worktrees/leak" "$T/secrets"
+    printf 'machine github.com/login AKIA-EXAMPLE-SECRET/token-value\npassword hunter2\n' > "$T/secrets/creds"
+    ln -s "$T/secrets/creds" "$T/repo/.git/worktrees/leak/gitdir"
+    printf 'ref: refs/heads/task/T-110-x\n' > "$T/repo/.git/worktrees/leak/HEAD"
+
+Then `read_lanes(Path::new("$T/repo"))`. **Expected:** a typed defect —
+`gitdir` is not a file git wrote. **Actual**, verbatim from
+`cargo test --test <probe> -- --nocapture` in a detached worktree at
+`2b20ea8`:
+
+    Scanned {
+        entries: [
+            Lane {
+                name: "leak",
+                task_id: "T-110",
+                branch: "task/T-110-x",
+                worktree_path: "machine github.com/login AKIA-EXAMPLE-SECRET",
+                exists_on_disk: false,
+            },
+        ],
+        truncated: false,
+    }
+
+That `worktree_path` is not a path. It is the first line of
+`$T/secrets/creds` with its last `/`-segment removed, `Serialize`d onto
+a `Lane` row, bound for `DispatchJoin.rows` and the board.
+
+**THIS FALSIFIES THREE STANDING CLAIMS, one of them a verdict's:**
+
+1. `read_lanes`' own doc comment: *"It opens no process, writes no byte,
+   and **follows no path it was not given by git's own files**."* It
+   follows exactly such a path.
+2. `read_lanes`' body comment at the `.git` check: *"a symlink is not a
+   directory either, and **this reader does not chase one**."* It chases
+   two.
+3. The standing verdict's sweep: *"no forged LANE is reachable by any of
+   them"*, and *"A `gitdir` that is a symlink to a 2.4 MB file is refused
+   `GitdirTooLarge { len: 2493885 }` — the bound holds through the
+   symlink. **Correct.**"* **That probe was one-sided.** The SIZE bound
+   stopped that fixture; the symlink policy never ran. Point the same
+   symlink at a file UNDER 4096 bytes and both the follow and the forged
+   Lane are right there. This is the one-sidedness CONVENTIONS' POISON
+   DRILL bullet warns about, committed by a probe rather than by a
+   mutant — and it is why this pass exists.
+
+**WHY THIS IS A REJECTION AND NOT A ROUTED SUGGESTION.**
+`method/roles/verifier.md` step 3 is explicit: *"injection points on any
+new input path … Findings here are REJECTED-level, not suggestions."*
+And the two things that separate it from `T-110-s7` and `T-110-s8`,
+which I agree are hardening and correctly deferred: those two report a
+path the reader **was given**, verbatim, and read no file at it. This one
+**reads a file it was not pointed at** and puts its bytes on a `Lane`.
+The threat model is this module's own — `MAX_METADATA_BYTES`' comment
+justifies its bound with *"The app can be pointed at a STRANGER's
+repository"* — so the module accepts the model, bounds the LENGTH of the
+read, and leaves the TARGET unbounded. And F-04's product is a brief a
+human pastes into a shell.
+
+**BE FAIR ABOUT THE BLAST RADIUS, because a verdict that overstates is
+worth less than one that measures.** Nothing is written. The read is
+bounded at 4096 bytes. `git clone` does not deliver `.git/worktrees`, so
+the vector is a repository handed over as an archive, a synced folder or
+a template rather than fetched. And **nothing is wired yet** — no
+`#[tauri::command]`, no importer — so no byte reaches a webview today.
+What makes it a rejection anyway is that it is a false property the
+record currently asserts is true, on the one input path this card exists
+to open, inside the fence, with a fix that is two tokens.
+
+**THE FIX**, in `read_small`:
+
+    -    let meta = fs::metadata(path).map_err(|_| SmallRead::Missing)?;
+    +    let meta = fs::symlink_metadata(path).map_err(|_| SmallRead::Missing)?;
+
+A symlink then fails `meta.is_file()` and lands as
+`EntryDefect::GitdirMissing` / `HeadMissing` — reported, never dropped,
+which is this card's own rule. Git never symlinks either file, so
+nothing legitimate changes. It wants a body: a `gitdir` symlinked to a
+SMALL file must be a typed defect, with the positive control that the
+same bytes written as a real file ARE read (a negative assertion needs a
+positive control — the exact rung the standing sweep missed).
+
+### The rest of the sweep — CLEAR, and each arm measured rather than granted
+
+Nineteen hostile entries in one fixture repository, every one read back
+and printed. **No traversal, no injection, no panic, no write.**
+
+- Entry names come from `read_dir`, so they are single path components;
+  `worktrees_dir.join(&name)` cannot escape. A symlinked entry directory
+  is `NotADirectory` (`symlink_metadata`). **Correct.**
+- Hostile BRANCH names never build a path and never forge an id:
+  `ref: refs/heads/task/../../../../etc/T-110-x` → `NotALane
+  ExtraSegment { segments: 7 }`; `refs/heads/../../../../../../etc/passwd`
+  → `NotALane ExtraSegment { segments: 8 }`; a 4000-character branch →
+  `NotALane TooLong { len: 4011 }`. `task/T-110-__proto__` is a lane with
+  `task_id: "T-110"` — the `__proto__` is a SLUG and never a key.
+- A `gitdir` with an interior NUL is a Lane whose `worktree_path`
+  carries the NUL to the wire; no panic, `is_dir()` is false. Cosmetic,
+  worth a byte-class check whenever the fix above is taken.
+- **ADR-009 — MET, on both sides.** Rust: `lanes_by_task` is a
+  `BTreeMap`, `count_by_state` is a `BTreeMap`. TypeScript: `hydrateJoin`
+  builds `ReadonlyMap<string, DispatchRow>`; the only plain object in the
+  file, `DISPATCH_STATE_KEYS`, is keyed by an AUTHORED vocabulary and
+  exists for its `satisfies`. No computed-key write to a plain object
+  anywhere in the diff.
+- **No dependency addition** — the 17 paths carry no manifest and no
+  lockfile; `serde` and `serde_json` were already present. **No webview
+  grant** — `acl_pin.rs` is a 0-file diff. No secret in the diff.
+
+### The reader against REAL git — CORRECT, and the card's problem statement is still wrong
+
+Built with `git init` + three real `git worktree add` invocations
+(git **2.50.1**, Apple Git-155), then read by `read_lanes`:
+
+- `gitdir` holds `<worktree>/.git`, **137 bytes, absolute, one trailing
+  newline** — the worktree's own `.git` FILE, not the worktree. The
+  card's *"names the worktree's path"* is wrong and `parent()` is
+  load-bearing; M09 reds four bodies. Third independent confirmation.
+- A real lane → `Lane { task_id: "T-110", exists_on_disk: true }`, and
+  the returned path is asserted to be the directory HOLDING the `.git`
+  file rather than merely not ending in `/.git`.
+- A real `--detach` worktree → `Detached`. **A real worktree on the
+  older `t042-genesis-switch` spelling → `NotALane
+  NotTheLaneNamespace`** — visible and wrong rather than invisible and
+  wrong, which is what `T-110-s2` routes. Both spellings are live here:
+  `git branch --list` from the ROOT returns 37 `tNNN-…` and 31
+  `task/T-NNN-…`. None of the `tNNN-` set is checked out today.
+- The four states drive off a REAL git repository, not only the
+  hand-written fixtures, and agree exactly.
+- `the_reader_writes_nothing`, re-asserted against a byte-for-byte
+  snapshot of a REAL `.git`: unchanged.
+
+**AND A RELATIVE `gitdir` IS NOT HYPOTHETICAL ON THIS MACHINE.**
+`T-110-s7` measured it from hand-written bytes; **real git writes it**:
+`git worktree add --relative-paths` (git ≥ 2.48) and
+`worktree.useRelativePaths=true` both produce `gitdir =
+../../../../base-T-110/.git`, and the reader then answers
+`worktree_path: "../../../../base-T-110"`, `exists_on_disk: **false**`
+for a LIVE lane — a live lane reported as gone, resolved against the
+process cwd. This repository is not configured that way (`git config
+--get worktree.useRelativePaths` exits 1; all seven live `gitdir` files
+are absolute), so it is latent HERE and not latent anywhere. It
+strengthens `T-110-s7`; it does not carry this rejection.
+
+### TOTALITY — the brief's harder question, answered
+
+`classify` is genuinely total: two booleans, four arms, no default. The
+lossy step is the PROJECTION, `has_lane = !lanes.is_empty()` over
+`WorktreeEntry::Lane` only. Three shapes therefore fall into `has_lane =
+false`, and I drove each:
+
+1. **A worktree whose entry is UNREADABLE, under a `building` card** — a
+   REAL live lane with its `HEAD` deleted — scores **`Died`**. The
+   worktree is alive. Nothing is lost (the entry is carried in
+   `not_lanes`, measured), but `WorktreeEntry::Unreadable` holds only
+   `name` and `defect`, so the row and the evidence are joinable by a
+   human and not by a program. A judgement, disclosed nowhere.
+2. **A pruned-but-not-removed registration under a `building` card**
+   scores **`Live`** with `exists_on_disk: false` on the row. This is a
+   deliberate, argued, pinned judgement
+   (`a_pruned_but_not_removed_lane_is_still_a_lane_and_says_so_on_the_row`)
+   and I agree with it — a renderer that reads `state` and ignores
+   `exists_on_disk` is the risk, and that is T-111/T-112's problem to
+   inherit knowingly.
+3. **TWO CARDS CARRYING ONE TASK ID PRODUCE TWO ROWS.** `join_lanes`
+   iterates the BOARD, so a board with `T-110 building` and `T-110 done`
+   yields `[("T-110", Live), ("T-110", StampSkipped)]`. Both
+   `DispatchJoin::Joined.rows` (*"One row per task id"*) and
+   `dispatch-store.ts` (*"a duplicate task id on the wire **would be a
+   defect in the producer** — `join_lanes` emits one row per id"*) state
+   the opposite, and `hydrateJoin`'s `rows.set` then silently keeps the
+   last. It is not a criterion and the parser already flags
+   `duplicate-id` upstream, so it does not carry this rejection —
+   **filed as `T-110-s11`.**
+
+Two lanes on ONE id is handled correctly and pinned
+(`two_lanes_carrying_one_task_id_both_survive`). A multi-line `HEAD`
+never forges a lane: `ref: refs/heads/task/T-110-x\nref:
+refs/heads/task/T-999-evil` → `NotALane`. A HEAD with TRAILING blank
+lines IS a lane, which is a benign tolerance and `T-110-s8`'s subject.
+`task/T-0110-x` yields `T-0110` and matches no card — visible.
+
+### Suites and gates, every exit read from `$?` UNPIPED on the very next token
+
+Fresh detached worktree at `2b20ea8`; `lib/parser` `npm ci` + build,
+`app/` `npm install` + build, `tools/e2e` `npm ci`, in that order.
+
+- **cargo `test --no-fail-fast`: 414 passed / 0 failed / 3 ignored, exit
+  0**, summed over **SIXTEEN** `test result:` lines, **zero warnings** —
+  the rebuild's figure, reproduced. Run TWICE, once as the baseline and
+  once after the drill restored every file; identical both times.
+  **31 of those 414 are `dispatch::`.**
+- **app: `npm run build` exit 0, `npm test` 940/940 across 46 files, exit
+  0.** Bundle `index-C86RloYb.css` 45.06 kB / `index-DEkJr3K8.js`
+  526.42 kB — unmoved, because nothing imports the store.
+- **parser: `npx vitest run` 263/263 across 12 files, exit 0.** STATE
+  says 264 at the checkpoint and both figures are right: T-096's extra
+  body is on MAIN and not in this lane's base.
+- **E2E: 143/143, exit 0**, scratch port **15080**; `npm run typecheck`
+  exit **0**.
+- **BOOT GATE — DERIVED and FIRES, 6 of 17** (four `dispatch/*.rs`,
+  `tests/dispatch_lanes.rs`, `dispatch-store.ts`). **RUN, exit 0** on
+  scratch port **15081**, both lines: `[nputer] project folder: …` and
+  `[nputer] window "main" created`.
+- **DOCS GATE — FIRES, exit 1, 11 of 17**, invoked DIRECTLY from the
+  repo root with ROOT-RELATIVE arguments, never through `xargs`. **THREE
+  suites owed** — `npm test from app/`, `npm test from tools/e2e/`,
+  `npx vitest run from lib/parser/` — all three run and green above.
+  12 derived readers across 4 suites, **0 frontmatter issues**, census
+  119 docs-shaped sites in 22 files with 12 in 10 files resolving into
+  `docs/`, 1 package-relative site, ledger at 6 entries.
+  **AND RE-RUN ON THIS VERDICT'S OWN TWO DOC PATHS**, because a verdict
+  commit is a `docs/tasks/**` diff and owes the same gate. `T-110-s11`
+  was `git add`ed BEFORE the gate saw it (`T-010-s10`: the gate reads
+  TRACKED files only): exit **1**, FIRES on 2 paths, **0 frontmatter
+  issues**, three suites owed and all three RE-RUN over the final tree —
+  parser **263/263 exit 0**, app **940/940 across 46 files, exit 0**,
+  E2E **143/143, exit 0** on scratch port **15082**.
+- **GRAPH REGEN — FIRES, 1 of 17 by the written trigger, and I ASKED the
+  gate rather than reasoning from it.** In a CLEAN worktree at
+  `2b20ea8` (`clean-T-110-verify2`, no target directory in it):
+  `index --check` exit **1**, a REAL red — `committed 648863 B · 126 f ·
+  1126 s · 1712 e` against `fresh 657087 B · 127 f · 1142 s · 1733 e`,
+  `files +1 -0 ~0`, `+ app/src/lib/dispatch-store.ts`, `edges +21`, every
+  edge with both endpoints inside that one file. **The lane leaving the
+  graph unregenerated is CORRECT** — that regen is the integrator's, at
+  the checkpoint. Post-merge the answer is bigger and the rebuild's
+  figure is the right one: `.nputerignore` does not exclude
+  `app/src-tauri/**`, so with T-010 on main **all five `.rs` files index
+  too and this lane's own contribution is +6 files**.
+- **`T-110-s4` REPRODUCED A THIRD TIME, INDEPENDENTLY.** The same
+  `index --check` run INSIDE the drill worktree reports **128** files and
+  `~ languages [ts] -> [js, ts]` — `.drilltarget/` is walked because
+  `.gitignore` carries `target/` and not `.drilltarget`. Measure any
+  graph delta in a clean tree.
+
+### What this brief, the card and BOTH earlier passes got wrong
+
+- **The card's problem statement**: `gitdir` does not name the worktree's
+  path. Third confirmation, from real git.
+- **The standing verdict's security sweep**: *"CLEAR at REJECTED level"*
+  and *"no forged LANE is reachable"* are both false, by a one-sided
+  probe — a symlink to a 2.4 MB file, refused by the SIZE bound rather
+  than by the symlink policy that never ran.
+- **The rebuild is right where I could check it**, including the two
+  claims the brief told me to distrust: the Darwin `EILSEQ`
+  unreachability (confirmed on four malformed shapes, both syscalls), and
+  that its `MAX_WORKTREE_ENTRIES` comment correction is the right half of
+  `T-110-s6` (truncating before the sort would delete
+  `entries_come_back_sorted_by_name_whatever_the_filesystem_says`).
+- **My dispatch brief** said `2b20ea8` was the tip against main `d64c673`
+  — true when written. **Main moved twice under this verification**,
+  `d64c673` → `25a9e2c` → `5fbfd4e` (T-031's merge). Re-derived at my own
+  ref: `TREE=$(git merge-tree --write-tree 5fbfd4e 2b20ea8)`, `$?` read
+  FIRST = **0**, `git diff --name-only 5fbfd4e "$TREE"` = **17 paths**,
+  unchanged. The forbidden two-dot form now reads **110**.
+- **My own probe was wrong once and it is recorded**: I asserted a
+  multi-line `HEAD` can never be a lane. A HEAD with TRAILING blank lines
+  is one, and that is a harmless tolerance, not a defect. The dangerous
+  multi-line shape is refused.
+
+### Live-environment facts, read on this host and never off a commit
+
+Port 1420 read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else,
+before and after — holder `node` pid **82549**, one socket `TCP
+[::1]:1420 (LISTEN)`, identical throughout; no bind, no connect, no
+signal, at any point. Scratch ports **15080** and **15081** were
+`lsof`-read FIRST (zero rows), then bind-confirmed free on `127.0.0.1`,
+`0.0.0.0`, `::1` and `::` in that order, and both were free again after.
+**No `pkill`.** The known `T-088-s4` flake
+(`docs_watch::tests::startup_arm_watches_the_initial_root`) was **green
+in both full runs — 0 red in 2, no suite re-run to get there.** No
+sibling lane touched; the untracked `z` left alone. Two throwaway
+worktrees (`drill-T-110-verify2`, `clean-T-110-verify2`) were created and
+are removed and pruned at this commit. Nothing was installed, built or
+run inside `/Users/ujju/Projects/nputer-T-110`; the only thing this pass
+wrote there is this verdict and `T-110-s11`.
+
 ## Implementation notes — THE REBUILD (second executor, after the rejection)
 
 Executor `claude-opus-5 @T-110-rebuild`, a FRESH session that did not
