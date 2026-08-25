@@ -646,3 +646,129 @@ move without a red. The two bodies hold the property jointly and neither
 holds it alone. CONVENTIONS says shape six *"has no mechanical remedy —
 the drill has to ASK"*; this is the asking, and the answer is a
 limitation rather than a clean bill.
+
+### 14. SUITES AND GATES — every exit read unpiped, every count derived
+
+**`cargo test --no-fail-fast` from `app/src-tauri`: 469 passed / 0 failed
+/ 3 ignored, exit 0**, SUMMED over **17** `test result:` lines and
+derived rather than read off the exit. Lib suite (`nputer_lib`)
+**5.05s** — the **GREEN** band (`T-088-s4`: green under 9.5s, red over
+14.6s, nothing between), `app/src-tauri/target` at 3.3 GB. **Both known
+intermittents read BY NAME and both `ok`**:
+`docs_watch::tests::startup_arm_watches_the_initial_root` and
+`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`.
+
+**THE COUNT'S ARITHMETIC CLOSES AND STATE'S 455 IS NOT THIS LANE'S
+BASELINE.** STATE's reference is 455 over 16 lines at the T-107
+checkpoint `05dd4d9`. Between it and this lane's base sits
+`a9ed33d` (Merge T-102), which adds **5** `#[test]` bodies — so the base
+at `ae16fbe` is **460 over 16**. This lane adds **9** bodies (6 unit + 3
+integration) and **one test target**: 460 + 9 = **469**, 16 + 1 = **17**.
+The three later commits add ASSERTIONS to existing bodies, not bodies, so
+the count does not move again.
+
+**ALL THREE STANDING GATES FIRE, each derived from the prescribed
+14-path range rather than assumed.**
+
+| gate | trigger | on these 14 | result |
+|---|---|---|---|
+| GRAPH REGEN | `*.ts/tsx/js/jsx` or `*.rs` outside `docs/` | **9 — FIRES** | **exit 1, a REAL stale** |
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **9 — FIRES** | **exit 0** |
+| DOCS GATE | a `docs/` path a code suite reads | **5 — FIRES** | **exit 1**, three suites owed, all green |
+
+**THE BOOT GATE FIRES, AND THE DISPATCH BRIEF GUESSED OTHERWISE.** The
+brief said *"The BOOT GATE does not obviously fire on `crates/**` —
+derive that rather than assuming, and say which way it came out."* It
+came out **FIRES**, on two independent readings. Literally: the trigger
+is the path prefix `app/src-tauri/**` and
+`app/src-tauri/crates/nputer-index/src/lib.rs` is under it. Meaningfully:
+`nputer_lib` depends on `nputer_index` (that is what `index_cmd.rs`
+imports), so this crate is a build input to the app binary and a
+regression here really can stop the app booting — which is the property
+T-040 created this gate for. Run as
+`NPUTER_BOOT_PORT=15290 npm run boot:check` from tools/e2e, **exit 0**,
+both `[nputer]` lines observed —
+`[nputer] project folder: /Users/ujju/Projects/nputer-T-129` and
+`[nputer] window "main" created` — process tree stopped by SIGTERM, no
+orphan (15290 back to zero `lsof` rows).
+
+**GRAPH REGEN — asked, not predicted**, and read off the SECOND line as
+this project's own trap requires: it printed both counts and a
+`+`/`~` file diff rather than `committed: MISSING`, so it is a real stale
+and not the `--root` false red. **Committed 921 608 · 178 · 1960 · 1881
+→ fresh 929 129 · 179 · 1981 · 1885**: `files +1 -0 ~11`, `edges +7 -3`.
+**THREE OF THOSE ELEVEN ARE NOT THIS LANE'S** — `agent/runner.rs`,
+`bin/fake_agent.rs` and `tests/agent_runner.rs` were already stale at the
+base (`T-129-s4`), and they account for **+7** of the +21 symbols. This
+lane's own share is **+1 file, +14 symbols, +4 edges, +7 521 bytes**, and
+every new edge endpoint is inside C-07, so no component relation moves.
+Against `max_graph_bytes` 1 000 000 that is **92.91%** with **70 871
+bytes of headroom** — the highest recorded, and still nothing reports it.
+**No regenerated graph is committed here**: `docs/architecture/graph.json`
+is not in C-07's declared `paths:`, and the regen belongs to the
+integrator at the checkpoint.
+
+**DOCS GATE — exit 1, FIRES on 5**, invoked DIRECTLY from the repo root
+with the RANGE RULE's own `$(…)` path list, **never through `xargs`**,
+stderr read FIRST (no missing-`yaml` trace — `npm ci` in tools/e2e ran in
+THIS worktree only). Three suites owed and all three green:
+
+- **`npx vitest run` from lib/parser — 264/264 across 12 files, exit 0**
+- **`npm test` from app/ — 958/958 across 46 files, exit 0**
+- **`npm test` from tools/e2e — TWO RUNS, BOTH DECLARED**
+
+`cargo test from app/src-tauri/` is **NOT owed and that is derived**: the
+diff carries no `docs/CONVENTIONS.md`, no `docs/architecture/components`
+and no `docs/research/` capture, which are the three things its readers
+resolve. It was run anyway and is green. The gate reports **12 derived
+readers across 4 suites**, a census of **130** docs-shaped sites in 22
+files, and **0 frontmatter issues** — *"every live task card's
+frontmatter parses, with a legal status"*, which is this card's
+`status: verifying` and the four new suggestion files checked rather than
+assumed.
+
+**`T-120-s3` FIRED ON THE FIRST E2E RUN AND THIS IS THE FOURTH PASS TO
+CATCH IT WITH THE DIGITS.** Run 1: **exit 1, 145 passed / 1 failed**, on
+`tools/e2e/tests/token-scan.spec.ts` —
+
+    Error: tools/e2e/fixtures/shell.ts restored its MTIME too
+    Expected: 1787663676918.452
+    Received: 1787663676918
+
+A fractional tail against a whole number, which STATE says *"is this and
+not your own change"*. This is a fresh worktree and it was its first E2E
+run, exactly the condition. **Run 2, nothing changed on disk, same
+scratch port 14530: exit 0, 146/146** — red once, green forever after, in
+this checkout. **BOTH RUNS DECLARED, and the second was not a fix.**
+The total is **146**, not main's post-T-091 **171**, because T-091 merged
+after this lane's base.
+
+**PORTS AND THE HUMAN'S APP.** Scratch ports **14530** (e2e) and
+**15290** (boot) were each `lsof`-read FIRST (zero rows), then
+bind-confirmed free on `127.0.0.1`, `0.0.0.0`, `::1` and `::` in that
+order, with a probe **this lane wrote itself** rather than one taken by
+name out of the shared scratch directory; both were free again
+afterwards. **1420 was read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and
+nothing else** — no bind, no connect, on any interface. Holder `node`
+pid **88948**, cwd `/Users/ujju/Projects/nputer-app/app` — **a different
+checkout**, which is what made the three `npm ci`/`npm install` runs in
+this worktree safe, and which is CONVENTIONS' item-3 repair (test the
+CHECKOUT, not the port) applied rather than quoted. The app binary is pid
+**89201**, started **2026-08-25 10:54:33**, unchanged before and after,
+read with the ANCHORED `awk '$NF=="target/debug/nputer"'`. No `pkill`, no
+`cargo clean`, no process from this lane survives. **These are
+live-environment facts and carry the time they were read.**
+
+**THE RANGE, at its own ref and re-derived twice because main moved
+twice under this lane.** `merge-tree`'s exit was read BEFORE the
+substitution both times, and both times it was **0** — a tree, not a
+conflict report.
+
+| main tip | prescribed pre-merge | forbidden two-dot | main's advance | branch | intersection |
+|---|---|---|---|---|---|
+| `a649766` | **14** | 66 (4.71x) | 52 | 14 | **EMPTY** |
+| `eea61e0` | **14** | 74 (5.29x) | 60 | 14 | **EMPTY** |
+
+14 + 52 = 66 and 14 + 60 = 74: the arithmetic closes at both refs, the
+two sets are disjoint under `comm -12`, and **the entire swing is
+left-endpoint drift** — this lane's own 14 paths never move.
