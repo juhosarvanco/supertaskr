@@ -20,6 +20,53 @@
 
 use serde::{Deserialize, Serialize};
 
+/// The bounded traversals in the extractors (T-129) — one variant per
+/// self-recursive walk that carries a depth bound, and the value a
+/// refused file records so the refusal names WHAT stopped rather than
+/// only THAT something did.
+///
+/// The enum is the enumeration: a new self-recursive traversal cannot be
+/// bounded without adding a variant here, which is the card's "derive the
+/// set of traversals" made structural instead of documented. Serialized
+/// kebab-case; it reaches `graph.json` only through
+/// [`FileEntry::depth_refused`], which no file in a human-written tree
+/// carries.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum DepthSite {
+    /// `extract::rust::Cx::declarations` <-> `mod_item`: inline
+    /// `mod x { … }` nesting.
+    RustModNesting,
+    /// `extract::rust::Cx::use_tree`: nested `use a::{b::{ … }}` groups.
+    RustUseTree,
+    /// `extract::rust::Cx::collect_segments`: `a::b::c::…` path length.
+    RustPathSegments,
+    /// `extract::ts::Cx::module_statement` <-> `export_statement`:
+    /// `declare`-chained ambient declarations.
+    TsModuleStatements,
+    /// `extract::ts::Cx::pattern_names`: nested destructuring patterns.
+    TsBindingPattern,
+    /// `extract::ts::Cx::scan`: the candidate scan, which descends the
+    /// WHOLE tree — so this is the one whose depth is the file's own AST
+    /// depth rather than the depth of one construct.
+    TsCandidateScan,
+}
+
+impl DepthSite {
+    /// The serialized spelling, for messages and assertions that want the
+    /// string without going through serde.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            DepthSite::RustModNesting => "rust-mod-nesting",
+            DepthSite::RustUseTree => "rust-use-tree",
+            DepthSite::RustPathSegments => "rust-path-segments",
+            DepthSite::TsModuleStatements => "ts-module-statements",
+            DepthSite::TsBindingPattern => "ts-binding-pattern",
+            DepthSite::TsCandidateScan => "ts-candidate-scan",
+        }
+    }
+}
+
 /// Languages the indexer can be asked to collect. T-010 registered the
 /// Rust extractor, so `Rust` maps to `.rs` and is collected by default —
 /// it was a schema-stability placeholder from T-009 until then.
@@ -80,6 +127,16 @@ pub struct FileEntry {
     pub loc: usize,
     /// Sorted by name; emptied (never omitted) under budget truncation.
     pub symbols: Vec<Symbol>,
+    /// The traversal that REFUSED to descend further in this file, when
+    /// one did (T-129) — the depth bound recording the file instead of
+    /// dropping it silently, which is the crate's "degrade, never fail"
+    /// contract one layer below the parse. A refused file keeps
+    /// everything its traversals reached above the bound and appears in
+    /// `files[]` like any other; only the sub-tree past
+    /// `extract::MAX_DEPTH` is missing. Omitted for every file that
+    /// extracted in full, which is every file in a human-written tree.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub depth_refused: Option<DepthSite>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -152,6 +209,14 @@ pub struct Stats {
     /// over the per-file parse cap) — counted, never silent (plan §3).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub skipped: Option<usize>,
+    /// Files whose extraction hit the traversal depth bound (T-129) — the
+    /// headline count beside `skipped`, so a caller has a number without
+    /// walking `files[]`. DERIVED from the `depth_refused` fields exactly
+    /// as `symbols` is derived from the symbol arrays, not a second
+    /// record of the same fact: `files[]` says WHICH file and WHAT
+    /// refused, this says HOW MANY.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub depth_limited: Option<usize>,
 }
 
 pub(crate) fn file_id(path: &str) -> String {

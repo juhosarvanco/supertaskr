@@ -221,6 +221,7 @@ mod tests {
                     range: [1, 2],
                 })
                 .collect(),
+            depth_refused: None,
         }
     }
 
@@ -236,6 +237,7 @@ mod tests {
                 truncated_symbols: None,
                 truncated_files: None,
                 skipped: None,
+                depth_limited: None,
             },
             files,
             packages: vec![],

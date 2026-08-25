@@ -674,6 +674,7 @@ mod tests {
             hash: format!("blake3:{}", "0".repeat(64)),
             loc: 1,
             symbols: vec![],
+            depth_refused: None,
         }
     }
 
@@ -700,6 +701,7 @@ mod tests {
                 truncated_symbols: None,
                 truncated_files: None,
                 skipped: None,
+                depth_limited: None,
             },
             files,
             packages,

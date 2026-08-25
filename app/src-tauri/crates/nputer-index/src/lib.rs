@@ -38,7 +38,7 @@ use std::path::{Path, PathBuf};
 
 pub use diff::{diff, GraphDiff};
 pub use error::IndexError;
-pub use graph::{Edge, FileEntry, Graph, Lang, Package, Stats, Symbol, Unresolved};
+pub use graph::{DepthSite, Edge, FileEntry, Graph, Lang, Package, Stats, Symbol, Unresolved};
 
 use extract::Extractor;
 
@@ -185,6 +185,7 @@ pub fn index(opts: &IndexOptions) -> Result<Graph, IndexError> {
                         range: s.range,
                     })
                     .collect(),
+                depth_refused: record.depth_refused,
             }
         })
         .collect();
@@ -192,6 +193,12 @@ pub fn index(opts: &IndexOptions) -> Result<Graph, IndexError> {
     let languages: BTreeSet<&'static str> =
         prepared.iter().map(|(_, lang, _, _)| lang.as_str()).collect();
     let symbols_total = files.iter().map(|f| f.symbols.len()).sum();
+    // Derived from the file entries the same way `symbols` is derived
+    // from the symbol arrays (T-129) — the headline count of files whose
+    // extraction refused past `extract::MAX_DEPTH`, so a caller has a
+    // number without walking `files[]`. `None` when nothing refused,
+    // which keeps the key out of the committed bytes entirely.
+    let depth_limited = files.iter().filter(|f| f.depth_refused.is_some()).count();
     let graph = Graph {
         schema: 1,
         root: ".".to_string(),
@@ -203,6 +210,7 @@ pub fn index(opts: &IndexOptions) -> Result<Graph, IndexError> {
             truncated_symbols: None,
             truncated_files: None,
             skipped: (skipped > 0).then_some(skipped),
+            depth_limited: (depth_limited > 0).then_some(depth_limited),
         },
         files,
         packages: resolved.packages,
