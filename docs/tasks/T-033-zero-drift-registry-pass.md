@@ -783,8 +783,12 @@ precedent is legible rather than inferred.**
 5. **THE JUSTIFICATION IS MATERIAL, NOT RHETORICAL — MEASURED.** Main
    advanced **89 paths** between `25a9e2c` and `ad5a0df`, and **3 of them
    intersect this lane's own 35**: `app/test/architecture-dogfood.test.ts`
-   (**+199/-…**), `app/test/map-dogfood-render.test.tsx` (**+47/-…**) and
-   this card. This card's entire deliverable is fixture NUMBERS derived
+   (**+173/-26**), `app/test/map-dogfood-render.test.tsx` (**+40/-7**) and
+   this card. *(This line read `+199/-…` and `+47/-…` until the
+   re-derivation below: 199 and 47 are `git diff --stat`'s TOTAL changed
+   lines, not insertions. Corrected in place, and the error is recorded
+   rather than quietly fixed — the ruling is unaffected, since main
+   rewrote both fixtures either way.)* This card's entire deliverable is fixture NUMBERS derived
    from the tree. Built on the old base they would have been derived from
    a tree main had already rewritten, and the merge would have hand-
    reconciled them. **The rebase eliminated the overlap rather than hiding
@@ -1283,3 +1287,111 @@ neither `main` nor this tip — so nothing on this branch references it and
 this verdict does not rest on it. Noted because it is adjacent: it opens
 `crates/nputer-index` for a cycle gate, and `T-033-s11` names a second
 gap in that same crate that T-127 does not cover.
+
+### Addendum, same pass — EVERY RANGE AND COUNT RE-DERIVED INLINE AFTER A SHARED-SCRATCH HAZARD
+
+**The cost is recorded here because the architect asked for it to be, and
+because a verdict that hid a re-derivation would be worth less than the
+re-derivation.** Mid-pass, the architect reported a MEASURED incident: one
+verification pass wrote `prescribed.txt` into a scratch directory shared
+with other live sessions, another session wrote its own `prescribed.txt`
+to the same path, and the first pass read back **a different lane's path
+list**. Not hypothetical, and it produces a wrong answer that looks
+perfectly well-formed.
+
+**I WAS EXPOSED, AND BY THE EXACT FILENAME.** This pass wrote
+`prescribed.txt` — that file, that name — into the shared scratchpad
+root, along with `main_advance.txt`, `replay_delta.txt`, `union.txt`,
+`patch_pre.txt`, `patch_post.txt`, `p.sorted`, `three.sorted`,
+`twodot.sorted` and `backup_tip.txt`, and **read several of them back**.
+Those files are behind the 35-path count, the set-identity checks, the
+89/89 rebase-fidelity claim, the 789-line patch comparison, the 119-vs-121
+comparison, and — most load-bearing of all — **the "3 paths intersect"
+figure that is the material justification for approving the rebase**. A
+bare path list is the worst possible thing to trust by filename, because
+another lane's list has the same SHAPE and no wrong-looking bytes.
+
+**RE-DERIVED WITH NOTHING ON DISK**, using `diff <(cmd) <(cmd)` and
+`comm -12 <(cmd) <(cmd)` so no intermediate file exists to be overwritten:
+
+| figure | as published | re-derived inline | |
+|---|---|---|---|
+| `merge-tree --write-tree ad5a0df 935693f` exit / tree | 0 / `38cec7e0…` | 0 / `38cec7e0…` | same |
+| prescribed pre-merge form | 35 | **35** | same |
+| three-dot / two-dot | 35 / 35 | **35 / 35** | same |
+| prescribed vs three-dot, vs two-dot (`diff` exit) | 0 / 0 | **0 / 0** | same |
+| `merge-base(main, 935693f)` | `ad5a0df` | **`ad5a0df`** | same |
+| main's advance `25a9e2c..ad5a0df` | 89 | **89** | same |
+| replay delta `9b9472b..ebbfae3` | 89, `diff` exit 0 | **89, exit 0** | same |
+| **lane's 35 ∩ main's advance** | **3** | **3**, and the same three paths by name | same |
+| pre/post-rebase patch lines | 789 / 789 | **789 / 789** | same |
+| substantive lines differing | 3 | **3** (blob index, one context line, one hunk header) | same |
+| backup-to-tip vs union | 119 / 121 | **119 / 121**, same two absentees | same |
+| forbidden `765924d..935693f` | 48 | **48** | same |
+| main's advance since base, at `765924d` | 13, ∩ = 0 | **13, ∩ = 0** | same |
+| docs paths / boot trigger / `.rs` files | 23 / 4 / 0 | **23 / 4 / 0** | same |
+| added lines / secret hits | 2 107 / 0 | **2 107 / 0** | same |
+| rulings-section sha256, both refs | `6e91317b…` | **`6e91317b…` on both** | same |
+| `app-shell` census, base -> tip | C-05,C-10,C-11 -> +C-16 | **same** | same |
+| current merge vs `main` | base `ad5a0df`, 36 / 24 / ∩ 0 | **`ad5a0df`, 36 / 24 / ∩ 0** | same |
+
+**NOT ONE PATH LIST OR COUNT MOVED.** No collision reached this pass.
+
+**ONE FIGURE WAS WRONG ANYWAY, AND IT WAS MY OWN MISREADING, NOT A
+COLLISION** — which is the useful half of paying this cost. The rebase
+justification above cited the two fixtures as `+199` and `+47`. **`git
+diff --stat` prints TOTAL CHANGED LINES, not insertions.** `--numstat`
+gives **173/26** and **40/7** (and 173+26 = 199, 40+7 = 47, 173+40 = 213
+insertions — the stat footer I had already read and not reconciled).
+Corrected in place above with the old text kept, per this repository's own
+practice for a signpost the measurement has overtaken. **The ruling does
+not move**: main rewrote both fixtures substantially under this lane
+either way, which is the whole of the argument.
+
+**WHY THE `arch` FIGURES DID NOT NEED THE SAME TREATMENT — derived, not
+waved through.** Two independent grounds. First, those outputs are
+**self-authenticating**: the before-column file's first line names
+`/Users/ujju/Projects/scratch-T-033-base/docs/architecture/graph.json`, a
+directory created by this pass alone, and the after-column lists
+`component C-16 Shared primitives`, which exists on no other branch in
+this repository. No other session's output could wear either string.
+Second and better, **there is a git-sourced witness that never touched
+scratch at all** — the dogfood body's own title, read straight out of
+each ref:
+
+    git show ad5a0df:app/test/architecture-dogfood.test.ts
+      it("the full relation table: 14 confirmed, 12 undeclared, 9 planned"
+    git show 935693f:app/test/architecture-dogfood.test.ts
+      it("the full relation table: 26 confirmed, 1 undeclared, 9 planned"
+      expect(derived.fileComponent.size).toBe(178);
+      expect(drift).toEqual(["C-10"]);
+      expect(derived.components.filter((c) => c.nonCode).map((c) => c.id)).toEqual(["C-01", "C-11"]);
+      expect(derived.findings.filter(isDriftFinding).map((f) => f.id)).toEqual(["D1:C-10->C-14"]);
+
+Those are ASSERTIONS, not labels, and the suite carrying them ran
+**962/962 green** at this tip — so the relation tally, the file count, the
+drift set and the surviving undeclared row are confirmed from a second
+source with no scratch file anywhere in the path. *(Counting the raw
+`"confirmed"`/`"undeclared"`/`"planned"` strings over the body is NOT a
+valid check and is recorded so nobody repeats it — it returns 15/12/9 and
+28/6/10, because the comments around the rows contain the words too.)*
+
+**SUITES RE-RUN AFTER THIS WRITE, AND THE THIRD DERIVED AS NOT OWED.**
+The docs gate names five content readers of a `docs/tasks/` path — three
+in `lib/parser`, two in `app` — and two FILE-LIST readers in `tools/e2e`
+(`shell-frame.spec.ts`, `window-contract.spec.ts`) that `walk()` `docs/`
+and consume the listing. **This edit appends prose to an existing card and
+adds or removes no file under `docs/`**, so the e2e pair's answer cannot
+move; that is the same derivation this repository already records for
+`docs/STATE.md`, applied to its own case rather than quoted. `npm test`
+from `tools/e2e/` was green at 146/146 on the write that DID add a file
+(`T-033-s11`, port 15293) and again at 146/146 on port 15294.
+
+**THE STANDING FIX, so this costs the next pass nothing:** scratch files
+get a directory named for the pass — `scratchpad/T-033-verify/` — or,
+better where the answer is one number, no file at all. `diff <(a) <(b)`
+and `comm -12 <(a) <(b)` answer every set-identity question in this
+verdict without writing a byte, and nothing a concurrent session does can
+reach them.
+
+**THE VERDICT IS UNCHANGED: APPROVED at `935693f`.**
