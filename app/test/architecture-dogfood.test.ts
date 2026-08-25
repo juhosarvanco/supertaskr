@@ -1130,25 +1130,60 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
   // reds here and NOWHERE else, while widening them to something that
   // matches reds half the fixture. The intent layer exists to carry
   // components that are not built yet; C-07 has done so since T-009.
-  it("C-15 is DECLARED-ONLY, never a defect: declared paths, zero files, one D3", () => {
+  it("C-15 HAS TERRITORY AT LAST: five files under its declared globs, D3 cleared", () => {
+    // THE ASSERTION THAT INVERTS AT THE T-110 MERGE REGEN (2026-08-25).
+    // This body read "C-15 is DECLARED-ONLY, never a defect: declared
+    // paths, zero files, one D3" from T-088 until here, and its own
+    // comment above named the condition exactly: C-15's D3 "clears when
+    // T-110 writes app/src-tauri/src/dispatch/**". It did. This is the
+    // same arc C-13 walked at T-024, C-14 at T-025 and C-07 at T-010 —
+    // the fourth component to leave declared-only, and the first to do
+    // so because the card that was ALWAYS going to build it landed.
+    // FOUR assertions move here and the TITLE with them; the paths
+    // assertion is deliberately unchanged, because it is still the only
+    // thing in this tree that pins C-15's globs and the globs did not
+    // move. Derived from a throwaway probe `it()` run against the
+    // regenerated graph BEFORE this suite was run (the T-088 technique),
+    // never read off a failure — the first red in this body hides the
+    // three below it.
     expect(project.components?.find((c) => c.id === "C-15")?.paths).toEqual([
       "app/src-tauri/src/dispatch/**",
       "app/src/lib/dispatch-store.ts",
     ]);
     const c15 = derived.components.find((c) => c.id === "C-15");
     expect(c15?.kind).toBe("declared");
-    expect(c15?.files).toEqual([]);
-    expect(c15?.declaredOnly).toBe(true);
-    expect([...derived.fileComponent.values()].filter((id) => id === "C-15")).toEqual([]);
-    // and the derivation says so as a FINDING, not as an issue or an
-    // unmapped bucket — the difference between "not built yet" and "wrong".
-    expect(derived.findings.filter((f) => "component" in f && f.component === "C-15")).toEqual([
-      { rule: "D3", id: "D3:C-15", component: "C-15" },
+    // FIVE files, not six: `app/src-tauri/tests/dispatch_lanes.rs` — the
+    // two-line compile shim that is the only reason `cargo test` can
+    // reach this module at all — matches NEITHER declared glob, so it
+    // lands in the unmapped bucket instead. That is `T-110-s9`'s subject
+    // and it is asserted, with the bucket, in the body below.
+    expect(c15?.files).toEqual([
+      "app/src-tauri/src/dispatch/fixtures.rs",
+      "app/src-tauri/src/dispatch/join.rs",
+      "app/src-tauri/src/dispatch/lanes.rs",
+      "app/src-tauri/src/dispatch/mod.rs",
+      "app/src/lib/dispatch-store.ts",
     ]);
+    expect(c15?.declaredOnly).toBe(false);
+    expect([...derived.fileComponent.values()].filter((id) => id === "C-15")).toEqual([
+      "C-15",
+      "C-15",
+      "C-15",
+      "C-15",
+      "C-15",
+    ]);
+    // and the derivation no longer says anything about C-15 at all: the
+    // D3 is gone and no D1 replaced it, because every edge the four Rust
+    // files carry is either INTERNAL to C-15 or lands on a cargo package
+    // (`serde`, `std`). A component that gains territory without gaining
+    // a cross-component import is the clean case, and it is why C-15
+    // leaves the drift set below rather than swapping one finding for
+    // another the way C-13 did at T-027.
+    expect(derived.findings.filter((f) => "component" in f && f.component === "C-15")).toEqual([]);
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 172 files map — zero unclaimed territory after the §2 amendments", () => {
+  it("all 178 files map — and ONE of them is unclaimed territory, for the first time since the §2 amendments", () => {
     // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
     // move this row has ever taken and the only one whose cause is a new
     // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
@@ -1157,9 +1192,28 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // on disk. The registry was settled ahead of the regen (the card's own
     // problem statement demanded it), so `unmappedFiles` below stays [] —
     // the regen CONFIRMS a decision instead of discovering a bucket.
-    expect(derived.fileComponent.size).toBe(172);
-    expect(derived.unmappedFiles).toEqual([]);
-    expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
+    // 172 → 178 at the T-110 merge regen (2026-08-25): the four
+    // `app/src-tauri/src/dispatch/*.rs` files and `dispatch-store.ts`
+    // (C-15's, five) plus `app/src-tauri/tests/dispatch_lanes.rs` (no
+    // component's, one).
+    // AND THIS BODY'S TITLE STOPPED BEING TRUE HERE, WHICH IS THE POINT.
+    // "zero unclaimed territory" held for every regen since the §2
+    // amendments; T-110 ends it, and the honest reconciliation is to
+    // record the bucket rather than to widen a glob until it disappears.
+    // Widening is not this checkpoint's to do: the registry lives in
+    // `docs/architecture/components/`, which T-033's lane holds tonight.
+    // Routed as `T-110-s9`. THREE assertions move in this body's head and
+    // two more in the tally below; all five were derived from a throwaway
+    // probe against the regenerated graph before the suite was run.
+    expect(derived.fileComponent.size).toBe(178);
+    expect(derived.unmappedFiles).toEqual(["app/src-tauri/tests/dispatch_lanes.rs"]);
+    // The bucket is now DEFINED, and it is asserted by shape rather than
+    // by mere existence — a bucket that appeared holding some OTHER file
+    // would be a different fact and must not pass here.
+    const unmapped = derived.components.find((c) => c.id === UNMAPPED_ID);
+    expect(unmapped).toBeDefined();
+    expect(unmapped?.kind).toBe("unmapped");
+    expect(unmapped?.files).toEqual(["app/src-tauri/tests/dispatch_lanes.rs"]);
     const counts = new Map<string, number>();
     for (const id of derived.fileComponent.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
     expect([...counts.entries()].sort()).toEqual([
@@ -1312,6 +1366,28 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // the rule that already puts app/test/** under C-05, so
       // 1 + 5 + 2 = 8. The map stops under-reporting this component.
       ["C-14", 8],
+      // C-15 JOINS THE MAPPING AT THE T-110 MERGE REGEN WITH FIVE FILES,
+      // and it is the row this ledger has been forecasting since T-088
+      // declared the component with nothing under it. Four Rust files
+      // under `app/src-tauri/src/dispatch/**` plus the one TS file the
+      // second glob names exactly. Derived from the added-file list and
+      // the registry globs BEFORE the suite ran — this is the FOURTH
+      // assertion in this body, below the size check, the unmappedFiles
+      // check and the bucket check, so three separate reds can hide it.
+      ["C-15", 5],
+      // AND THE ROW NOBODY DECLARED. `app/src-tauri/tests/dispatch_lanes.rs`
+      // is the two-line `#[path]` shim that lets `cargo test` compile
+      // `src/dispatch/**` at all — the placement T-110's verifier RULED
+      // legitimate, because `app/src-tauri/tests/**` is claimed by no
+      // component and widening `lib.rs` (C-05's `app-shell`) from inside
+      // the `[app-dispatch]` fence is the one repair an executor may
+      // never make. T-010 settled every other unclaimed Rust file by
+      // name and could not settle this one, because it did not exist on
+      // main yet. So the bucket is REAL and this row records it rather
+      // than hiding it: it is `T-110-s9`'s subject, and it clears the
+      // moment either a component claims `tests/**` or `T-110-s1` lands
+      // the real wiring, whose commit DELETES this shim.
+      ["unmapped", 1],
     ]);
     // The map pane joined its engine at the T-012 merge regen
     // (T-011-s1 option a keeps the trio in place under lib/).
@@ -1349,7 +1425,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: twelve undeclared dependencies, three declared-only components, no unclaimed territory", () => {
+  it("THE FINDINGS: twelve undeclared dependencies, ONE unclaimed file, two declared-only components", () => {
     expect(derived.findings).toEqual([
       {
         rule: "D1",
@@ -1674,18 +1750,33 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // condition exactly. Four declared-only components become THREE —
       // the SECOND assertion in the drift body below moves with it, in a
       // different it(), and so does the D3 face on the map fixture.
+      // D2 ARRIVES AT THE T-110 MERGE REGEN — THE FIRST D2 THIS LEDGER
+      // HAS EVER CARRIED. Every entry above records a D1 or a D3; the
+      // "D2 STAYS EMPTY" clause appears in four separate reconciliation
+      // blocks in this file's header, and it stops being true here.
+      // `app/src-tauri/tests/dispatch_lanes.rs` is the compile shim
+      // T-110's verifier ruled legitimate; `app/src-tauri/tests/**` is
+      // claimed by no component, and T-010's settlement could not name a
+      // file that did not exist on main yet. `T-110-s9`.
+      // ORDER MATTERS AND IS DERIVED, NOT CHOSEN: D2 sorts between the
+      // D1 block and the D3 block, so this row is inserted here rather
+      // than appended.
+      { rule: "D2", id: "D2:unmapped", files: ["app/src-tauri/tests/dispatch_lanes.rs"] },
+      // D3:C-15 CLEARED AT THE T-110 MERGE REGEN, exactly as the entry
+      // that used to sit below this line predicted: it said the D3
+      // "clears when T-110 writes app/src-tauri/src/dispatch/**". It
+      // did, and with T-010's Rust extraction already on main it is the
+      // four .rs files rather than the store that clear it. Three
+      // declared-only components become TWO — the SECOND assertion in
+      // the drift body below moves with it, in a different it().
+      // THE COUNT OF THIS ARRAY DOES NOT MOVE: fifteen rows before and
+      // fifteen after, because D3:C-15 leaving and D2:unmapped arriving
+      // cancel exactly. A body that asserted `findings.length` would be
+      // GREEN across this merge while both ends of the list changed —
+      // which is why this fixture pins the whole array and why the title
+      // above carries the composition rather than the total.
       { rule: "D3", id: "D3:C-01", component: "C-01" },
       { rule: "D3", id: "D3:C-11", component: "C-11" },
-      // NEW at T-088, and it does NOT arrive by a regen: the branch
-      // declares C-15 dispatch whose two paths match no file on disk, so
-      // the fourth declared-only component appears the moment the .md
-      // lands. It is the same arc C-13 walked at T-024 and C-14 at
-      // T-025, both of which cleared their D3 at the NEXT regen when a
-      // file appeared under the glob; C-15's clears when T-110 writes
-      // app/src-tauri/src/dispatch/** — and NOT before, since Rust is
-      // invisible to the indexer until T-010 (`languages: ["ts"]`), so
-      // the store is what will clear it.
-      { rule: "D3", id: "D3:C-15", component: "C-15" },
     ]);
   });
 
@@ -1959,9 +2050,26 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // ASYMMETRY WORTH KEEPING: C-14 does NOT join, because it is only the
     // TARGET here and it already declares C-10 — which is exactly why this
     // edge closes a CYCLE rather than adding a second independent one.
-    expect(drift).toEqual(["C-01", "C-05", "C-08", "C-09", "C-10", "C-11", "C-13", "C-15"]);
+    // C-15 LEAVES BOTH LISTS AT THE T-110 MERGE REGEN and "unmapped"
+    // JOINS THE FIRST, and the two happen in the same breath for
+    // opposite reasons — which is why this pair is the sharpest trap in
+    // this file. C-15 leaves because it gained five files and its D3
+    // cleared (the C-13-at-T-024 / C-14-at-T-025 / C-07-at-T-010 arc,
+    // fourth time); the unmapped bucket joins because it is a D2 SUBJECT,
+    // a route no entry in this ledger has taken before.
+    // **THE LENGTH OF THIS ARRAY DOES NOT MOVE — EIGHT BEFORE, EIGHT
+    // AFTER.** One member is swapped for another, so any assertion on
+    // `drift.length` would be green across this merge while the set it
+    // counts changed. The whole array is pinned for exactly that reason.
+    // The SECOND assertion below moves too and does NOT cancel:
+    // declaredOnly goes from three to two, because nothing became
+    // declared-only in C-15's place. Both derived from a throwaway probe
+    // against the regenerated graph before the suite ran — a red on the
+    // first would otherwise hide the second, which this body's own
+    // comment has warned about since T-088.
+    expect(drift).toEqual(["C-01", "C-05", "C-08", "C-09", "C-10", "C-11", "C-13", "unmapped"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
-    expect(declaredOnly).toEqual(["C-01", "C-11", "C-15"]);
+    expect(declaredOnly).toEqual(["C-01", "C-11"]);
   });
 
   it("stable rollup structure (values live in the unit tables, not here)", () => {

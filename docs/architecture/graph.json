@@ -5866,6 +5866,492 @@
       ]
     },
     {
+      "id": "f:app/src-tauri/src/dispatch/fixtures.rs",
+      "path": "app/src-tauri/src/dispatch/fixtures.rs",
+      "lang": "rust",
+      "hash": "blake3:15f597a80b540cb1c15258a9eaaf4299fd0740b71137ecb77e4c90aa350d2937",
+      "loc": 86,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/src/dispatch/fixtures.rs#NEXT",
+          "name": "NEXT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            23,
+            23
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/fixtures.rs#branch_head",
+          "name": "branch_head",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            84,
+            86
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/fixtures.rs#register",
+          "name": "register",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            64,
+            81
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/fixtures.rs#repo",
+          "name": "repo",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            41,
+            45
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/fixtures.rs#repo_with_worktrees_dir",
+          "name": "repo_with_worktrees_dir",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            51,
+            55
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/fixtures.rs#scratch",
+          "name": "scratch",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            26,
+            38
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src-tauri/src/dispatch/join.rs",
+      "path": "app/src-tauri/src/dispatch/join.rs",
+      "lang": "rust",
+      "hash": "blake3:b08ecc65b82c74105267bc9e44cbc402f45afc4f63827549de90a0ac2a21fc03",
+      "loc": 907,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#BoardStamp",
+          "name": "BoardStamp",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            79,
+            83
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#DISPATCH_STATES",
+          "name": "DISPATCH_STATES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            112,
+            117
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#DispatchJoin",
+          "name": "DispatchJoin",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            257,
+            275
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#DispatchRow",
+          "name": "DispatchRow",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            177,
+            191
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#DispatchState",
+          "name": "DispatchState",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            100,
+            109
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#IN_FLIGHT_STATUSES",
+          "name": "IN_FLIGHT_STATUSES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            66,
+            66
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#LANE_SCAN_REFUSALS",
+          "name": "LANE_SCAN_REFUSALS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            205,
+            210
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#LaneRegistration",
+          "name": "LaneRegistration",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            142,
+            148
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#LaneScanRefusal",
+          "name": "LaneScanRefusal",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            197,
+            202
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#classify",
+          "name": "classify",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            123,
+            130
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#count_by_state",
+          "name": "count_by_state",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            345,
+            354
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#impl BoardStamp",
+          "name": "impl BoardStamp",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            85,
+            93
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#impl LaneRegistration",
+          "name": "impl LaneRegistration",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            150,
+            172
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#impl LaneScanRefusal",
+          "name": "impl LaneScanRefusal",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            212,
+            246
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#is_in_flight",
+          "name": "is_in_flight",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            69,
+            71
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#join_lanes",
+          "name": "join_lanes",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            283,
+            340
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/join.rs#tests",
+          "name": "tests",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            357,
+            907
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src-tauri/src/dispatch/lanes.rs",
+      "path": "app/src-tauri/src/dispatch/lanes.rs",
+      "lang": "rust",
+      "hash": "blake3:37c9abb1121a3161e6a82e2342ed477d1e81d1152c57e9d0b1216bedef2c53f9",
+      "loc": 1435,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#BRANCH_MAX_LEN",
+          "name": "BRANCH_MAX_LEN",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            66,
+            66
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#BranchRejection",
+          "name": "BranchRejection",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            216,
+            241
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#EntryDefect",
+          "name": "EntryDefect",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            176,
+            200
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#HEADS_NAMESPACE",
+          "name": "HEADS_NAMESPACE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            62,
+            62
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#HEAD_REF_MARKER",
+          "name": "HEAD_REF_MARKER",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            59,
+            59
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#HeadRef",
+          "name": "HeadRef",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            204,
+            210
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#LANE_NAMESPACE",
+          "name": "LANE_NAMESPACE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            55,
+            55
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#LaneScan",
+          "name": "LaneScan",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            108,
+            129
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#MAX_METADATA_BYTES",
+          "name": "MAX_METADATA_BYTES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            77,
+            77
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#MAX_WORKTREE_ENTRIES",
+          "name": "MAX_WORKTREE_ENTRIES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            96,
+            96
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#SmallRead",
+          "name": "SmallRead",
+          "kind": "enum",
+          "exported": false,
+          "range": [
+            411,
+            415
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#TASK_ID_MAX_DIGITS",
+          "name": "TASK_ID_MAX_DIGITS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            70,
+            70
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#WorktreeEntry",
+          "name": "WorktreeEntry",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            134,
+            171
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#lane_task_id",
+          "name": "lane_task_id",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            483,
+            555
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#parse_head",
+          "name": "parse_head",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            446,
+            467
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#read_entry",
+          "name": "read_entry",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            305,
+            408
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#read_lanes",
+          "name": "read_lanes",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            249,
+            302
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#read_small",
+          "name": "read_small",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            429,
+            439
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/lanes.rs#tests",
+          "name": "tests",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            558,
+            1435
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src-tauri/src/dispatch/mod.rs",
+      "path": "app/src-tauri/src/dispatch/mod.rs",
+      "lang": "rust",
+      "hash": "blake3:f298083af68611c8649f4c34e9e5a34d0776aac0426b996c720f0a47b548304c",
+      "loc": 61,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/src/dispatch/mod.rs#fixtures",
+          "name": "fixtures",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            61,
+            61
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/mod.rs#join",
+          "name": "join",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            54,
+            54
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/dispatch/mod.rs#lanes",
+          "name": "lanes",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            55,
+            55
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/src-tauri/src/docs_watch.rs",
       "path": "app/src-tauri/src/docs_watch.rs",
       "lang": "rust",
@@ -7936,6 +8422,25 @@
           "range": [
             3091,
             3100
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src-tauri/tests/dispatch_lanes.rs",
+      "path": "app/src-tauri/tests/dispatch_lanes.rs",
+      "lang": "rust",
+      "hash": "blake3:4e9fa492a7b1c12b292032697cff266a171de1f973eda9f333c6f2447f4c439a",
+      "loc": 36,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/tests/dispatch_lanes.rs#dispatch",
+          "name": "dispatch",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            36,
+            36
           ]
         }
       ]
@@ -13597,6 +14102,175 @@
       ]
     },
     {
+      "id": "f:app/src/lib/dispatch-store.ts",
+      "path": "app/src/lib/dispatch-store.ts",
+      "lang": "ts",
+      "hash": "blake3:baffdb5df9d94ed2c04a75d29bd2af3e247b1fefb08b56be5fc52b072e5d1f98",
+      "loc": 314,
+      "symbols": [
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#BoardStamp",
+          "name": "BoardStamp",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            152,
+            156
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#DISPATCH_STATES",
+          "name": "DISPATCH_STATES",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            189,
+            191
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#DISPATCH_STATE_KEYS",
+          "name": "DISPATCH_STATE_KEYS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            182,
+            187
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#DetachedEntry",
+          "name": "DetachedEntry",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            98,
+            103
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#DispatchJoin",
+          "name": "DispatchJoin",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            250,
+            264
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#DispatchJoinWire",
+          "name": "DispatchJoinWire",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            219,
+            238
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#DispatchRow",
+          "name": "DispatchRow",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            194,
+            211
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#DispatchState",
+          "name": "DispatchState",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            163,
+            171
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#LaneRegistration",
+          "name": "LaneRegistration",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            72,
+            85
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#LaneScan",
+          "name": "LaneScan",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            123,
+            125
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#LaneScanRefusal",
+          "name": "LaneScanRefusal",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            132,
+            136
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#NotALaneEntry",
+          "name": "NotALaneEntry",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            88,
+            95
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#UnreadableEntry",
+          "name": "UnreadableEntry",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            106,
+            110
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
+          "name": "WorktreeEntry",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            112,
+            116
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#assertNever",
+          "name": "assertNever",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            312,
+            314
+          ]
+        },
+        {
+          "id": "s:app/src/lib/dispatch-store.ts#hydrateJoin",
+          "name": "hydrateJoin",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            281,
+            300
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:app/src/lib/docs-model.ts",
       "path": "app/src/lib/docs-model.ts",
       "lang": "ts",
@@ -14888,8 +15562,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:61d2f0125fa0c92c914e8503492394c3b7b08e56920008b474e2f3683d5d428b",
-      "loc": 1988,
+      "hash": "blake3:cede8c9d04a9f949a92cc09a8d70ee44bb49ebd2a4aa7c4b389f8091d297c608",
+      "loc": 2096,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -17315,8 +17989,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:ce58f52659cd9c4e29d02ac6748d0e340aea8674e0e63a52fe3594756dce087d",
-      "loc": 494,
+      "hash": "blake3:3b36e9fa72385f53e36ea5486765a642b265d5038c255e1f998e87fa47e06c59",
+      "loc": 516,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -21677,6 +22351,85 @@
         "Path",
         "PathBuf",
         "Stdio"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/fixtures.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "AtomicU32",
+        "Ordering",
+        "Path",
+        "PathBuf",
+        "fs"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/join.rs",
+      "to": "f:app/src-tauri/src/dispatch/fixtures.rs",
+      "kind": "import",
+      "symbols": [
+        "branch_head",
+        "register",
+        "repo",
+        "repo_with_worktrees_dir",
+        "scratch"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/join.rs",
+      "to": "f:app/src-tauri/src/dispatch/lanes.rs",
+      "kind": "import",
+      "symbols": [
+        "LaneScan",
+        "WorktreeEntry",
+        "read_lanes"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/join.rs",
+      "to": "p:cargo:serde",
+      "kind": "import",
+      "symbols": [
+        "Serialize"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/join.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "BTreeMap"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/lanes.rs",
+      "to": "f:app/src-tauri/src/dispatch/fixtures.rs",
+      "kind": "import",
+      "symbols": [
+        "branch_head",
+        "register",
+        "repo",
+        "scratch"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/lanes.rs",
+      "to": "p:cargo:serde",
+      "kind": "import",
+      "symbols": [
+        "Serialize"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/dispatch/lanes.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "Path",
+        "PathBuf",
+        "fs"
       ]
     },
     {
@@ -31045,6 +31798,132 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/dispatch-store.ts#DISPATCH_STATES",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#DISPATCH_STATE_KEYS",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#DispatchJoin",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#DispatchJoin",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneScanRefusal",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#DispatchJoin",
+      "to": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#DispatchJoinWire",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#DispatchJoinWire",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneScanRefusal",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#DispatchJoinWire",
+      "to": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#DispatchRow",
+      "to": "s:app/src/lib/dispatch-store.ts#BoardStamp",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#DispatchRow",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#DispatchRow",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneRegistration",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#LaneScan",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneScanRefusal",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#LaneScan",
+      "to": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
+      "to": "s:app/src/lib/dispatch-store.ts#DetachedEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
+      "to": "s:app/src/lib/dispatch-store.ts#LaneRegistration",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
+      "to": "s:app/src/lib/dispatch-store.ts#NotALaneEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#WorktreeEntry",
+      "to": "s:app/src/lib/dispatch-store.ts#UnreadableEntry",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#hydrateJoin",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchJoin",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#hydrateJoin",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchJoinWire",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#hydrateJoin",
+      "to": "s:app/src/lib/dispatch-store.ts#DispatchRow",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/dispatch-store.ts#hydrateJoin",
+      "to": "s:app/src/lib/dispatch-store.ts#assertNever",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/docs-model.ts#DocsModelState",
       "to": "s:app/src/lib/docs-model.ts#ParseFailure",
       "kind": "type_ref",
@@ -34059,8 +34938,8 @@
     }
   ],
   "stats": {
-    "files": 172,
-    "symbols": 1889,
-    "edges": 1849
+    "files": 178,
+    "symbols": 1951,
+    "edges": 1878
   }
 }

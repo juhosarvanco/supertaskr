@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 3
 size: M
-status: verifying
+status: done
 blocked_by: [T-088]
 touches: [app-dispatch]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5 @T-110 (rebuilt twice after rejections, 2026-08-25)
+verified_by: claude-opus-5 @T-110-verify — REJECTED — then claude-opus-5 @T-110-verify2 — REJECTED — then claude-opus-5 @T-110-verify3 — APPROVED under @human's one-time waiver, 2026-08-25
+review: same-model
 ---
 
 F-04's third card, under the follower-first ruling

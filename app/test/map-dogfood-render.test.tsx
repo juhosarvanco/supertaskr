@@ -78,7 +78,7 @@ const node = (id: string): HTMLElement => {
 };
 
 describe("the nputer repo on its own map", () => {
-  it("renders all twelve declared components in full mode, no unmapped bucket, no banner", () => {
+  it("renders all twelve declared components in full mode PLUS an unmapped bucket, no banner", () => {
     // Ten since T-024 declared C-13 (genesis pane); ELEVEN since T-025
     // declared C-14 (agent runner). See the reconciliation blocks in
     // architecture-dogfood.test.ts for both enumerated deltas.
@@ -88,8 +88,18 @@ describe("the nputer repo on its own map", () => {
     // as a declared-only face — zero files match either declared glob —
     // which is the C-07 treatment three bodies down, on a component that
     // has no code at all rather than code the indexer cannot see.
-    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(12);
-    expect(container.querySelector('[data-component-id="unmapped"]')).toBeNull();
+    // 12 → 13 AT THE T-110 MERGE REGEN, and the thirteenth node is NOT a
+    // component: it is the unmapped bucket, holding the single file
+    // `app/src-tauri/tests/dispatch_lanes.rs`. This map has rendered
+    // "no unmapped bucket" since the §2 amendments and stops doing so
+    // here. The declared count is still TWELVE — no component was
+    // declared by this merge — so the two halves of this body now
+    // disagree on purpose, and the title says so.
+    // Both assertions were derived from the live derivation before this
+    // suite was run; the second one INVERTS rather than moving a number,
+    // which no count check can see.
+    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(13);
+    expect(container.querySelector('[data-component-id="unmapped"]')).not.toBeNull();
     expect(container.querySelector("[data-testid=map-degraded]")).toBeNull();
   });
 
@@ -487,8 +497,20 @@ describe("the nputer repo on its own map", () => {
     // 5, C-07 stops being a declared-only face, and architecture-dogfood
     // records the full per-component delta. Derived from the regenerated
     // graph before the suite was run.
+    // 172 → 178 at the T-110 merge regen (2026-08-25): five files under
+    // C-15's two declared globs plus one under nobody's. The graph goes
+    // 895 891 → 918 406 bytes / 1889 → 1951 symbols / 1849 → 1878 edges.
+    // WHAT MOVES WITH IT AND WHAT DOES NOT, derived rather than assumed:
+    // the node count above goes 12 → 13 (the unmapped bucket, not a
+    // component) while the RELATION TABLE does not move at all — 35
+    // edges, 14/12/9, byte-identical — because every edge C-15's four
+    // Rust files carry is internal to C-15 or lands on a cargo package.
+    // C-05's drift chip holds at 5 and no ring lights or clears on any
+    // rendered face. That combination is new in this ledger: a merge
+    // that adds six indexed files, moves this hint, adds a NODE, and
+    // leaves every edge and every drift count untouched.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 172 files",
+      "committed graph · 178 files",
     );
   });
 });

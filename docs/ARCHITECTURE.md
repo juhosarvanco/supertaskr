@@ -792,7 +792,28 @@ ADR-014/015).
   the D2 bucket is DRAINED rather than argued into existence: `arch
   drift` reports `unmapped=0` over the regenerated graph and the dogfood's
   `unmappedFiles: []` assertion held without being relaxed. The argument
-  for each claim lives in that component's own file, not here)
+  for each claim lives in that component's own file, not here.
+  **AND THE BUCKET REFILLED AT THE VERY NEXT MERGE THAT ADDED A RUST
+  FILE** (2026-08-25, T-110's merge `1223543`; corrected in place with
+  the ref on T-101's precedent, because the reasoning above is what a
+  later reader needs and only its finality is wrong). T-110 writes
+  `app/src-tauri/tests/dispatch_lanes.rs`, a two-line `#[path]` shim, and
+  **no component claims it** — so `unmapped` is **1**, `unmappedFiles`
+  carries that one path, a thirteenth node renders on the map beside the
+  twelve declared components, and this repository has its **first D2
+  finding**. The settlement above was complete for the files that existed
+  when it was written; what it could not do was claim a file that was not
+  on main yet. **THE SHIM IS NOT AN OVERSIGHT — IT IS THE ONLY PLACEMENT
+  T-110'S FENCE ALLOWED**, and three verification passes ruled it
+  legitimate: `app/src-tauri/tests/**` is claimed by no component, and
+  declaring `pub mod dispatch;` in `lib.rs` (C-05's `app-shell`) from
+  inside the `[app-dispatch]` fence is the one repair
+  `method/roles/executor.md` says an executor may never make. The
+  consequence is a one-line `paths:` entry in a file that fence cannot
+  reach, routed as `T-110-s9` — **and it may never need writing**: the
+  commit that takes `T-110-s1` and wires the module properly DELETES the
+  shim, which drains the bucket by removing its occupant rather than by
+  claiming it)
   · `lib/parser/` = C-06,
   self-contained package · `app/src-tauri/crates/nputer-index` = C-07
   (Cargo workspace inside app/src-tauri arrives with T-009 — the Rust

@@ -653,13 +653,42 @@ deliberately never passed to Claude while Codex's `exec` accepts one —
 see design/cross-harness-plan.md). **D2 is taken**: dispatch gets its
 own component C-15 with touch slug `app-dispatch`, so it does not fence
 against every genesis card for the life of the feature.
-Progress: STARTED — **1 of 2 written F-04 cards done**. T-089 merged
-2026-08-23 and put the brief itself in writing: a thirteen-row normative
-contract in `method/roles/executor.md` that a program transcribes and a
-human reads as a checklist, plus the generic `method/lane-protocol.md`.
-The slice's goal is "stop hand-writing the instructions", and the
-artifact the assembler (T-090+) has to emit now has a spec instead of
-ninety examples. T-088 (C-15's declaration) is still `planned`.
+Progress: STARTED — **3 of 6 written F-04 cards done**, and the third is
+the slice's first real CODE. T-089 merged 2026-08-23 and put the brief
+itself in writing: a thirteen-row normative contract in
+`method/roles/executor.md` that a program transcribes and a human reads
+as a checklist, plus the generic `method/lane-protocol.md`. The slice's
+goal is "stop hand-writing the instructions", and the artifact the
+assembler (T-090+) has to emit now has a spec instead of ninety
+examples.
+**THAT LINE READ "1 OF 2 WRITTEN F-04 CARDS DONE" AND "T-088 … IS STILL
+`planned`" UNTIL T-110's CHECKPOINT** — corrected in place with the ref
+rather than deleted, the same T-101 precedent the paragraphs above use.
+Both halves went stale under cards written after they were typed: T-088
+merged and C-15 was declared, and the written F-04 set is now **six**
+(T-088, T-089, T-110 done; T-111, T-112, T-125 planned), not two.
+Milestone 4 carries **86** cards on disk at this checkpoint, of which
+**6 are F-04**. **DERIVE IT, DO NOT QUOTE IT** — the hazard this file
+names three paragraphs up caught its own progress line.
+**T-110 LANDED 2026-08-25** (merge `1223543`) and it is the first F-04
+card that ships something the app can run rather than something a human
+reads. **The app can now read which lanes exist from git's own files —
+`.git/worktrees/*/gitdir` and `*/HEAD` — with no subprocess**, returning
+a typed `{task_id, branch, worktree_path, exists_on_disk}` per entry and
+a NAMED refusal for each way the question can have no answer, so an
+empty list never means two different things.
+**THE PRODUCT IS THE DISAGREEMENT, NOT THE LIST.** The reader's output
+joined against the board distinguishes four states by name — a lane that
+DIED (stamped in flight, no worktree), a dispatch that SKIPPED THE STAMP
+(worktree, no stamp), a LIVE lane (both) and NOT DISPATCHED (neither) —
+and a pin drives each. A board that showed only the stamps or only the
+worktrees could report neither failure; this one reports both, which is
+what the follower-first ruling (`docs/rooms/cockpit-or-mirror.md`) asks
+for. It **unblocks T-111 and T-112**, the two cards that turn that
+answer into a board and a brief.
+The cost line this milestone watches moves with it: the committed graph
+goes 895 891 → **918 406 bytes, 91.84% of its own budget**, the highest
+this repository has ever been.
 Decomposition pass complete 2026-08-19
 (design/dispatch-technical-plan.md); D1 ruled by @human the same day.
 
