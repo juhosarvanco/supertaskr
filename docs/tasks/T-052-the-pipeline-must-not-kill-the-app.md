@@ -368,6 +368,75 @@ command was added to a `run from` bullet, so no `CI_SEQUENCE` entry and
 no `ci.yml` step are owed** — which matters because `.github/` is
 outside this fence and a needed CI step would have had to be routed.
 
+### Gates, derived from this lane's own diff at its own ref
+
+Main moved under this lane, `c4cfe52` to **`ce8b8e7`** (one first-parent
+commit, one path — T-110's room resolution). Every gate below is derived
+against that tip, never against the base.
+
+    TREE=$(git merge-tree --write-tree ce8b8e7 HEAD)   -> exit 0, READ FIRST
+    git diff --name-only ce8b8e7 "$TREE"               -> 8 paths
+
+| gate | trigger | on these paths |
+|---|---|---|
+| GRAPH REGEN | `*.ts/*.tsx/*.js/*.jsx` **or `*.rs`** outside `docs/` | **0 — NOT OWED** |
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **0 — NOT OWED** |
+| DOCS GATE | a `docs/` path a code suite reads | **6 — FIRES**, four suites |
+
+- **GRAPH REGEN — NOT OWED, and ASKED ANYWAY** as its own bullet
+  demands. `index --check --root ../..` is **exit 0, CURRENT** at
+  **895 891 bytes / 172 files / 1889 symbols / 1849 edges**, unmoved from
+  T-079's checkpoint. This fence cannot produce a matching suffix, and
+  `docs/` and `method/` are both outside the walk — but that is the
+  answer the gate gave, not a prediction it was spared.
+- **BOOT GATE — NOT OWED, 0 paths.** No `app/src-tauri/**`, no
+  `app/src/**`, neither manifest. `npm run boot:check` was therefore NOT
+  run, and that is derived rather than skipped: a boot check on a
+  method-and-docs diff would be a gate run against a lane it does not
+  apply to.
+- **DOCS GATE — exit 1**, invoked DIRECTLY with the merged paths as
+  ARGUMENTS, root-relative, never through `xargs`. It reports **12
+  derived readers across 4 suites** and **0 frontmatter issues**, and
+  names all four suites owed.
+
+### Suites, every exit read from its own unpiped `$?`
+
+- **cargo: 418 passed / 0 failed / 3 ignored, exit 0**, summed over
+  **15** `test result:` lines. This is the suite that reads the edited
+  `docs/CONVENTIONS.md` off disk, so it is the version-stamp proof.
+  **`T-088-s4`'s watcher flake did NOT fire** in this run.
+- **parser: 264/264 across 12 files, exit 0.**
+- **app: 958/958 across 46 files, exit 0**, after `npm run build` exit 0.
+- **E2E: 145/145, exit 0** on scratch port **15143** — after a first run
+  on **15141** went **144 passed / 1 failed at exit 1** on a body this
+  diff does not touch. See below; filed as `T-052-s4`.
+- **token lint: selftest exit 0** (65 TOKEN + 4 CONTROL samples, 87
+  walk-policy checks, 9 evidence-floor checks), **lint exit 0** at
+  **TOKEN 131 / CONTROL 660**. CONTROL is 660 rather than T-079's 655
+  because this lane adds four tracked docs files to a tree that had
+  already gained one; derive it at your own ref.
+- **`npm run lint:docs` exit 0**, run the way CI will run it.
+- **`npm run typecheck` exit 0.**
+
+### The one red, characterised rather than re-run away
+
+`tools/e2e/tests/token-scan.spec.ts`'s P6 plant-and-restore body failed
+on the first full E2E run. **It is not this lane's**, derived rather than
+asserted: the merge forecast contains **zero** `tools/e2e/**` paths and
+the worktree was clean at 0 rows. **And it is not a flake** — it is a
+deterministic function of one file's mtime precision. The body restores
+with `utimesSync(target, clock.atime, clock.mtime)`, where `clock.mtime`
+is a `Date` and therefore integer milliseconds, and then asserts against
+`clock.mtimeMs`, which carries the filesystem's finer resolution. Proved
+both ways: **three consecutive green runs** with a whole-millisecond
+mtime, and a **named red** with a fractional one set deliberately, the
+same Expected/Received pair each time. It hides itself because its own
+`finally` writes a whole-millisecond mtime, so the next run is green —
+the red-green signature `T-079-s3` already records one level up. The
+fixture was left sha256-identical to `HEAD:tools/e2e/fixtures/shell.ts`
+(`2e55d8e5…`) with a whole-millisecond clock. Routed as `T-052-s4` with
+the one-token fix and the probe that shows it round-trips.
+
 ### Where the brief and the card were wrong
 
 - **The worktree path.** The brief said `/Users/ujju/Projects/nputer-T-052`.
