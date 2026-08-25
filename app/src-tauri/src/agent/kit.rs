@@ -32,7 +32,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// the live stamps in `method/interview/plan-interview.md` and
 /// `docs/CONVENTIONS.md` by [`tests::snapshot_version_matches_the_live_method_stamps`],
 /// so a method bump that forgets this const is red.
-pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.5";
+pub const METHOD_SNAPSHOT_VERSION: &str = "0.1.6";
 
 /// Where the kit is written inside a project (relative, POSIX).
 pub const KIT_REL_DIR: &str = ".nputer/genesis/kit";

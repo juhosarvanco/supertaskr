@@ -33,6 +33,32 @@ right thing without asking a single question. Every task must pass it.
    Ban words: fast, clean, robust, proper, good — convert each to a
    number or an observable event, or delete it. Always include at least
    one unwanted-behavior (IF/THEN) line: the edge cases live there.
+
+   **A CRITERION CAN SPECIFY A CHECK THAT CANNOT FAIL, AND IT READS
+   EXACTLY LIKE A REAL ONE.** The shape to recognise: **a criterion that
+   names a relation between a POLICY and a VIEW DERIVED FROM THAT POLICY
+   has specified a tautology.** Worked form — a coverage floor written
+   over "the tracked set MINUS the exclusions": adding a suffix to the
+   exclusion set removes it from the expectation at the same instant it
+   removes it from the corpus, so **the deletion deletes its own
+   failure** and the floor can never bite. Both sides move together
+   because they are the same source read twice.
+   **THE TEST IS TO TRY TO RED IT.** Before the criterion ships, name the
+   input that makes it FAIL. If you cannot name one, you have written a
+   restatement, not a requirement — delete it or re-anchor one side to
+   something the policy does not derive (a literal, a frozen fixture, an
+   independently-measured expectation).
+   **GATHER THE EVIDENCE BY MUTATING THE PROPOSED CHECK, NOT THE THING IT
+   CHECKS.** This is how the shape survives review: mutating the POLICY
+   makes the criterion look alive, because the policy really does move the
+   world. Only mutating the CHECK reveals that the check moved with it.
+   **AND TWO CRITERIA ON ONE CARD CAN CONTRADICT EACH OTHER.** Read the
+   set against ITSELF, not only against the tree — one criterion
+   preferring the tautological form while a second requires the floor to
+   bite for the same input is a card that cannot be satisfied at all, and
+   the executor discovers it only after building. Contradiction between
+   criteria is what turns this from a style note into a defect, so the
+   self-review in step 8 checks the criteria against one another.
 4. **Size honestly** (S/M/L per TASK-FORMAT.md) — size sets ceremony,
    so under-sizing skips verification and over-sizing wastes tokens.
 5. **Declare the blast radius.** Fill `touches:` with the components

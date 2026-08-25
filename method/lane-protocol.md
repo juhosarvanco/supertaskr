@@ -56,6 +56,12 @@ this file is a project's actual name.
    (tasks/TASK-FORMAT.md), so its executor plays integrator for its OWN
    work once its tests pass — it merges, checkpoints and removes its own
    worktree. Every larger tier keeps the two roles in different hands.
+   **A SIZE-S CARD MAY STILL OWE A VERIFIER**, and the two questions are
+   separate: the ceremony table gives an S card touching shipped code a
+   verifier while leaving self-integration in place. Where it does, the
+   executor waits for the VERDICT before playing integrator. "No separate
+   integrator" has never meant "no verification"; read the table's row,
+   not the tier letter.
 
 5. **Concurrent lanes have disjoint `touches:`** — the orchestrator's
    guardrail (tasks/TASK-FORMAT.md), and the executor's too. An executor
@@ -70,7 +76,14 @@ this file is a project's actual name.
    is the project's rule. **On a size-S card there is no separate
    integrator (rule 4, tasks/TASK-FORMAT.md): the executor IS the
    integrator and removes its OWN worktree — after it has merged and
-   checkpointed, and with no verdict to preserve it for.**
+   checkpointed.** **WHETHER THERE IS A VERDICT TO PRESERVE IT FOR
+   DEPENDS ON THE CEREMONY TABLE'S ROW, NOT ON THE TIER LETTER.** An S
+   card whose diff is outside shipped code has none, and its worktree may
+   go as soon as the checkpoint lands. An S card that took a verifier has
+   one, and the sentence at the top of this rule binds it exactly as it
+   binds M and L: the worktree survives until the verdict, because a
+   worktree deleted before the verdict destroys the only reproducible
+   copy of what was measured.
 
 7. **The lane list is a fact on disk, not a memory.** Which lanes exist
    is answered by asking the repository (its worktrees and branches),
