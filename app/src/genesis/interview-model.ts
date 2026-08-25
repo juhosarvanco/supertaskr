@@ -2,6 +2,8 @@ import type { DocsModelState } from "@/lib/docs-model";
 import type {
   GenesisDenial,
   GenesisTurn,
+  SendOutcomePayload,
+  StartOutcomePayload,
   TranscriptLinePayload,
   TurnErrorPayload,
 } from "@/lib/agent-store";
@@ -716,6 +718,169 @@ export function failureDetail(error: TurnErrorPayload): string | null {
     : trimmed;
 }
 
+// ---- the OTHER family's next step --------------------------------------
+
+/**
+ * WHICH TYPED OUTCOMES THE NOTICE FAMILY ROUTES TO THE HAND-DRIVEN MODE
+ * (T-107) — and, because the switch below is EXHAUSTIVE OVER THE UNION,
+ * the standing ruling on every other arm beside the arm it rules on.
+ *
+ * **WHY THIS EXISTS AT ALL.** Two families of "this went wrong" reach
+ * this screen and only one of them could ever carry an action.
+ * `TurnError` goes through `failureAction` to `FailureBlock` and gets a
+ * `hint`/`command`/`retry`/`fallback`. `StartOutcome`/`SendOutcome` go to
+ * `OutcomeNotice`, which had no action slot at all — so
+ * `unsupportedVersion` rendered a correct, typed, verified diagnosis and
+ * offered the user nothing to do about it. **The app knew exactly what
+ * was wrong, the user could fix it, and the screen did not say how.**
+ *
+ * **AND THE FIX DELIBERATELY DOES NOT GIVE THIS FAMILY A SECOND
+ * `hint`/`command` PAIR** (criterion 4, read as the conditional it is: a
+ * pair in two families that drift apart is the defect this card fixes,
+ * arrived at from the other side). What the notice gains is a BOOLEAN
+ * over the one affordance both families already share — the hand-driven
+ * route, which is `FailureAction.fallback` under the other renderer. One
+ * notion of an action, in two places, still one shape.
+ *
+ * **WHY A BOOLEAN AND NOT A STRING.** The command a too-old CLI needs is
+ * `claude install`, `claude update`, `brew upgrade`, `npm i -g`, or
+ * something this project has never seen, and it depends entirely on how
+ * the user installed. **`UnsupportedVersion { found }` carries the
+ * `--version` line and nothing else** — not the resolved path, not a
+ * manager, not a channel — so this side cannot even see that the observed
+ * binary was `/opt/homebrew/bin/claude`. Criterion 2 makes the burden
+ * explicit: if a command is rendered, the card must state how the app
+ * KNOWS it is the right one for this installation. **It cannot know, so
+ * the refusal is recorded rather than guessed** — here and again at the
+ * renderer, which is the screen a person actually reads. T-082 is the
+ * precedent one layer down: the app shipped `claude login`, which is not
+ * a command, and a user following the app's own advice sent the word
+ * "login" to a model they could not reach.
+ *
+ * **THE MINIMUM VERSION IS NOT NAMED, AND THAT IS CRITERION 3 SATISFIED
+ * RATHER THAN DODGED.** `CLAUDE_V1.min_major` in
+ * `app/src-tauri/src/agent/adapter.rs` is the authority, and it reaches
+ * this side through NOTHING: `unsupportedVersion` carries only `found`,
+ * `GenesisStatusPayload` carries `cliVersion` and no floor, and no other
+ * payload mentions it. Writing "2" here would be a second implementation
+ * of a number owned in Rust (T-057), so the sentence says what this side
+ * can actually derive — that the reported version is below what the app
+ * drives — and the plumbing that would let the notice NAME the floor is
+ * routed as `T-107-s1`, outside `[app-interview]`.
+ *
+ * **THE ENUMERATION IS THE COMPILER'S, NOT A READING OF A SWITCH**
+ * (criterion 6). The `never` guard means an arm added to either union
+ * fails `tsc` until somebody rules on it, so "an arm added later must not
+ * escape the ruling" is enforced rather than asked for. THIRTEEN kinds
+ * across the two unions at this commit — `started`, `busy`, `noProject`,
+ * `alreadyPlanned`, `resumeAvailable`, `cliNotFound`,
+ * `unsupportedVersion`, `sessionIdRejected`, `nothingToResume`, `error`
+ * from `StartOutcome`; `accepted`, `noSession`, `staleProject` from
+ * `SendOutcome`; `busy`, `cliNotFound` and `error` are in both.
+ * `noticeSentence`'s ten arms are a SUBSET of that and are deliberately
+ * not the enumeration.
+ */
+export function noticeRoutesToHandDriven(
+  outcome: StartOutcomePayload | SendOutcomePayload,
+): boolean {
+  switch (outcome.kind) {
+    // ---- routed: the agent CLI is the thing that is wrong -------------
+    case "cliNotFound":
+      // T-029's card, and the shape this arm copies: no usable binary at
+      // all, so the ONE route that needs no binary is the offer.
+      return true;
+    case "unsupportedVersion":
+      // T-107. From the user's side of the screen a binary the app
+      // refuses to drive is a binary the app does not have — the same
+      // situation as `cliNotFound` with a different cause, so it gets the
+      // same route rather than a second kind of answer.
+      return true;
+
+    // ---- DELIBERATELY ACTIONLESS (criterion 7) -------------------------
+    case "busy":
+      // Transient and self-clearing: a turn is running and this one was
+      // not sent. Nothing is broken, so nothing is offered — routing here
+      // would offer an escape hatch from a working interview.
+      return false;
+    case "error":
+      // UNTYPED BY CONSTRUCTION. `message` is whatever went wrong that
+      // the runner could not name, so the app has no ground to stand on
+      // for a next step and inventing one is exactly the guess this card
+      // refuses. Try again is not offered either: this family has no
+      // retry.
+      return false;
+
+    // ---- a next step exists and is ALREADY ON THIS SCREEN --------------
+    case "resumeAvailable":
+      // Its own block, with two buttons (pick it up / start fresh). The
+      // notice is not even rendered for it.
+      return false;
+    case "sessionIdRejected":
+      // Its own block, with "Start a fresh session". Same.
+      return false;
+    case "nothingToResume":
+      // The resume raced the registry. `notStarted` is necessarily true
+      // on this path — nothing started, no turns — so the "Start the
+      // interview" block is on screen beside this notice, and a second
+      // button for the same action would be two ways to do one thing.
+      return false;
+
+    // ---- fixable, but NOT by the route this function governs -----------
+    case "noProject":
+      // The fix is a folder, which is the SHELL's affordance (⌘O and the
+      // front door), not this pane's. The hand-driven prompt is assembled
+      // against a project directory, so routing here would offer a mode
+      // that cannot run either. A notice growing its own front door is
+      // the duplication T-049 spent a card removing.
+      return false;
+    case "alreadyPlanned":
+      // Not a fault: the folder is DONE, not broken. The right half
+      // already becomes the board the moment a task file parses
+      // (T-028's `showsBoard`), so the next step is the screen the user
+      // is already looking at.
+      return false;
+
+    // ---- ENUMERATED, RULED, AND FILED: a fix exists and is NOT offered --
+    case "noSession":
+      // "start the interview first" is stated in words and the button is
+      // only conditionally beside it — `notStarted` requires
+      // `phase === "idle"`, and a send can be refused with the phase at
+      // `failed`. NOT ROUTED HERE: the hand-driven mode is the wrong
+      // answer to "your session went away" when the CLI is fine. Filed as
+      // `T-107-s2` rather than built, because giving this arm the right
+      // affordance is a second product decision and this card is the
+      // enumeration that found it (T-082's criterion 5, applied).
+      return false;
+    case "staleProject":
+      // Names the other project and offers neither way out — reopen that
+      // folder, or start a fresh session here. Same ruling and the same
+      // reason as `noSession`, filed as `T-107-s3`. Not routed: the CLI
+      // is not what is wrong.
+      return false;
+
+    // ---- successes, which never reach a notice at all ------------------
+    case "started":
+    case "accepted":
+      // Derived rather than assumed: `reduceGenesisOutcome` sets
+      // `lastOutcome: null` on exactly these two, and every
+      // `interview-source.ts` caller sets `ui.notice` only on a
+      // non-success answer. So both are unreachable here — and they are
+      // ruled on anyway, because an unreachable arm silently omitted is
+      // indistinguishable from an arm nobody thought about.
+      return false;
+
+    default: {
+      // Criterion 6's teeth. A new arm in either union lands here, is not
+      // assignable to `never`, and fails the build until it is ruled on
+      // above. This is why the enumeration is the union's and not a
+      // reading of `noticeSentence`, whose own `default` deliberately
+      // degrades to the bare kind rather than crashing a screen.
+      const unruled: never = outcome;
+      return unruled;
+    }
+  }
+}
+
 // ---- a refusal is not a failure ----------------------------------------
 
 /**
@@ -813,18 +978,31 @@ export function denialToolName(denial: GenesisDenial): string | null {
  * the CLI announced in band that the cumulative `result` line never
  * listed.
  *
- * **WHAT THIS CANNOT REACH, NAMED RATHER THAN LEFT TO BE DISCOVERED.**
- * The `exitNonZero` path double-reports today and no honest rule here can
- * stop it. Its failure block renders `stderrTail`, an UNTYPED blob, into
- * which `runner.rs` pushes `permission_denials: <names>` for the same
- * `unannounced` vector it emits live `Denied` events from — so one
- * result-only refusal reaches the screen as a notice row AND as a name in
- * the tail. Keying suppression on that text would mean this module owning
- * a copy of a runner format string (T-057: a rule with two
- * implementations is two chances to disagree), against a tail that is a
- * bounded RING and may hold the note only in part. The fix is the
- * runner's — drop the ring note for the set it already emits — and it is
- * routed as `T-101-s1`, outside `[app-interview]`.
+ * **WHAT THIS COULD NOT REACH — CLOSED BY T-113, IN THE RUNNER, WHERE IT
+ * BELONGED.** This paragraph used to describe a LIVE defect: the
+ * `exitNonZero` path double-reported, because its failure block renders
+ * `stderrTail`, an UNTYPED blob, into which `runner.rs` pushed
+ * `permission_denials: <names>` for the same `unannounced` vector it
+ * emits live `Denied` events from — so one result-only refusal reached
+ * the screen as a notice row AND as a name in the tail. **No rule on this
+ * side could honestly have stopped it**, and that is still the useful
+ * half: keying suppression on that text would mean this module owning a
+ * copy of a runner format string (T-057: a rule with two implementations
+ * is two chances to disagree), against a tail that is a bounded RING and
+ * may hold the note only in part. **T-113 deleted the ring note for the
+ * set the runner already emits** — see `denial_names` and the T-113
+ * comment at the `unannounced` partition in
+ * `app/src-tauri/src/agent/runner.rs`, which record that the live events
+ * are strictly more than the note was. So the double report is closed,
+ * and the fix was the runner's exactly as this comment predicted.
+ *
+ * **THE ROUTING SENTENCE THAT USED TO END THIS PARAGRAPH IS GONE, NOT
+ * MOVED** (T-107, taking T-113's own last criterion). It routed the fix
+ * to `T-101-s1`, a file the seventh triage removed when T-113 absorbed
+ * it — so it named a closed defect AND an unreachable target, which is
+ * two stale claims and not one. `app/src/genesis/**` was outside T-113's
+ * `[app-agent]` fence, so it routed the one-line correction here rather
+ * than widening its own; this is that correction.
  */
 export function visibleDenials(
   denials: readonly GenesisDenial[],

@@ -13,6 +13,7 @@ import {
   assembleTranscript,
   EMPTY_BANKING_OBSERVATION,
   mergeRehydrated,
+  noticeRoutesToHandDriven,
   observeBanking,
   shouldStickToBottom,
   stageOf,
@@ -676,13 +677,22 @@ function HandDrivenBlock({
  * text. Every field it shows is a TYPED fact from the runner — no error
  * string is ever parsed to decide which of these to show.
  *
- * `cliNotFound` is the one with its own card (criterion 6). It names the
- * binaries the app looked for (const data from the Rust adapter table,
- * never disk-sourced), the project path, and the hand-driven route. It
- * deliberately does NOT carry the assembled kickoff prompt:
+ * TWO OUTCOMES HAVE THEIR OWN CARD, and they are the two that say the
+ * agent CLI cannot be used. `cliNotFound` (T-029 criterion 6) names the
+ * binaries the app looked for — const data from the Rust adapter table,
+ * never disk-sourced — the project path, and the hand-driven route.
+ * `unsupportedVersion` (T-107) names the version the CLI reported and the
+ * same route. Neither carries the assembled kickoff prompt:
  * `assemble_kickoff` is a Rust `pub fn` reachable only from Rust, and
  * `GenesisStatusPayload` carries no kickoff — a copyable block needs a
  * fifth genesis command and belongs with T-029.
+ *
+ * **WHICH OUTCOMES OFFER THE ROUTE IS NOT DECIDED HERE** (T-107).
+ * `noticeRoutesToHandDriven` owns that ruling for every arm of both
+ * unions, exhaustively, and this component READS it — including for the
+ * generic notice below, so an arm ruled routable later reaches the screen
+ * instead of quietly doing nothing. The ruling is the only implementation
+ * of the rule; the markup is the only rendering of it.
  */
 function OutcomeNotice({
   outcome,
@@ -693,6 +703,67 @@ function OutcomeNotice({
   projectDir: string;
   onHandDriven: () => void;
 }) {
+  // T-029 criterion 4: the typed not-found becomes the MODE, not just an
+  // apology. The prompt is assembled by the same Rust function the spawn
+  // uses, over a kit really on disk. ONE element for every card that
+  // offers it — the testid is unchanged from T-029 on purpose, because
+  // the affordance is unchanged and renaming it would move a pin without
+  // moving a behaviour.
+  const handDriven = noticeRoutesToHandDriven(outcome) ? (
+    <div className="flex items-center gap-2.25">
+      <Button data-testid="interview-cli-hand-driven" onClick={onHandDriven}>
+        Show me the prompt
+      </Button>
+    </div>
+  ) : null;
+
+  if (outcome.kind === "unsupportedVersion") {
+    return (
+      <div
+        data-testid="interview-cli-outdated"
+        className="flex flex-col gap-2 rounded-lg border border-status-verifying-border bg-status-verifying px-4 py-3.5"
+      >
+        <span className="text-sm font-semibold tracking-heading text-status-verifying-title">
+          your agent CLI is older than this app can drive
+        </span>
+        <span className="text-sm text-secondary-foreground">
+          It reports{" "}
+          <span data-testid="interview-cli-found" className="font-mono text-sm break-words">
+            {outcome.found}
+          </span>
+          . nputer stops rather than driving a CLI whose flags it cannot be sure
+          of — updating yours to its current release is the fix.
+        </span>
+        {/* THE COMMAND IS DELIBERATELY ABSENT, AND THIS IS WHERE THAT
+            REFUSAL IS RECORDED (T-107 criterion 2). `claude install`,
+            `claude update`, `brew upgrade`, a package manager's own verb —
+            which one is right depends entirely on how this user
+            installed, and `unsupportedVersion` carries the `--version`
+            line and nothing else: no path, no manager, no channel. An app
+            that prints an install command it never ran is T-082's defect
+            one layer up, where the shipped `claude login` sent the word
+            "login" to a model the user could not reach. So the screen
+            says what is true, says why it is not saying more, and hands
+            over the one route that needs no CLI at all. */}
+        <span className="text-sm text-secondary-foreground">
+          It cannot see how you installed it, though, so it will not print an
+          update command that might be the wrong one for your machine — that one
+          is yours.
+        </span>
+        <span className="text-sm text-secondary-foreground">
+          And you do not have to wait for it: the method is hand-drivable. Run
+          your own agent in{" "}
+          <span data-testid="interview-outdated-project" className="font-mono text-sm break-words">
+            {projectDir}
+          </span>{" "}
+          and this screen keeps rendering whatever lands in{" "}
+          <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span>.
+        </span>
+        {handDriven}
+      </div>
+    );
+  }
+
   if (outcome.kind === "cliNotFound") {
     return (
       <div
@@ -717,14 +788,7 @@ function OutcomeNotice({
           and this screen keeps rendering whatever lands in{" "}
           <span className="rounded-sm bg-muted px-1.5 font-mono text-sm">docs/</span>.
         </span>
-        {/* T-029 criterion 4: the typed not-found becomes the MODE, not
-            just an apology. The prompt is assembled by the same Rust
-            function the spawn uses, over a kit really on disk. */}
-        <div className="flex items-center gap-2.25">
-          <Button data-testid="interview-cli-hand-driven" onClick={onHandDriven}>
-            Show me the prompt
-          </Button>
-        </div>
+        {handDriven}
       </div>
     );
   }
@@ -744,11 +808,22 @@ function OutcomeNotice({
       >
         {noticeSentence(outcome)}
       </span>
+      {handDriven}
     </div>
   );
 }
 
-/** One sentence per typed outcome, from its own fields. */
+/**
+ * One sentence per typed outcome, from its own fields.
+ *
+ * THIS IS NOT THE ENUMERATION (T-107 criterion 6). Its arms are a subset
+ * of the two unions' thirteen kinds and its `default` degrades to the
+ * bare kind rather than failing the build — which is the right behaviour
+ * for a SENTENCE, where a bare kind on screen is poor and still far
+ * better than a crashed pane, and the wrong one for a RULING. The ruling
+ * lives in `noticeRoutesToHandDriven`, whose `never` guard makes a newly
+ * added arm a compile error until somebody decides about it.
+ */
 function noticeSentence(outcome: StartOutcomePayload | SendOutcomePayload): string {
   switch (outcome.kind) {
     case "busy":
@@ -770,6 +845,10 @@ function noticeSentence(outcome: StartOutcomePayload | SendOutcomePayload): stri
     case "staleProject":
       return `the running session belongs to ${outcome.sessionProject}, not the folder now open.`;
     case "unsupportedVersion":
+      // Rendered by its own block above since T-107, which gave it the
+      // next step this sentence never had. Kept for the same reason
+      // `resumeAvailable` is kept — so the switch stays exhaustive rather
+      // than falling through to a bare kind.
       return `the agent CLI reports ${outcome.found}, which is older than this app can drive.`;
     case "error":
       return outcome.message;
