@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 42
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [tools/e2e]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @T-120
 verified_by:
-review:
+review: self-verified
 ---
 
 > **DRAFTER'S NOTE — for the architect, remove before landing.** Fence
