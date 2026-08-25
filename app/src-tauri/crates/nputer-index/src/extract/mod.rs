@@ -10,8 +10,57 @@
 use serde::{Deserialize, Serialize};
 use tree_sitter::Tree;
 
+use crate::graph::DepthSite;
+
 pub(crate) mod rust;
 pub(crate) mod ts;
+
+/// The depth ceiling every self-recursive traversal in this module tree
+/// carries (T-129). A traversal entered deeper than this REFUSES: it
+/// returns without descending, records the [`DepthSite`] that refused,
+/// and lets everything shallower stand.
+///
+/// WHY A BOUND AND NOT A BIGGER STACK. A Rust stack overflow is an
+/// `abort()`, not a catchable panic — no `catch_unwind` helps and no
+/// error path runs — and `index()` runs INSIDE the Tauri app's process
+/// behind `index_repo`, so an overflow takes the window, the docs
+/// watcher, the agent runner and any interview mid-turn with it. Running
+/// the walk on a thread with a bigger explicit stack (T-129's arm 2) was
+/// RULED ON AND NOT TAKEN: it moves a threshold where this removes one,
+/// it makes the crate's answer depend on a machine property rather than
+/// on its input (against ADR-014), and after this bound exists nothing
+/// can reach the bigger stack, so the code would be unreachable and its
+/// test vacuous. See the task card for the whole ruling.
+///
+/// WHY THIS NUMBER — it is the point where two measured margins meet,
+/// both taken at `ae16fbe` on this machine and both in the task's
+/// implementation notes.
+///
+/// FROM BELOW: the deepest traversal any file in this repository reaches
+/// is **36** (`app/src/architecture/MapView.tsx`, the candidate scan),
+/// derived by bisecting this constant against the live tree — 35 flags
+/// that file, 36 flags nothing. 128 is 3.5x that, so no committed byte
+/// moves and no plausible hand-written file is refused.
+///
+/// FROM ABOVE: these traversals NEST — `declarations` does not unwind
+/// before it calls `use_declaration`, which does not unwind before
+/// `use_tree`, which does not unwind before `collect_segments` — so the
+/// worst legal stack is three ceilings at once, and it is a CONSTANT
+/// rather than a function of the input, which is the whole of what the
+/// bound buys. Measured on a debug build it needs between **512 KiB and
+/// 640 KiB** (128–192 KiB on release), against the **2 MiB** a plain
+/// `std::thread` gets and the 8 MiB of this platform's main thread:
+/// **~3.2x margin on the smallest stack this crate can plausibly be
+/// handed**, pinned by `tests/depth.rs`.
+///
+/// RAISING IT TRADES THE SECOND MARGIN FOR THE FIRST, and the two
+/// failures are not symmetric: refusing a legitimate file DEGRADES and
+/// is recorded, overflowing ABORTS the app. 256 was measured too — 7.1x
+/// from below, ~1 MiB and only ~2x from above — and rejected for exactly
+/// that reason. Move this constant and the boundary bodies in
+/// `extract/{rust,ts}.rs` red by name; they carry literals on both sides
+/// so that they cannot follow it in silence.
+pub(crate) const MAX_DEPTH: usize = 128;
 
 /// One file's extraction output. Everything here is deterministic in the
 /// file's bytes: symbols sorted by name (post-merge), imports in document
@@ -28,6 +77,14 @@ pub(crate) struct ExtractRecord {
     /// because `.rs` was not a walked extension until this task.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub mods: Vec<RawMod>,
+    /// The traversal that refused past [`MAX_DEPTH`], when one did
+    /// (T-129) — FIRST refusal wins, and traversal order is document
+    /// order, so the value is content-determined like everything else
+    /// here. `None` for every file that extracted in full. Carried
+    /// through the cache the way `mods` is: a cache written before T-129
+    /// still deserializes, because the field defaults.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub depth_refused: Option<DepthSite>,
 }
 
 /// One `mod` declaration inside a Rust file (T-010) — the edge of the

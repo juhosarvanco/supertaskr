@@ -29,7 +29,8 @@ use std::collections::{btree_map::Entry, BTreeMap};
 
 use tree_sitter::{Node, Tree};
 
-use super::{ExtractRecord, Extractor, RawImport, RawMod, RawSymbol};
+use super::{ExtractRecord, Extractor, RawImport, RawMod, RawSymbol, MAX_DEPTH};
+use crate::graph::DepthSite;
 
 pub(crate) struct RustExtractor;
 
@@ -40,14 +41,16 @@ impl Extractor for RustExtractor {
             symbols: BTreeMap::new(),
             imports: Vec::new(),
             mods: Vec::new(),
+            depth_refused: None,
         };
-        cx.declarations(tree.root_node(), &[], true);
+        cx.declarations(tree.root_node(), &[], true, 0);
         ExtractRecord {
             symbols: cx.symbols.into_values().collect(),
             imports: cx.imports,
             calls: Vec::new(),
             type_refs: Vec::new(),
             mods: cx.mods,
+            depth_refused: cx.depth_refused,
         }
     }
 }
@@ -57,9 +60,19 @@ struct Cx<'a> {
     symbols: BTreeMap<String, RawSymbol>,
     imports: Vec<RawImport>,
     mods: Vec<RawMod>,
+    /// First traversal to refuse past [`MAX_DEPTH`], if any (T-129).
+    depth_refused: Option<DepthSite>,
 }
 
 impl<'a> Cx<'a> {
+    /// Record a refusal. FIRST one wins, so the recorded site is the
+    /// traversal that actually stopped rather than the last one to notice.
+    fn refuse(&mut self, site: DepthSite) {
+        if self.depth_refused.is_none() {
+            self.depth_refused = Some(site);
+        }
+    }
+
     fn text(&self, node: Node) -> String {
         node.utf8_text(self.src).unwrap_or_default().to_string()
     }
@@ -106,7 +119,16 @@ impl<'a> Cx<'a> {
     /// Walk one declaration list. `inside` is the INLINE module path this
     /// list sits under within the file; `top` marks the file's own level,
     /// which is the only level that contributes SYMBOLS.
-    fn declarations(&mut self, list: Node, inside: &[String], top: bool) {
+    ///
+    /// `depth` is the inline-`mod` nesting level; a list deeper than
+    /// [`MAX_DEPTH`] is refused rather than descended (T-129), so a file
+    /// with N nested inline modules extracts in full for N <= MAX_DEPTH
+    /// and records a refusal at N = MAX_DEPTH + 1.
+    fn declarations(&mut self, list: Node, inside: &[String], top: bool, depth: usize) {
+        if depth > MAX_DEPTH {
+            self.refuse(DepthSite::RustModNesting);
+            return;
+        }
         let mut cursor = list.walk();
         let children: Vec<Node> = list.named_children(&mut cursor).collect();
         drop(cursor);
@@ -127,7 +149,7 @@ impl<'a> Cx<'a> {
             }
             let attr = path_attr.take();
             match child.kind() {
-                "mod_item" => self.mod_item(child, inside, top, attr),
+                "mod_item" => self.mod_item(child, inside, top, attr, depth),
                 "use_declaration" => self.use_declaration(child, inside),
                 "extern_crate_declaration" => self.extern_crate(child),
                 "function_item" | "function_signature_item" => {
@@ -169,7 +191,14 @@ impl<'a> Cx<'a> {
             .then(|| self.string_text(value))
     }
 
-    fn mod_item(&mut self, node: Node, inside: &[String], top: bool, path_attr: Option<String>) {
+    fn mod_item(
+        &mut self,
+        node: Node,
+        inside: &[String],
+        top: bool,
+        path_attr: Option<String>,
+        depth: usize,
+    ) {
         let Some(name_node) = node.child_by_field_name("name") else {
             return;
         };
@@ -192,7 +221,7 @@ impl<'a> Cx<'a> {
             nested.push(name);
             // Inline bodies contribute their `mod`/`use` declarations and
             // NOT their items — one inline module is one symbol.
-            self.declarations(body, &nested, false);
+            self.declarations(body, &nested, false, depth + 1);
         }
     }
 
@@ -275,7 +304,7 @@ impl<'a> Cx<'a> {
         };
         let reexport = self.is_exported(node);
         let mut paths: Vec<UsePath> = Vec::new();
-        self.use_tree(argument, &[], &mut paths);
+        self.use_tree(argument, &[], &mut paths, 0);
         for path in paths {
             let Some(specifier) = self.anchor(&path, inside) else {
                 continue;
@@ -293,27 +322,35 @@ impl<'a> Cx<'a> {
 
     /// Flatten one use tree into absolute-ish segment lists. `prefix` is
     /// the path accumulated by the enclosing `{ … }` groups.
-    fn use_tree(&self, node: Node, prefix: &[String], out: &mut Vec<UsePath>) {
+    ///
+    /// `depth` is the group-nesting level; past [`MAX_DEPTH`] the tree is
+    /// refused rather than descended (T-129).
+    fn use_tree(&mut self, node: Node, prefix: &[String], out: &mut Vec<UsePath>, depth: usize) {
+        if depth > MAX_DEPTH {
+            self.refuse(DepthSite::RustUseTree);
+            return;
+        }
         match node.kind() {
             "use_list" => {
                 let mut c = node.walk();
                 let children: Vec<Node> = node.named_children(&mut c).collect();
                 for child in children {
-                    self.use_tree(child, prefix, out);
+                    self.use_tree(child, prefix, out, depth + 1);
                 }
             }
             "scoped_use_list" => {
                 let mut base = prefix.to_vec();
                 if let Some(path) = node.child_by_field_name("path") {
-                    base.extend(self.path_segments(path));
+                    let segments = self.path_segments(path);
+                    base.extend(segments);
                 }
                 if let Some(list) = node.child_by_field_name("list") {
-                    self.use_tree(list, &base, out);
+                    self.use_tree(list, &base, out, depth + 1);
                 }
             }
             "use_as_clause" => {
                 if let Some(path) = node.child_by_field_name("path") {
-                    self.use_tree(path, prefix, out);
+                    self.use_tree(path, prefix, out, depth + 1);
                 }
             }
             "use_wildcard" => {
@@ -321,7 +358,8 @@ impl<'a> Cx<'a> {
                 let mut c = node.walk();
                 let children: Vec<Node> = node.named_children(&mut c).collect();
                 for child in children {
-                    base.extend(self.path_segments(child));
+                    let segments = self.path_segments(child);
+                    base.extend(segments);
                 }
                 out.push(UsePath {
                     segments: base,
@@ -337,7 +375,8 @@ impl<'a> Cx<'a> {
             "identifier" | "scoped_identifier" | "crate" | "self" | "super" | "metavariable"
             | "type_identifier" | "primitive_type" => {
                 let mut base = prefix.to_vec();
-                base.extend(self.path_segments(node));
+                let segments = self.path_segments(node);
+                base.extend(segments);
                 out.push(UsePath {
                     segments: base,
                     glob: false,
@@ -349,21 +388,30 @@ impl<'a> Cx<'a> {
 
     /// Segments of a path node, outermost first. A leading `::` shows up
     /// as an empty first segment and is dropped.
-    fn path_segments(&self, node: Node) -> Vec<String> {
+    fn path_segments(&mut self, node: Node) -> Vec<String> {
         let mut out = Vec::new();
-        self.collect_segments(node, &mut out);
+        self.collect_segments(node, &mut out, 0);
         out.retain(|s| !s.is_empty());
         out
     }
 
-    fn collect_segments(&self, node: Node, out: &mut Vec<String>) {
+    /// `depth` is the `a::b::c` nesting level — a path is left-nested
+    /// `scoped_identifier`s, so this is the segment count. Past
+    /// [`MAX_DEPTH`] the path is refused rather than descended (T-129),
+    /// which truncates the specifier's LEADING segments (the ones nearest
+    /// the root) and never invents one.
+    fn collect_segments(&mut self, node: Node, out: &mut Vec<String>, depth: usize) {
+        if depth > MAX_DEPTH {
+            self.refuse(DepthSite::RustPathSegments);
+            return;
+        }
         match node.kind() {
             "scoped_identifier" | "scoped_type_identifier" => {
                 if let Some(path) = node.child_by_field_name("path") {
-                    self.collect_segments(path, out);
+                    self.collect_segments(path, out, depth + 1);
                 }
                 if let Some(name) = node.child_by_field_name("name") {
-                    self.collect_segments(name, out);
+                    self.collect_segments(name, out, depth + 1);
                 }
             }
             "generic_type" => {
@@ -371,7 +419,7 @@ impl<'a> Cx<'a> {
                 // through an alias clause can still carry one; keep the
                 // base only.
                 if let Some(ty) = node.child_by_field_name("type") {
-                    self.collect_segments(ty, out);
+                    self.collect_segments(ty, out, depth + 1);
                 }
             }
             "bracketed_type" | "generic_type_with_turbofish" => {}
@@ -690,6 +738,156 @@ mod tests {
         assert!(record.symbols.iter().any(|s| s.name == "fine"));
     }
 
+    // ---- T-129: the depth bound -------------------------------------------
+    //
+    // FIXTURES ARE BUILT HERE, NEVER COMMITTED. A file with 20 000 path
+    // segments is not a file that belongs in a repository, and the
+    // shapes below are generated into memory at run time.
+    //
+    // EVERY DEPTH BELOW IS A LITERAL, on both sides of every boundary,
+    // and no body mentions `MAX_DEPTH`. A test that computes its input
+    // depth from the constant it is checking cannot pin that constant
+    // (`T-110-s5`, and CONVENTIONS' "a test parametrised by the constant
+    // it checks cannot pin that constant"). Move the constant and these
+    // bodies red; move the constant and a `MAX_DEPTH + 1` body would
+    // follow it in silence.
+    //
+    // EACH REFUSAL PIN CARRIES ITS OWN POSITIVE CONTROL, in the same
+    // body and one step below the boundary: the clean side asserts that
+    // the traversal reached the BOTTOM and did its work there — an
+    // innermost `use` recorded, a full specifier, every module seen —
+    // because "it was refused" is otherwise satisfied by a file nothing
+    // parsed at all.
+
+    /// `n` nested inline modules, distinctly named, with a `use` at the
+    /// INNERMOST level. That import is the positive control's marker: it
+    /// is recorded only if the walk actually reached the bottom.
+    fn nested_mods(n: usize) -> String {
+        let mut s = String::new();
+        for i in 0..n {
+            s.push_str(&format!("mod m{i} {{\n"));
+        }
+        s.push_str("use marker::Deep;\n");
+        for _ in 0..n {
+            s.push_str("}\n");
+        }
+        s
+    }
+
+    /// `use a0::{a1::{ … an::{Deep} … }};` — `n` nested groups.
+    fn nested_use_groups(n: usize) -> String {
+        let mut s = String::from("use ");
+        for i in 0..n {
+            s.push_str(&format!("a{i}::{{"));
+        }
+        s.push_str("Deep");
+        for _ in 0..n {
+            s.push('}');
+        }
+        s.push_str(";\n");
+        s
+    }
+
+    /// `use s0::s1:: … ::s(n-1);` — one path, `n` segments.
+    fn long_path(n: usize) -> String {
+        let segments: Vec<String> = (0..n).map(|i| format!("s{i}")).collect();
+        format!("use {};\n", segments.join("::"))
+    }
+
+    #[test]
+    fn inline_mod_nesting_extracts_at_128_and_refuses_at_129() {
+        // POSITIVE CONTROL: at 256 the walk reaches the innermost body
+        // and records the `use` that only the bottom level carries.
+        let clean = extract(&nested_mods(128));
+        assert_eq!(clean.depth_refused, None, "128 nested inline modules");
+        assert_eq!(clean.mods.len(), 128, "every module declaration seen");
+        assert_eq!(clean.mods[127].name, "m127", "the innermost module");
+        assert_eq!(
+            specifiers(&clean).len(),
+            1,
+            "the innermost `use` was reached: {:?}",
+            specifiers(&clean)
+        );
+        let deep = &clean.imports[0].specifier;
+        assert!(deep.starts_with("self::m0::m1::"), "anchored at the file: {deep}");
+        assert!(deep.ends_with("::m127::marker::Deep"), "anchored through every level: {deep}");
+        // Still ONE symbol at the file's own level, which is the whole
+        // of what an inline module contributes.
+        let names: Vec<&str> = clean.symbols.iter().map(|s| s.name.as_str()).collect();
+        assert_eq!(names, vec!["m0"]);
+
+        // REFUSAL: one level deeper the walk stops and SAYS SO.
+        let refused = extract(&nested_mods(129));
+        assert_eq!(
+            refused.depth_refused,
+            Some(DepthSite::RustModNesting),
+            "129 nested inline modules"
+        );
+        // Degrade, never fail: everything above the bound survives, and
+        // only the innermost body — the `use` — is missing.
+        assert_eq!(refused.mods.len(), 129, "every module above the bound seen");
+        assert!(refused.imports.is_empty(), "the innermost `use` is past the bound");
+        assert_eq!(
+            refused.symbols.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(),
+            vec!["m0"],
+            "the file's own level is untouched by a refusal below it"
+        );
+    }
+
+    #[test]
+    fn use_group_nesting_extracts_at_64_and_refuses_at_65() {
+        // POSITIVE CONTROL: the flattened path proves the walk reached
+        // the innermost group rather than merely declining to refuse.
+        let clean = extract(&nested_use_groups(64));
+        assert_eq!(clean.depth_refused, None, "64 nested use groups");
+        assert_eq!(specifiers(&clean).len(), 1);
+        let flat = &clean.imports[0].specifier;
+        assert!(flat.starts_with("a0::a1::"), "outermost groups kept: {flat}");
+        assert!(flat.ends_with("::a63::Deep"), "innermost leaf reached: {flat}");
+        assert_eq!(flat.split("::").count(), 65, "64 groups plus the leaf");
+
+        let refused = extract(&nested_use_groups(65));
+        assert_eq!(
+            refused.depth_refused,
+            Some(DepthSite::RustUseTree),
+            "65 nested use groups"
+        );
+        assert!(
+            refused.imports.is_empty(),
+            "a refused tree yields no half-built specifier: {:?}",
+            specifiers(&refused)
+        );
+    }
+
+    #[test]
+    fn path_segments_extract_at_129_and_refuse_at_130() {
+        // POSITIVE CONTROL: every one of the 257 segments is present, in
+        // order — a truncated walk would silently drop the leading ones.
+        let clean = extract(&long_path(129));
+        assert_eq!(clean.depth_refused, None, "a 129-segment path");
+        assert_eq!(specifiers(&clean), vec![long_path(129)
+            .trim_start_matches("use ")
+            .trim_end_matches(";\n")]);
+
+        let refused = extract(&long_path(130));
+        assert_eq!(
+            refused.depth_refused,
+            Some(DepthSite::RustPathSegments),
+            "a 130-segment path"
+        );
+        // The refusal drops the LEADING segments (the walk descends the
+        // left-nested path first), so what remains is a suffix — never an
+        // invented segment and never the full path.
+        let kept = &refused.imports[0].specifier;
+        assert!(kept.ends_with("::s129"), "the tail survives: {kept}");
+        assert!(kept.starts_with("s2::"), "s0 and s1 are past the bound: {kept}");
+        assert_eq!(
+            kept.split("::").count(),
+            128,
+            "exactly the segments the bound allows, no more and no fewer"
+        );
+    }
+
     #[test]
     fn merged_declarations_take_the_union_range_and_the_earliest_kind() {
         let record = extract(
@@ -707,4 +905,5 @@ mod tests {
         assert_eq!(merged.range, [2, 8]);
     }
 }
+
 

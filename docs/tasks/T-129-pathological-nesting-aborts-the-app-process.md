@@ -142,3 +142,373 @@ on `crates/**` — derive that rather than assuming it, and say which way it
 came out. **Fixtures with 20 000 path segments do not belong in the
 repository** — generate them into a temp directory at run time and say so.
 @human: none.
+
+## Implementation notes (executor, claude-opus-5 @T-129)
+
+Built in `/Users/ujju/Projects/nputer-T-129` on `task/T-129-nesting-abort`,
+cut from `ae16fbe`. Every figure below was measured at `ae16fbe` on this
+machine unless it names another ref. **Main moved twice while this lane
+ran** — `ae16fbe` → `1ed6ae9` (Checkpoint: T-102) → `54076fe` (Checkpoint:
+T-033) → `fbae94a` (T-104 dispatch) — so the lane list and the graph gate
+both read differently now than at dispatch, and both are stated with when
+they were read.
+
+### 1. THE DIAGNOSIS REPRODUCES, AND SO DOES THE NEGATIVE RESULT
+
+Every Rust row of the card's table reproduces **exactly** at this ref,
+against the shipped binary, exit read from `$?` on an unpiped command
+(output to a FILE, never a pipe):
+
+| input | card said | measured at `ae16fbe` |
+|---|---|---|
+| nested inline `mod` | aborts 5 000, green 4 000 | **aborts 5 000 (exit 134), green 4 000** |
+| nested use groups | aborts 3 000, green 2 000 | **aborts 3 000 (exit 134), green 2 000** |
+| path segments | aborts 20 000, green 12 000 | **aborts 20 000 (exit 134), green 12 000** |
+
+`fatal runtime error: stack overflow, aborting`, `thread 'main' has
+overflowed its stack`. **Three rows measured at `cb13957` and reproduced
+unchanged at `ae16fbe` on rustc 1.95.0 / Darwin 25.6.0 arm64, `ulimit -s`
+8176 KiB** — so these numbers travel further than this project's usual
+caution would predict.
+
+**THE NEGATIVE RESULT HOLDS AND IT LOCALISES THE BUG.** 10 000 nested
+braces inside a `.rs` function body — parsed in full by tree-sitter,
+deliberately not descended by `declarations` — is **exit 0**, and so is
+50 000. The parse and the tree's drop both survive the depth the
+traversal dies on. **The unbounded recursion was ours.**
+
+### 2. WHERE THE CARD IS WRONG — the negative result is LANGUAGE-SPECIFIC
+
+The card states the negative result without a language: *"10 000 nested
+braces inside a function body — which tree-sitter parses in full and the
+extractor deliberately does not descend into — is exit 0."* **That is
+true of `.rs` and FALSE of `.ts`.** `extract::ts::Cx::scan` descends
+EVERY named child of the whole tree, function bodies included — it is the
+candidate scan, and candidates are exactly the things inside function
+bodies. Measured: `function f() {{{ … }}}` nested 10 000 deep in a `.ts`
+file is **exit 134**, green at 4 000.
+
+Nothing in the diagnosis changes — the recursion is still ours either
+way — but a reader who takes "the extractor does not descend into
+function bodies" as a property of the crate will look for the TS bug in
+the wrong place. It is a property of the RUST extractor's design and of
+nothing else.
+
+### 3. THE TS THRESHOLDS ARE TIGHTER THAN THE CARD'S, BY UP TO 5x
+
+The card measured four TS shapes at one depth each (10 000 / 10 000 /
+10 000 / 50 000) and reported "all four abort". Bisected here, the real
+thresholds are much lower, and one of them is the lowest in the whole
+table:
+
+| shape | card | measured at `ae16fbe` | ratio |
+|---|---|---|---|
+| `namespace nK {` × n | aborts at 10 000 | **aborts 2 000, green 1 000** | 5x tighter |
+| nested object literal | aborts at 10 000 | **aborts 4 000, green 2 000** | 2.5x |
+| parenthesised expression | aborts at 10 000 | **aborts 10 000, green 4 000** | — |
+| member chain | aborts at 50 000 | **aborts 10 000** | 5x tighter |
+| nested destructuring (NOT in the card) | — | **aborts 4 000, green 2 000** | new |
+| braces in a `.ts` function body (NOT in the card) | — | **aborts 10 000, green 4 000** | new |
+
+**The nested-`namespace` row makes TS the more exposed language, not the
+less**: 2 000 is below every Rust threshold. The card's framing ("the
+same class exists on the TS side") understates it.
+
+### 4. THE SET OF TRAVERSALS, DERIVED
+
+Enumerated by scanning every `fn` in `src/extract/**` for a call to
+itself, then reading each cycle by hand. **Six self-recursive traversals,
+in two mutual-recursion cycles and four plain ones. All six are bounded.**
+
+| # | traversal | cycle | depth is | smallest driver that reaches its bound | pre-fix abort |
+|---|---|---|---|---|---|
+| 1 | `rust::Cx::declarations` | mutual with `mod_item` | inline `mod` nesting | `mod m0 { … }` × 129 | 5 000 |
+| 2 | `rust::Cx::use_tree` | self | `use a::{b::{…}}` group nesting | 65 nested groups | 3 000 |
+| 3 | `rust::Cx::collect_segments` | self | `a::b::c::…` segment count | a 130-segment path | 20 000 |
+| 4 | `ts::Cx::module_statement` | mutual with `export_statement` | `declare`-chained ambient declarations | `declare` × 129 | 10 000 |
+| 5 | `ts::Cx::pattern_names` | self | destructuring nesting | 65 nested pattern pairs | 4 000 |
+| 6 | `ts::Cx::scan` | self | **the file's whole AST depth** | a 62-deep object value | 2 000 (nested `namespace`) |
+
+**NOT self-recursive, checked rather than assumed**: `text`, `flat_text`,
+`string_text`, `path_attribute`, `named_item`, `impl_name`,
+`is_exported`, `push_symbol`, `use_declaration`, `path_segments`,
+`anchor`, `extern_crate` (Rust); `string_text`, `named_declaration`,
+`push_symbol`, `import_statement`, `is_type_ref_position`,
+`push_candidate`, `enclosing_symbol`, `single_string_arg` (TS). One
+deserves naming because it LOOKS recursive and is not:
+**`ts::Cx::require_bindings` walks UP the parent chain in a `loop`** — it
+is iterative, uses one frame, and needs no bound.
+
+**`module_statement` nearly escaped the enumeration** and is worth
+recording: a first reading says the grammar bounds it at depth ~3, since
+it does not descend into `internal_module` bodies and `declare` cannot be
+repeated. That reading is wrong — **`ambient_declaration` is itself one
+of tree-sitter-typescript's `declaration` alternatives**, so
+`declare declare … const x` nests without limit, and it aborts at 10 000.
+Found by MEASURING candidate shapes rather than by reading the grammar.
+
+**`export_statement` shares `module_statement`'s counter rather than
+keeping its own**, because they are one cycle; two half-ladders would let
+an alternating chain reach twice the bound.
+
+**THE ENUMERATION IS NOW STRUCTURAL, not documentary.** `graph::DepthSite`
+has exactly one variant per bounded traversal and every refusal names
+one, so a seventh traversal cannot be bounded without adding a variant,
+and `tests/depth.rs` asserts the SET of six against six drivers.
+
+### 5. WHAT WAS BUILT
+
+- **`src/extract/mod.rs`** — `MAX_DEPTH: usize = 128`, with the whole
+  derivation beside it, and `ExtractRecord.depth_refused:
+  Option<DepthSite>` (`#[serde(default, skip_serializing_if)]`, the
+  `mods` pattern, so a cache written before T-129 still deserializes).
+- **`src/graph.rs`** — `pub enum DepthSite` (six unit variants,
+  kebab-case, with `as_str()`); `FileEntry.depth_refused:
+  Option<DepthSite>`; `Stats.depth_limited: Option<usize>`. Both optional
+  and both omitted when absent, so **`schema` stays 1 and the committed
+  bytes do not move**.
+- **`src/extract/rust.rs`**, **`src/extract/ts.rs`** — a `depth` argument
+  on each of the six, a guard at ENTRY (`if depth > MAX_DEPTH { refuse;
+  return }`), and `Cx::refuse` where FIRST refusal wins.
+- **`src/lib.rs`** — carries `depth_refused` onto the `FileEntry` and
+  DERIVES `stats.depth_limited` from the file entries the way
+  `stats.symbols` is derived from the symbol arrays. `DepthSite` is
+  re-exported.
+- **`tests/depth.rs`** — new integration target, three bodies.
+- `src/{emit,diff,arch/mod}.rs` — **`#[cfg(test)]` fixture builders only**,
+  two new fields each. **No production constructor of `FileEntry` or
+  `Stats` outside `lib.rs` exists**, which is how narrow this change is.
+
+**REFUSE, DO NOT DROP.** A refused file stays in `files[]` with
+everything its traversals reached above the bound; only the sub-tree past
+the bound is missing. A 129-deep module file keeps its file-level symbol
+and all 129 `mod` records and loses the innermost `use`; a 63-deep object
+value keeps its exported declaration and loses the call candidate under
+it. That is the crate's "degrade, never fail" contract one layer down,
+and both halves are asserted.
+
+### 6. THE NUMBER, DERIVED FROM BOTH SIDES
+
+**`MAX_DEPTH = 128` is where two measured margins meet.**
+
+**FROM BELOW — 3.5x.** The deepest traversal any file in this repository
+reaches is **36**, `app/src/architecture/MapView.tsx`'s candidate scan.
+Derived by bisecting the constant against a copy of the live tree and
+counting flagged files: 33→2 files, 34→2, **35→1** (`MapView.tsx` alone),
+**36→0**. Second deepest is
+`app/src/components/board/TaskDetailPanel.tsx` at 35. Nothing else in 254
+walked source files is within 90 of the bound.
+
+**FROM ABOVE — 3.2x.** These traversals NEST: `declarations` does not
+unwind before `use_declaration`, which does not unwind before `use_tree`,
+which does not unwind before `collect_segments`. So the worst legal stack
+is three ceilings at once — and, crucially, **it is a CONSTANT rather
+than a function of the input, which is the whole of what the bound
+buys**. Measured by bisecting an explicit thread stack against a file
+that maxes all three at once:
+
+| profile | worst legal input needs | against 2 MiB (`std::thread`) | against 8 MiB (main) |
+|---|---|---|---|
+| debug | **512–640 KiB** | ~3.2x | ~12.8x |
+| release | **128–192 KiB** | ~10x | ~40x |
+
+**256 WAS MEASURED AND REJECTED.** It gives 7.1x from below but needs
+**896–1024 KiB** in debug — only ~2x on a 2 MiB thread. The two failures
+are not symmetric: refusing a legitimate file DEGRADES and is recorded,
+overflowing ABORTS the app, so the margin belongs on the unrecoverable
+side. 128 is the value at which both margins are ~3.5x.
+
+**With the bound in place, every shape in section 1 and section 3 exits 0
+at 50 000** — ten to twenty-five times the depth that aborted before —
+read unpiped, 27 runs, no exceptions.
+
+### 7. ARM 2 — RULED ON, NOT TAKEN
+
+**Running the walk on a spawned thread with an explicit stack size is
+NOT taken.** The ruling is recorded beside the code (the `MAX_DEPTH` doc
+comment) as the card asks, and here is the whole of it:
+
+1. **It moves a threshold where a bound removes one** — the card's own
+   sentence, and it is decisive rather than rhetorical: with a bound, the
+   worst legal stack is a constant; with a bigger stack it stays a
+   function of the input.
+2. **It would make the crate's answer depend on a machine property.**
+   ADR-014 is "same tree, byte-identical output on any machine". A stack
+   size is not a property of the tree.
+3. **It would ship untestable code.** To exercise the bigger stack you
+   must exceed the bound — and after the bound exists nothing can. The
+   arm's own code path would be unreachable and any test of it vacuous,
+   which is the defect class this project catalogues most.
+4. **It widens the crate's threading contract for every caller** (the
+   app's `index_repo`, the CLI, the watcher) to buy a residual the
+   enumeration and the pins already cover.
+
+**WHAT SURVIVES FROM ARM 2 IS ITS QUESTION, and it is kept as a pin
+rather than as a paragraph.** `the_worst_legal_nesting_completes_on_a_
+small_explicit_stack` asks it from the other end: give the walk the
+SMALLEST stack any plausible caller hands it (2 MiB, a plain
+`std::thread`, spelled as a literal) and require the deepest legal input
+to finish. That is the property arm 2 was reaching for, held by a body
+instead of by a bigger buffer.
+
+### 8. THE PINS — every literal on both sides, a positive control beside every refusal
+
+**Nine new bodies.** Six unit (per-traversal attribution, in the module
+that owns the traversal) and three integration (the whole pipeline).
+
+**NO BODY MENTIONS `MAX_DEPTH`.** Every depth is a literal, on both sides
+of every boundary, and the integration file cannot even see the constant
+(`pub(crate)`). This is `T-110-s5`'s class handled structurally: move the
+constant and these bodies red by name; a `MAX_DEPTH + 1` body would
+follow it in silence. **`inline_mod_nesting_extracts_at_128_and_refuses_
+at_129` pins the constant EXACTLY** — for that shape depth == n, so
+"128 clean, 129 refused" is literal-against-literal with no constant in
+sight.
+
+| body | clean at | refuses at | the positive control asserts |
+|---|---|---|---|
+| `inline_mod_nesting_extracts_at_128_and_refuses_at_129` | 128 | 129 | the innermost `use`, anchored `self::m0::…::m127::marker::Deep` |
+| `use_group_nesting_extracts_at_64_and_refuses_at_65` | 64 | 65 | the flattened specifier, `a0::…::a63::Deep`, 65 segments |
+| `path_segments_extract_at_129_and_refuse_at_130` | 129 | 130 | all 129 segments in order; the refusal keeps exactly 128, dropping the LEADING two |
+| `ambient_declare_chains_extract_at_124_and_the_module_walk_refuses_at_129` | 124 | 129 | `deepConst` reached and typed `const` |
+| `nested_binding_patterns_extract_at_62_and_the_pattern_walk_refuses_at_65` | 62 | 65 | `deepBinding` is a module-scope symbol |
+| `the_candidate_scan_extracts_at_61_and_refuses_at_62` | 61 | 62 (loses the call at 63) | the innermost CALL CANDIDATE, which exists only because the scan reached it |
+
+**THE POSITIVE CONTROL IS THE CRITERION THAT STOPS THIS BEING VACUOUS
+AND IT IS NOT A SHRUG.** Each one asserts a fact that only exists if the
+walk reached the BOTTOM — an anchored specifier, a flattened path, a
+typed symbol, a call candidate — rather than "no refusal was recorded",
+which a file nothing parsed would satisfy equally.
+
+**THE THREE TS WALKS INTERLEAVE AND THE BODIES SAY SO.** `scan` counts
+every AST level while `module_statement` and `pattern_names` count only
+their own construct's levels, so `scan` reaches its ceiling first — but
+the module walk RUNS first and first refusal wins, so each walk still
+answers for its own shape once that shape is deep enough. The middle band
+(125–128 declares, 63–64 pattern pairs) records `ts-candidate-scan`, and
+that is asserted rather than left to be discovered. It is also why the
+declare/pattern positive controls sit at 124 and 62 rather than one below
+their own site's boundary: those are the last depths at which NOTHING
+refuses, which is what a positive control needs.
+
+**INTEGRATION** (`tests/depth.rs`), the three that fail against the
+pre-fix tree AS EXIT 134:
+
+- `a_pathological_file_is_indexed_and_recorded_rather_than_aborting_the_process`
+  — the card's own worst row (20 000 segments) beside an ordinary file:
+  `index()` returns, the hostile file is IN `files[]` naming
+  `rust-path-segments`, `stats.depth_limited == Some(1)`, and the
+  neighbour is byte-for-byte unaffected.
+- `every_bounded_traversal_is_reachable_from_a_real_file_and_names_itself`
+  — six drivers, one per `DepthSite`, plus a seventh ordinary file.
+  **A COVERAGE FLOOR, not a tally** (CONVENTIONS' shape five): the
+  assertion is over the SET, so deleting a bound, or deleting the file
+  that drives one, changes the set.
+- `the_worst_legal_nesting_completes_on_a_small_explicit_stack` — arm 7
+  above.
+
+### 9. EVERY PIN FAILS AGAINST THE PRE-FIX TREE, AND IT FAILS AS AN ABORT
+
+**AN ABORT IS NOT A TEST FAILURE**, so this is stated as exit codes off
+unpiped commands rather than as counts. Against the base binary built
+from `ae16fbe` in an isolated target directory:
+
+| body's own input, one file at a time, through the pre-fix binary | pre-fix exit | post-fix exit / site |
+|---|---|---|
+| 20 000-segment path (`a_pathological_file…`) | **134** | 0 / `rust-path-segments` |
+| `mods.rs` — 6 000 inline modules | **134** | 0 / `rust-mod-nesting` |
+| `groups.rs` — 4 000 nested use groups | **134** | 0 / `rust-use-tree` |
+| `path.rs` — 20 000 segments | **134** | 0 / `rust-path-segments` |
+| `declares.ts` — 12 000 chained `declare`s | **134** | 0 / `ts-module-statements` |
+| `pattern.ts` — 5 000 nested pattern pairs | **134** | 0 / `ts-binding-pattern` |
+| `value.ts` — a 5 000-deep object value | **134** | 0 / `ts-candidate-scan` |
+| the worst legal nesting (128 mods + 64 groups + 129 segments) | 0 | 0 / no refusal |
+
+**THE SITE DRIVERS WERE DELIBERATELY RAISED PAST THE PRE-FIX ABORT
+THRESHOLDS RATHER THAN LEFT JUST PAST THE NEW BOUND.** The first draft
+used 300/200/300/300/200/200 — enough to attribute each site, and far
+below the old thresholds, so against the pre-fix tree those bodies would
+have failed only as compile errors about fields that did not exist yet.
+That is a failure, but it is not THE failure, and criterion 2 says
+*"today they abort at 134, which is the whole finding"*. At
+6 000 / 4 000 / 20 000 / 12 000 / 5 000 / 5 000 each driver aborts the
+pre-fix binary on its own AND attributes to the same site post-fix, so
+the body fails against the pre-fix tree the way the defect actually
+presents. Costs 0.13s.
+
+**ONE BODY CANNOT ABORT PRE-FIX AND SAYS SO BY CONSTRUCTION.**
+`the_worst_legal_nesting_completes_on_a_small_explicit_stack` drives the
+deepest input that is LEGAL under the new bound; nothing legal was ever
+deep enough to overflow the old tree. Against the pre-fix tree it fails
+as a compile error, and that is the honest ceiling on this criterion for
+that one body.
+
+**AND THE HARNESS TRAP IS REAL, CAUGHT HERE ONCE.** A `cargo test … |
+tail` in this session returned `EXIT=0` while the child had aborted at
+SIGABRT — `tail`'s exit, exactly the failure the card warns about. Note
+also that **`cargo test` MASKS an abort as its own 101**: the crashed
+child shows as `signal: 6, SIGABRT` in cargo's message while `$?` reads
+**101**, not 134. The 134 is visible only on the binary itself, which is
+why every threshold run here drove `target/debug/nputer-index` directly.
+
+### 10. THE PUBLIC CONTRACT — PROVEN, and the baseline had to be rebuilt first
+
+**The committed `graph.json` was ALREADY STALE at `ae16fbe`, before this
+lane touched anything** — `a9ed33d` (Merge T-102) landed three `.rs`
+files after the last checkpoint's regen, so `index --check` at the base
+reports STALE naming `agent/runner.rs`, `bin/fake_agent.rs` and
+`tests/agent_runner.rs`, none of which this lane opened. Filed as
+**`T-129-s4`**. It means the committed file is not a valid baseline, so
+byte-identity was proven **binary against binary over identical trees**
+instead:
+
+| corpus | old binary (`ae16fbe`) | new binary | `cmp` |
+|---|---|---|---|
+| a pristine `ae16fbe` tree | 923 899 bytes · 178 files · 1967 symbols · 1881 edges · sha256 `42dba7c5…` | **identical, same sha256** | **exit 0** |
+| this lane's own tree | 929 129 bytes · 179 files · 1981 symbols · 1885 edges | **identical** | **exit 0** |
+
+**Byte-identical on both corpora, `depth_limited` absent from both** —
+254 walked source files, 179 indexed, not one within 90 of the bound. The
+`schema` stays 1 because both new fields are optional and omitted.
+
+**GRAPH REGEN forecast for the integrator**, asked of the gate rather
+than predicted: committed **921 608 · 178 · 1960 · 1881** → this lane's
+tree **929 129 · 179 · 1981 · 1885** = **+1 file** (`tests/depth.rs`),
+**+21 symbols**, **+4 edges**, **+7 521 bytes**. Against
+`max_graph_bytes` 1 000 000 that is **92.91%**, up from 92.16%, with
+**70 871 bytes of headroom** — the highest this repository has recorded,
+and still nothing reports it. **Roughly a third of the +21 is T-102's
+merge and not this lane's** (its three files moved 1960→1967 on their
+own); the lane's own share is +14 symbols.
+
+**NO REGENERATED GRAPH IS COMMITTED ON THIS BRANCH, and that is derived
+rather than skipped**: `docs/architecture/graph.json` is not inside
+C-07's declared `paths:` (`app/src-tauri/crates/nputer-index/**`), so it
+is outside this card's fence, and CONVENTIONS puts the regen on the
+integrator **at the checkpoint** — where it must be, since the checkpoint
+edits indexed fixture files.
+
+### 11. FIXTURES
+
+**Nothing pathological is committed.** Every fixture in section 8 is
+built as a `String` at run time; the integration bodies write theirs into
+a `TempTree` under the system temp dir which removes itself on drop. The
+largest is 20 000 path segments (~200 KB) and it exists for the duration
+of one test.
+
+### 12. WHAT WAS DELIBERATELY NOT BUILT
+
+- **Arm 3** (`index_cmd.rs`'s false `"never a panic"`) — out of fence,
+  C-05 `app-shell`. **Routed as `T-129-s1`** with the replacement comment
+  ready to paste.
+- **No reporting surface for the refusal** — the graph records it and
+  nothing reads it. That is exactly the status `stats.skipped` has had
+  since T-009, and inventing a one-off path for the new field while the
+  old one stays silent would have been the worse call. **Routed as
+  `T-129-s2`** with three arms.
+- **The two recursions in `resolve/` and one in `arch/glob.rs`** — in
+  fence, outside the card's scope, and a genuinely different class (their
+  depth is a function of the DIRECTORY TREE, which the platform's path
+  limit bounds long before this crate does). **Routed as `T-129-s3`**,
+  measurement-first.
+- **No CLI output change**, so `tests/cli.rs` is untouched.

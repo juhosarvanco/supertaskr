@@ -19,7 +19,8 @@ use std::collections::{btree_map::Entry, BTreeMap, BTreeSet};
 
 use tree_sitter::{Node, Tree};
 
-use super::{Candidate, ExtractRecord, Extractor, NameBinding, RawImport, RawSymbol};
+use super::{Candidate, ExtractRecord, Extractor, NameBinding, RawImport, RawSymbol, MAX_DEPTH};
+use crate::graph::DepthSite;
 
 pub(crate) struct TsExtractor;
 
@@ -33,14 +34,16 @@ impl Extractor for TsExtractor {
             export_marks: BTreeSet::new(),
             calls: BTreeSet::new(),
             type_refs: BTreeSet::new(),
+            depth_refused: None,
         };
 
         let root = tree.root_node();
         let mut cursor = root.walk();
-        for child in root.named_children(&mut cursor) {
-            cx.module_statement(child, false);
-        }
+        let top: Vec<Node> = root.named_children(&mut cursor).collect();
         drop(cursor);
+        for child in top {
+            cx.module_statement(child, false, 0);
+        }
 
         // `export { a, b as c }` lists and `export default <identifier>`
         // may reference declarations before OR after themselves: applied
@@ -52,7 +55,7 @@ impl Extractor for TsExtractor {
         }
 
         cx.spans.sort_by_key(|s| s.0);
-        cx.scan(root);
+        cx.scan(root, 0);
 
         ExtractRecord {
             symbols: cx.symbols.into_values().collect(),
@@ -60,6 +63,7 @@ impl Extractor for TsExtractor {
             calls: cx.calls.into_iter().collect(),
             type_refs: cx.type_refs.into_iter().collect(),
             mods: Vec::new(), // Rust only (T-010)
+            depth_refused: cx.depth_refused,
         }
     }
 }
@@ -76,9 +80,19 @@ struct Cx<'a> {
     export_marks: BTreeSet<String>,
     calls: BTreeSet<Candidate>,
     type_refs: BTreeSet<Candidate>,
+    /// First traversal to refuse past [`MAX_DEPTH`], if any (T-129).
+    depth_refused: Option<DepthSite>,
 }
 
 impl<'a> Cx<'a> {
+    /// Record a refusal. FIRST one wins, so the recorded site is the
+    /// traversal that actually stopped rather than the last one to notice.
+    fn refuse(&mut self, site: DepthSite) {
+        if self.depth_refused.is_none() {
+            self.depth_refused = Some(site);
+        }
+    }
+
     fn text(&self, node: Node) -> String {
         node.utf8_text(self.src).unwrap_or_default().to_string()
     }
@@ -96,10 +110,18 @@ impl<'a> Cx<'a> {
 
     // ---- module-level walk ------------------------------------------------
 
-    fn module_statement(&mut self, node: Node, exported: bool) {
+    /// `depth` is the unwrap nesting level — `ambient_declaration` is one
+    /// of the grammar's own `declaration` alternatives, so `declare
+    /// declare … const x = 1` nests without limit. Past [`MAX_DEPTH`] the
+    /// statement is refused rather than unwrapped (T-129).
+    fn module_statement(&mut self, node: Node, exported: bool, depth: usize) {
+        if depth > MAX_DEPTH {
+            self.refuse(DepthSite::TsModuleStatements);
+            return;
+        }
         match node.kind() {
             "import_statement" => self.import_statement(node),
-            "export_statement" => self.export_statement(node),
+            "export_statement" => self.export_statement(node, depth),
             "ambient_declaration" => {
                 // `declare X` unwraps to X; `declare global { … }` innards
                 // are skipped (statement_block child).
@@ -109,7 +131,7 @@ impl<'a> Cx<'a> {
                     if ch.kind() == "statement_block" {
                         continue;
                     }
-                    self.module_statement(ch, exported);
+                    self.module_statement(ch, exported, depth + 1);
                 }
             }
             "expression_statement" => {
@@ -118,7 +140,7 @@ impl<'a> Cx<'a> {
                 let children: Vec<Node> = node.named_children(&mut c).collect();
                 for ch in children {
                     if ch.kind() == "internal_module" || ch.kind() == "module" {
-                        self.module_statement(ch, exported);
+                        self.module_statement(ch, exported, depth + 1);
                     }
                 }
             }
@@ -152,7 +174,7 @@ impl<'a> Cx<'a> {
                     }
                     if let Some(pattern) = decl.child_by_field_name("name") {
                         let mut names = Vec::new();
-                        self.pattern_names(pattern, &mut names);
+                        self.pattern_names(pattern, &mut names, 0);
                         for name in names {
                             // All module-scope bindings — const, let, var,
                             // destructured — carry kind `const` (closed
@@ -178,31 +200,40 @@ impl<'a> Cx<'a> {
 
     /// Binding identifiers of a declarator pattern: plain identifiers,
     /// object/array destructuring (incl. defaults and rest), recursively.
-    fn pattern_names(&self, node: Node, out: &mut Vec<String>) {
+    ///
+    /// `depth` is the destructuring nesting level; past [`MAX_DEPTH`] the
+    /// pattern is refused rather than descended (T-129).
+    fn pattern_names(&mut self, node: Node, out: &mut Vec<String>, depth: usize) {
+        if depth > MAX_DEPTH {
+            self.refuse(DepthSite::TsBindingPattern);
+            return;
+        }
         match node.kind() {
             "identifier" | "shorthand_property_identifier_pattern" => {
                 out.push(self.text(node));
             }
             "object_pattern" | "array_pattern" => {
                 let mut c = node.walk();
-                for ch in node.named_children(&mut c) {
-                    self.pattern_names(ch, out);
+                let children: Vec<Node> = node.named_children(&mut c).collect();
+                for ch in children {
+                    self.pattern_names(ch, out, depth + 1);
                 }
             }
             "pair_pattern" => {
                 if let Some(value) = node.child_by_field_name("value") {
-                    self.pattern_names(value, out);
+                    self.pattern_names(value, out, depth + 1);
                 }
             }
             "rest_pattern" => {
                 let mut c = node.walk();
-                for ch in node.named_children(&mut c) {
-                    self.pattern_names(ch, out);
+                let children: Vec<Node> = node.named_children(&mut c).collect();
+                for ch in children {
+                    self.pattern_names(ch, out, depth + 1);
                 }
             }
             "object_assignment_pattern" | "assignment_pattern" => {
                 if let Some(left) = node.child_by_field_name("left") {
-                    self.pattern_names(left, out);
+                    self.pattern_names(left, out, depth + 1);
                 }
             }
             _ => {}
@@ -309,7 +340,10 @@ impl<'a> Cx<'a> {
         });
     }
 
-    fn export_statement(&mut self, node: Node) {
+    /// `depth` is [`Self::module_statement`]'s own counter — the two are
+    /// mutually recursive through the `declaration` field, so they share
+    /// one ladder rather than each keeping half of it.
+    fn export_statement(&mut self, node: Node, depth: usize) {
         if let Some(source) = node.child_by_field_name("source") {
             // Re-export: `export { a } from`, `export * from`,
             // `export * as ns from` — recorded as import edges with
@@ -362,7 +396,7 @@ impl<'a> Cx<'a> {
             return;
         }
         if let Some(declaration) = node.child_by_field_name("declaration") {
-            self.module_statement(declaration, true);
+            self.module_statement(declaration, true, depth + 1);
             return;
         }
         if let Some(value) = node.child_by_field_name("value") {
@@ -397,7 +431,15 @@ impl<'a> Cx<'a> {
 
     // ---- recursive candidate scan ----------------------------------------
 
-    fn scan(&mut self, node: Node) {
+    /// `depth` is the AST depth — this walk descends EVERY named child,
+    /// so unlike its five siblings its depth is the whole file's tree
+    /// height and not the height of one construct. Past [`MAX_DEPTH`] the
+    /// sub-tree is refused rather than descended (T-129).
+    fn scan(&mut self, node: Node, depth: usize) {
+        if depth > MAX_DEPTH {
+            self.refuse(DepthSite::TsCandidateScan);
+            return;
+        }
         match node.kind() {
             "decorator" => return, // decorators are not extracted at all
             "call_expression" => {
@@ -458,8 +500,9 @@ impl<'a> Cx<'a> {
         }
         let mut c = node.walk();
         let children: Vec<Node> = node.named_children(&mut c).collect();
+        drop(c);
         for child in children {
-            self.scan(child);
+            self.scan(child, depth + 1);
         }
     }
 
@@ -938,6 +981,171 @@ export class JsClass {}
         assert!(rec.calls.iter().any(|c| c.enclosing == "jsThing" && c.name == "def"));
     }
 
+    // ---- T-129: the depth bound -------------------------------------------
+    //
+    // Same discipline as the Rust extractor's own block: fixtures BUILT
+    // at run time, every depth a LITERAL on both sides, no body naming
+    // `MAX_DEPTH` (a test parametrised by the constant it checks cannot
+    // pin that constant — `T-110-s5`), and a POSITIVE CONTROL beside
+    // every refusal, one step below the boundary, asserting the walk
+    // reached the BOTTOM rather than merely declining to refuse.
+    //
+    // THE THREE TS WALKS INTERLEAVE AND THE BODIES SAY SO. `scan`
+    // descends EVERY node, so its depth counter climbs faster than
+    // `module_statement`'s or `pattern_names`', which count only their
+    // own construct's levels — but the module walk runs FIRST and the
+    // recorded site is the FIRST refusal, so each walk still answers for
+    // its own shape once that shape is deep enough. The middle band,
+    // where `scan` answers for a construct its owner has not yet
+    // refused, is asserted rather than left to be discovered.
+
+    /// `declare` × n, then one ambient const — `ambient_declaration` is
+    /// itself one of the grammar's `declaration` alternatives, which is
+    /// what makes this walk unbounded in the input.
+    fn declare_chain(n: usize) -> String {
+        let mut s = String::new();
+        for _ in 0..n {
+            s.push_str("declare ");
+        }
+        s.push_str("const deepConst: number;\n");
+        s
+    }
+
+    /// `const { k0: { k1: … deepBinding … } } = obj;` — n nested pairs.
+    fn nested_binding_pattern(n: usize) -> String {
+        let mut s = String::from("const ");
+        for i in 0..n {
+            s.push_str(&format!("{{ k{i}: "));
+        }
+        s.push_str("deepBinding");
+        for _ in 0..n {
+            s.push_str(" }");
+        }
+        s.push_str(" = obj;\n");
+        s
+    }
+
+    /// `export const deepValue = { k0: { … deepCall() … } };` — a VALUE,
+    /// not a pattern, so only the candidate scan descends it.
+    fn nested_object_value(n: usize) -> String {
+        let mut s = String::from("export const deepValue = ");
+        for i in 0..n {
+            s.push_str(&format!("{{ k{i}: "));
+        }
+        s.push_str("deepCall()");
+        for _ in 0..n {
+            s.push_str(" }");
+        }
+        s.push_str(";\n");
+        s
+    }
+
+    #[test]
+    fn ambient_declare_chains_extract_at_124_and_the_module_walk_refuses_at_129() {
+        // POSITIVE CONTROL: the innermost declaration is reached and
+        // typed, which only happens if the unwrap ran all the way down.
+        let clean = ts(&declare_chain(124));
+        assert_eq!(clean.depth_refused, None, "124 chained `declare`s");
+        assert_eq!(sym(&clean, "deepConst").kind, "const");
+
+        // REFUSAL: the module walk stops and names itself.
+        let refused = ts(&declare_chain(129));
+        assert_eq!(
+            refused.depth_refused,
+            Some(DepthSite::TsModuleStatements),
+            "129 chained `declare`s"
+        );
+        assert!(
+            refused.symbols.iter().all(|s| s.name != "deepConst"),
+            "the innermost declaration is past the bound"
+        );
+
+        // THE MIDDLE BAND: between the two, the candidate scan reaches
+        // its own ceiling first and answers for the file. Refused either
+        // way — never unbounded, never silent.
+        assert_eq!(
+            ts(&declare_chain(125)).depth_refused,
+            Some(DepthSite::TsCandidateScan),
+            "125 is past the scan's ceiling and short of the module walk's"
+        );
+    }
+
+    #[test]
+    fn nested_binding_patterns_extract_at_62_and_the_pattern_walk_refuses_at_65() {
+        // POSITIVE CONTROL: the binding at the bottom of the pattern is
+        // a module-scope symbol, which is the whole job of this walk.
+        let clean = ts(&nested_binding_pattern(62));
+        assert_eq!(clean.depth_refused, None, "62 nested pattern pairs");
+        assert_eq!(sym(&clean, "deepBinding").kind, "const");
+
+        let refused = ts(&nested_binding_pattern(65));
+        assert_eq!(
+            refused.depth_refused,
+            Some(DepthSite::TsBindingPattern),
+            "65 nested pattern pairs"
+        );
+        assert!(
+            refused.symbols.iter().all(|s| s.name != "deepBinding"),
+            "the innermost binding is past the bound"
+        );
+
+        assert_eq!(
+            ts(&nested_binding_pattern(63)).depth_refused,
+            Some(DepthSite::TsCandidateScan),
+            "63 is past the scan's ceiling and short of the pattern walk's"
+        );
+    }
+
+    #[test]
+    fn the_candidate_scan_extracts_at_61_and_refuses_at_62() {
+        // POSITIVE CONTROL: a CALL CANDIDATE at the bottom of the value.
+        // Candidates exist only because the scan reached them, so this is
+        // the sharpest available proof that the walk did its work rather
+        // than that nothing parsed.
+        let clean = ts(&nested_object_value(61));
+        assert_eq!(clean.depth_refused, None, "a 61-deep object value");
+        assert!(
+            clean
+                .calls
+                .iter()
+                .any(|c| c.enclosing == "deepValue" && c.name == "deepCall"),
+            "the innermost call is a candidate: {:?}",
+            clean.calls
+        );
+
+        // REFUSAL: one level deeper the scan stops and names itself. The
+        // call node itself is still ON the bound here — what is refused
+        // is the sub-tree below it — so the candidate survives, which is
+        // the bound cutting exactly where it says it does and not one
+        // level early.
+        let refused = ts(&nested_object_value(62));
+        assert_eq!(
+            refused.depth_refused,
+            Some(DepthSite::TsCandidateScan),
+            "a 62-deep object value"
+        );
+        assert!(
+            refused
+                .calls
+                .iter()
+                .any(|c| c.name == "deepCall"),
+            "the call sits ON the bound at 62, not past it: {:?}",
+            refused.calls
+        );
+
+        // ONE MORE LEVEL and the call itself is past the bound. Degrade,
+        // never fail: the DECLARATION is still extracted by the module
+        // walk — only the candidate below the bound is lost.
+        let lost = ts(&nested_object_value(63));
+        assert_eq!(lost.depth_refused, Some(DepthSite::TsCandidateScan));
+        assert!(sym(&lost, "deepValue").exported);
+        assert!(
+            lost.calls.iter().all(|c| c.name != "deepCall"),
+            "the innermost call is past the bound: {:?}",
+            lost.calls
+        );
+    }
+
     #[test]
     fn import_equals_require_is_not_extracted() {
         let rec = ts("import legacy = require(\"./legacy\");\nexport const x = 1;\n");
@@ -953,3 +1161,5 @@ export class JsClass {}
         assert!(rec.symbols.iter().any(|s| s.name == "alsoFine"));
     }
 }
+
+
