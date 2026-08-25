@@ -781,9 +781,10 @@ removes the pin's ability to move the input and the pin says so by name
 rather than going green.
 
 **THE CONTROL'S OWN RED IS NOT THIS TREE'S DEFECT, and it is derived
-rather than dismissed.** `shell-frame.spec.ts:263` reds in the drill
-worktree — twice in two runs — and is green in the lane at the same
-commit. That spec's snapshot carries `projectDir: repoRoot`; the shell
+rather than dismissed.** `tools/e2e/tests/shell-frame.spec.ts`'s body
+*"the error strip owns a ceiling while every diagnostic and the board
+remain reachable"* reds in the drill worktree — twice in two runs — and is
+green in the lane at the same commit. That spec's snapshot carries `projectDir: repoRoot`; the shell
 renders the path; the drill's root is **128 characters** against the
 lane's **33**, so the chrome wraps to more lines and the board's region
 falls under its floor — by MORE the narrower the viewport (14px at 1280,
@@ -811,12 +812,54 @@ it is this card and `T-133-s5`, and neither is executable.
 BEFORE the substitution**; merged tree `2e632cffe40a…`. Then
 `git diff --name-only 70b1d4058ee1 <that tree>`.
 
-**THE RANGE at the code tip: 8 files, +3537, −1**, against main at
-`70b1d4058ee1`. Fence: `tools/e2e` (3 files) plus this card and the five
-suggestion files — nothing outside `touches: [tools/e2e]` but the lane's
-own ceremony. Never `main..HEAD`, and never the three-dot form: `A...B` is
-definitionally `$(git merge-base A B)..B`, the range this project bans by
-name two paragraphs above it.
+**THE RANGE at the code tip `82e8ab4`: 8 files, +3537, −1**, against main
+at `70b1d4058ee1`. Re-derived at the notes tip `06c208a` — merge-tree
+**exit 0**, merged tree `05e7a4ecc2bb…` — **9 files, +3886, −1**, the one
+extra file being `T-133-s5`. Fence: `tools/e2e` (3 files) plus this card
+and the five suggestion files — nothing outside `touches: [tools/e2e]` but
+the lane's own ceremony. Never `main..HEAD`, and never the three-dot form:
+`A...B` is definitionally `$(git merge-base A B)..B`, the range this
+project bans by name two paragraphs above it.
+
+### Suites and gates at `06c208a`, exits read UNPIPED from `$?`
+
+Counts derived by counting numbered bodies against green lines. **The
+`list` reporter DOES print a `Running N tests using 1 worker` header on
+this version**, and it agreed with the count on every run.
+
+| command, run from | exit | derived |
+|---|---|---|
+| `npm test` · tools/e2e · **RUN 1** | **0** | header `Running 194`, **194 bodies, 194 green** |
+| `npm test` · tools/e2e · **RUN 2** | **0** | header `Running 194`, **194 bodies, 194 green** |
+| `npm run typecheck` · tools/e2e | **0** | |
+| `npm run lint:tokens` · tools/e2e | **0** | TOKEN 138 files, CONTROL 755 tracked text files |
+| `npm run lint:docs` · tools/e2e | **0** | the DOCS GATE's census form |
+| `npx vitest run` · lib/parser | **0** | **268 passed**, 12 files |
+| `npm run build` · app | **0** | |
+| `npm test` · app | **0** | **973 passed**, 47 files |
+| `docs-gate.mjs <the range's 9 paths>` · repo root | **1 = FIRES** | not 3; the gate RAN |
+| `cargo run -p nputer-index -- index --check --root ../..` · app/src-tauri | **0** | `graph.json is CURRENT` |
+
+**TWO e2e RUNS ARE DECLARED, both ways**, because on this project neither
+a green nor a red is evidence by itself.
+
+**THE GATES, DERIVED FROM THE RANGE'S OWN PATHS rather than predicted:**
+
+- **BOOT GATE — NOT OWED.** Its trigger is `app/src-tauri/**`,
+  `app/src/**` or either manifest; the range touches **none** of the
+  three. Derived on 9 paths.
+- **GRAPH REGEN — THE TRIGGER FIRES AND THE GATE WAS ASKED.**
+  `tools/e2e/tests/brief.spec.ts` is a `*.ts` outside `docs/`, so the
+  trigger matches. The bullet says the trigger is deliberately wider than
+  the walk and that `.nputerignore` excludes `tools/` — and it also says
+  **ASK THE GATE INSTEAD OF PREDICTING**, which the lane's own notes never
+  recorded doing. Asked: **`graph.json is CURRENT`, exit 0** — 939161
+  bytes, 179 files, 2004 symbols, 1907 edges. **No regen owed, and that is
+  a measurement rather than the construction argument.**
+- **DOCS GATE — FIRES, exit 1.** Six paths under `docs/` are code inputs
+  and the gate names the three suites owed: `npm test` from `app/`,
+  `npm test` from `tools/e2e/`, `npx vitest run` from `lib/parser/`. **All
+  three run above, all three green.**
 
 ### What this brief and the verdict got wrong
 
@@ -841,8 +884,27 @@ name two paragraphs above it.
    integration checkout on `main` and two DETACHED worktrees
    (`arch-verify`, `nputer-app`) — which is this card's own subject, met
    on the live tree while fixing it.
-5. **The mtime defect (`token-scan.spec.ts:201`) did not fire** in any run
-   of this pass, and that is declared in both directions because neither a
-   green nor a red is evidence by itself: not in the lane's runs, and not
-   in any of the drill's five arms — one of which is a FRESH worktree with
-   a fresh install, the shape that used to arm it.
+5. **The mtime defect did not fire** in any run of this pass — the
+   plant-and-restore body *"P6 reds a planted bare motion utility and
+   leaves its motion-safe twin alone"* in
+   `tools/e2e/tests/token-scan.spec.ts`, and the sibling clock guard in
+   `app/test/map-t1-t2-dom.test.tsx` it used to red. Declared in both
+   directions, because neither a green nor a red is evidence by itself:
+   not in the lane's runs, and not in any of the drill's five arms — one
+   of which is a FRESH worktree with a fresh install, the shape that used
+   to arm it.
+
+### What this pass did NOT stamp, and what it left alone
+
+`status: verifying` is unchanged, and `verifier:`, `verified_by:` and
+`review:` stay empty — they are the verifier's to stamp, the same verifier
+re-checks this, and **nothing is merged**. The worktree stays: rule 6 says
+the integrator removes it, and a worktree deleted before the verdict
+destroys the only reproducible copy of what was measured.
+
+**AND THE THINGS THE VERDICT SAID HELD WERE NOT TOUCHED.** The parser and
+its throws, the label binding, the branch-not-path filter, the fixture
+resolution, the exit-code contract and the drill guards are byte-identical
+to `1b626e2` except where the three restamped lines sit. **Twenty-seven
+mutations found no silent partial answer in that parser, and a rejection
+is not a verdict on a lane's judgement.**
