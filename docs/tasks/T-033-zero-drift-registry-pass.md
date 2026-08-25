@@ -483,11 +483,32 @@ summed over **16** `test result:` lines · `index --check` **1** (the real
 red above) · regen probe **0**, re-check **0**, app **962/962** against
 the fresh graph, restored and proved.
 
+`npm test` tools/e2e **1 then 0** — see below · `npx tsc --noEmit`
+tools/e2e **0** · `lint:tokens --selftest` **0**, `lint:tokens` **0**
+(printed TOKEN 132 / CONTROL 696 — derive these, never quote them) ·
+`npm run lint:docs` **0** · boot check `NPUTER_BOOT_PORT=15101 npm run
+boot:check` **0**, both `[nputer]` lines observed · docs gate **1** (23 of
+35 paths under `docs/`, four suites owed, all four run).
+
 **THE CARGO SUITE IS GREEN AND THAT IS NOW NEWS RATHER THAN NOISE.** The
 `docs_watch` intermittent was settled at `43803fe` as an 8.7 GB build
 cache rather than a flake; the baseline is a cleaned cache and **no
-`cargo clean` was run by this lane**. 455/0/3 on the first and only full
-run.
+`cargo clean` was run by this lane**. **455 / 0 / 3 over 16 `test result:`
+lines, twice**, on two independent full runs.
+
+**THE E2E SUITE RED ONCE AND IT IS NOT THIS LANE'S — CITED, NOT
+RE-RUN-AWAY.** First run on scratch port **15102**: **145 passed / 1
+failed, exit 1**, on `tools/e2e/tests/token-scan.spec.ts:201` (*"P6 reds a
+planted bare motion utility..."*) with *"restored its MTIME too - a
+content-exact restore that moves the clock reds an mtime guard"*. That is
+**`T-120-s3`** (primary account) and **`T-052-s4`**: a defect that reds
+**once per fresh checkout and is green forever after**, already hit by two
+independent lanes in one evening - this lane is the third, and the
+duplication is what `T-052-s4` says is itself the finding. My diff
+contains **zero paths under `tools/`**. Second run on port **15103**:
+**146 passed, exit 0**, which is exactly the documented behaviour.
+Recorded as a range, because a single green would be the less true of the
+two.
 
 ## PHASE 1 (superseded) — the notes written before the rulings existed
 
