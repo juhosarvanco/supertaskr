@@ -172,8 +172,15 @@ it named a detached `nputer-T-116-verify` entry that no longer exists,
 while `nputer-T-116` is a real lane on a real branch. The trap the brief
 was warning about had already inverted.
 
-**TWO DETACHED NON-LANE ENTRIES EXIST RIGHT NOW AND ONLY ONE IS
-PERMANENT.** Derive the membership; do not quote it.
+**SIX DETACHED NON-LANE ENTRIES EXIST RIGHT NOW AND ONLY ONE IS
+PERMANENT — AND THAT COUNT MOVED WHILE THIS CHECKPOINT WAS BEING
+WRITTEN.** This paragraph said TWO when the checkpoint commit was
+composed and SIX ninety seconds later, after T-091's own worktree was
+removed and the list re-derived; the four that arrived are two lanes'
+fresh drills. **That is the whole argument for the sentence that follows,
+made against this file rather than by it: a worktree's existence is a
+LIVE-ENVIRONMENT fact like a pid or a port holder, so this list is stale
+for you by construction.** Derive the membership; do not quote it.
 
 - **`/Users/ujju/Projects/nputer-app`, detached at `c4cfe52`** —
   **@human's app checkout, and the one serving port 1420.** Permanent, by
@@ -182,6 +189,20 @@ PERMANENT.** Derive the membership; do not quote it.
 - **`/Users/ujju/Projects/drill-T-102-verify`, detached at `d12efac`** —
   still on disk, **outliving its verification for the third checkpoint
   running**. Not the integrator's to remove.
+- **`/Users/ujju/Projects/drill-T-126`** and
+  **`/Users/ujju/Projects/drill-T-129`** — two live lanes' own drill
+  checkouts, correctly detached and correctly OUTSIDE the repository
+  root, which is the shape CONVENTIONS prescribes.
+- **TWO MORE SIT INSIDE THE SHARED SCRATCH ROOT** —
+  `…/scratchpad/T-104/drill-T-104` and `…/scratchpad/T-104/forecast-T-104`,
+  both detached, both T-104's. They are outside the repository, so they
+  break no rule; they are named here because they are the clearest
+  instance yet of STATE's standing observation that **the scratch
+  directory is shared and so is the worktree list**. A lane list derived
+  by counting rows would read ELEVEN entries against FIVE lanes.
+  **Filter on the branch, never on the path** — and note that `forecast-`
+  and `drill-` prefixes make that filter necessary rather than merely
+  advisable.
 
 **NO LANE WORKTREE SITS AT A NON-STANDARD PATH.** **`tools/e2e` IS
 RELEASED BY THIS CHECKPOINT.** Free too: `app-board`, `app-dispatch`,
