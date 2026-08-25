@@ -782,6 +782,21 @@
     branch, and expect other lanes' scratch worktrees to appear beside
     yours: the scratch directory is shared (STATE's standing observation
     about prefixes), and so, it turns out, is the worktree list.
+    **AND ONE DETACHED ENTRY IS PERMANENT RATHER THAN TRANSIENT — THE
+    HUMAN'S APP CHECKOUT `../nputer-app`** (T-052, @human's ruling of
+    2026-08-25; the bullet below has the whole account). It is detached
+    ON PURPOSE, it holds no fence, it is named after no card, and it is
+    NOT a lane — the same reading a drill worktree gets, for a different
+    reason. It needs no new rule here; it needs naming, so that the next
+    session to derive the lane list does not count the human's app as a
+    sixth lane or try to remove it after a merge. **DERIVE WHETHER IT
+    EXISTS FROM `git worktree list`, NEVER FROM THIS FILE.** This
+    sentence said it did not exist yet, and it was falsified within the
+    hour by the lane that wrote it. A worktree's existence is a
+    LIVE-ENVIRONMENT fact like a pid or a port holder, not a function of
+    a tree, so a doc that claims one goes stale at somebody else's
+    keystroke and a session that quotes the doc reports the wrong lane
+    list.
   - A FRESH WORKTREE HAS NOTHING INSTALLED AND NOTHING BUILT: no
     node_modules in any of the three packages, no `lib/parser/dist`, no
     `app/dist`, no `target/`. The fresh-clone ORDER at the top of this
@@ -795,6 +810,165 @@
     `4d2f03c` before this lane changed anything; after `npm run build`
     the same suite is **840/840 at exit 0**. CI never sees it because
     ci.yml orders app build before app suite; a hand-run lane does.
+- THE MAIN CHECKOUT IS SHARED WITH A HUMAN RUNNING THE APP, AND THE
+  PIPELINE HAS KILLED IT THERE (T-052). Nine instances across
+  2026-08-16/17 escalating from cosmetic to fatal, plus a tenth on
+  2026-08-24 that is a CONFLATION rather than a kill. **The generic
+  rules are `method/roles/integrator.md`'s "The checkout you merge into
+  may be in use" and are NOT restated here** — that file rules the fresh
+  install, the dependency-artifact channel, the checkpoint record and
+  the no-scratch-files rule, and leaves every mechanism to the project.
+  These are this project's mechanisms.
+  **THE APP'S TWO TRIGGER SETS ARE DIFFERENT SETS, AND THREE CHECKPOINTS
+  TREATED THEM AS ONE.** `tauri dev` rebuilds and RELAUNCHES the binary
+  on a change under `app/src-tauri/**` (a new pid, a new start time);
+  a change under `app/src/**` goes to vite HMR and **the window is never
+  replaced**. Both were measured on 2026-08-24: two merges relaunched the
+  human's app at the `git merge --no-commit` WORKING-TREE WRITE — ten and
+  thirty seconds ahead of the merge commit, so the relaunch precedes the
+  commit an integrator would date it by — and T-101's merge touched only
+  `app/src` and correctly did NOT relaunch, against a dispatch brief that
+  predicted it would. **BOOT GATE'S TRIGGER IS A THIRD SET AND IS NOT
+  EITHER OF THESE**: `app/src-tauri/**`, `app/src/**` or a manifest is
+  the set of diffs that could stop the app BOOTING, not the set that
+  reaches a window already open. Do not derive one from another.
+  **ANCHOR THE PROCESS MATCH OR THE MEASUREMENT LIES.**
+  `ps | grep 'target/debug/nputer'` matches `target/debug/nputer-index`
+  as a SUBSTRING, so an integrator's own graph-gate run reads exactly
+  like a relaunch: a fresh start time on a second `nputer`. Anchor it —
+  `ps -eo pid,lstart,command | awk '$NF=="target/debug/nputer"'` — and
+  note that the anchored and unanchored forms AGREE whenever no index run
+  is in flight, so a quiet moment is not evidence the hazard is absent.
+  One integrator caught this as a near-false-positive in its own relaunch
+  report.
+  **THE FRESH INSTALL IS THE ONE CHANNEL THAT CORRUPTS RATHER THAN
+  INTERRUPTS — AND THE CARD'S ACCOUNT OF IT IS HALF REFUTED, MEASURED AT
+  T-052 RATHER THAN REASONED.** `npm ci` REMOVES the package's
+  `node_modules` before rebuilding it, and the human's vite serves out of
+  `app/node_modules` for as long as it runs, which is why T-052's card
+  called this the likelier of two candidate causes of instance 8's death.
+  **A RUNNING VITE SURVIVES IT.** Driven on a scratch port against this
+  repository's own `app/`: the floor (`app/node_modules/vite/package.json`)
+  went ABSENT for twelve consecutive 100 ms samples while the server
+  answered **200 on every one of 51 samples**, same pid and same start
+  time before and after, and a simulated full reload resolved every
+  dependency URL afterwards. Vite serves what it has already transformed
+  out of memory and never re-reads the tree. **SO THE RULE STANDS ON THE
+  WINDOW RATHER THAN ON A KILL**, which is the stronger footing: instance
+  8's cause is recorded as UNDETERMINED between this and "the human
+  quit", and this measurement does not make it determined — it removes
+  the mechanism most people would have assumed. What IS destroyed is the
+  state the NEXT read needs: `node_modules/.vite`, vite's
+  optimized-dependency cache, is deleted and **not recreated**, so a
+  surviving process is serving from memory over a tree that no longer
+  matches it. And `tauri dev` is MORE than vite — the tauri CLI itself
+  lives in `node_modules` and a cargo rebuild runs beside it — so the
+  exposure is wider than what was measured, and nothing here licenses
+  running the install anyway. DERIVE THE FIGURES AGAIN IF YOU NEED THEM;
+  they are a property of a vite version, not of this repository.
+  DETECT AND REFUSE, in the T-046 form: read the
+  holder with `lsof -nP -iTCP:<port> -sTCP:LISTEN`, and for 1420 that is
+  the ONLY command permitted (see PORT RULE) — **never bind-probe, and
+  never connect**. On a hit, name the step you are skipping, the pid and
+  socket you read, and what has to happen first. On no hit, PROCEED: a
+  refusal that fires whether or not the app is up cannot tell the two
+  apart, which is the NEGATIVE ASSERTION rule below applied to a
+  procedure instead of to a test body.
+  **`lib/parser/dist` REACHES THE RUNNING APP WITH NOTHING UNDER `app/`
+  IN THE DIFF.** The app depends on `@nputer/parser` through
+  `file:../lib/parser`, which npm installs as a SYMLINK, so the built
+  `dist/` the running vite serves is the parser's own directory and not a
+  copy. A lib-only merge that rebuilds it changes what the app is
+  serving: instance 5 moved the board's model badges under the human with
+  no file under `app/` touched. So the question is never "does my diff
+  name a file the app owns" but **"which build outputs does the running
+  app read"**, and the fresh-clone ORDER at the top of this file is where
+  that is answered. A docs-only diff is not exempt either — an integrator
+  who runs the install order runs the parser build.
+  **A PROBE OR SCRATCH FILE IN THE MAIN CHECKOUT IS A VIOLATION, AND
+  INSTANCE 9 IS THE ARGUMENT FOR SAYING SO.** A `zz-scope-probe.ts`
+  appeared in the main checkout's `app/src-tauri/crates/nputer-index/`
+  and triggered two rebuilds; agents are fenced to worktrees and **which
+  session wrote it is unknown**, which is exactly why the rule has to be
+  written rather than assumed. **A LANE WORKTREE PARKED INSIDE THE TREE
+  IS THE SAME VIOLATION IN A LARGER SHAPE, AND THIS ONE HAS AN AUTHOR** —
+  which is what makes it the better worked example of the two. Three
+  lanes were cut into `tools/` on 2026-08-25 instead of beside the repo
+  root, against the spelling above (`../nputer-T-NNN`, a sibling and
+  never a path inside it) and against `method/lane-protocol.md` rule 3.
+  **THE MECHANISM IS A RELATIVE PATH RESOLVED AGAINST A CWD NOBODY
+  VERIFIED**: `git worktree add ../nputer-T-NNN` typed while the shell
+  sat in `tools/e2e` lands in `tools/`, and it lands there SILENTLY —
+  `git` has no opinion about where a worktree goes. The remedy is equally
+  concrete: **cut worktrees with an ABSOLUTE path, or verify the cwd
+  first.** THE BLAST RADIUS WAS MEASURED RATHER THAN FEARED, and it is
+  the staging surface and nothing else: `tools/` is `.nputerignore`d so
+  the indexer never walks the copies, the token lint's CONTROL corpus is
+  `git ls-files` so untracked copies are invisible to it, and TOKEN's
+  roots are `app/src`, `app/test` and `tools/e2e` rather than `tools/`.
+  What DOES change is that each one shows up as an untracked DIRECTORY in
+  the main checkout's `git status` — so the exclusivity check
+  `T-123-s10` asks every integrator to run now returns several rows
+  instead of one, and a `git add -A` there would stage thousands of
+  files. **NAME YOUR PATHS; never `git add -A` and never `git commit -a`
+  in the main checkout.**
+  Scratch work belongs in a DETACHED sibling worktree with its own name
+  (the POISON DRILL bullet's shape), or outside the repository entirely.
+  IF an unexplained file is found there THEN record it in the checkpoint
+  and LEAVE IT — its provenance is evidence, and deleting it destroys the
+  only copy of the question.
+  **@HUMAN'S RULING 2026-08-25 — THE SECOND CHECKOUT IS ADOPTED AND THE
+  MECHANISM IS A DETACHED WORKTREE.** The criteria decide which arguments
+  count, so they are quoted rather than summarised: *"It doesn't bother
+  me as a user if the app restarts. The only thing I'm concerned about is
+  if something breaks or if development work suffers."* **The RESTART is
+  therefore not a cost**, and every argument resting on it is void; what
+  survives is the fresh install above (the BREAKAGE channel) and cargo's
+  exclusive lock on `app/src-tauri/target/`, which the app and the
+  pipeline share (the THROUGHPUT channel). Setup, when the tree is quiet:
+
+      git worktree add --detach ../nputer-app main
+
+  then the fresh-clone ORDER at the top of this file, inside it. It
+  updates with ONE command, run when the human chooses:
+
+      git -C ../nputer-app checkout --detach main
+
+  No fetch and no pull: `git remote` returns ZERO remotes on this
+  repository, so a clone would need a local-path origin and a second
+  object store while a worktree shares `.git` entirely — that fact is
+  what picks the mechanism, so re-derive it rather than trusting this
+  sentence. **BEING DETACHED IS THE FEATURE**: the app's code cannot move
+  on its own, so the pipeline may merge all night and the running app is
+  untouched; when the human does run the update, vite and `tauri dev`
+  reload exactly as they do today. The second checkout does not stop the
+  app updating, it puts the human in control of WHEN. **THE APP STILL
+  WATCHES MAIN, so the founding demo survives** — it RUNS from
+  `../nputer-app` and OPENS `/Users/ujju/Projects/nputer` as its project;
+  code and watched folder are independent, demonstrated accidentally on
+  2026-08-24 by running the app from the main checkout with an unrelated
+  folder open. **MEASURE BEFORE QUOTING**: the trade is a second
+  `node_modules` set and a second Rust target dir, the target dir dwarfs
+  everything else by an order of magnitude, and free disk is not the
+  constraint on this machine — `du -sh app/src-tauri/target .git` and
+  `df -h /` re-derive it in seconds and the figures move weekly, so no
+  digits are transcribed here. The decisive one is a RELATION rather than
+  a number: solving the cargo contention WITHOUT a second checkout, by
+  giving pipeline runs their own `CARGO_TARGET_DIR`, costs the same
+  target dir either way, so full isolation costs about one `node_modules`
+  set more than the half-measure. **THE RULING DEFERRED THE SETUP TO A
+  QUIET TREE AND THE TREE WAS NOT QUIET WHEN IT HAPPENED** — recorded
+  because the caution was a real one and skipping it cost nothing
+  measurable, which is worth knowing next time. The reasoning was that
+  adding an entry while live lanes read `git worktree list` as the fence
+  authority is a needless perturbation; it was created on 2026-08-25 with
+  five lanes live, and the only observed effect is that the list now
+  carries TWO detached non-lane entries at once (this one and a lane's
+  transient drill), which is precisely the reading the bullet above
+  already prescribes. **AND IT EXCUSES NOTHING ABOVE**: the human may be
+  on one checkout at any moment, and @human's ruling ratifies every rule
+  in this bullet INDEPENDENTLY of the second checkout for that reason, so
+  they bind whether or not `../nputer-app` exists.
 - DISPATCH FROM THE LAST CHECKPOINT, never from a merge commit
   (T-014-s3, seven-for-seven): cut a task branch from the newest
   `Checkpoint:` commit on main. **READ THE REASON, NOT ONLY THE

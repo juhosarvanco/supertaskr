@@ -34,7 +34,19 @@ this file is a project's actual name.
    repository.** A worktree under the repository's own root is a second
    copy of every file to everything that walks the tree — linters,
    indexers, test discovery, the project's own file watchers — and the
-   duplicate findings arrive attributed to whoever is nearest.
+   duplicate findings arrive attributed to whoever is nearest. It also
+   becomes an untracked directory in the integration checkout's own
+   status, so a session that stages by wildcard there stages a whole
+   second copy of the project.
+   **STATE THE PATH ABSOLUTELY, OR VERIFY THE WORKING DIRECTORY FIRST.**
+   This is a clarification of the sentence above rather than a new rule,
+   and it is written because the rule has been obeyed and broken by the
+   same command: a RELATIVE worktree path resolves against whatever
+   directory the dispatching shell happens to sit in, `git` has no
+   opinion about where a worktree lands, and there is no error — so a
+   sibling path typed one directory too deep silently creates the inside
+   case this rule forbids. Whoever cuts the lane owns this, and a lane
+   that discovers it should report the real path rather than move itself.
 
 4. **The executor never touches the integration branch.** No commit, no
    merge, no push, no branch move, no dependency install run against

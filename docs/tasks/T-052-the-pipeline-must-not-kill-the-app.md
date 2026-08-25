@@ -5,7 +5,7 @@ feature: F-02
 milestone: 4
 priority: 8
 size: M
-status: building
+status: verifying
 blocked_by: []
 touches: [method/, docs/CONVENTIONS.md]
 builder: claude-opus-5
@@ -185,5 +185,227 @@ or refuses loudly). @human: whether to adopt the two-checkout
 recommendation, which is a workflow choice only they can make.
 
 ## Implementation notes
+
+Built by `claude-opus-5 @T-052` on branch `task/T-052-two-checkouts`,
+base `c4cfe52`. Fence `[method/, docs/CONVENTIONS.md]`, **never widened**.
+Every figure below was derived in this lane at its own ref.
+
+### THE BUMP QUESTION, ANSWERED FIRST AND IN WRITING — NO BUMP IS TAKEN
+
+The fence holds `method/`, so this had to be settled before anything was
+written. **The answer is that no method FORMAT moved, so the version
+stays at v0.1.5 and this is a two-file commit rather than a three-file
+one.** It is derived, not asserted:
+
+1. **CONVENTIONS' rule is about FORMATS**, not about method prose:
+   *"Changes to method/ formats are version-bumped."* Every precedent
+   this repository has is a structure that CODE reads or a PROGRAM
+   transcribes — v0.1.4's suggestion-triage encoding, v0.1.5's stage
+   to artifact table (*"normative and gets transcribed by programs"*),
+   the status vocabulary that *"lives in exactly one place in code"*,
+   and `executor.md`'s thirteen-row table, which declares itself a bump.
+   **This change adds no table, field, status, template or vocabulary
+   term.** It is prose rules in two role/protocol files.
+2. **NEITHER FILE I TOUCHED SHIPS IN THE KIT.** `KIT_FILES` in
+   `app/src-tauri/src/agent/kit.rs` is fourteen entries — the planner's
+   driver-contract set — and its header says the other role files are
+   *"Deliberately NOT included"*. `method/roles/integrator.md` and
+   `method/lane-protocol.md` are both outside it, so the hazard T-104
+   names (*"a version that lies about what shipped"*) is structurally
+   absent here. Checked mechanically against the `include_str!` table
+   rather than by eye.
+3. **NO CODE READS EITHER FILE.** `git grep` for `method/roles` and
+   `lane-protocol` over `*.ts *.tsx *.mjs *.js *.rs *.yml *.json`
+   returns only `planner.md` references. The full set of method paths
+   any code names contains neither file.
+4. **THE THREE PINNED STAMPS ARE UNTOUCHED** and proved so: `git diff`
+   matches no line containing a version number, and `cargo test` is
+   **418 passed / 0 failed / 3 ignored at exit 0** over 15
+   `test result:` lines, which includes
+   `snapshot_version_matches_the_live_method_stamps` reading the edited
+   `docs/CONVENTIONS.md` off disk.
+
+**THE RESIDUAL IS ROUTED RATHER THAN DECIDED, because two live tests
+disagree and a lane may not settle a method ruling.** T-104's own
+criterion asks whether a change is a CLARIFICATION or a NEW NORMATIVE
+SENTENCE, and by that test the fresh-install rule is new: `integrator.md`
+said nothing about dependency installs, and `lane-protocol.md` rule 4's
+install prohibition binds the EXECUTOR, not the integrator. By
+CONVENTIONS' own test (a FORMAT) it is not a bump at all. **Both cannot
+be the trigger.** T-104 already owns the owed v0.1.6 payment (it absorbs
+`T-089-s1`) and is the only planned card whose fence carries `app-agent`,
+so it is the seat that can answer this and pay it in the same commit.
+**The debt is per-VERSION, not per-change** — one three-file commit
+discharges T-089's method change, this one and T-104's own — so nothing
+is lost by routing it, and the ruling is recorded here rather than left
+silent, which the card's sibling criterion explicitly requires of the
+not-moving case.
+
+The addition to `lane-protocol.md` rule 3 is deliberately on the safe
+side of that line: it is a clarification of a sentence already there,
+attached to a live instance, and it adds no rule.
+
+### Criterion by criterion
+
+- **THE method SHALL state, where an integrator will read it, that the
+  main checkout may be in use — MET.** `method/roles/integrator.md`
+  gains a section, "The checkout you merge into may be in use", with
+  four numbered rules, reached from step 2 (the suite/install step) and
+  step 3 (the checkpoint list). **The existing steps are NOT renumbered**
+  — T-089's own table cites them by number and a renumber would silently
+  falsify those citations. The section opens by separating INTERRUPTION
+  from BREAKAGE, because @human's criteria make that distinction
+  load-bearing and treating the two alike is what gets the trade wrong.
+  Rule 1 is the fresh-install rule in the T-046 form: detect, refuse
+  loudly, name the skipped step and the evidence — with both wrong
+  repairs named (do not continue anyway, do not kill the process) and
+  the requirement that the check be shown to let the ordinary case
+  through, which is CONVENTIONS' NEGATIVE ASSERTION rule applied to a
+  procedure. The nputer mechanisms are in `docs/CONVENTIONS.md`, not in
+  `method/`, per that file's own first gotcha.
+- **THE rule SHALL cover the `lib/parser/dist` path — MET, and
+  DEMONSTRATED.** `integrator.md` rule 2 states it generically (a path
+  dependency, a symlink, a generated bundle) and refuses the
+  docs-only excuse by name. CONVENTIONS carries the mechanism. **Proved
+  end to end rather than argued**: `app/node_modules/@nputer/parser` is
+  a symlink to `../../../lib/parser`, and a marker line appended to the
+  gitignored `lib/parser/dist/index.js` was **served by the running app**
+  at `/node_modules/@nputer/parser/dist/index.js` (HTTP 200, 7738 bytes,
+  marker present) while `git status --short -- app/` stayed at **0 rows**
+  throughout. Restored by rebuilding the parser (exit 0, marker gone).
+- **WHEN an integrator's own work would disturb a running app THE
+  checkpoint SHALL record it — MET.** `integrator.md` rule 3, and it
+  carries the tenth instance's content rather than only the practice:
+  say WHICH change reached the app and which did not, because a product
+  that reloads on one path set and restarts on another has TWO trigger
+  sets. CONVENTIONS names this repository's three sets and their
+  differences, and carries the anchored-`awk` pitfall — with the
+  addition that the anchored and unanchored forms AGREE when no index
+  run is in flight, so a quiet reading is not evidence the hazard is
+  absent (measured here: both forms returned only pid 82593).
+- **THE recommendation SHALL be recorded with its trade-offs — MET.**
+  @human's ruling of 2026-08-25 is written into CONVENTIONS with the
+  quoted criteria, the detached-worktree mechanism, the `worktree add`
+  setup and the one-command update, the zero-remotes fact that picks
+  worktree over clone, and the still-watches-main property that saves
+  the founding demo. **No digits are transcribed**, deliberately: the
+  ruling's own figures moved between its ref and this one (`target/`
+  7.5 GB at `765362e`, **8.6 GB** here; `.git` 46 MB, **50 MB**; free
+  disk 420 GB, **410 GB**; the three `node_modules` **330 MB**,
+  unchanged), and CONVENTIONS already forbids writing counts it does not
+  derive. The decisive trade is recorded as a RELATION instead, which
+  does not go stale.
+- **A probe or scratch file in the main checkout SHALL be named a
+  violation — MET, and it acquired a live instance.** CONVENTIONS names
+  it, says where such files belong, and says to record-and-leave rather
+  than delete, because provenance is evidence. **The rung-9 example now
+  has a sibling with an author**: three live lanes are checked out under
+  `tools/` instead of beside the repo root, the mechanism is a relative
+  worktree path resolved against an unverified cwd, and the blast radius
+  was measured rather than feared (staging surface only). Filed as
+  `T-052-s2`; the in-fence half — a clarification to
+  `method/lane-protocol.md` rule 3 naming the mechanism and the remedy —
+  is built.
+
+### The demonstration the verification clause asked for
+
+Run on scratch port **15140** (`lsof` first, then bind-confirmed FREE on
+`127.0.0.1`, `0.0.0.0`, `::1` and `::`, and free again afterwards), with
+a real vite serving this lane's own `app/`. **Three parts, and the
+control is one of them.**
+
+**THE POSITIVE CONTROL FIRST.** With nothing on the port the sequence
+PROCEEDS at exit 0. Without this, a later refusal cannot be told from a
+check that always refuses — CONVENTIONS' own NEGATIVE ASSERTION rule.
+
+**THE RULE WORKS.** With the server up, `lsof -nP -iTCP:15140
+-sTCP:LISTEN` returns the holder, the sequence REFUSES at exit 3 naming
+the skipped step, the evidence and what has to happen first; `npm ci`
+does not run; `app/node_modules` is byte-identical afterwards (inode and
+mtime unchanged); the server answers 200 and keeps its pid and start
+time.
+
+**AND THE HAZARD IT GUARDS IS HALF REFUTED, WHICH IS THE FINDING.** With
+the guard removed and `npm ci` run underneath, the floor
+(`app/node_modules/vite/package.json`) went ABSENT for **12 consecutive
+100 ms samples** while the server answered **200 on all 51 samples**,
+same pid and start time, and a simulated full reload afterwards resolved
+every dependency URL. **A running vite survives `npm ci`.** What is
+destroyed is `node_modules/.vite`, which is deleted and not recreated,
+so a surviving process serves from memory over a tree that no longer
+matches it. The rule therefore stands on the WINDOW rather than on a
+kill — the stronger footing, since the card records instance 8's cause
+as undetermined and this does not make it determined. Corrected in place
+in CONVENTIONS and routed as `T-052-s3` with the untested candidates
+(the tauri CLI's own package, the cargo lock), because the app is
+`tauri dev` and not vite alone.
+
+**A DOCUMENTED HAZARD RE-DERIVED BY ACCIDENT**: vite bound `[::1]:15140`
+and nothing on IPv4, so the first IPv4 probe reported the server down
+while it was serving. That is CONVENTIONS' PORT RULE finding for 1420,
+reproduced on a scratch port — and it is why the rule as written says to
+ask the operating system rather than to connect.
+
+### The drill, and why none is owed
+
+**NO POISON DRILL WAS RUN, AND THAT IS THE ANSWER RATHER THAN AN
+OMISSION.** The POISON DRILL bullet fires *"at any task that ADDS OR
+CHANGES a test body"*. This diff adds and changes **zero** test bodies:
+it is two method files, `docs/CONVENTIONS.md`, this card and three
+suggestion files. Derived from the diff rather than recalled — no path
+under `app/test/`, `tools/e2e/tests/`, `lib/parser/test/` or any
+`#[cfg(test)]` block appears in it. The demonstration above is not a
+drill and is not claimed as one.
+
+What stands in for it is the parity instrument. The middle-dot trap
+governs any edit near the "Build & test" section, so the derivation was
+run BEFORE the edit and again after: **21 exposed commands
+(lib/parser 4, app 5, app/src-tauri 5, tools/e2e 7), 19 derived steps, 0
+problems, 0 structural problems** — identical on both sides. The new
+prose sits in `## Gotchas`, which `buildAndTestSection` cannot reach: it
+splits on `^## ` and takes the "Build & test" section alone. **No
+command was added to a `run from` bullet, so no `CI_SEQUENCE` entry and
+no `ci.yml` step are owed** — which matters because `.github/` is
+outside this fence and a needed CI step would have had to be routed.
+
+### Where the brief and the card were wrong
+
+- **The worktree path.** The brief said `/Users/ujju/Projects/nputer-T-052`.
+  The repository says **`/Users/ujju/Projects/nputer/tools/nputer-T-052`**
+  — inside the repository, which `method/lane-protocol.md` rule 3
+  forbids. Found by `git worktree list` before anything was written, and
+  independently confirmed by the dispatcher mid-lane. Not moved: moving
+  a worktree under a running session is this card's own hazard. See
+  `T-052-s2`.
+- **The brief said not to create `../nputer-app`, and it exists.** It was
+  created on 2026-08-25 while five lanes were live, detached at
+  `c4cfe52` — verified here by `git worktree list` rather than taken on
+  report. This lane did not create it. Two sentences drafted against the
+  brief's premise ("not yet created", "at this commit it does not exist
+  yet") were **falsified within the hour and are corrected in place**;
+  the correction is the durable half — a worktree's existence is a
+  live-environment fact and a doc must not claim one.
+- **@human's ruling mislocates the lane-list clause.** It says
+  *"lane-protocol rule 7 ... already says to read it as entries on a
+  `task/T-NNN-*` branch rather than as a row count"*. That sentence is
+  in `docs/CONVENTIONS.md`'s LANE PROTOCOL bullet; `lane-protocol.md`
+  rule 7 says only that the lane list is a fact on disk. The ruling's
+  instruction (*"the bullet SHALL name it"*) was therefore executed
+  against the CONVENTIONS bullet, which is where the text it describes
+  actually lives, and no rule was added to `lane-protocol.md` for it —
+  the ruling says none is needed.
+- **The brief's bump framing is T-104's, not CONVENTIONS'.**
+  "Clarification versus new normative sentence" is T-104's own criterion;
+  CONVENTIONS' trigger is a FORMAT change. The two disagree on this
+  diff. See the bump answer above.
+- **The card's instance-8 mechanism does not reproduce.** See the
+  demonstration.
+- **STATE.md's lane table is two lanes; the repository has five plus two
+  detached entries.** STATE was written at T-079's checkpoint and lists
+  T-110 and T-033 only. Derived at this tip: T-033, T-110, T-052, T-120,
+  T-124 on task branches, plus `nputer-app` and `drill-T-120` detached.
+  This is the board-versus-worktree-list asymmetry CONVENTIONS already
+  rules on, working as intended — recorded because a reader of STATE
+  would otherwise under-count the live fences by three.
 
 ## Verdicts
