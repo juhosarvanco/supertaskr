@@ -428,15 +428,32 @@ export function edgeVisual(
 // Drift findings: attribution + panel text
 // ---------------------------------------------------------------------
 
+/**
+ * TRUE when a finding counts as DRIFT (T-033 decision 2). Every finding
+ * does except an INFORMATIONAL D3 — a component whose file opts into
+ * `non_code:`, where "declared but matching no indexed file" is a
+ * statement about what the component IS rather than a divergence. The
+ * finding is still reported and still explained; it just stops lighting
+ * amber. ONE predicate, three callers (the ring set, the drift flag in
+ * derive.ts, the pane footer), so the three cannot disagree about what
+ * drift means — T-057's rule.
+ */
+export function isDriftFinding(finding: DriftFinding): boolean {
+  return !(finding.rule === "D3" && finding.informational);
+}
+
 /** Findings attributed to a node — exactly the set that lights its ring
  * (D1/D5 by source, D3 by subject, D2 on the unmapped bucket). D4 keeps
  * T-011's deliberate stance (never a ring) but shows in BOTH claimants'
- * panels via `panelFindings`. */
+ * panels via `panelFindings`. An informational D3 is excluded here and
+ * KEPT in `panelFindings`: the ring is the drift claim, the panel is the
+ * explanation. */
 export function attributedFindings(
   findings: readonly DriftFinding[],
   id: string,
 ): DriftFinding[] {
   return findings.filter((f) => {
+    if (!isDriftFinding(f)) return false;
     if (f.rule === "D1" || f.rule === "D5") return f.from === id;
     if (f.rule === "D3") return f.component === id;
     if (f.rule === "D2") return id === UNMAPPED_ID;
@@ -496,10 +513,16 @@ export function findingText(finding: DriftFinding): FindingText {
         evidence: evidenceList(finding.files),
       };
     case "D3":
-      return {
-        label: "D3",
-        sentence: `${finding.component} is declared but its globs match no indexed file.`,
-      };
+      return finding.informational
+        ? {
+            label: "D3",
+            sentence: `${finding.component} declares no code the indexer walks — informational, not drift.`,
+            evidence: "non_code: true in its component file",
+          }
+        : {
+            label: "D3",
+            sentence: `${finding.component} is declared but its globs match no indexed file.`,
+          };
     case "D4":
       return {
         label: "D4",
@@ -520,13 +543,18 @@ export function driftFooter(
   findings: readonly DriftFinding[],
   unmappedFiles: readonly string[],
 ): string {
+  // T-033: the footer counts DRIFT, so an informational D3 is out of both
+  // halves — otherwise the pane reports a finding count no node's ring
+  // accounts for, which is the "warning light wired to always-on" this
+  // downgrade exists to switch off.
+  const drift = findings.filter(isDriftFinding);
   const components = new Set<string>();
-  for (const f of findings) {
+  for (const f of drift) {
     if (f.rule === "D1" || f.rule === "D5") components.add(f.from);
     else if (f.rule === "D3") components.add(f.component);
   }
   const parts = [
-    `${findings.length} finding${findings.length === 1 ? "" : "s"} across ${components.size} component${components.size === 1 ? "" : "s"}`,
+    `${drift.length} finding${drift.length === 1 ? "" : "s"} across ${components.size} component${components.size === 1 ? "" : "s"}`,
   ];
   if (unmappedFiles.length > 0) {
     parts.push(`${unmappedFiles.length} unclaimed file${unmappedFiles.length === 1 ? "" : "s"}`);

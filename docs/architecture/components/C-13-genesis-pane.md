@@ -4,7 +4,7 @@ name: Genesis pane
 layer: app
 paths:
   - app/src/genesis/**
-depends_on: [C-10, C-11]
+depends_on: [C-06, C-08, C-10, C-11, C-14, C-16]
 decisions: [ADR-006, ADR-017]
 status: auto
 touch_slugs: [app-interview]

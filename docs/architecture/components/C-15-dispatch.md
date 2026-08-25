@@ -5,6 +5,7 @@ layer: app
 paths:
   - app/src-tauri/src/dispatch/**
   - app/src/lib/dispatch-store.ts
+  - app/src-tauri/tests/dispatch_lanes.rs   # T-033 settlement, see below
 depends_on: [C-10]
 decisions: [ADR-009, ADR-012, ADR-017]
 status: auto
@@ -38,3 +39,19 @@ T-008-s1's re-park stands until one does. The fence word comes first
 because without it every dispatch card inherits `app-agent` and
 serialises against every genesis card for the life of the feature, for
 no reason but a missing declaration.
+
+**`tests/dispatch_lanes.rs` IS CLAIMED HERE, AND THE SETTLEMENT IS
+DISCLOSED RATHER THAN SLIPPED IN (T-033).** T-110 wrote that file as the
+compile-and-test entry point for `src/dispatch/**` — Rust compiles no
+file no module declares, so `cargo test` could not reach this component's
+code without it — and said in the file's own header that it sat outside
+`[app-dispatch]` and belonged to nobody. When T-110 merged, it became
+**this repository's first D2 finding**: one file claimed by no component.
+It is settled here by the rule T-010 already used for
+`tests/agent_runner.rs`: *a component's test double and its suite belong
+to the component they exercise*. **This was NOT covered by T-033's
+rulings**, which were made at main `dce93b0` — seven hours before T-110
+merged, when neither this file nor this component's five source files
+existed — so the settlement is the lane's, argued by precedent rather
+than ruled, and `T-033-s8` carries it for the architect to confirm or
+reverse in one line.

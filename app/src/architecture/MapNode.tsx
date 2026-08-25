@@ -95,9 +95,16 @@ export function MapNode({
   const meta =
     component.kind === "unmapped"
       ? `${component.files.length} file${component.files.length === 1 ? "" : "s"} no component claims`
-      : component.declaredOnly || component.kind === "placeholder"
-        ? "declared · no files yet"
-        : [
+      : // T-033: a non-code component is not "no files YET" — the word
+        // "yet" is a promise its territory will never keep, and reading it
+        // on C-01 or C-11 is what made the permanent amber look like a
+        // to-do. Opt-in only, so a not-yet-built component keeps the
+        // original face.
+        component.declaredOnly && component.nonCode
+        ? `${component.layer ?? "non-code"} · not indexed by design`
+        : component.declaredOnly || component.kind === "placeholder"
+          ? "declared · no files yet"
+          : [
             component.layer,
             `${component.files.length} file${component.files.length === 1 ? "" : "s"}`,
             visual.metaStatusWord,

@@ -29,6 +29,7 @@ interface ComponentSpec {
   dependsOn?: string[];
   touchSlugs?: string[];
   status?: string;
+  nonCode?: boolean;
 }
 
 function componentFile(id: string, spec: ComponentSpec): { path: string; content: string } {
@@ -42,6 +43,7 @@ function componentFile(id: string, spec: ComponentSpec): { path: string; content
     ...(spec.dependsOn !== undefined ? [`depends_on: [${spec.dependsOn.join(", ")}]`] : []),
     ...(spec.touchSlugs !== undefined ? [`touch_slugs: [${spec.touchSlugs.join(", ")}]`] : []),
     ...(spec.status !== undefined ? [`status: ${spec.status}`] : []),
+    ...(spec.nonCode !== undefined ? [`non_code: ${spec.nonCode}`] : []),
     "---",
     `Responsibility of ${id}.`,
   ];
@@ -341,7 +343,7 @@ describe("file→component mapping", () => {
       // The loser ends up ASSIGNED nothing, so declared_only fires too:
       // D3 is about ownership after first-by-id assignment (§4.1), and
       // the D4 beside it explains exactly why the claim was lost.
-      { rule: "D3", id: "D3:C-02", component: "C-02" },
+      { rule: "D3", id: "D3:C-02", component: "C-02", informational: false },
       { rule: "D4", id: "D4:src/x.ts", path: "src/x.ts", ids: ["C-01", "C-02"] },
     ]);
     expect(model.issues).toEqual([
@@ -553,10 +555,65 @@ describe("D3 declared_only and D5 dangling depends_on", () => {
     ]);
     const graph = graphOf([{ path: "src/a.ts" }]);
     const model = deriveArchitecture({ components, graph, tasks: [] });
-    expect(model.findings).toEqual([{ rule: "D3", id: "D3:C-02", component: "C-02" }]);
+    expect(model.findings).toEqual([
+      { rule: "D3", id: "D3:C-02", component: "C-02", informational: false },
+    ]);
     const c2 = model.components.find((c) => c.id === "C-02");
     expect(c2?.declaredOnly).toBe(true);
     expect(c2?.hasDrift).toBe(true);
+    expect(c2?.nonCode).toBe(false);
+  });
+
+  it("D3 on a non_code component is INFORMATIONAL: still reported, no longer drift (T-033)", () => {
+    // THE POSITIVE CONTROL IS C-02, IN THIS SAME BODY: two components
+    // whose globs both match nothing, differing ONLY in the opt-in flag.
+    // Without that pair, "C-03 has no ring" would be satisfied equally by
+    // a derivation that had stopped emitting D3 altogether. (The globs are
+    // spelled differently on purpose — two identical `paths` sets are a
+    // parse-time `ambiguous-mapping` issue, which would be a second
+    // reason for the body to move.)
+    const components = componentsOf([
+      ["C-01", { paths: ["src/**"] }],
+      ["C-02", { paths: ["ghost/**"] }],
+      ["C-03", { paths: ["phantom/**"], nonCode: true }],
+    ]);
+    const graph = graphOf([{ path: "src/a.ts" }]);
+    const model = deriveArchitecture({ components, graph, tasks: [] });
+
+    // BOTH findings are still emitted — the downgrade is not a deletion.
+    expect(model.findings).toEqual([
+      { rule: "D3", id: "D3:C-02", component: "C-02", informational: false },
+      { rule: "D3", id: "D3:C-03", component: "C-03", informational: true },
+    ]);
+
+    const c2 = model.components.find((c) => c.id === "C-02");
+    const c3 = model.components.find((c) => c.id === "C-03");
+    // declaredOnly is a FACT about the file list and stays true for both.
+    expect(c2?.declaredOnly).toBe(true);
+    expect(c3?.declaredOnly).toBe(true);
+    // hasDrift is the CLAIM, and only the un-flagged one makes it.
+    expect(c2?.hasDrift).toBe(true);
+    expect(c3?.hasDrift).toBe(false);
+    expect(c3?.nonCode).toBe(true);
+  });
+
+  it("non_code NEVER comes from an empty file list — it is read off the record only", () => {
+    // The C-15 property at derivation level: two components with no
+    // indexed files, neither flagged, and the derivation must not decide
+    // for either of them.
+    const components = componentsOf([
+      ["C-01", { paths: ["src/**"] }],
+      ["C-02", { paths: ["ghost/**"] }],
+      ["C-03", { paths: ["also-ghost/**"] }],
+    ]);
+    const graph = graphOf([{ path: "src/a.ts" }]);
+    const model = deriveArchitecture({ components, graph, tasks: [] });
+    for (const id of ["C-02", "C-03"]) {
+      const c = model.components.find((x) => x.id === id);
+      expect(c?.nonCode, id).toBe(false);
+      expect(c?.hasDrift, id).toBe(true);
+    }
+    expect(model.findings.every((f) => f.rule === "D3" && !f.informational)).toBe(true);
   });
 
   it("D5: dangling depends_on draws a placeholder and a planned edge, never dropped", () => {

@@ -29,23 +29,24 @@ deliberately narrow: no status/provenance rollups, no task join, and a
 registry reader that REFUSES (exit 3, naming the file) rather than
 guessing at anything it cannot read exactly.
 
-**WHAT IS SETTLED, AND WHAT IS NOT.** ADR-015's dated addendum
-(2026-08-17, T-014) already rules that ADR-015 stands — derivation is
-TypeScript, and this binary's join is a reader that exists because a CLI
-cannot call into the app's TS — and records that the two engines can
-still disagree where `registry.rs::unquote` and @nputer/parser part
-company on YAML escapes. What is NOT settled is the OWNERSHIP clause
-T-033's decision (3) asks for: whether the crate formally owns the
-reality-side join while TypeScript owns the intent⨝tasks half (arm a),
-whether `arch` moves to the Node CLI once C-02 exists (arm b), or whether
-both are kept and their agreement pinned (arm c, which is T-059). That
-ruling is the architect's pen (ADR-004) and was NOT recorded at T-033's
-dispatch, so the clause owed to
-`docs/decisions/015-indexer-rust-derivation-ts.md` is routed as
-`T-033-s4` and **T-059 stays alive** — it dissolves only under arm (b),
-which nobody has chosen. Until the ruling is recorded, the two paragraphs
-above are a description of what is built and not a decision about who
-should own it.
+**AND THE OWNERSHIP IS DECIDED — ARM (a), T-033 decision (3),
+2026-08-25.** **This crate OWNS the reality-side join**; **TypeScript
+owns the intent ⨝ tasks half** — status and provenance rollups, the task
+join, and everything the map renders on top.
+`docs/decisions/015-indexer-rust-derivation-ts.md` now carries the same
+clause in its Decision section plus a dated addendum saying why, so the
+registry and the ADR are one sentence instead of two incompatible ones,
+which is what this half of the card existed to fix.
+
+Arm (b) — move `arch` to the Node CLI — was **refused**: it is the purest
+reading of ADR-015 and it costs the capability, since C-02 does not exist
+and the engine is not in a shareable package, so `nputer arch` could not
+exist at all in the meantime. Arm (c) is **retained rather than
+replaced**: pinning the two engines' agreement is **`T-059`**, which
+therefore does **NOT** dissolve and stays `blocked_by: [T-033]`.
+ADR-015's 2026-08-17 addendum still governs what this reader may do — it
+REFUSES rather than guesses, and the three latent divergence classes it
+names are unchanged and still latent.
 
 **AND SINCE T-010 IT SEES ITSELF.** The "TS/JS/Rust" above was a promise
 until T-010 registered the Rust extractor; `Lang::Rust` mapped to no

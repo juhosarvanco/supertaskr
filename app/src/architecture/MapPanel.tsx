@@ -9,6 +9,7 @@ import type { ChurnAttribution } from "@/lib/architecture/churn";
 import {
   churnAge,
   findingText,
+  isDriftFinding,
   panelFindings,
   provenanceLabel,
   STATUS_CHIP,
@@ -68,6 +69,12 @@ export function MapPanel({
 
   const component = derived.components.find((c) => c.id === componentId);
   const findings = component !== undefined ? panelFindings(derived.findings, component.id) : [];
+  // T-033: the CHIP counts drift, the LIST explains everything. An
+  // informational D3 (non_code) belongs in the list — a reader opening
+  // C-01 should still learn why it has no files — but a chip reading
+  // "1 drift finding" over a finding the map has just decided is not
+  // drift would contradict the node's own missing ring.
+  const driftFindings = findings.filter(isDriftFinding);
 
   return (
     <aside
@@ -106,12 +113,12 @@ export function MapPanel({
                   {component.layer}
                 </span>
               )}
-              {findings.length > 0 && (
+              {driftFindings.length > 0 && (
                 <span
                   data-testid="map-panel-drift-chip"
                   className="rounded-chip border border-warning-chip-border bg-warning-chip px-1.75 py-0.5 font-mono text-xs font-semibold text-warning"
                 >
-                  {findings.length} drift finding{findings.length === 1 ? "" : "s"}
+                  {driftFindings.length} drift finding{driftFindings.length === 1 ? "" : "s"}
                 </span>
               )}
               {component.pinned && (
@@ -240,9 +247,11 @@ export function MapPanel({
           <Section label="files">
             {component.files.length === 0 ? (
               <Placeholder>
-                {component.declaredOnly || component.kind === "placeholder"
-                  ? "declared · no files yet"
-                  : "no indexed files"}
+                {component.declaredOnly && component.nonCode
+                  ? "not indexed by design (non_code) — nothing here is code the walk collects"
+                  : component.declaredOnly || component.kind === "placeholder"
+                    ? "declared · no files yet"
+                    : "no indexed files"}
               </Placeholder>
             ) : (
               <FileGroups files={component.files} onOpenFile={onOpenFile} />

@@ -165,6 +165,20 @@ export interface ComponentRecord {
   touchSlugs: string[];
   /** `auto` = derive from tasks (T-011); any other value pins the node. */
   status: ComponentStatus;
+  /**
+   * OPT-IN, NEVER INFERRED (T-033 decision 2): this component's territory
+   * is not something the indexer walks — markdown, stylesheets, fonts —
+   * so "declared but matching no indexed file" (D3) is a PROPERTY OF WHAT
+   * IT IS rather than a state it will grow out of, and the derivation
+   * downgrades that finding to informational.
+   *
+   * It must NEVER be derived from an empty file list. A component with no
+   * indexed files may equally be one nobody has BUILT yet, and that D3 is
+   * the honest not-yet-built amber the intent layer exists to show;
+   * inferring the flag would silently convert "nobody has built this"
+   * into "nothing will ever be built here". Default false.
+   */
+  nonCode: boolean;
   /** Body prose — the component's responsibility, shown verbatim. */
   responsibility: string;
   /**

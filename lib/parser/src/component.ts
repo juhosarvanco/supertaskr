@@ -34,6 +34,10 @@ const KNOWN_FIELDS = new Set([
   'decisions',
   'status',
   'touch_slugs',
+  // T-033 decision (2). ADDITIVE: no component file carried this key
+  // before, so every existing file parses to the same record it did —
+  // the key simply stops landing in `extra`.
+  'non_code',
 ]);
 
 const ID_PATTERN = /^C-(\d{2,})$/;
@@ -215,6 +219,24 @@ export function parseComponentFile(content: string, file: string): ComponentPars
     }
   }
 
+  // -- non_code: OPT-IN, NEVER INFERRED (T-033 decision 2). Absent means
+  //    false; anything that is not a real boolean is REFUSED rather than
+  //    coerced, because the two states this flag distinguishes — "will
+  //    never contain indexed code" and "nobody has built it yet" — are
+  //    exactly the pair a truthy-coercion would silently merge. `non_code:
+  //    "false"` and `non_code: 0` are therefore issues, not falses.
+  let nonCode = false;
+  if (!isAbsent(data.non_code)) {
+    if (typeof data.non_code !== 'boolean') {
+      invalid(
+        'non_code',
+        `must be a boolean (true or false), got ${JSON.stringify(data.non_code)} — this flag is opt-in and never inferred, so it is refused rather than coerced`,
+      );
+    } else {
+      nonCode = data.non_code;
+    }
+  }
+
   // -- unknown keys: preserved, never silently deleted. Null prototype so
   //    hostile key names (`__proto__`, `constructor`, …) land as own data
   //    properties instead of hitting Object.prototype's inherited setter
@@ -240,6 +262,7 @@ export function parseComponentFile(content: string, file: string): ComponentPars
     decisions,
     touchSlugs,
     status,
+    nonCode,
     responsibility: fm.body.trim(),
     extra,
     file,

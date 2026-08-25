@@ -117,7 +117,16 @@ export interface DerivedComponent {
   files: string[];
   /** Declared component whose globs match no indexed file (full mode). */
   declaredOnly: boolean;
-  /** §4.5: source of a D1, or has D3/D5, or is unmapped with D2. */
+  /**
+   * The component file's opt-in `non_code:` flag (T-033 decision 2), read
+   * straight off the record — never inferred here from `files.length`.
+   * `declaredOnly && nonCode` is "nothing here is walkable"; `declaredOnly
+   * && !nonCode` is still the honest not-yet-built amber.
+   */
+  nonCode: boolean;
+  /** §4.5: source of a D1, or has a NON-informational D3/D5, or is
+   * unmapped with D2. An informational D3 (non_code) is deliberately not
+   * drift — that is the whole downgrade. */
   hasDrift: boolean;
   /** Tasks whose touches/component: pull them into this component. */
   tasks: DerivedTaskRef[];
@@ -129,7 +138,10 @@ export interface DerivedComponent {
 export type DriftFinding =
   | { rule: "D1"; id: string; from: string; to: string; fileEdges: ObservedFileEdge[] }
   | { rule: "D2"; id: string; files: string[] }
-  | { rule: "D3"; id: string; component: string }
+  /** D3 declared-only. `informational` is set from the component file's
+   * opt-in `non_code:` flag: the finding is still REPORTED (the fact is
+   * true and explainable) but stops counting as drift. */
+  | { rule: "D3"; id: string; component: string; informational: boolean }
   | { rule: "D4"; id: string; path: string; ids: string[] }
   | { rule: "D5"; id: string; from: string; to: string };
 
@@ -488,7 +500,16 @@ function deriveDeclared(
   if (graph !== undefined) {
     for (const component of components) {
       if (!filesPerComponent.has(component.id)) {
-        findings.push({ rule: "D3", id: `D3:${component.id}`, component: component.id });
+        findings.push({
+          rule: "D3",
+          id: `D3:${component.id}`,
+          component: component.id,
+          // READ, never inferred: `!filesPerComponent.has(id)` is the
+          // condition we are already inside, so deriving the flag from it
+          // here would make EVERY D3 informational and erase the
+          // not-yet-built signal entirely.
+          informational: component.nonCode,
+        });
       }
     }
   }
@@ -499,7 +520,7 @@ function deriveDeclared(
   const driftSources = new Set<string>();
   for (const finding of findings) {
     if (finding.rule === "D1" || finding.rule === "D5") driftSources.add(finding.from);
-    else if (finding.rule === "D3") driftSources.add(finding.component);
+    else if (finding.rule === "D3" && !finding.informational) driftSources.add(finding.component);
     else if (finding.rule === "D2") driftSources.add(UNMAPPED_ID);
   }
 
@@ -519,6 +540,7 @@ function deriveDeclared(
       autoStatus,
       files: filesPerComponent.get(component.id) ?? [],
       declaredOnly: graph !== undefined && !filesPerComponent.has(component.id),
+      nonCode: component.nonCode,
       hasDrift: driftSources.has(component.id),
       tasks: componentTasks,
       record: component,
@@ -542,6 +564,7 @@ function deriveDeclared(
       autoStatus: "planned",
       files: [],
       declaredOnly: false,
+      nonCode: false,
       hasDrift: false,
       tasks: [],
     });
@@ -557,6 +580,7 @@ function deriveDeclared(
       autoStatus: "planned",
       files: [...unmappedFiles],
       declaredOnly: false,
+      nonCode: false,
       hasDrift: true,
       tasks: [],
     });
@@ -648,6 +672,7 @@ function deriveInferred(graph: ArchGraph): DerivedArchitecture {
       autoStatus: "planned" as const,
       files,
       declaredOnly: false,
+      nonCode: false,
       hasDrift: false,
       tasks: [],
     }));
