@@ -1,9 +1,72 @@
 ---
 id: T-088-s4
-title: A watcher startup-arm test reds under concurrent load, and it is the second flake this suite has produced
+title: A watcher startup-arm test reds because the build cache had grown to 78,000 files — not a flake, and the title below is the wrong diagnosis kept for the record
 status: suggested
 suggested_by: integrator claude-opus-5 @T-088
 ---
+
+> **SETTLED BY CONTROLLED EXPERIMENT, 2026-08-25, architect, at main
+> `82c69a8`, on @human's instruction. THIS IS NOT A FLAKE AND NEVER WAS.**
+> Every earlier account on this card — including its own title, which is
+> left wrong on purpose so the correction is legible — treats it as a
+> load-sensitive race and reports honest tallies (1-in-8, 3-in-12,
+> 3-in-5, 1-in-3). **Those tallies were erratic because they mixed
+> checkouts**, which T-110's integrator diagnosed and this measures.
+>
+> **THE EXPERIMENT.** Ten bare `cargo test --no-fail-fast` runs in the
+> MAIN checkout, five either side of a single `cargo clean`, each
+> recording its own unpiped exit, its pass/fail summed across every
+> `test result:` line, the lib suite's own `finished in`, and the
+> 1-minute load average AT THE START of the run:
+>
+> | | red rate | mean lib suite | load during runs |
+> |---|---|---|---|
+> | **before** (target 8.7 GB / 78 173 files) | **4 of 5 — 80%** | **13.66 s** | 3.45–3.83 |
+> | **after** (target 2.3 GB, freshly built) | **0 of 5 — 0%** | **3.94 s** | 5.59–6.74 |
+>
+> **THE LOAD RAN THE WRONG WAY, WHICH IS WHAT MAKES THIS CONCLUSIVE.**
+> The after-phase ran under HIGHER load than the before-phase and still
+> went green five for five. A load-sensitive race cannot behave that way;
+> the "concurrent load" in this card's title is refuted by its own
+> control.
+>
+> **THE DISTRIBUTION IS BIMODAL WITH NOTHING IN THE GAP**, reproducing
+> what T-110's and T-124's integrators each reported from ordinary suite
+> output. Before: one run at **8.37 s** (green), four at **14.70–15.19 s**
+> (all red). After: **3.80, 3.94, 3.95, 3.95, 4.05** — a tight cluster.
+> **Even the before-phase GREEN run was degraded**: 8.37 s against a
+> healthy 3.94 s. Every figure this project recorded for this suite over
+> two days was taken on a slow machine, so no earlier "green" reading
+> should be treated as a baseline.
+>
+> **THE COST OF THE FIX IS 38 SECONDS.** `cargo clean` removed 78 173
+> files in **6 s** (cargo reported **21.8 GiB**, against `du -sh`'s
+> **8.7 G** — the two disagree and only cargo's figure counts what it
+> actually deleted). The cold rebuild via `cargo test --no-run` took
+> **32 s** and produced a **2.3 GB** target. That is the whole price.
+>
+> **THE MECHANISM IS STILL UNEXPLAINED, AND THAT IS STATED RATHER THAN
+> GLOSSED.** A test binary should not run 3.5x slower because the
+> directory beside it holds 78 000 files instead of a fresh build's set.
+> Accumulated incremental-compilation state is the obvious suspect and it
+> is NOT verified here. **The correlation is controlled; the causation is
+> not.** Anyone who explains it should write the explanation on this card.
+>
+> **THIS IS SYMPTOM RELIEF WITH A HALF-LIFE.** The cache will re-accumulate
+> and the cliff will return, so a green suite after a clean is not
+> evidence the defect is fixed. **The durable fix is the one arm (a)
+> already recommends below** — a deterministic rendezvous instead of a
+> wall-clock bound — which removes the cliff's ability to matter at any
+> cache size. Arm (a) stands, and **DO NOT "FIX" IT BY WIDENING THE
+> TIMEOUT** still stands: a wider bound buys a slower suite that fails
+> anyway on a slow enough machine.
+>
+> **A COROLLARY WORTH MORE THAN THIS CARD.** Three other intermittents
+> were filed while the machine was in this state — `T-124-s3`, the
+> `agent_runner.rs:2926` hostile-session-id body recorded in T-052's
+> checkpoint, and every "flake" tally in tonight's checkpoints. **None of
+> them has been re-measured on a clean cache**, and at least one redded in
+> the same run as this body. Re-derive them before treating any as real.
 
 > **UNPARKED 2026-08-25 AT T-010's CHECKPOINT — THE ARMED TRIGGER FIRED,
 > EXACTLY AS WRITTEN.** *"UNPARK THE MOMENT IT REDS A VERDICT OR A MERGE
