@@ -1,0 +1,44 @@
+---
+id: T-033-s1
+title: T-033 was dispatched without the three decisions its own card says must be recorded before dispatch
+status: suggested
+suggested_by: executor claude-opus-5 @T-033
+---
+
+T-033's card opens with *"Decisions at dispatch (ADR-004 — the registry
+is the architect's pen; record the picks in this file's plan section
+before dispatch)"* and then enumerates three of them: (1) the umbrella
+shared-primitive/test-edge story, (2) the non-code D3 story, (3) the
+ADR-015 one-implementation question. **None was recorded.** The dispatch
+commit `25a9e2c` ("Dispatch batch C: T-033 and T-079 stamped building")
+changes exactly two lines of the card — `status: planned` → `building`
+and `builder:` → `claude-opus-5` — and adds no plan section. Verified
+against main as well: `git diff 25a9e2c 5fbfd4e -- docs/tasks/T-033-*.md`
+is empty, so the omission is not a stale base.
+
+**THIS IS NOT A STYLE COMPLAINT — IT MAKES THREE OF FIVE CRITERIA
+UNBUILDABLE BY THEIR OWN WORDING.** Criterion 1 reads *"SHALL drain (or
+be recorded as accepted) **per the recorded decision**"*; criterion 2 has
+the same shape; criterion 5 says *"SHALL BE RECONCILED **per decision
+(3)**"*. A criterion whose antecedent is a decision that does not exist
+cannot be met, and an executor who supplies the missing decision has made
+the architect's ruling — which is exactly the single-writer failure
+ADR-004 exists to prevent. The card even anticipates this and names the
+consequence for one arm: *"IF arm (b) is chosen THEN the notes SHALL say
+so explicitly and name T-059 as dissolved"* — a sentence that only a
+recorded pick can satisfy.
+
+**Suggested:** the picks belong in the card before it is re-dispatched.
+The exact derived material each one needs is already measured and filed —
+`T-033-s2` (the umbrella drain set), `T-033-s3` (the non-code D3 story),
+`T-033-s4` (the ADR-015 clause) — so the ruling is the only work left,
+and each file states which arm costs what.
+
+**And the same check is cheap enough to be a dispatch step.** A card that
+says "record the picks before dispatch" is asserting a precondition
+nothing verifies; the board's `status: building` is not evidence that it
+was met. This is the second time the dispatch stamp has been observed
+carrying less than the card asked for (`T-089-s7`'s row-5 finding is the
+sibling shape: a fact the brief must transcribe that lives nowhere
+mechanical). Worth considering alongside T-104/T-111, which already
+compute things a dispatcher currently eyeballs.
