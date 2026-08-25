@@ -456,8 +456,14 @@
   REGEN cites this row (*"No suffix rule can match the walk"*) and its
   argument is unaffected, because `.nputerignore` still excludes docs/,
   tools/ and the indexer's own fixture trees.
-  **THE SAME THING HAPPENED TO THE TOKEN ROW ONE DAY LATER, WHICH MAKES
-  IT A PATTERN RATHER THAN AN INCIDENT.** That row read *"P1–P4"* until
+  **THE SAME THING HAPPENED TO THE TOKEN ROW NINETY-NINE MINUTES LATER,
+  WHICH MAKES IT A PATTERN RATHER THAN AN INCIDENT.** *(This clause read
+  "ONE DAY LATER" until T-086 asked `git log -1 --format=%ci` for the two
+  merges it names: `d64c673` is 2026-08-25 02:10:07 and `91398f9` is
+  03:49:24 THE SAME MORNING. AN UNREFED DURATION GOES STALE EXACTLY THE
+  WAY AN UNREFED COUNT DOES — the RANGE RULE bullet below records the
+  identical error about its own "false for weeks" — and one
+  `git log --format=%ci` settles both.)* That row read *"P1–P4"* until
   T-079's merge `91398f9` added **P6**, the ungated-motion-utility rule
   (`T-079-s1`, discharged in the checkpoint that merged it). The gap at
   P5 is deliberate and not an omission: P5 is the CONTROL row's
@@ -466,21 +472,53 @@
   it names the four walk constants, and P6 moved none of them; it is a
   pattern applied to the same masked text over the same corpus, which is
   why the lint stayed green through a change the signpost could not
-  describe. TWO SIGNPOSTS IN TWO DAYS, both caught by the lane that
-  falsified them and neither by a gate: **a pattern COUNT in this table
-  is a fact with no owner**, and the next reader to touch this row should
-  decide whether to keep enumerating at all rather than correct it a
-  third time. A new `.md` under docs/ is seen by
+  describe. **THREE STALE SIGNPOSTS IN THIS ONE BULLET NOW — the `.rs`
+  row, this row, and the reader sentence below that T-086 retracts —
+  every one caught by the lane that falsified it and NOT ONE by a gate**:
+  a pattern COUNT in this table is a fact with no owner, and the next
+  reader to touch this row should decide whether to keep enumerating at
+  all rather than correct it a third time. The reader sentence below took
+  the STOP-ENUMERATING option and is the worked example of it.
+  A new `.md` under docs/ is seen by
   CONTROL, and by the PARSER only if it is a flat `docs/tasks/T-*.md` or
   `docs/architecture/components/C-*.md`. THIS FILE is seen by CONTROL
   only: the parser never reads it, which is why an edit here cannot move
-  the parser suite. **BUT TWO LIVE READERS SIT OUTSIDE ALL FOUR WALKS,
-  AND THIS LIST IS CLOSED AT TWO** (T-078-s6 — naming one and stopping is
-  the one-sidedness the POISON DRILL bullet below warns about, and a
-  reader who trusts a half list edits into the half it omitted). ONE, the
-  E2E lane parses the "Build & test" section — see the CI bullet there —
-  so an edit to a command bullet can red
-  tools/e2e/tests/workflow-parity.spec.ts. TWO, the CARGO suite reads
+  the parser suite. **BUT LIVE READERS SIT OUTSIDE ALL FOUR WALKS AND
+  THIS FILE IS ONE OF THE THINGS THEY READ, SO AN EDIT HERE CAN RED A
+  SUITE NO ROW ABOVE CAN SEE** (T-078-s6, retracted and replaced at
+  T-086). **WHICH READERS IS A DERIVATION, NEVER A SENTENCE**:
+  `node tools/e2e/scripts/docs-gate.mjs --census` from the repo root
+  prints every derived reader of every path under docs/ with the suite it
+  sits in, and the SAME gate run on your own diff — the DOCS GATE bullet
+  below carries the one spelling — prints the suites your edit OWES. Run
+  one of them before you hand off, and do not count from this page: this
+  page has already been wrong about it, at every ref anyone checked.
+  **THE SENTENCE HERE USED TO TRANSCRIBE THAT CENSUS AND THEN CLOSE IT —
+  *"TWO LIVE READERS … CLOSED AT TWO"* — AND IT IS RETRACTED** (T-086,
+  absorbing T-081-s6 and T-078-s10). It was FALSE: ask the gate and count
+  the rows it prints for this path. It was also UNFALSIFIABLE AS WRITTEN,
+  because it never said what makes a file a reader, so nobody could check
+  it and nothing did — no test asserted it and none could. **THE READER
+  THAT BROKE IT WAS ADDED BY THE CARD THAT BUILT THE CENSUS**:
+  `tools/e2e/tests/docs-input-gate.spec.ts` reads this file through
+  `conventionsText()`, so the sentence went stale as a direct consequence
+  of building the machinery that could have kept it true. **AND IT WAS
+  PREDICTED IN THE NOTES OF THE LANE THAT WROTE IT**, which is why the
+  remedy is deletion rather than a fourth correction: T-078's executor
+  filed it under WHAT I AM LEAST CONFIDENT ABOUT — *"if a third live
+  reader of this file appears … 'CLOSED AT TWO' [makes] it worse than the
+  open version it replaced"* — while T-078-s6's ask had requested the
+  closed form in as many words (*"so the table's list of non-walk readers
+  is closed rather than open"*). A CARD CAN SPECIFY A DEFECT INTO
+  EXISTENCE AND A FAITHFUL EDITOR WILL BUILD IT, which is the POISON
+  DRILL bullet's own T-057 lesson arriving in prose instead of in a test;
+  and a list of readers cannot be closed by prose at all, because prose
+  is not what adds the next one.
+  TWO MECHANISMS STAY NAMED HERE AS SHAPES AND NEVER AS THE LIST — they
+  are what an edit to this file most often breaks, and the census is what
+  tells you the rest. The E2E lane parses the "Build & test" section —
+  see the CI bullet there — so an edit to a command bullet can red
+  tools/e2e/tests/workflow-parity.spec.ts. And the CARGO suite reads
   this file off disk on every `cargo test`:
   `snapshot_version_matches_the_live_method_stamps` in
   app/src-tauri/src/agent/kit.rs asserts it still carries the
@@ -1200,10 +1238,16 @@
   the over-fire trap is real: a gate that says "run everything on any
   `docs/**`" is ignored within a week. On this tree EVERY path under
   docs/ reaches a reader — two lane specs walk all of it — so narrowing
-  the TRIGGER would be a lie. What is proportional is the ANSWER:
-  `docs/rooms/*.md` owes ONE command, `docs/CONVENTIONS.md` owes TWO and
-  not the app suite, a flat `docs/tasks/T-*.md` owes THREE. Ask the
-  gate; do not predict.
+  the TRIGGER would be a lie. What is proportional is the ANSWER, and the
+  three below are EXAMPLES CARRYING THEIR REF rather than a table to
+  quote — each re-derived by asking the gate at `c4c15c8`, which is the
+  only thing that makes any of them worth writing: `docs/rooms/*.md` owes
+  ONE command, `docs/CONVENTIONS.md` owes TWO and not the app suite, a
+  flat `docs/tasks/T-*.md` owes THREE. **THEY ARE THE ANSWER'S SHAPE AND
+  NOT ITS CENSUS** (T-086): a new reader landing in a fourth suite moves
+  any of them without touching this page, which is exactly what happened
+  to the walk table's reader sentence above. Ask the gate; do not
+  predict.
   THE OTHER HALF IS THE FRONTMATTER, asked of the WHOLE TREE and not
   only of the diff, because a card broken three commits ago is still
   broken: every live flat `docs/tasks/T-*.md` must parse, and its
