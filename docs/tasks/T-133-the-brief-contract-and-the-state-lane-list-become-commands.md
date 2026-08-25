@@ -271,6 +271,20 @@ thirteen-row contract with role-specific rows substituted, and this
 command would print `NOT DERIVED` for those rows rather than assembling
 them. That is honest and it is not complete.
 
+**CORRECTED BY THE VERDICT AND RE-MEASURED IN THE FIX PASS. THE WRONG
+SENTENCE IS LEFT STANDING ABOVE so the error stays readable.** That last
+mechanism is invented. `method/roles/verifier.md` carries no four-column
+table at all, so `--role verifier` prints `NOT DERIVED` for nothing — it
+**THROWS, exit 3**: `found 0 tables headed # / The brief carries /
+Assembled from / If it is absent`. Re-measured at `1b626e2` before this
+sentence was written. `NOT DERIVED` is what a row of THIS table with no
+deriver prints, which is a different situation entirely. The throw is the
+module's own rule working — a contract table it cannot read is a hard
+failure and never an empty row set — so the LIMIT stated above is real
+and only its mechanism was guessed. **The card's own subject is filling a
+row from memory instead of from its source, and this sentence did it
+about the card's own tool.**
+
 ## Verdict: REJECTED — claude-opus-5, 2026-08-26
 
 One defect blocks, it is inside `touches: [tools/e2e]`, and it is two lines
@@ -578,3 +592,257 @@ status transition belongs to whoever routes this.
 **Verdict measured at `64d1483`. This verdict is itself a write**, so the
 DOCS GATE was re-run at my own tip (role rule 7) and the result is recorded
 in the commit that carries this section.
+
+## Fix pass — fresh executor claude-opus-5, 2026-08-26
+
+**A rejected card goes to a fresh hand (`method/tasks/TASK-FORMAT.md`), so
+this pass is not the session that wrote what it repairs.** Lane
+`task/T-133-brief-and-state-derived`, from the rejected tip `1b626e2`.
+Nothing outside `touches: [tools/e2e]` moved except this card and one new
+suggestion. **The verdict is right, and it undercounted the lines by one.**
+
+### THE BLOCKING DEFECT WAS THREE LINES
+
+Measured at the rejected tip `1b626e2` before the fix — the two the
+verdict named, and the third it did not:
+
+    base commit: 209596b8eb9e…  <- @ 1b626e220583 ; git log --first-parent --format=%H %s main, newest Checkpoint
+    integration tip right now: 70b1d4058ee1…  <- @ 1b626e220583 ; git log --first-parent main
+    create: git worktree add ../nputer-T-133 -b task/T-133-<slug> 209596b8eb9e…  <- @ 1b626e220583 ; docs/CONVENTIONS.md lane bullet create command
+
+Re-derived AT the ref all three wear:
+
+| figure | printed | re-derived at `1b626e2` |
+|---|---|---|
+| newest Checkpoint — **the base** | `209596b8eb9e` | **`93f86562b96a`** |
+| first-parent tip | `70b1d4058ee1` | **`1b626e220583`** |
+| the base **inside `create:`** | `209596b8eb9e` | **`93f86562b96a`** |
+
+**The create line is the sharpest of the three and it is not in the
+verdict.** Its stamp named `docs/CONVENTIONS.md` — a document that cannot
+produce a commit hash at all — as the source of one, and it is the line a
+dispatcher PASTES into a shell. Row 4's whole subject is that hash.
+
+**The branch moved again while this fix was written**, which is the fourth
+independent measurement on this card. All four tips are still reachable
+from `main` (`git merge-base --is-ancestor`), so none of it is a rewrite:
+`4f3de7e` (20:51Z, the verdict's) → `1d3838b` (20:58Z, the verdict's) →
+`209596b` → `70b1d40` (21:42Z, mine). **The base figure itself moved twice
+across the two passes**, `4f3de7e` → `209596b`, because a Checkpoint
+landed in between.
+
+After the fix, all three carry the time and host they were read at:
+
+    base commit: 209596b8eb9e…  <- read 2026-08-25T21:42:02.891Z on Mac.lan ; git log --first-parent --format=%H %s main, newest Checkpoint
+    integration tip right now: 70b1d4058ee1…  <- read 2026-08-25T21:42:02.891Z on Mac.lan ; git log --first-parent --format=%H %s main
+    create: git worktree add … 209596b8eb9e…  <- read 2026-08-25T21:42:02.891Z on Mac.lan ; docs/CONVENTIONS.md lane bullet create command, base substituted from git log --first-parent --format=%H %s main
+
+**THE STAMP IS DERIVED, NOT DECIDED.** `carriesBase = create.includes(base)`
+in `deriveLane`: with no task named the create command is the document's
+own text — `<base>` placeholder and all — and stays a TREE fact, which the
+pin drives in that direction too. **Stamping everything live is the same
+defect facing the other way.**
+
+### THE PIN, AND WHY IT IS NOT AN ASSERTION ABOUT TWO LINES
+
+M5 measured that nothing pinned this: **192 green with the defect and 192
+green without it.** The existing tree-versus-live body checks only that
+WORKTREE lines are live; nothing asked whether a `<- @ >` line is
+derivable at the ref it wears.
+
+A body that read those lines and demanded the word `read` would be a
+transcription of the fix and would say nothing about the property. The
+property is **"the stamped ref determines the value"**, and the only way
+to show it false is to change the value WITHOUT changing the ref.
+
+`integrationRefs(logText, branch)` is now pure — the shape
+`laneWorktrees(porcelain, spellings)` already had, and the one the
+verifier ruled sound — so `context()` holds ONE read of the branch beside
+the porcelain and the derivation takes it from there. The pin drives **one
+ctx, at one ref, through two reads of the branch**: the second read is
+DERIVED from the first by dropping the newest Checkpoint and everything
+above it, which is exactly what the branch moving does to that log.
+
+**Any line whose TEXT differs between those two renders is not a function
+of the ref both are stamped at, and the body requires every such line to
+carry a clock.** It never names a line. Three positive controls, because
+each half is an absence claim: a second read must be BUILDABLE from the
+first, **more than one line must move** (or the experiment drove nothing),
+and **more than one line must name the branch as its source** (or the rule
+it states has no subject). Its red names the offending line in full —
+
+    Error: this line's VALUE moved while the ref it is stamped at did not, so the ref does not determine it…
+    Expected substring: "  <- read "
+    Received string:    "  base commit: 209596b8eb9e…  <- @ 82e8ab4cfecf ; git log --first-parent --format=%H %s main, newest Checkpoint"
+
+**MEASURED FAILURE AGAINST THE PRE-FIX PRODUCER: arms MA, MB and MD
+below.** The pre-fix TREE cannot run it — `integrationRefs` and the
+`integrationLog` field do not exist at `64d1483`, so the body would fail
+to IMPORT rather than fail on a property, which is a green that proves
+nothing (`T-080-s1`, the reasoning this card already applied to its own
+first pass). The drill is the honest measurement: the defect is reinstated
+in the producer, one side only, and the pin dies.
+
+### THE SECOND, IN FENCE — AND `default: throw` ALONE DOES NOT CLOSE IT
+
+- `stamp()` was a ternary, so every kind that was not exactly `"tree"`
+  went down the LIVE branch. `value("…", { ref, via })` — the constructor
+  forgotten — rendered `<- read undefined on undefined ; …` and **slipped
+  `unstampedLines()`**, the provenance floor. A closed `switch` with
+  `default: throw` shuts that.
+- **But `{ kind: "live" }` still renders `read undefined on undefined`
+  under a default-throw**, because the KIND is legal and the SHAPE is
+  unchecked. So `stamp()` now re-validates through `treeProv`/`liveProv`
+  themselves rather than through a second copy of what a provenance is —
+  the same argument this module already makes for READING its row set
+  instead of transcribing it. The constructors additionally reject a
+  non-STRING field, which `=== ""` did not.
+
+Latent in both directions, as the verdict said: every shipped call site
+goes through the constructors. The pin drives eight malformed shapes and
+both good ones.
+
+### THE FOUR CORRECTIONS THE VERDICT MADE
+
+1. **TAKEN, and corrected in place above.** `--role verifier` does not
+   print `NOT DERIVED`; it **throws, exit 3** — re-measured at `1b626e2`
+   before the sentence was amended. The wrong sentence is left standing
+   with the correction under it, because the error is the card's own
+   subject happening to the card's own tool.
+2. **TAKEN, plainly.** This tool would NOT have caught the architect's
+   wrong-noun error, and it was argued for partly on that error. No
+   contract row carries "what past editions of `docs/STATE.md` did"; that
+   is narrative, not a derivable row. **What the tool removes is the NEED
+   for the figure, not the wrongness of a figure nobody derives.**
+3. **RECORDED, NOT TAKEN.** `note("T-133")` throws — this tool can never
+   name a card in its own prose — while `note("１９２ tests")` (fullwidth)
+   and `note("one hundred ninety-two")` pass. All four re-verified here.
+   Widening `\d` to `\p{Nd}` would close the fullwidth half and never the
+   spelled-out half, so the guard's honest description is **a floor
+   against the ACCIDENTAL bare figure and not a proof**. The rejection
+   asked for two lines and a pin; the producer this drill measured is the
+   producer that ships, and a comfort-change after the drill would have
+   been measured at a tree nobody ran.
+4. **RECORDED as a limit.** Findings carry bare digits on stderr, outside
+   the record system: stderr is diagnostics, stdout is what a dispatcher
+   pastes. The verdict's item 7 — `**   **` yielding an empty label where
+   `****` throws, still two findings and exit 1 — is cosmetic and also
+   unchanged.
+
+### POISON DRILL — and the drill's own shell lied once, in a new way
+
+Detached scratch worktree at `82e8ab4`, named for this lane, **outside the
+repository**, set up with the fresh-clone ORDER (`lib/parser` `npm ci` +
+`npm run build`, then `app/` `npm install`, then `tools/e2e` `npm ci` —
+each exit 0). Every arm moves the PRODUCER
+`tools/e2e/scripts/dispatch-brief.mjs`, never an assertion, and ABORTS if
+`git diff` on the spec is non-empty. **No cargo arm**: nothing in this
+lane compiles, so the `CARGO_TARGET_DIR` hazard the drill bullet names
+does not arise, and no `app/dist` is owed either — the `tools/e2e` suite
+drives the DEV bundle, and the CONTROL's 193 green is what proves the
+suite ran rather than a claim that it did.
+
+**EVERY GUARD POSITIVELY CONTROLLED BEFORE THE FIRST ARM.** A guard that
+has never fired is indistinguishable from one that is not there, and this
+lane's first drill was vacuous in exactly that way:
+
+| guard | vacuous input | genuine input |
+|---|---|---|
+| four tools, absolute and executable | a non-executable path → **would exit** | all four resolve, versions printed |
+| sha256 is sixty-four characters | a file that does not exist → **FIRED** | a real file → sixty-four |
+| the mutation LANDS | the needle applied twice, second finds none → **FIRED** | exactly one → applied |
+| `git diff` read-back, BEFORE the run | arm `MZERO`, whose replacement IS its needle → **FIRED** | a real arm → bytes reported |
+| the restore comparison has teeth | pristine against a one-line-changed copy → **UNEQUAL** | the restored file → equal |
+
+**THE DRILL'S OWN SHELL LIED, AND THE LOG IS WHAT CAUGHT IT.**
+`local h s status` in the restore function: `status` is READ-ONLY in zsh,
+so the function aborted at its declaration — *after* its `git checkout`
+had already restored the file, so the tree was clean, the abort was
+silent, and the top level still reported **exit 0** with two arms never
+run. Same class as this lane's first drill: **the drill's shell is a
+surface, and "the drill ran" and "the drill proved" are different
+claims.** Fixed; every arm below is from the clean re-run.
+
+**THE KILLS, MEASURED AGAINST THE WHOLE SUITE and stated RELATIVE TO THE
+CONTROL** — the control is not green here, and that is the point of
+having one:
+
+| arm | mutation, one side only | result | kill, net of the CONTROL |
+|---|---|---|---|
+| **CONTROL** | shipped | exit 1 · **193 passed / 1 failed of 194** | — |
+| **MA** | `base commit` and `integration tip right now` restamped `tree(...)` — the verdict's defect reinstated | exit 1 · 192 / 2 | **the moving-ref pin, and ONLY it** |
+| **MB** | the `create:` command's substituted base restamped `tree(...)` | exit 1 · 192 / 2 | **the moving-ref pin, and ONLY it** |
+| **MC** | `stamp()` back to the ternary | exit 1 · 192 / 2 | **the malformed-provenance pin, and ONLY it** |
+| **MD** | the `integrationLog` seam bypassed — `deriveLane` reads the branch itself again | exit 1 · 192 / 2 | **the moving-ref pin's POSITIVE CONTROL**: `moving the integration branch changed no line … Expected: > 1, Received: 0` |
+
+**MD is the arm that says the pin is not self-satisfying.** A pin whose
+experiment cannot move is a pin that passes for the wrong reason; MD
+removes the pin's ability to move the input and the pin says so by name
+rather than going green.
+
+**THE CONTROL'S OWN RED IS NOT THIS TREE'S DEFECT, and it is derived
+rather than dismissed.** `shell-frame.spec.ts:263` reds in the drill
+worktree — twice in two runs — and is green in the lane at the same
+commit. That spec's snapshot carries `projectDir: repoRoot`; the shell
+renders the path; the drill's root is **128 characters** against the
+lane's **33**, so the chrome wraps to more lines and the board's region
+falls under its floor — by MORE the narrower the viewport (14px at 1280,
+26px at 1024, 50px at 800), which is the signature of wrapping and not of
+a constant. `board.scrollHeight` is **14948 in both** and the capped strip
+is **192 in both**, so the content is identical. Ruled out by measurement:
+the two worktrees' installed app dependency trees are byte-identical
+(`.package-lock.json` sha256 `9928d6b9f8228…`, 500 packages, zero version
+differences) and the built parser artifacts match byte for byte. **Filed
+as `T-133-s5`** — it is a real property, the spec is right to assert it,
+and it is a trap for every future drill cut in a deep scratch path.
+
+Restoration proved per path by sha256 after every arm, with
+`git status --porcelain` empty each time:
+
+    tools/e2e/scripts/dispatch-brief.mjs   50ebbbef17be89ba2f80700907241bec7b9f2f6554f3e3ca93199f1461f6a03e
+    tools/e2e/tests/brief.spec.ts          970c244024e59ea8743a7211ef6419ade6a7a9d98a8f6790fdfe7c82b897a531
+
+**The drill measured `82e8ab4`**, which is the code tip: everything after
+it is this card and `T-133-s5`, and neither is executable.
+
+### The range, with its refs
+
+`git merge-tree --write-tree 70b1d4058ee1 82e8ab4cfecf` → **exit 0, read
+BEFORE the substitution**; merged tree `2e632cffe40a…`. Then
+`git diff --name-only 70b1d4058ee1 <that tree>`.
+
+**THE RANGE at the code tip: 8 files, +3537, −1**, against main at
+`70b1d4058ee1`. Fence: `tools/e2e` (3 files) plus this card and the five
+suggestion files — nothing outside `touches: [tools/e2e]` but the lane's
+own ceremony. Never `main..HEAD`, and never the three-dot form: `A...B` is
+definitionally `$(git merge-base A B)..B`, the range this project bans by
+name two paragraphs above it.
+
+### What this brief and the verdict got wrong
+
+1. **"Two lines plus a pin" was THREE lines.** The `create:` command
+   carries the same moving base under a stamp naming a document that
+   cannot produce a hash. The verdict named the base row as *feeding* the
+   create command and did not notice that the create line itself wears
+   the figure.
+2. **`default: throw` in `stamp()` would NOT have closed the second
+   defect.** `{ kind: "live" }` is a legal kind with no fields and renders
+   `read undefined on undefined` under a default-throw, exactly as the
+   ternary did. The closure needs the SHAPE re-validated.
+3. **"Playwright prints no `running N tests` header" is false here.**
+   Every run in this pass printed `Running 194 tests using 1 worker`
+   (@playwright/test 1.62.1, `list` reporter). The advice that produced
+   that line is still worth obeying — I counted numbered bodies against
+   green lines anyway — but the header exists and agreed with the count
+   every time.
+4. **"Two other lanes are live" — there is ONE.** Derived by filtering
+   `git worktree list --porcelain` on the BRANCH: `task/T-133-…` (mine)
+   and `task/T-135-blast-radius-ceremony`. The other three entries are the
+   integration checkout on `main` and two DETACHED worktrees
+   (`arch-verify`, `nputer-app`) — which is this card's own subject, met
+   on the live tree while fixing it.
+5. **The mtime defect (`token-scan.spec.ts:201`) did not fire** in any run
+   of this pass, and that is declared in both directions because neither a
+   green nor a red is evidence by itself: not in the lane's runs, and not
+   in any of the drill's five arms — one of which is a FRESH worktree with
+   a fresh install, the shape that used to arm it.
