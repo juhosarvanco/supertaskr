@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 5
 size: S
-status: planned
+status: verifying
 blocked_by: []
 touches: [method/lane-protocol.md, method/roles/integrator.md, method/tasks/TASK-FORMAT.md]
 builder:
@@ -268,3 +268,342 @@ clauses rather than formats — **derive that rather than assuming it.**
 Ask GRAPH REGEN rather than predicting, and ask again after any write.
 @human: none — every ruling here was made by a hand with standing, and
 the corrections are to the architect's own draft.
+
+## Implementation notes
+
+Branch `task/T-132-exclusive-integration-turn`, worktree
+`/Users/ujju/Projects/nputer-T-132`, base **`74feb67`** (main's tip at the
+cut). Built by `claude-opus-5`. **NOT merged**, per the dispatch.
+
+### THE FOUR "ALREADY WRITTEN" CLAIMS, RE-DERIVED AT `74feb67` BEFORE ANYTHING WAS EDITED
+
+**All four verify. None became a real addition.** The card's central claim
+survives its own re-check, which is the result it asked for and not the
+one it hedged for.
+
+| # | claim | verified at | verdict |
+|---|---|---|---|
+| 1 | the brief is assembled to `executor.md`'s contract, every row from the sources that row names | `method/roles/orchestrator.md:30-31`; sources at `method/roles/executor.md:87` (row 5) | **VERIFIED, exact** |
+| 2 | stamp-after-cut is already forbidden and its hazard stated | `method/roles/orchestrator.md:26-29` (the card says 24-29); the FIELD's authoritative copy at `method/tasks/TASK-FORMAT.md:208-221` | **VERIFIED; the citation is two lines wide** |
+| 3 | the POISON DRILL bullet already carries drill pollution in full | `docs/CONVENTIONS.md:1279`, with `CARGO_TARGET_DIR` at 1294-95, the `env!("CARGO_MANIFEST_DIR")` mechanism at 1300-02, T-013's measured cost at 1303-07, and the reverse direction *verbatim* at 1308-10 | **VERIFIED, all four halves** |
+| 4 | the out-of-fence criterion is already ruled | `method/roles/executor.md:126-128`, with the never-widen sentence at 129 | **VERIFIED, exact** |
+
+**Claim 2's line span is off by two and that is the only defect in the
+four.** The card cites `orchestrator.md:24-29`; the quoted sentence begins
+at **26**. Lines 24-25 are the preceding clause (*"THEN cut the lane from
+that commit, THEN hand over the brief. Fields lock at that write"*). The
+whole rule is 5b, lines **21-31**. **Recorded rather than silently
+corrected, because a citation that is two lines wide today is a citation
+that names the wrong paragraph after the next merge** — the hazard this
+project has now met three times.
+
+**T-104 MOVED NEITHER OF THE TWO FILES THE CARD WARNS ABOUT.** The card
+says *"`T-104` moved that file tonight and the sentence may already have
+changed."* `git diff --name-only` across T-104's merge names neither
+`method/lane-protocol.md` nor `method/roles/orchestrator.md`; rule 4's
+wording at `74feb67` was byte-identical to the card's block quote of it.
+**The warning was right to give and wrong on the facts** — which is the
+correct direction for a warning to be wrong in.
+
+**AND THE CARD'S OWN `git grep` REPRODUCES.** `git grep -n architect --
+method/lane-protocol.md method/roles/orchestrator.md` returns **zero
+rows, exit 1**, at `74feb67`. The seat that broke rule 4 twice was named
+nowhere in either file.
+
+**THE ABSORPTION IS REAL**: `T-123-s10` and `T-128-s1` are both gone from
+`docs/tasks/` at this ref.
+
+### WHAT LANDED, AND WHERE
+
+**`method/lane-protocol.md`, rule 4 — the seat, the list, the remedy, the
+backstop, the attribution.** The rule now binds **the complement of one
+seat** rather than an enumeration, and its prohibition list names **the
+test-suite run** beside the dependency install. Four attached paragraphs:
+why a complement and not a list; why the test run is the worse half (it
+CERTIFIES where the others obstruct); the **write/verification split** as
+the remedy, naming the long-lived suite run as the thing that actually
+collides and the seat's own sibling worktree as where it goes; and
+detect-and-refuse **cited and deliberately not built**. Both violations
+recorded with attribution to the ARCHITECT seat, with their figures
+(2 failed / 169 passed, then 171/171 alone).
+
+**`method/roles/integrator.md` — ruling THIRTEEN, inside step 3, beside
+the checkpoint ritual.** *Repair what the merge INTRODUCES; file what the
+merge merely REVEALS*, with **the parent as the test** rather than the
+size of the fix, and with `tasks/TASK-FORMAT.md`'s "THERE IS NO FOURTH
+MOVE" named as its companion — that rule says what an integrator may not
+CLOSE, this one says what it may FIX.
+
+**`method/tasks/TASK-FORMAT.md` — the card-author clause, plus one
+violation.** The clause sits in the criteria-writing guidance, where
+criteria are written, and **binds the WRITER**: a criterion may not order
+work outside its own card's `touches:`; test each criterion against the
+fence as you write it; either widen the fence BEFORE dispatch or write the
+criterion as a ROUTE. It says in one sentence why it is not in
+`executor.md` — a third refusal sentence in a file that already carries
+two would reproduce the defect it fixes. The **stamp-after-cut violation**
+is recorded beside the lifecycle bullet it broke.
+
+### THE ONE CONSTRAINT THAT DECIDED THE PROSE, AND IT IS NOT IN THE CARD
+
+**`method/` CONTAINS ZERO CITATIONS TO THIS PROJECT'S CARDS OR VERDICTS.**
+Derived, not assumed: `grep -rn "T-[0-9]" method/` returns nine rows and
+**every one is an illustrative frontmatter example** (`id: T-016`,
+`blocked_by: [T-015]`, `Absorbs: T-001-s2`, `task: T-014`,
+`"tasks": ["T-013","T-017"]`) **or a template filename**. There are no
+real dates either. The established idiom for grounding a rule in real
+operation is `roles/integrator.md:14`'s *"Measured on this method's own
+project"*.
+
+**This matters because `method/tasks/TASK-FORMAT.md` is `include_str!`'d
+into the shipped binary and materialized into OTHER projects' kits**
+(`app/src-tauri/src/agent/kit.rs`), where `T-108` names nothing at all.
+So the criterion *"RULING THIRTEEN … SHALL be cited to the verdict that
+made it"* was satisfied in `method/`'s own idiom — the seat, the project,
+and the **content** of the case (the citation that was correct when
+written and false thirty-one minutes later, which is recoverable and
+instructive) — and the card ids live here in the notes, where the
+project-side trail belongs. **Writing `T-108` into `method/` would have
+been the first leak of this project's board into a product-agnostic
+file.**
+
+### THE CEREMONY ROW WAS RE-DERIVED, AND THE RULE OF THUMB IS FALSE HERE
+
+The dispatch said stamp `verifying` and do not merge — row 2 of the
+ceremony table. **`TASK-FORMAT.md`'s own rule of thumb says the
+opposite**: *"docs, method and tooling self-integrate; anything a user
+could run does not"*, which would put a `method/`-only card on row 1 with
+no verifier and self-integration.
+
+**The rule of thumb is wrong for this fence, and the dispatch is right for
+a reason the dispatch did not give.** `method/tasks/TASK-FORMAT.md` is one
+of eight `method/` files `include_str!`'d into `app/src-tauri`'s binary. It
+is **shipped code by the table's own boundary test** — *"if any entry
+names a component whose build output SHIPS, the card takes a verifier"* —
+and it is a user-runnable artifact in the most literal sense, since the kit
+is materialized into a real project on disk. Stamped `verifying`,
+`verifier:` / `verified_by:` / `review:` left empty, worktree kept.
+
+### RANGE — THE PRESCRIBED FORM, AT A REF MAIN HAS ALREADY LEFT
+
+**Main moved twice under this lane**: `74feb67` (base) → `afe23c1`
+(T-127's dispatch) → **`cea839e`** (T-130's merge). Every derivation below
+is at **`cea839e`**, re-derived rather than carried forward, and the exit
+was read from `$?` **before** any substitution.
+
+    git merge-tree --write-tree cea839e HEAD   -> exit 0, tree read after
+    git diff --name-only cea839e <TREE>        -> THE PRESCRIBED FORM
+
+**NEITHER OF MAIN'S TWO ADVANCES TOUCHES THIS FENCE.** `git diff
+--name-only 74feb67..cea839e -- <the three files>` is **empty**, and
+`merge-tree` exits 0, so the forecast tree is clean.
+
+**THE FORBIDDEN FORM DID NOT ANNIHILATE HERE, AND THAT IS A REFINEMENT OF
+WHAT STATE RECORDS.** `git diff --name-only main..HEAD` returned **0** at
+T-129's checkpoint because that reader was an *integrator*, whose HEAD IS
+main. **At a lane it does not annihilate — it inflates**, returning the
+same 4 paths as the two-dot form against a prescribed 3. So the two
+forbidden spellings have **three** behaviours between them, not two, and
+which one you get depends on the seat rather than on the spelling.
+
+### GATES — ALL THREE ASKED, NONE PREDICTED
+
+**On the three `method/` paths alone (pre-stamp), every gate answers NOT
+OWED**, and the DOCS GATE says so in its own words: *"3 changed path(s)
+given, none under docs/ — this gate is not owed."* Exit **0**.
+
+**On the final four paths (this card included), the DOCS GATE FIRES —
+exit 1, on 1 of 4**, and names three suites: `npm test from app/`,
+`npm test from tools/e2e/`, `npx vitest run from lib/parser/`. Run
+directly from the repo root with the RANGE RULE's own path list, **never
+through `xargs`**. 13 derived docs readers across 4 suites, census 130
+sites in 22 files, **0 frontmatter issues**.
+
+**GRAPH REGEN — ASKED, exit 0, CURRENT**, and it is a real green rather
+than the `--root` false shape: the second line printed all four counts
+(**939 161 bytes · 179 files · 2004 symbols · 1907 edges**), which a false
+red cannot do. Not owed by trigger either — this diff has no `.ts/.tsx/
+.js/.jsx/.rs` outside `docs/`.
+
+**BOOT GATE — NOT OWED**, derived: zero of the four paths is under
+`app/src-tauri/**`, `app/src/**`, or either manifest. Not run.
+
+### `cargo test` WAS OWED, AND THE CARD SAYS IT WAS NOT
+
+**The card's Verification line reads *"`cargo test` is owed IF the method
+snapshot version moves"*. That is not the only trigger and it is not the
+one that fired.** `method/tasks/TASK-FORMAT.md` is a cargo-suite input in
+its own right: `app/src-tauri/src/agent/kit.rs` `include_str!`s it, and
+**four bodies read `method/` off disk and assert against it** —
+`every_compiled_entry_matches_its_method_file_byte_for_byte`,
+`the_snapshot_table_covers_every_method_scaffold_file`,
+`the_shipped_plan_interview_still_carries_the_normative_banking_map`,
+`snapshot_version_matches_the_live_method_stamps`. **Editing that file
+owes `cargo test` whether or not any version moves.** Derived, then run.
+
+**THE VERSION CORRECTLY DID NOT MOVE.** These are clauses, not formats:
+no new field, no new status, no new size, no change to the normative brief
+table. `METHOD_SNAPSHOT_VERSION` stays **0.1.6**, and the two live stamps
+it cross-checks (`docs/CONVENTIONS.md:266`, `method/interview/
+plan-interview.md:26`) are untouched and outside this fence — which is the
+card's own three-file-commit warning, and it did not fire.
+
+### SUITES — EVERY RUN DECLARED, EVERY EXIT FROM `$?` UNPIPED
+
+- **cargo: 471 passed / 0 failed / 3 ignored, exit 0**, summed over
+  **16** `test result:` lines. **THE COUNT WAS CROSS-CHECKED AGAINST THE
+  `running N tests` HEADERS**, which sum to **474 = 471 + 3** — so no body
+  vanished into a SIGABRT. Lib suite **197 bodies in 4.05s**, deep inside
+  T-124's green band, on a fresh isolated target. All three watched
+  intermittents read **by name** as `ok`:
+  `startup_arm_watches_the_initial_root`, `a_hostile_session_id_in_the_
+  init_line_fails_the_turn_and_is_never_recorded`,
+  `snapshot_version_matches_the_live_method_stamps`. **And
+  `every_compiled_entry_matches_its_method_file_byte_for_byte` is `ok`**,
+  which is this edit's own proof that the compiled kit and the file on
+  disk still agree.
+- **parser: 268/268 across 12 files, exit 0** — after `npm ci` and
+  `npm run build` from `lib/parser/`, run FIRST, per the fresh-clone
+  order.
+- **app: `npm install` exit 0 · `npm run build` exit 0 · `npm test`
+  973/973 across 47 files, exit 0.** The build was run before the suite in
+  this fresh worktree, unprompted by any red; 973 matches the pre-existing
+  baseline, which is right, because this diff contains no TypeScript.
+- **E2E: TWO RUNS, BOTH DECLARED, scratch port 15436** (`lsof`-read at
+  zero rows before run 1 and again after run 2, so nothing of this lane's
+  survives). **Run 1: 170 passed / 1 failed, exit 1, 2.3m. Run 2: 171
+  passed / 0 failed, exit 0, 2.1m** — the self-repairing intermittent
+  behaving exactly as `docs/STATE.md` documents, and the second run is
+  declared **because** it agreed, not as a replacement for the first.
+  `range-rule.spec.ts` printed its `T-091-s3` disclosure against this
+  lane by name (*"`/Users/ujju/Projects/nputer-T-132 @ b1783a6` — GRAPH
+  REGEN's published flip figures are stated at `ddcc8bb` … 5 of 5 at that
+  ref, 1 of 1 under the trigger on disk"*), which is the fourth
+  consecutive observation of it.
+
+**THE ONE RED IS `T-120-s3` AND IT IDENTIFIES ITSELF BY THE DIGITS.**
+`token-scan.spec.ts:201`, *"P6 reds a planted bare motion utility and
+leaves its motion-safe twin alone"*:
+
+    Expected: 1787683714264.4028
+    Received: 1787683714264
+
+**A fractional tail against a whole number** — which is the whole of the
+identification, and it is the three-way diagnostic paying off live on the
+first tree that met it after the diagnostic was written. **It is not this
+lane's**: this diff touches no `tools/e2e` path at all, and this branch is
+based at `74feb67`, one commit BEFORE `cea839e` merged **T-130**, which is
+the fix. The unfixed `utimesSync(target, clock.atime, clock.mtime)` is
+still at `tools/e2e/tests/token-scan.spec.ts:226` in this tree, exactly as
+expected. **Nothing was re-run until green and nothing was fixed here** —
+the fix is already on main and outside this fence.
+
+### THE DRILL HAS NOTHING TO POISON, AND THAT IS STATED RATHER THAN LEFT SILENT
+
+**This card adds no test body and changes no assertion.** All three files
+are prose in `method/`; no literal moved that any body compares against.
+The drill's own clause about bodies that cannot be poisoned is therefore
+what applies, and it is being applied deliberately rather than skipped.
+**The nearest thing to an assertion this diff touches is
+`every_compiled_entry_matches_its_method_file_byte_for_byte`, whose input
+changed and which is green** — but that body is unchanged, so it is a
+witness here, not a drill subject.
+
+### WHAT WAS NOT BUILT, AND WHERE IT WENT
+
+- **THE THREE-WAY E2E DIAGNOSTIC IS ALREADY IN `docs/STATE.md`, AT LINES
+  175-182, AND THE CRITERION IS ALREADY SATISFIED ON MAIN.** *"the way to
+  tell the three apart is now one question: does the failure carry a
+  fractional millisecond against a whole number?"* — with the
+  untouched-file tell for the concurrent-run case beside it. **The card
+  asks for this as though it were owed; it landed at T-129's checkpoint.**
+  So there is nothing to route: `STATE.md` is outside this fence, it is
+  not widened, and **no work is owed there for this criterion.** The one
+  thing the next checkpoint may want is the sentence that the diagnostic
+  has now been exercised, by this lane, against a real red.
+- **NO DETECT-AND-REFUSE MACHINERY WAS BUILT.** Cited in rule 4 and left
+  alone. Cited **by name rather than by line** — `roles/integrator.md`
+  rule 1, not `:65` — on this project's own standing instruction to cite
+  bodies by name, because a line number in `method/` is a citation with a
+  fuse. **And the citation is qualified where it needed to be**: that rule
+  detects a live PRODUCT; a live INTEGRATOR is a different holder needing
+  a different probe, which the clause now says.
+- **`docs/STATE.md` IS STALE ON THIS CARD AND THAT IS THE NEXT
+  CHECKPOINT'S.** Its "Next up" items 5, 9 and 23 still list `T-128-s1` as
+  a live untriaged suggestion and item 5 gives this card's fence as
+  `[method/]`; both went stale at `74feb67`, the dispatch commit that
+  absorbed the two suggestions and narrowed the fence. **Ruling THIRTEEN
+  adjudicates it in the checkpoint's favour**: that commit INTRODUCED the
+  staleness, so it is a repair and not a filing. Recorded here rather than
+  filed, on exactly that ground.
+- **Three findings routed as suggestions**, all with fences named:
+  `T-132-s1` (the DOCS GATE answers **1** when it could not run, measured),
+  `T-132-s2` (`method/` is a code input and **no** standing gate fires on
+  it), `T-132-s3` (two of the three violations have their rule-home
+  outside this fence).
+
+### THE FENCE HELD, AND THE ONE PLACE IT COULD NOT
+
+**`git diff --name-only` against the base names exactly the three fenced
+files**, plus this card and the three suggestions. Lane disjointness
+proved as sets against the two other live lanes at `cea839e`: **T-127**
+`[crate-index, docs/architecture/components/]` and **T-130** `[tools/e2e]`
+— no overlap with three `method/` paths.
+
+**THIS CARD'S OWN FILE IS NOT IN ITS OWN FENCE, WHICH IS `T-108-s3`
+ARRIVING EXACTLY AS FILED.** `executor.md` step 5 requires notes appended
+to the task file and step 6 requires the `verifying` stamp there; the
+suggestion route requires new files under `docs/tasks/`. **Under a
+path-granular fence a card can never reach its own card**, so the method's
+two most basic executor obligations are unperformable as written. Both
+were performed, because ruling NINE and step 5 are unambiguous and the
+alternative is a lane that lands work and no record. **Named here rather
+than glossed**, and it is the first card fenced this way, so it is also
+the first to meet it.
+
+### EVERYTHING THE BRIEF AND THE CARD GOT WRONG
+
+**Six, and the useful half is that four of them are the card's rather than
+the brief's — which is what a card about an architect's false claims
+should produce.**
+
+1. **THE CARD: the DOCS GATE does NOT fire on `method/` paths.** The
+   Verification line says it *"fires on this card and on any `method/`
+   path a code suite reads."* Asked rather than predicted: on the three
+   `method/` paths the gate exits **0** and prints *"none under docs/ —
+   this gate is not owed."* Its trigger is spelled `docs/` and nothing
+   else. The gate fires here **only** because of this card's own path.
+   **The card's underlying instinct was right and its mechanism was
+   wrong**, and the gap that opens is `T-132-s2`.
+2. **THE CARD: `cargo test` is owed for a second reason it does not
+   name.** Not only "if the method snapshot version moves" — editing
+   `method/tasks/TASK-FORMAT.md` at all owes it, because `kit.rs`
+   compiles that file in and four bodies compare it against disk. The
+   card's conclusion (*it should not move*) is correct; its premise is
+   incomplete.
+3. **THE CARD: the third criterion is already satisfied on main.** *"THE
+   THREE-WAY DIAGNOSTIC SHALL REACH `docs/STATE.md`"* — it reached it at
+   T-129's checkpoint, `docs/STATE.md:175-182`, before this card was
+   dispatched.
+4. **THE CARD: claim 2's citation is two lines wide** (`orchestrator.md`
+   24-29 for a sentence beginning at 26).
+5. **THE BRIEF: `T-104` moved neither file it warned about.** Rule 4's
+   wording at `74feb67` was byte-identical to the card's quote of it, and
+   `method/lane-protocol.md` is not in T-104's merge diff. **The
+   instruction to re-derive was still right** — it asked for a
+   measurement, and the measurement agreeing with the quote is a fact
+   about tonight, not about the method.
+6. **THE BRIEF: main's tip was already stale when the brief was
+   written.** It moved twice more during this lane (`74feb67` →
+   `afe23c1` → `cea839e`). The brief said so would happen and told me to
+   name the ref I measured at; every figure above does.
+
+**AND ONE THING THE BRIEF GOT EXACTLY RIGHT THAT NOTHING IN THE TREE
+WOULD HAVE TOLD ME.** *"Build `lib/parser` before any app suite, and
+`npm run build` from `app/` before the app suite in a fresh tree —
+skipping the second gives 14 failures that look exactly like defects."*
+Both were done first, unprompted by any red, and the app suite was
+973/973 on its first run. **A trap that never fires is still the reason
+it never fired.** Likewise `npm run typecheck` from `app/` was never
+reached for, and the mtime intermittent was recognised from its digits in
+the first ten seconds instead of debugged.
