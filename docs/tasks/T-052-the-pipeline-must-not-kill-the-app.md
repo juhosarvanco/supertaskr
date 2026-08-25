@@ -526,3 +526,344 @@ stays true; the hashes are here, where a dated note belongs.
   would otherwise under-count the live fences by three.
 
 ## Verdicts
+
+### 2026-08-25 — `claude-opus-5 @T-052-verify` — **APPROVED**
+
+Bounded read taken by the ref: the card at **`c4cfe52`**
+(`git show c4cfe52:docs/tasks/T-052-the-pipeline-must-not-kill-the-app.md`),
+attack designed AND RUN from that copy alone; the Implementation notes
+above were read only afterwards, to check the evidence half. Every figure
+below is re-derived at my own refs. Nothing in the dispatch brief was
+taken as authority.
+
+**THE DIFF — PRE-MERGE FORM, AT TWO TIPS, BECAUSE MAIN MOVED UNDER ME.**
+`merge-tree`'s exit was read BEFORE the substitution was used, both times.
+
+    TREE=$(git merge-tree --write-tree e5a8f6a 966b8dd); rc=$?   -> 0
+    git diff --name-only e5a8f6a b0bbc71d…                       -> 8
+    TREE=$(git merge-tree --write-tree 1223543 966b8dd); rc=$?   -> 0
+    git diff --name-only 1223543 a49291ee…                       -> 8
+
+Main advanced `e5a8f6a` → `1223543` (T-120's checkpoint and T-110's
+merge) while this verification ran and the forecast stayed **8 paths and
+clean**. Cross-checks at my first tip: `c4cfe52...966b8dd` (three dots)
+**8**, `c4cfe52..966b8dd` **8**, `c4cfe52..e5a8f6a` (main's advance)
+**6**, and the FORBIDDEN `e5a8f6a..966b8dd` **14** — 8 + 6 = 14, the
+arithmetic that shows the two sets disjoint and the forbidden form
+overstating by 1.75x. `merge-tree` reads COMMITS; the DOCS GATE below
+reads the INDEX, so the gate was handed the 8 paths as arguments from the
+lane's own clean worktree (`git status --short` = 0 rows) rather than
+from a range.
+
+**ZERO CODE PATHS, VERIFIED AGAINST THE DIFF RATHER THAN ACCEPTED.**
+`git diff --name-only … | grep -E '\.(ts|tsx|js|jsx|mjs|rs)$'` returns
+**0**; no `package*.json`, no `Cargo.*`. **NO POISON DRILL IS OWED** and
+none was run. Security sweep: eight markdown files, no new input path, no
+endpoint, no dependency, and a grep for key/token/secret shapes over the
+added lines returns nothing.
+
+#### 1. THE BUMP QUESTION — RULED INDEPENDENTLY: **NO BUMP IS OWED.**
+
+I reached the lane's answer by a different route and it holds on
+structure rather than on taste.
+
+- `METHOD_SNAPSHOT_VERSION` is documented in `kit.rs` as *"The method
+  version this snapshot was taken at"*, and the SNAPSHOT is `KIT_FILES`
+  — fourteen entries, enumerated `include_str!`s. **Neither edited file
+  is one of them**, and the directory-walk that forces new files into the
+  table, `the_snapshot_table_covers_every_method_scaffold_file`, walks
+  exactly `["docs-templates", "adapters", "tasks"]` — **not `roles/` and
+  not the top-level `lane-protocol.md`**. So no compiled byte, no
+  `kit.json` `files` entry and no materialized kit moves with this diff.
+- CONVENTIONS' trigger is *"Changes to method/ **formats**"*. This diff
+  adds no table, field, status, template or vocabulary term.
+- **THE T-089 PRECEDENT DOES NOT CUT THE OTHER WAY, AND THAT IS THE
+  ONE THING WORTH CHECKING**, because CONVENTIONS says in terms that
+  *"T-089's OWN CHANGE TO method/ IS THEREFORE OWED A BUMP TO v0.1.6"*
+  and T-089 edited `integrator.md` — the same file this card edits.
+  Derived from T-089's merge rather than from the sentence:
+  `git diff --name-only 4f25183^1 4f25183 | grep '^method/'` is **6
+  paths**, and one of them is **`method/tasks/TASK-FORMAT.md`, which IS
+  in `KIT_FILES` and IS a format file**. T-089's debt is fully explained
+  by that path; it implies nothing about a role-file-only edit.
+- Proved live rather than argued: `cargo test` is **418 passed / 0
+  failed / 3 ignored at exit 0** over **15** `test result:` lines,
+  including `snapshot_version_matches_the_live_method_stamps`, which
+  reads the EDITED `docs/CONVENTIONS.md` off disk and still finds
+  `currently v0.1.5` (line 266, untouched by this diff).
+
+The fence therefore does not need `app-agent` and the card is complete
+in fence. The lane's routing of the residual to T-104 is the right
+disposition and I do not disturb it.
+
+#### 2. THE RUNG-8 REFUTATION — **INDEPENDENTLY REPRODUCED, AND IT IS UNDER-CLAIMED RATHER THAN OVER-CLAIMED.**
+
+The claim that a card's own fatal instance does not reproduce deserved
+the hardest attack in this pass, so it got one built from the axes a
+200-on-the-index cannot reach: a COLD module, an HMR round trip,
+`/@vite/client`, a warm optimized dep, and NEW dependency discovery.
+Run in a detached scratch worktree **outside** the repository,
+`/Users/ujju/Projects/drill-T-052-verify` at `966b8dd`, installed by
+CONVENTIONS' own fresh-clone order, on scratch port **15180**
+(`lsof` first, then bind-confirmed on `127.0.0.1`, `0.0.0.0`, `::1` and
+`::`, free again after). **Port 1420 was never bound, connected to or
+signalled.**
+
+**ARM 1 — a real `npm ci` underneath a real vite.** 25 samples at 100 ms
+across the install (`npm ci` exit **0**, 2634 ms). The floor
+`app/node_modules/vite/package.json` was ABSENT for **11 consecutive
+samples** (t = 317 ms → 1377 ms). During those 11: index **200×11**,
+`/@vite/client` **200×11**, a warm optimized dep **200×11**, a **COLD
+source module never fetched before 200×11** (104 843 bytes on the first),
+and an HMR-shaped `?t=` re-request **200×11**. Same pid (96540), same
+start time, same socket. A cache-busted full reload afterwards: **81
+modules, zero non-200**, with `node_modules/.vite` **still absent** —
+which independently confirms the lane's sharpest sentence, that the
+optimize cache is deleted and NOT recreated.
+
+**ARM 2 — the window HELD OPEN, because 1.1 s is too short to prove
+anything.** `npm ci`'s destructive half reproduced as an atomic rename
+(`node_modules` → `node_modules.away`), held **4094 ms**, floor verified
+absent at three points (immediately, after the probe loop, and after a
+further 4 s hold). While `node_modules` did not exist at all:
+
+| probe | result |
+|---|---|
+| 44 cold source modules, none previously fetched | **44/44 = 200**, 1 526 242 bytes total |
+| 8 optimized-dep URLs discovered *during* the window | **8/8 = 200**, incl. `radix-ui.js` at 648 366 bytes |
+| index, `/@vite/client`, `?t=` HMR re-request | 200, 200, 200 |
+| 5 cache-busted re-requests after the 4 s hold | 5/5 = 200 |
+| **negative control** `…/deps/lucide-react.js` (no `?v=`) | **404**, with vite's own message |
+
+Same pid (7397) and start time before, during and after; restore proved
+by the floor returning and by an 81-module cache-busted reload at zero
+non-200. **The 404 control is what makes the 200s mean something** — the
+server was discriminating, not answering everything.
+
+**RULING: the card's rung 8 is refuted, the correction in CONVENTIONS is
+sound, and its hedges are the right ones.** A vite serves what it has
+already transformed — and, measurably, what it has NOT yet transformed —
+out of memory. The CONVENTIONS text is careful in all three places it
+needs to be: instance 8's cause stays UNDETERMINED, the `.vite` loss is
+named as the real residue, and `tauri dev` is named as wider exposure
+than what was measured. I did not test `tauri dev` (it opens a window)
+and neither did the lane; that limit is stated in both places.
+
+**One caution for the next reader, not a defect:** CONVENTIONS
+transcribes *"twelve consecutive 100 ms samples"* and *"200 on every one
+of 51 samples"*. My run measured **11** and **25** — different digits,
+identical conclusion. The paragraph already says *"DERIVE THE FIGURES
+AGAIN IF YOU NEED THEM; they are a property of a vite version"*, which is
+exactly why quoting them would be the mistake. They are the only
+measurement digits the new prose carries.
+
+#### 3. THE GUARD, WITH ITS POSITIVE CONTROL — **BOTH HALVES, MINE.**
+
+The lane's demonstration is not in the diff (correctly — it was a
+one-off), so I did not re-run theirs. I implemented the rule **from the
+text as it landed** (`integrator.md` rule 1 + CONVENTIONS' DETECT AND
+REFUSE paragraph) and ran both halves against the drill worktree on port
+**15184**:
+
+- **POSITIVE CONTROL — port free.** `lsof` reports no listener → the
+  sequence PROCEEDS, `npm ci` runs, exit **0**, `app/node_modules` mtime
+  moves `1787646753` → `1787647193`. The destructive step really is
+  destructive, which is what makes the other half worth anything.
+- **REFUSAL — port held** by my own listener (pid 14908, `TCP
+  127.0.0.1:15184 (LISTEN)`). Exit **3**. The message names the step
+  being skipped, the pid and socket read, what has to happen first, and
+  that the process was not signalled and the port not bound. `npm ci`
+  does not run: `node_modules` inode **33603461** and mtime
+  **1787647193** are IDENTICAL before and after. The holder is still
+  LISTEN afterwards.
+
+"Refused" is distinguishable from "always refuses", by construction and
+by measurement. **Criterion 1 MET.** The rule as written is
+implementable from the text alone by a reader who was not in the lane —
+which is the property a prose rule has to have.
+
+#### 4. IS THE METHOD TEXT PRODUCT-AGNOSTIC? — **YES, MEASURED.**
+
+`git diff … -- method/ | grep '^+' | grep -inE
+"nputer|tauri|vite|npm|cargo|1420|node_modules|lib/parser|app/src|Users/ujju|\.tsx|rust|react|typescript"`
+returns **zero rows**. The added method text speaks of "a dev server", "a
+file watcher", "a fresh dependency install", "a path dependency, a
+symlink, a generated bundle", "the port or the binary" — and its only
+citation is method-internal (`../lane-protocol.md rule 3`). Every nputer
+mechanism — `tauri dev`, `app/src-tauri/**` vs `app/src/**`, `1420`,
+`npm ci`, `lib/parser/dist`, the `file:` symlink, the `awk` anchor — is
+in `docs/CONVENTIONS.md`. CONVENTIONS' first gotcha is satisfied.
+
+#### 5. WERE `integrator.md`'s STEPS 1–4 RENUMBERED? — **NO.**
+
+Derived from both blobs rather than from the claim. Column-0 numbered
+lines at `c4cfe52`: `1.`@5, `2.`@25, `3.`@27, `4.`@35. At `966b8dd`:
+`1.`@5, `2.`@25, `3.`@30, `4.`@40 — same four numbers on the same four
+sentences. **Even T-089's LINE citation survives**: `integrator.md:5` is
+byte-identical on both sides. The five citations in the tree
+(`T-089` rows at :111, :538, :1406, :1492 and `integrator.md:5` at :42
+and :184) all still resolve.
+
+**A NEW AMBIGUITY DOES ARRIVE, AND IT IS MANAGED RATHER THAN MISSED.**
+The new section carries its own `1.`–`4.`, so `integrator.md` now holds
+two 1–4 lists. The file disambiguates by vocabulary — the new list is
+called *rules* in three places (*"Rules 1 and 2 are the breakage
+channels"*, *"see the last rule of the section below"*) while every
+existing citation says *step* — but that convention is nowhere written
+down. Filed as **`T-052-s5`**, not blocking.
+
+#### 6. THE CI PARITY DERIVATION — RE-DERIVED MYSELF, BEFORE AND AFTER.
+
+Not by importing the spec: I re-implemented `buildAndTestSection`,
+`commandBullets` and `structuralProblems` from their documented rules and
+ran them over three blobs of `docs/CONVENTIONS.md`.
+
+| ref | file lines | "Build & test" lines | bullets | **exposed commands** | structural problems | U+00B7 in section / file |
+|---|---|---|---|---|---|---|
+| `c4cfe52` (base) | 1219 | 260 | 4/5/5/7 | **21** | 0 | 20 / 23 |
+| `e5a8f6a` (main) | 1219 | 260 | 4/5/5/7 | **21** | 0 | 20 / 23 |
+| `966b8dd` (tip) | **1409** | **260** | 4/5/5/7 | **21** | 0 | **20 / 23** |
+
+**190 lines were added and the section did not move by one line, one
+command or one middle dot.** The added prose contains **zero** U+00B7, so
+the truncation trap cannot fire from it; its indented code blocks sit in
+`## Gotchas`, which `structuralProblems` never scans because
+`buildAndTestSection` splits on `^## ` first. The 21 commands are
+identical by NAME on both sides, not merely by count. Confirmed live by
+`tools/e2e/tests/workflow-parity.spec.ts` — *"the expected commands
+derive cleanly"* passes with `problems` empty and the ≥19 step floor met.
+
+#### 7. TRANSCRIBED FIGURES — the new CONVENTIONS prose carries **no disk figure**.
+
+`du`/`df` digits are absent by design and replaced by a RELATION plus the
+commands that re-derive them; the `git remote` fact is stated with
+*"re-derive it rather than trusting this sentence"*; the worktree's
+existence is explicitly demoted to a live-environment fact. The two
+sample counts in §2 above are the only measurement digits, and they are
+disclaimed in place. **The staleness that DID happen is in the card's
+own notes, not in the shipped text — see §10.**
+
+#### 8. SUITES AND GATES — every exit off its own unpiped `$?`, every count re-derived.
+
+Run in the lane worktree at `966b8dd` (`git status --short` = 0 rows).
+
+- **cargo** (`cargo test --no-fail-fast`, `app/src-tauri`): **418 passed
+  / 0 failed / 3 ignored, exit 0**, summed over **15** `test result:`
+  lines. `T-088-s4`'s watcher flake did NOT fire in my run either.
+- **graph gate**: `cargo run -p nputer-index -- index --check --root ../..`
+  **exit 0, CURRENT** at **895 891 bytes · 172 files · 1889 symbols ·
+  1849 edges** — unmoved. NOT owed (0 code paths) and asked anyway.
+- **parser**: `npx vitest run` — **264/264 across 12 files, exit 0**.
+- **app**: `npm run build` **exit 0**, then `npm test` — **958/958 across
+  46 files, exit 0**.
+- **E2E**: `npm test` on scratch port **15182** — **145/145, exit 0**;
+  `npm run typecheck` **exit 0**.
+- **token lint**: `--selftest` **exit 0** (65 TOKEN + 4 CONTROL samples,
+  87 walk-policy checks, 9 evidence-floor checks); lint **exit 0** at
+  **TOKEN 131 / CONTROL 661**.
+- **`npm run lint:docs` exit 0**, run the way CI runs it.
+- **DOCS GATE — exit 1**, invoked from the lane root with the 8 paths as
+  ARGUMENTS, root-relative, never through `xargs`: **12 derived readers
+  across 4 suites, 0 frontmatter issues**, **6 of 8** paths under `docs/`
+  are code inputs, and **all four suites it names were run and are
+  green** (cargo, app, tools/e2e, lib/parser).
+- **BOOT GATE — not owed**, 0 of 8 paths under `app/src-tauri/**`,
+  `app/src/**` or a manifest. Not run.
+
+#### 9. THE KNOWN DETERMINISTIC RED — **it did not fire, and I did not chase it.**
+
+`tools/e2e/tests/token-scan.spec.ts`'s P6 plant-and-restore body was
+**green** in my single E2E run (145/145, exit 0, port 15182) because this
+worktree is already healed. I read the mechanism rather than re-running
+for it: the `finally` calls `utimesSync(target, clock.atime, clock.mtime)`
+— a `Date`, integer milliseconds — and the assertion two lines down
+compares `statSync(target).mtimeMs`, which carries the filesystem's finer
+resolution. The failing restore repairs its own precondition. **Still
+unfixed on main at `1223543`** (the body is byte-identical there), with
+`T-120-s3` filed as the fuller account and `T-052-s4` correctly reduced
+to the one thing it adds. **Not this lane's, and not a flake.**
+
+#### 10. CORRECTIONS TO THE RECORD — two digits in the notes above are stale by one, and the cause is the same for both.
+
+Neither is in shipped text; both are in this card's Implementation notes,
+and both were true when written and falsified by this lane's own third
+commit. **`T-052-s4` was added at `4c55fec`**, after the sentences below
+were written, and neither of the two later commits revisited them.
+
+1. *"it is two method files, `docs/CONVENTIONS.md`, this card and
+   **three** suggestion files"* — the diff carries **four**
+   (`git diff --name-only c4cfe52...966b8dd | grep -c T-052-s` → **4**).
+   2 + 1 + 1 + 4 = **8**, which is the path count the same section's own
+   gate table uses.
+2. *"**TOKEN 131 / CONTROL 660** … because this lane adds four tracked
+   docs files"* — re-derived at `966b8dd`, `npm run lint:tokens` prints
+   **CONTROL 661**. Tracked-blob counts settle it: `c4cfe52` **675** →
+   `966b8dd` **679**, so the lane adds exactly four, and 660 + 1 = 661 is
+   the fourth arriving after the measurement.
+
+**This is worth writing down rather than waving through, because it is
+this card's own thesis landing on this card**: a count is a
+live-environment fact, and a card that says so twice still transcribed
+two. The integrator may correct them in the merge or leave them with this
+verdict beside them; nothing downstream reads either digit.
+
+A third figure has moved since it was written, legitimately:
+`T-052-s2` says **three** lane worktrees sit inside the repository. At
+`1223543` it is **two** — T-120's was removed by its own integrator.
+CONVENTIONS states it as a dated past event (*"Three lanes were cut into
+`tools/` on 2026-08-25"*), which stays true; the suggestion file's
+present tense will not.
+
+#### 11. WHERE THE BRIEF WAS WRONG, AT MY REF
+
+- **The brief's tip figures are one merge stale by construction.** It
+  gave main as moving and it moved twice during this pass
+  (`e5a8f6a` → `1223543`). Both merge-tree forecasts were re-run; both
+  clean, both 8.
+- **The brief lists `/Users/ujju/Projects/nputer/tools/nputer-T-120` as a
+  LIVE lane not to be touched.** T-120 merged and its worktree is GONE at
+  `1223543`. I never touched it.
+- **The brief predicted I would probably meet the `token-scan.spec.ts:201`
+  red.** I did not — the lane worktree is healed, exactly as the brief's
+  own account of the defect predicts.
+- **The brief said the lane reports "three lane worktrees" as a live
+  fact.** Two, now. See §10.
+- **The brief's reference figures were all confirmed**: cargo 418/0/3
+  over 15 lines, parser 264/264, app 958/958, e2e 145/145. Its CONTROL
+  figure was not stated; mine is 661 against the card's 660.
+
+#### VERDICT
+
+**APPROVED.** Every acceptance criterion is met, the two safety rules are
+in the generic file and every mechanism is in the product file, the
+demonstration the verification clause asked for reproduces independently
+with both halves, the bump answer is right, and the card's own rung 8 is
+correctly and honestly refuted — a card's premise corrected by measuring
+it is the outcome this pass hoped for rather than the one it feared. The
+two stale digits in §10 are corrections to the record, not failures of
+the deliverable. Non-blocking idea filed as `T-052-s5`.
+
+**What I ran, and what I left alone.** Scratch ports **15180–15184**,
+each `lsof`-read first and then bind-confirmed on `127.0.0.1`, `0.0.0.0`,
+`::1` and `::` before use, all free again after; every process I started
+was stopped by its exact pid and **no `pkill` at any point**. Port
+**1420** was read only with `lsof -nP -iTCP:1420 -sTCP:LISTEN`, before
+and after: holder `node` pid **88948**, `TCP [::1]:1420 (LISTEN)`,
+identical throughout, and the anchored `awk '$NF=="target/debug/nputer"'`
+match is pid **89201** started **2026-08-25 10:54:33**, unchanged.
+`/Users/ujju/Projects/nputer-app` was never entered. The lane's worktree
+was built and tested in place and no tracked file in it was modified
+except this verdict. My drill worktree
+`/Users/ujju/Projects/drill-T-052-verify` is detached, outside the
+repository, and removed after this commit.
+
+**THIS VERDICT'S OWN WRITES WERE GATED, because two `docs/tasks/**` files
+are code inputs and a verdict is not exempt.** With both paths STAGED
+first (`T-010-s10`'s hole walked around rather than into), the DOCS GATE
+run from the lane root with them as arguments is **exit 1**, naming three
+suites and **0 frontmatter issues** — `npm test from app/`, `npm test
+from tools/e2e/`, `npx vitest run from lib/parser/`; `cargo test` is NOT
+named, because neither path is one of its three readers. All three were
+re-run AFTER the writes: **parser 264/264 exit 0**, **app 958/958 across
+46 files exit 0**, **E2E 145/145 exit 0** on scratch port **15183**
+(`lsof` first, bind-confirmed on all four addresses, free again after).
