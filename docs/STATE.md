@@ -572,21 +572,36 @@ from a suite that did not run.
   second consecutive merge.
 - **`npm run lint:docs` exit 0**, **`npm run lint:tokens -- --selftest`
   exit 0**, **`npm run lint:tokens` exit 0**, at **TOKEN 135 / CONTROL
-  735**. **DERIVE IT AT YOUR OWN REF; it is not a constant** — CONTROL's
-  corpus is `git ls-files`, and 731 → 735 is exactly this merge's five
-  new tracked files less the one deleted shim.
+  735 before this checkpoint's commit** and **TOKEN 135 / CONTROL 737 at
+  the checkpoint `ab02ff2`**, re-run there rather than predicted.
+  **DERIVE IT AT YOUR OWN REF; it is not a constant** — CONTROL's corpus
+  is `git ls-files`, so 731 → 735 is exactly this merge's five new
+  tracked files less the one deleted shim, and **the +2 is the two
+  suggestion files this checkpoint commits, which were invisible to
+  CONTROL until the commit existed**. Neither is a TOKEN-root file, which
+  is why TOKEN holds at 135. This is the second consecutive checkpoint to
+  walk into that figure, and the reason it is stated with BOTH refs.
+- **`index --check` WAS ASKED A FIFTH TIME AT THE CHECKPOINT COMMIT
+  ITSELF** and is exit **0, CURRENT** at the same four figures
+  (933 931 · 178 · 1990 · 1903). `npm run lint:docs` at the checkpoint
+  reports **every live task card's frontmatter parses, with a legal
+  status**, and **0 frontmatter issues** — the check that the two new
+  suggestion files and the card's five stamped fields are well-formed.
+  **The `T-126-s7` title is the one worth having checked**: it opens with
+  a double quote, so the frontmatter QUOTES it, on the rule this file's
+  own card bullet gives.
 
 ## The lane worktree is removed and the branch is kept
 
-`/Users/ujju/Projects/nputer-T-126` is removed by this checkpoint with
+`/Users/ujju/Projects/nputer-T-126` was removed at **20:51:08** with
 `git worktree remove`, after the merge and after the checkpoint
-(lane-protocol rule 6), with `git worktree prune` behind it. **The BRANCH
-survives**, which is this project's rule read off disk rather than
-assumed: `git branch --list 'task/*'` returns **59** at the merge,
-including lanes merged weeks ago. `task/T-126-lane-reader-compiled` still
-resolves to `de05430`, so the verdict's own commit remains diffable.
-`git worktree list` then returns **four rows — main, two lanes and
-@human's app checkout.**
+(lane-protocol rule 6), and `git worktree prune` was run behind it. **The
+BRANCH survives**, which is this project's rule read off disk rather than
+assumed: `git branch --list 'task/*'` returns **59**, unchanged by the
+removal and including lanes merged weeks ago.
+`task/T-126-lane-reader-compiled` still resolves to **`de05430`**, so the
+verdict's own commit remains diffable. `git worktree list` now returns
+**four rows — main, two lanes and @human's app checkout.**
 
 ### **THE CEREMONY TABLE PRICES THIS CARD LOWER THAN IT WAS RUN**
 
@@ -691,8 +706,9 @@ QUESTION** (integrator.md rule 2), and this integration DID rebuild
 else** — no bind, no connect, no signal. Holder `node` pid **88948**, one
 socket `TCP [::1]:1420 (LISTEN)`, read at **20:18:19** (before any
 command that writes), at **20:20:05** (immediately after the merge's
-working-tree write) and at **20:30:00** (immediately after the BOOT GATE,
-the one step that could plausibly have collided). **All three readings
+working-tree write), at **20:30:00** (immediately after the BOOT GATE,
+the one step that could plausibly have collided) and at **20:51:31**
+(after the checkpoint and the worktree removal). **All four readings
 identical.** The **anchored** process match —
 `ps -eo pid,lstart,command | awk '$NF=="target/debug/nputer"'` — reports
 pid **53350**, started **2026-08-25 19:43:47**, unchanged at every
