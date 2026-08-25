@@ -903,8 +903,11 @@ afterwards**. **No `pkill` at any point.** The live lanes
 not entered. The untracked `z` was left alone. **The lane worktree
 `/Users/ujju/Projects/nputer-T-107` was not entered for any measurement,
 and this verdict commit is the only write this pass makes to it.**
-`drill-T-107-verify` is detached, named per-lane, sits outside the
-repository, and is left in place for the integrator to remove.
+`drill-T-107-verify` was detached, named per-lane, sat outside the
+repository, and **this pass removed it when it finished** — T-052-verify's
+precedent, and the reason STATE records the `drill-T-NNN-*` CLASS rather
+than a membership list. **The LANE worktree `/Users/ujju/Projects/nputer-T-107`
+stays**, for the integrator.
 
 **VERDICT: APPROVED.** The behaviour is correct, the ruling is right, the
 refusal is recorded where a reader will meet it, the enumeration is
