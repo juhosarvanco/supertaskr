@@ -117,7 +117,15 @@ fn a_pathological_file_is_indexed_and_recorded_rather_than_aborting_the_process(
     let t = common::TempTree::new("t129-abort");
     // The card's own worst row: 20 000 path segments. On the pre-fix
     // tree this is `fatal runtime error: stack overflow` and exit 134.
-    t.write("hostile.rs", &long_path(20_000));
+    // The declaration ABOVE it is the degrade-never-drop control: a
+    // refused file keeps everything its traversals reached before the
+    // refusal, and this is the only body that pins that end to end —
+    // the extractor's own bodies cannot see a caller that blanks the
+    // record, and the drill found exactly that mutant surviving.
+    t.write(
+        "hostile.rs",
+        &format!("pub fn keptAboveTheBound() {{}}\n{}", long_path(20_000)),
+    );
     // TWO neighbours, so "it was refused" cannot be satisfied by a run
     // in which nothing was extracted at all — and so that the REFUSED
     // count (1) differs from the CLEAN count (2). With one neighbour the
@@ -144,6 +152,15 @@ fn a_pathological_file_is_indexed_and_recorded_rather_than_aborting_the_process(
         g.stats.depth_limited,
         Some(1),
         "counted, never silent — the rule `skipped` already follows"
+    );
+    assert_eq!(
+        hostile
+            .symbols
+            .iter()
+            .map(|s| s.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["keptAboveTheBound"],
+        "degrade, never drop: what the walk reached before refusing survives"
     );
 
     // POSITIVE CONTROL at the pipeline level.
