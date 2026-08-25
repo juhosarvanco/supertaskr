@@ -5,14 +5,14 @@ feature: F-02
 milestone: 4
 priority: 15
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-board, app-interview]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5 @T-031
+verified_by: claude-opus-5 @T-031-verify
+review: same-model
 ---
 
 Absorbs: T-017-s1, T-017-s2, T-017-s3, T-019-s1, T-024-s4, T-024-s6
@@ -530,3 +530,58 @@ and `::`, and all three are free again. No `pkill`. No screen control, no
 model call, no CLI spawn. `CARGO_TARGET_DIR` was set inside the
 scratchpad, so the human's shared `target/` was never written. The
 untracked `z` was left alone.
+
+## Integration
+
+2026-08-25 — merged by an independent integrator hand. Main-before
+**`25a9e2c`**, lane tip **`ee73363`**, merge **`5fbfd4e`** (`--no-ff`,
+parents exactly those two, **nothing written into the merge commit**),
+checkpoint after it. Main advanced **11 first-parent commits / 80 paths**
+under this lane, from the base `765362e` through T-096's and T-010's
+merges and checkpoints to the batch-C dispatch stamp.
+
+**THE MERGE'S DIFF IS 17 PATHS**, and `merge-tree --write-tree 25a9e2c
+ee73363` exited **0** returning tree `044c470e…`, which **IS** the merge's
+own `HEAD^{tree}` byte for byte. Prescribed and collapsed spellings all
+agree at 17; both FORBIDDEN spellings return **97**, which is pure
+left-endpoint drift — main's advance is 80 paths, the branch's 17,
+`comm -12` over the sorted lists is **EMPTY**, and 80 + 17 = 97.
+
+**THE LANE'S REGEN FORECAST HELD EXACTLY AND ITS ENDPOINTS DID NOT.** The
+notes and the verdict both quote `648863 · 126 files · 1126 symbols · 1712
+edges` -> `652661 · 126 · 1137 · 1718`, measured at the lane tip and so
+free of T-010 contamination. T-010's checkpoint has since taken main's
+committed graph to `890866 · 172 · 1874 · 1842`, so those endpoints are
+stale — but the **DELTA reproduced to the byte**: committed `890866 · 172
+· 1874 · 1842` -> fresh **`894664 · 172 · 1885 · 1848`**, `files +0 -0
+~11`, `edges +8 -2`, **+3798 bytes / +11 symbols / +6 net edges** at both
+refs. A forecast whose delta survives an intervening order-of-magnitude
+move in its own endpoints is the kind worth having.
+
+**NO COMPONENT RELATION MOVED, AND THAT IS DERIVED RATHER THAN REASONED.**
+`arch drift` over the regenerated graph and over main-before's committed
+graph are **byte-identical apart from the graph header line** (`diff` exit
+0): findings **14**, undeclared **11**, unmapped **0**, declared_only
+**3**, ambiguous 0, dangling 0, unmoved. The two new cross-file edges land
+on `C-09->C-08` (declared in C-09's `depends_on`) and `C-05->C-08`, both
+pre-existing pairs; the other six are intra-file. **NO FIXTURE
+RECONCILIATION WAS OWED** — unlike T-010's merge, `files +0 -0` means
+`fileComponent.size` stays 172 and the two live registry fixtures pin
+nothing that moved; the app suite is **958/958 exit 0 against the
+regenerated graph on the first run**, with no assertion touched.
+
+**GATES, ALL THREE DERIVED AT THE MERGE'S OWN 17 PATHS AND ALL THREE RUN.**
+GRAPH REGEN **11 of 17 FIRES** (7 `app/src` + 4 `app/test`); BOOT GATE
+**7 of 17 FIRES**, run on scratch port 15091, exit **0**, both `[nputer]`
+lines; DOCS GATE **6 of 17 FIRES**, exit **1**, **three suites owed** (app,
+tools/e2e, lib/parser), all three green, 12 derived readers across 4
+suites, **0 frontmatter issues**. The verifier derived 11/7/5 of 16 at
+`d64c673`; the sixth docs path is its own verdict commit's `T-031-s5`.
+
+**THE PARSER SUITE IS 264, NOT THE 263 THE NOTES AND THE VERDICT BOTH
+REPORT.** Both were correct at their own refs — this lane was cut from
+`765362e`, before T-096's merge added a body — and stale at mine. The
+repository wins; the same correction T-010's integrator recorded.
+
+The five suggestion files stay as filed. The three @HUMAN looks the notes
+and the verdict agree on are carried into STATE unchanged.

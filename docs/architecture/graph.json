@@ -10127,8 +10127,8 @@
       "id": "f:app/src/components/board/GhostCard.tsx",
       "path": "app/src/components/board/GhostCard.tsx",
       "lang": "ts",
-      "hash": "blake3:f6b27d7079a53633dad3fe1aa1b8a76a615e47c99f3f5d349129f53d61c72ddd",
-      "loc": 39,
+      "hash": "blake3:e9cf8b1ee52ae3e02c455e24734c85c303cdfbeaf52b15ccd7ec23c8e1b22418",
+      "loc": 46,
       "symbols": [
         {
           "id": "s:app/src/components/board/GhostCard.tsx#GhostCard",
@@ -10136,8 +10136,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            12,
-            39
+            16,
+            46
           ]
         }
       ]
@@ -10184,8 +10184,8 @@
       "id": "f:app/src/components/board/TaskCard.tsx",
       "path": "app/src/components/board/TaskCard.tsx",
       "lang": "ts",
-      "hash": "blake3:4e21c8095b6040751b1ab1903343f1ad74f5eed3985ded428757396fcafbd787",
-      "loc": 228,
+      "hash": "blake3:add4abd1f4431b0a3e1900622faa939ad47c9d4ffd6b9d480e3f49113d12f046",
+      "loc": 267,
       "symbols": [
         {
           "id": "s:app/src/components/board/TaskCard.tsx#CHIP_BORDER_CLASSES",
@@ -10215,6 +10215,16 @@
           "range": [
             46,
             53
+          ]
+        },
+        {
+          "id": "s:app/src/components/board/TaskCard.tsx#IssueMark",
+          "name": "IssueMark",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            124,
+            137
           ]
         },
         {
@@ -10253,8 +10263,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            102,
-            228
+            139,
+            267
           ]
         }
       ]
@@ -10263,8 +10273,8 @@
       "id": "f:app/src/components/board/TaskDetailPanel.tsx",
       "path": "app/src/components/board/TaskDetailPanel.tsx",
       "lang": "ts",
-      "hash": "blake3:09f187283b2e580185451d37aa147ad658096f741c5b389ac3c11034f8f75a1b",
-      "loc": 444,
+      "hash": "blake3:b4683cbf299dd2c38502aa8a441d2860d555735dec3c9aeb92068cb933a129d1",
+      "loc": 531,
       "symbols": [
         {
           "id": "s:app/src/components/board/TaskDetailPanel.tsx#Empty",
@@ -10272,8 +10282,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            427,
-            433
+            514,
+            520
           ]
         },
         {
@@ -10282,8 +10292,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            321,
-            327
+            388,
+            394
           ]
         },
         {
@@ -10292,8 +10302,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            336,
-            364
+            403,
+            431
           ]
         },
         {
@@ -10302,8 +10312,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            399,
-            423
+            486,
+            510
           ]
         },
         {
@@ -10312,8 +10322,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            435,
-            444
+            522,
+            531
           ]
         },
         {
@@ -10322,8 +10332,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            42,
-            318
+            61,
+            385
           ]
         },
         {
@@ -10332,8 +10342,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            367,
-            397
+            449,
+            484
           ]
         }
       ]
@@ -10342,8 +10352,8 @@
       "id": "f:app/src/components/board/badges/ModelBadge.tsx",
       "path": "app/src/components/board/badges/ModelBadge.tsx",
       "lang": "ts",
-      "hash": "blake3:b5b34d3d20a74412c921e66e8c7cd2ff62002591df19e50fc3f8742ec9715bbe",
-      "loc": 17,
+      "hash": "blake3:7a8ae6b424b87bf1d674f9ce9f3957f6cdbd14641049e671198dae296162510e",
+      "loc": 38,
       "symbols": [
         {
           "id": "s:app/src/components/board/badges/ModelBadge.tsx#ModelBadge",
@@ -10351,8 +10361,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            7,
-            17
+            28,
+            38
           ]
         }
       ]
@@ -10633,8 +10643,8 @@
       "id": "f:app/src/genesis/GenesisPane.tsx",
       "path": "app/src/genesis/GenesisPane.tsx",
       "lang": "ts",
-      "hash": "blake3:6e0c06a84ea3c1b92a927b5ce9a768f245ff27f08251aadd5035d46c25533f4b",
-      "loc": 332,
+      "hash": "blake3:cf5bcc888cd3b3fd7c9e0607b6c30f0095b41d889d0c3aec4476356cbb794eab",
+      "loc": 350,
       "symbols": [
         {
           "id": "s:app/src/genesis/GenesisPane.tsx#ArtifactRow",
@@ -10663,7 +10673,7 @@
           "exported": true,
           "range": [
             169,
-            332
+            350
           ]
         },
         {
@@ -13331,8 +13341,8 @@
       "id": "f:app/src/lib/board-model.ts",
       "path": "app/src/lib/board-model.ts",
       "lang": "ts",
-      "hash": "blake3:e1bc7a2a20066a419fd505c2364844a8968c664c74eaf293377597068b020260",
-      "loc": 402,
+      "hash": "blake3:bd1583ae0fb3c10ae11dd0db22385f16041237aeb40f6963b10e81ec85ab0ee7",
+      "loc": 465,
       "symbols": [
         {
           "id": "s:app/src/lib/board-model.ts#BoardCard",
@@ -13341,7 +13351,7 @@
           "exported": true,
           "range": [
             104,
-            128
+            141
           ]
         },
         {
@@ -13350,8 +13360,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            130,
-            166
+            143,
+            179
           ]
         },
         {
@@ -13360,8 +13370,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            168,
-            174
+            181,
+            187
           ]
         },
         {
@@ -13380,8 +13390,8 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            227,
-            236
+            288,
+            297
           ]
         },
         {
@@ -13410,8 +13420,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            275,
-            275
+            336,
+            336
           ]
         },
         {
@@ -13420,8 +13430,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            221,
-            225
+            282,
+            286
           ]
         },
         {
@@ -13430,8 +13440,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            211,
-            218
+            272,
+            279
           ]
         },
         {
@@ -13440,8 +13450,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            208,
-            208
+            269,
+            269
           ]
         },
         {
@@ -13450,8 +13460,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            255,
-            266
+            316,
+            327
           ]
         },
         {
@@ -13460,8 +13470,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            176,
-            176
+            236,
+            236
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#issuesByFile",
+          "name": "issuesByFile",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            216,
+            228
           ]
         },
         {
@@ -13470,8 +13490,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            178,
-            184
+            238,
+            244
           ]
         },
         {
@@ -13480,8 +13500,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            297,
-            402
+            358,
+            465
           ]
         },
         {
@@ -13500,8 +13520,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            270,
-            272
+            331,
+            333
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#spreadIssues",
+          "name": "spreadIssues",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            232,
+            234
           ]
         },
         {
@@ -13520,8 +13550,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            186,
-            205
+            246,
+            266
           ]
         }
       ]
@@ -13729,8 +13759,8 @@
       "id": "f:app/src/lib/task-detail.ts",
       "path": "app/src/lib/task-detail.ts",
       "lang": "ts",
-      "hash": "blake3:5bb1af8850307d93b948c80ab160ddef0696109f998f328a08e6cb274651ba58",
-      "loc": 204,
+      "hash": "blake3:1754f48c4744f832c93324a4fef822810657a3196889b003cebb1843957315e5",
+      "loc": 218,
       "symbols": [
         {
           "id": "s:app/src/lib/task-detail.ts#BlockerLink",
@@ -13748,8 +13778,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            110,
-            115
+            123,
+            128
           ]
         },
         {
@@ -13759,7 +13789,7 @@
           "exported": true,
           "range": [
             63,
-            99
+            112
           ]
         },
         {
@@ -13788,8 +13818,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            122,
-            146
+            135,
+            159
           ]
         },
         {
@@ -13798,8 +13828,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            148,
-            153
+            161,
+            166
           ]
         },
         {
@@ -13818,8 +13848,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            103,
-            105
+            116,
+            118
           ]
         },
         {
@@ -13828,8 +13858,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            161,
-            204
+            174,
+            218
           ]
         }
       ]
@@ -14983,9 +15013,19 @@
       "id": "f:app/test/board-truth.test.tsx",
       "path": "app/test/board-truth.test.tsx",
       "lang": "ts",
-      "hash": "blake3:3b0f90f81314a365fcd748dc5a9ea4ffea7e02afea2709bb5e4cf5b47c4a3c23",
-      "loc": 464,
+      "hash": "blake3:6c07b758fe8a5f6b951f8660ca3b1aebd4d6f7898ab7028221eb252f0dd317d8",
+      "loc": 837,
       "symbols": [
+        {
+          "id": "s:app/test/board-truth.test.tsx#CLAMPING",
+          "name": "CLAMPING",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            490,
+            490
+          ]
+        },
         {
           "id": "s:app/test/board-truth.test.tsx#FILES",
           "name": "FILES",
@@ -15004,6 +15044,56 @@
           "range": [
             47,
             47
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#HOSTILE",
+          "name": "HOSTILE",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            477,
+            477
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#HOSTILE_DANGLING",
+          "name": "HOSTILE_DANGLING",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            480,
+            480
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#HOSTILE_MODEL",
+          "name": "HOSTILE_MODEL",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            508,
+            558
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#HOSTILE_PATH",
+          "name": "HOSTILE_PATH",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            484,
+            484
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#HOSTILE_VERDICT",
+          "name": "HOSTILE_VERDICT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            499,
+            506
           ]
         },
         {
@@ -15067,6 +15157,16 @@
           ]
         },
         {
+          "id": "s:app/test/board-truth.test.tsx#expectWraps",
+          "name": "expectWraps",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            492,
+            497
+          ]
+        },
+        {
           "id": "s:app/test/board-truth.test.tsx#leafSpan",
           "name": "leafSpan",
           "kind": "function",
@@ -15084,6 +15184,16 @@
           "range": [
             117,
             117
+          ]
+        },
+        {
+          "id": "s:app/test/board-truth.test.tsx#openHostilePanel",
+          "name": "openHostilePanel",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            560,
+            562
           ]
         },
         {
@@ -16242,8 +16352,8 @@
       "id": "f:app/test/genesis-pane-dom.test.tsx",
       "path": "app/test/genesis-pane-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:fe668c102ac3493f56914ee3ff602b1bb445747057b69a91c1599af189d1a9ca",
-      "loc": 386,
+      "hash": "blake3:2421ed57070e650df959c3d9b16b6361bed0a90f73b8582b6296300f8a387414",
+      "loc": 442,
       "symbols": [
         {
           "id": "s:app/test/genesis-pane-dom.test.tsx#FIXTURES",
@@ -18068,8 +18178,8 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:d1307e051c1763c54fbaaaf5c86e363b9ecf095db30df69880937b609f957dab",
-      "loc": 668,
+      "hash": "blake3:fee0e83c58ca3f4c7413384a98ce3ac81261cc8976550b2376e16ff570b0cfdb",
+      "loc": 740,
       "symbols": [
         {
           "id": "s:app/test/select-board.test.ts#ALIASED_ROADMAP",
@@ -18077,8 +18187,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            250,
-            258
+            251,
+            259
           ]
         },
         {
@@ -18087,8 +18197,8 @@
           "kind": "type",
           "exported": false,
           "range": [
-            28,
-            28
+            29,
+            29
           ]
         },
         {
@@ -18097,8 +18207,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            18,
-            26
+            19,
+            27
           ]
         },
         {
@@ -18107,8 +18217,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            260,
-            261
+            261,
+            262
           ]
         },
         {
@@ -18117,8 +18227,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            31,
-            32
+            32,
+            33
           ]
         },
         {
@@ -18127,8 +18237,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            60,
-            60
+            61,
+            61
           ]
         },
         {
@@ -18137,8 +18247,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            54,
-            55
+            55,
+            56
           ]
         },
         {
@@ -18147,8 +18257,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            35,
-            52
+            36,
+            53
           ]
         },
         {
@@ -18157,8 +18267,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            57,
-            58
+            58,
+            59
           ]
         }
       ]
@@ -18167,8 +18277,8 @@
       "id": "f:app/test/select-task-detail.test.ts",
       "path": "app/test/select-task-detail.test.ts",
       "lang": "ts",
-      "hash": "blake3:20bc31d51f78c34bfe09b3bddd4663d6028e567bbe24a4efe67fed3e1bb15a48",
-      "loc": 326,
+      "hash": "blake3:f87ea776405f31a6fe5dc084f53af6aeae5e6bf20856a70f927b9b14e178c19f",
+      "loc": 361,
       "symbols": [
         {
           "id": "s:app/test/select-task-detail.test.ts#FULL_BODY",
@@ -23268,6 +23378,7 @@
       "symbols": [
         "BoardCard",
         "StatusVisual",
+        "issuesByFile",
         "statusVisual"
       ]
     },
@@ -25276,6 +25387,7 @@
         "BoardColumn",
         "BoardModel",
         "UNMAPPED_KEY",
+        "issuesByFile",
         "selectBoard",
         "shortModelName",
         "statusVisual"
@@ -30831,6 +30943,12 @@
     },
     {
       "from": "s:app/src/lib/board-model.ts#selectBoard",
+      "to": "s:app/src/lib/board-model.ts#issuesByFile",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectBoard",
       "to": "s:app/src/lib/board-model.ts#spreadAlias",
       "kind": "call",
       "confidence": "resolved"
@@ -30856,6 +30974,12 @@
     {
       "from": "s:app/src/lib/board-model.ts#toCard",
       "to": "s:app/src/lib/board-model.ts#modelBadge",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#toCard",
+      "to": "s:app/src/lib/board-model.ts#spreadIssues",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -31025,6 +31149,12 @@
       "from": "s:app/src/lib/task-detail.ts#refLabel",
       "to": "s:app/src/lib/task-detail.ts#TaskRef",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/task-detail.ts#selectTaskDetail",
+      "to": "s:app/src/lib/board-model.ts#issuesByFile",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -31780,6 +31910,24 @@
     {
       "from": "s:app/test/board-truth.test.tsx#FILES",
       "to": "s:app/test/board-truth.test.tsx#task",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-truth.test.tsx#HOSTILE_MODEL",
+      "to": "s:app/test/board-truth.test.tsx#src",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-truth.test.tsx#openHostilePanel",
+      "to": "s:app/test/board-truth.test.tsx#press",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/board-truth.test.tsx#openHostilePanel",
+      "to": "s:app/test/board-truth.test.tsx#q",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -33863,7 +34011,7 @@
   ],
   "stats": {
     "files": 172,
-    "symbols": 1874,
-    "edges": 1842
+    "symbols": 1885,
+    "edges": 1848
   }
 }

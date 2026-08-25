@@ -569,14 +569,27 @@ Tasks: to be written from design/dispatch-technical-plan.md §2. **The
 plan's drafted ids T-081…T-090 are STALE** — T-081, T-082 and T-083
 were claimed on 2026-08-19 by the denial relay, the auth command and
 the range rule. Re-derive the maximum id before writing.
-On the inherited backlog: **45 cards already carry `milestone: 4` and
+On the inherited backlog: **80 cards already carry `milestone: 4` and
 they are NOT this milestone's content.** They are standing backlog that
-rides alongside — 29 of them F-02 map hardening, 11 F-06, 3 F-03, 2
+rides alongside — 41 of them F-02 map hardening, 21 F-06, 12 F-03, 6
 F-01 — inherited from an era when milestone 4 was an inbox with no
 goal. They are not re-stamped (that was the arm the ruling declined:
 ~30 frontmatter edits and an argument about each), so this milestone's
 card list will not match its goal, and that is a known and accepted
 cost of the ruling.
+**THOSE DIGITS READ 45 / 29 / 11 / 3 / 2 FROM 2026-08-19 UNTIL T-031's
+CHECKPOINT, AND THE ARGUMENT NEVER DEPENDED ON THEM** — corrected in
+place with the ref rather than deleted (T-101's precedent, the same one
+this paragraph's own parenthetical below uses). Re-derived on disk at
+`5fbfd4e`: **85** cards carry `milestone: 4`, of which **5 are F-04** and
+therefore ARE this milestone's content, leaving 80 inherited —
+6 + 41 + 12 + 21 = 80. Nothing about T-031's merge moved this figure;
+it went stale under every card written since the ruling, which is the
+"DERIVE THE COUNT AT YOUR OWN REF" hazard docs/CONVENTIONS.md names,
+found by an integrator asked to tick a ROADMAP sentence and checking
+whether it was true. **DERIVE IT, DO NOT QUOTE IT**:
+`grep -l '^milestone: 4$' docs/tasks/T-*.md` crossed with `feature:`
+re-derives the whole breakdown in a second.
 Of the four cards milestone 3 promised would "re-enter after it"
 (T-010, T-013, T-014, T-015), **TWO are already done** — T-014's
 indexer binary landed with watch and check modes, and **T-013 landed
