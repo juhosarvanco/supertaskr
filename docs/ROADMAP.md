@@ -820,7 +820,8 @@ deliberately never passed to Claude while Codex's `exec` accepts one —
 see design/cross-harness-plan.md). **D2 is taken**: dispatch gets its
 own component C-15 with touch slug `app-dispatch`, so it does not fence
 against every genesis card for the life of the feature.
-Progress: STARTED — **3 of 6 written F-04 cards done**, and the third is
+Progress: STARTED — **4 of 7 written F-04 cards done** (derived at
+T-126's checkpoint; it read "3 of 6" until then), and the third is
 the slice's first real CODE. T-089 merged 2026-08-23 and put the brief
 itself in writing: a thirteen-row normative contract in
 `method/roles/executor.md` that a program transcribes and a human reads
@@ -832,11 +833,14 @@ examples.
 `planned`" UNTIL T-110's CHECKPOINT** — corrected in place with the ref
 rather than deleted, the same T-101 precedent the paragraphs above use.
 Both halves went stale under cards written after they were typed: T-088
-merged and C-15 was declared, and the written F-04 set is now **six**
-(T-088, T-089, T-110 done; T-111, T-112, T-125 planned), not two.
-Milestone 4 carries **86** cards on disk at this checkpoint, of which
-**6 are F-04**. **DERIVE IT, DO NOT QUOTE IT** — the hazard this file
-names three paragraphs up caught its own progress line.
+merged and C-15 was declared, and the written F-04 set is now **seven**
+(T-088, T-089, T-110, T-126 done; T-111, T-112, T-125 planned), not two —
+it read **six** until T-126's checkpoint, which is the SECOND time this
+sentence has gone stale under a card written after it was typed.
+Milestone 4 carries **92** cards on disk at T-126's checkpoint, of which
+**7 are F-04** (86 and 6 at T-110's). **DERIVE IT, DO NOT QUOTE IT** —
+the hazard this file names three paragraphs up caught its own progress
+line, and has now caught the correction to it.
 **T-110 LANDED 2026-08-25** (merge `1223543`) and it is the first F-04
 card that ships something the app can run rather than something a human
 reads. **The app can now read which lanes exist from git's own files —
@@ -853,9 +857,29 @@ worktrees could report neither failure; this one reports both, which is
 what the follower-first ruling (`docs/rooms/cockpit-or-mirror.md`) asks
 for. It **unblocks T-111 and T-112**, the two cards that turn that
 answer into a board and a brief.
+**T-126 LANDED 2026-08-25** (merge `4983174`) and it is the card that
+made T-110's work exist. `rustc` compiles no file that no module
+declares, so from T-110's merge until this one the lane reader **was not
+in the binary at all** — it reached a compiler only through a `#[path]`
+shim compiled into a TEST target, and a planted type error in
+`dispatch/lanes.rs` left `cargo build` at exit 0. **The slice's first
+real code was dead code for a day, and every suite was green over it.**
+T-126 declares `pub mod dispatch;`, registers **`dispatch_lanes`** — the
+fifteenth IPC command and F-04's first, zero arguments — and deletes the
+shim. The 34 dispatch bodies now run in the **lib** target rather than a
+test target, which is the property to read; the pass count barely moves.
+**THE LESSON THIS SLICE SHOULD CARRY FORWARD** is that a fence can leave
+a card complete and its product unreachable: T-110 was rejected twice,
+waived once, rebuilt by two executors and approved on a third pass, and
+none of that could catch a missing `mod` line, because the missing line
+was outside its fence at all three dispatches.
 The cost line this milestone watches moves with it: the committed graph
-goes 895 891 → **918 406 bytes, 91.84% of its own budget**, the highest
-this repository has ever been.
+goes 895 891 → **918 406 bytes, 91.84% of its own budget** at T-110's
+merge, the highest this repository had then been, and **933 931 bytes —
+93.39%, 66 069 bytes of headroom** at T-126's. **T-126 is the first
+merge in this series to DELETE an indexed file and still spend
+headroom** (`files +0 -1 ~2`, +445 bytes), so file count and byte count
+moved in opposite directions at one regen. Derive it at your own ref.
 Decomposition pass complete 2026-08-19
 (design/dispatch-technical-plan.md); D1 ruled by @human the same day.
 

@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 5
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [app-shell]
 builder: claude-opus-5
-verifier:
-built_by: claude-opus-5 @T-126 — code commit 0fa83da
-verified_by:
-review:
+verifier: claude-opus-5 @fresh
+built_by: claude-opus-5 @T-126 — code commit 0fa83da, notes cc49f81
+verified_by: claude-opus-5 @fresh — verdict de05430
+review: same-model
 ---
 
 Absorbs (ninth triage, 2026-08-25): T-110-s1 — file removed in this
@@ -639,3 +639,185 @@ was caught.
 **Not stamped by me**, per the brief: `verifier:`, `verified_by:` and
 `review:` remain the integrator's, and `status:` is untouched at
 `verifying`.
+
+## Integration — third-hand integrator, claude-opus-5, 2026-08-25
+
+Main before **`7c2ed1a`** · lane tip **`de05430`** (both `git rev-parse`)
+· merge **`4983174`** · this checkpoint its direct child. Neither built
+nor verified by this hand.
+
+**Range: `7c2ed1a..4983174` — 9 paths**, byte-identical under `cmp` to
+the pre-merge `merge-tree --write-tree` set. **The forecast tree
+`3c991a8` IS the merge's tree**, re-read with `git rev-parse HEAD^{tree}`
+afterwards; parents are `7c2ed1a` and `de05430` and **nothing was written
+into the merge commit**. `merge-tree`'s exit was read from `$?` into a
+variable BEFORE the substitution — **0**.
+
+**THE FORBIDDEN TWO-DOT FORM ANSWERS 57 — A 6.33x OVERSTATEMENT, AND IT
+IS PURE LEFT-ENDPOINT DRIFT.** Main advanced **48** paths under this lane
+and the branch touched **9**; `comm -12` over the sorted lists is
+**EMPTY**, 48 + 9 = 57, and the union of the two sets is **byte-identical
+to the forbidden set** under `diff` — disjointness proved as SETS, not as
+counts. **22 of the forbidden form's 57 are PHANTOM DELETIONS**, main's
+advance read backwards through a drifted left endpoint. `main..HEAD`
+answers **0** here, as it must for an integrator standing on `main`.
+`<merge-base>..<tip>` answers **9** and is still forbidden: `41900d6` IS
+the merge base, so the spelling degenerates into the three-dot form and
+is right by the coincidence of this lane's shape.
+
+**FENCE DISJOINTNESS AGAINST EVERY LIVE LANE, AS SETS.** `comm -12` of
+these 9 paths against `T-129`'s own `merge-base..tip` diff (15 paths) and
+`T-130`'s (4) is **EMPTY** in both cases. Declared fences agree:
+`app-shell` against `crate-index` and `tools/e2e`.
+
+**SUITES, every exit from `$?` unpiped, every count DERIVED.** cargo
+**462 passed / 0 failed / 3 ignored, exit 0**, summed over **15**
+`test result:` lines and cross-checked against **465** declared bodies
+from the `running N tests` headers (462 + 3 ignored — the check that
+catches a target aborting with no result line); lib suite **197 bodies in
+4.51s**, the green band. parser **268/268** across 12 files, exit 0,
+after `npm run build` from `lib/parser/` which was run FIRST regardless.
+app `npm run build` exit **0** and `npm test` **973/973** across 47 files,
+exit 0 — **972 → 973 is the one TypeScript body this card adds**, the pin
+on the non-`cfg(test)` declaration. `tools/e2e` **171/171, exit 0, ONE
+RUN**, 1.9m, scratch port **15432**. `npm run lint:docs` **0**;
+`npm run lint:tokens -- --selftest` **0** and `npm run lint:tokens`
+**0** at **TOKEN 135 / CONTROL 735** — CONTROL was 731 at T-104's
+checkpoint and the +4 is exactly this merge's five new suggestion files
+less the one deleted shim. **All three watched cargo intermittents read
+BY NAME as `ok`**, never inferred from a green exit:
+`docs_watch::tests::startup_arm_watches_the_initial_root`,
+`a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+and `agent::kit::tests::snapshot_version_matches_the_live_method_stamps`.
+
+**THE FIGURE THAT PROVES THE CARD IS NOT THE PASS COUNT — IT IS THE
+TARGET LIST.** `test result:` lines go **16 → 15** while bodies go
+**460 → 462**, and `cargo test`'s own `Running` lines no longer name
+`tests/dispatch_lanes.rs` at all: the **34** `dispatch::` bodies now run
+inside `unittests src/lib.rs`. Two bodies are genuinely new, zero are
+lost, and the 34 moved from a test target into the library. A session
+reading only "462 passed" learns nothing about this; the target list says
+it in one line.
+
+**GATES — ALL THREE FIRE, all derived from the merge's own 9 paths.**
+
+| gate | trigger | on these 9 | result |
+|---|---|---|---|
+| GRAPH REGEN | `*.ts/tsx/js/jsx` or `*.rs` outside `docs/` | **3 — OWED** | **exit 1 STALE**, regenerated, **exit 0 CURRENT** |
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **2 — OWED** | exit **0**, both `[nputer]` lines |
+| DOCS GATE | a `docs/` path a code suite reads | **6 — FIRES** | exit **1**, **THREE** suites owed, all green |
+
+- **BOOT GATE is the gate that matters most on this card**, because the
+  defect it fixes is exactly the one every suite passes: exit **0** on
+  scratch port **15431**, `lsof`-probed free in the same command that
+  bound it, both lines observed — `[nputer] project folder:
+  /Users/ujju/Projects/nputer` and `[nputer] window "main" created`.
+  Child pid 85205, process group captured, tree stopped on SIGTERM, port
+  read back at zero rows. It is the only step that proves
+  `pub mod dispatch;` and the `generate_handler!` registration survive a
+  real build and a real window.
+- **GRAPH REGEN — asked, STALE, regenerated, asked again.** `graph.json`
+  moved **933 486 → 933 931 bytes**, sha256
+  `c20d4212…` → `c9dedabc…`, **179 → 178 files**, 1987 → 1990 symbols,
+  **1903 → 1903 edges**. **THE FILE COUNT MOVES DOWN**, which is this
+  merge's own trap for a reader expecting the usual `+1`, and the byte
+  count moves UP at the same regen — a file count and a byte count are
+  not evidence about each other.
+- **DOCS GATE — exit 1 on 6 of 9, THREE suites** (`npm test from app/`,
+  `npm test from tools/e2e/`, `npx vitest run from lib/parser/`), all
+  three run and green. **13 derived docs readers across 4 suites**,
+  census **130 sites in 22 files**, **0 frontmatter issues**. Invoked
+  from the repo root with the RANGE RULE's own path list, never through
+  `xargs`.
+
+**`T-126-s4` REPRODUCED A FOURTH WAY, WITH A POSITIVE CONTROL THE EARLIER
+PASSES DID NOT HAVE.** In the freshly regenerated graph, edges from
+`lib.rs` to any `dispatch/` file = **0**, while `lib.rs` carries **7**
+outgoing edges in the same graph — four file edges and three cargo
+packages. The four file edges are `agent/mod.rs`, `churn.rs`,
+`docs_watch.rs` and `index_cmd.rs`, which are **exactly** the four modules
+`lib.rs` reaches with a `use` statement; `dispatch` and `acl_pin` are
+declared with `mod` and neither gets one. So the indexer is not failing to
+see `lib.rs` — it sees it, records seven edges from it, and cannot see
+this one. The Rust reporter says the same thing at the component level:
+`arch` lists **eleven** C-05 edges and **C-15 is not among them**, so a
+real C-05 → C-15 dependency produces **zero drift** rather than an
+undeclared-edge finding.
+
+**FIXTURE RECONCILIATION — THREE ASSERTIONS, AND THE FIRST DOWNWARD MOVE
+THIS LEDGER HAS EVER TAKEN.** `architecture-dogfood.test.ts` (C-15's file
+list 6 → 5, its tally row 6 → 5, `fileComponent.size` 179 → 178) and
+`map-dogfood-render.test.tsx` (the hint 179 → 178), plus the two body
+titles that carried the old numbers. **Derived from `arch` over the
+regenerated graph BEFORE the suite was re-run**, on that body's own
+instruction, rather than read off the failure — the first red in the C-15
+body hides three assertions below it, and one of those three moved.
+
+**THE FENCE RULING IS CARRIED FORWARD IN THE WORDS THE VERDICT USED.**
+The deletion of `app/src-tauri/tests/dispatch_lanes.rs` **was a fence
+violation.** `app-shell` is C-15's neighbour, not C-15, and
+`method/roles/executor.md:126` is unconditional — *"Widening the fence
+from inside the lane is the one repair this role may never make"* — and
+it predates this card, so this is a broken rule and not an open question.
+The verdict declined to reject only because restoring the file is itself
+an edit to the same out-of-fence component, making the violation
+**structurally non-remediable inside the fence**: **ratified by
+necessity, not precedent.** An out-of-fence edit that ships without those
+words becomes the precedent that a card's own criteria outrank its fence,
+which would nullify every fence, since every out-of-fence edit is made
+because some criterion seemed to want it.
+
+**JUDGEMENT CALLS, all decided by one rule** — *repair what the merge
+INTRODUCES, file what the merge merely REVEALS.* **Repaired**: the three
+dogfood assertions and their titles (false at this merge, and red);
+ARCHITECTURE's C-07 budget figure (933 486 → 933 931, ref-stamped beside
+its predecessors rather than overwritten); ARCHITECTURE's C-05 row, which
+is where every previous command registration was recorded. **Filed, not
+repaired**: `T-126-s3` — C-15's registry still declares the deleted path
+and C-15's module header still says `lib.rs` does not declare it. Both
+became false AT this merge, so the rule's first half reaches them; they
+are routed anyway because the finding is already fully fenced
+(`[app-dispatch, docs/architecture/components/]`, both FREE), because
+item 1 fires T-024's three-fixture rule and is a card's work rather than
+a checkpoint aside, and because removing the `paths:` entry would
+discharge **`T-033-s8`** — an open question addressed to the architect —
+by side effect. **An integrator repairs statements of fact; it does not
+settle an open architectural question the falsehood happens to sit
+inside.** The stale prose is also the visible cost of the fence
+violation, and erasing it in the same breath as ratifying it is how
+"not precedent" quietly becomes precedent.
+
+**TWO FINDINGS FILED**: `T-126-s6` (the executor seat has no rule saying
+a gate derivation is stale at the lane's own tip — the verifier seat got
+one thirty minutes ago and this lane's DOCS GATE flipped from not-owed to
+owed across its last commit) and `T-126-s7` (*repair what the merge
+introduces, file what the merge merely reveals* is applied by every
+checkpoint and written in no file).
+
+**CEREMONY, RECORDED BECAUSE THE TABLE PRICES THIS CARD LOWER THAN IT WAS
+RUN.** `size: S` touching shipped code, so
+`method/tasks/TASK-FORMAT.md`'s row is *executor → verifier, then the
+executor integrates its OWN work* — **a separate integrator was not
+owed** and one was dispatched anyway. That is more ceremony than the
+table requires, never less, and it makes the provenance a genuine third
+hand. `review: same-model` is the honest label: the verdict is an
+independent adversarial session that declared a bounded read, and ruling
+SEVEN says `review:` is PROVENANCE rather than a strength ranking — one
+model on both sides.
+
+**THE HUMAN'S APP WAS NOT TOUCHED, AND THE PREDICTION WAS MADE BEFORE IT
+WAS CHECKED.** Two of nine paths are under `app/src-tauri/**` — the
+RELAUNCH trigger set — and zero under `app/src/**`. In the MAIN checkout
+that would rebuild and relaunch; @human's app serves from
+`/Users/ujju/Projects/nputer-app`, **measured rather than assumed** with
+`lsof -p 53350` (cwd and binary both under that checkout) and
+`lsof -p 88948` (the vite on 1420 has that checkout's `app/` as its cwd).
+Port 1420 read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else,
+at **20:18:19**, **20:20:05** (immediately after the merge's working-tree
+write) and **20:30:00** (immediately after the BOOT GATE, the one step
+that could plausibly have collided): holder `node` pid **88948**, one
+socket `TCP [::1]:1420 (LISTEN)`, **all three readings identical**, and
+the anchored `ps` match reports pid **53350** started **19:43:47**
+unchanged throughout. No fresh install was owed — all three
+`node_modules` trees, both `dist/` directories and `target/` were checked
+individually and present — so `npm ci` was never run.

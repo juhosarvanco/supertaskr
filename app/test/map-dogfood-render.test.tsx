@@ -562,8 +562,22 @@ describe("the nputer repo on its own map", () => {
     // the relation table stays 36 rows at 26/1/9 with no row added,
     // removed or flipped, and no ring lights or clears. Derived from the
     // regenerated graph before the suite was run.
+    // 179 → 178 at the T-126 merge regen (2026-08-25), and it is the FIRST
+    // time this hint has ever moved DOWN: T-126 declares `pub mod
+    // dispatch;` in `lib.rs` and deletes the `#[path]` shim that was the
+    // module's only route to a compiler, so one file LEAVES the index and
+    // none joins (`files +0 -1 ~2`). The graph goes 933 486 → 933 931
+    // bytes / 1987 → 1990 symbols, and EDGES DO NOT MOVE AT ALL: 1903
+    // before and 1903 after. That last figure is the interesting one and
+    // it is `T-126-s4` — `lib.rs` now genuinely depends on C-15 and the
+    // indexer records `use` imports only, so a `mod` declaration plus a
+    // path expression produces no edge. WHAT MOVES WITH IT: C-15's file
+    // list and count in architecture-dogfood and this hint; the node
+    // count holds at 13, the relation table is unmoved, and no ring
+    // lights or clears. Derived from the regenerated graph and `arch`
+    // before the suite was run.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 179 files",
+      "committed graph · 178 files",
     );
   });
 });

@@ -7033,17 +7033,27 @@
       "id": "f:app/src-tauri/src/lib.rs",
       "path": "app/src-tauri/src/lib.rs",
       "lang": "rust",
-      "hash": "blake3:f86f77489229d575cd2e99dde8f221e45dc1ac7818c8d52de15ac2b6bbdeae68",
-      "loc": 761,
+      "hash": "blake3:464ca6b6419912615eb9bf0b76093661b2a1125bbb07a60b8fe15615b4bd2363",
+      "loc": 947,
       "symbols": [
+        {
+          "id": "s:app/src-tauri/src/lib.rs#DispatchLanesOutcome",
+          "name": "DispatchLanesOutcome",
+          "kind": "enum",
+          "exported": false,
+          "range": [
+            403,
+            409
+          ]
+        },
         {
           "id": "s:app/src-tauri/src/lib.rs#STARTUP_FAILED_EVENT",
           "name": "STARTUP_FAILED_EVENT",
           "kind": "const",
           "exported": false,
           "range": [
-            93,
-            93
+            122,
+            122
           ]
         },
         {
@@ -7052,8 +7062,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            22,
-            22
+            51,
+            51
           ]
         },
         {
@@ -7072,8 +7082,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            84,
-            86
+            113,
+            115
           ]
         },
         {
@@ -7087,13 +7097,43 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/src/lib.rs#dispatch",
+          "name": "dispatch",
+          "kind": "mod",
+          "exported": true,
+          "range": [
+            45,
+            45
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/lib.rs#dispatch_lanes",
+          "name": "dispatch_lanes",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            455,
+            457
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/lib.rs#dispatch_lanes_at",
+          "name": "dispatch_lanes_at",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            419,
+            426
+          ]
+        },
+        {
           "id": "s:app/src-tauri/src/lib.rs#docs_snapshot",
           "name": "docs_snapshot",
           "kind": "fn",
           "exported": false,
           "range": [
-            128,
-            130
+            157,
+            159
           ]
         },
         {
@@ -7112,8 +7152,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            401,
-            403
+            504,
+            506
           ]
         },
         {
@@ -7122,8 +7162,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            421,
-            426
+            524,
+            529
           ]
         },
         {
@@ -7132,8 +7172,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            441,
-            443
+            544,
+            546
           ]
         },
         {
@@ -7142,8 +7182,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            410,
-            415
+            513,
+            518
           ]
         },
         {
@@ -7152,8 +7192,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            381,
-            387
+            484,
+            490
           ]
         },
         {
@@ -7162,8 +7202,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            368,
-            373
+            471,
+            476
           ]
         },
         {
@@ -7172,8 +7212,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            393,
-            395
+            496,
+            498
           ]
         },
         {
@@ -7182,8 +7222,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            432,
-            434
+            535,
+            537
           ]
         },
         {
@@ -7192,8 +7232,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            38,
-            48
+            67,
+            77
           ]
         },
         {
@@ -7202,8 +7242,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            17,
-            17
+            46,
+            46
           ]
         },
         {
@@ -7212,8 +7252,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            293,
-            314
+            322,
+            343
           ]
         },
         {
@@ -7222,8 +7262,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            206,
-            243
+            235,
+            272
           ]
         },
         {
@@ -7232,8 +7272,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            147,
-            190
+            176,
+            219
           ]
         },
         {
@@ -7242,8 +7282,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            339,
-            354
+            368,
+            383
           ]
         },
         {
@@ -7252,8 +7292,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            64,
-            80
+            93,
+            109
           ]
         },
         {
@@ -7262,8 +7302,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            446,
-            592
+            549,
+            702
           ]
         },
         {
@@ -7272,8 +7312,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            254,
-            281
+            283,
+            310
           ]
         },
         {
@@ -7282,8 +7322,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            114,
-            119
+            143,
+            148
           ]
         },
         {
@@ -7292,8 +7332,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            595,
-            761
+            705,
+            947
           ]
         }
       ]
@@ -8572,25 +8612,6 @@
           "range": [
             3610,
             3619
-          ]
-        }
-      ]
-    },
-    {
-      "id": "f:app/src-tauri/tests/dispatch_lanes.rs",
-      "path": "app/src-tauri/tests/dispatch_lanes.rs",
-      "lang": "rust",
-      "hash": "blake3:4e9fa492a7b1c12b292032697cff266a171de1f973eda9f333c6f2447f4c439a",
-      "loc": 36,
-      "symbols": [
-        {
-          "id": "s:app/src-tauri/tests/dispatch_lanes.rs#dispatch",
-          "name": "dispatch",
-          "kind": "mod",
-          "exported": false,
-          "range": [
-            36,
-            36
           ]
         }
       ]
@@ -15762,8 +15783,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:b6eb694fe9cfcf3eb6ddf5cb7d7ae6804a0307a5b57e61b3267f4138cf6cceed",
-      "loc": 1797,
+      "hash": "blake3:dd700c97fb0f96962194b322ea1de6e3ba6123f64d6a39ddfaacc17c6a5dfe2d",
+      "loc": 1834,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -16186,8 +16207,8 @@
       "id": "f:app/test/crescendo-dom.test.tsx",
       "path": "app/test/crescendo-dom.test.tsx",
       "lang": "ts",
-      "hash": "blake3:1dbbead437b1111d04d1880157e57f6bb3929413b5e1f0579251d97588e3ed8c",
-      "loc": 686,
+      "hash": "blake3:9f8d4437379b98373a3b51a4b9d40a769bd10cd7080acac90b68ab5f48e7f38b",
+      "loc": 726,
       "symbols": [
         {
           "id": "s:app/test/crescendo-dom.test.tsx#App",
@@ -18358,8 +18379,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:07f1b2e9aa8de27cf93d2bdd5f378609e75b4a4e2c263a3d411e95b1f6318311",
-      "loc": 569,
+      "hash": "blake3:abc7287f9654b459197c472092cac9fbe9d488140803f2cbbf00c7baac3fd9f1",
+      "loc": 583,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -35498,8 +35519,8 @@
     }
   ],
   "stats": {
-    "files": 179,
-    "symbols": 1987,
+    "files": 178,
+    "symbols": 1990,
     "edges": 1903
   }
 }

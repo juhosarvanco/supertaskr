@@ -1137,7 +1137,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
   // reds here and NOWHERE else, while widening them to something that
   // matches reds half the fixture. The intent layer exists to carry
   // components that are not built yet; C-07 has done so since T-009.
-  it("C-15 HAS TERRITORY AT LAST: six files under its declared globs, D3 cleared", () => {
+  it("C-15 HAS TERRITORY AT LAST: five files under its declared globs, D3 cleared", () => {
     // THE ASSERTION THAT INVERTS AT THE T-110 MERGE REGEN (2026-08-25).
     // This body read "C-15 is DECLARED-ONLY, never a defect: declared
     // paths, zero files, one D3" from T-088 until here, and its own
@@ -1171,17 +1171,30 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // reach this module at all — matched NEITHER declared glob and spent
     // one day as this repository's first D2. It is claimed now, and the
     // unmapped bucket below is empty again.
+    // 6 → 5 at the T-126 merge regen (2026-08-25), and this is the FIRST
+    // time this repository has reconciled a dogfood fixture DOWNWARD:
+    // T-126 declares `pub mod dispatch;` in `lib.rs`, so the shim's only
+    // reason to exist is gone and the commit DELETES it. Every other move
+    // in this file's log added a file; this one removes one, so a reader
+    // scanning for the usual `+1` will misread the direction. The glob
+    // list below is UNCHANGED and still passes — C-15's registry still
+    // DECLARES `tests/dispatch_lanes.rs` and now matches nothing with it,
+    // which no gate in this repository reports (`arch` says C-15 drift
+    // `-`, `unmapped=0`). That dangling declaration is `T-126-s3` item 1,
+    // deliberately NOT taken here; see this merge's checkpoint for why an
+    // integrator routed it instead of repairing it. Derived from
+    // `arch --root ../..` over the regenerated graph BEFORE this suite was
+    // run (the T-088 technique), never read off a failure — the first red
+    // in this body hides the three below it.
     expect(c15?.files).toEqual([
       "app/src-tauri/src/dispatch/fixtures.rs",
       "app/src-tauri/src/dispatch/join.rs",
       "app/src-tauri/src/dispatch/lanes.rs",
       "app/src-tauri/src/dispatch/mod.rs",
-      "app/src-tauri/tests/dispatch_lanes.rs",
       "app/src/lib/dispatch-store.ts",
     ]);
     expect(c15?.declaredOnly).toBe(false);
     expect([...derived.fileComponent.values()].filter((id) => id === "C-15")).toEqual([
-      "C-15",
       "C-15",
       "C-15",
       "C-15",
@@ -1199,7 +1212,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 179 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
+  it("all 178 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
     // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
     // move this row has ever taken and the only one whose cause is a new
     // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
@@ -1230,9 +1243,21 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // new file rather than a change of owner: `app/test/map-churn-age
     // .test.tsx`, which C-05's `app/test/**` glob claims, so the tally
     // below moves with it and `unmappedFiles` stays [].
-    expect(derived.fileComponent.size).toBe(179);
-    // AND THE BUCKET IS EMPTY AGAIN, one day after it first appeared:
-    // C-15 claims `tests/dispatch_lanes.rs` by name (T-033 settlement).
+    // 179 → 178 at the T-126 merge regen (2026-08-25), and it is the ONLY
+    // entry in this log that moves DOWN. T-126 deletes
+    // `app/src-tauri/tests/dispatch_lanes.rs` — the shim exists only
+    // because `lib.rs` did not declare the module, and this merge declares
+    // it — so one file leaves the index and none joins. `index --check`
+    // printed `files +0 -1 ~2`, which is the shape to read: the `-1` is
+    // the whole of this move and the two `~` are content-only. Derived
+    // from the indexed removed-file list and `arch` BEFORE the suite was
+    // run, which is what the note in the body above asks for.
+    expect(derived.fileComponent.size).toBe(178);
+    // AND THE BUCKET IS STILL EMPTY, for a second reason than the one it
+    // had yesterday: T-033's settlement kept `tests/dispatch_lanes.rs` out
+    // of the bucket by CLAIMING it, and T-126 keeps it out by DELETING it.
+    // C-15's registry still declares the path, so the settlement's glob is
+    // still there and now matches nothing — see the body above.
     expect(derived.unmappedFiles).toEqual([]);
     expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
@@ -1409,7 +1434,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // assertion in this body, below the size check, the unmappedFiles
       // check and the bucket check, so three separate reds can hide it.
       // 5 → 6 at T-033: `tests/dispatch_lanes.rs`, claimed by name.
-      ["C-15", 6],
+      // 6 → 5 at the T-126 merge regen: the same file, deleted rather than
+      // reclaimed, because declaring `pub mod dispatch;` in `lib.rs`
+      // removes the shim's only reason to exist. The component returns to
+      // exactly the five files it joined the mapping with, and the count
+      // it returns to is NOT the count it started from for the same
+      // reason — this is a round trip in the number and a one-way move in
+      // the tree. Derived from `arch` over the regenerated graph before
+      // the suite ran; it is the FOURTH assertion in this body, so three
+      // separate reds can hide it.
+      ["C-15", 5],
       // AND THE ROW NOBODY DECLARED. `app/src-tauri/tests/dispatch_lanes.rs`
       // is the two-line `#[path]` shim that lets `cargo test` compile
       // `src/dispatch/**` at all — the placement T-110's verifier RULED
@@ -1422,6 +1456,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // than hiding it: it is `T-110-s9`'s subject, and it clears the
       // moment either a component claims `tests/**` or `T-110-s1` lands
       // the real wiring, whose commit DELETES this shim.
+      // BOTH HAPPENED, IN THAT ORDER: T-033 claimed it and T-126 deleted
+      // it, so this row was settled twice by opposite mechanisms inside
+      // two days. The second is why C-15 reads 5 above.
       // AND THE ROW T-033 CREATES. C-16 shared primitives, EXTRACTED from
       // C-05: `components/ui/button.tsx`, `lib/utils.ts`,
       // `lib/verdicts.ts`. The first component in this ledger to arrive
