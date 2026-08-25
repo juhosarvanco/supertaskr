@@ -79,6 +79,30 @@
   so that survivor is a node-boundary artifact and not a real import
   cycle, and T-127 carries it with a criterion written over the CENSUS
   rather than over one cycle by name
+  Since T-091 (2026-08-25) F-06's premise reaches the GOVERNING DOCUMENTS
+  as well as the code, and this one is inherited backlog rather than map
+  content — say so rather than let the bullet imply the pane moved. The
+  RANGE RULE is the most-consulted paragraph in docs/CONVENTIONS.md and
+  was the least defended: **every measured figure it carries was
+  poisonable to any value with every reader still green**, proved on
+  T-083's branch by poisoning five at once and watching the whole tree
+  stay green. `tools/e2e/tests/range-rule.spec.ts` +
+  `scripts/range-rule.mjs` now recompute it — git on one side, the parsed
+  document on the other, **no constant shared** — over 25 bodies inside
+  `npm test` from tools/e2e. **The proof that it DERIVES is that moving a
+  figure in the document moves the expectation**: the verifier mutated
+  `**31**` to `**30**` on disk and the reader redded, which is exactly
+  where a hard-coded reader survives. 22 mutants attempted, 21 applied,
+  **18 KILLED, 3 PROVEN EQUIVALENT, 0 genuine survivors**. The one place
+  it declines to fail is disclosed rather than hidden and is the reusable
+  half: GRAPH REGEN's flip figures were measured before that trigger
+  gained `*.rs`, so they **carry their ref and not their trigger** — 5 of
+  5 at the ref they name, 1 of 1 under the trigger on disk — and the arm
+  prints the divergence on stdout every run, asserts the monotonic
+  relation between vintages, and REDS if the trigger ever NARROWS. The
+  alternative was refused because its only compliant repair overwrites
+  the five merges the correction rests on: **a gate that launders
+  history**
 
 ## Milestones
 ### Milestone 0 — planning (current)

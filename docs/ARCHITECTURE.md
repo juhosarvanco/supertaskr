@@ -1038,7 +1038,27 @@ ADR-014/015).
   static analyser that READS all four packages as text — including
   `lib/parser/src/types.ts`, out of which it reads the task-status
   vocabulary rather than restating it, so this tree has exactly one
-  status vocabulary (T-057). `.nputerignore` is UNCHANGED and
+  status vocabulary (T-057).
+  **AND SINCE T-091 (2026-08-25, merge `ca5fb96`) IT WIDENS ONCE MORE —
+  `tools/e2e/` NOW HOLDS A READER OF A GOVERNING DOCUMENT, not only of
+  code and of the app.** `tests/range-rule.spec.ts` + `scripts/
+  range-rule.mjs` parse docs/CONVENTIONS.md's RANGE RULE bullet and
+  RE-DERIVE every figure in it by running `git` — so a paragraph that no
+  program could check is now checked by 25 bodies inside `npm test` from
+  tools/e2e. Three properties are the architectural content rather than
+  the test count. It **executes rather than re-implements**: the recipe
+  the bullet prints is the recipe that runs, so a doc whose printed
+  command stops producing its published column reds instead of going
+  quietly stale. It **shares no constant with the document**, which is
+  what makes a green run evidence — every expectation arrives through a
+  `\d+` capture, so mutating a figure on disk moves the expectation and a
+  hard-coded reader dies there. And it is the **fourth by-name reader of
+  docs/CONVENTIONS.md** and the thirteenth docs reader overall, which the
+  census reports and this sentence deliberately does not fix — ask
+  `docs-gate.mjs --census`. This is dev tooling under no component still:
+  `tools/` is `.nputerignore`d, so none of it enters the graph, and the
+  GRAPH REGEN trigger fires on the `.spec.ts` and correctly answers
+  CURRENT. `.nputerignore` is UNCHANGED and
   deliberately so: the graph is code-derived, docs/ is not code, and
   `index --check` is not the gate that missed this. The residual is
   recorded rather than papered over — the gate's root-anchor ledger

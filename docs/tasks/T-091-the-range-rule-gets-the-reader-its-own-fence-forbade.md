@@ -5,25 +5,15 @@ feature: F-06
 milestone: 4
 priority: 47
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5 @T-091 — code commits d2bba71, 2e5704a
+verified_by: claude-opus-5 @T-091-verify — APPROVED, 2026-08-25 — verdict commit 1e134b1
+review: same-model
 ---
-
-> **DRAFTER'S NOTE — remove before landing.** I re-derived four of the
-> bullet's figures at HEAD `4d2f03c`. Three reproduce exactly. The
-> fourth reproduces only under the reading the prose states and NOT
-> under the obvious command spelling — see "One figure already needs its
-> spelling" below. That is a fixture for this card, not a defect to fix
-> first. The ninth reader item is the `xargs` hazard the T-084
-> integrator recorded; T-090 CORRECTS the sentence it came from, and
-> this card builds the thing that would have caught it. Deliberate
-> overlap.
 
 Absorbs: T-083-s2, T-083-s4 (sixth triage, 2026-08-20). Both files
 removed in this commit.
@@ -811,3 +801,107 @@ after they were measured — is the right call, is disclosed loudly on
 every run, is fenced by a monotonicity assertion that would catch a mixed
 derivation, and reds outright in the one direction that would be a real
 defect.
+
+## Integration
+
+Merged 2026-08-25 by a third hand that neither built nor verified this
+card. Main-before **`41900d6`**, lane tip **`1e134b1`**, merge
+**`ca5fb96`**, checkpoint the commit after it. `review: same-model` per
+T-104's ruling SEVEN — the independence that pays is INFORMATIONAL, not
+model diversity.
+
+**THE RULING THIS CARD TURNS ON, CARRIED HERE BECAUSE IT IS THE
+SUBSTANCE.** The bullet's flip figures were measured before GRAPH REGEN's
+trigger gained `*.rs` at `e1f3023`, so **they carry their ref and not
+their trigger**: at the refs they name GRAPH REGEN flips **5 of 5**;
+under the trigger as it stands the same derivation is **1 of 1**, and the
+headline *"thirteen flips in fifteen chances over twelve merges"* becomes
+**9 / 11 / 8**. The lane DISCLOSED rather than re-derived and the
+verifier ruled for it on four grounds. **The decisive one**: the only
+compliant repair under the alternative is to overwrite `5 of 5` with
+`1 of 1`, **which destroys the five merges the whole correction rests on
+— a gate that launders history.** Those five were real flips when they
+happened, and four of them stop being counterexamples only because a
+trigger widened afterwards. The other three grounds: the card had already
+ruled one variable over (its own 31-vs-30 fixture holds that a figure and
+the command producing it are ONE claim — substitute *trigger* for *range
+spelling* and the sentence is unchanged in force); re-binding the trigger
+to HEAD while leaving the merge range at `ddcc8bb` evaluates a THIRD
+expression mixing vintages, which is this bullet's own named error; and
+it would never terminate, redding paragraphs nobody edited on whatever
+lane is nearest.
+
+**AND DISCLOSURE ONLY WINS BECAUSE THE LANE PAID FOR IT.** The note
+prints on **stdout on every run** — observed here in the full 171-test
+run, stamped with this integration's own ref: *"range-rule DISCLOSURE
+[flip-counts-carry-their-trigger]: /Users/ujju/Projects/nputer @ ca5fb96
+… 5 of 5 at that ref, 1 of 1 under the trigger on disk."* The arm
+**asserts monotonicity** (a wider trigger can only lower the not-owed
+count and can add no flip that was not one before) and it **REDS if the
+trigger ever NARROWS**, which is the one direction that is a genuine
+defect and is GRAPH REGEN's own argument. The verifier says plainly that
+silence would have lost. That is `T-091-s3`, whose residue — one clause
+naming the trigger beside the ref — is a `docs/CONVENTIONS.md` edit that
+**T-104 holds right now**, so it is routed rather than taken here.
+
+**THE RANGE, AT MY OWN REFS, NOTHING INHERITED FROM THE BRIEF.**
+`git merge-tree --write-tree 41900d6 1e134b1` exit **0** (read from `$?`
+BEFORE the substitution), tree `b8e05dca…`; prescribed
+`git diff --name-only 41900d6 <TREE>` = **9**; three-dot = 9; main's
+advance `c4c15c8..41900d6` = **70**; intersection **EMPTY**; forbidden
+two-dot = **79**, and 9 + 70 = 79 with the union byte-identical to the
+two-dot set under `diff`, so the two are disjoint as SETS and not merely
+as counts. **The forbidden form overstates by 8.78x, the widest ratio
+this project has recorded.** The merge's own diff `41900d6..ca5fb96` is
+**9**, identical to the forecast, and `git rev-parse HEAD^{tree}` equals
+the forecast tree byte for byte — **nothing was written into the merge
+commit**, which is criterion 12's own ritual practised at the merge that
+lands the card asking for it to be written down.
+
+**THE CARD'S OWN CRITERION, MET INSIDE THIS FENCE, WOULD HAVE
+MANUFACTURED ITS OWN COUNTEREXAMPLE.** Main's 70-path advance under this
+lane includes **`docs/CONVENTIONS.md`** — the document under test, +62/−18
+lines by T-086's merge. The two sets stayed disjoint *only* because the
+fence is `[tools/e2e]`. Had the lane widened it to satisfy criterion 12,
+the two sides would have touched the same path and the three-dot form
+would have stated the lane's edit against the branch POINT and silently
+dropped main's 62 new lines. Re-derived here: main's edit lands in THE
+FOUR WALKS and the DOCS GATE bullets and **not** in the RANGE RULE bullet,
+so nothing the reader computes moved — which is why the suite is green
+and not why the fence was right.
+
+**FOUR THINGS THE CARD AND THE DISPATCH BRIEF GOT WRONG.**
+
+1. **The card's Verification section is wrong about its own drill
+   hazard.** It says *"the document under test is a tracked file this
+   lane is also editing"*. Derived here: the lane's paths contain **no
+   `docs/CONVENTIONS.md`**. The hazard is real for the DRILL and the
+   answer is the detached worktree both passes used; it is not real for
+   the lane. Executor and verifier agree and both are right.
+2. **The DRAFTER'S NOTE said "remove before landing" and was still
+   there**, left deliberately by the executor for the integrator.
+   Removed by this checkpoint.
+3. **The reader count.** The card says three files open
+   `docs/CONVENTIONS.md` (its head paragraph says two, then three). At
+   **my** ref the gate answers **FOUR by name** — `kit.rs`,
+   `docs-input-gate.spec.ts`, `range-rule.spec.ts`,
+   `workflow-parity.spec.ts` — plus TWO whole-`docs` readers
+   (`shell-frame.spec.ts`, `window-contract.spec.ts`) that also reach it,
+   so SIX in total. **The brief's "FIVE by name" does not reproduce
+   here.** The census is **13 derived readers across 4 suites** (was 12
+   on main before this merge), and the thirteenth is
+   `range-rule.spec.ts` itself via `call conventionsText()` — which is
+   `T-091-s2` confirmed from the gate's own output, and T-086's whole
+   subject happening once more to the card that names it.
+4. **The brief's GRAPH REGEN derivation.** It reasoned that the trigger
+   does not fire because `.mjs` is not in the suffix list. That is true
+   of `range-rule.mjs` and irrelevant: `tools/e2e/tests/range-rule.spec.ts`
+   is a `.ts` outside `docs/`, so the trigger **FIRES, 1 of 9**. The
+   verdict is the same — exit **0, CURRENT** — but it was reached by
+   asking the gate, not by predicting from the suffix list, which is what
+   that bullet requires.
+
+**GATES AND SUITES ARE IN THE CHECKPOINT**, derived at this merge and not
+copied: GRAPH REGEN fires 1 of 9 and answers exit 0 CURRENT; BOOT GATE is
+**NOT OWED, 0 of 9**, derived rather than skipped; DOCS GATE is exit 1 on
+7 of 9 naming THREE suites, all three run and green.
