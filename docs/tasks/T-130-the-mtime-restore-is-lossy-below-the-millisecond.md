@@ -384,10 +384,13 @@ CONVENTIONS install order — `npm ci` + `npm run build` from `lib/parser/`
 - `npm run typecheck` from tools/e2e — **exit 0**.
 - `npm run lint:tokens -- --selftest` — **exit 0**, 65 TOKEN + 4 CONTROL
   samples, 87 walk-policy checks, 9 evidence-floor checks.
-  `npm run lint:tokens` — **exit 0**, **TOKEN 134 / CONTROL 719**.
-  **719 and not STATE's 720, and the difference is derivable**: the
+  `npm run lint:tokens` — **exit 0**, **TOKEN 134 / CONTROL 719 at
+  `b1ceedc`** and **TOKEN 134 / CONTROL 721 at `7d16d4b`**. Both are
+  derivable and neither is a constant: STATE reads 720 at `ca5fb96`; the
   promotion commit `7221629` removed `T-120-s3` and `T-052-s4` and added
-  this card — two out, one in, net −1 tracked file.
+  this card, two out and one in, **net −1 → 719**; this lane's notes
+  commit adds `T-130-s1` and `T-130-s2`, **+2 → 721**. TOKEN is unmoved
+  at 134 because this card adds no file under a TOKEN root.
 - **GRAPH REGEN — FIRES, and the answer was ASKED rather than predicted**
   (below).
 - **BOOT GATE — NOT OWED, derived**: this diff carries no
