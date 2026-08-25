@@ -80,13 +80,39 @@ suggested_by: integrator claude-opus-5 @T-088
 > | `agent_runner.rs:2926` hostile session id | 1 in 3 | **0.0023** |
 > | `T-124-s3` result-only denial | 1 in 9 (pooled) | **0.17** |
 >
-> So **this body and the hostile-session-id body are settled** — the
-> second at better than 400-to-1 — while **`T-124-s3` is NOT**. At one in
-> nine, fifteen clean runs is exactly the sample size that proves nothing:
-> a genuine 1-in-9 defect survives it 17 times out of 100. **Do not
-> retire `T-124-s3` on this evidence**; it needs its own run of forty or
-> a mechanism. Recorded this way because the tempting move — one clean
-> sweep, three findings closed — is how a real defect gets filed away.
+> So **this body is settled**, while `T-124-s3` is not. At one in nine,
+> fifteen clean runs is exactly the sample size that proves nothing: a
+> genuine 1-in-9 defect survives it 17 times out of 100. **Do not retire
+> `T-124-s3` on this evidence**; it needs its own run of forty or a
+> mechanism.
+>
+> **AND THE HOSTILE-SESSION-ID SETTLEMENT WAS WRONG — RETRACTED WITHIN
+> THE HOUR BY T-086's LANE.** The paragraph above claimed it settled "at
+> better than 400-to-1". **It is not settled.** T-086's executor, on a
+> CLEAN cache, saw `a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+> (`agent_runner.rs:2926`) red **1 time in 4** — and the decisive detail
+> is that it redded while the watcher body was **GREEN** and the lib
+> suite finished in **3.97 s**, squarely inside the healthy band this
+> card establishes. **A clean cache does not stop it.**
+>
+> **THE ARITHMETIC, REDONE HONESTLY.** Pooling both samples gives **1 red
+> in 19 clean runs = 0.053**. At that true rate, the chance my fifteen
+> runs showed zero is **0.44** — so seeing nothing was the coin landing
+> the ordinary way, not evidence of absence. The 0.0023 figure above was
+> computed against the DEGRADED-cache rate of 1-in-3, which assumed the
+> very thing under test: that the cache was the cause. **It was circular
+> and it read as decisive.**
+>
+> **THIS IS EXACTLY THE FAILURE THE PARAGRAPH ABOVE WARNED AGAINST**, in
+> the same commit that warned against it: *"the tempting move — one clean
+> sweep, three findings closed — is how a real defect gets filed away."*
+> Three findings were reviewed; one was correctly held open, one was
+> correctly settled, and one was filed away on circular arithmetic. **The
+> lesson is not "be more careful" but a rule: a re-measurement can only
+> settle a finding whose MECHANISM the intervention addresses.** The
+> cache explains a body that fails on a wall-clock bound; it never
+> explained a session-id body, and nobody checked whether it should have.
+> `T-086-s1` carries the refutation and its fence is `[app-agent]`.
 
 > **UNPARKED 2026-08-25 AT T-010's CHECKPOINT — THE ARMED TRIGGER FIRED,
 > EXACTLY AS WRITTEN.** *"UNPARK THE MOMENT IT REDS A VERDICT OR A MERGE
