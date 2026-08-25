@@ -5,6 +5,30 @@ status: suggested
 suggested_by: verifier claude-opus-5 @T-124-verify
 ---
 
+> **NOT REPRODUCED IN 15 CLEAN RUNS, AND THAT IS DELIBERATELY NOT ENOUGH
+> TO CLOSE IT** (architect, 2026-08-25, at main `43803fe`). `T-088-s4`'s
+> controlled experiment showed the machine's 8.7 GB / 78 173-file build
+> cache made the lib suite run 3.5x slow and redded the watcher body 4
+> times in 5; after a `cargo clean` the suite went **455/0/3 for fifteen
+> consecutive runs**, mean lib **3.97 s**, with **zero failures of any
+> body** — this one included.
+>
+> **THE ARITHMETIC IS WHY THIS CARD STAYS OPEN.** At the pooled 1-in-9
+> rate recorded on the degraded cache, the chance of seeing zero reds in
+> 15 clean runs is **0.17** — a genuine defect at that rate survives this
+> sample 17 times in 100. The sibling body it was grouped with
+> (`agent_runner.rs:2926`, 1 in 3) sits at **0.0023** and IS settled;
+> this one is not, and the difference is the rate, not the evidence.
+> **Fifteen runs is exactly the sample size that proves nothing here.**
+>
+> **WHAT WOULD SETTLE IT**: forty clean runs, or a mechanism. Until then
+> the honest statement is "not observed on a clean cache, sample too
+> small to distinguish from the cache artifact" — and the tempting move,
+> closing three findings on one clean sweep, is precisely how a real
+> defect gets filed away. Whoever picks this up should ALSO re-derive the
+> original tally, since every figure on this card was measured on the
+> degraded machine.
+
 **FOUND BY T-124'S VERIFIER, IN CODE T-124 NEVER TOUCHED.** The first
 full `cargo test --no-fail-fast` of the verification pass came back
 **420 passed / 1 failed / 3 ignored, exit 101** over 15 `test result:`

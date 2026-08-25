@@ -61,12 +61,32 @@ suggested_by: integrator claude-opus-5 @T-088
 > TIMEOUT** still stands: a wider bound buys a slower suite that fails
 > anyway on a slow enough machine.
 >
-> **A COROLLARY WORTH MORE THAN THIS CARD.** Three other intermittents
-> were filed while the machine was in this state — `T-124-s3`, the
-> `agent_runner.rs:2926` hostile-session-id body recorded in T-052's
-> checkpoint, and every "flake" tally in tonight's checkpoints. **None of
-> them has been re-measured on a clean cache**, and at least one redded in
-> the same run as this body. Re-derive them before treating any as real.
+> **A COROLLARY WORTH MORE THAN THIS CARD — AND IT HAS NOW BEEN
+> MEASURED.** Three other intermittents were filed while the machine was
+> in this state: `T-124-s3`, the `agent_runner.rs:2926`
+> hostile-session-id body recorded in T-052's checkpoint, and the "flake"
+> tallies in tonight's checkpoints. **Ten further clean runs were added
+> to the five above — 15 consecutive runs on the fresh cache, 455/0/3
+> every time, mean lib 3.97 s, zero failures of ANY body.** Not one of
+> the three reproduced.
+>
+> **THE ARITHMETIC, because "it did not reproduce" is worth different
+> amounts for each of them.** If each observed rate had held on a clean
+> cache, the chance of seeing ZERO reds in 15 runs would be:
+>
+> | body | rate observed on the degraded cache | P(0 in 15 clean) |
+> |---|---|---|
+> | this one | 4 in 5 | **0.0000** |
+> | `agent_runner.rs:2926` hostile session id | 1 in 3 | **0.0023** |
+> | `T-124-s3` result-only denial | 1 in 9 (pooled) | **0.17** |
+>
+> So **this body and the hostile-session-id body are settled** — the
+> second at better than 400-to-1 — while **`T-124-s3` is NOT**. At one in
+> nine, fifteen clean runs is exactly the sample size that proves nothing:
+> a genuine 1-in-9 defect survives it 17 times out of 100. **Do not
+> retire `T-124-s3` on this evidence**; it needs its own run of forty or
+> a mechanism. Recorded this way because the tempting move — one clean
+> sweep, three findings closed — is how a real defect gets filed away.
 
 > **UNPARKED 2026-08-25 AT T-010's CHECKPOINT — THE ARMED TRIGGER FIRED,
 > EXACTLY AS WRITTEN.** *"UNPARK THE MOMENT IT REDS A VERDICT OR A MERGE
