@@ -1,0 +1,72 @@
+---
+id: T-124-s3
+title: A SECOND watcher-shaped flake — the result-only-denial tail body reds under the loaded cargo suite and is green in every isolated run, and nothing has filed it before
+status: suggested
+suggested_by: verifier claude-opus-5 @T-124-verify
+---
+
+**FOUND BY T-124'S VERIFIER, IN CODE T-124 NEVER TOUCHED.** The first
+full `cargo test --no-fail-fast` of the verification pass came back
+**420 passed / 1 failed / 3 ignored, exit 101** over 15 `test result:`
+lines. The failing body is
+`a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail`
+in `app/src-tauri/tests/agent_runner.rs` — T-113's, added at `55f9b1b` —
+and it fails on its POSITIVE CONTROL, not on the property it pins:
+
+    the ring relayed the CLI's own stderr, so this tail is LIVE and the
+    absences below mean something: ""
+
+`stderr_tail` came back EMPTY, so the assertion that the ring carried
+the fixture CLI's own sentence
+(`transport closed before the session could be saved`) failed before
+either of the two absences below it was reached.
+
+## The tally, honest and stated as a range
+
+| what ran | where | runs | result |
+|---|---|---|---|
+| `cargo test --no-fail-fast` | lane worktree | **4** | **1 red** (420/1/3, exit 101) · 3 green (421/0/3, exit 0) |
+| the named body alone | lane worktree | 6 | 6 green |
+| `cargo test -p nputer --test agent_runner` | drill worktree, LANE's rust | 14 | 14 green (76/0/1) |
+| `cargo test -p nputer --test agent_runner` | drill worktree, **MAIN's** rust (`ce8b8e7`) | 14 | 14 green (75/0/1) |
+
+The one red landed on the run with the highest observed system load
+(load averages `7.50 8.04 9.34`, with another lane's node process at 97%
+CPU); every later run was under a quieter machine. **Green in isolation,
+red under the loaded full suite** is the same asymmetry `T-088-s4` shows,
+and it locates the cause in concurrency with the rest of the suite rather
+than in the body.
+
+## It is not T-124's, and that is derived rather than assumed
+
+`app/src-tauri/src/agent/runner.rs` — which owns the stderr ring and the
+`ExitNonZero` path this body reads — is a **0-file diff** on
+`task/T-124-adapter-spelling`: sha256
+`43b3d72bab5e055451f574d46d494004bbf5449c4c1d2aeb6fddf5f760426009` at
+main `ce8b8e7` and at the tip `e896865`, identical. T-124's whole Rust
+diff is `const` data, two pure string functions and three test bodies.
+
+**THE ONE COUPLING WORTH NAMING** rather than dismissing: T-124 adds a
+body to the same integration binary, taking it from 76 to 77 bodies run
+in parallel. Whether that marginal concurrency matters is UNMEASURED —
+14 matched runs of that target on each side were green — but it is the
+only mechanism by which this lane could touch this failure at all, and a
+reader should meet it here instead of re-deriving it.
+
+## Why it is worth a card
+
+`T-088-s4` has been the project's only known intermittent for weeks and
+the pipeline reasons about the cargo suite as "green except that one".
+**That sentence is now false**, and a second unfiled intermittent is
+exactly the thing that gets attributed to whatever lane is nearest —
+the failure mode the DOCS GATE bullet describes, arriving from the
+concurrency direction instead. `T-088-s4` did NOT fire in any of this
+verifier's four full runs; this one did.
+
+The likely mechanism, named so the next reader has somewhere to start
+rather than as a diagnosis: the stderr pump has to drain the child's
+FIFO before the exit is observed, and under load it can lose that race,
+so the ring is empty when `ExitNonZero` is assembled. If that is right
+the defect is in the RUNNER (a tail that can be silently empty) and not
+in the body, and the body is simply the only thing that asserts the ring
+carried anything at all. **Fence `[app-agent]`.**
