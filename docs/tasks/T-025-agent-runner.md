@@ -127,7 +127,11 @@ Resume argv = the same + `--resume <native_session_id>`. Justification: `acceptE
 
 ### 3. Kit delivery — compiled-in method snapshot, materialized per-genesis into .nputer/; two criteria amendments
 
-**Decision: the method snapshot is compiled into the binary** — a static `include_str!` table of exactly the driver-contract kickoff set plus its operational references (14 files, ~60 KB — the count CORRECTED BY T-043 from the plan's "13": the enumeration that follows is normative and has fourteen entries, `KIT_FILES` has fourteen, and the parity walk asserts they match. The byte figure is a separate, still-wrong number and is left alone here: see T-043-s2): `roles/planner.md`, `interview/plan-interview.md`, `interview/decomposition.md`, `docs-templates/{NORTH_STAR,ROADMAP,ARCHITECTURE,CONVENTIONS,STATE}.md`, `docs-templates/decisions/000-template.md`, `adapters/{CLAUDE,AGENTS}.md`, `tasks/TASK-FORMAT.md`, `tasks/T-000-template.md`, `runtime/nputer.yaml` (planner.md step 1's MAY-seed reads it). A `METHOD_SNAPSHOT_VERSION: "0.1.5"` const sits beside the table. Three parity tests make drift loud: (a) content is by-construction (include_str! recompiles on file change); (b) a directory walk of `method/docs-templates`, `method/adapters`, `method/tasks` asserts every file found is in the table — a NEW template file turns cargo red until the table is deliberately updated; (c) the version const cross-checks the two live stamps (`(v0.1.5` in plan-interview.md's Output heading; "currently v0.1.5" in docs/CONVENTIONS.md) — a method bump without touching the const is red. CONVENTIONS' "programs transcribe the banking map / keep code in sync" gotcha is thereby enforced, not remembered.
+**Decision: the method snapshot is compiled into the binary** — a static `include_str!` table of exactly the driver-contract kickoff set plus its operational references (14 files — the count CORRECTED BY T-043 from the plan's "13": the enumeration that follows is normative and has fourteen entries, `KIT_FILES` has fourteen, and the parity walk asserts they match. A byte figure used to sit beside that count and is DELETED rather than corrected, because a number no test can hold and that every method bump moves is worse than none: see the note below): `roles/planner.md`, `interview/plan-interview.md`, `interview/decomposition.md`, `docs-templates/{NORTH_STAR,ROADMAP,ARCHITECTURE,CONVENTIONS,STATE}.md`, `docs-templates/decisions/000-template.md`, `adapters/{CLAUDE,AGENTS}.md`, `tasks/TASK-FORMAT.md`, `tasks/T-000-template.md`, `runtime/nputer.yaml` (planner.md step 1's MAY-seed reads it). A `METHOD_SNAPSHOT_VERSION: "0.1.5"` const sits beside the table. Three parity tests make drift loud: (a) content is by-construction (include_str! recompiles on file change); (b) a directory walk of `method/docs-templates`, `method/adapters`, `method/tasks` asserts every file found is in the table — a NEW template file turns cargo red until the table is deliberately updated; (c) the version const cross-checks the two live stamps (`(v0.1.5` in plan-interview.md's Output heading; "currently v0.1.5" in docs/CONVENTIONS.md) — a method bump without touching the const is red. CONVENTIONS' "programs transcribe the banking map / keep code in sync" gotcha is thereby enforced, not remembered.
+
+**THE BYTE FIGURE IS DELETED, THE COUNT STAYS, AND THE ASYMMETRY BETWEEN THEM IS THE WHOLE POINT (T-108, 2026-08-25, at `43f995a`).** The parenthetical above read *"(14 files, ~60 KB — … The byte figure is a separate, still-wrong number and is left alone here: see T-043-s2)"*. **The COUNT is stable and load-bearing**: adding a template moves it, parity test (b) asserts the table matches the directory, and a wrong count sends a reader hunting a fifteenth file — so 14 is corrected, kept, and held by something. **The BYTE TOTAL is none of those things.** It is `include_str!` of fourteen LIVE `method/` documents, so it is rewritten by the ordinary editing of this project's own convention; nothing asserts it, and it was already stale by the next commit. **A number no test can hold and that drifts by construction is worse in a plan than no number** — it reads like a measurement and cannot be one — so the right repair is deletion, not a fresher digit that starts going stale immediately.
+
+**AND THE DRIFT IS MEASURED HERE RATHER THAN PREDICTED, WHICH IS WHY THE FIGURE HAD TO BE TAKEN BEFORE IT COULD BE THROWN AWAY** — a deletion justified by a stale measurement is the same defect one layer up. Over exactly the fourteen `include_str!` sources (enumerated from `KIT_FILES`, not grepped — see below): **23,890 bytes at `4d2f03c`** against **25,418 bytes (24.8 KiB) at `43f995a`**, all of the +1,528 in `method/tasks/TASK-FORMAT.md` alone, across three `method/` commits. **`METHOD_SNAPSHOT_VERSION` reads `"0.1.5"` at BOTH refs**, so this drift did not even need a version bump to happen — the figure moves with ordinary method edits, which is a stronger reason to delete it than the one originally given. The old "~60 KB" was high by roughly **2.4x** against the figure measured here (and ~2.5x against `4d2f03c`, where T-043-s2 measured it) — in the opposite direction from the file count that was already corrected, which is worth noticing: the two numbers in that parenthetical were wrong in opposite directions. **A COUNTING NOTE THAT MATTERS FOR ANYONE RE-DERIVING THIS**: `grep -c 'include_str!' kit.rs` answers **17** at `43f995a`, because three of the hits are doc comments; the fourteen are the CALL sites, and `KIT_FILES`' 14 `rel:` entries agree with them one-for-one. Enumerate; do not grep a count. **If a size claim is ever wanted here, the honest form is a bound with a reason — the kickoff prompt carries tens of KB, not hundreds — and never digits.**
 
 **At genesis_start the snapshot is materialized to `<project>/.nputer/genesis/kit/`** (idempotent overwrite — app-owned runtime data, losable by charter) plus `kit.json` (`methodVersion`, `appVersion`, file list, `writtenAtMs`) — the version stamp on disk. This puts the kit INSIDE the agent's cwd: read access rides the project-dir scope, no extra grant exists, the exact kit version this genesis ran is auditable, stage 0's `.gitignore` line keeps it out of the project's git (proven in the T-023 dry run's `status --ignored` check), and T-029's hand-driven mode can point any CLI at the same path. The kickoff prompt is then small and assembled Rust-side (`pub fn assemble_kickoff(...)`, exported for T-029's copyable block); required elements — kit root path, project dir path, the planner.md pointer, plain-text-turns note, method version — draft text:
 
@@ -502,7 +506,29 @@ it. Fixed in scope: `classify_line` reads `is_error` and never trusts
 `subtype`; in-band `system` errors become diagnostics; a nonzero exit
 reports the CLI's own words when stderr is silent. The new fake scenario
 `auth-error` transcribes the observed lines verbatim as the regression
-pin (`an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail`).
+pin (`an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code`,
+`app/src-tauri/tests/agent_runner.rs:1347`).
+
+> **NAME CORRECTED 2026-08-25 (T-108, at `43f995a`). THIS SENTENCE COINED
+> A PIN NAME NO FUNCTION EVER CARRIED**, and T-081's planner copied it
+> forward into that card's criterion 7, so the two spellings coexisted
+> across several cards while T-029's and T-069's notes cited the real one
+> four times between them. The name written here was
+> `an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail`.
+> Verified BEFORE the replacement was written, at `43f995a`:
+> `git grep -n "fn an_in_band_auth_failure" -- '*.rs'` returns **exactly
+> one definition**, the name now above, at exit **0**; the old spelling
+> under the same pathspec exits **1**. **THE PATHSPEC IS PART OF THE
+> RULE** — unrestricted (`-- .`) the old spelling exits **0** at this ref,
+> matching this very correction and T-081's prose, so the search reports a
+> definition that does not exist. **AND THE MECHANICAL CHECK DOES NOT
+> FAIL, IT LIES**: run as a `cargo test` filter the phantom prints
+> `test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 77 filtered
+> out` and exits **0**, against the real name's `1 passed … 76 filtered
+> out` at exit **0** — **the same exit code for a pin that passes and a
+> pin that is not there.** Read the counts; the exit cannot tell them
+> apart.
+
 Re-run against the real CLI, the failure now reads `api_retry:
 authentication_failed 401 … Failed to authenticate. API Error: 401 OAuth
 access token has been revoked.` Filed as **T-025-s1**.
