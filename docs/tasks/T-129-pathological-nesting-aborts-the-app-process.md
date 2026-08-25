@@ -5,7 +5,7 @@ feature: F-06
 milestone: 4
 priority: 6
 size: M
-status: building
+status: verifying
 blocked_by: []
 touches: [crate-index]
 builder: claude-opus-5
@@ -512,3 +512,137 @@ of one test.
   limit bounds long before this crate does). **Routed as `T-129-s3`**,
   measurement-first.
 - **No CLI output change**, so `tests/cli.rs` is untouched.
+
+### 13. THE POISON DRILL — 15 mutations, and THREE OF THEM CHANGED THE CODE
+
+Run in `/Users/ujju/Projects/drill-T-129`, a **detached** worktree
+**outside the repository**, named for this lane, with its own
+`CARGO_TARGET_DIR` at `<drill>/.drilltarget` (`T-013-s7` arm (c), so the
+parent's cache was never touched and no `CARGO_MANIFEST_DIR` binary
+leaked either way). **Every mutation is PRODUCER-side; not one assertion
+and not one shared literal was touched.** Every mutation was **read back
+with `git diff` BEFORE its run**. Every restore was proved per path by
+**sha256 against `git show HEAD:<path>`**, never by assertion. Drill
+baseline at `980b903`: **193 passed / 0 failed / 2 ignored, exit 0**.
+The worktree was removed when the drill finished (T-052-verify's
+precedent) and `git worktree list` no longer carries it.
+
+**THE DRILL IS THE REASON THREE OF THIS LANE'S FOUR COMMITS EXIST.** It
+did not confirm the pins; it broke them, three times, and each break is
+worth more than the fix it produced.
+
+**(a) `c5aa0b8` — A FIXTURE THAT MADE ITS OWN COUNT INSENSITIVE.** M5
+mutated `lib.rs`'s summary from `filter(|f| f.depth_refused.is_some())`
+to `filter(is_none)` — a producer counting the exact wrong half. It
+redded **four golden bodies** and
+`every_bounded_traversal_…` and `the_worst_legal_nesting_…`, and
+**`a_pathological_file_…` stayed GREEN while asserting
+`stats.depth_limited == Some(1)`**. Its tree held ONE refused file and
+ONE clean one, so `is_some()` and `is_none()` both count 1 and the
+assertion cannot tell them apart. **A cardinality that happens to be
+symmetric is a value poison passing for the wrong reason.** A second
+ordinary file makes it 1 refused against 2 clean, the body now asserts
+both, and the re-run of M5 at `c5aa0b8` reds **all three** integration
+bodies.
+
+**(b) `2a6a261` — TWO BOUNDARIES PINNED ONLY TO WITHIN TWO DEPTH UNITS.**
+M11 (`pattern_names`' guard `> MAX_DEPTH` → `> MAX_DEPTH + 1`) and M12
+(the same on `use_tree`) each killed **NOTHING — exit 0, the whole suite
+green**. The cause is granularity: a nested use group costs TWO
+`use_tree` frames per source level (`scoped_use_list` + `use_list`) and a
+nested object pair costs TWO `pattern_names` frames
+(`object_pattern` + `pair_pattern`), so no fixture in either body can
+change its answer when the bound moves by one. **Both bodies were pinning
+their boundary to within two, and the name on each said "at 65".** Fixed
+by adding a granularity-ONE arm to each, each with its own positive
+control — bare nested use lists (`use {{{Deep}}}`, one frame per level,
+128 clean / 129 refused) and nested array patterns
+(`const [[[deepBinding]]] = arr`, one frame per level, 125 clean / 129
+the depth at which the pattern walk takes the file back from the scan).
+Re-run at `2a6a261`, **M11 and M12 each red exactly one body**.
+
+**(c) `fe0f45f` — THE LAST SURVIVING MUTANT.** M14 replaced a refused
+record with `ExtractRecord::default()` while KEEPING the flag — "drop"
+instead of "degrade", the exact behaviour criterion 1 forbids. It
+survived the whole suite. The six extractor bodies DO assert that what
+is above the bound survives, but they call the extractor directly and
+**cannot see a caller that blanks the record**; the pipeline bodies
+asserted the flag, the count and the file's presence, and none of them
+asserted its CONTENT. The hostile file now carries
+`pub fn keptAboveTheBound() {}` above its 20 000-segment `use`, and the
+body asserts that symbol survives. M14 re-run: **reds that body alone.**
+
+**THE KILL MATRIX. Uniqueness below is MEASURED, never inferred** — each
+row's "kills alone" was read off that run's own `failures:` list, and the
+two rows that do not claim it say so.
+
+| # | mutation (producer side only) | exit | bodies redded |
+|---|---|---|---|
+| M1 | `MAX_DEPTH` 128 → **1024** | 101 | the **six** boundary bodies |
+| M2 | `MAX_DEPTH` 128 → **32** | 101 | the six **+ `the_worst_legal_nesting_…`** |
+| M3 | TS `refuse` first-wins → last-wins | 101 | the two TS site bodies + the coverage floor |
+| M4 | `use_tree` names `RustModNesting` | 101 | `use_trees_…` + the coverage floor |
+| M5 | `depth_limited` counts `is_none` | 101 | 4 goldens + 2 (see (a)); after `c5aa0b8`, **3 of 3** integration bodies |
+| M6 | `depth_refused` never reaches `FileEntry` | 101 | `a_pathological_file_…` + the coverage floor |
+| M7 | `declarations` guard off-by-one | 101 | **`inline_mod_nesting_…` ALONE** |
+| M8 | `collect_segments` guard off-by-one | 101 | **`path_segments_…` ALONE** |
+| M9 | `scan`'s guard loses its `return` | 101 | **`the_candidate_scan_…` ALONE** |
+| M10 | `module_statement` guard off-by-one | 101 | **`ambient_declare_chains_…` ALONE** |
+| M11 | `pattern_names` guard off-by-one | **0 → 101** | **NOTHING**, then **`binding_patterns_…` ALONE** after (b) |
+| M12 | `use_tree` guard off-by-one | **0 → 101** | **NOTHING**, then **`use_trees_…` ALONE** after (b) |
+| M13 | `module_statement` guard active only in a depth WINDOW | **0** | **NOTHING — and the mutation is the finding**, see below |
+| M14 | a refused file DROPPED rather than degraded | **0 → 101** | **NOTHING**, then **`a_pathological_file_…` ALONE** after (c) |
+| M15 | `use_tree`'s bound **DELETED** | 101 | one unit body **+ the `depth` binary ABORTS at SIGABRT** |
+
+**M13 IS RECORDED BECAUSE IT FAILED AS A MUTATION, NOT AS A PIN.** It
+narrowed the guard to `depth > MAX_DEPTH && depth < 200`, intending a
+bound that works near the boundary and not far past it — so that the
+coverage floor (whose drivers sit at 6 000–20 000) would be the only body
+to notice. It killed nothing, and the reason is structural rather than a
+gap in the suite: **a recursion increments one frame at a time, so it
+passes THROUGH any depth window on the way down and refuses inside it.**
+No "deep regime only" mutant of a depth guard exists. Stated because the
+next reader will have the same idea.
+
+**M15 IS THE STRONGEST RESULT AND IT IS THE ONE THE CARD IS ABOUT.**
+Deleting `use_tree`'s bound outright leaves the lib test binary at
+**151 passed / 1 failed** — one boundary body, an ordinary red — while
+the `depth` binary **aborts**:
+
+    thread 'every_bounded_traversal_is_reachable_from_a_real_file_and_names_itself'
+      has overflowed its stack
+    fatal runtime error: stack overflow, aborting
+    process didn't exit successfully: …/deps/depth-e1f4c7aa9db80883
+      (signal: 6, SIGABRT: process abort signal)
+
+**The abort NAMES the body**, and it is the only body whose inputs are
+deep enough to produce one. **`cargo test` reports that as its own 101,
+not as 134** — the binary's own exit is where the 134 lives — which is
+this card's harness trap arriving inside the drill.
+
+**THE SHAPE-SIX ANSWER, PER BODY, AND TWO OF NINE ARE HONEST NEGATIVES:**
+
+| body | unique kill | measured? |
+|---|---|---|
+| `inline_mod_nesting_…` | M7 | **yes, alone** |
+| `use_trees_…` | M12 (after (b)) | **yes, alone** |
+| `path_segments_…` | M8 | **yes, alone** |
+| `ambient_declare_chains_…` | M10 | **yes, alone** |
+| `binding_patterns_…` | M11 (after (b)) | **yes, alone** |
+| `the_candidate_scan_…` | M9 | **yes, alone** |
+| `a_pathological_file_…` | M14 (after (c)) | **yes, alone** |
+| `every_bounded_traversal_…` | M15, as an ABORT naming it | **yes** — no mutant reds it alone as an assertion (M3/M4/M5/M6 all red it in company); its unique contribution is being the only body deep enough to abort when a bound is deleted |
+| `the_worst_legal_nesting_…` | **NONE FOUND** | it reds under M2 and M5, always in company. **Stated as a negative rather than claimed** |
+
+**`the_worst_legal_nesting_…` HAS NO UNIQUE PRODUCER MUTANT AND THAT IS
+SAID PLAINLY.** What it guards is a fact about the constant AND the
+platform — "the deepest legal input fits in the smallest stack a caller
+hands us" — and no edit to the source can simulate a smaller stack. Its
+input is three literals (128 / 64 / 129), so raising `MAX_DEPTH` leaves
+it green; what stops that being a hole is that
+`inline_mod_nesting_extracts_at_128_and_refuses_at_129` pins the constant
+to **exactly 128** with literals on both sides, so the constant cannot
+move without a red. The two bodies hold the property jointly and neither
+holds it alone. CONVENTIONS says shape six *"has no mechanical remedy —
+the drill has to ASK"*; this is the asking, and the answer is a
+limitation rather than a clean bill.
