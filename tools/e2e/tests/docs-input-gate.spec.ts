@@ -439,6 +439,44 @@ test("the package-relative account has no member this scan could not evaluate", 
   }
 });
 
+/**
+ * THE CLAIM, MATCHED THE WAY A COMMENT ACTUALLY CARRIES IT (T-120).
+ *
+ * The pin below used to read `/only (?:kind of )?file that CAN read/`
+ * over `docs-scan.mjs` and nothing else, and three measured shapes
+ * walked straight past it at a green suite: the same sentence WRAPPED so
+ * `CAN` and `read` land on different lines, the same sentence in
+ * lowercase, and the same sentence stated in `docs-gate.mjs`.
+ *
+ * WRAPPING IS THE LIKELY SHAPE, NOT AN EXOTIC ONE. `docs-scan.mjs` wraps
+ * its comments near 72 columns, so whether those two words stay
+ * contiguous is an accident of where the wrap falls — the defect that
+ * actually happened had it contiguous by luck. CASE MATTERS FROM THE
+ * OTHER SIDE: this file's own CORRECTED sentences are lowercase, so a
+ * reintroduction written in the file's current voice would be lowercase
+ * too.
+ *
+ * `GAP` closes both: runs of whitespace and comment-continuation `*`
+ * between every word, matched case-insensitively. It cannot leap a word,
+ * a `/` or a quote, so widening it costs no precision — measured on this
+ * tree, it matches exactly what the narrow pin matched and nothing more.
+ */
+const GAP = "[\\s*]+";
+
+/** Fresh each call: a `g` regex carries `lastIndex`, and a shared one
+ *  silently answers differently on its second use. */
+const universalClaim = (): RegExp =>
+  new RegExp(`only${GAP}(?:kind${GAP}of${GAP})?file${GAP}that${GAP}can${GAP}read`, "gi");
+
+/** The one file that has a legitimate place to state the universal — it
+ *  holds the retraction, and the retraction QUOTES the sentence. */
+const UNIVERSAL_RETRACTION_FILE = "tools/e2e/scripts/docs-scan.mjs";
+
+/** Every other script the claim could be restated in. `docs-gate.mjs` is
+ *  not hypothetical: it is where one of the corrected restatements
+ *  lived, and it is the sibling the positional pin never opened. */
+const UNIVERSAL_SIBLING_FILES = ["tools/e2e/scripts/docs-gate.mjs"];
+
 test("the ledger's universal is gone, and what replaced it is checkable", () => {
   // BLOCKING 1 of T-084's verdict, surviving its own fix. The ledger
   // asserted "a file that holds this repository's root is the only kind
@@ -453,24 +491,31 @@ test("the ledger's universal is gone, and what replaced it is checkable", () => 
     unanchoredReaders.map((r) => r.file),
     "a reader that holds no root falsifies the old universal",
   ).toContain("app/src-tauri/tests/agent_runner.rs");
-  const scanner = readFileSync(path.join(repoRoot, "tools/e2e/scripts/docs-scan.mjs"), "utf8");
+  const scanner = readFileSync(path.join(repoRoot, UNIVERSAL_RETRACTION_FILE), "utf8");
   expect(scanner, "the ledger no longer claims the universal as live").toContain(
     "THE SENTENCE THAT USED TO OPEN THIS COMMENT WAS FALSE",
   );
-  // AND THE RETRACTION HAS TO BE THE ONLY PLACE IT SURVIVES — T-085's
-  // own rejection. This file retracted the universal in the ledger while
+  // AND THE RETRACTION HAS TO BE THE ONLY PLACE THIS WORDING SURVIVES,
+  // IN EITHER SCRIPT — T-085's own rejection, widened by T-120. This
+  // file retracted the universal in the ledger while
   // `rootAnchoredFiles()`'s comment still ASSERTED it 220 lines above:
   // the T-070-s5 shape, a live false comment, in the card that exists
   // because a stale claim shipped. `toContain` on the retraction cannot
-  // see that, so the pin is POSITIONAL. The retraction QUOTES the
-  // sentence, which is the positive control that keeps the sweep below
-  // from being vacuous (a negative assertion needs one, CONVENTIONS).
+  // see that, so the pin is POSITIONAL — and a positional pin over ONE
+  // file is the shape that misses its sibling, so the sweep reads both
+  // scripts with a rule of its own for each.
   const retraction = scanner.indexOf("THE SENTENCE THAT USED TO OPEN THIS COMMENT WAS FALSE");
   const positiveClaim = scanner.indexOf("WHAT IS TRUE, and all this ledger claims");
   expect(positiveClaim, "the retraction ends where the ledger's positive claim begins").toBeGreaterThan(
     retraction,
   );
-  const asserted = [...scanner.matchAll(/only (?:kind of )?file that CAN read/g)];
+  const asserted = [...scanner.matchAll(universalClaim())];
+  // THE POSITIVE CONTROL, AND THE WIDENING ITSELF IS WHAT PUTS IT AT
+  // RISK. The retraction QUOTES the sentence, and that quotation is the
+  // only thing keeping the sweep below from being vacuous (a negative
+  // assertion needs a positive control, CONVENTIONS). A matcher widened
+  // until it stops matching the quotation has deleted its own control,
+  // and would then pass over a tree that had lost the retraction too.
   expect(asserted.length, "the retraction quotes the sentence, so this sweep can match").toBeGreaterThan(0);
   for (const m of asserted) {
     expect(
@@ -481,6 +526,77 @@ test("the ledger's universal is gone, and what replaced it is checkable", () => 
       positiveClaim,
     );
   }
+  // THE SIBLING SCRIPT GETS A RULE OF ITS OWN, and it has to, because
+  // the window above is defined in `docs-scan.mjs` and nowhere else:
+  // `docs-gate.mjs` holds no retraction and no positive claim, so it has
+  // no legitimate place to state the universal at all. OUTSIDE THE
+  // RETRACTION FILE, ANY OCCURRENCE IS A HIT.
+  for (const rel of UNIVERSAL_SIBLING_FILES) {
+    const sibling = readFileSync(path.join(repoRoot, rel), "utf8");
+    expect(
+      [...sibling.matchAll(universalClaim())].map((m) => m.index),
+      `${rel} holds no retraction window, so it may not state the universal at all`,
+    ).toEqual([]);
+  }
+  // WHAT THIS PIN DOES **NOT** REACH, NAMED RATHER THAN IMPLIED — which
+  // is why the comment above says "THIS WORDING" and not "IT". The sweep
+  // is wrap- and case-insensitive over ONE wording. `docs-scan.mjs`
+  // states the same universal in a DIFFERENT one near the top of its
+  // "WHAT IT CANNOT SEE" section, OUTSIDE the window, and this sweep
+  // does not see it. THAT OCCURRENCE IS BENIGN AND IS KEPT: it is itself
+  // a retraction and it is correct. It is asserted here so "seen and
+  // kept" cannot quietly become "missed", and so the next reader fixes
+  // the SWEEP's scoping rather than rewriting prose that is already
+  // right.
+  const other = scanner.search(new RegExp(`can${GAP}only${GAP}read${GAP}THIS${GAP}repositor`));
+  expect(other, "the differently-worded retraction is still in the tree, seen and kept").toBeGreaterThan(
+    -1,
+  );
+  expect(
+    other,
+    "and it sits OUTSIDE the window this pin enforces — the measured limit of its reach",
+  ).toBeLessThan(retraction);
+});
+
+test("the conclusion the universal warranted is scoped wherever it is restated", () => {
+  // THE PREMISE OCCURS ONCE; THE CONCLUSION IT WARRANTED IS RESTATED,
+  // and every restatement needs its own scoping clause. "X is the exact
+  // set of places the answer could still be short" is TRUE of the
+  // ROOT-ANCHORED class and FALSE of files in general: the
+  // package-relative class has no anchor to enumerate, so no list bounds
+  // it and `app/src-tauri/tests/agent_runner.rs` is the live
+  // counterexample. AN UNSCOPED RESTATEMENT IS THE RETRACTED UNIVERSAL
+  // WEARING THE CONCLUSION'S CLOTHES — and finding those took a careful
+  // read, one restatement at a time. This is that read done
+  // mechanically.
+  //
+  // MEASURED AGAINST THE LIVE TREE BEFORE THE ARM WAS WRITTEN, because
+  // an arm omitted for noise has to say so with its hit list: TWO
+  // occurrences, both in `docs-scan.mjs`, both already scoped — one by
+  // `ROOT-ANCHORED` 8 characters past the match and one by `THIS CLASS`
+  // 4 characters past it — and NONE in `docs-gate.mjs`. Zero unscoped
+  // hits, so the arm is built rather than argued away. Re-derive the
+  // figures at your own ref; what is pinned is the RULE.
+  const SCOPE_WINDOW = 80;
+  const scoping = new RegExp(`ROOT[-\\s*]+ANCHORED|THIS${GAP}CLASS`, "i");
+  const unscoped: string[] = [];
+  let seen = 0;
+  for (const rel of [UNIVERSAL_RETRACTION_FILE, ...UNIVERSAL_SIBLING_FILES]) {
+    const source = readFileSync(path.join(repoRoot, rel), "utf8");
+    for (const m of source.matchAll(new RegExp(`exact${GAP}set${GAP}of${GAP}places`, "gi"))) {
+      seen += 1;
+      const end = m.index + m[0].length;
+      if (!scoping.test(source.slice(end, end + SCOPE_WINDOW))) {
+        unscoped.push(`${rel}:${source.slice(0, m.index).split("\n").length}`);
+      }
+    }
+  }
+  // THE ARM'S OWN POSITIVE CONTROL, and it is the same shape as the
+  // premise sweep's: a negative assertion over zero occurrences passes
+  // for the wrong reason. A floor rather than a count — the restatements
+  // may be reworded, and this stays true while any survives.
+  expect(seen, "the conclusion is live in the tree, so this sweep is not vacuous").toBeGreaterThan(0);
+  expect(unscoped, "every restatement of the conclusion carries its scoping word").toEqual([]);
 });
 
 test("the one by-name exclusion is load-bearing, and the spec is NOT excluded", () => {
