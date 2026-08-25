@@ -3,7 +3,29 @@ id: T-123-s5
 title: GRAPH REGEN's suffix trigger stops covering the walk the moment T-010 lands — a Rust-only diff moves the graph and the gate says NOT OWED
 status: suggested
 suggested_by: executor claude-opus-5 @T-123-rebuild
+closed_by: e1f3023
 ---
+
+**DISCHARGED BEFORE ITS OWN CARD MERGED — recorded here at T-123's
+checkpoint so this file does not read as open.** The architect absorbed
+this finding into `docs/CONVENTIONS.md`'s GRAPH REGEN bullet at
+**`e1f3023`** (2026-08-25, *"GRAPH REGEN's trigger gains `*.rs`"*), which
+landed on main while T-123's second verification pass was still running.
+The trigger now reads *"`*.ts/*.tsx/*.js/*.jsx` **or `*.rs`** outside
+docs/"*, and the bullet carries this finding's own figures.
+
+**THE FIX WAS PROVED BY THE MERGE THAT PROMPTED IT.** At T-123's merge
+`0358c0c` the gate was DERIVED from the merge's own 13 paths: it fires on
+**3**, and the four TS/JS suffixes alone match **0**. A regen was genuinely
+owed — `index --check` exit 1, +1 227 bytes / +4 symbols / +1 edge — so
+without `e1f3023` this merge is exactly the miss this finding predicted,
+one night after it was filed.
+
+**STATUS STAYS `suggested` DELIBERATELY.** CONVENTIONS' fourth-question
+ruling (T-084, absorbing T-083's and T-081's precedents): *"resolved by
+other work"* is a DISPOSITION and disposition belongs to TRIAGE, not to
+the integrator — so this file records the discharge with a `closed_by:`
+line, the shape `T-081-s7` uses, and triage makes the move.
 
 **This refutes the closing note of `T-010-s1`, and it is measured rather
 than argued.** That note says:

@@ -1349,7 +1349,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: eleven undeclared dependencies, three declared-only components, no unclaimed territory", () => {
+  it("THE FINDINGS: twelve undeclared dependencies, three declared-only components, no unclaimed territory", () => {
     expect(derived.findings).toEqual([
       {
         rule: "D1",
@@ -1563,6 +1563,29 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
         ],
       },
       {
+        // NEW at the T-123 merge regen, and it is this repository's FIRST
+        // COMPONENT CYCLE: C-14 already declares C-10 and the registry has
+        // carried `C-14 -> C-10 confirmed` since T-025, so this row closes
+        // a two-node loop, C-10 ⇄ C-14. It is also C-10's FIRST drift
+        // finding in this repository's life — the node joins the drift set
+        // below for the first time, which is why that array grows here and
+        // `declaredOnly` does not.
+        // THE EDGE IS THE CARD'S OWN INSTRUCTION, not an executor's choice:
+        // T-123 criterion 2 requires the shell to ask C-14's accessor for
+        // the session registry and forbids `docs_watch.rs` from reading
+        // `.nputer/` itself, and `docs_watch.rs` is C-10. Any spelling that
+        // obeys that sentence puts this edge in the graph. Left UNDECLARED
+        // on the standing rule — the integrator regenerates, the ARCHITECT
+        // rules on the registry. Routed as `T-123-s8`.
+        rule: "D1",
+        id: "D1:C-10->C-14",
+        from: "C-10",
+        to: "C-14",
+        fileEdges: [
+          { from: "app/src-tauri/src/docs_watch.rs", to: "app/src-tauri/src/agent/sessions.rs" },
+        ],
+      },
+      {
         // NEW at the T-027 merge regen, and the row the branch's own
         // forecast did NOT predict: the first genesis-side use of a
         // SHARED UI PRIMITIVE. Both new chat components import
@@ -1666,7 +1689,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
   });
 
-  it("the full relation table: 14 confirmed, 11 undeclared, 9 planned", () => {
+  it("the full relation table: 14 confirmed, 12 undeclared, 9 planned", () => {
     expect(derived.edges.map((e) => [e.from, e.to, e.relation, e.observedCount])).toEqual([
       ["C-05", "C-01", "planned", 0],
       // 8 → 10 at the T-034 merge regen: both new map suites import
@@ -1782,6 +1805,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["C-09", "C-08", "confirmed", 3],
       ["C-09", "C-11", "planned", 0],
       ["C-10", "C-06", "confirmed", 1],
+      // NEW ROW at the T-123 merge regen — the twelfth undeclared, and the
+      // row that closes this repository's FIRST COMPONENT CYCLE: read it
+      // against `["C-14", "C-10", "confirmed", 2]` further down, which the
+      // registry has DECLARED since T-025. C-10 ⇄ C-14. Its fileEdges LIST
+      // lives in the findings body above, a different assertion in a
+      // different it(): the row appearing does not make the list right.
+      ["C-10", "C-14", "undeclared", 1],
       // 4 → 6 at the T-034 merge regen: task-waves.ts imports
       // lib/verdicts.ts and TasksLens.tsx imports lib/utils.ts — both
       // C-05's by NAME in the registry, not by umbrella. SIX and not the
@@ -1920,7 +1950,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // C-14-at-T-025 route one language later. Both assertions were
     // derived from the live probe before the suite ran, for the same
     // reason the sentence above gives.
-    expect(drift).toEqual(["C-01", "C-05", "C-08", "C-09", "C-11", "C-13", "C-15"]);
+    // C-10 JOINS THE DRIFT SET AT THE T-123 MERGE REGEN, and it is its
+    // FIRST drift finding in this repository's life — the node has been in
+    // this table since T-003 and has never carried one. It joins as a D1
+    // SOURCE (→C-14 via docs_watch.rs importing GenesisReachability), the
+    // same route C-13 took at T-027 and C-05 at T-025. `declaredOnly` does
+    // NOT move: C-10 has three files and is nobody's declared-only node.
+    // ASYMMETRY WORTH KEEPING: C-14 does NOT join, because it is only the
+    // TARGET here and it already declares C-10 — which is exactly why this
+    // edge closes a CYCLE rather than adding a second independent one.
+    expect(drift).toEqual(["C-01", "C-05", "C-08", "C-09", "C-10", "C-11", "C-13", "C-15"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
     expect(declaredOnly).toEqual(["C-01", "C-11", "C-15"]);
   });

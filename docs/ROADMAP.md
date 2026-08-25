@@ -180,6 +180,39 @@ when a re-subscribe is refused but the FIRST subscription is still
 attached, the failure screen stops saying no file change can reach the
 board — because one can, and the next write will bring it up without
 the user retrying or reopening anything.
+**THE SENTENCE ABOVE ABOUT "the one state 'no overwrite path exists' is
+supposed to make unreachable" NEEDS ITS EXCEPTION SINCE T-123**, corrected
+in place with the ref rather than deleted (T-101's precedent): landing on
+the interview screen over a folder that plainly has a plan is now a
+DELIBERATE outcome — but only when one of our OWN interviews has a
+resumable session registered on it. T-064's fix is untouched for every
+other folder, and the guarantee is untouched everywhere, because resuming
+the plan your own interview wrote is not an overwrite.
+T-123 merged 2026-08-25, and it is the first card in this milestone
+answering a defect a real @human hit on this project's FIRST genesis
+interview against a real model. **The interview's own first act made
+itself unreachable.** Stage 0 scaffolds `docs/ROADMAP.md`; a folder
+holding a ROADMAP has a plan; a folder with a plan was never routed to
+genesis; and the resume offer T-029 built lives only behind the genesis
+screen. So the session that wrote the plan was stranded by the plan it
+wrote, with no way back in from the UI — on a folder whose `docs/tasks/`
+was empty and whose ROADMAP had zero features. What a user could not do
+before and can now: reopen a folder whose interview banked stage 0 and
+be taken back into that interview rather than to an empty board. The
+routing now asks the session registry as well as the plan probe. **The
+half that had to be got right twice, and was rejected the first time, is
+what "registered" means**: a planner entry that is merely PRESENT is not
+a way back in — one with no usable session id, or one whose id the
+security boundary refuses, would have sent the user to a screen with no
+offer, no working button and no way off it, which is the same dead end
+one door over. So the predicate means RESUMABLE, and a folder whose
+registered interview cannot be resumed correctly opens as the project it
+is. **The honest limit, and it is @human's one look**: on that newly
+reachable screen a user with NO supported CLI finds three controls and
+none of them can succeed — resume needs the CLI, "Start a fresh session"
+is refused by design on a planned folder, and the hand-driven kickoff
+still refuses one too. All three are disclosed at the site and routed
+(`T-123-s1`, `T-123-s4`); none is introduced by this card.
 T-025 (the agent runner, the milestone's hard core) merged 2026-08-16
 and the honest reading of it is narrow. The MECHANISM exists: four app
 commands spawn the user's own `claude` headless once per turn, resume

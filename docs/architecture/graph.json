@@ -4054,8 +4054,8 @@
       "id": "f:app/src-tauri/src/agent/mod.rs",
       "path": "app/src-tauri/src/agent/mod.rs",
       "lang": "rust",
-      "hash": "blake3:560898560b1b8634f638cbc9ffddd5cf4a8972294fda36fa26936e7024f7e267",
-      "loc": 1464,
+      "hash": "blake3:e2c616cc1f7ccd4f70b5ff13b37567f20a9b3fa7e5600e87585fcf51bf7206c6",
+      "loc": 1873,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/mod.rs#AgentState",
@@ -4063,8 +4063,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            170,
-            178
+            172,
+            180
           ]
         },
         {
@@ -4073,8 +4073,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            104,
-            109
+            106,
+            111
           ]
         },
         {
@@ -4083,8 +4083,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            47,
-            47
+            49,
+            49
           ]
         },
         {
@@ -4093,8 +4093,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            123,
-            134
+            125,
+            136
           ]
         },
         {
@@ -4103,8 +4103,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            139,
-            149
+            141,
+            151
           ]
         },
         {
@@ -4113,8 +4113,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            634,
-            661
+            701,
+            728
           ]
         },
         {
@@ -4123,8 +4123,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            596,
-            596
+            663,
+            663
           ]
         },
         {
@@ -4133,8 +4133,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            113,
-            117
+            115,
+            119
           ]
         },
         {
@@ -4143,8 +4143,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            89,
-            100
+            91,
+            102
           ]
         },
         {
@@ -4153,8 +4153,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            53,
-            85
+            55,
+            87
           ]
         },
         {
@@ -4163,8 +4163,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            160,
-            160
+            162,
+            162
           ]
         },
         {
@@ -4183,8 +4183,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            799,
-            813
+            876,
+            890
           ]
         },
         {
@@ -4193,8 +4193,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            505,
-            587
+            572,
+            654
           ]
         },
         {
@@ -4203,8 +4203,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            180,
-            263
+            182,
+            265
           ]
         },
         {
@@ -4213,8 +4213,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            151,
-            155
+            153,
+            157
           ]
         },
         {
@@ -4223,8 +4223,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            265,
-            269
+            267,
+            271
           ]
         },
         {
@@ -4233,8 +4233,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            162,
-            166
+            164,
+            168
           ]
         },
         {
@@ -4243,8 +4243,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            679,
-            702
+            746,
+            779
           ]
         },
         {
@@ -4263,8 +4263,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            410,
-            490
+            448,
+            545
           ]
         },
         {
@@ -4283,8 +4283,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            707,
-            773
+            784,
+            850
           ]
         },
         {
@@ -4303,8 +4303,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            818,
-            903
+            895,
+            980
           ]
         },
         {
@@ -4313,8 +4313,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            276,
-            399
+            278,
+            437
           ]
         },
         {
@@ -4323,8 +4323,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            776,
-            788
+            853,
+            865
           ]
         },
         {
@@ -4333,8 +4333,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            906,
-            1464
+            983,
+            1873
           ]
         },
         {
@@ -4343,8 +4343,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            617,
-            629
+            684,
+            696
           ]
         }
       ]
@@ -5062,8 +5062,8 @@
       "id": "f:app/src-tauri/src/agent/sessions.rs",
       "path": "app/src-tauri/src/agent/sessions.rs",
       "lang": "rust",
-      "hash": "blake3:ec017a2b94c308ab4a36b9ec9a79c8f98fec8d1d4d93b43ef04cc3887833f9da",
-      "loc": 1045,
+      "hash": "blake3:e6500db72fc054d561167428ac8c1435f06864ca8ff2ba1090eb960b3a44693f",
+      "loc": 1175,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/sessions.rs#DAYS_IN_MONTH",
@@ -5071,8 +5071,18 @@
           "kind": "const",
           "exported": false,
           "range": [
-            518,
-            518
+            582,
+            582
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/sessions.rs#GenesisReachability",
+          "name": "GenesisReachability",
+          "kind": "enum",
+          "exported": true,
+          "range": [
+            286,
+            304
           ]
         },
         {
@@ -5121,8 +5131,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            370,
-            370
+            434,
+            434
           ]
         },
         {
@@ -5151,8 +5161,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            291,
-            313
+            355,
+            377
           ]
         },
         {
@@ -5161,8 +5171,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            318,
-            332
+            382,
+            396
           ]
         },
         {
@@ -5173,6 +5183,16 @@
           "range": [
             202,
             206
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/agent/sessions.rs#genesis_reachability",
+          "name": "genesis_reachability",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            324,
+            326
           ]
         },
         {
@@ -5201,8 +5221,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            520,
-            522
+            584,
+            586
           ]
         },
         {
@@ -5211,8 +5231,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            530,
-            564
+            594,
+            628
           ]
         },
         {
@@ -5231,8 +5251,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            271,
-            286
+            335,
+            350
           ]
         },
         {
@@ -5246,13 +5266,23 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/src/agent/sessions.rs#reachability_of",
+          "name": "reachability_of",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            311,
+            317
+          ]
+        },
+        {
           "id": "s:app/src-tauri/src/agent/sessions.rs#read_transcript",
           "name": "read_transcript",
           "kind": "fn",
           "exported": true,
           "range": [
-            350,
-            358
+            414,
+            422
           ]
         },
         {
@@ -5261,8 +5291,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            494,
-            502
+            558,
+            566
           ]
         },
         {
@@ -5291,8 +5321,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            390,
-            392
+            454,
+            456
           ]
         },
         {
@@ -5301,8 +5331,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            422,
-            471
+            486,
+            535
           ]
         },
         {
@@ -5311,8 +5341,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            567,
-            1045
+            631,
+            1175
           ]
         },
         {
@@ -5331,8 +5361,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            505,
-            514
+            569,
+            578
           ]
         },
         {
@@ -5839,72 +5869,12 @@
       "id": "f:app/src-tauri/src/docs_watch.rs",
       "path": "app/src-tauri/src/docs_watch.rs",
       "lang": "rust",
-      "hash": "blake3:87f74e58bdd7e6580474eeede868cf7952c93c35e76a5cfa2ff61632458a918c",
-      "loc": 3445,
+      "hash": "blake3:bd37032135bb49b782a03023d43fd15bfd303f23fb0dae4fe4e4235ac7497ec0",
+      "loc": 3952,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/docs_watch.rs#ARCHITECTURE_NAME",
           "name": "ARCHITECTURE_NAME",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            58,
-            58
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#CollectOutcome",
-          "name": "CollectOutcome",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            115,
-            124
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#DEBOUNCE",
-          "name": "DEBOUNCE",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            48,
-            48
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#DOCS_DIR",
-          "name": "DOCS_DIR",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            50,
-            50
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#DocsFile",
-          "name": "DocsFile",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            75,
-            78
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#DocsSnapshot",
-          "name": "DocsSnapshot",
-          "kind": "struct",
-          "exported": true,
-          "range": [
-            128,
-            139
-          ]
-        },
-        {
-          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_DEPTH",
-          "name": "MAX_DEPTH",
           "kind": "const",
           "exported": false,
           "range": [
@@ -5913,13 +5883,73 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/src/docs_watch.rs#CollectOutcome",
+          "name": "CollectOutcome",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            120,
+            129
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#DEBOUNCE",
+          "name": "DEBOUNCE",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            53,
+            53
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#DOCS_DIR",
+          "name": "DOCS_DIR",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            55,
+            55
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#DocsFile",
+          "name": "DocsFile",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            80,
+            83
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#DocsSnapshot",
+          "name": "DocsSnapshot",
+          "kind": "struct",
+          "exported": true,
+          "range": [
+            133,
+            144
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#MAX_DEPTH",
+          "name": "MAX_DEPTH",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            68,
+            68
+          ]
+        },
+        {
           "id": "s:app/src-tauri/src/docs_watch.rs#MAX_ECHO_LOG_CHARS",
           "name": "MAX_ECHO_LOG_CHARS",
           "kind": "const",
           "exported": false,
           "range": [
-            69,
-            69
+            74,
+            74
           ]
         },
         {
@@ -5928,8 +5958,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            62,
-            62
+            67,
+            67
           ]
         },
         {
@@ -5938,8 +5968,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            61,
-            61
+            66,
+            66
           ]
         },
         {
@@ -5948,8 +5978,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            67,
-            67
+            72,
+            72
           ]
         },
         {
@@ -5958,8 +5988,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            282,
-            282
+            287,
+            287
           ]
         },
         {
@@ -5968,8 +5998,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            165,
-            218
+            170,
+            223
           ]
         },
         {
@@ -5978,8 +6008,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            416,
-            426
+            421,
+            431
           ]
         },
         {
@@ -5988,8 +6018,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            147,
-            159
+            152,
+            164
           ]
         },
         {
@@ -5998,8 +6028,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            71,
-            71
+            76,
+            76
           ]
         },
         {
@@ -6008,8 +6038,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            57,
-            57
+            62,
+            62
           ]
         },
         {
@@ -6018,8 +6048,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            89,
-            101
+            94,
+            106
           ]
         },
         {
@@ -6028,8 +6058,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            105,
-            108
+            110,
+            113
           ]
         },
         {
@@ -6038,8 +6068,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            59,
-            59
+            64,
+            64
           ]
         },
         {
@@ -6048,8 +6078,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            221,
-            246
+            226,
+            251
           ]
         },
         {
@@ -6058,8 +6088,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            256,
-            276
+            261,
+            281
           ]
         },
         {
@@ -6068,8 +6098,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            1042,
-            1060
+            1167,
+            1185
           ]
         },
         {
@@ -6078,8 +6108,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            874,
-            1001
+            956,
+            1126
           ]
         },
         {
@@ -6088,8 +6118,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            751,
-            764
+            822,
+            835
           ]
         },
         {
@@ -6098,8 +6128,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1409,
-            1462
+            1534,
+            1587
           ]
         },
         {
@@ -6108,8 +6138,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1081,
-            1114
+            1206,
+            1239
           ]
         },
         {
@@ -6118,8 +6148,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            709,
-            711
+            780,
+            782
           ]
         },
         {
@@ -6128,8 +6158,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            691,
-            693
+            762,
+            764
           ]
         },
         {
@@ -6138,8 +6168,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            575,
-            685
+            646,
+            756
           ]
         },
         {
@@ -6148,8 +6178,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1064,
-            1074
+            1189,
+            1199
           ]
         },
         {
@@ -6158,8 +6188,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1138,
-            1208
+            1263,
+            1333
           ]
         },
         {
@@ -6168,8 +6198,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1214,
-            1261
+            1339,
+            1386
           ]
         },
         {
@@ -6178,8 +6208,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            526,
-            536
+            597,
+            607
           ]
         },
         {
@@ -6188,8 +6218,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            397,
-            399
+            402,
+            404
           ]
         },
         {
@@ -6198,8 +6228,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            284,
-            288
+            289,
+            293
           ]
         },
         {
@@ -6208,8 +6238,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            428,
-            483
+            433,
+            506
           ]
         },
         {
@@ -6218,8 +6248,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            290,
-            357
+            295,
+            362
           ]
         },
         {
@@ -6228,8 +6258,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            545,
-            554
+            616,
+            625
           ]
         },
         {
@@ -6238,8 +6268,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            500,
-            508
+            571,
+            579
           ]
         },
         {
@@ -6248,8 +6278,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            385,
-            390
+            390,
+            395
           ]
         },
         {
@@ -6258,8 +6288,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            359,
-            361
+            364,
+            366
           ]
         },
         {
@@ -6268,8 +6298,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            363,
-            368
+            368,
+            373
           ]
         },
         {
@@ -6278,8 +6308,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            771,
-            839
+            842,
+            910
           ]
         },
         {
@@ -6288,8 +6318,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            514,
-            522
+            585,
+            593
           ]
         },
         {
@@ -6298,8 +6328,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            715,
-            731
+            786,
+            802
           ]
         },
         {
@@ -6308,8 +6338,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1333,
-            1391
+            1458,
+            1516
           ]
         },
         {
@@ -6318,8 +6348,18 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            371,
-            378
+            376,
+            383
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/src/docs_watch.rs#routes_to_genesis",
+          "name": "routes_to_genesis",
+          "kind": "fn",
+          "exported": true,
+          "range": [
+            552,
+            554
           ]
         },
         {
@@ -6328,8 +6368,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1263,
-            1325
+            1388,
+            1450
           ]
         },
         {
@@ -6338,8 +6378,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1006,
-            1022
+            1131,
+            1147
           ]
         },
         {
@@ -6348,8 +6388,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            696,
-            706
+            767,
+            777
           ]
         },
         {
@@ -6358,8 +6398,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1030,
-            1039
+            1155,
+            1164
           ]
         },
         {
@@ -6368,8 +6408,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            1465,
-            3445
+            1590,
+            3952
           ]
         },
         {
@@ -6378,8 +6418,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            491,
-            493
+            562,
+            564
           ]
         }
       ]
@@ -14848,8 +14888,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:b801f24c441ed3886f218eb867efd04fcfa2b448ba8fb339eb783b42d633a0da",
-      "loc": 1949,
+      "hash": "blake3:61d2f0125fa0c92c914e8503492394c3b7b08e56920008b474e2f3683d5d428b",
+      "loc": 1988,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -17275,8 +17315,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:5c8bf8e5902f17f06317b4ec58df7a01582dc3599e6b5c7df4c9a1bb6e839981",
-      "loc": 483,
+      "hash": "blake3:ce58f52659cd9c4e29d02ac6748d0e340aea8674e0e63a52fe3594756dce087d",
+      "loc": 494,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -21470,6 +21510,7 @@
       "to": "f:app/src-tauri/src/docs_watch.rs",
       "kind": "import",
       "symbols": [
+        "*",
         "WatchState",
         "probe_plan"
       ]
@@ -21636,6 +21677,14 @@
         "Path",
         "PathBuf",
         "Stdio"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/src/docs_watch.rs",
+      "to": "f:app/src-tauri/src/agent/sessions.rs",
+      "kind": "import",
+      "symbols": [
+        "GenesisReachability"
       ]
     },
     {
@@ -34011,7 +34060,7 @@
   ],
   "stats": {
     "files": 172,
-    "symbols": 1885,
-    "edges": 1848
+    "symbols": 1889,
+    "edges": 1849
   }
 }

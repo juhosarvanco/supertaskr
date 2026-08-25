@@ -80,7 +80,14 @@ ADR-014/015).
   works here. Entry is two zero-argument Tauri commands (T-026, the ADR-012
   pattern — the native dialog opens Rust-side and no path crosses IPC
   in either direction); a folder that already holds a plan is routed to
-  the ordinary open, so no overwrite path exists by construction. "No
+  the ordinary open, so no overwrite path exists by construction —
+  **and SINCE T-123 (`0358c0c`) that clause carries ONE exception,
+  corrected in place rather than left standing (T-101's precedent): a
+  folder that holds a plan AND registers a RESUMABLE genesis session of
+  our own routes to GENESIS instead. The no-overwrite guarantee is
+  untouched, and that is the point — resuming the plan your own interview
+  wrote is not an overwrite but its opposite. See the T-123 paragraph
+  below for what "resumable" had to mean before this was safe.** "No
   plan" is a WEAKER condition than "no docs/", and since T-042 the
   switch says so rather than assuming the strong one: a genesis folder
   may already hold a plain `docs/` — a lone `docs/ARCHITECTURE.md`, a
@@ -118,13 +125,68 @@ ADR-014/015).
   `has_plan` is ONE predicate with TWO constructors and the LATER
   reading wins: the post-ack re-read is **veto-only** (it is reached
   only where the probe already said "no plan", so it can turn genesis
-  OFF and never ON) and its verdict is `open_as_project`'s own
+  OFF and never ON — **and SINCE T-123 that PARENTHETICAL is false
+  while the PROPERTY it states is still true, which is exactly the kind
+  of clause worth correcting rather than deleting. The re-read is now
+  reached wherever `routes_to_genesis` said genesis, which includes a
+  folder that DOES hold a plan and registers a resumable interview. The
+  veto survives on a different derivation: `reach` is read ONCE and
+  CARRIED into the window, so the only thing that can move between the
+  two readings is the docs half, and the docs half can only push
+  `has_plan` from false toward true. A second registry read inside the
+  window could have flipped genesis back ON, which is precisely why
+  there is not one — and that "read once and carried" half is the one
+  thing the suite does not pin, filed as `T-123-s6`**) and its verdict
+  is `open_as_project`'s own
   outcome, which needs no further work because the two paths have
   already converged — project committed, docs watch armed
   recursively, sentinel armed, seq taken, candidate cleared. What is
   NOT closed is the window itself: a plan written after the switch
   returns is still a plan written after the switch returns, and the
   sentinel brings the pipeline up correctly either way.
+  **T-123 GIVES THE ROUTING QUESTION ITS SECOND INPUT, and the whole
+  clause above about a plan-holding folder is amended at its source
+  because of it.** T-064 made the switch tell one story about WHEN it
+  looked; T-123 is about what it looked AT. The plan probe answers *"does
+  this folder hold a plan?"* and has never answered *"is one of OUR
+  interviews running on it?"* — so the interview's own first act, which
+  scaffolds `docs/ROADMAP.md`, made itself unreachable: the folder now had
+  a plan, a plan-holding folder went to the ordinary open, and the resume
+  offer lives only behind the genesis screen. **A real @human hit this on
+  this project's first genesis interview against a real model.** The
+  routing now asks BOTH — `routes_to_genesis(probe, reach)` is
+  `!probe.has_plan() || reach == Resumable`, ONE rule with ONE
+  implementation in `docs_watch.rs` and FOUR callers — and the registry
+  half has exactly one owner in C-14, which `docs_watch.rs` asks rather
+  than stat-ing `.nputer/` itself.
+  **THE PREDICATE MEANS *RESUMABLE*, NOT *PRESENT*, AND THAT DISTINCTION
+  IS THE CARD'S WHOLE SECOND PASS.** The first build asked
+  `genesis_record(..).is_some()`, which is true of a planner entry with no
+  usable `native_session_id` — and routing one of those to genesis lands
+  the user on a screen with no offer, no working control and no way off
+  it, which is a fresh instance of T-050's own ruling that no reachable
+  screen is a dead end. It was REJECTED for exactly that. The rebuild
+  fixed it at the source rather than at the gate: C-14 gained
+  `GenesisReachability { NoSession, NotResumable, Resumable }`, because a
+  `bool` cannot express *"present, and no way back in"* as distinct from
+  *"nothing of ours is here"* — the two are literally the same value, so
+  no test could ever show them differing, and CONVENTIONS requires a
+  refusal to be shown differing from an absence. **Naming the third state
+  is what made the missing control assertable**; the `if planned` backstop
+  the first build needed became UNREACHABLE and was removed rather than
+  kept as a guard no input can reach and no drill can red.
+  **THE ARCHITECTURAL PRICE IS A CYCLE, and it is recorded rather than
+  quietly declared.** `docs_watch.rs` is C-10; the accessor is C-14's; so
+  the merge adds an observed **`C-10 → C-14`** beside the registry's
+  already-declared **`C-14 → C-10`** — this repository's FIRST component
+  cycle, and C-10's first drift finding. It follows from the card's own
+  criterion 2 rather than from an executor's choice, it is left UNDECLARED
+  on the standing rule (the integrator regenerates, the ARCHITECT rules on
+  the registry), and `T-123-s8` puts the three open answers in front of
+  the architect. **ZERO frontend change** — `app/src/**`, `lib.rs`,
+  `acl_pin.rs` and both manifests are 0-file diffs, IPC stays at FOURTEEN
+  and the 92-grant set is untouched — because the route lands on the
+  existing `PickOutcome::Genesis` variant that `App.tsx` already renders.
   **THE WIRE NARROWED WITH IT**: `PickOutcome::Genesis` no longer
   carries `probe` — measured at ZERO live readers under `app/src` at
   both endpoints, so the field was a decision record nothing read —
@@ -682,6 +744,31 @@ ADR-014/015).
   move the graph from here on, which is a NEW obligation on every lane in
   that tree rather than only a correction: the four merges above were each
   able to state "byte-identical" without regenerating anything.
+  **T-123 IS THE FIRST MERGE UNDER `app/src-tauri/src/agent/**` TO PAY
+  THAT NEW OBLIGATION, and it paid it twice over.** Its diff is three
+  `.rs` files and nothing else in code; the graph moved **+4 symbols and
+  +1 edge** (894 664 → 895 891 bytes at `0358c0c`), the two live-registry
+  app fixtures had to be reconciled, and the regen fired **only** because
+  `T-123-s5` — this same lane's own finding — had widened GRAPH REGEN's
+  trigger to include `*.rs` at `e1f3023` the night before. The four TS/JS
+  suffixes alone match **0 of 13** paths here. The paragraph above
+  forecast a new obligation; this is what it cost.
+  **AND C-14 GAINED A CLASSIFICATION, WHICH IS THE INTERESTING HALF.**
+  `sessions::genesis_record` was already *"the ONE place that fact
+  lives"* (T-070, above). T-123 adds `GenesisReachability { NoSession,
+  NotResumable, Resumable }` and `genesis_reachability` beside it, so C-14
+  now owns not just *what was banked* but *whether it can be re-entered* —
+  and C-05's shell, C-14's `start_genesis` and its `resume_genesis` all
+  ask that one accessor, which is what makes the routing decision and the
+  two commands provably agree. The consequence is a component edge
+  **`C-10 → C-14`** that closes a cycle against C-14's own declared
+  `depends_on: [C-10]`; undeclared by the standing rule, `T-123-s8` in
+  front of the architect. **One disclosed residual sits in C-14 and
+  reaches a user**: `genesis_kickoff` still refuses a planned folder
+  outright, so on the screen T-123 newly makes reachable a user with NO
+  supported CLI meets three controls and none can succeed (`T-123-s1`,
+  `T-123-s4`). Disclosed in `kickoff`'s own body, judged non-blocking by
+  the second verifier, and carried to @human.
   area app-agent since T-025,
   where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
   `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and

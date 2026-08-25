@@ -211,7 +211,7 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 34-edge relation table", () => {
+  it("draws the full 35-edge relation table", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
@@ -250,10 +250,21 @@ describe("the nputer repo on its own map", () => {
     // so planned goes 10 → 9 and confirmed 13 → 14 with the ROW COUNT
     // moving only by the C-05→C-07 row. 14 + 11 + 9 = 34. Both numbers
     // were derived from the live derivation before the suite ran.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(34);
+    // 34 → 35 at the T-123 merge regen, and BOTH numbers move again: the
+    // one new row is C-10→C-14 (undeclared, the twelfth), so undeclared
+    // goes 11 → 12 while confirmed holds at 14 and planned at 9.
+    // 14 + 12 + 9 = 35. Both derived from the live derivation before the
+    // suite ran, because a red on the first hides the second either way.
+    // WHAT THIS ROW IS, and neither number here can see it: it closes this
+    // repository's FIRST COMPONENT CYCLE against the already-CONFIRMED
+    // C-14→C-10 above. A THIRD thing moves that this body also cannot
+    // see — C-10 gains its first drift ring — and architecture-dogfood's
+    // drift assertion is where that is pinned. Said here rather than left
+    // silent, so a reader of this body knows what it is NOT asserting.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(35);
     expect(
       container.querySelectorAll('[data-testid=map-edge][data-relation="undeclared"]'),
-    ).toHaveLength(11);
+    ).toHaveLength(12);
   });
 
   it("opens the C-05 panel on its real findings", () => {

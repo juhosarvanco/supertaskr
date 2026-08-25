@@ -5,14 +5,14 @@ feature: F-03
 milestone: 4
 priority: 2
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-shell, app-agent]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5 @T-123 (rebuilt after rejection by claude-opus-5 @T-123-rebuild, 2026-08-25)
+verified_by: claude-opus-5 @T-123-verify — REJECTED — then claude-opus-5 @T-123-verify2 — APPROVED, 2026-08-25
+review: same-model
 ---
 
 Every source reading below was derived at `45691d9`, against the live
@@ -1699,3 +1699,94 @@ regenerate the graph (`index --check` at the merged tree is **exit 1**,
 fixtures it moves; put the new **`C-10 -> C-14` undeclared** row and
 C-10's first **D1** in front of the architect; and re-run the three
 docs-gate suites after the checkpoint's own doc writes.
+
+## Integration
+
+2026-08-25 — merged by an independent integrator hand. Main-before
+**`6802126`**, lane tip **`01086d5`**, merge **`0358c0c`** (`--no-ff`,
+parents exactly those two, **nothing written into the merge commit**),
+checkpoint after it. **All three owed things are paid**, each below.
+
+**THE MERGE'S DIFF IS 13 PATHS, NOT THE 9 EVERY EARLIER PASS MEASURED** —
+the second verdict commit `01086d5` added `T-123-s6`…`s9` on top of the
+`338a7e2` the verifier measured at, which is the whole difference.
+`merge-tree --write-tree 6802126 01086d5` exited **0** (read BEFORE the
+substitution was used) returning tree `e23277c5…`, which **IS** the
+merge's own `HEAD^{tree}` byte for byte. Prescribed, collapsed and
+branch-only spellings all agree at **13**; both FORBIDDEN spellings return
+**107**, pure left-endpoint drift — main's advance is **94** paths, the
+branch's 13, `comm -12` over the sorted lists is **EMPTY**, and
+94 + 13 = 107. Main advanced **17 first-parent commits** under this lane,
+`d46f71f` → `6802126`, carrying T-015, T-096, T-010 and T-031's merges.
+
+**THE REGEN'S DELTA HELD AND ITS ENDPOINTS DID NOT — the same shape T-031
+recorded one merge earlier.** Both verdicts and the rebuild notes quote
+`890 866 · 172 · 1874 · 1842` → `892 093 · 172 · 1878 · 1843`, measured
+against main at `e1f3023`. T-031's checkpoint has since taken the
+committed graph to `894 664 · 172 · 1885 · 1848`, so those endpoints are
+stale — but the **DELTA reproduced to the byte**: committed
+`894 664 · 172 · 1885 · 1848` → fresh **`895 891 · 172 · 1889 · 1849`**,
+`files +0 −0 ~3`, `edges +2 −1`, **+1 227 bytes / +4 symbols / +1 net
+edge** at both refs.
+
+**FIXTURE RECONCILIATION WAS OWED AND IS PAID: FIVE assertions across
+FOUR bodies, plus THREE body titles, every one corrected to its derived
+value and none loosened.** `architecture-dogfood.test.ts` — findings
+14 → **15** (the new `D1:C-10->C-14`), relation table 34 → **35** rows,
+drift 7 → **8** nodes (C-10 joins). `map-dogfood-render.test.tsx` —
+rendered edges 34 → **35**, undeclared 11 → **12**. Titles: *"eleven
+undeclared"* → twelve, *"14 confirmed, 11 undeclared, 9 planned"* → 12,
+*"the full 34-edge relation table"* → 35. `declaredOnly` does NOT move and
+that is asserted rather than assumed. **The third live-registry fixture
+was verified NOT OWED rather than skipped**: `lib/parser/test/smoke.test.ts`
+pins the component ID LIST, no component is declared here, and it is
+**264/264 at exit 0** throughout — CONVENTIONS' own "a MERGE REGEN alone
+moves only the two app fixtures".
+
+**THE SECOND REGEN WAS NEEDED, AND THIS IS A SHARPER MEASUREMENT OF
+T-010's FINDING THAN T-010's OWN.** After the fixtures were reconciled
+(both files are INDEXED), `index --check` was **exit 1, STALE** — with
+**all four headline figures IDENTICAL on both sides**, `895 891 bytes ·
+172 files · 1889 symbols · 1849 edges` committed and fresh alike. The only
+difference is `loc`: `architecture-dogfood.test.ts` 1949 → 1988 and
+`map-dogfood-render.test.tsx` 483 → 494. The file's BYTE COUNT is
+identical across the second regen (895 891 both sides) while its sha256
+moves `7041d9e3…` → `7af1c79f…`. T-010 recorded that a byte comparison
+would have missed it; **a comparison of all four printed figures would
+have missed it too.** Only `index --check`, which compares CONTENT, can
+tell. Exit **0 — CURRENT** after the second regen, and **0 again after
+this checkpoint's doc writes**.
+
+**GATES, ALL THREE DERIVED FROM THE MERGE'S OWN 13 PATHS AND ALL THREE
+RUN.** BOOT GATE **3 of 13 FIRES**, scratch port 15111, exit **0**, both
+`[nputer]` lines. GRAPH REGEN **3 of 13 FIRES AND WAS OWED** — and the
+four TS/JS suffixes alone match **0 of 13**, so this merge is the first in
+this repository's history whose regen is owed *only* because of the `*.rs`
+clause `T-123-s5` put in that trigger at `e1f3023`. **This lane's own
+finding is what made its own merge's gate fire.** DOCS GATE **10 of 13
+FIRES**, exit **1**, **three suites owed** (app, lib/parser, tools/e2e),
+all three green, 12 derived readers across 4 suites, **0 frontmatter
+issues**, census 129 docs-shaped sites.
+
+**THE COMPONENT CYCLE IS REAL, MEASURED AT THIS REF, AND DELIBERATELY NOT
+FIXED.** `arch --root` over the regenerated graph: `C-10 → C-14
+undeclared observed=1` appears beside the already-declared `C-14 → C-10
+confirmed observed=2`, and C-10 goes `declared_deps=1 observed_deps=1
+drift=-` → `observed_deps=2 drift=D1`. First component cycle in this
+repository, and C-10's first drift finding. Left undeclared on the
+standing rule — the integrator regenerates, the ARCHITECT rules on the
+registry — and recorded in STATE as a ruling the architect owes.
+`T-123-s8` carries it.
+
+**THE PARSER SUITE IS 264 AND THE APP SUITE IS 958**, not the 263 and 940
+the notes and both verdicts report. All four figures were correct at their
+own refs — this lane is based at `d46f71f`, before T-096 added a parser
+body and before T-031 added eighteen app bodies — and stale at mine. The
+repository wins; the same correction T-010's and T-031's integrators each
+recorded.
+
+The nine suggestion files stay as filed, and **`T-123-s5` is already
+DISCHARGED** — the architect absorbed it into CONVENTIONS' GRAPH REGEN
+bullet at `e1f3023`, before this merge. It keeps `status: suggested` and
+records the discharge in its own body, per CONVENTIONS' fourth-question
+ruling that disposition belongs to TRIAGE and not to the integrator.
