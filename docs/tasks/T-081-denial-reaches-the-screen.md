@@ -102,9 +102,41 @@ values actually seen (`subcommandResults`, `other`) which nobody guessed.
   `message`, or a `tool_use_id` that no later `result` corroborates THEN
   it SHALL still be surfaced with what it has — a denial the app cannot
   fully describe is not a denial the user should be denied.
-- THE existing `an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail`
-  pin SHALL stay green, and the three `#[ignore]` attributes SHALL remain
-  exactly three.
+- THE existing `an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code`
+  pin (`app/src-tauri/tests/agent_runner.rs:1347`) SHALL stay green, and
+  the three `#[ignore]` attributes SHALL remain exactly three.
+  **NAME CORRECTED 2026-08-25 (T-108, at `43f995a`).** This criterion
+  cited `an_in_band_auth_failure_surfaces_the_clis_own_words_not_an_empty_tail`,
+  which no Rust function has ever carried; the planner copied it from
+  `docs/tasks/T-025-agent-runner.md`, where it was coined and where it is
+  now corrected too. **The criterion's SUBSTANCE always held** — the body
+  above is the one that carries the guarantee and it is green — and this
+  card's own verifier notes discharge it against that body. What was
+  unverifiable was the CITATION, which is why the fix is here in the
+  criterion and not only in the verifier's notes at the far end of this
+  file: a reader who stops at the criteria has the wrong string. (No
+  line number and no line COUNT is written into that pointer, on this
+  correction's own rule — the section is named instead, because a
+  heading survives an edit above it and a digit does not.)
+- **A CRITERION THAT NAMES A TEST SHALL NAME IT BY A STRING
+  `git grep -- '*.rs'` FINDS AS A DEFINITION**, and **THE PATHSPEC IS
+  PART OF THE RULE.** Written here, beside the criterion it governs,
+  because that is where criteria are read. Derived at `43f995a`:
+  `git grep -n "fn an_in_band_auth_failure" -- '*.rs'` returns exactly one
+  definition at exit **0**, and the phantom under the same pathspec exits
+  **1** — correctly. **UNRESTRICTED (`-- .`) IT EXITS 0**, matching this
+  card's own prose about the phantom, so the search that looks like the
+  obvious one confirms a definition that does not exist. The rule learned
+  this on itself: writing the finding is what put the string into `docs/`.
+- **THE FILTER TRAP SITS BESIDE IT AND IS WORSE, BECAUSE IT LOOKS LIKE A
+  PASS.** `cargo test --test <target> <name>` exits **0** on a name that
+  matches nothing, so *"the pin passes"* and *"the pin is not there"* are
+  the same verdict. Measured at `43f995a` on this repository's own
+  suite: the phantom prints `test result: ok. 0 passed; 0 failed; 0
+  ignored; 0 measured; 77 filtered out`, the real name prints `1 passed;
+  0 failed; 0 ignored; 0 measured; 76 filtered out`, **and BOTH exit 0.**
+  **READ THE PASSED AND FILTERED COUNTS, NEVER THE EXIT CODE** — the exit
+  is the same number for both, so it carries no information here at all.
 
 Verification: headless — `cargo test` from app/src-tauri against the
 transcribed fixture; `npm test` from app/ for the live surface; the boot
@@ -1127,6 +1159,17 @@ nothing reads the field, which is `T-081-s1` and belongs to C-13.
   (`tests/agent_runner.rs:1347`), and it is GREEN. Criterion 7's
   substance holds; the citation is a card defect that predates the
   executor, who did not flag it. Filed as `T-081-s8`.
+  **THIS ENTRY'S OWN CITATION IS UPDATED, NOT REWRITTEN (T-108,
+  2026-08-25, at `43f995a`).** `T-025-agent-runner.md:505` was true when
+  written and is not any more, and it was T-108's own edit that moved it —
+  so leaving it would have planted exactly the stale citation this entry
+  is about. In T-025 that name is no longer a citation of a pin at all: it
+  survives only inside a dated correction block in the §6 smoke notes,
+  quoted as the spelling that was wrong. **The line number is deliberately
+  not replaced with a fresher one** — a line number is the same class of
+  fact as the figures this card family keeps having to re-measure, and
+  T-027's own notes record `watcher-store.ts:533-534` going stale the same
+  way. `T-081-s8` was absorbed by T-108 and its file no longer exists.
 - **`T-081-s6` is accurate and correctly handled** — it rules the
   CONVENTIONS sentence AMBIGUOUS rather than false (both existing
   members read `docs/CONVENTIONS.md`; the new reader reads a different

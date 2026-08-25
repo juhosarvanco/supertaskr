@@ -5,15 +5,70 @@ feature: F-01
 milestone: 4
 priority: 64
 size: S
-status: planned
+status: building
 blocked_by: []
-touches: [docs/tasks/]
-builder:
+touches: [docs/tasks/T-027-interview-split-view.md, docs/tasks/T-025-agent-runner.md, docs/tasks/T-081-denial-reaches-the-screen.md]
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
 review:
 ---
+
+## ARCHITECT'S FENCE RULING — 2026-08-25, at `765924d`
+
+**THIS CARD'S FENCE WAS `[docs/tasks/]` AND HAS BEEN NARROWED TO THE
+THREE FILES IT ACTUALLY WRITES**, before dispatch, by the architect:
+
+    docs/tasks/T-027-interview-split-view.md
+    docs/tasks/T-025-agent-runner.md
+    docs/tasks/T-081-denial-reaches-the-screen.md
+
+All three are `status: done`. No live lane writes them.
+
+**THE OLD FENCE WAS NOT MERELY WIDE — IT WAS UNSHIPPABLE, AND THE REASON
+IS THE LANE PROTOCOL ITSELF.** `docs/tasks/` is where every dispatch
+stamps `status: building` and where every integrator stamps `status:
+done` and the `built_by` / `verified_by` / `review` fields. A lane
+holding `docs/tasks/` as a directory therefore collides with **every
+other lane's opening and closing move**, including its own integrator's.
+Held strictly, it serialises the entire board behind one small
+docs-correction card; held loosely, the fence is being ignored, which is
+worse than not having one. **A fence that the project's own protocol
+must violate to make progress is not a fence.**
+
+**THE GENERAL RULE THIS EARNS, which is worth more than the card:**
+a fence names the paths a lane WRITES, at the narrowest granularity that
+still covers them — and **a bare `docs/tasks/` directory fence is never
+correct**, for the reason above. Where a card edits a knowable, listed
+set of cards, it fences those cards by path. Where a card genuinely
+rewrites the whole archive, that is an L card whose plan pass has to
+argue for stopping the board, not an S card that takes the directory by
+default. **This belongs in the method rather than in this card**, and is
+routed to `T-104`, the rulings vehicle, rather than written into
+`docs/CONVENTIONS.md` from inside a lane.
+
+**A CARD'S OWN FILE IS NEVER PART OF ITS FENCE, and this card is where
+that became visible.** The dispatch stamp (`status: building`, `builder`)
+and the integrator's closing stamp (`status: done`, `built_by`,
+`verified_by`, `review`) are **protocol writes, not lane writes**: they
+are made by the architect and the integrator, on a file no other lane
+has any reason to touch, and they happen to every card whatever its
+fence says. So the fence above deliberately omits
+`docs/tasks/T-108-three-live-citations-*.md` even though this lane's
+first commit writes it — the omission is correct, and listing it would
+be the error. **This is the second reason a `docs/tasks/` directory
+fence is wrong**: it makes every card's own protocol stamp look like a
+fence violation, so the check has to be disabled to be usable, and a
+check nobody can leave on is not a check.
+
+**WHAT THE EXECUTOR MAY NOT DO** follows from that distinction rather
+than from a list. It SHALL NOT write any `docs/tasks/` path outside the
+three named above, and **suggestion files are the case to watch**: a
+finding on this lane does not become `docs/tasks/T-108-sN-*.md` while
+the lane runs. Findings go in the lane's report; the integrator files
+them. The executor's own frontmatter is already stamped and SHALL be
+left alone.
 
 > **DRAFTER'S NOTE — remove before landing.** All three reproduce at
 > HEAD `4d2f03c`, and I re-derived the one figure that could have
