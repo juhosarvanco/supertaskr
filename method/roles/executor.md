@@ -16,8 +16,21 @@ You build exactly one task, then you end.
    as a status: suggested task with suggested_by set, then let it go.
    Blocking discoveries were rooms (step 3); suggestions never expand
    your scope.
-6. Commit with the task id in the message. Set status: verifying (or done,
-   for size S). Report as "The report" below, then stop.
+6. Commit with the task id in the message. **Stamp `status: verifying` IN
+   YOUR OWN LANE** — never on the integration branch, which would re-open
+   the two-writer conflict the pre-cut dispatch stamp exists to prevent
+   (../lane-protocol.md). Leave the verifier fields empty; they are the
+   verifier's to stamp. **Stamp `done` instead only where the ceremony
+   table gives this card no verifier** (tasks/TASK-FORMAT.md — that is a
+   property of the card's ROW, not of the letter S). Report as "The
+   report" below, then stop.
+   **`verifying` IS A LANE STATE AND WILL LOOK INVISIBLE.** Your stamp
+   reaches the integration branch only when the merge lands, and the
+   checkpoint moves it to `done` in the next commit — so the board shows
+   it for at most one commit and usually shows zero cards verifying while
+   several are under verification. That is expected. Stamp it anyway: the
+   stamp is what the merge carries, and a brief telling you to skip it is
+   wrong (see "A brief is evidence, never authority" below).
 
 ## The report
 
@@ -71,13 +84,13 @@ column as "the brief's own role file".
 | 2 | **Task** — the id and the path to the card, to be read IN FULL, and the instruction to confirm understanding before touching anything | `docs/tasks/T-NNN-*.md` | the brief becomes a paraphrase of the card, and the card stops being the spec |
 | 3 | **Read-first set** — the standing docs every session in this project reads before working | the project's OWN root adapter file (the filled-in `CLAUDE.md`/`AGENTS.md` at the repo root — copied from the `adapters/*.md` TEMPLATE and de-placeholdered — which names them), NOT the template dir | the session reads whatever it happens to open |
 | 4 | **The lane** — branch name, worktree path, **base commit as a hash**, and the one command that creates it | `lane-protocol.md` (the rules) + the project's own lane SPELLINGS — branch/worktree/base names and the create command, which the protocol leaves to the project's CONVENTIONS — + the integration branch, for the base hash | the lane gets cut from "latest", which is a different commit for every reader |
-| 5 | **The fence** — the card's `touches:` verbatim, plus every lane live at dispatch with ITS `touches:`, and whether they are disjoint | the card's `touches:`; the repository's LANE LIST (its live worktrees on a task branch — authoritative over the board's `status: building`, which can lapse); and the project's slug↔path map, consulted whenever a fence names a component SLUG rather than a path, to test disjointness | the executor cannot tell a fence breach from ordinary work, and neither can the verifier |
+| 5 | **The fence** — the card's `touches:` verbatim, plus every lane live at dispatch with ITS `touches:`, and whether they are disjoint | the card's `touches:`; the repository's LANE LIST — its live worktrees ON A TASK BRANCH, which **takes PRECEDENCE over the board's `status:`** whenever the two disagree (lane-protocol.md rule 7; a card reading `planned` beside a live worktree is a lapsed stamp, not a free fence, and `verifying` is lane-local so the board under-reports by construction — tasks/TASK-FORMAT.md); and the slug↔path map, consulted whenever a fence names a component SLUG rather than a path, to test disjointness — **that map is the project's architecture doc's slug block PLUS each component file's own `touch_slugs:` field, and the FIELD is authoritative** where the two differ, because the block is prose that goes stale the day a component is added | the executor cannot tell a fence breach from ordinary work, and neither can the verifier |
 | 6 | **Setup** — what a fresh worktree does NOT have, and the exact order that restores it | the project's CONVENTIONS — the build ORDER *and* any fresh-worktree ordering its LANE rules add (the load-bearing "build before test" step can live in the lane section, not the build section) | the suite runs against a half-built tree and the session reports somebody else's failure |
 | 7 | **Commands** — the build and test commands, VERBATIM | the project's CONVENTIONS — every package the full suite spans, not only the fenced ones | a remembered command is a different command |
 | 8 | **Gates** — each standing gate and its TRIGGER, so the session DERIVES whether the gate fires rather than being told | the project's CONVENTIONS — each standing gate is a bullet naming a merge-diff TRIGGER; enumerate those bullets and derive fire/not-owed from the diff | gates get skipped in silence, or run against lanes they do not apply to |
 | 9 | **Standing disciplines** — what this project requires of every handoff, drills included | the project's CONVENTIONS | the discipline decays to whatever the last session happened to remember |
 | 10 | **Prohibitions** — what this session must not touch: shared processes, live ports, other lanes' trees, anything the project reserves | the project's CONVENTIONS plus the live environment at dispatch | the lane damages something outside itself and nobody can attribute it |
-| 11 | **The deliverable** — the size tier's ceremony, the status to stamp on exit, the notes and findings owed, and explicitly whether to merge | `tasks/TASK-FORMAT.md` ceremony table + `lane-protocol.md` (who merges and who removes the worktree, including the size-S self-integrate) + this role file | the session guesses the ceremony, and guesses upward |
+| 11 | **The deliverable** — the size tier's ceremony, the status to stamp on exit, the notes and findings owed, and explicitly whether to merge | `tasks/TASK-FORMAT.md` ceremony table + `lane-protocol.md` (who merges and who removes the worktree, including the size-S self-integrate) + this role file — and at size S the brief names WHICH ceremony ROW the card falls on, because that is what decides whether it owes a verifier and therefore whether its worktree outlives the checkpoint | the session guesses the ceremony, and guesses upward |
 | 12 | **The report** — what to say when the work is done, to whom, in what form | this role file's `## The report` spec and the dispatching role's | the work lands and the record does not |
 | 13 | **The correction clause** — the standing instruction to re-derive every figure at the session's own ref, and to say plainly where the brief is wrong | this row | the brief's own errors get copied forward as facts |
 

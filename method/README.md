@@ -59,7 +59,9 @@ docs/
 1. `/plan` interview → docs banked incrementally as it runs (roles/planner.md, interview/plan-interview.md) → decomposition stage turns the backbone into exact task files (interview/decomposition.md)
 2. Orchestrator (fresh session, any time) picks the highest-priority unblocked task, stamps it `building` on the integration branch, cuts the lane, and hands over a brief assembled to the contract in roles/executor.md
 3. Executor (fresh or named session) builds it in a git worktree (lane-protocol.md)
-4. Verifier (independent by default) red-teams the diff, writes a verdict
+4. Verifier (an independent session by default) red-teams the diff from
+   the card and the diff ALONE — that informational blindness is the
+   guarantee, not model diversity (tasks/TASK-FORMAT.md) — writes a verdict
 5. Integrator merges `--no-ff`, runs the full suite, writes the checkpoint as a SEPARATE commit, removes the worktree
 6. Docs updated → board fills in → repeat
 

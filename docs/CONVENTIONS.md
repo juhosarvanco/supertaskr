@@ -263,7 +263,7 @@
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   nputer-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.5) and noted here.
+  method/ formats are version-bumped (currently v0.1.6) and noted here.
   **A BUMP IS A THREE-FILE COMMIT AND THE THIRD FILE IS RUST** (T-078-s3
   arm 1, taken here at T-089 — it had been true and unwritten for six
   method versions). The three are: this stamp; the `(v<version>` stamp in
@@ -280,16 +280,25 @@
   gotcha must carry rather than leave in a finding**: a const-only bump
   reds on the plan-interview arm and NEVER reaches the CONVENTIONS arm,
   so fixing only the file a panic names yields a SECOND red, not a green
-  — move both doc stamps and the const in ONE commit. **AND THE BUMP IS A
-  FOUR-PLACE FACT, THREE PINNED AND ONE NOT**: the genesis-kit gotcha
-  below stamps a `(v0.1.5, T-023)` version on its `plan-interview.md`
-  reference that NO test reads, so a bump must hand-update that reference
-  in the same commit or leave it stale and green.
-  **T-089's OWN CHANGE TO method/ IS THEREFORE OWED A BUMP TO v0.1.6 AND
-  DID NOT TAKE ONE**: kit.rs sits under `app/src-tauri/src/agent/**`,
-  which is C-14's `app-agent` slug, held by a live lane at that dispatch.
-  `T-089-s1` carries the debt with the exact three-file edit; delete
-  these two sentences with the commit that pays it.
+  — move both doc stamps and the const in ONE commit. **THREE PLACES ARE
+  PINNED AND AN OPEN SET IS NOT — CITE THE SHAPE, NOT THE TALLY.** The
+  three above are the ones a red `cargo test` finds for you. Every other
+  occurrence of the version is a REFERENCE no test reads — the
+  genesis-kit gotcha below, the C-01 row in docs/ARCHITECTURE.md and that
+  component's own file, a source comment in the genesis lens, and a
+  scatter of `methodVersion:` FIXTURE literals in the TypeScript suites —
+  and they split into two kinds wanting opposite treatment. **A reference
+  that CLAIMS THE CURRENT VERSION goes stale and moves with the bump; a
+  FIXTURE that merely needs some version string does not**, and moving
+  those is churn. **DERIVE THE LIST, NEVER QUOTE IT**:
+  `git grep -n "0\.1\.[0-9]"` from the repo root prints every one at your
+  own ref, and this bullet deliberately states no count — a tally here
+  goes stale under the next merge exactly the way the references it warns
+  about do. **AND THEY ARE NOT ALL INSIDE ANY ONE FENCE**, which is the
+  practical trap: a `[method/, docs/CONVENTIONS.md, app-agent]` fence
+  reaches the three pinned places and this file's own references, and
+  does NOT reach docs/ARCHITECTURE.md, the component file or the app
+  suites. Route what you cannot reach.
 - [?] marks an unresolved claim (archaeology convention) — resolve or
   room it; never silently delete.
 - A CITATION NAMES A SYMBOL, NOT A LINE (fourth triage, 2026-08-19).
@@ -373,7 +382,10 @@
   note that a fence able to add one honestly would have to carry a
   method version bump, whose third file is Rust (T-078-s3).
 - The genesis kit is ratified in method/roles/planner.md +
-  method/interview/plan-interview.md (v0.1.5, T-023): interview output
+  method/interview/plan-interview.md (ratified v0.1.5, T-023 — a
+  RATIFICATION record like the suggestion-triage bullet's own
+  `(v0.1.4, T-016)`, NOT a claim about the current method version, which
+  the first gotcha above owns): interview output
   is INCREMENTALLY BANKED — the stage → artifact table in
   plan-interview.md is normative and gets transcribed by programs
   (T-024 stage inference, T-025 kit packaging); changing it is a
