@@ -5,7 +5,7 @@ feature: F-01
 milestone: 4
 priority: 4
 size: M
-status: building
+status: verifying
 blocked_by: []
 touches: [method/, docs/CONVENTIONS.md, app-agent]
 builder: claude-opus-5
@@ -430,3 +430,463 @@ the RED, read the mutated text back, restore per-path and prove by
 sha256 at the drill's own commit. Note that a stamp pin is a CONTAINMENT
 assertion with the uniqueness hole T-092 closes — coordinate if both
 land in the same window. @human: none.
+
+
+## Implementation notes — executor, 2026-08-25, lane tip measured at `aea8b9e`
+
+Base `fbae94a`. **Main moved under this lane mid-run**: it was `fbae94a`
+at dispatch and is `ca5fb96` now, because **T-091 merged while this card
+was being built** — which turns this card's IF/THEN constraint from the
+second arm to the first. See "T-091" below.
+
+### THE BUMP QUESTION, ANSWERED FIRST AND PER ITEM — **v0.1.6 IS OWED**
+
+The criterion asks whether these are CLARIFICATIONS of the existing
+format (prose, no version move) or NEW NORMATIVE SENTENCES (a three-file
+commit). Answered per item, as required:
+
+| # | ruling | reading | moves the version? |
+|---|---|---|---|
+| 1 | disposition — no fourth move, no ninth status | **clarification**; the three moves are untouched, this says what they already implied | no |
+| 2 | a title opening with a YAML-reserved indicator is quoted | **clarification**; YAML already forbids it, the file simply never said so | no |
+| 3 | the tautology rule | **new guidance**, in the decomposition rules; guidance is not a format | no, on its own |
+| 4 | a proposed replacement carries its measurement | **NEW NORMATIVE** — it adds a requirement to what a suggestion file must carry, which is a format | **YES** |
+| 5 | a role that writes to the tree owes the tree's gates | **new normative for the ROLE**; `roles/verifier.md` is not a format file and does not ship in the kit | no |
+| 6 | the size-S ceremony row narrows | **NEW NORMATIVE** — the ceremony table decides what a pipeline OWES | **YES** |
+| 7 | `review:` means informational independence | **clarification**; no new value, the three stay three | no |
+| 8 | the stop condition weighs rather than counts | **NEW NORMATIVE** — it decides when the pipeline HALTS, and it adds an architect waiver that did not exist | **YES** |
+| 9 | `verifying` is a lane state | **clarification plus a documented refusal**; no new status, and the obvious repair is explicitly declined | no |
+| — | T-088-s1: a criterion names the gate's COMMAND, never its OUTPUT | **new normative guidance** on how criteria are written | contributes |
+
+**Three items independently force it — 4, 6 and 8 — and SIX and EIGHT
+would each force it alone**, because they change the two sentences that
+decide what a pipeline owes and when it stops. The card's own architect
+section predicted exactly this ("six and eight change NORMATIVE
+sentences"), and the prediction holds.
+
+**AND THE VERSION HAD ALREADY DRIFTED, WHICH IS A SECOND AND INDEPENDENT
+ARGUMENT.** `METHOD_SNAPSHOT_VERSION` was stamped `"0.1.5"` at
+**`74a0274`** (T-025). Since then **three** `method/` commits landed —
+`677171a` (T-052), `88f75d9` and `1e5c4e9` (both T-089) — and the kit's
+fourteen `include_str!` sources grew **23 890 → 25 418 bytes** with the
+const never moving. **Every one of those 1 528 bytes is
+`method/tasks/TASK-FORMAT.md`** (5 397 → 6 925), derived per-file rather
+than inferred from the total: the other five changed `method/` files
+(`README.md`, `lane-protocol.md`, `roles/executor.md`,
+`roles/integrator.md`, `roles/orchestrator.md`) **are not in the kit at
+all**, so they moved `method/` without moving what ships. So v0.1.5 was
+already lying about the shipped kit by 1 528 bytes before this card wrote
+a line, and TASK-FORMAT.md — the sole drifting file — is the file this
+card edits most.
+
+After this card the same fourteen sources total **38 407 bytes**, a
+**+12 989** move against `fbae94a`. A version that did not follow that
+would not be bookkeeping in arrears; it would be false.
+
+**THE THREE PINNED FILES MOVED IN ONE COMMIT** (`aea8b9e`), as the gotcha
+requires: the CONVENTIONS stamp, `plan-interview.md`'s Output heading,
+and `METHOD_SNAPSHOT_VERSION`. `cargo test` is **460 passed / 0 failed /
+3 ignored, exit 0**, summed over **16** `test result:` lines — identical
+to main's reference — so both stamp pins and `acl_pin`'s `methodVersion`
+assertion agree at v0.1.6.
+
+### THE BUMP IS NOT A FOUR-PLACE FACT, AND THREE OF ITS PLACES ARE OUTSIDE THIS FENCE
+
+CONVENTIONS' first gotcha called this "a FOUR-PLACE FACT, THREE PINNED
+AND ONE NOT". **Derived at `fbae94a` with
+`git grep -n "0\.1\.5"`, it is not four.** Three are pinned (the two doc
+stamps and the const). The unpinned references are:
+
+- `docs/CONVENTIONS.md`'s own genesis-kit gotcha — **in fence, handled**
+- `docs/ARCHITECTURE.md`'s C-01 row, `built (v0.1.5)` — **OUT OF FENCE**
+- `docs/architecture/components/C-01-method.md`'s status comment — **OUT OF FENCE**
+- `app/src/genesis/genesis-derive.ts`'s `(v0.1.5, T-023)` comment — **OUT OF FENCE**
+- twelve `methodVersion: "0.1.5"` FIXTURE literals across five
+  `app/test/**` files and `tools/e2e/tests/shell-harness.ts` — **OUT OF FENCE**
+
+**The fixtures and the references want opposite treatment**, which is why
+the corrected gotcha states the SHAPE and a derivation command instead of
+a tally: a fixture needs *some* version string and moving it is churn; a
+reference that CLAIMS the current version goes stale. **None of the
+fixtures red at the bump** — verified rather than assumed: each
+constructs its own payload and asserts its own literal back, and nothing
+compares them to the Rust const. `app` is **962/962** and `tools/e2e`
+green at v0.1.6.
+
+The two genuine stale CLAIMS — ARCHITECTURE's C-01 row and C-01's own
+file — are **routed as `T-104-s1`, not edited**: `docs/ARCHITECTURE.md`
+and `docs/architecture/components/` are outside `touches:`, and a fence
+is not widened from inside the lane it fences (lane-protocol rule 5).
+
+**ONE JUDGEMENT MADE AGAINST THE LETTER OF A DELETED INSTRUCTION, DECLARED
+RATHER THAN BURIED.** The gotcha said a bump "must hand-update" the
+genesis-kit reference `(v0.1.5, T-023)`. Read literally that would make
+it `(v0.1.6, T-023)` — but T-023 ratified the banking table at v0.1.5 and
+did not ratify anything at v0.1.6, and the sibling suggestion-triage
+bullet's `(v0.1.4, T-016)` is plainly a RATIFICATION record that no bump
+has ever moved. The two references have identical shape and were being
+given opposite treatment. It now reads **`(ratified v0.1.5, T-023 — a
+RATIFICATION record …, NOT a claim about the current method version)`**,
+which discharges the concern the instruction had (a reader can no longer
+mistake it for a current-version claim) without destroying the fact it
+carried. Flagged for the verifier as the one place this lane chose the
+instruction's purpose over its wording.
+
+### T-091 — IT LANDED MID-LANE, SO ITS READER WAS RUN
+
+At dispatch, `tools/e2e/tests/range-rule.spec.ts` did not exist on main
+(`git cat-file -e main:…` exit 128) and the card's second arm applied. It
+merged at **`ca5fb96`** while this lane was building, so **the first arm
+applies and the reader was run.**
+
+It was run against the **actual merged tree**, not against either side:
+`git merge-tree --write-tree ca5fb96 aea8b9e` gives tree
+**`82e1194`**, and `git commit-tree` on that tree produced the dangling
+commit **`fec416a`** for a detached scratch worktree. **No ref was moved**
+— `git commit-tree` writes an object and nothing else, and `main` and the
+lane branch were re-read afterwards to prove it.
+
+**RESULT: 25 of 25 `range-rule.spec.ts` lines green.** The bullet's
+figures still hold with this card's CONVENTIONS edit in the tree. The
+reader printed one DISCLOSURE (GRAPH REGEN's flip figures are right at
+their stated ref but the paragraph does not carry its TRIGGER, which has
+since gained `.rs`) — disclosed by design, not a failure, and not this
+card's to fix.
+
+**THE CONSTRAINT WAS HONOURED THE WHOLE TIME, AND PROVED BY BYTES RATHER
+THAN BY INTENT.** The RANGE RULE bullet is **byte-identical** across this
+diff: sha256 **`308176748241376b99fbf10153b0299178e977a6c46a89c79afe01ff83a51b33`**
+on both sides, and in fact the **entire region from that bullet to EOF**
+is byte-identical at **`cafc225d313a14019cc5f32b2e47b54eceec62846f6101887a0e705eeb8a5cc4`**.
+The three CONVENTIONS hunks are at old lines **266**, **283–292** and
+**376** — all of them above the bullet, which begins at old line 546.
+
+### EVERY FIGURE RE-DERIVED AT THIS LANE'S REF, AGAINST THE CARD'S OWN
+
+**The card carries two figures for one quantity and they disagree.** Both
+are attributed to `d43455b`; one is right.
+
+| the card says | at `d43455b`, re-derived | at `fbae94a`, this lane's base |
+|---|---|---|
+| ruling SIX: "13 of 75 done cards are `self-verified`" | **13 of 75 — CORRECT** | **17 of 88** |
+| ruling SEVEN: "of 75 done cards, 56 `same-model`, 5 `independent`, 10 `self-verified`, 1 empty" | **56 / 5 / 13 / 1 — the `self-verified` figure is WRONG** | **65 / 5 / 17 / 1 of 88** |
+
+**RULING SEVEN'S FIGURES DO NOT SUM TO THEIR OWN STATED TOTAL**: 56 + 5 +
+10 + 1 = **72**, against the "75 done cards" in the same sentence. The
+card's ruling SIX paragraph records that "the architect first transcribed
+the stale 10 … and corrected it in the writing" — **the correction was
+applied to ruling SIX and never to ruling SEVEN**, and the stale 10 is
+still there, three paragraphs down, in a sentence that refutes itself by
+arithmetic. This is the card's own first criterion failing inside the card
+that writes it, which is the strongest available argument for the rule and
+is why the rule is written as **name the COMMAND, never the OUTPUT** and
+why **no count from this lane was transcribed into any `method/` file.**
+
+Other figures, all re-derived here:
+
+- **The "clean zero" reproduces exactly.** The five operative phrases
+  return **0 occurrences** across `method/` and `docs/CONVENTIONS.md` at
+  `8f8ec31` (the card's ref) and again at `fbae94a`. Confirmed, not
+  assumed.
+- `grep -n "disposition\|closed"` over `method/tasks/TASK-FORMAT.md`
+  returned **0** at `fbae94a`, reproducing the card's measurement at
+  `4d2f03c`.
+- **Board at `fbae94a`: 244 flat task files — 88 done / 37 planned / 41
+  parked / 75 suggested / 3 building / 0 verifying / 0 merging**, plus 26
+  in `rejected/`; 88+37+41+75+3 = 244. STATE's 38 planned / 2 building at
+  `54076fe` differs by exactly this card's own dispatch stamp.
+- `review:` over the 88 done cards: **65 `same-model`, 17
+  `self-verified`, 5 `independent`, 1 EMPTY** — reproduces STATE exactly.
+- **`verifying` reads 0 on the board at both refs while lanes are live**,
+  which is ruling NINE observed one more time in the act of writing
+  ruling NINE down.
+
+### WHERE EACH RULING LANDED, AND WHETHER IT IS ENFORCED OR DISCIPLINE
+
+The last criterion requires each to be either enforced somewhere (say
+where) or explicitly discipline-only (say so). Every clause carries that
+sentence in the file itself; summarised:
+
+| ruling | file | enforced or discipline |
+|---|---|---|
+| 1 disposition | `tasks/TASK-FORMAT.md` | **ENFORCED** — a card-input gate refuses the value at the point of writing (this project's is `DISPOSITION_RULING` in `tools/e2e/scripts/docs-scan.mjs`, pinned in `docs-input-gate.spec.ts`; `method/` names no path, being product-agnostic) |
+| 2 title | `tasks/TASK-FORMAT.md` | **ENFORCED** — the same gate, `docs-scan.mjs`'s reserved-indicator message, pinned by `docs-input-gate.spec.ts` |
+| 3 tautology | `interview/decomposition.md` | **DISCIPLINE**, and the file says so — with a procedure (try to red it; mutate the CHECK, not the policy) |
+| 4 proposed replacement | `tasks/TASK-FORMAT.md` | **DISCIPLINE**, stated — no gate can tell measured prose from confident prose, which is why the author must mark it |
+| 5 verifier owes gates | `roles/verifier.md` | **the GATE half is enforceable** by the project's docs gate; **the FIGURE half explicitly never will be**, and the file says so |
+| 6 size-S ceremony | `tasks/TASK-FORMAT.md` | **DISCIPLINE with a mechanical path** — read off `touches:`; `method/` cannot draw the code/convention partition (no slugs here), so the project supplies it and until then it is a rule of thumb. This is the criterion's IF/THEN branch, taken deliberately. |
+| 7 `review:` | `tasks/TASK-FORMAT.md` | **DISCIPLINE**, stated — nothing can verify a verifier stayed blind |
+| 8 stop condition | `tasks/TASK-FORMAT.md` | **DISCIPLINE**, stated — nothing computes "same defect"; the room is the reviewable artifact |
+| 9 `verifying` | `tasks/TASK-FORMAT.md` | **documented gap plus a REFUSAL**; the honest reader is the lane list (lane-protocol rule 7) |
+| T-088-s1 criterion rule | `tasks/TASK-FORMAT.md` | **DISCIPLINE**, stated |
+| T-089-s7 row 5 | `roles/executor.md` | the map is LOCATED (architecture doc + each component's `touch_slugs:`, **field authoritative**) and the PRECEDENCE is named (lane list over board `status:`) |
+
+**THREE COUPLINGS THE RULINGS CREATED WERE FOLLOWED RATHER THAN LEFT.**
+Narrowing the size-S row falsifies two sentences elsewhere, and both were
+repaired in the same commit: `lane-protocol.md` rule 4 ("once its tests
+pass" — an S card with a verifier waits for the VERDICT) and rule 6
+("with no verdict to preserve it for" — which is now false for exactly
+that row, so the worktree survives). `roles/executor.md` row 11 now asks
+the brief to name WHICH ceremony row a size-S card falls on. And
+`method/README.md`'s lifecycle line said "Verifier (independent by
+default)", the model-diversity reading ruling SEVEN exists to correct.
+
+### THE CRITERION THAT WAS ALREADY MET BEFORE THIS LANE STARTED
+
+**"THE THREE-FILE COUPLING SHALL BE NAMED IN THE GOTCHA … by SYMBOL."**
+It already was, at `fbae94a`: the first gotcha names
+`METHOD_SNAPSHOT_VERSION`, `app/src-tauri/src/agent/kit.rs` and
+`snapshot_version_matches_the_live_method_stamps`. T-089 wrote it. This
+lane did not re-add it; it corrected the FOUR-PLACE sentence beside it and
+deleted the two sentences that gotcha asked to have deleted once the debt
+was paid. Recorded because a criterion that is already satisfied should
+be reported as satisfied-and-untouched rather than quietly ticked.
+
+### POISON DRILL
+
+The version bump changes no assertion BODY — `snapshot_version_matches_
+the_live_method_stamps` is byte-unchanged — but it changes the values two
+of its asserts read, so it is drilled.
+
+- **Where**: a detached scratch worktree at `aea8b9e`, named for this
+  lane, **outside the repository**, with its own `CARGO_TARGET_DIR`
+  inside it.
+- **Mutated**: ONE PRODUCER — `docs/CONVENTIONS.md`'s stamp, v0.1.6 back
+  to v0.1.5, with the const left at 0.1.6. **The assertion was never
+  touched**; `git diff --name-only` in the drill listed
+  `docs/CONVENTIONS.md` and nothing else, and the mutated text was read
+  back with `git diff` BEFORE the run.
+- **Result: RED, exit 101**, panicking at `kit.rs:450` with *"docs/
+  CONVENTIONS.md no longer says 'currently v0.1.6' - bump
+  METHOD_SNAPSHOT_VERSION with the method"*.
+- **It reached the CONVENTIONS arm**, which is the ordered-asserts trap
+  the gotcha documents: mutating CONVENTIONS alone passes the
+  plan-interview arm first, so the second assert is genuinely exercised
+  rather than shadowed.
+- **Restored and proved per path by sha256**, all three matching the
+  pre-mutation baselines: `docs/CONVENTIONS.md` `b0528df4…`,
+  `method/interview/plan-interview.md` `86053229…`,
+  `app/src-tauri/src/agent/kit.rs` `8a56ccc5…`. The drill worktree was
+  clean afterwards apart from its own target dir.
+
+### SUITES AND GATES — every exit read unpiped from its own `$?`
+
+- **`cargo test --no-fail-fast` from `app/src-tauri`: 460 passed / 0
+  failed / 3 ignored, exit 0**, SUMMED over **SIXTEEN** `test result:`
+  lines, count DERIVED. Lib suite **4.00s** — the GREEN band (T-088-s4's
+  clock test separates green under 9.5s from red over 14.6s), as expected
+  for this lane's own fresh target dir. **Both known intermittents read
+  BY NAME, not inferred from a green exit**:
+  `docs_watch::tests::startup_arm_watches_the_initial_root` `ok`, and
+  `a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+  `ok`. ONE run; nothing to declare.
+- **parser: `npx vitest run` — 268/268 across 12 files, exit 0** (after
+  `npm run build` from `lib/parser`, which was run FIRST per the
+  fresh-clone ORDER).
+- **app: `npm run build` exit 0, `npm test` — 962/962 across 46 files,
+  exit 0.** The build was run before the suite and after the parser
+  build, so the TS2339 trap STATE documents never arose.
+- **DOCS GATE: exit 1, FIRES**, run DIRECTLY from the repo root with the
+  RANGE RULE's own path list and **never through `xargs`**. It reports
+  **12 derived docs readers across 4 suites, 0 frontmatter issues**, and
+  it owes **TWO** suites on this diff — `cargo test from app/src-tauri/`
+  and `npm test from tools/e2e/` — because the one path under `docs/` in
+  the diff is `docs/CONVENTIONS.md`. Both were run. **The card's own
+  Verification section predicted FOUR suites and the gate says two**; the
+  parser and app suites were run anyway and are green, so the difference
+  costs nothing here, but it is the card's own "ask the gate, never
+  predict the output" rule failing in the card's own closing paragraph.
+- **GRAPH REGEN: FIRES, AND THE GRAPH IS STALE — exit 1.** The trigger is
+  `*.ts/*.tsx/*.js/*.jsx` or `*.rs` outside `docs/`, and this diff
+  carries one `.rs` file. **ASKED rather than predicted**, twice, and the
+  answer is the same both times: **exit 1, STALE**. It is a REAL stale
+  read off the SECOND line as this project's own trap requires — it
+  prints both counts and a `~` file diff rather than
+  `committed: MISSING`:
+
+      committed:   925217 bytes · 178 files · 1968 symbols · 1886 edges
+      fresh index: 925217 bytes · 178 files · 1968 symbols · 1886 edges
+      files  +0  -0  ~1
+      | ~ app/src-tauri/src/agent/kit.rs  (content)
+
+  **EVERY HEADLINE COUNT IS IDENTICAL AND ONLY THE `~` LINE DIFFERS** —
+  T-033's checkpoint finding, reproduced here by a **ONE-CHARACTER**
+  change (the `5` of `"0.1.5"` becoming a `6` inside an existing
+  `const`). A session that confirmed the graph by comparing byte, file,
+  symbol and edge counts would ship a stale graph with **no figure
+  capable of showing it**. This is the sharpest available instance of
+  that rule and it is worth carrying forward: it did not need a
+  reconciliation or a fixture move, only one byte inside an indexed file.
+  **THE REGEN IS NOT THIS LANE'S TO COMMIT**: CONVENTIONS puts it on the
+  INTEGRATOR at the CHECKPOINT, and `docs/architecture/graph.json` is
+  outside `touches:` besides. **Flagged LOUDLY here rather than left
+  silent, per that bullet's own instruction** — the integrator owes a
+  regen, and must ask the gate AFTER its last write rather than after its
+  first.
+- **BOOT GATE: FIRES, exit 0** — the diff touches `app/src-tauri/**`. Run
+  in this lane's own worktree on scratch port **15299**, `lsof`-read free
+  before and after. **BOTH `[nputer]` lines observed**: `[nputer] project
+  folder: /Users/ujju/Projects/nputer-T-104` and `[nputer] window "main"
+  created`. The folder line confirms it opened its OWN checkout, not the
+  human's. Child pid 43691, process tree stopped on SIGTERM; no orphan.
+- **E2E lane: TWO RUNS, BOTH DECLARED, and the first red is a KNOWN
+  intermittent identified by its signature rather than by re-running
+  until green.** Run against the MERGED tree in the forecast worktree —
+  the only tree holding both T-091's reader and this card's edits — on
+  scratch port **15297**, chosen after `lsof` showed **15298 already held
+  by another lane**, which is the check earning its keep.
+  **RUN 1: 170 passed, 1 failed, exit 1.** The failure is
+  `tools/e2e/tests/token-scan.spec.ts:201`, and it is **`T-120-s3`**,
+  matched on STATE's own stated signature — a FRACTIONAL millisecond
+  against a WHOLE number:
+
+      Expected: 1787668190199.766
+      Received: 1787668190200
+
+  The forecast worktree was minutes old, which is precisely the
+  "red exactly once in every fresh checkout" condition; `.766` rounds to
+  `200`, which is the documented rounding mechanism (`Stats.mtime` is a
+  `Date` and holds whole milliseconds), and the failure repairs the
+  condition that caused it. **It is not this card's change**: nothing in
+  this diff touches `tools/e2e`, and the diff is byte-disjoint from that
+  spec.
+  **RUN 2: 171 passed, 0 failed, exit 0.** Run once, deliberately, and
+  declared — to confirm the "green forever after" half rather than to
+  manufacture a green. 170 + 1 on run 1 against 171 + 0 on run 2 is the
+  finding's own predicted arithmetic, and the owed suite is green.
+  **T-091's `range-rule.spec.ts` is 25 of 25 in both runs.**
+
+**PORT 1420 WAS READ ONCE, READ-ONLY, AND NOTHING ELSE.**
+`lsof -nP -iTCP:1420 -sTCP:LISTEN` returned `node` pid **88948**, one
+socket `TCP [::1]:1420 (LISTEN)`. No bind, no connect, no signal. That is
+a live-environment fact and is already stale for you.
+
+### WHERE THE CARD AND THE BRIEF WERE WRONG
+
+Named plainly, because a brief nobody contradicts is a brief that gets
+copied — and because this card is *about* stale and unverified writing.
+
+1. **RULING SEVEN'S FIGURES ARE STALE AND SELF-REFUTING.** "56
+   `same-model`, 5 `independent`, 10 `self-verified`, 1 empty" of "75 done
+   cards" sums to **72**. Re-derived at the card's own `d43455b`, the
+   `self-verified` figure is **13**, and 56+5+13+1 = 75. The card's ruling
+   SIX paragraph says the architect caught the stale 10 while writing —
+   **it was corrected in ruling SIX and left uncorrected in ruling
+   SEVEN.** This is the card's own first criterion failing inside the card
+   that writes it, and it is the single best argument for the rule.
+2. **"The four `review:` values do not change" — there are THREE.**
+   `independent | same-model | self-verified`. The fourth thing on the
+   board is the EMPTY field on T-056, which is an absence, not a value.
+   The clause as written was still honoured (nothing was added).
+3. **The card cites "the first criterion" for the bump question TWICE**
+   (the drafter's note and the architect's 2026-08-25 section) — **the
+   bump question is the THIRD criterion.** The brief inherited this and
+   repeated it. Harmless, and worth fixing before the next reader plans
+   around criterion 1.
+4. **The card's Verification paragraph predicts FOUR suites; the gate says
+   TWO.** It names `cargo test`, `npm test` from app/, `npx vitest run`
+   from lib/parser and `npm test` from tools/e2e. `docs-gate.mjs` on this
+   diff's own path list owes **`cargo test` and `npm test from tools/e2e/`
+   only**, because the sole `docs/` path in the diff is
+   `docs/CONVENTIONS.md`. All four were run and all four are green, so it
+   cost nothing — but it is *"name the gate's COMMAND, never its OUTPUT"*
+   violated in the closing paragraph of the card that writes that rule.
+5. **"THE DECOMPOSITION RULES SHALL CARRY THE TAUTOLOGY RULE, beside the
+   poison shapes" cannot be honoured literally**: `grep -ri poison
+   method/` returns **0**. The poison shapes live in
+   `docs/CONVENTIONS.md`'s POISON DRILL bullet, which is product-specific.
+   The rule went into `interview/decomposition.md` step 3, where criteria
+   are actually written, which is what "the decomposition rules" names.
+6. **One criterion was already satisfied before the lane started.** The
+   three-file coupling was already named by symbol in the gotcha at
+   `fbae94a` — T-089 wrote it. Reported as satisfied-and-untouched rather
+   than quietly ticked.
+7. **THE T-091 CONSTRAINT FLIPPED ARMS MID-LANE, WHICH NEITHER THE CARD
+   NOR THE BRIEF ANTICIPATED.** Both frame it as a question with one
+   answer to be checked once ("check, do not assume"). Checked at
+   dispatch, T-091 had NOT landed (`git cat-file -e
+   main:tools/e2e/tests/range-rule.spec.ts` → exit 128); it merged at
+   `ca5fb96` while this lane was building. **The instruction to check
+   rather than assume was right and is what caught it** — but the honest
+   generalisation is that a live repository fact needs re-checking AT
+   HANDOFF, not only at dispatch, exactly the way STATE says a pid or a
+   port holder does. Both arms were ultimately exercised: the bullet was
+   left untouched (arm 2's requirement) *and* the reader was run (arm 1's).
+8. **THE BRIEF WAS RIGHT ABOUT RULING NINE**, and says several briefs that
+   night were not. This one correctly instructed `status: verifying` in
+   the lane with `verifier:`, `verified_by:` and `review:` left empty,
+   which is what `method/roles/executor.md` and this card both require.
+   Recorded because the correction clause cuts both ways.
+9. **Every other figure the brief carried reproduced exactly**: the kit's
+   23 890 → 25 418 bytes across three `method/` commits; cargo's 460/0/3
+   over 16 lines with the lib suite near 4.06s (4.00s here); the clean
+   zero at `8f8ec31`; the `T-120-s3` fractional-millisecond signature; and
+   the warning that a stale graph can hide behind identical headline
+   counts, which this lane then reproduced with a one-character change.
+
+### WHAT I AM LEAST CONFIDENT ABOUT
+
+- **The size-S boundary is the weakest of the nine**, and it is weak by
+  construction rather than by drafting. `method/` is product-agnostic, so
+  it cannot name the slugs that would make the partition mechanical; the
+  criterion's IF/THEN branch was taken honestly, but the result is that a
+  dispatcher still exercises judgement on the one ruling whose whole
+  point was to remove judgement. **The repair is one sentence in the
+  PROJECT's conventions** naming which slugs ship — filed as `T-104-s2`.
+- **Ruling NINE now has two homes** — the reach clause in TASK-FORMAT.md
+  and the stamp instruction in `roles/executor.md` — and the card's own
+  IF clause says that if `T-111`'s disposition work lands first, this
+  clause SHALL CITE it rather than restate it. **`T-111` has not landed**,
+  so the clause is written standalone; whoever lands T-111 should collapse
+  it rather than leave two descriptions of one thing.
+- **`method/runtime/nputer.yaml`'s `verifier: claude # resolver default:
+  independent of builder` was left alone.** It reads as the
+  model-diversity framing ruling SEVEN corrects, but it is a *session*
+  default and is compatible; it also ships in the kit, so touching it has
+  a cost. Left, and named here rather than silently.
+
+### Findings filed
+
+- **`T-104-s1`** — the method version is CLAIMED in `docs/ARCHITECTURE.md`'s
+  C-01 row and in `docs/architecture/components/C-01-method.md`, both
+  outside this fence, both stale at v0.1.6. Names what is deliberately
+  NOT owed (the `methodVersion` fixtures) and why.
+- **`T-104-s2`** — the narrowed size-S row is mechanical only once this
+  project names which slugs SHIP; `tools/e2e` is the case that will be
+  misread, and `non_code:` is a different axis and must not be reused.
+
+### THE TWO EDITS T-091'S CHECKPOINT ROUTED HERE — DECLINED, WITH REASONS, NOT DROPPED
+
+T-091's checkpoint routed two earned `docs/CONVENTIONS.md` edits to this
+card because **this card holds that file**. It does. **It is also
+forbidden the paragraph both edits live in**, and the routing was computed
+from fence ownership, which cannot see that.
+
+Derived at `aea8b9e`: the RANGE RULE bullet spans lines **558–730**.
+
+| routed edit | where it lands | verdict |
+|---|---|---|
+| `T-091-s3`'s trigger-beside-the-ref clause | the GRAPH REGEN flip figures at lines **667, 682, 686, 688, 713** — the bullet's **flip list** | **DECLINED**, named verbatim in this card's prohibition |
+| the `bdada11` sharpening | line **659**, *"a command substitution that swallows it hands you an EMPTY forecast…"* — one of the bullet's **command recipes** | **DECLINED**, also named verbatim |
+
+This card's constraint is *"SHALL NOT edit the RANGE RULE bullet, its
+figures, its flip lists, or its command recipes."* Both edits are inside
+two of those four named categories, so taking either would breach the
+card's own hard constraint — the one written specifically to protect
+T-091's reader. **Left routed and filed as `T-104-s3`.**
+
+**BOTH ARE CORRECT AND BOTH SHOULD LAND.** This lane confirmed the
+`bdada11` sharpening first-hand while obeying it — `merge-tree`'s exit was
+read from `$?` BEFORE the substitution, exit 0, tree `82e1194` — and
+T-091's own reader printed the trigger disclosure during this lane's run,
+so `T-091-s3`'s residue is observed rather than theoretical.
+**The reason for the prohibition is now spent**: it existed because T-091
+was approved and unintegrated, and T-091 merged at `ca5fb96`. The next
+`docs/CONVENTIONS.md` card carries no such clause and should take both.
+
+**THE GENERAL FINDING IS WORTH MORE THAN THE TWO EDITS** and is why
+`T-104-s3` exists rather than a note here: **a fence names PATHS, and this
+project has begun writing prohibitions at a finer grain than a path.**
+Routing by "which lane holds this file" will keep producing routings that
+are correct at the fence and impossible at the card, and the failure is
+silent — the receiving lane finds it only by reading its own card closely.

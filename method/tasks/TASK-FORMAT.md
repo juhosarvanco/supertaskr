@@ -69,7 +69,8 @@ guarantee actually held, so the board can render self-verified checks
 differently from independent ones.
 
 **THE INDEPENDENCE THAT PAYS IS INFORMATIONAL, NOT MODEL DIVERSITY.**
-Read `review:` as PROVENANCE — which hand held the pen — and not as a
+What a verification rests on is **informational independence**: read
+`review:` as PROVENANCE — which hand held the pen — and not as a
 strength ranking. The guarantee a verification actually rests on is the
 INFORMATIONAL CONSTRAINT in `roles/verifier.md`: the verifier receives
 only the card and the diff, **never the executor's reasoning**, and is
