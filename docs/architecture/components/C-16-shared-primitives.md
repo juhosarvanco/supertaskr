@@ -54,5 +54,31 @@ reversal is one line if the architect disagrees: drop the path here, and
 are C-05's today, so `app-shell` is exactly who may edit them; giving
 C-16 its own slug would silently move a fence as a side effect of a
 registry tidy-up, and a fence that moves without a dispatch is the one
-thing the slug table exists to prevent. Whether shared primitives deserve
-their own fence word is a real question and a separate one — `T-033-s7`.
+thing the slug table exists to prevent.
+
+**`T-033-s7` IS ANSWERED, AND THE ANSWER IS ITS OPTION (a) — LEAVE IT.
+DECIDED ON A MEASUREMENT RATHER THAN ON TASTE (T-127, 2026-08-25,
+derived at `afe23c1`).** The question was whether shared primitives
+deserve their own fence word. Re-derived at that ref rather than quoted:
+**eight** cards whose `touches:` is exactly `[app-shell]` are still live
+— `T-022`, `T-035`, `T-044`, `T-099`, `T-100`, `T-106`, `T-114`,
+`T-115`; the ninth the census named, `T-126`, has shipped — and **NOT ONE
+of the eight names `ui/**`, `utils.ts` or `verdicts.ts` anywhere in its
+body.** A new `app-ui` slug would relieve **nobody in the current
+queue**, and it would NARROW the fence of every live card reading
+`[app-shell]`, which is a dispatch change exactly as real as a widening
+(option (b)'s own warning). **And nothing in this repository could see
+it**: giving `C-10` a different `touch_slugs:` value was measured on
+T-127's lane and left `npm test` from `app/` at **973 / 973, exit 0**
+(`T-127-s4`). Cost with no measured benefit, paid silently. Option (c)
+stays ruled out for the reason `T-033-s7` already gives.
+
+**WHERE THE BENEFIT ACTUALLY IS, MEASURED ON THE SAME EIGHT: `C-10`, NOT
+`C-16`.** Two of the eight touch only the docs watcher — `T-114`, whose
+own criterion reads *"NOTHING OUTSIDE `docs_watch.rs` SHALL MOVE"*, and
+`T-035`, which is `applySnapshot` in `docs-model.ts` — and two more span
+the shell AND the watcher (`T-044`, `T-106`). So the word that would
+relieve this queue is the docs watcher's, and `T-127-s2` carries it with
+the fence consequences enumerated by card id. **The suggestion asked
+about the shared primitives and the census says the shared primitives
+are not the problem** — which is exactly why it asked for a number.

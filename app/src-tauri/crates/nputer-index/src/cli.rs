@@ -60,6 +60,7 @@ USAGE
   nputer-index index --watch [--root DIR] [--debounce-ms MS] [--cache-dir DIR]
   nputer-index arch [--root DIR]
   nputer-index arch drift [--root DIR] [--fail-on undeclared|unmapped|any]
+  nputer-index arch cycles [--root DIR]
 
   --check and --watch are also accepted at the top level as shorthand for
   `index --check` / `index --watch`.
@@ -72,10 +73,19 @@ COMMANDS
                 250 ms - the app watcher's window). Runs until stopped.
   arch          Print components, their observed edges and drift flags.
   arch drift    Print drift findings and a verdict.
+  arch cycles   Print every DECLARED dependency cycle as a path
+                (`C-08 -> C-09 -> C-08`) and a verdict. Exit 1 when the
+                registry is not acyclic.
 
   arch and arch drift READ the committed graph (ADR-014) - they never
   index and never write. `index --check` is the one staleness gate;
   chain it first if the answer must be about the working tree.
+
+  arch cycles reads the REGISTRY ONLY - no graph, no index - so it
+  cannot be a false red from a stale graph, and it says nothing about
+  observed imports. It is the enforcing form of @human's no-cycles
+  ruling of 2026-08-25 (T-127); `cargo test -p nputer-index` carries
+  the same predicate against this repo's own registry.
 
 OPTIONS
   --root DIR         Repo root (default: the current directory).
@@ -90,19 +100,23 @@ OPTIONS
   -V, --version      Print the crate version.
 
 EXIT CODES
-  0  clean    graph current / no findings at the requested severity
-  1  finding  graph.json is STALE, or arch drift matched --fail-on
+  0  clean    graph current / no findings at the requested severity /
+              the declared registry is acyclic
+  1  finding  graph.json is STALE, or arch drift matched --fail-on, or
+              arch cycles found a declared cycle
   2  usage    called wrong (unknown flag, bad --fail-on value)
   3  failed   could not run (invalid root, unreadable registry, IO)
 
-  index --check and arch drift share this range deliberately: one
-  `case $?` reads both, and 1 (the gate's verdict) stays distinct from
-  2/3 (the gate could not run).
+  index --check, arch drift and arch cycles share this range
+  deliberately: one `case $?` reads all three, and 1 (the gate's
+  verdict) stays distinct from 2/3 (the gate could not run).
 
 NOTES
   Findings: D1 undeclared_dependency · D2 unmapped_files ·
   D3 declared_only_component · D4 ambiguous_mapping ·
-  D5 dangling_depends_on. Status and provenance ROLLUPS are not computed
+  D5 dangling_depends_on. A DECLARED CYCLE is not a drift finding - it
+  is a violation of the registry's own topology rule and is answered by
+  `arch cycles`, which needs no graph. Status and provenance ROLLUPS are not computed
   here - they join the task tree, which is the app's TypeScript
   derivation (ADR-015). `status=` prints the component file's own field.
 ";
@@ -116,6 +130,7 @@ enum Command {
     Watch,
     Arch,
     ArchDrift,
+    ArchCycles,
 }
 
 #[derive(Debug)]
@@ -179,6 +194,7 @@ fn parse(argv: &[String]) -> Result<Args, String> {
             "index" if position == 0 => command = Some(Command::Index),
             "arch" if position == 0 => command = Some(Command::Arch),
             "drift" if command == Some(Command::Arch) => command = Some(Command::ArchDrift),
+            "cycles" if command == Some(Command::Arch) => command = Some(Command::ArchCycles),
             other if other.starts_with('-') => return Err(format!("unknown flag {other:?}")),
             other => return Err(format!("unknown command {other:?}")),
         }
@@ -220,6 +236,7 @@ fn command_name(command: &Command) -> &'static str {
         Command::Watch => "index --watch",
         Command::Arch => "arch",
         Command::ArchDrift => "arch drift",
+        Command::ArchCycles => "arch cycles",
     }
 }
 
@@ -312,6 +329,27 @@ pub fn run(argv: &[String], out: &mut dyn Write, err: &mut dyn Write) -> i32 {
             match outcome {
                 Ok(()) => EXIT_OK,
                 Err(e) => fail(err, &e.to_string()),
+            }
+        }
+        Command::ArchCycles => {
+            // REGISTRY ONLY. No graph is read and none is needed: a
+            // declared cycle is a property of `depends_on:` alone, and
+            // making this gate depend on a committed index would give a
+            // registry question a second failure mode it does not have
+            // (T-127). An unreadable registry is exit 3, never a cheerful
+            // "acyclic" - silence would read as the green.
+            let components = match arch::registry::read_registry(&args.root) {
+                Ok(components) => components,
+                Err(e) => return fail(err, &e.to_string()),
+            };
+            let report = arch::cycles::cycles(&components);
+            let text = arch::cycles::render(&report, &args.root_label);
+            if report.has_cycle() {
+                let _ = write!(err, "{text}");
+                EXIT_FINDINGS
+            } else {
+                let _ = write!(out, "{text}");
+                EXIT_OK
             }
         }
         Command::Arch | Command::ArchDrift => {
@@ -604,6 +642,84 @@ mod tests {
         // Re-index recovers.
         assert_eq!(run_capture(&["index", "--root", &root]).0, EXIT_OK);
         assert_eq!(run_capture(&["index", "--check", "--root", &root]).0, EXIT_OK);
+    }
+
+    /// Two components, `deps` written into each in turn.
+    fn registry_tree(tag: &str, deps: &[(&str, &str)]) -> TempTree {
+        let t = TempTree::new(tag);
+        for (id, depends_on) in deps {
+            t.write(
+                &format!("docs/architecture/components/{id}-x.md"),
+                &format!("---\nid: {id}\nname: {id}\npaths:\n  - {id}/**\ndepends_on: [{depends_on}]\n---\n"),
+            );
+        }
+        t
+    }
+
+    #[test]
+    fn arch_cycles_names_a_declared_cycle_as_a_path_and_exits_one() {
+        let t = registry_tree("cli-cycles-red", &[("C-01", "C-02"), ("C-02", "C-01")]);
+        let root = t.root().display().to_string();
+        let (code, out, err) = run_capture(&["arch", "cycles", "--root", &root]);
+        assert_eq!(code, EXIT_FINDINGS, "{out}{err}");
+        assert!(err.contains("cycle  C-01 -> C-02 -> C-01"), "{err}");
+        assert!(err.contains("verdict  DECLARED CYCLE"), "{err}");
+        assert!(out.is_empty(), "a red gate says nothing on stdout: {out}");
+    }
+
+    #[test]
+    fn arch_cycles_is_green_on_an_acyclic_registry_and_says_what_it_examined() {
+        let t = registry_tree("cli-cycles-green", &[("C-01", "C-02"), ("C-02", "")]);
+        let root = t.root().display().to_string();
+        let (code, out, err) = run_capture(&["arch", "cycles", "--root", &root]);
+        assert_eq!(code, EXIT_OK, "{out}{err}");
+        assert!(
+            out.contains("verdict  ACYCLIC  no declared cycle among 2 components and 1 declared edges"),
+            "{out}"
+        );
+        assert!(err.is_empty(), "{err}");
+    }
+
+    #[test]
+    fn arch_cycles_needs_no_committed_graph_and_writes_nothing() {
+        // The whole reason it is its own subcommand: `arch` and `arch
+        // drift` are exit 3 without a graph, and a registry question must
+        // not inherit that failure mode.
+        let t = registry_tree("cli-cycles-nograph", &[("C-01", "C-02"), ("C-02", "")]);
+        let root = t.root().display().to_string();
+        assert!(!t.root().join(GRAPH_REL_PATH).exists());
+        assert_eq!(
+            run_capture(&["arch", "--root", &root]).0,
+            EXIT_FAILED,
+            "arch needs a graph"
+        );
+        assert_eq!(
+            run_capture(&["arch", "cycles", "--root", &root]).0,
+            EXIT_OK,
+            "arch cycles does not"
+        );
+        assert!(
+            !t.root().join(GRAPH_REL_PATH).exists(),
+            "arch cycles must never create the graph it does not read"
+        );
+    }
+
+    #[test]
+    fn arch_cycles_without_a_registry_is_exit_three_not_a_clean_verdict() {
+        let t = TempTree::new("cli-cycles-noregistry");
+        t.write("src/a.ts", "export const a = 1;\n");
+        let root = t.root().display().to_string();
+        let (code, out, err) = run_capture(&["arch", "cycles", "--root", &root]);
+        assert_eq!(code, EXIT_FAILED, "silence would read as ACYCLIC: {out}{err}");
+        assert!(err.contains("no component registry"), "{err}");
+        assert!(out.is_empty(), "{out}");
+    }
+
+    #[test]
+    fn fail_on_is_still_refused_for_arch_cycles() {
+        let (code, _, err) = run_capture(&["arch", "cycles", "--fail-on", "any"]);
+        assert_eq!(code, EXIT_USAGE);
+        assert!(err.contains("--fail-on belongs to"), "{err}");
     }
 
     #[test]

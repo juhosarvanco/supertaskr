@@ -21,6 +21,7 @@ mod common;
 use std::collections::BTreeSet;
 
 use nputer_index::arch::registry::{compare_component_ids, read_registry, RegistryError};
+use nputer_index::arch::cycles;
 use nputer_index::arch::{self, Finding, Severity, UNMAPPED_ID};
 use nputer_index::{Graph, GRAPH_REL_PATH};
 
@@ -201,4 +202,122 @@ fn a_registry_directory_that_is_a_symlink_is_refused_not_followed() {
             "the registry is repo content; a link to one is not"
         );
     }
+}
+
+// ------------------------------------------------- the declared topology
+
+/// The declared cycles this repository KNOWINGLY still carries, each
+/// written exactly as `CycleReport::paths` renders it.
+///
+/// EXACT-SET semantics, BOTH directions. A cycle that appears and is not
+/// listed here reds; an entry left here after its cycle is gone reds too.
+/// An allowlist that can only ever be too small is a rule that rots
+/// quietly, which is the failure `arch::cycles` exists to prevent.
+///
+/// 2026-08-25 (T-127) — `C-08 -> C-09 -> C-08` predates @human's
+/// no-cycles ruling by nine days (`T-033-s10`). Removing it re-partitions
+/// C-08/C-09's `paths:`, and that MOVES two live-registry fixtures:
+/// measured on T-127's lane at `afe23c1`, the smallest acyclic
+/// re-partition takes `npm test` from `app/` to **6 failed / 967 passed
+/// of 973, exit 1**, in `app/test/architecture-dogfood.test.ts` and
+/// `app/test/map-dogfood-render.test.tsx`. Both sit under `app/test/**`
+/// — C-05's `app-shell` — outside T-127's
+/// `[crate-index, docs/architecture/components/]` fence, so the move is
+/// routed as `T-127-s1`.
+/// **DELETE THIS ENTRY IN THE SAME COMMIT THAT CLOSES THAT CARD.**
+const KNOWN_DECLARED_CYCLES: &[&str] = &["C-08 -> C-09 -> C-08"];
+
+#[test]
+fn the_live_registry_declares_exactly_the_cycles_this_crate_still_allows() {
+    let components = read_registry(&common::repo_root()).expect("registry");
+    let report = cycles::cycles(&components);
+    assert!(
+        !report.truncated,
+        "the live registry must be small enough to enumerate whole"
+    );
+    assert_eq!(
+        report.paths(),
+        KNOWN_DECLARED_CYCLES,
+        "the DECLARED component graph moved. A NEW cycle here is @human's \
+         no-cycles ruling of 2026-08-25 being broken - fix the registry, \
+         never this list. A MISSING one means a cycle was fixed and its \
+         allowlist entry was left behind - delete the entry."
+    );
+}
+
+#[test]
+fn the_live_registry_minus_one_hop_per_reported_cycle_is_acyclic() {
+    // POSITIVE CONTROL against the LIVE corpus rather than a fixture: the
+    // gate has to be able to answer GREEN about this tree, not only RED,
+    // or "no cycles" is a sentence it can never say. Dropping the closing
+    // hop of every reported cycle in memory must leave nothing behind —
+    // and on the day the last cycle is fixed the removal set is empty and
+    // this body asserts the live tree itself, so it does not go vacuous
+    // when the red goes away.
+    let mut components = read_registry(&common::repo_root()).expect("registry");
+    let before = cycles::cycles(&components);
+    let mut dropped = 0usize;
+    for cycle in &before.cycles {
+        let from = cycle[cycle.len() - 2].clone();
+        let to = cycle[cycle.len() - 1].clone();
+        for component in components.iter_mut().filter(|c| c.id == from) {
+            let was = component.depends_on.len();
+            component.depends_on.retain(|d| *d != to);
+            dropped += was - component.depends_on.len();
+        }
+    }
+    assert_eq!(
+        dropped,
+        before.cycles.len(),
+        "every reported hop must exist in the registry it was read from"
+    );
+    let after = cycles::cycles(&components);
+    assert!(
+        !after.has_cycle(),
+        "the enumeration claims to be complete, so removing one hop per \
+         cycle must leave an acyclic graph: {after:?}"
+    );
+}
+
+#[test]
+fn a_cycle_reintroduced_into_the_live_registry_is_caught_and_named_today() {
+    // T-127's criterion: the gate SHALL make a reintroduced cycle fail,
+    // and it SHALL fail TODAY. `C-06 -> C-01` is declared and `C-01`
+    // declares nothing, so one added line closes a walk that does not
+    // exist in this tree — the cheapest mistake a future `depends_on:`
+    // edit could make.
+    let mut components = read_registry(&common::repo_root()).expect("registry");
+    let before = cycles::cycles(&components);
+    assert!(
+        components
+            .iter()
+            .find(|c| c.id == "C-06")
+            .expect("C-06 is declared")
+            .depends_on
+            .iter()
+            .any(|d| d == "C-01"),
+        "the control rests on C-06 -> C-01 being declared"
+    );
+    let c01 = components
+        .iter_mut()
+        .find(|c| c.id == "C-01")
+        .expect("C-01 is declared");
+    assert!(
+        !c01.depends_on.iter().any(|d| d == "C-06"),
+        "the back edge must not already exist, or this proves nothing"
+    );
+    c01.depends_on.push("C-06".to_string());
+
+    let after = cycles::cycles(&components);
+    assert!(after.has_cycle());
+    assert_eq!(after.cycles.len(), before.cycles.len() + 1);
+    assert!(
+        after.paths().contains(&"C-01 -> C-06 -> C-01".to_string()),
+        "the new cycle must be named as a path: {:?}",
+        after.paths()
+    );
+    assert!(
+        cycles::render(&after, ".").contains("cycle  C-01 -> C-06 -> C-01\n"),
+        "and printed as one"
+    );
 }

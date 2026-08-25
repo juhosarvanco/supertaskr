@@ -274,6 +274,72 @@ fn a_severity_only_gates_on_its_own_rule() {
     assert_eq!(at(d2.root(), &["arch", "drift", "--fail-on", "any"]).code, 1);
 }
 
+// --------------------------------------------------------- arch cycles
+
+#[test]
+fn arch_cycles_is_green_on_an_acyclic_fixture_and_needs_no_graph() {
+    // POSITIVE CONTROL at the process boundary. `clean-repo` declares
+    // C-02 -> C-01 and nothing back, and NOTHING is indexed here: the
+    // gate must answer without a committed graph, which is what makes it
+    // a registry gate rather than a second staleness check.
+    let t = materialize_fixture("clean-repo");
+    assert!(!t.root().join(GRAPH).exists(), "no graph, on purpose");
+    let out = at(t.root(), &["arch", "cycles"]);
+    assert_eq!(out.code, 0, "{}{}", out.stdout, out.stderr);
+    assert!(
+        out.stdout
+            .contains("verdict  ACYCLIC  no declared cycle among 2 components"),
+        "{}",
+        out.stdout
+    );
+    assert!(out.stderr.is_empty(), "{}", out.stderr);
+    assert!(!t.root().join(GRAPH).exists(), "and it writes nothing");
+}
+
+#[test]
+fn a_cycle_planted_into_a_fixture_reds_the_real_process_and_is_named_as_a_path() {
+    let t = materialize_fixture("clean-repo");
+    assert_eq!(at(t.root(), &["arch", "cycles"]).code, 0, "green first");
+    // One added `depends_on` line closes the walk. The MUTATION is the
+    // registry; the assertion below never moves with it.
+    std::fs::write(
+        t.root().join("docs/architecture/components/C-01-core.md"),
+        "---\nid: C-01\nname: Core\nlayer: lib\npaths:\n  - core/**\ndepends_on: [C-02]\nstatus: auto\n---\n",
+    )
+    .unwrap();
+    let out = at(t.root(), &["arch", "cycles"]);
+    assert_eq!(out.code, 1, "{}{}", out.stdout, out.stderr);
+    assert!(
+        out.stderr.contains("cycle  C-01 -> C-02 -> C-01"),
+        "a bare \"cycle detected\" sends the next reader to redo the \
+         measurement that found it: {}",
+        out.stderr
+    );
+    assert!(out.stdout.is_empty(), "{}", out.stdout);
+}
+
+#[test]
+fn arch_cycles_says_on_every_run_what_it_cannot_see() {
+    // The scope line rides on BOTH verdicts: a green whose reach nobody
+    // stated is a green that gets quoted as more than it is. `gate-repo`
+    // is acyclic AND carries a dangling `C-03 -> C-99`, so this pins the
+    // green half and the D5-is-not-a-cycle rule in one process.
+    let t = materialize_fixture("gate-repo");
+    let green = at(t.root(), &["arch", "cycles"]);
+    assert_eq!(green.code, 0, "{}{}", green.stdout, green.stderr);
+    assert!(
+        green.stdout.contains("about DECLARED depends_on only")
+            && green.stdout.contains("T-126-s4"),
+        "{}",
+        green.stdout
+    );
+    assert!(
+        !green.stdout.contains("cycle  C-"),
+        "a dangling depends_on is not a cycle: {}",
+        green.stdout
+    );
+}
+
 // ------------------------------------------------------- the failure ends
 
 #[test]
