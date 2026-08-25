@@ -1,14 +1,14 @@
 ---
 id: T-104
-title: Five ratified rulings live everywhere except the file that ratifies them — the method-snapshot card, dispatched with the fence a method bump actually needs
+title: NINE ratified rulings live everywhere except the file that ratifies them — the method-snapshot card, deferred until the deferral started costing rulings
 feature: F-01
 milestone: 4
-priority: 60
+priority: 4
 size: M
-status: planned
+status: building
 blocked_by: []
 touches: [method/, docs/CONVENTIONS.md, app-agent]
-builder:
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
@@ -165,6 +165,54 @@ buried:
 
 `T-089-s11` records the same two rows from the verdict side; both are
 absorbed here.
+
+## ARCHITECT, 2026-08-25, at `8f8ec31` — PRIORITY RAISED 60 → 4, AND THE REASON IS THAT THE DEFERRAL STARTED COSTING RULINGS
+
+This card said, of rulings six and seven, that they were carried here
+*"rather than given their own card precisely because a second card would
+reproduce the deferral this one exists to end."* **The deferral happened
+anyway — to this card, at priority 60, behind thirty others.** Two more
+rulings arrived after that sentence was written. There are now **nine**,
+and the title has been corrected from five.
+
+**Measured at `8f8ec31`, and it is a clean zero.** Searching `method/`
+and `docs/CONVENTIONS.md` for the operative phrase of each ruling —
+*"informational independence"*, *"S cards touching shipped code"*,
+*"LANE state"*, *"stop condition"*, *"weigh rejections"* — returns
+**0 occurrences of any of them, in either place.** Every one of the nine
+lives in this card, in git commit messages, and nowhere a role or a
+convention is read from.
+
+**AND THE COST ARRIVED THE SAME NIGHT, TO THE ARCHITECT WHO MADE THE
+RULING.** Ruling NINE says the executor stamps `verifying` in its own
+lane. Hours after ratifying it, the architect wrote a dispatch brief for
+T-116 instructing the executor **not** to stamp `status:`. The executor
+followed `method/roles/executor.md` and T-104 instead of the brief, was
+right to, and said so in its report. **Nothing broke, because the
+executor read the repository rather than the brief — which is exactly
+the safeguard that stops working the moment a ruling is not IN the
+repository.**
+
+That is the argument for the priority, and it is stronger than "the docs
+are stale": **a ruling that lives only in a card cannot be followed by
+anyone who does not happen to read that card**, and the people who most
+need these nine — dispatchers writing briefs, executors deciding
+ceremony, verifiers deciding what `review:` means — read `method/` and
+`docs/CONVENTIONS.md`. @human ruled *"solidify them into the way
+we/nputer works"* on 2026-08-25. **Until this card lands, they are not
+solidified; they are minuted.**
+
+**ONE CONSTRAINT ON THE `docs/CONVENTIONS.md` HALF, AND IT IS HARD.**
+`T-091` adds a reader that parses the **RANGE RULE** bullet and asserts
+roughly thirty figures inside it, and it is approved and awaiting
+integration as this is written. **This card SHALL NOT edit the RANGE RULE
+bullet, its figures, its flip lists, or its command recipes.** The
+rulings here belong in `method/roles/*.md`, `method/tasks/TASK-FORMAT.md`
+and `method/lane-protocol.md`; where CONVENTIONS is genuinely owed a
+sentence, it goes somewhere the reader does not parse. IF T-091 has
+landed by the time this lane runs THEN run its reader and prove the
+figures still hold; IF it has not THEN say so and leave the bullet
+untouched.
 
 ## TWO MORE RULINGS ARRIVED 2026-08-25, AND THEY ARE THE SAME SHAPE — RATIFIED EVERYWHERE EXCEPT `method/`
 
