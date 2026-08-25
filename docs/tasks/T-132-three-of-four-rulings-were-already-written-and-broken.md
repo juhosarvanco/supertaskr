@@ -6,14 +6,22 @@ milestone: 4
 priority: 5
 size: S
 status: planned
-blocked_by: [T-104]
-touches: [method/]
+blocked_by: []
+touches: [method/lane-protocol.md, method/roles/integrator.md, method/tasks/TASK-FORMAT.md]
 builder:
 verifier:
 built_by:
 verified_by:
 review:
 ---
+
+Absorbs (2026-08-25, at @human's instruction): **`T-123-s10`** and
+**`T-128-s1`** — both files removed in this commit. Both were filed by
+the architect against the architect, hours apart, for the same defect.
+
+`blocked_by` was cleared and the fence narrowed from `[method/]` to the
+three files this card writes — **the first card dispatched under the
+path-granularity ruling @human adopted tonight**, applied to itself.
 
 **THIS CARD WAS DRAFTED TO ADD FOUR RULINGS AND SHRANK TO ONE AND A HALF
 WHEN ITS OWN CLAIMS WERE CHECKED.** The checking is the deliverable. It
@@ -98,6 +106,77 @@ violated contract is a **check**, not more prose — a dispatcher that
 cannot emit a brief row without naming the command it came from, or a
 brief template whose rows are commands rather than values.
 
+## FOURTEEN — THE INTEGRATION TURN IS EXCLUSIVE, AND RULE 4 NAMES ONE SEAT WHERE IT MEANS ALL OF THEM
+
+**Absorbed from `T-123-s10` and `T-128-s1`, and this is now the largest
+item in the card.** It is the fourth instance of this card's own subject:
+a rule that exists, in the right file, and does not reach the seat that
+breaks it.
+
+**Measured on main, not assumed.** `method/lane-protocol.md` rule 4 reads:
+
+> **The executor** never touches the integration branch. No commit, no
+> merge, no push, no branch move, **no dependency install** run against
+> that checkout.
+
+**Two gaps, and both are load-bearing:**
+
+1. **It binds ONE SEAT.** `git grep -n architect -- method/lane-protocol.md method/roles/orchestrator.md` returns **zero**. The seat that dispatches, triages and files cards has never been named as bound by anything, and it is the seat that writes to that checkout most often.
+2. **It lists the INSTALL and not the TEST RUN.** An install is the destructive case everyone anticipated. **A test run only reads, so it looks harmless** — and it is the one that actually collided.
+
+### What the omission cost, twice, in one session
+
+**`T-123-s10`** was filed against the architect hours before this card, for staging into a shared index while an integrator held main; that integrator spent about four minutes deciding whether the tree was safe to write.
+
+**`T-128-s1`**: the architect then ran the full suite in the integration checkout while a *second* integrator worked there. The result was **2 failed / 169 passed** — a 30-second click timeout, and `Invalid package config` on a `tools/e2e/package.json` that was provably valid and untouched. **Re-run alone: 171/171, exit 0.** Both failures were collision artifacts.
+
+**The second was worse than the first and the reason generalises.** Every other shared surface this project has named — the index, the ref namespace, the scratch directory, the board — **obstructs or confuses. This one CERTIFIES.** An integrator's suite result is what a merge is signed off on, and the corruption is symmetric: a spurious red it would investigate, or a spurious green that prompts no second look. Nothing in the tree records that a second runner was present. **`git status` is clean, no lock exists, and the checkout looks idle.**
+
+**And `T-104` merged tonight WITHOUT taking `T-123-s10`**, because the triage that folded it there was never executed. **The architect then committed the same class of error three hours after filing the finding about it.**
+
+### The fix, and its parts are not equal
+
+- **GENERALISE THE SEAT AND EXTEND THE LIST.** Rule 4 binds *any seat that is not the integrator*, and the prohibition gains **the test run**. One clause; it is `T-123-s10`'s entire ask.
+- **SEPARATE THE WRITE FROM THE VERIFICATION — this is the real fix and it is free.** What collided was not the commit. Commits are atomic and were proved safe repeatedly tonight, including under a running integrator at that integrator's own request. **What collided was a four-minute suite run.** So the remedy is targeted rather than total: write to the integration branch directly, and run gate-owed suites in a checkout of one's own. **This card was verified that way** — an architect verification checkout was cut and installed specifically to land it, and it is the first card in this project to be gated from outside the integration tree.
+- **DETECT AND REFUSE, as a backstop only.** The precedent is already written at `method/roles/integrator.md:65` — *"DETECT the live process and REFUSE LOUDLY — naming the step skipped, the evidence, and what has to happen before it can run"* — and it carries the positive control with it: a check that cannot tell a live process from an absent one is not a check. **Build it only if the first two leak**, because it is machinery and the first two are a clause and a habit.
+
+### A stopping rule two integrators derived and neither stated exactly
+
+**Both integrators who met it got it right in practice and wrong in
+justification, which is why it belongs here rather than in either
+checkpoint.** The problem: a checkpoint writes suite counts into
+`docs/STATE.md`, and `STATE.md` is itself read by a suite — so declaring
+the run appears to owe another run, forever.
+
+The wrong justification, written into a correction commit tonight and
+retracted by its own author within the hour: *"no suite figure in this
+file moves, so the declare-every-run regress does not restart."* **That
+conflates two obligations that are not the same, and asking the gate is
+what separates them:**
+
+- **THE REGRESS** is about a file's own figures going stale — writing
+  suite counts into a file a suite reads. **That does not restart on a
+  prose edit.**
+- **THE DOCS GATE'S OBLIGATION** is about the file being a code input *at
+  all*. **It fires on ANY write under `docs/` that a suite reads,
+  regardless of what changed inside.** Asked rather than predicted on the
+  correction's own range: exit 1, one suite owed, which was run.
+
+**The honest rule: the regress stops because the covering run is declared
+somewhere that is NOT a code input — a commit message, or a report — and
+NOT because prose escapes the gate. It does not escape the gate.**
+
+Recorded here because **we are two for two on integrators deriving this
+and neither stating it exactly**, which by this card's own thesis means it
+is a rule that exists only in practice and will be re-derived by the
+third.
+
+### The diagnostic, which is prevention's other half
+
+The failure was **plausible rather than loud**. A future reader meeting a red in `tools/e2e` must now separate **three** things that look alike: a real defect, the known mtime intermittent, and a concurrent-run artifact.
+
+**The tell is the ABSENCE of the fractional-millisecond digits.** `T-120-s3`'s signature is a float against a whole number; neither of these two failures carried it. **That distinction belongs in `docs/STATE.md` beside the intermittents**, and it is worth more than the incident — it is the first recorded e2e red in this repository that is neither a defect nor the known flake.
+
 ## WHAT SURVIVES AS GENUINELY NEW
 
 - **THIRTEEN — repair what the merge introduces, file what the merge
@@ -135,6 +214,28 @@ brief template whose rows are commands rather than values.
 
 ## Acceptance criteria
 
+- **RULE 4 SHALL BIND ANY SEAT THAT IS NOT THE INTEGRATOR**, and its
+  prohibition list SHALL name **the test run** beside the dependency
+  install. **Derive the current wording at your own ref before editing** —
+  `T-104` moved that file tonight and the sentence may already have
+  changed.
+- **THE WRITE/VERIFICATION SPLIT SHALL BE STATED AS THE REMEDY, NOT THE
+  PROHIBITION.** A blanket "never touch that checkout" is wrong and would
+  be ignored: the atomic commit is safe and was performed under a running
+  integrator at that integrator's own request. **Name what actually
+  collides — a long-lived suite run — and say where it goes instead.**
+- **THE THREE-WAY DIAGNOSTIC SHALL REACH `docs/STATE.md`**: a `tools/e2e`
+  red is now a real defect, the known mtime intermittent, or a
+  concurrent-run artifact, **and the tell is the ABSENCE of the
+  fractional-millisecond digits.** IF `STATE.md` is outside this card's
+  fence THEN route it to the next checkpoint rather than widening —
+  and say so, because a diagnostic nobody can find is not a diagnostic.
+- **NO DETECT-AND-REFUSE MACHINERY SHALL BE BUILT BY THIS CARD.** It is
+  the backstop and its precedent already exists at
+  `method/roles/integrator.md:65` with its positive control attached.
+  **Cite it; do not implement it.** IF the clause and the habit are judged
+  insufficient THEN route the machinery as its own card with a measured
+  argument.
 - **THE THREE VIOLATIONS SHALL BE RECORDED WHERE THE RULE IS, not only
   here.** A rule that has been broken once by the seat that owns it earns
   a sentence saying so — the project's archive is trustworthy because it
