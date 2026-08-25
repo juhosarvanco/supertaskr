@@ -1114,3 +1114,141 @@ was written to the same constraint** — it cites `roles/orchestrator.md`
    and unprompted by any red; the app suite was 973/973 on its first run.
    `npm run typecheck` from `app/` was never reached for. **A trap that
    never fires is still the reason it never fired.**
+
+### RANGE — AT A REF MAIN REACHED WHILE THE VERDICT WAS BEING WRITTEN
+
+**Main has moved SIX times under this card**, not five as this pass's
+brief said: `74feb67` (base) → `afe23c1` → `cea839e` → `93f8656` →
+`14bc505` → `5036958` → **`e7db842`**, derived with
+`git rev-list --first-parent --count 74feb67..e7db842` = **6**. Every
+figure here is at `e7db842`, and the fix commit is `0c6a0a3`.
+
+    git merge-tree --write-tree e7db842 HEAD   -> exit 1, read from $?
+                                                  BEFORE the substitution
+    git diff --name-only e7db842 da6b385      -> THE PRESCRIBED FORM, 7 paths
+
+Neither forbidden spelling used. **DISJOINT AS SETS AGAINST THE FENCE**:
+main's advance `74feb67..e7db842` touches eight paths, none of them
+`method/`; `git diff --name-only 74feb67 e7db842 -- <the three fenced
+files>` is **empty**. The two other live lanes, derived by filtering
+`git worktree list` on the BRANCH: **T-127** `[crate-index,
+docs/architecture/components/]` and **T-133** `[tools/e2e]` — neither
+intersects three `method/` paths.
+
+**THE FORECAST TREE CONFLICTS, ON EXACTLY ONE LINE, AND IT IS THE ONE
+CORRECTION 3 PREDICTED.** `merge-tree` exits **1**, not 0, prints exactly
+**one** `CONFLICT (content)` line, and the tree `da6b385` carries **one**
+conflict hunk — a single `<<<<<<<` / `=======` / `>>>>>>>` triple, at
+lines 8-12 of one file.
+
+**THE FORECAST TREE'S HASH IS DELIBERATELY NOT RESTATED FOR THIS TIP, AND
+THE REASON IS WORTH THE SENTENCE.** `da6b385` is right for `0c6a0a3` and
+was measured there. A tree hash re-derived at the tip that CARRIES the
+sentence naming it changes the moment that sentence is written — measured
+here rather than reasoned: the same derivation gave `8d7c86f` before this
+paragraph existed and `3d02c3b` after. **A forecast tree hash is the one
+figure that cannot be self-consistently recorded in the commit it
+describes**, which is `docs/CONVENTIONS.md`'s *"cite the shape, not the
+tally"* with the loop closed. What IS invariant across every tip of this
+lane is the SHAPE, and it is the shape a reader needs: **exit 1, one
+`CONFLICT (content)` line, one hunk, on `status:`, and the same seven
+prescribed paths.** Asked again at each tip, never predicted.
+
+    <<<<<<< e7db842…
+    status: building
+    =======
+    status: verifying
+    >>>>>>> HEAD
+
+**`builder: claude-opus-5` merged CLEANLY**, because this pass adopted
+main's value instead of leaving it empty; had it been left empty that line
+would have conflicted too, and reverting it would have been silent.
+**`status:` is the two-writer line `roles/orchestrator.md` 5b exists to
+prevent**, and the resolution is **`verifying`** — the lane's stamp is the
+forward move from `building` and is `roles/executor.md` step 6's to make.
+**An exit of 1 here is a forecast, not a failure**: it is what the RANGE
+RULE's pre-merge form is FOR, and it was read from `$?` before the tree
+hash was substituted anywhere.
+
+### GATES — ALL THREE ASKED, NONE PREDICTED
+
+- **DOCS GATE, method-only (3 paths): exit 0, NOT OWED**, in its own
+  words — *"docs-gate: 3 changed path(s) given, none under docs/ — this
+  gate is not owed."* **`T-132-s2` reproduces a third time**, now at
+  `0c6a0a3`.
+- **DOCS GATE, the full prescribed 7: exit 1, FIRES on 4 of 7**, naming
+  `npm test from app/`, `npm test from tools/e2e/`, `npx vitest run from
+  lib/parser/` — **all three run below**. Run from the repo root in the
+  one prescribed spelling, fed the RANGE RULE's own derived path list,
+  **never through `xargs`**. 13 derived readers across 4 suites, census
+  130 sites in 22 files, **0 frontmatter issues**, and *"every live task
+  card's frontmatter parses, with a legal status"* — which is this pass's
+  check that `verifying` beside a filled `builder:` is legal.
+- **GRAPH REGEN: asked, exit 0, CURRENT** — 939161 bytes, 179 files, 2004
+  symbols, 1907 edges. All four counts printed, so it is a real green and
+  not the `--root` false-red shape. Not owed by trigger either: no
+  `.ts/.tsx/.js/.jsx/.rs` outside `docs/` in this diff.
+- **BOOT GATE: NOT OWED**, derived on the same 7 paths — **0** match
+  `app/src-tauri/**`, `app/src/**` or either manifest. Not run.
+- **`cargo test` OWED and RUN**, for the reason the lane derived rather
+  than the one the card names: `kit.rs` `include_str!`s
+  `method/tasks/TASK-FORMAT.md`. **`METHOD_SNAPSHOT_VERSION` is `0.1.6`
+  and did not move** — this pass adds clauses, not formats.
+
+### SUITES — EVERY RUN DECLARED, EVERY EXIT FROM `$?` UNPIPED
+
+- **cargo: 471 passed / 0 failed / 3 ignored, exit 0**, over **16**
+  `test result:` lines, cross-checked against **16** `running N tests`
+  headers summing to **474 = 471 + 3**. All five `kit.rs` bodies `ok`.
+- **lib/parser: `npm run build` exit 0, then 268/268 across 12 files,
+  exit 0 — RUN TWICE**, before and after the card edits, both exit 0. It
+  is built first, per the fresh-clone order.
+- **app: `npm run build` exit 0, then 973/973 across 47 files, exit 0 —
+  RUN TWICE**, before and after the card edits, both exit 0. The build ran
+  before the suite, unprompted by any red.
+- **tools/e2e: TWO RUNS, BOTH DECLARED, BOTH GREEN. Run 1: 171 passed,
+  exit 0, 2.0m. Run 2: 171 passed, exit 0, 1.9m.** Scratch port
+  **15903**, `lsof`-read at **0 rows before run 1 and 0 after run 2**.
+  Port **1420 read with `lsof` only** — one LISTEN row, the human's app,
+  left alone. `range-rule.spec.ts` printed its `T-091-s3` disclosure
+  against this lane by name (`/Users/ujju/Projects/nputer-T-132 @
+  0c6a0a3`) in both runs — the fifth and sixth consecutive observation.
+
+### THE MTIME INTERMITTENT DID NOT FIRE, AND THAT REFINES WHAT WE KNOW ABOUT IT
+
+**This tree does NOT carry T-130's fix and went green on the first run
+anyway.** Derived rather than assumed:
+`git merge-base --is-ancestor cea839e HEAD` exits **1**, the same probe
+against `main` exits **0**, and the unfixed
+`utimesSync(target, clock.atime, clock.mtime)` is still at
+`tools/e2e/tests/token-scan.spec.ts:226`. **The body that carries the
+flake — `token-scan.spec.ts:201`, *"P6 reds a planted bare motion utility
+and leaves its motion-safe twin alone"* — passed in BOTH runs**, at 210ms
+and 214ms.
+
+**SO A GREEN PRE-FIX RUN IS NOT EVIDENCE OF THE FIX, AND THIS PASS'S
+BRIEF CAME ONE STEP FROM IMPLYING IT WAS.** The brief's rule — *"check
+whether your tree includes `cea839e` before calling it anything"* — is
+right and is what caught this; but it was written expecting a red, and the
+useful addition is the other direction. `T-120-s3` is an INTERMITTENT with
+a fix, not a deterministic failure: **the lane hit it, the verifier hit
+it, and this pass did not, on byte-identical unfixed code.** The
+three-way diagnostic still separates the three cases when a red appears;
+what it cannot do is infer anything from a red's ABSENCE, and nothing in
+`docs/STATE.md` says so yet. **Routed rather than filed** — `STATE.md` is
+outside this fence and is not widened into; the next checkpoint owns the
+sentence, and it is one sentence: *the mtime flake's absence proves
+nothing about whether a tree carries `cea839e`; the ancestry probe does.*
+
+### WHY THIS IS TWO COMMITS AND NOT ONE
+
+`0c6a0a3` carries the clause fix and the four record corrections;
+**this commit carries only notes.** The split is deliberate: the verifier
+re-checking one clause can read `0c6a0a3` alone, and the range, gates and
+suite figures above are derived AGAINST `0c6a0a3` and could not be written
+into it. **The declare-every-run regress stops here exactly as this card
+already rules it stops** — the covering runs are declared in a commit
+message and in the report, which are not code inputs. **This is not a
+claim that prose escapes the DOCS GATE.** It does not: fed this commit's
+own range the gate fires again, on this card's path, for the same three
+suites — and the runs above are the ones that cover it.
