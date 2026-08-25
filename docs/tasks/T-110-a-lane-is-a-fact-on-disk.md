@@ -1455,3 +1455,446 @@ is CONVENTIONS' three-fixture rule behaving exactly as written.
   (`drill-T-110-rebuild-pre`, `drill-T-110-rebuild`,
   `forecast-T-110-rebuild`); their symlinks were UNLINKED rather than
   deleted, with all three targets verified present afterwards.
+
+## Implementation notes — THE THIRD PASS, under @human's waiver
+
+Executor `claude-opus-5 @T-110-pass3`, a FRESH session that wrote neither
+earlier build and neither verdict. Lane `task/T-110-lane-reader`,
+previous tip **`0bdaa24`** (the second verdict commit), this pass's tips
+**`c27e704`** and **`b91732b`**. **APPENDED, NEVER REWRITTEN**: both
+earlier passes' notes and BOTH verdicts are byte-untouched (T-101's
+precedent) — the region from `## Verdicts` to the rebuild's notes hashes
+`bbebadac…` before and after this section was added. Understanding was
+confirmed in one paragraph before a single file was opened for writing,
+with `git status --short` EMPTY in this worktree at that moment.
+
+**THIS PASS EXISTS BECAUSE OF A WAIVER AND NOT BECAUSE THE STOP
+CONDITION WAS WRONG.** `method/tasks/TASK-FORMAT.md`'s two-rejection
+circuit breaker fired correctly; `docs/rooms/t110-second-rejection.md`
+escalated it; the dispatch brief carries @human's ruling of 2026-08-25 —
+*"waive T-110 once"* — as the authority for this pass.
+
+**THE WAIVER IS CORROBORATED ON MAIN, AND NOT WHERE A READER WOULD LOOK
+FOR IT.** `docs/rooms/t110-second-rejection.md` is STILL `status: open`
+and still carries no @human entry — at `bb26a93` and again at `c4cfe52`.
+The ruling is recorded instead in **`T-104`'s card, ruling EIGHT**, which
+landed on main at `5e6fc8c` *during* this pass: it quotes @human
+(*"this kind of fix could have been done by you without me, so there
+might be fine-tuning needed with the double rejection rule"*), states
+that the stop condition **over-triggered** on T-110 because its two
+rejections were **different, novel defects each with a named in-fence
+fix**, and confirms *"A THIRD rejection is terminal in every case: park
+and re-plan, never a fourth pass."* So this pass's authority is real and
+checkable; what is missing is only the room's own stamp, and ruling
+EIGHT's second bullet — *"an escalation SHALL still be written even when
+the architect waives … the room says 'waiving, here is why'"* — is
+precisely the gap. **Closing the room is `[docs/rooms/]` work and is
+outside `[app-dispatch]`; it is named here rather than reached for.**
+
+### THE DEFECT REPRODUCED FIRST, AND IT IS WORSE THAN THE VERDICT RECORDED
+
+Reproduced before one producer byte moved, by writing the pinned bodies
+FIRST and watching them fail — the reproduction and the deliverable are
+the same artefact, so there is no probe that proved something the shipped
+suite does not. `git diff --stat` at that moment: **195 insertions, 0
+deletions, all inside `#[cfg(test)] mod tests`**, and
+`grep 'let meta = fs::metadata(path)'` still matching at line 419.
+
+    test result: FAILED. 0 passed; 2 failed; 31 filtered out
+
+    a_symlinked_gitdir_is_refused… panicked at lanes.rs:948
+      left:  Lane { name: "bleak", task_id: "T-110",
+                    branch: "task/T-110-x",
+                    worktree_path: "…/nputer-t110-gitdirtarget-…/victim-worktree",
+                    exists_on_disk: TRUE }
+      right: Unreadable { name: "bleak", defect: GitdirMissing }
+
+    a_symlinked_head_is_refused… panicked at lanes.rs:1022
+      left:  Lane { … same shape … }
+      right: Unreadable { name: "bleak", defect: HeadMissing }
+
+**TWO THINGS HERE ARE NEW, AND BOTH MAKE THE FINDING BIGGER.**
+
+1. **`exists_on_disk` COMES BACK TRUE.** The second verdict's
+   reproduction pointed the symlink at a credentials file, so the forged
+   row carried `exists_on_disk: false` and a `worktree_path` that was
+   visibly not a path. Point it at a target that is SMALL AND
+   WELL-FORMED and the forgery is complete: a lane the board would render
+   as live, on disk, indistinguishable from a real one. The bad case is
+   not "a secret leaks onto a row" — it is "a secret leaks onto a row
+   **that looks correct**".
+2. **THE SIBLING LEAKS TOO, AND NOBODY HAD RUN IT.** `read_small` is
+   called TWICE — `gitdir` at what is now line 317 and `HEAD` at 362 — so
+   the split existed at two call sites. The second verdict said so in
+   prose (*"it chases two"*) and demonstrated only the `gitdir` half. The
+   `HEAD` half is the sharper of the two: **the contents of a file the
+   reader was never pointed at decide the BRANCH, and therefore the TASK
+   ID.** A `gitdir` follow forges where a lane is; a `HEAD` follow forges
+   *which card it belongs to*.
+
+### THE TWO-TOKEN FIX IS THE WHOLE FIX — BY ENUMERATION, NOT BY TRUST
+
+The verdict said `metadata` → `symlink_metadata`, two tokens. It is
+right, and this pass declines to take that on the verdict's word. Every
+PRODUCER-side filesystem call in the fence, enumerated:
+
+| site | call | follows a link? | why it is right |
+|---|---|---|---|
+| `read_lanes` `.git` | `symlink_metadata` | no | structural |
+| `read_lanes` `worktrees` | `symlink_metadata` | no | structural |
+| `read_lanes` listing | `read_dir` | n/a | on a path already checked above |
+| `read_entry` entry dir | `symlink_metadata` | no | structural |
+| `read_small` stat | **`symlink_metadata`** | **no — THE FIX** | both call sites |
+| `read_small` read | `fs::read` | yes, in principle | gated by `is_file()`; see `T-110-s12` |
+
+`join.rs` and `mod.rs` contain **no producer-side filesystem call at
+all** — every `fs::` hit in `join.rs` is inside its own `#[cfg(test)]`
+module. So one edit closes both call sites and there is no third.
+
+The one residual is the last row and it is **filed, not folded in**:
+`read_small` stats the link and then opens BY PATH again, so the policy
+holds against a static tree and not against one being edited underneath
+it. That needs concurrent write access to the bookkeeping directory —
+strictly stronger than the archive/synced-folder position the closed
+defect needed, and an attacker holding it could just write the bytes
+directly. `O_NOFOLLOW` closes it and would carry a `libc` manifest
+change, which is a dependency decision rather than an executor's.
+**`T-110-s12`.**
+
+### THE PIN, AND ITS POSITIVE CONTROL — the rung that failed twice
+
+The first verification symlinked a `gitdir` at a **2.4 MB** file, watched
+`GitdirTooLarge` refuse it, and concluded *"the bound holds through the
+symlink."* The SIZE bound stopped that fixture before the symlink policy
+ran at all. That is `docs/CONVENTIONS.md`'s **A NEGATIVE ASSERTION NEEDS
+A POSITIVE CONTROL** failing inside a security sweep, and it is why this
+pass was dispatched with the control named as its deliverable.
+
+Both new bodies are built so that mistake cannot recur:
+
+- The symlink target is **small and well-formed** — for `gitdir`, an
+  absolute path to a `.git` file whose parent directory EXISTS; for
+  `HEAD`, exactly the bytes git writes for a branch checkout.
+- **The target's length is ASSERTED to be under `MAX_METADATA_BYTES`**,
+  in the body, with a message saying why. The size bound is thereby
+  proved not to be doing the work, in the body rather than in a reader's
+  head.
+- **The SAME BYTES written as a REAL FILE are asserted ACCEPTED**, as a
+  complete `Lane` with `exists_on_disk: true`, in the same scan, one
+  entry away. The refusal is therefore a refusal of the SYMLINK and of
+  nothing else.
+- The `gitdir` body adds the security property directly: neither the
+  target's path nor the victim path appears anywhere in the refused
+  entry's rendering.
+
+### THE DRILL FOUND THE SAME POLICY UNPINNED AT THREE MORE SITES
+
+**This is the pass's real finding and it came out of the drill rather
+than out of the brief.** The brief asked whether a sibling READ had the
+same split. It does — `HEAD`, above, closed by the same edit. But the
+drill asked the inverted question, and the answer was worse:
+
+| mutant | mutation | at `c27e704` |
+|---|---|---|
+| S1 | `.git` check → `fs::metadata` | **SURVIVED** |
+| S2 | `.git/worktrees` check → `fs::metadata` | **SURVIVED** |
+| S3 | entry-directory check → `fs::metadata` | **SURVIVED** |
+
+**The symlink policy existed in FOUR places, was WRONG in one, and was
+PINNED IN NONE.** The three that were right were right by accident of
+authorship, and any of them could be flipped back — reopening the exact
+class just closed, at three more doors — without a single test going
+red. Closing only the site the verdict named would have shipped a fix
+whose correctness rested on three unguarded lines.
+
+Closed at **`b91732b`** by
+`the_symlink_policy_holds_at_every_structural_check_and_not_only_at_the_file_reads`
+— **no producer line changes; the commit is assertions only.** Each arm
+points its symlink at part of a REAL, COMPLETE repository which the body
+first asserts scans into a real lane, so "refused" can never mean "the
+target was rubbish": a symlinked `.git` must be `GitIsAFile`, a symlinked
+`.git/worktrees` must be `WorktreesUnreadable`, and a symlinked entry
+directory must be `NotADirectory` beside a real registration that is
+still read. **S1b/S2b/S3b all RED at exit 101 afterwards.**
+
+### THE DRILL — 28 mutants, 21 RED, and the 7 survivors are 4 controls and 3 findings
+
+Detached worktree **`drill-T-110-pass3`** with its own `CARGO_TARGET_DIR`
+INSIDE it (arm (c)); driver **`drill-T-110-pass3-driver.sh`**, batch
+**`drill-T-110-pass3-run.sh`**, results
+**`drill-T-110-pass3-results.txt`** — every artefact named per-lane and
+not only the worktree (T-088-s3). Baseline
+`cargo test --test dispatch_lanes` **33/33 exit 0** at `c27e704`, **34/34
+exit 0** at `b91732b`. Every mutation PRODUCER-side and one side only,
+applied by a driver that refuses any path outside the drill, requires a
+match count of exactly **1**, refuses a file that is already dirty, and
+reads the mutation back with `git diff --unified=0` BEFORE its suite ran.
+Restoration proved **per-path by sha256 against the drill's own HEAD
+blob — 28 times, 28 MATCH, 0 MISMATCH.**
+
+**THIS PASS'S OWN (3, all RED):** P1 the defect itself put back
+(`symlink_metadata` → `metadata`) — killed by both new bodies and nothing
+else · P2 the `is_file()` gate removed, so `fs::read` follows the link by
+another door · P3 the `is_file()` gate always refusing, which the
+POSITIVE-CONTROL halves see.
+
+**THE SIBLING CHECKS (3):** S1/S2/S3 **SURVIVED** at `c27e704` — the
+finding above — and S1b/S2b/S3b **RED** at `b91732b`.
+
+**THE EARLIER PASSES' MUTANTS, RE-RUN BECAUSE THE PRODUCER MOVED UNDER
+THEM (14, all RED):** RD6 `MAX_METADATA_BYTES` 4096→40960 · RM13 the size
+bound disabled outright · RD5 `BRANCH_MAX_LEN` 255→256 · RD17 the digit
+bound widened · RD24 the `parent()` climb dropped · RD25 `exists_on_disk`
+pinned true · RD20 the entry-name sort deleted · RD23 a subprocess
+planted in the module · RD1 the `died`/`stampSkipped` swap · RD2 the
+in-flight set loses `building` · RD12 the row drops its card (the mutant
+the REBUILD's own drill caught) · RD13 the row sort deleted · RD19
+non-lane worktrees dropped · RD9 `truncated` hardcoded false. **Every one
+still reds against a producer that moved beneath it**, which is the
+reason the brief asked for the re-run.
+
+**NO-OP CONTROLS (4, all SURVIVED as they must):** C1/C1b a doc-comment
+word in `lanes.rs`, C2/C2b one in `join.rs` — so the harness
+discriminates rather than reporting red for everything.
+
+**A DEFECT IN THIS DRILL'S OWN DRIVER, CAUGHT AND STATED RATHER THAN
+QUIETLY FIXED.** The driver flags a mutant that failed to build by
+grepping the run output for `^error`, and cargo prints
+`error: test failed, to rerun pass …` as the ordinary footer of ANY
+failing test run. So the first batch reported *"DID NOT COMPILE"* on
+**17 of 22** mutants — exactly the RED set. Re-derived with the correct
+needle: `^error\[E` / `could not compile` matches **ZERO** times across
+the whole results file. **All 21 RED mutants compiled and died on an
+assertion**, which is the property that matters ("a mutant that fails to
+build proves nothing"), but the driver as written could not have told me
+so. Any future driver in this project should grep `error[E` and
+`could not compile`, never bare `^error`.
+
+### Each acceptance criterion, re-checked at `b91732b`
+
+Criteria 1–8 were verified MET by the second verifier at `0bdaa24` and
+this pass changes one executable line, so the re-check below is stated
+where this pass could have moved something and briefly where it could
+not.
+
+1. **One Rust-side reader, no subprocess, no grant — STILL MET.**
+   `no_subprocess_in_this_module` is green and now sweeps a `read_small`
+   doc comment that discusses symlink policy without naming a process
+   API; RD23 (a planted `Command::new`) still reds. `acl_pin.rs` is still
+   a **0-file diff** and the merge carries no manifest.
+2. **Positive shape — UNTOUCHED and still met.** RD5/RD17 red.
+3. **ADR-009 on the TS side — UNTOUCHED.** This pass wrote no
+   TypeScript; `app/src/lib/dispatch-store.ts` is byte-identical to
+   `0bdaa24`.
+4. **The four states, a pin driving each — UNTOUCHED and re-proved.**
+   RD1, RD2, RD12, RD19, RD9 all red, which is the first rejection's
+   content re-run against the moved producer.
+5. **Typed refusals naming the case — MET, and this pass ADDS to the
+   vocabulary's coverage.** `GitIsAFile` and `WorktreesUnreadable` are
+   now asserted against a SYMLINKED cause as well as a file/not-a-
+   directory one.
+6. **`exists_on_disk: false` rather than omission — UNTOUCHED.** RD25
+   reds.
+7. **The fixture repositories, all in a temp directory — MET, and the
+   three new bodies obey it.** Every byte the new bodies read is written
+   by them first, in `std::env::temp_dir()`. **NOTHING IN THE SUITE READS
+   THIS REPOSITORY'S OWN `.git`** — re-checked with two sibling
+   worktrees and a drill live while it ran. The new bodies are
+   `#[cfg(unix)]`, matching the house form already used ten times in
+   `docs_watch.rs` and once in `index_cmd.rs`.
+8. **The write set — STILL MET.** `the_reader_writes_nothing` is green
+   and untouched; no Rust file outside `src/dispatch/**` changed, so
+   `the_runners_write_set_is_snapshot_silent_and_the_agents_docs_write_is_not`
+   still passes inside the sweep.
+
+### Suites and gates — every exit read from `$?` UNPIPED on the very next token
+
+- **cargo `test --no-fail-fast`: 417 passed / 0 failed / 3 ignored, exit
+  0**, summed over **SIXTEEN** `test result:` lines, **zero warnings**.
+  The arithmetic closes: `0bdaa24`'s 414 plus this pass's **3** new
+  bodies. (An intermediate run at `c27e704` read **416/0/3, exit 0** —
+  the same figure plus the first two bodies.)
+- **`cargo test --test dispatch_lanes`: 34/34, exit 0** (31 at
+  `0bdaa24`).
+- **app: `npm run build` exit 0, `npm test` 940/940 across 46 files, exit
+  0.** **THE BUNDLE HASHES DO NOT MOVE** — `index-C86RloYb.css` 45.06 kB
+  / `index-DEkJr3K8.js` 526.42 kB, identical to both earlier passes,
+  which is what a Rust-only diff must produce.
+- **parser: 263/263 across 12 files, exit 0.** Main reads 264; both are
+  right, and the reason is unchanged from the second verdict (T-096's
+  extra body is on main and not in this lane's base).
+- **E2E: 143/143, exit 0** on scratch port **15121**; `npm run typecheck`
+  exit **0**.
+- **THE MERGE'S DIFF IS 18 PATHS, AND IT IS 18 AT BOTH MAIN TIPS THIS
+  PASS SAW.** Derived the prescribed way — `TREE=$(git merge-tree
+  --write-tree <main> b91732b)` with `$?` read FIRST (**0** both times),
+  then `git diff --name-only <main> "$TREE"`. **18** at `bb26a93` (tree
+  `d7cdf4c…`) and **18** at `c4cfe52` (tree `d0c2384…`). It is 17 at
+  `0bdaa24` plus `T-110-s11`; this pass adds `T-110-s12` and its two
+  edited files were already in the set. **The FORBIDDEN two-dot form
+  reads 131 and then 134** — a **7.4x** overstatement, pure
+  left-endpoint drift from a lane held open across five merges.
+- **MAIN MOVED UNDER THIS PASS, `bb26a93` → `5e6fc8c` → `c4cfe52`, AND
+  THREE NEW LANES OPENED** — `T-052` `[method/, docs/CONVENTIONS.md]`,
+  `T-120` `[tools/e2e]`, `T-124` `[app-agent]`, all at
+  `tools/nputer-T-NNN` rather than beside the repository. **None
+  collides with `[app-dispatch]`**, checked rather than assumed:
+  `app-agent` is `app/src-tauri/src/agent/**` and this fence is
+  `app/src-tauri/src/dispatch/**`. Main's whole advance is **six
+  `docs/tasks/*.md` files** carrying **zero** code paths and **no**
+  `graph.json`, so every figure below is unmoved by it — derived with
+  two `git diff --name-only … | grep -c` counts rather than argued.
+- **BOOT GATE — DERIVED and FIRES, 6 of 18** (four `dispatch/*.rs`,
+  `tests/dispatch_lanes.rs`, `dispatch-store.ts`). **RUN, exit 0** on
+  scratch port **15120**, both lines: `[nputer] project folder:
+  /Users/ujju/Projects/nputer-T-110` and `[nputer] window "main"
+  created`.
+- **DOCS GATE — FIRES, exit 1, 12 of 18.** Invoked DIRECTLY from the
+  repo root with ROOT-RELATIVE arguments, never through `xargs`, with
+  `T-110-s12` and this section `git add`ed BEFORE the gate saw them
+  (`T-010-s10`: the gate reads TRACKED files only). **12 derived readers
+  across 4 suites, 0 frontmatter issues**; census 119 docs-shaped sites
+  in 22 files with 12 in 10 files resolving into `docs/`, 25 files
+  holding the repository root (11 derived, 0 unlinked, 14 with no
+  linkable site), 1 package-relative site, ledger at 6 entries; every
+  live card's frontmatter parses with a legal status. **THREE suites
+  owed** — `npm test from app/`, `npm test from tools/e2e/`,
+  `npx vitest run from lib/parser/` — **all three RE-RUN over the final
+  tree after the doc writes, all three green**: parser **263/263 exit
+  0**, app **940/940 across 46 files, exit 0**, E2E **143/143 exit 0**.
+  `cargo test from app/src-tauri/` is **NOT owed by this diff** — its
+  three readers are `docs/architecture/components`, `docs/CONVENTIONS.md`
+  and a research capture, none of them among the 18 — and it was run
+  anyway, twice, because this pass changes Rust.
+- **GRAPH REGEN — FIRES, and it was ASKED rather than reasoned from the
+  suffix list**, which matters this time: the trigger gained `*.rs` at
+  `e1f3023` and this pass's diff is Rust.
+
+### THE REGEN, RE-DERIVED — and this pass moves it by ZERO
+
+`index --check --root ../..` **in the lane** exits **1** and names `+
+app/src/lib/dispatch-store.ts` and nothing else — because the lane's own
+`nputer-index` binary is built from a base that PREDATES T-010's Rust
+extraction. **That answer is an artefact of the lane's base and must not
+be reported as the merge's.** Re-derived against MAIN's indexer, in a
+throwaway worktree built at the tree `merge-tree` predicts (`d7cdf4c…`,
+confirmed byte-identical via `git rev-parse HEAD^{tree}`), with
+`CARGO_TARGET_DIR` placed OUTSIDE the worktree so `T-110-s4`'s phantom
+cannot apply:
+
+| | bytes | files | symbols | edges |
+|---|---|---|---|---|
+| committed (main, CURRENT) | 895 891 | 172 | 1889 | 1849 |
+| fresh at the merge | 918 406 | 178 | 1951 | 1878 |
+| **DELTA** | **+22 515** | **+6** | **+62** | **+29** |
+
+The six are named rather than counted: `dispatch/fixtures.rs`,
+`dispatch/join.rs`, `dispatch/lanes.rs`, `dispatch/mod.rs`,
+`tests/dispatch_lanes.rs`, `app/src/lib/dispatch-store.ts`. Main's
+committed graph is CURRENT at those figures, so the whole delta is this
+lane's — no separation arithmetic is needed this time, unlike the
+rebuild's measurement against a main that was itself stale by +46 files.
+
+**+6 / +62 / +29 IS EXACTLY THE REBUILD'S FORECAST, AND THAT IS THE
+POINT: THIS PASS'S ~290 NEW LINES MOVED THE GRAPH BY NOTHING.** Measured
+rather than inferred — regenerating in the throwaway and grepping the
+result, `read_small` (a PRIVATE non-test fn) appears and `read_lanes`
+appears, while `a_symlinked_gitdir_is_refused…` appears **0** times and
+so does the pre-existing `the_reader_writes_nothing`. **The Rust
+extractor indexes no `#[cfg(test)]` item at all.** A verifier can
+therefore carry the regen forecast forward from `0bdaa24` unchanged, and
+an integrator can too.
+
+**THE FIXTURE MOVEMENT IS SIX ASSERTIONS IN TWO FILES, NOT THE REBUILD'S
+TWO** — measured, not inherited, by regenerating in the throwaway and
+running the app suite there: **6 failed / 952 passed of 958** across 2
+files. The rebuild's figure was correct against `d64c673`; main has
+gained dogfood assertions since.
+
+1. `architecture-dogfood.test.ts` *"C-15 is DECLARED-ONLY"* — C-15's
+   `files` `[]` → **five** entries.
+2. *"all 172 files map"* — `fileComponent.size` **172 → 178**.
+3. *"THE FINDINGS: twelve undeclared dependencies, three declared-only
+   components"* — the findings list moves as `D3:C-15` clears.
+4. *"drift flags land on the right nodes"* — the drift array moves.
+5. `map-dogfood-render.test.tsx` *"renders all twelve declared
+   components, no unmapped bucket"* — **13 nodes, expected 12**, and the
+   thirteenth is the unmapped bucket for `tests/dispatch_lanes.rs`, which
+   is `T-110-s9`'s subject and still unrouted into a component file.
+6. *"the header hint reads the committed graph's scale"* —
+   `committed graph · 172 files` → **178**.
+
+All six are the regen's, none is this pass's, and reconciling them is the
+integrator's work at the checkpoint — corrected, never loosened.
+
+### WHERE THE BRIEF, THE CARD, THE ROOM AND THE THREE VERDICTS WERE WRONG
+
+1. **The second verdict UNDERSTATED its own finding, in two ways.** It
+   reproduced only the `gitdir` half, and only against a malformed target
+   (`exists_on_disk: false`). A small WELL-FORMED target yields a
+   complete forged lane with `exists_on_disk: TRUE`, and the `HEAD` call
+   site — which it named in prose and never ran — lets an unrelated
+   file's contents choose a lane's BRANCH and TASK ID.
+2. **The brief, the room and the verdict all describe the fix as
+   sufficient, and the drill says it is sufficient but not complete.**
+   Two tokens close the defect; three more sites hold the same policy
+   and NONE of the four was pinned. A pass that had taken the two tokens
+   on trust would have shipped correctly and left the class reopenable
+   in silence at three doors.
+3. **The brief's baselines are stale in one figure and right in the
+   rest.** cargo **414/0/3 over 16 lines** ✓, app **940/940** ✓, parser
+   **263/263** ✓, e2e **143** ✓ — all reproduced at `0bdaa24`. The app
+   figure for MAIN is **958**, not the brief's "higher, re-derive" — now
+   derived: the merge's suite is 958 and 952 of them pass after the
+   regen.
+4. **The room is still `status: open` on `main` and carries no @human
+   entry**, while the brief states @human ruled on 2026-08-25. Recorded
+   above; not this fence's to repair.
+5. **The card's problem statement is STILL wrong about `gitdir`** — it
+   *"names the worktree's path"*; it names the worktree's `.git` FILE.
+   Fourth independent confirmation, recorded only because the card is the
+   spec and has still not been corrected.
+6. **`docs/STATE.md` is now accurate about T-110** (2026-08-25, T-079's
+   integrator) and its lane table is right. The earlier passes' complaint
+   about it is discharged; noted so a reader does not chase it.
+7. **This pass's own drill driver was wrong about compilation** (above),
+   caught by re-deriving rather than by reading the summary line.
+
+### For the THIRD verifier
+
+- **The scope of this pass is one defect and its control.** The producer
+  diff is **ONE executable line**; everything else is a doc comment and
+  three test bodies. `git diff` `0bdaa24..b91732b` touches exactly two
+  files, `lanes.rs` and a new suggestion.
+- **Attack the control halves first**, because they are what the previous
+  two passes lacked. P3 in `drill-T-110-pass3-run.sh` (`if !meta.is_file()`
+  → `if true`) is the mutant that can only be seen by a positive control;
+  re-run it. **The shape-six question, asked and answered in the
+  uncomfortable direction**: P3 reds **18** bodies, so the two new
+  controls are NOT its unique killers — `one_live_lane_reads_back…` and
+  others would have caught it. What the controls uniquely buy is that
+  each refusal is legible AS a refusal of the symlink in its own body,
+  without a reader cross-referencing another one. That is a readability
+  and non-vacuity property, and CONVENTIONS requires it regardless; it is
+  recorded as such rather than dressed up as a unique kill.
+- **The three sibling mutants are the finding to re-run** — S1/S2/S3 in
+  the batch file, against `c27e704` (survive) and `b91732b` (red).
+- `T-110-s12` is the residual this pass deliberately did NOT take.
+  `T-110-s1` through `T-110-s11` stand exactly as filed.
+- **Live-environment facts, read on this host and never off a commit**:
+  port 1420 read with `lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing
+  else, before and after — holder `node` pid **82549**, one socket
+  `TCP [::1]:1420 (LISTEN)`, identical throughout; no bind, no connect,
+  no signal, at any point. Scratch ports **15120** (boot gate) and
+  **15121** (e2e) were `lsof`-read FIRST (zero rows) and then
+  bind-confirmed free on `127.0.0.1`, `0.0.0.0`, `::1` and `::` in that
+  order before use, and free again after. **No `pkill` at any point.**
+  No sibling worktree touched, nothing written in
+  `/Users/ujju/Projects/nputer`, and the untracked `z` left alone for the
+  tenth turn running. Two throwaway worktrees (`drill-T-110-pass3`,
+  `forecast-T-110-pass3`) were created and both are removed and pruned at
+  this commit.
+- **The known `T-088-s4` flake did not fire: 0 red in 2 full cargo runs**,
+  and no suite was re-run to get there. The running tally stays where
+  T-079's checkpoint left it (3 red in 7); this pass adds two green runs
+  and no red.
