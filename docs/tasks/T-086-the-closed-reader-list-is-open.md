@@ -326,3 +326,38 @@ not touched at all, and this lane built its own.** No sibling worktree
 was entered; the untracked `z` in the main checkout was left alone. No
 real CLI spawn, no model call, no screen control. Nothing was merged and
 the worktree is left in place for the integration turn.
+
+### Second pass, AT THE NOTES TIP `3ca4ae7` — all four owed suites, green
+
+The suites above ran at `2db5047`, before this card and `T-086-s1`
+existed. Re-run with all three paths in the diff, which is what takes the
+DOCS GATE from two suites to four:
+
+    git merge-tree --write-tree 29c0f4f HEAD     -> exit 0, tree 2b54976
+    git diff --name-only 29c0f4f 2b54976         -> 3 paths
+    node tools/e2e/scripts/docs-gate.mjs $(…)    -> exit 1, FIRES on 3
+
+**FOUR SUITES NAMED, FOUR RUN:** `cargo test` from app/src-tauri **exit
+0, 455 passed / 0 failed / 3 ignored over 16 `test result:` lines**;
+`npm test` from app **exit 0, 958/958 across 46 files**; `npx vitest run`
+from lib/parser **exit 0, 264/264 across 12 files**; `npm test` from
+tools/e2e **exit 0, 146/146** on scratch port **15252**. The gate's
+frontmatter half reports **every live task card parses with a legal
+status**, which is `T-086-s1`'s own frontmatter checked rather than
+assumed. The parity derivation is unchanged at this tip: 21 exposed
+commands, 4/5/5/7, 0 structural problems, 20 U+00B7 in the section and 23
+in the file. `snapshot_version_matches_the_live_method_stamps` reads `ok`
+here too. **No intermittent fired in this pass** — `T-120-s3` was green,
+which is its documented behaviour once a checkout has met it, and the
+`a_hostile_session_id…` body was green, taking this lane's tally to
+**1 red in 4** full `cargo test` runs.
+
+**THE RE-RUN REGRESS IS SETTLED BY DERIVATION, NOT BY A FIFTH PASS.**
+Appending this section edits a card AFTER its suites passed. What those
+four suites read out of a `docs/tasks/T-*.md` is its EXISTENCE in the
+file set and its FRONTMATTER — the parser's card parse and status
+vocabulary, the two app dogfood fixtures' id arrays and counts, and the
+two lane specs' `walk()` of the tree, which consumes the FILE LIST. This
+append adds no file, removes none, and moves no frontmatter field, so it
+cannot move any of their answers. The rule bites on the file set, not on
+the prose (STATE's own settlement of the identical regress).
