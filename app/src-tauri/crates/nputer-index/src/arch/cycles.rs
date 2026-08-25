@@ -20,15 +20,29 @@
 //!   gate (ADR-014).
 //! - It is a claim about DECLARATIONS, never about code. The observed
 //!   side is `arch drift`, and that side has a measured blind spot: it
-//!   counts `import` edges only, and a Rust `mod` declaration plus a path
-//!   expression — the strongest dependency Rust has — produces ZERO edges
-//!   (`T-126-s4`, reproduced at T-127: of this repository's edges, every
-//!   Rust one is an `import` and there is not a single `call` or
-//!   `type_ref`, while TypeScript carries all three kinds). **So a cycle
-//!   made only of Rust `mod` dependencies is invisible to BOTH sides**,
-//!   and [`render`] says so on every run, green or red. A gate that
-//!   cannot see a whole dependency class has to say so rather than return
-//!   a bare green.
+//!   counts `import` edges only, and every Rust edge in this repository
+//!   is an `import` — there is not a single `call` or `type_ref`
+//!   (`T-010-s6`, reproduced at T-127), while TypeScript carries all
+//!   three kinds. **So a cycle made only of Rust dependencies the
+//!   `import` set cannot see is invisible to BOTH sides**, and [`render`]
+//!   says so on every run, green or red. A gate that cannot see a whole
+//!   dependency class has to say so rather than return a bare green.
+//!
+//!   **THIS NOTE WAS NARROWED AT T-135 RATHER THAN DELETED, BECAUSE HALF
+//!   OF WHAT IT SAID BECAME FALSE AND HALF DID NOT.** It used to name
+//!   *"a Rust `mod` declaration plus a path expression"* as producing
+//!   zero edges (`T-126-s4`). The `mod` half is FIXED: T-135 emits an
+//!   `import` edge for every `mod` declaration that resolves to a walked
+//!   file, which is 27 new edges on this repository and is what made the
+//!   undeclared `C-05 -> C-15` dependency visible at all. The PATH
+//!   EXPRESSION half stands untouched — `crate::a::b::f()` written inline
+//!   with no `use` needs body-level name resolution, which T-135 ruled
+//!   out with arithmetic (projecting TypeScript's call/type_ref density
+//!   onto Rust is roughly 3.2x the graph's whole remaining byte budget)
+//!   and routed as a card of its own. Narrowing a disclosure is the only
+//!   honest move available when a fix makes it half-true: deleting it
+//!   would claim a reach this gate still does not have, and leaving it
+//!   would name a blind spot that no longer exists.
 //!
 //! # WHY A CYCLE IS NAMED AS A PATH
 //!
@@ -228,10 +242,13 @@ pub fn render(report: &CycleReport, root_label: &str) -> String {
         "note  this verdict is about DECLARED depends_on only; it is not a claim about observed imports\n",
     );
     out.push_str(
-        "note  the observed side (`arch drift`) sees `import` edges only - a Rust `mod` declaration plus a\n",
+        "note  the observed side (`arch drift`) sees `import` edges only - a Rust `mod` declaration now carries\n",
     );
     out.push_str(
-        "note  path expression yields no edge at all (T-126-s4), so a cycle made of those is invisible to BOTH\n",
+        "note  one (T-135, closing T-126-s4) but a cross-module PATH EXPRESSION with no `use` still carries none\n",
+    );
+    out.push_str(
+        "note  (T-010-s6: Rust emits no `call` and no `type_ref`), so a cycle made only of those is invisible to BOTH\n",
     );
     out
 }
@@ -250,6 +267,7 @@ mod tests {
             status: "auto".to_string(),
             paths: vec![format!("{id}/**")],
             depends_on: deps.iter().map(|d| (*d).to_string()).collect(),
+            touch_slugs: Vec::new(),
             file: format!("{id}.md"),
         }
     }
@@ -290,6 +308,15 @@ mod tests {
     #[test]
     fn every_green_and_every_red_carries_what_the_gate_cannot_see() {
         // The blind spot is printed on BOTH verdicts, on purpose.
+        //
+        // NARROWED AT T-135, NOT LOOSENED. The note used to name a Rust
+        // `mod` declaration as producing no edge; that half is now false
+        // (the fix emits one) and the path-expression half is still true,
+        // so the note names BOTH halves and this body asserts BOTH — the
+        // fix that is claimed, by its card id, and the gap that remains,
+        // by the finding that records it. Asserting only the survivor
+        // would let a future widening of the claim pass unnoticed, which
+        // is the failure a disclosure exists to prevent.
         for report in [
             cycles(&[component("C-01", &[])]),
             cycles(&[component("C-01", &["C-02"]), component("C-02", &["C-01"])]),
@@ -300,8 +327,13 @@ mod tests {
                 "the verdict must state its own scope: {text}"
             );
             assert!(
-                text.contains("T-126-s4"),
-                "and name the observed side's blind spot: {text}"
+                text.contains("`mod` declaration now carries") && text.contains("T-135"),
+                "the note must say what the observed side CAN now see: {text}"
+            );
+            assert!(
+                text.contains("PATH EXPRESSION with no `use` still carries none")
+                    && text.contains("T-010-s6"),
+                "…and still name the gap that remains, by its finding: {text}"
             );
         }
     }

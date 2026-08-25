@@ -37,6 +37,23 @@ pub struct Component {
     pub status: String,
     pub paths: Vec<String>,
     pub depends_on: Vec<String>,
+    /// The fence name a lane may spell instead of a path (T-135). Read
+    /// from THIS file rather than from `docs/ARCHITECTURE.md`'s prose
+    /// signpost, which that document says of itself is not the map
+    /// (`T-089-s7`) — the field is authoritative where the two differ.
+    /// Empty when the key is absent, and empty is a legitimate declared
+    /// value (`C-01` writes `touch_slugs: []`). A slug is NOT unique to
+    /// one component: `app-shell` names four of them.
+    ///
+    /// It is read with the SAME strictness as `depends_on:` — a bracketed
+    /// shape this reader cannot parse exactly is a `Malformed` naming the
+    /// file — which widens the refusal surface of `arch`, `arch drift`
+    /// and `arch cycles` by one field. That is deliberate and it was
+    /// measured before it was taken: all thirteen component files in this
+    /// repository carry the inline-list form today, and a slug lookup
+    /// answered out of a half-read list would send a lane to the wrong
+    /// fence, which is the failure this reader exists to refuse.
+    pub touch_slugs: Vec<String>,
     /// Repo-relative source file, for error messages.
     pub file: String,
 }
@@ -174,6 +191,7 @@ pub fn parse_component(text: &str, file: &str) -> Result<Component, RegistryErro
     let mut status: Option<String> = None;
     let mut paths: Option<Vec<String>> = None;
     let mut depends_on: Vec<String> = Vec::new();
+    let mut touch_slugs: Vec<String> = Vec::new();
     let mut current_list: Option<&'static str> = None;
     let mut closed = false;
 
@@ -192,6 +210,7 @@ pub fn parse_component(text: &str, file: &str) -> Result<Component, RegistryErro
             match current_list {
                 Some("paths") => paths.get_or_insert_with(Vec::new).push(value.to_string()),
                 Some("depends_on") => depends_on.push(value.to_string()),
+                Some("touch_slugs") => touch_slugs.push(value.to_string()),
                 Some(_) => {} // a list under a key this reader ignores
                 None => return Err(bad(format!("list item outside any key: {line:?}"))),
             }
@@ -213,6 +232,7 @@ pub fn parse_component(text: &str, file: &str) -> Result<Component, RegistryErro
         current_list = match key {
             "paths" => Some("paths"),
             "depends_on" => Some("depends_on"),
+            "touch_slugs" => Some("touch_slugs"),
             _ => Some("other"),
         };
         if value.is_empty() {
@@ -227,6 +247,7 @@ pub fn parse_component(text: &str, file: &str) -> Result<Component, RegistryErro
             "status" => status = Some(unquote(value).to_string()),
             "paths" => paths = Some(parse_inline_list(value, file)?),
             "depends_on" => depends_on = parse_inline_list(value, file)?,
+            "touch_slugs" => touch_slugs = parse_inline_list(value, file)?,
             _ => {}
         }
     }
@@ -248,6 +269,7 @@ pub fn parse_component(text: &str, file: &str) -> Result<Component, RegistryErro
         status: status.unwrap_or_else(|| "auto".to_string()),
         paths,
         depends_on,
+        touch_slugs,
         file: file.to_string(),
     })
 }

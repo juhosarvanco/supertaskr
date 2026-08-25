@@ -36,6 +36,7 @@
 //! live tree. Where a permanent cross-engine pin should live is filed as
 //! T-014-s2, and whether this join belongs in Rust at all as T-014-s1.
 
+pub mod blast;
 pub mod cycles;
 pub mod glob;
 pub mod registry;
@@ -663,6 +664,7 @@ mod tests {
             status: "auto".to_string(),
             paths: paths.iter().map(|p| (*p).to_string()).collect(),
             depends_on: deps.iter().map(|d| (*d).to_string()).collect(),
+            touch_slugs: vec![id.to_ascii_lowercase()],
             file: format!("{id}.md"),
         }
     }
