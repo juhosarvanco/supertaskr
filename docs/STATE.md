@@ -540,10 +540,32 @@ from a suite that did not run.
   16 lines · 171/171. GRAPH REGEN was asked a **fourth** time after run 3
   and is exit 0, CURRENT, at the same four figures.
 - **`npm run lint:docs` exit 0**, **`npm run lint:tokens -- --selftest`
-  exit 0**, **`npm run lint:tokens` exit 0** at **TOKEN 135 / CONTROL
-  729** before this checkpoint's commit. **DERIVE IT AT YOUR OWN REF; it
-  is not a constant** — CONTROL's corpus is `git ls-files`, so the two
-  new suggestion files are invisible to it until the commit exists.
+  exit 0**, **`npm run lint:tokens` exit 0**, at **TOKEN 135 / CONTROL
+  729 before this checkpoint's commit** and **TOKEN 135 / CONTROL 731 at
+  the checkpoint `939a8c2`**, re-run there rather than predicted.
+  **DERIVE IT AT YOUR OWN REF; it is not a constant** — CONTROL's corpus
+  is `git ls-files`, so **the two suggestion files this checkpoint
+  commits were invisible to it until the commit existed**, and neither is
+  a TOKEN-root file. The +2 is exactly derivable and is this
+  checkpoint's, not another hand's.
+- **`index --check` WAS ASKED A FIFTH TIME AT THE CHECKPOINT COMMIT
+  ITSELF** and is exit **0, CURRENT** at the same four figures
+  (933 486 · 179 · 1987 · 1903). `npm run lint:docs` at the checkpoint
+  reports **every live task card's frontmatter parses, with a legal
+  status** — which is the check that the two new suggestion files and the
+  card's five stamped fields are well-formed.
+
+## The lane worktree is removed and the branch is kept
+
+`/Users/ujju/Projects/nputer-T-104` was removed at **20:16** with
+`git worktree remove`, after the merge and after the checkpoint
+(lane-protocol rule 6), and `git worktree prune` was run behind it.
+**The BRANCH survives**, which is this project's rule read off disk
+rather than assumed: `git branch --list 'task/*'` returns **59**,
+including lanes merged weeks ago. `task/T-104-method-snapshot` still
+resolves to `7d95f79`, so the verdict's own commit remains diffable.
+`git worktree list` now returns **five rows — main, three lanes and
+@human's app checkout.**
 
 ### **`npm run typecheck` DOES NOT EXIST IN `app/`, AND `npm run` ON A MISSING SCRIPT EXITS 1**
 
