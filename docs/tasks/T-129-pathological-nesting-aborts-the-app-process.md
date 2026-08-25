@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 6
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [crate-index]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5 @fresh
+built_by: claude-opus-5 @T-129 — code 980b903, c5aa0b8, 2a6a261, fe0f45f; notes 46e3292 and edbc28f
+verified_by: claude-opus-5 @fresh — verdict 73651cb
+review: same-model
 ---
 
 Absorbs (tenth triage, 2026-08-25): `T-010-s8` — file removed in this
@@ -947,3 +947,133 @@ literals on both sides; arm 2 is ruled on with its question kept as a pin;
 arm 3 is routed as `T-129-s1` with the fence intact and `index_cmd.rs`
 untouched; and `graph.json` is byte-identical for every input that does not
 exceed a bound, proven binary-against-binary rather than asserted.
+
+## Integration — third hand, claude-opus-5, 2026-08-25
+
+Merged into `main` at **`2749256`** with `git merge --no-ff`, main-before
+**`af4f6c7`**, lane tip **`73651cb`** (both derived with `git rev-parse`,
+never quoted). **The merge commit's tree is byte-identical to the tree
+`git merge-tree --write-tree` forecast before it existed** —
+`df96e56d4cdcc94069f0dec7d05994a998a6ac9e` both times, the exit read from
+`$?` into a variable BEFORE any substitution (**0**, a tree and not a
+conflict report) — and its parents are `af4f6c7` and `73651cb` and nothing
+else. **Nothing was written into the merge commit**, and here that is
+evidence rather than ceremony: see the working-tree note below.
+
+**THE RANGE, every dot count at its own ref.** Prescribed
+`af4f6c7..2749256` = **15**. Three dots at the merge = **15** (it
+collapses, as it must). The forbidden `af4f6c7..73651cb` = **113**, a
+**7.53x** overstatement. `main..HEAD` = **0**. `<merge-base>..<tip>`
+(`ae16fbe..73651cb`) = 15, right by coincidence of this lane's shape and
+still forbidden. Main advanced **98** paths under this lane; 15 + 98 =
+113, `comm -12` of the two sets is **EMPTY**, and their union is
+byte-identical under `diff` to the forbidden two-dot set — proved as SETS
+and not only as counts.
+
+**ALL THREE GATES OWED, ALL THREE ASKED RATHER THAN PREDICTED.**
+
+- **BOOT GATE — FIRES, and this card's own Verification line is WRONG
+  about it.** The card says *"The BOOT GATE does NOT fire on `crates/**`
+  — derive that rather than assuming it, and say which way it came out."*
+  Derived: the trigger is the path PREFIX `app/src-tauri/**`, and all
+  nine code paths are `app/src-tauri/crates/nputer-index/…`, which is
+  under it. **9 of 15 — OWED.** Run: `NPUTER_BOOT_PORT=15433 npm run
+  boot:check`, **exit 0**, both lines — `[nputer] project folder:
+  /Users/ujju/Projects/nputer` and `[nputer] window "main" created` —
+  child pid 34607, process group captured, tree stopped on SIGTERM, no
+  orphan; 15433 `lsof`-read at zero rows before and after. The lane and
+  the verifier each derived FIRES independently; this is the third
+  reading and the card is the only thing that says otherwise.
+- **GRAPH REGEN — 9 of 15, OWED, ASKED, STALE, REGENERATED, ASKED
+  AGAIN.** A real stale rather than the `--root` false red: it printed
+  both sets of counts and a `+`/`~` block, not `committed: MISSING`.
+  Committed **933 931 · 178 · 1990 · 1903** → fresh **939 161 · 179 ·
+  2004 · 1907**: `files +1 -0 ~8`, `edges +7 -3`. **THE NINE PATHS IT
+  NAMES ARE EXACTLY THIS MERGE'S NINE CODE PATHS, ONE FOR ONE** — no
+  foreign staleness rode along, which is the clean case `T-129-s4`
+  describes the other side of. The lane's forecast of **+1 file, +14
+  symbols, +4 edges** is exact; only its byte figure differs, because it
+  was stated against a baseline main has since advanced past.
+- **DOCS GATE — exit 1, FIRES on 6 of 15, THREE suites owed**, invoked
+  DIRECTLY from the repo root with the RANGE RULE's own path list and
+  **never through `xargs`**. `cargo test from app/src-tauri/` is **not**
+  owed and that is derived: all six paths are flat `docs/tasks/T-129*`
+  cards, and the cargo readers resolve `docs/CONVENTIONS.md`,
+  `docs/architecture/components` and a research capture, none of which is
+  in this diff. **13 derived readers across 4 suites, census 130 sites in
+  22 files, 0 frontmatter issues.**
+
+**SUITES — every exit from `$?` on an unpiped command, every count
+DERIVED.** `cargo test --no-fail-fast` from `app/src-tauri`: **471 passed
+/ 0 failed / 3 ignored, exit 0, summed over 16 `test result:` lines**, and
+**the count cross-checked against the `running N tests` headers, which sum
+to 474 = 471 + 3** — the check that catches a target aborting with no
+`test result:` line at all, which is exactly this card's own subject. **The
+arithmetic closes against a baseline measured on this machine at
+`5e7ea6c` before the merge: 462 over 15 lines, + 9 new bodies = 471, + 1
+target = 16.** The nine are six boundary bodies in `extract/{rust,ts}.rs`
+(146 → 152 in the crate's lib target) and three in the new `depth` target.
+Lib suite `nputer_lib` **197 bodies in 4.91s**, the green band. All three
+watched intermittents read BY NAME and all three `ok`. Parser **268/268**,
+app **973/973 across 47 files** with `npm run build` exit 0, e2e
+**171/171, exit 0, ONE RUN, 1.9m** on scratch port 15434.
+
+**FIXTURE RECONCILIATION — TWO FILES, FIVE ASSERTIONS, AND THE DERIVATION
+WAS NECESSARY BUT NOT SUFFICIENT.** `fileComponent.size` 178 → 179, the
+C-07 tally row 32 → 33 and that body's title in
+`app/test/architecture-dogfood.test.ts`; the map hint 178 → 179 and
+**C-07's own body — its assertion AND its title** — in
+`app/test/map-dogfood-render.test.tsx`. The figures were derived from
+`arch` over the regenerated graph BEFORE the suite was re-run, on this
+project's standing instruction, and **that still left one red**: `arch`
+hands you the NUMBER and not the LIST OF PLACES THAT ASSERT IT. Measured
+afterwards at the merge commit: `git grep -E '"C-07", 32|32 files|
+thirty-two'` returns **five** hits, of which **three are live assertions
+that must move and two are historical prose about T-010 that must not**.
+Derive the figure from `arch`; derive the SITES with `git grep` on the old
+digit; then decide live-or-historical one hit at a time.
+
+**`T-129-s5` IS LEFT FILED AND DELIBERATELY NOT FIXED.** The verifier
+established that no criterion fails and filed it under
+`method/roles/verifier.md` rule 6; an integrator does not discharge a
+finding (T-083's ruling). Confirmed by eye at this merge: the comment in
+`the_worst_legal_nesting_completes_on_a_small_explicit_stack` says
+256 mods / 128 groups / 257 segments where the code builds 128 / 64 / 129.
+
+**WHAT REACHED THE HUMAN'S RUNNING APP: NOTHING**, closed by measurement
+rather than by "my diff is crate-only". @human's app serves from
+`/Users/ujju/Projects/nputer-app` — vite pid 88948's cwd, read with
+`lsof` — a different checkout with its own `lib/parser/dist` behind a
+RELATIVE symlink, so neither this merge's `app/src-tauri/**` paths nor
+any dependency rebuild here can reach it. Port 1420 read with
+`lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else, four times, all four
+identical: holder `node` pid 88948, one socket `TCP [::1]:1420 (LISTEN)`.
+The anchored match `ps -eo pid,lstart,command | awk '$NF=="target/debug/
+nputer"'` reports pid **53350**, started **2026-08-25 19:43:47**,
+unchanged throughout.
+
+**THE WORKING TREE WAS NOT ONLY THIS INTEGRATOR'S, AND THE MERGE WAITED.**
+The architect held an unstaged edit to a TRACKED file
+(`docs/tasks/T-131-…md`) plus five new cards in the main checkout while
+this integration started. `git diff --name-only` was therefore NOT empty,
+which is the pre-merge condition, so **the merge was held for eleven
+minutes rather than performed around it** — the cards were `??` and cost
+nothing; the tracked modification is what blocked. It cleared at
+`af4f6c7`, and that commit is this merge's own main-before. Recorded on
+the card because it is the first time this repository has priced *two
+hands on one working tree* and the collision touched no file either hand
+owned.
+
+**AND THE HEADLINE CLAIM WAS CONFIRMED BY THE INTEGRATOR'S OWN HAND, IN
+BOTH LANGUAGES, AT THE MERGE** — because a green suite is not the same
+evidence as the defect failing to reproduce. One `mktemp -d`, three files
+generated at run time, the binary built from the merged tree, exit read
+from `$?` unpiped, and **nothing pathological written into the
+repository**: a 20 000-segment `use` path (`hostile.rs`) and a
+10 000-deep `namespace` chain (`hostile.ts`) — each of which aborts the
+pre-fix binary at 134 — give **exit 0** in ONE run, both files present in
+`files[]` with `depth_refused` naming `rust-path-segments` and
+`ts-candidate-scan` respectively, `stats.depth_limited == 2`, and the
+ordinary `ok.rs` beside them at `depth_refused = None`. **The refusal and
+its positive control in the same measurement.** The temp directory was
+removed afterwards.

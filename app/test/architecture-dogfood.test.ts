@@ -1212,7 +1212,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 178 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
+  it("all 179 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
     // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
     // move this row has ever taken and the only one whose cause is a new
     // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
@@ -1252,7 +1252,18 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // the whole of this move and the two `~` are content-only. Derived
     // from the indexed removed-file list and `arch` BEFORE the suite was
     // run, which is what the note in the body above asks for.
-    expect(derived.fileComponent.size).toBe(178);
+    // 178 → 179 at the T-129 merge regen (2026-08-25), and it is the
+    // plainest entry in this log: ONE new file,
+    // `app/src-tauri/crates/nputer-index/tests/depth.rs`, which C-07's
+    // `app/src-tauri/crates/nputer-index/**` glob claims, so the C-07 row
+    // in the tally below moves with it (32 → 33) and `unmappedFiles`
+    // stays []. `index --check` printed `files +1 -0 ~8`, and the nine
+    // paths it names are EXACTLY this merge's nine code paths, one for
+    // one — no foreign staleness rode along, which is what T-129-s4 warns
+    // can happen when a lane's base sits between a merge and its
+    // checkpoint. The eight `~` are content-only. Derived from the
+    // regenerated graph and `arch` BEFORE the suite was run.
+    expect(derived.fileComponent.size).toBe(179);
     // AND THE BUCKET IS STILL EMPTY, for a second reason than the one it
     // had yesterday: T-033's settlement kept `tests/dispatch_lanes.rs` out
     // of the bucket by CLAIMING it, and T-126 keeps it out by DELETING it.
@@ -1381,7 +1392,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // create, and the inverse of every C-05 entry above. Its D3 clears
       // in the same breath (see the drift body below), which is the arc
       // C-13 walked at T-024 and C-14 at T-025, one language later.
-      ["C-07", 32],
+      // 32 → 33 at the T-129 merge regen (2026-08-25):
+      // `crates/nputer-index/tests/depth.rs`, the integration target that
+      // pins every bounded traversal, and the FIRST file this component
+      // has gained on disk since it joined the mapping. Derived from
+      // `arch` over the regenerated graph before the suite was run.
+      ["C-07", 33],
       ["C-08", 10],
       ["C-09", 3],
       // 2 → 3 at the T-010 merge regen: docs_watch.rs, which C-10 has

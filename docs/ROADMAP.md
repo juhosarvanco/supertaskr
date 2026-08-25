@@ -132,6 +132,32 @@
   comment claims it does, and a browser-bundle switch replaces a folded
   state — a real conflict between two criteria, resolved the right way,
   because serving A's numbers under B is the defect the card exists to fix
+  Since T-129 (2026-08-25) the REALITY half can no longer take the app
+  down while it reads. This one is not map CONTENT and not a pane change
+  at all — say so rather than let the bullet imply the map moved — it is
+  the indexer's own failure mode, and it belonged to F-06 because F-06 is
+  what runs the indexer. `index()` executes INSIDE the Tauri process
+  behind `index_repo`, and a Rust stack overflow is an `abort()` rather
+  than a catchable panic: a single generated or hostile source file with
+  pathological nesting ended the process at exit **134** — the window,
+  the docs watcher, the agent runner and any interview mid-turn, with no
+  error path running and nothing recorded. Six self-recursive traversals
+  in the extractors, DERIVED by closing the call graph rather than listed
+  from the card, now carry a depth bound and REFUSE past it while keeping
+  everything shallower, so a hostile file degrades and is recorded
+  instead of aborting. The margin is a CONSTANT rather than a function of
+  the input, which is the whole of what a bound buys over a bigger stack,
+  and the emitted graph is byte-identical for every input that does not
+  exceed one — proven binary-against-binary over two corpora. **The
+  finding worth carrying past the fix is that the card had the exposure
+  BACKWARDS**: its key negative result (deep nesting inside a function
+  body is harmless, which is what localises the bug away from
+  tree-sitter) is true of Rust and FALSE of TypeScript, whose candidate
+  scan descends every named child of the tree — and TS's `namespace`
+  chain aborted at 2 000 against the tightest Rust threshold of 3 000, so
+  the language the card treats as the afterthought was the more exposed
+  one. The cost is one indexed file and 5 230 bytes: **939 161 —
+  93.92% of the budget, 60 839 bytes of headroom**
 
 ## Milestones
 ### Milestone 0 — planning (current)
@@ -879,7 +905,16 @@ merge, the highest this repository had then been, and **933 931 bytes —
 93.39%, 66 069 bytes of headroom** at T-126's. **T-126 is the first
 merge in this series to DELETE an indexed file and still spend
 headroom** (`files +0 -1 ~2`, +445 bytes), so file count and byte count
-moved in opposite directions at one regen. Derive it at your own ref.
+moved in opposite directions at one regen, and **939 161 bytes —
+93.92%, 60 839 bytes of headroom** at T-129's, which spends 5 230 on ONE
+new indexed file (`files +1 -0 ~8`). Derive it at your own ref.
+**AND THE MILESTONE-4 CENSUS IS RE-DERIVED HERE RATHER THAN CARRIED**:
+**96** cards on disk carry `milestone: 4` at T-129's checkpoint, of which
+**7 are F-04** (92 and 7 at T-126's, 86 and 6 at T-110's) — F-01 9,
+F-02 43, F-03 12, F-04 7, F-06 25. **T-129 is F-06 and is inherited
+backlog, NOT F-04 slice content**, so the progress line below does not
+move for it; the four that arrived tonight are `T-132`…`T-135`, @human's
+adoption of `T-131`'s five process changes, and they are F-01/F-02/F-06.
 Decomposition pass complete 2026-08-19
 (design/dispatch-technical-plan.md); D1 ruled by @human the same day.
 
