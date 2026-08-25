@@ -118,9 +118,15 @@ fn a_pathological_file_is_indexed_and_recorded_rather_than_aborting_the_process(
     // The card's own worst row: 20 000 path segments. On the pre-fix
     // tree this is `fatal runtime error: stack overflow` and exit 134.
     t.write("hostile.rs", &long_path(20_000));
-    // A neighbour, so "it was refused" cannot be satisfied by a run in
-    // which nothing was extracted at all.
+    // TWO neighbours, so "it was refused" cannot be satisfied by a run
+    // in which nothing was extracted at all — and so that the REFUSED
+    // count (1) differs from the CLEAN count (2). With one neighbour the
+    // two are equal, and `stats.depth_limited` asserted at `Some(1)`
+    // survives a producer that counts the wrong half; found by drilling
+    // exactly that mutation (`filter(is_some)` -> `filter(is_none)`),
+    // which reds four golden bodies and left this one green.
     t.write("neighbour.ts", "export function ordinary() { return helper(); }\n");
+    t.write("second.ts", "export const alsoOrdinary = 1;\n");
 
     let g = indexed(&t);
 
@@ -156,7 +162,12 @@ fn a_pathological_file_is_indexed_and_recorded_rather_than_aborting_the_process(
         vec!["ordinary"],
         "an ordinary file beside a refused one is untouched"
     );
-    assert_eq!(g.stats.files, 2);
+    assert_eq!(g.stats.files, 3);
+    assert_eq!(
+        g.files.iter().filter(|f| f.depth_refused.is_none()).count(),
+        2,
+        "one refused, two clean — deliberately unequal, so the count cannot be right by accident"
+    );
 }
 
 #[test]
