@@ -475,10 +475,14 @@ than accepted on report:
 - `grep -rn "min_major|minMajor" app/src/` returns **exactly one row**,
   and it is inside this card's own new doc comment. No code path carries
   the number.
-- Rust-side `min_major` appears in **four** places only —
-  `adapter.rs:37` (the field), `adapter.rs:111` (`= 2`),
-  `adapter.rs:1695` (a unit assert) and `runner.rs:830` (the comparison).
-  **It is serialized to the webview nowhere.**
+- Rust-side `min_major` appears **five** times in `app/src-tauri/src/`,
+  and **four** of those are code — `adapter.rs:37` (the field),
+  `adapter.rs:111` (`= 2`), `adapter.rs:1695` (a unit assert) and
+  `runner.rs:830` (the comparison); the fifth (`runner.rs:358`) is a doc
+  comment on the `Unsupported` variant. **And it CANNOT be serialized to
+  the webview at all**, which is stronger than "is not":
+  `pub struct AgentAdapter` derives `Clone, Copy, Debug` and **no
+  `Serialize`**, so no `#[tauri::command]` return can carry it.
 - `StartOutcomePayload.unsupportedVersion` carries `found: string` and
   nothing else; `GenesisStatusPayload` carries `cliVersion` and no floor.
 
@@ -765,6 +769,20 @@ sweep was run as a first-class pass and not as a formality.
   suggestion files this branch adds account for the difference exactly.
   **Derive it at your own ref; it is not a constant.**
 - **tools/e2e `npm run lint:docs` exit 0** (the whole-tree census half).
+
+**AND EVERY OWED SUITE RAN AGAIN AFTER THIS VERDICT'S OWN DOC WRITES
+(T-081-s9), BECAUSE THIS PASS MOVES THE FILE SET AND NOT MERELY PROSE.**
+Filing `T-107-s5` ADDS a file under `docs/tasks/`, which is exactly the
+case STATE says the rule bites on — *"a content-only edit cannot move any
+suite's answer, while ADDING OR REMOVING a file under `docs/` can"*. At
+the verdict commit the pre-merge form is **8 paths** and the DOCS GATE is
+**exit 1, FIRES on 6**, with **0 frontmatter issues** — the new file
+parses with a legal status. Re-run: **app `npm test` exit 0, 958/958
+across 46 files** · **parser exit 0, 264/264 across 12 files** ·
+**E2E exit 0, 146/146** on scratch port **15273**, first time and with no
+`T-120-s3` sighting, this worktree having already healed. `index --check`
+re-derived at the verdict commit is unchanged at **920 597 → 921 608**,
+because a markdown file is not an indexed file.
 
 #### GATES — each derived with its own path count over the 7
 
