@@ -1040,6 +1040,105 @@ mod tests {
         );
     }
 
+    /// The three STRUCTURAL checks, which were already right and were
+    /// held by nothing.
+    ///
+    /// **MEASURED, NOT SUPPOSED.** This pass's drill flipped each of
+    /// `read_lanes`' three `symlink_metadata` calls to `metadata` — the
+    /// exact defect just closed in [`read_small`], at three more sites —
+    /// and all three mutants SURVIVED a green suite. The policy existed in
+    /// four places, was wrong in one, and was pinned in none. Closing only
+    /// the wrong one would leave three doors that can be reopened in
+    /// silence, so this body shuts them: no producer line changes, only
+    /// the assertions that were missing.
+    ///
+    /// Every arm carries its positive control the same way the two bodies
+    /// above do — the symlink target is a COMPLETE, READABLE repository,
+    /// asserted to scan into a real lane before it is pointed at. A
+    /// refusal of a broken fixture would prove nothing.
+    #[cfg(unix)]
+    #[test]
+    fn the_symlink_policy_holds_at_every_structural_check_and_not_only_at_the_file_reads() {
+        use std::os::unix::fs::symlink;
+
+        // THE POSITIVE CONTROL FOR ALL THREE ARMS: a real repository with
+        // a real lane in it. Everything below points a symlink at some
+        // part of THIS, so "refused" can never mean "the target was
+        // rubbish".
+        let real = repo("symlinkstructure-real");
+        let worktree = register(&real, "nputer-T-110", &branch_head("task/T-110-x"), true);
+        assert_eq!(
+            entries(&read_lanes(&real)),
+            [WorktreeEntry::Lane {
+                name: "nputer-T-110".to_string(),
+                task_id: "T-110".to_string(),
+                branch: "task/T-110-x".to_string(),
+                worktree_path: worktree.to_string_lossy().to_string(),
+                exists_on_disk: true,
+            }]
+            .as_slice(),
+            "the symlink target must be a readable repository, or nothing below proves anything"
+        );
+
+        // ARM 1 — `.git` is a symlink to that repository's `.git`.
+        // `symlink_metadata` sees a symlink, which is not a directory.
+        let arm1 = scratch("symlinkdotgit");
+        symlink(real.join(".git"), arm1.join(".git")).expect("symlink .git");
+        assert_eq!(
+            read_lanes(&arm1),
+            LaneScan::GitIsAFile,
+            "a symlinked .git was chased into another repository"
+        );
+
+        // ARM 2 — `.git/worktrees` is a symlink to that repository's
+        // worktrees directory, which we just proved scans to one lane.
+        let arm2 = repo("symlinkworktrees");
+        symlink(
+            real.join(".git").join("worktrees"),
+            arm2.join(".git").join("worktrees"),
+        )
+        .expect("symlink worktrees");
+        assert_eq!(
+            read_lanes(&arm2),
+            LaneScan::WorktreesUnreadable,
+            "a symlinked .git/worktrees was chased and its lanes reported as this repository's"
+        );
+
+        // ARM 3 — an ENTRY DIRECTORY is a symlink to that repository's
+        // registration, beside a real registration that IS read.
+        let arm3 = repo("symlinkentry");
+        let real_entry = register(&arm3, "acontrol", &branch_head("task/T-110-x"), true);
+        symlink(
+            real.join(".git").join("worktrees").join("nputer-T-110"),
+            arm3.join(".git").join("worktrees").join("bleak"),
+        )
+        .expect("symlink entry");
+
+        let scan = read_lanes(&arm3);
+        let [control, leak] = entries(&scan) else {
+            panic!("expected two entries, got {:?}", entries(&scan))
+        };
+        assert_eq!(
+            control,
+            &WorktreeEntry::Lane {
+                name: "acontrol".to_string(),
+                task_id: "T-110".to_string(),
+                branch: "task/T-110-x".to_string(),
+                worktree_path: real_entry.to_string_lossy().to_string(),
+                exists_on_disk: true,
+            },
+            "the real registration beside it must still be read"
+        );
+        assert_eq!(
+            leak,
+            &WorktreeEntry::Unreadable {
+                name: "bleak".to_string(),
+                defect: EntryDefect::NotADirectory,
+            },
+            "a symlinked entry directory was chased into another repository's bookkeeping"
+        );
+    }
+
     #[test]
     fn entries_come_back_sorted_by_name_whatever_the_filesystem_says() {
         let root = repo("order");
