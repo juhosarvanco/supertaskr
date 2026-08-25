@@ -8,7 +8,7 @@ size: S
 status: verifying
 blocked_by: []
 touches: [method/lane-protocol.md, method/roles/integrator.md, method/tasks/TASK-FORMAT.md]
-builder:
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
@@ -318,7 +318,12 @@ nowhere in either file.
 **`method/lane-protocol.md`, rule 4 — the seat, the list, the remedy, the
 backstop, the attribution.** The rule now binds **the complement of one
 seat** rather than an enumeration, and its prohibition list names **the
-test-suite run** beside the dependency install. Four attached paragraphs:
+test-suite run** beside the dependency install. **THE FIRST LANDING
+CARRIED THE FOUR WRITE PROHIBITIONS ACROSS THAT BOUNDARY TOO AND WAS
+REJECTED FOR IT** — see "THE REJECTION AND THE FIX" at the end of this
+file; what stands is the complement for the install and the suite run,
+with `no commit, no merge, no push, no branch move` scoped back to the
+lane. Four attached paragraphs:
 why a complement and not a list; why the test run is the worse half (it
 CERTIFIES where the others obstruct); the **write/verification split** as
 the remedy, naming the long-lived suite run as the thing that actually
@@ -377,12 +382,21 @@ no verifier and self-integration.
 
 **The rule of thumb is wrong for this fence, and the dispatch is right for
 a reason the dispatch did not give.** `method/tasks/TASK-FORMAT.md` is one
-of eight `method/` files `include_str!`'d into `app/src-tauri`'s binary. It
-is **shipped code by the table's own boundary test** — *"if any entry
-names a component whose build output SHIPS, the card takes a verifier"* —
-and it is a user-runnable artifact in the most literal sense, since the kit
-is materialized into a real project on disk. Stamped `verifying`,
-`verifier:` / `verified_by:` / `review:` left empty, worktree kept.
+of **fourteen** `method/` files `include_str!`'d into `app/src-tauri`'s
+binary. It is **shipped code by the table's own boundary test** — *"if any
+entry names a component whose build output SHIPS, the card takes a
+verifier"* — and it is a user-runnable artifact in the most literal sense,
+since the kit is materialized into a real project on disk. Stamped
+`verifying`, `verifier:` / `verified_by:` / `review:` left empty, worktree
+kept.
+
+**AND ONE ENTRY IS ALL IT TAKES, WHICH IS THE PART THIS PARAGRAPH FIRST
+GOT ONE STEP TOO BROAD.** The boundary test is satisfied by
+`tasks/TASK-FORMAT.md` alone: **neither `method/lane-protocol.md` nor
+`method/roles/integrator.md`, the other two files in this fence, is
+compiled into anything.** The dispatch is still right and the reasoning
+still holds, but it holds on one path out of three rather than on the
+directory — see the per-path correction below.
 
 ### RANGE — THE PRESCRIBED FORM, AT A REF MAIN HAS ALREADY LEFT
 
@@ -412,12 +426,21 @@ which one you get depends on the seat rather than on the spelling.
 OWED**, and the DOCS GATE says so in its own words: *"3 changed path(s)
 given, none under docs/ — this gate is not owed."* Exit **0**.
 
-**On the final four paths (this card included), the DOCS GATE FIRES —
-exit 1, on 1 of 4**, and names three suites: `npm test from app/`,
+**On the full prescribed path set (this card included), the DOCS GATE
+FIRES — exit 1**, and names three suites: `npm test from app/`,
 `npm test from tools/e2e/`, `npx vitest run from lib/parser/`. Run
 directly from the repo root with the RANGE RULE's own path list, **never
 through `xargs`**. 13 derived docs readers across 4 suites, census 130
 sites in 22 files, **0 frontmatter issues**.
+
+**THAT SENTENCE SAID "THE FINAL FOUR PATHS … 1 OF 4" AND WAS FALSE AT THE
+COMMIT THAT WROTE IT.** `git diff --name-only 74feb67 56821e7` names
+**seven** paths, **four** of them under `docs/` — because the same commit
+that wrote the sentence ADDED the three suggestion files it forgot to
+count. The suites owed are identical either way, so nothing was skipped;
+what the figure demonstrates is that a path COUNT written from memory
+mid-commit is stale before the commit exists, which is the RANGE RULE's
+own reason for feeding the gate a derived list rather than a typed one.
 
 **GRAPH REGEN — ASKED, exit 0, CURRENT**, and it is a real green rather
 than the `--root` false shape: the second line printed all four counts
@@ -434,12 +457,19 @@ red cannot do. Not owed by trigger either — this diff has no `.ts/.tsx/
 snapshot version moves"*. That is not the only trigger and it is not the
 one that fired.** `method/tasks/TASK-FORMAT.md` is a cargo-suite input in
 its own right: `app/src-tauri/src/agent/kit.rs` `include_str!`s it, and
-**four bodies read `method/` off disk and assert against it** —
-`every_compiled_entry_matches_its_method_file_byte_for_byte`,
-`the_snapshot_table_covers_every_method_scaffold_file`,
-`the_shipped_plan_interview_still_carries_the_normative_banking_map`,
-`snapshot_version_matches_the_live_method_stamps`. **Editing that file
-owes `cargo test` whether or not any version moves.** Derived, then run.
+**two bodies read `method/` off disk and assert against it** —
+`every_compiled_entry_matches_its_method_file_byte_for_byte` and
+`the_snapshot_table_covers_every_method_scaffold_file`, both via
+`repo_root().join("method")`. **Editing that file owes `cargo test`
+whether or not any version moves.** Derived, then run.
+
+**THIS FIRST SAID FOUR BODIES AND THE OTHER TWO DO NOT READ `method/` AT
+ALL.** `the_shipped_plan_interview_still_carries_the_normative_banking_map`
+reads the **compiled** `KIT_FILES` table, and
+`snapshot_version_matches_the_live_method_stamps` reads that table plus
+`docs/CONVENTIONS.md` off disk. **The conclusion survives and is reached
+more cheaply than the premise claimed**: `include_str!` alone forces the
+recompile, so the obligation never depended on any body reading disk.
 
 **THE VERSION CORRECTLY DID NOT MOVE.** These are clauses, not formats:
 no new field, no new status, no new size, no change to the normative brief
@@ -931,3 +961,156 @@ the count, the off-disk premise, the stale gate figure and the missing
 commit. **`T-132-s1` and `T-132-s2` should survive triage unchanged
 except for the count** — the second is worth more than the card it came
 from.
+
+## THE REJECTION AND THE FIX — fresh executor, claude-opus-5, 2026-08-25
+
+**Taken up by a hand that did not write the rejected code**, per
+`method/tasks/TASK-FORMAT.md`. Worktree `/Users/ujju/Projects/nputer-T-132`,
+branch `task/T-132-exclusive-integration-turn`, base for this pass the
+verdict commit `9314d3e` (`rev-parse`). **NOT merged.**
+
+### THE CLAUSE THAT MOVED, AND IT IS THE ONLY ONE
+
+**BEFORE** (`method/lane-protocol.md` rule 4, as rejected):
+
+> **NO SEAT BUT THE INTEGRATOR'S WORKS IN THE INTEGRATION BRANCH'S
+> CHECKOUT.** No commit, no merge, no push, no branch move, **no
+> dependency install and no test-suite run** against that checkout.
+
+**AFTER:**
+
+> **NO SEAT BUT THE INTEGRATOR'S INSTALLS OR RUNS A SUITE IN THE
+> INTEGRATION BRANCH'S CHECKOUT.** No dependency install and **no
+> test-suite run** against that checkout, whatever seat you sit in.
+> **THE FOUR WRITE PROHIBITIONS ARE THE LANE'S AND STAY THE LANE'S**: the
+> executor makes no commit, no merge, no push and no branch move there.
+
+**The generalisation of the SUBJECT is kept and is still the card's best
+idea.** What was withdrawn is the generalisation of the four WRITE
+prohibitions, which were calibrated for a lane. The headline now also
+names the write that MUST happen — `roles/orchestrator.md` 5b's
+`status: building` stamp, on the integration branch, committed before the
+cut — so a reader who stops at the first sentence gets the same answer as
+a reader who reaches SEPARATE THE WRITE FROM THE VERIFICATION five
+paragraphs down. **The contradiction the verdict found is gone in both
+directions**: the headline no longer forbids the commit its own remedy
+instructs, and it no longer forbids what another `method/` file mandates.
+
+**ONE PARAGRAPH WAS ADDED, AND IT IS THE PART THAT KEEPS THIS FROM
+RECURRING.** The complement paragraph now carries the discriminator that
+decides its own scope: **does a prohibition name a COLLISION or an
+AUTHORITY?** An install and a suite run CONTEND for the tree, the runner
+and the installed dependencies, so they bind every seat that is not the
+one holding the checkout. A commit does not contend — it is atomic, and
+who may make it is settled per seat in that seat's own file. **A rule that
+answers a collision question with an authority answer forbids the method's
+own dispatch**, which is exactly what happened, and the paragraph says so
+against itself. **Nothing else in the file moved**, and that is asserted
+rather than eyeballed: `git diff --word-diff` over
+`method/lane-protocol.md` shows change markers ONLY in the headline and in
+the added paragraph. The size-S exception clause was re-wrapped by the
+headline growing above it and is **word-identical** — a reflow changes
+bytes, so byte-identity is the wrong claim to make here and word-identity
+is the one that is true.
+
+### THE FOUR RECORD CORRECTIONS, EACH RE-DERIVED HERE RATHER THAN TAKEN
+
+| # | claimed | true | derived at this ref by |
+|---|---|---|---|
+| 1 | eight `method/` files compiled in | **fourteen** | `git grep -n 'include_str!' -- '*.rs'` filtered on `method/` — 14 rows, **all of them in `kit.rs`**, repo-wide |
+| 2 | four cargo bodies read `method/` off disk | **two** | `grep -n 'repo_root()' kit.rs` → `:360` and `:396` join `"method"`; `:448` joins `docs/CONVENTIONS.md`; the other two named read the compiled `KIT_FILES` table |
+| 3 | the card was stamped `status: building` | **it never was** | `planned` at `74feb67`, the dispatch commit the lane was cut from; **@human has since stamped it on main at `e7db842`**, with `builder: claude-opus-5` |
+| 4 | "the final four paths … 1 of 4" | **seven paths, four under `docs/`** | `git diff --name-only 74feb67 56821e7` → 7; the same commit that wrote the sentence added the three suggestion files |
+
+**ALL FOUR VERIFY. None was refuted and none needed softening.** Each is
+corrected where it was written — correction 1 in the ceremony-row section,
+`T-132-s2` and the notes commit message's successor; correction 2 in the
+`cargo test` section and `T-132-s2`; correction 4 in the gates section.
+
+**CORRECTION 3 IS THE ONE WITH A LIVE CONSEQUENCE AND THE LANE IS MADE NOT
+TO FIGHT IT.** `builder: claude-opus-5` is adopted into this lane's
+frontmatter so the lane carries main's stamp forward instead of reverting
+it; `status:` stays `verifying`, which is this lane's to stamp
+(`roles/executor.md` step 6) and is the forward move from `building`.
+**`status:` is therefore written by both sides from a common `planned`,
+and that is a real merge conflict, forecast rather than predicted** — see
+the range below. It is also, exactly, the two-writer hazard
+`roles/orchestrator.md` 5b exists to prevent, arriving on the card about
+5b because 5b was skipped: had the stamp been written before the cut, the
+lane would have inherited `building` and moved it to `verifying` with no
+second writer. **The resolution is `verifying`**, and it is named here so
+the integrator does not have to decide it.
+
+### THE SHARPENING — `method/` IS NOT A CATEGORY, THE TEST IS PER-PATH
+
+**`T-132-s2`'s gate gap holds unchanged and is not what moved.** What
+moved is the shipped-code half, which the card, the notes, the brief and
+the suggestion all stated one step too broadly. Fourteen `method/` files
+are compiled into `nputer_lib`; the rest are not; **and neither
+`method/lane-protocol.md` nor `method/roles/integrator.md` — two of this
+card's own three fenced files — is among the fourteen.** So the correction
+to ruling SIX is not *"`method/` is shipped"* but **"`method/` is not a
+category; the test is per-path."**
+
+**THAT IS A BETTER FINDING THAN THE ONE IT REPLACES, AND IT ARGUES
+@human's BLAST-RADIUS RULING BETTER THAN THIS CARD DOES.** *"Is this
+shipped?"* turns out not to be answerable from a directory name — the
+answer it appears to have is whichever of the directory's files the asker
+happened to open, which is how eight and four both got written. A
+path-granular fence is what makes the question askable at all, and this
+card is the first card cut under that ruling.
+
+**IT ALSO PAID OFF LIVE IN THIS PASS.**
+`every_compiled_entry_matches_its_method_file_byte_for_byte` is green
+here, and it is **not** a witness for this pass's edit the way the earlier
+notes imply it was for the whole fence: `lane-protocol.md` is not in
+`KIT_FILES`, so no compiled body sees it. The body that does cover this
+edit is `the_snapshot_table_covers_every_method_scaffold_file`, which
+walks `method/` on disk and asserts the table's coverage — green, and it
+would have caught a file added rather than a file edited.
+
+### WHAT WAS DELIBERATELY NOT DISTURBED
+
+**Nine of the verdict's thirteen attacks found nothing, and none of that
+was touched.** The four "already written" claims and their citations, the
+`architect`-at-base zero, ruling THIRTEEN in `roles/integrator.md`, the
+card-author clause in `TASK-FORMAT.md` (and `roles/executor.md` still
+byte-unchanged base→tip), the `roles/integrator.md` rule-1 citation by
+name, the STATE.md non-widening, the not-owed drill, and the fence itself.
+**No drill is owed and it is stated rather than skipped**: no test in the
+tree asserts on the CONTENT of any fenced file, so there is no assertion
+to poison, and this pass adds no test body either.
+
+**THE `method/` IDIOM DECISION IS LEFT EXACTLY AS LANDED.** `method/` is
+materialised into other people's projects, so this project's card ids stay
+out of it and ruling THIRTEEN is written in the method's own voice. The
+verdict calls it the best judgement on the branch. **The rule-4 fix above
+was written to the same constraint** — it cites `roles/orchestrator.md`
+5b, a `method/`-internal path, and names no card id.
+
+### WHAT THIS PASS'S BRIEF AND THE VERDICT GOT WRONG
+
+1. **THE VERDICT: "`T-132-s1` and `T-132-s2` should survive triage
+   unchanged except for the count."** Two figures moved in `T-132-s2`, not
+   one — the count AND the off-disk premise — and the verdict's own body
+   found both. The sentence under-counts its own findings.
+2. **THE VERDICT: "the boundary test at `TASK-FORMAT.md:340-344` is met"
+   cites `method/` line numbers**, which is the fuse this very branch
+   argued against when it replaced `roles/integrator.md:65` with a
+   by-name citation. The citation is correct at `56821e7`; the form is the
+   one this project has now been bitten by three times.
+3. **THE BRIEF: "the mtime red is FIXED at `cea839e` … your base may
+   predate the fix."** It does, and the brief was right to say so
+   conditionally. Derived rather than assumed:
+   `git merge-base --is-ancestor cea839e HEAD` exits **1**, and
+   `utimesSync(target, clock.atime, clock.mtime)` is still at
+   `tools/e2e/tests/token-scan.spec.ts:226`. The fix is on main
+   (`--is-ancestor cea839e main` exits **0**) and outside this fence.
+4. **THE BRIEF: "the same verifier will re-check."** Recorded as a fact
+   about intent, not about the tree — nothing in the repository names a
+   verifier for this card, and `verifier:` is left empty by design.
+5. **THE BRIEF, RIGHT AND WORTH SAYING SO: the build order.** `lib/parser`
+   built first, then `npm run build` from `app/`, both before any suite
+   and unprompted by any red; the app suite was 973/973 on its first run.
+   `npm run typecheck` from `app/` was never reached for. **A trap that
+   never fires is still the reason it never fired.**

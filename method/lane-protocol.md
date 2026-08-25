@@ -48,15 +48,23 @@ this file is a project's actual name.
    case this rule forbids. Whoever cuts the lane owns this, and a lane
    that discovers it should report the real path rather than move itself.
 
-4. **NO SEAT BUT THE INTEGRATOR'S WORKS IN THE INTEGRATION BRANCH'S
-   CHECKOUT.** No commit, no merge, no push, no branch move, **no
-   dependency install and no test-suite run** against that checkout. If
-   the lane needs something that exists only there, it waits for the
-   integrator or opens a room. **The one exception is the smallest
-   ceremony tier**: a size-S card has no separate integrator
-   (tasks/TASK-FORMAT.md), so its executor plays integrator for its OWN
-   work once its tests pass — it merges, checkpoints and removes its own
-   worktree. Every larger tier keeps the two roles in different hands.
+4. **NO SEAT BUT THE INTEGRATOR'S INSTALLS OR RUNS A SUITE IN THE
+   INTEGRATION BRANCH'S CHECKOUT.** No dependency install and **no
+   test-suite run** against that checkout, whatever seat you sit in.
+   **THE FOUR WRITE PROHIBITIONS ARE THE LANE'S AND STAY THE LANE'S**:
+   the executor makes no commit, no merge, no push and no branch move
+   there. They are not generalised, and generalising them would break
+   this method's own dispatch — roles/orchestrator.md 5b REQUIRES the
+   `status: building` stamp to be written on the integration branch and
+   committed BEFORE the lane is cut, and SEPARATE THE WRITE FROM THE
+   VERIFICATION below says in as many words that a seat with standing to
+   write there writes DIRECTLY and briefly. If the lane needs something
+   that exists only there, it waits for the integrator or opens a room.
+   **The one exception is the smallest ceremony tier**: a size-S card has
+   no separate integrator (tasks/TASK-FORMAT.md), so its executor plays
+   integrator for its OWN work once its tests pass — it merges,
+   checkpoints and removes its own worktree. Every larger tier keeps the
+   two roles in different hands.
    **A SIZE-S CARD MAY STILL OWE A VERIFIER**, and the two questions are
    separate: the ceremony table gives an S card touching shipped code a
    verifier while leaving self-integration in place. Where it does, the
@@ -71,6 +79,20 @@ this file is a project's actual name.
    prohibition that enumerates seats grows a hole for every seat added
    after it.** The complement of ONE seat has none, which is why the rule
    is now spelled that way round.
+   **AND THE COMPLEMENT REACHES ONLY THE TWO PROHIBITIONS THAT NAME A
+   COLLISION.** This clause first landed carrying all six across, and was
+   rejected for it: `no commit, no merge, no push, no branch move` were
+   calibrated for a LANE, whose writes there are never sanctioned, and
+   widening them to every seat made this rule contradict SEPARATE THE
+   WRITE FROM THE VERIFICATION below and forbid roles/orchestrator.md 5b
+   outright. **The test of a prohibition here is whether it names a
+   COLLISION or an AUTHORITY.** An install and a suite run CONTEND — for
+   the tree, the runner, the installed dependencies — so they bind
+   whoever is not the seat that owns the checkout. A commit does not
+   contend; it is atomic, and who may make it is settled per seat in that
+   seat's own file. **A rule that answers a collision question with an
+   authority answer forbids the method's own dispatch**, which is exactly
+   what happened here.
    **THE TEST RUN IS THE ADDITION AND IT IS THE WORSE HALF.** An install
    is the destructive case everyone anticipates. **A test run only READS,
    so it looks harmless — and it is the one that actually collided.**

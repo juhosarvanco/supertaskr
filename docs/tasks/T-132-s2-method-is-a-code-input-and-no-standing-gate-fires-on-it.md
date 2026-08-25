@@ -20,30 +20,56 @@ The DOCS GATE says so in its own words:
 
     docs-gate: 3 changed path(s) given, none under docs/ — this gate is not owed.
 
-**AND `method/` IS A CODE INPUT.** `app/src-tauri/src/agent/kit.rs`
-`include_str!`s eight `method/` files into the binary — `roles/planner.md`,
-`interview/plan-interview.md`, `interview/decomposition.md`,
-`docs-templates/**`, `adapters/*`, `tasks/TASK-FORMAT.md`,
-`tasks/T-000-template.md`, `runtime/nputer.yaml` — and four cargo bodies
-read `method/` **off disk** and assert against it:
-`every_compiled_entry_matches_its_method_file_byte_for_byte`,
-`the_snapshot_table_covers_every_method_scaffold_file`,
-`the_shipped_plan_interview_still_carries_the_normative_banking_map` and
-`snapshot_version_matches_the_live_method_stamps`.
+**AND PART OF `method/` IS A CODE INPUT — WHICH IS NOT THE SAME CLAIM AND
+IS THE SHARPER ONE.** `app/src-tauri/src/agent/kit.rs` `include_str!`s
+**fourteen** `method/` files into the binary, in one `KIT_FILES` table:
+`roles/planner.md`, `interview/{plan-interview,decomposition}.md`, six
+`docs-templates/**` files, `adapters/{CLAUDE,AGENTS}.md`,
+`tasks/{TASK-FORMAT.md,T-000-template.md}` and `runtime/nputer.yaml`.
+**And two cargo bodies — not four — read `method/` off disk and assert
+against it**: `every_compiled_entry_matches_its_method_file_byte_for_byte`
+and `the_snapshot_table_covers_every_method_scaffold_file`, both reading
+`repo_root().join("method")`. The other two this finding first named read
+the **compiled** `KIT_FILES` table, and
+`snapshot_version_matches_the_live_method_stamps` reads
+`docs/CONVENTIONS.md` off disk rather than anything under `method/`.
+**The conclusion is unaffected and reaches it by a shorter route**:
+`include_str!` forces the recompile whatever the bodies read.
+
+**`method/` IS NOT A CATEGORY; THE TEST IS PER-PATH.** Both figures above
+were first stated as eight and four, and the error was not arithmetic — it
+was treating a directory name as an answer to *"is this shipped?"*. It is
+not one. **The boundary runs THROUGH `method/`**: fourteen of its files
+are compiled into `nputer_lib` and the rest are not, and neither
+`method/lane-protocol.md` nor `method/roles/integrator.md` — two of the
+three files T-132 itself edited — is among the fourteen. A card fenced
+only on `roles/integrator.md` would keep self-integration under the
+ceremony table's own boundary test; a card fenced on `tasks/TASK-FORMAT.md`
+would not.
+
+**THAT IS THE ARGUMENT FOR PATH-GRANULAR FENCES, MADE BY THE THING BEING
+FENCED.** The ruling that a fence names paths rather than directories is
+what makes *"is this shipped?"* an askable question at all — asked of a
+directory it has no answer, and the answer it appears to have is whichever
+of its files the asker happened to open.
 
 **So `cargo test` is owed by a diff that touches `method/tasks/`, and no
 gate will ever say so.** T-132 ran it and derived it by hand — 471 / 0 / 3
 over 16 `test result:` lines, headers summing to 474 — but the next card
 fenced on `method/` has nothing to derive it from except somebody having
-read `kit.rs`.
+read `kit.rs`. **And the per-path boundary makes the gap WORSE, not
+better**: the fourteen compiled paths and the rest look identical from
+outside, so the seat that must derive `cargo test` by hand must first
+derive WHICH `method/` paths are in the table.
 
 **THIS IS THE DOCS GATE'S OWN ARGUMENT, MOVED ONE DIRECTORY.** That gate
 exists because a commit whose whole diff is `docs/tasks/*.md` matched
 neither of the two gates above it, and both incidents surfaced three
 layers from the cause, attributed to whoever was nearest. **A commit whose
 whole diff is `method/**` matches none of the THREE.** The failure mode is
-identical and the blast radius is worse: a `method/` file is compiled into
-the shipped binary and materialized into other projects' kits.
+identical and the blast radius is worse for the compiled subset: those
+files are in the shipped binary and are materialized into other projects'
+kits.
 
 **THE REPAIR IS PROBABLY ONE WORD IN A TRIGGER, AND THAT IS EXACTLY WHY IT
 SHOULD BE CHECKED RATHER THAN ASSUMED — MARKED UNVERIFIED.** The gate's
@@ -54,6 +80,13 @@ scanner change. **Do not widen the trigger without re-running the census
 and re-asserting the ROOT_ANCHOR_LEDGER equality** — this gate's own
 design says the reader set is derived from the tree and never listed, and
 a hand list is the defect two earlier cards each found.
+**AND THE PER-PATH FINDING ADDS A SECOND AXIS TO THAT DECISION**: whether
+the trigger should reach all of `method/` or only the compiled fourteen.
+The safe answer is probably all of it — the fourteen are `KIT_FILES`, and
+a trigger derived from that table is derived from the tree, which is this
+gate's own design, while a trigger derived from the directory over-fires
+on prose and never under-fires. **Both are askable; neither is answerable
+from the directory name, which is the whole finding.**
 
 **The cheaper interim, if the scanner is a bigger job than it looks**: a
 sentence in the DOCS GATE bullet naming `method/` as a code input the gate
