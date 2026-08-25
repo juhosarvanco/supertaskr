@@ -917,3 +917,212 @@ resolution, the exit-code contract and the drill guards are byte-identical
 to `1b626e2` except where the three restamped lines sit. **Twenty-seven
 mutations found no silent partial answer in that parser, and a rejection
 is not a verdict on a lane's judgement.**
+
+## Re-check verdict: APPROVED — claude-opus-5, 2026-08-26
+
+Re-checked at lane tip `508bd2c`, code isolated at `82e8ab4`, in a fresh
+detached worktree cut from the tip and outside the repository. **The
+rejection is discharged.** The fix is correct where I named it, correct
+where I MISSED it, and the remedy I proposed was insufficient — both of
+those are the fix pass's findings, not mine, and both reproduce.
+
+### FIRST, MY OWN ERROR, because it is in the verdict above
+
+**I wrote that Playwright prints no `running N tests` header. That is
+false, and I had the evidence in hand when I wrote it.** Every one of my
+own five captured runs opens with `Running N tests using 1 worker` — 192,
+171, 192, 192, 192 — and each agreed with the count I derived by counting
+bodies. I inherited the claim from my brief, repeated it without checking
+logs I had already collected, and committed it. **That is this card's
+subject performed by its verifier**: a figure taken from context instead
+of from its source. The counts in that verdict are unaffected — they were
+derived by counting numbered bodies against green lines, which is why the
+error changed no number. The header exists; at this tip it reads
+`Running 194 tests using 1 worker`.
+
+### The three-line fix — MET, and the third line was mine to have found
+
+`base commit` and `integration tip right now` are now `live(...)`. The
+line I missed is `create:`, and it is the one that matters most: the base
+is SUBSTITUTED INTO IT, so the line a dispatcher actually pastes into
+`git worktree add` carried a ref that could not produce it. Measured at
+this tip:
+
+    base commit: 209596b8eb9e…  <- read 2026-08-25T22:24:20.732Z on Mac.lan ; git log --first-parent … newest Checkpoint
+    integration tip right now: 70b1d4058ee1…  <- read … ; git log --first-parent main
+    create: git worktree add ../nputer-T-133 -b task/T-133-<slug> 209596b8eb9e…  <- read … ; … base substituted from git log …
+
+Re-derived at the stamped tree `508bd2c`, the newest Checkpoint is
+`93f86562` against the printed `209596b8` — the same disagreement I
+rejected on, now correctly stamped as a live read.
+
+**The stamp is DERIVED, not fixed, and the reverse direction holds.**
+`carriesBase = create.includes(base)`. With no task named the line keeps
+the document's `<base>` placeholder and comes back a TREE fact:
+
+    create: git worktree add ../nputer-T-NNN -b task/T-NNN-<slug> <base>  <- @ 508bd2ca79bc ; docs/CONVENTIONS.md lane bullet create command
+
+I probed that derivation for the one way it could mislead — an empty
+`base` makes `includes("")` always true, which would stamp a pure
+transcription as live. **It is closed upstream**: the new
+`integrationRefs` guard rejects a log whose first line is not
+`<40 hex> <subject>`, so `base` is always 40 hex. The guard is
+load-bearing for the new derivation, not only for the empty-hash case its
+comment names.
+
+### My proposed remedy was NOT sufficient — confirmed
+
+I proposed `default: throw` in `stamp()`. **That alone would not have
+closed it**: `{ kind: "live" }` is a legal kind with no fields and would
+still have rendered `read undefined on undefined`. The shipped fix is a
+closed switch that re-validates through `treeProv`/`liveProv` themselves,
+so there is no second definition of what a provenance is. I re-ran my
+whole malformed-provenance attack against it — **sixteen shapes, zero
+leaks**:
+
+`{ref,via}` · `{kind:"Tree",…}` · `{kind:"tree "}` · `{kind:"live"}` ·
+`{kind:"tree"}` · `{}` · `0` · `false` · `""` · `"tree"` · `null` ·
+`undefined` · numeric fields on either shape · a missing `via` ·
+`Object.create(null)`
+
+Every one throws, naming the shape. **Positive control**: the two real
+shapes still render, so the closure discriminates rather than refuses
+everything.
+
+### The new pin — attacked, and it holds
+
+This was the only genuinely new assertion, so it got the most.
+
+**It names no line, and its subject is found by measurement.** I probed
+what it actually catches: moving the branch changes exactly THREE lines,
+and the independent "source names the integration branch" filter returns
+the SAME three. Two routes, one subject, no transcription.
+
+**It cannot pass vacuously.** I starved it: a log with only one
+Checkpoint trips its own positive control (`older has a Checkpoint`) and
+the derivation underneath throws rather than returning empty. A log that
+starts at the newest checkpoint still yields three changed lines.
+
+**Five drill arms, one side only, producer mutated and never a pin,
+mutation read back with `git diff` before each run, restores proved per
+path by sha256.** Control at `508bd2c`: **194 bodies, 194 green, exit 0**
+(header agrees: `Running 194 tests`).
+
+| arm | mutation | result | killed |
+|---|---|---|---|
+| A1 | `base commit` back to `tree(...)` | exit 1 · 193/1 | the new pin, alone |
+| A2 | `integration tip` back to `tree(...)` | exit 1 · 193/1 | the new pin, alone |
+| A3 | `create` always `tree(...)` — **the line my verdict missed** | exit 1 · 193/1 | the new pin, alone |
+| A4 | `create` always `live(...)` — "stamp everything live" | exit 1 · 193/1 | the new pin, alone |
+| A5 | `stamp()` ternary restored | exit 1 · 193/1 | the **malformed-provenance** pin (`:398`), alone |
+
+Restore hash `50ebbbef…6a03e` after every arm, `git status` empty.
+
+**Every arm kills exactly ONE body net of the 194-green control, and the
+two new pins are killed by different arms** — A1–A4 by the moving-ref pin
+at `:313`, A5 by the provenance-shape pin at `:398`. Neither pin is
+redundant and neither absorbs the other's failure.
+
+**My drill's own shell tried to lie once, and the guard caught it.** My
+first five arms all reported `ABORT: mutation failed` — reading the
+mutation script from stdin shifts `process.argv`, so the path argument was
+`"-"`. **No suite ran and nothing was reported as a mutant**, which is the
+whole point of aborting before the run rather than after it. Fixed, and
+every arm above is from the clean re-run.
+
+### Everything I found holding is BYTE-IDENTICAL — verified, not accepted
+
+I checked rather than took the claim: `contractRows`, `laneWorktrees`,
+`laneSpellings`, `parseWorktreePorcelain`, `assembleBrief`, `tableCells`,
+`fenceOverlaps`, `slugMapFromFields`, `boardCensus`, `normaliseTaskId`,
+the `DERIVERS` map and `PORCELAIN_FIXTURE` all hash identical across
+`1b626e2..508bd2c`, and `brief.mjs` is byte-identical whole
+(`f50572fa…65ae`), so the exit-code contract was not touched. I re-ran my
+27 parser mutations anyway: same result, **no silent partial answer**.
+
+### Two corrections to the fix pass's own findings
+
+**1. The zsh diagnosis is wrong in its mechanism, and the silence was the
+pipe.** The notes say `local h s status` "made the restore function abort
+at its declaration". Measured in zsh 5.9:
+
+- `local h s status` → **rc=0. The declaration survives.**
+- `local status=abc` → rc=0.
+- `local h s status; status=abc` → **rc=1**, `read-only variable: status`.
+- `for status in …` → rc=1. `read status` → rc=1. Top-level `status=x` → rc=1.
+
+So the hazard is **assignment**, not declaration, and it is not confined
+to `local` — the name simply cannot be assigned in zsh. A lint that
+banned the declaration would miss it.
+
+**And it is neither silent nor exit 0 when read correctly.** In a real
+script file, unpiped: `restore:5: read-only variable: status`, **script
+rc=1**. Piped to `tail`: **rc=0**. In a subshell with `|| true`: 0. In
+`$(…)`: 0.
+
+**This is therefore not a second, distinct way for a drill to lie — it is
+a THIRD instance of one rule**: read the exit unpiped, from `$?`, at the
+point it happened. The empty-string comparison, the `head`-swallowed exit
+in my brief, and this are the same failure. That is a better finding than
+"a new way", because the remedy is already a standing rule rather than a
+new one.
+
+**2. `T-133-s5` is confirmed and its threshold is sharper than the card
+says.** My drill roots are **115 and 116 characters** against the card's
+128 and the lane's 33, and `shell-frame.spec.ts:263` was **GREEN in all
+five of my runs**. The measurements say why:
+
+| viewport | lane (33 ch) | **mine (116 ch)** | drill (128 ch) | floor |
+|---|---|---|---|---|
+| 1280x840 | 524 | **510** | 510 | — |
+| 1024x700 | 384 | **358** | 358 | — |
+| 800x600 | 284 | **252** | 234 | **250** |
+
+At the two wider viewports my figures are **identical to the 128-char
+drill**, not to the lane — the wrap has already happened there. Only at
+800x600 does the extra length cost another wrap. **At 116 characters the
+margin is TWO PIXELS.** So the trap is real, the mechanism is confirmed by
+a third independent data point, and the card should say the floor is
+crossed somewhere between 116 and 128 characters rather than implying any
+deep path reds — because a 116-character path passes, twice over, with 2px
+to spare.
+
+### One trap the brief names, now DERIVED rather than quoted
+
+`npm test` from `app/` came back **14 failed of 973, across 6 files** in
+my worktree, and every one names the same cause in as many words: *"no
+build output at app/dist/assets — run `npm run build` in app/ first …
+it does not skip."* That is the UNBUILT-APP class and my own precondition,
+not this lane's defect. Built (exit 0) and re-run: **973/973, exit 0.**
+
+The brief warned that CONVENTIONS contradicts itself here — 12 of 840
+across five files against 14 across six — and that all its figures predate
+the 973-body suite. Measured at `508bd2c`: the COUNT in the second bullet
+is still exactly right (**14 across six**) while its denominator is stale
+(**973**, not 840). So that bullet is half-stale rather than stale, which
+is worth more to whoever fixes it than either figure alone.
+
+### Gates and suites, exits read unpiped from `$?`
+
+| gate | exit | derived |
+|---|---|---|
+| `npm test` tools/e2e @ `508bd2c` | **0** | 194 bodies, 194 green; header agrees |
+| `npx vitest run` lib/parser | **0** | 268/268 |
+| `npm test` app/ | **0** | 973/973, after `npm run build` (exit 0) |
+| DOCS GATE on the range's 9 paths | **1 — FIRES** | 6 docs paths are code inputs; names the three suites above |
+| `npm run lint:docs` (census) | 0 | |
+
+**GRAPH REGEN**: trigger fires (`brief.spec.ts` is `*.ts` outside `docs/`)
+and the regen is a no-op, confirmed two independent ways —
+`.nputerignore` line 8 is `tools/`, and the committed graph indexes 179
+files, none under `tools/`.
+
+**THE RANGE, with its ref**: `merge-tree --write-tree` against main
+`70b1d40` → **exit 0 read before the substitution**, merged tree
+`c71da2f53eab`, **9 files, +3957, −1**. The only thing outside
+`touches: [tools/e2e]` is this lane's own ceremony.
+
+### Frontmatter
+
+Untouched again: no `verifier:`, `verified_by:` or `review:` stamped, and
+`status:` left at `verifying` for the seat that routes it.
