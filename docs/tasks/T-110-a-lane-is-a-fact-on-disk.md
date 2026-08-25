@@ -1725,15 +1725,24 @@ not.
   extra body is on main and not in this lane's base).
 - **E2E: 143/143, exit 0** on scratch port **15121**; `npm run typecheck`
   exit **0**.
-- **THE MERGE'S DIFF IS 18 PATHS, AND IT IS 18 AT BOTH MAIN TIPS THIS
-  PASS SAW.** Derived the prescribed way — `TREE=$(git merge-tree
-  --write-tree <main> b91732b)` with `$?` read FIRST (**0** both times),
-  then `git diff --name-only <main> "$TREE"`. **18** at `bb26a93` (tree
-  `d7cdf4c…`) and **18** at `c4cfe52` (tree `d0c2384…`). It is 17 at
-  `0bdaa24` plus `T-110-s11`; this pass adds `T-110-s12` and its two
-  edited files were already in the set. **The FORBIDDEN two-dot form
-  reads 131 and then 134** — a **7.4x** overstatement, pure
-  left-endpoint drift from a lane held open across five merges.
+- **THE MERGE'S DIFF IS 19 PATHS AT THIS PASS'S FINAL TIP.** Derived
+  the prescribed way — `TREE=$(git merge-tree --write-tree c4cfe52
+  25aaebf)` with `$?` read FIRST (**0**, tree `4b30f3d…`), then
+  `git diff --name-only c4cfe52 "$TREE"` → **19**: 17 at `0bdaa24`,
+  plus `T-110-s11` from the second verdict, plus this pass's
+  `T-110-s12`; its two edited files were already in the set. **13 are
+  under `docs/` and 6 under `app/`.**
+  **AND THE INTERMEDIATE FIGURE OF 18 IN THIS SECTION'S EARLIER DRAFT
+  WAS WRONG, WHICH IS WORTH THE LINE IT COSTS**: it was measured at
+  `b91732b`, when `T-110-s12` existed in the working tree and was
+  STAGED but not COMMITTED. `git merge-tree` reads COMMITS and cannot
+  see an index, so staging a file before measuring buys nothing —
+  unlike the DOCS GATE, which reads tracked files and must be staged
+  first (`T-010-s10`). **The two tools want opposite things and it is
+  easy to satisfy the wrong one.** The figure is re-derived at the tip
+  above and every gate below re-run against it.
+  **The FORBIDDEN two-dot form reads 135** — a **7.1x** overstatement,
+  pure left-endpoint drift from a lane held open across five merges.
 - **MAIN MOVED UNDER THIS PASS, `bb26a93` → `5e6fc8c` → `c4cfe52`, AND
   THREE NEW LANES OPENED** — `T-052` `[method/, docs/CONVENTIONS.md]`,
   `T-120` `[tools/e2e]`, `T-124` `[app-agent]`, all at
@@ -1744,12 +1753,12 @@ not.
   `docs/tasks/*.md` files** carrying **zero** code paths and **no**
   `graph.json`, so every figure below is unmoved by it — derived with
   two `git diff --name-only … | grep -c` counts rather than argued.
-- **BOOT GATE — DERIVED and FIRES, 6 of 18** (four `dispatch/*.rs`,
+- **BOOT GATE — DERIVED and FIRES, 6 of 19** (four `dispatch/*.rs`,
   `tests/dispatch_lanes.rs`, `dispatch-store.ts`). **RUN, exit 0** on
   scratch port **15120**, both lines: `[nputer] project folder:
   /Users/ujju/Projects/nputer-T-110` and `[nputer] window "main"
   created`.
-- **DOCS GATE — FIRES, exit 1, 12 of 18.** Invoked DIRECTLY from the
+- **DOCS GATE — FIRES, exit 1, 13 of 19.** Invoked DIRECTLY from the
   repo root with ROOT-RELATIVE arguments, never through `xargs`, with
   `T-110-s12` and this section `git add`ed BEFORE the gate saw them
   (`T-010-s10`: the gate reads TRACKED files only). **12 derived readers
