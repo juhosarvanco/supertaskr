@@ -961,3 +961,299 @@ cross-package file-level seam), `T-135-s2` (a distinct `mod` edge kind),
     whose Half B is unwritten is a false statement and the vocabulary has
     no true value. **Recorded and routed rather than decided** — that is
     what the same role file requires of a conflict — as `T-135-s4`.
+
+## Verdict — HALF A ONLY: **APPROVED** (verifier claude-opus-5 @T-135A-verify, 2026-08-26)
+
+**APPROVED for Half A.** Half B (the ceremony section and ADR-018) was not
+reviewed and its absence is not a defect; `status: building` staying is
+correct and `T-135-s4` is the right disposition. Every acceptance criterion
+Half A owns is discharged, and **no attack found a behavioural defect.**
+Eight findings follow and **all eight are figures, disclosure placement or
+routing — none is code.** One of them (F2) **the integrator must read before
+committing `graph.json`**, because T-135-s3 as filed understates the reds it
+exists to warn about.
+
+**BOUNDED READ, DECLARED.** The card at the lane's base `70b1d40` and the
+planning pass `git show 5547f02` §0–§12 were read first, and the attack set
+was written down at **2026-08-25T23:23Z** — before the diff, before the
+notes, and before `STATE.md` — in
+`…/scratchpad/T-135A-verify/00-attack-set.md`. Verified in a detached
+worktree **outside the repository** at `/private/tmp/t135t` (17 chars) with
+`CARGO_TARGET_DIR=/private/tmp/t135t/target`, drills at `/private/tmp/t135p`.
+
+**THE RANGE, WITH ITS REFS.** `git merge-tree --write-tree e692819 c6c7b1c`
+→ exit **0** (read from `$?` into a variable BEFORE the substitution) → tree
+**`b9c6faf`**; `git diff --name-only e692819 b9c6faf` → **16** paths. Ten are
+`app/src-tauri/crates/nputer-index/**` (`crate-index`, in fence), five are
+this card and its four new suggestions, one is `T-126-s3` — additive, a new
+`## ITEM 4` section, no other hand's text touched, and it is what the
+ratified plan §11 directed. **`docs/architecture/graph.json` is NOT in the
+range**, which is §11 applied. **The card's frontmatter is byte-unchanged
+from `70b1d40`** — no `verifier:`, `verified_by:` or `review:` is stamped by
+this verdict either.
+
+### The six claims, attacked
+
+**1. THE EDGE-KIND CHOICE — UPHELD, and both counter-cases hold, one of them
+by a smaller margin than claimed.** `GRAPH_EDGE_KINDS` is closed at
+`graph.ts:23` and line **346** skips an unknown kind with
+`entry(where, "unknown edge kind …; skipped")`; `arch/mod.rs:282` filters
+`edge.kind != "import"`. So `kind: "mod"` really had no in-fence spelling.
+Counter-case (a) is **exact**: the live graph carries exactly **three** Rust
+`reexport: true` edges, all `nputer-index/src/lib.rs → {diff,error,graph}.rs`,
+and `lib.rs` writes `pub mod diff;` / `mod error;` / `mod graph;` beside
+`pub use diff::…` / `error::…` / `graph::…`, so a `reexport: false`
+occurrence clears all three; the fixture's `core/src/lib.rs → types.rs`
+(`pub mod types;` + `pub use types::Shape;`) is the one fixture assertion,
+and the fixture's other `reexport: true` row (`app/src/lib.rs →
+engine/runner.rs`) is correctly untouched because no `mod` names it.
+**Counter-case (b) is F1 below.** Both are poisoned live (my arms C and D,
+2 kills each).
+
+**2. THE DELTA — RE-DERIVED INDEPENDENTLY AND EXACT.** I re-derived the mod
+pairs from the Rust module rules in Python, without reading the lane's code:
+**44 resolved pairs, 17 already carrying a `use` edge, 27 new** — the plan's
+figures, reproduced from the tree. Set-equal to the lane's 27 (`only mine: []`,
+`only theirs: []`). GRAPH REGEN, asked and never predicted, at `c6c7b1c`:
+before **exit 1 STALE**, after `index --root ../..` **exit 0 CURRENT**,
+**955 710 bytes · 181 files · 2038 symbols · 1943 edges** — the lane's table
+reproduced. **The attribution: +32 = 27 + 4 + 1**, where 4 are `blast.rs`'s
+own outbound edges (`glob.rs`, `registry.rs`, `graph.rs`, `p:cargo:std`) and
+1 is `arch/mod.rs → arch/blast.rs`, this card's own `pub mod blast;`.
+**PURELY ADDITIVE, PROVED AS SETS AND NOT AS COUNTS**: keying every edge on
+the FULL tuple `(from, to, kind, symbols, reexport, confidence)` — **32
+added, 0 removed, 0 changed in place.** A count alone cannot prove this;
+this can.
+
+**3. THE FINDING THE FIX REVEALS — CONFIRMED, AND THE FRAMING IS RIGHT.**
+On the regenerated graph, `arch --root ../..` exit **0**:
+`edges=36 → 37  findings=3 → 4  drift_components=3 → 4`, `C-05
+observed_deps=10 drift=D1`; `arch drift` exit **0**: `finding D1
+D1:C-05->C-15 … file-edge app/src-tauri/src/lib.rs ->
+app/src-tauri/src/dispatch/mod.rs`, exactly one file edge. **REVEAL, not
+create, and now with its provenance**: `git log -S "pub mod dispatch;" --
+app/src-tauri/src/lib.rs` names **`0fa83da` (T-126)**, and
+`git log -S "C-15" -- docs/architecture/components/C-05-app.md` is **EMPTY**
+— C-05 has never declared C-15 in its history. The dependency has been real
+since T-126 and the declaration has never existed.
+
+**4. `T-135-s3` — REPRODUCES IN DIRECTION, NOT IN MAGNITUDE. THIS IS F2.**
+
+**5. THE DISCLOSURE NARROWING — THE CLAIMED PROTECTION HOLDS.** Arm E
+deleted the surviving path-expression line and left the fixed half: **exit
+101, `every_green_and_every_red_carries_what_the_gate_cannot_see` red.** A
+future widening therefore **cannot** pass by deleting the survivor. The
+honest boundary, measured rather than assumed: arm **E2** kept every
+asserted substring and negated the sentence around it ("…and it is FALSE
+that a cross-module PATH EXPRESSION with no `use` still carries none") —
+**exit 0, 512 passed, nothing killed.** That is the residual limit of any
+substring assertion over prose, not a defect in this one; both of the
+lane's actual claims survive.
+
+**6. THE DRILL ARMS — NO ARM WAS A COMPILE FAILURE, PROVED WITH A POSITIVE
+CONTROL IN BOTH DIRECTIONS.** Every red arm shows `error[E…]` **= 0**,
+exactly one `Compiling nputer-index`, **16 `test result:` lines and 16
+`running N tests` headers summing 515**. Arm **G** — a deliberate
+`let _deliberate: u32 = "this must not compile";` — gives `error[E…]` **= 1**
+and **zero** result lines and **zero** headers. So a compile failure and a
+kill are separable on two independent signals, and the lane's re-run stands.
+
+### My own mutants — eight arms, producer only, never an assertion
+
+Drilled at `/private/tmp/t135p` (detached, outside the repository),
+`CARGO_TARGET_DIR=/private/tmp/t135p/target` — **named `target` because
+`git check-ignore -v target/` matches `.gitignore:4` and `.vtarget/` matches
+nothing (exit 1)**. Every arm: exactly one substitution asserted before the
+write, `git diff` read back BEFORE the run, `cargo test --no-fail-fast`,
+then `git checkout` and **sha256 over five producer files compared to a
+baseline taken before the first arm — 5/5 identical on every arm, with
+`git status --porcelain` empty (0 lines) on every arm.** Control,
+unmutated: **exit 0, 512 passed / 0 failed / 3 ignored, 515 headers.**
+
+| arm | producer mutation | exit | killed / 512 |
+|---|---|---|---|
+| A | the `mod` pair is never recorded | 101 | **6** |
+| B | recorded at the QUEUE PUSH instead of the DECLARATION | 101 | **1** |
+| C | a `mod` occurrence claims `reexport: false` | 101 | 2 |
+| D | a `mod` occurrence carries the module's own name as a symbol | 101 | 2 |
+| E | the disclosure drops the surviving path-expression half | 101 | 1 |
+| E2 | the disclosure is negated, every asserted substring kept | **0** | **0** |
+| F | `arch blast` drops the `kind != "import"` filter | 101 | 1 |
+| G | deliberate type error (positive control for the guard) | 101 | n/a |
+
+A kills the live pin, all three new `resolve::rust` bodies and both golden
+bodies. **B kills exactly one body in 512** —
+`a_declaration_of_an_already_visited_module_is_still_that_files_dependency`
+— which independently reproduces the lane's M2. C and D kill the same two
+golden bodies, which is what makes them narrowings rather than gaps.
+
+**AND THE PUSH-SITE CLAIM IS NOW PROVED BY CONSTRUCTION, NOT ASSERTED.** I
+built the push-site variant and indexed this repository with it:
+`955710 bytes · 181 files · 2038 symbols · 1943 edges`, and the **edge sets
+are SET-EQUAL on the full tuple** (`only push-site: 0, only shipped: 0`),
+with `tests/common/mod.rs` reading **8 dependents under BOTH**. So plan §3's
+stated discriminator does not discriminate and the lane's correction is
+right. **A caution the lane's own phrasing invites (F8):** the two graph
+FILES are **not** byte-identical — they differ at char 59 849, and the only
+differing file entry is `resolve/rust.rs`'s own blake3 hash, i.e. **the
+mutation's own footprint**. Compare edge sets, never bytes, when the
+producer you mutated is itself indexed.
+
+### Findings
+
+**F2 — `T-135-s3` UNDERSTATES ITS OWN SUBJECT BY THREE TESTS, AND
+MIS-ATTRIBUTES THE CAUSE. THE INTEGRATOR MUST READ THIS.** Both directions
+reproduce, but not at the stated size. With the **committed** graph:
+**973 / 973, exit 0** — as claimed. With the graph the lane actually
+regenerated and reports one paragraph earlier (955 710 B / 181 files /
+1943 edges): **9 failed / 964 passed**, `architecture-dogfood.test.ts`
+**4** and `map-dogfood-render.test.tsx` **5** — not 6 / 967 and not 3+3.
+**Diagnosed rather than guessed**: I rebuilt the graph the lane's figures
+describe — the final tree minus `blast.rs` and its five edges — and ran the
+suite against it: **exactly 6 failed / 967 passed, 3 and 3.** So T-135-s3's
+numbers were measured at an intermediate tree in which `blast.rs` did not
+yet exist, and reported as describing the final one. **The three extra
+reds are not the D1 and do not move under either repair T-135-s3 offers:**
+
+    architecture-dogfood.test.ts:1279   expected 181 to be 180
+    map-dogfood-render.test.tsx         'C-07 … 35 files' to contain '34 files'
+    map-dogfood-render.test.tsx         'committed graph · 181 files' to be '… 180 files'
+
+They are `blast.rs` arriving as the 181st walked file and C-07's 35th.
+An integrator who follows T-135-s3 to the letter declares `C-05 → C-15`,
+reconciles the findings list and the relation table — **and still ships
+three reds.** That is precisely the failure T-135-s3 exists to prevent,
+occurring inside T-135-s3. **Actionable fix:** amend T-135-s3 with the
+nine, the 4/5 split and the three file-count assertions, and re-derive at
+the commit that carries the regenerated graph rather than at any earlier
+tree. Its `Measured at 5547f02` line should also name the tree the numbers
+came from, since `arch` at `5547f02` reads a graph with no `mod` edges and
+cannot print `36 -> 37`.
+
+**F1 — counter-case (b) is 16 of 17, not "every one of the 17".** A `mod`
+occurrence carrying the module's own name would add a symbol to **16** of
+the 17 merged pairs. The exception is `nputer-index/src/lib.rs → diff.rs`,
+whose `symbols` already reads `["GraphDiff", "diff"]` — `pub use
+diff::{diff, GraphDiff}` re-exports a function sharing the module's name,
+and `EdgeAcc.symbols` is a `BTreeSet`, so the insert is a no-op there. **The
+design conclusion is unaffected** (16 perturbations still break the purely
+additive property, and arm D kills two bodies), but the notes state a count
+one higher than the tree carries.
+
+**F3 — THE TS HALF OF THE FLOOR RULE IS DISCLOSED IN THE NOTES AND NOWHERE A
+READER OF THE COMMAND WILL EVER SEE IT. THIS BINDS HALF B.** Measured
+through `arch blast` on §7's eight roots: the five Rust roots print
+`build-target-root=yes`; **`app/src/main.tsx`, `app/vite.config.ts` and
+`app/vitest.config.ts` print a bare `dependents=0` with no marker** — and
+neither `render`'s eight `note` lines nor `blast.rs`'s module doc says that
+TypeScript entry points are not computed. §7's floor rule ("a build-target
+root is never at rung 0") therefore **cannot be bound on this command's
+output as it stands**: three of its eight roots are indistinguishable from
+genuinely unimported files, in the failure direction this card exists to
+close. The lane names the gap in its correction 8, which is right; **the
+disclosure belongs in the output too.** Not a Half A defect — §7 is Half B —
+but Half B must close or state it before the rule binds.
+
+**F4 — THE PLAN'S BYTE MODEL WAS 1.0 % LOW, NOT 13 %; the 4 917 measures a
+different quantity.** The plan forecast **~161 bytes** per pretty-printed
+`{from,to,kind}` edge and **~4 350** for 27. I isolated exactly those 27 by
+taking the regenerated graph, dropping `blast.rs` and its five edges, and
+restoring every file entry to its base version — 180 files, 2018 symbols,
+1938 edges: **948 984 bytes, +4 394, 162.7 bytes per edge.** The emitter
+model is exact, verified in both directions
+(`json.dumps(g, indent=2) + "\n"` reproduces base **and** tip byte-for-byte,
+944 590 = 944 590 and 955 710 = 955 710). The lane's **4 917** additionally
+carries the growth of its own edited `resolve/*.rs` entries in `files[]`,
+which the per-edge model never claimed to cover — the same reconstruction
+with those two entries kept reads 949 782, and 949 507 sits between the two.
+**The model was good; the comparison changed the quantity.**
+
+**F5 — `arch blast` prints `source=committed graph` and one field that is
+not from the graph.** `build_target_root` comes from
+`cargo_target_roots(&canon, …)`, which reads `Cargo.toml` off the **working
+tree**. Sharing one definition with the indexer is right and is criterion
+3's own reasoning; the header and the eight notes should say that root-ness
+is a working-tree fact, or a report whose graph is stale can mark roots that
+its counts do not know about.
+
+**F6 — `arch blast ""` answers `coverage=non-code`**, the cheapest class,
+because an empty string names no walked extension. The card's own rule is
+that an uninterpretable input is not a small one. One line in `is_slug`/
+`classify`, or a usage refusal.
+
+**F7 — `T-126-s3` item 4 says "without it a **fifth D1**".** Measured on the
+regenerated graph there are **four findings, of which two are D1**
+(`D1:C-05->C-15`, `D1:C-10->C-14`). It is the second D1 and the fourth
+finding; the lane's own notes say `findings=3 -> 4` three paragraphs above.
+
+**F8 — "byte-identical" for the push-site graph is true of the FIGURES and
+false of the FILE.** Stated above with the measurement.
+
+### Attacks that found nothing, named because they were run
+
+`arch cycles --root ../..` exit **1** unpiped, **stdout 0 bytes, stderr 645
+bytes**, all four `note` lines present and the narrowed disclosure naming
+both halves; `cli.rs:386-392` confirms the green path writes `render` to
+**stdout** and only the red path to stderr, so the lane's correction 11 is
+right. All **13** component files carry `touch_slugs:` in the inline form
+(`C-01` is `[]`, `app-shell` appears in four), so the registry's widened
+refusal surface is safe on the live tree. `pkg-seam=p:@nputer/parser
+(importers=28)` **does** print beside every one of `lib/parser`'s 25 files —
+my first grep truncated it and the marker is there. `known_slugs` refuses
+`app-shel` at exit **2** naming the eight declared slugs, and `arch blast`
+with no inputs is exit **2**. Security sweep: **zero** manifest lines in the
+range (no dependency added), no `unsafe`, no `Command::new`, no `env::var`,
+no file open anywhere in `blast.rs`; `../../../../etc/passwd`, `../..`,
+`a/../b` and `%00` never reach the filesystem — they are string-matched
+against graph paths — and `-x` is exit 2. `self_graph_is_current` is
+`#[ignore]`d and the suite reports **3 ignored**, so the gate really is the
+only staleness signal; the new live pin
+`a_mod_declaration_is_an_edge_in_this_repositorys_own_graph` **is** in the
+default suite. Bare `cargo test --no-fail-fast` from `app/src-tauri`, exit
+**0** from `$?` unpiped: **16 headers summing 515, 16 result lines totalling
+512 passed / 0 failed / 3 ignored**, and 512 + 3 = 515 reconciles, so no body
+vanished into an abort. `npm run typecheck` from `app/` is exit 1 `Missing
+script` and the scripts are exactly `dev, build, preview, test, tauri`. All
+four suggestion cards carry `status: suggested` and `suggested_by:`.
+
+### The lane's thirteen corrections — twelve confirmed, one corrected
+
+Confirmed independently: **ONE** golden fixture moves, not two (four
+`expected-graph.json` files exist, and the `mixed` tree contains **no** `mod`
+declaration anywhere — `grep` exit 1); **`.vtarget` is inverted in both §12
+and the brief** (`git check-ignore -v .vtarget/` exit 1, `target/` matches
+`.gitignore:4`); §3's multi-declarer trap (proved by construction above —
+**eight** roots declare `mod common;`, my own parse found the same eight);
+§3's paths are one component short; **the retraction was RIGHT** — at
+`5547f02`, `arch/mod.rs:281` is `if edge.kind != "import" {`,
+`cycles.rs:231-234` is the two-line note and `cycles.rs:303` is
+`text.contains("T-126-s4")`, and `graph.ts:23` and `:346` hold too, so all
+five line references in the plan are exact and the lane was right to retract
+against its own edited tree; `touch_slugs:` was unread; `cargo_target_roots`
+factored to one definition; the `pkg-seam` line; the card does not order the
+lane to commit `graph.json`; `arch cycles`' stream behaviour; the closed
+`status:` vocabulary; and the `executor.md` step 6 conflict, correctly
+routed rather than decided. **Corrected: number 6, the byte forecast — F4.**
+
+### What this brief got wrong
+
+Its `.vtarget` warning is **right** and is the plan's error, not its own;
+`app/src-tauri/.gitignore:3` is `/target/` as stated, though the rule that
+actually protects a drill target at a worktree ROOT is the unanchored
+`target/` at `.gitignore:4`. Its claim that both counter-cases hold is right
+for (a) and one short for (b) (F1). Its statement of `T-135-s3` — "6 failed
+/ 967 passed, three and three" — **is the lane's figure carried forward, and
+it is wrong at the tip under review** (F2): the brief asked me to reproduce
+both directions and the third direction is what found it. Its `arch cycles`
+description is right and, as the lane says, only because this registry is
+red. `CONVENTIONS.md:1328`'s unbuilt-drill figure is half-stale exactly as
+the brief says — 14 across 6 files is right, **924** is the stale
+denominator against today's 973.
+
+**One process note, offered because this thread has twice made it the most
+valuable thing in a merge.** F2 exists because a figure was carried from an
+earlier tree into a paragraph about a later one, and F4 because a
+measurement changed quantity between the forecast and the check. Both are
+the habit `STATE.md` records as this session's best process finding, and
+both were invisible to every gate. **The nine-versus-six was found only by
+running the suite a third time, against a tree nobody asked for.**
