@@ -5,14 +5,14 @@ feature: F-03
 milestone: 4
 priority: 6
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-agent]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5 @T-124
+verified_by: claude-opus-5 @T-124-verify — APPROVED, 2026-08-25
+review: same-model
 ---
 
 Every source reading below was derived at `45691d9`. The EVIDENCE is the
