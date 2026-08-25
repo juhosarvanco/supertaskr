@@ -1252,3 +1252,123 @@ message and in the report, which are not code inputs. **This is not a
 claim that prose escapes the DOCS GATE.** It does not: fed this commit's
 own range the gate fires again, on this card's path, for the same three
 suites — and the runs above are the ones that cover it.
+
+## Re-check verdict: APPROVED — adversarial verifier, claude-opus-5, 2026-08-25
+
+**THE REJECTION IS DISCHARGED.** Re-checked in
+`/Users/ujju/Projects/nputer-T-132-verify2`, a detached worktree at
+`9b3b923` OUTSIDE the repository. Only the clause moved plus record
+corrections inside the same files, so the nine attacks that found nothing
+the first time were not re-run; what follows is scoped to `0c6a0a3`.
+
+### THE CLAUSE FIX IS CORRECT
+
+The headline now binds every seat to the two prohibitions that name a
+collision and returns the four writes to the lane, and it does not leave
+the reader to reconcile that alone: it names `roles/orchestrator.md` 5b
+**by name** as the thing generalising them would break, and
+cross-references SEPARATE THE WRITE FROM THE VERIFICATION as already
+saying so. **The contradiction I rejected for is gone in both
+directions** — nothing in rule 4 now forbids the dispatch stamp, and
+nothing in it now reads as a blanket prohibition. The subject
+generalisation, which was the card's best idea, is kept intact.
+
+### THE DISCRIMINATOR — SOUND, AND IT DOES NOT OVER-REACH
+
+*Does a prohibition name a COLLISION or an AUTHORITY?* **I attacked this
+for over-reach as asked and could not make it over-reach.** It is
+correctly scoped by what it quantifies over: it partitions PROHIBITIONS,
+not seats and not acts, and it returns "bind the complement of the holder"
+only where contention is the reason. Applied to the four writes it yields
+exactly the answer the fix implements; applied to the install and the
+suite run it yields the answer the card measured. **It also generalises
+safely to surfaces this rule does not mention** — the ref namespace, the
+scratch directory, the runner — which is the property an over-reaching
+test would not have.
+
+**Its SUPPORTING CLAUSE overstates, and that is the one thing I would
+change.** `:92` reads *"A commit does not contend; it is atomic."* True of
+a completed commit; false of the staging step — and the counterexample is
+violation **(a)**, thirty-six lines below, where a dirty shared index cost
+an integrator four minutes. **Atomicity is an obligation on the writer,
+not a property of git.** The test survives this; its justification needs
+one clause.
+
+### WHAT THAT UNCOVERED, FILED AS `T-132-s4` RATHER THAN BLOCKING
+
+`grep -rn -i 'staged\|staging' method/` returns **two rows at this ref and
+neither is a rule**: violation (a) itself, and `TASK-FORMAT.md:255`'s *"a
+separate rule — do not leave staged state in a checkout somebody else is
+holding."* **That rule is cited twice and written nowhere**, in `method/`
+or in `docs/CONVENTIONS.md`, and `TASK-FORMAT.md:257` leans on it again
+with *"The two rules were never jointly unsatisfiable."*
+
+**Staging was never in rule 4's list in any spelling** — not before the
+generalisation, not during it, not after it was scoped back. So
+**violation (a) is prohibited by nothing**, and the card's claim that
+generalising the seat *"is `T-123-s10`'s entire ask"* is false:
+`T-123-s10` was filed for the staging incident, was absorbed here, and its
+ask is unmet. **A sixth false claim, of the card's own genus, and it
+survived the original lane, my verdict, the rejection, the fix and this
+re-check until the question "where is (a) forbidden?" was asked directly.**
+It is not the fix's defect — no version of this clause reached it — which
+is why it is a finding and not a second rejection.
+
+### THE FOUR RECORD CORRECTIONS — VERIFIED, AND ONE IS BETTER THAN MY VERDICT
+
+Fourteen derived repo-wide (`include_str!` × `method/` across all of
+`app/src-tauri` is 14 rows, **all in `kit.rs`**); two off-disk readers,
+not four; the never-written `building` stamp; seven paths, not four.
+**`T-132-s2` did not merely absorb the per-path correction, it improved
+it**: the per-path boundary makes the gate gap WORSE rather than better,
+because the fourteen compiled paths and the rest look identical from
+outside — so the seat that must derive `cargo test` by hand must first
+derive WHICH paths are in the table. That is a better statement of the
+finding than my verdict's.
+
+### THE THREE THINGS THE ARCHITECT RAISED — ALL THREE LAND
+
+1. **"Unchanged except for the count" was wrong; two figures moved.**
+   Correct, and both were in my own verdict body. I named the count and
+   the off-disk premise as separate defects and then under-described the
+   remediation in one line.
+2. **My verdict cites `TASK-FORMAT.md:340-344`** — a `method/` line
+   number, the fuse this branch argued against. Taken. The by-name form
+   (*the ceremony table's boundary test*) was available and is what I
+   should have written. **One nuance worth keeping**: a verdict lives
+   under `docs/tasks/` and is pinned to a ref it names, so its fuse is
+   shorter than a citation inside `method/` — the objection is right, but
+   the two cases are not equally bad.
+3. **A GREEN PRE-FIX RUN IS NOT EVIDENCE OF THE FIX — and my own pass
+   supplies the missing half of the proof.** Derived here:
+   `git merge-base --is-ancestor cea839e 9b3b923` is **false**, and the
+   lane's `token-scan.spec.ts:226` still carries
+   `utimesSync(target, clock.atime, clock.mtime)` against main's
+   `utimesSync(target, clock.atimeMs / 1000, clock.mtimeMs / 1000)`.
+   **So every run on this branch is a run on unfixed code.** The new
+   lane's three greens establish that the flake can stay silent; **my own
+   pass on the same base went RED once and GREEN twice.** Together that is
+   six runs on code that cannot carry the fix, of which one redded.
+   **The absence of the signature is therefore not evidence of anything**,
+   and the three-way diagnostic in `docs/STATE.md` reads *reds* and is
+   silent about that. Routing it to the next checkpoint rather than filing
+   is right — `STATE.md` is outside this fence.
+
+### THE RANGE CONFLICT IS REAL AND IS EXACTLY WHAT 5b PREDICTS
+
+Derived at main **`e7db842`** (moved again since my first pass):
+`merge-tree --write-tree` **exit 1**, read from `$?` before any
+substitution, conflicting on **one file and one line** — base `planned`,
+main `building`, lane `verifying`, three stages, everything else a clean
+append. **Resolution is `verifying`**: it is the forward move and the lane
+is the only side that did any work. `orchestrator.md:27-28` said
+*"Stamping after the cut makes that line writable by both branches — clean
+only while a single side writes it."* **Two sides wrote it.** The
+prediction is now demonstrated rather than asserted, on the card filed
+about it, and that is worth more to the archive than a clean merge would
+have been.
+
+### GATES AND SUITES FOR THIS RE-CHECK
+
+Declared in this verdict's commit message and in the report — not written
+into a code input — per this card's own stopping rule.
