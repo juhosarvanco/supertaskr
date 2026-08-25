@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { ChurnPathEntry } from "@/lib/architecture/churn";
+import { getShellState, subscribeShell } from "@/lib/watcher-store";
 
 /**
  * WHERE THE MAP'S CHURN COMES FROM (T-013) — one command, one fold, one
@@ -213,6 +214,19 @@ function hasTauriRuntime(): boolean {
 let inFlight: Promise<ChurnState> | null = null;
 
 /**
+ * WHICH REPOSITORY THE CURRENT ANSWER IS ABOUT (T-116). Bumped by the
+ * project-switch trigger below, and read by `loadChurn` twice: an answer
+ * whose generation has moved is DISCARDED rather than folded, and only
+ * the current flight may release the single-flight latch.
+ *
+ * A `.then` cannot be cancelled, so this is the only thing standing
+ * between "the user switched projects while git was still walking A" and
+ * A's entries arriving as B's — the same shape `watcher-store.ts` calls
+ * `startupToken`, for the same reason.
+ */
+let generation = 0;
+
+/**
  * Ask for churn. Single-flight (the `picking`/`indexing` pattern): a
  * second call while one is out returns the same promise rather than
  * spawning a second `git`. A rejected invoke is a disabled overlay, not
@@ -237,14 +251,81 @@ export function loadChurn(): Promise<ChurnState> {
   // census can be stepped around by omitting a type argument — and can
   // be FED by a comment, which this comment was measured doing in its
   // first draft — is filed as T-013-s2.
+  const measuring = generation;
   inFlight = invoke<unknown>("repo_churn")
-    .then((payload) => applyChurnPayload(payload))
-    .catch(() => set({ kind: "disabled", reason: "gitFailed" }))
+    .then((payload) => (measuring === generation ? applyChurnPayload(payload) : state))
+    .catch(() =>
+      measuring === generation ? set({ kind: "disabled", reason: "gitFailed" }) : state,
+    )
     .finally(() => {
-      inFlight = null;
+      // ONLY THE CURRENT FLIGHT MAY RELEASE THE LATCH. A switch abandons
+      // the previous measurement and starts a fresh one immediately, so
+      // an abandoned flight settling later must not null out the latch
+      // its successor is holding.
+      if (measuring === generation) inFlight = null;
     });
   return inFlight;
 }
+
+// --- re-measuring when the project changes (T-116) ----------------------
+
+/**
+ * THE FOLDER THE CURRENT STATE IS ABOUT — the map's third data source is
+ * the only layer of this pane that REMEMBERS, and this is what stops it
+ * remembering the wrong repository.
+ *
+ * Every other layer of the map is a pure function of the docs snapshot
+ * and re-derives itself on a switch. Churn is measured once from `.git`,
+ * which the docs watcher does not walk, and `MapView` is NOT remounted
+ * by a project switch — so before this the module singleton kept the
+ * previous repository's entries and `attributeChurn` painted them onto
+ * the NEW repository's components. Numbers from one repository on
+ * another's nodes, with nothing on screen saying so.
+ *
+ * WHY THE SHELL STORE IS READ BY IMPORT RATHER THAN ARRIVING AS A PROP.
+ * `MapView`'s only production caller is `app/src/App.tsx`, which is
+ * C-05's; a new prop would put half of this change outside this pane's
+ * fence for a signal the shell already publishes module-globally. So the
+ * dependency goes the way the map's other data already goes — C-12 reads
+ * C-10, a direction `depends_on` already declares.
+ *
+ * WHY MODULE SCOPE RATHER THAN A MOUNT EFFECT. The property owed is
+ * about the STORE, not about the pane: a switch while the map is closed
+ * must still invalidate the answer, or the next mount paints the old
+ * repository's numbers for one frame before its own `loadChurn` lands.
+ * A mount effect cannot hold that, and a body in
+ * `test/map-churn-age.test.tsx` drives the unmounted case for exactly
+ * this reason.
+ *
+ * IT IS NOT A SECOND WAY TO STAMPEDE `repo_churn`: the trigger fires
+ * only on a CHANGED folder and goes through `loadChurn`, so it inherits
+ * the single-flight latch rather than bypassing it.
+ */
+let measuredFor: string = getShellState().docs.projectDir;
+
+function onProjectMaybeChanged(): void {
+  const projectDir = getShellState().docs.projectDir;
+  if (projectDir === measuredFor) return;
+  measuredFor = projectDir;
+  // NOTHING HAS BEEN ASKED YET, SO THERE IS NOTHING TO RE-ASK. Churn is
+  // measured lazily, from the pane's own mount effect — so while the map
+  // has never been opened this store holds no answer, no answer is in
+  // flight, and there is no previous repository's reading to drop. A
+  // re-measure here would spawn `git` for a pane nobody has looked at,
+  // on every project open, which is a cost this card does not buy and a
+  // second reason to touch `repo_churn` that the criteria forbid. The
+  // pane's mount effect measures when it opens, against the new folder.
+  if (state.kind === "loading" && inFlight === null) return;
+  // Otherwise: abandon whatever was measured or is being measured for the
+  // previous folder BEFORE anything can read it. The state goes back to
+  // `loading`, which is the honest answer between two repositories.
+  generation += 1;
+  inFlight = null;
+  set(LOADING);
+  void loadChurn();
+}
+
+subscribeShell(onProjectMaybeChanged);
 
 /** Test-only reset (the store is a module singleton — the
  * `__resetGenesisStoreForTests` convention). */
@@ -252,4 +333,9 @@ export function __resetChurnForTests(): void {
   state = LOADING;
   listeners.clear();
   inFlight = null;
+  // A reset abandons any flight in progress too, and re-baselines onto
+  // whatever project the shell is on NOW — otherwise the first switch
+  // after a reset would be measured against a stale folder.
+  generation += 1;
+  measuredFor = getShellState().docs.projectDir;
 }

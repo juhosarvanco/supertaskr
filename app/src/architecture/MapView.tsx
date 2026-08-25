@@ -943,6 +943,26 @@ export function MapView({
                   ? `churn is off — ${churnDisabledSentence(churnState.reason)}`
                   : "reading git…"}
             </span>
+            {/* HOW OLD THAT NUMBER IS (T-116). The payload has carried
+                `measuredAtMs` since T-013 and nothing rendered it, so a
+                measurement taken this second and one taken before lunch
+                read identically. It goes through `relativeTime` — the
+                index hint's own function, one directory up in this same
+                file — so the map has ONE spelling of "how old is this"
+                and not a second (T-057).
+
+                `measuredAtMs === 0` is what the boundary substitutes for
+                a shape it could not read, so it renders NOTHING here: an
+                age computed from the epoch would be a wrong timestamp,
+                which is worse than no timestamp. */}
+            {churnState.kind === "measured" && churnState.measuredAtMs > 0 && (
+              <span
+                data-testid="map-churn-age"
+                className="font-mono text-xs text-muted-foreground"
+              >
+                measured {relativeTime(churnState.measuredAtMs, Date.now())}
+              </span>
+            )}
           </>
         )}
         <span className="ml-auto flex items-center gap-4">
