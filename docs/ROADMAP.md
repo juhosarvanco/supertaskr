@@ -600,6 +600,51 @@ and disclosed, routed as `T-107-s4`, with the behaviour verified by a
 verifier who drove the routed body itself. **@human owes this card one
 look, and it is about wording rather than facts** — whether three
 sentences and a button read as help or as a wall.
+T-102 merged 2026-08-25 and it is the first card in this family to fix a
+**discriminator that read the evidence that CAN be forged and ignored the
+evidence that cannot.** T-069's paragraph above closed a false positive:
+a 401 the CLI retried and got past used to survive as a typed auth
+failure and take *Try again* away from a user whose login was fine, and
+the guard that withdraws it fires on model TEXT arriving after the last
+status-bearing line. **The runner's own justification for that guard
+never stopped at text** — a `tool_use` block is the same model response
+in a different content block — so a turn that recovered a 401 and then
+called a tool without saying anything first, which is an ordinary opening
+for a planner that reads the repo before it speaks, still reached the
+user as an auth failure. **And the ignored evidence is the STRONGER of
+the two**: T-069's own honest limit is that the CLI writes its own prose
+into a nominally-model field, so a delta may not be the model at all,
+while a block naming a tool is not prose and the CLI has no reason to
+fabricate one. The flag is renamed `evidence_after_auth_status`, because
+the old name said `text` and so made a missing CASE read as a different
+SUBJECT. **The card asked whether the stronger evidence deserves its own
+flag and the answer is a written refusal rather than a second flag**:
+there is exactly one reader, a guard that WITHDRAWS a claim and never
+makes one, withdrawal has no degrees, and two flags would differ in
+nothing but name — with the condition that would split them recorded at
+the declaration so the absence is on the record as checked.
+**THE SECOND HALF IS FOUR THINGS THAT COULD NOT FAIL, AND THE BEST OF
+THEM IS A FAMILY REPLACED RATHER THAN A BUG FIXED.** Seven mirrored
+negative assertions — match the failure event, then assert the settled
+status is NOT some other variant — were green under the exact storage bug
+they look like they would catch, because the match arm has already
+accepted the variant the negative forbids. All seven become an equality
+against the failure event itself, and the replacement is proved rather
+than argued: dropping the line that stores the classification reds
+**eleven** bodies at the tip and left **all seven** of their predecessors
+green at the base. **One criterion was declined on the evidence and the
+decline is enforced, which is the shape worth copying.** The card offered
+to lower a byte bound under a log cap so its "hard stop" comment would
+become true; the lane refused, because the log cap MARKS its cut and the
+runner's own truncation does not — so a bound that wins truncates
+SILENTLY, and lowering it would have removed the `…(truncated)`
+disclosure from the one string a refused user reads. The refusal is held
+by a test that reds if anyone takes the other side of it quietly, and the
+trade is routed as `T-102-s2` rather than settled here. **What is NOT
+here**: the `Activity` label still reaches the webview through no bound
+in the runner at all — not a regression, but it falsifies a universal
+this card itself wrote into shipped source, and it is filed as
+`T-102-s4`. **@human: none.**
 **The milestone is NOT complete, and what it waits on is not a task.**
 Every card on milestone 3's list — T-023 → T-024 → T-026 → T-037 →
 T-025 → T-039 → T-041 → T-042 → T-048 → T-049 → T-050 → T-027 → T-051 →

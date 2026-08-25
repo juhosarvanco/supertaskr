@@ -5,14 +5,14 @@ feature: F-03
 milestone: 4
 priority: 58
 size: M
-status: verifying
+status: done
 blocked_by: [T-113]
 touches: [app-agent]
 builder: claude-opus-5
 verifier: claude-opus-5
-built_by:
-verified_by: "claude-opus-5 @T-102-verify"
-review:
+built_by: claude-opus-5 @T-102 — code commit 023ab3b
+verified_by: claude-opus-5 @T-102-verify — APPROVED, 2026-08-25 — verdict commit d12efac
+review: same-model
 ---
 
 > **DRAFTER'S NOTE — remove before landing.** One fold's subject MOVED
@@ -877,3 +877,138 @@ the **920 597** this pass measured `index --check` STALE against. The
 files and still holds as a DELTA; the absolute forecast does not.
 Re-run `cargo run -p nputer-index -- index --check --root ../..` at the
 merge and read its own numbers.
+
+## Integration
+
+Merged 2026-08-25 by a third hand that neither built nor verified this
+card. Main-before **`48ed848`**, lane tip **`d12efac`**, merge
+**`a9ed33d`**, this checkpoint after it. The forecast tree
+`125e496b…` from `git merge-tree --write-tree` (exit read off `$?`
+FIRST, **0**) is byte-identical to `git rev-parse HEAD^{tree}` at the
+merge; parents are `48ed848` and `d12efac` and nothing else, so
+**nothing was written into the merge commit**. `blocked_by: [T-113]`
+was checked rather than assumed: T-113 reads `status: done` on main.
+
+### THE VERDICT'S MECHANISM WAS WRONG AND IT IS RECORDED, NOT REPAIRED
+
+**The verifier committed its verdict by repointing the shared branch ref
+with raw `git update-ref` from an unrelated detached worktree, twice,
+instead of committing inside the lane's worktree.** The damage is bounded
+and was re-verified here rather than taken on report: `935a78d` **is** an
+ancestor of `d12efac` (`git merge-base --is-ancestor`, exit 0), so the
+lane's work is intact; the one discarded commit, `c0ff888`, was the
+verifier's OWN first verdict commit and survives in the reflog; and the
+lane worktree's index had gone one commit stale, showing a spurious
+staged delete and a modify, which the dispatching pass repaired with
+`git reset --hard d12efac` after confirming nothing unstaged and nothing
+untracked would be lost. It was clean at **0 dirty paths, HEAD
+`d12efac`** when this integrator read it.
+
+**THE RULE IT EARNS BELONGS WITH THE METHOD RATHER THAN IN A VERDICT: a
+verifier commits its verdict IN the lane's worktree, or in its own
+checkout of that branch — never by repointing a shared ref from
+elsewhere**, because the ref is shared state and every other holder's
+index silently goes stale. Routed to **T-104**, the rulings vehicle.
+**The verification was NOT re-run**: its substance was checked and is
+sound, and it is the mechanism that was wrong.
+
+### THE TWO RECORD DEFECTS — one routed, one recorded, neither repaired here
+
+1. **The drill's record is incomplete**, and the integrator confirms the
+   verifier's finding independently: the implementation notes say *"Shown
+   still red-able by drill M2b (below)"* and **there is no table below,
+   anywhere on the branch**; labels M1/M2/M3/M6 are never defined; and of
+   the four mutants the Verification section names by hand, **"the
+   `Activity` flag removed" has no reported result at all**. The verifier
+   ran it independently (V1, reds one body) so the PROPERTY holds — what
+   is missing is the lane's own record of it, and under the succession
+   rule a dead-mutant account that exists only in a dispatch message did
+   not happen. **Recorded, not repaired**: an integrator cannot
+   retroactively author a drill record it did not run.
+2. **A new universal in shipped source is false**, verified here at the
+   source rather than relayed: `grep -n bounded_stream_string` over
+   `app/src-tauri/src/agent/runner.rs` returns exactly **three**
+   production call sites (all on the denial path), plus the definition
+   and two test sites — while the caps-block header claims *"Every
+   stream-borne string in this module reaches the app through
+   `bounded_stream_string`"*. The `Activity` label, the `TextDelta` relay
+   (`cap_text`, 32 KiB) and `terminal_reason` each falsify it, and
+   `T-102-s2` repeats the sentence. **DISPOSITION: ROUTED, NOT
+   CORRECTED**, and the reason is precedent rather than preference —
+   T-107's integrator met the identical shape one card earlier (a false
+   claim in a source comment inside the merged fence, the lane's
+   *"criterion 3 SATISFIED rather than dodged"*) and left the source as
+   filed while carrying the corrected word in ARCHITECTURE and the card.
+   Editing shipped Rust in a checkpoint would ship an unverified source
+   change, would re-stale the graph this checkpoint just regenerated
+   (`runner.rs` is indexed), and is not on `integrator.md`'s ritual list.
+   The narrow repair is one clause — *every stream-borne string THIS
+   BLOCK BOUNDS* — and the wide one is `T-102-s4`. **The narrow repair
+   has no carrier of its own**; a triage pass should give it one.
+
+`T-102-s1`…`T-102-s4` all stay `status: suggested` exactly as filed.
+Triage is not the integrator's (T-083's ruling), and that includes
+`T-102-s4`, which falsifies a universal T-102 itself wrote.
+
+### Range, gates and suites — every figure derived here, at this integrator's own refs
+
+    git merge-tree --write-tree 48ed848 d12efac -> tree 125e496b…, exit 0 (read from $? FIRST)
+    git diff --name-only 48ed848 <TREE>                        ->   8   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 48ed848..a9ed33d  (THE MERGE'S DIFF)  ->   8   the only one that means anything
+    git diff --name-only 48ed848...d12efac (branch-only)       ->   8
+    git diff --name-only c4c15c8..48ed848  (main's advance)    ->  22
+    git diff --name-only 48ed848..d12efac  (TWO dots, FORBIDDEN)   ->  30
+
+The prescribed pre-merge set and the merge's own diff are IDENTICAL under
+`diff` on sorted lists. `comm -12` over the branch's 8 and main's 22 is
+**EMPTY**, the union is byte-identical to the forbidden two-dot set, and
+22 + 8 = 30 — checked as SETS and not only as counts. **The forbidden
+form overstates by 22 paths, 3.75x, and it is pure left-endpoint drift.**
+
+- **GRAPH REGEN — FIRES on 3, a REAL stale** read off the SECOND line as
+  this project's trap requires (both counts and a `~` file diff, not
+  `committed: MISSING`). Main was **CURRENT at `48ed848`** before the
+  merge, so the stale is attributable to this merge and not inherited.
+  **921 608 · 178 files · 1960 symbols · 1881 edges → 923 899 · 178 ·
+  1967 · 1881**: **+7 symbols, edges UNMOVED, files `+0 −0 ~3`**.
+  Regenerated and committed **with this checkpoint, not the merge**;
+  `index --check` **exit 0, CURRENT** afterwards, and asked AGAIN after
+  two unrelated cards landed on main mid-checkpoint — still CURRENT,
+  which is `.nputerignore` working and was ASKED rather than predicted.
+- **NO FIXTURE RECONCILIATION WAS OWED, DERIVED RATHER THAN ASSUMED.**
+  The regen moves symbols but not FILES (178, `+0 −0 ~3`) and declares no
+  component, so CONVENTIONS' *"a MERGE REGEN alone moves only the two app
+  fixtures"* had nothing to move. Checked by running them afterwards.
+- **BOOT GATE — FIRES on 3, exit 0.** `NPUTER_BOOT_PORT=15284 npm run
+  boot:check` from tools/e2e, both `[nputer]` lines observed: `[nputer]
+  project folder: /Users/ujju/Projects/nputer` and `[nputer] window
+  "main" created`. Captured process group **2971**, stopped by SIGTERM,
+  confirmed gone afterwards — no orphan.
+- **DOCS GATE — FIRES on 5 of 8, exit 1**, invoked DIRECTLY from the repo
+  root with the merged paths as root-relative `$(…)` arguments, **never
+  through `xargs`**, fed the RANGE RULE's own path list. Three suites
+  owed — `npm test from app/`, `npm test from tools/e2e/`, `npx vitest
+  run from lib/parser/` — all three green. **`cargo test from
+  app/src-tauri/` is NOT owed and that is DERIVED**: this diff carries no
+  `docs/CONVENTIONS.md`, no `docs/architecture/components` and no
+  `docs/research/` capture. It was run anyway and is green. The gate
+  reports **12 derived readers across 4 suites**, a census of **130**
+  docs-shaped sites in 22 files, and **0 frontmatter issues**.
+
+**Suites, exits read off `$?` UNPIPED, counts DERIVED as well as exits**
+(`${PIPESTATUS[0]}` is empty in zsh, so it is never the source):
+**cargo 460 passed / 0 failed / 3 ignored, exit 0**, SUMMED over
+**SIXTEEN** `test result:` lines, lib suite **4.07s** — the green band,
+well under T-124's 9.5s divider. **GREEN FIRST TIME, no re-run, nothing
+discarded.** **app `npm run build` exit 0 · `npm test` 958/958 across 46
+files, exit 0** — unmoved, which is `agent-store.ts` being a 0-file diff
+checked rather than claimed. **parser 264/264 across 12 files, exit 0.**
+**E2E 146/146, exit 0**, scratch port **15283**, **ONE run** — nothing to
+declare. **typecheck exit 0**, **lint:docs exit 0**, **lint:tokens exit 0
+at TOKEN 132 / CONTROL 699**.
+
+**BOTH KNOWN INTERMITTENTS WERE READ BY NAME AND NOT INFERRED FROM A
+GREEN EXIT**: `docs_watch::tests::startup_arm_watches_the_initial_root`
+is `ok` and `a_hostile_session_id_in_the_init_line_fails_the_turn_and_is_never_recorded`
+is `ok`. `T-120-s3` did not fire — main is not a fresh checkout — so
+there was no second run to declare.
