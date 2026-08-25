@@ -503,3 +503,287 @@ every project open for an unopened pane is a cost the card does not buy;
 criterion means "always" should read this as a deliberate narrowing, not
 an oversight**, and body 5 plus poisons P5 and P12 make the choice
 visible rather than implicit.
+
+## VERDICT — APPROVED, adversarial verifier `claude-opus-5`, 2026-08-25
+
+Verified at lane tip `e7c020b`, base `765924d`, in a detached worktree
+`/Users/ujju/Projects/nputer-T-116-verify` cut from the lane tip. The
+lane worktree was never written to except by this section.
+
+### THE BOUNDED READ WAS DONE, AND IN THIS ORDER
+
+The card was read at its BASE REF (`git show 765924d:docs/tasks/
+T-116-…md`), the attack set was derived from the CRITERIA and **written
+to disk before the lane's implementation notes, its diff, or its test
+file were opened** — 30 attacks under eight criteria, at
+`scratchpad/T-116-verify/attack-set-derived-from-base-card.md`. Only
+then was the lane read. Every attack below is reported, including the
+ones that found nothing.
+
+### THE DISCLOSURE THIS BRANCH INHERITED HAS FIRED — T-033 IS MERGED
+
+**Main is now `8f8ec31`, "Merge T-033".** The notes say "T-033 IS NOT
+MERGED", which was true when written and is false now. **Every suite
+figure below was measured on the LANE tree `e7c020b`, WITHOUT T-033** —
+the same tree the executor measured on. The merge preview is named
+separately where it differs, and it differs in a way the integrator
+must act on (see the reconciliation).
+
+### THE PRE-FIX RED REPRODUCES — this is the load-bearing check
+
+Both production files reverted to `765924d` in my own worktree,
+`git diff --stat 765924d -- app/src/` **empty** before the run:
+**7 failed / 3 passed, exit 1** — the claimed figures exactly.
+
+**ONE OF THE SEVEN QUOTED MESSAGES CANNOT BE EMITTED.** The notes quote
+`A's answer must not become B's state: expected 'measured' not to be
+'measured'` (test line 304). Body 4 aborts at line **297**
+(`B is measured rather than waited for: expected 1 to be 2`), so line
+304 is unreachable pre-fix. My run produced the 297 message. **The
+dispatch brief inherited the same error**, quoting line 304's message as
+its example. Counts and exit are right; one transcription is not.
+
+### SHAPE SIX — THE CLAIM HOLDS, THE EVIDENCE OFFERED FOR IT DOES NOT
+
+**30 mutants over three rounds, producer side only**, driven by a script
+that ABORTS on a non-unique anchor, an empty `git diff`, or a diff
+reaching the assertion file. Restores proved per path by sha256 after
+every mutant — and **my three hashes are identical to the notes'**
+(`daae5fb1…`, `2c408c04…`, `472e1480…`), which corroborates the lane's
+own drill independently.
+
+**All ten bodies DO kill a mutant no other body kills. The claim
+survives.** But it does not survive on the witnesses the notes cite:
+
+- **P8, reproduced faithfully** (trigger armed from `MapView`'s mount
+  effect, both files edited) kills **three** bodies — asks-git-again,
+  stale-flight AND unmounted-store. It discriminates the unmounted body
+  from the canvas body, which is what the notes describe, but that is a
+  DISCRIMINATION, not a unique kill.
+- **P13** kills two (stale-flight as well as asks-git-again).
+- Only P15 and P16 are unique kills as written.
+
+Establishing uniqueness for the other three bodies took mutants the
+drill did not contain, which I had to design:
+
+| body | the mutant that kills it ALONE |
+|---|---|
+| canvas attribution | `churnAvailable` made STICKY — store correct, canvas keeps painting |
+| asks-git-again | re-measure only if a flight was already out |
+| unmounted-store | the trigger parks on `disabled` instead of `loading` |
+
+The third is the criterion's own words (`SHALL read as loading`) and
+nothing in the drill was aimed at it. **The conclusion was right and the
+argument for it was short by three mutants.**
+
+**TWO SURVIVORS — correct code that no body would notice losing:**
+
+- **The generation guard's `.catch` half is unpinned.** Removing it
+  leaves all ten green. A probe confirms the guard WORKS: a `repo_churn`
+  REJECTED for repository A after a switch to B leaves the state
+  `loading`, never `disabled/gitFailed` under B's name. That is the
+  card's own defect in its error form, live and unasserted.
+- **The changed-folder guard is unpinned.** Removing it leaves all ten
+  green; a probe confirms a same-folder notify adds zero measurements.
+
+Neither is a defect. Both are coverage gaps in a file whose whole
+subject is that machinery, and both are cheap to close.
+
+### TWO THINGS THE NOTES STATE THAT ARE NOT TRUE
+
+**1 · THE TRIGGER DOES NOT INHERIT THE SINGLE-FLIGHT LATCH.** The source
+comment says it "goes through `loadChurn`, so it inherits the
+single-flight latch rather than bypassing it".
+`onProjectMaybeChanged` sets `inFlight = null` immediately before
+calling `loadChurn()`, which bypasses the latch by construction.
+Measured: **five distinct switches spawn five `repo_churn`.** The
+CRITERION is still met — a stampede is many concurrent asks for the SAME
+answer, and a same-folder notify adds zero — and abandoning is
+*necessary*, since A's flight must never answer as B's. **The behaviour
+is right and the stated reason is wrong**, in a comment a later reader
+would rely on.
+
+**2 · IN A BROWSER BUNDLE, A PROJECT SWITCH REPLACES A FOLDED STATE.**
+Fold `measured`, switch project, and the store ends at
+`{kind:"disabled", reason:"notTauri"}` — having spawned nothing. The
+criterion "the browser bundle still refuses to OVERWRITE a state
+something else has folded" is now true of `loadChurn` (textually
+unchanged, pinned by body 10) and **not true of the module**. The two
+criteria are in direct conflict: you cannot both drop A's entries "not
+for one paint" and preserve a folded state. **The lane resolved it the
+right way** — invalidation beats preservation, because serving A's
+numbers under B is the defect this card exists to fix — **but the
+narrowing of a SHALL-BE-UNCHANGED is disclosed nowhere.** Recorded here
+so the next reader does not discover it as a surprise.
+
+### THE RECONCILIATION IS WRONG BY ONE, AND IT IS NOW STALE
+
+**Measured, not accepted** — graph regenerated and both dogfood bodies
+run, on both trees.
+
+**On the LANE tree**, three of four forecasts hold exactly:
+`fileComponent.size` 178→179, the D1 entry
+(`app/test/map-churn-age.test.tsx` → `lib/parser`) in sorted position,
+`committed graph · 178 files`→179, table stays 35 rows with no flips.
+**But FOUR observedCounts move, not three.** The missed one is
+**`C-05 → C-06` undeclared 13 → 14** — the new test file's
+`@nputer/parser` import, the very same edge that produced the D1 entry
+the notes DID record.
+
+**ON THE MERGED TREE THE LIST IS DIFFERENT AND THE LANE'S MUST NOT BE
+USED.** Merge preview of `8f8ec31` + `e7c020b`, regenerated and run:
+
+- `fileComponent.size` **178 → 179**
+- relation table, **36 rows, none added or removed, no flips**:
+  `C-05→C-06` **13→14**, `C-05→C-10` **38→39**,
+  `C-05→C-12` **32→35** (not 34), `C-12→C-10` **1→2**
+- `architecture-dogfood.test.ts:1647` `expect(c05?.observedCount)
+  .toBe(13)` → **14** — a body T-033 introduced, which the lane could
+  not have seen
+- `map-dogfood-render.test.tsx:557` `committed graph · 178 files` → **179**
+- **the D1 findings body does NOT move on the merged tree** — T-033 took
+  `C-05→C-06` from `undeclared` to `confirmed`, so the evidence list the
+  lane appended to no longer holds that edge
+
+Graph on the merged tree: committed 923 899 B · 178 files · 1967 symbols
+· 1881 edges; fresh **933 486 B · 179 · 1987 · 1903**; files `+1 -0 ~14`,
+edges `+26 -4`. **Main's own graph is stale independent of T-116** (the
+`~14`). Headroom on the merged tree is **93.35% used, 66 514 bytes
+left** — not the 92.89% / 71 134 the notes give, which is the lane-tree
+figure and correct there.
+
+### ATTACKS THAT FOUND NOTHING — reported because a clean verdict owes them
+
+- **The zero sentinel is airtight.** Guard is `> 0`. Driven through the
+  untrusted-shape boundary, **negative, NaN, Infinity, a string, a
+  non-integer float and an absent field ALL fold to `measuredAtMs: 0`**
+  (`isCount` = finite ∧ integer ∧ ≥ 0), and `> 0` is false for NaN and
+  negatives regardless. The negative assertion has a positive control
+  built by the same producer differing in one field.
+- **A FUTURE timestamp cannot render a negative age** — `relativeTime`
+  clamps with `Math.max(0, …)`, so clock skew reads `just now`.
+- **No tautology.** Expectations are LITERALS (`measured 5m ago`,
+  `measured just now`, `measured 3h ago`), never computed by calling
+  `relativeTime`. The clock is stubbed for the file
+  (`vi.spyOn(Date, "now")`), so no body is a clock race.
+- **One spelling, down to the clock source.** The age calls the index
+  hint's own `relativeTime`, and `indexHint` ALSO takes `Date.now()`
+  inline at render — the new span matches the neighbour exactly. No
+  second formatter was added.
+- **"Not for one paint" holds by construction, not by luck.**
+  `set(LOADING)` is synchronous, before `void loadChurn()`; and
+  churn-source subscribes at MODULE EVAL, which always precedes a React
+  mount subscription, so insertion order in the listener Set guarantees
+  the store invalidates before the pane is notified.
+- **`generation` is monotonic**, so A→B→A cannot revive a stale flight
+  by reuse.
+- **No listener-clearing reset exists in `watcher-store.ts`**, so the
+  never-unsubscribed module-scope trigger cannot be silently killed by a
+  test reset.
+- **No `Re-measure` affordance, no header layout move** — the entire
+  render delta is one `<span>`.
+
+### THE FIVE CORRECTIONS, VERIFIED INDEPENDENTLY
+
+1. **Disjointness holds**, checked against T-033's ACTUAL merged path
+   list (36 paths at `8f8ec31`, 8 of them in `[app-map]`) rather than
+   the brief's transcription — the two agree, and this card's three
+   files are in neither.
+2. **The zero is confirmed.** At `765924d`, `loadChurn` has exactly ONE
+   occurrence anywhere under `app/test`, `tools/e2e` or `lib/parser`,
+   and it is a **COMMENT** in `map-t1-t2-dom.test.tsx:590`. The card's
+   "both are asserted today" was wrong; single-flight was asserted
+   nowhere.
+3. **`status: verifying` is right**, and the ruling's declared EXPIRY
+   did NOT fire even under the merged T-033: at `8f8ec31`, C-05 still
+   claims `app/test/**` with `touch_slugs: [app-shell]`, and C-12 keeps
+   both globs with `[app-map]`. The executor's forward prediction, made
+   against T-033's tip, holds against T-033's merge. (`executor.md`
+   step 6 also says "or done, for size S" and this card is size S — the
+   dispatch of a verifier settles it, but the clause is ambiguous.)
+4. **C-12 DECLARES C-10** — `depends_on: [C-06, C-07, C-09, C-10, C-11,
+   C-16]` at the merged main. The read edge is declared, so the import
+   is not a fence question. Confirmed.
+5. `T-033-s5` arm (b) exists; citing rather than duplicating is right.
+
+### T-116-s1 IS ACCURATE
+
+Both function bodies read: `relativeTime` returns `just now` under 60s;
+`churnAge` has no such band (`0m ago`) and returns `unknown` for its
+zero. The two disagreements the card tabulates are real, and
+`map-visuals.ts` was out of reach.
+
+### THE @HUMAN LOOK IS STILL OWED, AND THE DIRECTIONS ARE CORRECT
+
+Confirmed from source rather than from the brief: `MAP_OVERLAYS` is
+`["status","provenance","drift","churn"]`, so **churn is the 4th
+segment**; the age span sits inside `data-testid="map-legend"` — the
+"Legend strip", a `border-t` row along the bottom of the canvas —
+immediately after `map-churn-footer`, inside the `overlay === "churn"`
+fragment, in `font-mono text-xs text-muted-foreground`, and only when
+the timestamp is non-zero. **A human sent there will be looking at the
+right thing.**
+
+### SUITES, GATES, RANGE — every exit read from `$?` UNPIPED
+
+All on the LANE tree `e7c020b`, without T-033.
+
+- app `npm run build` **exit 0**; `npm test` **968 passed / 968, 47
+  files, exit 0** — the claimed figures exactly.
+- `npx vitest run` from `lib/parser/` — **264 / 264, 12 files, exit 0**.
+- e2e, **TWO RUNS, BOTH DECLARED**. Run 1, port **15291**: **145 passed
+  / 1 failed, exit 1** — `token-scan.spec.ts:201`, `Expected:
+  1787664834069.9126` / `Received: 1787664834070`. A fractional
+  millisecond against a whole one, first run in a fresh checkout:
+  `T-120-s3` by its digits. Run 2, port **15292**: **146 / 146, exit
+  0**. This diff holds no `tools/e2e` path.
+- `typecheck` **exit 0**; `lint:tokens` **exit 0** (clean, 133 TOKEN
+  files, 691 CONTROL); `lint:docs` **exit 0**.
+- **DOCS GATE**, run DIRECTLY on the five range paths, never through
+  `xargs`: **exit 1 = FIRES with a real verdict** (stderr is a report,
+  not a missing-`yaml` stack). 12 derived readers, census 130 sites in
+  22 files, **0 frontmatter issues**, owing three suites — all three run
+  above. It reports **2** paths under `docs/`, not the notes' 1-of-4,
+  because `T-116-s1` landed after that measurement.
+- **BOOT GATE**, port **15285**: **exit 0**, both lines —
+  `[nputer] project folder: /Users/ujju/Projects/nputer-T-116-verify`
+  and `[nputer] window "main" created`.
+- **GRAPH REGEN**: `index --check` **exit 1, genuinely STALE** and the
+  REAL red, not the `--root` false one — it prints BOTH count sets AND a
+  `+`/`~` diff. committed **920 597 B · 178 files · 1959 symbols · 1878
+  edges**; fresh **928 866 · 179 · 1978 · 1895**; files `+1 -0 ~2`,
+  edges `+17 -0`. Every figure matches the notes. Left red deliberately;
+  the regen belongs to the checkpoint.
+- **THE RANGE.** `git merge-tree --write-tree 8f8ec31 HEAD` — **exit
+  read BEFORE the substitution: 0**, one line of output, tree
+  `4a612870dc75266e1f36978ad2a0f1a53e9ffd92`, a clean merge. Then
+  `git diff --name-only 8f8ec31 "$TREE"` → **5 paths**. Named at main
+  tip **`8f8ec31`**. **The notes' own count of "6 at the tip" is
+  arithmetic that double-counts** — the implementation notes live inside
+  the card file, which the four already contained. It is 5.
+
+**A SETUP PREREQUISITE THE NOTES DO NOT MENTION.** In a fresh worktree
+`npm run build` from `app/` exits **2**, not 0 — `Cannot find module
+'@nputer/parser/pure'` — until `lib/parser` is installed AND BUILT.
+`T-117` documents the `app/dist` prerequisite; this is a second one,
+earlier in the chain. Worth a line wherever T-117 is recorded.
+
+### WHY APPROVED
+
+Every acceptance criterion is met. The pre-fix red reproduces on the
+nose, the restores hash-match the lane's own, the zero-sentinel branch
+is airtight against every hostile shape the boundary can produce, the
+age pin asserts rendered text against a pinned clock with literal
+expectations, and the stale-attribution property holds by construction
+rather than by timing. The shape-six claim is TRUE — it just needed a
+harder argument than the one offered.
+
+Nothing found is fixable-and-unfixed inside the fence. The two unpinned
+guards are gaps in a green file, the two false statements are in prose
+and a comment, and the reconciliation error is one the merge has already
+overtaken. **The reconciliation is the one item that must not be
+carried forward as written** — the integrator should use the merged-tree
+list above, or re-derive it, and not the lane's.
+
+Not stamped here: `verifier:`, `verified_by:`, `review:` — the
+integrator's.
