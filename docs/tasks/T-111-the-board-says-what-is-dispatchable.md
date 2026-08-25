@@ -5,10 +5,10 @@ feature: F-04
 milestone: 4
 priority: 4
 size: M
-status: verifying
+status: planned
 blocked_by: [T-110]
-touches: [app-board]
-builder: claude-opus-5
+touches: [app-board, app-shell]
+builder:
 verifier:
 built_by:
 verified_by:
@@ -48,6 +48,48 @@ overlap, and override deliberately. Two lanes did exactly that this
 week (T-013 twice widened its own `touches` mid-lane, both widenings
 ruled correct) — the frontier must make that visible, not silently
 serialize.
+
+> **ARCHITECT'S RULING 2026-08-25 — THE FENCE WAS WRONG, THE CARD RETURNS
+> TO `planned`, AND THIS IS THE FIFTH TIME.** The lane built seven of
+> eight criteria NOT, and was right to: `[app-board]` expands to
+> C-08 u C-09 u C-11, thirteen globs all under `app/src/**`, while the
+> app's only collector is `app/vitest.config.ts` (`include: ["test/**"]`)
+> and both it and `app/test/**` are C-05's `app-shell`. **Three criteria
+> name a pin in their own text and no pin can exist in the fence.**
+> Measured with a positive control rather than reasoned from the config:
+> the same failing body inside C-08's own glob is INVISIBLE to the
+> shipped collector (exit 0, 958/958) and RED under one that can see it.
+> `touches:` is corrected in place to `[app-board, app-shell]` and the
+> dispatch fields are unlocked. **The dispatch defect is the
+> ARCHITECT'S**, exactly as at T-015.
+>
+> **AND THE LANE CAUGHT A SECOND, WORSE ERROR OF MINE — THE FENCES WERE
+> NEVER DISJOINT.** `C-11-design-tokens.md` carries
+> `touch_slugs: [app-shell, app-board]`, the only double-claimed
+> component in the registry. String-equality on slugs says T-033 x T-111
+> is disjoint; **component expansion says it is not — they share C-11.**
+> The lane ran the whole matrix by hand on the live board: fifteen pairs,
+> fourteen agree, **one disagrees, and it is this one**. No collision
+> occurred (this lane's diff is four markdown paths), but the guardrail
+> was reading the wrong thing. Filed as `T-111-s1`. **The disjointness
+> test is over EXPANDED COMPONENTS, never over slug strings** — and that
+> is now a rule the dispatcher owes, not an observation.
+>
+> **THE CEILING WAS ALSO EXCEEDED**, reported by the same lane:
+> `orchestrator.md` step 4 reads *"Ceiling: 3-5 concurrent"* and six
+> lanes were live. @human asked for maximum parallelism, so the deviation
+> was deliberate on the dispatcher's part and undeclared, which is the
+> defect — a written ceiling that is silently exceeded stops being a
+> ceiling. Merging this lane returns the count to five. IF the ceiling is
+> to move THEN it is a `method/` edit and belongs to T-104, not to a
+> dispatcher's discretion.
+>
+> **WHAT THE RE-CUT CARD INHERITS**: criterion 8 is MET (no dispatch
+> affordance, both guards named and green), criterion 2 is partly
+> discharged already — the four states and their pins live in `join.rs`
+> since T-110's rebuild, so the re-cut card should CONSUME them rather
+> than respell them — and criterion 3's trailing-slash rule reaches only
+> two of the four collisions the tree actually contains (`T-111-s3`).
 
 ## Acceptance criteria
 
