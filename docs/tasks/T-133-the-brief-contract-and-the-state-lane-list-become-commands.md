@@ -843,6 +843,15 @@ this version**, and it agreed with the count on every run.
 **TWO e2e RUNS ARE DECLARED, both ways**, because on this project neither
 a green nor a red is evidence by itself.
 
+**AND THE THREE DOCS-GATE-OWED SUITES WERE RE-RUN AT `f508fc1`**, the tip
+that carries this section's own commit — **e2e 194/194 exit 0 (a third
+run, and the mtime defect fired in none of the three), parser 268/268 exit
+0, app 973/973 exit 0.** The regress is named rather than hidden: the only
+diff between the tree those three were measured on and the commit
+carrying this paragraph IS this paragraph, and the DOCS GATE and token
+gate were re-run on that working tree before it was committed, both exit
+0.
+
 **THE GATES, DERIVED FROM THE RANGE'S OWN PATHS rather than predicted:**
 
 - **BOOT GATE — NOT OWED.** Its trigger is `app/src-tauri/**`,
