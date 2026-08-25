@@ -409,3 +409,488 @@ recorded above. **Nothing was written into the repository at any point**;
 this is about the scratch directory outside it, which STATE already
 records as shared. Worth knowing before another session trusts a scratch
 file by name.
+
+## Verdicts
+
+### 2026-08-25 — `claude-opus-5 @T-107-verify` — **APPROVED**
+
+**WHY THIS PASS EXISTS, AND WHY THAT SHAPES THE VERDICT.** This is the
+first card to invoke @human's 2026-08-25 rule that a size-S card touching
+SHIPPED CODE gets a verifier. It was asked for on two grounds, and the
+second is the one that matters: **criterion 5's pin could not ship, so
+nothing on the tree holds the new arm's own answer.** This pass is the
+compensating control for that missing pin, and everything below is
+written so the next reader does not have to take the gap on report.
+
+**THE BOUNDED READ IS DECLARED.** The spec was read at the base ref
+(`git show c4c15c8:docs/tasks/T-107-…md`) and the attack was FORMED AND
+RUN from it alone — all three poison mutants, the exhaustiveness probe,
+the fence positive control and the security sweep were designed and
+executed before the lane's notes were opened. The notes were read
+afterwards only to check the EVIDENCE half, and every figure they carry
+was re-derived here rather than quoted. Verified in a detached worktree
+`/Users/ujju/Projects/drill-T-107-verify` at `55909bb`, **outside** the
+repository, with its own installs; **the lane worktree was never entered
+for any measurement** and no build, test or install ran in it.
+
+#### The ranges, at my own ref, every dot count stated
+
+Main moved twice under this pass (`29c0f4f` → `765924d`). **Derived at
+both, and the path SET is identical at both** — checked with `diff` over
+sorted lists, never with counts.
+
+    git merge-tree --write-tree 29c0f4f 55909bb -> 4ec4f34a…, exit 0 (read off $? FIRST)
+    git diff --name-only 29c0f4f <TREE>          ->  7   THE PRESCRIBED PRE-MERGE FORM
+    git merge-tree --write-tree 765924d 55909bb -> 1a0260cb…, exit 0   (re-derived after main moved)
+    git diff --name-only 765924d <TREE2>         ->  7   SAME SET — `diff` over sorted lists EMPTY
+    git diff --name-only c4c15c8..55909bb        ->  7   branch-only, TWO dots from the card's base
+    git diff --name-only c4c15c8..29c0f4f        ->  4   main's advance
+    git diff --name-only c4c15c8...55909bb       ->  7   THREE dots — AGREES, SIXTH MERGE RUNNING
+    git diff --name-only 29c0f4f..55909bb        -> 11   TWO dots, FORBIDDEN
+
+**The forbidden two-dot form overstates by 4 paths — 1.57x — and it is
+pure left-endpoint drift.** Main advanced **4** (T-111's card and its
+three suggestion files), the branch **7**, `comm -12` over the sorted
+lists is **EMPTY**, and 4 + 7 = 11, the arithmetic that proves the sets
+disjoint. The three-dot form returned the right answer for the sixth
+merge running, **and that is recorded as a hazard rather than a habit**:
+it agrees only while the two path sets stay disjoint, and T-124's warning
+is unchanged.
+
+#### THE CRITERION-3 CONTRADICTION — MY INDEPENDENT RULING
+
+**The card contradicts itself and the lane picked the right side.** The
+suggested shape-2 wording is *"nputer needs claude 2 or newer; update it
+however you installed it"* — which hard-codes the very "2" that criterion
+3 calls a second implementation. Both cannot hold.
+
+I ruled this from the criterion's own text before reading the lane's
+argument, and I reach the same answer by a different route. Criterion 3
+is one prohibition with a positive gloss attached. The prohibition has a
+NAMED failure mode (T-057: a rule with two implementations is two chances
+to disagree). The positive gloss — *"named FROM THE ADAPTER"* — is
+**UNSATISFIABLE AT THIS COMMIT IN ANY FENCE**, and that is derived rather
+than accepted on report:
+
+- `grep -rn "min_major|minMajor" app/src/` returns **exactly one row**,
+  and it is inside this card's own new doc comment. No code path carries
+  the number.
+- Rust-side `min_major` appears in **four** places only —
+  `adapter.rs:37` (the field), `adapter.rs:111` (`= 2`),
+  `adapter.rs:1695` (a unit assert) and `runner.rs:830` (the comparison).
+  **It is serialized to the webview nowhere.**
+- `StartOutcomePayload.unsupportedVersion` carries `found: string` and
+  nothing else; `GenesisStatusPayload` carries `cliVersion` and no floor.
+
+So the only available way to "name" the minimum is to transcribe it, and
+transcribing it is the one act the criterion names as the defect. **A
+criterion cannot be discharged by committing the defect it cites by
+name.** The prohibition is what survives.
+
+**AND THE DISCRIMINATING TEST IS NOT "DID IT SAY THE NUMBER" BUT "DOES
+THE SHIPPED SCREEN CREATE THE DEFECT THE CRITERION EXISTS TO PREVENT".**
+It creates **zero** implementations of that number. The notice cannot
+disagree with `CLAUDE_V1.min_major` because it makes no claim about the
+floor at all — the failure mode is not merely avoided, it is made
+structurally impossible. What is lost is user information, which is a
+PRODUCT cost, not a T-057 correctness cost, and it is routed as
+`T-107-s1` and deposited into the @human look. **The ruling holds.**
+
+**WHERE THE LANE'S OWN WORDING IS TOO GENEROUS, AND THIS IS A CORRECTION
+TO THE RECORD RATHER THAN A FAILURE.** The notes head that paragraph *"THE
+MINIMUM VERSION IS NOT NAMED, AND THAT IS CRITERION 3 SATISFIED RATHER
+THAN DODGED."* The honest description is narrower and the lane's own
+vocabulary already has the right word for it: **criterion 3's PROHIBITION
+is met, and its POSITIVE OBLIGATION is ROUTED to `T-107-s1`** — exactly
+the disposition the same notes describe plainly for criterion 5
+("CRITERION 5 IS ROUTED"). Two identical acts are described with two
+different words. Nothing downstream reads either adjective, the routing
+card exists and is correct, and the code and comments say the true thing;
+this is recorded beside the claim rather than being cause to reject.
+
+#### THE MISSING PIN — VERIFIED UNBUILDABLE IN FENCE BY POSITIVE CONTROL
+
+The lane's claim was **not** accepted from the config. It was tested,
+with a deliberately RED body placed inside the fence's own glob
+(`app/src/genesis/drill-T-107-verify-probe.test.ts`), by the T-111
+method:
+
+| arm | what was run | result |
+|---|---|---|
+| **A** | the SHIPPED collector, `npm test` from app/, with the red body colocated in `app/src/genesis/` | **exit 0, 958 passed / 46 files** — the body is INVISIBLE; the only mention of it in the whole log is the `RUN v3.2.7` header path |
+| **B** | the same body under a collector that CAN see `src/genesis/**` | **exit 1, 1 failed / 1** — `AssertionError: expected true to be false` |
+| **C** | a TYPE error introduced into the colocated body, then `npm run build` | **exit 2** — `src/genesis/drill-T-107-verify-probe.test.ts(8,11): error TS2322` |
+| **D** | `grep` for the body's text over the built `app/dist/` | **no rows** |
+
+**Arm A ↔ arm B is the whole finding: the green was INVISIBILITY, not
+vacuity.** The identical body reds the moment a collector can reach it.
+Arm C proves the second half of the lane's claim positively — a colocated
+body IS inside the program bare `tsc` compiles, because `app/tsconfig.json`
+includes `"src"` — so the file would be a test nothing runs while still
+gating the shipped build. **Arm D refines the lane's phrasing**: it is the
+TYPECHECK program, not the emitted bundle; vite never reaches an
+unreferenced module. *"Compiled into the app program"* is right;
+*"shipped in the binary"* would not have been, and nobody claimed it.
+
+The registry half is confirmed independently: **C-13 declares one glob,
+`app/src/genesis/**`, source-only**, while `app/test/**` AND
+`app/vitest.config.ts` are both **C-05, `touch_slugs: [app-shell]`** —
+held by T-033 at dispatch and still held. `vitest.config.ts` reads
+`include: ["test/**/*.test.{ts,tsx}"]`. **The fence is real and the
+dispatch defect is real.** `T-107-s4` is correctly filed.
+
+#### THE ROUTED BODY REDS — CHECKED, NOT TRUSTED
+
+A routed pin nobody can run is worth only as much as its measurement, so
+the body in `T-107-s4` was pasted into
+`app/test/interview-chat-dom.test.tsx` in the drill and driven both ways.
+**Every figure below reproduces the lane's exactly.**
+
+| run | result | exit |
+|---|---|---|
+| the file with the body, unpoisoned | **46 passed (46)**, 45 before | **0** |
+| the whole app suite with the body | **959 passed / 46 files**, 958 without | **0** |
+| `npm run build` with the body | — | **0** |
+| poison: `noticeRoutesToHandDriven`'s `unsupportedVersion` arm `true`→`false` | **1 failed / 45**, on *"the notice offers the one mode that needs no CLI: expected null not to be null"* | **1** |
+| poison (MINE, renderer side): `{handDriven}` deleted from the `interview-cli-outdated` block | **1 failed / 45**, same assertion | **1** |
+
+#### THE MECHANISM IS HELD; THE NEW ARM'S OWN ANSWER IS NOT
+
+Reproduced against the SHIPPED tree, with no body added:
+
+| # | one-sided mutation of the code under test | result | exit |
+|---|---|---|---|
+| **1** | `noticeRoutesToHandDriven`'s **`cliNotFound`** arm `true`→`false` | **RED — 7 failed / 951, 2 files** (`interview-chat-dom.test.tsx` 1, `interview-resume-dom.test.tsx` 6) | **1** |
+| **2** | `noticeRoutesToHandDriven`'s **`unsupportedVersion`** arm `true`→`false` | **GREEN — 958/958**, build exit 0 | **0** |
+| **3** | `{handDriven}` deleted from the `interview-cli-outdated` block | **GREEN — 958/958**, build exit 0 | **0** |
+
+**The lane's "7 across 2 files" reproduces exactly**, so the ruling
+function is genuinely load-bearing and genuinely pinned — by its SIBLING
+arm. **Mutants 2 and 3 are the gap stated at its worst**: deleting the
+entire behaviour this card exists to add, from either side, leaves the
+tree fully green. A corroborating census: `unsupportedVersion` appears in
+`app/test/**` and `tools/e2e/**` **exactly once**, at
+`tools/e2e/tests/shell-harness.ts:202`, and that is a TYPE MIRROR in a
+payload union, not an assertion.
+
+**WHY THIS IS NOT A REJECTION.** A REJECTED verdict must be actionable by
+the lane it is handed to, and this one would not be: the pin could not
+have shipped without breaking a fence held by another live lane, and
+breaking a fence is the worse offence (T-101's precedent — a fence
+deliberately NOT widened and a disclosed defect that ships). The executor
+did every available thing instead: wrote the body, ran it green, poisoned
+it twice, filed it ready-to-paste with two dispositions and the
+neighbouring `T-110-s9` collision named. **The behaviour is verified — by
+this pass's own run of that body, green then red twice — even though
+nothing on the tree holds it.** That measurement is the compensating
+control, and it now lives here rather than in a removed drill.
+
+Every mutation above was ONE-SIDED (producer only, never an assertion and
+never a literal the two share), read back with `git diff` BEFORE its run,
+and restored with sha256 proof:
+`interview-model.ts` **`ef1a8daed6e0127ea68b84713043169679a799e09d11933cdcd9ddfdeb12827d`**,
+`InterviewChat.tsx` **`d10f9f74351c53f48d2dee62f5a75ff9522ed6383fa65cb354963e3230d424d3`**,
+`interview-chat-dom.test.tsx` **`e73ecd952aff672aa1121e96329ca1e738730091209ad35f2f8398464dd2a1b0`**,
+`agent-store.ts` **`f2232cc27a552180d5a405a6c3f5a7bfe2f7e8f74a84f5a3f461a2cdefc09a9e`**,
+each identical before and after, with `git status --porcelain` **empty**
+at the end of every drill. **Nothing was trusted from the shared agent
+scratch directory by name** — the lane's warning was heeded and the port
+bind-probe was re-derived inline in this pass.
+
+#### EVERY CRITERION, AND HOW IT WAS ATTACKED
+
+1. **Next step present AND one the app can honour — MET, and the
+   "honour" half is stronger than the card asked.** Attacked by asking
+   whether the offered route can dead-end. `agent::kickoff` calls
+   `resolve_cli` **nowhere** — verified by grep: `resolve_cli` appears at
+   `mod.rs:370, 498, 585, 815` and `kickoff` is at `746`. Its one refusal
+   arm is `AlreadyPlanned`, and **that arm is unreachable from this
+   screen**: all three doors that can return `UnsupportedVersion`
+   (`start_genesis`, `resume_genesis`, `fresh_genesis`) run
+   `routes_to_genesis`/`has_plan` at `308`, `477` and `580` — BEFORE
+   `resolve_cli` at `370`, `498`, `585`. A planned folder answers
+   `AlreadyPlanned` and never reaches the version probe, so the two
+   outcomes are mutually exclusive at the same instant. The residual race
+   renders honestly (`renders a typed non-ready kickoff as itself rather
+   than as a blank block`, `interview-resume-dom.test.tsx:749`).
+2. **No unverifiable install-manager command — MET, and the refusal IS at
+   the renderer.** Attacked by grepping every added line for a command
+   surface: `git diff … | grep '^+'` for `claude install|claude update|
+   claude upgrade|brew|npm i|apt|pnpm|yarn` returns **zero rows**, and
+   the routed body asserts the same thing as a CLASS over verbs. The
+   card's demand that *"the refusal SHALL be recorded at the renderer"*
+   is met literally — the comment sits INSIDE the JSX of the
+   `interview-cli-outdated` block, which is what the next editor opens,
+   and again beside the ruling in `interview-model.ts`.
+   **ONE OBSERVATION, NOT A FAILURE:** the sentence *"updating yours to
+   its current release is the fix"* is a DIRECTION, not a command — no
+   string on that screen is executable, which is the letter and the
+   spirit of a criterion whose named failure is a pasteable `claude
+   login`. It is deposited into the @human look rather than ruled on
+   here, because it is a wording question.
+3. **Minimum named from the adapter — PROHIBITION MET, POSITIVE
+   OBLIGATION ROUTED.** Ruled above at length.
+4. **One shape across the two renderers — MET, and vacuously so.**
+   Attacked by checking whether a second `hint`/`command` pair appeared.
+   `FailureAction` is **byte-untouched**: the diff's only three hunks are
+   the import list, a new function at `+718`, and the `visibleDenials`
+   doc comment at `+978`; `FailureAction` is at line 633 and every `+`
+   line mentioning it is prose inside the new comment. The antecedent is
+   false, so the obligation never arises — and what the notice family
+   gained is a BOOLEAN over the affordance both renderers already shared
+   (`FailureAction.fallback`), which is the honest reading of the
+   criterion rather than a dodge of it.
+5. **A body driving `unsupportedVersion` — NOT MET ON THE TREE.**
+   Positively controlled above, both that it is missing and that it could
+   not have been added inside the fence. Routed as `T-107-s4`.
+6. **Enumeration derived from the union type — MET, AND ITS TEETH WERE
+   TESTED BY ADDING AN ARM, WHICH IS THE ONLY WAY TO KNOW.** I derived
+   the union independently from `agent-store.ts:99-123` and `190-196`:
+   **10 arms in `StartOutcomePayload`, 6 in `SendOutcomePayload`, 3
+   shared (`busy`, `cliNotFound`, `error`) — 13 distinct kinds**, and
+   `noticeRoutesToHandDriven` carries all 13. `noticeSentence` has
+   **10** case arms plus a degrading `default`, so it is a strict SUBSET
+   and is correctly disclaimed as not the enumeration. Then the guard was
+   made to fire, twice, one union at a time:
+
+       + | { kind: "verifierProbeArm"; quotaResetAtMs: number }   // into SendOutcomePayload
+       npm run build -> exit 2
+       src/genesis/interview-model.ts(878,13): error TS2322: Type '{ kind: "verifierProbeArm"; … }' is not assignable to type 'never'.
+
+       + | { kind: "verifierStartArm"; detail: string }            // into StartOutcomePayload
+       npx tsc --noEmit -> exit 2
+       src/genesis/interview-model.ts(878,13): error TS2322: Type '{ kind: "verifierStartArm"; … }' is not assignable to type 'never'.
+
+   **A compile-time exhaustiveness guard that does not actually fail is
+   criterion 6 unmet; this one fails, from either union, at the build the
+   project gates on.** And note what did NOT error in either run:
+   `noticeSentence` compiled clean both times, which is the same fact
+   from the other side — the sentence is not the enumeration and the
+   ruling is.
+7. **Actionless arms recorded beside themselves — MET.** All 11
+   non-routed arms carry a per-arm reason in the switch. Spot-attacked
+   the two that could have been hand-waved: `nothingToResume` claims
+   `notStarted` is necessarily true on that path — `notStarted` is
+   `phase === "idle" && turns.length === 0` (`InterviewChat.tsx:115`) and
+   the resume raced the registry with nothing started, so it holds;
+   `started`/`accepted` claim unreachability via `reduceGenesisOutcome`
+   setting `lastOutcome: null`, and ruling on an unreachable arm anyway
+   is the right call, because an omitted arm is indistinguishable from a
+   forgotten one.
+
+**THE TWO GAPS FILED RATHER THAN BUILT — FILING WAS RIGHT, AND I CHECKED
+BOTH FOR IN-SCOPE-NESS RATHER THAN DEFERRING.** Criterion 6 demands the
+siblings be *"ENUMERATED AND RULED ON"*, not fixed. `T-107-s2`'s premise
+verifies: `notStarted` requires `phase === "idle"`, and a SEND refused
+with `noSession` can leave the phase at `failed`, so the button really can
+be absent while the words say "start the interview first" — but the fix
+is a change to when the Start affordance is offered, which is a second
+product decision. `T-107-s3`'s fix is either a shell affordance (reopen a
+folder) or a fresh-start door — also a second decision, and neither is
+about a CLI. **Neither belonged in this card's scope**, and the precedent
+is this card's own genesis: T-082 recorded rather than built, which is
+what produced T-107.
+
+#### SECURITY SWEEP — MANDATORY, AND THE ANSWER IS CLEAN
+
+This renders text from a CLI's `--version` output into the DOM, so the
+sweep was run as a first-class pass and not as a formality.
+
+- **TEXT NODE ONLY, NO MARKUP, NO ATTRIBUTE, NO URL.** `outcome.found`
+  reaches the page at exactly one site, `InterviewChat.tsx:732`, as a
+  bare JSX child `{outcome.found}` inside a `<span>` whose every
+  attribute is a static literal. React escapes text children. The whole
+  of `app/src/` contains **zero** occurrences of
+  `dangerouslySetInnerHTML`, `innerHTML` or `__html`, and the added lines
+  contain **zero** `href`, `src=`, `url(`, `eval(`, `new Function`,
+  `setAttribute`, `window.open` or `location`. The generic notice's one
+  dynamic attribute is `data-outcome-kind={outcome.kind}`, a union
+  literal, not free text.
+- **THE PAYLOAD CARRIES NO FILESYSTEM PATH, AND THAT IS THE LOAD-BEARING
+  ONE**, because the whole shape-2 argument rests on it. Traced to the
+  source: `agent/mod.rs:75` declares `UnsupportedVersion { found: String }`;
+  the three constructors at `374`, `502`, `589` pass through
+  `ResolveError::Unsupported { found }`; that is built at
+  `runner.rs:831` as `found: line.clone()`, where `line` is
+  `probe_version`'s return — `output.stdout.lines().next()?.trim()`,
+  **the first line of `--version` and nothing else**. No resolved path,
+  no manager, no channel, and the resolved `path` is deliberately left
+  behind in `ResolvedCli`. The lane's argument stands on the code.
+- **THE INPUT SURFACE IS NOT WIDENED BY ONE BYTE.** `outcome.found` was
+  ALREADY rendered to this screen before this card, by `noticeSentence`'s
+  `unsupportedVersion` arm at `4d2f03c`. The diff moves the same typed
+  field into a different element. Its bound is unchanged and inherited:
+  `probe_version` reads through `handle.take(MAX_LINE_BYTES)`,
+  `runner.rs:66` = 1 MiB — a large bound for a DOM text node, but
+  **pre-existing, shared with `error.message` and `cliNotFound.probed`,
+  and not this card's to move.**
+- **No new IPC command, no new endpoint, no authz surface.**
+  `noticeRoutesToHandDriven` is a pure total function; the button invokes
+  the already-permitted `genesis_kickoff`.
+- **No dependency added** — the diff touches no `package.json`,
+  `package-lock.json`, `Cargo.toml` or `Cargo.lock`. **No secret, key or
+  token in the diff.** No unsafe default: the new arm's failure mode is
+  to offer nothing, never to offer something wrong.
+
+**Nothing here is REJECTED-level. Nothing here is even suggestion-level.**
+
+#### SUITES — every exit off `$?` on the very next token, unpiped, with its COUNT
+
+- **app: `npm run build` exit 0** · **`npm test` exit 0, 958 passed / 958
+  across 46 files** — identical to main's reference, which is the honest
+  reading that **no existing body moved** and, jointly with mutants 2 and
+  3, that no new body was added.
+- **parser: `npx vitest run` exit 0, 264 passed / 264 across 12 files.**
+- **cargo: exit 0, 455 passed / 0 failed / 3 ignored**, summed over
+  **SIXTEEN** `test result:` lines — main's reference exactly. **The lib
+  line finished in 3.99s**, inside STATE's green band (every green under
+  9.5s, every red over 14.6s), which is the fresh-target-dir prediction
+  holding: this drill worktree has its own small `target/`. Neither
+  `docs_watch::tests::startup_arm_watches_the_initial_root` nor
+  `a_hostile_session_id_in_the_init_line…` fired. **`cargo clean` was not
+  run and main's target directory was not touched.**
+- **E2E — BOTH RUNS DECLARED, NEITHER DISCARDED.** Run 1 on scratch port
+  **15270**: **exit 1, 145 passed / 1 failed**, and the failing body is
+  `tools/e2e/tests/token-scan.spec.ts:201` — `T-120-s3`, exactly where
+  STATE predicts it in a fresh checkout. Run 2 on **15271**: **exit 0,
+  146/146**. **The second run proves nothing about the defect** — the
+  `utimesSync` in the body's own `finally` repairs the condition — but it
+  answers the only question this gate asks, and nothing in this diff is
+  on any path that spec reads. `T-120-s3` remains unfixed and is still
+  the first item under STATE's "Next up", for the sixth checkpoint.
+- **tools/e2e `npm run typecheck` exit 0.**
+- **tools/e2e `npm run lint:tokens` exit 0** at **TOKEN 132 / CONTROL
+  689**. The lane recorded 685 at its code commit `458237a` and STATE
+  records 688 at its own ref; the corpus is `git ls-files`, and the four
+  suggestion files this branch adds account for the difference exactly.
+  **Derive it at your own ref; it is not a constant.**
+- **tools/e2e `npm run lint:docs` exit 0** (the whole-tree census half).
+
+#### GATES — each derived with its own path count over the 7
+
+| gate | trigger | on these 7 | result |
+|---|---|---|---|
+| GRAPH REGEN | `*.ts/tsx/js/jsx` or `*.rs` outside `docs/` | **2 — FIRES** | exit **1, STALE** |
+| BOOT GATE | `app/src-tauri/**`, `app/src/**`, either manifest | **2 — FIRES** | exit **0** |
+| DOCS GATE | a `docs/` path a code suite reads | **5 — FIRES** | exit **1** |
+
+- **GRAPH REGEN — exit 1, and it is a REAL stale, not the `--root` false
+  red** (it prints both counts and a `~` file diff). Committed **920 597
+  bytes · 178 files · 1959 symbols · 1878 edges** → fresh **921 608 ·
+  178 · 1960 · 1881**: **+1 symbol** (`noticeRoutesToHandDriven`), edges
+  **+5 −2**, two files `~`. **921 608 of `max_graph_bytes` 1 000 000 =
+  92.16%, with 78 392 bytes of headroom** — the highest this repository
+  has been, and still nothing reports it. Every lane figure reproduces.
+  **The regen itself is the integrator's, at the checkpoint.**
+- **BOOT GATE — exit 0**, `NPUTER_BOOT_PORT=15272 npm run boot:check`
+  from tools/e2e in the drill worktree, **both `[nputer]` lines
+  observed**: `[nputer] project folder: /Users/ujju/Projects/drill-T-107-verify`
+  and `[nputer] window "main" created`. Captured process group **60650**,
+  stopped by SIGTERM, no orphan.
+- **DOCS GATE — exit 1, FIRES on 5 paths, THREE suites owed** (`npm test
+  from app/`, `npm test from tools/e2e/`, `npx vitest run from
+  lib/parser/`), all three run and green above. Invoked from the repo
+  root with ROOT-RELATIVE arguments and **never through `xargs`**, in the
+  one documented spelling. It reports **12 derived docs readers across 4
+  suites**, a census of **130 docs-shaped sites in 22 files**, 2
+  package-relative sites both resolving into `docs/`, 6 root-anchored
+  files argued in `ROOT_ANCHOR_LEDGER`, and **0 frontmatter issues** —
+  every live card parses with a legal status. **`cargo test` is NOT owed
+  on this diff**, because no `docs/CONVENTIONS.md` path is in it; it was
+  run anyway and is green.
+
+#### THE @HUMAN LOOK, RESTATED PRECISELY
+
+**One look is owed and this pass cannot discharge it.** No screen control
+was used and none should be: the question is not whether the facts are
+right — they are typed, and every one of them is verified above — but
+whether the screen reads as HELP rather than as a WALL.
+
+**WHAT TO OPEN:** the `interview-cli-outdated` card in
+`app/src/genesis/InterviewChat.tsx`, reached by starting an interview
+with an agent CLI whose `--version` reports a major below
+`CLAUDE_V1.min_major` (currently 2). It renders: a heading, the reported
+version in mono, a stated refusal to guess an update command, a sentence
+offering the hand-driven route, the project path, and a **"Show me the
+prompt"** button.
+
+**THE FOUR QUESTIONS, in the order they will bite:**
+
+1. Does *"It cannot see how you installed it, though, so it will not
+   print an update command that might be the wrong one for your machine —
+   that one is yours"* read as **respect** or as an **excuse**?
+2. Is **"Show me the prompt"** the right label for someone who came to
+   fix their CLI rather than to abandon it? The testid was deliberately
+   left unchanged because the affordance did not change — **the LABEL is
+   still open.**
+3. **Should the notice name the minimum version at all?** `T-107-s1` is
+   what makes that possible; this build's position is that *"update to
+   the current release"* is more useful than a number. **This is the
+   product half of the criterion-3 ruling above and it is @human's to
+   settle, not a lane's.**
+4. **NEW, ADDED BY THIS PASS:** *"updating yours to its current release
+   is the fix"* is an assertion the app cannot verify either — it is not
+   a COMMAND, so it clears criterion 2, but it is the same class of claim
+   one notch softer. Is that the right place to draw the line?
+
+#### WHERE THE BRIEF AND THE CARD WERE WRONG
+
+- **THE CARD CONTRADICTS ITSELF**, criterion 3 against its own suggested
+  shape-2 wording. Ruled above. This is the card's defect, not the
+  build's, and the build resolved it correctly.
+- **THE CARD'S VERIFICATION LINE ASKS FOR A POISON DRILL "ON THE NEW
+  BODY"** while its own fence makes a new body impossible. The two
+  instructions are jointly unsatisfiable and the executor could not have
+  obeyed both. It did the reachable thing (drill the body in a throwaway
+  worktree, file it) and this pass re-ran that drill from the outside.
+- **THE BRIEF'S `29c0f4f` WENT STALE MID-PASS.** Main advanced to
+  `765924d` (T-086 merged, plus a T-104 ruling) while this verification
+  ran. The path SET is identical at both refs, so nothing moved — but
+  this is the ninth consecutive record of a brief's ref being true when
+  written and false when used. **Re-derive; never quote a ref.**
+- **THE BRIEF SAYS "the three-dot form has agreed FIVE merges running".**
+  At my ref it is **six**, counting this one — a running tally in a brief
+  is stale by construction, and the warning attached to it is what
+  matters and is unchanged.
+- **THE LANE'S "compiled into the app program"** is right about the
+  typecheck program and would be wrong about the emitted bundle. Arm D
+  measured the distinction; the lane did not claim the stronger thing.
+- **THE LANE'S CONTROL FIGURE OF 685** is not wrong, it is at a different
+  commit; mine is **689** at the tip. Neither is a constant.
+- **THE BRIEF'S "DOCS GATE 5 of 7" AND EVERY REGEN FIGURE REPRODUCED
+  EXACTLY**, as did "7 existing bodies across 2 files". Recorded because
+  a verifier that only reports discrepancies is not reporting.
+
+#### PROHIBITIONS OBSERVED
+
+**NO REAL MODEL CALL AND NO CLI SPAWN, AT ANY POINT, FOR ANY REASON** —
+the binary was never invoked, not even `--help`; every fact about
+`claude`'s surface came from `adapter.rs`, `runner.rs` and the existing
+T-082 comment. **No backtick ever entered a shell string.** No screen
+control. Port **1420** was read with
+`lsof -nP -iTCP:1420 -sTCP:LISTEN` and nothing else — holder `node` pid
+**88948**, one socket `TCP [::1]:1420 (LISTEN)`, **identical before and
+after**; the app binary is pid **89201**, started **2026-08-25
+10:54:33**, unchanged, read with the anchored
+`awk '$NF=="target/debug/nputer"'`. **`/Users/ujju/Projects/nputer-app`
+was never entered**; its cwd was read from `lsof -p 88948` only, which is
+also what made this pass's installs provably safe under
+`integrator.md` rule 1 — the holder serves from a different checkout than
+the one installed into. Scratch ports **15270** (e2e run 1), **15271**
+(e2e run 2) and **15272** (boot gate) were each `lsof`-read FIRST (zero
+rows), then bind-confirmed free on `127.0.0.1`, `0.0.0.0`, `::1` and `::`
+in that order and never the reverse, and **all were free again
+afterwards**. **No `pkill` at any point.** The live lanes
+`/Users/ujju/Projects/nputer-T-033`, `-T-102`, `-T-091` and `-T-086` were
+not entered. The untracked `z` was left alone. **The lane worktree
+`/Users/ujju/Projects/nputer-T-107` was not entered for any measurement,
+and this verdict commit is the only write this pass makes to it.**
+`drill-T-107-verify` is detached, named per-lane, sits outside the
+repository, and is left in place for the integrator to remove.
+
+**VERDICT: APPROVED.** The behaviour is correct, the ruling is right, the
+refusal is recorded where a reader will meet it, the enumeration is
+enforced by the compiler rather than promised, the security answer is
+clean, and the one criterion that is not met on the tree could not have
+been met inside the fence — it is disclosed, routed with its body, and
+discharged by measurement in this verdict.
