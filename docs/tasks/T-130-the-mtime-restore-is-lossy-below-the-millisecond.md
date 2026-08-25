@@ -5,14 +5,14 @@ feature: F-02
 milestone: 4
 priority: 3
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e]
 builder: claude-opus-5
 verifier:
-built_by: claude-opus-5 @T-130 — code commit b1ceedc
+built_by: claude-opus-5 @T-130 — code b1ceedc; notes 7d16d4b and 6dedc0d
 verified_by:
-review:
+review: self-verified
 ---
 
 Absorbs (tenth triage, 2026-08-25): `T-120-s3` (canonical), `T-052-s4`,
@@ -433,3 +433,106 @@ CONVENTIONS install order — `npm ci` + `npm run build` from `lib/parser/`
 5. **Not an error, but the brief's most useful warning was live**: this
    worktree WAS already carrying a fractional mtime on arrival, so the
    body would have redded unplanted. Nothing was inferred from that.
+
+## Integration (2026-08-25)
+
+Main-before **`afe23c1`**, lane tip **`6dedc0d`** (derived with
+`git rev-parse`), merge **`cea839e`**, this checkpoint its direct child.
+`review: self-verified` is the honest label: the ceremony table's
+**"S, diff outside shipped code"** row owes no verifier and no *separate*
+integrator, so no verifier seat was ever filled. A second hand did
+integrate it, which is more than the row asks and less than a verdict —
+the field names the SEAT, not the effort.
+
+### THE LANE'S THREE HEADLINE MEASUREMENTS WERE RE-RUN BY THIS HAND, NOT READ
+
+Because on a card with no verifier the integrator is the only second pair
+of eyes, and because a suite that passes is not the same evidence as the
+defect failing to reproduce. In the lane worktree at `6dedc0d`, scratch
+port 15501, every exit read unpiped from `$?`, all eight targets
+re-planted with fractional mtimes before every run:
+
+| arm | code | result HERE |
+|---|---|---|
+| **control** | shipped | **10/10 pass, exit 0** — and all eight planted fractional values SURVIVED to the last digit |
+| **M1** | P6 producer → `utimesSync(target, clock.atime, clock.mtime)` | **exit 1** · `Expected 1787655727832.5427` / `Received 1787655727833` |
+| **M3** | T-058 producer line DELETED (the pre-T-130 shape) | **exit 1 · 1 failed / 9 passed**, the T-058 body · `Expected 1787655727833.6428` / `Received 1787684165024.1953` |
+| **the vacuous pass** | M1 still in place, NO re-plant | **exit 0** — the healing mechanism, run deliberately so it is on the record |
+
+**M1's digits are `docs/STATE.md`'s own recorded digits, character for
+character**, reproduced by a hand that did not write them. **M3's
+`Received` is the moment of the plant**, hours from the capture — which
+is what proves the new T-058 assertion catches the ORIGINAL
+content-only restore rather than only a rounding. Restoration proved per
+path by sha256 against `6dedc0d`
+(`4bc5997315cc8bbebea9debe420c0b1885d2aa012d301501c69395c84270a650`),
+with `git diff --name-only` and `git status --porcelain` both empty
+afterwards.
+
+### THE CARD'S TRIGGER IS TOO NARROW AND THE MEASURED ONE IS WIDER
+
+The card says the red fires in *"a fresh lane worktree and a fresh POISON
+DRILL worktree."* Measured in the lane worktree, one operation at a time:
+
+| operation | mtime after | rewrote? |
+|---|---|---|
+| `git reset --hard`, tree clean | unchanged | **no** |
+| `git reset --hard` after an mtime-only change | unchanged | **no** |
+| `git checkout <branch>` round trip, file unchanged | unchanged | **no** |
+| `git checkout -- <path>` on a clean file | **fresh, fractional** | **yes** |
+| `git reset --hard` over differing CONTENT | **fresh, fractional** | **yes** |
+
+**So the trigger is a WRITE OF THE FILE'S BYTES, not a fresh checkout** —
+and every byte-writer takes the mtime from the system clock, which APFS
+records to nanoseconds. **The only writer in this tree that leaves a
+WHOLE-millisecond mtime is the defect's own lossy `utimesSync`.** Armed
+is therefore the DEFAULT state and disarmed is an artifact the defect
+manufactures, which is the real reason this was met so often.
+
+### THE LAST CRITERION, CHECKED
+
+**`STATE.md`'s "Next up" LOSES THIS ITEM** — and the count it was asked
+against was derived rather than taken. Scanning the `## Next up` section
+of all **97** checkpoints on main: this finding stood at **item 1** in
+**six** of them — #84 `19f93bb` (T-120), #85 `1d8a2c2` (T-110), #87
+`82c69a8` (T-052), #88 `9b9c997` (T-086), #89 `05dd4d9` (T-107) and #94
+`f5e6907` (T-108). **The number six is exactly right and "consecutive" is
+not**: the run is broken at #86 (T-124's checkpoint, where T-052 led) and
+across #90–#93. The card and four briefs have all said *"six consecutive
+checkpoints"*; it is six checkpoints, not six in a row.
+
+### GATES, DERIVED FROM THE MERGE'S OWN FOUR PATHS
+
+- **GRAPH REGEN — OWED, ASKED, and the answer is CURRENT at exit 0.**
+  One path matches (`tools/e2e/tests/token-scan.spec.ts`). The gate was
+  asked, not predicted, and **why it answers CURRENT is derived rather
+  than assumed**: the committed graph holds **179 files — 154 under
+  `app/`, 25 under `lib/`, ZERO under `tools/`** — so the changed file is
+  outside the walk. This is the trigger-wider-than-the-walk case
+  `docs/ARCHITECTURE.md` already describes, arriving as a worked example.
+  Asked a **second** time after every doc write: **exit 0, CURRENT**.
+  **`graph.json` is NOT regenerated and NOT committed at this checkpoint**,
+  and that is a derivation, not a skip.
+- **BOOT GATE — NOT OWED, derived**: zero of four paths are under
+  `app/src-tauri/**`, `app/src/**` or either manifest.
+  `npm run boot:check` was not run and no scratch port was taken for it.
+- **DOCS GATE — exit 1, FIRES on 3 of 4, THREE suites owed** —
+  `npm test` from `app/`, `npm test` from `tools/e2e/`, `npx vitest run`
+  from `lib/parser/`; **not the cargo suite**, which the gate derives
+  rather than this checkpoint asserting. 13 derived docs readers across 4
+  suites, census 130 sites in 22 files, **0 frontmatter issues**. Invoked
+  from the repo root with the RANGE RULE's own path list, never through
+  `xargs`.
+
+### THE TWO ROUTED FINDINGS ARE LEFT WHERE THE LANE PUT THEM
+
+`T-130-s1` and `T-130-s2` arrive `status: suggested` and are untriaged,
+because disposition belongs to a triage pass and not to an integrator
+(T-083's ruling). **`T-130-s1`'s own text routes the CONVENTIONS sentence
+to `T-104`, and that was true when it was written and is stale now** —
+`T-104` is `done` and `docs/CONVENTIONS.md` is FREE; the seat is
+**`T-092`** (`touches: [docs/CONVENTIONS.md, app-agent]`), where
+`T-079-s3` items 2–3 already sit. Recorded here and in `docs/STATE.md`
+rather than edited into the lane's filed suggestion — **it must not be
+given a second home**; the three edits are one gap seen three ways and
+want ONE edit.
