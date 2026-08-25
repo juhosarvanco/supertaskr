@@ -8,9 +8,12 @@ import {
   CONTROL_PATTERN,
   CONTROL_UNCOVERED_SUFFIXES,
   CORPORA,
+  MOTION_UTILITIES,
+  MOTION_UTILITIES_OUT,
   TOKEN_EXCLUDED_FILES,
   TOKEN_PATTERNS,
   corpus,
+  declaredMotionUtilities,
   scanControlSource,
   suffixClass,
   trackedFiles,
@@ -151,6 +154,81 @@ test("one runtime-built control byte reds all seven first-party roots at exact b
     expect(result!.stdout).toContain(`${relative}:byte ${offsets.get(relative)}: U+0000`);
   }
   expect(result!.stderr).toContain("(0 TOKEN, 7 CONTROL)");
+});
+
+/**
+ * T-079. The selftest proves P6 against SAMPLES on a bare checkout; this
+ * body proves it against the real tree, end to end through the wrapper —
+ * the two-gate shape T-058 argued for P5 and the same one that keeps
+ * T-028's hand-written sweep alive beside this pattern.
+ *
+ * The plant carries its own POSITIVE CONTROL: the gated twin sits on the
+ * line above the bare one, in the same file, in the same run. One hit
+ * means P6 told them apart; a "not gated is refused" assertion with no
+ * accepted twin cannot tell refusal from absence (docs/CONVENTIONS.md).
+ *
+ * Restoration is proved by sha256 against the bytes read before the
+ * write, never by a clean `git status`.
+ */
+test("P6 reds a planted bare motion utility and leaves its motion-safe twin alone", () => {
+  const relative = "app/src/architecture/MapNode.tsx";
+  const target = path.join(repoRoot, relative);
+  const original = readFileSync(target);
+  const before = sha256(original);
+  // Assembled, never written whole: a literal here would be the very
+  // ungated candidate this file forbids, minted into a TOKEN-walked
+  // source by the test that guards against it (T-028's scanner-hygiene
+  // trap, and the reason app/test/map-view-dom.test.tsx splits its own).
+  const utility = `animate-status${"-"}pulse`;
+  const gate = `motion${"-"}safe:`;
+  const plant = `\nconst t079Gated = "${gate}${utility}";\nconst t079Bare = "${utility}";\n`;
+  // the file ends in a newline, so the plant's blank line lands first
+  const baseLines = original.toString("utf8").split("\n").length;
+  let result: { status: number | null; stdout: string; stderr: string } | undefined;
+
+  try {
+    writeFileSync(target, Buffer.concat([original, Buffer.from(plant, "utf8")]));
+    const planted = spawnSync(process.execPath, [wrapper], { cwd: repoRoot, encoding: "utf8" });
+    result = { status: planted.status, stdout: planted.stdout ?? "", stderr: planted.stderr ?? "" };
+  } finally {
+    writeFileSync(target, original);
+  }
+
+  expect(sha256(readFileSync(target)), `${relative} restored byte-exact`).toBe(before);
+  const diff = spawnSync("git", ["diff", "--quiet", "--", relative], { cwd: repoRoot });
+  expect(diff.status, "the plant target restores to an empty diff").toBe(0);
+
+  expect(result).toBeDefined();
+  expect(result!.status, result!.stdout + result!.stderr).toBe(1);
+  // exactly one — the gated line above it is not a hit
+  expect(result!.stdout.match(/\[P6:/g)).toHaveLength(1);
+  expect(result!.stdout).toContain(`${relative}:${baseLines + 2}: `);
+  expect(result!.stdout).not.toContain(`${relative}:${baseLines + 1}: `);
+  expect(result!.stderr).toContain("(1 TOKEN, 0 CONTROL)");
+});
+
+/**
+ * T-079. MOTION_UTILITIES is a list and a list goes stale in silence, so
+ * the names are derived too. This body recomputes the RELATION here
+ * rather than calling the module's check, so deleting `motionFloorChecks`
+ * from `walkPolicyChecks` reds the lane even while the selftest stays
+ * green — the same asymmetry the CONTROL floor body below relies on.
+ */
+test("every animation utility this tree declares is matched by P6 or argued out", () => {
+  const declared = declaredMotionUtilities();
+  const known = new Set<string>([...MOTION_UTILITIES, ...MOTION_UTILITIES_OUT]);
+
+  expect(declared.length, "the tree declares animation utilities to cover").toBeGreaterThan(0);
+  expect(
+    declared.filter(({ name }) => !known.has(name)),
+    "no declared animation utility is unknown to P6's name lists",
+  ).toEqual([]);
+  // both producers are really reached: a `--animate-*` theme key and an
+  // `@utility` whose body animates carry different names and only the
+  // second one has no `animate-` prefix to find it by.
+  expect(declared.map(({ name }) => name)).toContain("status-pulse");
+  expect(declared.map(({ name }) => name)).toContain("board-rain");
+  expect(new Set(declared.map(({ where }) => where))).toContain("app/src/index.css");
 });
 
 /**
