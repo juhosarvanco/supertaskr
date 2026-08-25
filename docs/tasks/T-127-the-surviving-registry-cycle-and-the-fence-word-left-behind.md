@@ -162,6 +162,39 @@ fence collided with the lane protocol itself.
 
 **This is the answer `T-033-s7` was owed: yes, and here is the number.**
 
+## FIVE — the demand side, and the one-line fix that is NOT this card's
+
+**The tenth triage (2026-08-25) measured the same word from the other
+end and got a larger number**: **57 of 126 cards' `touches:` lists name
+`app-shell`**, no other slug exceeding 21, and **fifteen of its
+twenty-three promotions sit behind one lane.** Its conclusion is worth
+quoting as the demand-side statement of this card's supply-side one:
+*the queue is not long because there is a lot of work; it is long because
+one word owns most of the tree.*
+
+**AND IT FOUND THE MECHANISM THAT MAKES `app-shell` UNAVOIDABLE RATHER
+THAN MERELY POPULAR.** `app/vitest.config.ts` collects
+`include: ["test/**/*.test.{ts,tsx}"]` and nothing else, and that file
+plus `app/test/**` are C-05's. **So every TypeScript pin in this
+repository must be written by a lane holding `app-shell`** — five of the
+eight slugs cannot hold a test assertion at all. Rust has no equivalent,
+because `#[cfg(test)] mod tests` lives inside the module it tests.
+
+The cost is on the record four times, each filed as a local surprise:
+T-015 built nothing; **T-110's first pass was REJECTED** for shipping an
+unpinned TypeScript join; **T-107 shipped with criterion 5 unmet**, its
+verifier proving by positive control that a colocated body is invisible
+to the collector (exit 0 at 958/958) while the same body under a
+collector that sees the glob exits 1; and T-111 was unbuildable in its
+own fence.
+
+**THAT FIX IS ONE LINE AND IT IS NOT THIS CARD'S** — adding
+`src/**/*.test.{ts,tsx}` to that `include`. It is promoted separately as
+`T-031-s4`, at higher priority than this card, and it is named here only
+so the two are not solved twice. **This card moves node boundaries;
+that one moves a collector glob. They relieve the same slug from
+opposite directions and neither substitutes for the other.**
+
 ## Acceptance criteria
 
 - **THE CYCLE CENSUS SHALL BE DERIVED, NOT READ**, and stated before and
@@ -172,11 +205,22 @@ fence collided with the lane protocol itself.
   the underlying FILES. IF one does THEN it is a real design defect and
   SHALL be routed as its own card — **the rule cuts both ways, and a
   boundary moved to hide a real file cycle is worse than the cycle.**
-- **`C-08 ↔ C-09` SHALL BE GONE, AND NO IMPORT SHALL BE SEVERED TO DO
-  IT.** No behaviour changes and no file moves on disk; the fix is which
-  node claims which path. IF the executor concludes a source file must
-  actually move or an import must actually change, THEN that is a
-  different card and SHALL be routed rather than done here.
+- **EVERY DECLARED CYCLE AT THIS CARD'S OWN REF SHALL BE GONE, AND NO
+  IMPORT SHALL BE SEVERED TO DO IT.** The criterion is deliberately
+  written over the *census* rather than over `C-08 ↔ C-09` by name.
+  **On main today there are TWO** — `C-08 ↔ C-09` and `C-05 ↔ C-12` —
+  and only T-033's tip has one. This card is `blocked_by: [T-033]`, so on
+  the expected path a single cycle remains; but a criterion that names one
+  cycle closes one cycle, and **if T-033 is re-scoped or lands
+  differently this card would ship having satisfied its own wording while
+  leaving a violation standing.** Naming the census instead makes the
+  criterion true under either history. (Found by the tenth triage, which
+  checked this card's criteria against main rather than against the
+  branch it was written from — the same discipline the card demands of
+  its own figures, applied to it.) No behaviour changes and no file moves
+  on disk; the fix is which node claims which path. IF the executor
+  concludes a source file must actually move or an import must actually
+  change, THEN that is a different card and SHALL be routed.
 - **A GATE SHALL MAKE A REINTRODUCED CYCLE FAIL, AND IT SHALL FAIL
   TODAY.** Its natural home is `nputer-index`, which already walks the
   registry and already answers `index --check` — decide there or argue
