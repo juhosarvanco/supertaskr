@@ -250,6 +250,68 @@ fn settle(agent: &agent::AgentState) -> GenesisStatus {
     }
 }
 
+/// **T-102, RESOLVING `T-069-s1`: THE FAMILY REPLACEMENT FOR THE
+/// MIRRORED NEGATIVES THAT COULD NOT FAIL.**
+///
+/// The idiom this replaces was: match on the failure EVENT, `other =>
+/// panic!` on the wrong variant, and then assert the SETTLED status is
+/// NOT some third variant —
+/// `assert!(!matches!(status.last_error, Some(TurnError::AuthFailed { .. })))`.
+/// Measured during T-069's own poison sweep (round R10, the mutation
+/// those lines exist to catch): both bodies reddened at the `other =>
+/// panic!` arm and NEVER at the negative below it. `run_turn` sets
+/// `out.error = Some(error.clone())` and then emits that same value, so
+/// the event and the stored status cannot disagree about the VARIANT —
+/// by the time the negative runs, the match arm above has already
+/// accepted the variant the negative forbids. Worse, the form is GREEN
+/// under the storage bug it looks like it would catch: `AgentState`
+/// dropping the classification leaves `last_error: None`, and
+/// `!matches!(None, Some(AuthFailed))` is true.
+///
+/// **SO THE FAMILY IS REPLACED BY A POSITIVE, WHICH IS THE FIRST OF THE
+/// TWO DISPOSITIONS THE CARD OFFERS.** The claim worth making is not
+/// "the settled error is not some other variant" — the arm above already
+/// said that — but "**the settled error IS the failure event, whole**".
+/// That is a real property of a real seam: `run_turn` returns an
+/// `out.error` and `agent/mod.rs` stores it into `Inner::last_error` in a
+/// separate statement, with FOUR other statements in that file clearing
+/// the same field to `None`. A drop, a clear, or a rewrite between the
+/// event and the status is exactly what this reds on, and the retired
+/// form saw none of the three.
+///
+/// **THE ORIGINAL CLAIM SURVIVES RATHER THAN BEING TRADED AWAY**, which
+/// is what makes this a replacement and not a deletion: each call site
+/// still names, in its message, the variant its turn must not be
+/// confused with — but the confusion is now ruled out by an equality
+/// against the whole error, which entails the old inequality and much
+/// more besides.
+///
+/// Comparing against the EVENT rather than against a literal is
+/// deliberate: `stderr_tail` carries whatever the fixture's CLI wrote to
+/// stderr, so a literal would be either brittle or weakened back into a
+/// variant check — which is the form being retired.
+fn assert_settled_error_is(status: &GenesisStatus, expected: &TurnError, why: &str) {
+    assert_eq!(
+        status.last_error.as_ref(),
+        Some(expected),
+        "{why}\n\
+         The settled status must carry the SAME error the turn's failure event did, \
+         whole and unrewritten. A `None` here is the classification being DROPPED \
+         between `run_turn` and `AgentState` — which every NEGATIVE form of this \
+         assertion was green under (T-069-s1, T-102)."
+    );
+}
+
+/// The error off a collected turn's terminal `Failed` event, for the
+/// bodies that use `collect_turn` instead of `wait_failed` and still owe
+/// the positive above.
+fn terminal_error(seen: &[RunEvent]) -> TurnError {
+    match seen.last() {
+        Some(RunEvent::Failed { error, .. }) => error.clone(),
+        other => panic!("the turn did not end in a failure event: {other:#?}"),
+    }
+}
+
 fn turn_dump(dump: &Path, turn: usize) -> PathBuf {
     dump.join(format!("turn-{turn}"))
 }
@@ -1382,7 +1444,8 @@ fn an_in_band_auth_failure_is_typed_authfailed_not_a_relayed_exit_code() {
 fn a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code() {
     let h = harness("tooldenied", Options { scenario: "tool-denied", ..Options::default() });
     agent::start_genesis(&h.watch, &h.agent);
-    match wait_failed(&h.events) {
+    let failed = wait_failed(&h.events);
+    match &failed {
         // T-081 MOVED THIS EXPECTATION, AND THE MOVE IS THE FINDING
         // (`T-081-s2`). It read `["Bash", "WebFetch"]` while the fixture
         // was a construction. The real capture refuses `Bash` TWICE — one
@@ -1391,8 +1454,16 @@ fn a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code() {
         // tool twice, and this list says so. Nothing deduplicates: two
         // refusals of one tool are two refusals, and the ONLY field that
         // tells them apart is `tool_use_id`.
+        //
+        // T-102: THIS CENSUS IS A PALINDROME, WHICH IS WHY IT CANNOT BE
+        // THE ORDER PIN. `["Bash", "Bash"]` reversed is itself, so this
+        // body kills a first-name-only mutant of `denial_names` (on
+        // LENGTH) and is blind to an order mutant.
+        // `the_cumulative_record_keeps_every_name_in_the_order_the_cli_listed_them`
+        // is the body with two DIFFERENT names, and it is the one that
+        // sees the difference.
         TurnError::ToolDenied { denials, terminal_reason } => {
-            assert_eq!(denials, vec!["Bash".to_string(), "Bash".to_string()]);
+            assert_eq!(denials, &vec!["Bash".to_string(), "Bash".to_string()]);
             assert_eq!(terminal_reason.as_deref(), Some("refusal"));
         }
         other => panic!("expected ToolDenied, got {other:?}"),
@@ -1400,10 +1471,12 @@ fn a_turn_killed_by_a_denied_tool_names_the_tool_rather_than_the_exit_code() {
     let status = settle(&h.agent);
     assert_eq!(status.phase, Phase::Failed);
     // Same failure shape as the auth case, different classification.
-    assert!(
-        !matches!(status.last_error, Some(TurnError::AuthFailed { .. })),
-        "exit 1 + is_error is not evidence of an auth failure: {:?}",
-        status.last_error
+    assert_settled_error_is(
+        &status,
+        &failed,
+        "exit 1 + `is_error` is the same shape the auth failure has, so this turn's \
+         `ToolDenied` must reach the settled status intact rather than becoming \
+         `AuthFailed`, some other variant, or nothing at all",
     );
     // And the project is untouched: a denied tool is not a write.
     assert!(!h.project.join("docs").exists());
@@ -1794,10 +1867,11 @@ fn a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail() {
     // turn — and `ToolDenied` carries no `stderr_tail` field at all, which
     // is why its record is not what this body is about.
     let status = settle(&h.agent);
-    assert!(
-        !matches!(status.last_error, Some(TurnError::ToolDenied { .. })),
-        "a denial the turn routed around is not the cause of its death: {:?}",
-        status.last_error
+    assert_settled_error_is(
+        &status,
+        &terminal_error(&seen),
+        "a denial the turn routed around is not the cause of its death, so this must \
+         settle as the very `ExitNonZero` the event carried — not `ToolDenied`",
     );
 }
 
@@ -2079,9 +2153,10 @@ fn a_recovered_auth_retry_does_not_relabel_a_disk_full_failure_as_an_auth_failur
         Options { scenario: "retry-401-then-enospc", ..Options::default() },
     );
     agent::start_genesis(&h.watch, &h.agent);
-    match wait_failed(&h.events) {
+    let failed = wait_failed(&h.events);
+    match &failed {
         TurnError::ExitNonZero { code, stderr_tail } => {
-            assert_eq!(code, Some(1));
+            assert_eq!(*code, Some(1));
             // The CLI's own words still arrive — the fix narrows the
             // CLASSIFICATION, it does not silence the relay.
             assert!(stderr_tail.contains("ENOSPC"), "{stderr_tail}");
@@ -2090,10 +2165,12 @@ fn a_recovered_auth_retry_does_not_relabel_a_disk_full_failure_as_an_auth_failur
     }
     let status = settle(&h.agent);
     assert_eq!(status.phase, Phase::Failed);
-    assert!(
-        !matches!(status.last_error, Some(TurnError::AuthFailed { .. })),
-        "a 401 the CLI RECOVERED from is not this turn's cause: {:?}",
-        status.last_error
+    assert_settled_error_is(
+        &status,
+        &failed,
+        "a 401 the CLI RECOVERED from is not this turn's cause, so the disk-full \
+         `ExitNonZero` must settle exactly as it was emitted rather than as \
+         `AuthFailed`",
     );
 }
 
@@ -2129,15 +2206,17 @@ fn a_recovered_auth_retry_does_not_survive_a_result_line_that_is_not_an_error() 
         Options { scenario: "retry-401-then-clean-result", ..Options::default() },
     );
     agent::start_genesis(&h.watch, &h.agent);
-    match wait_failed(&h.events) {
-        TurnError::ExitNonZero { code, .. } => assert_eq!(code, Some(1)),
+    let failed = wait_failed(&h.events);
+    match &failed {
+        TurnError::ExitNonZero { code, .. } => assert_eq!(*code, Some(1)),
         other => panic!("expected ExitNonZero, got {other:?}"),
     }
     let status = settle(&h.agent);
-    assert!(
-        !matches!(status.last_error, Some(TurnError::AuthFailed { .. })),
-        "a turn that answered did not fail to authenticate: {:?}",
-        status.last_error
+    assert_settled_error_is(
+        &status,
+        &failed,
+        "a turn that ANSWERED did not fail to authenticate, so its `ExitNonZero` must \
+         settle whole rather than as `AuthFailed`",
     );
 }
 
@@ -2167,6 +2246,22 @@ fn a_real_tool_denial_behind_a_recovered_auth_retry_is_still_a_tool_denial() {
 /// BEFORE writing any `result` line, so there is no terminal line to
 /// clear anything, and the diagnostic is the only evidence there is.
 /// This is a genuine authentication failure and must stay typed.
+///
+/// **T-102 RE-RAN IT AS A COUNTER-PIN AGAINST ITS OWN WIDENING**
+/// (criterion 2), and this is the body that had to be named. T-069's
+/// closure rested on "this stream carries no DELTA"; after T-102 the
+/// guard withdraws on a `tool_use` block as well, so the counter-pin's
+/// standing had to be re-derived rather than inherited. It holds, and it
+/// holds by construction on a WIDER foot than before: `auth-403-no-result`
+/// is an init, one `api_retry` diagnostic and an exit — it streams
+/// NEITHER content-block type, so there is no evidence of either kind for
+/// the widened flag to read.
+///
+/// It is still RED-ABLE, which is the claim that matters and the one a
+/// widening can quietly destroy: dropping the `!evidence_after_auth_status`
+/// guard's negation, or making the `Activity`/`TextDelta` arms set the
+/// flag unconditionally rather than under `auth_status.is_some()`, turns
+/// this turn into an `ExitNonZero` and reds here.
 #[test]
 fn a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed() {
     let h = harness(
@@ -2248,10 +2343,11 @@ fn a_denial_the_planner_routed_around_is_not_blamed_for_an_unrelated_exit() {
         other => panic!("expected ExitNonZero, got {other:?}"),
     }
     let status = settle(&h.agent);
-    assert!(
-        !matches!(status.last_error, Some(TurnError::ToolDenied { .. })),
-        "a denial the turn survived is not the cause of its death: {:?}",
-        status.last_error
+    assert_settled_error_is(
+        &status,
+        &terminal_error(&seen),
+        "a denial the turn SURVIVED is not the cause of its death, so this settles as \
+         the emitted `ExitNonZero` rather than as `ToolDenied`",
     );
 }
 
@@ -2306,10 +2402,213 @@ fn a_fatal_denial_the_cli_did_not_flag_as_an_error_still_names_the_tool() {
         other => panic!("expected ExitNonZero, got {other:?}"),
     }
     let status = settle(&h.agent);
+    assert_settled_error_is(
+        &status,
+        &terminal_error(&seen),
+        "`is_error: false` is not a turn the CLI says it failed, so the declined \
+         diagnosis settles as the emitted `ExitNonZero` rather than as `ToolDenied`",
+    );
+}
+
+/// **T-102 criteria 4 AND 6: THE SPLIT PAIR, ON THE ONLY TURN SHAPE THAT
+/// CAN SHOW IT.** One fixture closes both denial gaps at once, because
+/// `T-069-s3` and `T-081-s10` wanted the same edit from opposite
+/// directions — a SECOND denial, and an IN-BAND line.
+///
+/// **THE THREE CONDITIONS HAVE ALWAYS LIVED IN DIFFERENT FIXTURES, WHICH
+/// IS WHY NOTHING DROVE THIS.** The reachable case needs a denial
+/// announced in band, the cumulative `result` line listing it as well
+/// (always true — the array is cumulative), AND the turn classified
+/// `ExitNonZero` rather than `ToolDenied`, so a `stderr_tail` exists at
+/// all. `denied-then-end-turn`, `denied-fatal-not-flagged` and
+/// `denied-result-only-nonzero` satisfy the third and carry NO in-band
+/// line; `denied-live-and-silent` and `denied-same-tool-one-announced`
+/// carry one and exit ZERO. `denied-announced-and-silent-nonzero` is the
+/// intersection.
+///
+/// **THREE PROPERTIES, AND EACH IS SATISFIABLE WITHOUT THE OTHERS, WHICH
+/// IS WHY THEY ARE ONE BODY.**
+///
+///   ONE — the announced denial arrives at its IN-BAND MOMENT and is not
+///   re-emitted at `Result` time. The `Activity` between the two channels
+///   is the liveness witness (`denied-then-completed` records why an
+///   `Activity` dates a moment and a coalesced delta does not), so this
+///   is an ORDER fact and not a pair of counts: a runner that held its
+///   denials back to the `result` line would put BOTH after the marker.
+///
+///   TWO — the unannounced one arrives at `Result` time rather than not
+///   at all. Dropping the late emit gives one event, dropping the join
+///   gives three, and only the correct partition gives these two in this
+///   order.
+///
+///   THREE — and the tail names NEITHER of them (T-113's deletion),
+///   with the CLI's own stderr in it as the POSITIVE CONTROL.
+///
+/// **SHAPE SIX, ASKED AND ANSWERED WITH A MEASUREMENT RATHER THAN A
+/// PROMISE.** T-113's own pin
+/// (`a_result_only_denial_is_a_live_event_and_is_not_repeated_in_the_tail`)
+/// drives a single RESULT-ONLY denial, so every denial it sees is
+/// unannounced and the NARROW restoration
+/// (`denial_names(unannounced…)`) and the WIDE one
+/// (`denial_names(&denials)`) are the same mutant over that stream. Over
+/// THIS stream they are two: the narrow restoration puts `WebFetch` in
+/// the tail, and the wide one additionally puts `Bash` — the ANNOUNCED
+/// name, the one whose double report was T-113's entire subject — in it.
+/// **The wide restoration is the mutant only this body kills**, and it is
+/// exactly the pre-T-081 shape a careless revert would land back on.
+/// This body also drives the announced/unannounced ORDER, which no
+/// `ExitNonZero` fixture could reach before it.
+#[test]
+fn an_announced_denial_is_not_repeated_at_result_time_and_neither_name_reaches_the_tail() {
+    let h = harness(
+        "deniedsplit",
+        Options { scenario: "denied-announced-and-silent-nonzero", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let seen = collect_turn(&h.events);
+
+    // PROPERTIES ONE AND TWO — each denial reaches the screen exactly
+    // once, and WHEN it did is what tells the two channels apart.
+    let denied = denied_events(&seen);
+    assert_eq!(
+        denied.iter().map(|d| (d.1.clone(), d.2.clone())).collect::<Vec<_>>(),
+        vec![
+            (Some("Bash".to_string()), Some("tu_102_announced".to_string())),
+            (Some("WebFetch".to_string()), Some("tu_102_never_announced".to_string())),
+        ],
+        "each denial is reported ONCE: the announced one from the in-band line, the \
+         silent one from the cumulative `result` list, and the announced one is NOT \
+         repeated when the `result` line lists it again: {seen:#?}"
+    );
+
+    // …and the ORDER against the liveness witness, which is what makes
+    // "at its in-band moment" a fact rather than a hope. The `Activity`
+    // sits between the two channels in the stream, so it must sit
+    // between the two events on screen.
+    let marker = seen
+        .iter()
+        .position(|e| matches!(e, RunEvent::Activity { label, .. } if label == "Write"))
+        .expect("the liveness witness must have arrived: {seen:#?}");
+    let denial_positions: Vec<usize> = seen
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| matches!(e, RunEvent::Denied { .. }))
+        .map(|(i, _)| i)
+        .collect();
+    assert_eq!(denial_positions.len(), 2, "two denials, two events: {seen:#?}");
     assert!(
-        !matches!(status.last_error, Some(TurnError::ToolDenied { .. })),
-        "`is_error: false` is not a turn the CLI says it failed: {:?}",
-        status.last_error
+        denial_positions[0] < marker,
+        "the ANNOUNCED denial is news when it happens, so it lands BEFORE the tool \
+         call that followed it in the stream: {seen:#?}"
+    );
+    assert!(
+        denial_positions[1] > marker,
+        "…and the SILENT one could not be known until the `result` line, so it lands \
+         after: {seen:#?}"
+    );
+
+    // PROPERTY THREE — the tail repeats neither, and the control comes
+    // first so the two absences are absences rather than silence.
+    let failed = terminal_error(&seen);
+    match &failed {
+        TurnError::ExitNonZero { code, stderr_tail } => {
+            assert_eq!(*code, Some(1));
+            assert!(
+                stderr_tail.contains("transport closed before the session could be saved"),
+                "THE POSITIVE CONTROL: the ring relayed the CLI's own stderr on this \
+                 very turn, so the absences below mean something: {stderr_tail:?}"
+            );
+            assert!(
+                !stderr_tail.contains("Bash"),
+                "the ANNOUNCED denial is already on screen as its own live event and \
+                 the tail does not say it again — this is the name the WIDE \
+                 restoration of the deleted ring note would put back, and no other \
+                 body can see it: {stderr_tail:?}"
+            );
+            assert!(
+                !stderr_tail.contains("WebFetch"),
+                "…and neither is the silent one, which arrived as its own event too: \
+                 {stderr_tail:?}"
+            );
+            assert!(
+                !stderr_tail.contains("permission_denials"),
+                "…and the deleted note's own label went with it: {stderr_tail:?}"
+            );
+        }
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+
+    // The CUMULATIVE record is a DIFFERENT question and is asserted
+    // separately, on its own stream, by
+    // `the_cumulative_record_keeps_every_name_in_the_order_the_cli_listed_them`
+    // — a body that conflates the two pins neither. Here `is_error` is
+    // false, so nothing claims a denial killed this turn, and
+    // `ToolDenied` carries no `stderr_tail` field at all.
+    let status = settle(&h.agent);
+    assert_settled_error_is(
+        &status,
+        &failed,
+        "`is_error: false` declines the `ToolDenied` claim, so this settles as the \
+         emitted `ExitNonZero`",
+    );
+}
+
+/// **T-102 criterion 5: THE ORDER AND THE COMPLETENESS OF THE SURVIVING
+/// RECORD.**
+///
+/// After T-113 deleted the ring note, `denial_names(&denials)` feeding
+/// the cumulative `ToolDenied` record is the LAST runner-side producer of
+/// a multi-name record — and no fixture could see it work.
+///
+/// **RE-MEASURED AT THIS CARD'S BASE RATHER THAN TAKEN ON REPORT, AND THE
+/// NOTE ON THE CARD IS HALF RIGHT.** `retry-401-then-tool-denied` drives
+/// the join with ONE entry. `tool-denied` drives it with TWO — so a
+/// first-name-only mutant already reds there, on LENGTH — but both of
+/// them are `Bash`, because the real 2.1.226 capture refused the same
+/// tool twice (`T-081-s2`). **A two-element list of one repeated name is
+/// a palindrome**: reverse the join and `["Bash", "Bash"]` is still
+/// `["Bash", "Bash"]`, and `assert_eq!` cannot tell. So the gap is real
+/// and is narrower than "more than one name" — it is ORDER, and this is
+/// the only body in the file that can see it.
+///
+/// The separator lives render-side (`failureDetail`'s join, in
+/// `app-interview`) and is outside this card's fence; this body asserts
+/// the VECTOR the runner produces and reaches across for nothing.
+///
+/// SHAPE SIX: its unique mutant is a REORDERING of `denial_names` — a
+/// `.rev()`, or a sort. `tool-denied`'s census is blind to it by
+/// construction, `denied-announced-and-silent-nonzero` never reaches the
+/// `ToolDenied` arm at all (`is_error: false`), and the live `Denied`
+/// events are a different producer on a different channel.
+#[test]
+fn the_cumulative_record_keeps_every_name_in_the_order_the_cli_listed_them() {
+    let h = harness(
+        "twonames",
+        Options { scenario: "tool-denied-two-names", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let failed = wait_failed(&h.events);
+    match &failed {
+        TurnError::ToolDenied { denials, terminal_reason } => {
+            // BOTH names, in the CLI's own order. Completeness and order
+            // in one `assert_eq!`, which is the only form that has both:
+            // a `contains` pair would survive a reversal and a length
+            // check would survive a swap.
+            assert_eq!(
+                denials,
+                &vec!["WebFetch".to_string(), "Bash".to_string()],
+                "the cumulative record keeps every name the `result` line listed, in \
+                 the order it listed them"
+            );
+            assert_eq!(terminal_reason.as_deref(), Some("refusal"));
+        }
+        other => panic!("expected ToolDenied, got {other:?}"),
+    }
+    let status = settle(&h.agent);
+    assert_settled_error_is(
+        &status,
+        &failed,
+        "the record the user is shown is the record the turn produced, whole",
     );
 }
 
@@ -2413,9 +2712,10 @@ fn a_recovered_auth_retry_followed_by_model_text_and_no_result_line_is_not_an_au
         Options { scenario: "retry-401-then-no-result", ..Options::default() },
     );
     agent::start_genesis(&h.watch, &h.agent);
-    match wait_failed(&h.events) {
+    let failed = wait_failed(&h.events);
+    match &failed {
         TurnError::ExitNonZero { code, stderr_tail } => {
-            assert_eq!(code, Some(1));
+            assert_eq!(*code, Some(1));
             // Declined as a DIAGNOSIS, still delivered as a RELAY.
             assert!(
                 stderr_tail.contains("401"),
@@ -2425,10 +2725,11 @@ fn a_recovered_auth_retry_followed_by_model_text_and_no_result_line_is_not_an_au
         other => panic!("expected ExitNonZero, got {other:?}"),
     }
     let status = settle(&h.agent);
-    assert!(
-        !matches!(status.last_error, Some(TurnError::AuthFailed { .. })),
-        "the CLI answered after that 401, so it is not what killed the turn: {:?}",
-        status.last_error
+    assert_settled_error_is(
+        &status,
+        &failed,
+        "the CLI ANSWERED after that 401, so it is not what killed the turn and the \
+         relayed `ExitNonZero` must settle whole rather than as `AuthFailed`",
     );
 }
 
@@ -2488,6 +2789,134 @@ fn the_same_no_result_stream_without_the_retry_line_has_nothing_to_relay() {
                 stderr_tail.trim().is_empty(),
                 "this stream carries no diagnostic at all, so the ring stays empty \
                  and the 401 in the row above can only have come from that one line: \
+                 {stderr_tail:?}"
+            );
+        }
+        other => panic!("expected ExitNonZero, got {other:?}"),
+    }
+    settle(&h.agent);
+}
+
+// ---- T-102: THE DISCRIMINATOR READS THE EVIDENCE THAT CANNOT BE FORGED
+//      ----------------------------------------------------------------
+//
+// T-069's closure above rests on an argument about MODEL RESPONSES —
+// they are "streamed by a request that SUCCEEDED" — but it was
+// implemented against ONE of the two content-block types a model
+// response arrives in. `classify_line` turns a `text_delta` into
+// `StreamLine::TextDelta` and a `tool_use` into `StreamLine::Activity`;
+// only the first arm set the flag.
+//
+// And the arm that was missing carries the STRONGER evidence. The honest
+// limit T-069 states is that the CLI writes its own prose into the
+// nominally-model text field, so a delta can be the CLI rather than the
+// model. A `tool_use` block naming a tool is not prose and the CLI has no
+// reason to fabricate one. The discriminator read the evidence that CAN
+// be forged and ignored the evidence that cannot.
+
+/// **T-102's RULING, BUILT: the same closure on the block type T-069
+/// could not see.**
+///
+/// A recovered `api_retry` 401, then a `tool_use` block — and no
+/// `result` line at all. Against the shipped tip this measured
+/// `AuthFailed { status: Some(401), message: "the agent CLI could not
+/// authenticate" }`, which removes Try again (`failureAction` returns
+/// `retry: false` for `authFailed`) and prints `claude login` at a user
+/// whose login is fine.
+///
+/// **THE FAMILY IS AN ORDINARY OPENING, NOT AN EXOTIC ONE**, which is
+/// what made the narrowing worth closing rather than disclosing: a
+/// planner that reads the repo before it speaks calls a tool with no
+/// delta in front of it, so EVERY turn that recovered a 401 and then
+/// called a tool without saying anything first fell in it.
+///
+/// **THIS IS THE DELTA ROW MINUS EXACTLY ONE LINE**, by construction
+/// rather than by two fixtures agreeing to stay in step: `no_result_after`
+/// emits both, and the `Evidence` axis is the only thing that differs.
+/// So a runner that classifies these two differently is discriminating on
+/// the BLOCK TYPE and on nothing else, which is precisely the defect.
+///
+/// SHAPE SIX, asked and answered. Its unique mutant is the flag set in
+/// the runner's `Activity` arm: delete those two lines and ONLY this body
+/// reds — the delta rows above set the flag from `TextDelta` and never
+/// touch `Activity`, and `denied-then-completed` and its siblings drive
+/// `Activity` on turns that name no auth status at all, so the guard
+/// they exercise is not this one.
+#[test]
+fn a_recovered_auth_retry_followed_by_a_tool_call_and_no_result_line_is_not_an_auth_failure() {
+    let h = harness(
+        "retrytooluse",
+        Options { scenario: "retry-401-then-tool-use-no-result", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    let seen = collect_turn(&h.events);
+
+    // THE EVIDENCE ITSELF, ASSERTED BEFORE THE CLASSIFICATION IT
+    // JUSTIFIES. Without this the body cannot tell "the tool call was
+    // read as evidence" from "the tool call never arrived and something
+    // else withdrew the claim".
+    assert!(
+        seen.iter().any(|e| matches!(e, RunEvent::Activity { label, .. } if label == "Read")),
+        "the `tool_use` block must actually have reached the runner as an Activity, \
+         or this turn's classification is not evidence about tool calls at all: \
+         {seen:#?}"
+    );
+    assert!(
+        !seen.iter().any(|e| matches!(e, RunEvent::TextDelta { .. })),
+        "…and NO delta rode with it: a delta here would let T-069's original arm \
+         withdraw the claim and this body would pass without the widening: {seen:#?}"
+    );
+
+    let failed = terminal_error(&seen);
+    match &failed {
+        TurnError::ExitNonZero { code, stderr_tail } => {
+            assert_eq!(*code, Some(1));
+            // Declined as a DIAGNOSIS, still delivered as a RELAY — the
+            // same trade the delta row records.
+            assert!(
+                stderr_tail.contains("401"),
+                "the status the stream named is still legible: {stderr_tail:?}"
+            );
+        }
+        other => panic!(
+            "the CLI called a tool after that 401, which only a request that SUCCEEDED \
+             can stream, so this is not an authentication failure: {other:?}"
+        ),
+    }
+    let status = settle(&h.agent);
+    assert_settled_error_is(
+        &status,
+        &failed,
+        "a tool call after the 401 is the stream's own evidence the CLI got past it, \
+         so this settles as the relayed `ExitNonZero` rather than as `AuthFailed`",
+    );
+}
+
+/// THE CONTROL for the row above — the same emitter, one `bool` apart, so
+/// it is that stream minus exactly the 401 line.
+///
+/// A turn that dies with no `result` line is an `ExitNonZero` whether or
+/// not anything ever authenticated, so without this row "not
+/// `AuthFailed`" above is satisfied equally by a runner that read the
+/// tool call as evidence and by one that never classified this shape at
+/// all. The discriminating assertion is the tail: the 401 row asserts the
+/// status is legible in it, this one asserts there is no status to name,
+/// so flipping the fixture's `with_retry` back on reds here rather than
+/// passing unnoticed.
+#[test]
+fn the_same_tool_use_stream_without_the_retry_line_has_nothing_to_relay() {
+    let h = harness(
+        "toolusectl",
+        Options { scenario: "tool-use-no-result-no-retry", ..Options::default() },
+    );
+    agent::start_genesis(&h.watch, &h.agent);
+    match wait_failed(&h.events) {
+        TurnError::ExitNonZero { code, stderr_tail } => {
+            assert_eq!(code, Some(1));
+            assert!(
+                stderr_tail.trim().is_empty(),
+                "this stream carries no diagnostic at all, so the ring stays empty and \
+                 the 401 in the row above can only have come from that one line: \
                  {stderr_tail:?}"
             );
         }

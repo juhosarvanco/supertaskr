@@ -60,6 +60,35 @@ use super::adapter::{
 };
 
 // ---- caps (T-003's cap discipline, §4) --------------------------------
+//
+// **THE RULE FOR EVERY BYTE BOUND BELOW, WRITTEN WHERE THE BOUNDS LIVE
+// (T-102, absorbing `T-081-s4`). A BYTE BOUND ABOVE THE LOG CAP IS A
+// DEAD BOUND.**
+//
+// Every stream-borne string in this module reaches the app through
+// `bounded_stream_string`, which is
+// `docs_watch::sanitize_for_log(sessions::truncate_utf8(raw, N))` — a
+// BYTE truncation here followed by a CHARACTER cap in another file,
+// `docs_watch::MAX_ECHO_LOG_CHARS`. So for ASCII text, whenever `N`
+// exceeds that cap the second step decides the length and THIS module's
+// number governs nothing a reader can predict.
+//
+// Until T-102 the rule was written down in exactly ONE of the three
+// constants it governs (`MAX_DENIAL_MESSAGE_BYTES`), which is how
+// `MAX_AUTH_MESSAGE_BYTES` came to promise "a hard stop" it does not
+// own. Each bound below now states its CLASS, and
+// `every_byte_bound_here_is_classified_against_the_log_cap_that_outranks_it`
+// asserts the classification through the real composition — so it reds
+// if a constant moves in EITHER file.
+//
+// **AND THE TWO CLASSES DIFFER IN MORE THAN WHICH NUMBER WINS, WHICH IS
+// WHY "JUST LOWER THEM ALL" IS NOT FREE** (T-102, measured; the
+// finding `T-081-s4` did not reach). `sanitize_for_log` MARKS its own
+// cut with `…(truncated)`; `truncate_utf8` does not. So a bound that
+// LOSES to the cap truncates VISIBLY and a bound that WINS truncates
+// SILENTLY. Lowering a constant under the cap therefore makes its own
+// number honest and takes the disclosure away in the same edit — a
+// trade, not a tidy-up, and one no criterion here asks for.
 
 /// Largest single stream line the runner will assemble; beyond it the
 /// turn fails as `MalformedStream` rather than ballooning memory.
@@ -75,18 +104,33 @@ pub const MAX_STDERR_RING: usize = 64 * 1024;
 /// The list is stream-borne, so it is bounded like everything else here.
 pub const MAX_DENIALS: usize = 16;
 /// T-029: byte bound on ONE denied tool name.
+///
+/// **LIVE** against the rule at the top of this block: 128 is below
+/// `docs_watch::MAX_ECHO_LOG_CHARS`, so this number is the one that
+/// decides the length — and the cut is therefore SILENT, unmarked, which
+/// is correct for a tool NAME (a marker on a truncated identifier would
+/// be noise inside a string nothing reads as prose).
 pub const MAX_DENIAL_BYTES: usize = 128;
 /// T-081: byte bound on the CLI's OWN explanation of one denial, off a
 /// `system`/`permission_denied` line.
 ///
-/// **CHOSEN TO BE THE BOUND THAT ACTUALLY BITES, which is why it is not a
-/// rounder number.** Every stream-borne string here is truncated and then
-/// handed to [`crate::docs_watch::sanitize_for_log`], which caps at
-/// `MAX_ECHO_LOG_CHARS` characters of its own. A value above that cap
-/// would leave the other function's constant deciding the length for
-/// ASCII text, and a pin on THIS bound would then be measuring a number
-/// that lives in another file and can move without this one. 768 sits
-/// below it, so the truncation here is the one a reader can predict.
+/// **LIVE, AND CHOSEN TO BE THE BOUND THAT ACTUALLY BITES, which is why
+/// it is not a rounder number.** Every stream-borne string here is
+/// truncated and then handed to [`crate::docs_watch::sanitize_for_log`],
+/// which caps at `MAX_ECHO_LOG_CHARS` characters of its own. A value
+/// above that cap would leave the other function's constant deciding the
+/// length for ASCII text, and a pin on THIS bound would then be
+/// measuring a number that lives in another file and can move without
+/// this one. 768 sits below it, so the truncation here is the one a
+/// reader can predict.
+///
+/// T-102's cost note on that choice, recorded rather than argued away:
+/// winning against the cap also means truncating WITHOUT the
+/// `…(truncated)` marker `sanitize_for_log` would have added. For a
+/// denial MESSAGE that is the weaker half of the trade — a sentence
+/// cut mid-word says less about its own incompleteness than a marker
+/// would — and it is accepted here because predictability was the
+/// property this constant was chosen for. See the block header.
 ///
 /// The longest denial message in the 2.1.226 capture
 /// (`docs/research/captures/real-planner-turn-2026-08-19.jsonl`) is 419
@@ -96,7 +140,29 @@ pub const MAX_DENIAL_BYTES: usize = 128;
 /// what a model asked for.
 pub const MAX_DENIAL_MESSAGE_BYTES: usize = 768;
 /// T-029: byte bound on the message inside [`TurnError::AuthFailed`].
-/// The CLI's real one is ~70 bytes; this is headroom with a hard stop.
+/// The CLI's real one is ~70 bytes, so this is headroom.
+///
+/// **ADVISORY FOR ASCII, AND THAT IS NOW SAID OUT LOUD RATHER THAN
+/// PROMISED AWAY** (T-102, absorbing `T-081-s4`). This doc comment used
+/// to end "this is headroom with a hard stop", and the hard stop is in
+/// another file: 2048 is ABOVE `docs_watch::MAX_ECHO_LOG_CHARS`, so for
+/// ASCII text `sanitize_for_log` cuts first and this number never bites.
+/// The bound is not USELESS — it still bites for multi-byte text, where
+/// 2048 bytes can be as few as 512 characters, and it is what stops a
+/// hostile stream handing `sanitize_for_log` an unbounded allocation —
+/// but the length a reader sees for an ASCII message is the cap's, not
+/// this one's.
+///
+/// **IT IS DELIBERATELY NOT LOWERED, AND THE REASON IS THE MARKER**
+/// (T-102 criterion 8's second arm, declined with the measurement in
+/// hand). Lowering it under the cap would make "hard stop" true and
+/// would take the `…(truncated)` disclosure away in the same edit,
+/// because `sanitize_for_log` marks its cut and `truncate_utf8` does
+/// not. On the ONE string a user reads when their login is refused,
+/// silently losing the end is worse than a number that defers to
+/// another file — so the comment was corrected instead of the constant.
+/// A card that wants the trade the other way can have it; it is a
+/// behaviour change and belongs on its own card.
 pub const MAX_AUTH_MESSAGE_BYTES: usize = 2048;
 
 pub fn now_ms() -> u64 {
@@ -1833,11 +1899,46 @@ pub fn run_turn(
     // Bounded by the live-emit cap below, which is bounded by MAX_DENIALS.
     let mut announced_denials: Vec<String> = Vec::new();
     let mut live_denials: usize = 0;
-    // T-069: has model text arrived since the last line that named an
-    // auth status? Only meaningful for a turn that never writes a
-    // terminal `result` line, which is the one family T-029's rule
-    // cannot reach.
-    let mut text_after_auth_status = false;
+    // T-069, WIDENED BY T-102: has the MODEL SPOKEN — in ANY block type
+    // — since the last line that named an auth status? Only meaningful
+    // for a turn that never writes a terminal `result` line, which is
+    // the one family T-029's rule cannot reach.
+    //
+    // **T-102 RENAMED THIS FROM `text_after_auth_status`, AND THE RENAME
+    // IS PART OF THE FINDING RATHER THAN TIDYING.** T-069 set it in the
+    // `TextDelta` arm alone, and its own justification — model text "is
+    // streamed by a request that SUCCEEDED" — applies verbatim to
+    // `StreamLine::Activity`, which `classify_line` produces from a
+    // `tool_use` CONTENT BLOCK of the same model response. The old name
+    // said `text`, so the arm that was missing read as a different
+    // subject rather than as a missing case.
+    //
+    // **THE EVIDENCE IT NOW ALSO READS IS STRONGER THAN THE EVIDENCE IT
+    // ALREADY READ.** The honest limit T-069 states is that the CLI
+    // writes its OWN prose into a nominally-model field, so a delta can
+    // be the CLI rather than the model. A `tool_use` block naming a tool
+    // is not prose and the CLI has no reason to fabricate one. Before
+    // T-102 the discriminator read the evidence that CAN be forged and
+    // ignored the evidence that cannot.
+    //
+    // **ONE FLAG, NOT TWO, AND THE DIFFERENCE IS REFUSED IN WRITING**
+    // (T-102 criterion 3). A second flag earns its keep only if some
+    // reader makes a DIFFERENT decision from the stronger evidence, and
+    // there is exactly one reader below: a guard that WITHDRAWS a claim
+    // and never makes one. Withdrawal has no degrees — a turn is not
+    // more withdrawn because the evidence was unforgeable — so two flags
+    // would differ in nothing but name today, and a distinction no
+    // consumer reads is a distinction that rots. The direction of error
+    // is the same for both, too: when this flag is wrong the turn
+    // degrades to `ExitNonZero` with the status still legible in the
+    // tail and Try again restored, which is the trade T-029's verifier
+    // ratified. IF a future arm ever wants to make a POSITIVE claim from
+    // this evidence — "the CLI definitely authenticated" rather than
+    // "stop saying it definitely did not" — THEN it needs the
+    // unforgeable half alone and this splits in two. That reader does
+    // not exist; this comment is the record that its absence was checked
+    // rather than overlooked.
+    let mut evidence_after_auth_status = false;
     let mut oversize = false;
     let mut last_line_at = Instant::now();
     let mut failure: Option<TurnError> = None;
@@ -1920,8 +2021,16 @@ pub fn run_turn(
                         // flag rather than read off `relayed`, which
                         // counts FLUSHED bytes only and carries no order
                         // relative to the diagnostic.
+                        //
+                        // THE WEAKER OF THE TWO SOURCES, and it is the
+                        // one T-069 had: the CLI writes its own prose
+                        // into this nominally-model field, so a delta
+                        // can be the CLI talking rather than the model.
+                        // The `Activity` arm below is the unforgeable
+                        // half. See the flag's own declaration for why
+                        // they share one flag.
                         if auth_status.is_some() {
-                            text_after_auth_status = true;
+                            evidence_after_auth_status = true;
                         }
                         if relayed < MAX_RELAY_BYTES {
                             if pending.is_empty() {
@@ -1934,6 +2043,33 @@ pub fn run_turn(
                     }
                     StreamLine::Activity(label) => {
                         saw_json_anchor = true;
+                        // T-102: THE SAME DISCRIMINATOR, ON THE EVIDENCE
+                        // THAT CANNOT BE FORGED.
+                        //
+                        // This arm is a `tool_use` content block — the
+                        // SAME model response the `TextDelta` arm reads,
+                        // in a different block type — so T-069's own
+                        // argument reaches it verbatim: a `tool_use`
+                        // block is streamed by a request that SUCCEEDED,
+                        // and one arriving after the last status-bearing
+                        // line is the stream saying the CLI got past
+                        // that status. It reached nothing until T-102,
+                        // and the family that cost is an ordinary
+                        // opening: a planner that READS THE REPO BEFORE
+                        // IT SPEAKS, on a turn that recovered a 401 and
+                        // then died without a `result` line, classified
+                        // `AuthFailed` and lost Try again — the exact
+                        // harm T-029 exists to undo, surviving in the
+                        // one shape T-069's own closure could not see.
+                        //
+                        // Set BEFORE the flush and the dedupe below, so
+                        // the evidence counts even for a repeated label
+                        // that emits no event: what this flag records is
+                        // that the model ACTED, not that the screen
+                        // changed.
+                        if auth_status.is_some() {
+                            evidence_after_auth_status = true;
+                        }
                         flush_pending(emitter, req.turn, &mut pending, &mut pending_since, &mut relayed);
                         if last_activity.as_deref() != Some(label.as_str()) {
                             emitter.activity(req.turn, label.clone());
@@ -2026,10 +2162,11 @@ pub fn run_turn(
                         // flagship affordance.
                         auth_status = api_error_status;
                         // The turn's own verdict has just spoken, so
-                        // whatever the model said earlier no longer
-                        // argues against it (see `text_after_auth_status`
-                        // in the `Diagnostic` arm below).
-                        text_after_auth_status = false;
+                        // whatever the model said OR DID earlier no
+                        // longer argues against it (see
+                        // `evidence_after_auth_status` in the
+                        // `Diagnostic` arm below).
+                        evidence_after_auth_status = false;
                         if reason.is_some() {
                             terminal_reason = reason;
                         }
@@ -2144,12 +2281,22 @@ pub fn run_turn(
                         saw_json_anchor = true;
                         if error_status.is_some() {
                             auth_status = error_status;
-                            // A NEW status supersedes whatever text came
-                            // before it: the discriminator is about text
-                            // after the LAST status-bearing line, so a
-                            // second 401 arriving behind a recovered
-                            // first one still classifies.
-                            text_after_auth_status = false;
+                            // A NEW status supersedes whatever the model
+                            // said or did before it: the discriminator
+                            // is about evidence after the LAST
+                            // status-bearing line, so a second 401
+                            // arriving behind a recovered first one
+                            // still classifies. ONE RESET COVERS BOTH
+                            // SOURCES because they share one flag (see
+                            // its declaration) — which is also why the
+                            // `tool_use` widening owes no second
+                            // scoping fixture of its own: this line is
+                            // already pinned by
+                            // `…text_then_a_second_401…`, and a
+                            // `tool_use` twin of it would kill no
+                            // mutant that body does not (CONVENTIONS,
+                            // SHAPE SIX).
+                            evidence_after_auth_status = false;
                         }
                         stderr_ring.lock().expect("stderr ring poisoned").push(note.as_bytes());
                         stderr_ring.lock().expect("stderr ring poisoned").push(b"\n");
@@ -2273,12 +2420,20 @@ pub fn run_turn(
             // removes Try again and sends a user whose login is fine to
             // `claude login`, the exact harm T-029 exists to undo.
             //
-            // `text_after_auth_status` closes it on evidence the stream
-            // ALREADY CARRIES: model text is streamed by a request that
-            // SUCCEEDED, so a delta after the last status-bearing line
-            // is the CLI demonstrating it got past that status. No
+            // `evidence_after_auth_status` closes it on evidence the
+            // stream ALREADY CARRIES: a model response is streamed by a
+            // request that SUCCEEDED, so a delta OR A `tool_use` BLOCK
+            // after the last status-bearing line is the CLI
+            // demonstrating it got past that status. No
             // `terminal_reason` vocabulary is consulted — the set
             // T-029-s5 records as unverified is not touched here.
+            //
+            // T-102 ADDED THE SECOND SOURCE, and the family it closes is
+            // an ordinary opening rather than an exotic one: a planner
+            // that reads the repo before it speaks calls a tool with no
+            // delta in front of it, so on a turn that recovered a 401
+            // and wrote no `result` line, T-069's delta-only flag stayed
+            // false and this guard still typed `AuthFailed`.
             //
             // IT WITHDRAWS A CLAIM, IT NEVER MAKES ONE, which is why it
             // is allowed to rest on weaker evidence than the arms above:
@@ -2287,9 +2442,13 @@ pub fn run_turn(
             // restored — the direction T-029's verifier ratified, where
             // losing a diagnosis to a relay beats a false positive that
             // takes the retry away. The counter-pin holds by
-            // construction: `auth-403-no-result` streams no delta at
-            // all, so its 403 still classifies.
-            if matches!(auth_status, Some(401) | Some(403)) && !text_after_auth_status {
+            // construction ACROSS THE WIDENING, which is why T-102 could
+            // take it: `auth-403-no-result` streams NEITHER a delta NOR
+            // a `tool_use` — it is an init, a diagnostic and an exit —
+            // so its 403 still classifies, and
+            // `a_diagnostic_auth_failure_with_no_result_line_at_all_is_still_authfailed`
+            // is the body that says so.
+            if matches!(auth_status, Some(401) | Some(403)) && !evidence_after_auth_status {
                 let message = auth_message
                     .as_deref()
                     .map(str::trim)
@@ -2723,6 +2882,100 @@ mod tests {
             }
             other => panic!("expected Denial, got {other:?}"),
         }
+    }
+
+    /// **T-102, ABSORBING `T-081-s4`: THE BOUND RULE, ASSERTED OVER THE
+    /// CONSTANTS THROUGH THE COMPOSITION THAT ACTUALLY RUNS.**
+    ///
+    /// The finding was that three byte bounds in this file are governed
+    /// by a rule written down in exactly one of them, and that one of the
+    /// three (`MAX_AUTH_MESSAGE_BYTES`) sits ABOVE
+    /// `docs_watch::MAX_ECHO_LOG_CHARS` while its doc comment promised "a
+    /// hard stop". The rule now heads the caps block; this is the half
+    /// that reds.
+    ///
+    /// **IT MEASURES, IT DOES NOT RESTATE.** The cap is DERIVED from the
+    /// other module's own function rather than named — `MAX_ECHO_LOG_CHARS`
+    /// is private to `docs_watch` and reaching it would mean widening a
+    /// fence to assert a number, when the behaviour it produces is public
+    /// and is what actually governs. So this body reds if EITHER file
+    /// moves: raise a bound here past the cap, or drop the cap there
+    /// below a bound, and the class it asserts stops holding.
+    ///
+    /// **AND IT PINS THE MARKER ASYMMETRY, which is the reason "just
+    /// lower them all" is a trade rather than a tidy-up**:
+    /// `sanitize_for_log` marks its own cut with `…(truncated)` and
+    /// `truncate_utf8` does not, so a LIVE bound truncates silently and
+    /// an ADVISORY one truncates visibly. That is measured below in both
+    /// directions, so a future edit that swaps a constant's class cannot
+    /// do it without also moving this body.
+    #[test]
+    fn every_byte_bound_here_is_classified_against_the_log_cap_that_outranks_it() {
+        // The marker `docs_watch` appends, spelled once. If it ever
+        // changes, the derivation below fails loudly rather than
+        // silently computing a wrong cap.
+        const MARKER: &str = "…(truncated)";
+
+        // DERIVE the other file's cap from its own behaviour. `probe` is
+        // far longer than any plausible cap, so the cut is guaranteed;
+        // what comes back is `cap` characters plus the marker.
+        let probe = crate::docs_watch::sanitize_for_log(&"x".repeat(64 * 1024));
+        assert!(
+            probe.ends_with(MARKER),
+            "the derivation below reads the cap off this marker; without it there is \
+             no cap to classify against and this body is measuring nothing: {:?}",
+            &probe[probe.len().saturating_sub(40)..]
+        );
+        let cap = probe.chars().count() - MARKER.chars().count();
+        assert!(cap > 0, "a zero cap would make every bound below vacuously advisory");
+
+        // ---- THE LIVE CLASS: this file's number decides the length,
+        //      and the cut carries no marker.
+        for (name, bound) in
+            [("MAX_DENIAL_BYTES", MAX_DENIAL_BYTES), ("MAX_DENIAL_MESSAGE_BYTES", MAX_DENIAL_MESSAGE_BYTES)]
+        {
+            assert!(
+                bound <= cap,
+                "{name} is documented LIVE but {bound} is above the {cap}-character log \
+                 cap, so `docs_watch` decides its length for ASCII text and the doc \
+                 comment beside it has stopped being true"
+            );
+            let cut = bounded_stream_string(&"x".repeat(bound + 50), bound);
+            assert_eq!(
+                cut.len(),
+                bound,
+                "{name} must be the bound that BITES: the composition should return \
+                 exactly {bound} bytes"
+            );
+            assert!(
+                !cut.ends_with(MARKER),
+                "{name} wins against the cap, so its cut is SILENT — a marker here \
+                 would mean the cap cut first and the class is wrong"
+            );
+        }
+
+        // ---- THE ADVISORY CLASS: the cap decides the length for ASCII,
+        //      and the cut IS marked. Both halves matter — the first is
+        //      the finding, the second is why the constant was left at
+        //      2048 instead of being lowered under the cap.
+        assert!(
+            MAX_AUTH_MESSAGE_BYTES > cap,
+            "MAX_AUTH_MESSAGE_BYTES is documented ADVISORY-for-ASCII. If it has been \
+             lowered under the {cap}-character cap then its `hard stop` is real now \
+             and the doc comment must say which cap it is under — and the \
+             `…(truncated)` disclosure it used to inherit is gone"
+        );
+        let cut = bounded_stream_string(&"x".repeat(MAX_AUTH_MESSAGE_BYTES), MAX_AUTH_MESSAGE_BYTES);
+        assert!(
+            cut.ends_with(MARKER),
+            "a string exactly MAX_AUTH_MESSAGE_BYTES long passes this file's bound \
+             untouched and is then cut by the OTHER file, which marks: {cut:?}"
+        );
+        assert_eq!(
+            cut.chars().count(),
+            cap + MARKER.chars().count(),
+            "…and the length that reaches the user is the cap's, not this file's"
+        );
     }
 
     /// T-081 criterion 6: a denial the app cannot fully describe is not a
