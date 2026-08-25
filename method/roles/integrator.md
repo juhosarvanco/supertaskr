@@ -37,6 +37,34 @@ You merge one approved task and leave the docs true.
      here rather than in the merge
    - anything your own work did to a product a human was running — see
      the last rule of the section below
+   **REPAIR WHAT THE MERGE INTRODUCES; FILE WHAT THE MERGE MERELY
+   REVEALS.** The ritual above says which files to update. This says which
+   defects to touch, and it is the question every checkpoint actually
+   spends its judgement on. **A figure, a fixture, a count or a citation
+   that THIS merge made false is the merge's own debris and the
+   integrator's to repair, in the checkpoint** — nobody else will ever see
+   it as cheaply, and leaving it is shipping a break you made. **A defect
+   the merge merely brought into view — one that was already false at the
+   merge's parent — is FILED as a finding and LEFT ALONE**, however small
+   the fix looks and however plainly you can see it.
+   **THE TEST IS THE PARENT, NOT THE SIZE OF THE FIX.** Ask whether the
+   thing was true one commit ago. Yes: repair it. No: file it. That is the
+   whole rule, and it is answerable with one command rather than with
+   taste.
+   **IT IS THE COMPANION TO THE RULE THAT DISPOSITION IS NOT YOURS**
+   (tasks/TASK-FORMAT.md, "THERE IS NO FOURTH MOVE"): that rule says what
+   an integrator may not CLOSE, this one says what it may FIX, and the two
+   fail the same way. Repairing a revealed defect is not generosity — it
+   is a disposition taken without triage, and it destroys the evidence
+   that the defect predated the merge, which is usually the most
+   interesting thing about it.
+   **RULED AT A CHECKPOINT ON THIS METHOD'S OWN PROJECT, AND FIRST APPLIED
+   BY THAT INTEGRATOR AGAINST ITS OWN LANE**: a citation the lane had
+   shipped was correct when written and false thirty-one minutes later,
+   under a merge that landed between the two readings. The merge is what
+   moved it, so the checkpoint repaired it — and the same pass left
+   untouched, and filed instead, a defect it could see just as clearly and
+   had not caused.
 4. Commit. Remove the worktree (../lane-protocol.md rule 6). Stop.
 
 ## The checkout you merge into may be in use
