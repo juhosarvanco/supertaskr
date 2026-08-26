@@ -707,9 +707,60 @@ test("a brief assembled at this ref names the lanes the repository holds, and no
   const ctx = context({ taskId: "T-133" });
   const rendered = render(assembleBrief(ctx).recs);
   const entries = parseWorktreePorcelain(ctx.porcelain);
-  for (const lane of ctx.lanes) {
-    expect(rendered).toContain(`${lane.taskId} touches:`);
+
+  // MACHINE-WIDE STATE JOINED TO PER-CHECKOUT STATE, AND THE SEAM IS NOW
+  // ASSERTED INSTEAD OF ASSUMED (T-137).
+  //
+  // `ctx.lanes` comes from `git worktree list`, which is MACHINE-scoped:
+  // every worktree of this repository sees every other one's lane. The
+  // card index is CHECKOUT-scoped. So a lane cut AFTER this checkout's
+  // base has a card that exists in the integration branch and in no
+  // older tree, and no brief assembled here can name its `touches:` —
+  // this tree has never seen them.
+  //
+  // THIS BODY USED TO REQUIRE `<id> touches:` FOR EVERY LANE ON THE
+  // MACHINE, so cutting any new lane reddened it in every existing
+  // checkout at once, with a title that named none of that. Observed:
+  // `T-141` was dispatched at `2a922ce` and this body went red in the
+  // two older lanes simultaneously, on trees that had not changed.
+  // It is the same class as `T-132-s6` — a machine-scoped fact joined to
+  // a checkout-scoped one with nothing marking the seam.
+  //
+  // NARROWER IS NOT WEAKER HERE: the unresolvable side had NO assertion
+  // at all before this, and now has three.
+  const resolvable = ctx.lanes.filter((l) => ctx.cards.has(l.taskId));
+  const unresolvable = ctx.lanes.filter((l) => !ctx.cards.has(l.taskId));
+  expect(
+    resolvable.length + unresolvable.length,
+    "the partition is total — no lane may fall out of both halves",
+  ).toBe(ctx.lanes.length);
+  for (const lane of resolvable) {
+    expect(
+      rendered,
+      `${lane.taskId}'s card is in THIS checkout, so its fence must be named`,
+    ).toContain(`${lane.taskId} touches:`);
   }
+  for (const lane of unresolvable) {
+    expect(
+      rendered,
+      `${lane.taskId} is a lane whose card this checkout cannot resolve`,
+    ).toContain(`${lane.taskId}: no live card, fence UNKNOWN`);
+    expect(rendered).not.toContain(`${lane.taskId} touches:`);
+  }
+
+  // AND THE UNRESOLVABLE BRANCH IS DRIVEN DETERMINISTICALLY, off the
+  // fixture rather than off whatever the machine happens to hold — so
+  // this half is pinned whether or not a newer lane exists right now.
+  // `T-901` is a REAL lane in the fixture and no card declares it.
+  const fixture = context({ taskId: "T-133", porcelain: PORCELAIN_FIXTURE });
+  const fixtureRendered = render(assembleBrief(fixture).recs);
+  expect(fixtureRendered).toContain("T-901: no live card, fence UNKNOWN");
+  expect(fixtureRendered).not.toContain("T-901 touches:");
+  expect(
+    fixture.findings.join(" ;; "),
+    "a lane whose fence cannot be read is a fence nobody can be disjoint from",
+  ).toContain("T-901 holds a worktree on refs/heads/task/T-901-a-real-lane");
+
   // A detached entry is never silently promoted to a lane.
   for (const entry of entries.filter((e) => e.branch === "")) {
     expect(rendered).not.toContain(`${entry.path} (on `);
