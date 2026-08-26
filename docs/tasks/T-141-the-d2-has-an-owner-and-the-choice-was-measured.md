@@ -375,3 +375,467 @@ D2 row it had just added. This card takes the findings back to four, so
 the sentence is true again **by coincidence rather than by repair**. It is
 left untouched and named here so a verifier is not left to wonder whether
 it was edited: it was not.
+
+---
+
+## Verdicts
+
+### T-141 VERDICT: REJECTED — verifier claude-opus-5, 2026-08-26. The narrative this card calls "the real work" is built on a census that is wrong: this repository has had THREE D2s, not two, and the first is the one nobody remembers
+
+**Verified at `5c74f3d` (`task/T-141-lane`), against `main` at
+`2a922cecfc35e61ab67a20575c5bf792f6a7d7ff`.** Main advanced to
+`6036260` (Merge T-138) at 20:25 while this verification ran; the range
+was re-derived against it and is byte-identical — see §RANGE. Card read
+at its base `2a922ce` and the attack set written to scratch **before**
+the diff or the notes were opened, at **2026-08-26T20:22:10+03:00**.
+
+**EVERY MEASURABLE CLAIM IN THIS LANE REPRODUCED EXACTLY.** The
+four-owner table, the fourteen assertions, the five titles, all three
+pass counts, the drill, the cargo census and the identical-figures trap
+were each re-run on a fresh checkout and each came back to the digit.
+This rejection is narrow, textual, and does not touch the disposition:
+**C-05 is the right owner and the measurement that chose it is sound.**
+
+### The failure — criterion 3, violated by the lane's own replacement title
+
+The card's third criterion is the one it italicises: *"EVERY TITLE THAT
+CARRIES A FIGURE OR A CLAIM SHALL MOVE WITH ITS BODY … A title asserting
+a bucket that no longer exists is the defect this project has caught
+more than any other."* All five titles moved — and the new one at
+`app/test/architecture-dogfood.test.ts:1220` reads:
+
+    all 185 files map and the bucket is EMPTY again —
+    T-141 closes THE SECOND D2, which stood for exactly one merge
+
+**It is the third.** `app/src-tauri/tests/graph_budget_bench.rs` is this
+repository's THIRD D2, and `tests/dispatch_lanes.rs` was its second, not
+its first.
+
+**THE FIRST D2 WAS THE MAP'S OWN DERIVATION ENGINE, AT THE T-011 MERGE,
+2026-08-15 — AND IT WAS BIGGER THAN EITHER OF THE OTHER TWO.** Four
+files, four undeclared edges. Reproduce it in one command:
+
+    git show f8046fa^:app/test/architecture-dogfood.test.ts | sed -n '105,127p'
+
+which returns a live dogfood body reading, against the committed graph
+of the day:
+
+    it("59 files map except the four known-unclaimed (engine trio + verdicts.ts)"
+    expect(derived.unmappedFiles).toEqual([
+      "app/src/lib/architecture/derive.ts",
+      "app/src/lib/architecture/glob.ts",
+      "app/src/lib/architecture/graph.ts",
+      "app/src/lib/verdicts.ts",
+    ]);
+    ["unmapped", 4],
+
+plus `id: "D2:unmapped"` in the findings array and
+`["unmapped", "C-06", "undeclared", 1]` in the relation table.
+
+**FOUR INDEPENDENT CORROBORATIONS, ONE OF THEM ALREADY IN THIS TREE:**
+
+1. `git log -G'\["unmapped", [0-9]' -- app/test/architecture-dogfood.test.ts`
+   returns SIX commits, not four. The row enters at **`ceaa949`
+   "Checkpoint: T-011 done"** (2026-08-15 20:07:13), which follows
+   **`c036779` "Merge T-011"** (19:05:31), and leaves at **`f8046fa`
+   "T-012 §2"** (21:55:26).
+2. `f8046fa`'s own commit message: *"D2:unmapped GONE (all 59 files
+   map)"*.
+3. **`docs/tasks/rejected/T-011-s1-engine-location-vs-c12-paths.md:18`**
+   — *"the map's own engine becomes its **first D2 finding**:
+   `D2:unmapped` [derive.ts, glob.ts, graph.ts]"*. Filed 2026-08-15.
+4. **`docs/ARCHITECTURE.md:1004`** says the same four words —
+   *"this repository has its **first D2 finding**"* — about T-110's
+   `dispatch_lanes.rs`. **The repository contradicts itself**, and the
+   T-011 record is the half with contemporaneous test evidence behind
+   it. That line is the seed of the whole error chain and is OUT OF
+   THIS CARD'S FENCE; routed as **`T-141-s2`**, filed beside this
+   verdict.
+
+### The five sites this diff writes it into, all newly authored here
+
+| # | site | text |
+|---|---|---|
+| 1 | `app/test/architecture-dogfood.test.ts:1220` | title — *"T-141 closes the second D2"* |
+| 2 | `app/test/architecture-dogfood.test.ts:1620` | *"this repository's first D2, created by the T-110 merge"* |
+| 3 | `app/test/architecture-dogfood.test.ts:1625` | *"so the second D2 this repository has ever carried was a benchmark harness"* |
+| 4 | `app/test/architecture-dogfood.test.ts:1629` | **the pattern paragraph** — *"WORTH RECORDING BECAUSE IT IS NOW TWO FOR TWO. BOTH D2s THIS REPOSITORY HAS EVER HAD …"* |
+| 5 | `docs/architecture/components/C-05-app.md:64` | *"became the SECOND D2 this repository has ever carried"* — **in the registry `arch` reads and the map renders** |
+
+and once more in the suggestion filed beside it,
+`T-141-s1` line 60: *"Both D2s this repository has ever had were treated
+as things to close and both were closed."*
+
+A sixth site, `architecture-dogfood.test.ts:1177` (*"spent one day as
+this repository's first D2"*), is **PRE-EXISTING at `2a922ce`** and not
+this lane's — but it is in-fence and in the same file, so the rebuild
+should take it in the same pass.
+
+**THE ERROR IS INHERITED AND WAS ESCALATED.** `docs/STATE.md:124` at
+`2a922ce` already says *"the SECOND D2 it has ever had"*, and the card's
+own first sentence says *"this repository's second D2"*. The lane did not
+invent it. But the lane's §7 is titled *"WHERE THE BRIEF AND THE CARD
+WERE WRONG"* and audits the card's title count, its table of bodies, its
+unprinted numbers and its `touches:` — it accepted the duty and then did
+not apply it to the card's opening sentence. And it turned an inherited
+figure into a **new, emphatic, load-bearing claim**: the paragraph's
+stated warrant is *"BECAUSE IT IS NOW TWO FOR TWO"*, so the miscount is
+not decoration, it is the reason the paragraph says it exists.
+
+### AND THE PATTERN ITSELF SURVIVES — AT THREE FOR THREE, WHICH IS STRONGER THAN WHAT WAS CLAIMED
+
+I checked all three histories independently, as the brief asked. The
+lane's mechanism sentence is right every time:
+
+| # | created (regen at the checkpoint after…) | file(s) | closed by, a later hand |
+|---|---|---|---|
+| 1 | `ceaa949`, after **Merge T-011** `c036779`, 2026-08-15 20:07 | `derive.ts`, `glob.ts`, `graph.ts`, `verdicts.ts` | `f8046fa` **T-012 §2**, 21:55 |
+| 2 | `1d8a2c2`, after **Merge T-110** `1223543`, 2026-08-25 12:25 | `tests/dispatch_lanes.rs` | `1baed94` **T-033 phase 1B**, 14:37 |
+| 3 | `ae92f67`, after **Merge T-139** `aed77b6`, 2026-08-26 19:40 | `tests/graph_budget_bench.rs` | `5c74f3d` **T-141**, 20:17 |
+
+**Every one was created by a merge's regen — the checkpoint's act, not
+the lane's — and every one was closed by a later card's hand, never by
+the merge that made it.** Three for three. **The paragraph's conclusion
+is not in doubt; only its census is.** That is why this is a correction
+and not a redesign.
+
+**AND "THE FIRST LASTED A DAY" IS WRONG TWICE OVER.** It names the wrong
+instance, and the duration is wrong for either candidate: D2 #2 stood on
+main from 12:25:46 to `8f8ec31` (Merge T-033) at 16:32:00 the SAME
+day — **4h06m**; D2 #1 stood from 20:07:13 to 21:55:26 — **1h48m**. The
+phrase is inherited from `STATE.md` and the base fixture; it should stop
+being repeated as a duration.
+
+### A second, independent defect: the notes' own assertion table does not sum to its own headline
+
+Notes §2 states **fourteen** assertions — correct, and I machine-verified
+it — then prints a six-row table whose "assertions moved" column reads
+**4, 1, 4, 2, 2, 3 = 16**. Two rows count ARRAY ROWS as assertions:
+
+- *"all 185 files map …| 4 — `unmappedFiles`, the `UNMAPPED_ID` lookup,
+  the C-05 tally row, the `["unmapped", 1]` tally row"* — the last two
+  are **one** `expect([...counts.entries()].sort()).toEqual(…)`. It is 3.
+- *"the full relation table …| 4 — the row array (four rows inside it),
+  the relation tally, the undeclared identity list"* — three items
+  listed, four claimed. It is 3.
+
+The true per-body counts are **3, 1, 3, 2, 2, 3 = 14**, machine-derived
+by extracting every `expect(…)` statement from both files at `2a922ce`
+and at `5c74f3d` and diffing the normalised set: **9 moved in
+`architecture-dogfood.test.ts`, 5 in `map-dogfood-render.test.tsx`, 0
+added, 0 removed.** Fix the table, keep the headline.
+
+### THE FOURTEEN, RE-DERIVED — and the eight that sit below a first red
+
+`expect(` census, base → tip: **45 → 45** and **44 → 44**. Bodies
+**10 → 10** and **8 → 8**. **Zero assertions added; fourteen values
+moved inside assertions that already existed.** The six first-reds, from
+my own pass-1 run, are exactly the six the card's table forecast:
+
+    architecture-dogfood.test.ts:1338  unmappedFiles
+    architecture-dogfood.test.ts:1671  derived.findings
+    architecture-dogfood.test.ts:1726  derived.edges.map(...)
+    architecture-dogfood.test.ts:1993  drift
+    map-dogfood-render.test.tsx:117    map-node toHaveLength(14)
+    map-dogfood-render.test.tsx:376    map-edge toHaveLength(39)
+
+**6 first-reds + 8 hidden = 14.** The eight hidden ones are the
+`UNMAPPED_ID` lookup and the counts array (body 1), the tally and the
+undeclared identity list (body 3), `findings.filter(isDriftFinding)`
+(body 4), the bucket identity check (body 5), and the undeclared count
+and identity list (body 6).
+
+### THE SECOND-ASSERTION TRAP, REPRODUCED AND THEN DEMONSTRATED
+
+Both of the lane's published pass numbers reproduce on a fresh checkout,
+exactly:
+
+    fixtures at 2a922ce + the C-05 claim   ->  6 failed / 1007 passed (1013)  exit 1
+    tip, with ONLY findings.filter(isDriftFinding) reverted
+                                           ->  1 failed / 1012 passed (1013)  exit 1
+                                               red reported at :2148
+    tip                                    ->  0 failed / 1013 passed (1013)  exit 0
+
+**AND THE TRAP MADE VISIBLE, WHICH NO PASS COUNT CAN DO.** Revert BOTH
+assertions in `drift flags land on the right nodes` and vitest prints the
+**identical headline** — `1 failed / 1012 passed` — but names only line
+**2114**; line **2148 does not appear in the output at all**
+(`grep -c 2148` on the run log returns **0**). Two false assertions and
+one false assertion are indistinguishable from the summary line. **The
+lane's conclusion is correct and now demonstrated rather than argued: a
+failure count is a floor and never a total.** Third consecutive hand, and
+the first where a body-by-body forecast existed and still missed one.
+
+### THE FOUR-OWNER TABLE, RE-RUN — restored to HEAD and `git status --porcelain` proved empty between every arrangement
+
+`nputer-index arch --root ../..` from `app/src-tauri`, exit 0 each time,
+graph unchanged at `997202 bytes · 185 files · 2124 symbols · 2039 edges`:
+
+| arrangement | edges | findings | drift_components | what it adds |
+|---|---|---|---|---|
+| no owner (`C-05-app.md` at `2a922ce`) | **39** | **5** | 5 | the `unmapped` node at `drift=D2` + `unmapped -> C-07` and `unmapped -> C-10` |
+| **C-05** (the lane's claim) | **37** | **4** | 4 | **nothing** — undeclared rows stay `C-05->C-15`, `C-10->C-14` |
+| C-07 | **38** | **5** | 5 | new `C-07 -> C-10 undeclared`; C-07 goes `observed_deps 0 -> 1`, `drift - -> D1` |
+| C-10 | **38** | **5** | **4** | new `C-10 -> C-07 undeclared`; C-10 reads **`drift=D1,D1`** |
+
+**The inversion is observable, not merely reasoned, and the card's own
+IF/THEN is satisfied: only C-05 adds no edge.** The fold is exact —
+`C-05 -> C-07` **1 → 2** and `C-05 -> C-10` **39 → 40**, both already
+CONFIRMED; C-05 `files 63 → 64`. The two `use` lines at
+`tests/graph_budget_bench.rs:59-60` are verbatim what the card quotes.
+`C-07 depends_on: []` confirmed. One column the lane's table records that
+the brief does not: **C-10 drops `drift_components` to 4 while findings
+stays 5**, because both of C-10's findings land on one node.
+
+### THE POISON DRILL — MY RULING: A RECONCILIATION THAT ADDS NOTHING STILL OWES ONE, AND THIS LANE WAS RIGHT TO RUN IT
+
+The lane proved by count that it adds zero assertions, said so
+explicitly as the card demanded, and drilled anyway. **That was the
+right call and I am ruling it the standing one.** A reconciliation
+changes what an assertion MEANS even when it adds none; an assertion
+whose new value cannot be made red is indistinguishable from one that
+was loosened, and "we only changed numbers" is exactly the shape a
+loosening takes. The T-139 checkpoint already ruled that a measurement
+is not exempt because it is not an assertion; this is the same rule one
+step further. **The exemption clause in the card — "if this card adds
+none … say so explicitly" — buys a SENTENCE, not a skipped drill.**
+
+Reproduced on my checkout, one producer-side mutation (the single
+registry line removed from `C-05-app.md`'s `paths:`, read back with
+`git diff --stat` before the run), `npx vitest run` over the two
+fixtures only:
+
+    baseline   18 passed / 18   exit 0
+    mutant      6 failed / 12 passed of 18   exit 1
+    restored   18 passed / 18   exit 0   (git status --porcelain empty)
+
+**Its honest limit, which the lane states itself and I confirm:** one
+mutation reds at BODY granularity, so six of the fourteen are
+individually observed red and **eight sit below a first red in the
+mutant exactly as they did on pass 1**. The drill establishes that the
+reconciled set is producer-sensitive rather than vacuous; it does not
+individually exercise all fourteen. Surfacing the other eight would mean
+editing assertions, which the one-sidedness rule forbids. **That is the
+correct trade and the limit is correctly named.**
+
+### `T-141-s1` — RULED: the card is SOUND, and sharper than the parent asked for. Keep it as filed
+
+Every mechanism claim in it verifies verbatim at `5c74f3d`:
+
+- `crates/nputer-index/tests/arch.rs:211-214` — the `KNOWN_DECLARED_CYCLES`
+  comment reads *"EXACT-SET semantics, BOTH directions. A cycle that
+  appears and is not listed here reds; an entry left here after its cycle
+  is gone reds too."* Quoted accurately.
+- `the_mapping_is_total_over_the_committed_graph` (`arch.rs:59-79`)
+  asserts `owner == UNMAPPED_ID || declared.contains(owner)` and adds
+  `model.unmapped.len()` into the partition arithmetic. **A file in the
+  bucket is a legal state to it by construction.** Confirmed.
+- **The separability claim is not just arguable, it MEASURES.** From
+  `app/src-tauri` at this tip:
+
+        arch drift                        exit 0   REPORT
+        arch drift --fail-on unmapped     exit 0   CLEAN  matched 0 findings
+        arch drift --fail-on undeclared   exit 1   DRIFT  matched 2 finding(s)
+        arch drift --fail-on any          exit 1   DRIFT  matched 4 finding(s)
+
+  **The arm whose blocking reason is real reds; the arm whose blocking
+  reason never covered it is green.** CONVENTIONS' *"stays unwired while
+  the registry carries live undeclared edges by design"* is specific to
+  `undeclared`, and the two rows it protects are exactly the two the
+  drift report names — `C-10 -> C-14` (T-125's cycle) and `C-05 -> C-15`
+  (routed to `T-126-s3` item 4). I searched `docs/decisions/` and
+  `docs/rooms/` for any ruling that tolerates `unmapped` and found none.
+  **This is a gate that could have existed and was blocked by a rationale
+  that never covered it.**
+- `cargo test --no-fail-fast` from `app/src-tauri`: **518 passed / 0
+  failed / 4 ignored, exit 0**, summed from **eighteen** `test result:`
+  lines and cross-checked against **eighteen** `running N tests` headers,
+  **522 = 518 + 4**. Byte-identical to what T-139 recorded on both sides
+  of the D2's creation. **The Rust side is blind across the creation and
+  the closure alike** — confirmed on my own machine, not quoted.
+- Its refusal to recommend option 1 is the right call: a gate that reds
+  at the merge would force the integrator into the disposition a
+  checkpoint may not take — and my three-instance table above makes that
+  argument STRONGER, not weaker. Option 2 (a `KNOWN_UNMAPPED` exact-set
+  pin) is the shape that matches the cycle census.
+
+**One correction owed inside it**: line 60's *"Both D2s this repository
+has ever had"* is the same miscount; it becomes "all three", and the
+sentence gets stronger for it. Nothing else in the card moves.
+
+### The cargo-blindness gap earns a finding — CONFIRMED, and correctly filed rather than fixed
+
+Criterion 2 asked for a ruling and got one. The gap is real, it is now
+measured in both directions, and the card is right that fixing it here
+would owe a poison drill this card does not otherwise owe. **Filed, not
+fixed, is correct.**
+
+### FIVE TITLES, NOT FOUR — CONFIRMED, and the card's count is wrong in its own table
+
+I swept every `it(`/`test(` title in both dogfood fixtures for a figure
+or claim this change falsifies. Exactly five carry one and all five
+moved. The fifth — *"the full relation table: 26 confirmed, 4
+undeclared, 9 planned"* — is the one the card's criterion misses **while
+quoting it in its own table**. `drift flags land on the right nodes` is
+the sixth body and carries no figure, correctly unmoved. I also cleared
+the two nearby titles that carry live counts and are NOT affected:
+*"C-07 is a REAL face at last: thirty-six Rust files"* (C-07 stays at 36
+under the C-05 claim — it would have moved to 37 under the C-07
+arrangement) and *"C-15 HAS TERRITORY AT LAST: five files"* (still 5).
+
+### THE INCIDENTAL RE-TRUING — CONFIRMED, and correctly flagged rather than touched
+
+`architecture-dogfood.test.ts:1733-1735` carries the T-135-era sentence
+*"there are four findings, not five … two D1 rows and two D3 rows."*
+It is **byte-identical at `2a922ce` and at `5c74f3d`** (base line 1669,
+tip line 1734) — untouched, as the notes say. It was FALSE at base (5
+findings, one of them the D2) and is TRUE at the tip: `arch drift` now
+reports `D1:C-05->C-15`, `D1:C-10->C-14`, `D3:C-01`, `D3:C-11` — two D1
+rows and two D3 rows. **Re-trued by coincidence, named rather than
+claimed. Correct handling.**
+
+### RANGE
+
+**`git merge-tree --write-tree main task/T-141-lane`, exit read BEFORE
+the substitution: exit 0**, tree `7ecc93f`. `git diff --name-status
+<main^{tree}> 7ecc93f` → **5 paths**. No `..`, no `...`, no `main..HEAD`.
+
+**Main moved during this verification and the range was re-derived.** At
+`main = 2a922ce` (20:22) the tree was `7ecc93f`; `6036260` (Merge T-138)
+landed at 20:25 and against `main = 6036260` the merge-tree is
+`b6af721`, still **exit 0** and still the same 5 paths with an identical
+`--stat`. T-138's merge adds only five `docs/tasks/*.md` files and
+touches neither `graph.json` nor the registry, **so no figure in this
+lane is falsified by it.**
+
+The notes' §9 range quotes tree `bc060f6` at `07295b3`; that commit is a
+pre-amend predecessor and is not an ancestor of `5c74f3d`
+(`git log 2a922ce..task/T-141-lane` returns exactly one commit). I
+re-derived it: `merge-tree --write-tree 2a922ce 07295b3` **is** `bc060f6`,
+exit 0, 5 paths. **The notes' figure was true at the ref it names and is
+not the tip's tree** — worth a ref, not a correction.
+
+    M  app/test/architecture-dogfood.test.ts        +187 -56
+    M  app/test/map-dogfood-render.test.tsx         +38  -10
+    M  docs/architecture/components/C-05-app.md     +35  -0
+    A  docs/tasks/T-141-s1-…-exact-set-one.md       +94  -0
+    M  docs/tasks/T-141-…-was-measured.md           +260 -1
+
+`docs/tasks/` sits outside `touches:` and is the standing suggestion
+route, not a fence widening — the lane says so and I agree.
+
+### SUITES AND GATES, all at `5c74f3d` on a fresh checkout, exits read unpiped from `$?`
+
+    npm test          from app/          1013 / 1013   exit 0
+    cargo test --no-fail-fast  app/src-tauri   518 / 0 / 4   exit 0
+    npx vitest run    from lib/parser/     290 / 290   exit 0
+    npm test          from tools/e2e/      194 / 194   exit 0
+    npm run build     from app/                        exit 0
+    npx tsc --noEmit  from lib/parser/                 exit 0
+    npm run typecheck from tools/e2e/                  exit 0
+    npm run lint:docs from tools/e2e/                  exit 0
+    npm run lint:tokens from tools/e2e/                exit 0
+      clean (TOKEN 139 files; CONTROL 766 tracked text files)
+    arch cycles       from app/src-tauri   exit 1 BY DESIGN
+      declared_edges=35 at the tip AND at 2a922ce — no declared edge added
+
+`npm test` from `app/` reds at **14 failed** on a fresh checkout until
+`npm run build` has run (`test/window-manifest.test.ts` asserts about the
+SHIPPED stylesheet and refuses to skip). **That is the build order, not
+a defect** — `lib/parser` `npm ci` + `npm run build` first, then `npm run
+build` from `app/`. `npm run lint:docs` needs `tools/e2e/npm ci` first or
+node exits 1 on `ERR_MODULE_NOT_FOUND: yaml`, which is node's exit and
+not the gate's verdict.
+
+**GRAPH REGEN — ASKED, NEVER PREDICTED, AND ASKED AGAIN AFTER EVERY
+WRITE.** Both asks (before my experiments and after everything was
+restored) return:
+
+    committed:   997202 bytes · 185 files · 2124 symbols · 2039 edges
+    fresh index: 997202 bytes · 185 files · 2124 symbols · 2039 edges
+    -> STALE, exit 1
+    files  +0  -0  ~2   (architecture-dogfood.test.ts loc 2044 -> 2175,
+                         map-dogfood-render.test.tsx  loc  738 ->  766)
+
+**All four printed figures identical on both sides and the verdict is
+still STALE.** This is the third distinct graph at 997 202 bytes with
+matching file, symbol AND edge counts. **The regen belongs to the
+checkpoint; the lane leaves it stale by construction and says so, which
+is right.**
+
+### Security sweep — MANDATORY, and it is CLEAR at REJECTED level
+
+The diff is prose, test-fixture values and one registry `paths:` line.
+No new input path, no endpoint, no query, no unsafe default. **No
+manifest or lockfile is touched** (`git diff --name-only 2a922ce
+5c74f3d` matches neither `package*.json` nor `Cargo.toml`/`Cargo.lock`),
+so no dependency is added. No secret-shaped string in the diff. **The
+registry line widens C-05's `paths:` by exactly one literal file path,
+not a glob** — it cannot silently claim a directory. Clear.
+
+### What the card and the brief got wrong
+
+**The card** (architect, from a scratch measurement) — the lane found
+three of these; two more are mine:
+
+1. *"Four titles carry the D2 as a claim"* — **five**, and the fifth sits
+   inside the card's own table. (Lane's.)
+2. The six-row table is a table of BODIES presented where a count of reds
+   is wanted; **fourteen assertions moved**. (Lane's.)
+3. The C-07/C-10 inversion is asserted and never printed; the numbers are
+   **38/5 and 38/5**. (Lane's.)
+4. **"T-139's merge created this repository's second D2"** — the card's
+   FIRST SENTENCE, and the seed of this rejection. **It is the third.**
+   Criterion 5's premise (*"Both D2s in this repository's history…"*)
+   inherits it. (Mine.)
+5. **"137 lines … (`ae92f67`: `architecture-dogfood.test.ts` +103,
+   `map-dogfood-render.test.tsx` +63)"** — the citation contradicts the
+   headline it is offered as evidence for. `git show --numstat ae92f67`
+   gives **+84/−19** and **+53/−10**. 84+53 = **137**, so the headline is
+   right; 103 and 63 are **lines TOUCHED**, printed with a `+` as if they
+   were insertions, and they sum to **166**. The two figures for one
+   quantity disagree by exactly the 29 deletions. (Mine — the lane did
+   not catch it either.)
+
+**The brief:**
+
+- *"Expect `193/194`"* — **no. `npm test` from `tools/e2e/` is 194/194,
+  exit 0**, on port 14522 (re-probed free immediately before binding;
+  1420 confirmed held by the human's app and never touched). The pin at
+  `brief.spec.ts:706` joins the machine-wide worktree list to this
+  checkout's card index, and this checkout carries live cards for every
+  lane branch the machine holds — `T-137`, `T-138`, `T-141` — so it is
+  honestly green, not vacuous. **T-138's own merge subject records the
+  same brief prediction failing the same way.**
+- *"+226 / −66"* — **+225 / −66**. `git diff --shortstat 2a922ce 5c74f3d`
+  over the two fixtures reads *"225 insertions(+), 66 deletions(-)"*.
+  The lane's §4 heading repeats the same off-by-one.
+- *"C-10 … 38 / 5"* is right, but its `drift_components` is **4**, not 5
+  — the only row in the four-owner table where that column does not track
+  `findings`.
+
+### What a fresh executor owes
+
+Small and bounded. **Do not re-open the disposition, the measurement or
+the assertion work — all of it verified.**
+
+1. Correct the census at the five sites in the table above **and at the
+   inherited site `architecture-dogfood.test.ts:1177`**: three D2s, this
+   one is the third, `dispatch_lanes.rs` was the second, and the first
+   was the derivation engine plus `verdicts.ts` at the T-011 merge
+   (`ceaa949`, drained at `f8046fa`).
+2. Rewrite the pattern paragraph's warrant from *"TWO FOR TWO"* to three
+   for three, and carry the first instance's row. **The pattern gets
+   stronger; do not weaken the paragraph, extend it.** Drop *"the first
+   lasted a day"* or replace it with a measured duration and a ref.
+3. Fix `T-141-s1` line 60 the same way.
+4. Fix the notes' §2 table so its column sums to its own headline of 14.
+5. Correct §4's `+226` to `+225`.
+6. Re-run `npm test` from `app/` **until the body is green, not until the
+   first message stops appearing** — the edits are comments and titles,
+   but title text is inside `it(` and the fixtures are indexed.
+7. **Leave `docs/ARCHITECTURE.md:1004` alone — it is outside `touches:`.**
+   `T-141-s2` is filed for it.
+
+**Not stamped by this verdict:** `verifier:`, `verified_by:`, `review:`
+and `status:` are untouched, per the precedent at `6fea6a1`.
