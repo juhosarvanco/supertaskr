@@ -395,12 +395,37 @@ test("the reported line indexes the FILE, frontmatter included", async () => {
   expect(figures.map((f) => f.line)).toEqual([expected]);
 });
 
-test("a code transcript is not audited, because a command carries its own provenance", async () => {
+test("a BARE arrow inside a transcript is not audited, because a command carries its own provenance", async () => {
+  const derived = derivedTexts(ctx());
+  const quoted = "HEAD in full: abc <- @ deadbeef1234 ; git rev-parse HEAD";
+  expect(auditCard(fixture([quoted]), derived).map((f) => f.verdict)).toEqual(["UNRUNNABLE"]);
+  expect(auditCard(fixture(["```", quoted, "```"]), derived)).toEqual([]);
+  expect(auditCard(fixture([`    ${quoted}`]), derived)).toEqual([]);
+  // A card quoting this repository's own brief output carries these by
+  // the dozen. Applying the bare-arrow arm inside a block would turn
+  // every quoted brief into a wall of UNRUNNABLE, so it stays prose-only.
+});
+
+test("a `card:` STAMP is audited inside a transcript too — formatting is not an escape hatch", async () => {
+  // FOUND ON THIS LANE'S OWN NOTES. The paste-ready lines were pasted
+  // into an indented block, the prose reader blanks those, and the author
+  // who built the gate escaped it by formatting. A `card:` stamp is an
+  // EXPLICIT machine claim, so it is checked wherever it sits.
   const c = ctx();
   const derived = derivedTexts(c);
-  const stamp = `nine things <- @ ${c.ref.slice(0, 12)} ; card:vibes`;
-  expect(auditCard(fixture([stamp]), derived).map((f) => f.verdict)).toEqual(["UNRUNNABLE"]);
-  expect(auditCard(fixture(["```", stamp, "```"]), derived)).toEqual([]);
+  const one = [...(derived.get("board") ?? [])][0] ?? "";
+  const stale = one.replace(/(\d)(?!.*\d)/, (d) => String((Number(d) + 1) % 10));
+  const stamped = `${stale} <- @ ${c.ref.slice(0, 12)} ; card:board`;
+  expect(auditCard(fixture([`    ${stamped}`]), derived).map((f) => f.verdict)).toEqual(["STALE"]);
+  expect(auditCard(fixture(["```", stamped, "```"]), derived).map((f) => f.verdict)).toEqual([
+    "STALE",
+  ]);
+});
+
+test("a census claim is NOT inferred from a transcript, because it is inferred and not declared", async () => {
+  const derived = derivedTexts(ctx());
+  expect(auditCard(fixture([T141_SENTENCE]), derived).map((f) => f.verdict)).toEqual(["CENSUS"]);
+  expect(auditCard(fixture(["```", T141_SENTENCE, "```"]), derived)).toEqual([]);
 });
 
 test("the stamp is anchored at end of line, so a quoted stamp does not inherit a verdict", async () => {

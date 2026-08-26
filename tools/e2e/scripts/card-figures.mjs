@@ -546,13 +546,31 @@ export function auditCard(cardText, derived, frontmatterLines = undefined) {
   const body = cardBody(cardText);
   const offset =
     frontmatterLines ?? cardText.slice(0, cardText.length - body.length).split(/\r?\n/).length - 1;
+  /**
+   * TWO READINGS OF ONE BODY, AND THE CUT BETWEEN THEM IS OPT-IN.
+   *
+   * A `card:<key>` stamp is an EXPLICIT machine claim — its author asked
+   * for it to be checked — so it is audited wherever it sits, transcript
+   * blocks included. **That is a hole this lane found in its own notes**:
+   * the paste-ready lines were pasted into an indented block, which the
+   * prose reader blanks, so the author who built the gate escaped it by
+   * formatting.
+   *
+   * The other two arms stay PROSE-ONLY, and for a reason rather than for
+   * symmetry. A transcript of this repository's own brief command is full
+   * of `<- @ <ref> ; <free text>` lines, so applying the bare-arrow arm
+   * inside a block would turn every quoted brief into a wall of
+   * UNRUNNABLE; and a census claim is INFERRED from prose rather than
+   * declared, so inferring one from a command's output is a guess.
+   */
+  const lines = body.split(/\r?\n/);
   const prose = proseOnly(body).split(/\r?\n/);
   /** @type {Figure[]} */
   const out = [];
   for (let i = 0; i < prose.length; i += 1) {
     const raw = /** @type {string} */ (prose[i]);
     const line = offset + i + 1;
-    const stamped = raw.match(CARD_STAMP);
+    const stamped = (/** @type {string} */ (lines[i] ?? "")).trim().match(CARD_STAMP);
     if (stamped !== null && stamped.groups !== undefined) {
       const text = stamped.groups["text"] ?? "";
       const key = stamped.groups["key"] ?? "";
