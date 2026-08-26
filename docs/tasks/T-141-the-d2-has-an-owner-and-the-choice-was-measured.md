@@ -1053,3 +1053,435 @@ the assertion work — all of it verified.**
 
 **Not stamped by this verdict:** `verifier:`, `verified_by:`, `review:`
 and `status:` are untouched, per the precedent at `6fea6a1`.
+
+### T-141 REWORK VERDICT: APPROVED — verifier claude-opus-5, 2026-08-26. The rework's census is right, its method is sound, and the FIRST D2 is where this rework says it is and not where the previous verdict said: `98b1f4e`, one file, `app/src/lib/verdicts.ts`
+
+**Verified at `7ebe1ba` (`task/T-141-lane`).** Main moved **three times**
+under this verification and the range was re-derived each time — at
+`c524c1a`, `6586f9c` and `80bde23`, by `git merge-tree --write-tree
+<main> task/T-141-lane` with the exit read BEFORE the substitution
+(**0** every time), then `git diff --name-only <main> "$TREE"`.
+**Byte-identical all three times**: **6 paths, +1497/−70**, of which
+`+302/−69` is the two fixtures. No `..`, no `...`, no `main..HEAD`. **Card read at its base `f8d9efd` and the attack
+set written to scratch BEFORE the diff, the rework notes or any `s*`
+file were opened, at 2026-08-26T21:52:21+03:00.** One honest note on
+that: this project appends notes and verdicts INTO the card file, so
+reading the card at `f8d9efd` necessarily included the first build's
+notes and the previous verdict. What the attack set predates is the
+rework's diff, its §11–§14, `T-141-s1` and `T-141-s2`.
+
+**THE PREVIOUS REJECTION IS RESOLVED, AND THE PREVIOUS VERDICT WAS
+ITSELF WRONG ABOUT THE INSTANCE IT REJECTED FOR.** I settled that
+independently rather than choosing a side. Everything else in this lane
+that I re-measured reproduced to the digit.
+
+### THE CENSUS, DERIVED ON MY OWN MACHINE — AND BY A STRICTLY STRONGER SWEEP THAN THE LANE'S
+
+I did not read the lane's sweep and then agree with it. I built my own,
+from the same first principle — `arch` reads exactly two inputs
+(`GRAPH_REL_PATH`, `REGISTRY_REL_DIR`; `cli.rs:403` reads the COMMITTED
+graph and `registry.rs:26` the components dir), so the model is a pure
+function of two committed artifacts — materialised those two at each
+commit into a scratch root and ran one fixed engine over them.
+
+**FIRST, THE UNDERCOUNT ATTACK, BECAUSE THE METHOD IS WORTH MORE THAN
+THE NUMBER.** The claim that the partition has no `non_code`/lang/kind
+filter is TRUE, and it is true in BOTH engines, which I read rather than
+took: `arch/mod.rs:237` iterates `for file in &graph.files` with no
+filter and drops every unclaimed file into `unclaimed`; `derive.ts:359`
+does the same over `graph.files`. Each adds exactly one further source —
+a repo-internal package path no component owns (`mod.rs:322`,
+`derive.ts:440`). **There is no arm on which a file can leave the graph
+without either being claimed or landing in the bucket**, so the sweep
+cannot silently undercount.
+
+**MY SWEEP, AT `main = c524c1a`: 400 first-parent commits, 360
+graph-bearing, exactly THREE contiguous windows of `unmapped > 0`.**
+
+| # | opened | file(s) at open | drained on main | stood |
+|---|---|---|---|---|
+| 1 | `98b1f4e` **Checkpoint: T-017 done**, 2026-08-15T18:47:21 | `app/src/lib/verdicts.ts` — ONE; four at `ceaa949` 20:07:13 | `ed56884` Merge T-012, 23:18:50 | **4h31m29s** |
+| 2 | `1d8a2c2` **Checkpoint: T-110 done**, 2026-08-25T12:25:46 | `app/src-tauri/tests/dispatch_lanes.rs` | `8f8ec31` Merge T-033, 16:32:00 | **4h06m14s** |
+| 3 | `ae92f67` **Checkpoint: T-139 done**, 2026-08-26T19:40:08 | `app/src-tauri/tests/graph_budget_bench.rs` | this card | open, one merge so far |
+
+**AND THEN I RAN THE SWEEP THE LANE DID NOT: EVERY REACHABLE COMMIT, NOT
+ONLY FIRST-PARENT.** 949 commits reachable from `c524c1a`, **879
+graph-bearing**, **77 with `unmapped > 0`** — and all 77 fall inside the
+same three windows. **There is no fourth instance anywhere in this
+repository's history, on any branch.** That is the answer to "can the
+sweep MISS an instance": on the only frame that could hide one, it does
+not. It also vindicates the lane's choice of frame — window 2's
+non-first-parent commits run on to `73651cb2` 19:28, three hours past
+`8f8ec31`, because lanes cut from an open main inherit the bucket. **A
+duration taken over all commits would have been three hours wrong, and
+the lane's text names its frame in as many words.**
+
+### THE FIRST D2 — SETTLED, AND THE PREVIOUS VERDICT IS WRONG ABOUT IT
+
+The two accounts cannot both stand and I did not take either on trust.
+
+    98b1f4e  (Checkpoint: T-017 done)  files=51 mapped=50 unmapped=1
+      finding  D2  D2:unmapped  unmapped_files  files=1
+        file  app/src/lib/verdicts.ts
+
+**The bucket was open at `98b1f4e`, 1h19m52s before `ceaa949`, holding
+one file.** The mechanism reproduces exactly as the rework describes it:
+`93d3ea6` (Merge T-017) carries a **49-file** graph without
+`app/src/lib/verdicts.ts`; the T-017 checkpoint's regen takes it to
+**51** and adds that file; and **no component at `98b1f4e` carries a
+pattern that could match it** — C-05 lists `app/src/lib/utils.ts` as a
+LITERAL, C-08 `board-model.ts`, C-09 `task-detail.ts`, C-10
+`watcher-store.ts` + `docs-model.ts`, and **no `app/src/lib/**` glob
+exists in the registry at that commit.** That last check is
+engine-independent: no glob semantics, past or present, can claim a path
+no pattern names.
+
+**THE PREVIOUS VERDICT'S ERROR IS NAMEABLE AND IT IS THE ONE THE REWORK
+NAMES.** `git log -G'\["unmapped", [0-9]'` finds where the ROW enters the
+FIXTURE. The row enters at `ceaa949`; the FINDING opened at `98b1f4e`.
+**A `-G` search cannot find a D2 that opened before the literal it
+searches for existed**, and one did. `ceaa949` grew an open window and
+was the first commit to RECORD it. The rework's reading — "where the
+repository first SAW it, not where it was made" — is correct.
+
+### THE DURATIONS — THE REWORK IS RIGHT AND THE PREVIOUS VERDICT MIXED TWO FRAMES
+
+`f8046fa` (T-012 §2, 21:55:26) is **NOT on main's first-parent chain**
+(`git rev-list --first-parent c524c1a | grep -c '^f8046fa'` → **0**). It
+is an ancestor of main and the earliest first-parent commit containing it
+is **`ed56884` Merge T-012, 23:18:50**. So the previous verdict's
+*"D2 #1 stood from 20:07:13 to 21:55:26 — 1h48m"* takes its start from a
+main commit and its end from a lane commit that had not landed. Measured
+in one frame it is **4h31m29s**, and **D2 #1 is the LONGEST of the
+three, not the shortest** — exactly the rework's claim.
+
+The same frame error is latent in the previous verdict's own table,
+which lists `1baed94` (T-033 phase 1B) as instance 2's closing commit;
+`1baed94` is likewise not on main's first-parent chain. **The rework's
+text keeps the two apart — closing HAND versus drained ON MAIN — and
+that is the right distinction to have drawn.**
+
+### THE CONTROL — RE-BUILT INDEPENDENTLY, AND MY RULING ON WHETHER IT IS ENOUGH
+
+I built my own control rather than reading the lane's: for every
+graph-bearing first-parent commit, extract `expect(derived.unmappedFiles)
+.toEqual(...)` from that commit's own fixture and compare its cardinality
+against my derived count.
+
+    graph-bearing        360
+    no fixture             6   (all before 2026-08-15 19:05)
+    MATCH                353
+    MISMATCH               1   c036779  derived=1  asserted=0
+
+**Structurally identical to the lane's 343-of-350**, and the +10 on both
+totals is exactly main's advance between its ref and mine. At the lane's
+own ref the arithmetic is exact: `git rev-list --first-parent f8d9efd`
+is **390**, of which **350** are graph-bearing, and 350 − 6 − 1 = **343**.
+
+**THE ONE MISMATCH IS A REAL FINDING AND I RE-DERIVED IT.** At `c036779`
+(Merge T-011, 19:05:31) T-011's incoming fixture asserts
+`expect(derived.fileComponent.size).toBe(49)`,
+`expect(derived.unmappedFiles).toEqual([])` and a counts array summing to
+49 — against a committed graph of **51 files with one unmapped**. Three
+assertions in one body were false. **`npm test` from `app/` was red on
+main from 19:05:31 to `ceaa949` at 20:07:13 — 61m42s**, which the lane
+rounds to 62 minutes. The claim reproduces.
+
+**MY RULING ON THE BRIEF'S FIRST QUESTION — "is a fact no drill can
+reach adequately pinned by a control?" YES, HERE, AND THE LANE'S
+REASONING IS RIGHT. BUT ITS CONTROL IS WEAKER THAN IT SAYS, IN EXACTLY
+THE PLACE THAT MATTERS, AND I HAD TO CLOSE THAT MYSELF.**
+
+- A poison drill answers "can this assertion red?" **A comment cannot
+  red.** The right instrument for a narrative claim is a derivation plus
+  a control that COULD have disagreed — and CONVENTIONS' drill bullet
+  already rules the shape: *"IF a body cannot be poisoned … THEN say so
+  and name it."* The lane says so. That is correct handling, not evasion.
+- The control is not circular. The fixture's asserted list was produced
+  by the engine OF THE DAY; comparing it against today's engine is
+  precisely the test for glob-semantic drift, and it is a control that
+  fires — it fired once, and the firing turned out to be a finding.
+- **THE QUALIFICATION IS MINE AND THE LANE DOES NOT MAKE IT.** The 6
+  uncontrolled commits are `3d94298`, `cc87e40`, `850b5b0`, `c8ba301`,
+  `93d3ea6` and **`98b1f4e`**. The newly discovered instance opens on the
+  ONE uncontrolled commit that carries a bucket. **So the sweep's single
+  most load-bearing result sits in the exact region where the control has
+  zero power**, and the lane's *"6 predate the fixture"* is presented as
+  a dismissal when it is the coverage gap. I closed it by the registry
+  reading above — no pattern at `98b1f4e` can match `verdicts.ts`, so the
+  result holds under any engine — and by continuity into `c036779`, which
+  IS controlled and which reports the same single file 18 minutes later.
+  **The conclusion survives; the argument in the tree is one paragraph
+  short of the one that would have made it airtight.**
+
+### EVERY FIGURE THE BRIEF LISTED, RE-DERIVED AT MY OWN REFS
+
+| figure | claimed | mine | ref |
+|---|---|---|---|
+| as built, two fixtures | `+225/-66` | **+225/-66** (187/56 + 38/10) | `2a922ce` → `5c74f3d` |
+| at the tip, two fixtures | `+302/-69` | **+302/-69** (264/59 + 38/10) | `main` → merge-tree, both mains |
+| §2 table | `3+1+3+2+2+3 = 14` | **9 in dogfood (3,1,3,2) + 5 in map (2,3) = 14** | `2a922ce` → `7ebe1ba` |
+| `expect(` census | 45→45 / 44→44 | **45→45 / 44→44**; statements 45→45 / 44→44; bodies 10→10 / 8→8; **0 added, 0 removed** | same |
+| TOKEN LINT | CONTROL **767** | **clean (TOKEN 139 files; CONTROL 767 tracked text files)**, exit 0; `--selftest` exit 0 | `7ebe1ba` |
+| `arch` | `unmapped=0 edges=37 findings=4` | **components=13 files=185 mapped=185 unmapped=0 edges=37 findings=4 drift_components=4**, exit 0 | `7ebe1ba` |
+| separability | unmapped→0, undeclared→1 | **`--fail-on unmapped` exit 0 CLEAN 0 findings · `--fail-on undeclared` exit 1 DRIFT 2 · `--fail-on any` exit 1 DRIFT 4** | `7ebe1ba` |
+| `ae92f67` numstat | +84/−19 and +53/−10 | **84/19 and 53/10**; 84+53 = **137** | `ae92f67` |
+| 40-commit prefix | earliest 40 predate `graph.json`, first is `3d94298` 17:21:21 | **40**, and `3d94298` Merge T-009 2026-08-15T17:21:21 | stable prefix, does not move |
+
+**THE FOUR-OWNER TABLE, RE-RUN ONE ARRANGEMENT AT A TIME**, each on a
+scratch root built from the tip's own `graph.json`, `git status
+--porcelain` empty afterwards:
+
+    no owner (C-05 from 2a922ce)   files=185 mapped=184 unmapped=1 edges=39 findings=5 dc=5
+    C-05 (the lane's claim)        files=185 mapped=185 unmapped=0 edges=37 findings=4 dc=4
+    C-07                           edges=38 findings=5 dc=5   new `C-07 -> C-10 undeclared`, C-07 files 36 -> 37, observed_deps 0 -> 1, drift `-` -> D1
+    C-10                           edges=38 findings=5 dc=4   new `C-10 -> C-07 undeclared`, C-10 reads drift=D1,D1
+
+**The card's IF/THEN is satisfied: only C-05 adds no edge, and the
+inversion is observable rather than argued.** C-10's `drift_components=4`
+against `findings=5` reproduces too — both of C-10's findings land on one
+node.
+
+**THE DRILL, REPRODUCED IN A DETACHED SCRATCH WORKTREE OUTSIDE THE
+REPOSITORY WITH ITS OWN `CARGO_TARGET_DIR` INSIDE IT.** Producer arm
+only — the single `paths:` line removed from `C-05-app.md` — read back
+with `git diff` before the run, one deleted line and nothing else:
+
+    baseline   18 passed / 18        exit 0
+    mutant      6 failed / 12 of 18  exit 1
+    restored   18 passed / 18        exit 0
+
+The six reds are exactly the six reconciled bodies, and the mutant's
+output carries the rework's corrected title verbatim — *"T-141 closes the
+THIRD D2"* — so the drill does exercise the edited text. **Restoration
+proved two ways**: `shasum -a 256 -c` says **OK** against the
+pre-mutation reading, whose digest
+`0cd9c7d50c55f2492b6687a2b35536fd62145ce8bf1e810c85fe221d724446ca` is
+the one the notes print; and `git diff --stat` on that path plus
+`git status --porcelain` are both empty.
+
+### THE SIX SITES, AND THE PREVIOUS VERDICT'S TABLE OF FIVE — THE REWORK IS RIGHT AGAIN
+
+The rework's §12 claims a sixth newly-authored census site the previous
+verdict's table missed. **It is right.** `PUT IT BACK` does not exist in
+`architecture-dogfood.test.ts` at `2a922ce` and does exist at `5c74f3d`
+line 1764, carrying *"was the second it has ever had"* at line 1766. It
+is the lane's own text and the verdict's five-row table does not list it.
+All seven in-fence sites plus `T-141-s1`'s three lines read correctly at
+the tip; a sweep of `app/test/`, `docs/architecture/components/` and
+`docs/tasks/T-141*` for `second D2 | first D2 | Both D2s | TWO FOR TWO`
+returns nothing but corrected text and quotations that name themselves as
+quotations. `docs/ARCHITECTURE.md` is **0 paths in the range** — left
+alone, correctly, and still routed by `T-141-s2`.
+
+### RULING ON `T-141-s2`: THE APPEND IS CORRECT. THE TITLE IS THE PART THAT DID NOT MOVE
+
+**The append is the right call and I am ruling it so.** Three reasons,
+and they are the project's own: the retraction sits at `##` heading
+level and names the retracted sentence verbatim (*"THE SECOND IS THE
+TRUE ONE."*); it is attributed to the hand that made it; and the
+superseded reasoning is itself the evidence for the error chain the card
+exists to route — deleting it would erase the thing being routed. That
+is the same ruling `086bf1c` took when it **retracted a settlement in
+place**, and the same one STATE.md takes on T-138's card: *"a reason to
+leave it standing with a ref beside it, not to erase it."* An executor
+rewriting a verifier's ruling would also be the wrong seat doing it.
+
+**The one thing I would have done differently is the frontmatter
+`title:`**, which still reads *"…and the wrong one seeded a census every
+later document repeats"* while the body's new heading says **NEITHER**
+document names the first D2. No clause in it is false — ARCHITECTURE.md
+IS wrong and IT DID seed the chain — but the implicature that the other
+is right is now dead, and this card's own criterion 3 is about titles
+outliving their bodies. **Not a failure; named so the triage that picks
+`T-141-s2` up reads the body before the title.**
+
+### GRAPH REGEN — ASKED, NEVER PREDICTED, AND THE PROJECT'S OWN RULE SAYS THE LANE IS RIGHT TO LEAVE IT STALE
+
+`cargo run -p nputer-index -- index --check --root ../..` from
+`app/src-tauri`, at `7ebe1ba`:
+
+    committed:   997202 bytes · 185 files · 2124 symbols · 2039 edges
+    fresh index: 997202 bytes · 185 files · 2124 symbols · 2039 edges
+    -> STALE, exit 1
+    files  +0  -0  ~2
+      ~ app/test/architecture-dogfood.test.ts  (content, loc 2044 -> 2249)
+      ~ app/test/map-dogfood-render.test.tsx   (content, loc  738 ->  766)
+    budget: 997202 of 1040000 (95.9%) - 42798 left
+
+**THE IDENTICAL-FIGURES TRAP FIRED AGAIN, IN THE SAME PURE FORM: all
+four printed figures identical on both sides and the verdict is still
+STALE.** Only `loc` moves. Checked against the project's own rule rather
+than the lane's argument: CONVENTIONS' GRAPH REGEN bullet says commit
+`graph.json` **with the CHECKPOINT**, and its *"WHY THE CHECKPOINT AND
+NOT THE MERGE"* clause names **these two files by name** as the reason.
+**The lane leaving the graph stale by construction is what the rule
+prescribes, not a concession it argues for.**
+
+### SUITES AND GATES, ALL AT `7ebe1ba` ON A FRESH DETACHED CHECKOUT OUTSIDE THE REPOSITORY, EXITS READ UNPIPED FROM `$?`
+
+    npx vitest run    lib/parser/     290 / 290 across 13 files   exit 0
+    npx tsc --noEmit  lib/parser/                                 exit 0
+    npm run build     app/                                        exit 0
+    npm test          app/           1013 / 1013 across 47 files  exit 0
+    cargo test --no-fail-fast  app/src-tauri   518 / 0 / 4        exit 0
+    npm test          tools/e2e/     193 / 194                    exit 1   <- INHERITED, see below
+    npm run typecheck tools/e2e/                                  exit 0
+    npm run lint:docs tools/e2e/                                  exit 0
+    npm run lint:tokens tools/e2e/                                exit 0   TOKEN 139 / CONTROL 767
+    arch cycles       app/src-tauri  exit 1 BY DESIGN, declared_edges=35, stdout 0 bytes / stderr 645
+
+The cargo total is SUMMED from **eighteen** `test result:` lines and
+cross-checked against **eighteen** `running N test(s)` headers,
+**522 = 518 + 4**. **A WARNING FOR WHOEVER CHECKS THIS NEXT:** a header
+pattern anchored on the PLURAL finds only fifteen and sums to 519 —
+three headers read `running 1 test`. Match `tests?` or the reconciliation
+silently fails to reconcile.
+
+**GATES DERIVED FROM MY OWN 6-PATH RANGE, NOT FROM THE NOTES.**
+GRAPH REGEN **FIRES** (2 `.ts`/`.tsx` outside `docs/`) — asked, STALE,
+above. BOOT GATE **DOES NOT FIRE**: no path is under `app/src/**`,
+`app/src-tauri/**` or either manifest, and `app/test/**` matches no arm.
+DOCS GATE **FIRES, exit 1**, run from the repository root on the range's
+own path list: **4 paths under `docs/` are code inputs**, 18 readers
+across **4 suites**, and all four are in the table above.
+
+### THE ONE RED: `tools/e2e` 193/194, AND IT IS NOT THIS LANE'S — PROVED, NOT ASSERTED
+
+    ✘ tests/brief.spec.ts:706 — a brief assembled at this ref names the lanes
+      the repository holds, and no others
+      Expected substring: "T-145 touches:"
+
+This is the standing `T-138-s3` defect that main's own STATE.md
+documents in full: the body reads `git worktree list` — **machine-wide** —
+and resolves each lane's card from **this checkout's card index**.
+
+- `task/T-145-lane` is in the machine's worktree list.
+- `docs/tasks/T-145*` is absent at `2a922ce` (the lane's base), absent at
+  `f8d9efd` (the previous verdict's ref) and absent at `7ebe1ba`.
+- The T-145 card was created **on main** at `a86a8b8`,
+  2026-08-26T21:47:55 — **after** this lane's tip was written.
+
+**So the red is inherited, structural, present at the lane's own base
+tree, and unfixable from inside `touches: [docs/architecture/components/,
+app-shell]`.** `integrator.md` rule 3 returns FILE, and it is already
+filed. **This is also the previous verdict's `194/194` going stale for a
+reason nothing in this lane touched** — the exact hazard `verifier.md`
+names, arriving inside a verdict about that hazard. Port **15731**,
+`lsof` read zero rows immediately before the bind at 22:10:44; **1420 was
+read with `lsof` only and is held by the human's app on PID 19746** —
+never connected to, never bound.
+
+### SECURITY SWEEP — MANDATORY, AND CLEAR AT REJECTED LEVEL
+
+The range is 6 paths: two test fixtures, one registry file and three
+markdown cards. **No manifest and no lockfile** (`package*.json`,
+`Cargo.toml`, `Cargo.lock` all absent from the range), so no dependency
+is added. Two files created, both `docs/tasks/*.md`, mode `100644` — **no
+executable bit anywhere**. No new input path, endpoint, query or unsafe
+default; the diff adds **zero assertions** and therefore zero new code
+paths. No secret-shaped string (the only hits are the literal words
+"lint:tokens" and "secret-shaped" in prose). **The registry line widens
+C-05's `paths:` by exactly one LITERAL file path with a trailing
+comment — not a glob — so it cannot silently claim a directory**, which I
+confirmed by removing it in the drill and watching exactly one file move.
+No test spawns a CLI and none reaches a model. Clear.
+
+### EVERY PLACE A FIGURE DISAGREED WITH MY OWN MEASUREMENT
+
+**In the card / the rework notes:**
+
+1. **`390` first-parent commits and `350` graph-bearing carry NO REF, in
+   four places** — the fixture ledger, `C-05-app.md`, `T-141-s2` and
+   notes §11. They are exactly right at `f8d9efd`. **I measured main
+   three times inside this one verification and got a different answer
+   each time**: `c524c1a` **400 / 360** at 21:53, `6586f9c` **402** at
+   22:20, `80bde23` **403 / 363** at 22:23. Worse, the notes' own stated
+   anchor contradicts them:
+   the preamble says *"every figure here is derived at `2a922ce`"*, and
+   at `2a922ce` the answer is **388 / 348**. **Under every anchor a
+   reader can construct from the document, the number is wrong.**
+   `verifier.md` names this exactly — *re-derive at your own tip, or name
+   the ref you measured at* — and `C-05-app.md` is the one artefact here
+   that outlives the card.
+2. **"main's 390 first-parent commits" describes a chain that was never
+   main's.** `git rev-list --first-parent f8d9efd` walks 388 main commits
+   **plus this lane's own `5c74f3d` and `f8d9efd`**, and it stops at
+   `2a922ce` while main had already reached `0551a5e5`. Harmless to the
+   result — both lane commits derive `unmapped=0` and agree with the
+   lane's own fixture, and I verified the same three windows over main's
+   real 400 and over all 949 reachable commits — but the sentence's
+   warrant is that the sweep was TOTAL OVER MAIN, and as written it is
+   not the set it names.
+3. **Notes §9's GRAPH REGEN reading is stale at the tip.** It records
+   `architecture-dogfood.test.ts loc 2044 -> 2175`; at `7ebe1ba` it is
+   **2044 -> 2249**, because the rework added 74 lines after §9 was
+   written. The four summary figures are unchanged, as is the STALE
+   verdict.
+4. **No suite result and no gate result is recorded at the rework's own
+   tip.** §9 is the first build's record, measured against `main =
+   2a922ce` at `07295b3`/`5c74f3d`; §14 records the drill at `be7ac9b`.
+   Nothing records a run at `9e2f496` or `7ebe1ba`, and the card's own
+   Verification clause says **"ask AGAIN after any write"**. I ran all
+   four DOCS-GATE suites and asked the regen myself; the tree is green
+   and the answer is unchanged in kind, so this is a recording gap rather
+   than a broken tree — but it is the gap `verifier.md`'s GATE CASE is
+   about, one seat over.
+5. The card's SPEC prose still says *"this repository's second D2"*
+   (line 18) and criterion 5 still says *"Both D2s"*. **Left as written
+   is the right call** — it is the architect's section, the previous
+   verdict's own remedy list did not ask for it, and §7 now corrects it
+   explicitly in the same file. Recorded so nobody reads it as an
+   oversight twice.
+6. **`T-141-s2`'s frontmatter `title:` did not move with its body.** See
+   the ruling above. Not a failure.
+
+**In the previous verdict at `f8d9efd`:**
+
+7. **"The first D2 … opened at `ceaa949` … four files, closed `f8046fa`
+   21:55:26."** Wrong on the commit, the file count, the file list and
+   the start time. It opened at **`98b1f4e`** with **one** file,
+   `app/src/lib/verdicts.ts`.
+8. **"D2 #1 stood from 20:07:13 to 21:55:26 — 1h48m."** Mixes a main
+   commit with a lane commit. In one frame it is **4h31m29s**, and D2 #1
+   is the longest of the three.
+9. **Its table lists `1baed94` as instance 2's closing commit**;
+   `1baed94` is not on main's first-parent chain either. Its 4h06m for
+   instance 2 is nonetheless right, because that line happens to use
+   `8f8ec31`.
+10. **"The five sites this diff writes it into"** is **six**.
+11. **"`npm test` from `tools/e2e/` is 194/194, exit 0"** — **193/194,
+    exit 1** at my tip, for a reason on main rather than in this lane.
+12. Its `expect(` census, its 6-first-reds + 8-hidden = 14, its
+    `declared_edges=35`, its four-owner table, its drill counts, its
+    `+225/-66` correction and its cargo 518/0/4 all reproduce exactly.
+
+**In the brief:** every figure it asked me to re-derive came back as it
+said. The only correction is that `+302/-69` is measured **over the two
+fixtures**, not over the range — the range as a whole is **+1497/−70**
+across 6 paths.
+
+### WHAT IS OWED, AND NONE OF IT REQUIRES RE-OPENING ANY DECISION
+
+**Do not re-open the disposition, the measurement, the assertion work,
+the census or the drill. All of it verified.**
+
+1. **Give `390 / 350 / 343` a ref, or re-derive them at the tip and give
+   THAT a ref** — in `C-05-app.md` first, then the fixture ledger,
+   `T-141-s2` and notes §11. One clause each. While there, say `main` at
+   a named commit rather than `main`, so the two-lane-commit slip goes
+   with it. This is the card's own lesson and it is the one figure in the
+   diff that does not carry its ref.
+2. Re-ask GRAPH REGEN at the tip and record it — the answer is above and
+   the `loc` is `2044 -> 2249`.
+3. Record the four DOCS-GATE suites at the tip; the numbers are above.
+4. **For the INTEGRATOR, a live one:** the fixture title asserts the D2
+   *"stood for exactly one merge"*. That is true right now — one merge on
+   main since `ae92f67`, `6036260`. **It becomes false the moment
+   `T-137` or `T-145` merges before this card**, and both are live lanes.
+   Either merge T-141 next or move the title with the fact.
+5. `T-141-s2`'s title, at triage's discretion.
+
+**Not stamped by this verdict:** `verifier:`, `verified_by:`, `review:`
+and `status:` are untouched, per the precedent at `6fea6a1` and the
+previous verdict at `f8d9efd`.
