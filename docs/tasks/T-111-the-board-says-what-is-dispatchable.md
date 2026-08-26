@@ -1475,3 +1475,156 @@ dangling blocker, or the census moved** — the verdict re-derived the census
 independently and agreed on every row, and none of those rows is touched
 here. `status:` stays `verifying`; `verifier:`, `built_by:`, `verified_by:`
 and `review:` are untouched and empty.
+
+## ADVERSARIAL RE-CHECK — APPROVED (2026-08-26, tip `70dbf83`)
+
+Same verifier, same attack set, re-run at the shipping tip in a fresh
+detached worktree (`/private/tmp/t111z`, 18 chars). My verdict commit
+`75b7626` is still an ancestor — confirmed with `merge-base --is-ancestor`
+— so the base is untouched and the merge stays a forecast.
+**Baseline 1013/1013, exit 0, zero startup errors.**
+
+### ALL SIX REPAIRS VERIFIED, FIVE OF THEM BY MUTATION
+
+**1. THE NEAR-MISS NOW REACHES THE READER — PROVED END TO END, NOT READ.**
+My own probe on the fixed tree:
+
+    NEARMISS  ["T-001"]
+    REASON    "T-900 names T-01 as a blocker and no card declares that id —
+               that is a defect in this card, not a reason to wait. The parser
+               says: "… 'T-001' is declared and differs only in zero padding …"."
+    CONTROL   T-999, no padding twin -> reason carries NO "zero padding" clause
+
+Arm **V1** (drop the appended sentence) and **V2** (append a TEMPLATE
+sentence instead of the parser's) each red **2 bodies**. V2 is the one that
+matters: it proves the pin checks the PARSER's sentence rather than the
+presence of any sentence.
+
+**2. ALL FOUR OF MY SURVIVORS NOW RED.** Producer-side only, substitution
+count = 1, `git diff` read back before each run, restored and sha256-proved.
+
+| arm | before | now |
+|---|---|---|
+| A09 narrower shared domain inverted | exit 0, 1009/1009 | **exit 1, 1 kill** |
+| A20b coarse clause forced empty | exit 0 | **exit 1, 1 kill** |
+| A20c coarse clause made UNCONDITIONAL | — | **exit 1, 1 kill** |
+| A24 `disagrees` forced false | exit 0 | **exit 1, 1 kill** |
+| A28 componentIds sort dropped | exit 0 | **exit 1, 1 kill** |
+
+**A CORRECTION TO MY OWN RE-RUN, CAUGHT BY POSITIVE CONTROL.** My first
+A20b at this tip came back exit 0 and I nearly reported a survivor. The
+mutation was `const via = "" || (…)` — **`""` is falsy, so the operator
+returns the original expression and the mutation is a no-op.** Re-applied
+as `const via = "";` it reds. **An arm that does not change behaviour is
+not evidence of a pin**, and only reading the diff back caught it.
+`disagrees` is now asserted in BOTH directions (`[false]` for `live`,
+`[true]` for the disagreement), which is what discharges it as dead data.
+
+**3. BOOT GATE — RUN, exit 0, 1 of 9.** **4. THE RANGE — re-derived at the
+tip that carries it**, and nine is right (see below). **5. THE RETRACTED
+FRAMING IS GONE**: the body is now `LANDED BLOCKERS ARE DECLARED HERE, and
+the derivation asks their status rather than the field`, the variable is
+`landed`, and the old wording survives only inside a comment that
+*documents* the retraction — which is the right place for it. The remaining
+`stale` in the file is the forbidden-vocabulary sweep list, where it belongs.
+**6. THE FIGURES** are corrected in place with the arithmetic shown.
+
+### THE THREE CORRECTIONS TO ME — ALL THREE CHECKED, ALL THREE ACCEPTED
+
+**(a) MY `T-111-s7` CORRECTION WAS WRONG.** `git show main:lib/parser/src/fence.ts`
+matches `blocked|blocker` **zero** times. I carried the FENCE-rule count of
+four into a ruling about the BLOCKER rule. Re-derived: **three sites resolve
+a blocker id** (`task-detail.ts`, `board-model.ts`, `task-waves.ts`) and
+**two deliver a verdict** (`board-model.ts`, `task-waves.ts`).
+`s7` stands as written; my correction to it does not.
+
+**(b) THE LIVE FENCE DIVERGENCE IS THE BARE-WORD ORACLE, NOT
+`UNFENCEABLE_PATHS`.** Measured: **27 distinct live tokens, and bare
+`docs/tasks` is not one of them**, so `UNFENCEABLE_PATHS` matches nothing —
+dormant, exactly as claimed. The real divergence is `ci`, `docs`, `method`,
+all on `T-054`, which is `done`.
+
+**(c) THE GRAPH BASELINE MOVED UNDER BOTH OF US.** `b0416e9` replaced
+`b742efbe…` with `616205de…`. **Re-measured on a tree merged with current
+main**: committed 970961 bytes · 183 files · 2064 symbols · 1986 edges;
+fresh 989181 · 183 · 2101 · 2033; **`files +0 −0 ~2`, `edges +50 −3`**
+(1986 + 50 − 3 = 2033, which closes). **`npm test` from `app/` with the
+regenerated graph: 1013/1013, exit 0**; restored and sha256 read back
+**`616205de…`**, porcelain EMPTY. **The conclusion survives the new
+baseline: the checkpoint owes NO fixture reconciliation.**
+
+### THE `fence.ts` DECISION — INDEPENDENTLY MEASURED, AND THE DECLINE IS RIGHT
+
+Both implementations run over the live board on the merged tree:
+
+    distinct tokens                     27
+    normalisation disagreements       0 of 27
+    token-kind disagreements          3 of 27   ci, docs, method  (mine `path`, theirs `unresolved`)
+    pair disagreements                every one involves T-054, which is `done`
+
+**My pair arithmetic differs from the lane's** — I count 11 026 pairs and 34
+disagreements against its 10 731 and 113, because I passed `ownFile: ""` and
+filtered to id-bearing cards with a non-empty fence. **The load-bearing
+claim is identical and I confirm it: every disagreeing pair is a `T-054`
+pair, and the cause is the oracle, not the rule.** `expandFence`'s own doc
+comment names the same three tokens.
+
+**AND THE THIRD REASON IS ONE MY OWN REPAIR CREATED.** `FenceWitness` carries
+`left`, `right`, `path` and **no component ids**, so importing `compareFences`
+would delete the COARSE-fence clause that repair 2 has just pinned in two
+directions. `FenceVerdict`'s third value `unusable` is real and the
+six-value disposition cannot express it. **Declining to import is correct,
+and it is measured rather than argued.**
+
+### THE `grep` SHIM — REPRODUCED, WITH A ROOT CAUSE
+
+The shim is real and its flags are the answer. From the snapshot:
+
+    ARGV0=ugrep "$_cc_bin" -G --ignore-files --hidden -I --exclude-dir=.git …
+
+**`-I` means SKIP BINARY FILES, and one NUL byte makes a file binary.**
+Two files, same three words, one carrying `\0\0`:
+
+    SHIM grep     clean=1  withnul=NO MATCH   (all three words)
+    command grep  clean=1  withnul=1          (all three words)
+
+**That is the executor's report exactly**, and it is why it could not be
+reproduced on normal files: the shim and `command grep` agree on everything
+that is not binary. **The trigger was the lane's own NUL bytes** — the two
+findings are one event, and a `grep` sweep over a NUL-bearing file returns
+"no matches" with no error and exit 1. `--ignore-files` is a second, distinct
+blind spot; it is inert here (`git ls-files | git check-ignore --stdin`
+returns **0**). **At `70dbf83` exactly 18 tracked files carry a NUL and all
+18 are icons and fonts** — no source or test file does, so the repair landed.
+
+### SUITES, GATES AND THE RANGE
+
+- app **1013/1013** exit 0 at the tip, and **1013/1013** merged with current
+  main · parser **290/290** merged · **tools/e2e 194 passed, exit 0, FIRST
+  RUN**, scratch port **15995** probed at zero rows immediately before
+  binding · **`lint:tokens` exit 0, clean** — P5 sees no NUL, which is the
+  gate that caught them · DOCS GATE fires, three suites owed, all three run.
+- **THE RANGE, AT MY OWN REF `6a6bc87`** (main moved twice more during this
+  re-check — `b0416e9` then `6a6bc87`):
+
+      git merge-tree --write-tree 6a6bc87 70dbf83 -> exit 0 READ FIRST, tree 967ad5d4…
+      git diff --name-only 6a6bc87 <TREE>            ->  9   PRESCRIBED
+      git diff --name-only 6a6bc87...70dbf83 (THREE) ->  9   AGREES, SETS IDENTICAL
+      git diff --name-only 6a6bc87..70dbf83  (TWO, FORBIDDEN) -> 31
+      git diff --name-only 15a963d..6a6bc87 (main's advance)   -> 22
+
+  `comm -12` EMPTY, 9 + 22 = 31. **Nine is right.** Ratio 3.44x — weather;
+  the left endpoint is the signal, and it moved four times across both passes.
+
+### VERDICT
+
+**APPROVED.** Every finding my rejection named is discharged by a mutant
+that reds rather than by a sentence saying it is fixed, and the two claims I
+got wrong are corrected against the tree rather than conceded. The census,
+the disposition/reason split and the parser work are byte-untouched apart
+from the six, and I re-confirmed the census is unmoved. **`T-111-s9` and
+`T-111-s10` are the right shape** — both are gaps in the METHOD found by
+obeying it, and `s9`'s camouflage finding (a whole-corpus assertion redding
+three bodies from one planted violation, one of them impersonating
+`T-120-s3`) is the more dangerous of the two, because it teaches a reader to
+discount a real red.
