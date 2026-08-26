@@ -1048,3 +1048,124 @@ one.**
 4. **The brief's instruction not to propagate the old brief's figures was
    load-bearing.** None of `97/97`, `992 929 -> 968 081` or `96.8%`
    appears in this rework; every figure here was re-derived.
+
+### The rework's SECOND round — the live board found what no fixture could
+
+**A third lane (`T-145`) was cut on this machine while the rework ran**,
+so for the first time TWO card-less lanes were live at once — and both
+new sentences read *"T-141, T-145 **has** no card in this checkout … so
+no fence could be proved disjoint from **it**"*. **No fixture in this
+lane could have shown it**: every pin had exactly one card-less lane, and
+`--dispatch` on the live board is what printed it. The count is now the
+LANE count rather than the unique-id count, because two worktrees on one
+branch are two live writers, and **both directions are pinned** — the
+singular by the describe's first body, the plural by the dedupe body,
+which is the one fixture that already produces two holds.
+
+**THE DRILL WAS RE-RUN AT THE NEW TIP `b79675c`**, in a third detached
+scratch worktree `/tmp/t137r` (ten characters), same discipline: one
+side, producer only, mutation read back with `git diff`, restore proved
+by sha256.
+
+    arm   producer mutation                                suite      result
+    A4b   the missing-card clause dropped                  parser     exit 1, 2 of 314
+    A6    `many` forced FALSE (always singular)            parser     exit 1, 1 of 314 UNIQUE
+    A7    `many` forced TRUE (always plural)               parser     exit 1, 1 of 314 UNIQUE
+    E1b   `continue` restored + dist rebuilt               tools/e2e  exit 1, 1 of 206 UNIQUE
+    E2b   the consumer's empty-startable branch reverted   tools/e2e  exit 1, 1 of 206 UNIQUE
+
+`lib/parser/src/lanes.ts` restored to
+`1ad1871f9fc54bfe40250a7682bcb1f034d72e2d58b2a53a58ed883e6b9c6481` after
+A4b, A6, A7 and E1b; `tools/e2e/scripts/dispatch-order.mjs` restored to
+`66d2e81616f669c9b8776b1007670e2fa5e49b322c5e7317901fe73fd36873c6` after
+E2b. **Twelve arms in all across the two rounds, twelve reds, zero
+survivors.** All three scratch worktrees (`/tmp/t137p`, `/tmp/t137d`,
+`/tmp/t137r`) were removed and `git worktree prune` was run behind them.
+
+### Gates and suites, at the rework's tip
+
+**GRAPH REGEN FIRES** — 9 of the range's 23 paths. **ASKED THREE TIMES,
+NEVER PREDICTED, AND RE-ASKED AFTER EVERY WRITE**: exit **1** each time
+with identical figures — committed 989 181 / 183 / 2101 / 2033, fresh
+**973 197 bytes · 187 files · 2004 symbols · 2105 edges**,
+`truncated_symbols Some(true)`, `truncated_files Some(1)`. The regen
+belongs to the CHECKPOINT and this lane commits no graph.
+
+**BOOT GATE FIRES** — 1 path, `app/src/architecture/task-waves.ts`, which
+is the extraction's own re-export. **RUN, exit 0**, scratch port
+**14851** (probed at zero rows before and after), both `[nputer]` lines
+detected, process group stopped with SIGTERM. **Neither this card's
+implementation notes nor the verdict mentions this gate**, so it may not
+have been run before now; it is run and recorded here.
+
+**DOCS GATE FIRES** — exit 1 on 12 docs paths, 17 readers across 4
+suites, naming `npm test` from `app/`, `npm test` from `tools/e2e/` and
+`npx vitest run` from `lib/parser/`. **AND IT CAUGHT A DEFECT IN THIS
+REWORK'S OWN NEW CARD**: `T-137-s10`'s title opened with a backtick, so
+its frontmatter did not parse — `9c64cd8`'s exact failure, reproduced by
+the hand filing a card about false greens, and the gate is the only thing
+in this repository that saw it. Fixed at `88de3c4`; re-run reports **0
+frontmatter issues**. `cargo test` is still the fourth suite this gate
+lists as a READER and cannot name in its `Run:` list — `T-132-s2`,
+unchanged.
+
+    lib/parser   npm run build 0 · npx tsc --noEmit 0 · vitest 314/314 across 15 files, exit 0
+    app          npm run build 0 · npm test 1013/1013 across 47 files, exit 0
+    tools/e2e    npm test 206/206, exit 0, 2.4m, explicit port 14871
+                 (header `Running 206 tests` cross-checked against 206 ticks)
+    cargo        512 passed / 0 failed / 3 ignored, exit 0, SUMMED over 16
+                 `test result:` lines; 16 headers sum to 515 = 512 + 3
+    lint:tokens  --selftest 0, then 0 — TOKEN 140 / CONTROL 788
+    lint:docs    exit 0 · tools/e2e typecheck exit 0
+
+**THE EXTRACTION CONTROL IS INTACT AND BYTE-IDENTICAL.** `app/test/**`
+is **0 paths** in this lane's merge range and `map-task-waves.test.ts`
+is sha256 `1c991adccf7d47a67d17743560bba42af5fa0e963db2fbb974bf271d07994802`
+— the verifier's own reading — so those 50 bodies are the same bodies
+running the moved analysis through the re-export.
+
+**ALL FOUR WATCHED CARGO BODIES READ BY NAME**, not inferred from a green
+exit: `startup_arm_watches_the_initial_root` ok,
+`a_hostile_session_id_in_the_init_line…` ok,
+`agent::kit::tests::snapshot_version_matches_the_live_method_stamps` ok,
+`a_mod_declaration_is_an_edge_in_this_repositorys_own_graph` ok. The lib
+suite is **4.06s**, inside `T-088-s4`'s healthy band, so the cache-cliff
+regime is the good one.
+
+**ONE E2E RED WAS OBSERVED AND IT WAS NOT THIS LANE'S.** The first full
+run redded `keyboard-activation.spec.ts:34 › real Enter …` with *"Test
+timeout of 30000ms exceeded"* after **9.5 minutes of wall time**, in a
+run where `docs-input-gate.spec.ts` alone took 11.7m under load average
+6. Its own SIBLING body on the same line passed in 697ms. **Controlled
+rather than assumed**: the spec run alone is **2 passed, exit 0**
+(689ms/536ms), and the whole suite is 206/206 in a clean checkout at the
+same tree and again in the lane. A contention artifact, and it is
+recorded because a red that is dismissed without a control is how a real
+one gets dismissed later.
+
+**THE RANGE, BY THE RANGE RULE, AT THE TIP.** `git merge-tree
+--write-tree 2fab106 b79675c` -> exit **0** read from `$?` BEFORE the
+substitution -> tree `2108d54b`, **23 paths**. The forbidden two-dot form
+says **89**. **Main moved four times during this rework alone** —
+`4fadf62 -> 1dbdc63 -> 2fab106` — which is why the range was re-derived
+at every gate rather than carried.
+
+**PORT 1420 WAS READ AND NEVER TOUCHED**: `lsof -nP -iTCP:1420
+-sTCP:LISTEN` only, holder `node` pid **19746**, one `TCP [::1]:1420
+(LISTEN)` socket, identical at 21:59:04 and at 22:15:30 EEST. Every lane
+port was explicit and re-probed at zero rows immediately before binding
+and read back at zero rows afterwards: **14833, 14834, 14841, 14842,
+14843, 14851 (boot), 14853, 14861, 14862, 14871**. No `pkill`, no `cargo
+clean`, no `git add -A`, no `git update-ref`, no force-push, no history
+rewriting; every commit used `git commit -- <paths>` with the paths
+listed. **The untracked zero-byte `z` at the main checkout's root was
+left alone.**
+
+**AND ONE THING WAS FOUND IN THIS LANE'S OWN INDEX AND PUT BACK.** At the
+start of the rework `git status` showed a STAGED deletion of the whole
+`## Verification — REJECTED` section — 310 lines, the verifier's verdict
+— with the working tree already matching it. It is not this hand's and no
+brief mentions it. **The card was restored to `HEAD` for that path**
+(`git restore --source=HEAD --staged --worktree`), verified by sha256
+`0045c83246a718e452fe55fbb00f9f901dad14f5735239dc4d1dece18630bf50`, and
+the verdict is preserved byte-untouched.
