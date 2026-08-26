@@ -5,14 +5,14 @@ feature: F-01
 milestone: 4
 priority: 3
 size: M
-status: verifying
+status: done
 blocked_by: [T-134]
 touches: [CLAUDE.md, method/roles/orchestrator.md, method/roles/executor.md]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5
+verified_by: claude-opus-5
+review: same-model
 ---
 
 **@human, 2026-08-26**: *"Why did this error happen to you? Why did you
@@ -933,3 +933,81 @@ superseded one screen down in the same file, and carry no routed figure.**
 They are a checkpoint correction, not a rejection.
 
 **APPROVED.**
+
+---
+
+## Integration — integrator claude-opus-5, 2026-08-26
+
+**THE LANE'S NOTES, THE FOUR ROUTED CARDS AND THE VERDICT ABOVE ARE
+PRESERVED BYTE-UNTOUCHED.** Everything below is the integrator's, and the
+stamp in the frontmatter is the only edit made above this line.
+
+Main-before **`2a922cecfc35e61ab67a20575c5bf792f6a7d7ff`**, lane tip
+**`9818f03c2571c3960e85a129404f4bf1fbb243b5`** (derived with `git
+rev-parse` — the VERDICT commit, not the last work commit `956919c`),
+merge **`6036260c18eedaa46b2e3f5b03d83e6fa485a030`**, checkpoint the
+commit that carries these words. Range `2a922ce..6036260`, **5 paths**,
+all `docs/tasks/T-138*.md`. Forecast tree `c7c4619` **IS** the merge's
+tree, byte for byte, on exit 0.
+
+### THE BRIEF PREDICTED THIS MERGE'S SUITE WOULD RED AND IT DID NOT
+
+The integrator's brief said *"expect 193/194"*, citing the verifier's own
+red at `brief.spec.ts:706`. **Measured on main at `2a922ce` BEFORE the
+merge, on explicit port 15991: 194/194, exit 0, and that body GREEN.**
+Measured again after the merge on port 15992: **194/194, exit 0, green.**
+
+**THE DIAGNOSIS IS RIGHT AND THE BLAST RADIUS WAS OVERSTATED BY EXACTLY
+ONE CHECKOUT.** That body joins a MACHINE-WIDE fact (`git worktree list`)
+to a PER-CHECKOUT fact (the card index at this ref), which is `T-132-s6`'s
+shape one file over. But main is by construction the one tree where every
+dispatched card exists — the dispatch stamp lands there before any lane
+is cut (`lane-protocol`, *Why the branch carries the dispatch stamp*) —
+so **the integration checkout is the one checkout that can never red for
+it.** Every older LANE reds; the integrator never does. `T-138-s3` holds
+`[tools/e2e]` and is the seat for the repair.
+
+### THE TWO CARD-TEXT DEFECTS ARE **FILED**, NOT REPAIRED — `T-138-s5`
+
+The verdict asked for them to be fixed at the checkpoint. **The rule
+answers otherwise, and it answers with one command rather than with
+taste**: `integrator.md` rule 3, *"ask whether the thing was true one
+commit ago; yes: repair it, no: file it."* Both were false at this
+merge's parent `2a922ce` — `grep -c ROADMAP CLAUDE.md` returns **3**
+there, and `interview-chat-dom.test.tsx` reads nothing there either — so
+the merge REVEALS them and does not write them. Filed as **`T-138-s5`**,
+with the timing derived rather than quoted: the card was **TRUE when it
+was written** at `b3eaefe` 12:56:24, went false at `6a6bc87` 13:12:47,
+and was dispatched at `00e133a` 18:53:11 — **sixteen minutes true, five
+hours and forty-one minutes false.** `T-104-s4` is the precedent and the
+same seat filed it.
+
+### WHAT THIS STAMP RELEASES, DERIVED THROUGH THE MERGED `fence.ts`
+
+`[CLAUDE.md, method/roles/orchestrator.md, method/roles/executor.md]`
+expands to exactly those three paths — `excluded []`, `unusable []`,
+`issues 0`. It overlaps **three** open cards and **all three are freed**,
+because no live lane holds them: **`T-105`, `T-128`, `T-131`**, each on
+the witnesses `method/roles/executor.md` and
+`method/roles/orchestrator.md`. **They are freed from THIS card and they
+still collide with `T-135` on `method/tasks/TASK-FORMAT.md`**, which is
+`building` with no lane — two different questions, and this stamp answers
+only the first.
+
+### WHAT WAS NOT DONE, AND WHY
+
+- **No `ADR`.** Nothing supersedes ADR-001–017. The one decision this
+  card takes — `CLAUDE.md` stays unowned, its governance is its fence —
+  is written at the place it belongs, in the notes above, with its
+  measurement (85% of the tracked tree is in no component).
+  **ADR-018 is still owed and is still `T-135` Half B's.**
+- **`docs/ARCHITECTURE.md` NOT TOUCHED, derived rather than skipped.**
+  Rule 3's trigger is *"if any interface moved"*. This merge's five paths
+  are markdown under `docs/tasks/`, which no component's `paths:` claims;
+  no interface, no component row and no declared edge moves.
+- **`T-133-s3` still not taken.** The lane declined it because triage is
+  the orchestrator's act; an integrator has less standing, not more.
+  `method/roles/orchestrator.md` is released by this stamp and is
+  `disjoint` from every `building` card — **but a fence spelled `method/`
+  is not**, because `T-135` holds `method/tasks/TASK-FORMAT.md` and
+  containment is overlap. Name the file.

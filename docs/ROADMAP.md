@@ -1,7 +1,37 @@
 # Roadmap
 
 ## Backbone (revised per ADR-008 — app-first)
-- F-01: Method — the convention itself (method/), usable by hand
+- F-01: Method — the convention itself (method/), usable by hand.
+  Since T-138 (2026-08-26) the READ-FIRST SET is a measured object rather
+  than an assumption. It has three spellings — the project's root adapter,
+  `method/roles/orchestrator.md` and `method/roles/executor.md` — and
+  T-138 measured what each actually is: at that card's base ONE role file
+  carried a reading list of its own, ONE deferred to the adapter, and
+  THREE opened on an ACTION (verifier, integrator, planner), so the
+  "four competing lists" everyone had assumed was three-quarters a grep
+  artefact. **@human ruled the lists stay as they are for now.** What the
+  set COSTS is now on the record and is the number to argue against
+  before adding to it: **364 118 bytes across four documents at
+  `00e133a`**, against **1 140 bytes** for the adapter that names them —
+  a ratio of **319×**, which is why the adapter can afford to be read
+  every time and each document in it cannot. **DERIVE IT AT YOUR OWN
+  REF**: two of the four are rewritten by every checkpoint, so that
+  numerator moves under work no card does. **And the set still has no PRODUCT-shaped
+  entry**: STATE is what is happening now, CONVENTIONS is how to work,
+  ARCHITECTURE is which components exist, and not one of them says what
+  the app DOES for a person using it. @human decided the answer is a
+  GENERATED document assembled from `tools/e2e/tests/` — because a
+  sentence in a spec name is false the moment its body reds, and nobody
+  has to keep it true. **AND THE SIZE OF THAT ENTRY IS THREE DIFFERENT
+  NUMBERS, WHICH IS T-138's SHARPEST MEASUREMENT**: 163 statically
+  extractable `test("…")` sentences (**11 808 bytes, a 3.24% add on the
+  set**), 170 `test(` call sites in all, and **194 behaviours Playwright
+  actually runs** — the five loop-bodied sites expand by 24. T-138's
+  verifier derived all 194 **from the source without a run**, by
+  resolving the loops' own constants, so *"generated from source misses
+  31"* is false and the generator's real choice is whether it resolves
+  them. Routed as `T-138-s1`; the template every new project inherits
+  carries the same omission and is `T-138-s2`.
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
 - F-03: In-app genesis — planning interview as split view (planner
@@ -1108,6 +1138,33 @@ dispatched to `building`, T-140 arriving `planned`), so `building` goes
 is the only card it stamps — and **`verifying` goes 1 → 0**. Derive it at
 your own ref and stamp the reading; this paragraph was written at 295 and
 corrected at 281 inside one checkpoint.
+**AND RE-DERIVED ON DISK A NINTH TIME AT T-138'S CHECKPOINT, AND IT MOVES
+BY ONE UNDER A CARD THAT IS NOT THIS MERGE'S EITHER.** **100** cards on
+disk carry `milestone: 4` — F-01 10, F-02 43, F-03 12, F-04 8, F-06
+**27**; 10+43+12+8+27 = 100. The single mover is **`T-141`'s own card
+file**, which the architect created on main at the dispatch commit
+`2a922ce` — OUTSIDE this merge's range, which is `2a922ce..6036260` and
+contains no `feature:` or `milestone:` line at all. **`T-138` does NOT
+move this census**: it is F-01 with `milestone: 4` and was already inside
+the count before it landed, exactly as T-132, T-133, T-134, T-135, T-111
+and T-139 were before it. **THE F-04 PROGRESS LINE DOES NOT MOVE, FOR
+THE OLDEST REASON IN THIS LEDGER** — `T-138` is **F-01**, inherited
+backlog rather than F-04 slice content, so the fraction holds at **5 of
+8** for the second consecutive merge after T-111 finally moved it. **This
+is the TENTH ask and the EIGHTH time that exact reason applies.**
+**THE BOARD MOVES IN BOTH DIRECTIONS AND ONLY TWO OF THE FOUR MOVES ARE
+THIS MERGE'S.** 281 flat task files → **287**: main added `T-141`'s card
+(`2a922ce`), this merge adds **four** — `T-138-s1` … `s4` — and this
+checkpoint adds **one**, `T-138-s5`. 281 + 1 + 4 + 1 = 287. `suggested`
+goes 92 → **97** (four from the merge, one from the checkpoint);
+`rejected/` holds at **28** and this merge sends nothing there.
+**`done` goes 101 → 102 and THAT one is this merge's** — T-138 is the
+only card it stamps — and **`verifying` goes 1 → 0** while `building`
+holds at **3** (`T-135` with no lane, `T-137` and `T-141` with lanes).
+**T-138's OWN STAMP FREES EXACTLY THREE CARDS AND NO MORE**: `T-105`,
+`T-128` and `T-131`, derived through the merged `fence.ts` — a far
+smaller release than T-139's seventeen, because this fence held three
+files rather than two components.
 Decomposition pass complete 2026-08-19
 (design/dispatch-technical-plan.md); D1 ruled by @human the same day.
 
