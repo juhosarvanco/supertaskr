@@ -337,7 +337,8 @@ describe('a lane whose id names no card RULES on every card, and is never merely
     expect(ruled?.holds.map((h) => h.verdict)).toEqual(['unusable']);
     expect(ruled?.holds.map((h) => h.cardMissing)).toEqual([true]);
     expect(ruled?.reason).toContain('refs/heads/task/T-777-lane');
-    expect(ruled?.reason).toContain('NOT IN THIS CHECKOUT');
+    expect(ruled?.reason).toContain('this checkout has NO CARD for');
+    expect(ruled?.reason).toContain('nothing can be ruled disjoint from it');
     expect(ruled?.reason).not.toContain('disjoint from every live lane');
     expect(order.lanesWithNoCard).toEqual(['T-777']);
     expect(order.lanes.map((l) => l.taskId)).toEqual(['T-777']);
@@ -399,5 +400,16 @@ describe('a lane whose id names no card RULES on every card, and is never merely
       '/w/a',
       '/w/b',
     ]);
+    // AND THE SENTENCE AGREES IN NUMBER WITH THE LANES, NOT THE IDS.
+    // KILLED BY: counting unique task ids, or hard-coding either form.
+    // Two worktrees on one branch are TWO live writers, and a reason a
+    // human is meant to argue with cannot say "that fence" about two of
+    // them. Three lanes went live on this machine while this sentence
+    // was being written and produced "T-141, T-145 has no card … from
+    // it"; the singular half is pinned by the first body above.
+    expect(order.all.find((r) => r.id === 'T-001')?.reason).toContain('those fences');
+    expect(order.all.find((r) => r.id === 'T-001')?.reason).toContain(
+      'nothing can be ruled disjoint from them',
+    );
   });
 });

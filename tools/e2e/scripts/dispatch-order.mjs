@@ -282,9 +282,9 @@ export function dispatchReport(ctx) {
       o.lanesWithNoCard.length === 0
         ? value("nothing is startable", tree(boardVia))
         : value(
-            `nothing is startable, and the reason is NOT the board: ${o.lanesWithNoCard.join(", ")} ` +
-              "has no card in this checkout, so no fence could be proved disjoint from it — see " +
-              "UNFENCEABLE below",
+            `nothing is startable, and the reason is NOT the board: this checkout has no card for ` +
+              `${o.lanesWithNoCard.join(", ")}, so no fence could be proved disjoint from ` +
+              `${o.lanesWithNoCard.length > 1 ? "them" : "it"} — see UNFENCEABLE below`,
             live(laneVia),
           ),
     );

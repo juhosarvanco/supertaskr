@@ -499,10 +499,16 @@ function rule(
   const tokens = [...new Set(unresolved.flatMap((h) => [...h.unusable]))].sort();
   const clauses: string[] = [];
   if (missing.length > 0) {
+    // NUMBER AGREEMENT IS NOT DECORATION HERE. Three lanes went live on
+    // this machine while the sentence was being written, and a reason a
+    // human is meant to ARGUE with cannot read "T-141, T-145 has no card
+    // … disjoint from it". The count is the lane count, because two
+    // worktrees on one branch are two live writers.
+    const many = missing.length > 1;
     clauses.push(
-      `${missing.map((h) => laneName(h.lane)).join(', ')} is live and its card is NOT IN THIS ` +
-        'CHECKOUT, so its fence could not be expanded at all and nothing can be ruled disjoint ' +
-        'from it',
+      `this checkout has NO CARD for ${missing.map((h) => laneName(h.lane)).join(', ')}, so ` +
+        `${many ? 'those fences' : 'that fence'} could not be expanded at all and nothing can be ` +
+        `ruled disjoint from ${many ? 'them' : 'it'}`,
     );
   }
   if (tokens.length > 0) {
