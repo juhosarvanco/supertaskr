@@ -990,6 +990,80 @@ describe("a fence is compared over EXPANDED components, never slug strings (T-11
     expect(first?.sharedPaths).toContain("app/src/styles");
   });
 
+  it("the shared ground is the NARROWER domain, and it is the SAME in both orders", () => {
+    // **A09 SURVIVED THE FIRST DRILL AT EXIT 0 AND THAT IS A REJECTION.**
+    // The producer decides `pa.length >= pb.length ? pa : pb` behind a
+    // comment asserting the rule, and inverting it — proved
+    // non-equivalent, `["docs/CONVENTIONS.md"]` becoming `["docs"]` —
+    // left 1009 of 1009 green. Nothing asserted which of the two came
+    // back.
+    //
+    // IT IS NOT A MATTER OF TASTE. A parent fence RESERVES the child, so
+    // the ground two fences actually share is the CHILD. Reporting the
+    // parent tells a human that a lane holding one file has reserved a
+    // whole directory tree, which is the coarseness this card exists to
+    // make visible rather than to manufacture.
+    const model = liveBoard();
+    const comps = model.components ?? [];
+    // DRIVEN FROM THE LIVE BOARD'S OWN TOKENS, as criterion 3 requires:
+    // one card holds a bare `docs` and twenty-odd hold a file under it.
+    const holdersOf = (token: string): string[] =>
+      model.tasks.filter((t) => t.touches.includes(token)).map((t) => t.id ?? t.file);
+    expect(holdersOf("docs").length).toBeGreaterThan(0);
+    expect(holdersOf("docs/CONVENTIONS.md").length).toBeGreaterThan(0);
+
+    const childFirst = fenceClashes(
+      { taskId: "T-X", touches: ["docs/CONVENTIONS.md"] },
+      lane("T-054", "task/T-054-a", ["docs"]),
+      comps,
+    );
+    expect(childFirst[0]?.sharedPaths).toEqual(["docs/CONVENTIONS.md"]);
+    // BOTH ORDERS, because "the narrower" is a property of the PAIR: an
+    // implementation that simply returns its left-hand argument passes
+    // the line above and fails this one.
+    const parentFirst = fenceClashes(
+      { taskId: "T-054", touches: ["docs"] },
+      lane("T-X", "task/T-X", ["docs/CONVENTIONS.md"]),
+      comps,
+    );
+    expect(parentFirst[0]?.sharedPaths).toEqual(["docs/CONVENTIONS.md"]);
+    // POSITIVE CONTROL: the two really are a parent/child pair rather
+    // than two equal strings, or "the narrower" names nothing.
+    expect(normaliseTouchToken("docs")).not.toBe(normaliseTouchToken("docs/CONVENTIONS.md"));
+    expect(touchTokensOverlap("docs", "docs/CONVENTIONS.md")).toBe(true);
+  });
+
+  it("componentIds are SORTED, never left in registry order", () => {
+    // A28 dropped the sort and survived at exit 0, because every fixture
+    // handed the registry to this function already in id order. The
+    // reversed registry is what makes the sort observable — and the
+    // ordering is load-bearing, because `viaComponents` is rendered into
+    // a reason a human reads and compares between runs.
+    const comps = liveBoard().components ?? [];
+    const holders = (cs: typeof comps): string[] =>
+      cs.filter((c) => c.touchSlugs.includes("app-board")).map((c) => c.id);
+    const reversed = [...comps].reverse();
+    // POSITIVE CONTROL FIRST: the reversed registry genuinely presents
+    // these records in the other order, or the equality below is free.
+    expect(holders(comps).length).toBeGreaterThan(1);
+    expect(holders(reversed)).not.toEqual(holders(comps));
+
+    const forward = expandTouch("app-board", comps);
+    const backward = expandTouch("app-board", reversed);
+    expect(forward.componentIds).toEqual(backward.componentIds);
+    expect(forward.componentIds).toEqual([...forward.componentIds].sort());
+    // The same for the clash record, which carries its own second sort.
+    const clashOf = (cs: typeof comps): readonly string[] =>
+      fenceClashes(
+        { taskId: "T-111", touches: ["app-board"] },
+        lane("T-033", "task/T-033-zero-drift", ["app-shell"]),
+        cs,
+      )[0]?.viaComponents ?? [];
+    expect(clashOf(reversed)).toEqual(clashOf(comps));
+    expect(clashOf(comps)).toEqual([...clashOf(comps)].sort());
+    expect(clashOf(comps).length).toBeGreaterThan(1);
+  });
+
   it("T-111's OWN FENCE AND T-134's ARE DISJOINT, derived rather than asserted", () => {
     // The disjointness claim this lane itself rests on, computed the way
     // T-111-s1 says it must be.
@@ -1113,17 +1187,23 @@ describe("the lane set joined with status:, and their DISAGREEMENT visible (crit
       ["docs/tasks/T-902.md", task("T-902", "F-03", 1, "planned")],
     ]);
 
-  it("live — stamped in flight and a worktree is there", () => {
-    const got = dispositionOf(
-      selectDispositions(
-        model(),
-        reading({ taskId: "T-900", state: "live", lanes: [laneHold("T-900", "task/T-900-a")] }),
-      ),
-      "T-900",
+  it("live — stamped in flight and a worktree is there, and the lane does NOT disagree", () => {
+    const d = selectDispositions(
+      model(),
+      reading({ taskId: "T-900", state: "live", lanes: [laneHold("T-900", "task/T-900-a")] }),
     );
+    const got = dispositionOf(d, "T-900");
     expect(got?.disposition).toBe("not-applicable");
     expect(got?.reason).toContain("is in flight");
     expect(got?.reason).toContain("task/T-900-a");
+    // `InFlightLane.disagrees` — the field criterion 2 names for *"THEIR
+    // DISAGREEMENT SHALL BE VISIBLE"*. It was declared, assigned and read
+    // NOWHERE: arm A24 forcing it to `false` survived at exit 0, so a
+    // public interface `T-111-s5` puts on T-137's move list carried
+    // unpinned data. This is its `false` face; the `stampSkipped` body
+    // below is its `true` one, and the pair is what A24 now reds against.
+    if (d.kind !== "derived") throw new Error("unreachable");
+    expect(d.inFlight.map((l) => l.disagrees)).toEqual([false]);
   });
 
   it("died — stamped in flight, no worktree: the fence is NOT held and NO CAUSE is named", () => {
@@ -1173,6 +1253,82 @@ describe("the lane set joined with status:, and their DISAGREEMENT visible (crit
     expect(fenced?.reason).toContain("T-901");
     expect(fenced?.clash?.sharedPaths).toEqual(["app/src/shared"]);
     expect(fenced?.clash?.viaComponents).toEqual(["C-70", "C-71"]);
+    // THE DISAGREEMENT ITSELF, as a field: a worktree with no stamp IS
+    // the board and the disk disagreeing, and `disagrees` says so. Its
+    // `false` face is pinned in the `live` body above; between them arm
+    // A24 has nowhere to survive.
+    if (d.kind !== "derived") throw new Error("unreachable");
+    expect(d.inFlight.map((l) => l.disagrees)).toEqual([true]);
+  });
+
+  it("the FENCED reason DISCLOSES the coarse fence in words, and a path-only clash does not", () => {
+    // **THIS CARD'S OWN HEADLINE (b), AND A20b DELETED IT AT EXIT 0.**
+    // The card: *"a reason string honest enough that a human can see it
+    // is the coarse fence rather than a real overlap, and override
+    // deliberately… the frontier must make that visible, not silently
+    // serialize."* Deleting the entire coarse clause from the producer
+    // left 1009 of 1009 green — nothing asserted `COARSE`, `expand
+    // through` or `override it deliberately` anywhere. The tell was
+    // ENCODED in `FenceClash.viaComponents` and never DEFENDED as text,
+    // which is criterion 4's whole distinction: *the reason SHALL be
+    // rendered as text, not merely encoded.*
+    const viaSlugs = withRoadmap([
+      ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "planned", [["touches", "[alpha]"]])],
+      ["docs/tasks/T-902.md", task("T-902", "F-03", 1, "planned", [["touches", "[beta]"]])],
+      component("C-70", ["alpha"], ["app/src/shared/**"]),
+      component("C-71", ["beta"], ["app/src/shared/**"]),
+    ]);
+    const coarse = dispositionOf(
+      selectDispositions(
+        viaSlugs,
+        reading({
+          taskId: "T-901",
+          state: "stampSkipped",
+          lanes: [laneHold("T-901", "task/T-901-a")],
+        }),
+      ),
+      "T-902",
+    );
+    expect(coarse?.disposition).toBe("fenced");
+    expect(coarse?.reason).toContain("both expand through C-70, C-71");
+    expect(coarse?.reason).toContain("COARSE fence rather than a real overlap");
+    expect(coarse?.reason).toContain("override it deliberately");
+
+    // **THE NEGATIVE CONTROL, WHICH IS WHAT MAKES THE THREE LINES ABOVE
+    // WORTH ANYTHING.** Two LITERAL PATH tokens collide through no
+    // component at all, so there is nothing coarse to disclose and the
+    // clause must be ABSENT. Without this, a producer that appended the
+    // clause unconditionally would pass — and would then be lying on
+    // every path-only clash, where the overlap is exact and a human has
+    // nothing to override.
+    const viaPaths = withRoadmap([
+      ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "planned", [["touches", "[tools/e2e]"]])],
+      ["docs/tasks/T-902.md", task("T-902", "F-03", 1, "planned", [["touches", "[tools/e2e/]"]])],
+      // An unrelated component, so the registry is non-empty and the
+      // narrow undecidable refusal is not what this body measures.
+      component("C-70", ["alpha"], ["app/src/shared/**"]),
+    ]);
+    const exact = dispositionOf(
+      selectDispositions(
+        viaPaths,
+        reading({
+          taskId: "T-901",
+          state: "stampSkipped",
+          lanes: [laneHold("T-901", "task/T-901-a")],
+        }),
+      ),
+      "T-902",
+    );
+    expect(exact?.disposition).toBe("fenced");
+    expect(exact?.clash?.viaComponents).toEqual([]);
+    expect(exact?.reason).not.toContain("COARSE");
+    expect(exact?.reason).not.toContain("expand through");
+    expect(exact?.reason).not.toContain("override it deliberately");
+    // …and the reason is still a full one, so the three absences above
+    // are the CLAUSE missing rather than the reason missing.
+    expect(exact?.reason).toContain("T-901");
+    expect(exact?.reason).toContain("tools/e2e");
+    expect(exact?.reason).toContain("they share");
   });
 
   it("notDispatched — neither, and the card is judged on its own merits", () => {
@@ -1366,24 +1522,75 @@ describe("blocked_by is a DECLARATION and whether it binds is DERIVED (T-111-s4)
     expect(reason.indexOf("defect in this card")).toBeGreaterThan(reason.indexOf("PARKED"));
   });
 
-  it("a dangling blocker carries the PARSER's own sentence, never a second one", () => {
+  it("a dangling blocker QUOTES the parser's own sentence into the RENDERED reason, near-miss and all", () => {
     // Criterion 6 says consume `dangling-reference` rather than
-    // re-deriving it (T-057). The near-miss hint is the parser's and it
-    // reaches the reason untouched.
+    // re-deriving it (T-057); criterion 4 says the reason is RENDERED as
+    // text. Both, or neither is delivered.
+    //
+    // **THIS BODY'S PREVIOUS TITLE ASSERTED THE OPPOSITE OF WHAT IT
+    // CHECKED, AND THAT IS WHY THE CARD WAS REJECTED.** It read "carries
+    // the PARSER's own sentence, never a second one" while asserting only
+    // that the FIELD held the message — the reason rendered a second
+    // sentence and dropped the hint, probed at
+    // `REASON_CONTAINS_PARSERSAID = false`. The field assertion is kept
+    // (it is the consumption) and the RENDER is now asserted beside it.
+    // "Never a second one" is gone from the title because it is still
+    // false and should be: the board's own ruling clause — a dangling
+    // blocker is a defect in the card, not a reason to wait — is what the
+    // disposition/reason split owes the reader, and it sits beside the
+    // quote rather than instead of it.
+    // **AND THE FIXTURE MOVED, WHICH IS A SECOND DEFECT IN THIS PIN THAT
+    // THE VERDICT DID NOT NAME.** It used to declare `T-900` and dangle
+    // on `T-90` — and those are DIFFERENT id slots, because `idSlotKey`
+    // strips only LEADING zeros, so no near miss was ever emitted. The
+    // body could not have shown the hint reaching the reason even if the
+    // render had existed. `T-01` beside a declared `T-001` is T-076's own
+    // example and the pair the verdict probed with.
     const m = withRoadmap([
-      ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned", [["blocked_by", "[T-90]"]])],
-      ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "done")],
+      ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned", [["blocked_by", "[T-01]"]])],
+      ["docs/tasks/T-001.md", task("T-001", "F-02", 1, "done")],
     ]);
     const emitted = m.issues.filter(
       (i) => i.kind === "dangling-reference" && i.field === "blocked_by",
     );
     expect(emitted.length).toBe(1);
+    expect(emitted[0]?.nearMiss).toEqual(["T-001"]);
     const got = dispositionOf(selectDispositions(m, NO_LANES), "T-900");
     expect(got?.disposition).toBe("blocked");
     expect(got?.unmet?.[0]?.binding).toBe("missing");
     expect(got?.unmet?.[0]?.parserSaid).toBe(emitted[0]?.message);
     // ABSENT, never undefined-valued: a missing blocker has no status.
     expect("status" in (got?.unmet?.[0] ?? {})).toBe(false);
+    // THE RENDER — the half that was missing. The whole message, verbatim
+    // and attributed, so a reader can tell whose sentence it is.
+    expect(got?.reason).toContain("The parser says:");
+    expect(got?.reason).toContain(emitted[0]?.message ?? " never");
+    // AND THE NEAR-MISS SPECIFICALLY REACHES THE READER, which is the
+    // thing T-076 exists to deliver: the padding twin one line away.
+    expect(got?.reason).toContain("'T-001' is declared and differs only in zero padding");
+    // The board's own ruling clause is still there — beside the quote.
+    expect(got?.reason).toContain("defect in this card, not a reason to wait");
+  });
+
+  it("the near-miss is the PARSER's and not a template — an id with no padding twin gets no such clause", () => {
+    // THE DISCRIMINATING CONTROL for the body above. Asserting that a
+    // reason contains "zero padding" proves nothing if this file composes
+    // that clause itself: a template would print it for every dangling id.
+    // `T-999` has no declared twin, so the parser emits no near-miss — and
+    // the reason must quote a message that carries none.
+    const m = withRoadmap([
+      ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned", [["blocked_by", "[T-999]"]])],
+    ]);
+    const emitted = m.issues.filter(
+      (i) => i.kind === "dangling-reference" && i.field === "blocked_by",
+    );
+    expect(emitted.length).toBe(1);
+    expect(emitted[0]?.message).not.toContain("zero padding");
+    const got = dispositionOf(selectDispositions(m, NO_LANES), "T-900");
+    expect(got?.disposition).toBe("blocked");
+    expect(got?.reason).toContain("The parser says:");
+    expect(got?.reason).toContain(emitted[0]?.message ?? " never");
+    expect(got?.reason).not.toContain("zero padding");
   });
 
   it("a self-reference is dropped rather than blocking the card on itself", () => {
@@ -1577,24 +1784,40 @@ describe("THE LIVE BOARD — the frontier run on this repository (verification l
     }
   });
 
-  it("THE DECAY IS REAL HERE, and the derivation ignores it", () => {
+  it("LANDED BLOCKERS ARE DECLARED HERE, and the derivation asks their status rather than the field", () => {
+    // **THE WORD THIS BODY USED TO CARRY IS RETRACTED, AND THE
+    // ASSERTION IS NOT.** Its title read "THE DECAY IS REAL HERE", its
+    // comment said "a corpus with no stale entries", and its variable was
+    // `const stale`. *Decay* and *stale* are `T-111-s4`'s exact words and
+    // `T-136` was REJECTED on main under them: `blocked_by: [T-104]` on a
+    // card whose T-104 has landed is not stale, it is HISTORICALLY
+    // ACCURATE, and it is the only record of why the work was sequenced
+    // that way — four declarations cleared under the retracted argument
+    // were restored byte-identical. The retraction reached the card
+    // prose, `T-111-s6` and `board-model.ts`'s own doc comment and
+    // stopped one file short of here, so this suite went on shipping the
+    // premise three files from the module that disowns it. A test title
+    // is shipped text.
+    //
     // TWO HALVES, and the second is what makes the first mean anything.
     //
     // (a) POSITIVE CONTROL — this board really does carry `blocked_by`
     //     entries naming cards that are `done`. Without it the property
-    //     below is vacuous: a corpus with no stale entries satisfies "no
+    //     below is vacuous: a corpus carrying no such entry satisfies "no
     //     card is blocked by a done card" for free.
     // (b) THE PROPERTY — no card the frontier calls `blocked` is blocked
-    //     by an id whose card is `done`. The stored field says otherwise
-    //     on every one of those entries; the derived answer does not.
+    //     by an id whose card is `done`. The FIELD still names those
+    //     blockers on every one of those cards, correctly and
+    //     permanently; the derived answer resolves each id instead of
+    //     reading the field for a verdict it does not hold.
     const model = liveBoard();
     const statusOf = new Map(
       model.tasks.filter((t) => t.id !== undefined).map((t) => [t.id as string, t.status]),
     );
-    const stale = model.tasks.flatMap((t) =>
+    const landed = model.tasks.flatMap((t) =>
       t.blockedBy.filter((b) => statusOf.get(b) === "done"),
     );
-    expect(stale.length).toBeGreaterThan(0);
+    expect(landed.length).toBeGreaterThan(0);
 
     const d = selectDispositions(model, NO_LANES);
     if (d.kind !== "derived") throw new Error("unreachable");

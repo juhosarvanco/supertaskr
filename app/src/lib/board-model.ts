@@ -628,7 +628,10 @@ export interface UnmetBlocker {
   /** The blocker's own status; absent exactly when `binding` is `missing`. */
   readonly status?: TaskStatus;
   /** The parser's own sentence about this reference, verbatim, when it
-   * emitted one. Present only for `missing`. */
+   * emitted one. Present only for `missing`, and QUOTED INTO THE RENDERED
+   * REASON rather than merely carried here — see {@link blockedReason}. A
+   * near-miss hint that stops at this field has been computed and thrown
+   * away. */
   readonly parserSaid?: string;
 }
 
@@ -887,8 +890,27 @@ function danglingBlockerSentences(issues: readonly ParseIssue[]): Map<string, st
 
 const joinIds = (ids: readonly string[]): string => ids.join(", ");
 
-/** The sentence for one unmet blocker set — one clause per BINDING, so
- * the three never arrive as one word. */
+/**
+ * The sentence for one unmet blocker set — one clause per BINDING, so
+ * the three never arrive as one word.
+ *
+ * **THE PARSER'S SENTENCE IS QUOTED, NOT SUMMARISED, AND THIS WAS A
+ * REJECTION.** Criterion 6 says consume `dangling-reference` rather than
+ * re-deriving it (T-057), and the first pass consumed it into a FIELD
+ * (`UnmetBlocker.parserSaid`) and then rendered a second sentence of its
+ * own instead — so `'T-001' is declared and differs only in zero padding`
+ * was computed, carried, and dropped one layer short of the reader.
+ * Probed at the verdict: `REASON_CONTAINS_PARSERSAID = false`. That
+ * re-creates T-076's own failure — sending the author hunting a task that
+ * does not exist rather than at the padding one line away — one layer
+ * above the code T-076 wrote to fix it.
+ *
+ * The message is quoted VERBATIM, file prefix and all, and the redundancy
+ * is the price of not re-deriving: the moment this file reformats the
+ * parser's sentence it owns a second copy of it. `nearMiss` is the
+ * structured half and composing a clause from it would be exactly that
+ * second copy, so the whole message is attributed instead.
+ */
 function blockedReason(taskId: string, unmet: readonly UnmetBlocker[]): string {
   const parts: string[] = [];
   const open = unmet.filter((u) => u.binding === "open");
@@ -912,7 +934,12 @@ function blockedReason(taskId: string, unmet: readonly UnmetBlocker[]): string {
         "not a reason to wait",
     );
   }
-  return taskId + " " + parts.join("; ") + ".";
+  const sentence = taskId + " " + parts.join("; ") + ".";
+  const said = missing
+    .map((u) => u.parserSaid)
+    .filter((s): s is string => s !== undefined && s !== "");
+  if (said.length === 0) return sentence;
+  return sentence + ' The parser says: "' + said.join('" and "') + '".';
 }
 
 /**
