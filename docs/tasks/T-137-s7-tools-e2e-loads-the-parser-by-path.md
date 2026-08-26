@@ -1,6 +1,6 @@
 ---
 id: T-137-s7
-title: `tools/e2e` reaches into `lib/parser/dist` by relative path because it declares no dependency on the parser, and the manifest that forbids it is the same file that would fix it
+title: The E2E package reaches into `lib/parser/dist` by relative path because it declares no dependency on the parser, and the manifest that forbids it is the same file that would fix it
 status: suggested
 suggested_by: executor claude-opus-5 @T-137
 touches: [tools/e2e]
