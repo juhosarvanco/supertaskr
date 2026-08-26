@@ -800,6 +800,19 @@ and its criteria 1–3 are discharged.**
    `method/tasks/TASK-FORMAT.md`**, so one at a time, and not beside a
    live `T-135` Half B. Derived through `fence.ts` at this checkpoint,
    never from a token comparison.
+
+   **OR NARROW THE FENCE INSTEAD OF WAITING — `T-145` did exactly that
+   on 2026-08-26 and dispatched past this block.** The containment is
+   `method/` ⊇ `method/tasks/TASK-FORMAT.md`; a card fenced to the
+   SUBTREE its fix actually needs — `method/adapters/`, `method/roles/`,
+   `method/lane-protocol.md` — is disjoint from T-135 and free tonight.
+   **A re-fence is triage's call and must be verified with `brief.mjs
+   --task` AFTER the card is committed, never reasoned about in tokens.**
+   `T-128` looks like the best candidate, its remedy being a rule about
+   shared surfaces and `lane-protocol.md` already housing that kind of
+   rule — but that is inferred from its body, **NOT confirmed against the
+   fix**, and a lane whose fence turns out to be one file short is worse
+   than a lane that waited.
 2. **`T-138-s1` IS CHEAPER THAN ITS CARD SAYS AND SHOULD BE RE-SCOPED
    BEFORE IT IS DISPATCHED.** Its central choice — *source misses 31, or
    the run costs a suite pass* — **is false**: 194 is derivable from
