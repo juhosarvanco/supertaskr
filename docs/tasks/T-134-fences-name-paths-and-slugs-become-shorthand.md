@@ -522,3 +522,243 @@ comparison of two named sets and not by the emptiness of one of them.**
 (read before the substitution), tree `895a2e24`, **6 paths**. Main was
 `15a963d` at every one of the three times it was read. Lane tip
 `31d8212`; work commits `9dfb5a0`, `c98313c`, `31d8212`.
+
+## Verification — APPROVED
+
+Adversarial verification by a seat that did not build this, at lane tip
+`8d93149`. **BOUNDED READ**: the card was read at base `15a963d` (located
+by `grep -rl "^id: T-134$" docs/tasks/`, never a filename glob) and the
+attack set was derived from its criteria and **written down at
+2026-08-26T09:05:33Z, before the diff or the notes commit was opened**.
+
+**RANGE, by the range rule.** My named ref is `verify-T134-mainbase` =
+`cf470f576ff4bb2536f047eb512a7b21c9d96bba` — main as I read it, which is
+TWO COMMITS AHEAD of this lane's base (`T-136`/`T-137` landed at
+`cf470f5`). `git merge-tree --write-tree verify-T134-mainbase
+verify-T134-tip` → **exit 0, read from `$?` BEFORE the substitution**,
+tree `a0ed6d178dd2a6ebc8e0b24bb97c29fbb02c5a23`, **6 paths**. Clean merge.
+
+### The flip census — RE-DERIVED TWICE, INDEPENDENTLY, AND IT HOLDS
+
+Once with a from-scratch implementation written against the card's prose
+and NOT importing `fence.ts`, and once through the real `parseProject` +
+real `fence.ts`. **Both give the same answer, and it is the card's**:
+36 open cards, 630 pairs, **25 flips, 25 distinct cards, every one
+`disjoint` → `overlapping`, NONE the other way** — pair-for-pair and
+witness-for-witness identical to the enumeration, Shape A 19 pairs on
+`app/src/assets` + `app/src/styles`, Shape B 6 pairs on
+`method/lane-protocol.md` and `method/tasks/TASK-FORMAT.md`.
+
+**THE DANGEROUS DIRECTION IS EMPTY, AND I DID NOT TAKE THAT ON TRUST.**
+My first census reported **4 flips the other way** — the direction that
+would mean the expansion LOOSENS a fence. **That was my own defect, not
+the lane's**: `paths:` carries a trailing `#` comment on C-05, C-07,
+C-12 and C-16, my block-list header regex demanded end-of-line, and those
+four components parsed with ZERO paths. Fixed, and the reverse count went
+to 0 and stayed there under both implementations. Recorded because a
+verifier's own tooling is the last thing that gets a positive control.
+
+**RE-RUN AT CURRENT MAIN `cf470f5`: 38 cards, 703 pairs, THE SAME 25
+FLIPS, still 0 reverse.** `T-136` and `T-137` add none. Criterion 7's
+enumeration survives the merge; only its *pair count* is stale.
+
+**THE NEAR-MISS IS REAL AND LIVE.** `T-131 × T-134` → **overlapping**,
+witness `method/lane-protocol.md`, derived not asserted. So are
+`T-105 × T-134` and `T-128 × T-134`. `T-111 × T-134` → **disjoint**.
+
+### The pins
+
+**PIN TWO's two live instances confirmed**: `T-112 [app-dispatch,
+app-board] × T-114 [app-shell]` → overlapping on `app/src/assets` and
+`app/src/styles`, no shared token; `T-128 × T-134` → overlapping by
+containment, no shared token. **PIN ONE has no live instance and cannot
+have one — MEASURED**: zero `touches:` path tokens fall inside any
+SLUG-CARRYING component. The card's backwards guess is correctly
+self-refuted.
+
+### Attacks that found nothing (reported because they found nothing)
+
+29/29 targeted probes pass. Containment both ways; **the prefix-string
+trap is not an overlap** (`method/lane` vs `method/lane-protocol.md` →
+disjoint); a file fence does not swallow an unrelated directory;
+`docs/tasks` refused in 7 spellings including `docs\tasks` and
+`docs//tasks//`, with positive controls that `method/`,
+`docs/architecture/components/` and a NAMED file under `docs/tasks` are
+still accepted; unresolved and rejected tokens yield `unusable`, never a
+silent `disjoint`; `method` vs `method/` never disagree.
+
+**THE PARSE-TIME-REFUSAL ARGUMENT WAS ATTACKED AND HOLDS.** Simulating a
+fenceable `docs/tasks` (via `docs/notes/`): the holder reserves the
+directory, the neighbour's own card file is carved out of the
+neighbour's own fence, so the comparison is **disjoint** — the collision
+is structurally invisible. **Counter-probe**: when the other side
+EXPLICITLY names a file there, the witness appears. So the mechanism is
+not merely broken, and the refusal genuinely must happen at parse time.
+
+**Criterion 2 pinned positively**: mutating C-11's `touch_slugs:` reds 2
+bodies, and `app-shell`/`app-board` appear in `fence.ts` **only in doc
+comments**. There is no table.
+
+### Drills — the lane's 8 arms reproduce EXACTLY, and 5 of mine do not
+
+Control **290/290, exit 0**. Producer mutated, never an assertion; each
+mutation read back with `git diff` BEFORE its run; every restore proved
+by sha256 against `git show HEAD:` at `28c022e6…`; `git status` carried
+only the `node_modules` symlink throughout.
+
+| arm | claimed | measured |
+|---|---|---|
+| 1 trailing-slash strip | 6 | **6** |
+| 2 first component only | 3 | **3** |
+| 3 containment arms | 1 | **1** |
+| 4 `UNFENCEABLE_PATHS` emptied | 2 | **2** |
+| 5 carve-out disabled | 2 | **2** |
+| 6 `unusable` collapsed | 2 | **2** |
+| 7 `GLOB_CHARS` | 1 | **1** |
+| 8 trailing-slash-is-evidence | 4 | **4** |
+
+**FIVE ARMS OF MY OWN SURVIVE THE WHOLE 290-BODY SUITE**, so these
+behaviours are UNPINNED: (9) the own-file suppression *in
+`compareFences`* — `if (excluded.has(shared)) continue;` can be deleted
+green; (10) `sharedDomain`'s repository-root arms; (11) the witness
+SORT, which the interface documents; (12) the witness DEDUP; and
+(13) **the dedup key reverted to a space join stays 290/290 green** —
+which positively demonstrates this card's own lesson: the NUL site was,
+and REMAINS, invisible to every behavioural body. Its only guard is a
+text gate.
+
+**THE NUL, INDEPENDENTLY REPRODUCED.** Exactly 2 × U+0000 at byte offsets
+**18812** and **18824** pre-fix, 0 at tip across all six paths.
+Replanting it reds `lint:tokens` at **P5, those same two offsets, exit
+1**, while the parser suite stays **290/290 exit 0** — the gate's unique
+reach verified rather than believed. Repo-wide sibling hunt: **no sibling
+introduced by this lane** (the U+202E/U+202C and U+FEFF hits are
+pre-existing deliberate fixtures outside this diff).
+
+### Suites and gates — every exit read unpiped from `$?`
+
+- `npx vitest run` from `lib/parser/` — **290/290, exit 0**, 13 files,
+  `fence.test.ts` 22 bodies.
+- `npm test` from `app/` — **973/973, exit 0**, 47 files, after
+  `lib/parser` build then `app` build, both exit 0. `npm run typecheck`
+  from `app/` — **exit 1, `Missing script: "typecheck"`**, re-derived.
+- `npm test` from `tools/e2e/` — **194/194, exit 0, 2.4m**, explicit port
+  **15913**, re-probed free immediately before binding at 09:23:54Z and
+  released after; header, `✓` count and highest body number all 194.
+  (Port **15885** was held by another live lane during my run, and port
+  1420 by **pid 46532**, read rather than remembered.)
+- `lint:tokens` **exit 0, TOKEN 138 / CONTROL 776**; `git ls-files`
+  **794** at my ref. `lint:docs` **exit 0**. `tsc --noEmit` exit 0 in
+  `lib/parser` and `tools/e2e`.
+- **DOCS GATE: FIRES, exit 1**, run DIRECTLY on my range's six paths,
+  never through `xargs`. **1 of 6** — this card — and **NOT**
+  `method/lane-protocol.md`. 15 derived readers across 4 suites, census
+  131 sites in 22 files, 0 frontmatter issues, 6 root-anchored argued.
+- `arch cycles` **exit 1 by design**, read unpiped: `C-08 -> C-09 ->
+  C-08`, `components=13 declared_edges=35`.
+
+### For the integrator
+
+**GRAPH REGEN ASKED, NOT PREDICTED, WITH A POSITIVE CONTROL FIRST**:
+`--check` on clean main says **CURRENT, exit 0** (`955710 · 181 · 2038 ·
+1943`), so the tool agrees with main's committed graph. Against this
+lane: **STALE, exit 1** → `970961 · 183 · 2064 · 1986`, `files +2 -0 ~2`,
+`edges +43 -0`, no foreign staleness. **97.10% of `max_graph_bytes`
+1 000 000, 29 039 headroom, spending 15 251** — larger than T-135 Half
+A's 11 120.
+
+**THE IDENTICAL-FIGURES TRAP REPRODUCED INDEPENDENTLY**: regenerating
+against each tree gives pre-fix `09151e14…` and post-fix `ee554cea…`,
+**both exactly 970 961 bytes**. A byte comparison would have said
+"unchanged" and been wrong. Both graphs discarded; `graph.json` back at
+`b742efbe…` in every worktree, and **it is correctly NOT committed here**.
+
+`arch` goes `components=13 files=181 mapped=181 unmapped=0 edges=37
+findings=4 drift_components=4` → **`files=183 mapped=183`, every other
+figure unchanged**; **C-06 25 → 27 is the only component that moves.**
+Fixtures owed, confirmed present: `expect(derived.fileComponent.size)
+.toBe(181)` **and the test TITLE** at `architecture-dogfood.test.ts`, and
+`"committed graph · 181 files"` at `map-dogfood-render.test.tsx`.
+`smoke.test.ts` carries no file count and does NOT move.
+
+### Rulings asked for
+
+**R1 — ROUTING RATHER THAN UNIFYING WAS RIGHT, AND MORE STRONGLY THAN THE
+CARD ARGUES.** `tools/e2e` is outside this card's fence, so unifying
+would have breached the very rule this card ships. **And `T-136` is LIVE
+(`status: building`) holding `touches: [tools/e2e]`** — unifying here
+would have put two writers on `dispatch-brief.mjs`, which is this card's
+own subject matter. `T-137` (planned) already holds `[lib-parser,
+tools/e2e]`, which is exactly the fence the migration needs. The
+manifest declaration is real and verbatim ("Third standalone package
+(ADR-011 family); imports neither app nor parser"), and `brief.spec.ts`
+already pins `fenceOverlaps` on the same containment case, so the
+migration is a real decision with coverage behind it, not a chore.
+
+**THE PARSE-TIME-REFUSAL ARGUMENT IS SOUND** — attacked above, with a
+counter-probe, and it survived.
+
+### Where this card and the dispatch brief are still wrong
+
+- **R6 IS WRONG, AND SO WAS THE BRIEF.** `method/lane-protocol.md` is NOT
+  "read by NO suite": `tools/e2e/scripts/dispatch-brief.mjs:152` calls
+  `readDoc("method/lane-protocol.md")` via `laneProtocolText()`, and
+  `tools/e2e` exercises it. **The conclusion survives for a different and
+  sharper reason**: the brief consumes only numbered steps **2, 3, 4 and
+  6**, this card's edit is entirely inside **step 5**, and steps 2/3/4/6
+  are byte-identical across the merge (819 / 1107 / 5927 / 960). So there
+  IS a STRUCTURAL guard — `numberedStep` THROWS on a missing step — and
+  no CONTENT guard on rule 5. The protocol half ships unpinned as to what
+  it says, pinned as to its shape.
+- **"The divergences are real and all in one direction" (R1) is FALSE as
+  a statement about verdicts.** Measured against the parser on 15
+  constructed cases: the missing own-file carve-out makes that copy
+  STRICTER (false overlap), while `ci` and `docs/tasks` make it LOOSER
+  (false disjoint). They go both ways.
+- **R1 UNDERCOUNTS THE DIVERGENCES.** Beyond the three named, that copy's
+  `pathsOverlap` does not collapse repeated slashes, does not strip a
+  leading `./`, strips only ONE trailing slash, and does not convert
+  backslashes — so `docs//tasks2/`, `./method/`, `method//` and
+  `method\lane-protocol.md` each come back **disjoint where the parser
+  says overlapping**, all four in the DANGEROUS direction. It also has no
+  glob ceiling: `app/src/**/*.ts` is compared as a literal prefix, which
+  is the "answer confidently and wrongly" case `fence.ts` refuses.
+- **AND THE MEASUREMENT THE CARD DOES NOT MAKE IS THE REASSURING ONE**:
+  on the live board the two implementations **agree exactly** — 305
+  overlapping pairs each over 703 pairs, **0 disagreements**. The
+  duplication is a latent hazard today, not an active wrong answer.
+- **"not one path token inside a component's `paths:` block" is
+  literally wrong** — **21** path tokens sit inside C-01's `method/**`.
+  The conclusion survives because C-01 carries NO slug (`touch_slugs:
+  []`), so no pin-one instance is constructible. The true statement is
+  "inside a SLUG-CARRYING component's `paths:` block".
+- **"139 slug tokens, 88 path tokens" silently mixes two models.** 88 is
+  the NO-ORACLE figure (3 unresolved); WITH the repository oracle the
+  same board reads 139 / 90 / 1, and the card's own `ci` discussion uses
+  the oracle. Both reconcile to 230. The brief's `216` is 230, as the
+  card says.
+
+### What this approval does NOT cover
+
+- **THE UNION-EXCLUSION HOLE.** `compareFences` unions BOTH fences'
+  `excluded`, so if card B explicitly fences card A's own file while A is
+  live, the shared domain is suppressed and the verdict is **disjoint**
+  though both would write it. `fence.ts` discloses this ("another lane
+  cannot be told it collides there") and live exposure is **zero** — no
+  card fences another card's file. **But R3 and R4 both propose fences of
+  exactly that shape** (`[…, docs/tasks/T-054-…md]`), which would create
+  the first instance, and my arm 9 shows the suppression is unpinned. The
+  existing body "does not suppress a collision on somebody ELSE's card
+  file" uses a THIRD card's file and does not reach this case.
+- **AC6 is met in the fence module, not in `validateProject`.** A card
+  spelling `docs/tasks/` is refused only when someone expands its fence;
+  the normal parse path stays silent (R3, routed deliberately, with a
+  stated reason).
+- The unpinned behaviours in arms 9–13 above.
+
+**VERDICT: APPROVED.** All seven criteria are met, the central empirical
+claim survives two independent re-derivations including its direction
+property, both pins and both live pin-two instances check out, the eight
+drill arms reproduce exactly, and every owed suite and gate is green with
+its exit read unpiped. Verifier frontmatter fields deliberately left
+unstamped.
