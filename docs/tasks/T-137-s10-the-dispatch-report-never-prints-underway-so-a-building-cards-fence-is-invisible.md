@@ -1,6 +1,6 @@
 ---
 id: T-137-s10
-title: `--dispatch` computes `underway` and never prints it, so a card whose `status:` says somebody is building it — and whose `touches:` declares a fence — is absent from the report entirely
+title: The dispatch report computes `underway` and never prints it, so a card whose `status:` says somebody is building it — and whose `touches:` declares a fence — is absent from the report entirely
 status: suggested
 suggested_by: executor claude-opus-5 @T-137
 touches: [tools/e2e]
