@@ -48,9 +48,31 @@ reconciles once those two are added back:
 | planned cards ALL of whose blockers had landed | **6** |
 
 **`T-111-s4`'s table names FOUR of those six.** The other two are `T-111`
-and `T-134` themselves. And the four carried **seven** entries between
-them, not five — `T-065` carries two — so `51 − 7 = 44`, which is exactly
-the entry count on disk at `15a963d`.
+and `T-134` themselves.
+
+**AND THIS CARD'S FIRST SPELLING MIS-ATTRIBUTED THE SEVEN.** It read *"the
+four carried **seven** entries between them, not five"*. The arithmetic
+`51 − 7 = 44` is right and the seven belong to all SIX, never to the four.
+Re-derived at `f9350b1`, frontmatter only, one card at a time:
+
+| card | `blocked_by` entries |
+|---|---|
+| `T-015` | 1 |
+| `T-059` | 1 |
+| `T-065` | **2** |
+| `T-131` | 1 |
+| **the four** | **5** |
+| `T-111` | 1 |
+| `T-134` | 1 |
+| **the six** | **7** |
+
+`T-065` carrying two is the fact that made *five* look like the wrong
+count; it is not the fact that closes the gap. The two entries the four do
+not carry are `T-111`'s own and `T-134`'s own — **the same two this
+section's own headline is about**, so the card had the missing pair in
+hand one paragraph earlier and attributed their entries to the wrong set.
+**A figure and the SET it is a figure of are two facts, and only the first
+was checked.**
 
 ## TWO — at `15a963d` the answer is 0, 3 or 41 depending on the question
 

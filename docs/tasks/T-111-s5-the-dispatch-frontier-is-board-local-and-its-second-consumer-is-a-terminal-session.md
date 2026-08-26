@@ -93,3 +93,77 @@ subject is T-057. Three options, and the recommendation is (a):
    than a boolean. **The reason text is the half `T-111`'s title calls
    "and WHY the rest are not", and it needs the provenance, not the
    verdict.** Whichever copy survives should keep that.
+
+## THE CANONICAL COPY LANDED WHILE THIS CARD WAS BEING VERIFIED, AND THE DELTA IS MEASURED HERE RATHER THAN LEFT FOR T-137 TO REDISCOVER
+
+**`T-134` MERGED AT `520e93e`**, landing `lib/parser/src/fence.ts` —
+`normalizeFenceToken`, `slugPathIndex`, `expandFence`, `compareFences`,
+`sharedDomain`, `UNFENCEABLE_PATHS`. It is EXPORTED from the parser's
+index, and `@nputer/parser` is already an app dependency, so importing it
+into `board-model.ts` is a READ inside `[app-board, app-shell]` and never
+a fence widening. **The question was therefore live for T-111's fix pass,
+it was decided against importing, and the decision is a MEASUREMENT rather
+than a preference.**
+
+Both implementations were run over this repository's live board at
+`6a6bc87` merged with the lane — 27 distinct raw `touches:` tokens over
+304 cards, and the full pairwise matrix over the 147 cards that carry a
+fence:
+
+| measurement | result |
+|---|---|
+| normalisation: `normaliseTouchToken` vs `normalizeFenceToken` over all 27 live tokens | **0 disagreements** |
+| token KIND: `expandTouch` vs `expandFence` over all 27 | **3 disagreements** — `ci`, `docs`, `method`, all on `T-054` |
+| pairwise fence verdicts, 10 731 pairs | 3 255 both overlapping · 7 363 both disjoint · **113 disagree** |
+| every one of the 113 | a pair against `T-054`, shape `T134=unusable unusable:docs,method,ci` |
+| the narrower shared domain on `docs` × `docs/CONVENTIONS.md` | **both answer `docs/CONVENTIONS.md`** — the rules AGREE |
+| clash provenance | T-111 `viaComponents: [C-05,C-08,C-09,C-10,C-11,C-16]` · T-134 `FenceWitness {left,right,path}` — **no component ids at all** |
+
+**FOUR THINGS FOLLOW, AND THE FIRST IS THE ONE THAT DECIDES IT.**
+
+1. **`compareFences` HAS A THIRD VERDICT AND THE BOARD HAS SIX
+   DISPOSITIONS.** `unusable` is deliberate — its own doc forbids folding
+   it into `disjoint` — and T-111's criterion 1 closes the disposition
+   vocabulary at six with no per-card "I cannot tell". Consuming the
+   merged module faithfully needs a SEVENTH value. **That is a criteria
+   change, not a repair**, and an executor may not make it from inside a
+   lane.
+2. **THE BOARD HAS NO FILESYSTEM TO SUPPLY `knownPaths`.** `expandFence`'s
+   own doc says the oracle is *"the ONLY way this module can tell a bare
+   directory token from a word that names nothing"*, and
+   `selectDispositions` is a pure function of the parsed model. With the
+   oracle supplied, the `docs` × `docs/CONVENTIONS.md` pair comes back
+   `overlapping` and agrees exactly; without it, `T-054`'s whole fence is
+   `unusable`. **The 113 are an oracle gap, not a rule disagreement** —
+   which is a better answer than either card had, and it is T-137's to
+   close because only a caller with a repository can.
+3. **IMPORTING WOULD DELETE THIS CARD'S OWN HEADLINE.** `FenceWitness`
+   carries no component ids, so the `fenced` reason could no longer say
+   *"both expand through C-11, so this may be the COARSE fence rather than
+   a real overlap"* — the clause the card's section (b) demands, and the
+   one whose absence (arm A20b, surviving at exit 0) was part of what
+   rejected the first pass. **The provenance is the deliverable; the
+   verdict is not.**
+4. **THE SPELLING SPLIT IS A NAME, NOT A BEHAVIOUR.** `normaliseTouchToken`
+   and `normalizeFenceToken` disagree on **none** of the 27 live tokens,
+   so T-137 can take the parser's spelling for free on today's
+   vocabulary. They are not equal in general —
+   `normaliseTouchToken('**')` is `'**'` and `normalizeFenceToken('**')`
+   is `''` — so the swap wants its own pin rather than an assumption.
+
+**AND THE DIVERGENCE IS DORMANT TODAY, WHICH IS WHY MERGING T-111 BREAKS
+NOTHING WHILE STILL OWING T-137 A MOVE.** `T-054` is the only card in the
+vocabulary carrying a bare word, and it is `done` — a `done` card is never
+in flight and never a candidate, so none of the 113 pairs can reach a live
+dispatch. **It goes live the day anyone drafts a card with a bare-word
+`touches:` entry**, and the vocabulary shows that is a shape authors
+reach for. `UNFENCEABLE_PATHS` is likewise dormant: no live token
+normalises to `docs/tasks` (the three `docs/tasks/…` tokens on the board
+are individual FILES, which T-134 permits).
+
+**SO: T-137 UNIFIES, T-111 DOES NOT IMPORT, AND THE COST OF WAITING IS
+NAMED.** Merging this card puts a fourth spelling of the fence rule in the
+tree for as long as T-137 takes. That is a real T-057 debt and it is
+recorded here rather than argued away — but the alternative available to a
+lane today is a board that answers *"I cannot tell"* about a card it can
+currently answer for, bought by a criteria change the lane may not make.

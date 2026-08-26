@@ -777,7 +777,22 @@ worktree, both suites were run against it, and it was restored and proved.
 
     committed   955710 bytes · 181 files · 2038 symbols · 1943 edges   sha256 b742efbe…
     regenerated 973907 bytes · 181 files · 2075 symbols · 1990 edges
-    files +0 -0 ~2      edges +48 -3
+    files +0 -0 ~2      edges +50 -3
+
+**`edges +48 -3` IS WHAT THIS BLOCK SHIPPED AND IT FAILS ITS OWN
+ARITHMETIC**: `1943 + 48 − 3` is 1988 against the 1990 printed one line
+above; only `+50 −3` closes it. Corrected in place rather than left to be
+quoted forward — a figure contradicted by its neighbour on the same screen
+is the class this card was rejected for. **Re-asked at the fix pass's own
+tip** (`index --check --root ../..`, exit 1 STALE, the real form with both
+counts and a file diff): `files +0 -0 ~2`, **`edges +50 -3`**, and the
+fresh index is **973930** bytes rather than 973907 because the two files
+grew again. **AND THE SENTENCE BELOW IS IMPRECISE FOR A SECOND REASON**:
+three of the additions are FILE-LEVEL import edges that also appear in the
+`−3`, re-emitted with longer symbol lists, so they are neither intra-file
+nor package edges. The operative half — `files +0 −0`, therefore no
+dogfood assertion moves — holds, and it is the only half the checkpoint
+depends on.
 
 **`npm test` from `app/`: 1009 / 1009, exit 0 — with the regenerated graph
 in place.** Not one dogfood assertion moves, because **zero files join or

@@ -58,6 +58,35 @@ written twice. `merging` is the near-miss: both treat it as unmet today,
 and one edit to either makes the map and the board disagree about whether
 a card is dispatchable, with no test in the repository able to see it.
 
+### THE COUNT, BECAUSE THIS CARD SAYS "THREE SURFACES" ABOVE AND "THE TWO" HERE
+
+**Both sentences are true and they count different things, which is
+exactly why the card had to say which.** Re-derived at main `6a6bc87` by
+walking every non-test file that reads `blockedBy` / `blocked_by`:
+
+| site | resolves the id | delivers a VERDICT on whether it binds |
+|---|---|---|
+| `app/src/lib/task-detail.ts` — `BlockerLink.resolved` | yes | **no** — it carries the target's status and leaves the judgement to the eye |
+| `app/src/architecture/task-waves.ts` — `readSchedule` | yes | **yes** — `ready` / `waits` / `blocked` |
+| `app/src/lib/board-model.ts` — `bindingOf` | yes | **yes** — `open` / `missing` / `parked` |
+
+**THREE RESOLUTIONS, TWO VERDICTS.** `TaskDetailPanel.tsx` renders
+`BlockerLink` and re-derives nothing; `TasksLens.tsx` holds no
+`blockedBy` reference at all; `tools/e2e/scripts/dispatch-brief.mjs`
+matches `blocked` **zero** times. So *"the two"* is the right count for
+the rule this card is about, and the third surface named above is the
+third RESOLUTION.
+
+**AND THE REJECTION VERDICT'S CORRECTION TO THIS CARD IS WRONG — MEASURED,
+NOT ARGUED.** It reads *"s7 says 'today nothing forces them to agree'; as
+of `520e93e` there are FOUR derivations, not two."* `520e93e` is T-134's
+merge, whose whole content is `lib/parser/src/fence.ts` — and
+`git show 6a6bc87:lib/parser/src/fence.ts | grep -c blocked` is **0**.
+That module is about `touches:`, not `blocked_by`, and it cannot have
+moved this count. **The four-derivation fact is real and belongs to the
+FENCE rule**, where the same verdict states it correctly under F7 and
+where `T-111-s5` carries it. It was attached to the wrong card.
+
 ## The shape, and its order relative to `T-111-s5`
 
 **`T-111-s5` moves the frontier to `lib-parser`. This card should land
