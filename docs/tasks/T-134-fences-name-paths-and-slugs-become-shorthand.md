@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 5
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [lib-parser, method/lane-protocol.md]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5 @T-134-verify
+built_by: claude-opus-5 @T-134 — build 9dfb5a0, notes c98313c, NUL fix 31d8212, addendum 8d93149
+verified_by: claude-opus-5 @T-134-verify — APPROVED, verdict 4f40ccd, addendum 4b6c6b7 (the session label is derived from that seat's own named refs `verify-T134-mainbase`/`-tip`, which were session-local and no longer exist; it is NOT read off a Co-Authored-By trailer, which is a harness constant)
+review: same-model
 ---
 
 **@human adopted this on 2026-08-25** as item 4 of `T-131`'s five process
@@ -789,3 +789,115 @@ holds. **The ruling is unchanged and rests on the other three**:
 case, so the migration carries real coverage. **`T-137` is the vehicle
 and has grown into it** — now `planned` with `touches: [lib-parser,
 app-map, tools/e2e]`, which spans both implementations.
+
+## Integration
+
+Merged at **`520e93e`** into main-before **`15f0d7d`**; this checkpoint is
+its direct child. Lane tip **`4b6c6b7`**, derived with `git rev-parse` —
+it is the **verdict addendum** commit, not the lane's last work commit
+`31d8212`. `git merge-tree --write-tree 15f0d7d 4b6c6b7` exited **0**
+(read from `$?` before the substitution) at tree **`21b9612c`**, and the
+merge commit's own tree is `21b9612c` — the forecast tree and the real
+one, byte for byte. **The lane's own text, the planning notes, the
+verdict and both addenda are preserved byte-untouched**; this section and
+the five frontmatter lines are the only edits.
+
+**THE MERGE'S OWN SUBJECT CAUGHT A LIVE NEAR-MISS BEFORE IT LANDED, AND
+THAT IS THE POINT OF THE CARD RATHER THAN A SIDE EFFECT.** Re-derived at
+this ref **through the merged `fence.ts` itself** — the real
+`parseProject` and the real `compareFences`, never a throwaway parser —
+**37 open cards, 666 pairs, 25 flips, 0 in the loosening direction, 25
+distinct cards**, identical to the verifier's addendum figure at
+`15f0d7d`. Against this lane:
+
+    T-105  tokens=disjoint  expanded=OVERLAPPING  witness method/lane-protocol.md
+    T-128  tokens=disjoint  expanded=OVERLAPPING  witness method/lane-protocol.md
+    T-131  tokens=disjoint  expanded=OVERLAPPING  witness method/lane-protocol.md
+    T-137  tokens=overlapping  expanded=overlapping  witness lib/parser
+
+**All three were `planned` and the architect's next dispatch was
+`T-131`.** Nothing but this card's own mechanism could tell the
+difference, and it is released by this merge because the card closes, not
+because the comparison changed.
+
+**AND THE SAME SHAPE IS STILL LIVE ONE FILE OVER, WHICH NO BRIEF NAMED.**
+`T-131 × T-135` → **overlapping**, witness `method/tasks/TASK-FORMAT.md`,
+tokens disjoint. `T-135` is `building` with Half B unwritten. It holds no
+LANE today, so nothing is fenced right now — the rule binds concurrent
+lanes, not open cards — but **the day Half B is cut, dispatching `T-131`,
+`T-105` or `T-128` beside it puts two writers on `TASK-FORMAT.md` and a
+token comparison calls them disjoint.** The three also overlap each other
+VISIBLY, on `docs/CONVENTIONS.md` and `method/`, so at most one is
+dispatchable at a time regardless.
+
+**THE OTHER LIVE LANE, AS A NAMED COMPARISON.** `T-111` at `09b8920` on
+`task/T-111-board-dispatchable`. Through the mechanism:
+`T-111 [app-board, app-shell] × T-134` → **`{verdict: disjoint,
+witnesses: [], unusable: []}`**. And as actual path sets: this merge's
+**6** paths against `T-111`'s **7** (`main...task/T-111-…`), `comm -12`
+**empty**. Two named sets, not the emptiness of one.
+
+**THE FIXTURE RECONCILIATION WAS ONE ASSERTION LARGER THAN EVERY FORECAST
+OF IT, AND THE HIDDEN ONE CARRIES ITS OWN WARNING.** The verdict and the
+integrator brief both named two sites — the `181` in
+`architecture-dogfood.test.ts` and `"committed graph · 181 files"` in
+`map-dogfood-render.test.tsx`. Measured on the merged tree with the
+regenerated graph: **2 failed / 971 passed, and THREE red assertions.**
+The third is `["C-06", 25]` → **27** in the per-component tally, which
+sits BELOW the size check in the SAME `it()` body and is therefore
+invisible while that one is red — the trap that body's own C-06 comment
+has warned about since T-053, fired on the pass that was reading the
+warning. **Four sites edited**: the two assertions, the tally row, and
+the test TITLE `all 181 files map`. `smoke.test.ts` does not move, as
+forecast — the registry is untouched.
+
+**GRAPH REGEN, ASKED FOUR TIMES, AND THE IDENTICAL-FIGURES TRAP FIRED IN
+ITS STRONGEST FORM YET.** STALE `955710 · 181 · 2038 · 1943` →
+`970961 · 183 · 2064 · 1986`, `files +2 -0 ~2`, `edges +43 -0`, the four
+paths named exactly this merge's four `.ts` paths. Regenerated →
+`ee554cea…`, **the verifier's own post-fix hash, reproduced
+independently**. Asked again after the fixture writes: **STALE with every
+headline figure identical on both sides** — `970961 · 183 · 2064 · 1986`
+against `970961 · 183 · 2064 · 1986` — moving only `loc` on the two
+edited fixtures. Regenerated again → **`616205de…`, still 970 961
+bytes**. **THREE DISTINCT GRAPHS AT ONE BYTE COUNT IN ONE INTEGRATION**
+(`09151e14`, `ee554cea`, `616205de`); a byte comparison would have
+confirmed "unchanged" twice and been wrong twice. Fourth ask, after every
+doc write: **CURRENT, exit 0**.
+
+**BYTE BUDGET — the figure nothing reports and the largest spend in the
+series.** **970 961 of `max_graph_bytes` 1 000 000 = 97.10%, 29 039 bytes
+of headroom**, spending **15 251** against T-135 Half A's 11 120, which
+its own checkpoint called the largest single spend to date. **Two indexed
+files and 43 edges cost more than 27 new edges did.**
+
+**`arch` moves `files=181 → 183` and `mapped=181 → 183` and NOTHING
+ELSE** — `components=13 unmapped=0 edges=37 findings=4
+drift_components=4`, all unchanged — and **C-06 25 → 27 is the only
+component whose count moves**, exactly as forecast. Every one of the 43
+new edges is C-06-internal or lands on a `p:` package node.
+
+**Suites, every exit from `$?` on an unpiped command and every COUNT read
+as well**: `lib/parser` **290/290** (13 files) · `app` **973/973** (47
+files) · `tools/e2e` **194/194** on explicit port 15831 · `cargo test`
+**512 / 0 failed / 3 ignored** over 16 result lines, 16 `running N`
+headers summing 515 = 512 + 3. `cargo test` was **not owed** — no `.rs`
+in the six paths, and `method/lane-protocol.md` is not one of the
+fourteen `method/` files compiled into `agent/kit.rs` — and was run
+anyway; it is unchanged at 512, and `a_mod_declaration_is_an_edge…`
+stayed `ok` against the regenerated graph.
+
+**DOCS GATE fires, exit 1, on 2 of 9** — this card and, because the graph
+was put in the list by hand, `docs/architecture/graph.json`, whose
+readers are `shell-frame.spec.ts` and `window-contract.spec.ts`. **BOOT
+GATE not owed**, derived: no path under `app/src-tauri/**`, `app/src/**`
+or a manifest, and `app/test/**` is neither.
+
+**WHAT THIS CHECKPOINT DID NOT REPAIR, ON THE PARENT TEST.** The
+`C-05 -> C-15` D1 and `C-10 -> C-14` D1 were both exactly as false one
+commit before this merge; **filed, not repaired**, and still routed to
+`T-126-s3` item 4. Everything the verdict listed under *what this
+approval does not cover* — the union-exclusion hole, AC6 living in the
+fence module rather than in `validateProject`, and the five unpinned
+behaviours of arms 9–13 — **survives this merge unchanged and is carried
+into STATE rather than closed here.**

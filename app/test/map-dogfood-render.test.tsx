@@ -677,8 +677,19 @@ describe("the nputer repo on its own map", () => {
     // relation table goes 36 → 37 at 26/2/9, findings 3 → 4, and C-05
     // lights a ring. The node count still holds at 13. Derived from the
     // regenerated graph and `arch` before the suite was run.
+    // 181 → 183 at the T-134 merge regen (2026-08-26): TWO files,
+    // `lib/parser/src/fence.ts` and `lib/parser/test/fence.test.ts`. The
+    // graph goes 955 710 → 970 961 bytes / 2038 → 2064 symbols / 1943 →
+    // 1986 edges, and `index --check` printed `files +2 -0 ~2` naming
+    // EXACTLY this merge's four `.ts` paths, one for one. THIS ENTRY
+    // RETURNS TO T-127's SHAPE rather than T-135's: all 43 new edges are
+    // C-06-internal or land on a `p:` package node, so the node count
+    // holds at 13, the relation table stays 37 rows, findings hold at 4
+    // and no ring lights or clears — `arch` moves `files` and
+    // `mapped` and nothing else. Derived from the regenerated graph and
+    // `arch` before the suite was re-run.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 181 files",
+      "committed graph · 183 files",
     );
   });
 });

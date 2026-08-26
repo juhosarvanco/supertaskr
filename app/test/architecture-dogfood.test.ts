@@ -1212,7 +1212,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 181 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
+  it("all 183 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
     // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
     // move this row has ever taken and the only one whose cause is a new
     // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
@@ -1295,7 +1295,21 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // exist. The verifier diagnosed it by rebuilding that tree; this
     // integrator re-derived the nine independently. A count carried from
     // one tree into a paragraph about another is the shape to watch.
-    expect(derived.fileComponent.size).toBe(181);
+    // 181 → 183 at the T-134 merge regen (2026-08-26), by TWO, and the
+    // first entry in this ledger whose new files are BOTH lib-parser's:
+    // `lib/parser/src/fence.ts` and `lib/parser/test/fence.test.ts`, so
+    // the row that moves below is C-06 (25 → 27) and NOT C-07. `index
+    // --check` printed `files +2 -0 ~2` and the four paths it names are
+    // exactly this merge's four `.ts` paths, one for one — the two
+    // modified are the two barrels that re-export the new module.
+    // AND THE C-06 ROW IS THE ASSERTION THIS MERGE'S BRIEF DID NOT NAME.
+    // The integrator brief listed this size check and the map file's
+    // hint and said nothing about the tally, which sits BELOW this line
+    // in the same body and is therefore invisible while this one is red
+    // — the trap the C-06 comment down there has warned about since
+    // T-053, fired again on the pass that was reading the warning.
+    // Measured: 2 failed / 971 passed on the first run, 3 red assertions.
+    expect(derived.fileComponent.size).toBe(183);
     // AND THE BUCKET IS STILL EMPTY, for a second reason than the one it
     // had yesterday: T-033's settlement kept `tests/dispatch_lanes.rs` out
     // of the bucket by CLAIMING it, and T-126 keeps it out by DELETING it.
@@ -1418,7 +1432,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // and inert-spans.test.ts are both new and both match only C-06's
       // `lib/parser/**` glob. The four other parser files are modifications,
       // so they can move hash/loc/symbols but cannot move this count.
-      ["C-06", 25],
+      // 25 → 27 at the T-134 merge regen (2026-08-26): `fence.ts` and
+      // `fence.test.ts`, both new on disk and both matching only C-06's
+      // `lib/parser/**` glob. The two other parser files in the diff are
+      // the barrels and are modifications, so they move loc and content
+      // hash and cannot move this count. This is the THIRD time this row
+      // moves and the first since T-055 — and it is the row the merge's
+      // own brief omitted, which is exactly what the paragraph above has
+      // said about it since T-053. Derived from `arch` over the
+      // regenerated graph before the suite was re-run.
+      ["C-06", 27],
       // C-07 JOINS THE MAPPING AT THE T-010 MERGE REGEN WITH THIRTY-TWO
       // FILES AND NO NEW FILE ON DISK — the row this whole card exists to
       // create, and the inverse of every C-05 entry above. Its D3 clears

@@ -970,6 +970,30 @@ NOT MOVE**, and the fifth distinct reason: a merge whose card is not
 finished. **A `done` census that does not move is not evidence that
 nothing merged — and now there is a worked case where nothing was even
 stamped.**
+**AND RE-DERIVED ON DISK A SIXTH TIME AT T-134'S CHECKPOINT, AND THIS ONE
+MOVES — BY TWO, AND NEITHER MOVE IS THIS MERGE'S.** **98** cards on disk
+carry `milestone: 4` — F-01 **10**, F-02 43, F-03 12, F-04 **8**, F-06
+25; 10+43+12+8+25 = 98. **BOTH movers landed on main outside this merge's
+range**: `T-137`, rewritten at `15f0d7d` BEFORE the merge (F-04 7 → 8),
+and `T-138`, filed by the architect at `b3eaefe` DURING this checkpoint
+(F-01 9 → 10). `T-134` is **F-06** and carries `milestone: 4`, so like
+T-132, T-133 and T-135 it was already inside the 25 before it landed, and
+stamping it `done` moves no milestone figure. **SEVENTH CONSECUTIVE MERGE
+WHERE THE F-04 PROGRESS LINE DOES NOT MOVE**, and the sixth distinct
+reason is the sharpest of them: **the census DID move, twice, and neither
+movement belongs to this merge.** A census re-derived on disk answers
+"what is true now", never "what did this merge do" — the second question
+needs the range, and the range says six paths, none of them a card's
+`feature:` or `milestone:` line. **DERIVE IT AT YOUR OWN REF AND SAY WHEN:
+this figure was 97 forty minutes into this checkpoint and 98 by the end of
+it, and nothing this integrator did moved it either time.**
+**The BOARD moves too, and its three new files are also not this
+merge's**: 297 flat task files → **300** — `T-111-s4` (the live lane's),
+`T-137`, and `T-138` — while `T-136` never counted flat, because it was
+created directly in `rejected/`, which goes 26 → **27**. `done` goes 98 →
+**99**, the figure that had held for two merges, and **that one IS this
+merge's**: T-134 is the only card it stamps. **This merge adds no task
+file at all.**
 Decomposition pass complete 2026-08-19
 (design/dispatch-technical-plan.md); D1 ruled by @human the same day.
 

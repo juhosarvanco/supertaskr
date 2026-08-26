@@ -16290,8 +16290,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:2dcf2c5a25277581f1cdf76ed39cdd0bb072ccf59794525e437503dcc43b796d",
-      "loc": 1951,
+      "hash": "blake3:7175f52b580a30533843e54d439c92295ed3567d9d5e54e21523dd4ca5c39076",
+      "loc": 1974,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -18886,8 +18886,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:c3bb5d6ef44b8f5a6825ca71f4462516efec6d014e8c33a8e07b23c162715317",
-      "loc": 684,
+      "hash": "blake3:27c308c6f7575cf8710185bad185eaa32738d3ff644cf89d1bfcfe5916c386e8",
+      "loc": 695,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -20843,6 +20843,165 @@
       ]
     },
     {
+      "id": "f:lib/parser/src/fence.ts",
+      "path": "lib/parser/src/fence.ts",
+      "lang": "ts",
+      "hash": "blake3:909a444f3900a684706dcca37b2575a087066e7ea786a8b0c2a2cdbe88e7d9e5",
+      "loc": 470,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/fence.ts#ExpandFenceOptions",
+          "name": "ExpandFenceOptions",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            155,
+            181
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#Fence",
+          "name": "Fence",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            89,
+            111
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#FenceComparison",
+          "name": "FenceComparison",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            146,
+            152
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#FenceToken",
+          "name": "FenceToken",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            69,
+            86
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#FenceTokenKind",
+          "name": "FenceTokenKind",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            58,
+            66
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#FenceVerdict",
+          "name": "FenceVerdict",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            122,
+            133
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#FenceWitness",
+          "name": "FenceWitness",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            136,
+            143
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#GLOB_CHARS",
+          "name": "GLOB_CHARS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            184,
+            184
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#SlugExpansion",
+          "name": "SlugExpansion",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            114,
+            119
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#UNFENCEABLE_PATHS",
+          "name": "UNFENCEABLE_PATHS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            55,
+            55
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#compareFences",
+          "name": "compareFences",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            438,
+            470
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#expandFence",
+          "name": "expandFence",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            297,
+            414
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#normalizeFenceToken",
+          "name": "normalizeFenceToken",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            215,
+            221
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#sharedDomain",
+          "name": "sharedDomain",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            266,
+            273
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/fence.ts#slugPathIndex",
+          "name": "slugPathIndex",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            236,
+            253
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:lib/parser/src/files.ts",
       "path": "lib/parser/src/files.ts",
       "lang": "ts",
@@ -21063,8 +21222,8 @@
       "id": "f:lib/parser/src/index.ts",
       "path": "lib/parser/src/index.ts",
       "lang": "ts",
-      "hash": "blake3:b5bcec39524dd2e7e56cd5a8bd37b7fee231fb28aa738a95c87c14b0f6dbb329",
-      "loc": 56,
+      "hash": "blake3:8b5c2ee67b1aa64872138603060c08cb6fa2f021fda96f6dac64cf9b33e692f3",
+      "loc": 71,
       "symbols": []
     },
     {
@@ -21268,8 +21427,8 @@
       "id": "f:lib/parser/src/pure.ts",
       "path": "lib/parser/src/pure.ts",
       "lang": "ts",
-      "hash": "blake3:e6a8dca1389b6b52472f2da2d9f9b14549515867dc0224e845bf74500813ac84",
-      "loc": 49,
+      "hash": "blake3:a1f5eac62a75d17904acbe15edaefa505141147d4bd85d245caebdb1fa016423",
+      "loc": 64,
       "symbols": []
     },
     {
@@ -21683,6 +21842,125 @@
           "range": [
             493,
             493
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/test/fence.test.ts",
+      "path": "lib/parser/test/fence.test.ts",
+      "lang": "ts",
+      "hash": "blake3:265cf5a41491569e7aec59539c49716fccbf78586dd187b7915e6d4870638504",
+      "loc": 426,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/fence.test.ts#board",
+          "name": "board",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            27,
+            27
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#card",
+          "name": "card",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            31,
+            35
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#componentById",
+          "name": "componentById",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            41,
+            45
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#components",
+          "name": "components",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            26,
+            26
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#componentsTouched",
+          "name": "componentsTouched",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            64,
+            78
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#fenceOf",
+          "name": "fenceOf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            37,
+            39
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#project",
+          "name": "project",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            25,
+            25
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#repoRoot",
+          "name": "repoRoot",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            24,
+            24
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#slugGranularity",
+          "name": "slugGranularity",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            87,
+            98
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#synthetic",
+          "name": "synthetic",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            101,
+            112
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/fence.test.ts#tokenEquality",
+          "name": "tokenEquality",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            58,
+            61
           ]
         }
       ]
@@ -27855,6 +28133,16 @@
       ]
     },
     {
+      "from": "f:lib/parser/src/fence.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "ComponentRecord",
+        "ParseIssue",
+        "TaskRecord"
+      ]
+    },
+    {
       "from": "f:lib/parser/src/files.ts",
       "to": "f:lib/parser/src/component.ts",
       "kind": "import",
@@ -27920,6 +28208,27 @@
       "symbols": [
         "compareComponentIds",
         "parseComponentFile"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/fence.ts",
+      "kind": "import",
+      "symbols": [
+        "ExpandFenceOptions",
+        "Fence",
+        "FenceComparison",
+        "FenceToken",
+        "FenceTokenKind",
+        "FenceVerdict",
+        "FenceWitness",
+        "SlugExpansion",
+        "UNFENCEABLE_PATHS",
+        "compareFences",
+        "expandFence",
+        "normalizeFenceToken",
+        "slugPathIndex"
       ],
       "reexport": true
     },
@@ -28106,6 +28415,27 @@
       "symbols": [
         "compareComponentIds",
         "parseComponentFile"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/fence.ts",
+      "kind": "import",
+      "symbols": [
+        "ExpandFenceOptions",
+        "Fence",
+        "FenceComparison",
+        "FenceToken",
+        "FenceTokenKind",
+        "FenceVerdict",
+        "FenceWitness",
+        "SlugExpansion",
+        "UNFENCEABLE_PATHS",
+        "compareFences",
+        "expandFence",
+        "normalizeFenceToken",
+        "slugPathIndex"
       ],
       "reexport": true
     },
@@ -28331,6 +28661,61 @@
     },
     {
       "from": "f:lib/parser/test/component.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/fence.test.ts",
+      "to": "f:lib/parser/src/fence.ts",
+      "kind": "import",
+      "symbols": [
+        "UNFENCEABLE_PATHS",
+        "compareFences",
+        "expandFence",
+        "normalizeFenceToken",
+        "slugPathIndex"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/fence.test.ts",
+      "to": "f:lib/parser/src/index.ts",
+      "kind": "import",
+      "symbols": [
+        "parseProject"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/fence.test.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "ComponentRecord",
+        "TaskRecord"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/fence.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readdirSync"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/fence.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/fence.test.ts",
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
@@ -35622,6 +36007,132 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/fence.ts#Fence",
+      "to": "s:lib/parser/src/fence.ts#FenceToken",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#Fence",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#FenceComparison",
+      "to": "s:lib/parser/src/fence.ts#FenceVerdict",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#FenceComparison",
+      "to": "s:lib/parser/src/fence.ts#FenceWitness",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#FenceToken",
+      "to": "s:lib/parser/src/fence.ts#FenceTokenKind",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#compareFences",
+      "to": "s:lib/parser/src/fence.ts#Fence",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#compareFences",
+      "to": "s:lib/parser/src/fence.ts#FenceComparison",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#compareFences",
+      "to": "s:lib/parser/src/fence.ts#FenceVerdict",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#compareFences",
+      "to": "s:lib/parser/src/fence.ts#FenceWitness",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#compareFences",
+      "to": "s:lib/parser/src/fence.ts#sharedDomain",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandFence",
+      "to": "s:lib/parser/src/fence.ts#ExpandFenceOptions",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandFence",
+      "to": "s:lib/parser/src/fence.ts#Fence",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandFence",
+      "to": "s:lib/parser/src/fence.ts#FenceToken",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandFence",
+      "to": "s:lib/parser/src/fence.ts#normalizeFenceToken",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandFence",
+      "to": "s:lib/parser/src/fence.ts#slugPathIndex",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandFence",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandFence",
+      "to": "s:lib/parser/src/types.ts#ParseIssue",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#expandFence",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#slugPathIndex",
+      "to": "s:lib/parser/src/fence.ts#SlugExpansion",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#slugPathIndex",
+      "to": "s:lib/parser/src/fence.ts#normalizeFenceToken",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/fence.ts#slugPathIndex",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/files.ts#parseComponentsFromFiles",
       "to": "s:lib/parser/src/component.ts#parseComponentSet",
       "kind": "call",
@@ -36246,6 +36757,84 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/test/fence.test.ts#board",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#card",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#componentById",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#componentsTouched",
+      "to": "s:lib/parser/src/fence.ts#normalizeFenceToken",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#componentsTouched",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#fenceOf",
+      "to": "s:lib/parser/src/fence.ts#expandFence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#fenceOf",
+      "to": "s:lib/parser/test/fence.test.ts#card",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#slugGranularity",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#slugGranularity",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#slugGranularity",
+      "to": "s:lib/parser/test/fence.test.ts#componentsTouched",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#slugGranularity",
+      "to": "s:lib/parser/test/fence.test.ts#tokenEquality",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#synthetic",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/fence.test.ts#tokenEquality",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/test/files.test.ts#loadFixture",
       "to": "s:lib/parser/test/files.test.ts#fixture",
       "kind": "call",
@@ -36278,8 +36867,8 @@
     }
   ],
   "stats": {
-    "files": 181,
-    "symbols": 2038,
-    "edges": 1943
+    "files": 183,
+    "symbols": 2064,
+    "edges": 1986
   }
 }
