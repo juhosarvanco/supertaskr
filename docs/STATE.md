@@ -792,30 +792,31 @@ paths. **Cargo WAS owed** even though the range holds no `.rs`, because
 `agent::kit::tests::every_compiled_entry_matches_its_method_file_byte_for_byte`
 compares kit entries against their method files byte for byte; it passed.
 
-**`T-141` IS MERGED AND THE D2 IS CLOSED.** Merge `6fb3761`, parents
-`1433534` and `b1667a6`, 6 paths. **`arch drift` now reports
-`unmapped=0`, `findings=4`** — exactly the row T-141's four-owner table
-predicted for C-05, which was the only owner adding no edge.
+**THE INTEGRATION QUEUE IS EMPTY. `T-137`, `T-141`, `T-145` and `T-148`
+are all on main, and `T-137`'s merge closes the false-green defect that
+started the whole sequence.** `arch drift` reports `unmapped=0`,
+`findings=4`. `app-shell` is FREE for the first time in a day, and it is
+the slug **20 of 34 planned cards touch** — the board's real throughput
+ceiling.
 
-**GRAPH REGEN FIRED and the identical-figures trap fired with it.**
-`index --check` exit 1 before, exit 0 after, and **every published figure
-is the same on both sides** — `997202 bytes · 185 files · 2124 symbols ·
-2039 edges`. The real diff is `+4 −4`: one file's `hash` and its `loc`
-(2044 → 2249). **A summary line cannot detect staleness here**; only the
-gate can. Do not read matching byte counts as proof the graph is current.
+**THE CHECKPOINT'S RECONCILIATION WORK, AND WHY IT IS THE CHECKPOINT'S.**
+`T-137`'s regen moved the graph **185 → 189 files** (only
+`lib/parser/src/{lanes,task-waves}.ts` and their two tests join; nothing
+leaves) and **C-06's rollup 27 → 31**. Three dogfood assertions hard-code
+those numbers and the LANE COULD NOT REACH THEM — `app/test/**` was
+outside its fence, which is why its own tip was honestly green. **All
+four new files land under C-06, so the count moved WITHOUT the D2 moving,
+which is exactly what an extraction into an already-declared component
+should look like.** Every new figure was derived from a set difference
+over the two `graph.json` revisions and from `arch`, never copied out of
+the failure output.
 
-**`T-137` REMAINS THE LAST ONE OUT**, APPROVED at `d812de5`, needing an
-integrator: merge, suite in the integration checkout, checkpoint as a
-SEPARATE commit, `worktree remove`, `prune`.
-
-**THE MERGE BLOCK IS RESOLVED AND THE CAUSE WAS NOT WHAT THE ARCHITECT
-GUESSED.** `~/.claude/settings.json` allowed `git add`, `git rm`,
-`git mv` and `git commit` — **and not `git merge`**, so every merge fell
-through to the auto-mode classifier for a fresh case-by-case judgement.
-That explains both observations at once: commits never blocked, and
-T-138's merge passed the classifier while T-145's did not. **It was not
-non-determinism in the rules; there was no rule.** @human authorized
-adding `Bash(git merge:*)` to that allow list, which is done.
+**TWO CARDS WERE MERGED WITHOUT BEING STAMPED AND THE BOARD LIED FOR AN
+HOUR.** `T-137` and `T-141` both sat at `status: verifying` while their
+code was on main. Stamped now (`done`, `review: same-model`). **The
+integrator's step 3 is the stamp and it has no gate** — nothing reds when
+a merged card keeps a lane-local status, so the board simply
+under-reports until someone reads it.
 
 **CUTTING A NEW LANE REDS EVERY OLDER LIVE LANE, AND THE ARCHITECT DID
 IT TONIGHT.** `tools/e2e/tests/brief.spec.ts:706` on main iterates the

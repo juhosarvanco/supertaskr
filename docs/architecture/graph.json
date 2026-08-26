@@ -11141,8 +11141,8 @@
       "id": "f:app/src/architecture/task-waves.ts",
       "path": "app/src/architecture/task-waves.ts",
       "lang": "ts",
-      "hash": "blake3:b017f3ce175b88234cf5d815b82d4956a1d928701213a202731fc9fe15e9c135",
-      "loc": 838,
+      "hash": "blake3:d709deceb58858c1f401f7fb59b88619f88aef698a9539ffc7c97ed66adb636d",
+      "loc": 323,
       "symbols": [
         {
           "id": "s:app/src/architecture/task-waves.ts#CARD_DOT",
@@ -11150,8 +11150,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            777,
-            780
+            262,
+            265
           ]
         },
         {
@@ -11160,8 +11160,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            749,
-            756
+            234,
+            241
           ]
         },
         {
@@ -11170,8 +11170,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            758,
-            765
+            243,
+            250
           ]
         },
         {
@@ -11180,18 +11180,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            767,
-            774
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#IN_FLIGHT",
-          "name": "IN_FLIGHT",
-          "kind": "const",
-          "exported": false,
-          "range": [
-            79,
-            83
+            252,
+            259
           ]
         },
         {
@@ -11200,28 +11190,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            154,
-            157
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#ScheduleReading",
-          "name": "ScheduleReading",
-          "kind": "interface",
-          "exported": true,
-          "range": [
-            560,
-            564
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#ScheduleState",
-          "name": "ScheduleState",
-          "kind": "type",
-          "exported": true,
-          "range": [
-            76,
-            76
+            101,
+            104
           ]
         },
         {
@@ -11230,8 +11200,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            49,
-            49
+            88,
+            88
           ]
         },
         {
@@ -11240,8 +11210,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            34,
-            34
+            73,
+            73
           ]
         },
         {
@@ -11250,8 +11220,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            33,
-            33
+            72,
+            72
           ]
         },
         {
@@ -11260,8 +11230,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            43,
-            43
+            82,
+            82
           ]
         },
         {
@@ -11270,8 +11240,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            45,
-            45
+            84,
+            84
           ]
         },
         {
@@ -11280,8 +11250,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            40,
-            40
+            79,
+            79
           ]
         },
         {
@@ -11290,8 +11260,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            782,
-            795
+            267,
+            280
           ]
         },
         {
@@ -11300,8 +11270,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            145,
-            152
+            106,
+            113
           ]
         },
         {
@@ -11310,8 +11280,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            159,
-            170
+            116,
+            118
           ]
         },
         {
@@ -11320,8 +11290,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            38,
-            38
+            77,
+            77
           ]
         },
         {
@@ -11330,8 +11300,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            47,
-            47
+            86,
+            86
           ]
         },
         {
@@ -11340,48 +11310,8 @@
           "kind": "const",
           "exported": true,
           "range": [
-            36,
-            36
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#WaveCard",
-          "name": "WaveCard",
-          "kind": "interface",
-          "exported": true,
-          "range": [
-            124,
-            143
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#WaveEdge",
-          "name": "WaveEdge",
-          "kind": "interface",
-          "exported": true,
-          "range": [
-            100,
-            110
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#WaveInput",
-          "name": "WaveInput",
-          "kind": "interface",
-          "exported": true,
-          "range": [
-            87,
-            98
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#WaveLayering",
-          "name": "WaveLayering",
-          "kind": "interface",
-          "exported": true,
-          "range": [
-            183,
-            190
+            75,
+            75
           ]
         },
         {
@@ -11390,78 +11320,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            112,
-            121
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#WaveStatus",
-          "name": "WaveStatus",
-          "kind": "type",
-          "exported": true,
-          "range": [
-            57,
-            63
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#byTaskId",
-          "name": "byTaskId",
-          "kind": "const",
-          "exported": true,
-          "range": [
-            176,
-            177
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#criticalPath",
-          "name": "criticalPath",
-          "kind": "function",
-          "exported": true,
-          "range": [
-            384,
-            435
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#criticalPathText",
-          "name": "criticalPathText",
-          "kind": "function",
-          "exported": true,
-          "range": [
-            703,
-            715
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#cycleMembersOf",
-          "name": "cycleMembersOf",
-          "kind": "function",
-          "exported": false,
-          "range": [
-            293,
-            357
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#isRenderedTask",
-          "name": "isRenderedTask",
-          "kind": "function",
-          "exported": true,
-          "range": [
-            551,
-            553
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#layerWaves",
-          "name": "layerWaves",
-          "kind": "function",
-          "exported": true,
-          "range": [
-            208,
-            285
+            90,
+            99
           ]
         },
         {
@@ -11470,28 +11330,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            500,
-            544
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#readSchedule",
-          "name": "readSchedule",
-          "kind": "function",
-          "exported": true,
-          "range": [
-            573,
-            598
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#readyNowText",
-          "name": "readyNowText",
-          "kind": "function",
-          "exported": true,
-          "range": [
-            724,
-            727
+            156,
+            200
           ]
         },
         {
@@ -11500,18 +11340,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            470,
-            493
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#scheduleWord",
-          "name": "scheduleWord",
-          "kind": "function",
-          "exported": true,
-          "range": [
-            730,
-            743
+            126,
+            149
           ]
         },
         {
@@ -11520,8 +11350,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            605,
-            697
+            211,
+            228
           ]
         },
         {
@@ -11530,18 +11360,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            807,
-            838
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#transitiveHolds",
-          "name": "transitiveHolds",
-          "kind": "function",
-          "exported": true,
-          "range": [
-            439,
-            462
+            292,
+            323
           ]
         },
         {
@@ -11550,28 +11370,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            496,
-            498
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#waveStatus",
-          "name": "waveStatus",
-          "kind": "function",
-          "exported": true,
-          "range": [
-            556,
-            558
-          ]
-        },
-        {
-          "id": "s:app/src/architecture/task-waves.ts#worstBlockerText",
-          "name": "worstBlockerText",
-          "kind": "function",
-          "exported": true,
-          "range": [
-            717,
-            722
+            152,
+            154
           ]
         }
       ]
@@ -21840,8 +21640,8 @@
       "id": "f:lib/parser/src/index.ts",
       "path": "lib/parser/src/index.ts",
       "lang": "ts",
-      "hash": "blake3:8b5c2ee67b1aa64872138603060c08cb6fa2f021fda96f6dac64cf9b33e692f3",
-      "loc": 71,
+      "hash": "blake3:a87e80304349609fb36de422d83bc325929326398f4a5b808bb007cfbffdbd61",
+      "loc": 108,
       "symbols": []
     },
     {
@@ -21954,6 +21754,175 @@
       ]
     },
     {
+      "id": "f:lib/parser/src/lanes.ts",
+      "path": "lib/parser/src/lanes.ts",
+      "lang": "ts",
+      "hash": "blake3:558be12878599c3b2c11a7b05e22d989e6b6928d050e04bca7ee8b1a5f2d25a3",
+      "loc": 527,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/lanes.ts#CardStartability",
+          "name": "CardStartability",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            124,
+            139
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#DispatchOrder",
+          "name": "DispatchOrder",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            141,
+            175
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#DispatchOrderOptions",
+          "name": "DispatchOrderOptions",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            177,
+            192
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#LaneHold",
+          "name": "LaneHold",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            72,
+            91
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#LaneRecord",
+          "name": "LaneRecord",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            56,
+            65
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#REASON_PATH_CEILING",
+          "name": "REASON_PATH_CEILING",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            260,
+            260
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#StartState",
+          "name": "StartState",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            114,
+            121
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#byDispatchRank",
+          "name": "byDispatchRank",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            213,
+            221
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#comparisonComponents",
+          "name": "comparisonComponents",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            291,
+            295
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#fenceIndex",
+          "name": "fenceIndex",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            225,
+            239
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#laneName",
+          "name": "laneName",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            242,
+            244
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+          "name": "readDispatchOrder",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            307,
+            391
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#rule",
+          "name": "rule",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            395,
+            527
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#sharedPaths",
+          "name": "sharedPaths",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            247,
+            249
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#spellPaths",
+          "name": "spellPaths",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            263,
+            267
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/lanes.ts#witnessComponents",
+          "name": "witnessComponents",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            283,
+            288
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:lib/parser/src/model-session.ts",
       "path": "lib/parser/src/model-session.ts",
       "lang": "ts",
@@ -22045,8 +22014,8 @@
       "id": "f:lib/parser/src/pure.ts",
       "path": "lib/parser/src/pure.ts",
       "lang": "ts",
-      "hash": "blake3:a1f5eac62a75d17904acbe15edaefa505141147d4bd85d245caebdb1fa016423",
-      "loc": 64,
+      "hash": "blake3:bce21aecf5d6e815f5ded9831e2d668d20e2ec76d9a361fd5e9dc8c7f98303d8",
+      "loc": 101,
       "symbols": []
     },
     {
@@ -22064,6 +22033,255 @@
           "range": [
             24,
             142
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/src/task-waves.ts",
+      "path": "lib/parser/src/task-waves.ts",
+      "lang": "ts",
+      "hash": "blake3:d223628a2e6fe547cd1c447d1346e7b5ae6444c99f328404234b25c5c2aec391",
+      "loc": 674,
+      "symbols": [
+        {
+          "id": "s:lib/parser/src/task-waves.ts#IN_FLIGHT",
+          "name": "IN_FLIGHT",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            64,
+            68
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#ScheduleReading",
+          "name": "ScheduleReading",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            469,
+            476
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#ScheduleState",
+          "name": "ScheduleState",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            61,
+            61
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#SelectScheduleOptions",
+          "name": "SelectScheduleOptions",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            522,
+            530
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#TaskScheduleModel",
+          "name": "TaskScheduleModel",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            149,
+            161
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#UnmetBlocker",
+          "name": "UnmetBlocker",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            141,
+            147
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#WaveCard",
+          "name": "WaveCard",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            99,
+            138
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#WaveEdge",
+          "name": "WaveEdge",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            85,
+            95
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#WaveInput",
+          "name": "WaveInput",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            72,
+            83
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#WaveLayering",
+          "name": "WaveLayering",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            174,
+            181
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#WaveStatus",
+          "name": "WaveStatus",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            45,
+            45
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#byTaskId",
+          "name": "byTaskId",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            167,
+            168
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#criticalPath",
+          "name": "criticalPath",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            375,
+            426
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#criticalPathText",
+          "name": "criticalPathText",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            636,
+            646
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#cycleMembersOf",
+          "name": "cycleMembersOf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            284,
+            348
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#isRenderedTask",
+          "name": "isRenderedTask",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            460,
+            462
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#layerWaves",
+          "name": "layerWaves",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            199,
+            276
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#readSchedule",
+          "name": "readSchedule",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            489,
+            516
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#readyNowText",
+          "name": "readyNowText",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            655,
+            658
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#scheduleWord",
+          "name": "scheduleWord",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            661,
+            674
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+          "name": "selectTaskSchedule",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            541,
+            630
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#transitiveHolds",
+          "name": "transitiveHolds",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            430,
+            453
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#waveStatus",
+          "name": "waveStatus",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            465,
+            467
+          ]
+        },
+        {
+          "id": "s:lib/parser/src/task-waves.ts#worstBlockerText",
+          "name": "worstBlockerText",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            648,
+            653
           ]
         }
       ]
@@ -22640,6 +22858,65 @@
       ]
     },
     {
+      "id": "f:lib/parser/test/lanes.test.ts",
+      "path": "lib/parser/test/lanes.test.ts",
+      "lang": "ts",
+      "hash": "blake3:f412d17d8cf66da6ac6216ea090f75fe511341e1809908e8bda7c46454a2d0ab",
+      "loc": 415,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/lanes.test.ts#Frontmatter",
+          "name": "Frontmatter",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            22,
+            28
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/lanes.test.ts#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            68,
+            71
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/lanes.test.ts#card",
+          "name": "card",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            30,
+            47
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/lanes.test.ts#component",
+          "name": "component",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            49,
+            66
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/lanes.test.ts#lane",
+          "name": "lane",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            73,
+            80
+          ]
+        }
+      ]
+    },
+    {
       "id": "f:lib/parser/test/model-session.test.ts",
       "path": "lib/parser/test/model-session.test.ts",
       "lang": "ts",
@@ -22749,6 +23026,45 @@
           "range": [
             11,
             11
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:lib/parser/test/task-waves.test.ts",
+      "path": "lib/parser/test/task-waves.test.ts",
+      "lang": "ts",
+      "hash": "blake3:b461312a7e78733456859b73675e925b97fb854cd33c8671ec1931dda483c230",
+      "loc": 205,
+      "symbols": [
+        {
+          "id": "s:lib/parser/test/task-waves.test.ts#Frontmatter",
+          "name": "Frontmatter",
+          "kind": "interface",
+          "exported": false,
+          "range": [
+            33,
+            40
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/task-waves.test.ts#ROADMAP",
+          "name": "ROADMAP",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            60,
+            63
+          ]
+        },
+        {
+          "id": "s:lib/parser/test/task-waves.test.ts#card",
+          "name": "card",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            42,
+            58
           ]
         }
       ]
@@ -25473,8 +25789,28 @@
       "kind": "import",
       "symbols": [
         "ProjectParseResult",
-        "ReviewMode",
-        "TaskStatus"
+        "ScheduleReading",
+        "ScheduleState",
+        "SelectScheduleOptions",
+        "TaskScheduleModel",
+        "UnmetBlocker",
+        "WaveCard",
+        "WaveEdge",
+        "WaveInput",
+        "WaveLayering",
+        "WaveStatus",
+        "byTaskId",
+        "criticalPath",
+        "criticalPathText",
+        "isRenderedTask",
+        "layerWaves",
+        "readSchedule",
+        "readyNowText",
+        "scheduleWord",
+        "selectTaskSchedule",
+        "transitiveHolds",
+        "waveStatus",
+        "worstBlockerText"
       ]
     },
     {
@@ -28980,6 +29316,24 @@
     },
     {
       "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/lanes.ts",
+      "kind": "import",
+      "symbols": [
+        "CardStartability",
+        "DispatchOrder",
+        "DispatchOrderOptions",
+        "LaneHold",
+        "LaneRecord",
+        "REASON_PATH_CEILING",
+        "StartState",
+        "byDispatchRank",
+        "readDispatchOrder",
+        "witnessComponents"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
       "to": "f:lib/parser/src/model-session.ts",
       "kind": "import",
       "symbols": [
@@ -29007,6 +29361,37 @@
       "kind": "import",
       "symbols": [
         "parseRoadmap"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/index.ts",
+      "to": "f:lib/parser/src/task-waves.ts",
+      "kind": "import",
+      "symbols": [
+        "IN_FLIGHT",
+        "ScheduleReading",
+        "ScheduleState",
+        "SelectScheduleOptions",
+        "TaskScheduleModel",
+        "UnmetBlocker",
+        "WaveCard",
+        "WaveEdge",
+        "WaveInput",
+        "WaveLayering",
+        "WaveStatus",
+        "byTaskId",
+        "criticalPath",
+        "criticalPathText",
+        "isRenderedTask",
+        "layerWaves",
+        "readSchedule",
+        "readyNowText",
+        "scheduleWord",
+        "selectTaskSchedule",
+        "transitiveHolds",
+        "waveStatus",
+        "worstBlockerText"
       ],
       "reexport": true
     },
@@ -29058,6 +29443,41 @@
         "validateProject"
       ],
       "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/lanes.ts",
+      "to": "f:lib/parser/src/fence.ts",
+      "kind": "import",
+      "symbols": [
+        "Fence",
+        "FenceComparison",
+        "FenceVerdict",
+        "FenceWitness",
+        "compareFences",
+        "expandFence"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/lanes.ts",
+      "to": "f:lib/parser/src/task-waves.ts",
+      "kind": "import",
+      "symbols": [
+        "SelectScheduleOptions",
+        "TaskScheduleModel",
+        "WaveCard",
+        "byTaskId",
+        "selectTaskSchedule"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/lanes.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "ComponentRecord",
+        "ProjectParseResult",
+        "TaskRecord"
+      ]
     },
     {
       "from": "f:lib/parser/src/model-session.ts",
@@ -29187,6 +29607,24 @@
     },
     {
       "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/lanes.ts",
+      "kind": "import",
+      "symbols": [
+        "CardStartability",
+        "DispatchOrder",
+        "DispatchOrderOptions",
+        "LaneHold",
+        "LaneRecord",
+        "REASON_PATH_CEILING",
+        "StartState",
+        "byDispatchRank",
+        "readDispatchOrder",
+        "witnessComponents"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
       "to": "f:lib/parser/src/model-session.ts",
       "kind": "import",
       "symbols": [
@@ -29200,6 +29638,37 @@
       "kind": "import",
       "symbols": [
         "parseRoadmap"
+      ],
+      "reexport": true
+    },
+    {
+      "from": "f:lib/parser/src/pure.ts",
+      "to": "f:lib/parser/src/task-waves.ts",
+      "kind": "import",
+      "symbols": [
+        "IN_FLIGHT",
+        "ScheduleReading",
+        "ScheduleState",
+        "SelectScheduleOptions",
+        "TaskScheduleModel",
+        "UnmetBlocker",
+        "WaveCard",
+        "WaveEdge",
+        "WaveInput",
+        "WaveLayering",
+        "WaveStatus",
+        "byTaskId",
+        "criticalPath",
+        "criticalPathText",
+        "isRenderedTask",
+        "layerWaves",
+        "readSchedule",
+        "readyNowText",
+        "scheduleWord",
+        "selectTaskSchedule",
+        "transitiveHolds",
+        "waveStatus",
+        "worstBlockerText"
       ],
       "reexport": true
     },
@@ -29276,6 +29745,17 @@
         "FeatureRecord",
         "ParseIssue",
         "RoadmapParseResult"
+      ]
+    },
+    {
+      "from": "f:lib/parser/src/task-waves.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "ProjectParseResult",
+        "ReviewMode",
+        "TaskRecord",
+        "TaskStatus"
       ]
     },
     {
@@ -29533,6 +30013,50 @@
       ]
     },
     {
+      "from": "f:lib/parser/test/lanes.test.ts",
+      "to": "f:lib/parser/src/fence.ts",
+      "kind": "import",
+      "symbols": [
+        "expandFence"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/lanes.test.ts",
+      "to": "f:lib/parser/src/files.ts",
+      "kind": "import",
+      "symbols": [
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/lanes.test.ts",
+      "to": "f:lib/parser/src/lanes.ts",
+      "kind": "import",
+      "symbols": [
+        "LaneRecord",
+        "readDispatchOrder",
+        "witnessComponents"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/lanes.test.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "TaskStatus"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/lanes.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
       "from": "f:lib/parser/test/model-session.test.ts",
       "to": "f:lib/parser/src/index.ts",
       "kind": "import",
@@ -29678,6 +30202,43 @@
     },
     {
       "from": "f:lib/parser/test/smoke.test.ts",
+      "to": "p:vitest",
+      "kind": "import",
+      "symbols": [
+        "describe",
+        "expect",
+        "it"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/task-waves.test.ts",
+      "to": "f:lib/parser/src/files.ts",
+      "kind": "import",
+      "symbols": [
+        "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/task-waves.test.ts",
+      "to": "f:lib/parser/src/task-waves.ts",
+      "kind": "import",
+      "symbols": [
+        "readSchedule",
+        "readyNowText",
+        "selectTaskSchedule",
+        "worstBlockerText"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/task-waves.test.ts",
+      "to": "f:lib/parser/src/types.ts",
+      "kind": "import",
+      "symbols": [
+        "TaskStatus"
+      ]
+    },
+    {
+      "from": "f:lib/parser/test/task-waves.test.ts",
       "to": "p:vitest",
       "kind": "import",
       "symbols": [
@@ -30519,18 +31080,6 @@
     },
     {
       "from": "s:app/src/architecture/TasksLens.tsx#TaskWaveCard",
-      "to": "s:app/src/architecture/task-waves.ts#WaveCard",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/TasksLens.tsx#TaskWaveCard",
-      "to": "s:app/src/architecture/task-waves.ts#scheduleWord",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/TasksLens.tsx#TaskWaveCard",
       "to": "s:app/src/architecture/task-waves.ts#taskCardVisual",
       "kind": "call",
       "confidence": "resolved"
@@ -30549,25 +31098,7 @@
     },
     {
       "from": "s:app/src/architecture/TasksLens.tsx#TasksLens",
-      "to": "s:app/src/architecture/task-waves.ts#criticalPathText",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/TasksLens.tsx#TasksLens",
-      "to": "s:app/src/architecture/task-waves.ts#readyNowText",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/TasksLens.tsx#TasksLens",
       "to": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/TasksLens.tsx#TasksLens",
-      "to": "s:app/src/architecture/task-waves.ts#worstBlockerText",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -31310,42 +31841,6 @@
       "confidence": "resolved"
     },
     {
-      "from": "s:app/src/architecture/task-waves.ts#CARD_DOT",
-      "to": "s:app/src/architecture/task-waves.ts#WaveStatus",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#CARD_FILL",
-      "to": "s:app/src/architecture/task-waves.ts#WaveStatus",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#CARD_ID_INK",
-      "to": "s:app/src/architecture/task-waves.ts#WaveStatus",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#CARD_TITLE_INK",
-      "to": "s:app/src/architecture/task-waves.ts#WaveStatus",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#LaidWaveEdge",
-      "to": "s:app/src/architecture/task-waves.ts#WaveEdge",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#ScheduleReading",
-      "to": "s:app/src/architecture/task-waves.ts#ScheduleState",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
       "from": "s:app/src/architecture/task-waves.ts#TaskWaveLayout",
       "to": "s:app/src/architecture/task-waves.ts#LaidWaveEdge",
       "kind": "type_ref",
@@ -31364,78 +31859,6 @@
       "confidence": "resolved"
     },
     {
-      "from": "s:app/src/architecture/task-waves.ts#TaskWaveModel",
-      "to": "s:app/src/architecture/task-waves.ts#WaveCard",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#WaveCard",
-      "to": "s:app/src/architecture/task-waves.ts#ScheduleState",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#WaveCard",
-      "to": "s:app/src/architecture/task-waves.ts#WaveStatus",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#WaveLayering",
-      "to": "s:app/src/architecture/task-waves.ts#WaveEdge",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#criticalPath",
-      "to": "s:app/src/architecture/task-waves.ts#WaveLayering",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#criticalPath",
-      "to": "s:app/src/architecture/task-waves.ts#byTaskId",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#criticalPathText",
-      "to": "s:app/src/architecture/task-waves.ts#TaskWaveModel",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#layerWaves",
-      "to": "s:app/src/architecture/task-waves.ts#WaveEdge",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#layerWaves",
-      "to": "s:app/src/architecture/task-waves.ts#WaveInput",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#layerWaves",
-      "to": "s:app/src/architecture/task-waves.ts#WaveLayering",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#layerWaves",
-      "to": "s:app/src/architecture/task-waves.ts#byTaskId",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#layerWaves",
-      "to": "s:app/src/architecture/task-waves.ts#cycleMembersOf",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
       "from": "s:app/src/architecture/task-waves.ts#layoutWaves",
       "to": "s:app/src/architecture/task-waves.ts#LaidWaveEdge",
       "kind": "type_ref",
@@ -31444,12 +31867,6 @@
     {
       "from": "s:app/src/architecture/task-waves.ts#layoutWaves",
       "to": "s:app/src/architecture/task-waves.ts#TaskWaveLayout",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#layoutWaves",
-      "to": "s:app/src/architecture/task-waves.ts#WaveLayering",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -31472,30 +31889,12 @@
       "confidence": "resolved"
     },
     {
-      "from": "s:app/src/architecture/task-waves.ts#readSchedule",
-      "to": "s:app/src/architecture/task-waves.ts#ScheduleReading",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#readyNowText",
-      "to": "s:app/src/architecture/task-waves.ts#TaskWaveModel",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
       "from": "s:app/src/architecture/task-waves.ts#routeTaskEdge",
       "to": "s:app/src/architecture/task-waves.ts#WaveNode",
       "kind": "type_ref",
       "confidence": "resolved"
     },
     {
-      "from": "s:app/src/architecture/task-waves.ts#scheduleWord",
-      "to": "s:app/src/architecture/task-waves.ts#WaveCard",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
       "from": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
       "to": "s:app/src/architecture/task-waves.ts#TaskWaveModel",
       "kind": "type_ref",
@@ -31503,61 +31902,7 @@
     },
     {
       "from": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
-      "to": "s:app/src/architecture/task-waves.ts#WaveCard",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
-      "to": "s:app/src/architecture/task-waves.ts#WaveInput",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
-      "to": "s:app/src/architecture/task-waves.ts#byTaskId",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
-      "to": "s:app/src/architecture/task-waves.ts#criticalPath",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
-      "to": "s:app/src/architecture/task-waves.ts#isRenderedTask",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
-      "to": "s:app/src/architecture/task-waves.ts#layerWaves",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
       "to": "s:app/src/architecture/task-waves.ts#layoutWaves",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
-      "to": "s:app/src/architecture/task-waves.ts#readSchedule",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
-      "to": "s:app/src/architecture/task-waves.ts#transitiveHolds",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#selectTaskWaves",
-      "to": "s:app/src/architecture/task-waves.ts#waveStatus",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -31570,36 +31915,6 @@
     {
       "from": "s:app/src/architecture/task-waves.ts#taskCardVisual",
       "to": "s:app/src/architecture/task-waves.ts#TaskCardVisual",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#taskCardVisual",
-      "to": "s:app/src/architecture/task-waves.ts#WaveCard",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#transitiveHolds",
-      "to": "s:app/src/architecture/task-waves.ts#WaveLayering",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#transitiveHolds",
-      "to": "s:app/src/architecture/task-waves.ts#byTaskId",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#waveStatus",
-      "to": "s:app/src/architecture/task-waves.ts#WaveStatus",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/src/architecture/task-waves.ts#worstBlockerText",
-      "to": "s:app/src/architecture/task-waves.ts#TaskWaveModel",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -36440,24 +36755,6 @@
       "confidence": "resolved"
     },
     {
-      "from": "s:app/test/map-task-waves.test.ts#task",
-      "to": "s:app/src/architecture/task-waves.ts#WaveInput",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/test/map-task-waves.test.ts#waves",
-      "to": "s:app/src/architecture/task-waves.ts#WaveInput",
-      "kind": "type_ref",
-      "confidence": "resolved"
-    },
-    {
-      "from": "s:app/test/map-task-waves.test.ts#waves",
-      "to": "s:app/src/architecture/task-waves.ts#layerWaves",
-      "kind": "call",
-      "confidence": "resolved"
-    },
-    {
       "from": "s:app/test/map-tasks-lens-dom.test.tsx#lensFixture",
       "to": "s:app/test/map-tasks-lens-dom.test.tsx#componentFile",
       "kind": "call",
@@ -37328,6 +37625,288 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/src/lanes.ts#CardStartability",
+      "to": "s:lib/parser/src/fence.ts#Fence",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#CardStartability",
+      "to": "s:lib/parser/src/lanes.ts#LaneHold",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#CardStartability",
+      "to": "s:lib/parser/src/lanes.ts#StartState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#CardStartability",
+      "to": "s:lib/parser/src/task-waves.ts#WaveCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#DispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#CardStartability",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#DispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#LaneRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#DispatchOrder",
+      "to": "s:lib/parser/src/task-waves.ts#TaskScheduleModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#DispatchOrderOptions",
+      "to": "s:lib/parser/src/task-waves.ts#SelectScheduleOptions",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#LaneHold",
+      "to": "s:lib/parser/src/fence.ts#FenceVerdict",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#LaneHold",
+      "to": "s:lib/parser/src/fence.ts#FenceWitness",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#LaneHold",
+      "to": "s:lib/parser/src/lanes.ts#LaneRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#byDispatchRank",
+      "to": "s:lib/parser/src/task-waves.ts#WaveCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#byDispatchRank",
+      "to": "s:lib/parser/src/task-waves.ts#byTaskId",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#comparisonComponents",
+      "to": "s:lib/parser/src/fence.ts#Fence",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#comparisonComponents",
+      "to": "s:lib/parser/src/fence.ts#FenceComparison",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#comparisonComponents",
+      "to": "s:lib/parser/src/lanes.ts#witnessComponents",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#fenceIndex",
+      "to": "s:lib/parser/src/fence.ts#Fence",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#fenceIndex",
+      "to": "s:lib/parser/src/fence.ts#expandFence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#fenceIndex",
+      "to": "s:lib/parser/src/types.ts#ComponentRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#fenceIndex",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#laneName",
+      "to": "s:lib/parser/src/lanes.ts#LaneRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/fence.ts#compareFences",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/fence.ts#expandFence",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#CardStartability",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#DispatchOrder",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#DispatchOrderOptions",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#LaneHold",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#LaneRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#StartState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#byDispatchRank",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#fenceIndex",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/lanes.ts#rule",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/task-waves.ts#byTaskId",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#readDispatchOrder",
+      "to": "s:lib/parser/src/types.ts#ProjectParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#rule",
+      "to": "s:lib/parser/src/fence.ts#Fence",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#rule",
+      "to": "s:lib/parser/src/fence.ts#FenceComparison",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#rule",
+      "to": "s:lib/parser/src/lanes.ts#CardStartability",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#rule",
+      "to": "s:lib/parser/src/lanes.ts#LaneHold",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#rule",
+      "to": "s:lib/parser/src/lanes.ts#comparisonComponents",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#rule",
+      "to": "s:lib/parser/src/lanes.ts#laneName",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#rule",
+      "to": "s:lib/parser/src/lanes.ts#sharedPaths",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#rule",
+      "to": "s:lib/parser/src/lanes.ts#spellPaths",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#rule",
+      "to": "s:lib/parser/src/task-waves.ts#WaveCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#sharedPaths",
+      "to": "s:lib/parser/src/fence.ts#FenceComparison",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#witnessComponents",
+      "to": "s:lib/parser/src/fence.ts#Fence",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/lanes.ts#witnessComponents",
+      "to": "s:lib/parser/src/fence.ts#FenceWitness",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/src/model-session.ts#parseModelSession",
       "to": "s:lib/parser/src/types.ts#ModelSession",
       "kind": "type_ref",
@@ -37468,6 +38047,288 @@
     {
       "from": "s:lib/parser/src/roadmap.ts#parseRoadmap",
       "to": "s:lib/parser/src/types.ts#RoadmapParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#IN_FLIGHT",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#ScheduleReading",
+      "to": "s:lib/parser/src/task-waves.ts#ScheduleState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#ScheduleReading",
+      "to": "s:lib/parser/src/task-waves.ts#UnmetBlocker",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#SelectScheduleOptions",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#TaskScheduleModel",
+      "to": "s:lib/parser/src/task-waves.ts#WaveCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#TaskScheduleModel",
+      "to": "s:lib/parser/src/task-waves.ts#WaveLayering",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#UnmetBlocker",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#WaveCard",
+      "to": "s:lib/parser/src/task-waves.ts#ScheduleState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#WaveCard",
+      "to": "s:lib/parser/src/task-waves.ts#UnmetBlocker",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#WaveCard",
+      "to": "s:lib/parser/src/task-waves.ts#WaveStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#WaveCard",
+      "to": "s:lib/parser/src/types.ts#ReviewMode",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#WaveInput",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#WaveLayering",
+      "to": "s:lib/parser/src/task-waves.ts#WaveEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#criticalPath",
+      "to": "s:lib/parser/src/task-waves.ts#WaveLayering",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#criticalPath",
+      "to": "s:lib/parser/src/task-waves.ts#byTaskId",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#criticalPath",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#criticalPathText",
+      "to": "s:lib/parser/src/task-waves.ts#TaskScheduleModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#isRenderedTask",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#layerWaves",
+      "to": "s:lib/parser/src/task-waves.ts#WaveEdge",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#layerWaves",
+      "to": "s:lib/parser/src/task-waves.ts#WaveInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#layerWaves",
+      "to": "s:lib/parser/src/task-waves.ts#WaveLayering",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#layerWaves",
+      "to": "s:lib/parser/src/task-waves.ts#byTaskId",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#layerWaves",
+      "to": "s:lib/parser/src/task-waves.ts#cycleMembersOf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#readSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#ScheduleReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#readSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#UnmetBlocker",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#readSchedule",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#readyNowText",
+      "to": "s:lib/parser/src/task-waves.ts#TaskScheduleModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#scheduleWord",
+      "to": "s:lib/parser/src/task-waves.ts#WaveCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#SelectScheduleOptions",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#TaskScheduleModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#WaveCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#WaveInput",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#byTaskId",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#criticalPath",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#isRenderedTask",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#layerWaves",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#readSchedule",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#transitiveHolds",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/task-waves.ts#waveStatus",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/types.ts#ProjectParseResult",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/types.ts#TaskRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#selectTaskSchedule",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#transitiveHolds",
+      "to": "s:lib/parser/src/task-waves.ts#WaveLayering",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#transitiveHolds",
+      "to": "s:lib/parser/src/task-waves.ts#byTaskId",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#waveStatus",
+      "to": "s:lib/parser/src/task-waves.ts#WaveStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#waveStatus",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/src/task-waves.ts#worstBlockerText",
+      "to": "s:lib/parser/src/task-waves.ts#TaskScheduleModel",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -37826,6 +38687,36 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:lib/parser/test/lanes.test.ts#Frontmatter",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/lanes.test.ts#card",
+      "to": "s:lib/parser/test/lanes.test.ts#Frontmatter",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/lanes.test.ts#lane",
+      "to": "s:lib/parser/src/lanes.ts#LaneRecord",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/task-waves.test.ts#Frontmatter",
+      "to": "s:lib/parser/src/types.ts#TaskStatus",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:lib/parser/test/task-waves.test.ts#card",
+      "to": "s:lib/parser/test/task-waves.test.ts#Frontmatter",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:lib/parser/test/validate.test.ts#src",
       "to": "s:lib/parser/test/validate.test.ts#Field",
       "kind": "type_ref",
@@ -37852,8 +38743,8 @@
     }
   ],
   "stats": {
-    "files": 185,
-    "symbols": 2124,
-    "edges": 2039
+    "files": 189,
+    "symbols": 2152,
+    "edges": 2111
   }
 }

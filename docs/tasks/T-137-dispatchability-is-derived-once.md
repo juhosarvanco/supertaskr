@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 4
 size: M
-status: verifying
+status: done
 blocked_by: [T-134]
 touches: [lib-parser, app-map, tools/e2e]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5
+verified_by: claude-opus-5
+review: same-model
 ---
 
 **@human, 2026-08-26:** *"'what is dispatchable, in what order, given the

@@ -1338,7 +1338,17 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // widened or narrowed the claimed set. Derived from `arch` at
     // `2a922ce` with the claim applied (`files=185 mapped=185 unmapped=0`),
     // before this suite was re-run.
-    expect(derived.fileComponent.size).toBe(185);
+    // 185 -> 189 AT THE T-137 MERGE REGEN (2026-08-27, merge c22f0ac).
+    // FOUR FILES JOIN AND NONE LEAVE: lib/parser/src/{lanes,task-waves}.ts
+    // and their two test files - the extraction that moved the schedule
+    // analysis out of app-map into lib-parser. All four land under C-06's
+    // globs, so unmapped STAYS 0 and the bucket does not re-open: a count
+    // moving here WITHOUT the D2 moving is exactly what an extraction into
+    // an already-declared component should look like. Derived from a set
+    // difference over the two graph.json revisions (added 4, removed 0)
+    // and from arch after the regen (files=189 unmapped=0), never from the
+    // failure output.
+    expect(derived.fileComponent.size).toBe(189);
     // AND THE BUCKET IS EMPTY AGAIN, ONE MERGE AFTER IT RE-OPENED.
     // T-033's settlement kept `tests/dispatch_lanes.rs` out of it by
     // CLAIMING it and T-126 kept it out by DELETING it; T-139 put a file IN
@@ -1506,7 +1516,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // own brief omitted, which is exactly what the paragraph above has
       // said about it since T-053. Derived from `arch` over the
       // regenerated graph before the suite was re-run.
-      ["C-06", 27],
+      // 27 -> 31 at the T-137 merge regen (2026-08-27, c22f0ac): the four
+      // files of the schedule extraction - lib/parser/src/{lanes,task-waves}.ts
+      // and their two tests. ALL FOUR LAND HERE AND NOWHERE ELSE, which is the
+      // whole point of the extraction: it moved the schedule analysis out of
+      // app-map, so a rise anywhere but C-06 would mean it had not landed where
+      // the card claimed. Derived from a set difference over the two graph.json
+      // revisions, not from the failure output.
+      ["C-06", 31],
       // C-07 JOINS THE MAPPING AT THE T-010 MERGE REGEN WITH THIRTY-TWO
       // FILES AND NO NEW FILE ON DISK — the row this whole card exists to
       // create, and the inverse of every C-05 entry above. Its D3 clears

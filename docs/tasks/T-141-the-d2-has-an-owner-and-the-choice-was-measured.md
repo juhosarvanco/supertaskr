@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 5
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [docs/architecture/components/, app-shell]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5
+verified_by: claude-opus-5
+review: same-model
 ---
 
 **T-139's merge created this repository's second D2.** `arch` at

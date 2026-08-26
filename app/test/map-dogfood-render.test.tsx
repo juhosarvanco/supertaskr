@@ -760,7 +760,11 @@ describe("the nputer repo on its own map", () => {
     // findings 4 → 5 with a D2. Derived from the regenerated graph and
     // `arch` before the suite was re-run.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 185 files",
+      // 185 -> 189 at the T-137 merge regen (2026-08-27, c22f0ac) - the four
+      // lib-parser files of the schedule extraction, all mapped, so unlike
+      // the entry above this one moves the count WITHOUT moving findings.
+      // Derived from arch after the regen, not from the failure output.
+      "committed graph · 189 files",
     );
   });
 });
