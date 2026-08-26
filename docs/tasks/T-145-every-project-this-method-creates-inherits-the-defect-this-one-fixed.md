@@ -201,3 +201,57 @@ files and three task cards.
 Port discipline: `1420` was read once with `lsof -nP -iTCP:1420 -sTCP:LISTEN`
 and is held by the human's app (pid 19746, node). The lane ran on **15947**,
 re-probed free immediately before the run.
+
+### ADDENDUM: THE DRILL CONTAMINATED THIS LANE'S OWN CARGO SUITE
+
+Written because it produced a RED that looks exactly like a real one and
+is not attributable to this diff.
+
+To avoid a cold Tauri build, the drill worktree's `cargo test` ran with
+`CARGO_TARGET_DIR` pointed at THIS lane's warm target directory.
+`crate::testutil::repo_root()` is `env!("CARGO_MANIFEST_DIR")`, resolved
+at **compile** time, so that build baked the DRILL's absolute path into
+the test binaries; the two trees being byte-identical, cargo's
+fingerprint matched and the lane then **reused the drill's artifacts**.
+After the drill worktree was removed:
+
+    cargo test   exit 101   the live registry must read:
+                            DirMissing(".../T-145-drill/docs/architecture/components")
+
+Touching only the source file that panic named produced a SECOND red with
+**nine** failures — each integration-test binary bakes its own copy.
+`cargo clean` is prohibited here, so the recovery was to `touch` every
+workspace `.rs` (mtime only) and rebuild: back to **exit 0, 518 passed**,
+the same number this lane measured before the drill at `9a80c8a`.
+`git status --porcelain` was empty at every step of the episode.
+
+**Not a repository defect and not this diff's**, and filed as `T-145-s3`
+rather than left in these notes, because `method/lane-protocol.md` rule 4
+argues this exact failure — *"a test run only READS, so it looks
+harmless"*, *"nothing in the tree records that a second runner was
+present"* — for a case it does not cover. This was ONE runner and ONE
+owner; the shared surface was a TARGET DIRECTORY, and the rule has no
+term for that. **A drill worktree gets its own target directory, or it is
+not isolated.**
+
+### Fence derivation
+
+The merge's diff, by the RANGE RULE's executor pair
+(`TREE=$(git merge-tree --write-tree <main tip> HEAD)`, main tip
+`2fab106`): **6 paths** — 2 under `method/adapters/` (in fence), 1 this
+card (never part of its own fence, rule 5), and 3 new cards under
+`docs/tasks/` (a directory not fenceable by any card, rule 5). **No fence
+breach.** Nothing outside `method/adapters/` was modified; the routed
+criteria are cards, not edits.
+
+Standing gates, derived from those 6 paths:
+
+- **GRAPH REGEN** — trigger is `*.ts/*.tsx/*.js/*.jsx` or `*.rs` outside
+  `docs/`. Matches **0 of 6**. NOT OWED — and the gate was ASKED anyway
+  rather than predicted: `index --check` exit **0**, CURRENT, 997202
+  bytes / 185 files / 2124 symbols / 2039 edges.
+- **BOOT GATE** — trigger is `app/src-tauri/**`, `app/src/**` or either
+  manifest. Matches **0 of 6**. NOT OWED.
+- **DOCS GATE** — FIRES, exit **1**, naming 3 card paths and 3 suites:
+  `npm test` from `app/`, `npm test` from `tools/e2e/`, `npx vitest run`
+  from `lib/parser/`. All three re-run after the card writes, all green.
