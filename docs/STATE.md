@@ -680,9 +680,16 @@ without typechecking. **One command clears it**: `npm run build` from
 `lib/parser/`. **THE TRIGGER IS NOT A FRESH TREE, IT IS A MERGE THAT
 CHANGES THE PARSER'S TYPES** — CONVENTIONS files the parser-before-app
 ORDER under *fresh clone*, so a fully-installed main checkout reads as
-exempt and is not. **THIS MERGE ADDS SEVEN EXPORTED TYPES AND SIX
-EXPORTED FUNCTIONS TO BOTH BARRELS**, which is exactly the shape that
-fires it. The build was run first, in that order, and every exit was 0.
+exempt and is not. **THIS MERGE ADDS THIRTEEN EXPORTS TO BOTH BARRELS —
+EIGHT TYPES, FOUR FUNCTIONS AND ONE CONST** (`FenceTokenKind`,
+`FenceToken`, `Fence`, `SlugExpansion`, `FenceVerdict`, `FenceWitness`,
+`FenceComparison`, `ExpandFenceOptions`; `normalizeFenceToken`,
+`slugPathIndex`, `expandFence`, `compareFences`; `UNFENCEABLE_PATHS`) —
+which is exactly the shape that fires it. **The figure was first written
+here as "seven types and six functions" and is corrected in place rather
+than left standing** (T-101's precedent), derived from
+`index --check`'s own re-export symbol list rather than counted by eye.
+The build was run first, in that order, and every exit was 0.
 
 **AND THE SEPARATE UNBUILT-APP CLASS IS THE ONE THAT ARRIVES LOOKING LIKE
 A DEFECT**: on an unbuilt tree `npm test` from `app/` returns **14 failed
