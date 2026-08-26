@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 3
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [crate-index, app-shell]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5
+verified_by: claude-opus-5
+review: same-model
 ---
 
 **@human, 2026-08-26**: *"measure the parse cost and set both limits with
@@ -364,3 +364,124 @@ reason. Filed as **`T-139-s4`** with the repair options.
 `T-139-s2` (the IPC hop evals JS source), `T-139-s3` (no aggregate cap;
 the per-file cap is the wrong axis), `T-139-s4` (the DOCS GATE attributes
 a reader to the suite that owns its directory).
+
+## Integration
+
+Merged `aed77b6` on 2026-08-26 by a third `claude-opus-5` session that
+neither wrote nor reviewed the lane's commits; checkpoint is the commit
+after it. **Main-before `00e133a`, lane tip `6c5c983`** — derived with
+`git rev-parse`, and it is the **VERDICT** commit rather than the last
+work commit `8ab799c`. Range `00e133a..aed77b6`: **11 paths**, prescribed
+and three-dot forms identical as SETS (`diff` exit 0), against main's
+**7-path** advance since the lane's base `13c736e`, `comm -12` **EMPTY**.
+`merge-tree --write-tree` exit 0 read from `$?` FIRST, forecast tree
+**`5ce211c`** = the merge's own tree.
+
+**MAIN MOVED A FOURTH TIME UNDER THIS INTEGRATOR**, between the range
+derivation and the merge: `7f91ee4 -> 00e133a`, the architect dispatching
+`T-137` and `T-138`. The range was RE-DERIVED at the ref the merge
+actually has rather than carried, and the merge commit's own message
+names `00e133a`.
+
+**SUITES ON THE MERGED TREE.** `cargo test --no-fail-fast` from
+`app/src-tauri` exit **0**, **518 passed / 0 failed / 4 ignored**, summed
+from **18** `test result:` lines and cross-checked against 18 `running N
+tests` headers summing to **522**. Main's own baseline at `00e133a`,
+measured BEFORE the merge, was **512 / 0 / 3 over 16** lines summing 515,
+so this card adds **six passing bodies, one `#[ignore]`d body and two
+test binaries**, by name and not by subtraction:
+`the_emit_budget_stays_below_the_collectors_file_cap` (the pin),
+`check::tests::a_current_graph_reports_the_room_left_in_the_budget`,
+`check::tests::an_over_budget_graph_says_what_is_being_dropped`,
+`a_graph_driven_over_the_budget_keeps_its_files_and_its_import_edges`,
+`the_budget_option_is_what_the_emitter_uses`,
+`under_an_impossible_budget_the_graph_is_still_emitted_and_still_flagged`,
+and ignored `graph_delivery_cost_by_stage`. Zero bodies removed. app
+**1013/1013** across 47 files, parser **290/290**, `tools/e2e`
+**194/194**, `lint:docs` and `lint:tokens` exit 0, `arch drift` exit 0,
+`arch cycles` exit **1 by design**.
+
+**`T-139-s4` IS CONFIRMED BY THIS MERGE'S OWN ARITHMETIC.** The app suite
+is **1013/1013 across 47 files both before and after** the merge that
+adds `app/test/graph-budget-bench.mjs` — vitest does not match it, so the
+file the DOCS GATE now names as a reader of `docs/architecture/graph.json`
+under `[npm test from app/]` is not executed by that command. The gate's
+reader census went **16 -> 18** here and both new rows are this card's.
+
+**GRAPH REGEN — ASKED, NEVER PREDICTED.** At the merge: STALE, `files +2
+-0 ~4`, `edges +6 -0` (2033 + 6 = 2039), fresh **997 202 bytes · 185
+files · 2124 symbols · 2039 edges** against a committed 989 181, and
+`index --check` printed its own new headroom line: **95.9%, 42 798 left**
+— which under the old budget would have read **99.72%, 2 798 left**. The
+fourth modified file in that list, `app/test/architecture-dogfood.test.ts`,
+is MAIN's (`6dc5757`), not this lane's, and it costs **zero bytes**
+because only its `loc` moved and `1974` and `1979` are the same width.
+**So main's graph was already stale at this merge's parent AT AN
+IDENTICAL BYTE COUNT** — the identical-figures trap in its purest form.
+
+**WHAT THIS MERGE RELEASES, DERIVED THROUGH `fence.ts`.** `[crate-index,
+app-shell]` expands to **26 paths** through C-07, C-05, C-10, C-11 and
+C-16, and overlaps **22 of the 37 other open fence-carrying cards**. Of
+those 22, **17 are freed** — sixteen `planned` (T-022, T-035, T-044,
+T-059, T-068, T-071, T-087, T-094, T-099, T-100, T-106, T-112, T-114,
+T-115, T-117, T-125) plus `T-135`, which is `building` with no lane — and
+**five stay held by `T-137`** (T-015, T-032, T-065, T-075 and **T-140**).
+`T-140` is `blocked_by: [T-139]` and this stamp is what unblocks it; its
+fence is not free, which are two different questions and both are
+answered here. Flip census through the merged `fence.ts`: **38 cards ·
+703 pairs · 27 flips · 0 reverse · 0 unusable** before the stamp and **37
+· 666 · 26 · 0 · 0** after it — `T-139` sat in exactly ONE flip pair,
+`T-112 × T-139` on `app/src/assets`.
+
+**THE VERIFIER RULED AGAINST THIS LANE ON ONE THING AND THE CHECKPOINT
+CARRIES IT RATHER THAN LETTING THE APPROVAL SWALLOW IT.** The lane
+declined to poison-drill its two harnesses, arguing a measurement is not
+an assertion. The verifier ran the drill anyway and the exemption did not
+survive: reverting the eval cursor to an index makes JavaScriptCore report
+**0.00 ms at every size**, including 14 219 275 bytes where V8 in the same
+table reads **40.04 ms**. **A harness asserts that its number is the cost
+of the work it names, that assertion is falsifiable, and it was FALSE in
+this lane's first version** — and neither harness runs in any default
+suite (`#[ignore]`d, and unmatched by vitest), so nothing here would catch
+the regression. **The numbers are sound**: the lane found the defect
+itself, carries three real internal positive controls, and the verifier
+reproduced the whole table on its own machine. This is a finding about the
+RULE, not about the result, and **the approval does not ratify the
+exemption.**
+
+**THE MEASUREMENT DOES NOT SELECT 1 040 000, AND @human's LOOK IS ON
+EXACTLY THAT.** The direction is proven — no stage binds near 1 MiB — and
+so is the ceiling. The value is not: **any number in (989 181, 1 048 576)
+is equally defensible on this evidence.** And the card's stated reason for
+the 8 576-byte gap is weaker than it reads: the lane says the two limits
+are "two DIFFERENT measurements", and the verifier found them
+**byte-identical** — `apply_budget` measures `stable_json_string(&graph)?
+.len()` and `write_graph` writes that same string, trailing `\n`
+included. So the gap's justification reduces to *give the strict `<`
+something to catch*. **The raise buys about three ordinary merges, not a
+new regime**: headroom 10 819 -> 50 819, i.e. 0.69 -> 3.2 merges at the
+mean growth of 15 751, and 42 798 (2.7 merges) once this lane's own 8 021
+bytes land. The largest growth on record, 241 980, still overshoots the
+new budget by ~5x.
+
+**TWO SMALL CORRECTIONS, CARRIED NOT REPAIRED.** (a) The floor is
+**204 998** by the verifier's byte-exact round-trip, not the 204 996 this
+card's notes and `lib.rs`'s doc comment state; immaterial (19.55% of the
+cap either way, 373.2 bytes/symbol either way) and **not reproducible by
+the obvious method**, so it is recorded rather than edited — an
+integrator settling a measurement dispute inside verified code is a
+disposition without triage. (b) `budget.rs`'s module doc (`:9`) and its
+body doc (`:200`) both cite `lib.rs:221` for the option->emitter wire; at
+tip that line is **`lib.rs:276`**, because this lane's own diff added 55
+lines above it. The card's notes declare their base ref and are
+defensible; `budget.rs` carries no such frame. **FILED, not repaired**:
+the file did not exist at this merge's parent, so the parent test cannot
+call it debris this merge made false.
+
+**AND THE CITATION THIS MERGE DID MAKE FALSE WAS REPAIRED IN BOTH PLACES.**
+At `00e133a`, `crates/nputer-index/src/lib.rs:79` is literally
+`max_graph_bytes: 1_000_000,`; at `aed77b6` it is a doc-comment line and
+the value is `1_040_000` at `:134`. `docs/STATE.md` and
+`docs/ARCHITECTURE.md`'s C-07 row both cited that line for that value.
+Both are corrected in this checkpoint, with the ref, on T-101's
+correct-in-place precedent.

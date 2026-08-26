@@ -79,7 +79,7 @@ const node = (id: string): HTMLElement => {
 };
 
 describe("the nputer repo on its own map", () => {
-  it("renders all thirteen declared components in full mode, and the bucket is gone again", () => {
+  it("renders all thirteen declared components in full mode, and the bucket is BACK", () => {
     // Ten since T-024 declared C-13 (genesis pane); ELEVEN since T-025
     // declared C-14 (agent runner). See the reconciliation blocks in
     // architecture-dogfood.test.ts for both enumerated deltas.
@@ -106,8 +106,16 @@ describe("the nputer repo on its own map", () => {
     // below are what actually move — the bucket must be absent and C-16
     // must be present — and they are asserted by IDENTITY rather than by
     // the total for exactly this reason.
-    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(13);
-    expect(container.querySelector('[data-component-id="unmapped"]')).toBeNull();
+    // 13 → 14 AT T-139 (2026-08-26, merge `aed77b6`), AND THIS TIME THE
+    // TOTAL MOVES BECAUSE THE BUCKET COMES BACK. No declared component is
+    // added or removed — the thirteen are the same thirteen — and the
+    // fourteenth node is the unmapped bucket the derivation synthesises
+    // for `app/src-tauri/tests/graph_budget_bench.rs`. The identity
+    // assertion below is what says WHICH node arrived; had this body
+    // rested on the total it could not have told a fourteenth component
+    // from a bucket, which is the reason the comment above gives.
+    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(14);
+    expect(container.querySelector('[data-component-id="unmapped"]')).not.toBeNull();
     expect(container.querySelector('[data-component-id="C-16"]')).not.toBeNull();
     expect(container.querySelector("[data-testid=map-degraded]")).toBeNull();
   });
@@ -120,7 +128,7 @@ describe("the nputer repo on its own map", () => {
     expect(c01.textContent).toContain("pin");
   });
 
-  it("C-07 is a REAL face at last: thirty-five Rust files match its globs", () => {
+  it("C-07 is a REAL face at last: thirty-six Rust files match its globs", () => {
     // THE ASSERTION THAT INVERTS AT THE T-010 MERGE REGEN (2026-08-25),
     // and the one this whole card exists to invert. This body read
     // "C-07 is declared-only: zero TS files match its globs" from T-012
@@ -158,7 +166,14 @@ describe("the nputer repo on its own map", () => {
     // `C-05 -> C-15` D1 alone; this figure and the header hint below move
     // for a different reason — a new indexed file — and under no repair
     // that card offers.
-    expect(c07.textContent).toContain("35 files");
+    // 35 → 36 at the T-139 merge regen (2026-08-26), the FOURTH file this
+    // component has gained on disk and the same shape a fourth time:
+    // `crates/nputer-index/tests/budget.rs`, the degradation-path suite.
+    // Its sibling `app/src-tauri/tests/graph_budget_bench.rs` lands in the
+    // BUCKET rather than here, which is why this row moves by one while
+    // the merge added two indexed files. Derived from `arch` over the
+    // regenerated graph before the suite was run.
+    expect(c07.textContent).toContain("36 files");
     // The D3 ring is gone with the finding that drew it — the visible
     // half of architecture-dogfood's declaredOnly list losing C-07.
     expect(c07.className).not.toContain("map-drift-ring");
@@ -280,7 +295,7 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 37-edge relation table, with TWO undeclared rows left", () => {
+  it("draws the full 39-edge relation table, with FOUR undeclared rows left — two of them the bucket’s", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
@@ -345,16 +360,31 @@ describe("the nputer repo on its own map", () => {
     // real since T-126 and no `mod` declaration produced an edge until
     // now. The checkpoint did not declare it (ruling thirteen's parent
     // test says FILE, not repair); it is routed to `T-126-s3` item 4.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(37);
+    // 37 → 39 at the T-139 merge regen (2026-08-26, merge `aed77b6`), and
+    // both numbers move again — undeclared 2 → 4 while confirmed holds at
+    // 26 and planned at 9. 26 + 4 + 9 = 39. **BOTH NEW ROWS LEAVE THE SAME
+    // NODE AND THAT NODE IS NOT A COMPONENT**: the unmapped bucket, holding
+    // `app/src-tauri/tests/graph_budget_bench.rs`, which imports
+    // `nputer_index` (C-07) and `docs_watch` (C-10). So ONE unclaimed file
+    // draws TWO undeclared rows, and declaring it retires both at once.
+    // Unlike C-05→C-15 above, this pair is CREATED by the merge and not
+    // revealed by it — `arch drift` read `unmapped=0` at the parent — and
+    // the checkpoint still did not declare it, because choosing between
+    // C-07 and C-10 for a harness that imports both is a registry decision
+    // and a checkpoint takes no dispositions. Routed, with the reasoning,
+    // in this merge's STATE entry.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(39);
     const undeclared = container.querySelectorAll(
       '[data-testid=map-edge][data-relation="undeclared"]',
     );
-    expect(undeclared).toHaveLength(2);
-    // asserted by IDENTITY, not only by count: "two undeclared edges" must
+    expect(undeclared).toHaveLength(4);
+    // asserted by IDENTITY, not only by count: "four undeclared edges" must
     // not be reachable by some other row surviving in their place.
     expect([...undeclared].map((e) => e.getAttribute("data-edge"))).toEqual([
       edgeKey({ from: "C-05", to: "C-15" }),
       edgeKey({ from: "C-10", to: "C-14" }),
+      edgeKey({ from: "unmapped", to: "C-07" }),
+      edgeKey({ from: "unmapped", to: "C-10" }),
     ]);
   });
 
@@ -688,8 +718,21 @@ describe("the nputer repo on its own map", () => {
     // and no ring lights or clears — `arch` moves `files` and
     // `mapped` and nothing else. Derived from the regenerated graph and
     // `arch` before the suite was re-run.
+    // 183 → 185 at the T-139 merge regen (2026-08-26, merge `aed77b6`):
+    // TWO files, `app/src-tauri/crates/nputer-index/tests/budget.rs` and
+    // `app/src-tauri/tests/graph_budget_bench.rs`. The graph goes
+    // 989 181 → 997 202 bytes / 2101 → 2124 symbols / 2033 → 2039 edges,
+    // and `index --check` printed `files +2 -0 ~4` — the FOURTH modified
+    // path it names, `app/test/architecture-dogfood.test.ts`, is MAIN's
+    // (`6dc5757`) and not this lane's, and it costs zero bytes because
+    // only its `loc` moved and 1974 and 1979 are the same width. **SO THIS
+    // ENTRY BREAKS T-134's SHAPE IN THE ONE WAY NO EARLIER ENTRY DID**:
+    // the second new file lands under no component's globs, so the node
+    // count moves 13 → 14, the relation table 37 → 39 at 26/4/9 and
+    // findings 4 → 5 with a D2. Derived from the regenerated graph and
+    // `arch` before the suite was re-run.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 183 files",
+      "committed graph · 185 files",
     );
   });
 });

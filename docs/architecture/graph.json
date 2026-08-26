@@ -862,8 +862,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/check.rs",
       "path": "app/src-tauri/crates/nputer-index/src/check.rs",
       "lang": "rust",
-      "hash": "blake3:4c10e38314b13d856c5ab515ed7b37c2dae230772b4fb24d2a24047430942d9c",
-      "loc": 405,
+      "hash": "blake3:7e3720bf5817b0b11583c17849ebac0abcbecfbe635a627349ad607feab6a564",
+      "loc": 526,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/check.rs#CheckReport",
@@ -872,7 +872,7 @@
           "exported": true,
           "range": [
             44,
-            52
+            60
           ]
         },
         {
@@ -896,13 +896,23 @@
           ]
         },
         {
+          "id": "s:app/src-tauri/crates/nputer-index/src/check.rs#budget_line",
+          "name": "budget_line",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            211,
+            230
+          ]
+        },
+        {
           "id": "s:app/src-tauri/crates/nputer-index/src/check.rs#check",
           "name": "check",
           "kind": "fn",
           "exported": true,
           "range": [
-            66,
-            120
+            74,
+            131
           ]
         },
         {
@@ -911,8 +921,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            276,
-            287
+            323,
+            334
           ]
         },
         {
@@ -921,8 +931,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            54,
-            58
+            62,
+            66
           ]
         },
         {
@@ -931,8 +941,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            290,
-            296
+            337,
+            343
           ]
         },
         {
@@ -941,8 +951,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            128,
-            183
+            139,
+            196
           ]
         },
         {
@@ -951,8 +961,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            185,
-            225
+            232,
+            272
           ]
         },
         {
@@ -961,8 +971,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            227,
-            274
+            274,
+            321
           ]
         },
         {
@@ -971,8 +981,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            299,
-            405
+            346,
+            526
           ]
         }
       ]
@@ -1812,8 +1822,8 @@
       "id": "f:app/src-tauri/crates/nputer-index/src/lib.rs",
       "path": "app/src-tauri/crates/nputer-index/src/lib.rs",
       "lang": "rust",
-      "hash": "blake3:f42062169da484e3cded4074aed91690719759c1ae5009726925b9c3655ca578",
-      "loc": 356,
+      "hash": "blake3:1e1948aaa774c0330b7abe15afa31c5aca1ffd6bdd3f2428554b6baf45a2cd3d",
+      "loc": 411,
       "symbols": [
         {
           "id": "s:app/src-tauri/crates/nputer-index/src/lib.rs#GRAPH_REL_PATH",
@@ -1832,7 +1842,7 @@
           "exported": true,
           "range": [
             56,
-            71
+            123
           ]
         },
         {
@@ -1951,8 +1961,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            73,
-            82
+            125,
+            137
           ]
         },
         {
@@ -1961,8 +1971,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            86,
-            228
+            141,
+            283
           ]
         },
         {
@@ -1991,8 +2001,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            233,
-            238
+            288,
+            293
           ]
         },
         {
@@ -2001,8 +2011,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            260,
-            356
+            315,
+            411
           ]
         },
         {
@@ -2021,8 +2031,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            247,
-            257
+            302,
+            312
           ]
         },
         {
@@ -2051,8 +2061,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            243,
-            245
+            298,
+            300
           ]
         }
       ]
@@ -3044,6 +3054,75 @@
           "range": [
             132,
             162
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src-tauri/crates/nputer-index/tests/budget.rs",
+      "path": "app/src-tauri/crates/nputer-index/tests/budget.rs",
+      "lang": "rust",
+      "hash": "blake3:747edd92cb3192f286552bc0436464532cd50d32281da9e504cf49ee94e4b0e3",
+      "loc": 219,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/budget.rs#a_graph_driven_over_the_budget_keeps_its_files_and_its_import_edges",
+          "name": "a_graph_driven_over_the_budget_keeps_its_files_and_its_import_edges",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            72,
+            164
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/budget.rs#common",
+          "name": "common",
+          "kind": "mod",
+          "exported": false,
+          "range": [
+            20,
+            20
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/budget.rs#crowded_tree",
+          "name": "crowded_tree",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            31,
+            54
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/budget.rs#opts",
+          "name": "opts",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            56,
+            62
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/budget.rs#the_budget_option_is_what_the_emitter_uses",
+          "name": "the_budget_option_is_what_the_emitter_uses",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            205,
+            219
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/crates/nputer-index/tests/budget.rs#under_an_impossible_budget_the_graph_is_still_emitted_and_still_flagged",
+          "name": "under_an_impossible_budget_the_graph_is_still_emitted_and_still_flagged",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            172,
+            198
           ]
         }
       ]
@@ -6942,8 +7021,8 @@
       "id": "f:app/src-tauri/src/docs_watch.rs",
       "path": "app/src-tauri/src/docs_watch.rs",
       "lang": "rust",
-      "hash": "blake3:bd37032135bb49b782a03023d43fd15bfd303f23fb0dae4fe4e4235ac7497ec0",
-      "loc": 3952,
+      "hash": "blake3:459c8ca5df63902e00c5f69e0cf5f128c71f868fd718157a815f9b5b40712eaa",
+      "loc": 4059,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/docs_watch.rs#ARCHITECTURE_NAME",
@@ -6961,8 +7040,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            120,
-            129
+            162,
+            171
           ]
         },
         {
@@ -6991,8 +7070,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            80,
-            83
+            122,
+            125
           ]
         },
         {
@@ -7001,8 +7080,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            133,
-            144
+            175,
+            186
           ]
         },
         {
@@ -7011,8 +7090,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            68,
-            68
+            110,
+            110
           ]
         },
         {
@@ -7021,8 +7100,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            74,
-            74
+            116,
+            116
           ]
         },
         {
@@ -7031,8 +7110,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            67,
-            67
+            109,
+            109
           ]
         },
         {
@@ -7041,8 +7120,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            66,
-            66
+            108,
+            108
           ]
         },
         {
@@ -7051,8 +7130,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            72,
-            72
+            114,
+            114
           ]
         },
         {
@@ -7061,8 +7140,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            287,
-            287
+            329,
+            329
           ]
         },
         {
@@ -7071,8 +7150,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            170,
-            223
+            212,
+            265
           ]
         },
         {
@@ -7081,8 +7160,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            421,
-            431
+            463,
+            473
           ]
         },
         {
@@ -7091,8 +7170,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            152,
-            164
+            194,
+            206
           ]
         },
         {
@@ -7101,8 +7180,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            76,
-            76
+            118,
+            118
           ]
         },
         {
@@ -7121,8 +7200,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            94,
-            106
+            136,
+            148
           ]
         },
         {
@@ -7131,8 +7210,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            110,
-            113
+            152,
+            155
           ]
         },
         {
@@ -7151,8 +7230,8 @@
           "kind": "enum",
           "exported": true,
           "range": [
-            226,
-            251
+            268,
+            293
           ]
         },
         {
@@ -7161,8 +7240,8 @@
           "kind": "struct",
           "exported": true,
           "range": [
-            261,
-            281
+            303,
+            323
           ]
         },
         {
@@ -7171,8 +7250,8 @@
           "kind": "struct",
           "exported": false,
           "range": [
-            1167,
-            1185
+            1209,
+            1227
           ]
         },
         {
@@ -7181,8 +7260,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            956,
-            1126
+            998,
+            1168
           ]
         },
         {
@@ -7191,8 +7270,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            822,
-            835
+            864,
+            877
           ]
         },
         {
@@ -7201,8 +7280,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1534,
-            1587
+            1576,
+            1629
           ]
         },
         {
@@ -7211,8 +7290,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1206,
-            1239
+            1248,
+            1281
           ]
         },
         {
@@ -7221,8 +7300,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            780,
-            782
+            822,
+            824
           ]
         },
         {
@@ -7231,8 +7310,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            762,
-            764
+            804,
+            806
           ]
         },
         {
@@ -7241,8 +7320,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            646,
-            756
+            688,
+            798
           ]
         },
         {
@@ -7251,8 +7330,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1189,
-            1199
+            1231,
+            1241
           ]
         },
         {
@@ -7261,8 +7340,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1263,
-            1333
+            1305,
+            1375
           ]
         },
         {
@@ -7271,8 +7350,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1339,
-            1386
+            1381,
+            1428
           ]
         },
         {
@@ -7281,8 +7360,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            597,
-            607
+            639,
+            649
           ]
         },
         {
@@ -7291,8 +7370,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            402,
-            404
+            444,
+            446
           ]
         },
         {
@@ -7301,8 +7380,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            289,
-            293
+            331,
+            335
           ]
         },
         {
@@ -7311,8 +7390,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            433,
-            506
+            475,
+            548
           ]
         },
         {
@@ -7321,8 +7400,8 @@
           "kind": "impl",
           "exported": false,
           "range": [
-            295,
-            362
+            337,
+            404
           ]
         },
         {
@@ -7331,8 +7410,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            616,
-            625
+            658,
+            667
           ]
         },
         {
@@ -7341,8 +7420,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            571,
-            579
+            613,
+            621
           ]
         },
         {
@@ -7351,8 +7430,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            390,
-            395
+            432,
+            437
           ]
         },
         {
@@ -7361,8 +7440,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            364,
-            366
+            406,
+            408
           ]
         },
         {
@@ -7371,8 +7450,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            368,
-            373
+            410,
+            415
           ]
         },
         {
@@ -7381,8 +7460,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            842,
-            910
+            884,
+            952
           ]
         },
         {
@@ -7391,8 +7470,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            585,
-            593
+            627,
+            635
           ]
         },
         {
@@ -7401,8 +7480,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            786,
-            802
+            828,
+            844
           ]
         },
         {
@@ -7411,8 +7490,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1458,
-            1516
+            1500,
+            1558
           ]
         },
         {
@@ -7421,8 +7500,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            376,
-            383
+            418,
+            425
           ]
         },
         {
@@ -7431,8 +7510,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            552,
-            554
+            594,
+            596
           ]
         },
         {
@@ -7441,8 +7520,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            1388,
-            1450
+            1430,
+            1492
           ]
         },
         {
@@ -7451,8 +7530,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1131,
-            1147
+            1173,
+            1189
           ]
         },
         {
@@ -7461,8 +7540,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            767,
-            777
+            809,
+            819
           ]
         },
         {
@@ -7471,8 +7550,8 @@
           "kind": "fn",
           "exported": true,
           "range": [
-            1155,
-            1164
+            1197,
+            1206
           ]
         },
         {
@@ -7481,8 +7560,8 @@
           "kind": "mod",
           "exported": false,
           "range": [
-            1590,
-            3952
+            1632,
+            4059
           ]
         },
         {
@@ -7491,8 +7570,8 @@
           "kind": "fn",
           "exported": false,
           "range": [
-            562,
-            564
+            604,
+            606
           ]
         }
       ]
@@ -9119,6 +9198,175 @@
           "range": [
             3610,
             3619
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f:app/src-tauri/tests/graph_budget_bench.rs",
+      "path": "app/src-tauri/tests/graph_budget_bench.rs",
+      "lang": "rust",
+      "hash": "blake3:4e90f3477214c8e4e2b1752684fde5bc4f87b2c317b7442d3d0f75778ac75d23",
+      "loc": 430,
+      "symbols": [
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#Scratch",
+          "name": "Scratch",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            78,
+            78
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#TRIALS",
+          "name": "TRIALS",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            66,
+            66
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#Unit",
+          "name": "Unit",
+          "kind": "struct",
+          "exported": false,
+          "range": [
+            128,
+            131
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#assemble",
+          "name": "assemble",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            193,
+            225
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#build_pool",
+          "name": "build_pool",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            139,
+            170
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#graph_delivery_cost_by_stage",
+          "name": "graph_delivery_cost_by_stage",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            282,
+            430
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#impl Drop for Scratch",
+          "name": "impl Drop for Scratch",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            95,
+            99
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#impl Scratch",
+          "name": "impl Scratch",
+          "kind": "impl",
+          "exported": false,
+          "range": [
+            80,
+            93
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#now_nanos",
+          "name": "now_nanos",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            101,
+            106
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#owner",
+          "name": "owner",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            175,
+            180
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#repo_root",
+          "name": "repo_root",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            69,
+            75
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#reprefix",
+          "name": "reprefix",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            182,
+            187
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#snapshot_of",
+          "name": "snapshot_of",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            249,
+            260
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#snapshot_raw",
+          "name": "snapshot_raw",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            265,
+            278
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#synthesize",
+          "name": "synthesize",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            232,
+            243
+          ]
+        },
+        {
+          "id": "s:app/src-tauri/tests/graph_budget_bench.rs#timed",
+          "name": "timed",
+          "kind": "fn",
+          "exported": false,
+          "range": [
+            112,
+            125
           ]
         }
       ]
@@ -16550,8 +16798,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:7175f52b580a30533843e54d439c92295ed3567d9d5e54e21523dd4ca5c39076",
-      "loc": 1974,
+      "hash": "blake3:60f7bee6ddc2a69ed60475d38f9c8cfaa06816fdd50486cb0d7cb5678b88072f",
+      "loc": 2044,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -19146,8 +19394,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:27c308c6f7575cf8710185bad185eaa32738d3ff644cf89d1bfcfe5916c386e8",
-      "loc": 695,
+      "hash": "blake3:1837388cdd57854f805c9fc9aa49f4fe76ea1627724fb5429a71449ca31be2b9",
+      "loc": 738,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
@@ -23678,6 +23926,32 @@
       ]
     },
     {
+      "from": "f:app/src-tauri/crates/nputer-index/tests/budget.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/lib.rs",
+      "kind": "import",
+      "symbols": [
+        "IndexOptions",
+        "index",
+        "stable_json"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/tests/budget.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/tests/common/mod.rs",
+      "kind": "import",
+      "symbols": [
+        "TempTree"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/crates/nputer-index/tests/budget.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "BTreeSet"
+      ]
+    },
+    {
       "from": "f:app/src-tauri/crates/nputer-index/tests/cli.rs",
       "to": "f:app/src-tauri/crates/nputer-index/tests/common/mod.rs",
       "kind": "import",
@@ -24459,6 +24733,39 @@
         "UNIX_EPOCH",
         "fs",
         "mpsc"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/tests/graph_budget_bench.rs",
+      "to": "f:app/src-tauri/crates/nputer-index/src/lib.rs",
+      "kind": "import",
+      "symbols": [
+        "Edge",
+        "FileEntry",
+        "Graph",
+        "stable_json"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/tests/graph_budget_bench.rs",
+      "to": "f:app/src-tauri/src/docs_watch.rs",
+      "kind": "import",
+      "symbols": [
+        "DocsFile",
+        "DocsSnapshot",
+        "collect_docs_tree"
+      ]
+    },
+    {
+      "from": "f:app/src-tauri/tests/graph_budget_bench.rs",
+      "to": "p:cargo:std",
+      "kind": "import",
+      "symbols": [
+        "BTreeSet",
+        "Instant",
+        "Path",
+        "PathBuf",
+        "fs"
       ]
     },
     {
@@ -37545,8 +37852,8 @@
     }
   ],
   "stats": {
-    "files": 183,
-    "symbols": 2101,
-    "edges": 2033
+    "files": 185,
+    "symbols": 2124,
+    "edges": 2039
   }
 }

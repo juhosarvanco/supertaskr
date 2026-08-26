@@ -53,6 +53,24 @@
   create and clear findings where before it could do neither. The
   committed graph pays 648 886 → 890 866 bytes for it, 89.09% of its
   own budget, which is now F-06's tightest live constraint
+  Since T-139 (2026-08-26, merge `aed77b6`) that budget carries a
+  MEASURED reason instead of a round number, and the sentence above is
+  stamped rather than deleted: the budget is `1_040_000` from that merge
+  on, so every percentage written before it is against the old
+  1 000 000. The three delivery stages were measured separately — read
+  3.4%, IPC 64.9%, parse 31.7%, 3.66 ms in all — and the hop that binds
+  binds for the CHANNEL'S SHAPE, because tauri splices the serialised
+  snapshot into a JS source string and evals it. Cost is linear to 14 MB
+  with no knee, so nothing about TIME argues for a limit near 1 MiB and
+  what sets the number is the collector's cliff alone. **The raise buys
+  about three ordinary merges, not a new regime**, and the number itself
+  is a judgement the measurement does not select — @human owns that
+  last step. **AND THE SIZE IS NO LONGER F-06's TIGHTEST CONSTRAINT**:
+  `T-140` (filed on main at `7f91ee4`, `blocked_by: [T-139]`, milestone
+  5) puts the graph's FLOOR at 802 bytes per file, so the map stops
+  working at about a thousand files — the budget bounds what the map
+  may know and the floor bounds what it can reach, and only the second
+  one keeps nputer from being pointed at a real codebase.
   Since T-033 (2026-08-25) the map finally tells the truth about ITSELF.
   F-06's whole premise is "drift as a first-class signal", and this
   repository's own map had been carrying **fifteen findings** — twelve of
@@ -1063,6 +1081,33 @@ finished. **`verifying` goes 1 → 0.** Derive it at your own ref: three of
 the sixteen the triage removed were `T-111`'s own `s1`, `s3` and `s4`,
 so this card's suggestion trail is smaller on main than the card's body
 describes, and the body is deliberately left saying what it said.
+**AND RE-DERIVED ON DISK AN EIGHTH TIME AT T-139'S CHECKPOINT, AND IT
+MOVES BY ONE UNDER A CARD THAT IS NOT THIS MERGE'S EITHER.** **99** cards
+on disk carry `milestone: 4` — F-01 10, F-02 43, F-03 12, F-04 8, F-06
+**26**; 10+43+12+8+26 = 99. The single mover is **`T-139`'s own card
+file**, which the architect created on main at the dispatch commit
+`13c736e` — OUTSIDE this merge's range, which is `00e133a..aed77b6` and
+contains no `feature:` or `milestone:` line at all. **`T-140` does NOT
+move this census**, and that is worth saying because it is the obvious
+guess: it is F-06 but `milestone: 5`. **THE F-04 PROGRESS LINE DOES NOT
+MOVE, AND THE REASON IS THE OLDEST ONE IN THIS LEDGER** — `T-139` is
+**F-06**, inherited backlog rather than F-04 slice content, so the
+fraction holds at **5 of 8** one merge after T-111 finally moved it.
+Seven of the eight refusals before T-111 had that same shape; this is
+the ninth ask and the seventh time that exact reason applies.
+**THE BOARD MOVES IN BOTH DIRECTIONS AND ONLY TWO OF THE SEVEN MOVES ARE
+THIS MERGE'S.** 290 flat task files → **281**: main added `T-139`'s card
+(`13c736e`) and `T-140`'s (`7f91ee4`), `b3da1a4` MOVED `T-033-s6` out to
+`rejected/` (which goes 27 → **28**), this merge adds **four** —
+`T-139-s1` … `s4` — and `1d66a50`, the eleventh triage's second half,
+landed BETWEEN this merge and its checkpoint and **deleted fourteen while
+parking ten**. 290 + 2 − 1 + 4 − 14 = 281. `suggested` goes 113 → **92**,
+`parked` 41 → **51**, and `planned` 35 → **34** (T-137 and T-138
+dispatched to `building`, T-140 arriving `planned`), so `building` goes
+1 → **3**. **`done` goes 100 → 101 and THAT one is this merge's** — T-139
+is the only card it stamps — and **`verifying` goes 1 → 0**. Derive it at
+your own ref and stamp the reading; this paragraph was written at 295 and
+corrected at 281 inside one checkpoint.
 Decomposition pass complete 2026-08-19
 (design/dispatch-technical-plan.md); D1 ruled by @human the same day.
 
