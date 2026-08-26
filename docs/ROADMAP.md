@@ -16,7 +16,24 @@
   a ratio of **319×**, which is why the adapter can afford to be read
   every time and each document in it cannot. **DERIVE IT AT YOUR OWN
   REF**: two of the four are rewritten by every checkpoint, so that
-  numerator moves under work no card does. **And the set still has no PRODUCT-shaped
+  numerator moves under work no card does.
+  **Since T-145 (2026-08-26) the corrected set REACHES NEW PROJECTS.**
+  T-138 fixed this repository's own adapter and knowingly left the
+  TEMPLATE — `method/adapters/{CLAUDE,AGENTS}.md`, what every new nputer
+  project copies to its root — still naming only STATE, ARCHITECTURE and
+  CONVENTIONS. **So the method went on shipping the exact omission that
+  had just cost this project a working day.** The template now names
+  `docs/ROADMAP.md`, says what each of the four answers in wording taken
+  from `orchestrator.md` rather than invented, and carries the
+  check-whether-it-already-exists instruction as a MARKED PLACEHOLDER —
+  a template shipping a path that does not exist in the new project is
+  worse than one shipping nothing. **It is still pinned by nothing.**
+  T-145's own fence could not reach the file that would pin it, so the
+  guard is filed as `T-145-s1`, and the drill measured what that costs:
+  with `docs/ROADMAP.md` removed from the template again, `cargo test`
+  comes back **exit 0 with 18 green result lines**. The repository goes
+  fully green over the defect this card fixed.
+  **And the set still has no PRODUCT-shaped
   entry**: STATE is what is happening now, CONVENTIONS is how to work,
   ARCHITECTURE is which components exist, and not one of them says what
   the app DOES for a person using it. @human decided the answer is a

@@ -761,36 +761,41 @@ all.**
 
 ## In progress / broken right now
 
-**TWO APPROVED CARDS ARE BLOCKED ON A PERMISSION, NOT ON ANY DEFECT.**
-`git merge` into main is refused by the permission classifier — it
-denied `T-145`'s executor, then denied the architect at the same command.
-Ordinary commits to main are NOT blocked and have been landing all
-evening; the block is on `merge` specifically. **No workaround was
-attempted, and none should be**: `commit-tree`/`update-ref` would bypass
-the intent, and `update-ref` is a standing prohibition here.
+**`T-145` IS MERGED. THE MERGE BLOCK WAS REAL AND @human CLEARED IT BY
+RUNNING THE MERGE THEMSELVES.**
 
-- **`T-145` — built, `status: done`, S-tier self-integrating, lane
-  `ad24361`.** Merge message prepared at `~/Projects/T-145-merge-msg.txt`
-  with refs re-derived at the current tip. One command:
-  `git merge --no-ff task/T-145-lane -F ~/Projects/T-145-merge-msg.txt`
-- **`T-141` — APPROVED at `b1667a6`.** Verifier ran a sweep the lane did
-  not: all **949 reachable commits**, 879 graph-bearing, 77 with a live
-  D2, **all 77 inside the same three windows — no fourth instance on any
-  branch.** Needs an integrator.
-- **`T-137` — APPROVED at `d812de5`.** Verifier reproduced R1 by driving
-  the product's own `readDispatchOrder`: `startable` **23 → 0**,
-  `unfenceable` **0 → 23**, and "disjoint from every live lane" now
-  appears **0 times across all 302 rulings**. 11 of 12 arms red. Needs an
-  integrator.
+`git merge` into main was refused by the permission classifier — it
+denied `T-145`'s executor, then denied the architect at the same command,
+while ordinary commits to main kept landing all evening. **No workaround
+was attempted and none should be**; `commit-tree`/`update-ref` would
+bypass the intent and `update-ref` is prohibited here. The executor's own
+sentence for why it stopped is the one to keep: **a coordinator's
+authorization is not the permission system's consent.**
 
-**AND THE THREE ARE NOW ORDERED BY ONE ANOTHER.** `T-137-s11` and main's
-`T-143` are **the same finding filed twice by two hands that could not
-see each other** — T-143 was corrected on main at `80bde23`, after
-T-137's tip. **That is T-137's own subject happening to T-137.** Merge
-them at the integrator's seat rather than carrying both.
+**Merge `6a96f51`**, parents `ecdc942` and `ad24361` only, `--no-ff`.
+Range `ecdc942..6a96f51` = **6 paths**: `method/adapters/CLAUDE.md`,
+`method/adapters/AGENTS.md`, and four `T-145*` cards. Nothing outside the
+fence. Both templates verified identical below line 1; the read-first
+sentence now names `docs/ROADMAP.md`.
 
-Still owed after each merge: the suite in the integration checkout, the
-checkpoint as a SEPARATE commit, `git worktree remove`, `prune`.
+**Suites in the integration checkout at the merge**, exits read unpiped:
+parser **290/290** + `tsc` 0 · app build 0 + **1013/1013** · e2e
+**194/194** (port 14979, `lsof`-probed free; Playwright, so its summary
+line is `194 passed`, NOT a vitest `Tests` line — a grep for `Tests`
+returns nothing and looks like a clean run, `T-142`'s exact shape) ·
+cargo **518/0/4** over 18 result lines · `lint:docs` 0 · `lint:tokens` 0
+(TOKEN 139 / CONTROL 779) · e2e typecheck 0.
+
+**GRAPH REGEN asked, never predicted: CURRENT**, `997202 of 1040000
+bytes (95.9%)`, 185 files, 2124 symbols, 2039 edges — not owed, 0 of 6
+paths. **Cargo WAS owed** even though the range holds no `.rs`, because
+`agent::kit::tests::every_compiled_entry_matches_its_method_file_byte_for_byte`
+compares kit entries against their method files byte for byte; it passed.
+
+**STILL AWAITING AN INTEGRATOR, both APPROVED, neither merged:**
+`T-141` at **`b1667a6`** and `T-137` at **`d812de5`**. Each still owes a
+suite run in the integration checkout, a checkpoint as a SEPARATE commit,
+`git worktree remove` and `prune`.
 
 **CUTTING A NEW LANE REDS EVERY OLDER LIVE LANE, AND THE ARCHITECT DID
 IT TONIGHT.** `tools/e2e/tests/brief.spec.ts:706` on main iterates the
