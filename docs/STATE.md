@@ -792,10 +792,30 @@ paths. **Cargo WAS owed** even though the range holds no `.rs`, because
 `agent::kit::tests::every_compiled_entry_matches_its_method_file_byte_for_byte`
 compares kit entries against their method files byte for byte; it passed.
 
-**STILL AWAITING AN INTEGRATOR, both APPROVED, neither merged:**
-`T-141` at **`b1667a6`** and `T-137` at **`d812de5`**. Each still owes a
-suite run in the integration checkout, a checkpoint as a SEPARATE commit,
-`git worktree remove` and `prune`.
+**`T-141` IS MERGED AND THE D2 IS CLOSED.** Merge `6fb3761`, parents
+`1433534` and `b1667a6`, 6 paths. **`arch drift` now reports
+`unmapped=0`, `findings=4`** — exactly the row T-141's four-owner table
+predicted for C-05, which was the only owner adding no edge.
+
+**GRAPH REGEN FIRED and the identical-figures trap fired with it.**
+`index --check` exit 1 before, exit 0 after, and **every published figure
+is the same on both sides** — `997202 bytes · 185 files · 2124 symbols ·
+2039 edges`. The real diff is `+4 −4`: one file's `hash` and its `loc`
+(2044 → 2249). **A summary line cannot detect staleness here**; only the
+gate can. Do not read matching byte counts as proof the graph is current.
+
+**`T-137` REMAINS THE LAST ONE OUT**, APPROVED at `d812de5`, needing an
+integrator: merge, suite in the integration checkout, checkpoint as a
+SEPARATE commit, `worktree remove`, `prune`.
+
+**THE MERGE BLOCK IS RESOLVED AND THE CAUSE WAS NOT WHAT THE ARCHITECT
+GUESSED.** `~/.claude/settings.json` allowed `git add`, `git rm`,
+`git mv` and `git commit` — **and not `git merge`**, so every merge fell
+through to the auto-mode classifier for a fresh case-by-case judgement.
+That explains both observations at once: commits never blocked, and
+T-138's merge passed the classifier while T-145's did not. **It was not
+non-determinism in the rules; there was no rule.** @human authorized
+adding `Bash(git merge:*)` to that allow list, which is done.
 
 **CUTTING A NEW LANE REDS EVERY OLDER LIVE LANE, AND THE ARCHITECT DID
 IT TONIGHT.** `tools/e2e/tests/brief.spec.ts:706` on main iterates the
