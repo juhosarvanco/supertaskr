@@ -391,6 +391,26 @@ still imports both the parser and `verdicts.ts`. `arch` moves on exactly
 two rows (the graph header and C-06's file count); `edges=37`,
 `findings=4`, `drift_components=4` are unchanged. Routed as `T-137-s1`.
 
+### The nine routed findings, and which fence each needs
+
+| id | fence it needs | what it is |
+|---|---|---|
+| `T-137-s1` | `app-shell` | the three assertions this card's merge regen moves, measured |
+| `T-137-s2` | `crate-index` | crossing the graph budget makes the byte count go DOWN |
+| `T-137-s3` | `docs/architecture/graph.json` | the graph was already stale at this lane's base |
+| `T-137-s4` | `app-board`, `lib-parser` | one ORDER for the board and the terminal (`T-111-s5` option a) |
+| `T-137-s5` | `app-board` | the board CAN import `fence.ts` — in the card that opens its vocabulary |
+| `T-137-s6` | `app-shell`, `lib-parser` | the verdict classifier should follow the schedule |
+| `T-137-s7` | `tools/e2e` | the E2E package loads the parser by path because it declares nothing |
+| `T-137-s8` | `tools/e2e` | the DOCS GATE speaks for a parser it does not run |
+| `T-137-s9` | `tools/e2e` | a `brief.spec` body cannot be green in any older lane |
+
+**Three of the nine are inside this card's own fence (`s7`, `s8`, `s9`)
+and none of the three was taken.** They are other cards' machinery and
+other cards' pins; a suggestion never expands this role's scope, and
+`s9` in particular would mean rewriting an assertion whose card this
+session has not read.
+
 ### WHERE THIS CARD'S BRIEF AND THIS CARD ITSELF WERE WRONG
 
 1. **The brief said `T-111` measured "113 of 10 731 pairs".** At this ref
