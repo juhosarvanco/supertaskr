@@ -309,15 +309,95 @@ describe('ADAPTATION IS BY CONSTRUCTION, NOT A FEATURE', () => {
   });
 });
 
-describe('a lane whose id names no card is REPORTED, never dropped', () => {
+describe('a lane whose id names no card RULES on every card, and is never merely reported', () => {
+  const board = [ROADMAP, card('T-001', 'A', { touches: ['docs/CONVENTIONS.md'] })];
+
   it('because a fence that cannot be computed is not a fence that is free', () => {
-    // KILLED BY: filtering such lanes out silently. A lapsed or unstamped
-    // dispatch is the shape `lane-protocol.md` rule 7 rules the WORKTREE
-    // authoritative over the board's `status:` for, and silence there is
-    // how a collision gets through.
-    const model = parseProjectFromFiles([ROADMAP, card('T-001', 'A')]);
-    const order = readDispatchOrder(model, [lane('T-777')]);
+    // KILLED BY: `if (other === undefined) continue` in
+    // `readDispatchOrder` — dropping such a lane from the comparison, so
+    // the card falls through the `holds.length === 0` branch and comes
+    // back `startable` with the sentence "disjoint from every live lane"
+    // having never been compared against it. THAT MUTANT IS WHAT THIS
+    // MODULE SHIPPED UNTIL `62a4364`, and it is the ordinary case rather
+    // than an exotic one: the lane list is machine-wide and the board is
+    // per-checkout, so the two disagree the moment a lane is newer than
+    // the tree reading it. Measured live at that ref with `T-141` up: 15
+    // of 23 `startable` answers provably overlapped a live lane.
+    //
+    // THE TITLE OF THIS BODY NAMES THE RULING AND THE BODY USED TO ASSERT
+    // ONLY `lanesWithNoCard` — the REPORTING CHANNEL. The verifier's
+    // producer arm (a card-less lane yields an `unusable` hold) left 516
+    // bodies green and killed nothing. The ruling is asserted FIRST here,
+    // and the channel last, in that order on purpose.
+    const order = readDispatchOrder(parseProjectFromFiles(board), [lane('T-777')]);
+    expect(order.startable.map((r) => r.id)).toEqual([]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual(['T-001']);
+    const ruled = order.unfenceable[0];
+    expect(ruled?.state).toBe('unfenceable');
+    expect(ruled?.holds.map((h) => h.verdict)).toEqual(['unusable']);
+    expect(ruled?.holds.map((h) => h.cardMissing)).toEqual([true]);
+    expect(ruled?.reason).toContain('refs/heads/task/T-777-lane');
+    expect(ruled?.reason).toContain('NOT IN THIS CHECKOUT');
+    expect(ruled?.reason).not.toContain('disjoint from every live lane');
     expect(order.lanesWithNoCard).toEqual(['T-777']);
     expect(order.lanes.map((l) => l.taskId)).toEqual(['T-777']);
+  });
+
+  it('THE POSITIVE CONTROL: the same lane, its card present and disjoint, IS startable', () => {
+    // Without this, "nothing is ever startable beside a lane" would pass
+    // the body above just as well. The two boards differ in EXACTLY ONE
+    // FILE — the lane's own card — and the lane list is character
+    // identical, so what moves the answer is the card's presence and
+    // nothing else.
+    const withCard = parseProjectFromFiles([
+      ...board,
+      card('T-777', 'Holder', { status: 'building', touches: ['method/'] }),
+    ]);
+    const order = readDispatchOrder(withCard, [lane('T-777')]);
+    expect(order.lanesWithNoCard).toEqual([]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual([]);
+    expect(order.startable.map((r) => r.id)).toEqual(['T-001']);
+    expect(order.startable[0]?.reason).toContain('disjoint from every live lane');
+  });
+
+  it('a PROVED overlap still outranks it — the lattice is `fence.ts`\'s and is not re-ordered here', () => {
+    // KILLED BY: letting a card-less lane force `unfenceable` over a
+    // proved collision. `compareFences`'s own doc rules it: "A proved
+    // overlap outranks an unusable token, because an unresolved token can
+    // only add reserved paths and never remove one." T-001 is provably
+    // held by T-002 AND uncomparable against T-777; the honest word is
+    // the one that names a path a human can go and look at — and the
+    // unreadable lane is still SAID, so an override is made knowing the
+    // named overlap may not be the only one.
+    const model = parseProjectFromFiles([
+      ...board,
+      card('T-002', 'Holder', { status: 'building', touches: ['docs/CONVENTIONS.md'] }),
+    ]);
+    const order = readDispatchOrder(model, [lane('T-002'), lane('T-777')]);
+    expect(order.unfenceable.map((r) => r.id)).toEqual([]);
+    expect(order.fenced.map((r) => r.id)).toEqual(['T-001']);
+    expect(order.fenced[0]?.holds.map((h) => h.lane.taskId)).toEqual(['T-002', 'T-777']);
+    expect(order.fenced[0]?.reason).toContain('docs/CONVENTIONS.md');
+    expect(order.fenced[0]?.reason).toContain('could not be compared at all');
+  });
+
+  it('and the REPORTED list is deduped by task id, because two worktrees can hold one branch', () => {
+    // KILLED BY: mapping the lane list straight through. Measured on this
+    // repository at the verdict's ref: `lanesWithNoCard` came back
+    // ['T-141','T-141'] and the report printed the same sentence twice,
+    // because two worktrees sat on that one branch.
+    // THIS BODY IS ABOUT THE CHANNEL AND SAYS SO — the second assertion
+    // is the reason that is honest: the HOLDS are NOT deduped, because
+    // both worktrees are real and a reason that named one would be
+    // naming half of what is live.
+    const order = readDispatchOrder(parseProjectFromFiles(board), [
+      { ...lane('T-777'), worktree: '/w/a' },
+      { ...lane('T-777'), worktree: '/w/b' },
+    ]);
+    expect(order.lanesWithNoCard).toEqual(['T-777']);
+    expect(order.all.find((r) => r.id === 'T-001')?.holds.map((h) => h.lane.worktree)).toEqual([
+      '/w/a',
+      '/w/b',
+    ]);
   });
 });

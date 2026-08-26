@@ -37,6 +37,19 @@ import type { ComponentRecord, ProjectParseResult, TaskRecord } from './types.js
  * a detached worktree at a lane-shaped path is not a lane), because the
  * list is a read of a mutable environment and must carry a time and a
  * host rather than a commit. The terminal consumer supplies it.
+ *
+ * AND A LANE THIS CHECKOUT CANNOT READ A CARD FOR HOLDS AN UNKNOWN
+ * FENCE, NEVER AN EMPTY ONE. The lane list is MACHINE-WIDE and the board
+ * is per-checkout, so the two disagree the moment a lane is newer than
+ * the tree reading it — which is every moment of parallel work, not an
+ * exotic state. Dropping such a lane from the comparison makes a card
+ * come back "disjoint from every live lane" having never been compared
+ * against it: a false green, in the one direction a fence exists to
+ * prevent. Measured on this board at `62a4364` with `T-141` live and its
+ * card only on main: 15 of 23 `startable` answers overlapped a live lane.
+ * The rule is `fence.ts`'s own and this module states it twice below —
+ * an input that cannot be read means EVERY comparison is unresolvable
+ * RATHER THAN THAT EVERY FENCE IS FREE.
  */
 
 /** One live lane: a worktree ON A TASK BRANCH. */
@@ -53,7 +66,8 @@ export interface LaneRecord {
 
 /**
  * What one lane does to one candidate. `verdict` is `compareFences`'s own
- * word, never a re-derivation of it.
+ * word, never a re-derivation of it — EXCEPT where there was no second
+ * fence to hand it, which is what `cardMissing` records.
  */
 export interface LaneHold {
   lane: LaneRecord;
@@ -61,6 +75,19 @@ export interface LaneHold {
   witnesses: readonly FenceWitness[];
   /** Raw tokens from either side that could not be resolved. */
   unusable: readonly string[];
+  /**
+   * TRUE when THIS CHECKOUT holds no card for the lane's task id, so the
+   * lane's fence could not be expanded at all and `compareFences` was
+   * never called. The verdict is `unusable` for that reason rather than
+   * for a token's, and the two are kept apart because the REMEDY differs:
+   * an unresolved token is spelled better on a card, and a missing card
+   * is fetched.
+   *
+   * A `cardMissing` hold carries no witnesses and no `unusable` tokens —
+   * there is nothing to name — which is exactly why it must be a HOLD and
+   * not an omission. See `readDispatchOrder`.
+   */
+  cardMissing: boolean;
 }
 
 /**
@@ -69,11 +96,16 @@ export interface LaneHold {
  * - `underway`     — somebody is on it (status is not `planned`);
  * - `blocked`      — an unmet blocker is not in flight;
  * - `waits`        — every unmet blocker IS in flight, so the wait ends;
- * - `startable`    — `ready`, and disjoint from every live lane;
+ * - `startable`    — `ready`, and PROVED disjoint from every live lane —
+ *                    which means every live lane was actually compared,
+ *                    never that the uncomparable ones were skipped;
  * - `fenced`       — `ready`, and a live lane PROVABLY shares a path;
- * - `unfenceable`  — `ready`, no overlap proved, and a token on one side
- *                    could not be resolved, so no overlap could be ruled
- *                    out either. NOT `startable`, and not `fenced`;
+ * - `unfenceable`  — `ready`, no overlap proved, and no overlap could be
+ *                    ruled out either. TWO causes, kept apart in the
+ *                    sentence because their remedies differ: a token on
+ *                    one side could not be resolved, or a LIVE LANE'S
+ *                    CARD IS NOT IN THIS CHECKOUT so its fence could not
+ *                    be expanded at all. NOT `startable`, not `fenced`;
  * - `own-lane`     — `ready` and the only lane holding it is its OWN.
  *                    A card cannot be fenced out by the lane built to
  *                    build it, and reporting that as `fenced` is how a
@@ -124,10 +156,18 @@ export interface DispatchOrder {
   /** The lanes this answer was computed against, as handed in. */
   lanes: readonly LaneRecord[];
   /**
-   * Lanes whose task id names no card on the board — an UNSTAMPED or
-   * lapsed dispatch. Reported rather than dropped: a lane with no card
-   * still holds no fence this module can compute, and silence there is
-   * how a collision gets through.
+   * Task ids of lanes that name no card on the board — an UNSTAMPED or
+   * lapsed dispatch, or simply a lane cut after this checkout's base.
+   *
+   * THIS IS THE REPORTING CHANNEL AND IT IS NOT THE RULING. Each such
+   * lane ALSO puts a `cardMissing` hold on every ready card, which is
+   * what takes them out of `startable`; this list exists so a reader can
+   * name the lane to fetch. A field that was only reported and never
+   * acted on is exactly what `62a4364` rejected this module for.
+   *
+   * DEDUPED BY TASK ID, because two worktrees can sit on one branch and
+   * the reader wants the id once. The HOLDS are per worktree and are not
+   * deduped: both worktrees are real.
    */
   lanesWithNoCard: readonly string[];
   /** The schedule the ruling was made over. */
@@ -279,7 +319,9 @@ export function readDispatchOrder(
   const components = model.components ?? [];
   const fences = fenceIndex(model.tasks, components, options.knownPaths);
   const laneList = [...lanes].sort((x, y) => byTaskId(x.taskId, y.taskId));
-  const lanesWithNoCard = laneList.filter((l) => !fences.has(l.taskId)).map((l) => l.taskId);
+  const lanesWithNoCard = [
+    ...new Set(laneList.filter((l) => !fences.has(l.taskId)).map((l) => l.taskId)),
+  ];
 
   const rank = new Map<string, number>();
   if (options.order !== undefined) options.order.forEach((id, i) => rank.set(id, i));
@@ -290,7 +332,27 @@ export function readDispatchOrder(
     const holds: LaneHold[] = [];
     for (const lane of laneList) {
       const other = fences.get(lane.taskId);
-      if (other === undefined) continue;
+      if (other === undefined) {
+        // A LANE WHOSE CARD IS NOT IN THIS CHECKOUT HOLDS AN UNKNOWN
+        // FENCE, AND AN UNKNOWN FENCE IS NOT AN EMPTY ONE. There is no
+        // second fence to compare, so no overlap can be PROVED and none
+        // can be RULED OUT — which is `unusable`, by the same lattice
+        // `compareFences` applies to a token it cannot read, and by the
+        // same argument the `components ?? []` comment above makes about
+        // an absent registry. `continue` here would drop the lane from
+        // the comparison entirely and let the card out through the
+        // `holds.length === 0` branch wearing the sentence "disjoint
+        // from every live lane" — the exact false green this module
+        // exists to remove, and the reason `62a4364` rejected it.
+        holds.push({
+          lane,
+          verdict: 'unusable',
+          witnesses: [],
+          unusable: [],
+          cardMissing: true,
+        });
+        continue;
+      }
       const cmp = compareFences(fence, other);
       if (cmp.verdict === 'disjoint') continue;
       holds.push({
@@ -298,6 +360,7 @@ export function readDispatchOrder(
         verdict: cmp.verdict,
         witnesses: cmp.witnesses,
         unusable: cmp.unusable,
+        cardMissing: false,
       });
     }
     rulings.push(rule(card, fence, holds, fences));
@@ -365,6 +428,13 @@ function rule(
   }
 
   // schedule === "ready": the fence term is the whole remaining question.
+  //
+  // `holds.length === 0` NOW MEANS EVERY LIVE LANE WAS COMPARED AND EVERY
+  // COMPARISON CAME BACK `disjoint`, which is what makes the sentence
+  // below true rather than merely confident: a lane this checkout could
+  // not expand a fence for arrives as a `cardMissing` hold and lands the
+  // card in `unfenceable`, so `startable` is unreachable while one is
+  // live.
   if (holds.length === 0) {
     const spelled =
       fence.paths.length === 0 ? 'it reserves nothing' : `its fence is ${spellPaths(fence.paths)}`;
@@ -404,21 +474,48 @@ function rule(
           : '';
       return `${laneName(hold.lane)} holds ${spellPaths(paths)}.${coarse}`;
     });
+    // A PROVED OVERLAP OUTRANKS AN UNREADABLE LANE — `compareFences`'s own
+    // lattice, not re-ordered here — but the unreadable lane is still said
+    // out loud, because a human weighing a COARSE-fence override needs to
+    // know the named overlap may not be the only one.
+    const blind = holds.filter((h) => h.cardMissing);
+    const residual =
+      blind.length === 0
+        ? ''
+        : ` And ${blind.map((h) => laneName(h.lane)).join(', ')} could not be compared at all — ` +
+          'no card for it in this checkout — so this overlap may not be the only one.';
     return {
       ...base,
       state: 'fenced',
-      reason: `${card.id} has no unmet blocker and cannot start: ${sentences.join(' ')}`,
+      reason: `${card.id} has no unmet blocker and cannot start: ${sentences.join(' ')}${residual}`,
     };
   }
 
-  const tokens = [...new Set(holds.flatMap((h) => [...h.unusable]))].sort();
-  const lanesHolding = holds.map((h) => laneName(h.lane)).join(', ');
+  // TWO CAUSES OF "I DO NOT KNOW", SPELLED APART BECAUSE THEIR REMEDIES
+  // DIFFER: a token nobody can resolve is spelled better on a card; a
+  // lane whose card is not here is fetched.
+  const missing = holds.filter((h) => h.cardMissing);
+  const unresolved = holds.filter((h) => !h.cardMissing);
+  const tokens = [...new Set(unresolved.flatMap((h) => [...h.unusable]))].sort();
+  const clauses: string[] = [];
+  if (missing.length > 0) {
+    clauses.push(
+      `${missing.map((h) => laneName(h.lane)).join(', ')} is live and its card is NOT IN THIS ` +
+        'CHECKOUT, so its fence could not be expanded at all and nothing can be ruled disjoint ' +
+        'from it',
+    );
+  }
+  if (tokens.length > 0) {
+    clauses.push(
+      `against ${unresolved.map((h) => laneName(h.lane)).join(', ')}, ${tokens.join(', ')} ` +
+        'resolved to neither a slug nor a path',
+    );
+  }
   return {
     ...base,
     state: 'unfenceable',
     reason:
-      `${card.id} has no unmet blocker, and against ${lanesHolding} no overlap was PROVED and ` +
-      `none could be ruled out: ${tokens.join(', ')} resolved to neither a slug nor a path. ` +
-      'An unresolved token is not "disjoint from everything".',
+      `${card.id} has no unmet blocker, and no overlap was PROVED and none could be ruled out: ` +
+      `${clauses.join('; ')}. A fence that cannot be COMPUTED is not a fence that is free.`,
   };
 }

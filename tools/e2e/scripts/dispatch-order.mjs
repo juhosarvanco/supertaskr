@@ -259,7 +259,10 @@ export function dispatchReport(ctx) {
   for (const id of o.lanesWithNoCard) {
     recs.push(
       value(
-        `${id} IS A LANE WITH NO CARD — an unstamped or lapsed dispatch; its fence cannot be computed`,
+        `${id} IS A LANE WITH NO CARD IN THIS CHECKOUT — an unstamped or lapsed dispatch, or a ` +
+          `lane cut after this tree's base. Its fence cannot be computed, so NOTHING can be ruled ` +
+          `disjoint from it and every ready card is UNFENCEABLE below until ${id}'s card is here ` +
+          `(it is on the integration branch if the lane was cut from it)`,
         live(laneVia),
       ),
     );
@@ -267,9 +270,25 @@ export function dispatchReport(ctx) {
 
   recs.push(
     blank(),
-    note("STARTABLE NOW — ready, and disjoint from every live lane. In dispatch order."),
+    note("STARTABLE NOW — ready, and PROVED disjoint from every live lane. In dispatch order."),
   );
-  if (o.startable.length === 0) recs.push(value("nothing is startable", tree(boardVia)));
+  // THE EMPTY LINE HAS TO SAY WHICH EMPTY IT IS. "Nothing is startable"
+  // because every ready card is held is a board fact; "nothing is
+  // startable" because a lane could not be read at all is a LIVE fact
+  // about this checkout, with a different remedy — so it is stamped LIVE
+  // and it names the lane.
+  if (o.startable.length === 0) {
+    recs.push(
+      o.lanesWithNoCard.length === 0
+        ? value("nothing is startable", tree(boardVia))
+        : value(
+            `nothing is startable, and the reason is NOT the board: ${o.lanesWithNoCard.join(", ")} ` +
+              "has no card in this checkout, so no fence could be proved disjoint from it — see " +
+              "UNFENCEABLE below",
+            live(laneVia),
+          ),
+    );
+  }
   for (const r of o.startable) {
     recs.push(
       value(`${r.id} [${roadmapOf(r.card)}] ${r.card.title}`, tree(`${r.card.file} frontmatter`)),

@@ -246,7 +246,61 @@ test("the STARTABLE set is exactly the ready set minus what the live lanes hold"
   const readyIds = new Set(o.schedule.readyNow);
   const ruled = [...o.startable, ...o.fenced, ...o.unfenceable];
   expect(ruled.map((r) => r.id).sort()).toEqual([...readyIds].sort());
+  // A CARDINALITY FLOOR, so this body cannot go vacuous the day the live
+  // lane list empties one of the three sets: every per-set loop below is
+  // satisfied by an EMPTY set, and an assertion set with no floor deletes
+  // its own failure (CONVENTIONS' shape five).
+  expect(ruled.length).toBeGreaterThan(0);
+  for (const r of ruled) expect(r.reason, r.id).not.toBe("");
   for (const r of o.startable) expect(r.holds).toEqual([]);
   for (const r of o.fenced) expect(r.holds.length).toBeGreaterThan(0);
-  for (const r of o.startable) expect(r.reason).not.toBe("");
+  for (const r of o.unfenceable) expect(r.holds.length).toBeGreaterThan(0);
+});
+
+test("a lane with NO CARD IN THIS CHECKOUT empties STARTABLE — asserted at the CALL SITE", async () => {
+  // KILLED BY: `if (other === undefined) continue` in the parser's
+  // `readDispatchOrder` — the mutant that ruled 15 of 23 live cards
+  // "disjoint from every live lane" without ever comparing them against
+  // `T-141`.
+  //
+  // THE PARSER'S OWN BODY IS NOT ENOUGH, AND THAT IS WHY THIS ONE EXISTS.
+  // This lane has now been caught TWICE with a pin on the helper while
+  // the call site went unpinned — arm A17 once, and the ruling itself at
+  // `62a4364` — so the safety-relevant choice is driven here through the
+  // command's whole path: real board, real oracle, rendered report.
+  // `T-901` in the fixture above is a branch whose card is on nobody's
+  // disk, which is the ORDINARY state of every lane newer than the
+  // checkout reading it.
+  const ctx = await dispatchContext({ porcelain: PORCELAIN_FIXTURE });
+  expect(ctx.order.lanesWithNoCard).toEqual(["T-901"]);
+  expect(ctx.order.startable).toEqual([]);
+  expect(ctx.order.unfenceable.length).toBeGreaterThan(0);
+  for (const r of ctx.order.unfenceable) {
+    expect(r.holds.some((h: { cardMissing: boolean }) => h.cardMissing)).toBe(true);
+  }
+  const rendered = render(dispatchReport(ctx));
+  // The false-green SENTENCE, hunted where a card's ruling renders — the
+  // three-space indent — and not in the section header, which says
+  // "PROVED disjoint" as a heading and is not a claim about any card.
+  const reasons = (text: string) => text.split("\n").filter((l) => l.startsWith("   "));
+  expect(reasons(rendered).filter((l) => l.includes("disjoint from every live lane"))).toEqual([]);
+  expect(rendered).toContain("T-901 IS A LANE WITH NO CARD IN THIS CHECKOUT");
+  expect(rendered).toContain("nothing is startable, and the reason is NOT the board");
+  expect(rendered).toContain("UNFENCEABLE");
+
+  // THE POSITIVE CONTROL, without which a command that never ruled
+  // ANYTHING startable would pass every assertion above: the same board,
+  // the same code path, a porcelain with NO lane at all — and both the
+  // set and the sentence come back.
+  const free = await dispatchContext({
+    porcelain: ["worktree /Users/x/nputer", "HEAD " + "1".repeat(40), "branch refs/heads/main", ""].join(
+      "\n",
+    ),
+  });
+  expect(free.order.lanesWithNoCard).toEqual([]);
+  expect(free.order.startable.length).toBeGreaterThan(0);
+  expect(
+    reasons(render(dispatchReport(free))).filter((l) => l.includes("disjoint from every live lane"))
+      .length,
+  ).toBeGreaterThan(0);
 });
