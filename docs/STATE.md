@@ -761,6 +761,39 @@ all.**
 
 ## In progress / broken right now
 
+**TWO APPROVED CARDS ARE BLOCKED ON A PERMISSION, NOT ON ANY DEFECT.**
+`git merge` into main is refused by the permission classifier — it
+denied `T-145`'s executor, then denied the architect at the same command.
+Ordinary commits to main are NOT blocked and have been landing all
+evening; the block is on `merge` specifically. **No workaround was
+attempted, and none should be**: `commit-tree`/`update-ref` would bypass
+the intent, and `update-ref` is a standing prohibition here.
+
+- **`T-145` — built, `status: done`, S-tier self-integrating, lane
+  `ad24361`.** Merge message prepared at `~/Projects/T-145-merge-msg.txt`
+  with refs re-derived at the current tip. One command:
+  `git merge --no-ff task/T-145-lane -F ~/Projects/T-145-merge-msg.txt`
+- **`T-141` — APPROVED at `b1667a6`.** Verifier ran a sweep the lane did
+  not: all **949 reachable commits**, 879 graph-bearing, 77 with a live
+  D2, **all 77 inside the same three windows — no fourth instance on any
+  branch.** Needs an integrator.
+- **`T-137`** — rework in adversarial verification.
+
+Still owed after each merge: the suite in the integration checkout, the
+checkpoint as a SEPARATE commit, `git worktree remove`, `prune`.
+
+**CUTTING A NEW LANE REDS EVERY OLDER LIVE LANE, AND THE ARCHITECT DID
+IT TONIGHT.** `tools/e2e/tests/brief.spec.ts:706` on main iterates the
+LIVE LANE LIST and asserts each lane's card is present *in the checkout
+under test*. Cutting `T-145`'s lane at 22:14 therefore turned `T-141`'s
+verification red at **193/194** — its tree predates that card and always
+will. **This is `T-137-s9`'s class and the fix is sitting unmerged in
+`T-137`'s lane**, which partitions resolvable from unresolvable lanes.
+Until that merges: expect one inherited red per older lane, **verify it
+is this one before diagnosing anything**, and prefer not to cut a new
+lane while a verification is in flight.
+
+
 **NOTHING IS BROKEN. THE ONE EXIT-1 COMMAND ON MAIN IS DESIGNED. THE ONE
 `building` CARD WITHOUT A LANE IS OPEN ON PURPOSE. THE D2 IS THE MAP
 REPORTING A REAL GAP AND `T-141` IS THE LANE CLOSING IT.**
