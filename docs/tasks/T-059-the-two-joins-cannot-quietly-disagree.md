@@ -6,7 +6,7 @@ milestone: 4
 priority: 19
 size: M
 status: planned
-blocked_by: [T-033]
+blocked_by: []
 touches: [crate-index, app-shell]
 builder:
 verifier:

@@ -6,7 +6,7 @@ milestone: 4
 priority: 30
 size: M
 status: planned
-blocked_by: [T-057, T-058]
+blocked_by: []
 touches: [app-shell, tools/e2e]
 builder:
 verifier:

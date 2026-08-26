@@ -5,10 +5,10 @@ feature: F-06
 milestone: 4
 priority: 5
 size: M
-status: planned
-blocked_by: [T-132]
+status: building
+blocked_by: []
 touches: [lib-parser, method/lane-protocol.md]
-builder:
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:

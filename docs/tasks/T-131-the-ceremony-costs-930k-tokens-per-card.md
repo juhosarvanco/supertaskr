@@ -6,7 +6,7 @@ milestone: 4
 priority: 5
 size: M
 status: planned
-blocked_by: [T-104]
+blocked_by: []
 touches: [method/, docs/CONVENTIONS.md]
 builder:
 verifier:
