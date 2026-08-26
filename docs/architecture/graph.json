@@ -16598,8 +16598,8 @@
       "id": "f:app/test/architecture-dogfood.test.ts",
       "path": "app/test/architecture-dogfood.test.ts",
       "lang": "ts",
-      "hash": "blake3:06f3b2cfe49e420649c865d7e9599145448940d80ce9593100f2ac0a5e4546fa",
-      "loc": 2249,
+      "hash": "blake3:f212adca22a0cb8e12681fcd8b6e00157d8d0434cad72fbe6e6f1d3d18aae17a",
+      "loc": 2266,
       "symbols": [
         {
           "id": "s:app/test/architecture-dogfood.test.ts#LIB_PARSER",
@@ -19194,8 +19194,8 @@
       "id": "f:app/test/map-dogfood-render.test.tsx",
       "path": "app/test/map-dogfood-render.test.tsx",
       "lang": "ts",
-      "hash": "blake3:8a46b3603c26fa2f3e71b6e00f21c8cb930d00cfe47cc9fc7d845e6ae9b9d9b3",
-      "loc": 766,
+      "hash": "blake3:cad7e4ad930997810c5f8cbb348e9c69f8c58f903321fd3c1cecf7bbaffb3ea6",
+      "loc": 770,
       "symbols": [
         {
           "id": "s:app/test/map-dogfood-render.test.tsx#ROOT",
