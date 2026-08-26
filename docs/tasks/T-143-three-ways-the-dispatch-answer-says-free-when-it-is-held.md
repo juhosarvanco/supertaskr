@@ -1,6 +1,6 @@
 ---
 id: T-143
-title: Two mechanisms corrupt the dispatch answer toward FREE and a third only displays it that way — none of the three can err in the safe direction
+title: ONE mechanism corrupts the dispatch answer toward FREE and it lives in two implementations — the other two claims in this card did not survive being measured
 feature: F-06
 milestone: 4
 priority: 3
@@ -32,7 +32,8 @@ fence is free**"* — applies it to tokens, and violates it for lanes.
 `lanesWithNoCard` IS computed and reaches exactly one place: a field on
 the returned summary. **Reported, never acted on.**
 
-**2. Its dual — a card in `building` with no worktree.** The fence
+**2. REFUSED — see the correction below. Its dual — a card in
+`building` with no worktree.** The fence
 ledger is derived from lanes, and a lane is a worktree on a task branch.
 `T-135` is `building`, declares `touches: [crate-index,
 method/tasks/TASK-FORMAT.md]`, and has no worktree because its Half A
@@ -114,3 +115,56 @@ here is one. Prove each fix with a POSITIVE CONTROL: construct the held
 state, see the tool say HELD, then remove the hold and see it say FREE.
 **A fix that only ever prints HELD passes every test written from this
 card's text.**
+
+---
+
+# CORRECTION, 2026-08-26 — TWO OF THIS CARD'S THREE CLAIMS FAILED
+
+**Written by the architect who filed it, after both were measured by
+other hands. Recorded rather than quietly edited, because a card that
+overstates and then tidies itself is worse than one that overstates.**
+
+## Mechanism 2 is REFUSED
+
+T-137's rework was asked to judge it and did, on four of this
+repository's own sentences: criterion 2's "every live **lane**" read with
+criterion 3's live stamp; `executor.md` row 5, whose two examples are
+both the board **under**-reporting; `lane-protocol.md` rule 7 as this
+repo applies it — T-111's branch was kept and that checkpoint still says
+"there are zero lanes"; and `docs/STATE.md`'s own capitals, **"ONE CARD
+IS `status: building` WITH NO LANE, AND THAT IS ALSO ON PURPOSE."**
+`T-135-s4` already records that the stamp has no true value.
+
+**The distinction that settles it: R1 drops a PROVED live writer. The
+dual would INVENT one.** A hold conjured from a board stamp is not the
+same object as a hold erased despite a worktree, and only the second is
+a false green. **The board under-reports by construction and the lane
+list is authoritative — that is the design, not a defect.**
+
+One further correction to what this card originally implied:
+`method/tasks/TASK-FORMAT.md` is absent from the ledger **because T-135
+is not a lane**, not because the ledger cannot spell a path token. It
+can.
+
+## Mechanism 3 was already narrowed above
+
+The `--task` verdict is sound; only the `--state` display misleads.
+
+## What survives, and it is not small
+
+**Mechanism 1 is real, was measured, and lives in TWO implementations.**
+T-137's rework fixed `lanes.ts` and found the identical
+`if (card === undefined) continue` in `dispatch-brief.mjs`'s
+`fenceLedger`, filed as `T-137-s11` and deliberately left in place as
+another card's ground. **One defect, two copies — which is the
+`T-057` second-implementation shape, and it is a better finding than the
+three-mechanism story this card was filed on.**
+
+## The lesson this card is now also an instance of
+
+Filed with three claims on one night's evidence; **one survived.** The
+two that failed were the two the author reasoned to rather than
+measured — and mechanism 2 was reasoned to *by the architect and then
+handed to an executor as a suggestion*, which is how an unmeasured claim
+acquires the authority of a dispatch. `T-142` is the general shape and
+this is a second instance of it.
