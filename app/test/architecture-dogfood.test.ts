@@ -1159,10 +1159,15 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // component it exercises — which drains the D2 below. This was NOT in
     // T-033's rulings; they were made seven hours before T-110 merged,
     // when neither this file nor C-15's five source files existed.
+    // 3 -> 2 at the ELEVENTH TRIAGE (2026-08-26). T-126 deleted the shim
+    // at `0fa83da`; the glob outlived the file by nine merges, matching
+    // nothing while claiming a path that no longer existed. Removing it is
+    // the cleanup @human ordered when the triage surfaced it, and it moves
+    // NO file count — a glob matching nothing contributes nothing, which is
+    // exactly why nine merges did not notice.
     expect(project.components?.find((c) => c.id === "C-15")?.paths).toEqual([
       "app/src-tauri/src/dispatch/**",
       "app/src/lib/dispatch-store.ts",
-      "app/src-tauri/tests/dispatch_lanes.rs",
     ]);
     const c15 = derived.components.find((c) => c.id === "C-15");
     expect(c15?.kind).toBe("declared");

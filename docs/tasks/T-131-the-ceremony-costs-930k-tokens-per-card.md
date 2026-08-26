@@ -56,6 +56,29 @@ row, from the sources that row names."* **The contract exists and the
 architect violated it all night.** The remedy for a violated contract is a
 check, not more prose — which is why item 1's mechanism is a command.
 
+## @HUMAN'S RULING ON ITEM 5 — 2026-08-26: TWO AXES, AND THE HANDOVER IS AUTOMATIC
+
+**@human ruled that `size:` and blast radius are BOTH kept, because they
+answer different questions**, and supplied the transition rule the
+architect had missed:
+
+- **`size:` keeps meaning DURATION** — how long the work is. That is why
+  an L card earns a planning pass.
+- **BLAST RADIUS governs CHECKING** — whether a verifier is owed and
+  whether the integrator must be a third hand.
+
+**@human's observation is the part that resolves it**: *"in the beginning
+of development there is not much blast radius."* That is correct and it is
+not a defect in the metric — **a young codebase genuinely IS cheap to get
+wrong**, and the number reporting so is the number working. **Size carries
+the weight early; blast radius takes over on its own as the graph deepens,
+with no second ruling needed.**
+
+The architect had framed advisory-until-it-discriminates as a workaround
+for a rule that cannot yet sort. **It is not a workaround — it is the
+correct behaviour, and @human's framing is why.** `T-135` Half B is
+unblocked on this ruling.
+
 ## THE MEASUREMENT
 
 Subagent token totals, read from completion notices across **16 runs**

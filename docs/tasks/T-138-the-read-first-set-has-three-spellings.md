@@ -77,6 +77,49 @@ derived**: `tools/e2e/tests/` holds **23 spec files and 163 named
 behaviours**, each one a sentence about what the app does, kept true by
 running. **Nothing points any session at them.**
 
+## @HUMAN'S DECISIONS — 2026-08-26
+
+**DECIDED: the product-shaped entry is a GENERATED capabilities document,
+not a hand-written one.** `tools/e2e/tests/` holds **163 named behaviours
+across 23 spec files**, each a sentence about what the app does, **kept
+true by running**. A document generated from them cannot drift. A
+hand-maintained one would reproduce the exact failure this card exists to
+record — `docs/ROADMAP.md` already carried the sentence that would have
+saved a day, and it went unread because prose is something somebody has to
+keep true.
+
+**AND @HUMAN REFRAMED THE CARD'S CENTRAL QUESTION, CORRECTLY.** The
+architect wrote this card as *"what should the read-first set be"*. @human
+asked whether the set should differ by role — *"of course they need to
+differ, they are different roles"* — and that is the better question.
+
+**Measured, and it is a third disagreement the architect had not found**:
+`method/roles/executor.md` row 3 declares ONE read-first set for *"every
+session in this project"*, sourced from the root adapter — **while the
+role files already name different sets of their own.** So the project runs
+two competing models at once, which is this card's own subject one layer
+down.
+
+**AND THE PER-ROLE DIFFERENCE IS DELIBERATE IN AT LEAST ONE SEAT.** A
+verifier is kept blind to the executor's reasoning on purpose — that
+blindness is what `T-104`'s ruling SEVEN identifies as the property that
+makes a same-model verdict sharp. **A single universal list is therefore
+not merely inconvenient for that seat; it is wrong for it.**
+
+**THE EVIDENCE SAYS THE OTHER SEATS ARE NOT THE PROBLEM.** On 2026-08-25/26
+the pipeline produced **16 merges and 100 done cards**, with two
+rejections (`T-111`, `T-132`) that each caught a real defect and were each
+fixed and re-approved. **Executors, verifiers and integrators repeatedly
+caught the ARCHITECT's errors** — a fabricated citation, a stale figure
+carried into a brief, a wrong ignore-rule, a claim of novelty that was
+already written down. **The failing seat was the dispatching one, and its
+list is the one that omitted the product document.**
+
+So this card SHALL NOT speculatively re-cut the other three lists. It
+SHALL reconcile the ONE-list/PER-ROLE contradiction, fix the seat that
+demonstrably failed, and **change another seat's list only where there is
+evidence that seat needed it.**
+
 ## Acceptance criteria
 
 - **THE THREE SPELLINGS SHALL BECOME ONE, and the reconciliation SHALL
