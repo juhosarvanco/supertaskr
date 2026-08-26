@@ -682,3 +682,25 @@ and already repaired on main.** The lane found a live mutant in its own
 work, fixed it, then found a second defect by dogfooding its own gate
 against its own notes and closed that too — and left its own card
 reporting a finding rather than muting it.
+
+### POSTSCRIPT — THE VERDICT'S OWN COMMIT STALED THIS CARD, AND THE GATE SAID SO
+
+**`method/roles/verifier.md`'s FIGURE CASE, happening to the verdict that
+quotes it.** The commit above (`68d7f16`) filed three suggestion cards.
+Re-run at that tip, `--card T-150` returns **three** findings instead of
+two: the two standing `CENSUS` lines, and **`STALE line 188: board live
+cards: 316`** — because the board is now **319**. The other three pasted
+figures still VERIFY, since nothing in that commit touched `tools/e2e`.
+
+**Line 188 is deliberately NOT corrected**, for the same reason the lane
+gave for leaving its own two stale figures in: the moment this verifier
+re-pastes 319, the next hand to write a card makes it 316's successor all
+over again. **The gate is the thing that stays true, not the number.**
+This is the third time in three commits that this card's own figures have
+gone stale — twice under its author and once under its verifier — and it
+is the whole argument the card makes, arriving unprompted for a third
+time.
+
+The three cards filed above add **zero** findings of their own: the
+board-wide tally is unchanged at **65 CENSUS and 7 UNRUNNABLE**, over
+**319** live cards of which **285** audit clean, measured at `68d7f16`.
