@@ -447,7 +447,7 @@ export function compareFences(a: Fence, b: Fence): FenceComparison {
           const shared = sharedDomain(pa, pb);
           if (shared === undefined) continue;
           if (excluded.has(shared)) continue;
-          const key = `${shared} ${left.raw} ${right.raw}`;
+          const key = JSON.stringify([shared, left.raw, right.raw]);
           if (seen.has(key)) continue;
           seen.add(key);
           witnesses.push({ left: left.raw, right: right.raw, path: shared });
