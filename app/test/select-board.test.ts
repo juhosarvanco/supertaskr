@@ -990,9 +990,16 @@ describe("a fence is compared over EXPANDED components, never slug strings (T-11
     expect(first?.sharedPaths).toContain("app/src/styles");
   });
 
-  it("THE TWO LANES LIVE AT THIS COMMIT ARE DISJOINT, derived rather than asserted", () => {
+  it("T-111's OWN FENCE AND T-134's ARE DISJOINT, derived rather than asserted", () => {
     // The disjointness claim this lane itself rests on, computed the way
     // T-111-s1 says it must be.
+    //
+    // IT NAMES TWO CARDS AND NOT "THE LANE SET", DELIBERATELY. How many
+    // lanes are live is a LIVE-ENVIRONMENT fact with a shelf life of
+    // minutes — it went from two to three while this file was being
+    // written — and a test title claiming a count would be false without
+    // a byte of the tree changing. What is a function of the tree is what
+    // these two CARDS declare, and that is all this body asserts.
     const model = liveBoard();
     const comps = model.components ?? [];
     const touchesOf = (id: string): string[] =>

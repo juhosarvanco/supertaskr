@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 4
 size: M
-status: building
+status: verifying
 blocked_by: []
 touches: [app-board, app-shell]
 builder: claude-opus-5
@@ -476,3 +476,395 @@ reads the INDEX, so the three staged suggestion files join it: 688 + 3 =
    verifying / 2 building**, total 221. The dispatch commit that created
    this lane is what moved planned 39→38 and building 1→2 — the
    staleness is the stamp, not an error.
+
+## Implementation notes — THE SECOND LANE (2026-08-26)
+
+Executor `claude-opus-5 @T-111`, lane `task/T-111-board-dispatchable`,
+worktree `/Users/ujju/Projects/nputer-T-111`, base **`15a963d`**.
+Understanding was confirmed in one paragraph before a file was touched,
+with `git status --short` clean in this worktree at that moment.
+
+**THE FIRST LANE'S NOTES ABOVE ARE LEFT BYTE-UNTOUCHED.** They record a
+correct refusal and the measurement behind it; this section is what
+happened once the architect's ruling unlocked the fence.
+
+### THE FENCE QUESTION, RULED FIRST, BECAUSE EVERYTHING ELSE IS DOWNSTREAM
+
+**`T-111-s2` IS DISCHARGED BY THE ARCHITECT'S CORRECTION AND NOT BY THIS
+LANE.** Its claim was that `[app-board]` — thirteen globs, every one under
+`app/src/**` — contains no test collector, so three criteria naming a pin
+in their own text could not be built. **`touches:` now reads
+`[app-board, app-shell]`**, and `app-shell` expands through C-05, whose
+`paths:` include **`app/test/**` and `app/vitest.config.ts`**. Derived
+from the component files' own `touch_slugs:` at `15a963d`, never from
+ARCHITECTURE's prose:
+
+    app-board -> C-08, C-09, C-11
+    app-shell -> C-05, C-10, C-11, C-16
+
+**So every pin this card owes lives in fence, and none had to be
+weakened.** They are in `app/test/select-board.test.ts` — C-05's
+`app/test/**` — beside the other pins for the same producer.
+
+**AND NOT IN A NEW FILE, DELIBERATELY.** A new indexed file moves
+`architecture-dogfood.test.ts`'s `fileComponent.size` and
+`map-dogfood-render.test.tsx`'s header hint, and those reconciliations
+belong to the checkpoint that regenerates the graph. Asked rather than
+predicted, `index --check` reports **`files +0 -0 ~2`** — the graph gains
+no node. **The forecast section below measures what the regen actually
+costs, which is nothing.**
+
+### THE CRITERIA
+
+1. **One disposition per card, six values — MET.**
+   `selectDispositions(model, dispatch, topmost?)` returns
+   `{ kind: "derived", cards, inFlight, ceilingReached, headline }` or
+   `{ kind: "undecidable", sentence }`. `DISPOSITIONS` is the closed six.
+   **The ORDER of the tests is pinned**: `not-applicable` -> `blocked` ->
+   `fenced` -> `not-topmost` -> `at-ceiling` -> `dispatchable`.
+   Card-specific reasons come first, because a blocked card told *"the
+   ceiling is reached"* has been told the least useful true thing about
+   itself.
+2. **The lane set joined with `status:`, disagreement visible, a pin
+   driving all four states — MET, and the vocabulary is CONSUMED.** The
+   four states are `join.rs`'s, mirrored structurally so `board-model.ts`
+   declares no C-15 dependency for a type alias — the shape
+   `dispatch-store.ts`'s own `BoardStamp` already uses. `T-111-s2` item 2
+   asked for exactly this. One body per state, plus one for a
+   registration whose directory is gone.
+   **`died` IS THE BODY THAT PROTECTS `T-135`.** A card stamped in flight
+   beside no worktree has meant "somebody forgot" nearly every time it has
+   appeared in this record, and at `15a963d` it did NOT: `T-135` is
+   deliberately merged-but-open and STATE carries a heading saying so.
+   **A derivation cannot read intent, so it reports the two facts and
+   refuses the third** — and the body sweeps the sentence for `lapsed`,
+   `forgot`, `dead`, `abandon` and `stale` to keep it that way.
+3. **Normalisation, one function, its own pin, from the live board's own
+   tokens — MET, and the criterion's prescribed minimum is not enough.**
+   `normaliseTouchToken` is the one function; `touchTokensOverlap` adds
+   separator-anchored CONTAINMENT, which is what reaches `docs` beside
+   `docs/CONVENTIONS.md` and `method/` beside `method/lane-protocol.md`.
+   Censused at `15a963d`: **142 cards carry `touches:`, 26 distinct raw
+   tokens**, against `T-111-s3`'s 124 and 19 at `e04f5b3` — and the eleven
+   new tokens are a CONTAINMENT family that census did not have.
+   **`ci` against `.github/` is pinned AS known-wrong**, because a
+   normalisation that silently misses a collision while the card says the
+   vocabulary is normalised is worse than none (`T-111-s3`'s own ask).
+4. **The reason rendered as TEXT — MET, with the negative control.** Every
+   disposition except the quiet three carries a sentence naming its own
+   subject: the blocker ids and their bindings, the token and the lane and
+   the shared paths, the card above, the lane count against the ceiling.
+   `a DIFFERENT input yields a DIFFERENT sentence, five ways` strips card
+   ids and asserts five distinct SHAPES, which is the control `T-111-s2`
+   item 4 asks for: a derivation returning one reason for everything
+   satisfies "the reason names the token" as readily as a correct one.
+5. **The ceiling as a named constant with its own assertion — MET.**
+   `CONCURRENCY_CEILING` is `{ min: 3, max: 5 }`; the body hardcodes 3 and
+   5 rather than reading the constant (the shape that let `BRANCH_MAX_LEN`
+   survive T-110's first drill), **and a second body parses the bound out
+   of the live `method/roles/orchestrator.md` and asserts the same two
+   numbers.** `at-ceiling` and `NOTHING IS DISPATCHABLE` are different
+   sentences and are pinned as different.
+6. **A dangling `blocked_by` is `blocked`, consuming the parser's
+   `dangling-reference` — MET, AND THE DISAGREEMENT IS RULED RATHER THAN
+   DEFAULTED.** See the ruling below. No plumbing was owed, exactly as the
+   first lane derived: `parseProjectFromFiles` already pushes
+   `validateProject`'s issues into `result.issues`, so the sentence is
+   consumed verbatim and never re-derived (T-057).
+7. **`done`/`parked` carry no reason at all — MET**, plus `merging`, which
+   is `done`'s last mile. The key is ABSENT rather than undefined-valued,
+   and the body carries the positive control that a card which SHOULD
+   carry a reason does — without it, "no reason" is equally explained by a
+   derivation computing none.
+8. **No dispatch affordance — MET, and trivially: no component file
+   changed.** Both named guards are green inside the 1009/1009 run —
+   `it("6. the completion state renders — board ready, elapsed, ONE CTA
+   (criterion 2)")` in `app/test/crescendo-dom.test.tsx`, and
+   `TaskDetailPanel.tsx`'s module doc comment recording that the mockup's
+   dispatch footer is deliberately absent.
+
+**WHAT IS NOT BUILT, AND IT IS NOT A CRITERION.** Nothing RENDERS a
+disposition. `selectDispositions` has no data source in the running app:
+`dispatch_lanes` (T-126) delivers the lane SCAN, and the JOIN this
+derivation consumes has no zero-argument shape — **`T-126-s2` is that
+routing and it names T-111 as its first consumer.** Wiring a panel to a
+model nothing can produce would be dead code with a fake input, so the
+frontier ships as the derivation the card asks for and the surface waits
+on the ruling `T-126-s2` wants.
+
+### THE RULING THE ARCHITECT ASKED FOR: A DANGLING BLOCKER
+
+**The card and `T-111-s4` disagree, this card predates the finding, and
+neither wins silently.** The card: *"IF a card's `blocked_by` names an id
+that does not exist THEN the disposition SHALL be `blocked` and SHALL say
+the blocker is unresolved, rather than treating an unresolvable blocker as
+satisfied."* The finding: *"a dangling blocker is a defect in the card,
+not a reason to wait."*
+
+**RULED: THE CARD WINS ON THE DISPOSITION, THE FINDING WINS ON THE REASON,
+and the two are not a compromise.** A dangling blocker yields
+`disposition: "blocked"` with `binding: "missing"`, and the sentence reads
+*"names T-999 as a blocker and no card declares that id — that is a defect
+in this card, not a reason to wait."* Four reasons:
+
+1. **`T-111-s4`'s own argument decides it.** Its case is that over-blocking
+   *"costs throughput rather than correctness, and therefore is the failure
+   nobody notices"* — the CHEAP failure. Dispatching on a card whose own
+   frontmatter is unresolvable is the expensive one. The finding's
+   asymmetry argues for keeping it blocked.
+2. **The finding's sentence is about the READER, not the verdict.** It ends
+   *"and the board should say which it is"* — a requirement on the reason
+   text, which `binding` and the clause deliver. Reading it as a
+   requirement on the disposition would make the field's THREE states
+   collapse into two, which is the fold the same paragraph forbids.
+3. **It names the cheapest repair.** A `missing` blocker is fixed by
+   editing one line; an `open` one is fixed by landing a card. Saying so is
+   the "help rather than a scold" the card asks @human to judge.
+4. **It costs nothing today and is therefore a design decision rather
+   than a live trade-off.** Measured at `15a963d`: **ZERO live cards name
+   a blocker id that does not exist**, re-derived in a body that will red
+   the day one does.
+
+**`T-136` IS THE OTHER SEAT AND THE TWO RULINGS AGREE.** That card's
+criteria require the same three states unfolded and say the disagreement
+*"SHALL be resolved here or routed, not defaulted"*. A gate that FAILS a
+card with a dangling blocker and a board that reports it `blocked` while
+naming it a card defect are the same judgement on two surfaces. **If T-136
+rules the other way, this one yields** — a gate and a board disagreeing
+about one card is the defect both exist to prevent.
+
+### THE CENSUS, RE-DERIVED AT THIS LANE'S OWN REF — AND THE BRIEF'S "ZERO" IS RIGHT FOR ONE OF THREE QUESTIONS
+
+Full account in **`T-111-s6`**. The short form, walked over
+`docs/tasks/` and `docs/tasks/rejected/` by `^id:` and never by glob:
+
+| quantity | `f9350b1` | `15a963d` (this base) |
+|---|---|---|
+| `blocked_by` entries repo-wide | 51 | **44** |
+| stale entries (blocker is `done`) | **48** | **41** |
+| stale entries on cards that are not `done` | 10 | **3** |
+| **cards blocked on paper, dispatchable in fact** | **6** | **0** |
+| dangling blockers | 0 | **0** |
+
+**ZERO is right for the question that matters and for no other.** Three
+stale entries survive on PLANNED cards — `T-067 <- T-062`, `T-067 <-
+T-058`, `T-068 <- T-057` — and suppress nothing, because both cards are
+still genuinely blocked by `T-065`. **`T-111-s4` and `T-136` both say 46;
+on disk at `f9350b1` it is 48**, and the two missing are `T-111 <- T-110`
+and `T-134 <- T-132`, which the same commit cleared as *dispatch* rather
+than counting as *census*. Every figure reconciles once those two are
+added back.
+
+**AND THE HAND PASS IS ITSELF THE ARGUMENT FOR DERIVING.** It cleared the
+entries that changed an answer and left the ones that did not — correctly.
+So the field does not decay to a stable wrong value; it decays to one that
+is right about the cards somebody checked last and wrong about the rest,
+with no way to tell which by reading it. `selectDispositions` never asks.
+
+### THE ARCHITECT'S MID-LANE STEER, AND WHAT IT CHANGED
+
+**Received after the first build commit: the derivation has a SECOND
+consumer — a terminal session — and must not be reachable only from a
+React tree.** Acted on at `59fb69a` rather than deferred, and the change
+was small because the function was already pure: the column order became a
+PARAMETER, defaulted to `topmostUndoneByColumn(model)`, which is now the
+only function in the frontier that knows a board exists. Two pins: an
+injected order changes the answer, and the default IS the board's order.
+Drill arm A30 kills the first and nothing else.
+
+**THE SHARED HOME IS `lib-parser` AND IT IS OUT OF FENCE AND HELD LIVE BY
+`T-134`.** Routed, not built — `executor.md`'s *"widening the fence from
+inside the lane is the one repair this role may never make"*. **`T-137`
+landed on main at `cf470f5` WHILE THIS LANE WAS BUILDING** and is that
+card, with `blocked_by: [T-134]` and a criterion reading *"IF `T-111` has
+landed a board-local implementation by the time this runs THEN this card
+moves it and says what moved."* **`T-111-s5` is the "what moved" half**,
+written by the seat that built it, including the one decision T-137's
+criteria do not settle: whether the column ORDER moves with the frontier.
+
+### THE DOCS GATE CAUGHT A REAL DEFECT IN THIS LANE'S OWN TEST FILE
+
+**Worth its own heading because it fired on the shape of the code rather
+than on its meaning, and the first spelling was RED.** The live-board
+helper originally looped `for (const dir of ["docs/tasks", …])` and joined
+with `dir + "/" + name`. The reads were correct; every docs literal sat
+behind a loop variable, so `docs-scan.mjs` could not resolve them.
+`app/test/select-board.test.ts` therefore held the repository root while
+forming no linkable docs path — `unaccountedRootAnchors()`'s residual —
+and **`tools/e2e/tests/docs-input-gate.spec.ts` went 4 failed / 38 passed
+while the hand-run gate exited 1 on a CODE-ONLY path list**, which three
+of those four bodies exist to forbid.
+
+**Rewritten in `architecture-dogfood.test.ts`'s literal-at-the-join shape:
+exit 0, 15 derived readers across 4 suites (up from 14 — this suite IS a
+reader and the gate now says so), the root-anchor account back to 6, and
+the spec 42/42.** Arguing it into `ROOT_ANCHOR_LEDGER` instead would have
+been a lie by placement — that ledger records files that hold the root and
+mostly *do not* read docs/ — and the ledger is `tools/e2e`, out of fence.
+**The scanner gap is real for the next file and is `T-111-s8`**, with the
+failure direction named: a docs read the scanner cannot see is a suite the
+gate does not name.
+
+### THE POISON DRILL — 33 ARMS, ALL RED, AND FOUR BODIES THAT CANNOT BE POISONED
+
+Detached worktree **outside the repository** at `/private/tmp/t111d` (18
+characters — `T-133-s5`'s threshold is bracketed 116–128), its own
+install, `npm run build` first so the app suite was drillable at all.
+**One side only: the PRODUCER was mutated and never an assertion**, every
+substitution count asserted **= 1**, every mutation read back with
+`git diff` **before** its run, and every arm restored with
+`git checkout --` and proved by sha256 against `git show HEAD:<path>` with
+`git status --porcelain` EMPTY.
+
+**33 arms, 33 REDS, exit 1 on every one, 0 arms restored short.**
+**SIXTEEN arms kill exactly one body**, which is the uniqueness
+measurement rather than the uniqueness claim. The positive control every
+arm carries: the parsed `Tests N failed | M passed (T)` line was read as
+well as the exit, and each run was swept for `Cannot find module` /
+`Transform failed` / `Failed to load` — **zero startup errors across 33
+arms**, which is what separates a killed body from a suite that never ran.
+That control exists because this card's FIRST lane caught a false positive
+of exactly that shape.
+
+**FOUR BODIES SURVIVE EVERY PRODUCER MUTATION, and that is the finding
+CONVENTIONS asks for rather than a gap.** Three assert facts about the
+TREE and have no producer to mutate: `T-054 is still the live fixture`
+(the fixture check `T-111-s3` nominates), `it matches the LIVE
+orchestrator.md` (the constant's other end — its partner body pins the
+constant against the same hardcoded 3 and 5, so the chain is closed by the
+PAIR), and `no live card names a blocker that does not exist`. They red
+when the tree moves, which is their entire purpose.
+
+**The fourth is a MEASUREMENT and it is the interesting one.** `the two
+spellings that collide on THIS board are both live, and they overlap`
+survived both A01 (trailing-slash strip removed) and A02 (containment
+removed) — **because the two rules are REDUNDANT on exactly the pair
+criterion 3 names.** `tools/e2e` beside `tools/e2e/` is caught by
+normalisation alone OR by containment alone. Arm A27 broke both in one
+producer-side mutation and the body RED. **So the criterion's own example
+is the one case where either half suffices**, and the collisions that
+needed the second half are the ones the criterion does not name.
+
+**SHAPE SIX WAS ASKED AND ANSWERED.** Two bodies share an identical kill
+set across all 33 arms — `app-board and app-shell are different strings
+claiming ONE component` and `the clash names both faces AND the
+component`. They are not duplicates: the first drives `expandTouch` and
+asserts component ids and paths; the second drives `fenceClashes` and
+asserts the clash record's five fields. Different calls, different values,
+neither character-identical to the other.
+
+### THE GRAPH REGEN FORECAST — MEASURED, NOT PREDICTED, AND IT COSTS THE CHECKPOINT NOTHING
+
+**GRAPH REGEN FIRES** (2 of 2 paths are `.ts` outside `docs/`) and the
+graph is deliberately NOT committed here — 55 of the 57 commits that ever
+touched it are checkpoints. **So the forecast was MEASURED instead**, the
+way `T-135-s3` should have been: the graph was regenerated in this
+worktree, both suites were run against it, and it was restored and proved.
+
+    committed   955710 bytes · 181 files · 2038 symbols · 1943 edges   sha256 b742efbe…
+    regenerated 973907 bytes · 181 files · 2075 symbols · 1990 edges
+    files +0 -0 ~2      edges +48 -3
+
+**`npm test` from `app/`: 1009 / 1009, exit 0 — with the regenerated graph
+in place.** Not one dogfood assertion moves, because **zero files join or
+leave the index** and every new edge is either intra-file (`type_ref`,
+`call`) or a PACKAGE edge to `node:fs` / `node:path` / `node:url`, none of
+which is a component. The nine-versus-six trap `T-135-s3` fell into cannot
+fire here; **the checkpoint that commits this regen owes NO fixture
+reconciliation**, and that sentence is a measurement.
+
+`docs/architecture/graph.json` was restored with `git checkout --` and its
+sha256 read back as **`b742efbe…`**, identical to the committed file, with
+`git status --porcelain` EMPTY.
+
+### THE RANGE, DERIVED AT THIS LANE'S OWN REF — AND MAIN MOVED UNDER IT
+
+Main was **`15a963d`** at dispatch and **`cf470f5`** when the range was
+derived: `T-136` and `T-137` landed mid-lane. **Every figure below names
+`cf470f5`.**
+
+    git merge-tree --write-tree cf470f5 <tip>  -> tree 4737fc89…, exit 0 (read from $? FIRST)
+    git diff --name-only cf470f5 <TREE>            -> 2   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only cf470f5...<tip>  (THREE)  -> 2   AGREES
+    git diff --name-only cf470f5..<tip>   (TWO, FORBIDDEN) -> 4
+    git diff --name-only 15a963d..cf470f5 (main's advance)  -> 2
+
+**THE SET IDENTITY WAS CHECKED AND NOT ONLY THE COUNT**: `comm -12` over
+this branch's two paths and main's two is **EMPTY**, and 2 + 2 = 4 is the
+arithmetic proving the forbidden form's overstatement is pure
+left-endpoint drift. The ratio is **2.0x**; the ratio is weather and the
+left endpoint is the signal.
+
+### FENCE DISJOINTNESS AGAINST EVERY LIVE LANE, COMPUTED THE WAY THIS CARD SAYS IT MUST BE
+
+Read at **12:12:04 EEST, 2026-08-26** — a live-environment fact carrying a
+clock and never a commit. `git worktree list --porcelain | awk '/^branch
+refs\/heads\/task\//'` returns **THREE**, against **NINE** worktree
+entries:
+
+    task/T-111-board-dispatchable   [app-board, app-shell]      this lane
+    task/T-134-path-fences          [lib-parser, method/lane-protocol.md]
+    task/T-136-stale-blocker-gate   [tools/e2e]
+
+**The other six entries are not lanes**: main's checkout, `../nputer-app`,
+`../arch-verify`, and **four detached scratch checkouts** — this card's
+drill at `/private/tmp/t111d` and T-134's at `/private/tmp/t134b` and
+`/private/tmp/t134v`. **A path filter would have reported six lanes**,
+which is T-137's own criterion arriving as a live measurement rather than
+a historical one.
+
+**Expanded through the component files' `touch_slugs:` and intersected as
+PATH SETS, all three pairs are disjoint** — `lib/parser/**` and
+`method/lane-protocol.md` and `tools/e2e` share no prefix with any C-05 /
+C-08 / C-09 / C-10 / C-11 / C-16 path. `T-111's OWN FENCE AND T-134's ARE
+DISJOINT` pins that pair in the suite **with a positive control**, because
+an empty intersection asserted without one is worth nothing.
+
+### WHERE THE CARD AND THE BRIEF WERE WRONG
+
+1. **THE BRIEF, the census: *"the number you re-derive should now be zero
+   — and if it is not, that is news."*** Three numbers answer that
+   sentence and they are **0, 3 and 41**. Zero cards are suppressed; three
+   stale entries remain on PLANNED cards; 41 remain repo-wide. The brief
+   named no unit, which is the limit it names about itself — *figures AND
+   their qualifiers slip through*.
+2. **`T-111-s4` AND `T-136`, the headline figure: 46 is 48 on disk at
+   `f9350b1`.** The two missing are `T-111`'s own and `T-134`'s own.
+3. **`T-111-s4`, *"four sit on PLANNED cards"*: SIX did.** Four suppressed
+   dispatch; two more (`T-067`, `T-068`) carried stale entries that changed
+   no answer, which is why a hand pass did not find them.
+4. **THE CARD, criterion 3's prescribed minimum is not enough on this
+   board.** A trailing-slash rule reaches two collision families and
+   **eleven cards now fence a FILE UNDER a directory another card fences**
+   — a containment family `T-111-s3`'s census did not have. `T-111-s3`'s
+   own arithmetic (124 cards, 19 tokens) is **142 and 26** at `15a963d`.
+5. **THE CARD, criterion 6 versus `T-111-s4`** — ruled above rather than
+   defaulted, as `T-136` requires of whoever meets it first.
+6. **THE BRIEF, *"`T-111-s2` IS A CONSTRAINT ON HOW YOU CAN TEST"*:
+   correct in force and already discharged in fact.** The architect's
+   in-place correction to `[app-board, app-shell]` bought `app/test/**`
+   before this lane started, so the constraint shaped WHERE the pins went
+   and never bound what they could assert. Re-derived from the component
+   files rather than taken.
+7. **THE BRIEF, *"`T-133` landed a command that derives exactly this;
+   read it before building a second one"*: right, and the reuse is
+   REPORTED rather than performed.** `dispatch-brief.mjs` derives the lane
+   list, the slug map and fence overlap — for a **dispatcher in the
+   integration checkout, in zero-dependency plain Node**. The board cannot
+   import it and it cannot import the board. **What this lane took from it
+   is its RULES, not its code**: expansion before comparison, the
+   authoritative `touch_slugs:` field over ARCHITECTURE's prose, and
+   separator-anchored containment — which this card reached independently
+   and which agrees. **`T-137` is the card that makes it one copy**, and
+   `T-111-s5` is the move list it asked for.
+8. **THE BRIEF was right about every trap it named, and two would have
+   cost time.** `npm run typecheck` from `app/` does not exist (scripts
+   are `dev, build, preview, test, tauri`); `lint:docs`/`lint:tokens` live
+   in `tools/e2e/package.json` and exit **254** from the root; build
+   `lib/parser` first; match by `grep -l "^id: <ID>$"` and never a glob —
+   `T-111-*.md` matches four suggestion files here; ports are machine-wide
+   (15881/15882/15883/15884, each `lsof`-probed at zero rows before use);
+   ask GRAPH REGEN rather than predicting it. **The one that actually bit
+   was none of them** — it was the DOCS GATE finding above, which no brief
+   could have carried because it did not exist until this lane wrote the
+   file that caused it.
