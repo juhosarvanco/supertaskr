@@ -29,7 +29,16 @@ which is an app surface **a terminal session cannot consume**.
 **So the architect computes its dispatch order by hand.** It did so
 repeatedly on 2026-08-25/26, with a shell loop, and got it wrong twice in
 one command — a filename glob that matched a suggestion file instead of a
-card, and a stale blocker set that hid four dispatchable cards.
+card, and **a blocker test that treated a non-empty `blocked_by` as
+"blocked"**.
+
+**THE SECOND ERROR WAS THE QUERY, NOT THE DATA, AND `T-136` WAS REJECTED
+FOR GETTING THAT BACKWARDS.** The app has always resolved blockers
+correctly — `task-detail.ts` joins each id to the model and the panel
+renders a finished blocker green with a `✓`. `blocked_by` is a
+DECLARATION; whether it still binds is derived, and the board already
+derives it. **What is missing is not correct data but a CONSUMER: the
+board is an app surface, and a terminal session cannot import it.**
 
 ## THE DUPLICATION ALREADY EXISTS ON MAIN, AND THE ARCHITECT MISSED IT
 

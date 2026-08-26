@@ -5,10 +5,10 @@ feature: F-02
 milestone: 4
 priority: 4
 size: S
-status: building
+status: rejected
 blocked_by: []
 touches: [tools/e2e]
-builder: claude-opus-5
+builder:
 verifier:
 built_by:
 verified_by:
@@ -86,3 +86,35 @@ this card; run it directly, never through `xargs`, and note **exit 3 is
 GATE COULD NOT RUN**. **Ports are machine-wide while lane-protocol rule 4
 partitions by CHECKOUT (`T-132-s6`)** — explicit port, re-probed
 immediately before binding. @human: none.
+
+## REJECTED 2026-08-26 — THE DEFECT THIS CARD GATES DOES NOT EXIST
+
+**@human looked at the running app and asked why this was a problem at
+all, because the board already shows a done blocker in green with a tick.**
+It does. Checked in the source rather than argued:
+`app/src/lib/task-detail.ts` resolves every `blocked_by` id against the
+model and carries the blocker's `status` and `visual`;
+`TaskDetailPanel.tsx` renders it with the status colour and appends `✓`
+for `done` or `merging`, and falls back to a non-link when the id does not
+resolve. **All three states the architect said were "folded" are already
+distinguished, and have been.**
+
+**So `blocked_by` is a DECLARATION and the app has always resolved it.**
+`blocked_by: [T-104]` on a card whose T-104 is finished is not stale — it
+is historically accurate, and the app says so correctly.
+
+**Measured at `cf470f5`: dangling blockers = 0.** There is no defect of
+either kind. A gate that failed a card for naming a done blocker would
+have forced the deletion of accurate history to satisfy a check.
+
+**What actually happened**: the architect queried the raw frontmatter with
+a shell loop, treated a non-empty `blocked_by` as "blocked", and called
+four cards falsely blocked. **The data was right and the query was wrong.**
+It then cleared four accurate declarations — including the lineage the app
+was rendering — before @human's question surfaced the error. **All four are
+restored in this commit.**
+
+**The one real gap survives as `T-137`**: nothing answers *"what is
+dispatchable, in what order, given the live lanes"* for a terminal
+session. That is a missing CONSUMER, not bad data, and `T-137`'s
+motivation is corrected accordingly.
