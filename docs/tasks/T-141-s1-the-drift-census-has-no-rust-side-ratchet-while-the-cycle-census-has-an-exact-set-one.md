@@ -8,7 +8,7 @@ suggested_by: executor claude-opus-5 @T-141
 **MEASURED IN BOTH DIRECTIONS NOW, WHICH IS WHAT MAKES THIS FILEABLE
 RATHER THAN A RESTATEMENT.** T-139's checkpoint recorded that `cargo
 test` was **518 passed / 0 failed / 4 ignored, exit 0** both before and
-after the merge that CREATED this repository's second D2. T-141 closes
+after the merge that CREATED this repository's third D2. T-141 closes
 that D2 and `cargo test --no-fail-fast` from `app/src-tauri` is
 **518 / 0 / 4, exit 0** again, summed from the eighteen `test result:`
 lines and cross-checked against the eighteen `running N tests` headers
@@ -37,7 +37,7 @@ and nothing wires it.
 
 ## The whole tripwire is two React fixtures, and their fence is not the registry's
 
-What noticed, both times, is
+What noticed, at this D2's creation and at its closure alike, is
 `app/test/architecture-dogfood.test.ts` and
 `app/test/map-dogfood-render.test.tsx` — **fourteen assertions across six
 bodies**, measured at T-141 by moving them. Both files sit under
@@ -57,18 +57,24 @@ unwired while the registry carries live undeclared edges by design"*.
 `C-10 -> C-14` is the cycle T-125 owns and `C-05 -> C-15` is routed to
 `T-126-s3` item 4 — so `--fail-on undeclared` would red on states this
 project has decided to hold. **No such decision exists for `unmapped`.**
-Both D2s this repository has ever had were treated as things to close and
-both were closed: T-033 claimed `tests/dispatch_lanes.rs` a day after
-T-110 created it, and T-141 claimed `tests/graph_budget_bench.rs` one
-merge after T-139 created it. **The `unmapped` arm is separable from the
+All THREE D2s this repository has ever had were treated as things to
+close and all three were closed — a census derived at T-141 by
+re-running the join at every first-parent commit on main, not read off
+any remembered figure: T-012 §2 claimed `app/src/lib/verdicts.ts` and
+the engine trio 4h31m after T-017's regen stranded the first of them,
+T-033 claimed `tests/dispatch_lanes.rs` 4h06m after T-110's regen, and
+T-141 claimed `tests/graph_budget_bench.rs` one merge after T-139's.
+**Three for three, with no counter-example in 350 graph-bearing commits
+— so the tolerance this arm would need has never once been exercised.**
+**The `unmapped` arm is separable from the
 `undeclared` arm and is the one whose blocking reason has lapsed.**
 
 ## What this card is NOT
 
 It is **not** a proposal to red on a D2 at the moment of creation.
-T-141's own finding is that both D2s were created by a MERGE and closed by
-a LATER HAND, because picking an owner is a disposition an integrator may
-not take at a checkpoint. A gate that reds at the merge would force the
+T-141's own finding is that all three D2s were created by a MERGE'S REGEN
+AT THE CHECKPOINT and closed by a LATER CARD'S HAND, because picking an
+owner is a disposition an integrator may not take at a checkpoint. A gate that reds at the merge would force the
 integrator into exactly that disposition, or block the merge on a card
 that does not exist yet. The disposal shapes worth weighing are therefore:
 

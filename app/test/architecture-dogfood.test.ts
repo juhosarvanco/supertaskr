@@ -1173,9 +1173,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(c15?.kind).toBe("declared");
     // SIX files since T-033: `app/src-tauri/tests/dispatch_lanes.rs` —
     // the two-line compile shim that is the only reason `cargo test` can
-    // reach this module at all — matched NEITHER declared glob and spent
-    // one day as this repository's first D2. It is claimed now, and the
-    // unmapped bucket below is empty again.
+    // reach this module at all — matched NEITHER declared glob and became
+    // this repository's SECOND D2. **THIS LINE SAID "first" AND "one day"
+    // AND BOTH WERE WRONG**; T-141 derived the census rather than
+    // remembering it, and the first D2 was `app/src/lib/verdicts.ts` ten
+    // days earlier — the same `lib/verdicts.ts` that sits three entries
+    // down this ledger as one of C-16's three. It stood on main
+    // **4h06m14s**, `1d8a2c2` 12:25:46 to `8f8ec31` 16:32:00, the same
+    // day and not "a day". The derivation and all three instances are in
+    // the `["unmapped", 1]` ledger entry below. It is claimed now, and
+    // the unmapped bucket below is empty again.
     // 6 → 5 at the T-126 merge regen (2026-08-25), and this is the FIRST
     // time this repository has reconciled a dogfood fixture DOWNWARD:
     // T-126 declares `pub mod dispatch;` in `lib.rs`, so the shim's only
@@ -1217,7 +1224,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 185 files map and the bucket is EMPTY again — T-141 closes the second D2, which stood for exactly one merge", () => {
+  it("all 185 files map and the bucket is EMPTY again — T-141 closes the THIRD D2, which stood for exactly one merge", () => {
     // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
     // move this row has ever taken and the only one whose cause is a new
     // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
@@ -1615,41 +1622,104 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // AND THE ROW THAT LEFT, CAME BACK, AND HAS LEFT AGAIN — KEPT HERE AS
       // A LEDGER ENTRY WITH NO ASSERTION UNDER IT, BECAUSE DELETING THE
       // EXPLANATION TO CLOSE THE FINDING WOULD ERASE THE EVIDENCE THAT IT
-      // HAPPENED. `["unmapped", 1]` has stood in this array twice.
-      // FIRST, for exactly one day: `app/src-tauri/tests/dispatch_lanes.rs`,
-      // this repository's first D2, created by the T-110 merge and settled
-      // onto C-15 at T-033 by the rule T-010 used for
-      // `tests/agent_runner.rs`. SECOND, for exactly one merge: **T-139
-      // re-opened it** (2026-08-26, merge `aed77b6`) with a different file
-      // and the same mechanism — `app/src-tauri/tests/graph_budget_bench.rs`
-      // sits in a directory no component claims by prefix, so the second D2
-      // this repository has ever carried was a benchmark harness — and
-      // **T-141 closed it** by declaring C-05 the owner.
+      // HAPPENED.
       //
-      // THE PATTERN, WORTH RECORDING BECAUSE IT IS NOW TWO FOR TWO. BOTH
-      // D2s THIS REPOSITORY HAS EVER HAD WERE CREATED BY A MERGE AND CLOSED
-      // BY A LATER HAND, NEVER BY THE MERGE THAT MADE THEM. Both were
-      // created the same way: a merge added a `.rs` file to a directory
-      // that is claimed one file at a time, and the regen — which is the
-      // checkpoint's act, not the lane's — discovered it afterwards. Both
-      // were closed the same way: a later card took a DISPOSITION, because
-      // picking an owner is a registry decision and neither an executor
-      // (fence) nor an integrator (a checkpoint takes no dispositions) may
-      // take it. The first lasted a day, the second a merge. THE STANDING
+      // **THE CENSUS BELOW IS DERIVED, NOT REMEMBERED, AND EVERY EARLIER
+      // COUNT IN THIS REPOSITORY WAS WRONG.** T-141 first wrote "the
+      // second D2" here and was rejected for it; the verdict said three
+      // and named the first as the map's own engine trio at T-011. Three
+      // is right and that first instance is still not. Method, because
+      // the count is only worth what the method is: for every one of the
+      // **390** first-parent commits on main, materialise that commit's
+      // own `docs/architecture/{graph.json, components/}` — the only two
+      // inputs `arch` reads — and run ONE fixed engine over it. **350
+      // carry a committed graph** (the earliest 40 predate `graph.json`,
+      // so no D2 can exist there) and the sweep computes the join instead
+      // of grepping for `D2:unmapped`, which is why it can find an
+      // instance nobody recorded. **It found one.** Control: at 343 of
+      // those 350 the derived count equals the list this very fixture
+      // asserted at that commit; the 7 exceptions are 6 commits predating
+      // the fixture and ONE genuine disagreement, `c036779`, described
+      // below. The glob semantics have not drifted.
+      //
+      // `["unmapped", N]` HAS STOOD ON MAIN THREE TIMES.
+      // **FIRST, 4h31m29s** — and it is not the instance anyone named.
+      // The bucket opened at `98b1f4e`, **Checkpoint: T-017 done**,
+      // 2026-08-15 18:47:21, whose regen after `93d3ea6` Merge T-017 put
+      // exactly two files into the graph: `app/test/board-truth.test.tsx`,
+      // which C-05 claimed, and **`app/src/lib/verdicts.ts`, which nothing
+      // claimed** — the same `lib/verdicts.ts` listed three entries up as
+      // one of C-16's three. T-017's merge had nothing to do with the map;
+      // the regen simply indexed a file no glob reached. It stood at ONE
+      // file for 1h20m, was still one at `c036779` Merge T-011 19:05:31 —
+      // where T-011's incoming fixture asserted `unmappedFiles` `[]` and
+      // was FALSE on main for 62 minutes, the one control mismatch in 350
+      // — and grew to FOUR at `ceaa949`, **Checkpoint: T-011 done**,
+      // 20:07:13, when that checkpoint's regen added the engine trio
+      // (`derive.ts`, `glob.ts`, `graph.ts`) to the ALREADY-OPEN bucket
+      // and reconciled the fixture to `["unmapped", 4]`. So T-011's
+      // checkpoint is where the repository first SAW it, not where it was
+      // made. Closed by `f8046fa` **T-012 §2**, which reached main at
+      // `ed56884` Merge T-012, 23:18:50.
+      // **SECOND, 4h06m14s**: `app/src-tauri/tests/dispatch_lanes.rs`,
+      // opened at `1d8a2c2` **Checkpoint: T-110 done** 2026-08-25
+      // 12:25:46 after `1223543` Merge T-110, settled onto C-15 by
+      // `1baed94` **T-033 phase 1B** and drained on main at `8f8ec31`
+      // Merge T-033 16:32:00 — by the rule T-010 used for
+      // `tests/agent_runner.rs`.
+      // **THIRD, one merge**: `app/src-tauri/tests/graph_budget_bench.rs`,
+      // opened at `ae92f67` **Checkpoint: T-139 done** 2026-08-26
+      // 19:40:08 after `aed77b6` Merge T-139, sitting in a directory no
+      // component claims by prefix — and **T-141 closed it** by declaring
+      // C-05 the owner.
+      //
+      // THE PATTERN, WORTH RECORDING BECAUSE IT IS NOW THREE FOR THREE —
+      // AND THE INSTANCE NOBODY REMEMBERED IS THE ONE THAT FITS IT BEST.
+      // ALL THREE D2s THIS REPOSITORY HAS EVER HAD WERE CREATED BY A
+      // MERGE'S REGEN AT THE CHECKPOINT AND CLOSED BY A LATER CARD'S
+      // HAND, NEVER BY THE MERGE THAT MADE THEM. All three were created
+      // the same way: a merge added a file to a directory claimed one
+      // file at a time, and the regen — which is the checkpoint's act,
+      // not the lane's — discovered it afterwards. All three were closed
+      // the same way: a later card took a DISPOSITION, because picking an
+      // owner is a registry decision and neither an executor (fence) nor
+      // an integrator (a checkpoint takes no dispositions) may take it.
+      // **THE FIRST IS THE PUREST CASE OF THE MECHANISM AND WAS THE ONE
+      // LEFT OUT**: T-017's merge was about the board, the stranded file
+      // was a shared helper, and nothing in that merge's own subject had
+      // anything to do with the bucket it opened.
+      // DURATIONS, ALL MEASURED THE SAME WAY — first first-parent commit
+      // on main carrying the bucket, to the first that drains it, since a
+      // lane commit is not yet main: **4h31m29s, 4h06m14s, and this one**.
+      // Two of the three are within 25 minutes of each other and none of
+      // them is "a day"; that phrase entered at T-033, was repeated by
+      // T-139's checkpoint, by this card's brief, by STATE.md and by this
+      // file, and was never once measured. THE STANDING
       // LESSON IS THE ONE THE DELAY ITSELF TEACHES: a D2 is not a defect
       // the merge that creates it can repair, so the honest reconciliation
       // is to RECORD the bucket — which is what T-139's checkpoint did in
       // this file, in 137 lines — and let the disposition follow. Repairing
       // it at the merge would have hidden that the merge created unclaimed
-      // territory, which is the most interesting thing about either event.
+      // territory, which is the most interesting thing about any of them.
+      // AND THE SECOND LESSON IS THIS ENTRY'S OWN HISTORY: a census
+      // carried in prose was wrong three times running and cost a
+      // rejection; the sweep that corrected it is thirty lines of shell
+      // over a binary this repository already ships.
       //
-      // AND WHAT NOTICED, BOTH TIMES, WAS THIS FILE AND THE MAP FIXTURE.
-      // Not `cargo test`, which was 518/0/4 exit 0 on both sides of the
-      // T-139 regen and on both sides of this claim; not `arch drift`,
-      // which exits 0 without `--fail-on`; not the cargo arch pin, which
-      // is about CYCLES. Two React fixtures are the whole of the tripwire
-      // for unclaimed Rust territory. Recorded, not fixed — wiring a
-      // drift gate is a separate decision and not this card's.
+      // AND WHAT NOTICED IS A THIRD THING THE CENSUS CORRECTS, BECAUSE THE
+      // THREE INSTANCES DID NOT FAIL ALIKE. The FIRST was TypeScript and
+      // it went RED: T-011's fixture asserted `[]` against a bucket that
+      // was already open, so `npm test` on main was failing for 62
+      // minutes and the checkpoint reconciled it. For the SECOND and
+      // THIRD — both `.rs` — the whole tripwire was this file and the map
+      // fixture. Not `cargo test`, which was 518/0/4 exit 0 on both sides
+      // of the T-139 regen and on both sides of this claim; not `arch
+      // drift`, which exits 0 without `--fail-on`; not the cargo arch
+      // pin, which is about CYCLES. **Two React fixtures are the whole of
+      // the tripwire for unclaimed RUST territory, and that is exactly
+      // the half of the history where nothing else spoke.** Recorded, not
+      // fixed — wiring a drift gate is a separate decision and not this
+      // card's; it is `T-141-s1`.
     ]);
     // The map pane joined its engine at the T-012 merge regen
     // (T-011-s1 option a keeps the trio in place under lib/).
@@ -1762,9 +1832,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // COMMENT AFTER THE ROW ITSELF LEFT, BECAUSE THE ROW'S DEPARTURE IS
       // THE FINDING AND THE EXPLANATION IS THE EVIDENCE FOR IT.
       // T-139 PUT IT BACK (2026-08-26, merge `aed77b6`): this repository had
-      // carried a D2 for exactly one day at T-033 and none since, and
-      // `app/src-tauri/tests/graph_budget_bench.rs` was the second it has
-      // ever had. It was the merge's own — `arch drift` read `unmapped=0` at
+      // carried a D2 twice before — 4h31m29s in 2026-08-15 and 4h06m14s at
+      // T-110/T-033 — and
+      // `app/src-tauri/tests/graph_budget_bench.rs` is the THIRD it has
+      // ever had. (This comment said "the second" and "exactly one day",
+      // inheriting both from T-139's checkpoint; the derived census is in
+      // the `["unmapped", 1]` ledger entry above.) It was the merge's own
+      // — `arch drift` read `unmapped=0` at
       // the parent `00e133a` and `unmapped=1` after the checkpoint's regen —
       // and the DECLARATION was routed rather than taken there, because the
       // harness imports across two components (C-07's `nputer_index` and

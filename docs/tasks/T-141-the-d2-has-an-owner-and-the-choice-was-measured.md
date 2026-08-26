@@ -181,12 +181,24 @@ six. Enumerated from the diff, per body:
 
 | body | assertions moved |
 |---|---|
-| `all 185 files map …` | 4 — `unmappedFiles`, the `UNMAPPED_ID` lookup, the C-05 tally row, the `["unmapped", 1]` tally row |
+| `all 185 files map …` | 3 — `unmappedFiles`, the `UNMAPPED_ID` lookup, and the counts array (whose C-05 row and `["unmapped", 1]` row are ONE `expect`) |
 | `THE FINDINGS …` | 1 — the `D2:unmapped` row |
-| `the full relation table …` | 4 — the row array (four rows inside it), the relation tally, the undeclared identity list |
+| `the full relation table …` | 3 — the row array, the relation tally, the undeclared identity list |
 | `drift flags land …` | 2 — `drift`, and the hidden `isDriftFinding` list |
 | `renders all thirteen …` | 2 — the node count, the bucket identity check (INVERTS) |
 | `draws the full … relation table` | 3 — the edge count, the undeclared count, the undeclared identity list |
+
+**THIS TABLE SUMMED TO 16 AGAINST ITS OWN HEADLINE OF 14 UNTIL THE
+REWORK**, because two rows counted ARRAY ROWS as assertions: the C-05
+tally row and the `["unmapped", 1]` tally row are one
+`expect([...counts.entries()].sort()).toEqual(…)`, and the relation-table
+row listed three items while claiming four. **The headline was right and
+the table was wrong.** Re-derived mechanically at the rework's own tip
+rather than copied from the verdict — comments stripped, bodies paired in
+file order, `expect(` statements gathered and compared one to one:
+**3 + 1 + 3 + 2 + 2 + 3 = 14**, with expect-statements **45 → 45** and
+**44 → 44**, bodies **10 → 10** and **8 → 8**, and **zero added, zero
+removed**.
 
 Every value was derived from `arch`'s own output BEFORE the re-run, never
 read off a failure diff.
@@ -197,7 +209,7 @@ The card says four titles carry the D2 as a claim. **Five carry a figure
 or a claim that this change falsifies**, and the fifth is in the card's
 own table:
 
-1. `all 185 files map and ONE of them lands in the bucket — T-139 re-opens the D2 that stood for a day at T-033` -> `all 185 files map and the bucket is EMPTY again — T-141 closes the second D2, which stood for exactly one merge`
+1. `all 185 files map and ONE of them lands in the bucket — T-139 re-opens the D2 that stood for a day at T-033` -> `all 185 files map and the bucket is EMPTY again — T-141 closes the THIRD D2, which stood for exactly one merge` (the replacement read "the second D2" as first built; that is the miscount §11 corrects)
 2. `THE FINDINGS: … — AND A D2 THIS MERGE CREATED` -> `… — AND THE D2 IS GONE, RETIRED BY A DECLARATION THAT COST NO EDGE`
 3. `the full relation table: 26 confirmed, 4 undeclared, 9 planned` -> `26 confirmed, 2 undeclared, 9 planned` — **the one the card's count misses**; its table lists this body's `4 undeclared` and its criterion still says "Four do."
 4. `renders all thirteen declared components in full mode, and the bucket is BACK` -> `… and the bucket is GONE again`
@@ -206,23 +218,29 @@ own table:
 `drift flags land on the right nodes` is the sixth body and its title
 carries no figure, which is why it did not move.
 
-### 4. THE NARRATIVE WAS REWRITTEN, NOT DELETED — +226 / -66
+### 4. THE NARRATIVE WAS REWRITTEN, NOT DELETED — +302 / -69 after the rework (+225 / -66 as first built; the heading said +226 and was off by one)
 
 Every ledger entry T-139's checkpoint wrote is still in the file. The D2
 rows leave the ASSERTIONS and stay as comments beside them, because the
 row's departure is the finding and the explanation is the evidence for
 it. **The pattern paragraph sits at the `["unmapped", 1]` tally row**,
-where both D2s' histories already met:
+where all three D2s' histories meet. **AS FIRST BUILT IT READ "TWO FOR
+TWO" AND THAT MISCOUNT IS WHY THIS CARD WAS REJECTED**; the rework
+replaced it with a derived census (§11) and the claim now reads:
 
-> BOTH D2s THIS REPOSITORY HAS EVER HAD WERE CREATED BY A MERGE AND
-> CLOSED BY A LATER HAND, NEVER BY THE MERGE THAT MADE THEM.
+> ALL THREE D2s THIS REPOSITORY HAS EVER HAD WERE CREATED BY A MERGE'S
+> REGEN AT THE CHECKPOINT AND CLOSED BY A LATER CARD'S HAND, NEVER BY
+> THE MERGE THAT MADE THEM.
 
-with the mechanism on both sides — a merge adds a `.rs` file to a
+with the mechanism on all three sides — a merge adds a file to a
 directory claimed one file at a time and the regen (the checkpoint's act,
 not the lane's) discovers it afterwards; a later card takes the
 disposition, because neither an executor (fence) nor an integrator (a
-checkpoint takes no dispositions) may take it. The first lasted a day,
-the second a merge.
+checkpoint takes no dispositions) may take it. **"The first lasted a day"
+is gone**: measured the same way for all three — first first-parent
+commit on main carrying the bucket to the first that drains it — they
+stood **4h31m29s**, **4h06m14s**, and (this one) one merge. No instance
+lasted anything like a day.
 
 ### 5. THE CARGO-BLINDNESS GAP: IT EARNS A FINDING. FILED, NOT FIXED
 
@@ -375,6 +393,126 @@ D2 row it had just added. This card takes the findings back to four, so
 the sentence is true again **by coincidence rather than by repair**. It is
 left untouched and named here so a verifier is not left to wonder whether
 it was edited: it was not.
+
+---
+
+## Rework notes (fresh executor claude-opus-5 @T-141, after the REJECTED verdict at `f8d9efd`)
+
+The verdict rejected this card for one reason: the narrative's census.
+**Nothing about the disposition, the measurement or the assertion work
+was re-opened** — the verdict re-derived all of it and it reproduced to
+the digit. What follows is the correction and the one place the verdict
+itself was short.
+
+### 11. THE CENSUS, DERIVED INSTEAD OF SEARCHED — AND THE VERDICT'S FIRST D2 IS ONE MERGE AND ONE FILE OFF
+
+**THE COUNT IS THREE AND THE VERDICT IS RIGHT ABOUT THAT. THE FIRST
+INSTANCE'S IDENTITY, CREATING EVENT, START TIME, FILE LIST AND DURATION
+ARE ALL WRONG IN IT.**
+
+Both the card's original "second" and the verdict's "three, the first
+being the engine trio at T-011" were reached by SEARCH — `git log -G` for
+`D2:unmapped` or for the `["unmapped", N]` row, plus corroborating prose.
+**A `-G` search finds D2s whose literal survives in a diff; it cannot
+find one that opened before the literal existed.** One did.
+
+**METHOD.** `arch` reads exactly two inputs —
+`docs/architecture/graph.json` and `docs/architecture/components/`
+(`GRAPH_REL_PATH` and `REGISTRY_REL_DIR`). So the model is a pure
+function of those two committed artifacts, and the census can be
+COMPUTED at every point in the repository's history: for each of main's
+**390** first-parent commits, `git archive <sha> docs/architecture` into
+a scratch root and run one fixed engine (this lane's own
+`nputer-index arch`) over it. **350 carry a committed graph**; the
+earliest **40** predate `graph.json` (the first is `3d94298` Merge T-009,
+2026-08-15 17:21:21), and no D2 can exist where the artifact it is
+derived from does not. The sweep never reads a finding id, a fixture, or
+a commit message, so **it is capable of returning four** — and it is a
+total partition: `arch`'s `unclaimed` set takes every file in the graph
+that no component's globs claim, with no `non_code`, language or kind
+filter, so it cannot silently undercount.
+
+**RESULT: exactly THREE contiguous windows of `unmapped > 0`**, and the
+first is not where anyone put it.
+
+| # | opened (checkpoint regen, after…) | file(s) at open | drained on main | stood |
+|---|---|---|---|---|
+| 1 | `98b1f4e` **Checkpoint T-017**, 2026-08-15 18:47:21, after `93d3ea6` Merge T-017 | `app/src/lib/verdicts.ts` — ONE; grew to FOUR at `ceaa949` when T-011's checkpoint regen added `derive.ts`, `glob.ts`, `graph.ts` | `ed56884` Merge T-012, 23:18:50 (closing hand `f8046fa` T-012 §2) | **4h31m29s** |
+| 2 | `1d8a2c2` **Checkpoint T-110**, 2026-08-25 12:25:46, after `1223543` Merge T-110 | `app/src-tauri/tests/dispatch_lanes.rs` | `8f8ec31` Merge T-033, 16:32:00 (closing hand `1baed94` T-033 phase 1B) | **4h06m14s** |
+| 3 | `ae92f67` **Checkpoint T-139**, 2026-08-26 19:40:08, after `aed77b6` Merge T-139 | `app/src-tauri/tests/graph_budget_bench.rs` | this card | one merge |
+
+**WHY THE VERDICT MISSED IT.** It dates D2 #1 to `ceaa949` because that
+is where the `["unmapped", 4]` row ENTERS the fixture. But the T-017
+checkpoint's regen (`93d3ea6` → `98b1f4e`) added exactly two files to the
+graph — `app/test/board-truth.test.tsx`, which C-05 claimed, and
+`app/src/lib/verdicts.ts`, which nothing did. **The bucket was already
+open, holding one file, for 1h19m52s before the engine trio joined it.**
+T-011's checkpoint GREW an open window and was the first to RECORD it.
+So `T-011-s1`'s *"the map's own engine becomes its first D2 finding:
+[derive.ts, glob.ts, graph.ts]"* — the half of `T-141-s2` the verdict
+rules true — names the wrong event and omits `verdicts.ts` from its own
+list. Appended to `T-141-s2` rather than edited into its ruling.
+
+**CONTROL, BECAUSE A FIXED ENGINE OVER HISTORICAL INPUTS COULD DRIFT.**
+For every one of the 350 graph-bearing commits, the derived count was
+compared against the list this very fixture asserted at that commit —
+main is kept green, so that assertion is what the engine OF THE DAY
+produced. **343 MATCH exactly.** Of the 7 exceptions, **6** predate the
+fixture (T-011 introduced it) and exactly one of those 6 carries
+`unmapped > 0`: `98b1f4e`, the newly found opening, which has no fixture
+because the engine had not merged yet. **The seventh is a genuine
+disagreement and it is a finding, not drift**: at `c036779` Merge T-011
+the derivation says 1 and the incoming fixture asserted `[]` — **main
+carried a false assertion for 62 minutes**, until `ceaa949`, whose own
+commit message calls it *"fixture reconciliation"*. So the glob semantics
+have not moved, and the one place the engine and the record disagree is a
+place where the record was wrong.
+
+**AND "A DAY" WAS NEVER MEASURED BY ANYONE.** Durations above are all
+taken the same way — first first-parent commit carrying the bucket to the
+first that drains it, since a lane commit is not yet main. The verdict's
+own correction (*"D2 #1 stood 20:07:13 → 21:55:26, 1h48m"*) mixes a main
+commit with a LANE commit: `f8046fa` is not on main's first-parent chain
+and did not land until `ed56884` at 23:18:50. Measured consistently, **D2
+#1 is the LONGEST of the three, not the shortest.**
+
+### 12. WHAT THE REWORK CHANGED
+
+Six newly authored census sites, plus the inherited one, plus `T-141-s1`:
+
+| # | site | was | now |
+|---|---|---|---|
+| 1 | `architecture-dogfood.test.ts` title, `it(` at the bucket body | "T-141 closes the second D2" | "the THIRD D2" |
+| 2 | same file, the `["unmapped", 1]` ledger entry | "has stood in this array twice", first = `dispatch_lanes.rs` | the derived three-window census, with method, control and durations |
+| 3 | same file, the pattern paragraph | "TWO FOR TWO … BOTH D2s" | "THREE FOR THREE … ALL THREE", first instance carried as the purest case |
+| 4 | same file, "the first lasted a day, the second a merge" | unmeasured | 4h31m29s / 4h06m14s / one merge, with the method named |
+| 5 | same file, the D2-row comment in the findings body | "the second it has ever had", "exactly one day at T-033" | "the THIRD", both durations measured |
+| 6 | `C-05-app.md` | "SECOND D2 this repository has ever carried" | "THIRD", with the derivation and the three opening commits |
+| 7 | `architecture-dogfood.test.ts` pre-existing at `2a922ce` (the verdict's "sixth site") | `dispatch_lanes.rs` "spent one day as this repository's first D2" | "SECOND", 4h06m14s, both corrections named as corrections |
+| 8 | `T-141-s1` lines 11, 60 and 69 | "second D2", "Both D2s", "both D2s were created" | third, all three, all three — and the three-for-three makes its own argument stronger |
+
+**THE VERDICT'S TABLE OF SITES IS FIVE AND THE TRUE COUNT IS SIX.** Row 5
+above — the D2-row comment in the findings body — is newly authored by
+this lane (it rewrote a pre-existing block and carried the miscount
+through) and the verdict's *"five sites this diff writes it into"* does
+not list it. Also: the verdict's instruction 3 says fix `T-141-s1` line
+60; lines **11 and 69** carry the same miscount and are fixed too, since
+leaving them would be the exact defect this rejection is about.
+
+### 13. THE DRILL, OWED THIS TIME BY THE VERDICT'S OWN RULING
+
+The verdict ruled: *"a reconciliation that adds zero assertions DOES owe
+a poison drill … 'we only changed numbers' is exactly the shape a
+loosening takes."* The rework changes fewer things still — comments and
+one title — so the drill is recorded in §14 below with its own honest
+limit.
+
+**THE ASSERTION COUNT IS UNCHANGED AND MACHINE-VERIFIED AT THIS TIP, NOT
+COPIED FROM THE VERDICT**: `expect(` census **45 → 45** and **44 → 44**
+against `2a922ce`; expect-STATEMENTS, comments stripped and bodies paired
+in file order, **45 → 45** and **44 → 44**; bodies **10 → 10** and
+**8 → 8**; **zero added, zero removed**; and per body **3, 1, 3, 2, 2,
+3 = 14**, which is the corrected §2 table.
 
 ---
 

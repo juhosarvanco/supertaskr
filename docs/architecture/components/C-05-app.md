@@ -61,8 +61,17 @@ IS THIS COMPONENT AND NOT EITHER ONE IT IMPORTS.**
 `docs/architecture/graph.json` to the map pane. It imports both sides of
 the seam it measures — `nputer_index` (C-07) and `docs_watch` (C-10) — so
 it landed under no component's globs at T-139's regen and became the
-SECOND D2 this repository has ever carried, drawing two undeclared shadow
-edges out of the unmapped node. **The two components it imports are the
+THIRD D2 this repository has ever carried, drawing two undeclared shadow
+edges out of the unmapped node. **THE COUNT IS DERIVED, NOT REMEMBERED**
+— this line said SECOND, STATE.md and this card's brief said second, and
+`docs/ARCHITECTURE.md` and a T-011 finding each claim a different event
+as the first (routed as `T-141-s2`). Settled by re-deriving the join at
+all 390 first-parent commits on main, the 350 of them that carry a
+committed graph: three windows, opening at `98b1f4e` (`verdicts.ts`,
+2026-08-15), `1d8a2c2` (`tests/dispatch_lanes.rs`, 2026-08-25) and
+`ae92f67` (this file's subject, 2026-08-26). The ledger in
+`app/test/architecture-dogfood.test.ts` carries the method and the
+durations. **The two components it imports are the
 two wrong answers, and for the same reason in mirror.** C-07 is a
 standalone crate with `depends_on: []` that the app depends on; claiming
 the harness there would declare that the indexer depends on the app's
