@@ -344,6 +344,35 @@ CONTROL 805** — 802 before the three new cards were staged, and 805
 after, which is the positive control on that figure. `arch drift` **0**,
 unmoved.
 
+**AND A THIRD PASS AT THE COMMITTED TIP `6e5ad00`**, which is what every
+number in this card is stated at: `cargo test` **518 / 0 / 4, exit 0**
+over 18 result lines, with all four watched bodies read BY NAME and `ok`
+(`startup_arm_watches_the_initial_root`,
+`a_hostile_session_id_in_the_init_line...`,
+`agent::kit::tests::snapshot_version_matches_the_live_method_stamps`,
+`a_mod_declaration_is_an_edge_in_this_repositorys_own_graph`) ·
+`npm test` from `app/` **1013/1013 across 47 files, exit 0** ·
+`npx vitest run` from `lib/parser/` **314/314 across 15 files, exit 0** ·
+`npm test` from `tools/e2e/` **206 passed, exit 0** on port **15983**
+(`lsof` zero rows at 2026-08-27 00:50:53 EEST), header `Running 206
+tests using 1 worker` cross-checked against **206** `✓` bodies ·
+`arch drift` **0** at `findings=4 undeclared=2 unmapped=0
+declared_only=2 ambiguous=0 dangling=0` · `arch` at `components=13
+files=189 mapped=189 unmapped=0 edges=37` · `arch cycles` **1**, the
+designed `C-08 -> C-09 -> C-08` and nothing new. The merge's diff at
+this tip is **12 paths** (merge-tree exit 0, tree `878a93b`): BOOT GATE
+matches **0 of 12**, GRAPH REGEN **1 of 12**, DOCS GATE **11 of 12** at
+exit 1 naming the same four suites.
+
+**PASSES TWO AND THREE ARE IDENTICAL ACROSS EXACTLY ONE CARD-BODY EDIT,
+WHICH IS THE CONTROL THAT MAKES THIS PARAGRAPH SAFE TO WRITE**: adding
+prose to a live `docs/tasks/T-*.md` moves no assertion in any of the
+four suites, so the commit that carries this paragraph cannot have
+invalidated the figures in it. What a `docs/tasks` write CAN move is the
+frontmatter half — `lint:docs` is **exit 0** here, and the board counts
+moved by the three new `suggested` cards, which nothing in these four
+suites pins by value.
+
 Port **15981** was `lsof -nP -iTCP:15981 -sTCP:LISTEN`-read at **zero
 rows** at 2026-08-27 00:34:40 EEST on Mac.lan immediately before
 binding. 1420 was never probed and never touched.
