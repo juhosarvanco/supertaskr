@@ -1234,7 +1234,7 @@ padding twin, so the reason must quote a message carrying no such clause
 and must NOT contain "zero padding". Without it, "the reason says zero
 padding" is equally explained by this file composing that clause itself.
 
-**3. THE BOOT GATE — RUN, NOT DECLARED.** It fires: 1 of 8 paths is under
+**3. THE BOOT GATE — RUN, NOT DECLARED.** It fires: 1 of 9 paths is under
 `app/src/**`. `NPUTER_BOOT_PORT=15771 npm run boot:check` from `tools/e2e/`,
 **exit 0**, and both `[nputer]` lines:
 
@@ -1248,28 +1248,38 @@ SIGTERM and no `pkill` was issued. **Port 1420 was read and never touched**:
 `lsof -a -p 46532 -d cwd` puts its cwd at `/Users/ujju/Projects/nputer-app/app`
 — a different checkout, so `integrator.md` rule 1 does not bind here.
 
-**4. THE RANGE, AT THE REF THIS SHIPS ON, AND THE NOTES COMMIT CANNOT
-INVALIDATE IT.** The rejection's item 4 is a range written INTO the commit
-that added five paths to it. **The repair is structural rather than
-careful**: every path was committed FIRST, the range derived at that tip,
-and this section then edits only files ALREADY IN THE SET — so the path set
-is a fixed point across the commit that records it, and that is re-derived
-below rather than asserted.
+**4. THE RANGE, AT THE REF THIS SHIPS ON — AND IT MOVED UNDER ME ONCE,
+WHICH IS THE HALF WORTH READING.** The rejection's item 4 is a range
+written INTO the commit that added five paths to it. **The repair is
+structural rather than careful**: every path is committed FIRST and the
+range derived at that tip, so a section that then edits only files ALREADY
+IN THE SET is a fixed point.
 
-    ref 6a6bc87 (main, read at the derivation)   tip c72e97a
-    git merge-tree --write-tree 6a6bc87 c72e97a  -> exit 0 READ FIRST, tree d910cbd9…
-    git diff --name-only 6a6bc87 <TREE>              ->  8   THE PRESCRIBED PRE-MERGE FORM
-    git diff --name-only 6a6bc87...c72e97a (THREE)   ->  8   AGREES, AND THE SETS ARE IDENTICAL
-    git diff --name-only 6a6bc87..c72e97a  (TWO, FORBIDDEN) -> 30
+**THE STRUCTURE HELD AND MY FIRST DRAFT OF IT STILL WENT STALE.** This
+section was first written naming tip **`c72e97a`** at **8** paths — and
+then `T-111-s10` was filed, which is a NINTH path, and the eight became a
+nine before the commit landed. **The number below is re-derived at the
+tip that carries this sentence and the fixed point is checked rather than
+argued**, because "I arranged it so it cannot drift" is exactly the claim
+the rejected range also made.
+
+    ref 6a6bc87 (main)                           tip 18c03b4
+    git merge-tree --write-tree 6a6bc87 18c03b4 -> exit 0 READ FIRST, tree 8c95303c…
+    git diff --name-only 6a6bc87 <TREE>              ->  9   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 6a6bc87...18c03b4 (THREE)   ->  9   AGREES, AND THE SETS ARE IDENTICAL
+    git diff --name-only 6a6bc87..18c03b4  (TWO, FORBIDDEN) -> 31
     git diff --name-only 15a963d..6a6bc87 (main's advance)  -> 22
 
 `diff` over the two sorted lists is **exit 0, EMPTY**; `comm -12` against
-main's 22 is **EMPTY**; **8 + 22 = 30** is the arithmetic proving the
-forbidden form's overstatement is pure left-endpoint drift. Ratio **3.75x**
+main's 22 is **EMPTY**; **9 + 22 = 31** is the arithmetic proving the
+forbidden form's overstatement is pure left-endpoint drift. Ratio **3.44x**
 — the ratio is weather, the left endpoint is the signal. **The gate
 denominators DERIVED from that list, never from a remembered one**: DOCS
-GATE 6 of 8 under `docs/`, GRAPH REGEN 2 of 8 `.ts` outside `docs/`, BOOT
-GATE 1 of 8 under `app/src/**`.
+GATE **7 of 9** under `docs/`, GRAPH REGEN **2 of 9** `.ts` outside
+`docs/`, BOOT GATE **1 of 9** under `app/src/**`. **The commit carrying
+this paragraph edits only this card, which is already path 9**, so the set
+does not move again — verified by re-deriving at that tip and comparing the
+sorted lists, not by asserting it.
 
 **5. THE RETRACTED WORD IS OUT OF THE SUITE.** Title, comment and variable:
 `THE DECAY IS REAL HERE` -> `LANDED BLOCKERS ARE DECLARED HERE, and the
@@ -1344,14 +1354,14 @@ At `c72e97a` in this worktree unless stated.
   them impersonates a known flake (`T-111-s9`).
 - **`lint:tokens` exit 0 clean** — 138 TOKEN files, **778** CONTROL
   tracked text files · **`lint:docs` exit 0.**
-- **BOOT GATE — FIRES (1 of 8), exit 0**, both lines quoted above.
-- **DOCS GATE — FIRES, exit 1, 6 of 8 paths under `docs/`.** **15 derived
+- **BOOT GATE — FIRES (1 of 9), exit 0**, both lines quoted above.
+- **DOCS GATE — FIRES, exit 1, 7 of 9 paths under `docs/`.** **15 derived
   readers across 4 suites**, root-anchor account **6**, census 133
   docs-shaped sites in 23 files, **0 frontmatter issues**, and
   `app/test/select-board.test.ts` still derives as a `docs/tasks` +
   `docs/architecture/components` reader — `T-111-s8`'s fix survives this
   pass. Three suites owed, all three run above.
-- **GRAPH REGEN — FIRES (2 of 8), ASKED AND NOT PREDICTED, TWICE.**
+- **GRAPH REGEN — FIRES (2 of 9), ASKED AND NOT PREDICTED, TWICE.**
 
 ### THE REGEN — AND THE LANE'S FORECAST WAS MEASURED AGAINST A GRAPH THAT NO LONGER EXISTS
 
