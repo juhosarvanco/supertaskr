@@ -185,15 +185,25 @@ not the inversion (not a figure), possibly the stale blast radius.
 
 ### The figures, derived
 
-    board live cards: 313  <- @ f174d5c32de7 ; card:board
-    fence tools/e2e tracked files: 47  <- @ f174d5c32de7 ; card:fence
-    fence tools/e2e tracked bytes: 890996  <- @ f174d5c32de7 ; card:fence
-    demand tools/e2e cards: 38  <- @ f174d5c32de7 ; card:demand
+    board live cards: 316  <- @ 05a09e487852 ; card:board
+    fence tools/e2e tracked files: 47  <- @ 05a09e487852 ; card:fence
+    fence tools/e2e tracked bytes: 893489  <- @ 05a09e487852 ; card:fence
+    demand tools/e2e cards: 38  <- @ 05a09e487852 ; card:demand
 
-Of the live cards, **279 audit clean and 34 carry at least one finding**
+Of the live cards, **282 audit clean and 34 carry at least one finding**
 — an eleven-percent card-level hit rate, against arm one's every card.
 That pair is a function of the tree and moves with it; re-derive it, do
 not quote it.
+
+**THOSE FOUR LINES WERE PASTED ONCE ALREADY AND TWO OF THEM WENT STALE
+INSIDE THREE COMMITS**, which is the honest demonstration and is left in
+rather than tidied away. The first paste was at `f174d5c`; by `05a09e4`
+the board had gained three suggestion cards and `tools/e2e` had gained
+bytes, and `--card T-150` reported `STALE line 188: board live cards: 313`
+and `STALE line 190: fence tools/e2e tracked bytes: 890996` beside two
+that still VERIFIED. **The author of the gate could not keep his own
+figures current for one hour.** That is the whole argument for the gate
+and against remembering.
 
 ### T-142's caution: PROVE THE CHECK CAN FAIL
 
@@ -218,7 +228,8 @@ assertion**, and every mutation was read back with `git diff` before its
 suite ran — the count being right is not the same as the text being right
 (T-078).
 
-Baseline in the drill worktree: **25 passed, exit 0**. Kills:
+Baseline in the drill worktree: **25 passed at `8d4500a`, 27 at
+`05a09e4`, exit 0 both times**. Kills:
 
 | mutant | what it moved | killed |
 |---|---|---|
@@ -242,6 +253,8 @@ Baseline in the drill worktree: **25 passed, exit 0**. Kills:
 | M18 | `auditCard`'s reported line shifted by one | **0 — SURVIVED** |
 | M19 | `reproduces` always false | 3 |
 | M20 | a bare-digit branch added to `auditCard` | 3 |
+| M21 | stamped-line lookup back to the PROSE reader | 1 |
+| M22 | census claim inferred from transcript lines too | 1 |
 
 **M18 IS THE FINDING AND IT IS FIXED.** The reported line indexes the
 card FILE, frontmatter included, and nothing asserted it: the line-number
@@ -250,6 +263,15 @@ off-by-one sends every author to the wrong line of their own card,
 silently. A body was added (`the reported line indexes the FILE,
 frontmatter included`) and **M18 re-run against it now kills: 1 failed,
 24 passed, exit 1.**
+
+**AND THE DRILL'S SECOND FINDING CAME FROM DOGFOODING RATHER THAN FROM A
+MUTANT.** These very notes pasted their figures into an INDENTED block,
+`proseOnly` blanks those, and every figure in them therefore sat OUTSIDE
+the audit — **the author who built the gate had escaped it by
+formatting.** Closed at `05a09e4`: a `card:` stamp is an explicit machine
+claim and is now audited wherever it sits, transcript blocks included,
+while the bare-arrow and census arms stay prose-only for stated reasons.
+M21 and M22 are the mutants that pin the new cut.
 
 **ONE BODY CANNOT BE POISONED FROM THE PRODUCER AND IS NAMED RATHER THAN
 COUNTED AS DRILLED**: `every digit in that sentence is an IDENTIFIER, and
