@@ -484,3 +484,313 @@ arms (A19, A20), both red, both unique, both restored by sha256;
    re-swept with a NUL test that cannot degrade: **exactly 18 NUL-bearing
    tracked files, all icons and fonts, zero source-shaped**, with a
    positive control fired on `app/src-tauri/icons/32x32.png`.
+
+## Verification — REJECTED
+
+Adversarial verification by a seat that did not build this, at lane tip
+`260a354e80a0ab4791a9a72ae02f9bbc7e4899fd` (`git rev-parse`, 8 commits
+from base). **BOUNDED READ**: the card was read at base `00e133a` and
+**the attack set was written down at 2026-08-26T17:24Z, before the diff,
+the notes or any `T-137-s*` file was opened** (36 numbered attacks, from
+the eight criteria and the verification clause).
+
+**THE REJECTION IS NARROW AND EVERYTHING ELSE PASSED.** The extraction is
+clean, the fence claim holds, the consumer is honest, and this card's own
+measurements are exact to the byte. Two findings, one repair, both inside
+this card's own fence.
+
+### R1 — THE CARD'S CENTRAL CRITERION IS NOT MET AT THIS REF
+
+Criterion 2: *"A card is startable iff its schedule reads `ready` **and**
+its fence is disjoint from every live lane's."*
+
+`readDispatchOrder` (`lanes.ts:292`) drops a lane whose card this checkout
+cannot resolve:
+
+    const other = fences.get(lane.taskId);
+    if (other === undefined) continue;
+
+So a live lane with no card in this tree **holds nothing**, and the card
+is ruled `startable` with the sentence *"…disjoint from every live lane."*
+Measured on the live board at this ref, `T-141` live on this machine:
+
+    state of T-071                       startable
+    its reason ends                      "…disjoint from every live lane."
+    lanesWithNoCard                      ['T-141', 'T-141']
+    compareFences(T-071, T-141).verdict  OVERLAPPING
+      witnesses  app/index.html, app/src-tauri/build.rs, app/src-tauri/capabilities
+
+Driving the product's own `readDispatchOrder` over one parse of one tree,
+varying **only** the lane list:
+
+    A  real lane list (T-137, T-138, T-141x2)   startable 20  fenced 11
+    B  minus T-141 (the CARD-LESS lane)         startable 20  fenced 11   <- no change
+    C  minus T-138                              startable 23  fenced  8
+    D  no lanes at all                          startable 31  fenced  0
+    E  same lanes + T-141's real card off main  startable  5  fenced 26
+
+**Fifteen of the twenty are false green** — T-071, T-112, T-125, T-022,
+T-035, T-059, T-044, T-087, T-115, T-094, T-114, T-117, T-099, T-100,
+T-106 — each carrying "disjoint from every live lane" while a live lane
+provably holds it. This is the ORDINARY case, not an exotic one: it is
+`T-137-s9`'s own seam, and every lane older than the newest is in it.
+
+The module already has the right state and the right words for this.
+`unfenceable`'s own doc: *"no overlap proved, and a token could not be
+resolved, so no overlap could be ruled out either. NOT `startable`."* A
+lane whose fence cannot be read is that same situation one level up.
+`s9` ruled *"THE DERIVATION ITSELF IS ALREADY CORRECT"* — true of
+`dispatch-brief.mjs`, and that sentence is what carried this past.
+
+### R2 — THE PIN THAT NAMES THE PROPERTY DOES NOT TEST IT
+
+`lib/parser/test/lanes.test.ts:313` is titled **"because a fence that
+cannot be computed is not a fence that is free"** and its body asserts
+only `order.lanesWithNoCard` and `order.lanes` — the REPORTING channel.
+It never asserts the RULING its title is about.
+
+**Poison arm V1, mine, on the PRODUCER** (a card-less lane yields an
+`unusable` hold, so those 15 cards become `unfenceable` instead of
+`startable`):
+
+    lib/parser  npx vitest run   exit 0   311/311
+    tools/e2e   npm test         exit 0   205/205
+
+**516 bodies, zero kills.** The choice that decides 15 of 20 live answers
+is unpinned in BOTH directions. Restored by sha256 to a byte-identical
+file. This is the A17 shape — a body on the helper while the call site
+goes unpinned — surviving in the same lane, one commit after `000273e`
+repaired the other one.
+
+### THE EXTRACTION IS CLEAN — the control, run at BOTH refs
+
+The card's stated whole risk is a silent behaviour change in C-12. It did
+not happen.
+
+    app npm test @ base 00e133a   47 files  1013/1013  exit 0
+    app npm test @ tip  260a354   47 files  1013/1013  exit 0
+
+    map-task-waves.test.ts        50 / 50      <- the ONLY file that reaches
+    map-tasks-lens-dom.test.tsx   29 / 29         the moved analysis
+    map-dogfood-render.test.tsx    8 /  8
+    map-visuals.test.ts           41 / 41
+
+`app/test/**` is **untouched by this lane** and `map-task-waves.test.ts`
+is byte-identical at both refs (sha256 `1c991adc…`), so those 50 bodies
+are the same bodies executing the moved implementation through the
+re-export. That is a real control, not an unchanged total.
+
+Also verified: **no duplicate implementation** — not one moved symbol is
+defined in `app/src/architecture/task-waves.ts`; `tsc` + `tsc -p
+tsconfig.test.json` + `vite build` exit 0.
+
+**FOURTEEN APP BODIES ARE RED IN A FRESH WORKTREE UNTIL `npm run build`
+RUNS** — "no build output at …/app/dist/assets". Node's precondition, not
+a verdict, the same class as the `ERR_MODULE_NOT_FOUND: yaml` trap and
+worth the same warning.
+
+### THE ONE IMPORT — the default cannot produce a wrong schedule
+
+`rejectedCountOf` defaults to `() => 0`. `readSchedule(status, blockedBy,
+statusOf, self)` never receives it; the only consumer of `rejectedCount`
+is `worstBlockerText`'s word (`task-waves.ts:651`). `ScheduleState` is a
+pure function of status, `blocked_by` and the board. The default costs one
+display word, the tool prints that difference in its own output, and it is
+routed as `s6`. **No wrong schedule is reachable.**
+
+### THE FENCE — no second implementation
+
+`lanes.ts` imports exactly `compareFences`/`expandFence` (+4 types). A
+mechanical sweep for `startsWith`/`endsWith`/`split('/')`/`normali[sz]`/
+`toLowerCase`/`RegExp`/`.test(`/`path.`/`posix`/`resolve(` returns only
+doc comments and `join(', ')` in reason SENTENCES. `normalizeFenceToken`
+and `slugPathIndex` are never called. T-134's module is the only one.
+
+### RULING ON THE `fence.ts` DISCHARGE — the counter-example holds
+
+`FenceWitness` is `{left, right, path}`; `Fence.tokens[].raw` +
+`.components` close the join, and `witnessComponents` does it. **The
+reason carried to two lanes as decisive is DISCHARGED.** Re-derived
+independently at this tip:
+
+    OPEN fence-carrying cards           38    703 pairs
+      no oracle    overlapping 322  disjoint 381  unusable 0
+      with oracle  overlapping 322  disjoint 381  unusable 0
+
+**The oracle changes 0 verdicts over the set a dispatch can reach** —
+exact. And the decisive property: `disjoint` is IDENTICAL either way
+(8732 = 8732 over all pairs); all 35 pairs the oracle resolves move
+`unusable -> overlapping`. **The oracle can only ADD overlaps, never
+remove one.** Confirmed. The ruling — board keeps its copy until one card
+opens the vocabulary AND parameterises `knownPaths` — stands.
+
+### RULING ON `T-137-s2` — routing is correct, and it is worse than filed
+
+Verified at the tip with the lane's own binary, and again with main's:
+
+    lane tip, ceiling 1_000_000   973 194 bytes  2004 symbols  TRUNCATED
+    lane tip, ceiling 1_040_000  1 011 999 bytes  2129 symbols  clean
+    delta                           38 805        125 symbols  = agent_runner.rs
+
+**The direction is confirmed: data is dropped and the document SHRINKS.**
+The merged tree under main's ceiling is `1 020 020 of 1 040 000 (98.1%) -
+19 980 left`, no truncation — **`T-139`'s raise did save it by timing.**
+
+`budget_line` (`check.rs:215`) uses `report.fresh_bytes`, the length
+AFTER `apply_budget`. Forced empirically (main's binary, ceiling lowered
+to 1_000_000 in a scratch checkout, restored by sha256):
+
+    fresh index: 981215 bytes · 2027 symbols
+    | ~ stats.truncated_symbols None -> Some(true)
+    | ~ app/src-tauri/tests/agent_runner.rs  (symbols 125 -> 0)
+    budget:      981215 of 1000000 bytes (98.1%) - 18785 left
+
+**T-139's new number reads "98.1%, 18 785 left" while 125 symbols are
+being dropped.** Because `apply_budget` returns only when the doc FITS,
+`used > budget` — the branch whose text names the degradation — is
+**unreachable except at the floor**, and its only test (`check.rs:462`)
+uses `budget = 400`, the absurd case. So the branch that would alarm is
+tested only where it cannot occur.
+
+`check.rs` is C-07 `crate-index`, outside `[lib-parser, app-map,
+tools/e2e]`. **T-137 cannot fix it; `s2`'s `touches: [crate-index]` is the
+right routing**, and the unreachable-branch point belongs on it.
+
+### THE RANGE — by the range rule, endpoints named
+
+`git merge-tree --write-tree 2a922cecfc35e61ab67a20575c5bf792f6a7d7ff
+260a354e80a0ab4791a9a72ae02f9bbc7e4899fd` → **exit 0, read from `$?`
+BEFORE the substitution** → tree `6f9788711af4dede999b8224c83c71a90bf9d162`.
+`git diff --name-only 2a922ce 6f978871` = **21 paths**, 11 under the GRAPH
+REGEN trigger. The forbidden two-dot form says **74**.
+
+### GATES — asked, never predicted, and asked again after every write
+
+    index --check @ main 2a922ce   EXIT 0  clean
+    index --check @ base 00e133a   EXIT 1  989181/183/2101/2033 BOTH SIDES
+    index --check @ tip  260a354   EXIT 1  989181/183/2101/2033 committed
+                                           973194/187/2004/2105 fresh
+                                           truncated_symbols Some(true), files Some(1)
+
+**The identical-figures trap reproduced at base**: bytes, files, symbols
+AND edges all match and the gate still fires, on one file's content
+(`architecture-dogfood.test.ts`, loc 1974 -> 1979). **`s3` is TRUE at this
+lane's base and CLOSED on today's main** — the card left that unverified;
+it is verified here.
+
+Re-asked after each of my four writes; identical every time; every scratch
+checkout `git status --porcelain` empty.
+
+    lib/parser  npx vitest run  311/311  exit 0
+    app         npm test       1013/1013 exit 0   (after npm run build)
+    tools/e2e   npm test  Running 205 tests -> 205 passed, exit 0, T-141 live
+                          explicit port 14737, re-probed immediately before binding
+    DOCS GATE   exit 0        arch drift exit 0 (findings=4, dangling=0)
+    arch cycles exit 1 BY DESIGN, 1 cycle among 13 components, read unpiped
+
+**NUL SWEEP with a positive control** (plain `grep` misses across a NUL,
+`command grep -a` finds): **zero NUL bytes in every one of the 21 changed
+paths at every one of the 8 commits**, and exactly **18** NUL-bearing
+tracked files tree-wide, all icons and fonts — the card's own figure, hit
+independently.
+
+### ARMS I RAN MYSELF
+
+    A14'  readSchedule returns `unmet: []` on a READY reading
+          -> exit 1, 1 of 1013, UNIQUE, map-task-waves.test.ts
+          The absent-not-empty rule IS load-bearing, and its only pin is
+          in a file this lane may not edit. Positive control supplied.
+    A17   parseProjectFromFiles(boardFiles(root)) -> parseProject(root)
+          -> exit 1, 1 of 205, UNIQUE, killed by dispatch-order.spec.ts:161
+          The `000273e` repair works and is unique. Confirmed.
+    V1    a card-less lane yields an `unusable` hold  (see R2)
+          -> exit 0 / exit 0, 0 of 516. Nothing pins it.
+
+All three restored by sha256 to byte-identical files.
+
+### WHAT ELSE I ATTACKED AND FOUND NOTHING
+
+`blocked_by` untouched — every diff hit is a doc comment; no card's
+frontmatter field moved. `docs/ROADMAP.md` untouched; no second notion of
+progress. The consumer writes nothing (no `writeFile`/`mkdir`/`rm`/
+`createWriteStream` anywhere reachable). All four report sections present
+and in the criterion's order, lane named, unmet blocker named, generation
+declared out of scope in the output itself. Lane list filtered on the
+BRANCH: my three DETACHED scratch worktrees are correctly absent from it.
+`D` above is the internal control — with no lanes, `startable` is 31,
+exactly "ready on blocked_by alone". `s8` reproduced independently: a card
+whose `title:` opens with a backtick gives DOCS GATE **exit 0** printing
+*"every live task card's frontmatter parses"* while the parser smoke gives
+**exit 1 `yaml-error`** on the identical tree.
+
+### WHERE THE BRIEF WAS WRONG
+
+1. **"the four map-pane files at 97/97 before and after"** — that figure
+   appears NOWHERE in this lane's documents and does not reproduce. The
+   map-pane files count 50, 29, 8, 41, 25, 27, 10, 21, 7, 4, 28, 17; no
+   set of four sums to 97. The real control is stronger: `app/test/**` is
+   untouched and both refs are 1013/1013.
+2. **"992 929 -> 968 081"** are two INTERMEDIATE rows of the lane's
+   file-by-file table, not this lane's tip. At the tip it is
+   **1 011 999 -> 973 194**.
+3. **"the budget line reads 96.8%"** — 96.8% is that intermediate row.
+   The lane's actual tip is 97.3%, and the line I forced T-139's own
+   reporter to print read **98.1%**. Direction right, figure not.
+4. **"untruncated it computes to 1 012 056"** — it is **1 011 999**
+   (below).
+5. **"that branch had no assertion and now has four"** — the shipped code
+   comment and commit `1338633` both say **three**, `s9` says **four**,
+   and the literal count on the unresolvable branch is **five** `expect`s
+   (two live, three fixture) plus the totality guard. The load-bearing
+   half is TRUE: before, there was NO unresolvable branch — every lane was
+   required to print `touches:`. **Narrower is strictly stronger here.**
+6. **"20 drill arms, one survivor"** — the card records no drill table.
+   Only A14, A15, A17, A19, A20 are named, in prose. "20 arms" is not
+   verifiable from this lane's own record.
+7. The brief's own flagged error is confirmed: **`FenceWitness` carrying
+   no component ids is NOT a reason**, and the counter-example ships.
+
+### WHERE THE CARD WAS WRONG
+
+1. **`s2`'s untruncated figure is 57 bytes high.** `973 194 + 38 862 =
+   1 012 056` adds the symbol block back to a document that still carries
+   the two truncation flags. Those flags cost exactly 57 bytes —
+   `"truncated_symbols": true,` (31) + `"truncated_files": 1` (25) + the
+   comma the `"edges"` line gains (1). Measured both documents: **38 805**
+   delta, untruncated **1 011 999**. So `12 056 OVER` is **11 999 OVER**
+   and `27 944 of headroom` is **28 001**. The 38 862 symbol-block figure
+   is right; neither conclusion changes.
+2. **"Ten paths" (line 147) — there are ELEVEN.**
+   `tools/e2e/tests/brief.spec.ts` arrived at `1338633` and was never
+   added to the table. "All inside `[lib-parser, app-map, tools/e2e]`"
+   stays true.
+3. **"Main moved twice" (line 130) contradicts "Main moved THREE times"
+   (line 448)** in the same file. Line 448 is right.
+4. **The ALL-set fence census has drifted inside this lane's own
+   lifetime.** Stamped at `000273e` as 151 cards / 11 325 pairs /
+   116 / 82 / 27 tokens; at the tip it is **160 / 12 720 / 122 / 87 / 28**
+   — moved by the nine `T-137-s*` cards this lane itself wrote. The card's
+   own rule ("DERIVE THE COUNT AT YOUR OWN REF") applies to it. **The
+   OPEN-set figures, the ones it says govern a dispatch, are exact.**
+5. **`s3` was filed as "very likely gone, NOT verified".** Verified here:
+   base exit 1, main `2a922ce` exit 0. Closed.
+6. **`lanes.test.ts:313`'s title overclaims its body** (R2).
+7. **The card-less-lane finding is emitted once per WORKTREE, not once
+   per task id**: `lanesWithNoCard` returns `['T-141','T-141']` and the
+   report prints the same sentence twice, because two worktrees hold that
+   branch.
+
+### WHAT WOULD CLEAR THIS
+
+Both repairs are inside `[lib-parser, tools/e2e]`. (a) A live lane whose
+fence cannot be read must not leave a card in `startable` — `unfenceable`
+already exists, is already documented for exactly this, and has zero live
+instances. (b) Give `lanes.test.ts:313` the assertion its own title names,
+so arm V1 kills. The reason sentence and the `STARTABLE NOW` header must
+stop saying "every live lane" while `lanesWithNoCard` is non-empty. Dedupe
+the finding by task id while there.
+
+Nothing else found here needs to block: 1-7 above are corrections to
+prose and figures, and `s2`/`s3`/`s8` are correctly routed out of fence.
+
+Verifier frontmatter fields left unstamped.
