@@ -72,6 +72,17 @@ write it up as a defect that fired.
 **Arm 1 is the one to take first** — it is nearly free and it makes arms
 2 and 3 optional rather than urgent.
 
+**SCOPE ARM 1 TO THE ROOT PAIR ONLY.** There is a second adapter pair —
+`method/adapters/CLAUDE.md` and `method/adapters/AGENTS.md`, the
+templates a new project copies — and those two **legitimately differ by
+one line**: `AGENTS.md`'s opening HTML comment names the tools it serves
+("Codex CLI, Cursor, Gemini CLI etc.") and `CLAUDE.md`'s does not. A
+check written as *"every adapter pair in the repository is
+byte-identical"* fails on that pair on day one and gets weakened or
+deleted rather than fixed. Compare the ROOT pair byte for byte; if the
+templates are ever worth comparing, it is content-below-the-comment, and
+that is `T-145`'s ground, not this card's.
+
 ## One caution for whoever takes it
 
 **A test that reads one file and asserts a property of it can pass while
