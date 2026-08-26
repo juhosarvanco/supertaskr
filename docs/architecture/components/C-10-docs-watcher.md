@@ -6,6 +6,16 @@ paths:
   - app/src-tauri/src/docs_watch.rs
   - app/src/lib/watcher-store.ts
   - app/src/lib/docs-model.ts
+  # The tests that exercise this pipeline, routed out of C-05's test
+  # umbrella at T-149. All four drive `watcher-store.ts` or
+  # `docs-model.ts` and nothing else of anyone's. `shell-harness` is the
+  # one whose NAME says shell: the surface it audits,
+  # `window.__nputerShellHarness`, is installed by `watcher-store.ts`,
+  # and the code a fix would edit is this component's.
+  - app/test/docs-model.test.ts
+  - app/test/shell-harness.test.ts
+  - app/test/startup-recovery.test.ts
+  - app/test/watcher-store.test.ts
 depends_on: [C-06]
 decisions: [ADR-002, ADR-014]
 status: auto
