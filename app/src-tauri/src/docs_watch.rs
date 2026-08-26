@@ -63,6 +63,48 @@ const ROADMAP_NAME: &str = "ROADMAP.md";
 const ARCHITECTURE_NAME: &str = "ARCHITECTURE.md";
 const TASKS_SUBDIR: &str = "tasks";
 /// Caps so a pathological repo cannot balloon the IPC payload.
+///
+/// `MAX_FILE_BYTES` IS 1 MiB AND T-139 MEASURED IT RATHER THAN MOVING IT.
+/// It is an AVAILABILITY control, not a performance one, and that is why
+/// the measurement argues for leaving it alone rather than for raising
+/// it. Two findings, both re-derivable — the harness is
+/// `app/src-tauri/tests/graph_budget_bench.rs` plus
+/// `app/test/graph-budget-bench.mjs`, measured at `13c736e` on an Apple
+/// M5 / macOS 26.6 (25G72):
+///
+/// 1. NOTHING BINDS NEAR IT. Delivering the 989 181-byte `graph.json` —
+///    the only collected file anywhere near this cap — costs 3.66 ms end
+///    to end: 0.126 ms here, 2.374 ms across the IPC hop, 1.160 ms in
+///    `parseGraph`. Linear to 14 MB with no knee. The IPC hop is the
+///    stage that binds, and it binds for a shape reason rather than a
+///    size one: tauri's `emit` serializes the snapshot with serde_json
+///    and then `event::emit_js_script` embeds that JSON VERBATIM AS JS
+///    SOURCE, which `webview/mod.rs:1975` hands to `eval` — so the
+///    webview parses a megabyte-scale object literal with its general JS
+///    parser. Measured on JavaScriptCore, the engine a macOS WKWebView
+///    actually runs: 1.76 ms to eval, against 0.92 ms to `JSON.parse` the
+///    same bytes. Roughly half that stage is the channel's shape.
+///
+/// 2. THE BLAST RADIUS IS EVERY DOC, WHICH IS WHY IT DID NOT MOVE. This
+///    cap governs all 372 files `collect_docs_tree` accepts. Exactly ONE
+///    of them is within 7x of it (`graph.json`, at 94.3%); the largest
+///    markdown is 145 078 bytes, 13.8%. `MAX_FILES` is 2 000 and NOTHING
+///    CAPS THE AGGREGATE, so raising this to buy headroom for one file
+///    raises the worst-case payload by the same factor for two thousand.
+///    If the map is ever to know more than ~1 MiB of a codebase, the
+///    shape that buys it is a GRAPH-SPECIFIC cap on the `.json` branch of
+///    `is_collected_docs_path` — a new refusal surface, and a card of its
+///    own — not a wider general one.
+///
+/// AND IT IS THE HARD ONE OF THE PAIR. `nputer-index`'s
+/// `IndexOptions::max_graph_bytes` governs the same file and DEGRADES at
+/// its limit (symbol arrays dropped, files and `import` edges kept,
+/// `truncated_*` set); this cap does not degrade at all — over it, the
+/// file becomes a `SkipReason::Oversize` row and the pane stops receiving
+/// the graph. `max_graph_bytes < MAX_FILE_BYTES` is what keeps the first
+/// failure in front of the second, and
+/// `tests::the_emit_budget_stays_below_the_collectors_file_cap` enforces
+/// it across the two crates.
 const MAX_FILE_BYTES: u64 = 1_048_576; // 1 MiB per file
 const MAX_FILES: usize = 2_000;
 const MAX_DEPTH: usize = 16;
@@ -1723,6 +1765,71 @@ mod tests {
         t.write("docs/architecture/huge.json", &big);
         let paths: Vec<String> = collect_docs_files(t.root()).into_iter().map(|f| f.path).collect();
         assert_eq!(paths, vec!["docs/architecture/graph.json"]);
+    }
+
+    /// T-139 — THE INVARIANT BETWEEN THE TWO SIZE LIMITS, ENFORCED RATHER
+    /// THAN ASSUMED. It is the only test in this repository that reads
+    /// both, and it exists because they live in different crates with
+    /// nothing between them: `nputer-index` decides how big a
+    /// `graph.json` it will emit, this module decides how big a file it
+    /// will ship, and the two had agreed only by coincidence and a
+    /// comment. Raise the emitter's budget to or above this cap and every
+    /// suite in the repository stays green while the map pane silently
+    /// stops receiving the graph — an `Oversize` skip, no truncation
+    /// flag, no error path, nothing on screen but "index not run".
+    ///
+    /// IT IS DELIBERATELY PARAMETRISED BY BOTH CONSTANTS AND RESTATES
+    /// NEITHER. A copy of `1_040_000` here would move with the thing it
+    /// checks and pin nothing (`T-010-s3` arm 2's own trap). What is
+    /// pinned is the RELATION, so the mutation that reds it is an edit to
+    /// either definition site.
+    ///
+    /// THE THIRD ASSERTION IS THE POSITIVE CONTROL and the reason this is
+    /// not arithmetic about two integers: it drives the real collector
+    /// with a file of exactly the emitter's budget and shows it ARRIVING.
+    /// Without it, `budget < cap` would still pass in a world where the
+    /// collector had stopped shipping `.json` at all.
+    #[test]
+    fn the_emit_budget_stays_below_the_collectors_file_cap() {
+        let budget = nputer_index::IndexOptions::default().max_graph_bytes;
+        assert!(
+            (budget as u64) < MAX_FILE_BYTES,
+            "T-139: nputer-index emits up to {budget} bytes and this collector drops anything over \
+             {MAX_FILE_BYTES}. At or above the cap the emitter's own graceful degradation \
+             (symbols dropped, files and import edges kept, truncated_* set) is unreachable, \
+             because the file never arrives at all. Lower IndexOptions::max_graph_bytes, or \
+             raise MAX_FILE_BYTES and answer for every other doc it governs."
+        );
+
+        // The relation, exercised: a graph at exactly the emitter's
+        // ceiling rides the snapshot, and one byte past this collector's
+        // cap does not.
+        let t = TempTree::new("budget-under-cap");
+        t.write("docs/architecture/graph.json", &"x".repeat(budget));
+        t.write(
+            "docs/architecture/over.json",
+            &"y".repeat((MAX_FILE_BYTES + 1) as usize),
+        );
+        let outcome = collect_docs_tree(t.root());
+        let shipped: Vec<&str> = outcome.files.iter().map(|f| f.path.as_str()).collect();
+        assert_eq!(
+            shipped,
+            vec!["docs/architecture/graph.json"],
+            "a graph AT the emitter's budget must arrive; a file over the cap must not"
+        );
+        assert_eq!(
+            outcome.files[0].content.len(),
+            budget,
+            "and it must arrive whole, not truncated"
+        );
+        assert!(
+            outcome.skipped.contains(&SkippedFile {
+                path: "docs/architecture/over.json".to_string(),
+                reason: SkipReason::Oversize,
+            }),
+            "the cap is live at the value the assertion above names: {:?}",
+            outcome.skipped
+        );
     }
 
     #[cfg(unix)]

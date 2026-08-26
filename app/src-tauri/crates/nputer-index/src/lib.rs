@@ -64,9 +64,61 @@ pub struct IndexOptions {
     /// Languages to collect. Default `[Ts, Js, Rust]` — `Rust` was inert
     /// until T-010 registered its extractor.
     pub languages: Vec<Lang>,
-    /// Serialized-size budget. Default 1_000_000 — headroom under the
-    /// docs collector's 1 MiB/file cap (a graph landing exactly at the
-    /// cap would be one edit from vanishing out of the snapshot).
+    /// Serialized-size budget: the emitted document never exceeds this,
+    /// because [`emit::apply_budget`] drops symbol arrays until it fits.
+    ///
+    /// DEFAULT `1_040_000`, WHICH IS `MAX_FILE_BYTES - 8_576`. The number
+    /// this must stay under is the docs collector's per-file cap,
+    /// `docs_watch.rs`'s `MAX_FILE_BYTES` (1 MiB) — `graph.json` is
+    /// subject to BOTH, because the collector accepts `.json` only under
+    /// `docs/architecture/`, a rule written for this file. The two
+    /// failure modes are not alike and that asymmetry is the whole
+    /// argument: crossing THIS budget DEGRADES (symbol arrays go, files
+    /// and `import` edges never do, `truncated_*` is set); crossing the
+    /// collector's cap is a CLIFF (`SkipReason::Oversize`, and the pane
+    /// simply stops receiving the graph). So `max_graph_bytes <
+    /// MAX_FILE_BYTES` is what keeps the survivable failure in front of
+    /// the silent one, and it is ENFORCED rather than assumed, by
+    /// `docs_watch::tests::the_emit_budget_stays_below_the_collectors_file_cap`,
+    /// which reads both constants instead of restating either.
+    ///
+    /// THE VALUE IS MEASURED, at `13c736e` on an Apple M5 / macOS 26.6
+    /// (25G72), by `app/src-tauri/tests/graph_budget_bench.rs` and
+    /// `app/test/graph-budget-bench.mjs` — both re-runnable, both naming
+    /// their command in their own module docs. Delivering the live
+    /// 989 181-byte graph costs 3.66 ms end to end, and the stage that
+    /// binds is the IPC hop rather than the parse:
+    ///
+    ///   read   (collector, whole docs tree)   0.126 ms    3.4%
+    ///   IPC    (serde encode + webview eval)  2.374 ms   64.9%
+    ///   parse  + model construction           1.160 ms   31.7%
+    ///
+    /// Cost is LINEAR to 14 MB with no knee, so no stage argues for a
+    /// limit anywhere near 1 MiB. What sets this number is therefore the
+    /// cliff and nothing else — and the distance to it was doing no work.
+    /// The emitter caps the document, so while this stays under the
+    /// collector's cap AND `apply_budget`'s floor stays under it too, the
+    /// graph can never be dropped; that floor — every symbol array
+    /// emptied and the dependent `s:` edges gone — is 204 996 bytes here,
+    /// 19.6% of the cap. The old 48 576-byte gap bought no safety and
+    /// cost about 130 symbols at this graph's 373 bytes/symbol, while the
+    /// headroom under `1_000_000` had fallen to 10 819 bytes against a
+    /// mean single-commit growth of 15 751 (55 growths on record, median
+    /// 5 230, max 241 980 at T-010) — one ordinary merge from truncating.
+    ///
+    /// THE REMAINING 8 576 BYTES ARE NOT A GROWTH ALLOWANCE. Growth is
+    /// absorbed by truncation, which is what this budget is FOR. They are
+    /// there because the two limits are two DIFFERENT measurements in two
+    /// different crates: `apply_budget` compares the serialized STRING
+    /// LENGTH and the collector compares the on-disk `meta.len()`. Equal
+    /// today; a non-zero gap is also what gives the strict `<` in the pin
+    /// something to catch when somebody makes them equal on purpose.
+    ///
+    /// RAISING THE COLLECTOR'S CAP IS NOT THE WAY TO BUY MORE THAN THIS
+    /// (T-139): that cap governs all 372 collected docs, `MAX_FILES` is
+    /// 2 000 and nothing caps the aggregate. A graph-specific cap on the
+    /// `.json` branch of `is_collected_docs_path` is the shape that
+    /// would, and it is a card of its own.
     pub max_graph_bytes: usize,
 }
 
@@ -76,7 +128,10 @@ impl Default for IndexOptions {
             root: PathBuf::new(),
             cache_dir: None,
             languages: vec![Lang::Ts, Lang::Js, Lang::Rust],
-            max_graph_bytes: 1_000_000,
+            // T-139: `MAX_FILE_BYTES - 8_576`. The field's doc above
+            // carries the measurement and the argument; the pin that
+            // holds the relation is in docs_watch.rs's tests.
+            max_graph_bytes: 1_040_000,
         }
     }
 }

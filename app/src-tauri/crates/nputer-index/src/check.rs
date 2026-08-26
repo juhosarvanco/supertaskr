@@ -49,6 +49,14 @@ pub struct CheckReport {
     pub fresh_bytes: usize,
     pub committed_stats: Option<(usize, usize, usize)>,
     pub fresh_stats: (usize, usize, usize),
+    /// The emit budget this run measured against
+    /// (`IndexOptions::max_graph_bytes`) — carried so the report can print
+    /// the HEADROOM beside the size (T-139, taking `T-010-s3` arm 1).
+    /// Every checkpoint runs this gate by hand, and until now the one
+    /// number that would have warned anybody was the one it did not
+    /// print: `bytes · files · symbols · edges`, and never how much room
+    /// was left.
+    pub budget_bytes: usize,
 }
 
 impl CheckReport {
@@ -78,6 +86,7 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
             fresh_bytes: fresh_json.len(),
             committed_stats: None,
             fresh_stats,
+            budget_bytes: opts.max_graph_bytes,
         });
     };
 
@@ -89,6 +98,7 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
             fresh_bytes: fresh_json.len(),
             committed_stats: Some(fresh_stats),
             fresh_stats,
+            budget_bytes: opts.max_graph_bytes,
         });
     }
 
@@ -116,6 +126,7 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
         fresh_bytes: fresh_json.len(),
         committed_stats,
         fresh_stats,
+        budget_bytes: opts.max_graph_bytes,
     })
 }
 
@@ -131,9 +142,10 @@ pub fn render(report: &CheckReport, root_label: &str) -> String {
     let Some(stale) = &report.stale else {
         out.push_str(&format!(
             "[nputer-index] graph.json is CURRENT - {} matches a fresh index \
-             ({} bytes, {ff} files, {fs} symbols, {fe} edges)\n",
+             ({} bytes, {ff} files, {fs} symbols, {fe} edges)\n{}",
             rel_display(&report.graph_path, root_label),
             report.committed_bytes,
+            budget_line(report),
         ));
         return out;
     };
@@ -176,10 +188,45 @@ pub fn render(report: &CheckReport, root_label: &str) -> String {
             render_delta(&mut out, delta);
         }
     }
+    out.push_str(&budget_line(report));
     out.push_str(&format!(
         "[nputer-index]\n[nputer-index]   regenerate: nputer-index index --root {root_label}\n"
     ));
     out
+}
+
+/// THE ONE NUMBER THIS REPORT USED NOT TO PRINT (T-139, taking
+/// `T-010-s3` arm 1): how much of the emit budget a FRESH index of this
+/// tree would spend, and how much would be left.
+///
+/// It is the fresh size and not the committed one on purpose. The
+/// question a reader has at this gate is "what will the next regen
+/// write", and on a CURRENT graph the two are byte-identical anyway.
+///
+/// Over budget is not an error and must not read like one: the emitter
+/// degrades rather than failing — symbol arrays are dropped largest
+/// first, files and `import` edges are never dropped — so the line names
+/// the degradation and points at the flags that record it, because a
+/// truncated graph is otherwise indistinguishable from a small one.
+fn budget_line(report: &CheckReport) -> String {
+    if report.budget_bytes == 0 {
+        return String::new();
+    }
+    let used = report.fresh_bytes;
+    let budget = report.budget_bytes;
+    let percent = (used as f64) * 100.0 / (budget as f64);
+    if used > budget {
+        format!(
+            "[nputer-index]   budget:      {used} of {budget} bytes ({percent:.1}%) - OVER by {}: \
+             symbol arrays are being dropped (stats.truncated_symbols / truncated_files say how many)\n",
+            used - budget
+        )
+    } else {
+        format!(
+            "[nputer-index]   budget:      {used} of {budget} bytes ({percent:.1}%) - {} left\n",
+            budget - used
+        )
+    }
 }
 
 fn render_delta(out: &mut String, delta: &GraphDiff) {
@@ -353,6 +400,80 @@ mod tests {
             "names the added edge:\n{text}"
         );
         assert!(text.contains("files  +1"), "counts the delta:\n{text}");
+    }
+
+    /// T-139, taking `T-010-s3` arm 1. This gate printed
+    /// `bytes · files · symbols · edges` and never the room left, so the
+    /// first anybody would learn the budget had run out was the day
+    /// symbol panels went empty in the map with nothing pointing at the
+    /// cause. This is the CURRENT path, which is the one a checkpoint
+    /// reads.
+    #[test]
+    fn a_current_graph_reports_the_room_left_in_the_budget() {
+        let t = TempTree::new("check-headroom");
+        t.write("src/a.ts", "export const a = 1;\n");
+        let graph = index(&opts(t.root())).unwrap();
+        crate::write_graph(&graph, &t.root().join(GRAPH_REL_PATH)).unwrap();
+
+        let report = check(&opts(t.root())).unwrap();
+        assert!(!report.is_stale(), "{report:?}");
+        let text = render(&report, ".");
+        let budget = IndexOptions::default().max_graph_bytes;
+        let left = budget - report.fresh_bytes;
+        assert!(
+            text.contains(&format!("{} of {budget} bytes", report.fresh_bytes)),
+            "names the size against the budget it was measured on:\n{text}"
+        );
+        assert!(
+            text.contains(&format!("- {left} left")),
+            "names the REMAINING room, which is the number nothing printed:\n{text}"
+        );
+        assert!(
+            !text.contains("OVER by"),
+            "an under-budget graph must not read as a degraded one:\n{text}"
+        );
+    }
+
+    /// The other half, and the one that must read as a DEGRADATION rather
+    /// than as a failure: over budget the emitter still emits, so the line
+    /// names what is being lost and where the count of it lives. Driven
+    /// through the real `index()` with a budget below even the floor, so
+    /// `apply_budget` runs out of symbol arrays and emits the valid
+    /// over-budget document.
+    #[test]
+    fn an_over_budget_graph_says_what_is_being_dropped() {
+        let t = TempTree::new("check-overbudget");
+        for i in 0..8 {
+            t.write(
+                &format!("src/f{i}.ts"),
+                "export const alpha = 1;\nexport const beta = 2;\n",
+            );
+        }
+        let tight = IndexOptions {
+            max_graph_bytes: 400,
+            ..opts(t.root())
+        };
+        let graph = index(&tight).unwrap();
+        crate::write_graph(&graph, &t.root().join(GRAPH_REL_PATH)).unwrap();
+
+        let report = check(&tight).unwrap();
+        let text = render(&report, ".");
+        assert!(
+            report.fresh_bytes > 400,
+            "the fixture must actually exceed the budget: {report:?}"
+        );
+        assert!(
+            text.contains(&format!("OVER by {}", report.fresh_bytes - 400)),
+            "names how far over:\n{text}"
+        );
+        assert!(
+            text.contains("symbol arrays are being dropped"),
+            "says what the emitter gave up, not merely that a number is large:\n{text}"
+        );
+        assert!(
+            text.contains("truncated_symbols"),
+            "points at the flags that carry the count:\n{text}"
+        );
     }
 
     #[test]
