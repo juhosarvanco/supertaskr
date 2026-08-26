@@ -324,9 +324,26 @@ lane's own built indexer:
     + lib/parser/test/lanes.test.ts (whole lane)     973 194    187     2004   YES
 
 **THE TIPPING FILE IS `lib/parser/src/lanes.ts` AND IT IS AN ORDINARY
-FOUR-HUNDRED-LINE MODULE.** `max_graph_bytes` is `1_000_000`, read out of
-`crates/nputer-index/src/lib.rs:79`. `apply_budget` drops the most
-expensive symbol block until the document fits.
+FOUR-HUNDRED-LINE MODULE.** `max_graph_bytes` is `1_000_000` at this
+lane's base, read out of `crates/nputer-index/src/lib.rs:79`.
+`apply_budget` drops the most expensive symbol block until the document
+fits.
+
+**AND `T-139` MERGED WHILE THIS LANE RAN AND RAISED THE CEILING, WHICH
+CHANGES THE VERDICT AND NOT THE MECHANISM.** At `ae92f67`, main's
+`max_graph_bytes` is **`1_040_000`** (`:134`). Re-derived exactly — the
+serialisation was verified to reproduce the committed graph byte for byte
+at indent two plus a newline, 989 181 = 989 181:
+
+    agent_runner.rs symbol block         125 symbols = 38 862 bytes
+    this lane's graph, TRUNCATED                    973 194
+    this lane's graph, UNTRUNCATED                1 012 056
+      against 1_000_000 (this lane's base)   12 056  OVER
+      against 1_040_000 (main at ae92f67)    27 944  of headroom
+
+**SO THIS LANE NO LONGER OVERFLOWS ONCE IT MEETS MAIN, and the integrator
+should confirm that at its own ref rather than trusting either figure.**
+The mechanism below holds at either ceiling.
 
 **AND THE BYTE COUNT GOES DOWN WHEN IT OVERFLOWS — 992 929 -> 968 081.**
 A checkpoint watching usage as a percentage reads **96.8%** and concludes
@@ -336,6 +353,13 @@ which `index --check` prints, `arch` does not report, and
 — *"THIS ONE CANNOT SAY ONE [more merge]"* — was right, and this is the
 merge that goes over. Routed as `T-137-s2`; it is `T-139`/`T-140`'s
 subject and this lane is its first live instance.
+
+**AND `T-139`'s CHECKPOINT ALSO REGENERATED THE GRAPH**, so the base-commit
+staleness below is very likely already closed on main. **It was not
+verified**, and the reason is itself the finding: checking main's graph
+needs main's OWN indexer, because a check run with this lane's older
+binary can report a FALSE stale on a tree whose fresh index sits between
+the two ceilings — and this lane may not build in that checkout.
 
 ### THE GRAPH ON MAIN WAS ALREADY STALE BEFORE THIS LANE EXISTED
 
@@ -392,7 +416,30 @@ two rows (the graph header and C-06's file count); `edges=37`,
    is what forced `unmet` to be ABSENT rather than `[]` on a `ready`
    reading — poison arm A14 proves the naive version reds
    `map-task-waves.test.ts`, a file this lane may not edit.
-6. **This session wrote two literal `U+0000` bytes** into
+6. **The brief's four known limits included "it does not stop me being
+   stale", and this lane is the worked example.** Main moved THREE times
+   while it ran — `00e133a -> db4c903 -> ae92f67 -> 2a922ce` — `T-139`
+   merged, its lane was removed, `T-141`'s was cut, and
+   **`max_graph_bytes` changed underneath a measurement this card had
+   already written down.** Every figure here therefore names its own ref,
+   and the two that are functions of MAIN rather than of this tree
+   (`max_graph_bytes`, the graph's currency) are stated twice, once at
+   each ref.
+7. **`npm test` from `tools/e2e/` is exit 1 at this lane's tip, and the
+   red is not this lane's.** `brief.spec.ts:706` — *a brief assembled at
+   this ref names the lanes the repository holds, and no others* —
+   expects `T-141 touches:` and gets `T-141: no live card, fence
+   UNKNOWN`. `T-141`'s lane was cut at `2a922ce`, AFTER this lane's base,
+   so its card is on main and not in this tree, while `git worktree list`
+   is shared across every worktree. **The positive control is in this
+   same lane**: the first full run, at 19:21 EEST before `T-141` existed,
+   was **204/204 exit 0** on the same tree. **The body cannot be green in
+   ANY lane whose base predates a newer lane's card**, which is a
+   structural defect in a `tools/e2e` spec rather than a flake. Routed as
+   `T-137-s9`. It is inside this fence and was deliberately NOT repaired:
+   weakening another card's pin from inside this lane, without that
+   card's context, is not a repair an executor makes.
+8. **This session wrote two literal `U+0000` bytes** into
    `app/src/architecture/task-waves.ts`, in the `criticalPairs` separator,
    where the committed source carries the six-character escape `\u0000`.
    `T-111-s9` is therefore reproduced by a third hand, in the same

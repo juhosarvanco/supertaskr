@@ -26,6 +26,18 @@ is REGENERATED and COMMITTED. A lane that asks the gate — as every lane is
 told to — gets exit 1 and has to decide, on its own, whether the staleness
 is its own. **This lane spent a measurement finding out that it was not.**
 
-The repair is one regen in a card that holds the graph. The general fix is
-the GRAPH REGEN gate firing on a commit that is not a merge — `6dc5757`
-was the architect's own commit and no gate ran behind it.
+**THE INSTANCE IS PROBABLY ALREADY CLOSED AND THE MECHANISM IS NOT.**
+`ae92f67` — `T-139`'s checkpoint, landed while `T-137`'s lane ran —
+regenerated the graph, so this particular staleness is very likely gone.
+**That was NOT verified here, and the reason is worth stating rather than
+skipping:** checking main's graph needs main's OWN indexer, because
+`T-139` also moved `max_graph_bytes` from `1_000_000` to `1_040_000`, and
+a check run with the older binary can report a FALSE stale on a tree whose
+fresh index sits between the two ceilings. This lane may not build in the
+integration checkout, so it did not guess.
+
+**THE GENERAL FIX IS THE ONE WORTH THE CARD**: the GRAPH REGEN gate does
+not fire on a commit that is not a merge. `6dc5757` was the architect's
+own commit, it edited a `.ts` file, and no gate ran behind it — so the
+staleness was invisible until a lane cut from it asked, and that lane had
+to spend a measurement to learn the red was not its own.
