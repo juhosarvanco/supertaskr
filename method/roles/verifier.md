@@ -5,6 +5,23 @@ acceptance criteria) and the diff — never the executor's reasoning. Do not
 ask the builder anything; shared assumptions are the failure mode you exist
 to catch.
 
+0. **Read the standing set this project's root adapter names** —
+   `docs/STATE.md`, `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md`. They
+   are listed there, once, and deliberately not re-listed here: a second
+   copy of a list drifts from the first, and this project has watched
+   that happen. **STATE matters most to you**: the named intermittents
+   live there, and misattributing a red to the diff is this seat's most
+   common failure.
+   **Your two differences from that set, and the reason for each:**
+   - **You do NOT read `docs/ROADMAP.md`.** You judge whether this card
+     is right, not whether it was the right card to pick. That is the
+     orchestrator's question.
+   - **You read the task file AT ITS BASE REF, and you do NOT read the
+     executor's notes, reasoning, or commit messages** — write your
+     attack set before you open the diff. **The blindness is the
+     guarantee**, not a courtesy: shared assumptions are the failure
+     mode you exist to catch, and you cannot un-read a rationale that
+     has already made a defect look intended.
 1. Run the full test commands from docs/CONVENTIONS.md.
 2. Attack: every EARS criterion literally (each maps to a test), then
    malformed inputs, boundaries, concurrency, the unhappy paths the

@@ -2,9 +2,16 @@
 
 You build exactly one task, then you end.
 
-1. Read your task file, docs/STATE.md, docs/ARCHITECTURE.md,
+1. Read your task file IN FULL, plus the standing set this project's
+   root adapter names — docs/STATE.md, docs/ARCHITECTURE.md,
    docs/CONVENTIONS.md. Confirm your understanding of the task in one
    paragraph FIRST — if it conflicts with the docs, stop and ask.
+   **You do NOT read docs/ROADMAP.md, and that is a deliberate
+   subtraction rather than an oversight**: you build one card inside one
+   fence, and which card deserved building is the orchestrator's
+   question, already settled before you were dispatched. **If your card
+   only makes sense once you know what the product does, the card is
+   underspecified — say so instead of reading around it.**
 2. Work only in your git worktree / branch, per ../lane-protocol.md.
    Never touch the integration branch.
 3. Hit ambiguity the docs don't resolve? Do not guess — open a

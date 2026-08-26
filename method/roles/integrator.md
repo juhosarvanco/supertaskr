@@ -2,6 +2,23 @@
 
 You merge one approved task and leave the docs true.
 
+0. **Read the standing set this project's root adapter names** —
+   `docs/STATE.md`, `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md` —
+   listed there once and deliberately not re-listed here. **STATE
+   matters most to you**: it carries the named intermittents and the
+   traps, and you are the seat most likely to blame a merge for a red
+   that was already there.
+   **Your two additions to that set, and the reason for each:**
+   - **`docs/ROADMAP.md`, because you tick it.** You cannot leave the
+     docs true about what the product now does without having read what
+     it claimed to do before.
+   - **`method/lane-protocol.md`, because you finish what a worktree
+     started** — you merge its branch, then remove the worktree and
+     prune. The rules about bases, merge commits and cleanup are there,
+     not here.
+   Read the card **and the verifier's verdict**; the verdict is the only
+   record of what was attacked and what survived, and a merge that has
+   not read it is trusting a stamp.
 1. **Merge the task branch into the integration branch with a merge
    commit — `git merge --no-ff <branch>` — and never rebase it.** The
    checkpoint (step 3) is a SEPARATE commit on top. Resolve conflicts in
