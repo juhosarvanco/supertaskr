@@ -403,13 +403,21 @@ two rows (the graph header and C-06's file count); `edges=37`,
 | `T-137-s6` | `app-shell`, `lib-parser` | the verdict classifier should follow the schedule |
 | `T-137-s7` | `tools/e2e` | the E2E package loads the parser by path because it declares nothing |
 | `T-137-s8` | `tools/e2e` | the DOCS GATE speaks for a parser it does not run |
-| `T-137-s9` | `tools/e2e` | a `brief.spec` body cannot be green in any older lane |
+| `T-137-s9` | `tools/e2e` | **TAKEN AND FIXED** — a `brief.spec` body joined the machine-wide lane list to the checkout's card index |
 
 **Three of the nine are inside this card's own fence (`s7`, `s8`, `s9`)
-and none of the three was taken.** They are other cards' machinery and
-other cards' pins; a suggestion never expands this role's scope, and
-`s9` in particular would mean rewriting an assertion whose card this
-session has not read.
+and exactly ONE was taken.** `s7` and `s8` are other cards' machinery and
+stay routed. **`s9` was taken after the ARCHITECT reached the same finding
+independently and handed the decision to this lane**, on the ground that
+`tools/e2e` is this card's fence and nobody else could touch it, that a
+new lane reds that pin in every existing checkout at once, and that "what
+is dispatchable given the live lanes" meeting a checkout boundary is this
+card's own subject one layer over. **The derivation needed no change** —
+`dispatch-brief.mjs` has always printed `<id>: no live card, fence
+UNKNOWN` and raised a finding; only the assertion was wrong, and the
+narrowing ADDS four assertions to a branch that had none. Two producer
+arms (A19, A20), both red, both unique, both restored by sha256;
+`tools/e2e` is **205/205 exit 0** afterwards with `T-141` live.
 
 ### WHERE THIS CARD'S BRIEF AND THIS CARD ITSELF WERE WRONG
 
@@ -459,7 +467,15 @@ session has not read.
    `T-137-s9`. It is inside this fence and was deliberately NOT repaired:
    weakening another card's pin from inside this lane, without that
    card's context, is not a repair an executor makes.
-8. **This session wrote two literal `U+0000` bytes** into
+8. **The red in item 7 was TAKEN, not left routed** — see the findings
+   index above. The correction to item 7 is that "not repaired" was true
+   when written and false an hour later, and the reason is worth keeping:
+   **an executor's scope is set by its fence and by its dispatching role,
+   and the second half moved.** The architect's hand-off named the same
+   defect, the same mechanism and the same three options this lane had
+   already filed, independently — which is what made taking it safe
+   rather than hasty.
+9. **This session wrote two literal `U+0000` bytes** into
    `app/src/architecture/task-waves.ts`, in the `criticalPairs` separator,
    where the committed source carries the six-character escape `\u0000`.
    `T-111-s9` is therefore reproduced by a third hand, in the same
