@@ -5,7 +5,7 @@ feature: F-04
 milestone: 4
 priority: 4
 size: M
-status: building
+status: verifying
 blocked_by: [T-134]
 touches: [lib-parser, app-map, tools/e2e]
 builder: claude-opus-5
@@ -122,3 +122,282 @@ again after any write** — this card moves a file between packages, so the
 graph will move. **Ports are machine-wide while rule 4 partitions by
 CHECKOUT (`T-132-s6`)** — explicit port, re-probed before binding.
 @human: none — the requirement is stated; this is its mechanism.
+
+## Implementation notes (executor claude-opus-5, 2026-08-26)
+
+Lane `task/T-137-lane`, worktree `/Users/ujju/Projects/nputer-T-137`, cut
+from `00e133a`. **Every figure below is measured at this lane's own ref
+and names it.** Main moved twice while this lane ran (`00e133a` ->
+`db4c903` -> `ae92f67`), so no figure here is stated against "main".
+
+### What changed, and where each thing went
+
+| path | what |
+|---|---|
+| `lib/parser/src/task-waves.ts` | **NEW.** The pure schedule, MOVED out of the map pane. |
+| `lib/parser/src/lanes.ts` | **NEW.** The lane term — the only new analysis. |
+| `lib/parser/src/index.ts`, `pure.ts` | both new modules exported from both barrels |
+| `lib/parser/test/task-waves.test.ts` | **NEW**, 8 bodies — the DELTA only |
+| `lib/parser/test/lanes.test.ts` | **NEW**, 13 bodies |
+| `app/src/architecture/task-waves.ts` | 838 -> 323 loc: geometry + ink kept, analysis re-exported |
+| `tools/e2e/scripts/dispatch-order.mjs` | **NEW.** The terminal consumer's derivation. |
+| `tools/e2e/scripts/brief.mjs` | a `--dispatch` arm; `main()` is now async |
+| `tools/e2e/tests/dispatch-order.spec.ts` | **NEW**, 11 bodies |
+
+Ten paths, all inside `[lib-parser, app-map, tools/e2e]`. **`TasksLens.tsx`
+did not have to change at all** — the re-export keeps the pane's import
+list byte-identical, which is also what keeps `app/test/**` (C-05,
+`app-shell`, outside this fence) untouched.
+
+**THE ONE IMPORT, AND WHAT ITS LINE BECAME.** `task-waves.ts:2` was
+`import { rejectedVerdictCount } from "@/lib/verdicts";` and
+`task-waves.ts:641` spent it. That import **stayed in the app** and the
+call site became the ARGUMENT:
+
+    selectTaskSchedule(model, {
+      rejectedCountOf: (task) => rejectedVerdictCount(task.sections.verdicts),
+    })
+
+The parser's default is `() => 0`. `verdicts.ts` is C-16 (`app-shell`),
+which this fence cannot reach, so "pass its result in" was the criterion's
+own second branch and not a preference.
+
+**WHAT DELIBERATELY DID NOT MOVE:** the geometry (card boxes, wave pitch,
+elbow routing, `layoutWaves`) and the ink (the Tailwind tables,
+`taskCardVisual`). A parser that shipped `bg-status-planned` would be a
+view with a library's name. The pane now gets `layering` on the model and
+lays out what it never recomputed.
+
+### The lane term — the new half
+
+`lanes.ts` is the AND: a card is startable iff its schedule reads `ready`
+**and** its fence is disjoint from every live lane's. It imports
+`expandFence`/`compareFences` and contains **no path comparison, no
+normalisation and no slug table**. Seven states, each with a reason
+SENTENCE naming the lane, the shared path, the unmet blocker or the
+unresolved token:
+
+`startable` · `own-lane` · `fenced` · `unfenceable` · `waits` · `blocked`
+· `underway`.
+
+- **`unfenceable` is `compareFences`'s third verdict, carried and never
+  folded.** `T-111` could not express it because its vocabulary is closed
+  at six by its own criterion 1. This card is under no such constraint.
+- **`own-lane`**: a card is never fenced out by the lane built to build
+  it. Without it the tool tells a session it may not do its own job.
+- **The COARSE-fence clause survives the migration.** `FenceWitness` is
+  `{left, right, path}` and carries no component ids — `T-111-s5` called
+  that "deleting this card's own headline". It does not have to be
+  deleted: a witness names its two RAW tokens and a token knows the
+  components it resolved through, so `witnessComponents(a, b, w)` joins
+  them back. **The provenance was never missing; it was one join away.**
+
+### The consumer
+
+`node tools/e2e/scripts/brief.mjs --dispatch`. Writes nothing. Reuses
+T-133's `laneSpellings`/`laneWorktrees` (filtered on the BRANCH, with the
+pattern READ off the CONVENTIONS lane bullet) and its
+`treeProv`/`liveProv`/`value`/`render`. **The worktree list is stamped
+LIVE — a time and a host, never a commit.** That is the exact shape T-133
+was rejected for, and it is pinned in both directions (arm A15).
+
+**`tools/e2e` declares no dependency on `@nputer/parser`** (ADR-011
+family; its own manifest says it "imports neither app nor parser"), so
+the parser's BUILT entry is loaded by relative path — the same file
+`preflight.ts` already asserts into existence for this package — and a
+missing build REFUSES loudly at exit 3 rather than falling back to a
+fourth spelling of the fence rule. Declaring the dependency properly is
+`T-137-s7`, not a decision made from inside a lane.
+
+**THE ORACLE IS THIS CONSUMER'S OWN CONTRIBUTION.** `expandFence`'s
+`knownPaths` is by its own doc *"the ONLY way this module can tell a bare
+directory token from a word that names nothing"*, and a board has no
+filesystem. A terminal does. `knownPathOracle()` supplies every tracked
+path **and every directory prefix of one** — the prefixes are load-bearing,
+because `git ls-files` names files and `docs` never appears in it.
+
+### The measurement that is the card's own argument
+
+Derived at `000273e`, 2026-08-26, on `Mac.lan`:
+
+    drawn cards                                138
+    ready on blocked_by alone                   31
+    startable once the lanes are counted   5 -> 20
+
+**Both readings are of the same tree.** At 16:14 UTC three lanes were live
+(T-137, T-138, T-139) and **5** cards were startable. At 16:46 UTC T-139's
+worktree had been removed by someone else and the same command at the same
+ref answered **20**, with nothing edited and nothing regenerated. That is
+"adaptation is by construction" observed rather than asserted — and it is
+also why the lane list must be LIVE-stamped: the tree did not move.
+
+### THE RULING ON THE `fence.ts` MIGRATION, with a fresh measurement
+
+**`T-111`'s decline stands for the BOARD, and this card does not overturn
+it.** Re-measured at `000273e` through the merged `fence.ts` — a fresh
+run, not T-111's numbers carried:
+
+    raw touches: tokens on the board                          27
+    tokens unresolvable WITHOUT an oracle                      3   ci, docs, method
+    tokens unresolvable WITH    an oracle                      1   ci
+    carriers of all three                            T-054 ONLY, and T-054 is `done`
+
+    ALL fence-carrying cards        151    11 325 pairs
+      no oracle    overlapping 3458   disjoint 7751   unusable 116
+      with oracle  overlapping 3492   disjoint 7751   unusable  82
+
+    OPEN fence-carrying cards        38       703 pairs
+      no oracle    overlapping  322   disjoint  381   unusable   0
+      with oracle  overlapping  322   disjoint  381   unusable   0
+
+**THREE THINGS THIS MEASUREMENT SAYS THAT T-111'S DID NOT.**
+
+1. **Over the set a dispatch can actually reach — cards that are
+   `planned`/`building`/`verifying` and carry a fence — `unusable` is
+   ZERO, with or without an oracle.** T-111 measured over all 147
+   fence-carrying cards and got 113; the figure at this ref over all
+   **151** is **116**, and it is not the number that governs a dispatch.
+2. **THE ORACLE CAN ONLY ADD OVERLAPS, NEVER REMOVE ONE.** `disjoint` is
+   **7 751 both ways, identically.** The 34 pairs the oracle resolves all
+   move `unusable -> overlapping`. So supplying it is safe in the only
+   direction that matters: it cannot turn a real collision into a green
+   light. **This is the property that makes the oracle worth adding, and
+   nothing had stated it.**
+3. **The board should keep its copy, and here is the sentence to act on:**
+   *import `fence.ts` into `board-model.ts` only in the same card that
+   opens the disposition vocabulary to a seventh value and gives
+   `selectDispositions` a `knownPaths` parameter its caller can fill —
+   because `unusable` is only expressible with the seventh value, and the
+   oracle is only fillable by a caller with a repository.* Both are
+   criteria changes; an executor may not make them from inside a lane, and
+   T-137's own criteria do not authorise them either. **The clause T-111's
+   repair pinned is NOT a reason any more** — `witnessComponents` recovers
+   the component ids from the tokens, and this card ships it. Routed as
+   `T-137-s5`.
+
+### `T-111-s7`, RE-DERIVED rather than inherited
+
+At `000273e`, sites that RESOLVE a `blocked_by` id against the board:
+**FOUR**, not three — `lib/parser/src/validate.ts:135`,
+`lib/parser/src/task-waves.ts` (`readSchedule`'s `statusOf`, moved here by
+this card), `app/src/lib/board-model.ts:1136`, and
+`app/src/lib/task-detail.ts:184`. Sites that deliver a verdict about
+whether the blocker BINDS: **TWO** — `readSchedule` and
+`selectDispositions`. `task-detail.ts` resolves the id only to say whether
+it EXISTS, which is why `s7`'s "three" is defensible and its "two" is
+exact. **This card reduced neither count.** It moved ONE resolver from
+app-local to shared, so the pane and a terminal now read the same one; the
+board's remains separate for the reasons in the ruling above.
+
+### `blocked_by` was READ and never repaired
+
+`readSchedule` reads the declaration and rules on it; nothing in this
+diff writes it. Pinned: `a blocker naming NO card carries no status and is
+never in flight` asserts the record comes back exactly as written.
+Dangling blockers on the live board at this ref: measured by the parser as
+part of `--dispatch`, and the report names every unmet blocker rather than
+folding it.
+
+### GENERATION IS OUT OF SCOPE, AND THE COMMAND SAYS SO
+
+The report's last three lines are notes, not values: *it does not plan and
+it does not generate cards. That is the architect's judgement, not a
+derivation. What it gives that judgement is the INPUT.* @human named
+planning and generating in the same breath as the derivation; a mechanical
+gap-finder is its own card if it is wanted.
+
+### THE BYTE BUDGET IS EXCEEDED BY THIS LANE, AND THE HEADLINE FIGURE HIDES IT
+
+**This is the most important thing in these notes for whoever integrates.**
+`index --check` at this lane's ref is exit 1 and reports
+`stats.truncated_files None -> Some(1)` with
+`app/src-tauri/tests/agent_runner.rs (symbols 125 -> 0)`. Measured file by
+file against a detached scratch worktree at the base commit, using this
+lane's own built indexer:
+
+    tree                                              bytes  files  symbols  truncated
+    base 00e133a                                    989 181    183     2101   no
+    + the app re-export and both barrels             976 473    183     2081   no
+    + lib/parser/src/task-waves.ts                   992 929    184     2105   no   <- 7 071 left
+    + lib/parser/src/lanes.ts                        968 081    185     1996   YES
+    + lib/parser/test/task-waves.test.ts             970 276    186     1999   YES
+    + lib/parser/test/lanes.test.ts (whole lane)     973 194    187     2004   YES
+
+**THE TIPPING FILE IS `lib/parser/src/lanes.ts` AND IT IS AN ORDINARY
+FOUR-HUNDRED-LINE MODULE.** `max_graph_bytes` is `1_000_000`, read out of
+`crates/nputer-index/src/lib.rs:79`. `apply_budget` drops the most
+expensive symbol block until the document fits.
+
+**AND THE BYTE COUNT GOES DOWN WHEN IT OVERFLOWS — 992 929 -> 968 081.**
+A checkpoint watching usage as a percentage reads **96.8%** and concludes
+the budget is fine. The overflow is visible ONLY in `stats.truncated_files`,
+which `index --check` prints, `arch` does not report, and
+`docs/STATE.md`'s byte-budget section does not track. STATE's own sentence
+— *"THIS ONE CANNOT SAY ONE [more merge]"* — was right, and this is the
+merge that goes over. Routed as `T-137-s2`; it is `T-139`/`T-140`'s
+subject and this lane is its first live instance.
+
+### THE GRAPH ON MAIN WAS ALREADY STALE BEFORE THIS LANE EXISTED
+
+Derived by running this lane's indexer against a detached worktree at
+`00e133a` with none of this lane's files: **exit 1**, one file,
+`app/test/architecture-dogfood.test.ts (content, loc 1974 -> 1979)`, and
+**no truncation**. `6dc5757` edited that file after the T-111 checkpoint
+committed the graph at `7fd6ffb`, and no regen followed. `docs/STATE.md`
+says the graph is regenerated and current and that nothing is broken.
+Routed as `T-137-s3`.
+
+### THE FIXTURE RECONCILIATION, DERIVED AND NOT PREDICTED
+
+Regenerated in the scratch worktree, then run against it: **exactly three
+assertions move, in two files, and both files are `app/test/**` — C-05,
+`app-shell`, OUTSIDE this fence.** They are green in this lane because the
+suite reads the COMMITTED graph, and this lane commits no graph.
+
+    app/test/architecture-dogfood.test.ts  fileComponent.size   183 -> 187
+    app/test/architecture-dogfood.test.ts  ["C-06", 27]      -> ["C-06", 31]
+    app/test/map-dogfood-render.test.tsx   "committed graph · 183 files" -> 187
+
+With those three applied and the graph regenerated, the app suite is
+**1013/1013 exit 0** — measured, not forecast. **`C-12` does NOT move: it
+holds at 18 files, its file LIST is unchanged, and every edge row
+(`["C-12","C-06",...]`, `["C-12","C-16",...]`) is unchanged**, because the
+extraction leaves a module at `app/src/architecture/task-waves.ts` that
+still imports both the parser and `verdicts.ts`. `arch` moves on exactly
+two rows (the graph header and C-06's file count); `edges=37`,
+`findings=4`, `drift_components=4` are unchanged. Routed as `T-137-s1`.
+
+### WHERE THIS CARD'S BRIEF AND THIS CARD ITSELF WERE WRONG
+
+1. **The brief said `T-111` measured "113 of 10 731 pairs".** At this ref
+   the board has **151** fence-carrying cards, **11 325** pairs and
+   **116** unusable without an oracle — and **0** over the open set. The
+   brief's own instruction to re-measure is what found it.
+2. **The brief said `FenceWitness` carrying no component ids is a reason
+   not to import.** It is not, and this card ships the counter-example:
+   `witnessComponents` recovers them from the tokens. The two reasons that
+   survive are the seventh verdict and the oracle.
+3. **The brief said `T-111-s7` re-derives to "three sites resolve a
+   blocker id".** Four do, at this ref; the fourth is
+   `app/src/lib/task-detail.ts:184`. The verdict count, two, is exact.
+4. **The card's own criterion 1 says the analysis SHALL MOVE and the map
+   pane SHALL import what it used to own.** Taken literally that would
+   have moved the Tailwind ink tables into `lib/parser`. It did not: the
+   geometry and the ink stayed, because they are a screen's facts. The
+   criterion is right about the ANALYSIS and silent about the line.
+5. **The card's verification section says to run `npm test` from `app/`
+   and treat the map pane's bodies as the control. It does not say that
+   the control's file is outside this card's fence.** `app/test/**` is
+   C-05 (`app-shell`), which `T-139` held live for most of this lane. That
+   is what forced `unmet` to be ABSENT rather than `[]` on a `ready`
+   reading — poison arm A14 proves the naive version reds
+   `map-task-waves.test.ts`, a file this lane may not edit.
+6. **This session wrote two literal `U+0000` bytes** into
+   `app/src/architecture/task-waves.ts`, in the `criticalPairs` separator,
+   where the committed source carries the six-character escape `\u0000`.
+   `T-111-s9` is therefore reproduced by a third hand, in the same
+   construct, inside the same week. Caught by `command grep` answering
+   `Binary file … matches`, removed with `perl`, and the whole tree
+   re-swept with a NUL test that cannot degrade: **exactly 18 NUL-bearing
+   tracked files, all icons and fonts, zero source-shaped**, with a
+   positive control fired on `app/src-tauri/icons/32x32.png`.
