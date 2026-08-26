@@ -1,13 +1,33 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseProjectFromFiles, type ProjectParseResult } from "@nputer/parser/pure";
 import {
+  parseProjectFromFiles,
+  type ProjectParseResult,
+  type TaskStatus,
+} from "@nputer/parser/pure";
+import {
+  CONCURRENCY_CEILING,
+  DISPOSITIONS,
+  expandTouch,
+  fenceClashes,
   issuesByFile,
+  normaliseTouchToken,
   selectBoard,
+  selectDispositions,
   shortModelName,
   statusVisual,
+  touchTokensOverlap,
   UNMAPPED_KEY,
   type BoardColumn,
   type BoardModel,
+  type CardDisposition,
+  type DispatchReading,
+  type DispatchStamp,
+  type DispositionModel,
+  type InFlightLane,
+  type LaneHold,
 } from "../src/lib/board-model";
 
 // Pure-selector tests for the story map board (T-004). Fixtures run
@@ -736,5 +756,789 @@ describe("soft issues join to their card by file (T-031, absorbing T-019-s1)", (
     expect(model.issues.length).toBe(3);
     expect(marked).toBe(3);
     expect(board.columns.flatMap((c) => c.cards).length).toBe(3);
+  });
+});
+
+// =====================================================================
+// T-111 — THE DISPATCH FRONTIER.
+//
+// Every body below drives `selectDispositions`, `normaliseTouchToken`,
+// `touchTokensOverlap`, `expandTouch` or `fenceClashes`. Half run on
+// synthetic models and half on THIS REPOSITORY'S OWN LIVE BOARD, which
+// the card asks for by name — a normalisation rule pinned against a
+// synthetic pair is pinned against the pair somebody invented, and the
+// collisions that actually exist here are not that pair.
+//
+// **`app/test/**` IS C-05's `app-shell`, AND THAT IS WHY THESE BODIES
+// EXIST AT ALL.** T-111's first lane built SEVEN OF EIGHT CRITERIA NOT,
+// and was right to: its fence was `[app-board]`, thirteen globs all under
+// `app/src/**`, while the app's only collector is `app/vitest.config.ts`
+// with `include: ["test/**"]` — so no pin could live in the fence and
+// three criteria name a pin in their own text (`T-111-s2`, the fifth
+// instance of `T-015-s1`). The architect corrected `touches:` in place to
+// `[app-board, app-shell]`, which buys exactly this file.
+//
+// THE PINS ARE HERE RATHER THAN IN A NEW SUITE FILE, deliberately: a new
+// indexed file moves `architecture-dogfood`'s file count and
+// `map-dogfood-render`'s header hint, and those reconciliations belong to
+// the checkpoint that regenerates the graph. This card owes the
+// integrator no reconciliation it can avoid owing (the `T-135-s3` class).
+// =====================================================================
+
+const REPO_ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
+
+const readRepo = (rel: string): string => readFileSync(join(REPO_ROOT, rel), "utf8");
+
+/** The statuses whose cards carry no disposition reason at all. */
+const NO_REASON_STATUSES = new Set<TaskStatus>(["done", "merging", "parked"]);
+
+/** This repository's live board, through the real parser. Flat
+ * `docs/tasks/*.md` only — `rejected/` is excluded from the board by
+ * design (CONVENTIONS' suggestion-triage bullet). */
+function liveBoard(): ProjectParseResult {
+  const files: Array<{ path: string; content: string }> = [];
+  for (const dir of ["docs/tasks", "docs/architecture/components"]) {
+    for (const name of readdirSync(join(REPO_ROOT, dir))) {
+      if (!name.endsWith(".md")) continue;
+      files.push({ path: dir + "/" + name, content: readRepo(dir + "/" + name) });
+    }
+  }
+  files.push({ path: "docs/ROADMAP.md", content: readRepo("docs/ROADMAP.md") });
+  return parseProjectFromFiles(files);
+}
+
+/** The raw `touches:` tokens on the live board and the cards holding
+ * each — the census criterion 3 says the normalisation pin must be driven
+ * from. */
+function liveTouchTokens(model: ProjectParseResult): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const t of model.tasks) {
+    for (const token of t.touches) {
+      const held = out.get(token) ?? [];
+      held.push(t.id ?? t.file);
+      out.set(token, held);
+    }
+  }
+  return out;
+}
+
+const lane = (taskId: string, branch: string, touches: string[] = []): InFlightLane => ({
+  taskId,
+  branch,
+  worktreePath: "/Users/x/Projects/nputer-" + taskId,
+  touches,
+  disagrees: false,
+  fenceKnown: true,
+});
+
+const laneHold = (taskId: string, branch: string, existsOnDisk = true): LaneHold => ({
+  taskId,
+  branch,
+  worktreePath: "/Users/x/Projects/nputer-" + taskId,
+  existsOnDisk,
+});
+
+/** A `DispatchReading` from rows, in the shape `hydrateJoin` produces. */
+const reading = (...rows: DispatchStamp[]): DispatchReading => ({
+  kind: "joined",
+  rows: new Map(rows.map((r) => [r.taskId, r])),
+});
+
+const NO_LANES: DispatchReading = { kind: "joined", rows: new Map() };
+
+const dispositionOf = (m: DispositionModel, id: string): CardDisposition | undefined =>
+  m.kind === "derived" ? m.cards.get(id) : undefined;
+
+/** A component file's source, so a synthetic model can carry a registry. */
+const component = (id: string, slugs: string[], paths: string[]): [string, string] => [
+  "docs/architecture/components/" + id + "-x.md",
+  [
+    "---",
+    "id: " + id,
+    "name: " + id,
+    "paths:",
+    ...paths.map((p) => "  - " + p),
+    "touch_slugs: [" + slugs.join(", ") + "]",
+    "status: auto",
+    "---",
+    "prose",
+    "",
+  ].join("\n"),
+];
+
+describe("normalisation is ONE function and it states its own ceiling (criterion 3)", () => {
+  it("collapses a trailing slash, a glob tail and a doubled separator", () => {
+    expect(normaliseTouchToken("tools/e2e/")).toBe("tools/e2e");
+    expect(normaliseTouchToken("tools/e2e")).toBe("tools/e2e");
+    expect(normaliseTouchToken("app/src/styles/**")).toBe("app/src/styles");
+    expect(normaliseTouchToken("docs//tasks/")).toBe("docs/tasks");
+    expect(normaliseTouchToken("  method/  ")).toBe("method");
+  });
+
+  it("the two spellings that collide on THIS board are both live, and they overlap", () => {
+    // Criterion 3 asks for a pin "driven from the live board's own tokens
+    // rather than a synthetic pair", so the corpus is asserted before the
+    // rule is: a normalisation pinned against a pair nobody writes is a
+    // pin against nothing.
+    const tokens = liveTouchTokens(liveBoard());
+    expect(tokens.has("tools/e2e")).toBe(true);
+    expect(tokens.has("tools/e2e/")).toBe(true);
+    expect(touchTokensOverlap("tools/e2e", "tools/e2e/")).toBe(true);
+    expect(tokens.has("method")).toBe(true);
+    expect(tokens.has("method/")).toBe(true);
+    expect(touchTokensOverlap("method", "method/")).toBe(true);
+  });
+
+  it("containment is overlap, which is the half a trailing-slash rule misses", () => {
+    // `T-111-s3` measured the prescribed minimum reaching two of four
+    // collisions; the two it misses are CONTAINMENTS, and one of them has
+    // grown a whole family since that census — every `method/<file>` token
+    // a card now carries sits under the bare `method/` other cards hold.
+    const tokens = liveTouchTokens(liveBoard());
+    expect(tokens.has("docs")).toBe(true);
+    expect(tokens.has("docs/CONVENTIONS.md")).toBe(true);
+    expect(touchTokensOverlap("docs", "docs/CONVENTIONS.md")).toBe(true);
+    expect(tokens.has("method/lane-protocol.md")).toBe(true);
+    expect(touchTokensOverlap("method/", "method/lane-protocol.md")).toBe(true);
+    // …and the containment test is anchored on a separator, so this
+    // repository's own worst near-miss stays disjoint.
+    expect(touchTokensOverlap("app/src", "app/src-tauri")).toBe(false);
+  });
+
+  it("the KNOWN-WRONG hole is pinned AS known-wrong: `ci` against `.github/`", () => {
+    // `T-111-s3`'s fourth collision. The two tokens name one thing and
+    // share no substring, so no string rule reaches them — and the danger
+    // is a reader concluding the vocabulary is reconciled. This body
+    // exists so the ceiling in the doc comment cannot drift away from the
+    // behaviour: if somebody closes it with a special case, this reds and
+    // they have to move the doc with it.
+    const tokens = liveTouchTokens(liveBoard());
+    expect(tokens.has("ci")).toBe(true);
+    expect(tokens.has(".github/")).toBe(true);
+    expect(touchTokensOverlap("ci", ".github/")).toBe(false);
+  });
+
+  it("T-054 is still the live fixture carrying three of the four at once", () => {
+    // `T-111-s3` nominates it, so the nomination is CHECKED rather than
+    // quoted: a fixture that has moved is not a fixture.
+    const t054 = liveBoard().tasks.find((t) => t.id === "T-054");
+    expect(t054?.touches).toEqual(["docs", "method", "tools/e2e", "ci"]);
+  });
+});
+
+describe("a fence is compared over EXPANDED components, never slug strings (T-111-s1)", () => {
+  it("app-board and app-shell are different strings claiming ONE component", () => {
+    const comps = liveBoard().components ?? [];
+    const board = expandTouch("app-board", comps);
+    const shell = expandTouch("app-shell", comps);
+    expect(board.kind).toBe("slug");
+    expect(shell.kind).toBe("slug");
+    // STRING equality says disjoint…
+    expect(normaliseTouchToken("app-board") === normaliseTouchToken("app-shell")).toBe(false);
+    // …and the registry says they share C-11, whose paths are real.
+    expect(board.componentIds.filter((id) => shell.componentIds.includes(id))).toEqual(["C-11"]);
+    expect(board.paths).toContain("app/src/styles");
+    expect(shell.paths).toContain("app/src/styles");
+  });
+
+  it("a token naming no slug is a literal path and expands to itself", () => {
+    const comps = liveBoard().components ?? [];
+    const e = expandTouch("docs/CONVENTIONS.md", comps);
+    expect(e.kind).toBe("path");
+    expect(e.componentIds).toEqual([]);
+    expect(e.paths).toEqual(["docs/CONVENTIONS.md"]);
+  });
+
+  it("the clash names both faces AND the component, which is the coarse-fence tell", () => {
+    const comps = liveBoard().components ?? [];
+    const clashes = fenceClashes(
+      { taskId: "T-111", touches: ["app-board"] },
+      lane("T-033", "task/T-033-zero-drift", ["app-shell"]),
+      comps,
+    );
+    expect(clashes.length).toBeGreaterThan(0);
+    const first = clashes[0];
+    expect(first?.token).toBe("app-board");
+    expect(first?.laneToken).toBe("app-shell");
+    expect(first?.laneTaskId).toBe("T-033");
+    expect(first?.viaComponents).toContain("C-11");
+    expect(first?.sharedPaths).toContain("app/src/styles");
+  });
+
+  it("THE TWO LANES LIVE AT THIS COMMIT ARE DISJOINT, derived rather than asserted", () => {
+    // The disjointness claim this lane itself rests on, computed the way
+    // T-111-s1 says it must be.
+    const model = liveBoard();
+    const comps = model.components ?? [];
+    const touchesOf = (id: string): string[] =>
+      model.tasks.find((t) => t.id === id)?.touches ?? [];
+    expect(touchesOf("T-111")).toEqual(["app-board", "app-shell"]);
+    expect(touchesOf("T-134")).toEqual(["lib-parser", "method/lane-protocol.md"]);
+    expect(
+      fenceClashes(
+        { taskId: "T-111", touches: touchesOf("T-111") },
+        lane("T-134", "task/T-134-path-fences", touchesOf("T-134")),
+        comps,
+      ),
+    ).toEqual([]);
+    // POSITIVE CONTROL: the same call on a fence that DOES overlap must
+    // not come back empty, or the emptiness above is worth nothing.
+    expect(
+      fenceClashes(
+        { taskId: "T-111", touches: touchesOf("T-111") },
+        lane("T-Z", "task/T-Z", ["lib-parser", "app-board"]),
+        comps,
+      ).length,
+    ).toBeGreaterThan(0);
+  });
+});
+
+describe("the ceiling is a named constant with its own assertion (criterion 5)", () => {
+  it("CONCURRENCY_CEILING is 3-5, hardcoded here and not parametrised by itself", () => {
+    expect(CONCURRENCY_CEILING.min).toBe(3);
+    expect(CONCURRENCY_CEILING.max).toBe(5);
+  });
+
+  it("and it matches the LIVE orchestrator.md, which is the source it claims", () => {
+    // The constant and the method file are two copies of one bound; this
+    // body is the only thing making them one fact — the shape
+    // `snapshot_version_matches_the_live_method_stamps` uses one language
+    // over, for the same reason. NOTE FOR WHOEVER EDITS
+    // `method/roles/orchestrator.md`: the DOCS GATE's trigger is `docs/`
+    // and `method/` is not `docs/`, so the gate will not name this suite
+    // (T-132-s2's class). `app/test/genesis-derive.test.ts` already reads
+    // `method/interview/plan-interview.md` under the same gap.
+    const m = /Ceiling:\s*(\d+)\s*[–—-]\s*(\d+)\s*concurrent/.exec(
+      readRepo("method/roles/orchestrator.md"),
+    );
+    expect(m).not.toBeNull();
+    expect(Number(m?.[1])).toBe(3);
+    expect(Number(m?.[2])).toBe(5);
+  });
+
+  it("at-ceiling and nothing-is-dispatchable are DIFFERENT SENTENCES", () => {
+    const full = selectDispositions(
+      withRoadmap([
+        ["docs/tasks/T-900.md", task("T-900", "F-01", 1)],
+        ["docs/tasks/T-901.md", task("T-901", "F-02", 1)],
+        ["docs/tasks/T-902.md", task("T-902", "F-03", 1)],
+      ]),
+      reading(
+        { taskId: "T-800", state: "stampSkipped", lanes: [laneHold("T-800", "task/T-800-a")] },
+        { taskId: "T-801", state: "stampSkipped", lanes: [laneHold("T-801", "task/T-801-a")] },
+        { taskId: "T-802", state: "stampSkipped", lanes: [laneHold("T-802", "task/T-802-a")] },
+        { taskId: "T-803", state: "stampSkipped", lanes: [laneHold("T-803", "task/T-803-a")] },
+        { taskId: "T-804", state: "stampSkipped", lanes: [laneHold("T-804", "task/T-804-a")] },
+      ),
+    );
+    if (full.kind !== "derived") throw new Error("unreachable");
+    expect(full.inFlight.length).toBe(5);
+    expect(full.ceilingReached).toBe(true);
+    expect(dispositionOf(full, "T-900")?.disposition).toBe("at-ceiling");
+    expect(dispositionOf(full, "T-900")?.reason).toContain("Nothing is wrong with this card");
+    expect(full.headline).toContain("THE CEILING IS REACHED");
+
+    // The OTHER sentence: room to spare, and still nothing qualifies.
+    const quiet = selectDispositions(
+      withRoadmap([
+        ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned", [["blocked_by", "[T-901]"]])],
+        ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "parked")],
+      ]),
+      NO_LANES,
+    );
+    if (quiet.kind !== "derived") throw new Error("unreachable");
+    expect(quiet.ceilingReached).toBe(false);
+    expect(quiet.headline).toContain("NOTHING IS DISPATCHABLE");
+    expect(quiet.headline).not.toContain("CEILING IS REACHED");
+  });
+
+  it("one lane short of the cap is not the cap", () => {
+    const four = selectDispositions(
+      withRoadmap([["docs/tasks/T-900.md", task("T-900", "F-01", 1)]]),
+      reading(
+        { taskId: "T-800", state: "stampSkipped", lanes: [laneHold("T-800", "task/T-800-a")] },
+        { taskId: "T-801", state: "stampSkipped", lanes: [laneHold("T-801", "task/T-801-a")] },
+        { taskId: "T-802", state: "stampSkipped", lanes: [laneHold("T-802", "task/T-802-a")] },
+        { taskId: "T-803", state: "stampSkipped", lanes: [laneHold("T-803", "task/T-803-a")] },
+      ),
+    );
+    if (four.kind !== "derived") throw new Error("unreachable");
+    expect(four.ceilingReached).toBe(false);
+    expect(dispositionOf(four, "T-900")?.disposition).toBe("dispatchable");
+  });
+});
+
+describe("the lane set joined with status:, and their DISAGREEMENT visible (criterion 2)", () => {
+  // The card asks for a pin driving all FOUR of `join.rs`'s states. The
+  // four are CONSUMED, never respelled: they are decided in
+  // `app/src-tauri/src/dispatch/join.rs` with a pin under each since
+  // T-110's rebuild, and these bodies assert what the BOARD does with
+  // each.
+  const model = (): ProjectParseResult =>
+    withRoadmap([
+      ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "building")],
+      ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "planned")],
+      ["docs/tasks/T-902.md", task("T-902", "F-03", 1, "planned")],
+    ]);
+
+  it("live — stamped in flight and a worktree is there", () => {
+    const got = dispositionOf(
+      selectDispositions(
+        model(),
+        reading({ taskId: "T-900", state: "live", lanes: [laneHold("T-900", "task/T-900-a")] }),
+      ),
+      "T-900",
+    );
+    expect(got?.disposition).toBe("not-applicable");
+    expect(got?.reason).toContain("is in flight");
+    expect(got?.reason).toContain("task/T-900-a");
+  });
+
+  it("died — stamped in flight, no worktree: the fence is NOT held and NO CAUSE is named", () => {
+    // THE BODY THAT PROTECTS `T-135`. At the commit this was written, the
+    // one card in this state was deliberately merged-but-open pending a
+    // human ruling, with a whole heading in docs/STATE.md saying so — and
+    // the same combination has meant "somebody forgot" every other time
+    // it has appeared. A derivation cannot read intent, so it reports the
+    // two facts and refuses the third.
+    const d = selectDispositions(model(), reading({ taskId: "T-900", state: "died", lanes: [] }));
+    const got = dispositionOf(d, "T-900");
+    expect(got?.disposition).toBe("not-applicable");
+    expect(got?.reason).toContain("no worktree is registered");
+    expect(got?.reason).toContain("NOT held");
+    for (const word of ["lapsed", "forgot", "dead", "abandon", "stale"]) {
+      expect(got?.reason?.toLowerCase()).not.toContain(word);
+    }
+    if (d.kind !== "derived") throw new Error("unreachable");
+    expect(d.inFlight).toEqual([]);
+  });
+
+  it("stampSkipped — a worktree with no stamp: the LANE wins and the fence IS held", () => {
+    // Driven from a fixture in which NO card carries `building`, exactly
+    // as the card's verification line requires: the lane set alone has to
+    // produce the fenced result.
+    const m = withRoadmap([
+      ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "planned", [["touches", "[alpha]"]])],
+      ["docs/tasks/T-902.md", task("T-902", "F-03", 1, "planned", [["touches", "[beta]"]])],
+      component("C-70", ["alpha"], ["app/src/shared/**"]),
+      component("C-71", ["beta"], ["app/src/shared/**"]),
+    ]);
+    expect(m.tasks.every((t) => t.status !== "building")).toBe(true);
+    const d = selectDispositions(
+      m,
+      reading({
+        taskId: "T-901",
+        state: "stampSkipped",
+        lanes: [laneHold("T-901", "task/T-901-a")],
+      }),
+    );
+    const holder = dispositionOf(d, "T-901");
+    expect(holder?.disposition).toBe("not-applicable");
+    expect(holder?.reason).toContain("worktree list outranks the stamp");
+    expect(holder?.reason).toContain("IS held");
+    const fenced = dispositionOf(d, "T-902");
+    expect(fenced?.disposition).toBe("fenced");
+    expect(fenced?.reason).toContain("T-901");
+    expect(fenced?.clash?.sharedPaths).toEqual(["app/src/shared"]);
+    expect(fenced?.clash?.viaComponents).toEqual(["C-70", "C-71"]);
+  });
+
+  it("notDispatched — neither, and the card is judged on its own merits", () => {
+    expect(
+      dispositionOf(
+        selectDispositions(
+          model(),
+          reading({ taskId: "T-901", state: "notDispatched", lanes: [] }),
+        ),
+        "T-901",
+      )?.disposition,
+    ).toBe("dispatchable");
+  });
+
+  it("a registration whose directory is gone is not a lane and holds no fence", () => {
+    const m = withRoadmap([
+      ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "planned", [["touches", "[alpha]"]])],
+      ["docs/tasks/T-902.md", task("T-902", "F-03", 1, "planned", [["touches", "[alpha]"]])],
+      component("C-70", ["alpha"], ["app/src/shared/**"]),
+    ]);
+    const gone = selectDispositions(
+      m,
+      reading({
+        taskId: "T-901",
+        state: "stampSkipped",
+        lanes: [laneHold("T-901", "task/T-901-a", false)],
+      }),
+    );
+    if (gone.kind !== "derived") throw new Error("unreachable");
+    expect(gone.inFlight).toEqual([]);
+    expect(dispositionOf(gone, "T-902")?.disposition).toBe("dispatchable");
+    // POSITIVE CONTROL: the same row with the directory PRESENT fences it.
+    expect(
+      dispositionOf(
+        selectDispositions(
+          m,
+          reading({
+            taskId: "T-901",
+            state: "stampSkipped",
+            lanes: [laneHold("T-901", "task/T-901-a", true)],
+          }),
+        ),
+        "T-902",
+      )?.disposition,
+    ).toBe("fenced");
+  });
+
+  it("an unread lane list makes the board UNDECIDABLE, never all-clear", () => {
+    const d = selectDispositions(withRoadmap([["docs/tasks/T-900.md", task("T-900", "F-01", 1)]]), {
+      kind: "unavailable",
+      sentence: "no .git/worktrees directory.",
+    });
+    expect(d.kind).toBe("undecidable");
+    if (d.kind !== "undecidable") throw new Error("unreachable");
+    expect(d.sentence).toContain("no card can be called dispatchable");
+    expect(d.sentence).toContain("no .git/worktrees directory.");
+  });
+
+  it("a missing component registry with a FENCED live lane is undecidable too", () => {
+    const m = withRoadmap([
+      ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned", [["touches", "[alpha]"]])],
+      ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "planned", [["touches", "[alpha]"]])],
+    ]);
+    expect(m.components).toEqual([]);
+    expect(
+      selectDispositions(
+        m,
+        reading({
+          taskId: "T-900",
+          state: "stampSkipped",
+          lanes: [laneHold("T-900", "task/T-900-a")],
+        }),
+      ).kind,
+    ).toBe("undecidable");
+    // TWO POSITIVE CONTROLS, because the refusal is narrow on purpose.
+    // (a) with NO live lane there is nothing to compare against…
+    expect(selectDispositions(m, NO_LANES).kind).toBe("derived");
+    // (b) …and neither is there when the live lane reserves nothing, so a
+    // registry-less model is not refused for merely being registry-less.
+    const bare = withRoadmap([["docs/tasks/T-900.md", task("T-900", "F-01", 1)]]);
+    expect(
+      selectDispositions(
+        bare,
+        reading({ taskId: "T-800", state: "stampSkipped", lanes: [laneHold("T-800", "t/x")] }),
+      ).kind,
+    ).toBe("derived");
+  });
+
+  it("a lane no card claims has an UNKNOWN fence, and the caveat says so", () => {
+    // A worktree on a `task/` branch that no card declares is
+    // `stampSkipped` with a null card. Its fence is not empty — it is
+    // unreadable — and those are not the same fact, so a `dispatchable`
+    // answer carries the caveat rather than quietly counting the lane as
+    // reserving nothing.
+    const m = withRoadmap([["docs/tasks/T-900.md", task("T-900", "F-01", 1)]]);
+    const d = selectDispositions(
+      m,
+      reading({ taskId: "T-800", state: "stampSkipped", lanes: [laneHold("T-800", "task/T-800-a")] }),
+    );
+    if (d.kind !== "derived") throw new Error("unreachable");
+    expect(d.inFlight[0]?.fenceKnown).toBe(false);
+    const got = dispositionOf(d, "T-900");
+    expect(got?.disposition).toBe("dispatchable");
+    expect(got?.reason).toContain("CAVEAT");
+    expect(got?.reason).toContain("task/T-800-a");
+    // POSITIVE CONTROL: the SAME lane, once a card claims it, reads
+    // fenceKnown and the caveat disappears.
+    const claimed = withRoadmap([
+      ["docs/tasks/T-900.md", task("T-900", "F-01", 1)],
+      ["docs/tasks/T-800.md", task("T-800", "F-02", 1, "planned")],
+    ]);
+    const d2 = selectDispositions(
+      claimed,
+      reading({ taskId: "T-800", state: "stampSkipped", lanes: [laneHold("T-800", "task/T-800-a")] }),
+    );
+    if (d2.kind !== "derived") throw new Error("unreachable");
+    expect(d2.inFlight[0]?.fenceKnown).toBe(true);
+    expect(dispositionOf(d2, "T-900")?.reason).not.toContain("CAVEAT");
+  });
+});
+
+describe("blocked_by is a DECLARATION and whether it binds is DERIVED (T-111-s4)", () => {
+  it("a blocker that landed stops binding, and the stored field never had to change", () => {
+    // THE WHOLE CARD IN ONE BODY. The field still reads `[T-901]` and the
+    // answer is `dispatchable`, because the derivation asks the blocker's
+    // own status rather than trusting a line written at drafting time.
+    const m = withRoadmap([
+      ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned", [["blocked_by", "[T-901]"]])],
+      ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "done")],
+    ]);
+    expect(m.tasks.find((t) => t.id === "T-900")?.blockedBy).toEqual(["T-901"]);
+    expect(dispositionOf(selectDispositions(m, NO_LANES), "T-900")?.disposition).toBe(
+      "dispatchable",
+    );
+    // POSITIVE CONTROL: the same declaration against a blocker that has
+    // NOT landed still blocks, so the green above is about the blocker's
+    // status and not about the field being ignored.
+    const still = withRoadmap([
+      ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned", [["blocked_by", "[T-901]"]])],
+      ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "planned")],
+    ]);
+    expect(dispositionOf(selectDispositions(still, NO_LANES), "T-900")?.disposition).toBe(
+      "blocked",
+    );
+  });
+
+  it("`merging` is NOT done: the work has not landed", () => {
+    const got = dispositionOf(
+      selectDispositions(
+        withRoadmap([
+          ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned", [["blocked_by", "[T-901]"]])],
+          ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "merging")],
+        ]),
+        NO_LANES,
+      ),
+      "T-900",
+    );
+    expect(got?.disposition).toBe("blocked");
+    expect(got?.unmet?.[0]?.binding).toBe("open");
+  });
+
+  it("THREE BINDINGS, and the three are three sentences", () => {
+    const got = dispositionOf(
+      selectDispositions(
+        withRoadmap([
+          [
+            "docs/tasks/T-900.md",
+            task("T-900", "F-01", 1, "planned", [["blocked_by", "[T-901, T-902, T-999]"]]),
+          ],
+          ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "planned")],
+          ["docs/tasks/T-902.md", task("T-902", "F-03", 1, "parked")],
+        ]),
+        NO_LANES,
+      ),
+      "T-900",
+    );
+    expect(got?.disposition).toBe("blocked");
+    expect(got?.unmet?.map((u) => [u.id, u.binding])).toEqual([
+      ["T-901", "open"],
+      ["T-902", "parked"],
+      ["T-999", "missing"],
+    ]);
+    const reason = got?.reason ?? "";
+    expect(reason).toContain("T-901 (planned)");
+    expect(reason).toContain("T-902, which is PARKED");
+    expect(reason).toContain("no card declares that id");
+    expect(reason).toContain("defect in this card, not a reason to wait");
+    // The three clauses are DISTINCT and ORDERED, which is what "do not
+    // fold the three into blocked" means to a reader.
+    expect(reason.indexOf("PARKED")).toBeGreaterThan(reason.indexOf("(planned)"));
+    expect(reason.indexOf("defect in this card")).toBeGreaterThan(reason.indexOf("PARKED"));
+  });
+
+  it("a dangling blocker carries the PARSER's own sentence, never a second one", () => {
+    // Criterion 6 says consume `dangling-reference` rather than
+    // re-deriving it (T-057). The near-miss hint is the parser's and it
+    // reaches the reason untouched.
+    const m = withRoadmap([
+      ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned", [["blocked_by", "[T-90]"]])],
+      ["docs/tasks/T-901.md", task("T-901", "F-02", 1, "done")],
+    ]);
+    const emitted = m.issues.filter(
+      (i) => i.kind === "dangling-reference" && i.field === "blocked_by",
+    );
+    expect(emitted.length).toBe(1);
+    const got = dispositionOf(selectDispositions(m, NO_LANES), "T-900");
+    expect(got?.disposition).toBe("blocked");
+    expect(got?.unmet?.[0]?.binding).toBe("missing");
+    expect(got?.unmet?.[0]?.parserSaid).toBe(emitted[0]?.message);
+    // ABSENT, never undefined-valued: a missing blocker has no status.
+    expect("status" in (got?.unmet?.[0] ?? {})).toBe(false);
+  });
+
+  it("a self-reference is dropped rather than blocking the card on itself", () => {
+    expect(
+      dispositionOf(
+        selectDispositions(
+          withRoadmap([
+            ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned", [["blocked_by", "[T-900]"]])],
+          ]),
+          NO_LANES,
+        ),
+        "T-900",
+      )?.disposition,
+    ).toBe("dispatchable");
+  });
+});
+
+describe("the rest of the six, and the reason is always TEXT (criteria 1, 4, 7)", () => {
+  it("not-topmost names the card above it in its own column", () => {
+    const d = selectDispositions(
+      withRoadmap([
+        ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned")],
+        ["docs/tasks/T-901.md", task("T-901", "F-01", 2, "planned")],
+      ]),
+      NO_LANES,
+    );
+    expect(dispositionOf(d, "T-900")?.disposition).toBe("dispatchable");
+    const behind = dispositionOf(d, "T-901");
+    expect(behind?.disposition).toBe("not-topmost");
+    expect(behind?.behind).toBe("T-900");
+    expect(behind?.reason).toContain("T-900");
+    expect(behind?.reason).toContain("sits above it");
+  });
+
+  it("a DONE card above does not make the one below not-topmost", () => {
+    expect(
+      dispositionOf(
+        selectDispositions(
+          withRoadmap([
+            ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "done")],
+            ["docs/tasks/T-901.md", task("T-901", "F-01", 2, "planned")],
+          ]),
+          NO_LANES,
+        ),
+        "T-901",
+      )?.disposition,
+    ).toBe("dispatchable");
+  });
+
+  it("done and parked carry NO REASON AT ALL — progress acquires no scolding", () => {
+    const d = selectDispositions(
+      withRoadmap([
+        ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "done")],
+        ["docs/tasks/T-901.md", task("T-901", "F-01", 2, "parked")],
+        ["docs/tasks/T-902.md", task("T-902", "F-02", 1, "merging")],
+        ["docs/tasks/T-903.md", task("T-903", "F-03", 1, "planned")],
+      ]),
+      NO_LANES,
+    );
+    for (const id of ["T-900", "T-901", "T-902"]) {
+      const got = dispositionOf(d, id);
+      expect(got?.disposition).toBe("not-applicable");
+      expect(got?.reason).toBeUndefined();
+      expect("reason" in (got ?? {})).toBe(false);
+    }
+    // POSITIVE CONTROL: a card that SHOULD carry one does. Without it,
+    // "no reason" is equally explained by a derivation computing none.
+    expect(dispositionOf(d, "T-903")?.reason).toContain("dispatchable");
+  });
+
+  it("a DIFFERENT input yields a DIFFERENT sentence, five ways", () => {
+    // The negative control `T-111-s2` item 4 asks for: a derivation
+    // returning one reason for everything satisfies "the reason names the
+    // token" as readily as a correct one. Card ids are stripped before
+    // comparison, so five distinct strings means five distinct SHAPES and
+    // not five distinct ids.
+    const roadmap4 = [
+      "# R",
+      "",
+      "## Backbone",
+      "- F-01: A — a",
+      "- F-02: B — b",
+      "- F-03: C — c",
+      "- F-04: D — d",
+      "",
+    ].join("\n");
+    const d = selectDispositions(
+      project([
+        ["docs/ROADMAP.md", roadmap4],
+        ["docs/tasks/T-800.md", task("T-800", "F-01", 1, "planned", [["touches", "[alpha]"]])],
+        ["docs/tasks/T-900.md", task("T-900", "F-02", 1, "planned", [["touches", "[alpha]"]])],
+        ["docs/tasks/T-901.md", task("T-901", "F-03", 1, "planned", [["blocked_by", "[T-902]"]])],
+        ["docs/tasks/T-902.md", task("T-902", "F-03", 2, "planned")],
+        ["docs/tasks/T-903.md", task("T-903", "F-04", 1, "planned")],
+        component("C-70", ["alpha"], ["app/src/shared/**"]),
+      ]),
+      reading({
+        taskId: "T-800",
+        state: "stampSkipped",
+        lanes: [laneHold("T-800", "task/T-800-a")],
+      }),
+    );
+    if (d.kind !== "derived") throw new Error("unreachable");
+    expect([...d.cards.values()].map((c) => c.disposition).sort()).toEqual([
+      "blocked",
+      "dispatchable",
+      "fenced",
+      "not-applicable",
+      "not-topmost",
+    ]);
+    const shapes = [...d.cards.values()]
+      .map((c) => (c.reason ?? "").replace(/T-\d+/g, "T-X"))
+      .filter((r) => r !== "");
+    expect(shapes.length).toBe(5);
+    expect(new Set(shapes).size).toBe(5);
+  });
+
+  it("the six values are closed", () => {
+    expect([...DISPOSITIONS]).toEqual([
+      "dispatchable",
+      "blocked",
+      "fenced",
+      "not-topmost",
+      "at-ceiling",
+      "not-applicable",
+    ]);
+  });
+});
+
+describe("THE LIVE BOARD — the frontier run on this repository (verification line)", () => {
+  it("every card gets one of the six, and every applicable one carries a reason", () => {
+    const model = liveBoard();
+    const d = selectDispositions(model, NO_LANES);
+    if (d.kind !== "derived") throw new Error("unreachable");
+    const ids = new Set(model.tasks.map((t) => t.id).filter((id) => id !== undefined));
+    expect(d.cards.size).toBe(ids.size);
+    const statusOf = new Map(
+      model.tasks.filter((t) => t.id !== undefined).map((t) => [t.id as string, t.status]),
+    );
+    for (const card of d.cards.values()) {
+      expect(DISPOSITIONS).toContain(card.disposition);
+      if (NO_REASON_STATUSES.has(statusOf.get(card.taskId) ?? "planned")) {
+        expect(card.reason).toBeUndefined();
+      } else {
+        expect((card.reason ?? "").length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("THE DECAY IS REAL HERE, and the derivation ignores it", () => {
+    // TWO HALVES, and the second is what makes the first mean anything.
+    //
+    // (a) POSITIVE CONTROL — this board really does carry `blocked_by`
+    //     entries naming cards that are `done`. Without it the property
+    //     below is vacuous: a corpus with no stale entries satisfies "no
+    //     card is blocked by a done card" for free.
+    // (b) THE PROPERTY — no card the frontier calls `blocked` is blocked
+    //     by an id whose card is `done`. The stored field says otherwise
+    //     on every one of those entries; the derived answer does not.
+    const model = liveBoard();
+    const statusOf = new Map(
+      model.tasks.filter((t) => t.id !== undefined).map((t) => [t.id as string, t.status]),
+    );
+    const stale = model.tasks.flatMap((t) =>
+      t.blockedBy.filter((b) => statusOf.get(b) === "done"),
+    );
+    expect(stale.length).toBeGreaterThan(0);
+
+    const d = selectDispositions(model, NO_LANES);
+    if (d.kind !== "derived") throw new Error("unreachable");
+    for (const card of d.cards.values()) {
+      for (const u of card.unmet ?? []) {
+        expect(statusOf.get(u.id)).not.toBe("done");
+      }
+    }
+  });
+
+  it("no live card names a blocker that does not exist — so criterion 6 needs a fixture", () => {
+    // Measured rather than assumed. `T-111-s2` item 6 claims this case
+    // "CANNOT be driven from the live board", and that claim is a
+    // function of a tree — so it is re-derived at whatever ref this runs
+    // on, and it reds the day somebody drafts a card with a typo'd
+    // blocker, which is the day the claim stops being true.
+    expect(
+      liveBoard().issues.filter(
+        (i) => i.kind === "dangling-reference" && i.field === "blocked_by",
+      ),
+    ).toEqual([]);
   });
 });

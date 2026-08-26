@@ -1,4 +1,5 @@
 import type {
+  ComponentRecord,
   ParseIssue,
   ProjectParseResult,
   ReviewMode,
@@ -462,4 +463,734 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
   });
 
   return { columns, empty: columns.length === 0 };
+}
+
+// ---------------------------------------------------------------------
+// THE DISPATCH FRONTIER (T-111): what is dispatchable, and WHY the rest
+// are not.
+//
+// `method/roles/orchestrator.md` step 4 is the whole rule: *among the
+// topmost undone tasks of each feature column, pick the highest-priority
+// one that is unblocked AND whose `touches:` don't overlap any task
+// currently building. Ceiling: 3-5 concurrent.* Everything below derives
+// one sentence per card from that step, the parsed model, and the lane
+// reader's answer.
+//
+// **THE FIELD IS THE DECLARATION; THE ANSWER IS DERIVED (T-111-s4).**
+// `blocked_by:` is written when a card is drafted and nothing ever clears
+// it when the blocker lands, so the stored field decays in ONE direction
+// only: nothing ever adds a false blocker, time only removes true ones.
+// That makes it a statement of intent — *this work needs that work first*
+// — which is not derivable from anything, sitting in a field a reader
+// mistakes for a live answer. So the declaration is KEPT and read, and
+// whether it still BINDS is computed here and stored nowhere (T-057).
+//
+// **THREE BINDINGS, NEVER FOLDED INTO ONE.** A blocker still open, a
+// blocker that names no card at all, and a blocker that is PARKED are
+// three different sentences to a reader: the first is a wait with an end,
+// the second is a defect in THIS card rather than a reason to wait, and
+// the third is a wait nobody has scheduled an end for. `task-waves.ts`'s
+// `readSchedule` folds the second into "blocked" by construction and says
+// so in its own header — it is C-12's, outside this card's fence, so the
+// divergence is recorded here rather than repaired.
+//
+// **THE LANE LIST OUTRANKS THE STAMP.** `method/roles/executor.md` row 5
+// rules the live worktree list authoritative over the board's `status:`
+// whenever the two disagree, and both disagreements are real: a stamp
+// with no worktree, and a worktree with no stamp. This derivation
+// therefore takes the JOIN's answer rather than a status field, and it
+// TAKES it rather than recomputing it — the four states are
+// `app/src-tauri/src/dispatch/join.rs`'s, with a pin under each since
+// T-110's rebuild, and a second spelling of that rule here is exactly the
+// divergence T-110 exists to remove (T-111-s2 item 2).
+//
+// **AND IT NAMES THE DISAGREEMENT WITHOUT NAMING A CAUSE.** A card
+// stamped in flight beside no worktree has meant "somebody forgot" nearly
+// every time it has appeared in this project's record — and at the commit
+// this was written it did NOT mean that: `T-135` is deliberately
+// merged-but-open pending a human ruling and `docs/STATE.md` carries a
+// whole heading saying so. A derivation cannot read intent, so it reports
+// the two facts and stops. "Lapsed", "forgotten" and "dead" are words for
+// the reader to reach, never for this file to assert.
+// ---------------------------------------------------------------------
+
+/**
+ * The four states `join.rs` names, mirrored STRUCTURALLY so this module
+ * declares no dependency on C-15 for two fields — the shape
+ * `dispatch-store.ts`'s own `BoardStamp` already uses, for the same
+ * reason: an import here would be an undeclared C-08 -> C-15 component
+ * edge bought for a type alias.
+ *
+ * The AUTHORITY is the Rust enum. Nothing in this repository pins the two
+ * vocabularies equal across the language boundary; `T-110-s3` carries
+ * that, and pinning it needs exactly the import this comment explains
+ * away.
+ */
+export type LaneJoinState = "live" | "died" | "stampSkipped" | "notDispatched";
+
+/** One worktree registration git wrote down, as much of it as the
+ * frontier reads. Structurally satisfied by `LaneRegistration`. */
+export interface LaneHold {
+  readonly taskId: string;
+  readonly branch: string;
+  readonly worktreePath: string;
+  /** The worktree directory is still there. A registration whose
+   * directory is gone is NOT a live lane and holds no fence. */
+  readonly existsOnDisk: boolean;
+}
+
+/** One task id, and what the card and the disk together say about it.
+ * Structurally satisfied by `DispatchRow`. */
+export interface DispatchStamp {
+  readonly taskId: string;
+  readonly state: LaneJoinState;
+  readonly lanes: readonly LaneHold[];
+}
+
+/**
+ * What the lane reader had to say, as the frontier consumes it.
+ * Structurally satisfied by `DispatchJoin`.
+ *
+ * **`unavailable` IS WHY THIS IS A UNION, one layer up from where
+ * `dispatch-store.ts` makes the same argument.** When the scan refused,
+ * the app knows NOTHING about lanes — and every card would then read
+ * `dispatchable`, because an empty lane set is indistinguishable from a
+ * quiet repository. That is the failure direction this card exists to
+ * close, so the frontier refuses to answer instead of answering freely.
+ */
+export type DispatchReading =
+  | { readonly kind: "joined"; readonly rows: ReadonlyMap<string, DispatchStamp> }
+  | { readonly kind: "unavailable"; readonly sentence: string };
+
+/**
+ * `orchestrator.md` step 4's *"Ceiling: 3-5 concurrent."*, as a constant.
+ *
+ * A RANGE, because the step states one: below `min` the board is
+ * under-parallel, at `max` it is full. Only `max` refuses a dispatch, and
+ * `min` is carried rather than dropped so the constant says what the step
+ * says. Asserted against the live `method/roles/orchestrator.md` in
+ * `app/test/select-board.test.ts` with both bounds HARDCODED in the body
+ * — never parametrised by this object, which is the shape that let
+ * `BRANCH_MAX_LEN` survive T-110's first drill.
+ */
+export const CONCURRENCY_CEILING: { readonly min: number; readonly max: number } = Object.freeze({
+  min: 3,
+  max: 5,
+});
+
+/** The six dispositions, closed. */
+export const DISPOSITIONS = [
+  "dispatchable",
+  "blocked",
+  "fenced",
+  "not-topmost",
+  "at-ceiling",
+  "not-applicable",
+] as const;
+
+export type Disposition = (typeof DISPOSITIONS)[number];
+
+/**
+ * Why one declared blocker is still unmet — three values, deliberately
+ * NOT folded (T-111-s4's trap).
+ *
+ * - `open`    — the blocker exists and is not done. An ordinary wait.
+ * - `missing` — no live card declares that id. A defect in THIS card, not
+ *   a reason to wait: the parser already says so as a
+ *   `dangling-reference` issue carrying a near-miss hint, and the
+ *   frontier consumes that sentence rather than re-deriving it (T-057).
+ * - `parked`  — the blocker is shelved, so the wait has no scheduled end.
+ */
+export type BlockerBinding = "open" | "missing" | "parked";
+
+export interface UnmetBlocker {
+  readonly id: string;
+  readonly binding: BlockerBinding;
+  /** The blocker's own status; absent exactly when `binding` is `missing`. */
+  readonly status?: TaskStatus;
+  /** The parser's own sentence about this reference, verbatim, when it
+   * emitted one. Present only for `missing`. */
+  readonly parserSaid?: string;
+}
+
+/** A fence overlap, named on both faces and through the component that
+ * carries it — never as two slug STRINGS (T-111-s1). */
+export interface FenceClash {
+  /** This card's `touches:` entry. */
+  readonly token: string;
+  /** The live lane's `touches:` entry it collides with. */
+  readonly laneToken: string;
+  readonly laneTaskId: string;
+  readonly laneBranch: string;
+  /** The expanded paths both entries reserve, deduped and sorted. */
+  readonly sharedPaths: readonly string[];
+  /** Component ids both entries expand through; empty when the collision
+   * is between two literal path tokens rather than through the registry.
+   * NON-EMPTY IS THE COARSE-FENCE TELL a human overrides on. */
+  readonly viaComponents: readonly string[];
+}
+
+/** One card's answer. */
+export interface CardDisposition {
+  readonly taskId: string;
+  readonly file: string;
+  readonly disposition: Disposition;
+  /**
+   * The reason, as a SENTENCE. A disposition with no reason is not done
+   * being computed (criterion 4) — with one exception, which is the
+   * criterion beside it: a `done`, `merging` or `parked` card carries no
+   * reason at all, because progress must not acquire a scolding.
+   */
+  readonly reason?: string;
+  /** Present exactly when `disposition` is `blocked`. */
+  readonly unmet?: readonly UnmetBlocker[];
+  /** Present exactly when `disposition` is `fenced`. */
+  readonly clash?: FenceClash;
+  /** Present exactly when `disposition` is `not-topmost` and the card
+   * above carries an id. */
+  readonly behind?: string;
+}
+
+/** One live lane, as the ceiling counts it. */
+export interface InFlightLane {
+  readonly taskId: string;
+  readonly branch: string;
+  readonly worktreePath: string;
+  /** The card's `touches:` verbatim; empty when no card claims the lane. */
+  readonly touches: readonly string[];
+  /** True when the board and the worktree list disagree about this id —
+   * a lane whose card is not stamped in flight. */
+  readonly disagrees: boolean;
+  /**
+   * A card on the board claims this lane's task id, so its fence could be
+   * READ. False is a worktree on a `task/` branch that no card declares:
+   * its fence is not empty, it is UNKNOWN, and the two are not the same
+   * fact. Nothing can be certified disjoint from an unknown fence, so a
+   * `dispatchable` reason says so out loud rather than quietly counting
+   * the lane as reserving nothing.
+   */
+  readonly fenceKnown: boolean;
+}
+
+export type DispositionModel =
+  | {
+      readonly kind: "derived";
+      /** Task id -> answer. A Map: ids are read from files (ADR-009). */
+      readonly cards: ReadonlyMap<string, CardDisposition>;
+      readonly inFlight: readonly InFlightLane[];
+      readonly ceilingReached: boolean;
+      /**
+       * The board's one-line answer. Criterion 5 asks for DIFFERENT
+       * SENTENCES for "nothing is dispatchable" and "the ceiling is
+       * reached", because they are different situations wanting different
+       * responses: one wants a card unblocked, the other wants a lane to
+       * land.
+       */
+      readonly headline: string;
+    }
+  | { readonly kind: "undecidable"; readonly sentence: string };
+
+// ---------------------------------------------------------------------
+// Normalisation — ONE function, and it states its own ceiling.
+// ---------------------------------------------------------------------
+
+/**
+ * The canonical spelling of one `touches:` entry.
+ *
+ * Trailing slashes and a trailing glob tail are noise: `tools/e2e` and
+ * `tools/e2e/` are one fence spelled twice, and a component's
+ * `app/src/styles/**` and a card's `app/src/styles` are one directory.
+ * Interior separators collapse so `docs//tasks` cannot pass for a
+ * different token.
+ *
+ * **THE CEILING, STATED SO A READER DOES NOT CONCLUDE THE VOCABULARY IS
+ * RECONCILED (T-111-s3).** Three collision families exist on this board
+ * and this rule reaches ONE of them alone:
+ *
+ * - REACHED HERE: `tools/e2e` beside `tools/e2e/`, `method` beside
+ *   `method/`.
+ * - REACHED BY {@link touchTokensOverlap}'s containment rule and NOT by
+ *   this function: a bare `docs` beside `docs/CONVENTIONS.md`, and
+ *   `method/` beside `method/lane-protocol.md`. Two DIFFERENT canonical
+ *   strings, one containing the other. Containment is overlap, so the
+ *   COMPARISON is where that is answered and never the spelling.
+ * - REACHED BY NEITHER, and this is the honest hole: `ci` against
+ *   `.github/`. They name one thing and share no substring at all. No
+ *   string rule can close it and this one does not pretend to — a token
+ *   resolving to no component slug is treated as a literal path, so `ci`
+ *   is reported disjoint from `.github/` and that is KNOWN-WRONG rather
+ *   than unknown. The repair is upstream: a `touches:` entry resolving to
+ *   neither a slug nor an existing path is a parser-level issue kind
+ *   (`T-111-s3`, C-06), and the board has no filesystem to settle it
+ *   with.
+ */
+export function normaliseTouchToken(token: string): string {
+  const trimmed = token.trim();
+  const noGlob = trimmed.replace(/\/\*+$/, "");
+  const collapsed = noGlob.replace(/\/{2,}/g, "/");
+  return collapsed.replace(/\/+$/, "");
+}
+
+/**
+ * Do two `touches:` entries reserve overlapping ground?
+ *
+ * Equality after normalisation, OR containment: `docs` contains
+ * `docs/tasks`, and a card fenced to the parent reserves the child. The
+ * containment test is anchored on a separator so `app/src` does not
+ * "contain" `app/src-tauri`, which is the off-by-one a bare `startsWith`
+ * produces on this repository's own path vocabulary.
+ */
+export function touchTokensOverlap(a: string, b: string): boolean {
+  const na = normaliseTouchToken(a);
+  const nb = normaliseTouchToken(b);
+  if (na === "" || nb === "") return false;
+  if (na === nb) return true;
+  return na.startsWith(nb + "/") || nb.startsWith(na + "/");
+}
+
+/** What one `touches:` entry turns out to be. */
+export interface TouchExpansion {
+  readonly token: string;
+  readonly kind: "slug" | "path";
+  /** Component ids the slug names; empty for a path entry. */
+  readonly componentIds: readonly string[];
+  /** Normalised paths the entry reserves. For a path entry, itself. */
+  readonly paths: readonly string[];
+}
+
+/**
+ * Expand one `touches:` entry to the paths it reserves.
+ *
+ * **THE DISJOINTNESS TEST IS OVER EXPANDED PATHS, NEVER OVER SLUG
+ * STRINGS**, and that is the finding this card was dispatched beside
+ * rather than a refinement of it. `C-11-design-tokens.md` carries
+ * `touch_slugs: [app-shell, app-board]` — the only double-claimed
+ * component in the registry — so `[app-board]` and `[app-shell]` are two
+ * different strings naming one shared component, and a string-equality
+ * fence calls them disjoint. It did, for a whole lane (`T-111-s1`).
+ *
+ * The map is read from each component file's own `touch_slugs:` FIELD,
+ * which `roles/executor.md` row 5 rules authoritative over
+ * `docs/ARCHITECTURE.md`'s prose block — "because the block is prose that
+ * goes stale the day a component is added".
+ */
+export function expandTouch(
+  token: string,
+  components: readonly ComponentRecord[],
+): TouchExpansion {
+  const canonical = normaliseTouchToken(token);
+  const owners = components.filter((c) => c.touchSlugs.includes(canonical));
+  if (owners.length === 0) {
+    return { token, kind: "path", componentIds: [], paths: [canonical] };
+  }
+  const paths = new Set<string>();
+  for (const owner of owners) {
+    for (const p of owner.paths) paths.add(normaliseTouchToken(p));
+  }
+  return {
+    token,
+    kind: "slug",
+    componentIds: owners.map((c) => c.id).sort(byText),
+    paths: [...paths].sort(byText),
+  };
+}
+
+/**
+ * Every way two fences collide, named on both faces.
+ *
+ * An empty result is the whole claim "these two are disjoint", and it is
+ * a claim about PATH SETS: `docs/ARCHITECTURE.md` settles that "overlap"
+ * ranges over paths and that slugs are a naming layer on top of
+ * components.
+ */
+export function fenceClashes(
+  mine: { readonly taskId: string; readonly touches: readonly string[] },
+  lane: InFlightLane,
+  components: readonly ComponentRecord[],
+): FenceClash[] {
+  const found: FenceClash[] = [];
+  for (const token of mine.touches) {
+    const a = expandTouch(token, components);
+    for (const laneToken of lane.touches) {
+      const b = expandTouch(laneToken, components);
+      const shared = new Set<string>();
+      for (const pa of a.paths) {
+        for (const pb of b.paths) {
+          if (!touchTokensOverlap(pa, pb)) continue;
+          // The NARROWER of the two is the ground actually shared: a
+          // parent fence reserves the child, not the other way round.
+          shared.add(pa.length >= pb.length ? pa : pb);
+        }
+      }
+      if (shared.size === 0) continue;
+      found.push({
+        token,
+        laneToken,
+        laneTaskId: lane.taskId,
+        laneBranch: lane.branch,
+        sharedPaths: [...shared].sort(byText),
+        viaComponents: [...new Set([...a.componentIds, ...b.componentIds])].sort(byText),
+      });
+    }
+  }
+  return found;
+}
+
+// ---------------------------------------------------------------------
+// The derivation.
+// ---------------------------------------------------------------------
+
+/** The statuses that carry no disposition reason at all — criterion 7's
+ * two, plus `merging`, which is `done`'s last mile. */
+const NO_REASON_AT_ALL = new Set<TaskStatus>(["done", "merging", "parked"]);
+
+/** A blocker is met when its card is `done` — the ONE rule, and the
+ * reason the stored field never has to be cleared for the board to be
+ * right. `merging` is deliberately NOT met: the work has not landed. */
+function bindingOf(blockerStatus: TaskStatus | undefined): BlockerBinding | undefined {
+  if (blockerStatus === undefined) return "missing";
+  if (blockerStatus === "done") return undefined;
+  if (blockerStatus === "parked") return "parked";
+  return "open";
+}
+
+/** The parser's own sentence about a dangling `blocked_by`, keyed by the
+ * file it is about and the id it names. Consumed, never re-derived. */
+function danglingBlockerSentences(issues: readonly ParseIssue[]): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const issue of issues) {
+    if (issue.kind !== "dangling-reference") continue;
+    if (issue.field !== "blocked_by") continue;
+    out.set(issue.file + " " + issue.id, issue.message);
+  }
+  return out;
+}
+
+const joinIds = (ids: readonly string[]): string => ids.join(", ");
+
+/** The sentence for one unmet blocker set — one clause per BINDING, so
+ * the three never arrive as one word. */
+function blockedReason(taskId: string, unmet: readonly UnmetBlocker[]): string {
+  const parts: string[] = [];
+  const open = unmet.filter((u) => u.binding === "open");
+  const parked = unmet.filter((u) => u.binding === "parked");
+  const missing = unmet.filter((u) => u.binding === "missing");
+  if (open.length > 0) {
+    parts.push("waits on " + joinIds(open.map((u) => u.id + " (" + (u.status ?? "?") + ")")));
+  }
+  if (parked.length > 0) {
+    parts.push(
+      "waits on " +
+        joinIds(parked.map((u) => u.id)) +
+        ", which is PARKED — a wait with no scheduled end",
+    );
+  }
+  if (missing.length > 0) {
+    parts.push(
+      "names " +
+        joinIds(missing.map((u) => u.id)) +
+        " as a blocker and no card declares that id — that is a defect in this card, " +
+        "not a reason to wait",
+    );
+  }
+  return taskId + " " + parts.join("; ") + ".";
+}
+
+/**
+ * Derive one disposition per card.
+ *
+ * PURE: a function of the parsed model plus the lane reader's answer and
+ * nothing else. It writes nothing and stores nothing — the whole point is
+ * that the live answer is cheaper to derive than to remember (T-057).
+ *
+ * **THE ORDER OF THE TESTS IS THE SHAPE OF THE ANSWER, and it is pinned.**
+ * `not-applicable` (this card is not a candidate) -> `blocked` (its own
+ * declaration still binds) -> `fenced` (a live lane holds its ground) ->
+ * `not-topmost` (its column has a card above it) -> `at-ceiling` (nothing
+ * is wrong with it and there is no room) -> `dispatchable`. Card-specific
+ * reasons come FIRST because a blocked card told "the ceiling is reached"
+ * has been told the least useful true thing about itself.
+ */
+export function selectDispositions(
+  model: ProjectParseResult,
+  dispatch: DispatchReading,
+): DispositionModel {
+  if (dispatch.kind === "unavailable") {
+    return {
+      kind: "undecidable",
+      sentence:
+        "the lane reader could not answer, so no card can be called dispatchable: " +
+        dispatch.sentence +
+        " An empty lane set and an unread one are not the same fact, and reporting every card " +
+        "as free is the failure direction this frontier exists to close.",
+    };
+  }
+
+  const components = model.components ?? [];
+  const byId = new Map<string, TaskRecord>();
+  for (const task of model.tasks) {
+    if (task.id !== undefined) byId.set(task.id, task);
+  }
+
+  // THE IN-FLIGHT SET: the worktree list, which row 5 rules authoritative
+  // over the board's `status:`. A registration whose directory is gone is
+  // not a live lane and holds no fence.
+  const inFlight: InFlightLane[] = [];
+  for (const row of dispatch.rows.values()) {
+    for (const lane of row.lanes) {
+      if (!lane.existsOnDisk) continue;
+      const card = byId.get(row.taskId);
+      inFlight.push({
+        taskId: row.taskId,
+        branch: lane.branch,
+        worktreePath: lane.worktreePath,
+        touches: card?.touches ?? [],
+        disagrees: row.state !== "live",
+        fenceKnown: card !== undefined,
+      });
+    }
+  }
+  inFlight.sort((a, b) => byText(a.taskId, b.taskId) || byText(a.branch, b.branch));
+
+  // The refusal is narrow ON PURPOSE: it fires only when a fence is
+  // actually in play and cannot be expanded. A registry-less model whose
+  // live lanes reserve nothing has nothing to compare, so answering it is
+  // not a guess.
+  if (components.length === 0 && inFlight.some((l) => l.touches.length > 0)) {
+    return {
+      kind: "undecidable",
+      sentence:
+        "the component registry is absent, so a fence naming a slug cannot be expanded to the " +
+        "paths it reserves — and comparing slug STRINGS is the exact defect this frontier " +
+        "exists to remove (T-111-s1: app-board and app-shell are different strings claiming " +
+        "one component).",
+    };
+  }
+  const blindLanes = inFlight.filter((l) => !l.fenceKnown);
+
+  // The board's OWN order decides what "topmost" means, so the frontier
+  // and the render can never disagree about which card is above which.
+  const board = selectBoard(model);
+  const topmost = new Map<string, BoardCard>();
+  for (const column of board.columns) {
+    const head = column.cards.find((c) => !isDoneish(c.status));
+    if (head === undefined) continue;
+    for (const c of column.cards) {
+      if (c.id !== undefined) topmost.set(c.id, head);
+    }
+  }
+
+  const dangling = danglingBlockerSentences(model.issues);
+  const ceilingReached = inFlight.length >= CONCURRENCY_CEILING.max;
+  const cards = new Map<string, CardDisposition>();
+  let readyCount = 0;
+  let heldByCeiling = 0;
+
+  for (const task of model.tasks) {
+    const id = task.id;
+    if (id === undefined) continue;
+    const base = { taskId: id, file: task.file };
+    const row = dispatch.rows.get(id);
+    const held = inFlight.find((l) => l.taskId === id);
+
+    // 1. NOT A CANDIDATE — and the two disagreements are named here.
+    if (held !== undefined) {
+      cards.set(id, {
+        ...base,
+        disposition: "not-applicable",
+        reason:
+          row?.state === "live"
+            ? id +
+              " is in flight: stamped " +
+              task.status +
+              " and a worktree is live at " +
+              held.worktreePath +
+              " (" +
+              held.branch +
+              ")."
+            : id +
+              " reads " +
+              task.status +
+              " on the board and a worktree is live at " +
+              held.worktreePath +
+              " (" +
+              held.branch +
+              "). The worktree list outranks the stamp (executor.md row 5), so this fence " +
+              "IS held.",
+      });
+      continue;
+    }
+    if (NO_REASON_AT_ALL.has(task.status)) {
+      // Criterion 7: no reason at all. Progress must not acquire a scolding.
+      cards.set(id, { ...base, disposition: "not-applicable" });
+      continue;
+    }
+    if (task.status !== "planned") {
+      cards.set(id, {
+        ...base,
+        disposition: "not-applicable",
+        reason:
+          row?.state === "died"
+            ? id +
+              " is stamped " +
+              task.status +
+              " and no worktree is registered for it. The board and the worktree list " +
+              "disagree; the worktree list outranks the stamp (executor.md row 5), so this " +
+              "fence is NOT held. WHY they disagree is not a fact on disk — read the card."
+            : id + " is " + task.status + ", which is not a status a dispatch picks from.",
+      });
+      continue;
+    }
+
+    // 2. BLOCKED — derived from the declaration, never trusted as one.
+    const unmet: UnmetBlocker[] = [];
+    const seen = new Set<string>();
+    for (const rawId of task.blockedBy) {
+      if (rawId === id || seen.has(rawId)) continue;
+      seen.add(rawId);
+      const blocker = byId.get(rawId);
+      const binding = bindingOf(blocker?.status);
+      if (binding === undefined) continue;
+      const said = dangling.get(task.file + " " + rawId);
+      unmet.push({
+        id: rawId,
+        binding,
+        ...(blocker === undefined ? {} : { status: blocker.status }),
+        ...(said === undefined ? {} : { parserSaid: said }),
+      });
+    }
+    if (unmet.length > 0) {
+      cards.set(id, {
+        ...base,
+        disposition: "blocked",
+        reason: blockedReason(id, unmet),
+        unmet,
+      });
+      continue;
+    }
+
+    // 3. FENCED — over expanded components, never over slug strings.
+    let clash: FenceClash | undefined;
+    for (const lane of inFlight) {
+      const first = fenceClashes({ taskId: id, touches: task.touches }, lane, components)[0];
+      if (first !== undefined) {
+        clash = first;
+        break;
+      }
+    }
+    if (clash !== undefined) {
+      const via =
+        clash.viaComponents.length === 0
+          ? ""
+          : " — both expand through " +
+            joinIds(clash.viaComponents) +
+            ", so this may be the COARSE fence rather than a real overlap, and a human can " +
+            "override it deliberately";
+      cards.set(id, {
+        ...base,
+        disposition: "fenced",
+        reason:
+          id +
+          " reserves " +
+          clash.token +
+          " and lane " +
+          clash.laneTaskId +
+          " (" +
+          clash.laneBranch +
+          ") holds " +
+          clash.laneToken +
+          "; they share " +
+          joinIds(clash.sharedPaths) +
+          via +
+          ".",
+        clash,
+      });
+      continue;
+    }
+
+    // 4. NOT TOPMOST.
+    const head = topmost.get(id);
+    if (head !== undefined && head.id !== id) {
+      cards.set(id, {
+        ...base,
+        disposition: "not-topmost",
+        reason:
+          id +
+          " is not the topmost undone card in its column: " +
+          (head.id ?? head.file) +
+          " (" +
+          head.status +
+          ") sits above it.",
+        ...(head.id === undefined ? {} : { behind: head.id }),
+      });
+      continue;
+    }
+
+    // 5. AT CEILING — nothing is wrong with this card; there is no room.
+    if (ceilingReached) {
+      heldByCeiling += 1;
+      cards.set(id, {
+        ...base,
+        disposition: "at-ceiling",
+        reason:
+          id +
+          " is ready and there is no room: " +
+          inFlight.length +
+          " lanes are live and orchestrator.md step 4 caps concurrency at " +
+          CONCURRENCY_CEILING.max +
+          ". Nothing is wrong with this card — a lane has to land.",
+      });
+      continue;
+    }
+
+    // 6. DISPATCHABLE — with the one caveat that cannot be computed away.
+    readyCount += 1;
+    cards.set(id, {
+      ...base,
+      disposition: "dispatchable",
+      reason:
+        id +
+        " is dispatchable: no declared blocker still binds, its touches clear all " +
+        inFlight.length +
+        " live lane" +
+        (inFlight.length === 1 ? "" : "s") +
+        ", it is the topmost undone card in its column, and " +
+        inFlight.length +
+        " of " +
+        CONCURRENCY_CEILING.max +
+        " lanes are in flight." +
+        (blindLanes.length === 0
+          ? ""
+          : " CAVEAT: " +
+            blindLanes.length +
+            " of those lanes (" +
+            joinIds(blindLanes.map((l) => l.branch)) +
+            ") is claimed by no card, so its fence could not be READ — unknown is not empty."),
+    });
+  }
+
+  const headline = ceilingReached
+    ? "THE CEILING IS REACHED: " +
+      inFlight.length +
+      " lanes are live against a cap of " +
+      CONCURRENCY_CEILING.max +
+      ", and " +
+      heldByCeiling +
+      (heldByCeiling === 1 ? " card is" : " cards are") +
+      " ready behind it. A lane has to land."
+    : readyCount === 0
+      ? "NOTHING IS DISPATCHABLE: " +
+        inFlight.length +
+        " of " +
+        CONCURRENCY_CEILING.max +
+        " lanes are live, so there is room — no card qualifies. Read the reasons."
+      : readyCount +
+        (readyCount === 1 ? " card is" : " cards are") +
+        " dispatchable, with " +
+        inFlight.length +
+        " of " +
+        CONCURRENCY_CEILING.max +
+        " lanes live.";
+
+  return { kind: "derived", cards, inFlight, ceilingReached, headline };
 }
