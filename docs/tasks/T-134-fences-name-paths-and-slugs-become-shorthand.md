@@ -762,3 +762,30 @@ property, both pins and both live pin-two instances check out, the eight
 drill arms reproduce exactly, and every owed suite and gate is green with
 its exit read unpiped. Verifier frontmatter fields deliberately left
 unstamped.
+
+### Verifier addendum — the board moved three times under this verification
+
+**MAIN MOVED WHILE I WAS VERIFYING, WHICH IS WHY THE RANGE RULE SAYS NAME
+YOUR REF.** My range is fixed at `verify-T134-mainbase` = `cf470f5`. Main
+then went to `15f0d7d` (`T-136` REJECTED, four `blocked_by:` declarations
+restored, `T-137` rewritten). Re-derived after my own write: `merge-tree
+--write-tree` **exit 0**, tree `8d65d33b`, still **6 paths**; GRAPH REGEN
+**asked again**, unchanged at `970961 · 183 · 2064 · 1986`.
+
+**THE CENSUS IS STABLE ACROSS ALL THREE REFS** — `15a963d` (36 cards /
+630 pairs), `cf470f5` (38 / 703), `15f0d7d` (37 / 666): the SAME 25
+flips, the same pairs, the same witnesses, **0 in the loosening direction
+every time**. The four restored declarations moved `blocked_by:` only and
+no `touches:`, which is why nothing shifted.
+
+**ONE GROUND OF MY R1 RULING IS NOW STALE AND I AM STAMPING IT RATHER
+THAN LEAVING IT.** I argued that unifying `dispatch-brief.mjs` here would
+have collided with `T-136`, LIVE at `cf470f5` holding `[tools/e2e]`.
+**`T-136` is `rejected` as of `15f0d7d`**, so that ground no longer
+holds. **The ruling is unchanged and rests on the other three**:
+`tools/e2e` is outside this card's fence; the manifest's
+"imports neither app nor parser" is a recorded ADR-011-family choice; and
+`brief.spec.ts` already pins `fenceOverlaps` on the same containment
+case, so the migration carries real coverage. **`T-137` is the vehicle
+and has grown into it** — now `planned` with `touches: [lib-parser,
+app-map, tools/e2e]`, which spans both implementations.
