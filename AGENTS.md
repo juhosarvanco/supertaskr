@@ -12,9 +12,14 @@ STATE is what is happening right now, ROADMAP is **what this app DOES**,
 ARCHITECTURE is which components exist, CONVENTIONS is how to work here.
 
 **Before concluding that a feature is missing, check whether it already
-exists.** `tools/e2e/tests/` holds spec files whose names are sentences
-about what the app actually does, kept true by running — they cannot go
-stale the way prose can. An architect session once spent a working day
+exists.** The spec files in `tools/e2e/tests/` are named by TOPIC
+(`brief`, `interview`, `accelerators`); the sentences are the test names
+INSIDE them. Run
+
+    grep -h 'test("' tools/e2e/tests/*.spec.ts
+
+to read what this app actually does, in sentences kept true by running —
+they cannot go stale the way prose can. An architect session once spent a working day
 rebuilding a belief about `blocked_by` that ROADMAP's own F-06 entry
 would have corrected in a sentence (T-138).
 
