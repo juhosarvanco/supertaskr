@@ -954,6 +954,22 @@ CONSECUTIVE MERGE WHERE THE F-04 PROGRESS LINE DOES NOT MOVE.** The board
 DID move — 286 flat task files to 292, and 97 done to 98 — which is the
 point: **a milestone census and a board census answer different questions,
 and only one of them moves when an inherited-backlog card lands.**
+**AND RE-DERIVED ON DISK A FIFTH TIME AT THE T-135 HALF A CHECKPOINT,
+IDENTICAL A FIFTH TIME** — 96 total, F-01 9, F-02 43, F-03 12, F-04 7,
+F-06 25 — **and this time for a reason none of the four above had, which
+is why the entry is worth its lines.** `T-135` is **F-06** and carries
+`milestone: 4`, so like T-132 and T-133 it was already in this count
+before its merge. But the previous four all stamped their card `done`
+and moved the BOARD's done figure; **this merge stamps nothing done at
+all.** T-135's Half A merged and its Half B did not, so the card stays
+`status: building` on a card with no live lane, and **done holds at 98
+while the board's flat count goes 292 → 297** (four T-135 suggestions
+plus `T-132-s6`, which arrived on main in its own commit after T-133's
+checkpoint). **SIXTH CONSECUTIVE MERGE WHERE THE F-04 PROGRESS LINE DOES
+NOT MOVE**, and the fifth distinct reason: a merge whose card is not
+finished. **A `done` census that does not move is not evidence that
+nothing merged — and now there is a worked case where nothing was even
+stamped.**
 Decomposition pass complete 2026-08-19
 (design/dispatch-technical-plan.md); D1 ruled by @human the same day.
 

@@ -1212,7 +1212,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 180 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
+  it("all 181 files map, and the bucket is empty again — C-16 changes owners without changing territory", () => {
     // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
     // move this row has ever taken and the only one whose cause is a new
     // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
@@ -1276,7 +1276,26 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // last commit and are stale by `tests/arch.rs -> cycles.rs`. Derived
     // fresh here from the regenerated graph and `arch` BEFORE the suite
     // was run, which is the instruction that caught it.
-    expect(derived.fileComponent.size).toBe(180);
+    // 180 → 181 at the T-135 Half A merge regen (2026-08-26), the same
+    // plain shape as the two entries above: ONE new file,
+    // `app/src-tauri/crates/nputer-index/src/arch/blast.rs`, which C-07's
+    // `app/src-tauri/crates/nputer-index/**` glob claims, so the C-07 row
+    // in the tally below moves with it (34 → 35) and `unmappedFiles`
+    // stays []. `index --check` printed `files +1 -0 ~8` and the nine
+    // paths it names are exactly this merge's nine `.rs` paths, one for
+    // one.
+    // AND THIS IS THE ENTRY THE CARD THAT PREDICTED IT DID NOT PREDICT.
+    // `T-135-s3` forecast that committing this graph reds this file and
+    // `map-dogfood-render.test.tsx` over the `C-05 -> C-15` D1 alone, at
+    // 6 failed / 967 passed. Measured here: **9 failed / 964 passed**,
+    // four in this file and five in that one. SIX are the D1; the other
+    // THREE are this file-count line and two in the map file, and they
+    // move under no repair `T-135-s3` offers, because the card's figures
+    // were taken at an intermediate tree in which `blast.rs` did not yet
+    // exist. The verifier diagnosed it by rebuilding that tree; this
+    // integrator re-derived the nine independently. A count carried from
+    // one tree into a paragraph about another is the shape to watch.
+    expect(derived.fileComponent.size).toBe(181);
     // AND THE BUCKET IS STILL EMPTY, for a second reason than the one it
     // had yesterday: T-033's settlement kept `tests/dispatch_lanes.rs` out
     // of the bucket by CLAIMING it, and T-126 keeps it out by DELETING it.
@@ -1415,7 +1434,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // gate — the SECOND file this component has gained on disk, and
       // the only component whose count moves at this merge. Derived from
       // `arch` over the regenerated graph before the suite was run.
-      ["C-07", 34],
+      // 34 → 35 at the T-135 Half A merge regen (2026-08-26):
+      // `crates/nputer-index/src/arch/blast.rs`, the derived-dependents
+      // report — the THIRD file this component has gained on disk, and
+      // again the only component whose count moves at this merge.
+      // Derived from `arch` over the regenerated graph before the suite
+      // was run.
+      ["C-07", 35],
       ["C-08", 10],
       ["C-09", 3],
       // 2 → 3 at the T-010 merge regen: docs_watch.rs, which C-10 has
@@ -1540,7 +1565,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: ZERO DRIFT BUT ONE ROW, WHICH IS THE POINT OF THE CARD", () => {
+  it("THE FINDINGS: TWO D1 ROWS, ONE OF THEM REVEALED RATHER THAN CREATED", () => {
     // T-033 TAKES THIS ARRAY FROM FIFTEEN ROWS TO THREE, and the shape of
     // what is left is the whole deliverable. Eleven undeclared rows were a
     // warning light wired to always-on; after this, an undeclared edge is
@@ -1570,7 +1595,35 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // committed graph BEFORE this suite was run (the T-088 technique),
     // never read off a failure — the first red here hides everything under
     // it. The probe was deleted and its removal proved by `git status`.
+    //
+    // A SECOND D1 ARRIVES AT THE T-135 HALF A MERGE REGEN (2026-08-26),
+    // AND IT IS REVEALED RATHER THAN CREATED. T-135 makes a Rust `mod`
+    // declaration an `import` edge, so `app/src-tauri/src/lib.rs` (C-05)
+    // finally shows the dependency on `dispatch/mod.rs` (C-15) that
+    // `pub mod dispatch;` has carried since T-126's merge `0fa83da`.
+    // `git log -S "C-15" -- docs/architecture/components/C-05-app.md` is
+    // EMPTY: C-05 has never declared C-15 in its history. So this row was
+    // exactly as true one commit before this merge as it is now, which is
+    // the whole of ruling thirteen's parent test — the checkpoint that
+    // reconciled this array therefore did NOT declare C-15 in the
+    // registry. The declaration is routed, with its own measurement, to
+    // `T-126-s3` item 4, which is where a triage will dispose of it.
+    // AND THAT CARD'S ITEM 4 CALLS THIS THE "FIFTH D1"; IT IS THE SECOND,
+    // and there are four findings, not five. Measured here with `arch
+    // drift` over the regenerated graph: two D1 rows and two D3 rows.
     expect(derived.findings).toEqual([
+      {
+        rule: "D1",
+        id: "D1:C-05->C-15",
+        from: "C-05",
+        to: "C-15",
+        fileEdges: [
+          {
+            from: "app/src-tauri/src/lib.rs",
+            to: "app/src-tauri/src/dispatch/mod.rs",
+          },
+        ],
+      },
       {
         rule: "D1",
         id: "D1:C-10->C-14",
@@ -1592,7 +1645,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
   });
 
-  it("the full relation table: 26 confirmed, 1 undeclared, 9 planned", () => {
+  it("the full relation table: 26 confirmed, 2 undeclared, 9 planned", () => {
     // T-033: 35 rows -> 36, and the TALLY is where the card lands.
     // 14/12/9 becomes 26/1/9 — eleven undeclared rows become confirmed or
     // disappear, and the single survivor is the cycle T-125 owns.
@@ -1651,6 +1704,13 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["C-05", "C-12", "confirmed", 35],
       ["C-05", "C-13", "confirmed", 17],
       ["C-05", "C-14", "confirmed", 8],
+      // NEW at the T-135 Half A merge regen (2026-08-26), and it is the
+      // ONE row this merge adds: `lib.rs -> dispatch/mod.rs`, the single
+      // cross-component pair among the 27 edges the `mod` fix rescues.
+      // It arrives `undeclared` and is LEFT undeclared — see the findings
+      // body above for why the checkpoint did not repair it and where the
+      // declaration is routed. Row count 36 -> 37, tally 26/1/9 -> 26/2/9.
+      ["C-05", "C-15", "undeclared", 1],
       // NEW at T-033: `components/shell/PaneRail.tsx -> lib/utils.ts` and
       // two siblings. The shell is now a CONSUMER of the primitives it
       // used to own, which is the extraction working in both directions.
@@ -1713,13 +1773,18 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect([...tally.entries()].sort()).toEqual([
       ["confirmed", 26],
       ["planned", 9],
-      ["undeclared", 1],
+      ["undeclared", 2],
     ]);
     // AND THE INVARIANT THE CARD EXISTS TO RESTORE: every undeclared edge
-    // is now either declared or owned by a named card. One row, one owner.
+    // is now either declared or owned by a named card. TWO rows at the
+    // T-135 Half A merge, and the invariant still holds because the new
+    // one arrives with its owner already named: `C-05->C-15` is routed to
+    // `T-126-s3` item 4 and `C-10->C-14` is T-125's cycle. An undeclared
+    // row with no owner is what this assertion exists to catch, and
+    // adding one WITHOUT its owner is the failure it would have caught.
     expect(
       derived.edges.filter((e) => e.relation === "undeclared").map((e) => `${e.from}->${e.to}`),
-    ).toEqual(["C-10->C-14"]);
+    ).toEqual(["C-05->C-15", "C-10->C-14"]);
   });
 
   it("the T-009 package.path seam is consumed: C-0x→C-06 edges are real, never absent", () => {
@@ -1829,7 +1894,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     //     `hasDrift`. `declaredOnly` below is the control that proves the
     //     two facts came apart rather than both vanishing.
     //   · C-10 stays, alone, on the cycle T-125 owns.
-    expect(drift).toEqual(["C-10"]);
+    // C-05 RETURNS AT THE T-135 HALF A MERGE REGEN (2026-08-26), by the
+    // D1-source route it left by at T-033: `lib.rs -> dispatch/mod.rs` is
+    // observed and C-05 does not declare C-15. `declaredOnly` below is
+    // the control again and does NOT move — this merge adds a drift
+    // SOURCE without adding a declared-only component, which is a
+    // different mechanism from the one T-088 recorded, and pinning the
+    // whole array is what makes the two distinguishable.
+    expect(drift).toEqual(["C-05", "C-10"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
     expect(declaredOnly).toEqual(["C-01", "C-11"]);
     // THE CONTROL FOR THE DOWNGRADE, stated as its own assertion: the two
@@ -1841,7 +1913,18 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // that reads the live registry: `hasDrift` above and the map's rings
     // are the SAME rule, exported once from the engine. The drill caught
     // the moment they were two.
-    expect(derived.findings.filter(isDriftFinding).map((f) => f.id)).toEqual(["D1:C-10->C-14"]);
+    // AND THIS IS THE FOURTH ASSERTION IN THIS BODY, WHICH IS WHY THE
+    // T-135 CHECKPOINT MET IT SECOND. Reconciling `drift` above turned
+    // this line red on its own re-run — the exact "a red on the first
+    // hides the second" trap this file has warned about since T-028,
+    // fired on the integrator that was reading the warning. Recorded
+    // rather than quietly fixed: FOUR assertions live in this one body
+    // and a fixture pass must re-run until the body is green, never
+    // until the first message stops appearing.
+    expect(derived.findings.filter(isDriftFinding).map((f) => f.id)).toEqual([
+      "D1:C-05->C-15",
+      "D1:C-10->C-14",
+    ]);
   });
 
   it("stable rollup structure (values live in the unit tables, not here)", () => {

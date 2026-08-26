@@ -1257,3 +1257,134 @@ measurement changed quantity between the forecast and the check. Both are
 the habit `STATE.md` records as this session's best process finding, and
 both were invisible to every gate. **The nine-versus-six was found only by
 running the suite a third time, against a tree nobody asked for.**
+
+## Integration — HALF A ONLY (integrator claude-opus-5, 2026-08-26)
+
+**THIS CARD IS MERGED AND STILL OPEN, AND THAT IS THE POINT OF THIS
+SECTION.** Half A is on `main`; Half B — the ceremony section in
+`method/tasks/TASK-FORMAT.md` and ADR-018 — is unwritten. `status:` stays
+**`building`** and no frontmatter line moved: `verifier:`, `built_by:`,
+`verified_by:` and `review:` are all still empty, because
+`TASK-FORMAT.md` stamps those three **on done** and this card is not
+done. The verdict at `c983a7d` moved none of them either, deliberately,
+and this checkpoint kept that.
+
+**IF YOU ARE READING A `building` CARD AND LOOKING FOR ITS LANE, THERE IS
+NOT ONE — AND THAT IS NOT A LAPSED STAMP.** The ordinary meaning of
+`status: building` is "a lane is cutting code for this right now", and
+that inference is wrong here. Read this section, `T-135-s4`, and
+`docs/STATE.md`'s own section on it before you treat the card as
+abandoned or re-dispatch it whole.
+
+- **merge** `9ae87a6` — `git merge --no-ff task/T-135-blast-radius-ceremony`
+- **lane tip** `c983a7d`, derived with `git rev-parse` — the **VERDICT**
+  commit (APPROVED, Half A only), not the lane's last work commit
+  `c6c7b1c`. A hand that merged `c6c7b1c` would have dropped the verdict.
+- **main-before** `7331b87` · **checkpoint** its direct child
+- **range** `git diff --name-only 7331b87..9ae87a6` → **16** paths; the
+  three-dot form at the merge collapses to 16, as it must. `merge-tree
+  --write-tree 7331b87 c983a7d` exits **0** (read from `$?` before the
+  substitution) → tree `48a97144` → the same 16, so nothing was resolved.
+- **built by** `claude-opus-5` (planning pass `5547f02`, Half A build
+  `7d386f0`, notes `c6c7b1c`) · **verified by** a second `claude-opus-5`
+  session `@T-135A-verify` (`c983a7d`) · **integrated by** a third that
+  neither wrote nor reviewed the lane's commits. When this card is
+  eventually stamped, **`review: same-model` is the honest label** for
+  Half A; Half B's provenance is not yet written and must not be assumed
+  from this line.
+
+### What Half B still owes, and the one blocker that is not about prose
+
+1. **@human's look at §6 and §7** — where the rungs sit and whether they
+   bind at all. §6's own measurement is the argument against binding now:
+   on the live board the rule is a **constant function**, 35 of 35
+   planned and 92 of 97 done cards landing on the top rung, because no
+   card's `touches:` has ever named a code file (0 of 216 entries).
+2. **§11's fence widening to `docs/decisions/`**, which is the
+   architect's and no lane's — criterion 6 cannot be built inside
+   `[crate-index, method/tasks/TASK-FORMAT.md]` because an ADR does not
+   live there.
+3. **THE BLOCKER THAT IS A MEASUREMENT AND NOT A JUDGEMENT.** §7's floor
+   rule — *a build-target root is never at rung 0* — **cannot bind while
+   `arch blast` prints a bare `dependents=0` for three of its eight
+   roots.** `app/src/main.tsx`, `app/vite.config.ts` and
+   `app/vitest.config.ts` are TypeScript entry points and this crate
+   computes none, so they are indistinguishable from genuinely unimported
+   files — in exactly the failure direction the card exists to close. The
+   gap is disclosed in the lane's correction 8 and in the verdict's F3,
+   and **nowhere a reader of the command will meet it.** Half B must
+   close it or state it in the output first.
+
+### The fixture reconciliation, and why it is bigger than `T-135-s3` says
+
+`docs/architecture/graph.json` was regenerated and committed **by this
+checkpoint**, not by the lane — 55 of the 57 commits that ever touched it
+are checkpoints. The regeneration is byte-identical to the lane's and to
+the verifier's, proved by `sha256`, so the file was never in doubt; the
+fixtures it moves were.
+
+**`T-135-s3` FORECAST 6 FAILED / 967 PASSED IN TWO FILES. MEASURED HERE:
+9 FAILED / 964 PASSED — four in `architecture-dogfood.test.ts` and five
+in `map-dogfood-render.test.tsx`.** Six are the `C-05 -> C-15` D1 the
+card describes, three and three exactly as it says. **The other three are
+`blast.rs` arriving as the 181st indexed file and C-07's 35th**, and they
+move under neither repair the card offers:
+
+    architecture-dogfood.test.ts   expected 181 to be 180
+    map-dogfood-render.test.tsx    'C-07 … 35 files' to contain '34 files'
+    map-dogfood-render.test.tsx    'committed graph · 181 files' to be '… 180 files'
+
+The verifier diagnosed the gap by rebuilding the tree the card's figures
+describe — the final tree minus `blast.rs` — which gives exactly 6 / 967.
+This integrator re-derived the nine from the merged tree instead, which
+is the check the card itself asks for. **An integrator who followed
+`T-135-s3` to the letter would have shipped three reds.**
+
+**AND A TENTH ASSERTION WAS RED THAT THE FIRST RUN COULD NOT SHOW**, in
+`drift flags land on the right nodes`: reconciling `expect(drift)`
+un-hid `expect(derived.findings.filter(isDriftFinding)…)` four lines
+below it, in the same body. That is the "a red on the first hides the
+second" trap `architecture-dogfood.test.ts` has warned about in its own
+comments since T-028, fired on the pass that was reading the warning.
+**Nine failing bodies, ten red assertions, twenty-one edited sites
+counting the six test TITLES that carried a now-false figure.** Final:
+**973 / 973, exit 0.**
+
+**THE `C-05 -> C-15` DRIFT IS LEFT UNDECLARED, ON RULING THIRTEEN'S
+PARENT TEST.** `pub mod dispatch;` landed at T-126 and `git log -S "C-15"
+-- docs/architecture/components/C-05-app.md` is **EMPTY**: the
+declaration has never existed, so the defect was exactly as false one
+commit before this merge as after it. That makes it **FILED, not
+repaired** — the fixtures are this merge's debris and were reconciled;
+the registry is not, and declaring C-15 here would have destroyed the
+evidence that the dependency predates the merge, which is the most
+interesting thing about it. It is routed to **`T-126-s3` item 4**, whose
+own text calls it the *"fifth D1"* when `arch drift` at this checkpoint
+reports **two D1 rows and four findings** — recorded here rather than
+edited, because that card is a triage's to dispose of.
+
+### The gates, and the trap that fired
+
+**GRAPH REGEN — OWED and ASKED THREE TIMES, never predicted.** STALE at
+the merge (`944590 · 180 · 2018 · 1911` → fresh `955710 · 181 · 2038 ·
+1943`); regenerated; **STALE AGAIN after the fixture writes**; regenerated;
+CURRENT. **THE IDENTICAL-FIGURES TRAP FIRED, IN ITS STRONGEST FORM, FOR
+THE FIRST TIME IN THIS SERIES.** The second ask reported *every headline
+figure identical on both sides* — `955710 bytes · 181 files · 2038
+symbols · 1943 edges` committed and fresh — **and STALE**, on `loc` alone
+(`architecture-dogfood.test.ts` 1868 → 1951, `map-dogfood-render.test.tsx`
+621 → 684). The rewritten file's `sha256` changed while its size did not,
+to the byte. §12's instruction — *ask again after every fixture write,
+and never confirm by byte count* — is the instruction that caught it, and
+this is the first checkpoint in seven where the discriminator had
+something to discriminate.
+
+**BOOT GATE — FIRES** (10 of 16 paths under `app/src-tauri/**`): exit
+**0** on scratch port 15772, both `[nputer]` lines. **DOCS GATE — FIRES**
+at exit **1** naming three suites, derived from the merge's own 16 paths
+**with `docs/architecture/graph.json` in the list** — which is
+`T-135-s3`'s own general finding acted on: the graph the checkpoint
+commits must be in the path list the gate is asked about, or the gate
+cannot see it. It named `tools/e2e` as an owner of `graph.json`
+(`shell-frame.spec.ts`, `window-contract.spec.ts`), which is a suite the
+card's "cheap fix for THIS merge" does not mention.

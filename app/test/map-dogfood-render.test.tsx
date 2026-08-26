@@ -120,7 +120,7 @@ describe("the nputer repo on its own map", () => {
     expect(c01.textContent).toContain("pin");
   });
 
-  it("C-07 is a REAL face at last: thirty-four Rust files match its globs", () => {
+  it("C-07 is a REAL face at last: thirty-five Rust files match its globs", () => {
     // THE ASSERTION THAT INVERTS AT THE T-010 MERGE REGEN (2026-08-25),
     // and the one this whole card exists to invert. This body read
     // "C-07 is declared-only: zero TS files match its globs" from T-012
@@ -148,7 +148,17 @@ describe("the nputer repo on its own map", () => {
     // `crates/nputer-index/src/arch/cycles.rs`, the registry cycle gate.
     // Derived from `arch` over the regenerated graph before the suite was
     // run, and the title moved with the digit again.
-    expect(c07.textContent).toContain("34 files");
+    // 34 → 35 at the T-135 Half A merge regen (2026-08-26), the third file
+    // this component has gained on disk and the same shape once more:
+    // `crates/nputer-index/src/arch/blast.rs`, the derived-dependents
+    // report. Derived from `arch` over the regenerated graph before the
+    // suite was run, and the title moved with the digit a third time.
+    // THIS LINE IS ONE OF THE THREE `T-135-s3` DOES NOT NAME. That card
+    // forecast this merge's graph commit reddening this file over the
+    // `C-05 -> C-15` D1 alone; this figure and the header hint below move
+    // for a different reason — a new indexed file — and under no repair
+    // that card offers.
+    expect(c07.textContent).toContain("35 files");
     // The D3 ring is gone with the finding that drew it — the visible
     // half of architecture-dogfood's declaredOnly list losing C-07.
     expect(c07.className).not.toContain("map-drift-ring");
@@ -185,17 +195,33 @@ describe("the nputer repo on its own map", () => {
     // C-09 and C-13 stop being D1 sources — declared, or extracted onto
     // C-16 — so the chip is ABSENT rather than zero, which is a stronger
     // statement than "drift 0" and the one the renderer actually makes.
-    for (const id of ["C-05", "C-08", "C-09", "C-13"]) {
+    // C-05 LEAVES THIS LOOP AT THE T-135 HALF A MERGE REGEN (2026-08-26)
+    // and is asserted positively below instead. The `mod` fix makes
+    // `lib.rs -> dispatch/mod.rs` an edge, C-05 does not declare C-15, so
+    // C-05 is a D1 source again — by the same mechanism it left by at
+    // T-033, running the other way. The loop keeps its other three
+    // members, which is what stops this edit from reading as "the
+    // renderer stopped drawing chips": three absent, two present.
+    for (const id of ["C-08", "C-09", "C-13"]) {
       expect(node(id).querySelector("[data-testid=map-drift-count]"), id).toBeNull();
       expect(node(id).className, id).not.toContain("map-drift-ring");
     }
-    // THE POSITIVE CONTROL, and the only ring left on this map: C-10, on
-    // the cycle T-125 owns. Without this the four assertions above would
-    // pass equally against a renderer that had stopped drawing chips.
+    // THE POSITIVE CONTROL, and the two rings on this map: C-10, on the
+    // cycle T-125 owns, and C-05 since the T-135 Half A merge. Without
+    // these the assertions above would pass equally against a renderer
+    // that had stopped drawing chips.
     expect(node("C-10").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
       "drift 1",
     );
     expect(node("C-10").className).toContain("map-drift-ring");
+    // C-05's ring is the VISIBLE half of the D1 this merge reveals; the
+    // findings array in architecture-dogfood.test.ts is the derived half,
+    // and both are asserted because a ring drawn without a finding and a
+    // finding drawn without a ring are different defects.
+    expect(node("C-05").querySelector("[data-testid=map-drift-count]")?.textContent).toBe(
+      "drift 1",
+    );
+    expect(node("C-05").className).toContain("map-drift-ring");
     // NEW at the T-027 merge regen: C-13 is a D1 SOURCE for the first
     // time (→C-05 via components/ui/button.tsx, →C-14 via
     // agent-store.ts), so it gains a count of its own beside the three
@@ -254,7 +280,7 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 36-edge relation table, with ONE undeclared row left", () => {
+  it("draws the full 37-edge relation table, with TWO undeclared rows left", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
@@ -310,17 +336,29 @@ describe("the nputer repo on its own map", () => {
     // stop existing; C-12→C-05 was dropped from the registry once the
     // extraction took its last observed edge). The SECOND assertion is
     // where the card actually lands — 12 undeclared rows become ONE.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(36);
+    // 36 → 37 AT THE T-135 HALF A MERGE REGEN (2026-08-26), and BOTH
+    // numbers move together for the first time since T-010: the one new
+    // row is C-05→C-15, undeclared, so undeclared goes 1 → 2 while
+    // confirmed holds at 26 and planned at 9. 26 + 2 + 9 = 37. It is the
+    // only cross-component pair among the 27 `mod` edges this merge adds,
+    // and it is REVEALED rather than created — the dependency has been
+    // real since T-126 and no `mod` declaration produced an edge until
+    // now. The checkpoint did not declare it (ruling thirteen's parent
+    // test says FILE, not repair); it is routed to `T-126-s3` item 4.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(37);
     const undeclared = container.querySelectorAll(
       '[data-testid=map-edge][data-relation="undeclared"]',
     );
-    expect(undeclared).toHaveLength(1);
-    // asserted by IDENTITY, not only by count: "one undeclared edge" must
-    // not be reachable by some other row surviving in its place.
-    expect(undeclared[0]?.getAttribute("data-edge")).toBe(edgeKey({ from: "C-10", to: "C-14" }));
+    expect(undeclared).toHaveLength(2);
+    // asserted by IDENTITY, not only by count: "two undeclared edges" must
+    // not be reachable by some other row surviving in their place.
+    expect([...undeclared].map((e) => e.getAttribute("data-edge"))).toEqual([
+      edgeKey({ from: "C-05", to: "C-15" }),
+      edgeKey({ from: "C-10", to: "C-14" }),
+    ]);
   });
 
-  it("the C-05 panel has NOTHING left to report, and C-10's still does", () => {
+  it("the C-05 panel reports ONE row again — the one the graph could not see — and C-10's still does", () => {
     // T-033 INVERTS THIS BODY WHOLE. It carried five "C-05 imports X
     // without declaring the dependency." sentences and a "5 drift
     // findings" chip; every one of those five is now DECLARED, so the
@@ -328,12 +366,25 @@ describe("the nputer repo on its own map", () => {
     // all. Absence is asserted by the sentence STEM rather than by the
     // chip alone — a chip that merely stopped rendering would pass a
     // count check while the findings were still there.
+    // AND THE T-135 HALF A MERGE REGEN (2026-08-26) INVERTS IT BACK, BY
+    // ONE ROW AND FOR A REASON WORTH READING. The five sentences T-033
+    // cleared were all declarations catching up with reality. This one is
+    // the opposite: the reality was always there and the GRAPH could not
+    // see it, because a Rust `mod` declaration produced no edge until this
+    // merge. So the panel reports again — one sentence, not five — and the
+    // honest reading is not "C-05 regressed" but "C-05 was never clean;
+    // the map could not draw what it could not see." That is the single
+    // best piece of evidence T-135 has, and it is rendered here.
     act(() => node("C-05").click());
     const c05Panel = container.querySelector("[data-testid=map-panel]") as HTMLElement;
-    expect(c05Panel.querySelector("[data-testid=map-panel-drift-chip]")).toBeNull();
-    expect(c05Panel.textContent).not.toContain("without declaring the dependency");
+    expect(c05Panel.querySelector("[data-testid=map-panel-drift-chip]")?.textContent).toContain(
+      "1 drift finding",
+    );
+    expect(c05Panel.textContent).toContain(
+      "C-05 imports C-15 without declaring the dependency.",
+    );
     // the panel itself is still rendering — the grid is the control that
-    // says this is an empty finding list and not an empty panel
+    // says this is a one-row finding list and not a broken panel
     expect(c05Panel.querySelector("[data-testid=map-panel-dependencies]")).not.toBeNull();
     act(() => {
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
@@ -614,8 +665,20 @@ describe("the nputer repo on its own map", () => {
     // count holds at 13, the relation table stays 36 rows at 26/1/9,
     // findings hold at 3 and no ring lights or clears. Derived from the
     // regenerated graph and `arch` before the suite was run.
+    // 180 → 181 at the T-135 Half A merge regen (2026-08-26): ONE file,
+    // `app/src-tauri/crates/nputer-index/src/arch/blast.rs`. The graph
+    // goes 944 590 → 955 710 bytes / 2018 → 2038 symbols / 1911 → 1943
+    // edges, and `index --check` printed `files +1 -0 ~8` naming EXACTLY
+    // this merge's nine `.rs` paths, one for one. **AND THIS ENTRY BREAKS
+    // THE PATTERN THE LAST TWO SET**: +32 edges, not +4, because 27 of
+    // them are the `mod` fix on files that already existed, and one of
+    // those 27 is CROSS-COMPONENT. So unlike T-127's and T-129's entries,
+    // everything that "nothing else moves" promised does move — the
+    // relation table goes 36 → 37 at 26/2/9, findings 3 → 4, and C-05
+    // lights a ring. The node count still holds at 13. Derived from the
+    // regenerated graph and `arch` before the suite was run.
     expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
-      "committed graph · 180 files",
+      "committed graph · 181 files",
     );
   });
 });
