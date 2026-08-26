@@ -338,8 +338,20 @@ times over. And it silently desynchronises the pane, because
 user-facing warning from the restatement. Routed as **`T-139-s1`** (it is
 `app-map`, outside this fence) and **`T-139-s3`**.
 
-### 7. FINDINGS FILED
+### 7. THE DOCS GATE'S READER CENSUS MOVED 16 -> 18 AND BOTH NEW ROWS ARE MINE
+
+Disclosed rather than left to be discovered: the gate now derives
+`docs/architecture/graph.json` as a code input — which is `T-135-s3`'s
+hand-maintained entry finally becoming derivable — but it attributes both
+harnesses to the suite that owns their DIRECTORY, and neither suite
+executes them under the command it prints (`graph-budget-bench.mjs` is a
+standalone node script vitest does not match; `graph_budget_bench.rs` is
+`#[ignore]`d). Over-firing, which is the safe direction, with a false
+reason. Filed as **`T-139-s4`** with the repair options.
+
+### 8. FINDINGS FILED
 
 `T-139-s1` (three spellings of the outer cap, one authority),
 `T-139-s2` (the IPC hop evals JS source), `T-139-s3` (no aggregate cap;
-the per-file cap is the wrong axis).
+the per-file cap is the wrong axis), `T-139-s4` (the DOCS GATE attributes
+a reader to the suite that owns its directory).
