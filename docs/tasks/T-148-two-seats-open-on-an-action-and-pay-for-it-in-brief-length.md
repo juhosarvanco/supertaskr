@@ -83,6 +83,34 @@ an explicit list**. A later plan does not silently undo an earlier
 ruling; if the two should be reconciled, that is @human's call and not
 this card's.
 
+## FIRST MEASUREMENT AFTER THE CHANGE — 2026-08-27
+
+Two executor briefs written for `T-149` and `T-150`, the first dispatch
+after this card landed:
+
+    baseline (5 briefs, 2026-08-26)   executor n=3   mean 3701 bytes
+    after  (2 briefs, 2026-08-27)     executor n=2   mean 2311 bytes
+
+**A 37.5% drop.** The removed bytes are exactly the predicted half: the
+standing constraints — the range rule, the poison drill, port 1420,
+`cargo clean`, `git add -A`, backticks in shell strings — now reached the
+executor through `docs/CONVENTIONS.md`, which its step 1 names, instead
+of being retyped.
+
+**Small n, one author, and the author is the person whose theory it is.**
+It is the predicted direction and not yet proof. Re-measure at the next
+verifier and integrator dispatch, which is where the theory claims the
+largest gain and where nothing has been measured yet.
+
+**AND THE MEASUREMENT FOUND A GAP IT DID NOT PREDICT.** Checking which
+constraints could safely be dropped showed that **`pkill` and
+`git update-ref` appear NOWHERE in `docs/CONVENTIONS.md`** — 0
+occurrences each, against 19 for port 1420 and 13 for the poison drill.
+Those two prohibitions have existed only in briefs, which means they have
+existed only in the dispatching session's memory. **They survived this
+long because the same author wrote every brief.** They are stated
+explicitly in both new briefs and they need a home.
+
 ## The measurement that decides whether the theory was right
 
 Re-measure brief length after the next executor and verifier dispatch.
