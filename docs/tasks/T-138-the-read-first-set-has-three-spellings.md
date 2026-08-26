@@ -489,3 +489,82 @@ expand its scope.** Flagged loudly rather than taken, because the next
 lane to hold that file may be a long way off — `method/roles/orchestrator.md`
 is `overlapping` with `[method/, docs/CONVENTIONS.md]`, held by three
 queued cards.
+
+### THE COUNT CROSS-CHECKED AGAINST THE RUN, WHICH COMPLETES THE RULING
+
+The card asked for the Playwright figure as a cross-check on the static
+count. Run at `64b939e`:
+
+```
+Running 194 tests using 1 worker
+194 passed (2.2m)
+```
+
+**So the three numbers are 163, 170 and 194, and each is the answer to a
+different question:**
+
+| number | what it counts |
+|---|---|
+| **163** | `test("…")` sites with a literal double-quoted name — **the extractable sentences**, and the figure the card carried |
+| **170** | all `test(` call sites, literal or template |
+| **194** | tests Playwright actually RUNS — the 5 loop-generated sites expand, adding **24** |
+
+**A generator that reads the SOURCE tops out at 163 and is silently
+missing 31 behaviours; one that reads the RUN gets all 194 and costs a
+full suite pass per regeneration.** That is the choice `T-138-s1` has to
+make, and it is now a measurement rather than an argument. The card's
+"163 named behaviours" was right about the sentences and 31 short of the
+behaviours — which is the same shape as every other figure this card is
+about: true, unrefed, and read as something slightly different from what
+it measured.
+
+### SUITES AND GATES, AT THEIR REFS
+
+**Every figure below was measured at `64b939e`.** This section is a later
+prose-only commit on top of it, so the tip carrying these words is not the
+tip they were measured at — named rather than papered over
+(`roles/verifier.md`, THE FIGURE CASE). The suites were re-run at the
+final tip and the numbers are unchanged.
+
+| command | from | exit | result |
+|---|---|---|---|
+| `npm ci` · `npm run build` | `lib/parser/` | 0 · 0 | setup, per the fresh-clone ORDER |
+| `npx vitest run` | `lib/parser/` | **0** | **290 passed / 290**, 13 files |
+| `npx tsc --noEmit` | `lib/parser/` | **0** | — |
+| `npm install` · `npm run build` | `app/` | 0 · **0** | the fast gate |
+| `npm test` | `app/` | **0** | **1013 passed / 1013**, 47 files |
+| `npm ci` | `tools/e2e/` | 0 | setup |
+| `npm run typecheck` | `tools/e2e/` | **0** | — |
+| `npm run lint:tokens -- --selftest` | `tools/e2e/` | **0** | — |
+| `npm run lint:tokens` | `tools/e2e/` | **0** | clean — TOKEN 138 files, CONTROL 775 tracked text files |
+| `npm run lint:docs` | `tools/e2e/` | **0** | every live task card's frontmatter parses, with a legal status |
+| `NPUTER_E2E_PORT=14538 npm test` | `tools/e2e/` | **0** | **194 passed / 194**, 1 worker, 2.2m |
+
+Exits read unpiped from `$?`. **Port 14538, re-probed on both stacks with
+`lsof` immediately before binding** (16:24:28Z on `Mac.lan`, no listener);
+1420 was read once with `lsof` only and holds the human's app at
+`[::1]:1420`, pid 19746, untouched.
+
+**THE RANGE, WITH ITS REF.** `main` moved twice under this lane, so it is
+named rather than spelled:
+
+```
+MAINTIP=db4c90330004be43c94d3ad6946202a175d5df41
+TREE=$(git merge-tree --write-tree "$MAINTIP" HEAD)   -> exit 0, read BEFORE the substitution
+git diff --name-only "$MAINTIP" "$TREE"               -> 5 paths, all docs/tasks/T-138*.md
+```
+
+**THE THREE STANDING GATES, DERIVED FROM THAT 5-PATH DIFF:**
+
+- **GRAPH REGEN — NOT OWED.** Trigger is `*.ts/*.tsx/*.js/*.jsx` outside
+  `docs/`; **0 of 5** match.
+- **BOOT GATE — NOT OWED.** Trigger is `app/src-tauri/**`, `app/src/**`,
+  `app/package.json` or `app/src-tauri/Cargo.toml`; **0 of 5** match.
+- **DOCS GATE — FIRES, and was run.** Trigger is a path under `docs/`
+  that a code suite READS; **5 of 5** match. The readers are
+  `lib/parser`'s smoke test (it parses the live `docs/` tree),
+  `app/test/select-board.test.ts` (it reads live cards off disk), and
+  `tools/e2e`'s `docs-input-gate.spec.ts`. All three ran green above, and
+  `npm run lint:docs` — the gate's NAMED form — is exit **0**, not exit 3.
+- **`cargo test` — NOT OWED**, derived: this diff touches nothing under
+  `method/`, and `METHOD_SNAPSHOT_VERSION` does not move.
