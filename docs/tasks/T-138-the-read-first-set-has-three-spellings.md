@@ -5,10 +5,10 @@ feature: F-01
 milestone: 4
 priority: 3
 size: M
-status: planned
+status: building
 blocked_by: [T-134]
 touches: [CLAUDE.md, method/roles/orchestrator.md, method/roles/executor.md]
-builder:
+builder: claude-opus-5
 verifier:
 built_by:
 verified_by:
