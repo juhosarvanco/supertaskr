@@ -150,6 +150,15 @@ Delivering the live **989 181-byte** `graph.json` to the pane, minimum of
 | **3 parse** | `parseGraph` end to end (of which `JSON.parse` 0.70, model 0.46) | **1.160 ms** | **31.7%** |
 | | | **3.66 ms** | |
 
+**THE TABLE IS ONE RUN'S MINIMA AND IT REPRODUCES.** Both harnesses were
+run twice at this tip and the LIVE row moved by under 5% on every cell —
+Rust `S1 collect` 126 then 121 us, `S2a encode` 613 then 621 us; JSC
+`S2b eval` 1.76 then 1.80 ms, `S3b model` 1.16 then 1.14 ms. So the
+totals are **3.66-3.68 ms** and the shares **3.3-3.4% read / 64.9-65.8%
+IPC / 31.0-31.7% parse**: the ordering is not close and does not depend
+on which run you read. Both harnesses print `max` beside `min` on every
+cell so a re-runner can see the spread rather than take this on trust.
+
 **THE IPC HOP BINDS, AND IT BINDS FOR A SHAPE REASON RATHER THAN A SIZE
 ONE.** `EmitArgs::new` (tauri 2.11.5 `event/mod.rs:130`) serializes the
 snapshot with serde_json, and `emit_js_script` (`:194`) then splices that
