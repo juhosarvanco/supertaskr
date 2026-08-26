@@ -443,3 +443,430 @@ its smallest yet.)
   `app/test/` file, and it is a REPORTER (`arch drift` exits 0 without
   `--fail-on`). That is `T-141-s1`'s open subject — the drift census has
   no ratchet where the cycle census has one — so no duplicate was filed.
+
+## Verification — **APPROVED**
+
+Verifier `claude-opus-5` @ session `1240c3f2`, 2026-08-27 01:25 EEST.
+Target `task/T-149-lane` tip **`d437f5a`**; base **`23ee41b`** (which IS
+`git merge-base d85d946 d437f5a`, checked); main **`d85d946`**.
+`git merge-tree --write-tree d85d946 d437f5a` is **exit 0**, tree
+`40f6150`, and the merge's diff is **12 paths**.
+
+**THE BOUNDED READ WAS HONOURED AND HERE IS THE ARTEFACT.** The attack
+set was written to
+`…/scratchpad/T-149-attack-set.md` at **2026-08-27 01:01:25 EEST**
+(`2026-08-26T22:01:25Z`), BEFORE `git diff`, before the implementation
+notes and before any commit on this branch. Read to that point: the
+verification brief, `method/roles/verifier.md`, this card **at
+`23ee41b`** via `git show`, and `STATE`/`CONVENTIONS`/`ARCHITECTURE`.
+**`docs/ROADMAP.md` was not read**, per the role file. The file records
+two predictions made before looking; **P1 was right and is reported
+below** (the card's subject table does not sum to its own total).
+
+**ENVIRONMENT.** Two DETACHED scratch worktrees OUTSIDE the repository,
+one at `d437f5a` and one at `23ee41b`, both cut at **101-character**
+roots (`T-133-s5`'s bracket is 116–128, so both sit below it), each with
+its own `CARGO_TARGET_DIR` at `<worktree>/target` — **no lane's warm
+target was written and no lane's worktree was entered**. Both are removed
+at the end of this verdict. No `pkill`, no `git update-ref`, no
+force-push, no history rewriting; every commit named its paths. 1420 was
+never probed, never bound, never connected.
+
+### The routing was re-derived from scratch, not checked against the lane's table
+
+I wrote my own registry parser and glob matcher over `graph.json` and the
+component frontmatter and rebuilt the ownership map and the component
+edge table without the lane's TS engine or the Rust reader. **It
+reproduces `arch` exactly** at both refs — every file count, every
+relation, every observed count, `unmapped=0`, `ambiguous=0`. That
+agreement is the licence for everything below.
+
+    at 23ee41b   C-05 64   C-08 10   C-09 3   C-10 3   C-12 18   C-13 8   C-14 8
+    at d437f5a   C-05 31   C-08 12   C-09 6   C-10 7   C-12 34   C-13 15  C-14 9
+
+**49 indexed files under `app/test/`, all C-05's at the base; at the tip
+16 / 2 / 3 / 4 / 16 / 7 / 1 = 49, every one matched by exactly one glob.**
+Then the SUBJECT of each file was derived from its own outgoing edges in
+`graph.json` rather than from its name. **Every routed file's new owner
+declares every component that file reaches.** The two inversions the
+brief named are both confirmed by import, not by prefix:
+`map-shell-dom.test.tsx` imports `App.tsx` **and
+`components/shell/PaneRail.tsx`** and is correctly C-05's;
+`shell-harness.test.ts` reaches **C-10 and nothing else** and is
+correctly C-10's.
+
+### "37 rows before, 37 after — zero new, zero lost" — REPRODUCED, and the counts checked too
+
+    grep '^edge ' | awk '{print $2,$3,$4}' | sort   at both refs -> diff EMPTY
+    row count            37 -> 37
+    relation tally       26/2/9  ->  25/2/10
+    rows whose relation or count moved                          15
+
+**A surviving row is not a surviving edge, so the fifteen were compared
+value by value** — and all fifteen match the literals in the reconciled
+dogfood table exactly. `arch drift` at the two refs is **byte-identical
+apart from the root path**: `findings=4 undeclared=2 unmapped=0
+declared_only=2 ambiguous=0 dangling=0`. `arch cycles` is exit **1**
+with `C-08 -> C-09 -> C-08`, `components=13 declared_edges=35`,
+**identical at both refs** — the designed state, unmoved.
+
+### The thirteen "by rule not taste" — the RULE was tested, not its application
+
+Three ways, none of them taking the lane's word:
+
+1. **Membership.** Exactly **thirteen** `app/test` files carry a direct
+   import edge to `App.tsx` or `components/shell/**`, and they are
+   exactly the thirteen the notes name.
+2. **The rule is real.** Re-routing each of the thirteen to its natural
+   owner, one at a time, over `graph.json`: **all thirteen produce a NEW
+   component row pointing back at C-05, and all thirteen close a cycle**
+   against an already-declared `C-05 -> X`. Run again with the
+   name-natural target instead of the import-dominant one
+   (`genesis-* -> C-13`, `map-shell-dom -> C-12`, `board-truth -> C-08`):
+   same result, thirteen for thirteen.
+3. **The inverse, which is the attack that matters.** Swept every
+   `app/test` file for an import of `App.tsx` or `components/shell/**`
+   and checked its owner: **no file that mounts the shell was routed
+   away. The rule is applied without exception.**
+
+The other three C-05 entries are correctly *not* held by that rule and
+the notes say so: two `.d.ts` files with no edges at all, and
+`window-manifest.test.ts`, which reaches **no component** — I confirmed
+it is routable anywhere with no new row, so it stays with C-05 on
+subject (`tauri.conf.json`) rather than on the cycle rule.
+
+### The negated catch-all and the wildcard — both CONFIRMED, and the wildcard is worse than the card says
+
+**Negation.** Modelled the alternative on a copy of the base registry —
+`app/test/**` kept in C-05 with `'!app/test/map-layout.test.ts'` added,
+the file claimed positively by C-12 — and drove the built parser:
+
+    compareFences(app-shell, app-map)
+      -> overlapping, witness app/test/map-layout.test.ts
+
+**Reproduced verbatim.** `normalizeFenceToken` strips only a trailing
+star run (`/(?:\/)?\*+$/`), so the negation survives in the slug's path
+set as an inert literal while the `app/test` directory domain stands.
+The lane's conclusion — a negated umbrella moves the queue by zero — is
+correct.
+
+**Wildcard: TRUE, and it is a live false green.** `app/test/map-*`
+normalises to `app/test/map-`, and `sharedDomain` compares by path
+SEGMENT, so it matches nothing — not even `app/test/map-layout.test.ts`.
+Modelled it in the registry and measured both layers over the same tree:
+
+    fence   compareFences(app-shell, app-map)  ->  disjoint   (no witness)
+    matcher arch drift                         ->  ambiguous=1
+
+**The two layers disagree about the same file**, and the fence reports
+`disjoint` with **no issue and not `unusable`** — while a NON-trailing
+star run *is* refused, with a message that describes this exact failure
+(*"comparing the rest as a literal prefix would answer confidently and
+wrongly"*). The guard rejects the shape that cannot slip through and
+passes the shape that can. **This is bigger than this card, it is
+pre-existing, and this card's design is what avoids it** — swept all
+**97** `paths:` entries at the tip: zero non-trailing wildcards, zero
+negations, zero quotes or escapes, zero `..`. Filed as **`T-149-s4`**;
+it is not this diff's defect and is not grounds to reject it.
+
+### `C-05 -> C-09` left standing — RULED, and the reasoning is corrected
+
+**Leaving it is right, and the card's own stated reason is the weaker
+half of the argument.** Two corrections to the record first, both
+measured:
+
+- **By `integrator.md` rule 3's parent test the residue is this card's
+  own**, not inherited: at `23ee41b` the row is `confirmed observed=3`
+  and a legitimate declaration; it becomes residue *because of this
+  change*. "The charter is `paths:`" does not by itself answer that, and
+  the card's fence **does** reach `docs/architecture/components/C-05-app.md`.
+- **`T-149-s1`'s title says "T-012's own precedent says drop it", and
+  that precedent's decisive half is absent here.** C-12's own file
+  records the T-033 drop: the row was residue **and** keeping it "would
+  have left `C-05 <-> C-12` standing under @human's *the registry holds
+  no cycles* rule". `C-09` does not declare `C-05`, so **nothing forces
+  the drop here**. What transfers is the weaker sentence — *"dropping it
+  costs nothing and asserts something true"*.
+
+It still stands, for the reason the lane reached and under-argued:
+`depends_on` is a claim about **intent**, and intent is not derivable
+from `graph.json`. A routing card that silently edits a declaration is
+bundling a judgement with a reconciliation, and the governing authority
+for `depends_on` is @human's no-cycles ruling rather than an observed
+count. The disclosure is exemplary — the filed card carries the cost
+(37 rows -> 36, `25/2/10` -> `25/2/9`, `declared_deps` 11 -> 10, no drift
+finding moves) **and the discriminating test that stops the next reader
+dropping `C-05 -> C-11` and `C-05 -> C-01` with it** (both `non_code:
+true`, so nothing there can ever be observed). Every one of those
+figures I re-derived and every one is right. **The one real cost is that
+the map pane draws `planned` as INTENT** — C-12's own file says so — so
+until `s1` is taken the shipped map shows one arrow that is residue.
+
+### The card's success measurement — CORRECTLY SCOPED, and the architect wrote it wrong
+
+    query: a planned card whose `touches:` contains the string `app-shell`
+      23ee41b  planned 34   touching 20
+      d437f5a  planned 34   touching 20
+      d85d946  planned 34   touching 20
+      23ee41b + one planted `touches:` flip (T-022 -> [app-board])   19
+
+**The T-142 control fires**, so the query is capable of a different
+answer and the 20 is a fact about the cards. `docs/tasks` is in
+`UNFENCEABLE_PATHS` (`lib/parser/src/fence.ts`, a frozen list of one), so
+**no card may hold those twenty files — not this card, and not any
+re-fencing of it.** The measurement was unsatisfiable from inside any
+fence at the moment it was written. **The card is correctly scoped with a
+follow-up, not under-delivered**, and `T-149-s2` carries the twenty ids —
+which I re-derived and which match the card's list exactly.
+
+**AND THE HONEST READING OF WHAT DID AND DID NOT MOVE.** Driven through
+`slugPathIndex` + `expandFence` at both refs:
+
+    app/test files each SLUG reserves     23ee41b     d437f5a
+      app-shell                          49 of 49    20 of 49
+      app-map                             0          16
+      app-interview                       0           7
+      app-board                           0           5
+      app-agent                           0           1
+
+**Twenty-nine of forty-nine left the `app-shell` fence** — a map card can
+now be fenced `[app-map]` and still reserve the sixteen test files it
+writes, which it could not do at the base. But the count of PLANNED cards
+that overlap a live `[app-shell]` lane is **21 at both refs** (the 20
+plus `T-112` through the C-11 seam), because those cards still type the
+token. **This card buys a capability today and a board movement only
+after `T-149-s2`.** That is worth saying plainly and the lane says it.
+
+### POISON DRILL — 7 mutants, 7 reds, restoration proved twice over
+
+Run in the detached scratch worktree at `d437f5a` with its own
+`CARGO_TARGET_DIR`, no cargo compiled during the drill, **one side only —
+every mutant is the REGISTRY (the producer); no assertion literal was
+touched**, and every mutation was read back with `git diff` before the
+suite ran. Baseline in the same worktree: **101/101, exit 0** over
+`architecture-dogfood` + `map-dogfood-render` + `select-board`.
+
+    M1  C-12 loses architecture-dogfood.test.ts        exit 1   6 red
+    M2  C-05 regains the `app/test/**` catch-all       exit 1   9 red   <- ambiguity control
+    M3  C-10 loses watcher-store.test.ts               exit 1   6 red
+    M4  C-13 loses interview-resume-dom.test.tsx       exit 1   6 red
+    M5  map-shell-dom.test.tsx MOVED C-05 -> C-12      exit 1   6 red   <- routing control
+    M6  C-08 loses select-board.test.ts                exit 1   7 red   <- package-seam control
+    M7  C-09's three tests moved BACK to C-05          exit 1   3 red   <- relation control
+
+**M5 is the one worth reading.** Routing the file its NAME argues for
+takes the independent derivation to **`EDGE ROWS 38`** with a new
+`C-12 -> C-05 undeclared observed=2`. The 37-row property is not
+decoration — it is exactly what that one routing decision buys. **M7**
+restores `C-05 -> C-09 confirmed observed=3`, which is what proves that
+row's move is caused by those three files and nothing else. Restoration
+proved after every mutant by an empty `git diff` over
+`docs/architecture/components`, and once more at the end by **sha256
+against `git show HEAD:<path>` on all seven registry files — seven OK,
+zero mismatches**, with `git status` clean.
+
+### One probe the lane did not run: the disclosed cost is LOUDER than the registry says
+
+The C-05 note says a new `app/test/` file lands in the D2 bucket, "the
+map correctly reporting unclaimed territory". Measured, by planting one:
+
+- **Before a regen** the dogfood suite is **10/10, exit 0** — the file is
+  not in the committed graph, so nothing sees it. `index --check` catches
+  it at once: STALE, `files +1 -0 ~2`, naming it.
+- **After the regen** the suite is **exit 1, 3 bodies red** —
+  `['C-05','C-10','unmapped']` against `['C-05','C-10']`, and
+  `D2:unmapped` appears in the findings table.
+
+So the cost arrives as a **red `npm test` from `app/` at the CHECKPOINT**,
+not as a silent drift line — GRAPH REGEN fires on the new `.ts`, the
+checkpoint regenerates, and the suite names it. That is a better
+guarantee than the note claims, and the probe was restored (sha256 match
+on `graph.json`, `git status` clean).
+
+### Gates — every exit read from `$?` UNPIPED, and the COUNT read as well as the exit
+
+**At the commit under review, `d437f5a`,** in the scratch worktree
+(fresh `npm ci` in `lib/parser` and `tools/e2e`, `npm install` in `app/`,
+parser build BEFORE app build, cold `CARGO_TARGET_DIR`):
+
+- **cargo test — 518 passed / 0 failed / 4 ignored, exit 0**, summed over
+  **18** `test result:` lines; **18** `running N tests` headers sum to
+  **522 = 518 + 4**, which reconciles exactly. All four watched bodies
+  read BY NAME and `ok`: `startup_arm_watches_the_initial_root`,
+  `a_hostile_session_id_in_the_init_line…`,
+  `agent::kit::tests::snapshot_version_matches_the_live_method_stamps`,
+  `a_mod_declaration_is_an_edge_in_this_repositorys_own_graph`;
+  `self_graph_is_current` read as `ignored`. **The cache cliff is not in
+  play** — the lib suite is **4.04s** against `T-088-s4`'s 9.5s floor,
+  target dir 2.6 GB.
+- **app — `npm run build` exit 0, `npm test` 1013/1013 across 47 files,
+  exit 0.**
+- **parser — `npm run build` exit 0, `npx vitest run` 314/314 across 15
+  files, exit 0, `npx tsc --noEmit` exit 0.**
+- **tools/e2e — 206 passed, exit 0**, on port **15987**, `lsof -nP
+  -iTCP:15987 -sTCP:LISTEN` read at **zero rows** at 2026-08-27 01:19:35
+  EEST immediately before binding; header `Running 206 tests using 1
+  worker` cross-checked against **206** `✓` bodies. `npm run typecheck`
+  exit 0. **The only `brief.spec` disclosure names `T-150 tools/e2e
+  against T-133 tools/e2e` and is not this lane's**; `T-149` and `T-150`
+  compare **`disjoint`** at both refs, and T-149's fence still reserves
+  the one `app/test` file it edits.
+- **`npm run lint:docs` exit 0** · **`npm run lint:tokens` exit 0** at
+  **TOKEN 141 / CONTROL 805**, `-- --selftest` exit 0.
+- **`index --check --root` — exit 1 at `d437f5a`, exit 1 at the untouched
+  base `23ee41b`, exit 0 on main `d85d946`.** It is a REAL stale by
+  CONVENTIONS' own discriminator (both count lines printed, a `~` file
+  diff), not the `--root` false red. **`T-149-s3` reproduces verbatim,
+  including `map-dogfood-render.test.tsx` drifting 766 -> 770 in a file
+  this lane never opened.** The regen belongs to the checkpoint and
+  `graph.json` is outside this fence.
+- **FORWARD CHECK the notes do not make:** I regenerated the graph at the
+  tip to see what the checkpoint will get. **1 020 023 bytes, 189 files,
+  2152 symbols, 2111 edges — byte-identical to the committed graph**, and
+  `arch drift` still `findings=4 unmapped=0 ambiguous=0` with 37 rows
+  over it. The regen the merge owes is safe and costs no budget (98.1%,
+  19 977 left). Restored afterwards.
+- **The merge's own gates, derived from the 12 paths:** BOOT GATE **0 of
+  12** (nothing under `app/src-tauri/**`, `app/src/**` or either
+  manifest — `app/test/` is none of those). GRAPH REGEN **1 of 12**.
+  DOCS GATE **exit 1 on 11 of 12**, naming **four** suites — `cargo test
+  from app/src-tauri/`, `npm test from app/`, `npm test from tools/e2e/`,
+  `npx vitest run from lib/parser/` — **all four run above, all four
+  green.** Invoked from the repository root with the one documented
+  spelling, never through `xargs`.
+
+### Security sweep — mandatory, and clean
+
+No new dependency, no manifest or lockfile in the diff, no new endpoint,
+no new input path, no secret or key, no unsafe default. The one input
+surface this card touches is the registry's `paths:` vocabulary, and it
+was swept for the shape that matters here: **`registry.rs` strips quotes
+without processing YAML escapes where `@nputer/parser` processes them
+(`T-014-s6`), so an escaped or quoted glob makes both engines exit 0 and
+disagree about ownership.** All **97** `paths:` entries at the tip:
+**zero** escapes, quotes, negations, non-trailing wildcards or `..`.
+
+**AND THE COMMENT BLOCKS CARRY THEIR OWN POSITIVE CONTROL, which is worth
+recording because it could have gone the other way.** The lane added
+**39** `#` comment lines INSIDE `paths:` blocks, and the C-05 block's
+text contains the literal string ``app/test/**`` twice. **An engine that
+read comments as list items would have re-created the catch-all and made
+every routed file ambiguous.** Both engines report the list items only —
+TS `ComponentRecord.paths` = 33/10/6/7/18/8/5 against the raw list-item
+counts 33/10/6/7/18/8/5, `0` parse issues, and the Rust reader's file
+counts match my independent matcher on all thirteen components. No
+divergence.
+
+### Adjacent breakage — checked, and one thing is left standing
+
+`map-dogfood-render.test.tsx` and `lib/parser/test/smoke.test.ts` did not
+need to move, and that is derived rather than lucky: the rendered node
+and edge counts are **13 components and 37 edges at both refs**, and no
+component id changed. The CONVENTIONS three-fixture gotcha (`T-024-s5`)
+answers correctly. No file moved on disk — `git diff --name-status -M`
+over the range has no `R` row. **C-05's fifteen real files are intact and
+unsplit**: `App.tsx`, `main.tsx`, all three `components/shell/**`,
+`lib.rs`, `main.rs`, `build.rs`, `acl_pin.rs`, `churn.rs`,
+`index_cmd.rs`, `graph_budget_bench.rs`, `vite-env.d.ts`,
+`vite.config.ts`, `vitest.config.ts`.
+
+What is left standing is **prose that this card falsified**: a sentence
+this diff retires in the dogfood comment survives in
+`docs/architecture/components/C-14-agent-runner.md` (*"the same rule that
+puts `app/test/**` under C-05"*), in `app/test/select-board.test.ts`
+(*"`app/test/**` IS C-05's `app-shell`"*), and twice in
+`docs/ARCHITECTURE.md`. Filed as **`T-149-s5`**; the first two are inside
+reachable fences, the third is not. Nothing reds for any of them.
+
+### Every place a figure disagreed with my own measurement
+
+**IN THE CARD.**
+
+1. **The subject table does not sum to its own total, and this is the
+   prediction I wrote down before opening the diff.** `18 + 10 + 16 + 3 +
+   3 + 1 = 51`, against the card's own **49** under `app/test/**` two
+   sections up; non-shell by that table is **35**, against the card's own
+   sentence *"Thirty-three of forty-nine"*. **The sentence is right (33
+   of 49, measured) and the table it sits under is not.** The lane
+   corrects the table's four row counts and does not notice that it never
+   summed. Measured: **16 / 7 / 16 / 4 / 5 / 1 = 49**.
+2. *"Expect a larger reconciliation than `T-141`'s fourteen."* It was
+   **three failing bodies in one file**. The lane's diagnosis is right —
+   a 37-row table is one failure, not 37.
+3. The success measurement expected 20 to move. It cannot, from any
+   fence. Ruled above.
+
+**IN THE NOTES.** I re-derived every figure in them and **found no wrong
+number.** All seven file counts, `16+2+3+4+16+7+1=49`, 33 changed owner,
+`ls app/test/` = 51 with two non-indexed entries, 37/37 rows, 15 moved
+counts, the `25/2/10` tally, `findings=4 unmapped=0 ambiguous=0
+dangling=0`, thirteen held by the mount rule, the five-slug reservation
+table, the negated-fence witness line, `TOKEN 141 / CONTROL 805`, DOCS
+GATE 11 of 12 naming four suites, merge-tree exit 0 at 12 paths, BOOT
+GATE 0, GRAPH REGEN 1, and all four suite counts — every one reproduces
+at `d437f5a`. Three imprecisions, none of them a wrong value:
+
+4. **`T-149-s1` says "MEASURED AT `bf09a57`, THIS LANE'S TIP".**
+   `bf09a57` is the implementation commit; the tip is `d437f5a`, two
+   commits later. The figure is still true — I re-derived it at the tip —
+   but the sentence names the wrong ref for what it calls the tip. This
+   is the verifier role's own FIGURE CASE arriving one seat early.
+5. **The C-05 registry note says a negated entry leaves "inert junk
+   domains".** True of `slugPathIndex` (I measured the slug's path set
+   growing by one inert literal) — but the same spelling in a card's
+   `touches:` is flagged `unresolved` with an `invalid-field` issue and
+   marked `unusable`. Right conclusion, mechanism stated one layer
+   shallow.
+6. **The C-05 note understates its own disclosed cost** — see the probe
+   above. It reads as report-only; it is a red `npm test` at the
+   checkpoint.
+
+**IN THE BRIEF.** Every claim confirmed: the 33-file routing, the sweep
+wrong in four places, both name/subject inversions, the 37/37 property,
+the `C-05 -> C-09` move with all three edges being test edges, the
+wildcard false green ("*if true that is a bigger finding than this
+card*" — it is true), `index --check` exit 1 at the base and fixed on
+main at `d85d946`. One refinement: the routing judgement covers **49**
+files, not 33 — the 16 that stay are decisions too, and `M5` shows one of
+them is load-bearing on the headline property.
+
+**AND ONE THING `T-149-s3` NO LONGER ASKS FOR.** Its remedy is already
+applied: main regenerated `graph.json` at `d85d946` (`loc` 2249 -> 2266
+and 766 -> 770, **stats and byte count unchanged at 1 020 023 — exactly
+the trap STATE names**), and `index --check` is exit 0 there. Its FIRST
+check is discharged; its **second** — *did the checkpoint that last
+touched those two bodies skip its regen, or run it before the
+reconciliation* — is not, and is the half worth keeping. Triage should
+close the first half rather than dispatch the card whole.
+
+### Findings filed (not blocking, per role step 6)
+
+- **`T-149-s4`** — `fence.ts` answers `disjoint` for a token whose star
+  run sits inside a filename, with no issue and no `unusable`, while the
+  derivation matcher reports `ambiguous=1` over the same registry.
+  Reproduced both ways. `[lib-parser]`.
+- **`T-149-s5`** — three surviving present-tense statements that
+  `app/test/**` is C-05's, plus the dogfood title still saying *"all 185
+  files"* where the tree has been 189 since T-137.
+  `[docs/architecture/components/, app-board, app-map, docs/ARCHITECTURE.md]`.
+
+### Re-run at MY OWN tip, because a verdict is prose and prose is a code input
+
+This verdict and the two findings are commits under `docs/tasks/`, which
+the DOCS GATE names as a code input to four suites, so they are re-run at
+the tip THIS verdict creates rather than at the commit I was sent, and
+the figures are appended below in a second commit. **The regress
+terminates there and the reason is measured, not assumed**: that second
+commit adds only prose to a live `docs/tasks/T-*.md`, and the only half
+of a `docs/tasks` write that can move any of those four suites is the
+FRONTMATTER — which `lint:docs` answers in one second and which is re-run
+at that tip too.
+
+**VERDICT: APPROVED.** The charter — route each of the 49 indexed
+`app/test/` files to the component it exercises by editing `paths:`, move
+nothing on disk, split none of C-05's fifteen — is delivered completely
+and correctly, at `unmapped=0 ambiguous=0`, with the 37-row property
+holding and every gate green. The two judgement calls I was asked to rule
+on both stand: the residue is right to leave (for a reason the card
+states weakly and I have corrected in place), and the success measurement
+is correctly scoped with a follow-up rather than under-delivered.
