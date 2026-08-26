@@ -144,6 +144,60 @@ this file is a project's actual name.
    whose work reaches outside its own `touches:` has found a dispatch
    error, not a licence: record it, route it, and build the part that
    fits. A fence is not widened from inside the lane it fences.
+   **A FENCE NAMES PATHS. A COMPONENT NAME IS SHORTHAND FOR THE PATH SET
+   IT STANDS FOR, AND DISJOINTNESS IS COMPUTED OVER THE EXPANDED SETS —
+   NEVER OVER THE TOKENS.** Both halves of that sentence were bought with
+   a defect. Comparing tokens reports two lanes DISJOINT whenever their
+   names differ, and two different names can stand for the same files:
+   one component carrying two names is enough, and the pair that proved
+   it went into flight overlapping and undetected for a whole lane,
+   because the only thing that could have detected it was the work that
+   lane was dispatched to build. And a vocabulary of names ALONE is worse
+   than coarse — it is a lock on a name. A card that knows its three
+   files has to claim its whole component, so lanes that never touch each
+   other serialise behind a word. Measured on the session that ran six
+   lanes concurrently: **every block was a naming collision and not one
+   real collision occurred.**
+   **THE EXPANSION READS ONE SOURCE AND MUST NEVER GROW A SECOND.** The
+   map from a name to its paths is each component file's own slug field,
+   which roles/executor.md row 5 already rules authoritative over the
+   architecture document's prose block. A second copy of that map is two
+   facts, not one fact checked twice.
+   **ONE SPELLING, AND AN UNRESOLVED TOKEN IS NOT "DISJOINT FROM
+   EVERYTHING".** A path and the same path with a trailing slash are one
+   fence; containment is overlap, so a directory fence and a fence naming
+   a file inside it are NOT disjoint however far apart their strings sort.
+   A token that resolves to neither a name nor a path is the case that
+   matters most: the honest answer is that the comparison could not be
+   made, and a fence that answers "no overlap" when it means "I do not
+   know" is worse than one that refuses. Three verdicts, never two.
+   **A DIRECTORY THE PROTOCOL ITSELF WRITES TO ON EVERY CARD IS NOT
+   FENCEABLE BY ANY CARD.** The task-file directory is the worked case:
+   the dispatch stamp and the closing stamp are written there for every
+   task, so a lane holding it collides with every other lane's opening
+   and closing move. Name the individual files instead. **This has to be
+   refused MECHANICALLY, where the fence is read, and the reason is
+   structural rather than a matter of taste**: the collision is between a
+   fence and a PROTOCOL WRITE, and the clause below means a
+   fence-versus-fence comparison has no term for one. It cannot discover
+   this, ever, so it must not be asked to.
+   **A CARD'S OWN FILE IS NEVER PART OF ITS OWN FENCE, AND THE EXPANSION
+   ENCODES THAT RATHER THAN LEAVING IT TO EACH READER.** The card is
+   where the dispatch stamp lands before the lane exists and where the
+   closing stamp lands after it ends; treating it as fenced territory
+   would put every card in permanent collision with its own protocol.
+   **SO THE FENCE DOES NOT GOVERN WRITES TO IT, AND A LANE WRITING TO ITS
+   OWN CARD IS NOT A FENCE BREACH** — which is what makes the executor's
+   own implementation notes performable under a path-granular fence
+   instead of forbidden by one. That resolves a conflict, and it is worth
+   being exact about how far it reaches: the fence answers WHERE a lane
+   may write, and it now answers "not here, this file is outside every
+   fence including your own". **WHO may write to a card and WHAT they may
+   write is a different question with a different owner** —
+   tasks/TASK-FORMAT.md for the fields, the acting role's own file for
+   the act — and this clause does not touch it. Two lanes split on this
+   in one night, which is the signature of an unruled conflict rather
+   than of one session's mistake.
 
 6. **The integrator removes the worktree** — after the merge and the
    checkpoint, not before. The executor never removes its own: a

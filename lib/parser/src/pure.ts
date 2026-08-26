@@ -39,6 +39,21 @@ export { parseRoadmap } from './roadmap.js';
 export { parseComponentFile, compareComponentIds } from './component.js';
 export { validateProject, type ValidateProjectOptions } from './validate.js';
 export {
+  UNFENCEABLE_PATHS,
+  normalizeFenceToken,
+  slugPathIndex,
+  expandFence,
+  compareFences,
+  type FenceTokenKind,
+  type FenceToken,
+  type Fence,
+  type SlugExpansion,
+  type FenceVerdict,
+  type FenceWitness,
+  type FenceComparison,
+  type ExpandFenceOptions,
+} from './fence.js';
+export {
   parseProjectFromFiles,
   parseComponentsFromFiles,
   isTaskFilePath,
