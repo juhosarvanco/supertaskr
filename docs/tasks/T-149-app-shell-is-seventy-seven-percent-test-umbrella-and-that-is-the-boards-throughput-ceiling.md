@@ -915,3 +915,37 @@ spends a section on other people's figures and the same rule binds it:
 **a commit message is not a code input, so nothing will ever red for
 this — which is exactly why it has to be written down instead of fixed
 by rewriting the commit that carries it.**
+
+### MAIN MOVED UNDER THIS VERIFICATION, AND THE FORECAST WAS RE-DERIVED RATHER THAN INHERITED
+
+`main` read **`d85d946`** when this verification started and **`1ab0587`**
+when it finished — `T-150`'s merge landed in between, ten paths
+(`tools/e2e/scripts/brief.mjs`, `card-figures.mjs`,
+`card-figures.spec.ts` and seven `T-150*` cards). **Re-derived against
+the new main at 2026-08-27 01:40 EEST:** `git merge-tree --write-tree
+1ab0587 bc299ad` is **exit 0**, tree `236249f`, and the merge's diff is
+still **14 paths** — the same 12 the lane produced plus this verdict's
+two findings. **`comm`-free proof by inspection: T-150's ten paths and
+T-149's fourteen share none.** No conflict, no re-fence, nothing to
+re-rule.
+
+**AND THE ONE FIGURE IN THIS VERDICT THAT A MOVING MAIN COULD HAVE
+FALSIFIED WAS RE-MEASURED**, because the `T-149-s3` ruling above rests on
+it. `index --check --root .` on main **at `1ab0587`** is **exit 0,
+CURRENT** — 1 020 023 bytes, 189 files, 2152 symbols, 2111 edges, read
+from `$?` on an unpiped command in a second invocation because
+`${PIPESTATUS[0]}` is EMPTY in zsh. Run with main's own prebuilt
+`nputer-index` (built 2026-08-26 18:55, later than the indexer crate's
+last source commit `b4fa434` 17:18), **read-only — no `cargo`, so
+nothing was written to main's `target/`.** So `T-149-s3`'s first half is
+discharged at today's main as well as at `d85d946`, and the ruling
+stands. Recorded because a sibling card filed tonight asserts the
+opposite for its own ref; **whichever ref that one was measured at, this
+one is `1ab0587` and it is exit 0.**
+
+**One untracked `z` and one modified `T-150` card sit in the main
+checkout. Neither is this verification's**, both were left alone, and
+nothing in this verification wrote to `/Users/ujju/Projects/nputer`,
+`/Users/ujju/Projects/nputer-app`, `/Users/ujju/Projects/arch-verify` or
+`/Users/ujju/Projects/nputer-T-150`. Both scratch worktrees are removed
+and `git worktree prune` has run.
