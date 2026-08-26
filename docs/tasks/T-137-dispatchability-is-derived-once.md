@@ -1169,3 +1169,410 @@ brief mentions it. **The card was restored to `HEAD` for that path**
 (`git restore --source=HEAD --staged --worktree`), verified by sha256
 `0045c83246a718e452fe55fbb00f9f901dad14f5735239dc4d1dece18630bf50`, and
 the verdict is preserved byte-untouched.
+
+
+## Second verification — APPROVED
+
+Adversarial verification of the REWORK by a seat that neither built nor
+reworked this, at lane tip `2f7ad29d5afb96a2b1190dce837a505c2bb7ffe7`
+(`git rev-parse`), against main `80bde23e9987c85c72f6781e675ec73d6958f9ed`.
+**Every figure below names the ref it was measured at, and none was
+copied from the card, the notes, the brief or the previous verdict.**
+
+**BOUNDED READ.** The card was read at the previous verdict's base
+`62a4364` — frontmatter, criteria, verification clause, first-pass notes
+and the whole 307-line `## Verification — REJECTED` — and **my ATTACK SET
+was written to scratch at 2026-08-26T19:22:24Z (22:22:24 EEST), before
+the diff, the rework notes, or any `T-137-s*` file was opened** (13
+sections, A–M, from the two rejection grounds, the eight criteria and the
+verification clause). The first diff hunk was read at 19:27Z.
+
+**BOTH REJECTION GROUNDS ARE CLOSED AND I REPRODUCED BOTH.** One new
+finding, and it is a word rather than a ruling; it is filed as
+`T-137-s12` and does not block.
+
+### R1 IS CLOSED — measured on the live board, not read off the diff
+
+`readDispatchOrder` no longer drops a lane whose card this checkout
+cannot resolve: it pushes a `verdict: 'unusable'` hold carrying
+`cardMissing: true`, and the card lands in `unfenceable`.
+
+Driving the product's own `readDispatchOrder` over **one parse of one
+tree**, varying only the lane list — read **2026-08-26T19:29:03Z** on
+`Mac.lan`, lanes `T-137`, `T-141`, `T-145`, the last two card-less in
+this tree:
+
+    lane list                                startable  fenced  unfenceable
+    A  the real lane list                            0       8           23
+    B  minus the two card-less lanes                23       8            0
+    D  no lanes at all                              31       0            0
+    E  A + T-141's and T-145's real cards off main   5      26            0
+
+**B is the pre-fix behaviour and E is the truth.** Eighteen of B's
+twenty-three are false green — every one of them **provably `fenced`** in
+E, and every one carrying the sentence *"disjoint from every live lane"*:
+
+    T-071 T-112 T-131 T-125 T-128 T-022 T-035 T-059 T-044
+    T-087 T-115 T-094 T-114 T-117 T-099 T-100 T-105 T-106
+
+**AND THE SENTENCE IS NOW UNREACHABLE, NOT MERELY UNUSED.** Over all 302
+cards in run A, the count of rulings whose reason contains *"disjoint
+from every live lane"* is **0**. `D = 31` is the internal control — with
+no lanes, `startable` is exactly "ready on `blocked_by` alone".
+
+### R2 IS CLOSED AT BOTH ENDS — the arms reproduce
+
+**Every arm below is mine, run in my own detached scratch worktree at a
+17-character root, producer mutated and never an assertion, each mutation
+read back with `git diff` before its suite ran and each restore proved by
+sha256 against the pre-mutation reading.**
+
+    arm  producer mutation                            suite   result
+    A1   `continue` restored in the card-less branch  parser  exit 1, 3 of 314
+    A2   `new Set(...)` removed from lanesWithNoCard  parser  exit 1, 1 of 314 UNIQUE
+    A3   the fenced residual clause forced to ''      parser  exit 1, 1 of 314 UNIQUE
+    A4   the missing-card clause dropped              parser  exit 1, 2 of 314
+    A5   EVERY lane treated as card-less              parser  exit 1, 9 of 314
+    A6   `many` forced FALSE                          parser  exit 1, 1 of 314 UNIQUE
+    A7   `many` forced TRUE                           parser  exit 1, 1 of 314 UNIQUE
+    E1   A1's mutation + rebuilt dist                 e2e     exit 1, 1 of 206 UNIQUE
+    E2   the consumer's empty-startable branch        e2e     exit 1, 1 of 206 UNIQUE
+    V2   the fenced residual's "it" -> "them"         parser  exit 0, 0 of 314  SURVIVES
+    V3   `cardMissing: true` -> `false`, hold kept    parser  exit 1, 3 of 314
+    V4   the hold's verdict -> 'disjoint', hold kept  parser  exit 1, 1 of 314 UNIQUE
+    V6   no card can ever read `ready`                e2e     exit 1, THE FLOOR FIRES
+
+**A1 IS THE PREVIOUS VERDICT'S ARM V1**, the one that left 516 bodies
+green with zero kills. It now kills 3 in the parser and 1 uniquely at the
+call site — **four across the two suites**, exactly as claimed. A1's three
+kills do NOT include the new positive control, which matters below.
+
+`lib/parser/src/lanes.ts` restored to
+`1ad1871f9fc54bfe40250a7682bcb1f034d72e2d58b2a53a58ed883e6b9c6481` after
+A1–A7 and V2–V4 and E1; `tools/e2e/scripts/dispatch-order.mjs` to
+`66d2e81616f669c9b8776b1007670e2fa5e49b322c5e7317901fe73fd36873c6` after
+E2; `lib/parser/src/task-waves.ts` to
+`407d7a0056514751359e71d6cc5b7204f85f8505b4f8f5a6c7dadcee7b7ab8ab` after
+V6. `git status --porcelain` empty after every one, and the built `dist`
+was rebuilt clean after each rebuild arm.
+
+### THE LATTICE — tested directly, including the case the brief named
+
+`unfenceable` had zero live instances before this change, so the ordering
+was probed with a fixture harness of my own rather than inferred from the
+diff. All of these are my measurements, not re-readings:
+
+- **A card facing BOTH a proved overlap and an unreadable lane comes back
+  `fenced`** — the overlap outranks, `compareFences`'s lattice is not
+  re-ordered — **and the unreadable lane is still named**. Confirmed at
+  fixture scale AND on the live board: all 8 of run A's `fenced` cards
+  face `T-137` provably and `T-141`/`T-145` blind, and every one is
+  `fenced`.
+- **ORDER-INDEPENDENT.** `[T-002, T-777]` and `[T-777, T-002]` give not
+  merely the same state but the byte-identical reason. The branches are
+  filters over the whole `holds` array, never first- or last-wins.
+- **THE SCHEDULE STILL OUTRANKS THE FENCE.** A `blocked` card beside a
+  blind lane stays `blocked` and never enters `unfenceable`.
+- **`own-lane` SURVIVES** where it should: a card whose only hold is its
+  own lane is still `own-lane`. **And correctly does NOT survive** where
+  it should not: own lane + one blind lane is `unfenceable`, because the
+  blind one cannot be ruled out.
+- **THE TWO CAUSES ARE SPELLED APART** in one sentence when both are
+  present: *"this checkout has NO CARD for T-777 …; against T-004,
+  zzz-not-a-thing resolved to neither a slug nor a path."*
+- **THE FORWARD DIRECTION OF THE IFF IS INTACT** — ready, genuinely
+  disjoint, no blind lane, and the card is `startable` with the sentence.
+  The fix does not over-fence.
+- **EDGE, mine:** a lane whose card EXISTS but declares `touches: []` is
+  **not** reported card-less — `fenceIndex` keys on every task id, so
+  `cardMissing` means "no card", never "no fence". A lane with a garbage
+  task id fails CLOSED. A card with an empty fence beside a blind lane is
+  `unfenceable`, not `startable`.
+
+### THE DEDUPE IS RIGHT, AND NOTHING DOWNSTREAM DOUBLE-COUNTS
+
+`lanesWithNoCard` is deduped by task id; the HOLDS are not. **Ruling: the
+asymmetry is correct and not an accident.** A hold is per-worktree
+evidence and two worktrees on one branch are two live writers; the
+reported list is per-card news and a reader wants the id once. Checked
+every consumer: the report's card-less line iterates the deduped list, so
+the previous verdict's finding 7 — *"the report prints the same sentence
+twice"* — **is gone**. No count, `.length` or rendered figure reads the
+undeduped side.
+
+### THE POSITIVE CONTROL IS LOAD-BEARING, AND THE BRIEF'S WORRY INVERTS
+
+The brief asked whether a control that "reds under nine arms" is too
+broad to localise. **The premise is the wrong way round: A5 is ONE arm
+that reds NINE BODIES**, not a control that reds under nine arms. The
+question that decides it is whether a mutant exists that passes the
+describe's first body and fails the control — and A5 is exactly that:
+
+    A1  kills the first body, the outranking body and the dedupe body
+        — and NOT the positive control
+    A5  kills the positive control — and NOT the first body
+
+**The pair is genuinely discriminating**, which is the whole job of a
+positive control. The two boards differ in exactly one file and the lane
+list is character-identical, so what moves the answer is the card's
+presence and nothing else. No change owed.
+
+### THE "UNPOISONABLE" ASSERTION IS POISONABLE — and that is good news
+
+The rework names `expect(ruled.length).toBeGreaterThan(0)` unpoisonable,
+on the ground that *"any mutation that empties it reds the arithmetic
+assertion two lines above first."* **That is false, and I falsified it.**
+Arm **V6** mutates `readSchedule` in `lib/parser/src/task-waves.ts` so no
+card can ever read `ready`. Both sides go empty together, `toEqual`
+PASSES on `[] === []`, and the floor fires by name:
+
+    > 253 |   expect(ruled.length).toBeGreaterThan(0);
+    Error: expect(received).toBeGreaterThan(expected)
+
+So the assertion has an independent producer and a real kill. **It needs
+no different guard**, and a floor is the right shape here rather than an
+equality: `ruled.length` is a function of a mutable lane list, while the
+exact SET is already pinned by the `toEqual` above it. The bookkeeping
+was wrong in the card's own favour.
+
+### THE REFUSAL OF THE ARCHITECT'S DUAL IS CORRECT — checked, not inherited
+
+I read the four sentences at this ref rather than taking them from the
+notes. **The refusal holds, and two of the four are stronger than the
+rework says.**
+
+- `method/lane-protocol.md` rule 7: *"The lane list is a fact on disk,
+  not a memory. Which lanes exist is answered by asking the repository
+  (its worktrees and branches)."*
+- `method/roles/executor.md` row 5: the lane list *"takes PRECEDENCE over
+  the board's `status:`"*, and both its examples are of the BOARD
+  UNDER-reporting a live worktree — never of a `status:` line
+  manufacturing one.
+- `method/lane-protocol.md`, *Why the branch carries the dispatch stamp*:
+  `status: building` is written on the integration branch **before** the
+  branch is cut. **So there is a NECESSARY window in which a card reads
+  `building` and no worktree exists** — synthesising a hold from
+  `status:` would fire on every card during its own dispatch.
+- `docs/STATE.md`: *"ONE CARD IS `status: building` WITH NO LANE, AND
+  THAT IS ALSO ON PURPOSE."* `T-135`, still `building` and still
+  laneless.
+
+Confirmed in code: `readDispatchOrder` takes lanes only from the list
+handed in and never consults `status:` to synthesise one. **R1 drops a
+PROVED live writer; the dual would INVENT one.** The asymmetry is real.
+The residual — the report computes `underway` and never prints it — is
+real too, and I verified it independently: `dispatchReport` has ten
+section headers and no `underway` section, and never reads `o.underway`.
+Criterion 4 names startable, fenced, blocked and the critical path, and
+does not name `underway`, so this is a routed improvement rather than a
+criterion breach. `T-137-s10` is the right seat.
+
+### THE ONE NEW FINDING — a sentence that disagrees with itself on the same page
+
+**`lanes.ts`'s `fenced` residual clause hard-codes the singular while
+naming a list.** With two blind lanes live it prints, in the shipped
+report at this ref, **eight times**:
+
+    And T-141 (…), T-145 (…) could not be compared at all —
+    no card for it in this checkout — so this overlap may not be the only one.
+
+Four lines above, the consumer's own sentence gets it right — *"no fence
+could be proved disjoint from **them**"* — so one page says both.
+
+Three things make this worth writing down rather than shrugging at.
+**(1)** The rework identified this exact class, wrote *"NUMBER AGREEMENT
+IS NOT DECORATION HERE"* in a comment, and pinned it with two dedicated
+arms (A6, A7) — in the branch two functions away, while shipping the
+violation in the branch it wrote in the same commit. **(2)** It is live
+now, not hypothetical: three lanes on this machine, two of them
+card-less. **(3)** It is unpinned in BOTH directions — my arm **V2**
+flips the word and the parser stays **314/314, exit 0, zero kills**. A3
+pins the clause's PRESENCE and nothing pins its NUMBER.
+
+**It does not block.** The ruling is right, the state is right, both
+lanes ARE named, and no information is lost — this is one word, and the
+card's criteria are met without it. Filed as **`T-137-s12`**,
+`[lib-parser]`, with the arm that proves the gap.
+
+### FIGURES — every one re-derived, and every disagreement named
+
+1. **The brief says the forbidden two-dot form returns 89. I measure 90**
+   at main `80bde23`. The brief's figure was true at `2fab106`; main
+   gained `6586f9c` and `80bde23` while this pass ran, and the two-dot
+   form counts main's advance. **The prescribed form is 23 at both.**
+2. **The rework says the defect's blast radius is "the same fifteen ids".
+   At my ref it is EIGHTEEN.** The rework's fifteen, id for id, plus
+   **`T-105`, `T-128`, `T-131`** — exactly the three `method/` cards that
+   `T-145`'s fence reaches. `T-145`'s lane did not exist when the rework
+   measured. **The defect did not move; the lane list did, for the fourth
+   recorded time in this card's life.**
+3. **The rework's run E is `startable 8 / fenced 23`; mine is `5 / 26`**,
+   for the same reason — it had one card-less lane and I have two.
+4. **`index --check` at the lane tip.** The rework reports fresh
+   **973 197** bytes, truncated, using the LANE's own binary at its base
+   ceiling `1_000_000`. Measured here with **MAIN's** binary at main's
+   ceiling `1_040_000`: **1 012 002 bytes · 187 files · 2129 symbols ·
+   2105 edges, budget 97.3%, 27 998 left, NO truncation.** Both are
+   right about their own binary. **The first verdict's corrected
+   untruncated figure was 1 011 999 at tip `260a354`; the rework's tip is
+   3 bytes larger.** The lane's central claim — *this lane no longer
+   overflows once it meets main* — **is confirmed at my own ref.**
+5. **The rework's round-1 A4 is "1 of 314" and its round-2 A4b is "2".**
+   At the tip it is **2**; the round-1 row is stale by its own second
+   round and the notes say so.
+6. **`cargo 512 / 0 / 3 over 16 result lines` is NOT re-derived here, and
+   the reason is the honest one.** This lane changes **zero** `.rs` and
+   `.toml` files against its own base `00e133a`, and the 23-path range
+   contains **zero** Rust. `cargo test` is owed by no gate — the DOCS
+   GATE lists `cargo test` as a READER and correctly leaves it out of the
+   `Run:` list. Building it cold in a scratch target under a load average
+   of 20 would have measured `00e133a`'s Rust and told this card nothing.
+   **Stated rather than skipped silently.**
+7. **`TOKEN 140 / CONTROL 788` reproduces exactly**, and the control
+   reconciles: `git ls-files` is **806** at this tip, 806 − 18
+   NUL-bearing = **788**.
+8. The previous verdict's `20 / 11` for lane list B is superseded by
+   `23 / 8`, which is what I measure too.
+
+### THE RANGE — by the range rule, endpoints named
+
+`git merge-tree --write-tree 80bde23e9987c85c72f6781e675ec73d6958f9ed
+task/T-137-lane` → **exit 0, read from `$?` BEFORE the substitution** →
+tree `b4af83c97303dca062afeeb61faeb54d98991b87`.
+`git diff --name-only 80bde23 b4af83c` = **23 paths**. The forbidden
+two-dot form says **90**; the forbidden `merge-base..tip` form says 23
+and **that is luck, not licence** — `00e133a` is an ancestor of the tip.
+
+Trigger sets derived from those 23: **GRAPH REGEN 9** · **BOOT GATE 1**
+(`app/src/architecture/task-waves.ts`) · **DOCS GATE 12**.
+
+### GATES — asked, never predicted
+
+    index --check @ lane tip 2f7ad29   EXIT 1  committed 989181/183/2101/2033
+      (MAIN's binary, ceiling 1_040_000)       fresh 1012002/187/2129/2105
+                                               97.3%, 27 998 left, NO truncation
+    index --check @ main 80bde23       EXIT 0  CURRENT 997202/185/2124/2039, 95.9%
+    DOCS GATE (fed the 23 paths)       EXIT 1  12 docs paths, 17 readers, 4 suites,
+                                               0 frontmatter issues; run list green
+    BOOT GATE  port 14921              EXIT 0  both [nputer] lines, tree stopped
+    arch drift @ tip                   EXIT 0  findings=4 undeclared=2 unmapped=0
+                                               declared_only=2 dangling=0
+    arch cycles @ tip                  EXIT 1  BY DESIGN, 1 cycle among 13,
+                                               stderr 657 bytes, stdout 0 bytes
+    lint:docs 0 · lint:tokens --selftest 0 · lint:tokens 0 · e2e typecheck 0
+
+**THE BOOT GATE IS GENUINELY OWED AND GENUINELY PASSES.** Derived, not
+assumed: `app/src/architecture/task-waves.ts` is 1 of the range's 23
+paths and CONVENTIONS fires this gate on `app/src/**`. It is addressed to
+the integrator and the executor — the verifier is not named — and
+**neither this card's first-round notes nor the previous verdict mentions
+it, which is a gap in the FIRST pass rather than in this one.** Run here
+on scratch port **14921**, `lsof` read at zero rows immediately before
+binding and zero rows after, the process group stopped with SIGTERM and
+no listener left behind. The running app reported `[nputer] project
+folder: /private/tmp/v137`, so it was this tree's build and not a
+borrowed binary; all 279 rlibs in that scratch target are newer than the
+run's start.
+
+### SUITES — exits read unpiped, counts read as well as exits
+
+    lib/parser  npm run build 0 · npx tsc --noEmit 0
+                npx vitest run  314/314 across 15 files, exit 0
+    app         npm run build 0 · npm test 1013/1013 across 47 files, exit 0
+    tools/e2e   npm test 206/206, exit 0, 2.2m, explicit port 14907
+                header `Running 206 tests using 1 worker` cross-checked
+                against 206 tick lines; probed 0 rows before and after
+
+**THE EXTRACTION CONTROL HOLDS, AND IT IS A REAL CONTROL.** `app/test/**`
+is **0 of the 23 paths**, `map-task-waves.test.ts` is sha256
+`1c991adccf7d47a67d17743560bba42af5fa0e963db2fbb974bf271d07994802` — the
+first verifier's own reading, hit independently — and the four map-pane
+files run **50 / 41 / 29 / 8**. Those 50 bodies are the same bodies
+executing the moved analysis through the re-export. **The app never
+reaches `readDispatchOrder` or `cardMissing`**: `app/src/lib/board-model.ts`
+has its own unrelated `LaneHold`, so the new required field cannot reach
+it, and both `tsc` passes plus `vite build` are exit 0.
+
+**LOAD DISCIPLINE.** Load average was **19.95** at the first suite, far
+above the 6 the brief warned about. **No suite was run beside another**,
+and **no body timed out** in any of the four full e2e runs. Nothing was
+dismissed as contention, because nothing needed to be.
+
+### THE STANDING CRITERIA, RE-CHECKED AT THIS TIP
+
+- **The consumer WRITES NOTHING** — no `writeFile`/`mkdir`/`rm`/
+  `appendFile`/`createWriteStream`/`rename`/`copyFile` anywhere reachable
+  in `dispatch-order.mjs`, `dispatch-brief.mjs` or `lanes.ts`.
+- **`blocked_by` IS UNTOUCHED** — every hit in the whole 23-path range is
+  a doc comment, a test fixture builder or a provenance string. No card's
+  frontmatter field moves.
+- **NO SECOND FENCE IMPLEMENTATION.** A mechanical sweep of `lanes.ts`
+  for `startsWith`/`endsWith`/`split('/')`/`normali[sz]`/`toLowerCase`/
+  `new RegExp`/`.test(`/`path.`/`posix`/`resolve(`/`slugPathIndex`/
+  `normalizeFenceToken` returns **two doc-comment lines and nothing
+  else**. Its imports are exactly `compareFences`/`expandFence` plus four
+  fence types.
+- **The lane list is still filtered on the BRANCH.** My own detached
+  scratch worktree is correctly absent from it.
+
+### SECURITY SWEEP — no finding
+
+`lanes.ts` contains no `exec`, no `spawn`, no `RegExp`, no `eval` and no
+filesystem call; it is a pure function of the model and the lane list.
+The lane list reaches it through `git()`, which is `execFileSync("git",
+["-C", root, ...args])` — an argv array, **no shell**, so a branch name
+is never interpolated into a command. No dependency is added (no manifest
+in the range), no secret or key appears in the diff, and no new option
+defaults to the permissive value. **The change's direction is the safe
+one: an input that cannot be read now produces MORE fencing, not less** —
+this diff converts a fail-open into a fail-closed, which is the only
+correct direction for a fence.
+
+**NUL SWEEP WITH ITS POSITIVE CONTROL FIRED**, run with `perl` because
+this session's `grep` is a shim carrying `-I`: **zero NUL bytes in every
+one of the 23 changed paths**, exactly **18** NUL-bearing tracked files
+tree-wide, and the control fired on `app/src-tauri/icons/32x32.png`.
+
+### THE LANE'S INDEX AND THE PRESERVED VERDICT
+
+**Checked before the tree was trusted.** `/Users/ujju/Projects/nputer-T-137`
+has **0 staged paths and 0 status rows** at `2f7ad29`. The previous
+307-line verdict is present at the tip and **byte-identical** to its text
+at `62a4364`; the card's whole base→tip diff deletes exactly **four**
+lines, and all four are corrections the previous verdict itself demanded
+(the "Ten paths" count and the three untruncated-figure rows). **Nothing
+was quietly removed.**
+
+### TWO NOTES FOR WHOEVER INTEGRATES
+
+1. **`T-137-s11` and main's `T-143` are the same finding, filed twice by
+   two hands that could not see each other.** `T-143` was corrected on
+   main at `80bde23` — *"the one that did lives in two implementations"*
+   — **after** this rework's tip, and it already carries `touches:
+   [lib-parser, tools/e2e]`. Neither hand is wrong; **this is the card's
+   own subject happening to the card for the third time**, and the two
+   should be merged at the seat, not both dispatched.
+2. **From a LANE checkout this tool now answers "nothing is startable",
+   and that is correct rather than a regression.** With two card-less
+   lanes live, no card's disjointness can be PROVED, so the honest answer
+   is refusal plus a remedy — and the report gives the remedy by name.
+   **From main it is undegraded**: `status: building` lands on the
+   integration branch before the branch is cut, so main is by
+   construction the one tree holding every dispatched card. Run E is that
+   answer, and it is 5 startable rather than 0.
+
+### WHAT ELSE I ATTACKED AND FOUND NOTHING
+
+`docs/ROADMAP.md` untouched; no second notion of progress. All report
+sections present and in the criterion's order, the lane named in every
+`fenced` reason, the unmet blocker named in every `blocked` reason, and
+generation declared out of scope in the output itself. Both new cards
+(`s10`, `s11`) carry legal frontmatter with `suggested_by` set and titles
+that open with neither a backtick nor a reserved indicator — the DOCS
+GATE reports **0 frontmatter issues** across the live tree. `s11`'s claim
+was verified in the source: `dispatch-brief.mjs:1201` does carry
+`if (card === undefined) { … continue; }`, R1's own shape in a second
+file, and leaving it routed is consistent with this card's own item-7
+ruling about another card's pinned output.
+
+**Verifier frontmatter fields left unstamped.**
