@@ -870,3 +870,37 @@ holding and every gate green. The two judgement calls I was asked to rule
 on both stand: the residue is right to leave (for a reason the card
 states weakly and I have corrected in place), and the success measurement
 is correctly scoped with a follow-up rather than under-delivered.
+
+### The gates AT THE TIP THIS VERDICT CREATED — `4b985be`
+
+**A verdict is measured at a commit that no longer exists, so these are
+the numbers at MY OWN tip and not at the one I was sent.** Same detached
+scratch worktree, moved to `4b985be`, `git status` clean; the sibling
+verifier's Playwright run was polled to completion before a single
+command took CPU, so nothing here shares a machine with a suite it could
+have timed out.
+
+- **cargo test — 518 / 0 / 4, exit 0**, 18 `test result:` lines, 18
+  `running` headers summing to **522**, all four watched bodies read by
+  name and `ok`.
+- **app — `npm run build` 0, `npm test` 1013/1013 across 47 files, exit 0.**
+- **parser — `npm run build` 0, 314/314 across 15 files, exit 0, `tsc
+  --noEmit` 0.**
+- **tools/e2e — 206 passed, exit 0**, port **15988**, `lsof` **zero rows**
+  at 2026-08-27 01:32:37 EEST, header `Running 206 tests using 1 worker`
+  cross-checked against **206** `✓` bodies. `npm run typecheck` 0.
+  The one `brief` disclosure is still `T-150 tools/e2e against T-133
+  tools/e2e` and is still not this lane's.
+- **`lint:docs` 0** — *"every live task card's frontmatter parses, with a
+  legal status"*, which is the only half of a `docs/tasks` write that can
+  reach those four suites, and the reason the regress stops here.
+- **`lint:tokens` 0 at TOKEN 141 / CONTROL 807.** **CONTROL moved 805 ->
+  807 and that is this block's positive control**: two tracked files
+  arrived — `T-149-s4` and `T-149-s5` — so the figure is answering about
+  the tree this verdict actually made, not the one it was handed. A
+  CONTROL count that had NOT moved would have meant the lint was reading
+  a tree without my commit in it.
+
+**Nothing in this verdict's own commits moved an assertion** — the four
+suites return the same counts at `4b985be` as at `d437f5a`, which is what
+makes the APPROVED above safe to have written before they ran.
