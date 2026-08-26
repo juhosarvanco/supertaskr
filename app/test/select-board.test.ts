@@ -1566,7 +1566,11 @@ describe("blocked_by is a DECLARATION and whether it binds is DERIVED (T-111-s4)
     // THE RENDER — the half that was missing. The whole message, verbatim
     // and attributed, so a reader can tell whose sentence it is.
     expect(got?.reason).toContain("The parser says:");
-    expect(got?.reason).toContain(emitted[0]?.message ?? " never");
+    const said = emitted[0]?.message ?? "";
+    // NON-EMPTY FIRST: `toContain("")` is true of every string, so an
+    // empty message would make the line below vacuous rather than red.
+    expect(said.length).toBeGreaterThan(0);
+    expect(got?.reason).toContain(said);
     // AND THE NEAR-MISS SPECIFICALLY REACHES THE READER, which is the
     // thing T-076 exists to deliver: the padding twin one line away.
     expect(got?.reason).toContain("'T-001' is declared and differs only in zero padding");
@@ -1591,7 +1595,11 @@ describe("blocked_by is a DECLARATION and whether it binds is DERIVED (T-111-s4)
     const got = dispositionOf(selectDispositions(m, NO_LANES), "T-900");
     expect(got?.disposition).toBe("blocked");
     expect(got?.reason).toContain("The parser says:");
-    expect(got?.reason).toContain(emitted[0]?.message ?? " never");
+    const said = emitted[0]?.message ?? "";
+    // NON-EMPTY FIRST: `toContain("")` is true of every string, so an
+    // empty message would make the line below vacuous rather than red.
+    expect(said.length).toBeGreaterThan(0);
+    expect(got?.reason).toContain(said);
     expect(got?.reason).not.toContain("zero padding");
   });
 
