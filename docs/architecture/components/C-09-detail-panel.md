@@ -6,6 +6,12 @@ paths:
   - app/src/components/board/TaskDetailPanel.tsx
   - app/src/components/board/panel-dismissal.ts
   - app/src/lib/task-detail.ts
+  # The tests that exercise this drawer, routed out of C-05's test
+  # umbrella at T-149. `detail-presentation` also reads C-16's
+  # `verdicts.ts`, which this component already declares.
+  - app/test/detail-presentation.test.ts
+  - app/test/panel-dismissal.test.ts
+  - app/test/select-task-detail.test.ts
 depends_on: [C-06, C-08, C-11, C-16]
 decisions: [ADR-016]
 status: auto

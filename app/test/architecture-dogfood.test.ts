@@ -1490,7 +1490,22 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // in this ledger to say so. Derived from `arch`'s own
       // `component C-05 … files=64` with the claim applied, before the
       // suite was re-run, never off the failure output.
-      ["C-05", 64],
+      // 64 → 31 AT T-149 (2026-08-27), the largest move this row has ever
+      // made and the third time it moves WITHOUT THE GRAPH MOVING AT ALL —
+      // no file added, no file deleted, `derived.fileComponent.size` still
+      // 189. THIRTY-THREE of the forty-nine files under `app/test/**` change
+      // owner, and the catch-all glob that made them C-05's is gone: the
+      // component now names its SIXTEEN shell tests one by one. What is left
+      // is 15 shell files + 16 tests = 31, and that 15 is the same fifteen
+      // the card counted before anything moved. THE SIX ROWS BELOW MOVE IN
+      // THE SAME BREATH AND SUM TO THE SAME 33 — C-08 +2, C-09 +3, C-10 +4,
+      // C-12 +16, C-13 +7, C-14 +1 — which is the check worth running on
+      // this table: a routing that loses or duplicates a file breaks the sum
+      // before it breaks any single row. Derived from `arch`'s own
+      // `component … files=` lines at the edited registry, cross-checked
+      // against a per-file simulation over `graph.json` run BEFORE the
+      // registry was touched, never off the failure output.
+      ["C-05", 31],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under
@@ -1553,11 +1568,29 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // the bucket row at the bottom of this table is new. Derived from
       // `arch` over the regenerated graph before the suite was run.
       ["C-07", 36],
-      ["C-08", 10],
-      ["C-09", 3],
+      // 10 → 12 at T-149: `review-badge.test.tsx` and `select-board.test.ts`
+      // arrive from C-05's dissolved test umbrella. Both drive only this
+      // component's own files plus the parser it already declares, so the
+      // relation table below gains no row for them — C-08 → C-06 merely
+      // goes 4 → 5.
+      ["C-08", 12],
+      // 3 → 6 at T-149: `detail-presentation.test.ts`,
+      // `panel-dismissal.test.ts` and `select-task-detail.test.ts`. The
+      // first also reads C-16's `verdicts.ts`, which this component already
+      // declares, so again no new row — C-09 → C-16 goes 2 → 3.
+      ["C-09", 6],
       // 2 → 3 at the T-010 merge regen: docs_watch.rs, which C-10 has
       // claimed by name since T-003 and which no walk could see.
-      ["C-10", 3],
+      // 3 → 7 at T-149: `docs-model.test.ts`, `shell-harness.test.ts`,
+      // `startup-recovery.test.ts` and `watcher-store.test.ts`. THIS ROW
+      // MORE THAN DOUBLES AND THE FENCE DOES NOT MOVE WITH IT, which is
+      // worth saying where the number is: C-10's `touch_slugs:` is
+      // `[app-shell]`, the same slug C-05 carries, so a test routed here is
+      // routed for TRUTH and not for throughput. `shell-harness.test.ts` is
+      // the one whose name argues for C-05 — the surface it audits,
+      // `window.__nputerShellHarness`, is installed by `watcher-store.ts`,
+      // which is this component's file.
+      ["C-10", 7],
       // 11 → 14 at the T-034 merge regen: TasksLens.tsx, map-lens.ts and
       // task-waves.ts all land under app/src/architecture/**, C-12's own
       // glob and its only claimant. The FILE LIST below moves with it —
@@ -1566,7 +1599,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // churn-source.ts and map-zoom.ts under app/src/architecture/**,
       // plus churn.ts under app/src/lib/architecture/** — both C-12's
       // globs and C-12 their only claimant. Same positive control.
-      ["C-12", 18],
+      // 18 → 34 at T-149, by SIXTEEN — the largest single move any row in
+      // this table has made, and the mirror of C-05's 33-file drop. Five
+      // `architecture-*` and eleven `map-*` files arrive from the dissolved
+      // umbrella; `map-shell-dom.test.tsx` does NOT, because its subject is
+      // `components/shell/PaneRail.tsx` and a filename is a hint rather than
+      // a fact. THIS IS THE ROW T-137 COULD NOT REACH: its fence was
+      // `[lib-parser, app-map, tools/e2e]` and the assertions its own regen
+      // moved lived in `app/test/**`, which was C-05's — the defect this
+      // card exists to remove, recorded at the number that proves it.
+      ["C-12", 34],
       // The genesis pane joined the index at the T-024 merge regen, and
       // STAYS 2 at T-037's: the mount gave the lens a consumer, not a
       // file.
@@ -1581,7 +1623,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // C-05's row — so a red in either hides it. It was derived from the
       // indexed added-file list and the registry glob before the suite
       // ran, which is the only way this row is ever caught in time.
-      ["C-13", 8],
+      // 8 → 15 at T-149, by SEVEN: `crescendo.test.ts`,
+      // `genesis-derive.test.ts`, `genesis-pane-dom.test.tsx` and the four
+      // `interview-*` files. FIVE genesis-named tests stay with C-05 and
+      // that is the judgement this row records — `crescendo-dom`,
+      // `genesis-entry`, `genesis-mount`, `genesis-pane-boundary` and
+      // `genesis-switch-truth` mount `App.tsx` or
+      // `components/shell/GenesisScreen.tsx`, so routing them here would
+      // write `C-13 → C-05` into a registry that already declares
+      // `C-05 → C-13` at 6 observed — a cycle, for a mount point.
+      ["C-13", 15],
       // C-14 joins the mapping at the T-025 merge regen with exactly ONE
       // file: agent-store.ts. Its other declared path
       // (app/src-tauri/src/agent/**, five .rs files) is invisible to the
@@ -1595,7 +1646,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // `src/bin/fake_agent.rs` and its suite `tests/agent_runner.rs`, on
       // the rule that already puts app/test/** under C-05, so
       // 1 + 5 + 2 = 8. The map stops under-reporting this component.
-      ["C-14", 8],
+      // 8 → 9 at T-149: `agent-store.test.ts`, the TS half's own test,
+      // which is the same rule the §5 settlement two lines up already
+      // applied to `fake_agent.rs` and `tests/agent_runner.rs`. The clause
+      // above that reads "the rule that already puts app/test/** under
+      // C-05" is what T-149 retires: there is no longer an `app/test/**`
+      // rule, only per-file routing, and this component's own test is the
+      // first row to feel it.
+      ["C-14", 9],
       // C-15 JOINS THE MAPPING AT THE T-110 MERGE REGEN WITH FIVE FILES,
       // and it is the row this ledger has been forecasting since T-088
       // declared the component with nothing under it. Four Rust files
@@ -1767,6 +1825,29 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       "app/src/lib/architecture/derive.ts",
       "app/src/lib/architecture/glob.ts",
       "app/src/lib/architecture/graph.ts",
+      // T-149: 18 → 34. The sixteen tests that exercise this pane arrive
+      // from C-05's dissolved `app/test/**` umbrella. They sort AFTER every
+      // `app/src/**` entry because the order is the graph's own, a plain
+      // codepoint sort of the full path — `app/src` < `app/test` on the
+      // fifth segment character. Derived by filtering `graph.json`'s own
+      // file order through the routed set, not copied out of a failure
+      // diff, and the count reconciles against `arch`'s `C-12 … files=34`.
+      "app/test/architecture-derive.test.ts",
+      "app/test/architecture-dogfood.test.ts",
+      "app/test/architecture-glob.test.ts",
+      "app/test/architecture-graph.test.ts",
+      "app/test/architecture-store.test.ts",
+      "app/test/map-churn-age.test.tsx",
+      "app/test/map-churn.test.ts",
+      "app/test/map-dogfood-render.test.tsx",
+      "app/test/map-layout.test.ts",
+      "app/test/map-search.test.ts",
+      "app/test/map-t1-t2-dom.test.tsx",
+      "app/test/map-task-waves.test.ts",
+      "app/test/map-tasks-lens-dom.test.tsx",
+      "app/test/map-view-dom.test.tsx",
+      "app/test/map-visuals.test.ts",
+      "app/test/map-zoom.test.ts",
     ]);
   });
 
@@ -1881,7 +1962,35 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
   });
 
-  it("the full relation table: 26 confirmed, 2 undeclared, 9 planned", () => {
+  it("the full relation table: 25 confirmed, 2 undeclared, 10 planned", () => {
+    // T-149: THE ROW COUNT DOES NOT MOVE AND FIFTEEN OF THE THIRTY-SEVEN
+    // ROWS DO, WHICH IS THE WHOLE RESULT STATED AS A RELATION. Routing 33
+    // test files out of C-05's umbrella adds NO row and removes NO row —
+    // 37 before, 37 after — because every test that moved already imported
+    // only components its new owner declares. The tally moves by exactly
+    // one row's relation: `C-05 -> C-09` goes `confirmed 3` to
+    // `planned 0`, so 26/2/9 becomes 25/2/10.
+    // THE ARRANGEMENTS WERE MEASURED RATHER THAN ARGUED (the T-141
+    // precedent, and this card's own third bite). A per-file simulation
+    // over `graph.json`, run BEFORE the registry was touched, scored the
+    // candidate owner of every one of the 49 files by the edges it would
+    // create; the chosen routing scores ZERO new component edges, and the
+    // tool then reproduced the simulation's every file count and every
+    // observed count exactly. The rule that decided the hard cases: a test
+    // that mounts `App.tsx` or a `components/shell/**` component stays with
+    // C-05, because giving it to the component it otherwise exercises would
+    // point that component BACK at the shell — and C-05 already declares
+    // C-08, C-10, C-12, C-13 and C-14, so every such row would be a CYCLE
+    // under @human's no-cycles ruling. Thirteen files are held here by that
+    // rule alone.
+    // THE ONE ROW WHOSE RELATION MOVES IS RESIDUE, AND IT IS LEFT
+    // STANDING DELIBERATELY. All three observed `C-05 -> C-09` file edges
+    // were test edges; with them routed, the shell reaches the detail
+    // panel only THROUGH C-08 (`App.tsx -> Board.tsx -> TaskDetailPanel`).
+    // T-012's `C-05` row in C-12 is the precedent for DROPPING such a
+    // declaration, and this card does not take it: dropping a declared
+    // dependency is a separate judgement with its own argument, and this
+    // card's charter is `paths:`. Filed as `T-149-s1`.
     // T-033: 35 rows -> 36, and the TALLY is where the card lands.
     // 14/12/9 becomes 26/1/9 — eleven undeclared rows become confirmed or
     // disappear, and the single survivor is the cycle T-125 owns.
@@ -1904,7 +2013,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // edge produces; the D1 entry no longer moves at all, because T-033
       // took this pair from `undeclared` to `confirmed` and the findings
       // list stopped holding it.
-      ["C-05", "C-06", "confirmed", 14],
+      ["C-05", "C-06", "confirmed", 1],   // T-149: 14 -> 1
       // 1 -> 2 AT T-141, and the observed count moves with NO code change
       // and NO regen: `graph_budget_bench.rs` has imported `nputer_index`
       // since T-139 and the file edge has been in the graph the whole time
@@ -1914,8 +2023,8 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // gets SHORTER instead of longer: nothing new is observed, one
       // endpoint is renamed.
       ["C-05", "C-07", "confirmed", 2],
-      ["C-05", "C-08", "confirmed", 4],
-      ["C-05", "C-09", "confirmed", 3],
+      ["C-05", "C-08", "confirmed", 2],   // T-149: 4 -> 2
+      ["C-05", "C-09", "planned", 0],     // T-149: confirmed 3 -> planned 0
       // 38 -> 39 at the T-116 merge regen: map-churn-age.test.tsx imports
       // `startDocsWatcher` from app/src/lib/watcher-store.ts, which is
       // C-10's.
@@ -1923,7 +2032,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // and for the harness's OTHER import, `docs_watch`. The two folds are
       // one file's two imports, which is why the D2 was one finding and not
       // three, and why retiring it retires both shadow rows at once.
-      ["C-05", "C-10", "confirmed", 40],
+      ["C-05", "C-10", "confirmed", 24],  // T-149: 40 -> 24
       ["C-05", "C-11", "planned", 0],
       // *** DISCHARGED AT T-033's CHECKPOINT: 32 -> 33. *** The lane left
       // this row at 32 because the file tracks the COMMITTED graph (the
@@ -1949,9 +2058,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // MERGE commit, and on main after T-033's CHECKPOINT the baseline is
       // 33. All three were right where they were measured. Derived here at
       // this merged tree, which is the only ref that governs this line.
-      ["C-05", "C-12", "confirmed", 35],
-      ["C-05", "C-13", "confirmed", 17],
-      ["C-05", "C-14", "confirmed", 8],
+      ["C-05", "C-12", "confirmed", 1],   // T-149: 35 -> 1
+      ["C-05", "C-13", "confirmed", 6],   // T-149: 17 -> 6
+      ["C-05", "C-14", "confirmed", 3],   // T-149: 8 -> 3
       // NEW at the T-135 Half A merge regen (2026-08-26), and it is the
       // ONE row this merge adds: `lib.rs -> dispatch/mod.rs`, the single
       // cross-component pair among the 27 edges the `mod` fix rescues.
@@ -1962,9 +2071,9 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // NEW at T-033: `components/shell/PaneRail.tsx -> lib/utils.ts` and
       // two siblings. The shell is now a CONSUMER of the primitives it
       // used to own, which is the extraction working in both directions.
-      ["C-05", "C-16", "confirmed", 3],
+      ["C-05", "C-16", "confirmed", 2],   // T-149: 3 -> 2
       ["C-06", "C-01", "planned", 0],
-      ["C-08", "C-06", "confirmed", 4],
+      ["C-08", "C-06", "confirmed", 5],   // T-149: 4 -> 5
       ["C-08", "C-09", "confirmed", 6],
       ["C-08", "C-11", "planned", 0],
       // NEW at T-033, and it REPLACES `["C-08","C-05","undeclared",4]`:
@@ -1972,12 +2081,12 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // now landing on C-16. Declaring C-08 -> C-05 instead would have
       // written a cycle against the already-declared C-05 -> C-08.
       ["C-08", "C-16", "confirmed", 4],
-      ["C-09", "C-06", "confirmed", 2],
+      ["C-09", "C-06", "confirmed", 3],   // T-149: 2 -> 3
       ["C-09", "C-08", "confirmed", 3],
       ["C-09", "C-11", "planned", 0],
       // NEW at T-033, replacing `["C-09","C-05","undeclared",2]`: `cn` and
       // `verdicts` from TaskDetailPanel.tsx.
-      ["C-09", "C-16", "confirmed", 2],
+      ["C-09", "C-16", "confirmed", 3],   // T-149: 2 -> 3
       ["C-10", "C-06", "confirmed", 1],
       // THE ONE UNDECLARED ROW LEFT IN THIS REPOSITORY, and it is left on
       // purpose: declaring it would write this registry's first cycle
@@ -1988,7 +2097,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // `verdicts`, so the extraction took the row to `planned 0` and the
       // registry dropped the declaration rather than assert an intent that
       // is not there — which also closed C-05 <-> C-12.
-      ["C-12", "C-06", "confirmed", 6],
+      ["C-12", "C-06", "confirmed", 17],  // T-149: 6 -> 17
       ["C-12", "C-07", "planned", 0],
       ["C-12", "C-09", "confirmed", 5],
       // 1 -> 2 at the T-116 merge regen, and this is the card's own
@@ -1998,16 +2107,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // DECLARES C-10, so the new edge is confirmed rather than drift —
       // which is why the fence question the card raised about that import
       // was never a fence question.
-      ["C-12", "C-10", "confirmed", 2],
+      ["C-12", "C-10", "confirmed", 5],   // T-149: 2 -> 5
       ["C-12", "C-11", "planned", 0],
       // NEW at T-033: the map pane is the heaviest consumer of the
       // primitives — five `cn` sites plus `task-waves.ts -> verdicts.ts`.
       ["C-12", "C-16", "confirmed", 7],
       ["C-13", "C-06", "confirmed", 1],
       ["C-13", "C-08", "confirmed", 1],
-      ["C-13", "C-10", "confirmed", 6],
+      ["C-13", "C-10", "confirmed", 14],  // T-149: 6 -> 14
       ["C-13", "C-11", "planned", 0],
-      ["C-13", "C-14", "confirmed", 5],
+      ["C-13", "C-14", "confirmed", 9],   // T-149: 5 -> 9
       // NEW at T-033, replacing `["C-13","C-05","undeclared",3]` — three
       // `Button` imports. This is the row the ruling named as the proof
       // that the arrow was an artifact of WHERE the primitives lived:
@@ -2036,8 +2145,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     const tally = new Map<string, number>();
     for (const e of derived.edges) tally.set(e.relation, (tally.get(e.relation) ?? 0) + 1);
     expect([...tally.entries()].sort()).toEqual([
-      ["confirmed", 26],
-      ["planned", 9],
+      // 26 -> 25 and 9 -> 10 at T-149, and the two move TOGETHER because
+      // it is ONE row changing relation, not two rows appearing:
+      // `C-05 -> C-09` loses its last observed file edge (all three were
+      // test edges, now C-09's own) and becomes a declared dependency with
+      // nothing behind it. 25 + 2 + 10 = 37, the same 37 as before the
+      // routing — no row arrived and none left. Derived from `arch`'s own
+      // edge listing at the edited registry, and forecast by a per-file
+      // simulation over `graph.json` before the registry was touched.
+      ["confirmed", 25],
+      ["planned", 10],
       // 2 → 4 at T-139, both new rows from the one unmapped file above.
       // 4 → 2 AT T-141, both leaving for the same reason they arrived. This
       // is the SECOND assertion in this body and the row count above is the
@@ -2086,12 +2203,21 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       { from: "app/src/components/board/badges/ReviewBadge.tsx", to: LIB_PARSER, package: PARSER_PKG },
       { from: "app/src/components/board/badges/SizeBadge.tsx", to: LIB_PARSER, package: PARSER_PKG },
       { from: "app/src/lib/board-model.ts", to: LIB_PARSER, package: PARSER_PKG },
+      // 4 -> 5 at T-149: `select-board.test.ts` arrives from C-05's
+      // dissolved test umbrella and consumes the parser through the same
+      // seam. `review-badge.test.tsx` arrives too and does NOT appear here
+      // — it imports react and one component, no parser — which is what
+      // makes this list a check on the ROUTING rather than on the count.
+      { from: "app/test/select-board.test.ts", to: LIB_PARSER, package: PARSER_PKG },
     ]);
     const c09 = derived.edges.find((e) => e.from === "C-09" && e.to === "C-06");
     expect(c09?.relation).toBe("confirmed");
     expect(c09?.fileEdges).toEqual([
       { from: "app/src/components/board/TaskDetailPanel.tsx", to: LIB_PARSER, package: PARSER_PKG },
       { from: "app/src/lib/task-detail.ts", to: LIB_PARSER, package: PARSER_PKG },
+      // 2 -> 3 at T-149: `select-task-detail.test.ts`. Of the three tests
+      // routed here, it is the only parser consumer.
+      { from: "app/test/select-task-detail.test.ts", to: LIB_PARSER, package: PARSER_PKG },
     ]);
     const c10 = derived.edges.find((e) => e.from === "C-10" && e.to === "C-06");
     expect(c10?.relation).toBe("confirmed");
@@ -2110,7 +2236,17 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // T-033's, so the lane could not have forecast it — and the count
     // moving here while the relation holds is exactly what this body was
     // written to make visible.
-    expect(c05?.observedCount).toBe(14);
+    // 14 -> 1 AT T-149, AND THE GUARD THIS COMMENT DESCRIBES IS WHAT KEEPS
+    // THE ROW HONEST AT THE OTHER END OF ITS RANGE. Thirteen of the
+    // fourteen parser consumers under C-05 were tests, and every one has
+    // been routed to the component it exercises. The survivor is
+    // `board-truth.test.tsx`, which stays with C-05 because it mounts
+    // `App.tsx` — so the shell's declared dependency on the parser now
+    // rests on ONE file edge, and if that file ever moves this row goes
+    // `planned 0` rather than disappearing quietly. Derived from
+    // `graph.json`'s own package-seam edges filtered through the routed
+    // ownership map, not read off a failure diff.
+    expect(c05?.observedCount).toBe(1);
   });
 
   it("drift flags land on the right nodes", () => {

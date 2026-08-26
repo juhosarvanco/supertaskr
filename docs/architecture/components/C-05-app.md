@@ -6,7 +6,29 @@ paths:                    # the shell/umbrella only — panes and plumbing own t
   - app/index.html
   - app/vite.config.ts
   - app/vitest.config.ts
-  - app/test/**
+  # THE SIXTEEN app/test/** FILES THAT EXERCISE THE SHELL, NAMED ONE BY
+  # ONE (T-149). The catch-all `app/test/**` that stood here until then
+  # is gone on purpose — see "WHY THE TEST DIRECTORY IS NOT A GLOB HERE"
+  # below. Every one of these mounts `App.tsx` or a
+  # `components/shell/**` component, or is the test program's own
+  # plumbing; nothing here is routable without pointing some other
+  # component back at the shell.
+  - app/test/accelerators.test.tsx
+  - app/test/board-truth.test.tsx
+  - app/test/crescendo-dom.test.tsx
+  - app/test/cross-file-rows.test.tsx
+  - app/test/genesis-entry.test.tsx
+  - app/test/genesis-mount.test.tsx
+  - app/test/genesis-pane-boundary.test.tsx
+  - app/test/genesis-switch-truth.test.tsx
+  - app/test/map-shell-dom.test.tsx
+  - app/test/node-builtins.d.ts
+  - app/test/node-builtins-write.d.ts
+  - app/test/project-shell.test.tsx
+  - app/test/shell-frame.test.tsx
+  - app/test/startup-screen.test.tsx
+  - app/test/watcher-truth.test.tsx
+  - app/test/window-manifest.test.ts
   - app/src/App.tsx
   - app/src/main.tsx
   - app/src/index.css
@@ -97,3 +119,51 @@ already CONFIRMED — **the claim adds nothing this registry did not
 already carry**, which is the test that separated it from the two
 candidates that looked closer. A declaration that LENGTHENS the relation
 table has picked the wrong owner.
+
+**WHY THE TEST DIRECTORY IS NOT A GLOB HERE (T-149).** This component
+carried `app/test/**` from T-003 until 2026-08-27, and by the end that
+one line was **49 of its 64 indexed files — 77% of the component**, so
+`app-shell` was three-quarters a test umbrella and **20 of 34 planned
+cards had to claim it**. A map card and an interview card collided for no
+reason but a shared glob, and `T-137` shipped honestly green while the
+three dogfood assertions its own regen moved sat in `app/test/**`, which
+its fence could not reach. Each of the 49 is now routed to the component
+whose code it exercises, **and nothing moved on disk**.
+
+**THE CATCH-ALL COULD NOT SURVIVE AS A NEGATED GLOB, AND THAT IS
+MEASURED RATHER THAN PREFERRED.** The obvious cheaper edit is to keep
+`app/test/**` here and subtract the routed files with `!` lines, which
+both matchers support. It does not work, because the FENCE is a different
+layer from the matcher: `normalizeFenceToken` in `lib/parser/src/fence.ts`
+turns `app/test/**` into the domain `app/test` and does not interpret a
+leading `!` at all, so the negations survive as inert junk domains while
+the DIRECTORY claim stands. Driven through the built parser before this
+edit was made, with one file routed to C-12 and negated here:
+
+    compareFences(app-shell, app-map)
+      -> overlapping, witness app/test/map-layout.test.ts
+
+**A negated catch-all leaves every routed test still reserved by
+`app-shell`, so the queue does not move at all** — which is the whole
+deliverable. Only naming the files positively removes the directory
+domain.
+
+**AND WILDCARDS INSIDE A FILENAME ARE WORSE THAN THE CATCH-ALL, NOT
+BETTER.** `app/test/map-*` looks like the tidy middle way and normalises
+to the domain `app/test/map-`, which is a prefix that matches no path
+under the fence's `sharedDomain` rule — so two fences that really do
+collide come back **`disjoint`**. That is the failure `T-111-s3` named:
+a fence answering "no overlap" when it means "I do not know". The
+supported shapes for a `paths:` entry that the fence must reason about
+are a `dir/**` claim and an exact file, and this component now uses only
+the second for `app/test/`.
+
+**THE COST, STATED SO NOBODY REDISCOVERS IT AS A DEFECT.** A NEW file
+under `app/test/` matches no component glob and lands in the D2
+`unmapped` bucket until someone routes it. That is the map correctly
+reporting unclaimed territory — the same reading `tests/agent_runner.rs`
+and `graph_budget_bench.rs` each got — and it is **opt-in, never
+inferred**, the rule C-01 already states about `non_code:`. The card
+adding a test now fences its own component's slug plus that component's
+own registry FILE (`docs/architecture/components/C-12-map-pane.md`, not
+the directory), and two such cards stay disjoint.

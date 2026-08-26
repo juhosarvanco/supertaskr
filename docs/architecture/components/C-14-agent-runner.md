@@ -7,6 +7,10 @@ paths:
   - app/src-tauri/src/bin/fake_agent.rs   # T-010 settlement, see below
   - app/src-tauri/tests/agent_runner.rs   # T-010 settlement, see below
   - app/src/lib/agent-store.ts
+  # The TS half's own test, routed out of C-05's test umbrella at
+  # T-149 — the same rule the two Rust files above already took: a
+  # component's test belongs to the component it exercises.
+  - app/test/agent-store.test.ts
 depends_on: [C-10]
 decisions: [ADR-003, ADR-012, ADR-017]
 status: auto
