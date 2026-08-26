@@ -769,7 +769,20 @@ REPORTING A REAL GAP AND `T-141` IS THE LANE CLOSING IT.**
 tools/e2e]` and `T-141` holds `[docs/architecture/components/,
 app-shell]`. Read `git worktree list --porcelain` — or run `brief.mjs
 --state`, which stamps the reading with a clock — rather than any table
-here. **`T-135` is `status: building` with no lane and Half B
+here.
+
+**BUT DO NOT READ THAT COMMAND'S `FREE` COLUMN AS A DISPATCH VERDICT.**
+It is keyed by SLUG, and **two slugs can name the same component**:
+`C-11` declares `touch_slugs: [app-shell, app-board]`, so with
+`app-shell` held the ledger prints **`app-board: FREE`** and the two
+fences intersect at C-11. This is not hypothetical — on the night of
+2026-08-26 it was the *only* candidate left on the board (`T-112`,
+`blocked_by: [T-111]` with T-111 `done`, `touches: [app-dispatch,
+app-board]`, both columns reading FREE) and it overlaps the live
+`T-141`. **Ask `fence.ts` for a verdict on the two CARDS; the ledger
+answers a different question than the one a dispatcher is asking.**
+`T-143` collects this with two sibling mechanisms and `T-142` is the
+general shape. **`T-135` is `status: building` with no lane and Half B
 unwritten**, waiting on @human's look at its §6 and §7, an
 architect-widened fence including `docs/decisions/`, and the TS half of
 §7's floor rule. **It must not be re-dispatched whole: Half A is on main
