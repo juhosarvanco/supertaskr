@@ -777,7 +777,17 @@ the intent, and `update-ref` is a standing prohibition here.
   not: all **949 reachable commits**, 879 graph-bearing, 77 with a live
   D2, **all 77 inside the same three windows — no fourth instance on any
   branch.** Needs an integrator.
-- **`T-137`** — rework in adversarial verification.
+- **`T-137` — APPROVED at `d812de5`.** Verifier reproduced R1 by driving
+  the product's own `readDispatchOrder`: `startable` **23 → 0**,
+  `unfenceable` **0 → 23**, and "disjoint from every live lane" now
+  appears **0 times across all 302 rulings**. 11 of 12 arms red. Needs an
+  integrator.
+
+**AND THE THREE ARE NOW ORDERED BY ONE ANOTHER.** `T-137-s11` and main's
+`T-143` are **the same finding filed twice by two hands that could not
+see each other** — T-143 was corrected on main at `80bde23`, after
+T-137's tip. **That is T-137's own subject happening to T-137.** Merge
+them at the integrator's seat rather than carrying both.
 
 Still owed after each merge: the suite in the integration checkout, the
 checkpoint as a SEPARATE commit, `git worktree remove`, `prune`.
