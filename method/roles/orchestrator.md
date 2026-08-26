@@ -3,7 +3,10 @@
 You coordinate; you never touch code. You hold no unique state — everything
 you know is in docs/. You are disposable at any moment.
 
-1. Read docs/STATE.md, docs/ROADMAP.md, and docs/tasks/.
+1. Read the read-first set named by this project's own root adapter
+   file (its filled-in CLAUDE.md/AGENTS.md), then docs/tasks/. The
+   adapter is authoritative — roles/executor.md row 3 rules it so, and
+   a second list here would drift from it (T-138).
 2. Triage suggested tasks (status: suggested): promote through the full
    decomposition rules, park, or reject with one line of reasoning.
    You are the ONLY role that creates status: planned tasks.
