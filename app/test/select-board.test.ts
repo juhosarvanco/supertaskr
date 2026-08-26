@@ -794,15 +794,38 @@ const readRepo = (rel: string): string => readFileSync(join(REPO_ROOT, rel), "ut
 /** The statuses whose cards carry no disposition reason at all. */
 const NO_REASON_STATUSES = new Set<TaskStatus>(["done", "merging", "parked"]);
 
-/** This repository's live board, through the real parser. Flat
+/**
+ * This repository's live board, through the real parser. Flat
  * `docs/tasks/*.md` only — `rejected/` is excluded from the board by
- * design (CONVENTIONS' suggestion-triage bullet). */
+ * design (CONVENTIONS' suggestion-triage bullet).
+ *
+ * **THE SHAPE IS `architecture-dogfood.test.ts`'s, AND THAT IS NOT
+ * COSMETIC.** The DOCS GATE derives which suites READ which docs paths by
+ * scanning for a docs-shaped literal it can resolve against a root the
+ * file holds. A first draft of this function looped
+ * `for (const dir of ["docs/tasks", …])` and joined with
+ * `dir + "/" + name`, so every literal sat behind a loop variable: the
+ * scanner saw a file holding the repository root and forming NO docs path
+ * it could link, which is `unaccountedRootAnchors()`'s residual —
+ * `docs-input-gate.spec.ts` went 4 red and the gate exited 1 on a
+ * code-only path list. The reads were real either way; only the scanner's
+ * view of them changed. Written this way the gate DERIVES this suite as a
+ * `docs/tasks` + `docs/architecture/components` reader, which is the true
+ * answer, and nothing has to be argued into a ledger outside this fence.
+ */
 function liveBoard(): ProjectParseResult {
   const files: Array<{ path: string; content: string }> = [];
-  for (const dir of ["docs/tasks", "docs/architecture/components"]) {
-    for (const name of readdirSync(join(REPO_ROOT, dir))) {
-      if (!name.endsWith(".md")) continue;
-      files.push({ path: dir + "/" + name, content: readRepo(dir + "/" + name) });
+  for (const name of readdirSync(join(REPO_ROOT, "docs/tasks"))) {
+    if (name.endsWith(".md")) {
+      files.push({ path: `docs/tasks/${name}`, content: readRepo(`docs/tasks/${name}`) });
+    }
+  }
+  for (const name of readdirSync(join(REPO_ROOT, "docs/architecture/components"))) {
+    if (name.endsWith(".md")) {
+      files.push({
+        path: `docs/architecture/components/${name}`,
+        content: readRepo(`docs/architecture/components/${name}`),
+      });
     }
   }
   files.push({ path: "docs/ROADMAP.md", content: readRepo("docs/ROADMAP.md") });
