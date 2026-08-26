@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 2
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [method/adapters/]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @T-145 — build 9a80c8a
 verified_by:
 review:
 ---
@@ -83,3 +83,121 @@ Per `T-142`, prove the check can fail before believing it: remove a
 document from the sentence in a scratch worktree, watch it RED, restore,
 watch it GREEN. **A guard whose positive control was never run is the
 same shape as the defect it is guarding against.**
+
+## Implementation notes
+
+Built at lane `task/T-145-lane`, base `d45d841`, fix commit `9a80c8a`.
+Every figure below is measured at this lane's own ref, not carried.
+
+### What changed, and the three judgement calls
+
+**1. How generic the "what each document answers" paragraph is.** It
+reads *"ROADMAP is what the PRODUCT does"*, not this repository's *"what
+this app DOES"*. That is not a paraphrase invented here — it is the
+wording `method/roles/orchestrator.md:7` already uses, which makes the
+template agree with the role file a session is dispatched with instead of
+offering it a second spelling. "App" is also wrong for a library, a
+service or a CLI, and the template serves those too. The T-138 citation
+that closes this repository's own version is dropped: a task id from
+another project's tracker is noise in a fresh repo.
+
+**2. The third paragraph is CARRIED, with the project-specific half
+inside an angle-bracket placeholder.** It now reads:
+
+    Before concluding that a feature is missing, check whether it already
+    exists: <the command that prints this project's executable record of
+    what it does — spec or test names, which cannot go stale the way
+    prose can>.
+
+The card allowed either omission or a marked placeholder. Placeholder,
+for three reasons. **(a)** The instruction is generic and the pointer is
+not, so only the pointer needs bracketing — omitting the whole paragraph
+throws away the generic half to protect the specific half. **(b)** The
+template already uses exactly this convention for `<project name>` and
+`<One sentence: what this repo is.>`; a third one is the same shape a
+filler already recognises, and an unfilled `<...>` is visible on the
+first read, whereas a shipped `tools/e2e/tests/` path is a lie that reads
+as truth in a project that has no such directory. **(c)** The lesson is
+the whole reason this card exists — T-138 spent a working day rebuilding
+a belief ROADMAP already held — and a template that teaches the read-first
+SET without the habit that makes the set useful has kept the cheaper half.
+
+**3. What the pin should assert — decided, proven, and NOT LANDED.** See
+below; this is the criterion that did not fit the fence.
+
+Two things the card warned would look like defects were left alone: the
+one-line HTML-comment difference between the two files (verified by `diff`
+after — the only differing line is line 1, and `tail -n +2` of the two
+files is byte-identical, `diff` exit 0), and the template's thinness.
+
+### THE PIN DOES NOT FIT THIS FENCE, AND THAT IS A DISPATCH ERROR
+
+The card says *"it must not land unpinned either"* and fences the lane to
+`method/adapters/`, which is two markdown files. **Every place a pin
+could live is outside it**, and a new file INSIDE `method/adapters/` is
+not an escape: `the_snapshot_table_covers_every_method_scaffold_file` in
+`app/src-tauri/src/agent/kit.rs` walks that directory and reds
+`cargo test` for any file not in `KIT_FILES`. **The fence permits the
+write; the suite forbids it.**
+
+Per `lane-protocol.md` rule 5 and `roles/executor.md`, an executor whose
+work reaches outside its own `touches:` has found a dispatch error and
+not a licence. Routed rather than built:
+
+- **`T-145-s1`** — the pin, with the property, the argument for it, and
+  the positive control already run. Fence: `app-agent`.
+- **`T-145-s2`** — whether a method version bump is owed, which `T-104`
+  already ruled is triage's call BEFORE dispatch and which this card's
+  dispatch did not make. Fence: `[method/interview/plan-interview.md,
+  docs/CONVENTIONS.md, app-agent]` — the three-file bump, none of it here.
+
+### The drill (T-142), and what it measured
+
+Run in a DETACHED SCRATCH WORKTREE outside the repository
+(`git worktree add --detach`), removed afterwards so it never appears in
+the lane list other lanes derive fences from.
+
+| state | templates sha256 (CLAUDE / AGENTS) | pin | `cargo test` |
+|---|---|---|---|
+| fixed | `4b7f1bbf199d89ed…` / `268cca0371bf71a3…` | exit **0** | — |
+| ROADMAP dropped, ONE side | `5cfdeabad91e555f…` / unchanged | exit **1**, arms 1 AND 2 both name it | exit **0**, 18 green result lines, 0 failures |
+| restored | `4b7f1bbf199d89ed…` / `268cca0371bf71a3…` | exit **0** | — |
+| ROADMAP dropped, BOTH sides | — | exit **1**, arm 2 SILENT, arm 1 alone | — |
+| restored | `4b7f1bbf199d89ed…` / `268cca0371bf71a3…` | exit **0** | — |
+
+Both restorations proved by `sha256` byte-identical to the pre-mutation
+hashes AND by an empty `git status --porcelain`.
+
+**THE ROW THAT MATTERS IS THE `cargo test` ONE.** The defect this card
+fixed was re-introduced on purpose and the repository's own Rust suite
+went **green, exit 0**. That is not a prediction about the pin — it is a
+measurement of the hole, and it is why `T-145-s1` is filed rather than
+argued.
+
+**The both-sides row is the second control**: it proves arm 1 is not
+piggybacking on arm 2, and it is the exact shape the defect had for the
+whole of this repository's history.
+
+### Suites, all at `9a80c8a` + these notes
+
+| where | command | exit | result |
+|---|---|---|---|
+| lib/parser | `npx vitest run` | 0 | 290 passed / 13 files |
+| lib/parser | `npx tsc --noEmit` | 0 | — |
+| app | `npm run build` | 0 | — |
+| app | `npm test` | 0 | 1013 passed / 47 files |
+| app/src-tauri | `cargo test` | 0 | 518 passed, 0 failed |
+| app/src-tauri | `cargo run -p nputer-index -- index --check --root ../..` | 0 | CURRENT — 997202 bytes, 185 files, 2124 symbols, 2039 edges |
+| tools/e2e | `NPUTER_E2E_PORT=15947 npm test` | 0 | 194 passed |
+| tools/e2e | `npm run typecheck` | 0 | — |
+| tools/e2e | `npm run lint:tokens -- --selftest` | 0 | — |
+| tools/e2e | `npm run lint:tokens` | 0 | TOKEN 139 / CONTROL 774 |
+| tools/e2e | `npm run lint:docs` | 0 | 6 root-anchored files, all argued |
+
+**518 / 1013 / 290 / 194** — the same four numbers the last checkpoint
+carries, which is the expected answer for a diff of two method markdown
+files and three task cards.
+
+Port discipline: `1420` was read once with `lsof -nP -iTCP:1420 -sTCP:LISTEN`
+and is held by the human's app (pid 19746, node). The lane ran on **15947**,
+re-probed free immediately before the run.
