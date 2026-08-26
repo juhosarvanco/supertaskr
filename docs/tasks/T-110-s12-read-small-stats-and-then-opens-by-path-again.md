@@ -73,3 +73,7 @@ executor's.
    un-normalised, possibly relative `worktree_path`) as one card rather
    than two — both are "the reader trusts a path more than it should",
    and both were deliberately left out of the third pass.
+
+Absorbs (eleventh triage, 2026-08-26): T-110-s7 T-110-s8 — files removed in this
+commit. Same defect seen from more than one side; this file is the
+survivor because it carries the measurement or the general fix.

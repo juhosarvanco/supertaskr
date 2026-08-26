@@ -86,3 +86,7 @@ side-effect-free as the stat sweep it sits beside.
 Related: `fs::read_to_string` on that path also blocks indefinitely if
 `.nputer/sessions.json` is a FIFO, which would hang the pick. Same
 containment argument, same suggested fix site.
+
+Absorbs (eleventh triage, 2026-08-26): T-123-s9 — files removed in this
+commit. Same defect seen from more than one side; this file is the
+survivor because it carries the measurement or the general fix.

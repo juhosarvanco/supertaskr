@@ -1,7 +1,7 @@
 ---
 id: T-135-s1
 title: A cross-package file-level dependent count is not computable from today's graph — the package.path seam resolves at COMPONENT granularity only, and both available file-level answers are wrong
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-135
 touches: [crate-index]
 ---
@@ -44,3 +44,7 @@ own determinism story, and it changes what `arch` and `arch drift` observe
 as well — the same seam feeds their component edges. The `arch blast`
 output above is the honest interim and costs nothing if this is never
 taken.
+
+## PARKED — eleventh triage, 2026-08-26
+
+Real and still true; not now. **UN-PARK WHEN:** a consumer needs a file-level cross-package answer — Half B of `T-135` is the candidate. Its own text calls the current output the honest interim that costs nothing if never taken.

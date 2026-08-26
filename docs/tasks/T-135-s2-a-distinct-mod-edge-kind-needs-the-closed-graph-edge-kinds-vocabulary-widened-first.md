@@ -1,7 +1,7 @@
 ---
 id: T-135-s2
 title: A distinct `mod` edge kind would need GRAPH_EDGE_KINDS widened FIRST — the vocabulary is closed, the reader skips an unknown kind while emitting a parse issue, and `arch` filters on `"import"`
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-135
 touches: [app-map, crate-index]
 ---
@@ -42,3 +42,7 @@ added edge objects, 0 removed and 0 changed in place (measured at
 
 **Do not take this without a caller.** Nothing in the tree asks the
 question today.
+
+## PARKED — eleventh triage, 2026-08-26
+
+Real and still true; not now. **UN-PARK WHEN:** the first thing that needs to tell a `mod` dependency from a `use` one. Its own last line is the park: do not take this without a caller, and nothing in the tree asks the question today.

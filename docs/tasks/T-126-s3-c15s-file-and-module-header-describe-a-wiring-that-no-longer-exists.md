@@ -96,3 +96,7 @@ pins `derived.findings` and the whole relation table as exact literals, so
 the row moves either way: with the declaration it becomes a
 **confirmed** `C-05 -> C-15` row, without it a **fifth D1**. Whoever takes
 this reconciles that suite in the same commit — changed, never loosened.
+
+Absorbs (eleventh triage, 2026-08-26): T-110-s9 — files removed in this
+commit. Same defect seen from more than one side; this file is the
+survivor because it carries the measurement or the general fix.

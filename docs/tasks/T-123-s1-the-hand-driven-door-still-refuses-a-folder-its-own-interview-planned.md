@@ -51,3 +51,7 @@ in `kickoff`'s own body naming this finding, on the T-070-s5 precedent.
 **FENCE**: `[app-agent]` alone if the answer is "open it on the same
 rule"; add `app-interview` if `HandDrivenBlock`'s copy needs to change
 with it.
+
+Absorbs (eleventh triage, 2026-08-26): T-123-s4 — files removed in this
+commit. Same defect seen from more than one side; this file is the
+survivor because it carries the measurement or the general fix.

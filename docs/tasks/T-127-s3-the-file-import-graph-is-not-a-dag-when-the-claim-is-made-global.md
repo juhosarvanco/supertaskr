@@ -1,7 +1,7 @@
 ---
 id: T-127-s3
 title: The file import graph is not a DAG once the claim is made global — one SCC of four files lives inside C-07, it is idiomatic Rust rather than a defect, and no standing sentence says which
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-127
 ---
 
@@ -66,3 +66,7 @@ view is skewed in both directions at once.
 `[crate-index]` if a cycle report is added to `nputer-index`;
 `[docs/tasks/]` alone if the answer is the corrected sentence. Read
 beside `T-126-s4` and `T-010-s6`.
+
+## PARKED — eleventh triage, 2026-08-26
+
+Real and still true; not now. **UN-PARK WHEN:** the first card adds a cycle report to `nputer-index`, or the next repository-wide file-level DAG claim. Correctly scoped as fix-the-SENTENCE: the SCC is idiomatic Rust inside C-07 and its drift is clean.

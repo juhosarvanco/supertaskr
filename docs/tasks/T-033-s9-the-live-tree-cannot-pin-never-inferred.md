@@ -1,7 +1,7 @@
 ---
 id: T-033-s9
 title: The live registry cannot pin "non_code is never inferred" — every D3 on this tree is flagged, so the inferring mutant survives both dogfood fixtures
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-033
 ---
 
@@ -55,3 +55,7 @@ how the coverage disappeared without anybody choosing to remove it.
   that a future declared-before-built component restores live coverage for
   free. Defensible; the risk is that the next executor reads the live
   fixture as coverage, which is the risk this file exists to record.
+
+## PARKED — eleventh triage, 2026-08-26
+
+Real and still true; not now. **UN-PARK WHEN:** the next card that edits either dogfood fixture — it takes the two-line comment with it. Still true (only C-01 and C-11 carry `non_code:`), and the property is pinned twice in unit fixtures, so this is a warning rather than a hole.

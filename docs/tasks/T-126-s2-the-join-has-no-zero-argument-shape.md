@@ -1,7 +1,7 @@
 ---
 id: T-126-s2
 title: The join is the half F-04 actually renders and it has no zero-argument shape — the board's stamps are parsed in TypeScript and a joining command would have to take them inbound
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-126
 ---
 
@@ -51,3 +51,7 @@ disposition from the lane set and is the first consumer either way.
 `[app-dispatch]` for the command, plus `[app-shell]` for its
 registration, plus `[lib-parser]` or `[crate-index]` if the board moves
 to Rust. It wants a ruling before it wants a fence.
+
+## PARKED — eleventh triage, 2026-08-26
+
+Real and still true; not now. **UN-PARK WHEN:** a consumer needs to render the four lane states — i.e. `T-111`/`T-112`. Its own text says it wants a ruling before it wants a fence, and nothing is broken: `join_lanes` is compiled and webview-unreachable.

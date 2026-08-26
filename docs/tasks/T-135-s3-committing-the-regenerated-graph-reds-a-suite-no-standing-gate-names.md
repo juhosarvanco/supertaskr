@@ -55,3 +55,7 @@ committing the regenerated graph, and reconcile
 GENERAL case is a sentence in the GRAPH REGEN bullet naming the DOCS GATE
 as owed on the checkpoint's own graph commit; that is `docs/CONVENTIONS.md`
 and belongs to whoever takes it.
+
+Absorbs (eleventh triage, 2026-08-26): T-129-s4 — files removed in this
+commit. Same defect seen from more than one side; this file is the
+survivor because it carries the measurement or the general fix.

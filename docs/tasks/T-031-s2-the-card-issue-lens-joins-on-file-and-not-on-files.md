@@ -1,7 +1,7 @@
 ---
 id: T-031-s2
 title: The card-issue lens joins on `file` and skips every issue that carries `files`
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-031
 ---
 
@@ -49,3 +49,7 @@ change:
 The narrow version is worth considering on its own: join `files` only
 for `space: 'task'`, which is the one case where every named path is a
 card.
+
+## PARKED — eleventh triage, 2026-08-26
+
+Real and still true; not now. **UN-PARK WHEN:** C-08 declares C-10 for any other reason — the helper import is then free and the objection evaporates. The narrow fix today buys a new undeclared edge exactly when the registry has been driven to one undeclared row.

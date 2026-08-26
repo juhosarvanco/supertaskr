@@ -151,3 +151,7 @@ Listed in the card's own order, with the fixture each needs:
    already consumes `ParseIssue[]` through `issuesByFile`.
 7. **`done`/`parked` carry no reason at all** — with the positive control
    that a card which SHOULD carry one does.
+
+Absorbs (eleventh triage, 2026-08-26): T-110-s3 T-110-s13 — files removed in this
+commit. Same defect seen from more than one side; this file is the
+survivor because it carries the measurement or the general fix.

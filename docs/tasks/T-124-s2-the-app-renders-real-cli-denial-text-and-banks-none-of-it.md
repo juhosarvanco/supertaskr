@@ -1,7 +1,7 @@
 ---
 id: T-124-s2
 title: The app renders the CLI's real permission text and banks none of it — this card's own evidence survives only because a human retyped it off the screen
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-124
 ---
 
@@ -78,3 +78,7 @@ ARCHITECTURE-level addition to C-14's documented four-then-eight. T-124
 did not build any of this: none of it is on its acceptance criteria, and
 its own card's strongest instruction is that a change made to look
 productive is worse than no change.
+
+## PARKED — eleventh triage, 2026-08-26
+
+Real and still true; not now. **UN-PARK WHEN:** the next @human real-CLI look. Take its own option 3 — a protocol step at the look — which costs nothing; only if that fails does the app-side capture earn a card, and options 1/2 are C-14 additions competing with F-04.

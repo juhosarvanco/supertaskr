@@ -51,3 +51,7 @@ forget it**.
 `[docs/CONVENTIONS.md, tools/e2e]` — the bullet and the parity spec must
 move together. `tools/e2e` was held by `T-130` at `afe23c1`; re-derive
 before dispatch rather than trusting this sentence.
+
+Absorbs (eleventh triage, 2026-08-26): T-133-s1 — files removed in this
+commit. Same defect seen from more than one side; this file is the
+survivor because it carries the measurement or the general fix.

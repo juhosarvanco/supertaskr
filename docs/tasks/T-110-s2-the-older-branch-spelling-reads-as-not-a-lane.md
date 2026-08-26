@@ -1,7 +1,7 @@
 ---
 id: T-110-s2
 title: The older tNNN- branch spelling reads as "not a lane", and whether that is right is a ruling nobody has made
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-110
 ---
 
@@ -45,3 +45,7 @@ NOT DO" list), so whoever changes the grammar meets this question in the
 file rather than in a card.
 
 Fence: `[app-dispatch]` — the grammar and its tests are both inside it.
+
+## PARKED — eleventh triage, 2026-08-26
+
+Real and still true; not now. **UN-PARK WHEN:** the first worktree appears on a `tNNN-` branch, or the day the lane list is rendered to a human (`T-111`/`T-112`). A ruling request with no forcing event: `lanes.rs` accepts only `task/T-<digits>-<slug>`, 37 of 69 branches carry the older spelling, and no worktree has ever held one.

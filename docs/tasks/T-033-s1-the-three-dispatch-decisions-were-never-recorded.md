@@ -1,7 +1,7 @@
 ---
 id: T-033-s1
 title: T-033 was dispatched without the three decisions its own card says must be recorded before dispatch
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-033
 ---
 
@@ -61,3 +61,7 @@ own stated dispatch preconditions, and `status: building` is not evidence
 that they were met. The cost was measured this time — the lane held
 `app-shell` and `docs/architecture/components/` while idle, blocking two
 other cards, until the delay was noticed by hand.
+
+## PARKED — eleventh triage, 2026-08-26
+
+Real and still true; not now. **UN-PARK WHEN:** the second observed instance, or the moment `T-111`/`T-137` ships a dispatch-time reader that could carry the check for free. Its three rulings are discharged; the residual is that nothing verifies a card own stated dispatch preconditions.

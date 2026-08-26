@@ -1,7 +1,7 @@
 ---
 id: T-123-s2
 title: Getting back into your own interview costs a native dialog and a re-pick of the folder you already have open
-status: suggested
+status: parked
 suggested_by: executor claude-opus-5 @T-123
 ---
 
@@ -49,3 +49,7 @@ screen is a dead end"* is already satisfied without it.
 **FENCE**: `[app-shell]` for the handler and the label;
 add `app-board` if the answer is a new control in the board's own
 header rather than a change to the shell's.
+
+## PARKED — eleventh triage, 2026-08-26
+
+Real and still true; not now. **UN-PARK WHEN:** the first card touches the board header — `T-111` or `T-112`. Cheap and true (`start_genesis_here` exists and takes no path), but a design question about a label with no forcing event.

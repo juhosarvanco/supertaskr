@@ -30,3 +30,7 @@ difference is that its row hardcodes `"task/T-1234567-x"` and
 the other two rows the same treatment: one literal input and one literal
 expected length each, beside the derived rows rather than instead of
 them. `app/src-tauri/src/dispatch/lanes.rs`, fence `[app-dispatch]`.
+
+Absorbs (eleventh triage, 2026-08-26): T-110-s6 T-110-s10 T-110-s11 — files removed in this
+commit. Same defect seen from more than one side; this file is the
+survivor because it carries the measurement or the general fix.

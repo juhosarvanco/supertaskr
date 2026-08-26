@@ -53,3 +53,7 @@ and step 5b gains only a pointer**, which is the same split
 Fence: `[method/roles/orchestrator.md]`, or `[docs/CONVENTIONS.md]` if
 the split above is taken. Read beside `T-108-s3`, which is the other
 open card about `method/roles/` under a path-granular fence.
+
+Absorbs (eleventh triage, 2026-08-26): T-132-s3 — files removed in this
+commit. Same defect seen from more than one side; this file is the
+survivor because it carries the measurement or the general fix.

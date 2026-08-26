@@ -93,3 +93,7 @@ without editing it. The positive control this project asks of any new
 rule applies: **state it so that the ordinary case — an atomic
 stamp-and-commit under a running integrator, which rule 4 explicitly
 blesses — still passes.**
+
+Absorbs (eleventh triage, 2026-08-26): T-120-s1 — files removed in this
+commit. Same defect seen from more than one side; this file is the
+survivor because it carries the measurement or the general fix.
