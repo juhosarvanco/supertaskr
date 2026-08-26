@@ -904,3 +904,14 @@ have timed out.
 **Nothing in this verdict's own commits moved an assertion** — the four
 suites return the same counts at `4b985be` as at `d437f5a`, which is what
 makes the APPROVED above safe to have written before they ran.
+
+**AND ONE FIGURE IN THIS VERIFICATION'S OWN COMMIT MESSAGE IS WRONG,
+CORRECTED HERE RATHER THAN AMENDED AWAY.** `d86eb5d`'s message says the
+pre-commit parse ran *"over 320 cards"*. It was **318** — measured, at
+that tree, immediately before the commit: 316 at `d437f5a` plus the two
+cards this verdict filed. The issue count it quotes (**0**) and the
+`lint:docs` exit (**0**) are both right. Recorded because this verdict
+spends a section on other people's figures and the same rule binds it:
+**a commit message is not a code input, so nothing will ever red for
+this — which is exactly why it has to be written down instead of fixed
+by rewriting the commit that carries it.**
