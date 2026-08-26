@@ -381,6 +381,20 @@ test("fenced and indented blocks are blanked but LINE NUMBERS survive", async ()
   // every reported line number.
 });
 
+test("the reported line indexes the FILE, frontmatter included", async () => {
+  // FOUND BY THE DRILL, NOT ANTICIPATED. Mutant M18 shifted auditCard's
+  // reported line by one and the whole file stayed green at 24 of 24: the
+  // body above drives `proseOnly` directly, over array indices, so it
+  // never saw the FILE offset that a reader actually needs. An off-by-one
+  // sends every author to the wrong line of their own card.
+  const text = `---\nid: T-999\nstatus: planned\n---\n\nfiller\n${T141_SENTENCE}\n`;
+  const lines = text.split("\n");
+  const expected = lines.indexOf(T141_SENTENCE) + 1;
+  expect(expected, "the sentence really is on that line of the fixture").toBe(7);
+  const figures = auditCard(text, derivedTexts(ctx()));
+  expect(figures.map((f) => f.line)).toEqual([expected]);
+});
+
 test("a code transcript is not audited, because a command carries its own provenance", async () => {
   const c = ctx();
   const derived = derivedTexts(c);
