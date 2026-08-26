@@ -1164,3 +1164,304 @@ merge and regen forecasts hold at refs the lane never saw, and every suite
 and gate I could run is green. **The rejection is that four pieces of
 shipped text state things that are not so, and that criterion 4's own two
 headline reason clauses are encoded rather than defended.**
+
+## Implementation notes — THE FIX PASS AFTER REJECTION (2026-08-26)
+
+Executor `claude-opus-5 @T-111`, **a FRESH HAND as
+`method/tasks/TASK-FORMAT.md` requires of a rejected card** — this seat
+did not write the two lanes above and deliberately is not the session that
+did. Lane `task/T-111-board-dispatchable`, worktree
+`/Users/ujju/Projects/nputer-T-111`, rejected tip `75b7626` confirmed with
+`git rev-parse`, main `6a6bc87` at the start and unmoved at the end.
+Understanding was confirmed in one paragraph before a file was touched.
+
+**THE TWO LANES' NOTES AND THE VERDICT ARE LEFT BYTE-UNTOUCHED, WITH ONE
+EXCEPTION NAMED IN PLACE**: `edges +48 -3`, which fails its own arithmetic
+against the 1990 printed one line above it. A figure that cannot be true
+is not a record of what a session believed; it is a number the next
+reader quotes.
+
+**THE VERDICT IS RIGHT THAT NOTHING IN THE DERIVATION HAD TO CHANGE.** One
+producer edit was made and it is the one the rejection asks for. Everything
+else is a pin, a title, or a figure.
+
+### THE SIX, EACH WITH THE MUTANT THAT NOW REDS IT
+
+**Every arm below: PRODUCER mutated and never an assertion, substitution
+count asserted `= 1`, mutation read back with `git diff` BEFORE the run,
+exit read from `$?` unpiped, the `Tests N failed | M passed (T)` line
+derived as well as the exit, each run swept for `Cannot find module` /
+`Transform failed` / `Failed to load` at ZERO, and restored with
+`git checkout --` and proved by sha256 against `git show HEAD:<path>` with
+`git status --porcelain` EMPTY.** Detached worktree at `/private/tmp/t111p`
+— **19 characters**, against `T-133-s5`'s bracketed 116–128 — with its own
+install and `npm run build` first. Baseline **1013/1013, exit 0**.
+
+| # | repair | arm | mutation | result | kills |
+|---|---|---|---|---|---|
+| 1 | the parser's sentence reaches the reader | **A31** | `if (said.length === 0)` -> `>= 0` (the quote never appends) | **exit 1**, 2 failed / 1011 passed | 2 |
+| 2 | the COARSE clause is TEXT | **A20b** | `clash.viaComponents.length === 0` -> `>= 0` (clause deleted) | **exit 1**, 1 failed / 1012 | 1 |
+| 2 | …and it is not unconditional | **A20c** | the same test -> `< 0` (clause always appended) | **exit 1**, 1 failed / 1012 | 1 |
+| 2 | the NARROWER shared domain | **A09** | `pa.length >= pb.length` -> `<=` | **exit 1**, 1 failed / 1012 | 1 |
+| 2 | component ids are sorted | **A28** | `.sort(byText)` dropped in `expandTouch` | **exit 1**, 1 failed / 1012 | 1 |
+| 2 | …and so is the clash's copy | **A28b** | `.sort(byText)` dropped in `fenceClashes` | **exit 1**, 3 failed / 1010 | 3 |
+| 6 | `disagrees` is read | **A24** | `row.state !== "live"` -> `false` | **exit 1**, 1 failed / 1012 | 1 |
+| 5 | the renamed live-board body still kills | **A32** | `blockerStatus === "done"` -> `"verifying"` | **exit 1**, 2 failed / 1011 | 2 |
+
+**EIGHT ARMS, EIGHT REDS, 0 STARTUP ERRORS, 0 ARMS RESTORED SHORT.** Six of
+the eight kill exactly one body, which is the uniqueness measurement rather
+than the claim. **A20c IS THE POSITIVE CONTROL A NEGATIVE ASSERTION NEEDS**:
+the new body asserts three `not.toContain`s on a path-only clash, and
+without an arm that makes the clause appear unconditionally those three are
+satisfied by a producer that never emits it at all.
+
+**1. THE PIN'S TITLE ASSERTED THE OPPOSITE, AND ITS FIXTURE COULD NOT HAVE
+SHOWN THE HINT EITHER — WHICH THE VERDICT DID NOT NAME.**
+`blockedReason` now quotes `parserSaid` VERBATIM and ATTRIBUTED
+(`The parser says: "…"`), so the near-miss reaches the rendered reason
+instead of stopping at a field. The title drops *"never a second one"*
+because that clause is still false and SHOULD be: the board's ruling
+sentence — *a defect in this card, not a reason to wait* — is what the
+disposition/reason split owes a reader, and it belongs beside the quote.
+**AND THE FIXTURE MOVED.** It declared `T-900` and dangled on `T-90`;
+`idSlotKey` strips only LEADING zeros, so those are different slots and
+the parser emitted **no near miss at all**. The body could not have shown
+the hint reaching the reason even with the render present. It is `T-01`
+beside a declared `T-001` now — T-076's own example and the pair the
+verdict probed with — and `nearMiss` is asserted to be exactly
+`["T-001"]`. A second body is the DISCRIMINATING control: `T-999` has no
+padding twin, so the reason must quote a message carrying no such clause
+and must NOT contain "zero padding". Without it, "the reason says zero
+padding" is equally explained by this file composing that clause itself.
+
+**3. THE BOOT GATE — RUN, NOT DECLARED.** It fires: 1 of 8 paths is under
+`app/src/**`. `NPUTER_BOOT_PORT=15771 npm run boot:check` from `tools/e2e/`,
+**exit 0**, and both `[nputer]` lines:
+
+    [nputer] project folder: /Users/ujju/Projects/nputer-T-111
+    [nputer] window "main" created
+
+Port **15771** `lsof`-probed at **zero rows** immediately before binding and
+**zero rows** after; the check stopped its own captured process group with
+SIGTERM and no `pkill` was issued. **Port 1420 was read and never touched**:
+`lsof -nP -iTCP:1420 -sTCP:LISTEN` at **10:34:59Z** gives node pid **46532**,
+`lsof -a -p 46532 -d cwd` puts its cwd at `/Users/ujju/Projects/nputer-app/app`
+— a different checkout, so `integrator.md` rule 1 does not bind here.
+
+**4. THE RANGE, AT THE REF THIS SHIPS ON, AND THE NOTES COMMIT CANNOT
+INVALIDATE IT.** The rejection's item 4 is a range written INTO the commit
+that added five paths to it. **The repair is structural rather than
+careful**: every path was committed FIRST, the range derived at that tip,
+and this section then edits only files ALREADY IN THE SET — so the path set
+is a fixed point across the commit that records it, and that is re-derived
+below rather than asserted.
+
+    ref 6a6bc87 (main, read at the derivation)   tip c72e97a
+    git merge-tree --write-tree 6a6bc87 c72e97a  -> exit 0 READ FIRST, tree d910cbd9…
+    git diff --name-only 6a6bc87 <TREE>              ->  8   THE PRESCRIBED PRE-MERGE FORM
+    git diff --name-only 6a6bc87...c72e97a (THREE)   ->  8   AGREES, AND THE SETS ARE IDENTICAL
+    git diff --name-only 6a6bc87..c72e97a  (TWO, FORBIDDEN) -> 30
+    git diff --name-only 15a963d..6a6bc87 (main's advance)  -> 22
+
+`diff` over the two sorted lists is **exit 0, EMPTY**; `comm -12` against
+main's 22 is **EMPTY**; **8 + 22 = 30** is the arithmetic proving the
+forbidden form's overstatement is pure left-endpoint drift. Ratio **3.75x**
+— the ratio is weather, the left endpoint is the signal. **The gate
+denominators DERIVED from that list, never from a remembered one**: DOCS
+GATE 6 of 8 under `docs/`, GRAPH REGEN 2 of 8 `.ts` outside `docs/`, BOOT
+GATE 1 of 8 under `app/src/**`.
+
+**5. THE RETRACTED WORD IS OUT OF THE SUITE.** Title, comment and variable:
+`THE DECAY IS REAL HERE` -> `LANDED BLOCKERS ARE DECLARED HERE, and the
+derivation asks their status rather than the field`; *"a corpus with no
+stale entries"* -> *"a corpus carrying no such entry"*; `const stale` ->
+`const landed`. **The assertion and its positive control are byte-unchanged
+and arm A32 proves the body still kills.** Swept with `command grep` over
+both files: the only surviving `stale`/`decay` are the `died` body's own
+FORBIDDEN-WORD LIST (which must contain the word to forbid it), this card's
+record of what was retracted, and `board-model.ts` quoting
+`executor.md` row 5's *"prose that goes stale"* — a different sense.
+
+### THE FENCE-RULE DUPLICATION — RULED, AND THE DIVERGENCE MEASURED FIRST
+
+**T-134 merged at `520e93e` and `lib/parser/src/fence.ts` is EXPORTED from
+the parser's index, which `@nputer/parser` already is a dependency for — so
+importing it is a READ inside this fence and never a widening.** The
+question was live and it was decided by measurement, not by the fence.
+
+Both implementations were run over the live board on the merged tree — 27
+distinct raw tokens over 304 cards, and the whole pairwise matrix over the
+147 cards carrying a fence. **`T-111-s5` carries the full table.** The
+short form: **0 of 27 normalisation disagreements**, 3 of 27 token-KIND
+disagreements (`ci`, `docs`, `method`, all on `T-054`), **113 of 10 731
+pairs disagree and every one is a pair against `T-054`**, and the
+narrower-domain rule **AGREES** on `docs` x `docs/CONVENTIONS.md`.
+
+**NOT IMPORTED, FOR THREE REASONS AND NONE OF THEM IS THE FENCE:**
+
+1. `compareFences` has a THIRD verdict, `unusable`, which its own doc
+   forbids folding into `disjoint`. **Criterion 1 closes this card's
+   disposition vocabulary at SIX.** Consuming it faithfully needs a
+   seventh value — a criteria change, which an executor may not make.
+2. `expandFence`'s oracle is `knownPaths`, and its doc calls that *"the
+   ONLY way this module can tell a bare directory token from a word that
+   names nothing"*. **`selectDispositions` is a pure function of the
+   parsed model and has no filesystem.** With the oracle supplied the
+   `docs` pair comes back `overlapping` and the two agree exactly — so
+   **the 113 are an ORACLE GAP, not a rule disagreement**, which is a
+   better answer than either card had.
+3. `FenceWitness` carries `{left, right, path}` and **no component ids**,
+   so the `fenced` reason could no longer say *"both expand through C-11,
+   so this may be the COARSE fence"* — **the clause this card's section
+   (b) demands and whose absence is half of what rejected the first
+   pass.** `T-111-s5` predicted this in advance: *"it needs the
+   provenance, not the verdict."*
+
+**AND THE DIVERGENCE IS DORMANT TODAY, MEASURED RATHER THAN HOPED.**
+`T-054` is the only card in the vocabulary carrying a bare word and it is
+**`done`** — never in flight, never a candidate — so none of the 113 pairs
+can reach a live dispatch. `UNFENCEABLE_PATHS` is dormant too: **no live
+token normalises to `docs/tasks`** (the three `docs/tasks/…` tokens on the
+board are individual FILES, which T-134 permits). **Merging this card puts
+a fourth spelling of the fence rule in the tree until `T-137` lands, and
+that debt is recorded rather than argued away.**
+
+### SUITES AND GATES — every exit from `$?` unpiped, every count derived too
+
+At `c72e97a` in this worktree unless stated.
+
+- **app `npm run build` exit 0** · **`npm test` 1013 / 1013 across 47
+  files, exit 0.** Four new bodies against the rejected tip's 1009.
+- **parser `npx vitest run` 268 / 268 across 12 files, exit 0.**
+- **`cargo test --no-fail-fast` 512 passed / 0 failed / 3 ignored, exit
+  0**, summed over **SIXTEEN** `test result:` lines. NOT owed by the DOCS
+  GATE on this diff; run anyway.
+- **tools/e2e `npm test` — 3 FAILED / 191 passed, exit 1 on the first run;
+  194 passed, exit 0 on the second. BOTH DECLARED, NOTHING DISCARDED, AND
+  THE RED WAS MINE.** Scratch ports **15883** then **15884**, each
+  `lsof`-read at zero rows immediately before binding and zero after. See
+  the NUL section below: all three reds were one edit of mine, and one of
+  them impersonates a known flake (`T-111-s9`).
+- **`lint:tokens` exit 0 clean** — 138 TOKEN files, **778** CONTROL
+  tracked text files · **`lint:docs` exit 0.**
+- **BOOT GATE — FIRES (1 of 8), exit 0**, both lines quoted above.
+- **DOCS GATE — FIRES, exit 1, 6 of 8 paths under `docs/`.** **15 derived
+  readers across 4 suites**, root-anchor account **6**, census 133
+  docs-shaped sites in 23 files, **0 frontmatter issues**, and
+  `app/test/select-board.test.ts` still derives as a `docs/tasks` +
+  `docs/architecture/components` reader — `T-111-s8`'s fix survives this
+  pass. Three suites owed, all three run above.
+- **GRAPH REGEN — FIRES (2 of 8), ASKED AND NOT PREDICTED, TWICE.**
+
+### THE REGEN — AND THE LANE'S FORECAST WAS MEASURED AGAINST A GRAPH THAT NO LONGER EXISTS
+
+**`b0416e9`, main's own T-134 checkpoint, REGENERATED `graph.json`.** The
+committed graph is **`616205de…`**, not the `b742efbe…` both the lane and
+the verdict measured against. So the forecast above is a true statement
+about a baseline that left main, and it was re-measured on the tree that
+actually ships:
+
+    at this lane's tip (committed b742efbe…, 181 files, 1943 edges)
+      files +0 -0 ~2   edges +50 -3   fresh 973930 bytes
+    MERGED with 6a6bc87 (committed 616205de…, 183 files, 1986 edges)
+      files +0 -0 ~2   edges +50 -3   fresh 989181 bytes · 183 files · 2101 symbols · 2033 edges
+
+`1986 + 50 − 3 = 2033` closes. **`npm test` from `app/` with the
+REGENERATED graph in place on the merged tree: 1013 / 1013, exit 0.**
+Restored with `git checkout --`, sha256 read back **`616205de…`**,
+`git status --porcelain` EMPTY. **So the claim holds at the ref that
+matters, and `+48 −3` was wrong at every ref.**
+
+**AND THE FIRST MEASUREMENT OF IT WAS WRONG IN A WAY WORTH ITS OWN CARD.**
+Run with `CARGO_TARGET_DIR` INSIDE the worktree — which is exactly what
+`docs/CONVENTIONS.md`'s POISON DRILL arm (c) instructs — the gate reported
+**`files +3 -0 ~2` and `edges +51 -3`**, the three being
+`.fctarget/debug/build/serde*/out/private.rs`. The walk excludes `target/`
+and nothing else. **`files +0 -0` is the sentence a checkpoint decides on,
+and following a standing rule inverts it.** `T-111-s10`.
+
+### THE MERGE FORECAST, AT A REF NEITHER EARLIER SEAT SAW
+
+Merged into a detached checkout at **`6a6bc87`**: parser build 0, parser
+**290 / 290** (T-134's `fence.test.ts` adds 22 to this lane's 268), app
+build 0, **app 1013 / 1013**, zero startup errors on every run.
+
+### THE TWO NUL BYTES — MINE, AND THEY BEAT EVERY GATE BUT ONE
+
+**I typed a sentinel and the byte that landed was `U+0000`.**
+`toContain(emitted[0]?.message ?? "<NUL>never")`, twice, at bytes 67908 and
+69367 of `select-board.test.ts`. A NUL inside a JS string literal is a
+valid string, so **`npm run build` exited 0, the app suite went 1013/1013,
+and all eight poison arms ran clean over it.** `lint:tokens` P5 is the only
+check in this repository that saw it — that rule's own stated rationale
+arriving on its author.
+
+**IT ANNOUNCED ITSELF ONCE BEFORE I UNDERSTOOD IT AND I MIS-READ THE
+ANNOUNCEMENT.** Arm A31's log came back `Binary file … matches` where the
+test counts should have been, so that arm briefly had **an EXIT with no
+COUNT** — the exact shape this project forbids reading a drill by. It was
+caught because the count was demanded a second time with `grep -a`, not
+because anything failed. **A log that answers "Binary file matches" is a
+measurement that did not happen.**
+
+The sentinel is gone rather than respelled, because it guarded a real
+hazard the wrong way: **`toContain("")` is true of every string**, so an
+empty message would have made the assertion vacuous rather than red. It is
+now an explicit `said.length > 0` before the `toContain`.
+
+### WHERE THE VERDICT AND THE BRIEF WERE WRONG
+
+1. **THE VERDICT, its correction to `T-111-s7`.** *"as of `520e93e` there
+   are FOUR derivations, not two."* `520e93e` is T-134's merge and its whole
+   content is `fence.ts`, which matches `blocked` **ZERO** times. That
+   module cannot have moved a count of blocker-binding derivations. **The
+   four-derivation fact is the FENCE rule's** and the same verdict states
+   it correctly under F7; it was attached to the wrong card. Re-derived at
+   `6a6bc87`: **three sites RESOLVE a `blocked_by` id, two deliver a
+   VERDICT on whether it binds.** `TaskDetailPanel.tsx` re-derives nothing,
+   `TasksLens.tsx` holds no `blockedBy` reference, `dispatch-brief.mjs`
+   matches `blocked` zero times.
+2. **THE VERDICT AND THE BRIEF, the fence divergence.** Both name
+   *"`docs/tasks` is unfenceable in the merged module and handled by
+   containment in yours"* as the live semantic divergence. **It is
+   dormant** — no live token normalises to `docs/tasks`. The divergence
+   that is live is the **BARE-WORD ORACLE**, 113 of 10 731 pairs, all on
+   `T-054`'s `docs` / `method` / `ci`, and it is a resolvability gap rather
+   than a disagreement about the rule.
+3. **THE VERDICT, F1 — the pin was weak in a SECOND way it does not
+   name.** The fixture (`T-90` against a declared `T-900`) is in a
+   different id slot, so no near miss was ever emitted; the verifier had to
+   build its own fixture to probe it and did not report that the shipped
+   one could not.
+4. **THE LANE AND THE VERDICT, the regen baseline.** Both measured against
+   committed `b742efbe…`. `b0416e9` replaced it with `616205de…` before
+   this pass started. The conclusion survives; the baseline does not.
+5. **THE BRIEF, "a UI spec passes at 116 chars and reds at 128".** Both
+   scratch worktrees here are **19 characters** and neither approached it.
+   The trap the brief named is real and none of this pass's four measured
+   traps were on its list.
+6. **THE ENVIRONMENT, and it silently un-did a sweep.** `grep` in this
+   session's shell is a FUNCTION shimming to `ugrep --ignore-files`. It
+   returned **no hits** for `lapsed`, `abandon` and `stale` in a tracked
+   file that contains all three, on the very sweep meant to prove the
+   retracted vocabulary was gone — a clean exit that would have shipped a
+   false "the word is gone". `command grep` finds them. **Every sweep in
+   this pass was re-run with `command grep`**, and a sweep is not a sweep
+   until its own positive control has fired.
+7. **THE CARD, header citation — STILL UNFIXED AND DELIBERATELY.**
+   `method/roles/orchestrator.md:16` is a LINE citation where CONVENTIONS
+   requires a SYMBOL; the first lane flagged it and the body quotes step 4
+   correctly. It sits in the card's SPEC, which is the architect's text,
+   and rewriting a spec from inside a lane is not this seat's to do.
+
+### FOR THE VERIFIER — WHAT MOVED, IN ONE PARAGRAPH
+
+**ONE PRODUCER EDIT** (`blockedReason` quotes `parserSaid`), **six new or
+retitled bodies**, one variable and two comments renamed, four figures
+corrected, two suggestion files added, and every arm the rejection named
+now reds with its restoration proved. **Nothing in `selectDispositions`'s
+control flow, the six dispositions, the three bindings, the ruling on a
+dangling blocker, or the census moved** — the verdict re-derived the census
+independently and agreed on every row, and none of those rows is touched
+here. `status:` stays `verifying`; `verifier:`, `built_by:`, `verified_by:`
+and `review:` are untouched and empty.
