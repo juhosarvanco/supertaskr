@@ -1,6 +1,6 @@
 ---
 id: T-143
-title: Three independent mechanisms make the dispatch answer say FREE when the fence is HELD — and not one of them can err in the safe direction
+title: Two mechanisms corrupt the dispatch answer toward FREE and a third only displays it that way — none of the three can err in the safe direction
 feature: F-06
 milestone: 4
 priority: 3
@@ -40,18 +40,39 @@ merged and the card was deliberately left open. `brief.mjs --state`
 prints **`crate-index: FREE`**, and `method/tasks/TASK-FORMAT.md` does
 not appear in the ledger at all.
 
-**3. The ledger's FREE column is per-SLUG, and two slugs can share a
-component.** `docs/architecture/components/C-11-*.md` declares
+**3. The `--state` LEDGER's FREE column is per-SLUG, and two slugs can
+share a component.** `docs/architecture/components/C-11-*.md` declares
 `touch_slugs: [app-shell, app-board]`. With `app-shell` held, the ledger
-prints `app-board: FREE`. **They intersect at C-11.**
+prints `app-board: FREE`. They intersect at C-11.
+
+**MECHANISM 3 IS NARROWER THAN THE OTHER TWO AND THIS CARD ORIGINALLY
+OVERSTATED IT — corrected here rather than quietly.** The `--task` half
+of the same tool is CORRECT. Asked properly it answers:
+
+    T-141 and T-112: OVERLAP — T-141 app-shell against T-112 app-board,
+      both reserve app/src/assets/**
+    T-141 and T-112: OVERLAP — ... both reserve app/src/styles/**
+
+with the witness paths named. **So the dispatch VERDICT is sound; it is
+the ledger DISPLAY that misleads**, and only a reader who takes a FREE
+column for a verdict is misled. That is a real trap — the architect fell
+into it on 2026-08-26 — but it is consumer confusion between two
+questions, not a wrong answer. Mechanisms 1 and 2 corrupt the answer
+itself; 3 does not.
 
 ## What this cost, tonight, live
 
 Mechanism 3 nearly took a lane. `T-112` was the highest-priority card
 that survived every other filter — `blocked_by: [T-111]` with T-111
 `done`, and `touches: [app-dispatch, app-board]` reading FREE, FREE. It
-overlaps the live `T-141` at C-11. **It was the only candidate on the
-board, so the failure had a 100% hit rate on the decision it fed.**
+overlaps the live `T-141`. It was the only candidate on the board.
+
+**But the process would have caught it**, and the honest version of this
+item is the interesting one: the documented step before dispatch is to
+assemble the brief with `--task`, and that step reports the overlap
+correctly. **The architect skipped it because the ledger had already
+answered** — which is the actual lesson. A cheap display that
+approximates an expensive verdict gets consulted INSTEAD of it.
 
 Mechanism 2 was caught by hand seconds earlier: the three cards that
 night's stamp freed — T-105, T-128, T-131 — all touch `method/`, which
