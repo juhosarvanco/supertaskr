@@ -897,10 +897,60 @@ function blockedReason(taskId: string, unmet: readonly UnmetBlocker[]): string {
 }
 
 /**
+ * The one card ABOVE another in its own column — as much of it as the
+ * frontier reads. Structural rather than a {@link BoardCard} on purpose:
+ * see {@link topmostUndoneByColumn}.
+ */
+export interface TopmostCard {
+  readonly id?: string;
+  readonly file: string;
+  readonly status: TaskStatus;
+}
+
+/**
+ * Task id -> the topmost UNDONE card in that id's own column.
+ *
+ * **THIS IS THE ONLY BOARD-SHAPED INPUT THE FRONTIER TAKES, AND IT IS
+ * ISOLATED HERE ON PURPOSE.** `orchestrator.md` step 4 dispatches "among
+ * the topmost undone tasks of each feature column", so the frontier needs
+ * a column ORDER — and this repository already has exactly one, in
+ * {@link selectBoard}. Re-spelling it would be T-057 at the layer whose
+ * whole subject is T-057, and it would let the frontier and the render
+ * disagree about which card is above which.
+ *
+ * **AND IT IS THE ONE THING THAT HAS TO MOVE SEPARATELY WHEN THE
+ * DERIVATION DOES.** {@link selectDispositions} is otherwise a pure
+ * function of the parsed model and the lane reader's answer — no React,
+ * no DOM, no IO, and no import outside this module and the parser's
+ * types. It belongs somewhere a terminal session can import it as well as
+ * a webview, and it is here only because the shared home is `lib-parser`,
+ * which is outside this card's fence and held by a live lane. The routing
+ * carries the move checklist, and this function is item one on it: a
+ * consumer with its own ordering passes its own map, and the default
+ * below is the board's.
+ */
+export function topmostUndoneByColumn(model: ProjectParseResult): ReadonlyMap<string, TopmostCard> {
+  const out = new Map<string, TopmostCard>();
+  for (const column of selectBoard(model).columns) {
+    const head = column.cards.find((c) => !isDoneish(c.status));
+    if (head === undefined) continue;
+    const entry: TopmostCard = {
+      ...(head.id === undefined ? {} : { id: head.id }),
+      file: head.file,
+      status: head.status,
+    };
+    for (const c of column.cards) {
+      if (c.id !== undefined) out.set(c.id, entry);
+    }
+  }
+  return out;
+}
+
+/**
  * Derive one disposition per card.
  *
- * PURE: a function of the parsed model plus the lane reader's answer and
- * nothing else. It writes nothing and stores nothing — the whole point is
+ * PURE: a function of the parsed model, the lane reader's answer and a
+ * column order. It writes nothing and stores nothing — the whole point is
  * that the live answer is cheaper to derive than to remember (T-057).
  *
  * **THE ORDER OF THE TESTS IS THE SHAPE OF THE ANSWER, and it is pinned.**
@@ -910,10 +960,14 @@ function blockedReason(taskId: string, unmet: readonly UnmetBlocker[]): string {
  * is wrong with it and there is no room) -> `dispatchable`. Card-specific
  * reasons come FIRST because a blocked card told "the ceiling is reached"
  * has been told the least useful true thing about itself.
+ *
+ * `topmost` defaults to {@link topmostUndoneByColumn}, which is the only
+ * line in this function that knows a board exists.
  */
 export function selectDispositions(
   model: ProjectParseResult,
   dispatch: DispatchReading,
+  topmost: ReadonlyMap<string, TopmostCard> = topmostUndoneByColumn(model),
 ): DispositionModel {
   if (dispatch.kind === "unavailable") {
     return {
@@ -967,18 +1021,6 @@ export function selectDispositions(
     };
   }
   const blindLanes = inFlight.filter((l) => !l.fenceKnown);
-
-  // The board's OWN order decides what "topmost" means, so the frontier
-  // and the render can never disagree about which card is above which.
-  const board = selectBoard(model);
-  const topmost = new Map<string, BoardCard>();
-  for (const column of board.columns) {
-    const head = column.cards.find((c) => !isDoneish(c.status));
-    if (head === undefined) continue;
-    for (const c of column.cards) {
-      if (c.id !== undefined) topmost.set(c.id, head);
-    }
-  }
 
   const dangling = danglingBlockerSentences(model.issues);
   const ceilingReached = inFlight.length >= CONCURRENCY_CEILING.max;

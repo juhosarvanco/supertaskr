@@ -18,6 +18,7 @@ import {
   selectDispositions,
   shortModelName,
   statusVisual,
+  topmostUndoneByColumn,
   touchTokensOverlap,
   UNMAPPED_KEY,
   type BoardColumn,
@@ -28,6 +29,7 @@ import {
   type DispositionModel,
   type InFlightLane,
   type LaneHold,
+  type TopmostCard,
 } from "../src/lib/board-model";
 
 // Pure-selector tests for the story map board (T-004). Fixtures run
@@ -1478,6 +1480,50 @@ describe("the rest of the six, and the reason is always TEXT (criteria 1, 4, 7)"
       "at-ceiling",
       "not-applicable",
     ]);
+  });
+
+  it("the column order is an INPUT, so the derivation is not board-local", () => {
+    // THE PORTABILITY PIN. `selectDispositions` is a pure function of the
+    // parsed model, the lane reader's answer and a column ORDER — and the
+    // order is the only board-shaped thing it takes. A consumer with its
+    // own ordering (a terminal session assembling a dispatch, say) passes
+    // its own map and gets its own answer; nothing about the frontier is
+    // reachable only from a React tree. This body is what makes that
+    // claim checkable rather than a sentence in a doc comment.
+    const m = withRoadmap([
+      ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "planned")],
+      ["docs/tasks/T-901.md", task("T-901", "F-01", 2, "planned")],
+    ]);
+    // The board's own order: T-900 on top, so T-901 is behind it.
+    expect(dispositionOf(selectDispositions(m, NO_LANES), "T-901")?.disposition).toBe(
+      "not-topmost",
+    );
+    // A DIFFERENT order, supplied by a caller that is not the board.
+    const inverted: ReadonlyMap<string, TopmostCard> = new Map([
+      ["T-900", { id: "T-901", file: "docs/tasks/T-901.md", status: "planned" as TaskStatus }],
+      ["T-901", { id: "T-901", file: "docs/tasks/T-901.md", status: "planned" as TaskStatus }],
+    ]);
+    const flipped = selectDispositions(m, NO_LANES, inverted);
+    expect(dispositionOf(flipped, "T-900")?.disposition).toBe("not-topmost");
+    expect(dispositionOf(flipped, "T-901")?.disposition).toBe("dispatchable");
+  });
+
+  it("topmostUndoneByColumn is the board's order, and it is the DEFAULT", () => {
+    const m = withRoadmap([
+      ["docs/tasks/T-900.md", task("T-900", "F-01", 1, "done")],
+      ["docs/tasks/T-901.md", task("T-901", "F-01", 2, "planned")],
+      ["docs/tasks/T-902.md", task("T-902", "F-02", 1, "planned")],
+    ]);
+    const order = topmostUndoneByColumn(m);
+    expect(order.get("T-901")?.id).toBe("T-901");
+    expect(order.get("T-900")?.id).toBe("T-901");
+    expect(order.get("T-902")?.id).toBe("T-902");
+    // Passing the default explicitly is the same answer as omitting it —
+    // which is what "the default IS the board's order" means.
+    const a = selectDispositions(m, NO_LANES);
+    const b = selectDispositions(m, NO_LANES, order);
+    if (a.kind !== "derived" || b.kind !== "derived") throw new Error("unreachable");
+    expect([...a.cards.values()]).toEqual([...b.cards.values()]);
   });
 });
 
