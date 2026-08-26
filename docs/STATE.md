@@ -792,31 +792,43 @@ paths. **Cargo WAS owed** even though the range holds no `.rs`, because
 `agent::kit::tests::every_compiled_entry_matches_its_method_file_byte_for_byte`
 compares kit entries against their method files byte for byte; it passed.
 
-**THE INTEGRATION QUEUE IS EMPTY. `T-137`, `T-141`, `T-145` and `T-148`
-are all on main, and `T-137`'s merge closes the false-green defect that
-started the whole sequence.** `arch drift` reports `unmapped=0`,
-`findings=4`. `app-shell` is FREE for the first time in a day, and it is
-the slug **20 of 34 planned cards touch** — the board's real throughput
-ceiling.
+**`T-150` IS MERGED AND A CARD CAN NOW ASK FOR ITS FIGURES.** Merge
+`1ab0587`, 10 paths. `brief.mjs --card <T-NNN>` derives the six figure
+classes this board actually carries and then RE-RUNS every provenance a
+card already claims; `--audit <path>` reaches a brief file. Board figures
+in this checkpoint were derived with it, not typed.
 
-**THE CHECKPOINT'S RECONCILIATION WORK, AND WHY IT IS THE CHECKPOINT'S.**
-`T-137`'s regen moved the graph **185 → 189 files** (only
-`lib/parser/src/{lanes,task-waves}.ts` and their two tests join; nothing
-leaves) and **C-06's rollup 27 → 31**. Three dogfood assertions hard-code
-those numbers and the LANE COULD NOT REACH THEM — `app/test/**` was
-outside its fence, which is why its own tip was honestly green. **All
-four new files land under C-06, so the count moved WITHOUT the D2 moving,
-which is exactly what an extraction into an already-declared component
-should look like.** Every new figure was derived from a set difference
-over the two `graph.json` revisions and from `arch`, never copied out of
-the failure output.
+**THE LINT WAS REFUTED BY THE CORPUS, AND THE REFUTATION REPRODUCED.**
+**75,785** digit runs across card prose — exact at the base — against
+**63** census claims in 31 of 313 cards. **The largest figure class
+carries no digit at all**: word cardinals, independently measured at
+about **16.5k** against **9,060** for the largest digit class. T-141's
+rejected figure is the word "second". **And T-141's sentence is followed
+immediately by a command and a ref, so an adjacency lint PASSES it** —
+the marker was present, honest, and did not bind. That is the card's own
+caution occurring naturally in the example it was built from.
 
-**TWO CARDS WERE MERGED WITHOUT BEING STAMPED AND THE BOARD LIED FOR AN
-HOUR.** `T-137` and `T-141` both sat at `status: verifying` while their
-code was on main. Stamped now (`done`, `review: same-model`). **The
-integrator's step 3 is the stamp and it has no gate** — nothing reds when
-a merged card keeps a lane-local status, so the board simply
-under-reports until someone reads it.
+**THE MISS IS DECLARED AND CONFIRMED NOT LARGER.** `--card T-137`
+returns nothing at all: an inverted premise is not a figure. The fix
+prevents that failure rather than detecting it.
+
+**MAIN'S GRAPH WAS STALE AND BOTH LANES CAUGHT IT INDEPENDENTLY.** The
+`T-137` checkpoint regenerated the graph and THEN edited two dogfood
+files to reconcile counts — 17 and 4 lines of provenance comment — and
+never re-asked. **Every published figure matched on both sides** (1020023
+bytes, 189 files, 2152 symbols, 2111 edges) while the tree was stale.
+Repaired at `d85d946`. **"Re-ask after every write" is the architect's
+own sentence, broken at the one seat whose job is leaving the docs true.**
+
+**THE GRAPH BUDGET IS AT 98.1%** — 1020023 of 1040000, **19977 bytes
+left**. `T-140` is the card and it is no longer theoretical.
+
+**`T-149` IS IN VERIFICATION** at `d437f5a`, and its build already
+falsified its own card's success measurement: *"20 of 34 planned cards
+touch app-shell"* is a census over a STRING in `touches:`, and no
+registry edit moves a token an author already typed. What did move:
+**app-shell's reserved test files 49 → 20**, with 29 routed to map,
+interview, board and agent. Re-fencing the twenty cards is `T-149-s2`.
 
 **CUTTING A NEW LANE REDS EVERY OLDER LIVE LANE, AND THE ARCHITECT DID
 IT TONIGHT.** `tools/e2e/tests/brief.spec.ts:706` on main iterates the
