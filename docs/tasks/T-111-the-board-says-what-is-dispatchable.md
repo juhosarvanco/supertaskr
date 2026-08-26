@@ -5,14 +5,14 @@ feature: F-04
 milestone: 4
 priority: 4
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [app-board, app-shell]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5
+verified_by: claude-opus-5
+review: same-model
 ---
 
 Absorbs (seventh triage, 2026-08-24): T-089-s6, T-013-s1 — files removed in this commit.
@@ -1628,3 +1628,89 @@ obeying it, and `s9`'s camouflage finding (a whole-corpus assertion redding
 three bodies from one planted violation, one of them impersonating
 `T-120-s3`) is the more dangerous of the two, because it teaches a reader to
 discount a real red.
+
+## Integration
+
+Merged at **`f3a4233`** into main-before **`6bec5a2`**, checkpointed
+separately on top. Lane tip **`a80870b`** — derived with `git rev-parse`,
+and it is the **RE-CHECK VERDICT** commit rather than the last work commit
+`70dbf83`. Integrated by a third `claude-opus-5` session that neither wrote
+nor reviewed the lane's commits; `review: same-model`, and the
+`Co-Authored-By` trailer on those commits is a harness constant and is NOT
+evidence of a model.
+
+**THE FORECAST TREE IS THE MERGE'S TREE.** `git merge-tree --write-tree
+6bec5a2 a80870b` returned exit **0** (read from `$?` FIRST) and tree
+**`09a8279e`**; the merge commit's own tree is **`09a8279e`**. No conflict,
+no resolution. Parents are `6bec5a2` and `a80870b` and nothing else.
+
+**THE RANGE, at `6bec5a2`:** prescribed **9**, three-dot **9** with the
+sorted sets IDENTICAL (`diff` exit 0), two-dot **47** forbidden, main's
+advance since the lane's base **38**, `comm -12` over the two sorted lists
+**EMPTY**, and **9 + 38 = 47** — the overstatement is pure left-endpoint
+drift. The FORBIDDEN merge-base form `15a963d..a80870b` also returns **9**
+here, which is luck and not licence: `15a963d` happens to be an ancestor of
+`a80870b`. `main..HEAD` returns **0**.
+
+**SUITES on the merged tree**, every exit read from `$?` unpiped and the
+COUNT derived as well as the exit: parser build 0, `tsc --noEmit` 0, parser
+**290/290** across 13 files; app build 0, **`npm test` 1013/1013** across 47
+files (main's own baseline at `6bec5a2` was **973/973**, so this merge adds
+**40** bodies); `cargo test --no-fail-fast` **512 passed / 0 failed / 3
+ignored** over SIXTEEN `test result:` lines, with sixteen `running N tests`
+headers summing to **515 = 512 + 3**; `tools/e2e` **194/194, exit 0, FIRST
+RUN, 2.2m** on explicit port **15871**.
+
+**GATES.** **BOOT GATE FIRES — 1 of 9 (`app/src/lib/board-model.ts`), RUN,
+exit 0**, on scratch port **15872**, both `[nputer]` lines read:
+`project folder: /Users/ujju/Projects/nputer` and `window "main" created`.
+**This is the finding the rejection's item 3 was about, discharged at the
+merge as well as in the lane.** **DOCS GATE FIRES — exit 1, 7 of 9**, with
+**16 derived readers across 4 suites** (up from 15; the sixteenth is
+`app/test/select-board.test.ts`, which this merge makes derivable —
+**`T-111-s8`'s fix landing on main**), census 133 sites in 23 files, **0
+frontmatter issues**, 6 root-anchored all argued, 0 unlinked. **GRAPH REGEN
+FIRES — 2 of 9 — and was ASKED rather than predicted**, twice before the
+doc writes and again after: STALE → **`files +0 −0 ~2`, `edges +50 −3`**
+(1986 + 50 − 3 = 2033, which closes) → regenerated → CURRENT.
+
+**THE `+50 −3` THE REJECTION'S ITEM 6 ASKED FOR IS CONFIRMED AT A THIRD
+BASELINE.** The lane and the first verdict both measured against committed
+`b742efbe…`; `b0416e9` replaced it with `616205de…`; this merge measured
+against `616205de…` and got the same `+50 −3` and the same `files +0 −0 ~2`.
+**And the no-reconciliation conclusion was not inherited — it was
+re-derived**: `npm test` from `app/` **with the regenerated graph actually
+in place** is **1013/1013, exit 0**, so no fixture moves.
+
+**THE `fence.ts` DUPLICATION IS A MEASURED DECLINE AND IS NOT A DEFECT OF
+THIS MERGE.** `T-111-s5` is the move list, `T-137` is the vehicle, and the
+three reasons the verifier confirmed independently stand: `compareFences`
+has a third verdict (`unusable`) the six-value disposition cannot express,
+which is a criteria change an executor may not make; `expandFence`'s oracle
+needs a filesystem `selectDispositions` does not have; and `FenceWitness`
+carries no component ids, so importing would DELETE the coarse-fence clause
+that repair 2 has just pinned in two directions. Every disagreeing pair
+involves `T-054`, which is `done`, so the divergence is dormant.
+
+**THE TRIPWIRE THE VERDICT WARNED ABOUT HAD ITS FIRST LIVE REHEARSAL THREE
+HOURS BEFORE THIS MERGE, AND PASSED.** The verdict noted that
+`a dangling blocker` fires "the day a card's blocker is moved to
+`rejected/`, which is routine triage". The eleventh triage (`6bec5a2`)
+removed **16** cards from `docs/tasks/` — including this card's own
+`T-111-s1`, `T-111-s3` and `T-111-s4` — and nothing redded, because not one
+of the 16 is named as a blocker. Re-derived through the parser at this
+merge: **51 `blocked_by` entries over `docs/tasks/`, 48 whose blocker is
+`done`, 3 open, ZERO dangling.**
+
+**WHAT THIS MERGE RELEASES.** `T-111`'s fence expands to **36 paths** and
+overlaps **20 of the 36 other open fence-carrying cards** — and, derived
+through `fence.ts`, **every one of the 20 is visible on TOKENS**: `T-111`
+appears in ZERO of the board's 25 flip pairs. So the fence census reads
+**36 cards · 630 pairs · 25 flips · 0 reverse** after the stamp, against 37
+· 666 · 25 · 0 before it — **the flip total does not move, and this time
+that IS evidence that nothing moved**, which is the exact opposite of
+`T-134`'s checkpoint, where an unmoved total concealed a complete change of
+pairs.
+
+`T-111-s9` and `T-111-s10` are carried to the backlog unrepaired: both are
+`[tools/e2e]` / `[docs/CONVENTIONS.md]`, outside this card's fence.

@@ -14614,17 +14614,27 @@
       "id": "f:app/src/lib/board-model.ts",
       "path": "app/src/lib/board-model.ts",
       "lang": "ts",
-      "hash": "blake3:bd1583ae0fb3c10ae11dd0db22385f16041237aeb40f6963b10e81ec85ab0ee7",
-      "loc": 465,
+      "hash": "blake3:31a16c09788d798f53e541bfd6376cd28a05a317a186398630f69df7a5544c30",
+      "loc": 1284,
       "symbols": [
+        {
+          "id": "s:app/src/lib/board-model.ts#BlockerBinding",
+          "name": "BlockerBinding",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            623,
+            623
+          ]
+        },
         {
           "id": "s:app/src/lib/board-model.ts#BoardCard",
           "name": "BoardCard",
           "kind": "interface",
           "exported": true,
           "range": [
-            104,
-            141
+            105,
+            142
           ]
         },
         {
@@ -14633,8 +14643,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            143,
-            179
+            144,
+            180
           ]
         },
         {
@@ -14643,8 +14653,118 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            181,
-            187
+            182,
+            188
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#CONCURRENCY_CEILING",
+          "name": "CONCURRENCY_CEILING",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            595,
+            598
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#CardDisposition",
+          "name": "CardDisposition",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            656,
+            674
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#DISPOSITIONS",
+          "name": "DISPOSITIONS",
+          "kind": "const",
+          "exported": true,
+          "range": [
+            601,
+            608
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#DispatchReading",
+          "name": "DispatchReading",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            580,
+            582
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#DispatchStamp",
+          "name": "DispatchStamp",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            563,
+            567
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#Disposition",
+          "name": "Disposition",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            610,
+            610
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#DispositionModel",
+          "name": "DispositionModel",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            697,
+            713
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#FenceClash",
+          "name": "FenceClash",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            640,
+            653
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#InFlightLane",
+          "name": "InFlightLane",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            677,
+            695
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#LaneHold",
+          "name": "LaneHold",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            552,
+            559
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#LaneJoinState",
+          "name": "LaneJoinState",
+          "kind": "type",
+          "exported": true,
+          "range": [
+            548,
+            548
           ]
         },
         {
@@ -14653,8 +14773,8 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            95,
-            100
+            96,
+            101
           ]
         },
         {
@@ -14663,8 +14783,18 @@
           "kind": "interface",
           "exported": false,
           "range": [
-            288,
-            297
+            289,
+            298
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#NO_REASON_AT_ALL",
+          "name": "NO_REASON_AT_ALL",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            867,
+            867
           ]
         },
         {
@@ -14673,8 +14803,8 @@
           "kind": "type",
           "exported": true,
           "range": [
-            29,
-            35
+            30,
+            36
           ]
         },
         {
@@ -14683,8 +14813,28 @@
           "kind": "interface",
           "exported": true,
           "range": [
-            37,
-            42
+            38,
+            43
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#TopmostCard",
+          "name": "TopmostCard",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            950,
+            954
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#TouchExpansion",
+          "name": "TouchExpansion",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            774,
+            781
           ]
         },
         {
@@ -14693,8 +14843,38 @@
           "kind": "const",
           "exported": true,
           "range": [
-            336,
-            336
+            337,
+            337
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#UnmetBlocker",
+          "name": "UnmetBlocker",
+          "kind": "interface",
+          "exported": true,
+          "range": [
+            625,
+            636
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#bindingOf",
+          "name": "bindingOf",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            872,
+            877
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#blockedReason",
+          "name": "blockedReason",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            914,
+            943
           ]
         },
         {
@@ -14703,8 +14883,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            282,
-            286
+            283,
+            287
           ]
         },
         {
@@ -14713,8 +14893,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            272,
-            279
+            273,
+            280
           ]
         },
         {
@@ -14723,8 +14903,28 @@
           "kind": "const",
           "exported": false,
           "range": [
-            269,
-            269
+            270,
+            270
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#danglingBlockerSentences",
+          "name": "danglingBlockerSentences",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            881,
+            889
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#expandTouch",
+          "name": "expandTouch",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            799,
+            818
           ]
         },
         {
@@ -14733,8 +14933,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            316,
-            327
+            317,
+            328
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#fenceClashes",
+          "name": "fenceClashes",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            828,
+            859
           ]
         },
         {
@@ -14743,8 +14953,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            236,
-            236
+            237,
+            237
           ]
         },
         {
@@ -14753,8 +14963,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            216,
-            228
+            217,
+            229
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#joinIds",
+          "name": "joinIds",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            891,
+            891
           ]
         },
         {
@@ -14763,8 +14983,18 @@
           "kind": "function",
           "exported": false,
           "range": [
-            238,
-            244
+            239,
+            245
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#normaliseTouchToken",
+          "name": "normaliseTouchToken",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            749,
+            754
           ]
         },
         {
@@ -14773,8 +15003,18 @@
           "kind": "function",
           "exported": true,
           "range": [
-            358,
-            465
+            359,
+            466
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#selectDispositions",
+          "name": "selectDispositions",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            1013,
+            1284
           ]
         },
         {
@@ -14783,8 +15023,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            79,
-            92
+            80,
+            93
           ]
         },
         {
@@ -14793,8 +15033,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            331,
-            333
+            332,
+            334
           ]
         },
         {
@@ -14803,8 +15043,8 @@
           "kind": "function",
           "exported": false,
           "range": [
-            232,
-            234
+            233,
+            235
           ]
         },
         {
@@ -14813,8 +15053,8 @@
           "kind": "function",
           "exported": true,
           "range": [
-            51,
-            69
+            52,
+            70
           ]
         },
         {
@@ -14823,8 +15063,28 @@
           "kind": "function",
           "exported": false,
           "range": [
-            246,
-            266
+            247,
+            267
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#topmostUndoneByColumn",
+          "name": "topmostUndoneByColumn",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            978,
+            993
+          ]
+        },
+        {
+          "id": "s:app/src/lib/board-model.ts#touchTokensOverlap",
+          "name": "touchTokensOverlap",
+          "kind": "function",
+          "exported": true,
+          "range": [
+            765,
+            771
           ]
         }
       ]
@@ -19789,8 +20049,8 @@
       "id": "f:app/test/select-board.test.ts",
       "path": "app/test/select-board.test.ts",
       "lang": "ts",
-      "hash": "blake3:fee0e83c58ca3f4c7413384a98ce3ac81261cc8976550b2376e16ff570b0cfdb",
-      "loc": 740,
+      "hash": "blake3:2fbbbfaa61829e2a7e78aff8421fcc41db65266217f77fdd9d70eaa40eb06c86",
+      "loc": 1853,
       "symbols": [
         {
           "id": "s:app/test/select-board.test.ts#ALIASED_ROADMAP",
@@ -19798,8 +20058,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            251,
-            259
+            274,
+            282
           ]
         },
         {
@@ -19808,8 +20068,38 @@
           "kind": "type",
           "exported": false,
           "range": [
-            29,
-            29
+            52,
+            52
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#NO_LANES",
+          "name": "NO_LANES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            873,
+            873
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#NO_REASON_STATUSES",
+          "name": "NO_REASON_STATUSES",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            796,
+            796
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#REPO_ROOT",
+          "name": "REPO_ROOT",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            791,
+            791
           ]
         },
         {
@@ -19818,8 +20108,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            19,
-            27
+            42,
+            50
           ]
         },
         {
@@ -19828,8 +20118,28 @@
           "kind": "const",
           "exported": false,
           "range": [
-            261,
-            262
+            284,
+            285
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#component",
+          "name": "component",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            879,
+            893
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#dispositionOf",
+          "name": "dispositionOf",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            875,
+            876
           ]
         },
         {
@@ -19838,8 +20148,48 @@
           "kind": "const",
           "exported": false,
           "range": [
-            32,
-            33
+            55,
+            56
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#lane",
+          "name": "lane",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            851,
+            858
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#laneHold",
+          "name": "laneHold",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            860,
+            865
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#liveBoard",
+          "name": "liveBoard",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            817,
+            834
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#liveTouchTokens",
+          "name": "liveTouchTokens",
+          "kind": "function",
+          "exported": false,
+          "range": [
+            839,
+            849
           ]
         },
         {
@@ -19848,8 +20198,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            61,
-            61
+            84,
+            84
           ]
         },
         {
@@ -19858,8 +20208,28 @@
           "kind": "const",
           "exported": false,
           "range": [
-            55,
-            56
+            78,
+            79
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#readRepo",
+          "name": "readRepo",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            793,
+            793
+          ]
+        },
+        {
+          "id": "s:app/test/select-board.test.ts#reading",
+          "name": "reading",
+          "kind": "const",
+          "exported": false,
+          "range": [
+            868,
+            871
           ]
         },
         {
@@ -19868,8 +20238,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            36,
-            53
+            59,
+            76
           ]
         },
         {
@@ -19878,8 +20248,8 @@
           "kind": "const",
           "exported": false,
           "range": [
-            58,
-            59
+            81,
+            82
           ]
         }
       ]
@@ -25591,6 +25961,7 @@
       "to": "p:@nputer/parser",
       "kind": "import",
       "symbols": [
+        "ComponentRecord",
         "ParseIssue",
         "ProjectParseResult",
         "ReviewMode",
@@ -27708,11 +28079,26 @@
       "symbols": [
         "BoardColumn",
         "BoardModel",
+        "CONCURRENCY_CEILING",
+        "CardDisposition",
+        "DISPOSITIONS",
+        "DispatchReading",
+        "DispatchStamp",
+        "DispositionModel",
+        "InFlightLane",
+        "LaneHold",
+        "TopmostCard",
         "UNMAPPED_KEY",
+        "expandTouch",
+        "fenceClashes",
         "issuesByFile",
+        "normaliseTouchToken",
         "selectBoard",
+        "selectDispositions",
         "shortModelName",
-        "statusVisual"
+        "statusVisual",
+        "topmostUndoneByColumn",
+        "touchTokensOverlap"
       ]
     },
     {
@@ -27720,8 +28106,36 @@
       "to": "p:@nputer/parser",
       "kind": "import",
       "symbols": [
+        "ParseIssue",
         "ProjectParseResult",
+        "TaskStatus",
         "parseProjectFromFiles"
+      ]
+    },
+    {
+      "from": "f:app/test/select-board.test.ts",
+      "to": "p:node:fs",
+      "kind": "import",
+      "symbols": [
+        "readFileSync",
+        "readdirSync"
+      ]
+    },
+    {
+      "from": "f:app/test/select-board.test.ts",
+      "to": "p:node:path",
+      "kind": "import",
+      "symbols": [
+        "join",
+        "resolve"
+      ]
+    },
+    {
+      "from": "f:app/test/select-board.test.ts",
+      "to": "p:node:url",
+      "kind": "import",
+      "symbols": [
+        "fileURLToPath"
       ]
     },
     {
@@ -33373,6 +33787,54 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/board-model.ts#CardDisposition",
+      "to": "s:app/src/lib/board-model.ts#Disposition",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#CardDisposition",
+      "to": "s:app/src/lib/board-model.ts#FenceClash",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#CardDisposition",
+      "to": "s:app/src/lib/board-model.ts#UnmetBlocker",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#DispatchReading",
+      "to": "s:app/src/lib/board-model.ts#DispatchStamp",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#DispatchStamp",
+      "to": "s:app/src/lib/board-model.ts#LaneHold",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#DispatchStamp",
+      "to": "s:app/src/lib/board-model.ts#LaneJoinState",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#DispositionModel",
+      "to": "s:app/src/lib/board-model.ts#CardDisposition",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#DispositionModel",
+      "to": "s:app/src/lib/board-model.ts#InFlightLane",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/board-model.ts#MutableColumn",
       "to": "s:app/src/lib/board-model.ts#BoardCard",
       "kind": "type_ref",
@@ -33382,6 +33844,30 @@
       "from": "s:app/src/lib/board-model.ts#StatusVisual",
       "to": "s:app/src/lib/board-model.ts#StatusToken",
       "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#UnmetBlocker",
+      "to": "s:app/src/lib/board-model.ts#BlockerBinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#bindingOf",
+      "to": "s:app/src/lib/board-model.ts#BlockerBinding",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#blockedReason",
+      "to": "s:app/src/lib/board-model.ts#UnmetBlocker",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#blockedReason",
+      "to": "s:app/src/lib/board-model.ts#joinIds",
+      "kind": "call",
       "confidence": "resolved"
     },
     {
@@ -33405,6 +33891,42 @@
     {
       "from": "s:app/src/lib/board-model.ts#byPriority",
       "to": "s:app/src/lib/board-model.ts#byText",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#expandTouch",
+      "to": "s:app/src/lib/board-model.ts#TouchExpansion",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#expandTouch",
+      "to": "s:app/src/lib/board-model.ts#normaliseTouchToken",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#fenceClashes",
+      "to": "s:app/src/lib/board-model.ts#FenceClash",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#fenceClashes",
+      "to": "s:app/src/lib/board-model.ts#InFlightLane",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#fenceClashes",
+      "to": "s:app/src/lib/board-model.ts#expandTouch",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#fenceClashes",
+      "to": "s:app/src/lib/board-model.ts#touchTokensOverlap",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -33469,6 +33991,90 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#CardDisposition",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#DispatchReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#DispositionModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#FenceClash",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#InFlightLane",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#TopmostCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#UnmetBlocker",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#bindingOf",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#blockedReason",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#byText",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#danglingBlockerSentences",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#fenceClashes",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#joinIds",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#selectDispositions",
+      "to": "s:app/src/lib/board-model.ts#topmostUndoneByColumn",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/src/lib/board-model.ts#statusVisual",
       "to": "s:app/src/lib/board-model.ts#StatusVisual",
       "kind": "type_ref",
@@ -33501,6 +34107,30 @@
     {
       "from": "s:app/src/lib/board-model.ts#toCard",
       "to": "s:app/src/lib/verdicts.ts#rejectedVerdictCount",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#topmostUndoneByColumn",
+      "to": "s:app/src/lib/board-model.ts#TopmostCard",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#topmostUndoneByColumn",
+      "to": "s:app/src/lib/board-model.ts#isDoneish",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#topmostUndoneByColumn",
+      "to": "s:app/src/lib/board-model.ts#selectBoard",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/src/lib/board-model.ts#touchTokensOverlap",
+      "to": "s:app/src/lib/board-model.ts#normaliseTouchToken",
       "kind": "call",
       "confidence": "resolved"
     },
@@ -35665,6 +36295,12 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/select-board.test.ts#NO_LANES",
+      "to": "s:app/src/lib/board-model.ts#DispatchReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/select-board.test.ts#aliasedBoard",
       "to": "s:app/src/lib/board-model.ts#BoardModel",
       "kind": "type_ref",
@@ -35683,8 +36319,50 @@
       "confidence": "resolved"
     },
     {
+      "from": "s:app/test/select-board.test.ts#dispositionOf",
+      "to": "s:app/src/lib/board-model.ts#CardDisposition",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#dispositionOf",
+      "to": "s:app/src/lib/board-model.ts#DispositionModel",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
       "from": "s:app/test/select-board.test.ts#fm",
       "to": "s:app/test/select-board.test.ts#Field",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#lane",
+      "to": "s:app/src/lib/board-model.ts#InFlightLane",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#laneHold",
+      "to": "s:app/src/lib/board-model.ts#LaneHold",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#liveBoard",
+      "to": "s:app/test/select-board.test.ts#readRepo",
+      "kind": "call",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#reading",
+      "to": "s:app/src/lib/board-model.ts#DispatchReading",
+      "kind": "type_ref",
+      "confidence": "resolved"
+    },
+    {
+      "from": "s:app/test/select-board.test.ts#reading",
+      "to": "s:app/src/lib/board-model.ts#DispatchStamp",
       "kind": "type_ref",
       "confidence": "resolved"
     },
@@ -36868,7 +37546,7 @@
   ],
   "stats": {
     "files": 183,
-    "symbols": 2064,
-    "edges": 1986
+    "symbols": 2101,
+    "edges": 2033
   }
 }

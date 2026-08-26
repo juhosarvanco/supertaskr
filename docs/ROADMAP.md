@@ -846,9 +846,50 @@ deliberately never passed to Claude while Codex's `exec` accepts one —
 see design/cross-harness-plan.md). **D2 is taken**: dispatch gets its
 own component C-15 with touch slug `app-dispatch`, so it does not fence
 against every genesis card for the life of the feature.
-Progress: STARTED — **4 of 7 written F-04 cards done** (derived at
-T-126's checkpoint; it read "3 of 6" until then), and the third is
-the slice's first real CODE. T-089 merged 2026-08-23 and put the brief
+Progress: STARTED — **5 of 8 written F-04 cards done, and THIS LINE
+FINALLY MOVES** (re-derived on disk at T-111's checkpoint by crossing
+`^feature: F-04$` with each card's own `^status:`; it read "4 of 7" from
+T-126's checkpoint until this merge, and "3 of 6" before that). **T-111
+merged 2026-08-26 (`f3a4233`) and it is the SEVENTH consecutive merge
+this line was asked about and the FIRST in eight that it moves for** —
+the six preceding refusals each had a different reason, and every one was
+"the card that landed is not this slice's content". This one is. Derived
+here: `T-088`, `T-089`, `T-110`, `T-126` and now **`T-111`** are `done`;
+`T-112`, `T-125` and `T-137` are `planned`. **DERIVE IT, DO NOT QUOTE
+IT** — the denominator moved from 7 to 8 at T-134's checkpoint under a
+card written outside that merge's range, so both halves of this fraction
+have gone stale under work nobody's merge did.
+**WHAT T-111 ACTUALLY DELIVERS AGAINST THE MILESTONE'S OWN GOAL.** The
+goal sentence above says the board *"reads its own lanes off disk, says
+which card is dispatchable AND WHY THE OTHERS ARE NOT, and hands you the
+exact brief and lane commands for the one you pick."* T-110 delivered the
+first clause; **T-111 delivers the second, which is the half the sentence
+puts in capitals**, and it delivers it as a rendered REASON rather than
+as a verdict: six closed dispositions, each with a sentence a human can
+argue with. Two of those sentences are the whole point. A `fenced` card
+names the token AND the lane holding it AND — because disjointness is
+computed over EXPANDED component paths and the clash reports which
+components it expanded through — says when the overlap is the COARSE
+`app-shell` fence rather than a real collision, so a human can override
+deliberately instead of serialising behind a word. A `blocked` card names
+the unmet blocker ids, and when one of them names no card at all the
+board QUOTES the parser's own near-miss hint verbatim (*"'T-001' is
+declared and differs only in zero padding"*) and rules that this is a
+defect in the card rather than a reason to wait. **The third clause — the
+brief and the lane commands — is still T-112's**, and nothing in this
+card spawns a process or offers a dispatch affordance; T-028's fence on
+that is mechanically enforced and stayed green. **AND THE CARD WAS
+REJECTED ONCE, ON SOMETHING WORTH RECORDING IN A ROADMAP**: not one line
+of the derivation had to change. Four pieces of shipped TEXT stated
+things that were not so — a pin whose title asserted the opposite of what
+it checked, a range written into the commit that invalidated it, a
+retracted word surviving in a test title, and a published edge count that
+failed its own arithmetic — and three one-sided PRODUCER mutants survived
+the whole suite at exit 0 because two of the card's own headline reason
+clauses were encoded rather than defended. **A 33-arm poison drill that
+is entirely red is not evidence that the thing the card is FOR is
+pinned**; five of the six repairs are discharged by a mutant that now
+reds, which is the only form of "fixed" this project accepts. T-089 merged 2026-08-23 and put the brief
 itself in writing: a thirteen-row normative contract in
 `method/roles/executor.md` that a program transcribes and a human reads
 as a checklist, plus the generic `method/lane-protocol.md`. The slice's
@@ -994,6 +1035,34 @@ created directly in `rejected/`, which goes 26 → **27**. `done` goes 98 →
 **99**, the figure that had held for two merges, and **that one IS this
 merge's**: T-134 is the only card it stamps. **This merge adds no task
 file at all.**
+**AND RE-DERIVED ON DISK A SEVENTH TIME AT T-111'S CHECKPOINT, AND EVERY
+MILESTONE FIGURE IS IDENTICAL TO T-134'S WHILE THE PROGRESS LINE ABOVE
+MOVES FOR THE FIRST TIME IN EIGHT MERGES.** **98** cards on disk carry
+`milestone: 4` — F-01 **10**, F-02 43, F-03 12, F-04 **8**, F-06 25;
+10+43+12+8+25 = 98, every row unmoved. `T-111` is **F-04** and carries
+`milestone: 4`, so like T-132, T-133, T-135 and T-134 before it, it was
+ALREADY INSIDE THIS COUNT before it landed — **which is exactly why the
+milestone census does not move and the F-04 progress line does.** They
+answer different questions: the census asks *how many cards carry this
+stamp*, and the progress line asks *how many of the slice's own cards are
+finished*. **Six consecutive checkpoints wrote down that the progress
+line did not move; this is the first that can say WHY the two figures
+were ever expected to move together, which is that they never were.**
+**THE BOARD MOVES IN BOTH DIRECTIONS AT THIS MERGE AND ONLY ONE
+DIRECTION IS THIS MERGE'S.** 300 flat task files → **290**: the eleventh
+triage (`6bec5a2`, the architect's, landed on main three hours before
+this merge and OUTSIDE its range) removed **16**, and this merge adds
+**six** — `T-111-s5` … `T-111-s10`. `suggested` goes 123 → **113** by the
+same arithmetic (123 − 16 + 6). `rejected/` holds at **27** and does NOT
+gain the sixteen: that commit deleted them outright, and the copies bound
+for `rejected/` are still staged in the architect's own verification
+checkout, which is a fact about somebody else's index and not about this
+tree. **`done` goes 99 → 100, and THAT one is this merge's** — T-111 is
+the only card it stamps, and it is the hundredth card this project has
+finished. **`verifying` goes 1 → 0.** Derive it at your own ref: three of
+the sixteen the triage removed were `T-111`'s own `s1`, `s3` and `s4`,
+so this card's suggestion trail is smaller on main than the card's body
+describes, and the body is deliberately left saying what it said.
 Decomposition pass complete 2026-08-19
 (design/dispatch-technical-plan.md); D1 ruled by @human the same day.
 
