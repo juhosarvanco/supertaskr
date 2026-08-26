@@ -158,6 +158,30 @@ test("the board is read with REPOSITORY-RELATIVE paths, so a card's own file can
   expect(files.every((f) => f.path.startsWith("docs/"))).toBe(true);
 });
 
+test("...AND THE CONTEXT ACTUALLY USES IT — this body exists because a mutant survived", async () => {
+  // KILLED BY: swapping `parseProjectFromFiles(boardFiles(root))` back to
+  // `parseProject(root)` inside `dispatchContext`.
+  //
+  // THE BODY ABOVE DID NOT KILL THAT MUTANT. It tests the HELPER and not
+  // the CALL SITE, so arm A17 of this card's poison drill changed the
+  // behaviour and the whole suite stayed at exit 0, 204 passed. A drill
+  // that is entirely red is not evidence that the thing the card is for
+  // is pinned (T-111's rejection, in one sentence) — and this is the arm
+  // that proved it here rather than in a verdict.
+  const ctx = await dispatchContext({ porcelain: PORCELAIN_FIXTURE });
+  const rulings = ctx.order.all as { card: { file: string } }[];
+  const files = rulings.map((r) => r.card.file);
+  expect(files.length).toBeGreaterThan(10);
+  for (const f of files) expect(path.isAbsolute(f), f).toBe(false);
+  // The visible symptom, pinned at the surface a reader sees: a card's
+  // path reaches the report through its provenance, and an absolute one
+  // makes every stamped line a function of WHICH CHECKOUT ran rather than
+  // of the tree.
+  const rendered = render(dispatchReport(ctx));
+  expect(rendered).toContain("; docs/tasks/");
+  expect(rendered).not.toContain(`; ${repoRoot}/docs/tasks/`);
+});
+
 test("the parser is loaded from ONE place and a missing build REFUSES loudly", async () => {
   // KILLED BY: catching the import failure and falling back to a local
   // re-spelling of the schedule or the fence. A fourth spelling of the
