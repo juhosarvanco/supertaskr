@@ -468,6 +468,17 @@ commit message calls it *"fixture reconciliation"*. So the glob semantics
 have not moved, and the one place the engine and the record disagree is a
 place where the record was wrong.
 
+**AND THE CONTROL IS THE POINT, NOT DECORATION** — `T-142`, filed on main
+while this rework ran, names as its sharpest instance a probe of
+`graph.json` for unmapped files that returned *"a plausible rising
+series"* because **that file has no component field at all**: the join
+happens later, against the registry globs. This sweep avoids that by
+construction — it does not read `graph.json` looking for a component, it
+runs the engine that performs the join — and the 343-of-350 agreement is
+the positive control T-142 asks censuses to carry. **A census that had
+returned "three" with no control would have been indistinguishable from
+this one, and would have been wrong about the first instance.**
+
 **AND "A DAY" WAS NEVER MEASURED BY ANYONE.** Durations above are all
 taken the same way — first first-parent commit carrying the bucket to the
 first that drains it, since a lane commit is not yet main. The verdict's
