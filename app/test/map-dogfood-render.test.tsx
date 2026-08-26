@@ -79,7 +79,7 @@ const node = (id: string): HTMLElement => {
 };
 
 describe("the nputer repo on its own map", () => {
-  it("renders all thirteen declared components in full mode, and the bucket is BACK", () => {
+  it("renders all thirteen declared components in full mode, and the bucket is GONE again", () => {
     // Ten since T-024 declared C-13 (genesis pane); ELEVEN since T-025
     // declared C-14 (agent runner). See the reconciliation blocks in
     // architecture-dogfood.test.ts for both enumerated deltas.
@@ -114,8 +114,22 @@ describe("the nputer repo on its own map", () => {
     // assertion below is what says WHICH node arrived; had this body
     // rested on the total it could not have told a fourteenth component
     // from a bucket, which is the reason the comment above gives.
-    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(14);
-    expect(container.querySelector('[data-component-id="unmapped"]')).not.toBeNull();
+    // 14 → 13 AT T-141 (2026-08-26), AND THE BUCKET LEAVES FOR THE SECOND
+    // TIME IN THIS LEDGER — the first was T-033's swap, where the total
+    // held at 13 because C-16 arrived in the same breath. This time the
+    // total MOVES, because nothing arrives with it: C-05 declares
+    // `app/src-tauri/tests/graph_budget_bench.rs` and the derivation stops
+    // synthesising a node for it. The identity assertion below is again
+    // what carries the meaning — it now asserts the bucket is ABSENT, and
+    // it INVERTS rather than moving a number, which no count check can
+    // see. Both halves of this body agree again: thirteen nodes, thirteen
+    // declared components, and the title says THAT.
+    // **THE MAP IS ONE OF ONLY TWO PLACES THIS SHOWED UP.** `cargo test`
+    // was 518/0/4 exit 0 with the bucket present and 518/0/4 exit 0 with
+    // it gone; `arch drift` exits 0 without `--fail-on`. A React render
+    // test is this repository's tripwire for unclaimed Rust territory.
+    expect(container.querySelectorAll("[data-testid=map-node]")).toHaveLength(13);
+    expect(container.querySelector('[data-component-id="unmapped"]')).toBeNull();
     expect(container.querySelector('[data-component-id="C-16"]')).not.toBeNull();
     expect(container.querySelector("[data-testid=map-degraded]")).toBeNull();
   });
@@ -295,7 +309,7 @@ describe("the nputer repo on its own map", () => {
     expect(node("C-12").className).toContain(`bg-status-${status}`);
   });
 
-  it("draws the full 39-edge relation table, with FOUR undeclared rows left — two of them the bucket’s", () => {
+  it("draws the full 37-edge relation table, with TWO undeclared rows left — the bucket’s two are gone", () => {
     // 23 + C-13's two declared edges (T-024) + the undeclared
     // C-05→C-13 the merge regen surfaced + C-14→C-10, T-025's one
     // declared edge (planned: no TS import can confirm a Rust-side
@@ -373,18 +387,32 @@ describe("the nputer repo on its own map", () => {
     // C-07 and C-10 for a harness that imports both is a registry decision
     // and a checkpoint takes no dispositions. Routed, with the reasoning,
     // in this merge's STATE entry.
-    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(39);
+    // 39 → 37 AT T-141 (2026-08-26), AND BOTH NUMBERS MOVE DOWNWARD FOR THE
+    // FIRST TIME IN THIS LEDGER — undeclared 4 → 2 while confirmed holds at
+    // 26 and planned at 9. 26 + 2 + 9 = 37. The routed decision above was
+    // taken: C-05 declares the harness, so the two bucket rows retire and
+    // their observed edges FOLD into `C-05 → C-07` and `C-05 → C-10`, which
+    // were already confirmed. Nothing is drawn in their place, which is
+    // exactly what makes C-05 the owner. **THE OTHER TWO CANDIDATES WERE
+    // MEASURED AND EACH DRAWS A ROW**: claiming it in C-07 leaves 38 with a
+    // new undeclared `C-07 → C-10`, and in C-10 leaves 38 with a new
+    // undeclared `C-10 → C-07` — each writing an inverted dependency onto
+    // this map, since C-07 is a standalone crate the app depends on and
+    // C-10 is a watcher that does not read the indexer. Both numbers here
+    // were derived from `arch` at `2a922ce` with the claim applied, before
+    // the suite was re-run, because a red on the first hides the second.
+    expect(container.querySelectorAll("[data-testid=map-edge]")).toHaveLength(37);
     const undeclared = container.querySelectorAll(
       '[data-testid=map-edge][data-relation="undeclared"]',
     );
-    expect(undeclared).toHaveLength(4);
-    // asserted by IDENTITY, not only by count: "four undeclared edges" must
-    // not be reachable by some other row surviving in their place.
+    expect(undeclared).toHaveLength(2);
+    // asserted by IDENTITY, not only by count: "two undeclared edges" must
+    // not be reachable by some other row surviving in their place — and
+    // that guard is what says the two that LEFT are the bucket's two,
+    // rather than any two rows leaving and the count coming out right.
     expect([...undeclared].map((e) => e.getAttribute("data-edge"))).toEqual([
       edgeKey({ from: "C-05", to: "C-15" }),
       edgeKey({ from: "C-10", to: "C-14" }),
-      edgeKey({ from: "unmapped", to: "C-07" }),
-      edgeKey({ from: "unmapped", to: "C-10" }),
     ]);
   });
 

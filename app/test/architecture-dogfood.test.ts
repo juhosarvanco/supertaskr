@@ -1217,7 +1217,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("all 185 files map and ONE of them lands in the bucket — T-139 re-opens the D2 that stood for a day at T-033", () => {
+  it("all 185 files map and the bucket is EMPTY again — T-141 closes the second D2, which stood for exactly one merge", () => {
     // 126 → 172 at the T-010 merge regen (2026-08-25), the largest single
     // move this row has ever taken and the only one whose cause is a new
     // LANGUAGE rather than a new file. `Lang::for_extension("rs")` now
@@ -1323,20 +1323,47 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // since T-033 cleared it. Derived from `index --check`'s own
     // `files +2 -0 ~4` and from `arch` (`files=185 mapped=184 unmapped=1`)
     // before this suite was re-run, never from the failure output.
+    // 185 → 185 AT T-141 (2026-08-26), AND THE SIZE HOLDING IS THE POINT.
+    // This card declares an OWNER for a file already in the index; no file
+    // joins or leaves, so this line does not move and the four assertions
+    // under it do. The same shape as T-033's extraction eleven entries up —
+    // a count that moved here would mean the declaration had accidentally
+    // widened or narrowed the claimed set. Derived from `arch` at
+    // `2a922ce` with the claim applied (`files=185 mapped=185 unmapped=0`),
+    // before this suite was re-run.
     expect(derived.fileComponent.size).toBe(185);
-    // AND THE BUCKET IS NO LONGER EMPTY. T-033's settlement kept
-    // `tests/dispatch_lanes.rs` out of it by CLAIMING it and T-126 kept it
-    // out by DELETING it; T-139 puts a file IN it, because
-    // `app/src-tauri/tests/` is claimed one file at a time — C-14 declares
-    // `app/src-tauri/tests/agent_runner.rs` and nothing declares a prefix.
-    // **NOTHING REDS ON THE RUST SIDE FOR THIS**: `arch drift` exits 0
-    // without `--fail-on`, and `crates/nputer-index/tests/arch.rs` pins the
-    // CYCLE census rather than the drift census. This assertion and the
-    // three below it are the only things in the repository that noticed.
-    // The declaration is a registry decision (C-07 imports and C-10 imports
-    // are both real here) and is ROUTED rather than taken at a checkpoint.
-    expect(derived.unmappedFiles).toEqual(["app/src-tauri/tests/graph_budget_bench.rs"]);
-    expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeDefined();
+    // AND THE BUCKET IS EMPTY AGAIN, ONE MERGE AFTER IT RE-OPENED.
+    // T-033's settlement kept `tests/dispatch_lanes.rs` out of it by
+    // CLAIMING it and T-126 kept it out by DELETING it; T-139 put a file IN
+    // it, because `app/src-tauri/tests/` is claimed one file at a time —
+    // C-14 declares `app/src-tauri/tests/agent_runner.rs` and nothing
+    // declares a prefix. **T-141 CLAIMS IT FOR C-05 AND THE CLAIM COSTS NO
+    // EDGE**, which is what chose C-05 over the two components the harness
+    // actually imports. `graph_budget_bench.rs` imports `nputer_index`
+    // (C-07) and `docs_watch` (C-10), so those two look like the closer
+    // owners and each would INVERT a real dependency: C-07 is a standalone
+    // crate with `depends_on: []` and the app depends on IT, while C-10 is
+    // a watcher with no dependency on the indexer. C-05 already declares
+    // BOTH, and the harness sits in the app's own test directory measuring
+    // the app's own delivery path — the T-010 rule at `tests/agent_runner
+    // .rs`, that a component's suite belongs to the component it
+    // exercises, applied to a harness that exercises the seam.
+    // MEASURED AT `2a922ce`, ALL FOUR ARRANGEMENTS, BEFORE THIS EDIT:
+    //   no owner (today)  39 edges  5 findings  — D2 + two shadow rows
+    //   claimed in C-05    37 edges  4 findings  — NO new edge
+    //   claimed in C-07    38 edges  5 findings  — new undeclared C-07→C-10
+    //   claimed in C-10    38 edges  5 findings  — new undeclared C-10→C-07
+    // Only C-05 makes the graph SMALLER in both columns; the other two
+    // trade a D2 for a D1 and write the inverted dependency into the map.
+    // **AND NOTHING ON THE RUST SIDE REDDED FOR ANY OF IT**, in either
+    // direction: `arch drift` exits 0 without `--fail-on` and
+    // `crates/nputer-index/tests/arch.rs` pins the CYCLE census rather than
+    // the drift census, so `cargo test` was byte-identical while the D2
+    // opened and is byte-identical again now that it has closed. This
+    // assertion and the three below it are still the only things in the
+    // repository that notice — see the note in the drift body.
+    expect(derived.unmappedFiles).toEqual([]);
+    expect(derived.components.find((c) => c.id === UNMAPPED_ID)).toBeUndefined();
     const counts = new Map<string, number>();
     for (const id of derived.fileComponent.values()) counts.set(id, (counts.get(id) ?? 0) + 1);
     expect([...counts.entries()].sort()).toEqual([
@@ -1435,7 +1462,18 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // vitest never reaches it while any of those is red. Derived from
       // the indexed added-file list before the suite was run, which is
       // what the note nine entries up asks for.
-      ["C-05", 63],
+      // 63 → 64 AT T-141 (2026-08-26), and this row moves WITHOUT the graph
+      // moving at all — the second time it has done so, after T-033's
+      // extraction two entries up, and the first time it moves UPWARD that
+      // way. No file was added: `app/src-tauri/tests/graph_budget_bench.rs`
+      // has been indexed since T-139 and merely changes owner, from nobody
+      // to C-05. It is the FOURTH assertion in this body — below the size
+      // check and the two empty-bucket checks — so vitest never reaches it
+      // while any of those is red, and this is the fifth consecutive entry
+      // in this ledger to say so. Derived from `arch`'s own
+      // `component C-05 … files=64` with the claim applied, before the
+      // suite was re-run, never off the failure output.
+      ["C-05", 64],
       // 21 → 23 at the T-053 merge regen (2026-08-17), and this is the
       // FIRST time since T-008 that C-06 moves at all: lib/parser/src/
       // id-slot.ts and lib/parser/test/id-slot.test.ts, both under
@@ -1574,17 +1612,44 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // with files and add none — every other new row above either grew
       // the index or waited for a language.
       ["C-16", 3],
-      // AND THE ROW THAT LEFT, AND HAS COME BACK. `["unmapped", 1]` stood
-      // here for exactly one day: `app/src-tauri/tests/dispatch_lanes.rs`,
-      // this repository's first D2, settled onto C-15 at T-033 by the rule
-      // T-010 used for `tests/agent_runner.rs`. **T-139 re-opens it**
-      // (2026-08-26, merge `aed77b6`) with a different file and the same
-      // mechanism: `app/src-tauri/tests/graph_budget_bench.rs` sits in a
-      // directory no component claims by prefix, so the SECOND D2 this
-      // repository has ever carried is a benchmark harness. Nothing on the
-      // Rust side reds for it — this row, `unmappedFiles` above, the
-      // findings list and the relation table are the whole of what noticed.
-      ["unmapped", 1],
+      // AND THE ROW THAT LEFT, CAME BACK, AND HAS LEFT AGAIN — KEPT HERE AS
+      // A LEDGER ENTRY WITH NO ASSERTION UNDER IT, BECAUSE DELETING THE
+      // EXPLANATION TO CLOSE THE FINDING WOULD ERASE THE EVIDENCE THAT IT
+      // HAPPENED. `["unmapped", 1]` has stood in this array twice.
+      // FIRST, for exactly one day: `app/src-tauri/tests/dispatch_lanes.rs`,
+      // this repository's first D2, created by the T-110 merge and settled
+      // onto C-15 at T-033 by the rule T-010 used for
+      // `tests/agent_runner.rs`. SECOND, for exactly one merge: **T-139
+      // re-opened it** (2026-08-26, merge `aed77b6`) with a different file
+      // and the same mechanism — `app/src-tauri/tests/graph_budget_bench.rs`
+      // sits in a directory no component claims by prefix, so the second D2
+      // this repository has ever carried was a benchmark harness — and
+      // **T-141 closed it** by declaring C-05 the owner.
+      //
+      // THE PATTERN, WORTH RECORDING BECAUSE IT IS NOW TWO FOR TWO. BOTH
+      // D2s THIS REPOSITORY HAS EVER HAD WERE CREATED BY A MERGE AND CLOSED
+      // BY A LATER HAND, NEVER BY THE MERGE THAT MADE THEM. Both were
+      // created the same way: a merge added a `.rs` file to a directory
+      // that is claimed one file at a time, and the regen — which is the
+      // checkpoint's act, not the lane's — discovered it afterwards. Both
+      // were closed the same way: a later card took a DISPOSITION, because
+      // picking an owner is a registry decision and neither an executor
+      // (fence) nor an integrator (a checkpoint takes no dispositions) may
+      // take it. The first lasted a day, the second a merge. THE STANDING
+      // LESSON IS THE ONE THE DELAY ITSELF TEACHES: a D2 is not a defect
+      // the merge that creates it can repair, so the honest reconciliation
+      // is to RECORD the bucket — which is what T-139's checkpoint did in
+      // this file, in 137 lines — and let the disposition follow. Repairing
+      // it at the merge would have hidden that the merge created unclaimed
+      // territory, which is the most interesting thing about either event.
+      //
+      // AND WHAT NOTICED, BOTH TIMES, WAS THIS FILE AND THE MAP FIXTURE.
+      // Not `cargo test`, which was 518/0/4 exit 0 on both sides of the
+      // T-139 regen and on both sides of this claim; not `arch drift`,
+      // which exits 0 without `--fail-on`; not the cargo arch pin, which
+      // is about CYCLES. Two React fixtures are the whole of the tripwire
+      // for unclaimed Rust territory. Recorded, not fixed — wiring a
+      // drift gate is a separate decision and not this card's.
     ]);
     // The map pane joined its engine at the T-012 merge regen
     // (T-011-s1 option a keeps the trio in place under lib/).
@@ -1622,7 +1687,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     expect(derived.issues).toEqual([]);
   });
 
-  it("THE FINDINGS: TWO D1 ROWS, ONE OF THEM REVEALED RATHER THAN CREATED — AND A D2 THIS MERGE CREATED", () => {
+  it("THE FINDINGS: TWO D1 ROWS, ONE OF THEM REVEALED RATHER THAN CREATED — AND THE D2 IS GONE, RETIRED BY A DECLARATION THAT COST NO EDGE", () => {
     // T-033 TAKES THIS ARRAY FROM FIFTEEN ROWS TO THREE, and the shape of
     // what is left is the whole deliverable. Eleven undeclared rows were a
     // warning light wired to always-on; after this, an undeclared edge is
@@ -1693,17 +1758,29 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
           },
         ],
       },
-      // AND THE D2 ROW T-139 PUTS BACK (2026-08-26, merge `aed77b6`). This
-      // repository carried a D2 for exactly one day at T-033 and none since;
-      // `app/src-tauri/tests/graph_budget_bench.rs` is the second it has
-      // ever had. It is the merge's own — `arch drift` read `unmapped=0` at
+      // AND THE D2 ROW THAT STOOD HERE FOR EXACTLY ONE MERGE — KEPT AS A
+      // COMMENT AFTER THE ROW ITSELF LEFT, BECAUSE THE ROW'S DEPARTURE IS
+      // THE FINDING AND THE EXPLANATION IS THE EVIDENCE FOR IT.
+      // T-139 PUT IT BACK (2026-08-26, merge `aed77b6`): this repository had
+      // carried a D2 for exactly one day at T-033 and none since, and
+      // `app/src-tauri/tests/graph_budget_bench.rs` was the second it has
+      // ever had. It was the merge's own — `arch drift` read `unmapped=0` at
       // the parent `00e133a` and `unmapped=1` after the checkpoint's regen —
-      // and the DECLARATION is routed rather than taken here, because the
+      // and the DECLARATION was routed rather than taken there, because the
       // harness imports across two components (C-07's `nputer_index` and
       // C-10's `docs_watch`) and choosing an owner is a registry decision.
-      // Its position is the derivation's own ordering: D1s, then D2, then
-      // the D3s.
-      { rule: "D2", id: "D2:unmapped", files: ["app/src-tauri/tests/graph_budget_bench.rs"] },
+      // T-141 TAKES IT, AND TAKES IT FOR THE COMPONENT THAT LOOKED FURTHEST
+      // AWAY. Neither importee is the owner: claiming it in C-07 would
+      // declare that a standalone crate with `depends_on: []` depends on the
+      // app's docs watcher, and claiming it in C-10 would give the watcher a
+      // dependency on the indexer — mirror inversions of the real direction,
+      // and both MEASURABLE. At `2a922ce`, C-07 gives 38 edges / 5 findings
+      // (new undeclared C-07→C-10), C-10 gives 38 / 5 (new undeclared
+      // C-10→C-07, and a second drift ring on C-10), and C-05 gives 37 / 4
+      // with nothing added at all. **A DISPOSITION THAT MAKES THE GRAPH
+      // SMALLER IN BOTH COLUMNS IS DECLARING SOMETHING THE REGISTRY ALREADY
+      // CARRIED**, which is the test that separated the three candidates,
+      // and it is why the count above went 5 → 4 rather than 5 → 5.
       // `informational: true` is READ from each component file's opt-in
       // `non_code:` key, never derived from the empty file list — the two
       // are asserted apart in architecture-derive.test.ts, where a second
@@ -1713,7 +1790,7 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     ]);
   });
 
-  it("the full relation table: 26 confirmed, 4 undeclared, 9 planned", () => {
+  it("the full relation table: 26 confirmed, 2 undeclared, 9 planned", () => {
     // T-033: 35 rows -> 36, and the TALLY is where the card lands.
     // 14/12/9 becomes 26/1/9 — eleven undeclared rows become confirmed or
     // disappear, and the single survivor is the cycle T-125 owns.
@@ -1737,13 +1814,25 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       // took this pair from `undeclared` to `confirmed` and the findings
       // list stopped holding it.
       ["C-05", "C-06", "confirmed", 14],
-      ["C-05", "C-07", "confirmed", 1],
+      // 1 -> 2 AT T-141, and the observed count moves with NO code change
+      // and NO regen: `graph_budget_bench.rs` has imported `nputer_index`
+      // since T-139 and the file edge has been in the graph the whole time
+      // — it was attributed to the bucket. Declaring an owner re-attributes
+      // it, so the edge that WAS `unmapped -> C-07 undeclared 1` folds into
+      // this already-CONFIRMED row. That fold is the whole reason the table
+      // gets SHORTER instead of longer: nothing new is observed, one
+      // endpoint is renamed.
+      ["C-05", "C-07", "confirmed", 2],
       ["C-05", "C-08", "confirmed", 4],
       ["C-05", "C-09", "confirmed", 3],
       // 38 -> 39 at the T-116 merge regen: map-churn-age.test.tsx imports
       // `startDocsWatcher` from app/src/lib/watcher-store.ts, which is
       // C-10's.
-      ["C-05", "C-10", "confirmed", 39],
+      // 39 -> 40 AT T-141, by the same re-attribution as the C-07 row above
+      // and for the harness's OTHER import, `docs_watch`. The two folds are
+      // one file's two imports, which is why the D2 was one finding and not
+      // three, and why retiring it retires both shadow rows at once.
+      ["C-05", "C-10", "confirmed", 40],
       ["C-05", "C-11", "planned", 0],
       // *** DISCHARGED AT T-033's CHECKPOINT: 32 -> 33. *** The lane left
       // this row at 32 because the file tracks the COMMITTED graph (the
@@ -1835,15 +1924,23 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["C-13", "C-16", "confirmed", 3],
       ["C-14", "C-10", "confirmed", 2],
       ["C-15", "C-10", "planned", 0],
-      // NEW at T-139 (2026-08-26, merge `aed77b6`), and they are the first
-      // rows in this table whose SOURCE is not a component: the bucket
-      // imports. `app/src-tauri/tests/graph_budget_bench.rs` is unclaimed
-      // territory and reaches `nputer_index` (C-07) and `docs_watch`
-      // (C-10), so one unmapped file produces TWO undeclared rows. Both
-      // vanish the day the file is declared — which is what makes them a
-      // symptom of the D2 rather than two independent findings.
-      ["unmapped", "C-07", "undeclared", 1],
-      ["unmapped", "C-10", "undeclared", 1],
+      // AND THE TWO ROWS THAT STOOD HERE FOR ONE MERGE, KEPT AS A COMMENT.
+      // T-139 (2026-08-26, merge `aed77b6`) added `unmapped -> C-07` and
+      // `unmapped -> C-10`, the first and only rows this table has ever
+      // carried whose SOURCE is not a component: the bucket's imports.
+      // `app/src-tauri/tests/graph_budget_bench.rs` was unclaimed territory
+      // and reaches `nputer_index` (C-07) and `docs_watch` (C-10), so one
+      // unmapped file produced TWO undeclared rows — which is what made
+      // them a symptom of the D2 rather than two independent findings.
+      // T-141 DECLARED IT AND BOTH VANISHED, exactly as the comment that
+      // stood here predicted. They did not become two new rows: the
+      // observed edges folded into `C-05 -> C-07` and `C-05 -> C-10`
+      // above, both already CONFIRMED, so the table lost two rows and
+      // gained none. **A DECLARATION THAT SHORTENS THE TABLE IS DECLARING
+      // A DEPENDENCY THAT WAS ALREADY DECLARED**; a declaration that
+      // lengthens it has picked the wrong owner, and C-07 and C-10 were
+      // each measured doing exactly that (38 rows apiece, each with a new
+      // undeclared row pointing the wrong way down the dependency).
     ]);
     const tally = new Map<string, number>();
     for (const e of derived.edges) tally.set(e.relation, (tally.get(e.relation) ?? 0) + 1);
@@ -1851,7 +1948,14 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
       ["confirmed", 26],
       ["planned", 9],
       // 2 → 4 at T-139, both new rows from the one unmapped file above.
-      ["undeclared", 4],
+      // 4 → 2 AT T-141, both leaving for the same reason they arrived. This
+      // is the SECOND assertion in this body and the row count above is the
+      // first, so vitest never reaches it while that one is red — the trap
+      // this body's own comments have warned about since T-028. Both
+      // numbers were derived from `arch` with the claim applied (26
+      // confirmed / 2 undeclared / 9 planned = 37) before the suite was
+      // re-run, never off the failure output.
+      ["undeclared", 2],
     ]);
     // AND THE INVARIANT THE CARD EXISTS TO RESTORE: every undeclared edge
     // is now either declared or owned by a named card. TWO rows at the
@@ -1860,15 +1964,23 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // `T-126-s3` item 4 and `C-10->C-14` is T-125's cycle. An undeclared
     // row with no owner is what this assertion exists to catch, and
     // adding one WITHOUT its owner is the failure it would have caught.
-    // FOUR ROWS AT THE T-139 MERGE, and the invariant still holds for the
-    // same reason in a different shape: the two new ones are not a
-    // relation anybody declared wrongly, they are the SHADOW of `D2:
-    // unmapped` above, and they are owned by the routed registry decision
-    // this merge's checkpoint records. Declare the harness and all four
+    // FOUR ROWS AT THE T-139 MERGE, and the invariant still held for the
+    // same reason in a different shape: the two new ones were not a
+    // relation anybody declared wrongly, they were the SHADOW of `D2:
+    // unmapped` above, and they were owned by the routed registry decision
+    // that merge's checkpoint recorded. Declare the harness and all four
     // numbers below move at once; that coupling is the point.
+    // BACK TO TWO AT T-141, AND THE COUPLING IS THE PROOF. The routed
+    // decision landed, one line of registry moved, and the row count, the
+    // undeclared tally, this identity list and the findings body all moved
+    // together — four assertions across two bodies, one cause. The
+    // invariant is unchanged and now has two rows to hold: `C-05->C-15` is
+    // routed to `T-126-s3` item 4 and `C-10->C-14` is T-125's cycle. This
+    // is the THIRD assertion in this body; it moves under a red on either
+    // of the two above it and was derived, like them, from `arch`.
     expect(
       derived.edges.filter((e) => e.relation === "undeclared").map((e) => `${e.from}->${e.to}`),
-    ).toEqual(["C-05->C-15", "C-10->C-14", "unmapped->C-07", "unmapped->C-10"]);
+    ).toEqual(["C-05->C-15", "C-10->C-14"]);
   });
 
   it("the T-009 package.path seam is consumed: C-0x→C-06 edges are real, never absent", () => {
@@ -1990,7 +2102,16 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // for `D2:unmapped`. So this list is "nodes carrying drift" and has
     // never been "components carrying drift"; the difference was invisible
     // while the bucket was empty and is visible now.
-    expect(drift).toEqual(["C-05", "C-10", "unmapped"]);
+    // AND IT LEAVES AGAIN AT T-141, ONE MERGE LATER, BY THE SAME ROUTE IT
+    // LEFT BY AT T-033 — a component claims the file, so there is no D2
+    // subject and the derivation synthesises no bucket node. The lesson
+    // survives the row: this list is "nodes carrying drift" and has never
+    // been "components carrying drift", and the two entries that remain
+    // are both real components again. `declaredOnly` below is the control
+    // and does NOT move, which is the tell that a NODE left rather than a
+    // component changing shape — the mirror of the T-135 Half A entry
+    // above, where a drift source arrived and the control also held.
+    expect(drift).toEqual(["C-05", "C-10"]);
     const declaredOnly = derived.components.filter((c) => c.declaredOnly).map((c) => c.id);
     expect(declaredOnly).toEqual(["C-01", "C-11"]);
     // THE CONTROL FOR THE DOWNGRADE, stated as its own assertion: the two
@@ -2013,10 +2134,20 @@ describe("dogfood: the nputer repo through its own derivation engine", () => {
     // AND THE T-139 CHECKPOINT MET IT THE SAME WAY, which is the second
     // consecutive integration to prove the warning above with its own
     // re-run: reconciling `drift` turned this line red on the next pass.
+    // AND T-141 MET IT A THIRD TIME, WHICH MAKES THREE CONSECUTIVE HANDS.
+    // This lane's first pass read `6 failed / 1007 passed` and its card
+    // named exactly six bodies; the SEVENTH assertion was this line, hidden
+    // under the `drift` red four lines up, and it surfaced only on pass 2
+    // at `1 failed / 1012 passed`. **A COUNT OF FAILURES IS A FLOOR AND
+    // NEVER A TOTAL** — and this time the floor was published in a card
+    // before the run, which is the strongest form of the warning yet: even
+    // a body-by-body forecast written from a scratch measurement missed it,
+    // because a body is one unit to vitest and seven assertions to a
+    // reader. Re-run until the BODY is green, never until the first message
+    // stops appearing.
     expect(derived.findings.filter(isDriftFinding).map((f) => f.id)).toEqual([
       "D1:C-05->C-15",
       "D1:C-10->C-14",
-      "D2:unmapped",
     ]);
   });
 
