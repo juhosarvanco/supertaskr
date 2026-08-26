@@ -437,3 +437,88 @@ At `15a963d` (base) / `9dfb5a0` (this lane's work commit):
   the single most important thing in the tree for this card (R1). It
   warned about the prose-block map and not about the module that had
   already built the expansion.
+
+### Addendum — the gates, the three owed suites, and one defect only a lint could see
+
+**THE TOKEN LINT FOUND A DEFECT THAT 290 GREEN BODIES COULD NOT.**
+`compareFences` built its witness-dedup key by joining three strings with
+what were meant to be spaces and were written as two literal **U+0000**
+bytes. The key WORKED — a NUL is a perfectly good separator — so the
+parser suite was 290/290 with it in place, `tsc --noEmit` was 0, and
+nothing in `lib/parser` could ever have caught it. **`tools/e2e`'s P5
+control-character rule reds on it**, and it arrived as three failing
+bodies in `token-scan.spec.ts` counting **9 planted control bytes against
+an expected 7** — the gate's own runtime-built control corpus finding two
+uninvited passengers. Fixed at `31d8212` with `JSON.stringify`, which
+removes the separator question rather than answering it. **The lesson is
+the gate's, not the bug's**: a defect that changes no behaviour is
+invisible to every behavioural suite by construction, and the only thing
+that sees it is a gate that reads the TEXT.
+
+**THE DOCS GATE FIRES, exit 1**, run from the repository root on the
+RANGE RULE's own six paths and never through `xargs`. It fires on **1**
+of the 6 — `docs/tasks/T-134-…md`, this card — and **NOT** on
+`method/lane-protocol.md`, because the gate's trigger is `docs/` and
+`method/` is not `docs/` (`T-132-s2`). It named THREE suites and
+**15 derived docs readers across 4 suites, up from 14**: the fifteenth is
+this card's own `lib/parser/test/fence.test.ts`, which the gate detects
+by its `parseProject()` call. **0 frontmatter issues; census 131 sites in
+22 files; 6 root-anchored files all argued, 0 unlinked.**
+
+**ALL THREE OWED SUITES RUN AND GREEN**, exits from `$?` on unpiped
+commands, counts read as well as exits:
+
+- `npx vitest run` from `lib/parser/` — **290 / 290, exit 0**, 13 files.
+- `npm test` from `app/` — **973 / 973, exit 0**, 47 files, TWICE (before
+  and after the NUL fix), after `npm run build` from `lib/parser/` then
+  from `app/`, both exit 0.
+- `npm test` from `tools/e2e/` — **194 / 194, exit 0, 3.1m** on explicit
+  port **15781**, `lsof` read at ZERO rows at 11:51:28 EEST before and
+  11:54:33 EEST after. Header `Running 194 tests using 1 worker`
+  cross-checked against 194 `✓` bodies and a highest body number of 194.
+  The first run of this suite is the one that found the NUL: **3 failed /
+  191 passed**, all three in `token-scan.spec.ts`.
+- Also: `npm run lint:tokens` **exit 0, clean, TOKEN 138 / CONTROL 776**
+  (derive the control figure at your own ref — `git ls-files` reads
+  **794** here); `npm run lint:docs` **exit 0**; `npx tsc --noEmit` from
+  `lib/parser/` and from `tools/e2e/` both **exit 0**; and `npm run
+  typecheck` from `app/` **exit 1, `Missing script: "typecheck"`**,
+  re-derived rather than quoted.
+
+**`cargo test` IS NOT OWED AND THAT IS DERIVED RATHER THAN SKIPPED.** No
+`.rs` path is in the diff, and `method/lane-protocol.md` is **not** one of
+the fourteen `method/` files compiled into `agent/kit.rs` — the parity
+test walks only `docs-templates`, `adapters` and `tasks`, and the two
+Rust mentions of this file (`dispatch/join.rs:57`, `dispatch/lanes.rs:40`)
+are **doc comments, not `include_str!`**. So the `method/` half of
+`T-132-s2`'s gap costs nothing here; it would have cost everything if
+this card's fence had been `method/tasks/TASK-FORMAT.md`.
+
+**THE IDENTICAL-FIGURES TRAP FIRED IN THIS LANE, AND IT WAS MEASURED
+RATHER THAN ANTICIPATED.** GRAPH REGEN was asked TWICE, before and after
+the NUL fix, and reported **byte-identical headline figures both times**:
+`970961 bytes · 183 files · 2064 symbols · 1986 edges`. It is not the
+same file. Regenerated against each tree in turn and hashed:
+
+    pre-fix  tree -> graph sha256 09151e14…  970961 bytes
+    post-fix tree -> graph sha256 ee554cea…  970961 bytes
+
+`fence.ts` grew by nine source bytes and the graph's own length never
+moved, because the entry stores a fixed-width content hash and an
+unchanged `loc`. **A byte comparison would have confirmed "unchanged" and
+been wrong about the content.** Both regenerations were then discarded:
+`docs/architecture/graph.json` is back at its committed `b742efbe…` and
+`git status` is empty — **this lane commits no graph.**
+
+**THE OTHER LIVE LANE MOVED UNDER THIS ONE AND THE DISJOINTNESS STILL
+HOLDS ON ACTUAL PATHS.** `T-111` was at `15a963d` when this lane opened
+and is at `80032ec` now, with its own drill checkout `/private/tmp/t111d`
+beside it (detached, not a lane). Its diff is
+`app/src/lib/board-model.ts` and `app/test/select-board.test.ts`; this
+lane's six paths contain neither. **The intersection is empty as a
+comparison of two named sets and not by the emptiness of one of them.**
+
+**FINAL RANGE**: `git merge-tree --write-tree 15a963d HEAD` → **exit 0**
+(read before the substitution), tree `895a2e24`, **6 paths**. Main was
+`15a963d` at every one of the three times it was read. Lane tip
+`31d8212`; work commits `9dfb5a0`, `c98313c`, `31d8212`.
