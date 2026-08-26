@@ -265,9 +265,12 @@ that matters.**
   `arch drift --fail-on` unwired *"while the registry carries live
   undeclared edges by design"*. That reason is specific to `undeclared` —
   `C-10 -> C-14` and `C-05 -> C-15` are both held on purpose — and **no
-  such decision has ever been taken for `unmapped`**. Both D2s were
-  treated as things to close and both were closed. The `unmapped` arm is
-  separable and its blocking reason has lapsed.
+  such decision has ever been taken for `unmapped`**. ALL THREE D2s were
+  treated as things to close and all three were closed (§11 — this
+  sentence said "both" until the rework). The `unmapped` arm is
+  separable and its blocking reason has lapsed, and the separability
+  MEASURES at this tip: `arch drift --fail-on unmapped` exits **0**,
+  `--fail-on undeclared` exits **1**, `--fail-on any` exits **1**.
 - Not fixed here: out of scope by the card's own words, and a new Rust
   assertion would owe a POISON DRILL this card otherwise does not.
 
@@ -290,6 +293,24 @@ indistinguishable from one that passes.
   of reds is wanted.** Fourteen assertions moved; six bodies went red on
   pass 1 and a seventh assertion on pass 2.
 - **"Four titles" is five.** §3 above.
+- **THE CARD'S FIRST SENTENCE — *"T-139's merge created this repository's
+  SECOND D2"* — IS WRONG, AND THIS SECTION MISSED IT ON THE FIRST BUILD.**
+  That is the miss that got this card rejected: §7 accepted the duty of
+  auditing the card, audited its title count, its table, its unprinted
+  numbers and its `touches:`, and never applied the same duty to the
+  opening sentence it had copied. **It is the THIRD**, and criterion 5's
+  premise (*"Both D2s in this repository's history…"*) inherits the same
+  error. Derived, not argued — §11. The card's spec prose is the
+  architect's and is left as written; the correction is recorded here and
+  in `T-141-s2` rather than edited into someone else's section.
+- **The card's "137 lines … (`ae92f67`: `architecture-dogfood.test.ts`
+  +103, `map-dogfood-render.test.tsx` +63)" cites two figures for one
+  quantity and they disagree.** `git show --numstat ae92f67` gives
+  **+84/−19** and **+53/−10**, re-derived here: 84 + 53 = **137**, so the
+  headline is right, and 103 and 63 are lines TOUCHED printed with a `+`
+  as though they were insertions — they sum to 166, over by exactly the
+  29 deletions. (The verdict's finding; confirmed at this tip, not
+  copied.)
 - **The card asserts the C-07/C-10 inversion and never prints its
   numbers.** They are 38/5 and 38/5, measured here.
 - The card's `touches:` reads `[docs/architecture/components/,
@@ -524,6 +545,50 @@ against `2a922ce`; expect-STATEMENTS, comments stripped and bodies paired
 in file order, **45 → 45** and **44 → 44**; bodies **10 → 10** and
 **8 → 8**; **zero added, zero removed**; and per body **3, 1, 3, 2, 2,
 3 = 14**, which is the corrected §2 table.
+
+### 14. THE REWORK'S DRILL — RUN AT `be7ac9b`, PRODUCER SIDE ONLY
+
+Detached worktree at `/private/tmp/t141r`, **outside the repository**,
+`git worktree add --detach` at this rework's own commit **`be7ac9b`**,
+with its own `lib/parser` `npm ci` + `npm run build` and `app`
+`npm install` so nothing of the lane's was shared. Removed afterwards
+with `git worktree remove --force`, exit **0**; `git worktree list
+--porcelain` filtered on `refs/heads/task/` then reads **two** lanes,
+`T-137` and this one (T-138's merged and its worktree is gone).
+
+**ONE SIDE ONLY: THE PRODUCER WAS MUTATED, NEVER AN ASSERTION.** The
+mutation is the single registry line this card adds — the
+`app/src-tauri/tests/graph_budget_bench.rs` claim removed from
+`C-05-app.md`'s `paths:` — and it was **read back with `git diff` before
+the run**, not trusted to a substitution count. The diff shows exactly
+one deleted line and nothing else.
+
+    baseline   18 passed / 18        exit 0
+    mutant      6 failed / 12 of 18  exit 1
+    restored   18 passed / 18        exit 0
+
+**All six reconciled bodies red under the mutant**, and the red set is
+byte-for-byte the pass-1 set the verdict published — including this
+rework's own corrected title, which appears in the failure output as
+*"T-141 closes the THIRD D2"*, so the drill exercises the edited text
+rather than only the assertion under it. Restoration proved two ways:
+`shasum -a 256 -c` against the pre-mutation reading
+(`0cd9c7d50c55f249…`) says **OK**, and `git diff --stat` on that path is
+**empty**.
+
+**HONEST LIMIT, AND IT IS DIFFERENT FROM THE FIRST BUILD'S.** One
+mutation reds at BODY granularity, so six of the fourteen assertions are
+individually observed red and the other eight sit below a first red —
+unchanged from the original drill, and surfacing them would mean editing
+assertions, which the one-sidedness rule forbids. **The limit this
+rework has to name is a different one: the census facts it writes are
+COMMENTS, and a comment cannot be poisoned at all.** No mutation of
+`C-05-app.md` can make "4h31m29s" or "three windows" red. Said plainly
+rather than left silent: the drill establishes that the reconciled
+ASSERTIONS are producer-sensitive; **it establishes nothing about the
+census, which is why the census was established by derivation and a
+343-of-350 positive control instead (§11).** A narrative claim's control
+is a measurement, not a mutant.
 
 ---
 
