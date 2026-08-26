@@ -823,12 +823,37 @@ own sentence, broken at the one seat whose job is leaving the docs true.**
 **THE GRAPH BUDGET IS AT 98.1%** — 1020023 of 1040000, **19977 bytes
 left**. `T-140` is the card and it is no longer theoretical.
 
-**`T-149` IS IN VERIFICATION** at `d437f5a`, and its build already
-falsified its own card's success measurement: *"20 of 34 planned cards
-touch app-shell"* is a census over a STRING in `touches:`, and no
-registry edit moves a token an author already typed. What did move:
-**app-shell's reserved test files 49 → 20**, with 29 routed to map,
-interview, board and agent. Re-fencing the twenty cards is `T-149-s2`.
+**`T-149` IS MERGED. `app/test/**` IS NO LONGER THE SHELL'S CATCH-ALL.**
+Merge `921d121`, 14 paths. Each of the 49 indexed test files is claimed by
+an exact path in the component whose code it exercises — **subject
+derived from IMPORT EDGES, not filenames**, which is why the card's
+keyword sweep was wrong in four places and two files invert their own
+names.
+
+    C-05 64->31   C-08 10->12   C-09 3->6   C-10 3->7
+    C-12 18->34   C-13 8->15    C-14 8->9
+
+**37 edge rows before, 37 after, row-set diff EMPTY**, and `arch drift`
+still `findings=4 unmapped=0 ambiguous=0`. The verifier rebuilt the
+registry parser, glob matcher and edge derivation from scratch and
+confirmed they reproduce `arch` at both refs before trusting anything.
+
+**A PRE-EXISTING FALSE GREEN FELL OUT OF IT — `T-149-s4`.** A glob whose
+star sits inside a filename (`app/test/map-*`) normalises to a domain
+matching no path, so **two genuinely colliding fences answer `disjoint`**,
+with no issue raised and not even `unusable`, while `arch drift` calls the
+same file `ambiguous`. **Zero live triggers today**: all 97 registry
+`paths:` entries are clean. It is the same reason the negated catch-all
+was rejected — `normalizeFenceToken` does not interpret a leading `!`.
+
+**THE BOARD HAS NOT MOVED YET AND THE CARD SAYS SO.** *"20 of 34 planned
+cards touch app-shell"* is a census over a STRING in `touches:`; no
+registry edit moves a token an author already typed, and `docs/tasks` is
+in `UNFENCEABLE_PATHS` so no card may hold those files. The verifier
+ruled the card **correctly scoped rather than under-delivered**. What
+moved: `app-shell` reserves **20 of 49** app/test files where it reserved
+49. **The throughput gain waits on `T-149-s2`**, which carries the twenty
+ids.
 
 **CUTTING A NEW LANE REDS EVERY OLDER LIVE LANE, AND THE ARCHITECT DID
 IT TONIGHT.** `tools/e2e/tests/brief.spec.ts:706` on main iterates the

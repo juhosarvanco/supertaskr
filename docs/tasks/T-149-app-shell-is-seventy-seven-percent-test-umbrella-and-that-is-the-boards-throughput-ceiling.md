@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 1
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [docs/architecture/components/, app-shell, app-map]
 builder: claude-opus-5
-verifier:
-built_by:
-verified_by:
-review:
+verifier: claude-opus-5
+built_by: claude-opus-5
+verified_by: claude-opus-5
+review: same-model
 ---
 
 ## The measurement
