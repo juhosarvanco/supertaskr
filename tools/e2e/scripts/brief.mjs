@@ -36,14 +36,24 @@
  *      and every one of them names the sentence it could not find.
  */
 import { EXIT, assembleBrief, context, render, stateReport } from "./dispatch-brief.mjs";
+import { dispatchContext, dispatchReport } from "./dispatch-order.mjs";
 
-const FLAGS = Object.freeze(["--task", "--role", "--root", "--state", "--full", "--help"]);
+const FLAGS = Object.freeze([
+  "--task",
+  "--role",
+  "--root",
+  "--state",
+  "--dispatch",
+  "--full",
+  "--help",
+]);
 
-/** @param {string[]} argv @returns {number} */
-function main(argv) {
+/** @param {string[]} argv @returns {Promise<number>} */
+async function main(argv) {
   /** @type {Record<string, string>} */
   const opts = {};
   let wantsState = false;
+  let wantsDispatch = false;
   let full = false;
   for (let i = 0; i < argv.length; i += 1) {
     const a = /** @type {string} */ (argv[i]);
@@ -61,12 +71,17 @@ function main(argv) {
     }
     if (a === "--help") {
       console.log(
-        "usage: node tools/e2e/scripts/brief.mjs --task <T-NNN> [--role <role>] [--state] [--full] [--root <path>]",
+        "usage: node tools/e2e/scripts/brief.mjs --task <T-NNN> [--role <role>] [--state] " +
+          "[--dispatch] [--full] [--root <path>]",
       );
       return EXIT.CLEAN;
     }
     if (a === "--state") {
       wantsState = true;
+      continue;
+    }
+    if (a === "--dispatch") {
+      wantsDispatch = true;
       continue;
     }
     if (a === "--full") {
@@ -82,10 +97,11 @@ function main(argv) {
     i += 1;
   }
   const taskId = opts["task"] ?? "";
-  if (taskId === "" && !wantsState) {
+  if (taskId === "" && !wantsState && !wantsDispatch) {
     console.error(
       "brief: nothing asked for — give --task <T-NNN> for a dispatch brief, --state for the " +
-        "sections of docs/STATE.md a command can answer, or both.\n" +
+        "sections of docs/STATE.md a command can answer, --dispatch for what is startable now " +
+        "and why the rest are not, or any combination.\n" +
         "  An empty request is not a clean run; it is a question this command was never asked.",
     );
     return EXIT.USAGE;
@@ -115,6 +131,17 @@ function main(argv) {
     console.log(render(stateReport(ctx)));
   }
 
+  if (wantsDispatch) {
+    if (taskId !== "" || wantsState) console.log("");
+    console.log(
+      render(
+        dispatchReport(
+          await dispatchContext(opts["root"] === undefined ? {} : { root: opts["root"] }),
+        ),
+      ),
+    );
+  }
+
   if (ctx.findings.length > 0) {
     console.error("");
     console.error(`brief: FOUND ${ctx.findings.length} thing(s) the assembler could not settle:`);
@@ -130,7 +157,7 @@ function main(argv) {
 
 let code;
 try {
-  code = main(process.argv.slice(2));
+  code = await main(process.argv.slice(2));
 } catch (err) {
   console.error("brief: COULD NOT RUN");
   console.error(`  ${err instanceof Error ? err.message : String(err)}`);
