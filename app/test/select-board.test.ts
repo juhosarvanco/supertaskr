@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   parseProjectFromFiles,
+  type ParseIssue,
   type ProjectParseResult,
   type TaskStatus,
 } from "@nputer/parser/pure";
@@ -1551,7 +1552,8 @@ describe("blocked_by is a DECLARATION and whether it binds is DERIVED (T-111-s4)
       ["docs/tasks/T-001.md", task("T-001", "F-02", 1, "done")],
     ]);
     const emitted = m.issues.filter(
-      (i) => i.kind === "dangling-reference" && i.field === "blocked_by",
+      (i): i is Extract<ParseIssue, { kind: "dangling-reference" }> =>
+        i.kind === "dangling-reference" && i.field === "blocked_by",
     );
     expect(emitted.length).toBe(1);
     expect(emitted[0]?.nearMiss).toEqual(["T-001"]);
