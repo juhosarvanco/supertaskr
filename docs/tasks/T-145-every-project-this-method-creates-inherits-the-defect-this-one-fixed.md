@@ -252,6 +252,29 @@ Standing gates, derived from those 6 paths:
   bytes / 185 files / 2124 symbols / 2039 edges.
 - **BOOT GATE** — trigger is `app/src-tauri/**`, `app/src/**` or either
   manifest. Matches **0 of 6**. NOT OWED.
-- **DOCS GATE** — FIRES, exit **1**, naming 3 card paths and 3 suites:
-  `npm test` from `app/`, `npm test` from `tools/e2e/`, `npx vitest run`
-  from `lib/parser/`. All three re-run after the card writes, all green.
+- **DOCS GATE** — FIRES, exit **1**, naming **all 4** card paths and 3
+  suites: `npm test` from `app/`, `npm test` from `tools/e2e/`,
+  `npx vitest run` from `lib/parser/`. All three re-run after the LAST
+  card write, all green. (Derived twice: at `db3d8a1` it named 3 cards,
+  at `5897c30` it names 4 — the gate is a function of the diff, so it was
+  re-asked after every write rather than carried.)
+
+### The three DOCS-GATE suites, re-run at the tip
+
+Every card write moves the gate's answer, so the three suites it names
+were re-run after the LAST one rather than once at the start:
+
+| command | exit | result |
+|---|---|---|
+| `npx vitest run` from `lib/parser/` | 0 | 290 passed |
+| `npm test` from `app/` | 0 | 1013 passed |
+| `NPUTER_E2E_PORT=15947 npm test` from `tools/e2e/` | 0 | 194 passed |
+| `npm run lint:docs` from `tools/e2e/` | 0 | every live card parses, legal status |
+| `npm run lint:tokens` from `tools/e2e/` | 0 | TOKEN 139 / CONTROL **777** |
+
+`cargo test` stands at **exit 0, 518 passed** after the recovery the
+addendum above describes; `index --check` exit **0**, CURRENT.
+
+**CONTROL moved 774 → 777** across this lane — three tracked card files,
+exactly the printed-never-pinned behaviour `docs/CONVENTIONS.md` promises
+for that corpus. No test fixes either number and none needed touching.
