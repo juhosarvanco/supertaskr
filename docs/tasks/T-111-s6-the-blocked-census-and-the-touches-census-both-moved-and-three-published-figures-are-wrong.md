@@ -1,80 +1,88 @@
 ---
 id: T-111-s6
-title: Three published figures about blocked_by and touches: are wrong at 15a963d — the stale-blocker census is 48 not 46, 41 entries survive the clearing, and T-111-s3's vocabulary arithmetic has grown a whole collision family
+title: Four published figures re-derived on disk — the blocked_by census is 48 at f9350b1 and not 46, its four "suppressed" cards were six, T-111-s3's vocabulary census has grown a containment family, and the whole framing was overturned on main while this lane measured it
 status: suggested
 suggested_by: executor claude-opus-5 @T-111
 ---
 
-**Every figure below was re-derived on disk at the ref it names.** Nothing
-here is a defect in anybody's reasoning; the arguments all hold. What has
-moved is arithmetic, and arithmetic is a function of a tree.
+**Every figure below was re-derived on disk at the ref it names**, by
+matching `^id:` and never a filename glob, over `docs/tasks/` and
+`docs/tasks/rejected/` together.
 
-## ONE — the stale-blocker census is 48 at `f9350b1`, not 46
+## ZERO — THE FRAMING WAS OVERTURNED ON MAIN AT `b0b5b43`, AND THIS CARD KEEPS THE MEASUREMENTS AND DROPS THE WORD
 
-`T-111-s4` and the dispatch commit `15a963d` both state **46 stale blocker
-entries repo-wide**, measured at `f9350b1`. **Walked at that same ref, over
-`docs/tasks/` and `docs/tasks/rejected/` together, it is 48.**
+**`T-136` was REJECTED and four cleared declarations were restored
+byte-identical**, on @human's question and a reading of the source: `blocked_by`
+is a DECLARATION, `app/src/lib/task-detail.ts` has always resolved every id
+against the model, and `TaskDetailPanel.tsx` has always rendered a `done`
+blocker in its status colour with a tick. **`blocked_by: [T-104]` on a card
+whose T-104 has landed is not stale — it is historically accurate.**
 
-**THE TWO MISSING ARE T-111's OWN AND T-134's OWN** — `T-111 <- T-110` and
-`T-134 <- T-132`, the two the same commit's message narrates clearing as
-*dispatch* rather than counting as *census*. Every other figure
-reconciles exactly once those two are added back, which is what makes the
-explanation an explanation rather than a guess:
+**So the word "stale" is retracted from this card and the counts are
+kept.** They were never counts of a defect; they are counts of
+*declarations naming a blocker that has since landed*, which is what a
+project's lineage looks like after a hundred cards. **What was wrong was a
+QUERY** — a shell loop reading a non-empty `blocked_by` as "blocked"
+without resolving the ids — and that is precisely what `T-111`'s
+derivation cannot do, because it asks every named blocker for its status
+and never asks the field for a verdict.
+
+Read every table below as an inventory, not an indictment.
+
+## ONE — the repo-wide count is 48 at `f9350b1`, not 46
+
+`T-111-s4` and `T-136` both state **46 entries naming a `done` blocker**,
+measured at `f9350b1`. **Walked at that same ref it is 48.**
+
+**THE TWO MISSING ARE `T-111`'s OWN AND `T-134`'s OWN** — `T-111 <- T-110`
+and `T-134 <- T-132`, the two that `15a963d`'s message narrates clearing
+as *dispatch* rather than counting as *census*. Every other figure
+reconciles once those two are added back:
 
 | at `f9350b1` | on disk |
 |---|---|
 | `blocked_by` entries repo-wide | **51** |
-| stale (blocker is `done`) | **48** |
-| dangling (blocker names no card) | **0** |
-| still binding | **3** |
-| cards blocked on paper, dispatchable in fact | **6** |
+| entries whose blocker is `done` | **48** |
+| entries whose blocker names no card | **0** |
+| entries whose blocker is still open or parked | **3** |
+| planned cards ALL of whose blockers had landed | **6** |
 
-**The card's table names FOUR of those six** (`T-131`, `T-015`, `T-059`,
-`T-065`). The other two are `T-111` and `T-134`. `48 − 5 cleared entries =
-43`… and the four cards carried **7** stale entries between them, not 5:
-`T-065` carries two. **`51 − 7 = 44`, which is exactly the entry count on
-disk at `15a963d`.**
+**`T-111-s4`'s table names FOUR of those six.** The other two are `T-111`
+and `T-134` themselves. And the four carried **seven** entries between
+them, not five — `T-065` carries two — so `51 − 7 = 44`, which is exactly
+the entry count on disk at `15a963d`.
 
-## TWO — at `15a963d` the answer is ZERO, and only for one of three questions
+## TWO — at `15a963d` the answer is 0, 3 or 41 depending on the question
 
-The dispatch brief for this lane says *"the number you re-derive should now
-be zero — and if it is not, that is news."* **Three different numbers
-answer to that sentence and they are 0, 3 and 41.** Derived at `15a963d`,
-this lane's base:
+This lane's dispatch brief said *"the number you re-derive should now be
+zero — and if it is not, that is news."* **Three different numbers answer
+that sentence.** Derived at `15a963d`, this lane's base:
 
 | quantity | `f9350b1` | `15a963d` |
 |---|---|---|
 | `blocked_by` entries repo-wide | 51 | **44** |
-| stale entries (blocker `done`) | 48 | **41** |
-| stale entries on cards that are not `done` | 10 | **3** |
-| **cards blocked on paper, dispatchable in fact** | 6 | **0** |
-| dangling blockers | 0 | **0** |
+| entries whose blocker is `done` | 48 | **41** |
+| such entries on cards that are not `done` | 10 | **3** |
+| **planned cards ALL of whose blockers had landed** | 6 | **0** |
+| entries naming no card at all | 0 | **0** |
 
-**ZERO is right for the question that matters** — no planned card is
-suppressed by a blocker that has landed. **41 stale entries survive**, 38
-of them on `done` cards where `T-111-s4` correctly calls them harmless
-history, and **THREE on PLANNED cards**: `T-067 <- T-062`, `T-067 <-
-T-058`, `T-068 <- T-057`, all three blockers `done`.
+**ZERO is right for the question that decides a dispatch.** Forty-one
+entries record blockers that have landed — 38 on `done` cards, and THREE
+on planned ones: `T-067 <- T-062`, `T-067 <- T-058`, `T-068 <- T-057`.
+**None of the three changes an answer**, because both cards are still
+genuinely blocked by `T-065`, which is `planned`. That is why the hand
+pass did not touch them, and — after `b0b5b43` — why it should not have.
 
-**Those three suppress nothing**, and that is why the clearing pass did not
-find them: both cards are still genuinely blocked by `T-065`, which is
-`planned`. So `T-111-s4`'s *"four sit on PLANNED cards, where they suppress
-dispatch"* is right about suppression and short about population — **six
-planned cards carried stale entries, four of them suppressed.**
+**AND AT `b0b5b43` THE FIRST TWO ROWS GO BACK UP**, because the four
+declarations were restored. **A COUNT OF THIS FIELD IS A FUNCTION OF THE
+TREE AND OF THE QUESTION, and this card is four different numbers for one
+sentence.** Derive it; do not quote this table.
 
-**AND THIS IS THE ARGUMENT FOR DERIVING RATHER THAN CLEARING, MADE BY THE
-CLEARING PASS ITSELF.** A hand pass finds the entries that change an
-answer today and leaves the ones that do not — correctly, because clearing
-them is churn. So the field does not decay to a stable wrong value; it
-decays to a value that is right about the cards somebody checked last and
-wrong about the rest, with no way to tell which is which by reading it.
-`selectDispositions` never asks.
-
-## THREE — `T-111-s3`'s vocabulary census has grown a whole collision family
+## THREE — `T-111-s3`'s vocabulary census has grown a containment family
 
 `T-111-s3` censused **124 cards carrying `touches:`, 19 distinct raw
 tokens** at `e04f5b3`. At `15a963d` it is **142 cards and 26 tokens**, and
-the difference is not scale — it is a NEW KIND of token:
+the difference is a new KIND of token rather than more of the same:
 
     e04f5b3 -> 15a963d, added:  method/lane-protocol.md (3)
                                 method/roles/executor.md (2)
@@ -87,32 +95,30 @@ the difference is not scale — it is a NEW KIND of token:
                        removed: docs/tasks/ (was 1)
 
 **ELEVEN cards now fence a FILE UNDER a directory another card fences.**
-`method/` (9 cards) contains all five `method/<file>` tokens; `docs`
-(1 card, `T-054`) contains `docs/CONVENTIONS.md` (21),
+`method/` (9 cards) contains all five `method/<file>` tokens; the bare
+`docs` (1 card, `T-054`) contains `docs/CONVENTIONS.md` (21),
 `docs/architecture/components/` (8) and the three `docs/tasks/T-*.md`.
-**That is CONTAINMENT, and s3's prescribed trailing-slash minimum reaches
-none of it** — its own census had a single containment case and called it
-one of four; on this board it is the dominant one.
+**That is CONTAINMENT, and `T-111-s3`'s prescribed trailing-slash minimum
+reaches none of it** — its own census had one containment case among four
+collisions; on this board containment is the dominant family.
 
 **T-111's implementation answers it**: `touchTokensOverlap` is
 normalisation PLUS separator-anchored containment, so `method/` and
-`method/lane-protocol.md` overlap and `app/src` and `app/src-tauri` do not.
-The remaining hole is s3's fourth, unchanged and unclosable by any string
-rule: **`ci` (1 card) against `.github/` (4)**. It is pinned AS
+`method/lane-protocol.md` overlap while `app/src` and `app/src-tauri` do
+not. The remaining hole is s3's fourth, unchanged and unclosable by any
+string rule: **`ci` (1 card) against `.github/` (4)**, pinned AS
 known-wrong rather than left silent.
 
-**AND THE UPSTREAM REPAIR IS DOUBLY OUT OF REACH RIGHT NOW.** s3 routes it
-to the parser — *"a `touches:` token that resolves to neither a slug nor
-an existing path is a parser-level issue kind (C-06, `lib-parser`)"* —
-and `lib-parser` is held live by `T-134`, whose own subject is that a
-fence names paths and a slug is shorthand. **Read this beside that card
-rather than before it.**
+**The upstream repair s3 routes — a parser-level issue kind for a token
+resolving to neither a slug nor a path — is `lib-parser`, held live by
+`T-134`**, whose own subject is that a fence names paths and a slug is
+shorthand. Read it beside that card rather than before it.
 
-## FOUR — one figure this lane could not check
+## FOUR — one claim the frontier is structurally unable to check
 
-`T-111-s3` states *"`ci` … is not a path (nothing at the repository root is
-named `ci`)"*. **A board derivation has no filesystem**, so
+`T-111-s3` states *"`ci` … is not a path (nothing at the repository root
+is named `ci`)"*. **A board derivation has no filesystem**, so
 `expandTouch` classifies any token resolving to no component slug as a
 literal path and cannot tell `ci` from a real one. The claim is still true
-on disk; it is simply not a claim the frontier is able to make, and the
-doc comment says so rather than implying otherwise.
+on disk; it is simply not one this layer can make, and the doc comment
+says so rather than implying otherwise.

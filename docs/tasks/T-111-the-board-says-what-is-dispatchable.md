@@ -625,41 +625,55 @@ in this card, not a reason to wait."* Four reasons:
    a blocker id that does not exist**, re-derived in a body that will red
    the day one does.
 
-**`T-136` IS THE OTHER SEAT AND THE TWO RULINGS AGREE.** That card's
-criteria require the same three states unfolded and say the disagreement
-*"SHALL be resolved here or routed, not defaulted"*. A gate that FAILS a
-card with a dangling blocker and a board that reports it `blocked` while
-naming it a card defect are the same judgement on two surfaces. **If T-136
-rules the other way, this one yields** — a gate and a board disagreeing
-about one card is the defect both exist to prevent.
+**`T-136` WAS THE OTHER SEAT AND IT WAS REJECTED ON MAIN WHILE THIS LANE
+BUILT.** At `b0b5b43` — twenty minutes before this section was written —
+`T-136` moved to `docs/tasks/rejected/` and four declarations cleared
+under its argument were restored byte-identical. **Its criteria required
+the same three states unfolded, so nothing above changes**; what changes
+is that no gate will assert them, and the board is now the only surface
+that judges binding at all. The ruling stands on its own four reasons.
 
-### THE CENSUS, RE-DERIVED AT THIS LANE'S OWN REF — AND THE BRIEF'S "ZERO" IS RIGHT FOR ONE OF THREE QUESTIONS
+### THE CENSUS — AND THE FRAMING IT WAS MEASURED UNDER WAS OVERTURNED ON MAIN MID-LANE
 
-Full account in **`T-111-s6`**. The short form, walked over
-`docs/tasks/` and `docs/tasks/rejected/` by `^id:` and never by glob:
+**READ THIS SECTION AS AN INVENTORY, NOT AN INDICTMENT, AND THAT IS A
+CORRECTION TO THIS LANE'S OWN BRIEF.** `T-136`'s rejection at `b0b5b43`
+settles it on @human's question and a reading of the source:
+`app/src/lib/task-detail.ts` has always resolved every `blocked_by` id
+against the model and `TaskDetailPanel.tsx` has always rendered a `done`
+blocker in its status colour with a tick. **`blocked_by: [T-104]` on a
+card whose T-104 has landed is not stale — it is historically accurate,
+and it is the only record of why the work was sequenced that way.** The
+defect was never in the data; it was in a QUERY that read a non-empty
+field as "blocked" without resolving the ids.
+
+**THAT STRENGTHENS THIS CARD RATHER THAN WEAKENING IT.** A hand-written
+query is exactly what `selectDispositions` replaces, and it is the one
+thing this derivation structurally cannot do: it asks every named blocker
+for its status and never asks the field for a verdict. Full account in
+**`T-111-s6`**, which retracts the word "stale" and keeps every count.
+
+The short form, walked over `docs/tasks/` and `docs/tasks/rejected/` by
+`^id:` and never by glob:
 
 | quantity | `f9350b1` | `15a963d` (this base) |
 |---|---|---|
 | `blocked_by` entries repo-wide | 51 | **44** |
-| stale entries (blocker is `done`) | **48** | **41** |
-| stale entries on cards that are not `done` | 10 | **3** |
-| **cards blocked on paper, dispatchable in fact** | **6** | **0** |
-| dangling blockers | 0 | **0** |
+| entries whose blocker is `done` | **48** | **41** |
+| such entries on cards that are not `done` | 10 | **3** |
+| **planned cards ALL of whose blockers had landed** | **6** | **0** |
+| entries naming no card at all | 0 | **0** |
 
-**ZERO is right for the question that matters and for no other.** Three
-stale entries survive on PLANNED cards — `T-067 <- T-062`, `T-067 <-
-T-058`, `T-068 <- T-057` — and suppress nothing, because both cards are
-still genuinely blocked by `T-065`. **`T-111-s4` and `T-136` both say 46;
-on disk at `f9350b1` it is 48**, and the two missing are `T-111 <- T-110`
-and `T-134 <- T-132`, which the same commit cleared as *dispatch* rather
-than counting as *census*. Every figure reconciles once those two are
-added back.
-
-**AND THE HAND PASS IS ITSELF THE ARGUMENT FOR DERIVING.** It cleared the
-entries that changed an answer and left the ones that did not — correctly.
-So the field does not decay to a stable wrong value; it decays to one that
-is right about the cards somebody checked last and wrong about the rest,
-with no way to tell which by reading it. `selectDispositions` never asks.
+**ZERO is right for the question that decides a dispatch, and for no
+other.** Three entries survive on PLANNED cards — `T-067 <- T-062`,
+`T-067 <- T-058`, `T-068 <- T-057` — and none changes an answer, because
+both cards are still genuinely blocked by `T-065`. **`T-111-s4` and
+`T-136` both say 46; on disk at `f9350b1` it is 48**, and the two missing
+are `T-111 <- T-110` and `T-134 <- T-132`, which `15a963d` cleared as
+*dispatch* rather than counting as *census*. Every figure reconciles once
+those two are added back — and **the first two rows go back UP at
+`b0b5b43`**, because the four are restored. A count of this field is a
+function of the tree AND of the question; derive it rather than quoting
+this table.
 
 ### THE ARCHITECT'S MID-LANE STEER, AND WHAT IT CHANGED
 
@@ -824,29 +838,40 @@ an empty intersection asserted without one is worth nothing.
 
 1. **THE BRIEF, the census: *"the number you re-derive should now be zero
    — and if it is not, that is news."*** Three numbers answer that
-   sentence and they are **0, 3 and 41**. Zero cards are suppressed; three
-   stale entries remain on PLANNED cards; 41 remain repo-wide. The brief
-   named no unit, which is the limit it names about itself — *figures AND
-   their qualifiers slip through*.
-2. **`T-111-s4` AND `T-136`, the headline figure: 46 is 48 on disk at
+   sentence and they are **0, 3 and 41**. Zero planned cards had all their
+   blockers landed; three such entries remain on planned cards; 41 remain
+   repo-wide. The brief named no unit, which is the limit it names about
+   itself — *figures AND their qualifiers slip through*.
+2. **THE BRIEF AND `T-111-s4`, THE WHOLE FRAMING — overturned on main at
+   `b0b5b43` while this lane measured it.** *"`blocked_by:` is written at
+   drafting and NOTHING EVER CLEARS IT … the field drifts monotonically
+   toward over-blocking"* reads as a data defect. **`T-136`'s rejection
+   rules there is none**: the field is a declaration, it is historically
+   accurate, and every rendering surface in this app already resolves it.
+   The defect was a hand query. **This is the brief's fourth self-declared
+   limit — *it does not stop me being stale* — arriving as the largest
+   single correction this lane makes**, and it makes the card's subject
+   more useful rather than less.
+3. **`T-111-s4` AND `T-136`, the headline figure: 46 is 48 on disk at
    `f9350b1`.** The two missing are `T-111`'s own and `T-134`'s own.
-3. **`T-111-s4`, *"four sit on PLANNED cards"*: SIX did.** Four suppressed
-   dispatch; two more (`T-067`, `T-068`) carried stale entries that changed
-   no answer, which is why a hand pass did not find them.
-4. **THE CARD, criterion 3's prescribed minimum is not enough on this
+4. **`T-111-s4`, *"four sit on PLANNED cards"*: SIX did.** Four had every
+   blocker landed; two more (`T-067`, `T-068`) carried such entries that
+   changed no answer, which is why a hand pass did not find them — and,
+   after `b0b5b43`, why it should not have.
+5. **THE CARD, criterion 3's prescribed minimum is not enough on this
    board.** A trailing-slash rule reaches two collision families and
    **eleven cards now fence a FILE UNDER a directory another card fences**
    — a containment family `T-111-s3`'s census did not have. `T-111-s3`'s
    own arithmetic (124 cards, 19 tokens) is **142 and 26** at `15a963d`.
-5. **THE CARD, criterion 6 versus `T-111-s4`** — ruled above rather than
+6. **THE CARD, criterion 6 versus `T-111-s4`** — ruled above rather than
    defaulted, as `T-136` requires of whoever meets it first.
-6. **THE BRIEF, *"`T-111-s2` IS A CONSTRAINT ON HOW YOU CAN TEST"*:
+7. **THE BRIEF, *"`T-111-s2` IS A CONSTRAINT ON HOW YOU CAN TEST"*:
    correct in force and already discharged in fact.** The architect's
    in-place correction to `[app-board, app-shell]` bought `app/test/**`
    before this lane started, so the constraint shaped WHERE the pins went
    and never bound what they could assert. Re-derived from the component
    files rather than taken.
-7. **THE BRIEF, *"`T-133` landed a command that derives exactly this;
+8. **THE BRIEF, *"`T-133` landed a command that derives exactly this;
    read it before building a second one"*: right, and the reuse is
    REPORTED rather than performed.** `dispatch-brief.mjs` derives the lane
    list, the slug map and fence overlap — for a **dispatcher in the
@@ -857,7 +882,7 @@ an empty intersection asserted without one is worth nothing.
    separator-anchored containment — which this card reached independently
    and which agrees. **`T-137` is the card that makes it one copy**, and
    `T-111-s5` is the move list it asked for.
-8. **THE BRIEF was right about every trap it named, and two would have
+9. **THE BRIEF was right about every trap it named, and two would have
    cost time.** `npm run typecheck` from `app/` does not exist (scripts
    are `dev, build, preview, test, tauri`); `lint:docs`/`lint:tokens` live
    in `tools/e2e/package.json` and exit **254** from the root; build

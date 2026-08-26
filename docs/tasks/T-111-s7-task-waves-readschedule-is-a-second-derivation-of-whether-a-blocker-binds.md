@@ -20,8 +20,13 @@ Both answer *"does this card's `blocked_by` still bind?"* and both answer
 it by asking each blocker's own status rather than trusting the field —
 so **the good news first: the map's tasks lens has been deriving this
 correctly all along**, and a card blocked by a landed card has read
-`ready` on the map for as long as `readSchedule` has existed. The decay
-`T-111-s4` measures never reached that surface.
+`ready` on the map for as long as `readSchedule` has existed.
+
+**THAT IS THE THIRD SURFACE IN THIS APP THAT ALREADY RESOLVES THE IDS**,
+after `task-detail.ts`'s `BlockerLink` and now `board-model.ts`'s
+`UnmetBlocker` — which is `T-136`'s rejection restated as an inventory:
+the failure that card was filed against lived in a hand-written shell
+query, never in a rendering surface and never in the data.
 
 **They agree on the rule and disagree on the vocabulary**, in three places:
 

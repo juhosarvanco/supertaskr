@@ -476,14 +476,33 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
 // one sentence per card from that step, the parsed model, and the lane
 // reader's answer.
 //
-// **THE FIELD IS THE DECLARATION; THE ANSWER IS DERIVED (T-111-s4).**
-// `blocked_by:` is written when a card is drafted and nothing ever clears
-// it when the blocker lands, so the stored field decays in ONE direction
-// only: nothing ever adds a false blocker, time only removes true ones.
-// That makes it a statement of intent — *this work needs that work first*
-// — which is not derivable from anything, sitting in a field a reader
-// mistakes for a live answer. So the declaration is KEPT and read, and
-// whether it still BINDS is computed here and stored nowhere (T-057).
+// **THE FIELD IS A DECLARATION AND IT IS ACCURATE; WHAT IS DERIVED IS
+// WHETHER IT STILL BINDS.** `blocked_by: [T-104]` on a card whose T-104
+// has landed is not stale — it is *historically accurate*, and it is the
+// only record of why this work was sequenced the way it was. Nothing
+// about it needs clearing, and clearing it destroys lineage.
+//
+// **THAT SENTENCE IS A RULING AND IT COST A REJECTED CARD TO REACH.**
+// `T-136` proposed a gate failing any planned card whose `blocked_by`
+// named a `done` id, on the argument that the field "decays"; it was
+// rejected on main hours after it was filed, and four declarations
+// cleared under that argument were restored byte-identical. **The defect
+// was never in the data.** It was in a QUERY — a shell loop that read a
+// non-empty `blocked_by` as "blocked" without resolving the ids. So the
+// thing worth building is not a cleaner field; it is a derivation that
+// never asks the field for a verdict it does not hold. That is this one.
+//
+// **AND THE PANEL HAS RESOLVED THESE IDS ALL ALONG.**
+// `selectTaskDetail` in `./task-detail.ts` (C-09) already turns each
+// entry into a `BlockerLink` carrying `resolved`, the target's `status`
+// and its visual, and `TaskDetailPanel.tsx` renders a done blocker in its
+// status colour with a tick. **This module adds the JUDGEMENT that layer
+// deliberately does not make** — *does it still bind* — and does not
+// consume `BlockerLink` to get there, for a structural reason rather than
+// a preference: `task-detail.ts` imports `BoardCard` and `statusVisual`
+// FROM this file, so C-09 -> C-08 already exists and an import back would
+// close a component CYCLE. If the two are ever merged, the shared half
+// moves in THIS direction and never the other.
 //
 // **THREE BINDINGS, NEVER FOLDED INTO ONE.** A blocker still open, a
 // blocker that names no card at all, and a blocker that is PARKED are
@@ -492,7 +511,7 @@ export function selectBoard(model: ProjectParseResult): BoardModel {
 // the third is a wait nobody has scheduled an end for. `task-waves.ts`'s
 // `readSchedule` folds the second into "blocked" by construction and says
 // so in its own header — it is C-12's, outside this card's fence, so the
-// divergence is recorded here rather than repaired.
+// divergence is recorded here rather than repaired (`T-111-s7`).
 //
 // **THE LANE LIST OUTRANKS THE STAMP.** `method/roles/executor.md` row 5
 // rules the live worktree list authoritative over the board's `status:`
