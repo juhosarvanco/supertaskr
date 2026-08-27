@@ -544,3 +544,295 @@ exactly one row, my own lane's vite (pid 22181, 127.0.0.1:14592), so
 nothing collided — but the reading order was wrong and the rule is about
 the order. The re-run at the final tip (14593) and the boot check (14620)
 were both read at zero rows first.
+
+## Verdict — APPROVED (verifier, 2026-08-27, claude-opus-5 @T-092-verify)
+
+Measured at **`73d7870`** unless another ref is named. Every figure below
+carries the ref it was derived at; none is quoted from the card, the
+notes or the brief.
+
+**BOUNDED READ, DECLARED.** The attack set was written to
+`<scratchpad>/T-092-attack-set.md` and hashed
+(`6d3a2c8e20e09a18512e4af285348bd163499a927b3cd2877ea306d9b03d9740`)
+at **2026-08-27T14:12:48Z**, BEFORE any diff hunk, the card at the tip,
+or the implementation notes were opened. Read before that stamp: the
+brief, `method/roles/verifier.md`, and `CLAUDE.md`, `docs/STATE.md`,
+`docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md`, `docs/CAPABILITIES.md`
+and this card **all at `5887cd4`**; `docs/ROADMAP.md` deliberately not
+read. Two leaks, recorded rather than smoothed: `git diff --name-only`
+(5 paths, no content) and `git log --oneline | wc -l` (count only) were
+run before the stamp, and `git worktree add` echoed one commit subject
+line. No reasoning, no notes, no hunk.
+
+Drilled in a DETACHED scratch worktree **outside the repository** at
+`/private/tmp/v092-1240c3f2` — 26 characters, stem derived from this
+session's own id, never a fixed name — with
+`CARGO_TARGET_DIR=/private/tmp/v092-1240c3f2/target` inside itself
+(arm (c)). Driver `<scratchpad>/v092-1240c3f2-drill.sh`, one stem, every
+artefact. The driver's guard asks *is this MY drill* by resolving the
+stem's own path, requiring a DETACHED HEAD and requiring the exact
+commit. Worktree removed afterwards.
+
+### The control reproduces, so the card fixed something real
+
+The whole claim is that the PRE-FIX pin was vacuous. **Reproduced
+independently on the base ref**, not taken from the notes. At `5887cd4`,
+one planted duplicate of the stamp elsewhere in the file, then gotcha
+one's pinned sentence rewritten to cite the symbol — its own subject
+deleted, `grep -c "currently v0.1.7"` still 1:
+
+    cargo test --lib from app/src-tauri/  ->  198 passed / 0 failed, exit 0
+
+Green with its subject deleted, at exit 0. The card's D1 figure is
+**exact at my own ref**.
+
+### Every arm, drilled one side only (the DOC, never the assertion)
+
+Substitution count asserted, mutated text read back with `git diff -U0`
+BEFORE each run, restored byte-exact against the commit the drill ran at.
+
+| arm | mutation | subs | `cargo test --lib` |
+|---|---|---|---|
+| C1 | **CONTROL** — drill B against the PRE-FIX body at `5887cd4` | 1+1 | **198 / 0, exit 0** |
+| C2 | drill B against the FIXED body at `73d7870` | 1+1 | **197 / 1, exit 101** |
+| C3b | drill B on the **second** pin, `plan-interview.md` | 1+1 | **197 / 1, exit 101** |
+| D5 | plant a second line carrying the CONVENTIONS anchor | 1 | **197 / 1, exit 101**, anchor message |
+| D6 | reword the anchor away, stamp left present and correct | 1 | **197 / 1, exit 101**, anchor message |
+| D7 | plant a second line carrying the `## Output` anchor | 1 | **197 / 1, exit 101**, anchor message |
+
+C3b is the sharp one: after it, `grep -c "(v0.1.7"
+method/interview/plan-interview.md` is still **1**, so the pre-fix
+whole-file `contains` would have PASSED. Both instances are closed, not
+one. D7 extends the notes' D5 to the second haystack, which the notes did
+not drill.
+
+Anchor uniqueness attacked at all three boundaries: **twice** -> RED
+(D5/D7), **zero times** -> RED (D6), **a line carrying something else**
+-> still pins, because the line is returned whole. `the_one_line_carrying`
+sits inside `#[cfg(test)] mod tests` (`kit.rs:296`), so **nothing was
+added to the shipped binary**.
+
+Restoration proved by sha256 against the drill's own commit on every arm:
+`docs/CONVENTIONS.md 26322cd6…`, `method/interview/plan-interview.md
+19d5a011…`, `app/src-tauri/src/agent/kit.rs 6c42a704…`, with `git diff`
+and `git diff --cached` both 0 bytes. Those three shas also prove the
+fence's files are **byte-identical between `dc3c5af` and `73d7870`**, so
+the notes' drill figures are still true at the tip they are tabled under.
+
+### The two failures the drill caught inside itself — both re-run
+
+- **A mutation reporting `SUBSTITUTIONS=0` that went green.** Reproduced
+  directly: the same `perl -0777` pattern carrying a literal U+2014
+  substitutes **1** without a UTF-8 layer and **0** under `-CSD`, because
+  the `-e` program's bytes are never decoded while the file's are. The
+  notes' mechanism is exactly right. I hit the same class independently
+  on my own first C3 attempt, and only the asserted count told me.
+- **`git checkout <commit> -- <path>` STAGES.** Reproduced at `73d7870`,
+  and it is **sharper than the notes state**: after the staged checkout
+  and a bare `git checkout -- <path>`, `git diff -- <path>` is **0
+  bytes** while the file is the wrong one (`42d65592…` where `6c42a704…`
+  belongs). POISON DRILL offers that empty diff as an ALTERNATIVE
+  restoration proof, so **one of the two prescribed proofs passes on a
+  failed restore**, and committing first does not close it. Filed as
+  `T-092-s4`; it is not a criterion failure and does not block.
+
+### Criteria
+
+Every one discharged. **BODY** where the card says body, **PROSE** where
+it says prose, and the declination is principled: a `contains`-over-
+CONVENTIONS body asserting each new clause would have manufactured fresh
+shape-eight instances in the same commit that catalogues the shape.
+
+1. **Catalogue closed and numbered in one place** — MET. SEVEN's entry
+   reproduces its namer's wording (`T-076:659` at `5887cd4`) and names
+   the sightings rather than a tally; the card's *four independent
+   sightings* reconciles exactly once `T-102` is read as corroborating
+   `T-069-s3` — `git grep -il "shape seven" -- docs/` returns **6** files
+   at `5887cd4` (1 namer + 4 sightings + 1 corroboration).
+2. **NINE ratified, not minted** — MET, and **all three citations
+   verified by name at `5887cd4`**: `T-080:615` (*"Shape nine"*),
+   `T-083:1071` (mutant table row **N4**, *"SHAPE NINE"*), `T-095:19`.
+   Numbering by the card's own listing order would have put the empty
+   comparison at nine and falsified all three. EIGHT is likewise
+   consistent with `T-078:1341`'s prior use. TEN and ELEVEN collide with
+   nothing — `git grep -in "shape ten|shape eleven"` is empty at the
+   base. No ordinal is assigned twice.
+3. **Both pins gain a uniqueness floor, drill B shown RED** — MET; the
+   table above.
+4. **Class sweep run and recorded** — MET. The criterion's own command
+   returns **760** raw hits at `73d7870`, exact against the notes. The
+   one live instance is real: `lib/parser/test/rejected-exclusion.test.ts:51`
+   `expect(content).toContain('status: rejected')` over a whole card,
+   under a comment at :48 claiming a FRONTMATTER property. Correctly
+   routed out of fence as `T-092-s1` (C-06). The worked example is where
+   it is said to be (`agent/mod.rs:1172`), and the false positive is
+   recorded rather than hidden.
+5. **"DRILL AT A COMMIT" + the snapshot's own `cmp` proof** — MET.
+6. **Shape six's isolating-mutant check, finishing not replacing** — MET,
+   and said in as many words: *"it replaces nothing above, it finishes
+   it"*.
+7. **Non-emptiness before evidence + proof shown capable of failing** —
+   MET.
+8. **Class-and-sweep clause, obeyed on its own edit** — MET. `grep -n
+   "POISON$"` returns line **900** at `4d2f03c` and **nothing, exit 1**
+   at both `5887cd4` and `73d7870`: ADR-019's compaction reflowed it away
+   before this lane existed, and the "left with the sweep recorded" arm
+   is the honest one. I re-ran the class over six named handles at the
+   tip — `POISON$ DOCS$ BOOT$ GRAPH$ RANGE$ LANE$`, all **0** — and
+   showed the sweep capable of failing against a planted split.
+9. **Per-lane scratch identity** — MET, as a construction rather than a
+   rule, covering worktree, target dir, driver and results; the guard
+   distinguishes MY drill from A drill; and the shared scratchpad is
+   stated in as many words.
+10. **Drafter's note removed** — MET, both halves discharged (0 hits for
+    `DRAFTER'S NOTE` and for `remove before landing`).
+
+### Gates and suites, at `73d7870`, every exit read from `$?` unpiped
+
+DOCS GATE diff half in THE ONE SPELLING, RANGE RULE **executor** pair
+(`merge-tree` exit read FIRST = 0, tree `f31a3ec`): **FIRES**, exit 1,
+5 paths, 4 under `docs/` are code inputs, owing exactly four suites. All
+four run, plus the rest:
+
+| command | from | result | exit |
+|---|---|---|---|
+| `cargo test` | app/src-tauri/ | **518 passed / 0 failed**, 18 `test result:` lines | 0 |
+| `npm test` | app/ | 47 files, **1013 passed** | 0 |
+| `npx vitest run` | lib/parser/ | 15 files, **314 passed** | 0 |
+| `npm test` (`NPUTER_E2E_PORT=14625`) | tools/e2e/ | `Running 233 tests`, **233 passed**, workflow-parity 17 | 0 |
+| `npx tsc --noEmit` | lib/parser/ | — | 0 |
+| `npm run build` | app/ | both `tsc` calls + bundle | 0 |
+| `npm run lint:tokens -- --selftest` | tools/e2e/ | 65+4 samples, 87 walk-policy, 9 evidence-floor | 0 |
+| `npm run lint:tokens` | tools/e2e/ | TOKEN 144 files, CONTROL **831** tracked | 0 |
+| `npm run lint:docs` | tools/e2e/ | budgets hold, 4 gated, 0 awaiting | 0 |
+| `npm run typecheck` | tools/e2e/ | — | 0 |
+
+**BOOT GATE — FIRES** (the diff touches `app/src-tauri/**`) and was RUN,
+not argued away. Port 14626 read at **zero rows on BOTH stacks
+immediately before binding** (`-i6TCP` exit 1, `-i4TCP` exit 1, 14:28:15Z),
+then `NPUTER_BOOT_PORT=14626 npm run boot:check` from tools/e2e/ ->
+**exit 0**, both lines: `[nputer] project folder:
+/private/tmp/v092-1240c3f2` and `[nputer] window "main" created`; port
+released afterwards. Independently, **100% of the Rust change is inside
+`#[cfg(test)] mod tests`**, so the shipped surface did not move at all.
+The human's app was read once with the one permitted command and nothing
+else — `node` pid 19746 on `[::1]:1420 (LISTEN)`, never bind-probed,
+never connected to.
+
+**GRAPH REGEN — FIRES and is NOT this seat's**, confirmed to be exactly
+the staleness the brief names and nothing else. `index --check --root
+../..` exit **1**, a REAL stale (both sides print counts; a `--root`
+false red would say `committed: MISSING`):
+
+    committed / fresh index: 1020023 bytes · 189 files · 2152 symbols · 2111 edges
+    files  +0  -0  ~1
+    | ~ app/src-tauri/src/agent/kit.rs  (content, loc 514 -> 562)
+    budget: 1020023 of 1040000 bytes (98.1%) - 19977 left
+
+Byte count identical, **zero symbols moved, zero edges moved, one file,
+content only**. `docs/architecture/graph.json` is outside this fence and
+the bullet lands it with the CHECKPOINT.
+
+**MIDDLE DOT**, checked over a NAMED RANGE per the card's own new clause
+and shown capable of failing: `git diff -U0 5887cd4..73d7870 --
+docs/CONVENTIONS.md | grep '^+' | grep <U+00B7>` -> **0**; the same
+pipeline against a planted hit -> **1**.
+
+### Security sweep
+
+Clean, and REJECTED-level nothing. Zero dependency changes (no
+`Cargo.toml`, `Cargo.lock`, `package.json` or lockfile in the diff);
+`acl_pin.rs` untouched, so `EXPECTED_GRANTS` did not move; no secret,
+key or token on any added line; no new input path, no new endpoint, no
+`unsafe`. The only `panic!`/`assert!` added is inside `#[cfg(test)]`
+and is the pin's own discriminator — drilled RED above. The helper reads
+strings the test already holds; it opens nothing.
+
+### Fence and interfaces
+
+`touches: [docs/CONVENTIONS.md, app-agent]`. Five changed paths:
+`docs/CONVENTIONS.md`, `app/src-tauri/src/agent/kit.rs` (C-14's
+territory per ARCHITECTURE's code-layout rule), and this card plus its
+two routed findings. Nothing outside. The three-file method bump
+(T-078-s3) still works — the const and both doc stamps move together —
+but it now also requires the stamps to stay on their anchors' lines; see
+`T-092-s3`.
+
+### The byte budget — RULED: acceptable, no compression pass owed
+
+Authority is `DOC_BUDGETS` in `tools/e2e/scripts/docs-gate.mjs`:
+`docs/CONVENTIONS.md` `{ landed: 86373, warn: 107967, fail: 129560 }`.
+Measured with `wc -c`: **95,644** at `5887cd4`, **107,048** at both
+`dc3c5af` and `73d7870`. Delta **+11,404**; headroom **12,323 -> 919**;
+**92.5%** of the seat's headroom spent by one card. Every figure in the
+brief and in `T-092-s2` reproduces exactly.
+
+The gate is not merely un-failed, it does not even WARN — 107,048 is
+under 107,967, and `lint:docs` prints *"governing-document budgets
+hold"* at exit 0. ADR-019 set that line; a card that lands under it has
+obeyed the rule, and every byte added here is MECHANISM, which ADR-019's
+own *"a hazard is never deleted to fit"* protects. Two compression passes
+already moved the instance measurements out to the cards that own them.
+Blocking on this would be a verifier overriding a gate that answered.
+
+**But 919 bytes is not headroom for anything**, and the next card at this
+seat cannot add a paragraph without warning. `T-092-s2` is correctly
+filed, its three options are the right three, and it should be triaged
+ahead of the next `docs/CONVENTIONS.md` card rather than after it.
+`T-092-s5` is the same decision seen from the other side.
+
+### Findings filed — none of them blocking
+
+`T-092-s3` (the anchor is line-scoped, so a reflow that leaves the
+document CORRECT reds it with a remedy that names the wrong repair —
+measured), `T-092-s4` (the staged-checkout hazard above),
+`T-092-s5` (*"EVERY ORDINAL IS MINTED HERE"* while shapes ONE to FOUR are
+numbered nowhere — inherited, not introduced), `T-092-s6` (the shape-six
+paragraph lands `833` with no ref, and the app suite is 1013 today).
+
+### Every figure that disagreed with my own measurement
+
+Reported in full, as the brief asks. **Only one is wrong**; the rest are
+labels or denominators.
+
+1. **`lint:tokens` CONTROL 829 -> the tree says 831.** The notes table it
+   under *"SUITES at tip"*. Tracked files: **847** at `5887cd4` and
+   `dc3c5af`, **849** at `73d7870` — the two routed findings — so 829 was
+   measured at or before `dc3c5af` and went stale when the notes' own
+   commit landed. Textbook FIGURE CASE, harmless (exit 0 either way),
+   and worth naming because this pipeline names it.
+2. **`T-092-s1`'s "37 times"** is EXACT at its stated ref `dc3c5af` and
+   is **42** at `73d7870` — the s-card's own text moved the count it
+   reports. The card says *"Re-derive rather than quoting these"* and
+   gives the command, so it is honest; it is still a stale number sitting
+   in a card about stale numbers.
+3. **`T-092-s1` and `T-092-s2` both call `dc3c5af` "T-092's tip".** It is
+   the WORK commit; the tip is `73d7870`. The ref is right, the label is
+   not.
+4. **CONVENTIONS' new `1 failed / 832 passed of 833`** carries no ref and
+   is 180 short of today's 1013. `T-092-s6`.
+5. **SEVEN's "four" against the brief's "five"** are two counts of two
+   different things and both reproduce: 6 files name the shape at
+   `5887cd4`, of which one is the namer and one is a corroboration. The
+   landed entry names the cards and refuses a tally, which is the right
+   answer to the disagreement.
+6. **The card's `v0.1.5` stamp measurements** are a method version stale
+   (v0.1.7 since ADR-019) and the notes say so; the COUNTS still
+   reproduce, 1 and 1, at `73d7870`.
+7. **The brief's "three unnumbered shas"** are three unnumbered SHAPES;
+   the brief corrects itself and I did not inherit the noun. No set of
+   three shas exists anywhere in the card.
+8. Everything else reproduces exactly, at my own refs: 198/0 exit 0;
+   197/1 exit 101 on every drilled arm; 760 raw sweep hits; `POISON$`
+   line 900 at `4d2f03c` and gone at `5887cd4`; 95,644 -> 107,048 against
+   107,967 with 919 left; `kit.rs` loc 514 -> 562 with no symbol or edge
+   moved; 518/18, 1013/47, 314/15, 233 with workflow-parity 17; TOKEN 144;
+   selftest 65+4/87/9; the placeholder twice and the literal once; the
+   three restoration sha256s.
+
+**APPROVED.** The vacuity was real, the fix closes both instances rather
+than the one that was reported, the anchor's own uniqueness is an
+assertion and not a comment, and the four blind spots in the drill's
+procedure are written where the next session reads. Merging is the
+integrator's; `docs/architecture/graph.json` is theirs to regenerate with
+the checkpoint.
