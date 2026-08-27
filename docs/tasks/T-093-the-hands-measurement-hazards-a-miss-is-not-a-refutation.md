@@ -226,8 +226,8 @@ before the run, restore proved by sha256 at the drill's own commit.
 
 ## Implementation notes (executor claude-opus-5 @T-093, lane `task/T-093-lane`, base `bc2d82a`)
 
-**Diff: one file, `docs/CONVENTIONS.md`, +129 lines / +8,830 bytes,
-86,718 -> 95,548.** Four insertions, no deletions, no test body — the
+**Diff to `docs/CONVENTIONS.md`: +8,926 bytes, 86,718 -> 95,644**, at
+`a8d6df6` plus this commit. Four insertions, no deletions, no test body — the
 fence is `[docs/CONVENTIONS.md]` and a test body would be
 `tools/e2e/**`.
 
@@ -301,9 +301,24 @@ findable from either end instead of scattered among tooling bullets.
     app/src-tauri  cargo test                       0   518 passed / 0 failed
     tools/e2e   NPUTER_E2E_PORT=14763 npm test      0   233 passed / 0 failed
 
-`cargo test` and `npm test` from tools/e2e are exactly the two the DOCS
-GATE names for this path, and `snapshot_version_matches_the_live_method_stamps`
-— CONVENTIONS' Rust reader — is `ok` inside the first.
+**AND THE GATE'S ANSWER CHANGED WHEN THE COMMIT DID, WHICH IS THE
+POINT OF ASKING IT RATHER THAN PREDICTING.** Run against
+`docs/CONVENTIONS.md` alone it named TWO commands. Run against the
+COMMITTED merge diff — four paths, because the two suggestion cards and
+the card itself are flat `docs/tasks/T-*.md` — it names FOUR. All four
+were run on the committed tree at `a8d6df6`:
+
+    app/src-tauri  cargo test                       0   518 passed / 0 failed
+    app            npm test                         0  1013 passed / 0 failed
+    lib/parser     npx vitest run                   0   314 passed / 0 failed
+    tools/e2e      NPUTER_E2E_PORT=14764 npm test   0   233 passed / 0 failed
+
+`snapshot_version_matches_the_live_method_stamps` — CONVENTIONS' Rust
+reader — is `ok` inside the first. `cargo run -p nputer-index --
+index --check --root ../..` exits **0**, `graph.json is CURRENT`
+(1,020,023 bytes, 189 files) — the graph gate ASKED rather than
+predicted, per its own bullet, even though a docs-only diff cannot move
+it.
 
 ### Standing gates, DERIVED from the merge's diff (executor pair, RANGE RULE)
 
@@ -410,8 +425,8 @@ repository's own `docs/CONVENTIONS.md`, restored and proved each time:
 
 ### The floor, and what this displaces
 
-**It displaces nothing; it adds 8,830 bytes** and the document is now
-**95,548 against a warn of 107,967 and a fail of 129,560** — 12,419
+**It displaces nothing; it adds 8,926 bytes** and the document is now
+**95,644 against a warn of 107,967 and a fail of 129,560** — 12,323
 bytes of headroom to the warn line. The 48 KB TARGET moves further away,
 and that is honest: ADR-019's addendum says the target is unreachable
 while ~59 KB is spec-kept or card-owned, and this card was never a

@@ -389,11 +389,13 @@
   carrying `-I`, which STATE records, and the one line that would have
   given the game away never reached the transcript. IF another cause is
   found THEN it joins this list rather than replacing it.
-  **ONE, THE SCOPE.** `git grep` run from a subdirectory silently scopes
-  itself there and returns nothing, which reads like a refutation rather
-  than a miss. Search from the repo ROOT. Re-running from the root fixes
-  this one, which is what makes the other two worse: they give the SAME
-  answer from anywhere, over a file somebody has just edited.
+  **ONE, THE SCOPE** — this bullet's own `git grep`-from-a-subdirectory
+  sentence above, listed here as a member of the set and deliberately
+  NOT restated: a rule written twice is two chances to disagree, and
+  "four paragraphs up" would be a line number wearing a disguise.
+  Re-running from the ROOT fixes this one, which is what makes the other
+  two worse — they give the SAME answer from anywhere, over a file
+  somebody has just edited.
   **TWO, A CONTROL BYTE IN THE FILE.** One literal NUL makes a file
   BINARY to every binary-skipping searcher while it still compiles,
   still renders and still passes its suites. Measured at `bc2d82a` in a
