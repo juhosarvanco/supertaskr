@@ -1,5 +1,14 @@
 # Architecture
 
+Compacted 2026-08-27 under ADR-019 (docs/rooms/governing-docs.md). The
+contract: which components exist, what each owns, the interface rules —
+one paragraph each, card ids carrying the stories. The per-merge
+component chronicle this file used to hold (1,203 lines) is permanently
+readable at `git show a6491e6:docs/ARCHITECTURE.md`; each component's
+own file under docs/architecture/components/ is the registry the parser
+reads, and the graph (docs/architecture/graph.json) is the reality
+side. This file is touched only when an INTERFACE moves.
+
 ## System map
 ```mermaid
 graph TD
@@ -13,1190 +22,121 @@ graph TD
 ```
 
 ## Components
+
 | ID | Component | Responsibility | Depends on | Status |
 |----|-----------|----------------|------------|--------|
 | C-01 | method/ | The convention: templates, formats, roles, interviews | — | built (v0.1.6) |
 | C-02 | CLI | Plumbing + power/CI path (ADR-008): genesis, dispatch; shells out to agent CLIs | C-01, C-06 | planned |
 | C-03 | Runtime | nputer.yaml role defaults; sessions.json registry | C-02 | planned |
 | C-04 | Daemon | Sidecar: watcher, websocket, @mention → headless turns | C-02, C-03 | planned |
-| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the milestone-1 watcher (T-003); see docs/design/dashboard.md | C-01, C-06; C-07 when F-06 lands | building (board + map panes complete T-001…T-012; T-026 landed the genesis front door and the full-bleed `genesis` screen, and T-037 mounted C-13's lens inside it — the screen renders the pane on the watched `DocsModelState`, behind an error boundary, so hand-driven genesis renders live; T-025 registered C-14's four genesis commands + the exit-reap hook in lib.rs, so the shell can now spawn the planner although nothing in the UI calls it yet; T-049 moved the app's keyboard surface out of a component and up to the root — `components/shell/accelerators.ts` holds a pure chord table and ONE window listener mounted by `App`, replacing the front-door-scoped one, so ⌘O/⌘N fire from every screen — and gave the board header its own "Start an interview", so genesis is reachable from an open project and not only from the front door; T-050 made the startup handshake RECOVERABLE — the `docs-changed` subscribe + `docs_snapshot` pull that C-10 delivers is latched on the in-flight PROMISE rather than a boolean set before the awaits, so a refused boundary call no longer strands the app permanently, the rejection becomes shell state and is rendered as text, and the startup screen carries retry + the front door's own two ways in, which means no reachable screen is a dead end; T-034 gave the map pane its SECOND lens — a segmented control (architecture · tasks) where tasks lays the board's cards out in dependency waves over `blocked_by`, with a critical path, and the architecture lens is proven byte-unchanged beside it (the whole `map-view` delta is the 472-byte control element); T-042 made the genesis switch TRUTHFUL at the three places it was claiming more than it knew — the outcome now carries the docs tree it found (so the screen stops saying "nothing written yet" over a non-empty docs/), a watch-state transition is ONE measured rule covering armed→unarmed as well as unarmed→armed instead of two special cases, and the `model-updated` echo reads PROVENANCE (`outcomeCarriesSnapshot`) instead of a seq guard that was always true; T-027 turned the `genesis` SCREEN into a SPLIT VIEW and made C-05 the first caller of C-14 — `GenesisScreen.tsx` now lays a 640px chat column (C-13's `InterviewChat`) beside the lens above 1024px CSS px and centres the chat alone below it, `App.tsx` starts C-13's turn subscription at the root, and the screen owns a scoped accelerator table entry (⌘. cancels) on T-049's single window listener rather than a second one. The shell adds no reducer: the turn stream stays C-14's and the chat renders `turn.text` as the store folds it; T-051 then made that split the size the app actually opens at — `tauri.conf.json`'s window block goes 800×600 with no floor to **1280×840 with minWidth 1024 / minHeight 700**, the FIRST window minimum this shell has ever declared, so the sub-1024 "chat alone" branch above is now outside the window's legal range rather than its default (1280 is the unique width at which the two halves are equal; 700 was justified as clearing every screen's natural content at the minimum, the repo map's 692 being the tallest, by 8px — **and THAT JUSTIFICATION IS FALSE, corrected at T-062 (T-062-s1)**: the probe read the DOCUMENT, which reports content only for a screen that can push the page open, so it recorded 302 for the bounded genesis screen whose real content is 1082 and could not see the board's 4989 either. 700 SURVIVES, on the property T-062 creates rather than the one T-051 claimed — every screen owns a scroll region, and the tightest non-form region at the declared minimum is 580px against T-048-s5's 250px floor). The whole change is four manifest keys: no grant, no Rust, no frontend edit; T-028 then made the split's right half CHANGE HANDS — `GenesisScreen.tsx` picks its renderer (`showsBoard(docs) ? "board" : "lens"`) so the lens becomes C-08's real board the moment a task file PARSES, and the completion panel's one CTA is the FIRST path this shell has ever had from a genesis session into the project board (`openBoardFromGenesis`, a pure phase move; no dispatch affordance, F-04 still fenced). Zero new IPC — the command set was still exactly nine — and zero telemetry; T-029 then registered C-14's FOUR new genesis commands in the same handler (`genesis_resume`, `genesis_fresh`, `genesis_transcript`, `genesis_kickoff`), taking the app's whole IPC surface from NINE to **THIRTEEN** — derived from both ends and intersected: 13 `#[tauri::command]` and 13 in `generate_handler!`, against 10 literal `invoke` call sites plus `runPicker`'s three. All four are ZERO-ARGUMENT (`tauri::State` extractors only), which is ADR-012's "narrowness lives in the command's own signature" applied rather than cited — no path, no session id and no flag crosses the boundary in either direction, and the 92-grant `core:default` set is byte-identical (`acl_pin.rs` sha256 `8d24cbad…` at the base and at the tip); T-063 then gave the shell its SECOND webview→process event and its first OUTBOUND FAILURE channel — `recordStartupFailure` used to end at a `console.error` no WKWebView ever surfaces to stdout, and now emits `startup-failed`, which `lib.rs` listens for and writes to **stderr** through a pure `startup_failed_line` (control bytes escaped, capped at `MAX_ECHO_LOG_CHARS` = 800 with an explicit `…(truncated)` marker, so the cap never lies by omission; the whole line is 58 + 800 + 12 = **870 characters / 872 bytes** once the cap fires, content-independent). The stream choice is the architectural half: `model-updated` goes to stdout and this goes to stderr, so a healthy round trip and a failure are separable in one session's log WITHOUT parsing. **NO NEW IPC COMMAND AND NO NEW GRANT — an event is not a command**: `generate_handler!` is byte-identical across the merge (still THIRTEEN, sha `4e062a2e…`) and `acl_pin.rs` is a 0-file diff at the same 92-grant `8d24cbad…`. The startup phase also gained a DEADLINE (`STARTUP_DEADLINE_MS` = 8 000, pinned by its own assertion because a test parametrised by a constant cannot pin it), which is what makes a HANG distinguishable from a REJECTION — the failure state T-050 introduced could previously only be reached by something actually rejecting; T-062 then settled what the shell IS, which had been two things since T-048: the column was `h-screen` for genesis and `min-h-screen` for everything else, with the fork explicitly deferred to T-027 and never taken. **ONE SCROLL MODEL NOW** — `main` and the column are `h-screen` unconditionally, `PaneRail` carries its own, the `boundedFrame` conditional and its `cn` import are gone, and **the page never grows on any screen** (measured: page == viewport on all five screens at 1280×840, 1024×700 and 800×600, 15 of 15). The corollary is the load-bearing half: a bounded frame makes overflow the SCREEN's problem, so every screen had to gain its own scroll region — the front door's card, `board-scroll`, the map canvas and the genesis lens — and the app chrome (wordmark, project path, parse chips, theme toggle, rail) stops being scrollable content. **The trap this closes was already in the tree and silent**: `MapView`'s canvas was `min-h-0 flex-1 overflow-hidden`, a box that can shrink and, when it does, HIDES what no longer fits — harmless only while the column could grow, and worth 54px of unreachable graph at 800×600 the moment it could not, with every suite green. It is now `overflow-auto`, and the lane asserts the CLASS (no box may clip content it gives no way to reach) rather than the instance. **Zero IPC movement and zero grant movement — this merge is `app/src/**` only**: `app/src-tauri/**` is a 0-file diff, `generate_handler!` untouched at THIRTEEN, `acl_pin.rs` a 0-file diff at the same 92-grant `8d24cbad…`. Zero new tokens; the built stylesheet's content hash moves only because Tailwind emits a different UTILITY set. **T-066 closes T-062-s3 without moving the strip.** `parse-error-details` remains outside `board-scroll`, so ordinary diagnostics stay visible while the board moves, but `max-h-48 overflow-y-auto` makes the list itself the overflow owner above 192px. Sixty real parser failures now leave page==viewport and keep the board at 524/384/284px across 1280×840, 1024×700 and 800×600; every diagnostic remains reachable. No token, parser, IPC, grant, manifest or Rust surface moved, and the graph relation/finding fixtures remain unchanged; T-073 restored the one architectural guard in this component that is not code at all — **THE SHELL NOW COMPILES AS TWO PROGRAMS, NOT ONE**, and that is the whole change. `app/tsconfig.json` read `"include": ["src", "test"]`, so `app/test/node-builtins.d.ts` — the file that exists precisely BECAUSE the app ships no `@types/node`, so that a webview module reaching for a node builtin fails `tsc` by construction — was visible to `app/src`. T-028 had legitimately extended it with `mkdtempSync`/`mkdirSync`/`writeFileSync`/`rmSync` and `node:os`'s `tmpdir` for its own temp-project writes, and the side effect was that ADR-017's free half (the spawned planner writes; the app renders what lands) had quietly stopped being enforced: a four-line probe under `app/src` importing `mkdirSync`/`writeFileSync` typechecked at **exit 0** on the base. **A FILE BOUNDARY CANNOT FIX THIS AND THE CARD'S OWN SECOND OPTION WAS REFUTED BY MEASUREMENT**: ambient module declarations merge PROGRAM-WIDE, so a `declare module "node:fs"` block written inside the single test that writes still let the `app/src` probe compile at exit 0, and a module file can AUGMENT an ambient module but never CREATE one (TS2664 for `node:os`). The write surface therefore moved out whole, into `app/test/node-builtins-write.d.ts`, reached only by a second program — `app/tsconfig.test.json`, which is `extends` plus a wider `include` and nothing else, so the two programs cannot drift in any compiler OPTION — while `app/tsconfig.json` narrows to `["src", "test/node-builtins.d.ts"]`, naming the read-only surface one path at a time so the guard is legible in the config. `npm run build` becomes `tsc && tsc -p tsconfig.test.json && vite build`, and that second `tsc` is load-bearing rather than tidy: measured with a real planted type error, the bare app program exits 0 (misses it) and `vitest` exits 0 (it transpiles without typechecking), so **without that one line nothing in the repo would typecheck any of the 42 test files**. The guard's scope is stated rather than implied: the TEST program necessarily contains `app/src` too — the tests import it — so the restored property is exactly "**the program `npm run build` gates on denies the write**", which is also the program CI runs; the residual is filed as `T-073-s2` rather than papered over. The second, independent closer is the `crescendo-dom.test.tsx` sink sweep, widened from `app/src/genesis/` to ALL of `app/src` on ONE shared `frontendFiles()` walk with the IPC census beside it — **8 files → 47 across 9 directories** — and the two closers are not alternatives: on one probe the type gate reds at exit 2 while the pre-T-073 sweep replayed verbatim over the identical tree reports `files=8 hits=0`. **ZERO BEHAVIOUR CHANGE, and it is the strong form**: `app/src` is byte-identical (53/53), no bundle input moved, and a HEAD build against a build with the base `tsconfig.json` swapped in reports `diff -r` DIRECTORIES IDENTICAL. **WHAT IS NOT HELD IS THAT IT STAYS TRUE.** The card built a third pin beyond its criteria, on the correct instinct that a restoration nothing holds is no restoration, and the verifier measured two ways past it: the include half is a FIRST-MATCH REGEX over raw text (not, as the card and the test comment both claim, parsed out of the JSON), so widening the line while leaving the old value in an explanatory comment passes 14/14 with the guard gone; and a single `/// <reference path="./node-builtins-write.d.ts" />` at the top of the shared ambient file puts the writes back in the app program with every pinned fact untouched — 827/827 green with `rmSync(dir, {recursive:true, force:true})` live in `app/src`, which the sweep cannot catch because `rmSync` matches none of the eleven sink strings. `T-073-s4`/`T-073-s5` carry it, with the measured fix: assert the PROGRAM (`tsc --noEmit --listFiles`) instead of a proxy for it; **T-064 finished the job T-042 started at the genesis switch** — see the Genesis bullet under Interfaces for the whole account. Three things move in C-05's own code: `reducePickOutcome` stops discarding an overtaking `docs-changed` emit when it is a FRESHER reading of the SAME folder (`genesisSwitchIsOvertaken`, on `prev.docs.projectDir` — the criterion's literal `switched.projectDir` conjunct is UNSATISFIABLE, since `resetDocsForProjectSwitch` sets that field to `""` and a canonicalized `project_dir` is never empty, so a literal implementation would have been a constant-false guard and arm (b) a no-op); the snapshot-less arm's watermark becomes a `Math.max` and can no longer walk backwards (measured 8 -> 7 before); and `ShellState` gains **`watcherLive`**, which closes T-063-s3 by arm (b) — the subscribe failure's consequence clause (*"no file change can reach the board"*) is now derived from whether a `docs-changed` subscription is HELD rather than from the step's name, so a refused RE-subscribe that left attempt 1's live handler attached stops telling the user the app cannot recover on its own. The residual is filed (`T-064-s3`): the flag's meaning is coupled to `startupFailure` by a doc comment and by there being exactly one writer, not by the type; rooms/sessions pending F-05; **T-013 gave the shell its SECOND SUBPROCESS SURFACE and its FOURTEENTH command** — `app/src-tauri/src/churn.rs` shells out to `git` behind the zero-argument `repo_churn`, taking the IPC census from THIRTEEN to **FOURTEEN**, derived from both ends and intersected (14 line-anchored `#[tauri::command]`, 14 `generate_handler!` entries, name-for-name identical) with **ZERO new webview grants** — `acl_pin.rs` is a 0-file diff at the same 92-grant `8d24cbad…`, which is ADR-012 applied rather than reopened, since an app command is not a grant. **The security content is WHICH BINARY RUNS, and the first build got it wrong**: `Command::new("git")` plus `current_dir(root)` with an inherited PATH let the child `chdir` into the opened project and only THEN resolve a bare name, so a relative or empty PATH element resolved `<project>/git` — the verifier planted a fake and **the app executed it**, which is strictly worse than the case T-060 fixed because the opened folder is the one directory an attacker controls by asking the user to clone a repository. The fix does not write a second gate: `runner.rs`'s `validate_resolved_binary(path, adapter)` becomes a thin wrapper over a new **`validate_resolved_program(path, name)`**, so the resolved-path standard has ONE implementation and TWO callers (the `claude` door and the `git` door), `login_shell()` is made `pub` and shared, and `run_git` spawns the ABSOLUTE resolved program with the child's `PATH` SET by the app from an absolute-only, traversal-free list. That refactor is the reason C-14 is in this card's fence at all, and it is behaviour-preserving for its original caller by TEXT rather than by sample — the two gate bodies are byte-identical under the rename (35 lines, `diff` exit 0, re-derived at the merge against `11c82a1`); T-126 declared `pub mod dispatch;` in `lib.rs` and registered **`dispatch_lanes`** in `generate_handler!` — the FIFTEENTH command and F-04's first, zero arguments with the project root taken from `WatchState` on the `repo_churn`/`index_repo` pattern, IPC census 14/14 → 15/15 with `comm -3` empty at both ends, and `acl_pin.rs` a 0-file diff at the same 92-grant `8d24cbad…` because an app command is not a webview grant. **THE DECLARATION IS THE WHOLE CARD AND THE SUITE COULD NOT SEE THE DEFECT**: `rustc` compiles no file that no module declares, so from T-110's merge until this one `app/src-tauri/src/dispatch/**` reached a compiler ONLY through `app/src-tauri/tests/dispatch_lanes.rs`, a two-line `#[path]` shim compiled into a TEST target — a planted type error in `dispatch/lanes.rs` left `cargo build` at exit **0** while `cargo check --test dispatch_lanes` over the same mutated byte exited **101**, and the error PATH separates them more sharply than the exit does (`tests/../src/dispatch/lanes.rs` at base, `src/dispatch/lanes.rs … could not compile nputer (lib)` at tip). The 34 dispatch bodies now run in the **lib** target and the separate test target is gone — `test result:` lines **16 → 15** while bodies go **460 → 462** — and THAT relation, not the pass count, is what says the module is in the binary. **THE SHIM'S DELETION WAS OUTSIDE T-126's `[app-shell]` FENCE**, and verdict `de05430` ruled the fence should have held and criterion 7 should have yielded, approving only because restoring the file is itself an edit to that same component: **ratified by necessity, not precedent**. C-15's registry still declares the deleted path and C-15's module header still says `lib.rs` does not declare it — `T-126-s3`, routed rather than repaired at the merge; **T-111 (2026-08-26, merge `f3a4233`) GIVES C-08 THE FIRST THING IN THIS APP THAT IS ABOUT THE METHOD RATHER THAN ABOUT THE DOCUMENTS — the DISPATCH FRONTIER.** `app/src/lib/board-model.ts` grows from a board selector into the derivation `orchestrator.md` step 4 states in one sentence: `selectDispositions(model, dispatch, topmost?)` answers, per card, one of SIX closed dispositions — `dispatchable`, `blocked`, `fenced`, `not-topmost`, `at-ceiling`, `not-applicable` — **each carrying a reason SENTENCE rather than an encoded verdict**, because *a disposition with no reason is not done being computed*. Four properties are the content and each is now pinned by a mutant that reds. **(1) THE IN-FLIGHT SET IS A JOIN AND ITS DISAGREEMENT IS VISIBLE**: T-110's lane reader is joined with `status:`, and all four states — LIVE, a stamp with no worktree (a DEAD lane), a worktree with no stamp (an UNSTAMPED dispatch), and neither — are driven by a pin, so an empty list never means two things. **(2) ONE NORMALISATION WITH ITS OWN PIN**: `normaliseTouchToken` / `touchTokensOverlap` collapse the `tools/e2e` versus `tools/e2e/` split ONCE, with containment counted as overlap, driven from the live board's own tokens rather than a synthetic pair. **(3) DISJOINTNESS IS COMPUTED OVER EXPANDED COMPONENT PATHS**, never over slugs — `expandTouch` reports each token's KIND and the component ids it resolved THROUGH, and `fenceClashes` returns the shared PATHS rather than a boolean, so a `fenced` reason can say *both expand through C-11, so this may be the COARSE fence rather than a real overlap* and a human can override deliberately. **THE PROVENANCE IS THE DELIVERABLE AND THE VERDICT IS NOT**, which is why this card DECLINED to import C-06's `fence.ts` even though the import is a READ inside its own fence: `FenceWitness` carries `{left,right,path}` and no component ids, `compareFences` has a THIRD verdict (`unusable`) the six-value vocabulary cannot express without a criteria change, and `expandFence`'s `knownPaths` oracle needs a filesystem a pure function of the parsed model does not have. **MEASURED RATHER THAN PREFERRED**: both implementations run over the live board agree on **0 of 27** normalisation disagreements and differ on 3 token KINDS (`ci`, `docs`, `method`), every disagreeing pair being a pair against `T-054`, which is `done` — so the divergence is DORMANT and `T-137` is the vehicle that unifies (`T-111-s5` is the move list, written by the seat that built it). **(4) A DANGLING BLOCKER IS A DEFECT IN THE CARD, NOT A REASON TO WAIT**, and the parser's own near-miss hint reaches the RENDERED reason verbatim and attributed (`The parser says: "… 'T-001' is declared and differs only in zero padding …"`) rather than stopping at a field — T-076's hint consumed rather than re-derived (T-057), with a `T-999` control body proving the pin checks the PARSER's sentence and not the presence of any sentence. **NO DISPATCH AFFORDANCE LANDS HERE** and T-028's fence stays mechanically enforced. **THE CARD WAS REJECTED AT `75b7626` AND THE REJECTION IS THE PART WORTH CARRYING**: nothing in the derivation had to change — four pieces of shipped TEXT stated things that were not so, and two of criterion 4's own headline reason clauses were encoded rather than defended, so three one-sided PRODUCER mutants survived at exit 0 over a 33-arm drill that was all red. Five of the six repairs are now discharged by a mutant that reds. **THE ONE DEFECT THE FIX PASS ITSELF INTRODUCED IS THE SECOND INSTANCE OF T-134's**: two literal `U+0000` bytes in `app/test/select-board.test.ts` survived `npm run build`, 1013 tests and eight poison arms, and only `tools/e2e`'s P5 control-character lint saw them (`T-111-s9`) — **and this time the root cause was found**: a NUL makes a file binary, the session's `grep` shim runs `ugrep … -I`, and `-I` skips binary files, so the sweep meant to CONFIRM the byte was gone returned no match with no error. **The defect conceals its own evidence, and the finding and the shim are one event.** C-08's file count holds at **10** and C-05's at **63** — `files +0 −0 ~2` — while the graph gains **47 net edges** for 18 220 bytes |
-| C-06 | lib-parser | Pure library: docs/tasks/ + ROADMAP backbone → typed model (T-002); browser-safe pure exports (T-003); component files (T-008); cross-ref validation (T-019); strictness pass (T-030 — the backbone scanner strips HTML comments before matching, so a commented row is neither a phantom feature nor a dropped one; blocked_by cycles reported once per SCC; three new issue kinds, additive, consumed generically); id-space aliasing lifted OUT of the component registry and applied to all three id spaces (T-053, promoting T-030-s3 — `id-slot.ts` holds the numeric-slot grouping ONCE and component.ts, validate.ts and roadmap.ts each own only their message, because copied logic in three id spaces is three chances to disagree about what an id is. `C-05`/`C-005`, `T-01`/`T-001` and `F-1`/`F-01` are each one slot spelled twice, and nothing rejected the pair before: the strings differ, so `duplicate-id` correctly stayed silent while every consumer reasoning NUMERICALLY resolved the tie by an accident of zero-padding. Two properties are load-bearing — the strip is TEXTUAL and never `Number()`, so two genuinely different ids past 2^53 cannot false-alias when floating point runs out of room; and every digit run is canonicalized separately with its separators kept, so a task's `-sN` suffix aliases like any other digits while the `-s` keeps a suggestion apart from its parent. `aliased-id` gained a REQUIRED `space` field rather than splitting into three kinds — the shape `dangling-reference` and `duplicate-id` already use, and the one that breaks the compiler at a construction site instead of falling silently through an exhaustive switch. Zero app-side change: the app surfaces the new issues through the existing count, which is a premise the task VERIFIED rather than assumed); one shared inert-span pass now defines the structural view for BOTH roadmap rows and task headings (T-055, absorbing T-030-s2/s4/s5 — `inert-spans.ts` position-preservingly blanks top-level backtick/tilde fences, HTML comments including the abrupt empty forms, and physical-line-local single-backtick spans before either consumer matches. Recognition order keeps comment-looking bytes inside code inert; genuine unterminated comments and fences run through EOF. This is deliberately not a Markdown parser: indented code, other HTML blocks, link definitions and container/list de-indentation remain named non-goals. All 127 live section objects stayed byte-identical, while fenced roadmap examples and commented task headings became structurally inert); the id layer is now TOTAL, which is the property T-053's entry above already claimed for half of it (T-076, absorbing T-053-s2/s3/s4 — that entry states as load-bearing that "the strip is TEXTUAL and never `Number()`", and it was, in `idSlotKey`. One function away `compareComponentIds` still returned `Number(na) - Number(nb)`, so past roughly 309 digits both sides are `Infinity`, the difference is `NaN`, and `NaN !== 0` is TRUE — the comparator RETURNED `NaN` before its string fallback could run. That degraded in TWO ways, not one: at the sort V8 left the pair in arrival order, and at the `ambiguous-mapping` site `compareComponentIds(...) || fileCompare` swallowed the falsy `NaN`, so the declared winner was decided by FILE PATH — deterministic and wrong. Both were reproduced at the branch point through the real parser and both are closed: `compareDigitRuns` over `canonicalDigits` is the same textual primitive `idSlotKey` uses, so the comparator and the slot key now agree about what the digits of an id are BY CONSTRUCTION rather than by coincidence, and order is unchanged over an exhaustive 1,210,000-pair sweep of every 2- and 3-digit `C-` id. `duplicate-id` gained the required `space` field at all four emit sites, matching what `aliased-id` got at T-053, so no kind in this union still needs its prose read to know which id space it came from except `dangling-reference`; `dangling-reference` itself gained a NEAR-MISS HINT — structured `nearMiss?: string[]` plus a message clause — at all three sites, so a `blocked_by: [T-01]` beside a declared `T-001` names the id it almost matched instead of only denying it exists. NONE OF IT IS LIVE ON THIS TREE and that is stated rather than implied: the registry stops at `C-14`, no app SOURCE reads either kind — `validateProject` has zero call sites under `app/src/`, and the board's parse-error strip carries per-FILE failures only — so this is a totality fix, not an incident response, and it earns no ROADMAP narrative for the same reason T-019, T-030 and T-053 did not). **T-096 CHANGES NOTHING ABOUT C-06's SOURCE AND EVERYTHING ABOUT WHAT ITS SUITE CAN TELL YOU** (absorbing T-076-s4/s5; `lib/parser/src/**` is a 0-FILE DIFF). Nothing in the T-076 entry above is falsified — this is an addition to the lineage, not a correction — but its *"both are closed"* was true of the BEHAVIOUR and only half true of the PINS. A mutant restoring the pre-T-076 comparator at the `ambiguous-mapping` SORT SITE ALONE, with `compareComponentIds` left total, survived the entire suite at **263 passed / 263, exit 0** — re-derived at `765362e` before anything was built — because every `ambiguous-mapping` pin uses two- and three-digit ids, where the branch-point and the fixed comparator agree on every pair. T-076 DID build one consumer-side pin and it works: the same mutant at the `aliasedIdSlots` call site reds `the slot's OWN ids array is ordered past the double range too (T-076)`, alone, so the true statement is that T-076 pinned ONE of the comparator's two consumers through the consumer and left the other pinned only in isolation. Both are now consumer-side. The second half is the disk/pure PARITY contract: both entry points declare the same LAYER ORDER (task -> roadmap -> component) and `toEqual(fromDisk)` could not check it, because the fixture behind it carried issues from ONE layer — so a disk-side reorder also survived at 263/263. **A parity assertion can only see the layers it has issues from.** The fixture now carries one from each, so the EXISTING assertion holds the whole contract and no second body remembers the order; the symmetric case (both assemblers moved alike, parity preserved) is caught by T-076's own pure-side pin, measured rather than assumed. THE CLASS THIS ROW SHOULD CARRY FORWARD: a pin on the mechanism is not a pin on the property the mechanism exists to protect, and a suite states the difference in prose it cannot check (a third instance is live and filed as `T-096-s1`). **AND SINCE T-134 (2026-08-26, merge `520e93e`) THIS PACKAGE OWNS THE PROJECT'S FENCE, WHICH IS THE FIRST THING IT EXPORTS THAT IS ABOUT THE METHOD RATHER THAN ABOUT THE DOCUMENTS.** `lib/parser/src/fence.ts` is the ONE implementation of "may these two lanes run at once": `normalizeFenceToken` (one spelling — backslashes, repeated slashes, a leading `./`, a trailing star run and a trailing slash all collapse, **with the ceiling DECLARED rather than discovered**: an interior `*`, a `?`, a character class or a leading `!` is `unresolved`, because comparing `app/src/**/*.ts` as a literal prefix would answer confidently and wrongly), `slugPathIndex` (the map, READ off each component file's own `touch_slugs:` — `roles/executor.md` row 5 already rules that field authoritative over this document's prose block, and **there is no table**: `app-shell` and `app-board` appear in `fence.ts` only in doc comments, pinned by mutating C-11's `touch_slugs:` and watching two bodies red), `expandFence` (four token kinds, `invalid-field` issues on `touches`, and the card's own file carved out of its own fence) and `compareFences` (**a THREE-valued verdict — an unresolved token yields `unusable`, never a silent `disjoint`**, which is the whole failure this module exists to close). Both barrels re-export it, the browser-safe one included, because it imports nothing but `./types.js`. **THE RULE ITSELF LANDS IN `method/lane-protocol.md` RULE 5** and says the load-bearing halves in words: a fence names PATHS, a component name is shorthand for the path set it stands for, disjointness is computed over the EXPANDED sets and never over the tokens, `docs/tasks/` is unfenceable by any card because the protocol itself writes there on every card, and a card's own file is outside EVERY fence including its own — **which resolves `T-108-s3` question 1 and makes `executor.md` step 5 performable under a path-granular fence instead of forbidden by one**. **THE MEASUREMENT THAT BOUGHT IT**: over the live board, token equality against the expansion flips **25 of 666 pairs, 25 distinct cards, every one `disjoint` → `overlapping` and NOT ONE the other way** — the direction property re-derived four times across four refs, twice by the verifier (once against the card's prose without importing `fence.ts`) and once by this integrator through the merged module. **AND IT CAUGHT A LIVE ONE ON ITS WAY IN**: `T-105`, `T-128` and `T-131` each hold `[method/, docs/CONVENTIONS.md]`, which CONTAINS the `method/lane-protocol.md` this lane held; all three read `disjoint` on tokens and `overlapping` on paths, and `T-131` was the architect's next dispatch. **THE DUPLICATE IS REAL AND IS ROUTED RATHER THAN CLOSED**: `tools/e2e/scripts/dispatch-brief.mjs` carries a second copy of this expansion (T-133's `fenceOverlaps`/`pathsOverlap`), outside this card's fence and behind a recorded ADR-011-family manifest choice, whose divergences go BOTH ways — no own-file carve-out makes it stricter; `ci`, `docs/tasks` and four missing normalisations make it looser — while agreeing with the parser on **all 703 live pairs, 305 vs 305 overlapping, zero disagreements**. A latent hazard, not an active wrong answer; `T-137` is the vehicle and spans both. **THE ONE DEFECT IN THIS CARD WAS INVISIBLE TO ALL 290 BODIES**: the witness-dedup key joined three strings with two literal U+0000 bytes, which WORKS as a separator, so only `tools/e2e`'s P5 control-character lint could see it — replanted by the verifier, it reds `lint:tokens` at bytes 18812/18824 while the parser suite stays 290/290 green. **A defect that changes no behaviour is invisible to every behavioural suite by construction.** C-06 goes 25 → **27** files at this merge, its third move ever and its first since T-055 | C-01 | verified |
-| C-07 | nputer-index | Rust crate + a REAL binary since T-014: code → docs/architecture/graph.json (tree-sitter TS/JS/Rust); deterministic, no tauri dependency (ADR-014/015). The binary now gates and reads as well as writes — `index [--root .]`, `index --check` (writes nothing; exits non-zero on a stale graph and prints WHAT moved), `index --watch` (headless, debounced 250 ms), `arch` and `arch drift [--fail-on undeclared\|unmapped\|any]` (read the COMMITTED graph, one record per line) and, since T-127 (2026-08-25, merge `ad3ac8a`), **`arch cycles [--root DIR]`, which reads the REGISTRY ONLY — no graph, no index — so a stale graph cannot redden it and its verdict is about DECLARED `depends_on:` alone; it names each cycle as a closed walk rotated to its lowest member (`C-08 -> C-09 -> C-08`), never as a bare "cycle detected", caps enumeration at `MAX_CYCLES = 64` with the truncation stated, and prints on EVERY run including the green one that the observed side sees `import` edges only. THAT DISCLOSURE IS LOAD-BEARING AND WAS PROVEN BY CONSTRUCTION rather than argued: a `use`-based mutual pair fires two D1s while a `crate::b::pong()` path-expression pair fires NOTHING on either side and still compiles, so a cycle made of Rust `mod`/path dependencies is invisible to BOTH the declared and the observed side at once (`T-126-s4`, generalised). The ENFORCING copy is `cargo test` and not the subcommand — `crates/nputer-index/tests/arch.rs` pins the live census against an EXACT SET, so a new cycle reds today and a stale allowlist entry reds the day `T-127-s1` lands. `arch`/`arch drift` output is byte-unchanged by it. It is NOT yet in `docs/CONVENTIONS.md`'s command list, which was outside T-127's fence — `T-127-s5`** — on ONE exit-code contract shared with `npm run boot:check`: 0 clean · 1 the gate's verdict · 2 called wrong · 3 could not run, so "stale" and "could not tell you" are never the same number. `arch`/`arch drift` carry a NARROW reality-side join in Rust; see ADR-015's dated addendum for what that may do and where it can still disagree. F-06 | — | building (TS/JS extraction + committed graph done T-009; the binary, `--check`, `--watch` and the arch reports done T-014; **Rust language extraction done T-010** (2026-08-25, merge `d64c673` — `Lang::for_extension("rs")` answers, `languages` is `["rust","ts"]`, and this component stops being the one that could not see itself: C-07 goes from a D3 declared-only face with ZERO files to **32**, and the whole `app/src-tauri/` Rust tree becomes reality-side map content, 46 `.rs` files, not one of them new on disk. `arch drift` reports `unmapped=0`. The row read "Rust language extraction T-010 still open" until that merge). **THE SIZE IS THE LIVE CONSTRAINT NOW** (`T-010-s3`): the committed graph was **890 866 bytes — 89.09% of `max_graph_bytes` (**1 000 000 THEN; `1_040_000` SINCE T-139, merge `aed77b6` — every percentage in this row up to that entry is against the OLD budget and each stays stamped at its own ref**) and 84.96% of the docs collector's 1 MiB per-file cap** at T-010's merge `d64c673`, nothing truncated, and the budget's floor with every symbol array emptied is ~187 KB, so the collector cap the map data rides cannot be crossed while the budget stands below it. **THAT SENTENCE WAS WRITTEN IN THE PRESENT TENSE AND IS NOW STAMPED WITH ITS REF INSTEAD** (T-102's checkpoint, on T-101's correct-in-place precedent): the figure moved at every regen since and no checkpoint updated it, reaching **925 217 bytes — 92.52%, 74 783 bytes of headroom** at T-033's checkpoint (923 899 at `a9ed33d` one merge earlier) and **933 486 bytes — 93.35%, 66 514 bytes of headroom** at T-116's checkpoint, which spends **8 269** of it on ONE new indexed file, and **933 931 bytes — 93.39%, 66 069 bytes of headroom** at T-126's checkpoint. **THAT LAST ENTRY IS THE ONE THAT BREAKS THE PATTERN, AND IT IS WORTH THE CLAUSE**: every earlier move in this series spent headroom on a file the merge ADDED, while T-126 DELETES an indexed file (`app/src-tauri/tests/dispatch_lanes.rs`, `files +0 -1 ~2`) and the graph still grows by **445** bytes — because `lib.rs` gains the module declaration, the command body and their symbols (26 → 30) and the shim it replaces held almost none. **A FILE COUNT AND A BYTE COUNT CAN MOVE IN OPPOSITE DIRECTIONS AT ONE REGEN**, so neither is evidence about the other. **DERIVE IT AT YOUR OWN REF; a transcribed byte count is a line number by another name.** The headroom, not the size, is the thing nothing reports. **AND SINCE T-129 (2026-08-25, merge `2749256`) THIS CRATE CAN NO LONGER TAKE THE APP DOWN WITH IT.** Every self-recursive traversal in `extract/` — six of them, DERIVED by closing the call graph rather than listed, in two mutual-recursion cycles and four plain ones — now carries a depth bound at `MAX_DEPTH = 128`, refuses past it, and RECORDS which one refused. That is this crate's "degrade, never fail" contract one layer deeper, and it matters here rather than only in the CLI because `app/src-tauri/src/index_cmd.rs` runs `nputer_index::index()` **inside the Tauri process**: a Rust stack overflow is an `abort()` and not a catchable panic, so a generated or hostile source file with pathological nesting took the window, the docs watcher, the agent runner and any interview mid-turn with it, at exit **134**, with no error path running. **THE EMITTED SHAPE GAINS TWO OPTIONAL FIELDS AND `schema` STAYS 1** — `FileEntry.depth_refused: Option<DepthSite>` (six kebab-case variants, one per bounded traversal, so a seventh cannot be bounded without adding one) and `Stats.depth_limited: Option<usize>`, both `skip_serializing_if` — and **the bytes are unchanged for every input that does not exceed a bound**, proven binary-against-binary over two pristine corpora rather than asserted. The margin is a CONSTANT rather than a function of the input, which is the whole of what a bound buys over a bigger stack: ~3.5x from below (the deepest traversal any file in this repository reaches is **36**) and ~3.2x from above (the worst LEGAL input needs 512–640 KiB debug against the 2 MiB a plain `std::thread` gets). Arm 2 — running the walk on a thread with an explicit stack — was **ruled on and NOT taken**, with the ruling beside the constant and its question kept as a pin instead of as a paragraph. **AND THE CARD'S OWN FRAMING IS INVERTED, WHICH IS THE THING TO CARRY**: it proves the bug is the traversal's rather than tree-sitter's by showing deep nesting *inside a function body* exits 0, **and states that without naming a language** — true of `.rs`, FALSE of `.ts`, because `extract::ts::Cx::scan` descends every named child of the whole tree. TypeScript is the MORE exposed language, not the less: its `namespace` chain aborted at **2 000** against the tightest Rust threshold of 3 000. The budget entry: **939 161 bytes — 93.92%, 60 839 bytes of headroom** at T-129's checkpoint, spending **5 230** of it on ONE new indexed file (`crates/nputer-index/tests/depth.rs`) — the first file this component has gained ON DISK since T-010 put it on the map, every other move having been a change of language or of owner. **AND 944 590 bytes — 94.46%, 55 410 bytes of headroom** at T-127's checkpoint, spending **5 429** on ONE new indexed file (`crates/nputer-index/src/arch/cycles.rs`, `files +1 -0 ~4`) — the SECOND file this component has gained on disk, so C-07 goes 33 → **34** and is the only component whose count moves. **ALL FOUR NEW EDGES ARE `import`, ZERO `call`, ZERO `type_ref`** — three with both endpoints inside C-07 and the fourth on `p:cargo:std` — so `arch` reports `components=13 files=180 mapped=180 unmapped=0 edges=36 findings=3 drift_components=3`, every component-level figure unmoved. **A merge can add a file, four edges and 5 429 bytes and move no component relation at all**, which is the second consecutive merge in this series to do it. **AND SINCE T-135 HALF A (2026-08-26, merge `9ae87a6`) A RUST `mod` DECLARATION IS AN EDGE, WHICH BREAKS THAT TWO-MERGE PATTERN IN EVERY DIRECTION AT ONCE.** Rust reached across its own module tree by `mod` and produced nothing: `resolve/rust.rs` emitted an `import` edge from a `use` and from nothing else, so the file whose absence made a whole component compile into nothing was the file the graph rated at zero. The fix rides the EXISTING `import` accumulator rather than a new `kind` — `app/src/lib/architecture/graph.ts:23` declares `GRAPH_EDGE_KINDS` as a CLOSED vocabulary and line 346 skips an unknown kind *while emitting a `graph-entry` issue*, and `arch/mod.rs:282` filters `edge.kind != "import"`, so a `kind: "mod"` would have been invisible to the map pane, to `arch`, to `arch drift` and to D1–D5 while adding one error-strip entry per edge (`T-135-s2` carries the widening that would be needed first). **44 `mod` pairs resolve, 17 already carry a `use` edge, 27 are new**, and the occurrence is deliberately the WEAKEST one available — no `symbols` entry, no `reexport` claim, no provenance field — which is what makes the whole graph delta **PURELY ADDITIVE, proved on the full edge tuple `(from,to,kind,symbols,reexport,confidence)`: 32 added, 0 removed, 0 CHANGED IN PLACE.** A `reexport: false` occurrence would have CLEARED `reexport: true` off three live edges, and a symbol-carrying one would have grown 16 of the 17 merged pairs; both are poisoned. **AFTER THIS CARD RUST EMITS `import` FROM `use` AND `import` FROM `mod`, AND STILL NO `call` AND NO `type_ref`** (`T-010-s6`) — ruled SAFE for a file-granularity dependent count and UNSAFE for any symbol-granularity question, on arithmetic rather than taste: projecting TS's density onto Rust gives ~900 edges and ~175 000 bytes, **3.2x the entire remaining headroom**. The ruling is written where a reader meets it — `resolve/rust.rs`'s module doc and `arch cycles`' own disclosure, **NARROWED rather than deleted**, with its test asserting BOTH halves (the fixed `mod` half by card id and the surviving path-expression half by finding id) so a future widening cannot pass by deleting the survivor. **AND THE FIX'S FIRST ACT IS TO REVEAL A TRUE DEPENDENCY NO GATE COULD SEE**: `app/src-tauri/src/lib.rs` (C-05) → `dispatch/mod.rs` (C-15), the one cross-component pair among the 27. `pub mod dispatch;` landed at T-126 (`0fa83da`) and `git log -S "C-15" -- docs/architecture/components/C-05-app.md` is EMPTY — **C-05 has never declared C-15**, so the drift is REVEALED and not created, it is left undeclared on ruling thirteen's parent test, and the declaration is routed to `T-126-s3` item 4 (**whose text calls it the "fifth D1" when it is the SECOND**). **THE THIRD SUBCOMMAND, `arch blast <path|slug>…`**, derives dependents by reversing the committed graph's `import` edges AT READ TIME — no reverse index is stored, so T-057's two-implementations failure cannot arise — resolves slugs through each component's own `touch_slugs:` (a field `arch::registry::Component` did not read until this card, which widens the refusal surface of `arch`, `arch drift` and `arch cycles` by one field), shares ONE definition of build-target-root-ness with the indexer (`resolve::rust::cargo_target_roots`, factored out of `RustWorld::build`), and prints the `pkg-seam` marker beside every file of a repo-internal package because a cross-package FILE-level blast radius is not computable from today's graph (`T-135-s1`). **IT IS NOT YET DOCUMENTED IN `docs/CONVENTIONS.md`'s command list, which is the same gap `arch cycles` has carried since T-127 — `T-127-s5`, now two commands wide.** **AND ITS TypeScript HALF IS OPEN AND MUST STAY VISIBLE**: `arch blast` marks no TS file as a build-target root, so three of the planning pass's eight roots (`app/src/main.tsx`, `app/vite.config.ts`, `app/vitest.config.ts`) print a bare `dependents=0` indistinguishable from a genuinely unimported file — **§7's floor rule cannot bind until that is closed or disclosed in the output**, which is Half B's blocker and not Half A's defect. The budget entry: **955 710 bytes — 95.57%, 44 290 bytes of headroom** at the T-135 Half A checkpoint, spending **11 120** — by far the largest single spend in this series and the first that is mostly EDGES rather than a file: **+32 edges = 27 (`mod` on files that already existed) + 4 (`blast.rs`'s own outbound `use` edges) + 1 (`arch/mod.rs -> arch/blast.rs`, this card's own `pub mod blast;`)**, isolated at **+4 394 bytes for the 27, 162.7 bytes per edge**. C-07 goes 34 → **35** on ONE new indexed file (`crates/nputer-index/src/arch/blast.rs`, `files +1 -0 ~8`) and is again the only component whose count moves, but **every other figure DOES move this time**: `arch` reports `components=13 files=181 mapped=181 unmapped=0 edges=37 findings=4 drift_components=4`. **THE BUDGET ENTRY AT T-134's CHECKPOINT (2026-08-26, merge `520e93e`) IS THE LARGEST SPEND IN THIS SERIES AND THE FIRST WHOSE FILES ARE NOT THIS COMPONENT'S: 970 961 bytes — 97.10%, 29 039 bytes of headroom**, spending **15 251** against T-135 Half A's 11 120, on `files +2 -0 ~2` and `edges +43 -0`. The two new files are C-06's (`lib/parser/src/fence.ts`, `lib/parser/test/fence.test.ts`), so **C-06 25 → 27 is the only component whose count moves** and C-07 holds at 35; every one of the 43 edges is C-06-internal or lands on a `p:` package node, so `arch` moves `files` and `mapped` **and nothing else** — `components=13 unmapped=0 edges=37 findings=4 drift_components=4`, unchanged. **TWO INDEXED FILES AND 43 EDGES COST MORE THAN T-135's 27 NEW EDGES DID**, which is the arithmetic worth carrying: at 29 039 bytes the budget now holds roughly two more merges of this size, and the headroom — not the size — is the number nothing reports. **AND THE IDENTICAL-FIGURES TRAP FIRED TWICE IN ONE INTEGRATION HERE, IN ITS STRONGEST FORM SO FAR**: THREE distinct graphs at exactly 970 961 bytes (`09151e14` the lane's pre-NUL-fix tree, `ee554cea` the merged tree, `616205de` after the fixture writes), the second ask reporting `970961 · 183 · 2064 · 1986` on BOTH sides and still exit 1 because two fixtures' `loc` moved. **A BYTE COUNT IS NOT A CONTENT CHECK; ASK `index --check` AND ASK IT AGAIN AFTER EVERY WRITE.** **AND THE BUDGET ENTRY AT T-111's CHECKPOINT (2026-08-26, merge `f3a4233`) IS THE LARGEST SPEND IN THIS SERIES AND THE FIRST THAT MOVES NO `arch` FIGURE AT ALL: 989 181 bytes — 98.92%, 10 819 bytes of headroom**, spending **18 220** against T-134's 15 251 and T-135 Half A's 11 120. **THE HEADROOM IS NOW SMALLER THAN THE SPEND THAT PRODUCED IT**, which is the first time in this series that the next merge of this size would not fit — T-134's checkpoint could still say *roughly two more merges*, and this one cannot say one. **AND IT BUYS ZERO NEW INDEXED FILES**: `files +0 −0 ~2`, so `arch` reports `components=13 files=183 mapped=183 unmapped=0 edges=37 findings=4 drift_components=4` — **byte-identical, line for line, before and after the regen** (`diff` exit 0 over every `component`/`edge`/`summary` row), and not one component's file count moves. The whole 18 220 is **+50 −3 edges and +37 symbols inside two files that already existed**, `app/src/lib/board-model.ts` (loc 465 → 1284, symbols 21 → 47) and `app/test/select-board.test.ts` (loc 740 → 1853, symbols 9 → 20). **SO A MERGE CAN SPEND MORE OF THIS BUDGET THAN ANY MERGE BEFORE IT AND LEAVE EVERY COMPONENT-LEVEL FIGURE UNTOUCHED** — T-126 proved file count and byte count can move in opposite directions; this one proves the byte count can move while nothing else does at all. **AND SINCE T-139 (2026-08-26, merge `aed77b6`) BOTH LIMITS CARRY A MEASURED REASON AND THE INVARIANT BETWEEN THEM IS ENFORCED RATHER THAN ASSUMED.** `max_graph_bytes` goes **1 000 000 → `1_040_000`** (`MAX_FILE_BYTES − 8 576`) and the docs collector's `MAX_FILE_BYTES` stays at **1 048 576**, both with the measurement, the machine and the ref at their definition sites — the field's doc comment at `lib.rs:66-121`, the literal at `:134`. **THE THREE DELIVERY STAGES WERE MEASURED SEPARATELY AND THE IPC HOP BINDS**, which nobody knew: delivering the live 989 181-byte graph costs **3.66 ms** — read 0.126 ms (3.4%), IPC 2.374 ms (**64.9%**), `JSON.parse` plus model 1.160 ms (31.7%) — **and it binds for a SHAPE reason rather than a size one.** tauri's `EmitArgs::new` (`event/mod.rs:130`) serialises the snapshot and `emit_js_script` (`:194`) splices that JSON verbatim into a JS SOURCE string that `webview/mod.rs:1975` hands to `eval`, so the webview parses a megabyte-scale object literal with its GENERAL parser and not the engine's JSON fast path: on JavaScriptCore, the engine a macOS WKWebView actually runs, **1.76 ms to eval against 0.92 ms to `JSON.parse` the same bytes**, linearly at every size — about half that stage is the channel (`T-139-s2`). Cost is **LINEAR TO 14 MB WITH NO KNEE**, so no stage argues for a limit anywhere near 1 MiB and what sets the number is the collector's cliff and only the cliff. **THE PIN HOLDS THE RELATION AND NOT EITHER VALUE**: `docs_watch::tests::the_emit_budget_stays_below_the_collectors_file_cap` reads `IndexOptions::default().max_graph_bytes` and `MAX_FILE_BYTES` and restates neither (`T-010-s3` arm 2's own trap, avoided), and carries a positive control that drives the real collector at exactly the budget beside one byte past the cap being skipped as `Oversize`. Raising the budget to the cap — the weakest possible violation — kills **exactly one body of 522**, and the verifier proved the pin two-sided by poisoning the OTHER constant for the same unique kill. **`index --check` NOW PRINTS THE HEADROOM BESIDE THE SIZE** (`budget: 997202 of 1040000 bytes (95.9%) - 42798 left`, and over budget it names the degradation instead of reading as a failure) — `T-010-s3` arm 1 TAKEN, arm 2 declined with its reason and arm 3 REFUTED by the measurement it rested on. The budget entry: **997 202 bytes — 95.88%, 42 798 bytes of headroom** at T-139's checkpoint, spending **8 021** — and under the OLD budget that same graph would read **99.72% with 2 798 bytes left**, which is the arithmetic the raise exists for. **BUT THE RAISE BUYS ABOUT THREE ORDINARY MERGES, NOT A NEW REGIME**: headroom goes 10 819 → 50 819, i.e. 0.69 → 3.2 merges at the mean single-commit growth of 15 751, and 2.7 once this card's own 8 021 lands; the largest growth on record, 241 980, still overshoots the new budget by ~5x. **AND THE MEASUREMENT PROVES THE DIRECTION AND THE CEILING WITHOUT SELECTING THE VALUE** — any number in (989 181, 1 048 576) is equally defensible on this evidence, which is exactly the judgement the card reserved for @human. The card's stated reason for the surviving 8 576-byte gap is weaker than it reads: it says the two limits are "two DIFFERENT measurements", and the verifier found them **byte-identical** (`apply_budget` measures `stable_json_string(&graph)?.len()` and `write_graph` writes that same string, trailing newline included), so the gap reduces to *give the strict `<` something to catch*. **THIS IS ALSO THE FIRST ENTRY IN THIS SERIES TO PUT A FILE IN THE UNMAPPED BUCKET**, and it moves every `arch` figure at once: `components=13 files=185 mapped=184 unmapped=1 edges=39 findings=5 drift_components=5`, against 183/183/0/37/4/4 at the parent `00e133a`. C-07 goes 35 → **36** on `crates/nputer-index/tests/budget.rs`, the FOURTH file this component has gained on disk; the second new file, **`app/src-tauri/tests/graph_budget_bench.rs`, lands under no component's globs** — `app/src-tauri/tests/` is claimed one file at a time (C-14 declares `agent_runner.rs` and nothing declares a prefix) — so this repository carries its **SECOND D2 ever**, the first having stood for a single day at T-033, and that one unclaimed file draws **TWO undeclared edges** (`unmapped → C-07`, `unmapped → C-10`) because the harness imports across both. **NOTHING ON THE RUST SIDE REDS FOR ANY OF IT**: `arch drift` exits 0 without `--fail-on`, and `crates/nputer-index/tests/arch.rs` pins the CYCLE census rather than the drift census — the whole of what noticed is **eight bodies and eighteen assertions in `app/test/architecture-dogfood.test.ts` and `app/test/map-dogfood-render.test.tsx`**, reconciled in this checkpoint so that the fixtures now RECORD the D2 rather than hide it. **The declaration itself is ROUTED and not taken**: choosing C-07 or C-10 for a harness that imports both is a registry decision, and a checkpoint takes no dispositions. **AND `graph.json` IS NOW A DERIVED DOCS-GATE READER** — the gate's census goes 16 → **18** and both new rows are this card's two harnesses, which is `T-135-s3`'s hand-maintained entry finally becoming derivable and `T-139-s4`'s finding in the same breath, because neither harness is executed by the suite the gate names (`#[ignore]`d, and unmatched by vitest — proved here by the app suite reading 1013/1013 across 47 files with the `.mjs` present and absent alike). Milestone 4's remainder is T-015, T-032, T-059 |
+| C-05 | App | Front door (ADR-008): Tauri shell + panes over files; hosts the docs watcher. History: the cards T-001…T-149 and `git show a6491e6` | C-01, C-06, C-07 | building |
+| C-06 | lib-parser | Pure library: docs → typed model; browser-safe exports; owns the fence (`fence.ts`, T-134) and the id layer. History: the cards and `git show a6491e6` | C-01 | verified |
+| C-07 | nputer-index | Rust crate + binary: code → committed graph (TS/JS/Rust); `index --check`, `arch`/`drift`/`cycles`/`blast`; depth-bounded (T-129); budget 1,040,000 bytes with a measured reason (T-139) — headroom derived with `index --check`, never quoted | — | building |
 
-Task `touches:` slugs map here: `app-shell` = C-05 shell/window/watcher
-plumbing · `app-board` = C-05 board pane · `app-map` = C-05 map pane
-(F-06) · `app-interview` = C-13 genesis pane (F-03) · `app-agent` =
-C-14 agent runner (F-03) · `app-dispatch` = C-15 dispatch (F-04, T-088)
-· `lib-parser` = C-06 · `crate-index` = C-07.
+The full component set — C-08 board, C-09 model store, C-10 docs
+watcher, C-11 design tokens, C-12 map pane, C-13 genesis pane, C-14
+agent runner, C-15 dispatch, C-16 shared primitives — is the registry:
+one file per component under docs/architecture/components/, parsed by
+C-06, pinned by three live-tree fixtures (the DECLARING-A-COMPONENT
+gotcha in CONVENTIONS).
 
-**THAT SENTENCE IS A SIGNPOST AND NOT THE MAP, and this paragraph says
-so because a fence is derived from it.** The AUTHORITY is each component
-file's own `touch_slugs:` field; the line above names the component a
-slug is ABOUT, which is not the same as the set of components that CLAIM
-it. Derived mechanically from `docs/architecture/components/C-*.md` at
-this checkpoint — read the field, never this prose:
+**THE SLUG MAP'S AUTHORITY IS EACH COMPONENT FILE'S OWN `touch_slugs:`
+FIELD — read the field, never prose.** Two implementations compute it
+(C-06's `slugPathIndex`, C-08's `expandTouch`), which is T-057's own
+failure shape and `T-137` was the vehicle for unifying them. Three
+slugs are claimed by more than one component (`app-shell`, `app-board`,
+`app-map`), so a fence computed from any prose signpost would call two
+overlapping cards disjoint — the exact failure a fence exists to
+prevent (`T-089-s7`). Derived mechanically from
+`docs/architecture/components/C-*.md` at this compaction — and this
+block is COMPARED against the fields by `brief.spec.ts` on every lane
+run, so a component change that moves the fields reds it by name
+rather than letting it go quietly stale:
 
     app-agent    -> C-14          app-interview -> C-13
     app-board    -> C-08, C-09, C-11   app-map  -> C-12
     app-dispatch -> C-15          app-shell     -> C-05, C-10, C-11, C-16
     crate-index  -> C-07          lib-parser    -> C-06
 
-So **three slugs are claimed by more than one component** and the line
-above understates all three: `app-shell` is C-05 *plus* the docs watcher,
-the design tokens **and, since T-033, the shared primitives**,
-`app-board` is C-08/C-09/C-11 rather than C-05, and `app-map` is C-12
-rather than C-05. A fence computed from the prose
-would call two overlapping cards disjoint — the exact failure a fence
-exists to prevent. This is `T-089-s7`'s row-5 finding (the slug map is
-this paragraph plus every component's `touch_slugs:`, named nowhere),
-which rides **T-104**; the derived table above is a stopgap that goes
-stale the day a component file changes, and T-111's frontier is the
-thing that should compute it instead of reading it.
-
-**THAT LAST CLAUSE IS NOW IN THE PAST TENSE AND THIS MERGE IS WHY** —
-corrected in place with its ref rather than deleted (T-101's precedent).
-Since **T-111** (2026-08-26, merge `f3a4233`) there are **TWO** things
-that compute it instead of reading it: C-06's `slugPathIndex` (T-134) and
-C-08's `expandTouch` (this merge), each joining a component record's own
-`touch_slugs:` with its own `paths:` and embedding no table. The block
-above was re-derived mechanically at this checkpoint and is **UNCHANGED**
-— eight slugs, `app-board -> C-08 C-09 C-11` and
-`app-shell -> C-05 C-10 C-11 C-16` — which is the first time it has been
-checked against a second independent implementation rather than against
-one. **`T-089-s7` IS NOT CLOSED BY THAT**: two computing implementations
-is `T-057`'s own failure shape, and it is exactly the debt `T-137` is the
-vehicle for (`T-111-s5` is the move list). The stopgap stays a stopgap.
-
-**AND IT WENT STALE EXACTLY THAT WAY AT T-033, WHICH IS THE FOURTH
-SIGNPOST IN THIS FILE TO DO SO AND THE FIRST CAUGHT BEFORE IT SHIPPED.**
-T-033 declared **C-16 Shared primitives** with `touch_slugs:
-[app-shell]`, and the block above read `app-shell -> C-05, C-10, C-11`
-until this checkpoint. **The lane was RIGHT not to fix it**: this file is
-outside `touches: [docs/architecture/components/, lib-parser, app-map,
-app-shell]`, and a fence is not widened from inside the lane it fences
-(lane-protocol rule 5). The block says of itself *"read the field, never
-this prose"*, which puts it on the integrator by written rule
-(`method/roles/integrator.md` step 3) — so this is the ritual working
-rather than a gap escaping it. **T-033's verifier found it and routed it
-to the checkpoint by name rather than filing a suggestion**, which is
-why no `T-033-s` card carries it: the ritual already owned it. Nothing
-mechanical caught it and nothing could — **no gate in this repository
-reads this block**, which is the whole of `T-089-s7`'s argument for
-computing it instead.
-
 Component intent files: docs/architecture/components/ (same
 C-namespace, one file per mapped component; parsed by C-06 — T-008,
 ADR-014/015).
 
 ## Interfaces
+
 - Everything coordinates through files; no component holds project
   state the files don't. Killing anything is safe by construction.
 - CLI ↔ agents: spawn/resume the user's own agent CLIs with role
   prompts from method/roles/; never call model APIs directly.
-- App ↔ project: read-only first; writes are single-field
-  frontmatter edits or thread appends, nothing else (pure-lens rule).
-- Genesis: the spawned planner session is the writer; the app renders
-  what lands (ADR-017); app-side writes confined to .nputer/ runtime
-  files. **HALF OF THAT RULE IS ENFORCED BY THE TYPE SYSTEM RATHER
-  THAN BY REVIEW, and since T-073 it is enforced again**: the app
-  ships no `@types/node` on purpose, so a webview module reaching
-  for a node builtin fails `tsc` by construction. `app/test/
-  node-builtins.d.ts` declares the narrow surface the tests need,
-  and it was READ-ONLY until T-028 legitimately added
-  `mkdtempSync`/`mkdirSync`/`writeFileSync`/`rmSync` for its own
-  temp-project writes — which, because `app/tsconfig.json` included
-  all of `test/`, silently declared them for `app/src` too. T-073
-  split the WRITE half into `app/test/node-builtins-write.d.ts` and
-  put it behind a second PROGRAM (`app/tsconfig.test.json`); see
-  C-05's row for why a program boundary is the only boundary that
-  works here. Entry is two zero-argument Tauri commands (T-026, the ADR-012
-  pattern — the native dialog opens Rust-side and no path crosses IPC
-  in either direction); a folder that already holds a plan is routed to
-  the ordinary open, so no overwrite path exists by construction —
-  **and SINCE T-123 (`0358c0c`) that clause carries ONE exception,
-  corrected in place rather than left standing (T-101's precedent): a
-  folder that holds a plan AND registers a RESUMABLE genesis session of
-  our own routes to GENESIS instead. The no-overwrite guarantee is
-  untouched, and that is the point — resuming the plan your own interview
-  wrote is not an overwrite but its opposite. See the T-123 paragraph
-  below for what "resumable" had to mean before this was safe.** "No
-  plan" is a WEAKER condition than "no docs/", and since T-042 the
-  switch says so rather than assuming the strong one: a genesis folder
-  may already hold a plain `docs/` — a lone `docs/ARCHITECTURE.md`, a
-  `docs/decisions/` tree, any repo whose docs/ predates nputer — and
-  when it does the ordinary recursive watch arms over it and the
-  outcome CARRIES that tree, as an optional `DocsSnapshot` stamped with
-  the switch's own `seq`, so the pane renders what is actually there
-  instead of claiming nothing is written. `None` means the folder
-  genuinely has no docs/ yet — the one shape the variant used to
-  assume. Nothing new crosses the boundary: it is the same snapshot
-  type, collector and containment rules the `docs-changed` channel has
-  carried since T-003, on a second carrier. The tree is collected AFTER
-  the arming rendezvous acks, and that ORDER is load-bearing rather
-  than incidental (`open_as_project`'s own rule since T-007): arming
-  resets the emit baseline to the tree it saw, so a snapshot read
-  before the arm would miss a file written in the gap, and that file —
-  present in the baseline, absent from the snapshot — would collect
-  equal and stay suppressed until the next unrelated change. The
-  arming thread reports whether a plain `docs/` armed, because it is
-  the only place that knows for certain; the caller does not re-stat
-  and guess across the validate→arm window.
-  **SINCE T-064 THE SWITCH TELLS ONE STORY, and the sentence three
-  clauses up — "a folder that already holds a plan is routed to the
-  ordinary open" — is true at BOTH moments rather than only at the
-  first.** T-042 gave the outcome a tree; it left the switch holding
-  TWO readings of one folder taken at different times. `probe_plan`
-  runs BEFORE the rendezvous, because its answer decides whether
-  genesis may be offered at all; the snapshot is collected AFTER the
-  ack for the baseline reason above, and between them sits a channel
-  round trip bounded only by `REARM_TIMEOUT` (10 s). Write
-  `docs/ROADMAP.md` into the folder in that window and the two
-  readings disagreed — and both rode the payload, so the app put the
-  interview screen over a folder that now had a plan: T-026's
-  criterion 5 defeated by timing rather than by routing. Now
-  `has_plan` is ONE predicate with TWO constructors and the LATER
-  reading wins: the post-ack re-read is **veto-only** (it is reached
-  only where the probe already said "no plan", so it can turn genesis
-  OFF and never ON — **and SINCE T-123 that PARENTHETICAL is false
-  while the PROPERTY it states is still true, which is exactly the kind
-  of clause worth correcting rather than deleting. The re-read is now
-  reached wherever `routes_to_genesis` said genesis, which includes a
-  folder that DOES hold a plan and registers a resumable interview. The
-  veto survives on a different derivation: `reach` is read ONCE and
-  CARRIED into the window, so the only thing that can move between the
-  two readings is the docs half, and the docs half can only push
-  `has_plan` from false toward true. A second registry read inside the
-  window could have flipped genesis back ON, which is precisely why
-  there is not one — and that "read once and carried" half is the one
-  thing the suite does not pin, filed as `T-123-s6`**) and its verdict
-  is `open_as_project`'s own
-  outcome, which needs no further work because the two paths have
-  already converged — project committed, docs watch armed
-  recursively, sentinel armed, seq taken, candidate cleared. What is
-  NOT closed is the window itself: a plan written after the switch
-  returns is still a plan written after the switch returns, and the
-  sentinel brings the pipeline up correctly either way.
-  **T-123 GIVES THE ROUTING QUESTION ITS SECOND INPUT, and the whole
-  clause above about a plan-holding folder is amended at its source
-  because of it.** T-064 made the switch tell one story about WHEN it
-  looked; T-123 is about what it looked AT. The plan probe answers *"does
-  this folder hold a plan?"* and has never answered *"is one of OUR
-  interviews running on it?"* — so the interview's own first act, which
-  scaffolds `docs/ROADMAP.md`, made itself unreachable: the folder now had
-  a plan, a plan-holding folder went to the ordinary open, and the resume
-  offer lives only behind the genesis screen. **A real @human hit this on
-  this project's first genesis interview against a real model.** The
-  routing now asks BOTH — `routes_to_genesis(probe, reach)` is
-  `!probe.has_plan() || reach == Resumable`, ONE rule with ONE
-  implementation in `docs_watch.rs` and FOUR callers — and the registry
-  half has exactly one owner in C-14, which `docs_watch.rs` asks rather
-  than stat-ing `.nputer/` itself.
-  **THE PREDICATE MEANS *RESUMABLE*, NOT *PRESENT*, AND THAT DISTINCTION
-  IS THE CARD'S WHOLE SECOND PASS.** The first build asked
-  `genesis_record(..).is_some()`, which is true of a planner entry with no
-  usable `native_session_id` — and routing one of those to genesis lands
-  the user on a screen with no offer, no working control and no way off
-  it, which is a fresh instance of T-050's own ruling that no reachable
-  screen is a dead end. It was REJECTED for exactly that. The rebuild
-  fixed it at the source rather than at the gate: C-14 gained
-  `GenesisReachability { NoSession, NotResumable, Resumable }`, because a
-  `bool` cannot express *"present, and no way back in"* as distinct from
-  *"nothing of ours is here"* — the two are literally the same value, so
-  no test could ever show them differing, and CONVENTIONS requires a
-  refusal to be shown differing from an absence. **Naming the third state
-  is what made the missing control assertable**; the `if planned` backstop
-  the first build needed became UNREACHABLE and was removed rather than
-  kept as a guard no input can reach and no drill can red.
-  **THE ARCHITECTURAL PRICE IS A CYCLE, and it is recorded rather than
-  quietly declared.** `docs_watch.rs` is C-10; the accessor is C-14's; so
-  the merge adds an observed **`C-10 → C-14`** beside the registry's
-  already-declared **`C-14 → C-10`** — this repository's FIRST component
-  cycle, and C-10's first drift finding. It follows from the card's own
-  criterion 2 rather than from an executor's choice, it is left UNDECLARED
-  on the standing rule (the integrator regenerates, the ARCHITECT rules on
-  the registry), and `T-123-s8` puts the three open answers in front of
-  the architect. **ZERO frontend change** — `app/src/**`, `lib.rs`,
-  `acl_pin.rs` and both manifests are 0-file diffs, IPC stays at FOURTEEN
-  and the 92-grant set is untouched — because the route lands on the
-  existing `PickOutcome::Genesis` variant that `App.tsx` already renders.
-  **THE WIRE NARROWED WITH IT**: `PickOutcome::Genesis` no longer
-  carries `probe` — measured at ZERO live readers under `app/src` at
-  both endpoints, so the field was a decision record nothing read —
-  and dropping it is boundary-narrowing in ADR-012's direction. No
-  command was added or removed (IPC is still THIRTEEN at both ends)
-  and `acl_pin.rs` is a 0-file diff at the same 92-grant
-  `8d24cbad…`. On the shell's side the switch also stopped throwing
-  away a fresher measurement of the SAME folder — an emit that
-  overtakes the invoke reply is kept when `prev.docs.projectDir`
-  matches the outcome's, because a watcher emit is a FULL snapshot and
-  Rust's seq counter is global and monotonic, so an equal folder with
-  a not-lower seq can only be a strictly later reading; a different
-  folder still clears, and the snapshot-less arm's watermark can no
-  longer walk backwards. The
-  rendering half is real since T-037: the `genesis` screen hands its
-  live `DocsModelState` straight to C-13's pane, so the lens updates on
-  C-10's existing watcher path — no new IPC, no polling, no prop
-  plumbing. The pane is on the shell's critical path, so the mount
-  wraps it in an error boundary that does NOT latch (it resets on the
-  next snapshot's seq): a throwing pane degrades to a read-only notice
-  inside the slot and cannot take the window down. The SPAWNING half is
-  real since T-025 (C-14): four app commands — `genesis_start`,
-  `genesis_send_turn(text)`, `genesis_status`, `genesis_cancel` — over
-  one `genesis-turn` event channel, still exactly `core:default` (the
-  92-grant set is byte-identical; `std::process` is not a plugin).
-  **T-029 took those four to EIGHT** — `genesis_resume`, `genesis_fresh`,
-  `genesis_transcript`, `genesis_kickoff`, every one zero-argument — and
-  the addition is not more of the same: three of the four are for the
-  cases where there is nothing to spawn. `genesis_kickoff` assembles the
-  method kit's kickoff for a HUMAN to paste into their own terminal, so
-  the runner now produces output for a person as well as for a child
-  process; `genesis_fresh` deliberately does NOT ride `genesis_start`
-  with a flag, because that would move a destructive selector (mark the
-  user's live session dead) across the IPC boundary. The channel is
-  still one and the fold is still one. One
-  short-lived child per turn, resumed by the CLI's own native session
-  id, cwd = the open project, argv fixed arrays and the user's text on
-  stdin (never a shell string, never in argv); the child's environment
-  is BUILT, not inherited — `env_clear()` plus a named allowlist, so no
-  key or token can reach it (ADR-003 made mechanical). The `.nputer/`
-  runtime writes are no longer planned but real and losable by charter:
-  `sessions.json`, `genesis/transcript.jsonl`, and the compiled-in
-  method snapshot materialized per genesis into `genesis/kit/` so the
-  CLI reads it inside its own cwd scope — all outside the docs watch
-  root, so they raise no snapshots. **Since T-027 the UI calls all of
-  it**, and the shape of that call is the part worth recording: C-13's
-  chat subscribes to the `genesis-turn` channel and invokes the four
-  commands, and it adds NO second reduction — `reduceGenesisEvent`
-  already coalesces deltas into `turn.text` and replaces the buffer with
-  the canonical `result` on `completed`, so the chat renders what the
-  store gives it and there is exactly one fold of that channel in the
-  app. The BANKED CHIPS are the other half of the contract and they do
-  not ride this channel at all: they are derived by diffing the docs
-  snapshot C-10's watcher delivers across turn boundaries, so a chip is
-  evidence that a FILE changed and can never be evidence that a model
-  said so — driven with 24 hostile probes at T-027's verification,
-  including turn text and activity labels naming real paths over an
-  unchanged disk (zero chips) and a human writing a file mid-interview
-  (an identical chip, which is ADR-006's hand-driven mode rendering
-  correctly). What is STILL not true: the loop has never run against a
-  real model — it is proven against a fake CLI fixture and a scripted
-  lane only — and the user's half of the transcript does not survive a
-  remount, because `refreshGenesisStatus` rebuilds phase/turn/session but
-  never `turns` (T-029's rehydration).
-- Resolving the agent CLI (disk → `execve`) — the boundary the Genesis
-  bullet above does not describe. Before any turn can spawn,
-  `resolve_cli` decides WHICH `claude` runs. **Since T-060 it decides
-  that from a PROBE it just ran, and from nothing else.** The order is
-  the test seam, then one probe, then typed `cliNotFound`; there is no
-  third source and in particular there is no file.
-  **`agent-paths.json` IS GONE** — T-047 gated that cache, T-060 RETIRED
-  it: `CacheFile`, `CacheEntry`, `read_cache`, `write_cache`,
-  `invalidate_cache`, `cache_path` and `RunnerConfig::config_dir` are
-  all deleted, so the app now holds NO durable state outside `.nputer/`
-  at all and the whole file→exec class stops existing rather than being
-  narrowed. Three reasons, in the order established: the file's stated
-  justification was already false (it existed "so the login-shell probe
-  runs once per install rather than once per turn", but T-047 stopped
-  caching the login PATH, so the shell was spawned on every resolve
-  regardless — the cache saved nothing it claimed to); the probe returns
-  the binary path and the login PATH in the SAME spawn; and the cost was
-  measured — **3.7–7.8 ms, median 4.0** for the login-shell probe against
-  **39–42 ms, median 40** for the `claude --version` probe the same
-  resolve runs unconditionally. Retiring it also deleted
-  `probe_login_path`, whose only caller was the cache-hit arm, so a
-  resolve can no longer spawn the user's login shell twice.
-  **ONE GATE NOW HOLDS EVERY DOOR** (T-047-s5). `validate_resolved_binary`
-  — absolute, no `.`/`..` component, file name == the adapter's binary,
-  executable — is applied inside `which_in` to every candidate a search
-  path produces AND again to whatever the login shell's `command -v`
-  printed, BEFORE `Command::new` and before the `--version` probe. T-047
-  applied it only to the cached path, so the same function called
-  `relbin/claude` `NotAbsolute` and discarded it while the probe arm
-  EXECUTED it: `which_on_path` reads the app's inherited `PATH` and hands
-  each element to `which_in`, which does `dir.join(binary)`, so a
-  relative element (`.`, an empty element meaning CWD, a bare directory
-  name) produced a relative binary path that the OS resolved against
-  whatever CWD the app was launched with. A failure is now treated as
-  "this probe found nothing": the search continues past a refused
-  element, and a refused final answer falls to typed `cliNotFound` with
-  a sanitized line on stderr. Nothing is executed on the way to
-  refusing.
-  **THE RESOLVER DOES READ THE ENVIRONMENT, and the docs now say so**
-  (T-047-s4). The CHILD's environment is still built rather than
-  inherited (`env_clear()` plus the allowlist — that claim is unchanged
-  and still true), but the resolver reads exactly three variables of the
-  APP's own environment, listed in `RunnerConfig`'s doc comment and
-  pinned by a test that re-derives them from the source: `SHELL` picks
-  the program run with `-l -c`, `PATH` is the fallback search list, and
-  `NPUTER_NO_REAL_CLI` is the guard below. "Production reads nothing
-  from the environment" was true of the CONFIG and false of the RESOLVER
-  two functions away, and a reader of that pin would not have guessed
-  it. **`$SHELL` is also NAME-CHECKED now** against `zsh`, `bash` and
-  `sh` — the three whose `-l -c` semantics the script actually relies on,
-  fish's differing — falling back to `/bin/zsh`; before T-060 any
-  absolute executable named anything was run with `-l -c <script>`.
-  **NO TEST CAN RESOLVE THE USER'S REAL CLI, STRUCTURALLY** (T-047-s6).
-  The property used to live in a `RunnerConfig` field every test had to
-  remember, with `..RunnerConfig::default()` as the idiom and the default
-  `true`, **and it failed**: T-047's verifier spawned the developer's
-  real `claude` with the genesis planner prompt from `cargo test`. Now
-  `resolve_cli` refuses the login-shell and `which_on_path` arms whenever
-  `real_cli_arms_forbidden()` says so — `NPUTER_NO_REAL_CLI=1` forbids,
-  `=0` permits, and UNSET is DERIVED: forbidden iff the process is a
-  cargo test binary, which cargo runs out of `<target>/<profile>/deps/`
-  — or a rustdoc DOCTEST, which runs out of a `rustdoctest<random>` temp
-  dir with `cfg!(test)` false and used to fail OPEN (T-060-s4, closed).
-  Nothing has to be set, exported or wrapped, so a test file written next
-  year inherits the refusal, doctests included. A `.cargo/config.toml`
-  `[env]` entry was considered and rejected because it would have reached
-  the human's DEVELOPMENT APP, which would then have stopped finding their
-  CLI — and the mechanism is not the obvious one (T-060-s5): `tauri dev`
-  is NOT `cargo run`, it is `cargo build` plus a direct spawn with no
-  cargo process in the tree, but the tauri CLI reconstructs cargo's run
-  environment for the binary it spawns and `[env]` rides along, measured
-  reaching the dev app against a no-cargo control. The one `#[ignore]`d,
-  env-gated real smoke opts out in one line. **The proof that the guard
-  refuses runs in CHILD PROCESSES** rather than by lifting the variable
-  in-process (T-060-s3): a lift window in a binary libtest runs on many
-  threads made the guard's own tripwire red at CI's thread count.
-  A turn is still not one process: the turn's own child is exactly one,
-  and the resolve ahead of it spawns a login shell and a version probe.
-  **ONE honest residual remains**, recorded in the validator's own
-  header: the gate checks SHAPE and never IDENTITY, so an absolute,
-  traversal-free file named `claude` pointing at an attacker's binary
-  still passes — there is no `canonicalize`, so a symlink or a swapped
-  file is enough and no race is needed. Its precondition is write access
-  to a directory already on the user's PATH. T-047's second residual —
-  the freshly-probed path being exempt from the gate — is CLOSED.
-- Test surfaces (DEV, browser-only) — part of what the app exposes, so
-  named here rather than left to be discovered in the source. THREE
-  harnesses hang off `window` in a browser DEV build since T-027 added
-  `__nputerInterviewHarness` (it feeds `genesis-turn` events to the chat,
-  which a served bundle cannot otherwise reach because there is no Tauri,
-  therefore no runner and no CLI). It sits behind the SAME single gate as
-  the two below — `!isTauri && import.meta.env.DEV` — and T-027's
-  verification re-derived both halves of that gate against a DEV-flipped
-  build: `NODE_ENV=development npm run build` does put all three names in
-  the bundle (T-041-s4's known, already-filed lever, not a T-027
-  regression), and the runtime `isTauri` half still holds inside that very
-  bundle, checked at the minified install site. The two older ones:
-  `__nputerDocsHarness` (pre-existing — feeds docs snapshots, which in a
-  browser always land on phase `open`) and, since T-041,
-  `__nputerShellHarness` (`applyProjectStatus` / `applyPickOutcome` /
-  `applyStartupFailure` / `getShell`), which reaches the four phases a
-  served bundle otherwise could not — `noProject`, `noDocs`,
-  `rejectedPick`, `genesis` — and, since T-050, one state that is NOT a
-  phase: the `startupFailed` SCREEN, which rides `loading` in the
-  shipped app and `browser` in a served bundle. That fourth door is
-  `recordStartupFailure` itself, the module-private function the store's
-  own two catches call when `listen` or `invoke` rejects, so the lane
-  renders the shipped failure state rather than a lane-side imitation —
-  and it closes a hole only this harness can close, because a browser
-  awaits neither boundary call and so cannot fail a real startup. It
-  hands out the shell's OWN reducers by reference, so the E2E lane
-  drives shipped code instead of a parallel implementation. Those two sit
-  behind ONE gate, not two that can drift: `!isTauri && import.meta.env.DEV`,
-  the same block in `watcher-store.ts`; T-027's third installs itself from
-  C-13 under the same two conditions, so the property is still one rule
-  and not three. Keeping them in that module rather
-  than a test-only one is deliberate and is the SMALLER surface — a
-  separate module could only reach the module-private reducers and the
-  live shell through NEW PRODUCTION EXPORTS on the store, which would
-  exist whether or not a test imported them. This is not IPC: no Tauri
-  command, no grant, nothing reachable from the packaged app, and the
-  app/src export surface grew by exactly one line, an `interface` that
-  is erased at build. Measured rather than asserted at T-041's merge:
-  pristine main, main + T-041's picker extraction alone, and T-041's
-  HEAD build to 442,052 / 442,069 / 442,069 bytes with the last two
-  byte-identical, so the harness contributes ZERO bytes and its object
-  provably never constructs — the whole production delta is a 17-byte
-  function extraction. ONE lever is known and filed (T-041-s4):
-  `--mode development` does not flip DEV, but an inherited
-  `NODE_ENV=development` does, and `npm run build` is
-  tauri.conf.json's `beforeBuildCommand`. The runtime `isTauri` half
-  keeps the harness inert in the packaged app even then, and a bundle
-  test reds on the next `npm test`.
-- Code layout: `app/` = C-05 (Tauri 2 + React + Vite + Tailwind/shadcn;
-  areas app-shell, app-board, app-map, and app-interview since T-024 —
-  `app/src/genesis/**` is C-13's own territory inside the app package;
-  T-026 mounted the shell's `genesis` SCREEN
-  (`app/src/components/shell/GenesisScreen.tsx`, C-05) and T-037 mounted
-  the LENS inside it — `GenesisScreen.tsx` imports `GenesisPane`, so the
-  pane is in the shipped bundle and the graph carries the C-05→C-13
-  source edge, both of which were measured absent before that merge.
-  That import is a source dependency of the shell on a child component
-  and is still UNDECLARED in the registry — deliberate, live drift the
-  map shows and the architect rules on, and since T-027 it is no longer
-  the only one on that pair: the shell also imports `InterviewChat` and
-  `App.tsx` imports `interview-source.ts`, so C-05→C-13 carries ten file
-  edges where it carried four. **T-027 also made C-13 a drift SOURCE for
-  the first time** — it had been only a target — by adding two undeclared
-  directions OUT of the genesis pane: C-13→C-14 (all four new modules
-  read `agent-store.ts`, which is the runner's store and not the pane's)
-  and C-13→C-05 (both chat components import `components/ui/button.tsx`,
-  the first genesis-side use of a shared UI primitive). Neither was
-  drained at the merge — an integrator regenerates, the ARCHITECT rules
-  on the registry — and both are the architect's to declare or refuse.
-  **T-028 changed what C-13 IS, which the earlier merges did not.** The
-  pane was a bespoke LENS over the docs tree; it is now a HOST that
-  chooses its own renderer — `crescendo.ts` decides on parsed task
-  RECORDS and `BoardCrescendo.tsx` mounts C-08's real `Board` read-only
-  (`app/src/components/board/**` is a 0-file diff). So C-13 goes from
-  two outgoing drift directions to FOUR, and the two new ones are the
-  structural news: **C-13→C-08**, the genesis pane depending on the
-  board for the first time, and **C-13→C-06**, the pane reaching the
-  PARSER directly — which is what makes the switch a parse result rather
-  than a filename match, and therefore identical for a human hand-driving
-  the method (ADR-006). Both are UNDECLARED and left for the architect on
-  the standing reasoning. C-05→C-13 grows ten file edges to thirteen,
-  and fifteen at T-029's regen — a bigger LIST on the same pair, which is
-  the shape that moves no row and lights no new ring.
-  **T-029 changed what C-14 IS, and left C-13 the same kind of thing it
-  already was** — the distinction is worth keeping because the two look
-  alike from the card. C-13 gains real affordances (a resume offer, a
-  fresh-session escape, the hand-driven block, and an inline notice when
-  the turn channel refused to open) but no new outgoing dependency: its
-  whole relation row set is byte-unchanged at this merge, which is what
-  "more of what it already is" looks like structurally. C-14 is the one
-  that changed kind. It was the SPAWN surface — start a turn, resume it
-  by native session id, stream deltas, kill the group on cancel. It is
-  now the component that also decides what happens when there is nothing
-  to spawn: it classifies WHY a turn died as a typed outcome
-  (`AuthFailed { status, message }`, `ToolDenied { denials,
-  terminal_reason }`, `RejectedSessionId`, `SessionIdRejected`) instead
-  of relaying an exit code and a blob, it owns "an interview was running
-  on <folder>" as a single fact in `.nputer/sessions.json` and nowhere
-  else, it reads `SessionEntry.model` through an accessor that can refuse
-  without refusing the resume, and it can assemble a kickoff for a user
-  who has no supported CLI at all. **A component that serves a user with
-  no child process is not the same component as a spawner.** None of this
-  is visible on the map — `languages: ["ts"]` still hides
-  `app/src-tauri/src/agent/**`, so C-14 renders as its one TS file — which
-  is the sharpest live argument for T-010 the registry has produced;
-  **AND T-010 LANDED, so that clause is now HISTORY rather than state**
-  (2026-08-25, merge `d64c673`, `T-010-s7`; corrected in place with the
-  ref on T-101's precedent, because the reasoning is what a later reader
-  needs and only the tense is wrong). `languages` is `["rust", "ts"]`,
-  `app/src-tauri/src/agent/**`'s five `.rs` files are indexed, and C-14
-  renders **8 mapped files** where it rendered one — the five plus
-  `src/bin/fake_agent.rs` and `tests/agent_runner.rs`, which T-010's
-  registry settlement moved to it on the rule that already puts
-  `app/test/**` under C-05. THE SENTENCE WAS ITS OWN ARGUMENT AND THE
-  ARGUMENT WON: the same three clauses recur below at T-043, T-069 and
-  T-113, each written as the reason a merge moved no graph, and all four
-  are corrected the same way;
-  **T-056 changes C-13's render cost, not its source of truth.** Completed
-  live turns already keep object identity through the reducer; rehydrated
-  turns now keep it through a projection cached by the immutable transcript
-  payload array's identity. `PlannerTurn` is memoised on that turn object and
-  historical turns receive no moving stage prop. No throttle, timer, second
-  fold or store source was added. The existing resume DOM suite reaches two
-  more C-13 modules directly, so observed C-05→C-13 file edges move 15→17;
-  no component relation or finding changes.
-  **T-057 gives C-13's banking rule ONE owner.** The chat used to hold the
-  whole transition in a `useEffect` — prime, advance, rebaseline on a
-  project switch, merge and dedupe within a turn — while the replay tests
-  hand-copied it, so a test could agree with a COPY of the rule rather than
-  the rule. `interview-model.ts` now exports `observeBanking`, one pure
-  `(previous, docs, turn) -> BankingObservation` transition that the shipped
-  chat and the tests both call; no second banking loop remains, and the
-  project-switch clause the copy never had is pinned by a test that reds
-  when the clause is removed (measured here, one test, both watermark
-  arms). The counterweight is recorded rather than smoothed over
-  (**T-057-s2**): the baseline moved from a `useRef` into the same
-  `useState` as the chips, so a snapshot that advances the seq and banks
-  NOTHING now returns a fresh object and re-renders where the old code
-  called no setter at all — measured `identity kept: false`, baseline seq
-  1 -> 2, `chipsByTurn` identity preserved. Bounded (the added render's only
-  effect is an auto-scroll write that is a no-op at the bottom), but it
-  moves against T-056 immediately above, and no test on the branch can see
-  it. Structurally quiet: no component relation, finding, observedCount or
-  drift flag moves, and the whole graph delta is +7 symbols / +6 edges
-  inside C-13 and C-05.
-  **T-043 changes who is allowed to know that the child is dead.** C-14's
-  description above ends "kill the group on cancel", and the mechanism
-  behind that sentence had a structural problem rather than a coding one:
-  exactly ONE thread owns the `Child` and may `waitpid` it, while THREE
-  observers — `genesis_cancel`, the exit hook and `AgentState`'s `Drop` —
-  need to know when the group is clear and own nothing. They each asked
-  the only question an observer can ask alone, `kill(pid, 0)`, which is
-  TRUE FOR A ZOMBIE; and since the turn's child is always our own unreaped
-  child, the honest answer to that question was "alive" until the grace
-  expired. The fix is an ownership relocation, not a faster poll:
-  `ChildHandle` (a `Clone` handle over an `Arc<AtomicBool>`) lets the one
-  owner PUBLISH its reap and the observers READ it, and early release now
-  requires both that fact and an ESRCH from `killpg(pgid, 0)`. This is the
-  second of the two options STATE.md's open question offered — coordinate
-  with the worker, rather than hand a second child handle around — and it
-  is chosen because the first is not available: a second owner is a second
-  `waitpid` on the same pid. Escalation is keyed to group membership
-  rather than to the clock, since a reaped pid is reusable and the pgid IS
-  that pid. **No component INTERFACE in the IPC sense moved** — thirteen
-  commands unchanged, `acl_pin.rs` byte-identical at 92 grants, no event,
-  no dependency edge, and the graph is byte-identical because
-  `languages: ["ts"]` still hides `app/src-tauri/src/agent/**` (true AT
-  T-043's merge and no longer the state of the tree — T-010 landed at
-  `d64c673` on 2026-08-25; `T-010-s7`). What moved
-  is the C-14→C-05 seam's TIMING contract: `lib.rs`'s exit hook completes
-  in milliseconds by coordination instead of blocking on a poll that could
-  not succeed, so "child processes SHALL not outlive the app" is now fast
-  as well as true on every exit path the app controls. The guarantee is
-  also narrowed in all four code sites to *no orphaned descendant THAT
-  STAYS IN THE GROUP*: a `setsid()` descendant leaves the group and
-  survives, which is a property of process groups and is measured rather
-  than asserted, and a descendant sweep is a deliberate non-goal.
-  **T-069 separates RELAYING from DIAGNOSING inside C-14, and that
-  distinction is the architectural content.** The paragraph above says
-  C-14 "classifies WHY a turn died as a typed outcome instead of relaying
-  an exit code and a blob" — and the two were coupled in a way nobody had
-  written down: everything the classifier DECLINED to claim was also
-  relayed nowhere. A `result` line carrying `permission_denials` with
-  `is_error: false` fell through T-029-s7's deliberately narrow
-  `ToolDenied` guard (correctly — a cumulative record of what was refused
-  is not a statement that a refusal ended the turn), and because
-  `is_error: false` also kept the result TEXT out of the diagnostic ring,
-  the turn arrived as `ExitNonZero { code: Some(1), stderr_tail: "" }`
-  and C-05 rendered no detail at all. The names were parsed, bounded and
-  control-stripped, and went nowhere a user could see. The ring now
-  carries them unconditionally, on the precedent the file already had —
-  the `api_retry` note, a diagnostic the classifier never acts on. **The
-  ring is a diagnostic ring, not a claim**, and the two decisions are
-  independent from here on. The auth arm gains the mirror-image
-  refinement: `AuthFailed` can now be WITHDRAWN by evidence, not only
-  asserted by it. A turn that writes no terminal `result` line has no
-  verdict to clear a status with, so a 401 the CLI retried and got past
-  used to survive as a typed auth failure that removed Try again from a
-  user whose login was fine; model text arriving after the LAST
-  status-bearing line withdraws it, and the turn degrades to `ExitNonZero`
-  with the status still legible in the tail. The direction is deliberate
-  and is C-14's standing rule for this family — losing a diagnosis to a
-  relay beats a false positive that takes an affordance away. **The
-  honest limit is recorded here because it is a fact about the CLI, not
-  about the code**: the CLI writes its own prose into a nominally-model
-  field, so a delta is not certainly the model, and the runner never reads
-  delta CONTENT — closing that joint would need the guessed vocabulary
-  T-029-s5 records as unverified. `T-069-s2` names the evidence C-14
-  declines to read (a `tool_use` block, which the CLI has no reason to
-  fabricate). **No IPC, grant, event or dependency moved** — thirteen
-  commands, `acl_pin.rs` byte-identical at 92 grants, `ENV_ALLOWLIST`
-  untouched at 16 entries — and the graph is byte-identical for the same
-  reason as T-043: `languages: ["ts"]` still hides
-  `app/src-tauri/src/agent/**` (true AT T-069's merge; T-010 landed at
-  `d64c673` on 2026-08-25 and the runner's Rust is indexed — `T-010-s7`).
-
-  **T-081 GIVES C-14 AN EVENT IT DID NOT HAVE, AND IT IS THE FIRST ONE
-  THAT IS NEITHER A RELAY NOR A VERDICT.** T-069's entry above ends "no
-  IPC, grant, event or dependency moved"; this one moves the EVENT set
-  and nothing else in that list. `RunEvent` gains `Denied { seq, turn,
-  tool_name, tool_use_id, message }`, mirrored on the wire as
-  `toolName`/`toolUseId` and in the store as `GenesisDenial` +
-  `GenesisTurn.denials`. The mechanism it closes is one layer BELOW the
-  one T-069 closed: the CLI announces a permission denial the moment it
-  happens, on a `system`/`permission_denied` line whose defining
-  property is what it LACKS — no `error`, no `error_status` — so
-  `classify_line`'s `system` arm, which asks whether an error field is
-  PRESENT, returned `Ignored` and the line never reached the parse at
-  all. On the observed 2.1.226 turn the denials preceded the `result`
-  line by roughly forty seconds. The arm is now keyed POSITIVELY on
-  `subtype`, because a lack cannot be matched.
-  **THE ARCHITECTURAL CONTENT IS THAT A DENIAL IS NOT A DEATH.** Every
-  prior thing C-14 told C-05 about a refusal arrived as part of the
-  turn's OUTCOME — `ToolDenied`, or T-069's ring note riding
-  `stderr_tail` on `ExitNonZero`. Both are terminal by construction, so
-  a denial the planner RECOVERED from reached nobody even after T-069:
-  the observed turn carried two denials and finished `is_error: false`,
-  `terminal_reason: "completed"`. `Denied` is the first C-14 event that
-  says something happened without saying how the turn ends, and the
-  classification is deliberately UNTOUCHED — `result_is_error &&
-  !permission_denials.is_empty()` stays exactly as narrow as T-029-s7
-  left it, which the capture vindicates rather than merely permits.
-  **TWO CHANNELS, ONE JOIN, IN ONE PLACE.** The `result` line carries
-  the denials cumulatively and the in-band lines carry them
-  individually, so `tool_use_id` joins them in the Rust and nowhere
-  else — the store APPENDS what it is given and does not re-join, on
-  T-057's rule that a rule with two implementations is two chances to
-  disagree. An entry with no id is treated as unannounced, because a
-  repeat is a nuisance and a silence is the defect. **No IPC and no
-  grant moved** — still THIRTEEN commands at both ends, `acl_pin.rs` a
-  0-file diff at the same 92-grant `8d24cbad…`, `ENV_ALLOWLIST`
-  byte-identical at 16 entries — but **the GRAPH did move, and that is
-  the difference from T-069**: `app/src/lib/agent-store.ts` is TS and
-  therefore indexed, so `GenesisDenial` is the 996th symbol and its two
-  `type_ref` edges take the graph to 1520. Both edges have BOTH
-  endpoints in that one file, so no component relation moved and the
-  registry still stops at C-14. What was NOT here is the RENDERING: the
-  notice a human would see lives in C-13's chat, outside this fence
-  (`T-081-s1`) — **and since T-101 it EXISTS, so the denial channel now
-  reaches the screen end to end**; see C-13's entry below for what the
-  screen does with it, and T-113's entry for the one report it duplicated
-  until `e231e79` and no longer does.
-  **T-070 BOUNDS THE ONE READ IN THIS COMPONENT THAT HAD NO BOUND, and
-  like T-081 it moves the GRAPH while moving no IPC.** Since T-029 the
-  arrival at the interview screen rehydrated its transcript by reading
-  the WHOLE `.nputer/genesis/transcript.jsonl` and parsing every line
-  before dropping all but the last `MAX_REHYDRATED_LINES` (200) — the
-  cap protected the webview and nothing protected the read, so a
-  tens-of-MiB transcript cost a tens-of-MiB read on every arrival. The
-  read is now bounded AT THE READ: `agent::transcript` calls
-  `read_transcript_tail`, which drives a private
-  `tail_lines<R: Read + Seek>` that seeks from the end and walks
-  backward in `TAIL_CHUNK` (64 KiB) steps, stopping at the line budget
-  OR a byte ceiling of `MAX_REHYDRATED_LINES × TRANSCRIPT_TEXT_CAP`
-  (= 52 MB, independent of file size). `TRANSCRIPT_TEXT_CAP` and the
-  losable-by-charter property are untouched; nothing rotates, truncates
-  or deletes. The bound is held by a pin PAIR whose COMPOSITION is the
-  point — a `Counting<R>` cost pin that is total because `tail_lines` is
-  handed no path (its only channel to disk is `src`), and a six-arm
-  source tripwire
-  `the_only_production_path_to_the_transcript_is_the_bounded_one` that
-  binds the callee set of each hop from `genesis_transcript` down, so a
-  whole-file read planted at ANY hop, in an allowlisted leaf, or in a
-  new ordinary reader of either file reds BY NAME and FAILS CLOSED. It
-  is an allowlist and not a denylist for the same reason
-  `EXPECTED_GRANTS` is (`T-070-s5` records that its doc comment
-  overstates the refactor-tolerance — a benign loop-split reds it, fails
-  closed; and the fragment-reconstruction bypass it cannot kill is
-  disclosed and honestly bounded, `T-070-s6`, the `T-080-s4`
-  precedent). The CLI-less half is the user-facing one:
-  `KickoffOutcome::Ready` now carries `record: Option<GenesisRecord>`
-  filled by `sessions::genesis_record` — the ONE place that fact lives,
-  no CLI anywhere in the call — so a user with no supported CLI, routed
-  to the hand-driven kickoff, is finally told what they already banked
-  (the turn count reaches the DOM). **NO IPC AND NO GRANT MOVED** —
-  thirteen commands at both ends, `lib.rs` a 0-line diff, `acl_pin.rs` a
-  0-file diff at the same 92-grant `8d24cbad…` — **but the GRAPH DID**,
-  exactly the T-081 shape: `agent-store.ts` gains `GenesisRecordPayload`
-  and `InterviewChat.tsx` gains `bankedSentence`, taking the graph
-  +2 symbols / +4 edges to **1023 / 1550**, every new edge's endpoints
-  inside C-13 and C-14 so no component relation moved and the registry
-  still stops at C-14. The honest edge, corrected in the card body:
-  bounding the read changed one answer — a tail of unparseable lines
-  rehydrates as EMPTY where the whole-file read reached further back
-  (`T-070-s3`), and a newline-free file answers with fewer lines than
-  the budget — both deliberate, both on inputs `append_transcript`
-  cannot produce, each pinned. The FILE still grows unbounded
-  (`T-070-s2`).
-
-  **T-101 CLOSES THE CHANNEL T-081 OPENED, AND IT IS C-13's WORK, NOT
-  C-14's.** T-081's entry above ends "what is NOT here is the RENDERING";
-  this is it. `interview-turns.tsx` gains a `DenialNotice` mounted inside
-  `PlannerTurn` BELOW the activity line and OUTSIDE the `running` guard,
-  in the existing quiet furniture register (`font-mono text-xs
-  text-secondary-foreground`) and deliberately never in `FailureBlock`'s
-  treatment — **because a denial is not a death**, which is the property
-  T-081 established in the runner and this card is the first thing to
-  render. One row per DENIAL and never per tool: the list is not deduped,
-  `toolUseId` rides as `data-tool-use-id`, and the measured real turn —
-  two `Bash` refusals, `is_error: false`, `terminal_reason: "completed"`
-  — renders as two rows on a turn whose status still reads COMPLETED.
-  **THE ARCHITECTURAL CONTENT IS WHERE SUPPRESSION IS KEYED.** Criterion
-  7 licenses hiding *the same refusal* when the terminal `toolDenied`
-  block already names it, and the first build implemented that as
-  `error?.kind !== "toolDenied"` — a WHOLE-NOTICE gate. That
-  over-suppressed to zero, because `TurnError::ToolDenied`'s `denials`
-  is built by `denial_names`, a `filter_map` over `tool_name`, so a
-  refusal the CLI never named contributes nothing to the failure block
-  and was then dropped from the notice as well: two refusals in the
-  store, one on screen, and the silent one is precisely the one the
-  runner announces *because* silence is the defect. `visibleDenials`
-  suppresses **per denial**, keyed on `error.denials` — the TYPED array
-  `FailureBlock` actually restates (twice: `failureAction`'s `listOf`
-  and `failureDetail`'s `join`) — so suppression tracks WHAT IS ON
-  SCREEN rather than what kind of error it was, and the notice can lose
-  a row but can never lose the notice. `denialToolName` gives the
-  printed name and the suppression key ONE owner, on T-057's rule.
-  **ONE DEFECT SHIPPED, DISCLOSED IN THE CODE — AND T-113 CLOSED IT.**
-  *(True as written at T-101's merge `5b80d32`; false as of T-113's merge
-  `e231e79`, corrected in place on T-101's own precedent for T-081's
-  paragraph rather than deleted, because the reasoning is what a later
-  reader needs and only the tense was wrong.)* On the `exitNonZero` path
-  a single result-only refusal WAS reported twice — once as a notice row
-  and again inside `stderrTail`, where `runner.rs` pushed
-  `permission_denials: <names>` for the same `unannounced` vector it
-  emits live `Denied` events from. No honest key existed on this side:
-  matching the tail's text would put a copy of a `runner.rs` `format!`
-  string in `interview-model.ts`, the tail is a bounded 64 KiB RING that
-  can hold the note in part, and the empty-`message` proxy is ambiguous
-  on inputs the runner really produces. **All three reasons still
-  stand, and they are why the fix was C-14's rather than C-13's** — see
-  C-14's T-113 entry below. `T-101-s1` routed it; the seventh triage
-  `6f2f8ea` promoted that finding into `T-113`, which deleted the ring
-  note. `visibleDenials`' doc comment still describes the defect in the
-  present tense and still routes to the removed `T-101-s1` — a stale
-  disclosure of a closed defect, filed as `T-113-s1` because
-  `app/src/genesis/**` was outside T-113's `[app-agent]` fence. **No IPC, no grant, no event, no Rust and no store change** —
-  `agent-store.ts` is a 0-file diff, IPC still FOURTEEN at both ends,
-  `acl_pin.rs` a 0-file diff at the same 92-grant `8d24cbad…` — but the
-  GRAPH moves, the T-081/T-070 shape again: +6 symbols / +9 edges
-  (`denialLine`, `denialToolName`, `visibleDenials`, `DenialNotice` and
-  two in the test file), every endpoint inside C-13 and C-14, so no
-  component relation moves and the registry still stops at C-14. The
-  persistence half is DEFERRED and said so: the notice is LIVE-ONLY,
-  `rehydrate` still writes `denials: []`, and banking a denial record
-  needs both `app-agent` and `app-interview` (T-081-s3, unpark condition
-  now met).
-
-  **T-107 GIVES C-13's OTHER FAILURE FAMILY AN ACTION, AND THE
-  ARCHITECTURAL CONTENT IS THAT IT IS NOT A SECOND `hint`/`command`
-  PAIR.** Two families of "this went wrong" reach this pane and only one
-  of them could ever carry an action: a `TurnError` goes through
-  `failureAction` to `FailureBlock` and gets
-  `hint`/`command`/`retry`/`fallback`, while `StartOutcome`/`SendOutcome`
-  go to `OutcomeNotice`, **which had no action slot at all** — so
-  `unsupportedVersion` rendered a correct, typed, verified diagnosis and
-  offered the user nothing to do about it. Giving the notice family its
-  own `hint`/`command` pair would have been this card's own defect
-  arrived at from the other side (two notions of an action that can
-  drift), so what it gains instead is a BOOLEAN over the affordance both
-  renderers ALREADY share — the hand-driven route, which is
-  `FailureAction.fallback` under the other one. **`FailureAction` is
-  byte-untouched**, and `OutcomeNotice` computes the element ONCE and
-  renders it in all three of its shapes, the generic notice included, so
-  an arm ruled routable later reaches the screen instead of quietly doing
-  nothing.
-  **THE RULING IS THE COMPONENT'S, AND IT IS EXHAUSTIVE OVER THE UNION
-  RATHER THAN OVER A SWITCH.** `noticeRoutesToHandDriven` in
-  `interview-model.ts` owns which outcomes offer the route, for all
-  THIRTEEN kinds across the two payload unions, with a `default` that
-  assigns to `never` — so an arm added to either union is a **build
-  error** until somebody rules on it, verified by adding one arm to each
-  union and reading `error TS2322` out of `npm run build` at exit 2.
-  `noticeSentence`'s ten arms are a strict SUBSET and are disclaimed in
-  the source as not the enumeration: its own `default` degrades to the
-  bare kind, which is right for a SENTENCE (a bare kind on screen beats a
-  crashed pane) and wrong for a RULING.
-  **THE SCREEN REFUSES TO NAME AN UPDATE COMMAND, AND THE REFUSAL IS
-  RECORDED AT THE RENDERER RATHER THAN ONLY IN A CARD.**
-  `UnsupportedVersion { found }` carries the first line of `--version`
-  and nothing else — no resolved path, no manager, no channel, the
-  resolved `path` deliberately left behind in `ResolvedCli` — so the app
-  cannot know whether the answer is `claude install`, `claude update`,
-  `brew upgrade` or a package manager's own verb, and an app that prints
-  one it never ran is T-082's defect one layer up. **The minimum version
-  is likewise not named, and that is criterion 3's PROHIBITION met with
-  its POSITIVE OBLIGATION ROUTED — not the criterion satisfied.**
-  `pub struct AgentAdapter` derives `Clone, Copy, Debug` and **no
-  `Serialize`**, so `CLAUDE_V1.min_major` cannot cross IPC by any
-  `#[tauri::command]` return; the only way to "name it from the adapter"
-  is to transcribe it, which is the one act the criterion itself calls
-  the defect. The shipped screen therefore creates **ZERO**
-  implementations of that number and cannot disagree with the adapter,
-  which is stronger than avoiding the failure mode — but the plumbing
-  that would let the notice name the floor from its authority is
-  `T-107-s1`, outside `[app-interview]`. The source comment beside
-  `noticeRoutesToHandDriven` calls this *"criterion 3 SATISFIED rather
-  than dodged"*; **the honest word is the lane's own word for criterion
-  5 — routed** — and the verifier corrected the record rather than
-  rejecting over an adjective nothing downstream reads.
-  **ONE CRITERION SHIPS UNMET AND DISCLOSED, ON T-101's PRECEDENT.** No
-  assertion can live inside this card's fence: C-13 declares ONE
-  path glob, `app/src/genesis/**`, and it is source-only, while
-  `app/test/**` and `app/vitest.config.ts` are both C-05 `app-shell` —
-  held by a live lane. `vitest.config.ts` reads
-  `include: ["test/**/*.test.{ts,tsx}"]`, so a body colocated under
-  `app/src/genesis/` is **not collected** by `npm test` while still being
-  compiled into the program bare `tsc` gates on: worse than no pin. That
-  was proved by positive control rather than read off a config — the same
-  red body is INVISIBLE at 958/958 under the shipped collector and reds
-  at 1 failed under a collector that can see the glob, **and A↔B is the
-  finding: the green was invisibility, not vacuity.** Routed as
-  `T-107-s4`. What IS held is the MECHANISM, indirectly and by its
-  sibling arm: flipping the `cliNotFound` arm reds seven existing bodies
-  across two files. What is NOT held is the new arm's own answer —
-  deleting the behaviour from either side leaves the tree fully green.
-  **No IPC, no grant, no event, no Rust, no store and no new token** —
-  `agent-store.ts` is a 0-file diff, IPC still FOURTEEN at both ends,
-  `acl_pin.rs` untouched at the same 92-grant set, and the card reuses
-  the `status-verifying` token family `cliNotFound` already uses, which
-  is why `app/src/styles/**` never had to be routed — **but the GRAPH
-  moves**, the T-081/T-070/T-101 shape once more: **+1 symbol / +5 −2
-  edges** (`noticeRoutesToHandDriven`, plus the import and `type_ref`
-  edges it draws), both endpoints of every new edge inside C-13 and C-05,
-  so no component relation moves and the registry still stops at C-14.
-
-  **T-113 IS A DELETION, AND WHAT IT DELETES IS ONE OF TWO REPORTS OF ONE
-  FACT.** T-069 gave C-14 a diagnostic ring note — `permission_denials:
-  <names>` pushed into `stderr_tail` — because at that tree NOTHING
-  rendered a denial and a declined diagnosis relayed nothing. T-081 then
-  gave every denial its own live `Denied` event and NARROWED that note to
-  the `unannounced` set. **The narrowing selected exactly the set the
-  emit loop three statements above had just announced**: it removed the
-  note for the denials that did not need it and kept it for the ones that
-  did not either. Latent until T-101 built the second surface, then live
-  — one result-only refusal rendering as a `DenialNotice` row AND inside
-  `FailureBlock`'s verbatim `stderrTail`, which is T-081's own criterion
-  4 (*the same denial shall not be reported twice*) broken by the code
-  written to keep it.
-  **THE ARCHITECTURAL CONTENT IS THAT ONE OF THE TWO REPORTS WAS STRICTLY
-  WEAKER, so this is a deletion rather than a choice between surfaces.**
-  The live events are emitted FROM THE SAME VECTOR, in the same
-  iteration, onto the same channel, so their coverage is identical BY
-  CONSTRUCTION rather than by two lists agreeing; each additionally
-  carries its own `tool_use_id`, which a joined `format!` string cannot
-  spell; and each survives a missing `tool_name`, which `denial_names`'
-  `filter_map` drops — so a refusal the CLI never named contributed
-  NOTHING to the note and the note was never that shape's surface. The
-  note was also the only one of the two that could be LOST: the ring is
-  bounded at `MAX_STDERR_RING` and `stderr_tail` exists only on
-  `ExitNonZero`, so on a turn that SUCCEEDED it reached nobody. **The
-  partition, the `tool_use_id` join and the cumulative
-  `denial_names(&denials)` feeding `TurnError::ToolDenied` are
-  untouched** — the two are different questions, and `ToolDenied` carries
-  no `stderr_tail` field at all. **No IPC, no grant, no event, no store
-  and no graph movement**: IPC still FOURTEEN at both ends reconciled by
-  name, `acl_pin.rs` a 0-file diff at the same 92-grant `8d24cbad…`,
-  `agent-store.ts` a 0-file diff, and the graph is byte-identical because
-  `languages: ["ts"]` still hides `app/src-tauri/src/agent/**` — the
-  T-043/T-069 shape, and the fourth standing argument for T-010.
-  **THE FOURTH ARGUMENT WAS THE LAST ONE: T-010 merged at `d64c673`
-  (2026-08-25), so this clause too is true AT T-113's merge and false of
-  the tree** (`T-010-s7`). A merge under `app/src-tauri/src/agent/**` can
-  move the graph from here on, which is a NEW obligation on every lane in
-  that tree rather than only a correction: the four merges above were each
-  able to state "byte-identical" without regenerating anything.
-  **T-123 IS THE FIRST MERGE UNDER `app/src-tauri/src/agent/**` TO PAY
-  THAT NEW OBLIGATION, and it paid it twice over.** Its diff is three
-  `.rs` files and nothing else in code; the graph moved **+4 symbols and
-  +1 edge** (894 664 → 895 891 bytes at `0358c0c`), the two live-registry
-  app fixtures had to be reconciled, and the regen fired **only** because
-  `T-123-s5` — this same lane's own finding — had widened GRAPH REGEN's
-  trigger to include `*.rs` at `e1f3023` the night before. The four TS/JS
-  suffixes alone match **0 of 13** paths here. The paragraph above
-  forecast a new obligation; this is what it cost.
-  **AND C-14 GAINED A CLASSIFICATION, WHICH IS THE INTERESTING HALF.**
-  `sessions::genesis_record` was already *"the ONE place that fact
-  lives"* (T-070, above). T-123 adds `GenesisReachability { NoSession,
-  NotResumable, Resumable }` and `genesis_reachability` beside it, so C-14
-  now owns not just *what was banked* but *whether it can be re-entered* —
-  and C-05's shell, C-14's `start_genesis` and its `resume_genesis` all
-  ask that one accessor, which is what makes the routing decision and the
-  two commands provably agree. The consequence is a component edge
-  **`C-10 → C-14`** that closes a cycle against C-14's own declared
-  `depends_on: [C-10]`; undeclared by the standing rule, `T-123-s8` in
-  front of the architect. **One disclosed residual sits in C-14 and
-  reaches a user**: `genesis_kickoff` still refuses a planned folder
-  outright, so on the screen T-123 newly makes reachable a user with NO
-  supported CLI meets three controls and none can succeed (`T-123-s1`,
-  `T-123-s4`). Disclosed in `kickoff`'s own body, judged non-blocking by
-  the second verifier, and carried to @human.
-
-  **T-102 WIDENS THE ONE DISCRIMINATOR IN C-14 THAT WAS READING THE WEAKER
-  HALF OF ITS OWN EVIDENCE, AND THE ARCHITECTURAL CONTENT IS THAT IT IS
-  ONE FLAG AND NOT TWO.** T-069's entry above records the auth arm's
-  withdrawal rule — model text arriving after the last status-bearing line
-  withdraws an `AuthFailed`, so a 401 the CLI retried and got past stops
-  removing *Try again* from a user whose login is fine. **The rule's own
-  justification reaches further than the rule did**: `classify_line`
-  produces `StreamLine::Activity` from a `tool_use` content block, which is
-  the same model response in a different block type, and that arm set
-  nothing. The flag is renamed `text_after_auth_status` →
-  **`evidence_after_auth_status`** and the `Activity` arm sets it under the
-  same `auth_status.is_some()` guard, the rename being part of the finding
-  rather than tidying: the old name said `text`, so a missing CASE read as
-  a different SUBJECT. **The evidence added is STRONGER than the evidence
-  already read**, which inverts T-069's own honest limit — that entry
-  records the CLI writing its own prose into a nominally-model field, so a
-  delta is not certainly the model, while a block naming a tool is not
-  prose and the CLI has no reason to fabricate one.
-  **THE SECOND FLAG WAS REFUSED IN WRITING, AT THE DECLARATION, AND THAT
-  REFUSAL IS THE ENTRY'S REUSABLE HALF.** Criterion 3 offered to treat
-  unforgeable evidence differently. There is exactly ONE reader — a guard
-  that WITHDRAWS a claim and never makes one — withdrawal has no degrees,
-  and the direction of error is identical for both sources, so two flags
-  would differ in nothing but name while being able to drift. The
-  condition under which the split becomes real (a future arm making a
-  POSITIVE claim from unforgeable evidence) is named at the declaration,
-  so the absence is on the record as CHECKED rather than overlooked. This
-  is T-057's one-owner rule applied to a decision instead of to a
-  function.
-  **A FAMILY OF SEVEN ASSERTIONS WAS REPLACED RATHER THAN REPAIRED, AND
-  THE REPLACEMENT IS MEASURED FROM BOTH ENDS.** Seven bodies in
-  `tests/agent_runner.rs` matched on the failure event and then asserted
-  the settled status was NOT some other variant — an idiom that cannot
-  fail, because `run_turn` sets `out.error` and emits the same value, so
-  by the time the negative runs the match arm has already accepted the
-  variant it forbids (and `!matches!(None, Some(..))` is true under the
-  storage bug it looks like it would catch). All seven become
-  `assert_settled_error_is`, an equality against the failure event that
-  entails the old inequality, with each site still NAMING the variant its
-  turn must not be confused with. Dropping `guard.last_error =
-  outcome.error.clone()` in `agent/mod.rs` reds **eleven** bodies at the
-  tip and left **all seven** predecessors green at the base — the
-  measurement that makes this a replacement and not the same tautology
-  re-dressed. The honest residual is that all ten new sites kill that one
-  mutant class, so nine are redundant with respect to it: no longer bodies
-  that CANNOT fail, but ten copies of one kill.
-  **AND A CRITERION WAS DECLINED ON EVIDENCE, WITH THE DECLINE ENFORCED.**
-  The card offered to lower `MAX_AUTH_MESSAGE_BYTES` (2048) under
-  `docs_watch::MAX_ECHO_LOG_CHARS` (800) so its "hard stop" doc comment
-  would become true. Read as EARS the SHALL is *write the rule and assert
-  it over the constants*; the lowering is an `IF…THEN` antecedent, an
-  option rather than a requirement. It was refused for a reason
-  `T-081-s4` did not reach: `sanitize_for_log` appends `…(truncated)` and
-  `truncate_utf8` appends nothing, **so a bound that LOSES to the cap
-  truncates visibly and a bound that WINS truncates silently** — lowering
-  it would make "hard stop" true and remove the disclosure from the one
-  string a refused user reads. The caps block now heads with the rule and
-  each constant states its CLASS, and the test DERIVES the cap
-  behaviourally rather than naming it, because `MAX_ECHO_LOG_CHARS` is
-  private to `docs_watch` and reaching it means widening a fence to assert
-  a number (`T-102-s1`). It reds from BOTH sides — raise a bound here or
-  lower the cap there, each exit 101 — and the verifier ran the
-  criterion's own IF-arm as a mutant across the workspace: **459/1/3, exit
-  101**, reddening the new bound body alone with a message naming what was
-  given up.
-  **ONE NEW UNIVERSAL IN SHIPPED SOURCE IS FALSE AS WRITTEN, AND IT IS
-  RECORDED HERE RATHER THAN REPAIRED BY THE INTEGRATOR.** The caps-block
-  header asserts *"Every stream-borne string in this module reaches the
-  app through `bounded_stream_string`"*. There are exactly **three**
-  production call sites of that helper, all on the denial path, and three
-  things falsify the claim: the `Activity` label reaches the webview
-  through no bound in this module at all, the `TextDelta` relay goes
-  through `cap_text` (32 KiB), and `terminal_reason` goes through
-  `sanitize_for_log` with no byte bound here — a third class the new
-  two-class LIVE/ADVISORY scheme has no name for. This is CONVENTIONS'
-  `CLOSED AT TWO` class arriving in a comment: an unfalsifiable-as-written
-  universal that no test asserts and that was already false when it was
-  typed. **The narrow repair is one clause and the wide one is
-  `T-102-s4`**; the integrator recorded it rather than editing shipped
-  Rust it did not verify, which is exactly what T-107's integrator did one
-  card earlier with that lane's over-generous adjective. **No IPC, no
-  grant, no event and no store change** — IPC still FOURTEEN at both ends,
-  `acl_pin.rs` a 0-file diff at the same 92-grant `8d24cbad…`,
-  `agent-store.ts` a 0-file diff and no `TurnError` variant gaining or
-  losing a field, which is why the app suite is unmoved at 958/958 — **but
-  the GRAPH moves**, the second merge under `app/src-tauri/src/agent/**`
-  to pay T-010's new obligation after T-123: **+7 symbols, edges UNMOVED
-  at 1881, files unmoved at 178** (921 608 → 923 899 bytes), all three
-  changed files inside C-14, so no component relation moves and the
-  registry still stops at C-14.
-  area app-agent since T-025,
-  where `app/src-tauri/src/agent/**` (the runner's Rust core) plus
-  `app/src/lib/agent-store.ts` (its TS mirror) are C-14's territory and
-  `lib.rs` keeps only the thin command wrappers (four at T-025, EIGHT
-  since T-029) and the exit hook,
-  which are C-05's. Note for T-010: FOUR `.rs` files under
-  `app/src-tauri/` are claimed by no component — `acl_pin.rs` and
-  `index_cmd.rs` (pre-existing) and T-025's `src/bin/fake_agent.rs` and
-  `tests/agent_runner.rs`. All four are invisible while the indexer is
-  `languages: ["ts"]`; they become a live unmapped-territory question
-  the moment Rust extraction lands.
-  **THAT NOTE IS DISCHARGED AND ITS COUNT WAS WRONG BY ONE** (2026-08-25,
-  merge `d64c673`). The set was FIVE, not four: T-013 added
-  `src/churn.rs` on 2026-08-23, a week after the triage that enumerated
-  the note, and the lane re-derived it on disk rather than transcribing
-  it. All five are now claimed — C-05 takes `acl_pin.rs`, `churn.rs` and
-  `index_cmd.rs` (the first pins `capabilities/**`, a path C-05 already
-  claims; the other two are the shell's own command bodies), and C-14
-  takes `src/bin/fake_agent.rs` and `tests/agent_runner.rs` on the rule
-  that already puts `app/test/**` under C-05. **NOTHING IS DECLINED**, so
-  the D2 bucket is DRAINED rather than argued into existence: `arch
-  drift` reports `unmapped=0` over the regenerated graph and the dogfood's
-  `unmappedFiles: []` assertion held without being relaxed. The argument
-  for each claim lives in that component's own file, not here.
-  **AND THE BUCKET REFILLED AT THE VERY NEXT MERGE THAT ADDED A RUST
-  FILE** (2026-08-25, T-110's merge `1223543`; corrected in place with
-  the ref on T-101's precedent, because the reasoning above is what a
-  later reader needs and only its finality is wrong). T-110 writes
-  `app/src-tauri/tests/dispatch_lanes.rs`, a two-line `#[path]` shim, and
-  **no component claims it** — so `unmapped` is **1**, `unmappedFiles`
-  carries that one path, a thirteenth node renders on the map beside the
-  twelve declared components, and this repository has its **first D2
-  finding**. The settlement above was complete for the files that existed
-  when it was written; what it could not do was claim a file that was not
-  on main yet. **THE SHIM IS NOT AN OVERSIGHT — IT IS THE ONLY PLACEMENT
-  T-110'S FENCE ALLOWED**, and three verification passes ruled it
-  legitimate: `app/src-tauri/tests/**` is claimed by no component, and
-  declaring `pub mod dispatch;` in `lib.rs` (C-05's `app-shell`) from
-  inside the `[app-dispatch]` fence is the one repair
-  `method/roles/executor.md` says an executor may never make. The
-  consequence is a one-line `paths:` entry in a file that fence cannot
-  reach, routed as `T-110-s9` — **and it may never need writing**: the
-  commit that takes `T-110-s1` and wires the module properly DELETES the
-  shim, which drains the bucket by removing its occupant rather than by
-  claiming it)
-  · `lib/parser/` = C-06,
-  self-contained package · `app/src-tauri/crates/nputer-index` = C-07
-  (Cargo workspace inside app/src-tauri arrives with T-009 — the Rust
-  sibling of ADR-011) · `tools/e2e/` = the real-input E2E lane (T-020),
-  dev tooling under no component — it drives the app from outside over
-  HTTP, imports neither package, and is .nputerignored out of the map ·
-  `.github/workflows/` = the one CI job (T-020), a thin invoker of the
-  CONVENTIONS commands, dormant until the repo's first push. Each
-  package owns its package.json; app depends on @nputer/parser via
-  file:../lib/parser (T-003; parser builds before app — ADR-011); the
-  third npm package arrived with T-020 and the ruling was revisited and
-  REAFFIRMED — still no root workspace (ADR-011 addendum). docs/ stays
-  the brain.
-  **AND SINCE T-084, docs/ IS ALSO A CODE INPUT — the brain is read by
-  programs, and that is now a standing property of this layout rather
-  than an accident of four suites.** First-party bodies across ALL FOUR
-  packages resolve a path under docs/ — most against this repository's
-  own root, and since T-085 at least one against its own PACKAGE
-  directory — so a commit whose entire diff is markdown can red a suite;
-  it has done so twice (`9c64cd8`, `fede266`). **THE NUMBER OF THEM IS
-  DELIBERATELY NOT WRITTEN HERE**: it is `node
-  tools/e2e/scripts/docs-gate.mjs --census` from the repo root, for the
-  reason docs/CONVENTIONS.md's DOCS GATE bullet gives at length — this
-  sentence carried the digit ELEVEN and T-085 made it twelve, which is
-  the second time a transcribed reader count in this tree went green and
-  wrong. The repo
-  therefore carries a THIRD standing gate beside BOOT GATE and GRAPH
-  REGEN — the DOCS GATE, specified in docs/CONVENTIONS.md and
-  implemented as `tools/e2e/scripts/docs-gate.mjs` +
-  `docs-scan.mjs` — and its reader set is DERIVED FROM THE TREE on
-  every run rather than listed, so a new dogfood reader is covered
-  without anyone remembering. **THAT WIDENS WHAT `tools/e2e/` IS**: the
-  clause above still holds for the LANE (it drives the app over HTTP
-  and imports neither package), but the directory now also hosts a
-  static analyser that READS all four packages as text — including
-  `lib/parser/src/types.ts`, out of which it reads the task-status
-  vocabulary rather than restating it, so this tree has exactly one
-  status vocabulary (T-057).
-  **AND SINCE T-091 (2026-08-25, merge `ca5fb96`) IT WIDENS ONCE MORE —
-  `tools/e2e/` NOW HOLDS A READER OF A GOVERNING DOCUMENT, not only of
-  code and of the app.** `tests/range-rule.spec.ts` + `scripts/
-  range-rule.mjs` parse docs/CONVENTIONS.md's RANGE RULE bullet and
-  RE-DERIVE every figure in it by running `git` — so a paragraph that no
-  program could check is now checked by 25 bodies inside `npm test` from
-  tools/e2e. Three properties are the architectural content rather than
-  the test count. It **executes rather than re-implements**: the recipe
-  the bullet prints is the recipe that runs, so a doc whose printed
-  command stops producing its published column reds instead of going
-  quietly stale. It **shares no constant with the document**, which is
-  what makes a green run evidence — every expectation arrives through a
-  `\d+` capture, so mutating a figure on disk moves the expectation and a
-  hard-coded reader dies there. And it is the **fourth by-name reader of
-  docs/CONVENTIONS.md** and the thirteenth docs reader overall, which the
-  census reports and this sentence deliberately does not fix — ask
-  `docs-gate.mjs --census`. This is dev tooling under no component still:
-  `tools/` is `.nputerignore`d, so none of it enters the graph, and the
-  GRAPH REGEN trigger fires on the `.spec.ts` and correctly answers
-  CURRENT. `.nputerignore` is UNCHANGED and
-  deliberately so: the graph is code-derived, docs/ is not code, and
-  `index --check` is not the gate that missed this. The residual is
-  recorded rather than papered over — the gate's root-anchor ledger
-  lives under `tools/e2e` while four of its six entries argue about
-  `app/src-tauri` (`T-084-s7`). **THE PACKAGE-RELATIVE HOLE IS CLOSED,
-  AND HOW IT CLOSED IS THE PART WORTH KNOWING (T-085).** `T-084-s8` said
-  a docs path expressed relative to a PACKAGE directory escapes every
-  arm, and the tree held a live instance —
-  `app/src-tauri/tests/agent_runner.rs` reading a captured planner turn
-  through `CARGO_MANIFEST_DIR` + `../../docs/…`, owed by `cargo test`
-  and named by no arm, so the gate could answer with only green suites
-  while bare `cargo test` redded. The fix RESOLVES each docs-shaped
-  literal against its own evaluated base and keeps what lands inside
-  `<root>/docs`, which means the class is closed BY CONSTRUCTION rather
-  than by a population anyone could enumerate — so what bounds it is the
-  textual filter, whose one disclosed gap is `T-085-s1`, and the pin
-  that guards the retraction reaches one spelling in one file
-  (`T-085-s3`). Root-anchoring is therefore the ledger's subject, not
-  the gate's.
-- Map data (F-06): C-07 writes docs/architecture/graph.json —
-  committed, deterministic, volatile-field-free (ADR-014); intent =
-  docs/architecture/components/*.md parsed by C-06 (same C-namespace
-  as this table); derivation is pure TS inside C-05 (ADR-015);
-  delivery rides the docs watcher (collector gains .json under
-  docs/architecture/; its 1 MiB cap governs the indexer's size
-  budget). Since T-034 that describes the map pane's FIRST lens, not
-  all of it: the pane carries a lens control (architecture · tasks),
-  and the TASKS lens reads NEITHER of the two sources above. It builds
-  dependency waves out of the `blocked_by` edges C-06 already parses
-  from docs/tasks/ — so the second lens needs no new data source, no
-  new IPC and nothing from C-07, and it renders on a tree where
-  graph.json is absent or stale. Both lenses are pure TS derivation
-  over the same live `DocsModelState`; what differs is which half of
-  the model they read. Lens choice is session-ephemeral view state
-  (useState, the T-012 overlay precedent) until T-022 gives the pane a
-  persisted view-state seam — T-034-s3 records that `lens` is the
-  fourth member of that seam.
-  Since T-014 the "derivation is pure TS" clause above needs ONE
-  qualification, and it is recorded where decisions live rather than
-  here: ADR-015 carries a dated addendum. The binary's `arch` /
-  `arch drift` reports needed a reality-side join of their own, because
-  a CLI cannot call into the app's TypeScript. It is deliberately a
-  READER — no rollups, no task join, no provenance, and a registry
-  reader that refuses (exit 3) rather than guesses — and it was diffed
-  against the TS engine over identical inputs at **252 fact lines
-  byte-identical** on the live registry. So derivation is still
-  TypeScript and the map pane is unaffected. What is no longer true is
-  the implicit promise that one engine means one answer: `registry.rs`
-  strips quotes without processing YAML escapes where `@nputer/parser`
-  processes them, so a `paths:` entry carrying an escape makes both
-  engines exit 0 and disagree about ownership (T-014-s6 — latent, no
-  live component file carries a trigger, and the close is three
-  refusals rather than a second YAML parser).
-  **T-013 gave the pane a THIRD data source, and it is the first one
-  that is not a file** (2026-08-23). Semantic zoom T1/T2 still reads
-  graph.json — an expanded component becomes a container of its own
-  files, grouped by directory, growing DOWN within its own column so
-  unexpanded siblings do not move, with T2's symbols and resolved
-  edges in the panel and no canvas symbols in v1. The CHURN overlay
-  does not: it comes from `repo_churn`, which shells out to `git log`
-  over a 30-day window and returns per-path edit counts. So the map's
-  sources are now INTENT (the registry, parsed by C-06), REALITY (the
-  committed graph, written by C-07) and HISTORY (git, read live
-  through C-05's Rust half) — and only the third can be absent, which
-  is why the churn segment is DISABLED rather than removed when the
-  project is not a git repository (five typed reasons, one fixed UI
-  sentence each; nothing git says reaches the webview, unreachable by
-  TYPE rather than by filter). Attribution joins on `fileComponent`
-  first — the derivation's own §4.1 answer, so churn can never
-  disagree with the file list the same panel shows — and falls back to
-  the declared globs for paths the indexer never walked (never Rust,
-  never markdown: THE FOUR WALKS), because a map that reported a Rust
-  crate as permanently cold would be lying about the busiest component
-  in this repository.
-  **THE RUST HALF OF THAT PARENTHESIS IS SPENT SINCE T-010's MERGE
-  `d64c673`** (2026-08-25, `T-010-s7`), and the news is good rather than
-  merely corrective: `.rs` files are walked now, so they join on
-  `fileComponent` like every other indexed path and **the glob fallback
-  is unreachable for Rust**. The clause's own justification is what came
-  true — the busiest component in this repository gets real, file-level
-  churn attribution for the first time instead of a component-wide
-  approximation. THE MARKDOWN HALF STILL HOLDS and the fallback still
-  earns its place for it: `.nputerignore` excludes docs/, which no
-  language switch changes.
-  **T-116 GIVES THAT THIRD SOURCE THE TWO PROPERTIES THE OTHER TWO GET
-  FOR FREE** (2026-08-25) — and the architectural content is that a
-  non-file source needs them WRITTEN, because nothing derives them.
-  INTENT and REALITY are pure functions of a snapshot: they re-derive
-  themselves whenever the docs tree changes, and they carry their own
-  provenance (the registry's file, the graph's `indexed … ago` hint).
-  HISTORY is neither. It is measured once, from a mount effect, into a
-  MODULE-LEVEL store — so it was the only layer of this pane that
-  REMEMBERS, and what it remembered survived a project switch that
-  remounts nothing. **A source that remembers must say WHEN it measured
-  and must be told WHEN to forget**, and both halves are now explicit:
-  the age the payload has carried since T-013 renders through the index
-  hint's own `relativeTime` (one spelling of the question, and `0` — the
-  sentinel the untrusted-shape boundary substitutes for anything it
-  cannot read — renders nothing rather than an age computed from the
-  epoch), and `churn-source.ts` subscribes to C-10's shell store at
-  MODULE EVAL rather than from the pane, because the invalidation is owed
-  by the STORE and a switch while the map is closed must still take
-  effect. **THAT SUBSCRIPTION IS A REAL NEW SOURCE EDGE AND IT IS NOT
-  DRIFT**: the observed `C-12 -> C-10` count goes 1 -> 2 at this merge,
-  and C-12 already DECLARES C-10 in `depends_on`, so the map records it
-  as confirmed. It is also why the direction matters — a new prop would
-  have put half the change in `App.tsx`, which is C-05's, so the
-  dependency goes the way the map's other data already goes. A
-  `generation` counter makes the guarantee hold under TIMING as well as
-  under staleness: a `repo_churn` still out for repository A is
-  discarded rather than folded onto B, and only the current flight may
-  release the single-flight latch. **The honest residual is that the
-  trigger does NOT inherit that latch** — it nulls `inFlight` before
-  calling `loadChurn`, so five switches spawn five `repo_churn` — which
-  is necessary (A's flight must never answer as B's) and is the opposite
-  of what the source comment beside it claims.
+- App ↔ project: read-only first; writes are single-field frontmatter
+  edits or thread appends, nothing else (pure-lens rule).
+- Genesis (ADR-017): the spawned planner session is the WRITER; the
+  app renders what lands, and app-side writes are confined to
+  `.nputer/` runtime files. Half of that rule is enforced by the type
+  system: the app ships no `@types/node`, the write surface lives in a
+  second tsc PROGRAM (`tsconfig.test.json`), and `npm run build`'s
+  second `tsc` is the load-bearing gate (T-073). Entry is
+  zero-argument Tauri commands — no path crosses IPC in either
+  direction (ADR-012, T-026). Routing: a folder with a plan opens as a
+  project, with ONE exception — a plan-holding folder whose OWN
+  interview is RESUMABLE routes back to genesis (T-042, T-064, T-123;
+  resumable means resumable, not present — the bool that couldn't say
+  so cost a rejection). The runner (C-14) spawns one short-lived child
+  per turn, argv fixed, text on stdin, environment BUILT
+  (`env_clear()` + allowlist, ADR-003), eight zero-argument genesis
+  commands over one event channel with one fold (T-025, T-029). Banked
+  chips derive from the WATCHER seeing files, never from model claims
+  (T-027); completion derives from typed state + a parseable board on
+  disk, never a model-emitted marker (T-028). Failures reach the user
+  as typed outcomes that never cost an affordance falsely — the
+  denial/withdrawal/notice family is T-069/T-081/T-101/T-102/T-107/
+  T-113's cards.
+- Resolving the agent CLI (disk → execve): one fresh probe decides
+  WHICH binary runs — no cache, no file (T-060 retired
+  `agent-paths.json`). ONE gate holds every door
+  (`validate_resolved_program`: absolute, traversal-free, correctly
+  named, executable — shared by the `claude` and `git` doors, T-013),
+  the resolver's three environment reads are named and pinned, and NO
+  TEST CAN RESOLVE THE REAL CLI structurally (forbidden-by-default
+  under cargo test and rustdoc, T-047-s6/T-060). The honest residual:
+  the gate checks SHAPE, never identity — a symlink named `claude` on
+  a writable PATH directory passes.
+- Test surfaces (DEV, browser-only): three `window.__nputer*Harness`
+  objects behind ONE gate (`!isTauri && import.meta.env.DEV`), handing
+  out the shipped reducers by reference so the e2e lane drives real
+  code; zero bytes in the production bundle, measured (T-041, T-027).
+  The known lever: an inherited `NODE_ENV=development` flips DEV
+  (T-041-s4); the runtime `isTauri` half holds regardless.
+- Code layout: `app/` = C-05 (+ C-08/C-09/C-11/C-12/C-13/C-16
+  territories in `app/src/`; C-14 owns `app/src-tauri/src/agent/**` +
+  `agent-store.ts`; C-15 owns `app/src-tauri/src/dispatch/**`) ·
+  `lib/parser/` = C-06, self-contained · `app/src-tauri/crates/
+  nputer-index` = C-07 (workspace inside app/src-tauri) · `tools/e2e/`
+  = the real-input lane + the docs-gate/token-lint/brief analysers,
+  dev tooling under no component, `.nputerignore`d out of the map ·
+  `.github/workflows/` = one CI job, a thin invoker of CONVENTIONS'
+  commands, dormant until first push. No root workspace (ADR-011,
+  reaffirmed). docs/ stays the brain — and since T-084 the brain is a
+  CODE INPUT: programs in all four packages read it, the DOCS GATE
+  derives the reader set on every run, and no count of them is ever
+  transcribed (ask `docs-gate.mjs --census`).
+- Map data (F-06): three sources — INTENT (the registry, parsed by
+  C-06), REALITY (the committed graph, written by C-07, delivered over
+  the docs watcher), HISTORY (git, read live through `repo_churn`).
+  Derivation is pure TS in C-05 (ADR-015; the binary's own narrow
+  reality-side join is that ADR's dated addendum). Only HISTORY can be
+  absent, so its segment DISABLES with a reason rather than vanishing;
+  a source that REMEMBERS must say when it measured and be told when
+  to forget — module-scope store subscription + a generation counter
+  (T-116). Zoom and churn are T-013's; the tasks lens reads
+  `blocked_by` waves and needs nothing from C-07 (T-034).
 
 ## Related decisions
-decisions/001–017. 007 (stack) and 008 (app-first) shape the map
-above; 008 supersedes the original dashboard-last build order; 011
-fixes the app → parser wiring (file: dep, no root workspace yet);
-012 keeps native OS surfaces Rust-side (webview grant set stays
-empty); 013–015 charter the architecture map (intent+reality v1,
-committed deterministic graph files, indexer-Rust/derivation-TS);
-017 settles genesis (spawned planner writes, app stays a lens —
-supersedes ADR-008's Node-daemon-sidecar phrasing for the spawn
-surface).
+decisions/001–019. 007 (stack) and 008 (app-first) shape the map
+above; 011 fixes the app → parser wiring (file: dep, no root
+workspace); 012 keeps native OS surfaces Rust-side (webview grant set
+stays empty, pinned by acl_pin.rs); 013–015 charter the architecture
+map (intent+reality v1, committed deterministic graph files,
+indexer-Rust/derivation-TS); 017 settles genesis (spawned planner
+writes, app stays a lens); 019 charters the governing documents
+(rules/truths/records, budgets, docs/checkpoints/).
