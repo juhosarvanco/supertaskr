@@ -6,6 +6,10 @@ ruling on the proposal and the four sub-questions at the end. This room
 takes no disposition: no document is edited, no precedent is changed and
 no card is re-scoped until the ruling lands.
 
+Amended the same day after the architect session's review — the dated
+section before "What this room does not decide" records what moved and
+why.
+
 ## The question, as the human asked it
 
 > Is the content and form in them the most valuable and valuable
@@ -29,6 +33,11 @@ Derived 2026-08-27 with `wc -c docs/{STATE,ROADMAP,ARCHITECTURE,CONVENTIONS}.md`
     ARCHITECTURE.md  133,682
     CONVENTIONS.md    99,212
     total            382,136 bytes ≈ 153,000 tokens
+
+Re-derived twice later the same day — once by the architect's review,
+once independently — **384,201 bytes**, the two derivations
+byte-identical: 2,065 bytes of growth inside the room's own first day,
+the monotone-growth claim demonstrating itself.
 
 ROADMAP's F-01 bullet recorded 364,118 bytes at `00e133a` and named it
 "the number to argue against." The set consumes roughly three quarters
@@ -82,6 +91,14 @@ already ratified or practiced somewhere in this repository:
 - **The succession rule**: if it isn't in this folder, it didn't
   happen — which is why the archive must live in files, and why this
   room carries its whole proposal rather than citing a chat.
+- **Rediscovery is already on the board** (`T-146`, "the record has
+  outgrown reading and rediscovery is now cheaper than retrieval"): a
+  card naming this room's problem independently. Convergent evidence;
+  phase dispatch checks coordination with whatever T-146 routes.
+- **The archive is already drifting inside the document the precedent
+  governs** (architect's review): ARCHITECTURE's T-101 entry carries a
+  disclosure that "still routes to the removed T-101-s1 — a stale
+  disclosure of a closed defect" (`T-113-s1`).
 
 ## The proposal
 
@@ -185,21 +202,47 @@ Budget values are sub-question 1, @human's; the shape is the proposal.
 0. This room → the ADR (@human).
 1. Create `docs/checkpoints/` + template; backfill the current
    STATE.md narrative verbatim as the first record, so nothing is lost
-   before anything is cut. Fence `[docs/checkpoints/, docs/STATE.md]`.
+   before anything is cut. Fence `[docs/checkpoints/]` — the backfill
+   READS STATE.md and writes nothing outside the new directory, so no
+   lane holds a file every checkpoint rewrites (architect's review).
 2. Land `T-138-s1` (re-scoped per the T-138 checkpoint: 194 is
    derivable from source; honest omissions NAMED) — the replacement
    must exist before ROADMAP narrative is removed.
-3. STATE compaction, absorbing `T-133-s2`; add the budget gate to
-   `lint:docs`. Fence `[docs/STATE.md, tools/e2e]`.
+3. STATE compaction, absorbing `T-133-s2`. The lane delivers the
+   TEMPLATE and the budget gate in `lint:docs` — fence `[the
+   template's ruled home, tools/e2e]` — and the CUTOVER, the first
+   regeneration of docs/STATE.md itself, is performed by the next
+   merge's own checkpoint: the seat that already rewrites STATE
+   outside any fence. No lane ever holds `docs/STATE.md`; a lane that
+   did would make every other card's checkpoint a second-writer
+   violation (architect's review; the mechanism, not the tally — see
+   the review section below).
 4. ROADMAP compaction; pre-compaction text permanently reachable at
    `git show <ref>:docs/ROADMAP.md`, ref recorded in the ADR and the
-   card — a loud, ruled deletion, not a silent one.
-5. ARCHITECTURE compaction; component files are C-06-parsed, so the
-   parser suite and both dogfood fixtures watch it.
-6. CONVENTIONS compaction, absorbing the queued seat edits (`T-092`,
-   `T-093`, `T-127-s5`, the stale unbuilt-app denominators);
-   workflow-parity and range-rule specs co-move if their parsed shapes
-   change. Fence `[docs/CONVENTIONS.md, tools/e2e]`.
+   card — a loud, ruled deletion, not a silent one. Its traceability
+   table pre-enumerates the T-101-justified passages, derived with
+   `git grep -n "T-101" docs/ROADMAP.md` at dispatch.
+5. CONVENTIONS compaction, absorbing the queued seat edits (`T-092`,
+   `T-093`, `T-127-s5`, the stale unbuilt-app denominators). The
+   co-move list is workflow-parity.spec.ts, range-rule.spec.ts AND
+   `tools/e2e/scripts/dispatch-brief.mjs` (architect's review,
+   verified at source: `laneSpellings` at :517, opener-text lookups
+   on THE LANE PROTOCOL, DISPATCH FROM THE LAST CHECKPOINT,
+   Fresh-clone ORDER and PORT RULE:, three column-0 bullet splits).
+   Law 2 binds the exit: the four looked-up bullets end the phase
+   under a real keeper — a pinned parsed-shape test, or the lane
+   spellings moved to one structured source both the doc and the
+   script read (T-057). Which arms fail silent is measured in the
+   card, not assumed: the PORT RULE arm already discloses loudly
+   (:1504). `docs-scan.mjs` owns `conventionsText()` (:2608), so the
+   four spec readers share one read. Fence
+   `[docs/CONVENTIONS.md, tools/e2e]`.
+6. ARCHITECTURE compaction, deliberately LAST of the document cuts
+   (architect's review): the deepest cut, the document T-101 leans on
+   most, and by now several checkpoints under the new model will have
+   exercised the citation pattern. Component files are C-06-parsed,
+   so the parser suite and both dogfood fixtures watch it. Its
+   traceability table pre-enumerates the T-101-justified passages.
 7. Propagate to method/: `roles/integrator.md` checkpoint sequence,
    the docs-protocol file below, the adapter templates — the T-145
    lesson, fix the template. Rides the version-bump rule (three-file
@@ -241,6 +284,13 @@ so this likely lands as 019 — do not collide.
 > one and cites the card or record that holds the history; the
 > pre-replacement text remains reachable in git history at the ref the
 > replacing commit names.
+>
+> **Transition.** Passages already corrected in place under the
+> practiced precedent remain valid records of their moment until the
+> phase that compacts their document reaches them; each is then
+> re-justified, moved or retired in that card's traceability table.
+> There is no window in which live text cites a precedent that no
+> longer licenses it.
 >
 > **Budgets.** STATE ≤ NN KB (hard, gate-enforced in lint:docs);
 > ROADMAP ≤ NN KB, ARCHITECTURE ≤ NN KB, CONVENTIONS ≤ NN KB (warn).
@@ -293,7 +343,10 @@ rules here, every name left to the project:
 
 1. **Budget values.** Proposed 12 / 24 / 20 / 48 KB (STATE hard, rest
    warn). Direction and ceiling argued above; the values are a
-   judgment the evidence does not select.
+   judgment the evidence does not select. The architect's review flags
+   ARCHITECTURE's 20 KB — an 85% cut — as the value most likely to be
+   wrong; provisional, revisable by ADR addendum with a measured
+   reason.
 2. **Record home.** docs/checkpoints/ files (recommended — the
    succession rule favors files, and they are greppable) versus
    checkpoint commit messages only (current partial practice; the
@@ -302,9 +355,47 @@ rules here, every name left to the project:
    (recommended — it is the model's tier-TRUTH exemplar) and move only
    the unguarded 31-merge scoreboard narrative to T-083's card, or
    leave the bullet entirely as is.
-4. **Where Law 3's scoping is written.** Only in the ADR (recommended
-   — the precedent was practice, not method text), or also as a
-   sentence in method/.
+4. **Where Law 3's scoping is written.** Revised after the architect's
+   review, which cited T-146's finding that a rule living only in a
+   record nobody re-reads gets rediscovered wrong. The split now
+   proposed: the GENERIC law already sits in the docs-protocol
+   sketch's rule 3, which is method text every future project's
+   sessions read; the NAMED amendment ("this scopes the practiced
+   T-101 precedent") lives in the ADR alone, because method/ is
+   generic and a card id does not belong in it (the first gotcha).
+   Ruling sought on that split.
+
+## The architect's review (2026-08-27), and what it changed here
+
+Reviewed at @human's direction; findings verified independently at the
+source before being folded in. What moved:
+
+- **Phase 5's co-move list gains `dispatch-brief.mjs`** (blocking):
+  it parses CONVENTIONS structurally — opener-text bullet lookups and
+  column-0 bullet splits — so the rule/why/authority/provenance
+  reformat would break the tool that assembles every dispatch brief.
+  One nuance kept honest: the failure is not uniformly silent — the
+  PORT RULE arm discloses loudly by name (:1504); which arms fail
+  silent is measured in the card, not assumed.
+- **No lane ever holds `docs/STATE.md`** (blocking): phases 1 and 3
+  reshaped above. The review's tally — "15 of the last 15
+  first-parent commits" — did not reproduce: measured 4 of 15, the
+  window holding card filings, a triage and this room's own commit.
+  The finding survives its tally: every CHECKPOINT rewrites STATE, so
+  a held STATE fence makes every checkpoint a second-writer
+  violation. Cite the shape, not the tally — the project's own rule,
+  applied to its own review.
+- **ARCHITECTURE compacts last** of the document cuts; its 20 KB
+  budget is flagged provisional.
+- **The draft ADR gains the Transition clause**: rescoping T-101
+  touches the stated rationale of the passages that cite it (measured
+  14 raw mentions in ARCHITECTURE, 5 in ROADMAP; precedent-phrase
+  counts differ by counting rule and the shape, not the tally, is the
+  finding). Phases 4 and 6 pre-enumerate those passages.
+- **Sub-question 4 reworded** as the generic-law / named-amendment
+  split.
+- **`T-146` added to the evidence**: the board already carries a card
+  naming this room's problem.
 
 ## What this room does not decide
 
