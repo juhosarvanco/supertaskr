@@ -127,6 +127,22 @@
   never links them, so the wrapper's `try` never runs and the process
   exits 1, not 3. READ THE MESSAGE, NOT THE CODE is still the advice —
   the three outcomes look nothing alike on stdout.
+  THE LANE WRITES INTO TRACKED FILES WHILE IT RUNS, AND ONE OF THEM IS
+  UNDER docs/ (T-093). `npm test` here plants a control byte into seven
+  tracked files across four packages and restores them; the list is
+  owned by tools/e2e/tests/token-scan.spec.ts's *"one runtime-built
+  control byte reds all seven first-party roots at exact byte offsets"*
+  and is deliberately NOT copied here. That body proves its own
+  restoration properly, sha256 per file plus an empty diff over all
+  seven, so this is not a defect in it — what is unrecorded is the SIDE
+  EFFECT while it runs. docs/ is the tree the app's watcher is armed
+  over, so running the lane in the MAIN checkout beside a live
+  `npm run tauri dev` writes docs/NORTH_STAR.md twice within
+  milliseconds, and the human's board can observe a snapshot in which
+  that file is one byte longer. It is the class T-081's checkpoint
+  recorded from the other side, where merging an `app/src-tauri/**` card
+  into a checkout with a live dev server restarts the human's window.
+  RUN THE LANE IN A WORKTREE and it touches nothing the human sees.
 - One-time dev-tool setup, outside the repo and never a repo dep:
   `npx playwright install chromium` from tools/e2e/ (browsers cache in
   ~/Library/Caches/ms-playwright, ~/.cache/ms-playwright on Linux —
@@ -160,6 +176,33 @@
   sub-millisecond window to prove it is busy is still taking 1420 from
   the human. The rule above governs the LANE's tooling, which is why
   this is stated separately — it governs the hand.
+  **THAT SENTENCE IS WHERE THE LANE/HAND DISTINCTION IS STATED, AND IT
+  IS LOAD-BEARING** (T-093): the hand's other rules are gathered in
+  A CITATION NAMES A SYMBOL, NOT A LINE under Gotchas, and this clause
+  is the pointer that keeps them findable. Two more of them sit here,
+  because they are about this command and about how it gets typed.
+  **NEVER PUT A BACKTICK INSIDE A SHELL STRING** — single-quote a
+  command name, or omit it; a heredoc quoted as `<<'EOF'` suppresses
+  substitution too. In `sh`, `bash` and `zsh` a backtick is COMMAND
+  SUBSTITUTION, so this repository's own house style, a command name in
+  backticks, IS the hazard: copying that spelling into a shell LABEL is
+  the natural motion and the one motion that executes, it is SILENT when
+  the substitution succeeds because nothing errors and the output merely
+  contains something nobody wrote, and it defeats the rule at the exact
+  point the rule is being obeyed, arriving through a label rather than
+  through any command anybody chose to run. T-082's own executor started
+  a real model turn that way while building the card whose whole subject
+  is that this happens — six assistant messages, ~2,485 output tokens,
+  against a seven-day quota then 85% spent. Same precedent as the 1420
+  probe above: the rule is on the SYSCALL, not the intent.
+  **`lsof` IS THE AUTHORITY AND A `bind()` PROBE IS THE CONFIRMING HALF,
+  NEVER THE PRIMARY.** On a port holding client-side TIME_WAIT peers,
+  `lsof` returns ZERO ROWS while a plain `bind()` without `SO_REUSEADDR`
+  still fails EADDRINUSE — a real false red, measured on port 14768.
+  AND UNFILTERED `lsof` IS EQUALLY BLIND, which is the half a reader
+  will get wrong: TIME_WAIT sockets have no owning process, so dropping
+  `-sTCP:LISTEN` "to be safer" buys nothing. For 1420 there is no bind
+  half at all — read the port and stop.
   THE FACT THEY WERE DEMONSTRATING, RECORDED SO NOBODY DEMONSTRATES IT
   AGAIN: the human's vite listens on **`[::1]:1420` — IPv6 loopback —
   and nothing listens on IPv4**, so an IPv4-only probe of 1420 comes
@@ -331,6 +374,84 @@
   returns nothing, which reads like a refutation rather than a miss.
   And CITE THE SHAPE, NOT THE TALLY — a hit count is a line number by
   another name.
+  **THIS BULLET IS ONE OF THE TWO THAT GOVERN THE HAND** rather than the
+  lane's tooling. The other is the PORT RULE's `lsof` clause, and the
+  DISTINCTION IS STATED THERE, in the sentence beginning *"The rule
+  above governs the LANE's tooling"*; the hand's remaining rules are
+  gathered HERE, because a session that has just been surprised by its
+  own shell needs one place to read, and a hand rule filed among tooling
+  rules is a rule nobody applies (T-093).
+  **A MISS IS NOT A REFUTATION, AND THERE ARE AT LEAST THREE CAUSES.**
+  An empty result is the answer you were hoping for, which is precisely
+  why it is the one to distrust. Each cause is stated as a MECHANISM and
+  never as a tool's message, because the message is not guaranteed to
+  survive the shell: this harness resolves `grep` to a SHELL FUNCTION
+  carrying `-I`, which STATE records, and the one line that would have
+  given the game away never reached the transcript. IF another cause is
+  found THEN it joins this list rather than replacing it.
+  **ONE, THE SCOPE** — this bullet's own `git grep`-from-a-subdirectory
+  sentence above, listed here as a member of the set and deliberately
+  NOT restated: a rule written twice is two chances to disagree, and
+  "four paragraphs up" would be a line number wearing a disguise.
+  Re-running from the ROOT fixes this one, which is what makes the other
+  two worse — they give the SAME answer from anywhere, over a file
+  somebody has just edited.
+  **TWO, A CONTROL BYTE IN THE FILE.** One literal NUL makes a file
+  BINARY to every binary-skipping searcher while it still compiles,
+  still renders and still passes its suites. Measured at `bc2d82a` in a
+  detached drill worktree, one 0x00 planted into this file: the real
+  `/usr/bin/grep -c` answered 1 at exit 0 and `-n` printed
+  `Binary file … matches`, while the shell-function `grep` this harness
+  installs answered EXIT 1 WITH NO OUTPUT over the same bytes — the same
+  code a genuinely absent string gives. Same file, same needle, two
+  opposite answers, and only one of them distinguishable from absence.
+  WHAT TO RUN NEXT, rather than waiting for a `Binary file` line that
+  may never arrive: `file(1)`, which said `data` there, and then
+  `npm run lint:tokens` from tools/e2e, which needs no `node_modules`,
+  runs against a bare checkout, and named the byte and its offset —
+  `byte 22048: U+0000  [P5: …]` — at exit 1. THE GATE IS NOT THE GAP;
+  the advice was.
+  **THREE, A HARD WRAP ACROSS THE PHRASE.** Every governing document
+  here is wrapped at about 70 columns, so a phrase search is a search
+  for a line break you did not choose. Worked at `bc2d82a` on the CI
+  bullet's retraction above, whose quoted sentence runs *"is silent
+  in"* then *"exactly ONE case"* across a break: the head is found at
+  exit 0, and extending the needle one word past the break returns
+  nothing at exit 1. THIS CLAUSE DELIBERATELY DOES NOT TYPE THAT LONGER
+  NEEDLE, because writing it here would satisfy the search it is about.
+  **AND THE WRAP POINT MOVES**: T-093's card measured the same sentence
+  at `4d2f03c` breaking one word earlier, ADR-019's compaction reflowed
+  it, and the needle that worked then finds nothing now while the
+  mechanism reproduces exactly — which is why the rule describes the
+  WRAP and never a needle. WHAT TO RUN NEXT: shorten the needle until it
+  cannot span a break, or search the COLLAPSED text, the way every
+  mechanical reader of this file does before it matches anything.
+  **`file --mime` IS NOT THE CHEAP VERSION OF THE GATE**, and briefs and
+  verdicts have carried it as though it were. `charset=binary` is
+  legitimate evidence for U+0000 and for almost nothing else: measured
+  at `bc2d82a`, one U+000B planted into this file left `file --mime`
+  reporting `text/plain; charset=utf-8` UNCHANGED and both greps still
+  finding the needle at exit 0, while `npm run lint:tokens` named
+  `byte 22048: U+000B` and exited 1. THE C0 SET P5 REJECTS IS
+  `scanControlSource` in tools/e2e/scripts/token-scan.mjs — READ IT
+  THERE, never transcribed into prose, because a set written twice is
+  two chances to disagree. The cheap version of the gate IS the gate.
+  **A COMMENT THAT RESTATES A MEASURED FIGURE IS A SECOND
+  IMPLEMENTATION**, which is this bullet's own lesson one category over.
+  Of T-074's six corrections exactly ONE had a mechanical reader, and it
+  lived in a different npm package from the comment it contradicted,
+  which is how the two disagreed for weeks. SO WHERE A FIGURE IS
+  ASSERTED SOMEWHERE, CITE THE ASSERTION BY NAME INSTEAD OF RESTATING
+  ITS VALUE: *"the lens takes the rest; `interview.spec.ts`'s `the split
+  is 640 + the lens at >=1024` measures it"* cannot go stale, because
+  the only thing it claims is that a test exists — a rename reds nothing
+  and misleads nobody about a width. **THE GATE FOR THIS IS REFUSED IN
+  WRITING**, so the next reader inherits the decision instead of
+  re-deriving it: a lint that grepped comments for digit runs would fire
+  constantly on prose that is fine, and the honest narrow version — flag
+  a comment quoting a figure in the same file as an assertion of a
+  DIFFERENT value — is worth a prototype only if a sixth instance turns
+  up.
 - This project was planned in a long chat session before the folder
   existed; the chat is NOT the record — if it isn't in this folder,
   it didn't happen (succession rule).
@@ -674,6 +795,16 @@
   of the two, because a lane reported as touching trees it never opened
   is a false red on somebody else's work, which is the one kind of noise
   nobody can dismiss by looking at it.
+  **AND A FORECAST IS MEASURED, NEVER EXTRAPOLATED — ITS INVARIANT IS
+  THE DELTA** (T-093, seventh triage). Three forecasts went stale in
+  their ABSOLUTES in one session and none in its DELTA. The technique
+  that holds: build the merge tree with the recipe above, wrap it in a
+  throwaway `git commit-tree` so no ref moves, check THAT out detached
+  with its own `CARGO_TARGET_DIR` (POISON DRILL below says why), and run
+  the gate there. Reproduced against a main two merges later, both
+  endpoints moved and the delta did not. So state the DELTA as the
+  invariant and both ENDPOINTS as ref-bound, because a forecast checked
+  by its delta alone would have reported "current" when it was not.
 - GRAPH REGEN (T-009-s1's INTERIM rule, RETIRED at T-054 and replaced
   by this bullet — the retirement condition it carried, "when T-014's
   `index --check` becomes the gate", is met in the same commit that
