@@ -5,12 +5,12 @@ feature: F-06
 milestone: 4
 priority: 48
 size: M
-status: building
+status: verifying
 blocked_by: []
 touches: [docs/CONVENTIONS.md, app-agent]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @T-092 — code dc3c5af; drilled at that commit
 verified_by:
 review:
 ---
@@ -52,18 +52,6 @@ not the discipline's.
   (it is — the session UUID in its path makes it LOOK private and it is
   not) THEN the bullet SHALL say so in as many words, because every
   session so far has assumed the opposite.
-
-> **DRAFTER'S NOTE — remove before landing.** Two things for the
-> architect. **(1) ORDINALS MUST BE MINTED IN ONE PLACE.** This card is
-> the taxonomy pass, so it should assign every outstanding ordinal —
-> including the RECLASSIFICATION shape `T-080-s7` proposes, which the
-> fifth triage folded into T-095 (the floors card). T-095 should CITE
-> the ordinal this card mints rather than mint a second one; a number
-> assigned twice is the defect this taxonomy exists to prevent.
-> **(2) SHAPE EIGHT HAS TWO LIVE INSTANCES, not one.** The same test
-> body carries a second containment pin over
-> `method/interview/plan-interview.md`; T-078-s13 names only the
-> CONVENTIONS one. Measured at HEAD `4d2f03c`.
 
 Absorbs: T-078-s13, T-083-s3, T-081-s5, T-072-s1, T-072-s2, T-078-s11,
 T-078-s12 (sixth triage, 2026-08-20). All seven files removed in this
@@ -148,7 +136,7 @@ narrow the haystack to the line or section actually pinned.
   what the real planner did. **The rule: when a test asserts A precedes
   B, ask whether B's arrival time is a property of B or of the
   transport. If the transport can hold B, B cannot date A.**
-- **The reclassification shape** — see the drafter's note: `T-080-s7`
+- **The reclassification shape** — `T-080-s7`
   measured a mutation that MOVES a generated row between families,
   leaving cardinality invariant, so a count floor is blind to it. It is
   carried by T-095 and it needs an ordinal from this card.
@@ -257,3 +245,234 @@ against **the commit the drill ran at** — this card's own first clause.
 The DOCS GATE fires on the CONVENTIONS edit; run what it owes and record
 which, and note that `kit.rs` is one of CONVENTIONS' own live readers,
 so this edit moves the suite it is editing. @human: none.
+
+## Implementation notes (executor, 2026-08-27)
+
+Lane `/Users/ujju/Projects/nputer-T-092`, branch `task/T-092-lane`, base
+`5887cd4`, work commit **`dc3c5af`**. Every drill ran at `dc3c5af` in a
+DETACHED scratch worktree, which is this card's own first clause obeyed
+on its own edit.
+
+### The three judgement calls
+
+**1. Rule or construction, for the drill path — CONSTRUCTION.** The
+bullet now says DERIVE ONE STEM FROM THE LANE ID and spend it on the
+worktree, its `CARGO_TARGET_DIR`, the driver AND every results file, the
+way `../nputer-T-NNN` already derives the lane worktree from the card. A
+rule saying "pick something unique" is what the four colliding lanes
+already believed they were doing; the derivation is the only form with
+nothing left to choose. The guard clause is a construction too: it asks
+*is this MY drill* by resolving the stem's own path, requiring DETACHED
+HEAD and requiring the exact commit — three conditions a sibling's drill
+cannot satisfy, where a prefix guard can only ask *is this A drill*.
+
+**2. What "no uniqueness floor" should require — A NARROWED HAYSTACK,
+not a count.** Both remedies red drill B, so this is not about power. A
+bare `count() == 1` is **a number with no keeper**: nothing in it says
+WHICH occurrence is the subject, so the first legitimate second copy reds
+it and the cheapest repair is to bump the 1 to a 2 — after which any two
+occurrences anywhere satisfy it, including zero in the right place. That
+is the decay T-093's landed *"A COMMENT THAT RESTATES A MEASURED FIGURE
+IS A SECOND IMPLEMENTATION"* describes, one category over. The anchor
+has a keeper by construction: it NAMES the subject, and
+`the_one_line_carrying` asserts the anchor's own uniqueness, so an anchor
+that stops identifying one line fails loudly instead of quietly widening
+back into a whole-file search. CONVENTIONS records both, prefers the
+anchor, and requires the executor to say which it chose.
+
+**3. The three unnumbered shapes — NUMBERING IS THE FIX, and one of the
+three was already numbered.** A shape derived at read time has no citable
+handle, and five cards already cite SEVEN by number against an entry that
+did not exist. So: mint in ONE place, cards cite. **But NINE was already
+taken.** `T-080` calls the reclassification shape *"Shape nine"* in landed
+text, `T-083`'s mutant table row N4 cites SHAPE NINE, and `T-095` carries
+the shape waiting for this card. Assigning nine in the card's listing
+order would have made three landed citations wrong — so nine is
+**RATIFIED, not minted**, and the empty comparison takes TEN and the
+buffered witness ELEVEN. Both were tested for foldability first and both
+are kept: TEN is EIGHT's opposite end (a corpus with NO members wanting a
+lower floor, against a corpus that GAINED one wanting an upper), and the
+causes — a failed producer against a duplicate — send a reader to
+different repairs. ELEVEN is about TRANSPORT and folds into nothing.
+
+### The drill
+
+**Scratch identity, derived rather than chosen.** Lane branch
+`task/T-092-lane` → card id `T-092` → **stem `t092`**. Worktree
+`/private/tmp/t092-drill` (**23 characters**, well clear of `T-133-s5`'s
+116–128 bracket), `CARGO_TARGET_DIR=/private/tmp/t092-drill/.t092-target`
+(inside itself, arm (c)), driver `<scratchpad>/t092-drill.sh`, results
+`<scratchpad>/t092-drill-results.txt`. One stem, every artefact.
+
+**The guard was shown capable of failing before its OK was believed** —
+pointed at a commit that is not this drill's it exits 3 naming the
+mismatch, and pointed at stem `t999` it exits 3 saying that path is not a
+git worktree. That second case is the one a prefix guard cannot answer.
+
+Suite is `cargo test --lib` from `app/src-tauri/` (the changed body is a
+lib unit test), one side only — the DOC, never the assertion — with the
+substitution count asserted and the mutated text read back with
+`git diff -U0` BEFORE each run.
+
+| # | mutation | subs | expected | `cargo test --lib` |
+|---|---|---|---|---|
+| D3 | **drill A**: rewrite the pinned CONVENTIONS sentence to cite the symbol | 1 | RED | **197 passed / 1 failed, exit 101** |
+| D2 | **drill B**: plant a second copy of the stamp, THEN rewrite the sentence | 1 + 1 | RED | **197 passed / 1 failed, exit 101** |
+| D4 | **drill B on the second pin**, `plan-interview.md`'s Output heading | 1 + 1 | RED | **197 passed / 1 failed, exit 101** |
+| D5 | plant a SECOND line carrying the anchor | 1 | RED | **197 / 1, exit 101**, message names the anchor |
+| D6 | reword the anchor away | 1 | RED | **197 / 1, exit 101**, message names the anchor |
+| D1 | **CONTROL, not a drill**: D2's mutation against the PRE-FIX body | 1 + 1 | GREEN | **198 passed / 0 failed, exit 0** |
+
+**D1 is the whole finding.** The pre-fix whole-file `contains` is GREEN
+at exit 0 with its own subject deleted. It moves two sides deliberately
+(the doc and the body) because it is a before/after comparison rather
+than a drill, and it is labelled that way in the driver.
+
+D5 and D6 print the helper's own messages, which is what makes the
+anchor's uniqueness a real assertion rather than a comment:
+
+    docs/CONVENTIONS.md has more than one line containing "formats are
+    version-bumped" - the anchor no longer identifies the stamped sentence
+    docs/CONVENTIONS.md has no line containing "formats are version-bumped"
+    - the anchor this pin narrows on has moved
+
+**SHAPE SIX'S OWN NEW CHECK, RUN ON THIS CARD'S CHANGED BODY.** Drill A's
+mutant over the WHOLE workspace, `cargo test --no-fail-fast`, exit 101:
+**517 passed / 1 failed across 18 `test result:` lines**, and the
+`failures:` block names exactly one body,
+`agent::kit::tests::snapshot_version_matches_the_live_method_stamps`. A
+failing-body count of ONE is the non-duplication, mechanically.
+
+**RESTORATION.** Every file restored byte-exact against `dc3c5af`:
+`docs/CONVENTIONS.md` sha256
+`26322cd653a6c12de6a9bff65d7f937bfce4809f8d993c4235e83aab994d0b12`,
+`method/interview/plan-interview.md`
+`19d5a011d6ff261371e676223175b1054b4055b64edea4f7b8565c830ea639ad`,
+`app/src-tauri/src/agent/kit.rs`
+`6c42a7040fb463990c540c9385db5d0299adfad1af4063460c39282408ac6532`;
+empty `git diff` and empty `git diff --cached` over the tracked tree; the
+only `git status --porcelain` entry is the untracked `.t092-target/`,
+which is arm (c) working. The LANE was clean throughout — the drill never
+touched it.
+
+### TWO THINGS THE DRILL CAUGHT IN THE DRILL, both of them this card's own subjects
+
+**1. A mutation that did not land, caught only by its count.** D4's first
+attempt reported `REWRITE SUBSTITUTIONS=0` and the suite went GREEN. That
+green was not a finding about the fix — it was a finding about the
+mutant. The pattern carried a literal U+2014 EM DASH in the `perl -e`
+string, whose bytes are not decoded, so it could not match decoded text.
+This is T-078's raw-byte lesson arriving from the other direction, and
+**only the asserted substitution count distinguished it from a real
+survivor.** The driver now carries a comment saying so, and the fixed
+mutant reds.
+
+**2. A restore that was really a revert, in the drill for the card that
+adds "A RESTORE CANNOT TELL ITSELF FROM A REVERT".** D1's control sets
+the pre-fix body up with `git checkout 5887cd4 -- …kit.rs` — which STAGES
+it — so the driver's `git checkout -- <path>` restored from the INDEX and
+handed back the OLD file. The restoration proof is what caught it:
+`RESTORE FAILED for app/src-tauri/src/agent/kit.rs`. Repaired with
+`git restore --source=<commit> --staged --worktree`, and re-proved above.
+**The proof did its job here precisely because the drill ran AT A
+COMMIT** — with the work uncommitted, that same sequence would have
+compared clean against a HEAD that never saw it.
+
+### The sweeps, recorded including the empty one
+
+**Sweep 1 — shape eight's class**, the criterion's own command, at
+`dc3c5af`:
+`git grep -nE 'contains\(|toContain\(|\.includes\('` over `app/src-tauri`,
+`tools/e2e` and `lib` → **760 raw hits**, of which **43** have a haystack
+bound from a whole-file read. Filtering those to POSITIVE assertions with
+a literal needle leaves 14 to judge; the negated ones in
+`app/src-tauri/src/dispatch/lanes.rs` and `app/src-tauri/tests/agent_runner.rs`
+are immune by construction, because a duplicate REDS a negative.
+
+- **One live instance, and it is outside this fence:**
+  `lib/parser/test/rejected-exclusion.test.ts` searches a WHOLE rejected
+  card for `status: rejected` while its own comment says the property is
+  about the FRONTMATTER. Filed as **`T-092-s1`**, fence `lib-parser`.
+- **One already remedied, before the shape had a number:**
+  `the_only_production_path_to_the_transcript_is_the_bounded_one` in
+  `app/src-tauri/src/agent/mod.rs` cuts the file to its production half
+  first and says why in a comment. It is now cited in CONVENTIONS as the
+  second worked example.
+- The sweep's own false positive is recorded rather than hidden:
+  `docs-input-gate.spec.ts:1036` searches ONE package.json script value,
+  not a file, and the heuristic could not tell.
+
+**Sweep 2 — the class-and-sweep clause, obeyed on this card's own edit.**
+The card names `grep -n "POISON$" docs/CONVENTIONS.md` returning line
+**900** at `4d2f03c`. **At this lane's base `5887cd4` it returns nothing,
+exit 1** — ADR-019's compaction reflowed it away before this lane
+existed. So the instance is recorded as ALREADY GONE rather than fixed.
+The CLASS was then swept: a named handle this file is searched by,
+split across a hard wrap. **Zero at `dc3c5af`, and the sweep was shown
+capable of failing first** — run against a scratch copy with `POISON
+DRILL` deliberately split it reports `SPLIT 803: POISON | DRILL` and
+exits 1; against the real file it reports 0 and exits 0.
+
+### Which criteria are BODIES and which are PROSE
+
+The card requires this distinction to be stated per item.
+
+- **BODY** — the two containment pins gaining a uniqueness floor, and the
+  anchor-uniqueness assertion inside `the_one_line_carrying`. Three
+  assertions, all four arms drilled RED (D2–D6).
+- **PROSE, and no body is possible** — the catalogue (SEVEN…ELEVEN with
+  tells and remedies), the per-lane scratch identity, DRILL AT A COMMIT,
+  the non-emptiness and proof-capable clauses, shape six's isolating
+  check, and the class-and-sweep bullet. These are disciplines about how
+  a session works, and CONVENTIONS already records why that stays a
+  discipline: *"nothing can automate 'would this have failed'"*. What IS
+  mechanical about them was used here rather than asserted — the sweeps
+  were run and shown capable of failing, and the isolating-mutant check
+  was run over the whole workspace.
+
+### Flagged for the verifier
+
+- **The byte budget is the sharp edge.** `docs/CONVENTIONS.md` goes
+  95,644 → **107,048** bytes, **+11,404**, against ADR-019's warn line of
+  107,967: **919 bytes left**. `npm run lint:docs` is CLEAN (a WARN does
+  not count toward `breaches`), but one card spent 93% of the headroom
+  the seat had. Two compression passes moved every instance measurement
+  into the cards that own it, per ADR-019's *"a hazard is never deleted
+  to fit"*. Filed as **`T-092-s2`**.
+- **`kit.rs` is one of CONVENTIONS' own live readers**, so this edit
+  moves the suite it is editing — that is why the DOCS GATE names
+  `cargo test` for a docs-only path, and why the anchor and the stamp
+  were re-counted after every CONVENTIONS pass.
+- **The placeholder now appears twice in CONVENTIONS**
+  (`currently v<METHOD_SNAPSHOT_VERSION>`), once in the live-readers
+  paragraph and once in shape eight's entry citing it. That is safe
+  BECAUSE it is a placeholder and not the literal, which is the entry's
+  own point; `grep -c "currently v0.1.7" docs/CONVENTIONS.md` is still 1.
+- The drafter's note was removed, as it instructs. Both halves are
+  discharged: its ordinal ruling is section "The catalogue is closed at
+  ELEVEN", and its second live instance is drill D4.
+
+### Where the card and the brief were wrong
+
+- **The card's shape-eight measurement is a version stale.** It reads
+  `grep -c "currently v0.1.5" docs/CONVENTIONS.md` = 1 and
+  `grep -c "(v0.1.5" method/interview/plan-interview.md` = 1 at
+  `4d2f03c`. The method is at **v0.1.7** since ADR-019. The COUNTS
+  reproduce exactly — 1 and 1 at `5887cd4` — so the shape stands
+  unchanged; only the literal moved, which is the card's own subject
+  happening to the card.
+- **The card's `POISON$` instance is no longer live.** Line 900 at
+  `4d2f03c`; nothing at `5887cd4`. Recorded with the sweep, per the
+  criterion's "or left with the sweep recorded" arm.
+- **The card says SEVEN has "four independent sightings".** Five cards
+  name it at `5887cd4` — `T-076` (which named the shape), `T-069-s3`,
+  `T-073-s4`, `T-077` and `T-080` — with `T-102` corroborating `T-069-s3`
+  from a second seat. Four is defensible if the corroboration is folded
+  into its subject, which is why CONVENTIONS names the cards and tells
+  the reader to derive the count instead of carrying one.
+- **The brief calls them "the three unnumbered shas".** They are the
+  three unnumbered SHAPES; the card's own heading and title say so, and
+  there is no set of three shas anywhere in the card. Answered as shapes.
+- **The brief's byte figures reproduce exactly** — 95,644 at `5887cd4`
+  against a 107,967 warn line, 12,323 of headroom. Its account of the
+  T-093 landing and of the four-lane collision also reproduces.
