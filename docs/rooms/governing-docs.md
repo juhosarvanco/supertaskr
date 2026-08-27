@@ -1,14 +1,10 @@
-# Room: what may the governing documents contain, and who keeps each sentence true? (OPEN)
+# Room: what may the governing documents contain, and who keeps each sentence true? (resolved 2026-08-27)
 
 Opened 2026-08-27 at @human's direction, after a review of the four
-read-first documents against the question below. Awaiting @human's
-ruling on the proposal and the four sub-questions at the end. This room
-takes no disposition: no document is edited, no precedent is changed and
-no card is re-scoped until the ruling lands.
-
-Amended the same day after the architect session's review — the dated
-section before "What this room does not decide" records what moved and
-why.
+read-first documents against the question below. Amended the same day
+after the architect session's review — the dated section before "What
+this room does not decide" records what moved and why — and RULED the
+same day by @human: see "The ruling" at the end. Ratified as ADR-019.
 
 ## The question, as the human asked it
 
@@ -403,3 +399,44 @@ No document is edited by this room. No card is re-scoped. The T-101
 precedent stands unmodified until the ADR lands. Phases 1–7 dispatch
 only after the ruling, each as its own fenced card, with lane state
 derived at dispatch — never from this file.
+
+## The ruling (@human, 2026-08-27)
+
+All four sub-questions ruled as recommended, with sub-question 1 in
+the revised shape reached after @human pressed on the too-narrow risk:
+
+1. **Budgets are TARGETS, not gates.** 12 / 24 / 20 / 48 KB are what
+   the compaction cards aim at (overshoot up to ~25% acceptable,
+   argued in the card). Gate values are DERIVED at each document's
+   compaction landing — warn at landed size × 1.25, fail at landed
+   size × 1.5 — and recorded by ADR addendum with the measurement,
+   the max_graph_bytes pattern. Nothing can hard-fail until a
+   compacted document exists to measure. The budget is a tripwire
+   against relapse, not the instrument of the cut.
+2. **Records live in docs/checkpoints/ files**, append-only, written
+   before STATE is regenerated; the commit message keeps its summary
+   role.
+3. **The RANGE RULE keeps its spec-kept figures whole** — tier-TRUTH
+   with a real keeper — and only the unguarded 31-merge scoreboard
+   narrative moves to T-083's card at phase 5.
+4. **The split**: the generic law lives in method/docs-protocol.md
+   rule 3 (phase 7); the named T-101 amendment lives in the ADR
+   alone.
+
+Ratified as **ADR-019**,
+`docs/decisions/019-governing-docs-rules-truths-records.md` — 018
+stays reserved for T-135 Half B, so the numbering gap is deliberate.
+
+**Phase 1 was executed at @human's direction in the same session**:
+`docs/checkpoints/` exists with `TEMPLATE.md` and the verbatim
+backfill of docs/STATE.md at `9d09a07` (69,837 bytes) — nothing was
+cut before it was preserved. One honest correction to this room's own
+§2, discovered on the way: "read by no suite, ever" is achievable as
+NO DEPENDENCY, not as no walk — the two e2e specs that walk all of
+docs/ walk these files as app content by construction, and ADR-019's
+Records clause states the boundary precisely.
+
+**Phase 2 needs no new card**: `T-138-s1` already exists and its
+re-scope is on the record (STATE's Next up and this room §5);
+dispatching it is the architect's. **Phases 3–7 dispatch as fenced
+cards per §5**, each citing this room and ADR-019.
