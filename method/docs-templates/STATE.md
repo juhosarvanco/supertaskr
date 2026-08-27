@@ -1,7 +1,9 @@
 # State
 <!-- The baton. Under ONE page. History lives in git, not here.
      Every fresh session reads this first and confirms its understanding
-     of the next task in one paragraph before doing anything. -->
+     of the next task in one paragraph before doing anything.
+     Governed by method/docs-protocol.md: regenerated at each
+     checkpoint, the narrative going to docs/checkpoints/ records. -->
 
 Updated: <date> by <role, model@session>
 

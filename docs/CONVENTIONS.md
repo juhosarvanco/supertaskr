@@ -278,7 +278,13 @@
 ## Gotchas
 - method/ is the generic, product-agnostic convention — nothing
   nputer-specific goes in it; product docs live in docs/. Changes to
-  method/ formats are version-bumped (currently v0.1.6) and noted here.
+  method/ formats are version-bumped (currently v0.1.7) and noted here.
+  v0.1.7 (ADR-019, 2026-08-27): method/docs-protocol.md added — the
+  three-tier governing-docs contract; the integrator's checkpoint
+  ritual gains the record-first sequence; the adapter template names
+  the generated capabilities census (completing T-145's fix and
+  discharging T-138-s2); the kit's STATE scaffold points at the
+  protocol.
   **A BUMP IS A THREE-FILE COMMIT AND THE THIRD FILE IS RUST** (T-078-s3
   arm 1, taken here at T-089 — it had been true and unwritten for six
   method versions). The three are: this stamp; the `(v<version>` stamp in

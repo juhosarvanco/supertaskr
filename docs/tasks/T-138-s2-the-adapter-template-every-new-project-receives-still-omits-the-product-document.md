@@ -74,3 +74,16 @@ for every future project, so it should carry the product-shaped slot even
 if a brand-new project has nothing to put in it yet. A slot a genesis
 leaves visibly empty is a question somebody answers; a slot that does not
 exist is a document nobody thinks to write.
+
+closed_by: T-145's merge fixed the class's core (the template names
+docs/ROADMAP.md with the check-first placeholder), and the ADR-019
+phase-7 commit completes the product-document half this card is named
+for: the template now names docs/CAPABILITIES.md as a marked
+placeholder ("once this project generates it" — T-145's own rule that
+a template shipping a nonexistent path is worse than one shipping
+nothing), points at method/docs-protocol.md, and the method version
+bump this card earmarked ships as 0.1.6 -> 0.1.7 in the three-file
+commit whose third file is kit.rs. Find it with
+`git log -S "0.1.7" -- app/src-tauri/src/agent/kit.rs`. Executed
+directly at @human's direction per docs/rooms/governing-docs.md's
+override.

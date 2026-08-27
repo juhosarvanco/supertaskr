@@ -44,14 +44,26 @@ You merge one approved task and leave the docs true.
    with a fresh dependency install THEN read "The checkout you merge
    into may be in use" below BEFORE you run one** — that step is the one
    that can break a product a human is running out of this same tree.
-3. Checkpoint ritual, in order, as ONE commit distinct from the merge:
-   - STATE.md: rewrite (it is a snapshot, not a log)
-   - ROADMAP.md: tick progress
-   - ARCHITECTURE.md: update map + component status if any interface moved
+3. Checkpoint ritual, in order, as ONE commit distinct from the merge
+   (../docs-protocol.md governs what may live where):
+   - checkpoint record FIRST: one append-only file per integration in
+     docs/checkpoints/, on the project's committed template — the
+     ranges, gates, suites, board deltas, environment facts and what
+     the brief got wrong. The record keeps the INSTANCE; the governing
+     documents keep only the MECHANISM. No suite may ever depend on it.
+   - STATE.md: REGENERATE from the project's template, under its byte
+     budget (it is a snapshot, not a log — the narrative just went into
+     the record)
+   - ROADMAP.md: tick progress — at most one sentence per feature,
+     absorbed into its paragraph at the next edit; the story lives on
+     the card
+   - ARCHITECTURE.md: update map + component status if any interface
+     moved — the account goes in the component's own file or the card
    - decisions/: new ADR if any non-obvious decision got made
    - task file: status done, stamp built_by / verified_by / review
-   - regenerate whatever the project derives from the tree, and commit it
-     here rather than in the merge
+   - regenerate whatever the project derives from the tree — generated
+     documents with a currency check included — and commit it here
+     rather than in the merge
    - anything your own work did to a product a human was running — see
      the last rule of the section below
    **REPAIR WHAT THE MERGE INTRODUCES; FILE WHAT THE MERGE MERELY
