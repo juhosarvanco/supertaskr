@@ -1,0 +1,326 @@
+# Capabilities
+
+<!-- GENERATED — do not edit by hand (T-138-s1, ADR-019).
+     Regenerate:  npm run capabilities        (from tools/e2e/)
+     Currency:    npm run capabilities:check  (exit 1 when stale)
+     Source: tools/e2e/tests/*.spec.ts — the test names ARE the
+     sentences; a sentence here is false the moment its body reds,
+     and nobody has to keep it true by hand. -->
+
+What this app does, one sentence per behaviour the e2e suite runs.
+
+Census: **233 behaviours** — 231 extracted sentences + 2 named-not-extracted (listed at the end) — across 25 spec files. Cross-check against the runner's own `Running N tests` header.
+
+## accelerators
+
+- a real ⌘O / ⌘N is claimed from every screen, front door or not
+- the chord survives a screen it did not start on (board -> map -> board)
+
+## blocker-retarget
+
+- a real blocker-chip click re-targets the panel — same node, stays open, board intact
+
+## boot-check-guard
+
+- unset resolves to 1420 and threads no --config — the pre-T-046 command, byte for byte
+- a scratch port threads the matching --config to BOTH halves of tauri dev
+- the overlay carries the COMMITTED dev command, so a renamed script still reds
+- a committed command that already carries `--` does not gain a second one
+- only the PORT of the committed devUrl is rewritten — scheme, host and path survive
+- THE RESIDUAL, asserted rather than described: a wrong committed PORT is still masked
+- against the REAL committed config the derivation is a no-op, byte for byte
+- an underivable committed config REFUSES — it never falls back to the committed port
+- an OVERRIDE with no committed config refuses rather than emitting a bare overlay
+- the process-group guard refuses the two ids that mean something else entirely
+- NPUTER_BOOT_PORT=1420 is refused by the resolver — the lane's own throw, restated
+- values that are not ports are refused, never silently defaulted
+- the real script refuses NPUTER_BOOT_PORT=1420 with exit 3, probing nothing
+- a busy scratch port aborts with exit 2 and spawns nothing
+
+## brief
+
+- the ROW SET is read from the role file, and the coverage runs both ways
+- the row set FOLLOWS the document — it is not pinned here
+- a contract table this command cannot read THROWS, never yields an empty contract
+- THE LANE LIST FILTERS ON THE BRANCH, NEVER THE PATH
+- the branch filter is DERIVED from the spelling CONVENTIONS publishes
+- the lane spellings refuse a near-miss rather than answering with it
+- the LIVE worktree list is parsed, and every derived lane is on a task branch
+- EVERY EMITTED FIGURE CARRIES ITS PROVENANCE, and the detector is not vacuous
+- a TREE fact carries a ref and a LIVE fact carries a clock — never the other way round
+- a figure read from the MOVING integration ref is a LIVE fact — two reads at ONE ref disagree
+- a provenance that is neither SHAPE throws at render, rather than rendering `read undefined`
+- THE SLUG MAP COMES FROM THE FIELD, and the prose block is compared rather than trusted
+- FENCE DISJOINTNESS IS COMPUTED AS SETS THROUGH THE MAP, not as a string compare
+- the frontmatter reader agrees with `yaml` on every live card and every component
+- the gates are ENUMERATED from the document, and a removed gate is not still named
+- the commands are transcribed VERBATIM from the per-package bullets
+- the ceremony ROW is read from TASK-FORMAT, and the tier letter alone does not decide it
+- the named disciplines are enumerated from the document's own shape
+- ARM TWO answers STATE's derivable sections and says what it cannot answer
+- the board census adds up, and it is derived rather than carried
+- THE COMMAND IS A READ — it writes nothing into the checkout it runs in
+- THE EXIT CODES keep `I derived it` apart from `I could not tell you`
+- a brief assembled at this ref names the lanes the repository holds, and no others
+
+## card-figures
+
+- the census claim fires on the sentence that cost T-141 a rejection
+- the same sentence with no repository scope does NOT fire, so the pattern discriminates
+- every digit in that sentence is an IDENTIFIER, and the FIGURE has none
+- the audit reports the census claim on a card that only states it
+- a derived line pasted verbatim under its own stamp is VERIFIED
+- a sentence may LEAD INTO a derived figure and still verify
+- ONE DIGIT EDITED under the same stamp goes STALE — the marker cannot be borrowed
+- text APPENDED after a true figure under the same stamp does not verify
+- a stamp naming a deriver outside the closed set is UNRUNNABLE, and the message names the keys that exist
+- a provenance arrow this gate cannot re-run is UNRUNNABLE rather than accepted
+- a figure attested as not-a-function-of-a-tree is ATTESTED and is NOT a finding
+- an unstamped bare number is NOT a finding — arm one is deliberately not rebuilt
+- the case for arm two is a RATIO and this body re-derives it
+- every line this command emits for a real card carries a stamp
+- a note may not carry a digit, and this command's own notes obey it
+- every declared deriver produces a text set, and the audit knows no key the map lacks
+- every deriver states, in the author's words, the question it answers
+- fence weight matches an independent walk of the tracked tree
+- fence demand counts every live card naming the entry and nothing else
+- every live card can be audited, and the report is a SHAPE rather than a tally
+- fenced and indented blocks are blanked but LINE NUMBERS survive
+- the reported line indexes the FILE, frontmatter included
+- a BARE arrow inside a transcript is not audited, because a command carries its own provenance
+- a `card:` STAMP is audited inside a transcript too — formatting is not an escape hatch
+- a census claim is NOT inferred from a transcript, because it is inferred and not declared
+- the stamp is anchored at end of line, so a quoted stamp does not inherit a verdict
+- frontmatter is not prose, so its fields are never audited as figures
+
+## crescendo
+
+- the lens hands over to the real board when task files land
+- the entrance transition is painted, and reduced motion drops it
+- completion: the board is ready, and one CTA lands in the board pane
+- a planner that ends without a parseable board is never celebrated
+- the frame holds with the board in the right half, at 1024x768 and 1280x720
+
+## dispatch-order
+
+- the lane list is filtered on the BRANCH, never the path
+- and the live repository AGREES with git worktree list, entry for entry
+- THE PROVENANCE FLOOR: every rendered line ends in a stamp
+- the WORKTREE LIST is a LIVE fact and never carries a commit
+- the oracle carries DIRECTORY PREFIXES, which is the half that closes the gap
+- the board is read with REPOSITORY-RELATIVE paths, so a card's own file can be carved out
+- ...AND THE CONTEXT ACTUALLY USES IT — this body exists because a mutant survived
+- the parser is loaded from ONE place and a missing build REFUSES loudly
+- --dispatch runs on the live repository, exits 0, and WRITES NOTHING
+- --dispatch is a NAMED arm: an empty request is still a usage error
+- the STARTABLE set is exactly the ready set minus what the live lanes hold
+- a lane with NO CARD IN THIS CHECKOUT empties STARTABLE — asserted at the CALL SITE
+
+## docs-input-gate
+
+- every package with a suite has at least one derived docs reader
+- the two readers the card names are derived, and they are NOT all of them
+- a body that hands the root to a first-party call is a reader, and names every prefix that call spends
+- the CALLEE is not a reader — a root that arrives as a parameter is somebody else's project
+- the call sample set is green, with a Rust positive and a DEFAULTED-root positive
+- nothing forms a repo-root docs path that the derivation could not link
+- the tripwire's ANCHOR arm follows imports, exactly as its site arm always did
+- THE ACCOUNT and the tree agree — every root-anchored file is derived, reported, or argued
+- the census is DERIVED, and the DOCS GATE bullet names the command instead of a digit
+- a docs path off a root that is NOT the repo root is not a reader
+- a repo-root join whose first segment is not `docs` is not a reader
+- THE LIVE PACKAGE-RELATIVE READER IS DERIVED — not listed, and not in the ledger
+- the resolve sample set is green — both spellings in, the fixture base and the escape out
+- PLANTED READERS in BOTH spellings are derived by the real derivation, off a scratch repository
+- a planted climb that ESCAPES the repository is excluded, and the exclusion is asserted
+- the package-relative account has no member this scan could not evaluate
+- the ledger's universal is gone, and what replaced it is checkable
+- the conclusion the universal warranted is scoped wherever it is restated
+- the one by-name exclusion is load-bearing, and the spec is NOT excluded
+- the site sample set is green, with positives, negatives and a Rust spelling
+- the sample set covers the two shapes that HIDE a reader
+- every suite command this gate names is in CONVENTIONS' own command bullet
+- the DOCS GATE bullet names exactly the commands the derivation produces
+- the DOCS GATE bullet points at the derivation rather than restating it
+- a docs-only diff with NO code file in it fires the gate and names the suites
+- a code-only diff does not fire this gate — it is the other two gates' business
+- the answer is PROPORTIONAL — that is what keeps the trigger obeyable
+- a path names the readers that read it, not a generic list
+- the hand-run gate's exit codes hold, and an EMPTY path list is 2 and not 0
+- EVERY SPELLING of one docs path answers the same, or is REFUSED — never `not owed`
+- THE EXIT MATRIX — all four codes survive the invocation the doc prints
+- THE EMPTY-LIST TRAP, re-proved against the new spelling, with a PLANTED POSITIVE
+- ONE SPELLING, TWO PLACES — the doc and the script print the same recipe
+- THE `EXIT` OBJECT IS THE SINGLE AUTHORITY — the npm script re-types no numbers
+- the status vocabulary is READ from the parser, never restated here
+- the frontmatter delimiters are transcribed from the parser and still match it
+- `status: closed` fails loudly, names the FILE and the FIELD, and carries the ruling
+- a genuine typo gets a near miss; `closed` gets the ruling because it is not one
+- a title opening with a backtick is a named yaml-error, not a shorter board
+- a legal card reports nothing, and a path the parser does not collect is not judged
+- every live task card parses, with a status in the vocabulary
+- .nputerignore still excludes docs/ — the indexer is not the gate that missed this
+
+## front-door
+
+- phase noProject renders both ways in, with the accelerators named
+- the front door is styled by the real sheet, in both schemes
+- phase open leaves the front door for the board, rail and all
+
+## genesis-screen
+
+- phase genesis renders the interview screen full-bleed
+- T-024's streak tree renders through the lens, inside the slot
+- the pane is laid out and painted by the real sheet, inside the slot
+- the frame holds and the pane scrolls at 800x600, 1024x768 and 1280x720
+
+## interview
+
+- the whole interview: start, question, answer, challenge, chips, failure, retry
+- the challenge treatment survives the theme, in both schemes
+- the split is 640 + the lens at >=1024, and the chat alone below it
+- the frame holds and BOTH regions scroll at 800x600 / 1024x768 / 1280x720 / 1440x900
+- the other screens follow the shell's one scroll model
+- Enter is input-local, and the window chords still fire from the interview
+
+## keyboard-activation
+
+- real Enter on a focused blocker chip re-targets without closing
+- real Space on a focused blocker chip re-targets without closing
+
+## map-retarget
+
+- map pane: node opens MapPanel; touching-task row re-targets to the real TaskDetailPanel
+
+## no-plan-card
+
+- phase noDocs renders the card, and every mark is the probe's own answer
+- a probe that found nothing renders four ○ and no ✓ anywhere
+- a rejected pick shows the same card over an OPEN project, and keeps it
+- a pick that failed for a reason shows the reason, not a checklist
+
+## panel-exempt-controls
+
+- theme toggle keeps the panel open and actually flips the scheme (both ways)
+- a genuine outside press closes the panel AT PRESS (asserted between down and up)
+- the parked row's exempt expander keeps the panel open
+
+## panel-real-keys
+
+- real Escape closes the panel and focus returns to the opener trigger
+- real Enter on a focused card trigger opens its panel
+- real Space on a focused card trigger opens its panel
+
+## range-rule
+
+- RANGE RULE — range-spelling-with-its-count
+- RANGE RULE — prescribed-table-is-the-recipe
+- RANGE RULE — t027-figures-at-their-own-ref
+- RANGE RULE — t078-figures-at-their-own-ref
+- RANGE RULE — t080-collapse-at-the-merge
+- RANGE RULE — scoreboard-path-for-path
+- RANGE RULE — scoreboard-byte-for-byte
+- RANGE RULE — scoreboard-third-metric
+- RANGE RULE — three-dots-two-scores-split
+- RANGE RULE — merge-tree-refusal-is-not-a-miss
+- RANGE RULE — merge-commit-ceiling
+- RANGE RULE — three-dot-identity-executed
+- RANGE RULE — flip-headline-counts
+- RANGE RULE — flip-lists-by-gate
+- RANGE RULE — flip-counts-carry-their-trigger
+- RANGE RULE — reverse-flip-universal
+- RANGE RULE — falsified-sentence-dating
+- RANGE RULE — judgement-half-present-not-valued
+- RANGE RULE — printed-recipe-exit-codes
+- RANGE RULE — docs-gate-recipe-exit-codes
+- RANGE RULE — every parsed claim is answered by some check
+- RANGE RULE — a parse failure throws instead of yielding an empty expectation
+- RANGE RULE — the expectation side is READ from the document, never pinned
+- RANGE RULE — the flip lists are checked BY GATE, and a merged set would miss the relabel
+- RANGE RULE — the DOCS GATE's printed spelling still carries no `xargs`
+
+## resume-fallback
+
+- an expired login is a diagnosis with an action, not an exit code with a lie
+- a refused turn subscription says so, in the half that is not receiving
+- a restart mid-interview rehydrates the conversation instead of showing an empty log
+- a resumable session offers both exits, and a fresh one is never a dead end
+
+## shell-frame
+
+- the frame holds on every screen at the declared default (1280x840)
+- the frame holds on every screen at the declared minimum (1024x700)
+- the frame holds on every screen at T-048's 800x600 baseline (800x600)
+- the error strip owns a ceiling while every diagnostic and the board remain reachable
+- the map canvas SCROLLS rather than clips when the frame shrinks it
+- the board scrolls inside its own region and the app chrome stays put
+
+## startup-recovery
+
+- a failed startup says so, and carries three ways out
+- the failure card is styled by the real sheet, in both schemes
+- a hostile rejection message is text, in a real browser
+- the escape works: a real click on Try again leaves the failure state
+
+## token-scan
+
+- token-scan is side-effect-free on direct import
+- P5 rejects every disallowed C0 byte and DEL while allowing tab, LF and CR
+- P5 renders the codepoint in the documented format, named literally
+- P5 offsets are bytes, including after a non-ASCII prefix
+- TOKEN and CONTROL are explicit, disjoint policies over the same tree
+- one runtime-built control byte reds all seven first-party roots at exact byte offsets
+- P6 reds a planted bare motion utility and leaves its motion-safe twin alone
+- every animation utility this tree declares is matched by P6 or argued out
+- CONTROL covers every tracked suffix class it does not declare uncoverable
+- the gate distinguishes clean, found-something and could-not-run
+
+## trusted-canary
+
+- harness present; one lane click and one lane keypress are trusted
+
+## window-contract
+
+- the default window renders both halves of T-027's split
+- the declared minWidth sits at or above the lens's measured breakpoint
+- the declared minHeight leaves every screen a workable scroll region
+
+## workflow-parity
+
+- ci.yml is valid YAML with the one pinned ubuntu job
+- the expected commands derive cleanly from docs/CONVENTIONS.md
+- every CONVENTIONS command is a step, verbatim and in CI order
+- the workflow runs nothing beyond the derived commands and its infrastructure
+- every `uses:` is pinned by a full 40-hex commit SHA
+- the xvfb boot step runs the documented boot check with the webkit workaround
+- the apt step installs the Tauri v2 webkit2gtk set + xvfb
+- FIXTURE: rewording a command in CONVENTIONS reds the lane, naming both sides
+- FIXTURE: deleting a command from CONVENTIONS reds the lane
+- FIXTURE: an undocumented divergence reds the lane
+- FIXTURE: a restructured section fails loudly, never with an empty expectation
+- FIXTURE: an indented sub-bullet is named, not silently swallowed
+- FIXTURE: an indented sub-bullet with its OWN `run from` marker is named
+- FIXTURE: a fenced block after a bullet is named, not read as prose
+- FIXTURE: a command the DOC gains that the spec does not claim reds BY NAME
+- FIXTURE: the shape that IS silent — a command in a bullet with no `run from` marker
+- FIXTURE: a middle dot inside a parenthetical drops every command behind it
+
+## workflow-permissions
+
+- every workflow file is enumerated — the glob is not vacuous
+- every workflow declares least privilege, and no grant is unargued
+- FIXTURE: a second workflow with no `permissions:` block fails, NAMING the file
+- FIXTURE: `.yaml` files are judged too, not only `.yml`
+- FIXTURE: a job- or step-level widening fails, naming file, path and grant
+- FIXTURE: the `write-all` shorthand fails as a whole-token grant
+- FIXTURE: a redundant `contents: read` and an empty block are not widenings
+- FIXTURE: an exception row argues a grant — and a stale row is itself a failure
+- FIXTURE: an empty enumeration is a failure, never a green run
+
+## Not extracted — named rather than dropped
+
+A generated document that quietly omits is worse than prose that
+visibly goes stale (T-138-s1). These behaviours run in the suite
+and are not sentence-expanded here:
+
+- `window-contract.spec.ts:442` — 2 behaviour(s) from `test(\`every screen is usable at ${label} (${size.width}x${size.height})\`)`: `MINIMUM` is not a literal object — its fields are computed at run time.

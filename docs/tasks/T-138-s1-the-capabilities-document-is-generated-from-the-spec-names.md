@@ -90,3 +90,16 @@ Fence both or neither.
 first-party roots and asserts an EMPTY DIFF; `AGENTS.md` is one of the
 seven.** An uncommitted edit to it reds that body and the failure looks
 like a defect in the plant. Commit before running the e2e suite.
+
+closed_by: the commit that introduces docs/CAPABILITIES.md and
+tools/e2e/scripts/capabilities.mjs (ADR-019 phase 2, executed directly
+at @human's direction per docs/rooms/governing-docs.md's override —
+find it with `git log --diff-filter=A -- docs/CAPABILITIES.md`). The
+source-vs-run choice this card left open was settled the way T-138's
+checkpoint predicted: SOURCE reaches the full census by resolving the
+loops' own literals — 231 sentences extracted, and the one family the
+generator cannot resolve (window-contract's manifest-derived sizes, 2
+behaviours) is NAMED in the document per this card's honest-omission
+rule. Census 233 = the runner's own count. `npm run capabilities:check`
+is the currency gate, poison-drilled both ways at landing. Both root
+adapters moved together and are cmp-identical, per this card's hazard.
