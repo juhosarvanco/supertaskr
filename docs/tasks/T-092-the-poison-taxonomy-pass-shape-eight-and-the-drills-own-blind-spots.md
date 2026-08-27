@@ -836,3 +836,53 @@ assertion and not a comment, and the four blind spots in the drill's
 procedure are written where the next session reads. Merging is the
 integrator's; `docs/architecture/graph.json` is theirs to regenerate with
 the checkpoint.
+
+### Step 7 — the gates re-run at the tip THIS VERDICT created
+
+A verdict is a WRITE, and prose is a code input here. The section above
+was measured at `73d7870`; this one is measured at **`00bb50b`**, the
+commit that appended it and filed `T-092-s3`…`s6`, and re-confirmed at
+the tip that appended THIS section (a prose-only append to a card whose
+frontmatter did not move — the four counts below are unchanged, which is
+what makes the section true at its own tip rather than at the last one).
+
+The DOCS GATE at `00bb50b`, same one spelling, same executor pair,
+`merge-tree` exit read first = 0: **exit 1, nine paths under docs/**, the
+same four suites owed. All four re-run:
+
+| command | from | result | exit |
+|---|---|---|---|
+| `cargo test` | app/src-tauri/ | **518 passed / 0 failed**, 18 lines | 0 |
+| `npm test` | app/ | 47 files, **1013 passed** | 0 |
+| `npx vitest run` | lib/parser/ | 15 files, **314 passed** | 0 |
+| `npm test` (`NPUTER_E2E_PORT=14627`, read at zero rows on both stacks first) | tools/e2e/ | **233 passed** | 0 |
+| `npm run lint:tokens` | tools/e2e/ | TOKEN 144, CONTROL **835** tracked | 0 |
+| `npm run lint:docs` | tools/e2e/ | frontmatter parses, budgets hold | 0 |
+
+CONTROL moves **831 -> 835**: four filed findings, four tracked files.
+That is the same mechanism that made the notes' 829 stale, stated here
+with its ref so it cannot repeat. No card's frontmatter broke, no title
+opens with a reserved indicator, no control byte was introduced (swept
+with `perl -0777` over all five files before the commit), and
+`docs/CONVENTIONS.md` is untouched by this seat, so the byte budget is
+where the section above left it.
+
+**One more finding, found while auditing the notes' own figures:**
+`T-092-s7` — the notes derive their gate list from `5887cd4..HEAD` and
+label it *"the RANGE RULE's executor pair"*, but `<main>..HEAD` before
+the merge is the pair that rule bans by name; the prescribed right-hand
+endpoint is the merge TREE. Main never moved on this lane
+(`git merge-base --is-ancestor 5887cd4 73d7870` exits 0), so the two
+forms are **byte-identical under `cmp`** here and every gate fired
+correctly — the right answer by the forbidden route, which is the exact
+failure CONVENTIONS predicts one notation over. Not blocking, and nothing
+downstream is wrong.
+
+**And a second stale figure in the same sentence**, completing the audit
+above: the notes' *"5 paths, 574 insertions, 19 deletions"* is EXACT at
+`2502d16` — the commit that carried the notes — and is **642 insertions**
+at `73d7870`, which appended 68 more lines to this card. The path count
+and the deletions are stable; only the insertion count moved, and it
+moved because the notes' own later commit moved it.
+
+The verdict stands: **APPROVED**.
