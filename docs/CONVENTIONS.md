@@ -1281,9 +1281,32 @@
   substitution COUNT was non-zero. Then restore, and PROVE the
   restoration rather than asserting it: `git show HEAD:<path> | shasum
   -a 256` against the working file, or an empty `git diff -- <path>`.
+  **DRILL AT A COMMIT** (T-072-s1) — commit the work FIRST, then mutate,
+  because **A RESTORE CANNOT TELL ITSELF FROM A REVERT**: both proofs
+  above are satisfied perfectly by a restore that threw away work HEAD
+  never saw. Measured — `git checkout --` on a file whose implementation
+  was still an uncommitted working-tree change reverted it to the branch
+  point; the sha256 matched and `git diff --stat` was empty AT THE MOMENT
+  THE WORK WAS LOST, and the harness echoing the file back is what caught
+  it. Committing first makes both proofs correct by construction, which
+  beats adding a third. The scratch-SNAPSHOT alternative — copy aside,
+  mutate, copy back — works too and needs its OWN proof, `cmp` against
+  the snapshot, because `git show HEAD:` cannot see it.
   RECORD the count and the restoration proof in the notes, the verdict
   or the checkpoint — "133-for-133" is the shape (T-027), "drills run"
   is not.
+  **A COMPARISON IS EVIDENCE ONLY ONCE ITS EXPECTED SIDE IS ASSERTED
+  NON-EMPTY** (poison shape TEN below), and **A COMMAND QUOTED AS PROOF
+  IS SHOWN CAPABLE OF FAILING** (T-078-s11): a diff-based check NAMES ITS
+  RANGE, and a search-based one is run once against a PLANTED HIT before
+  its zero is written down. Worked: `git diff -U0 -- <path>` piped
+  through two greps was offered as the STRONG form of a no-new-character
+  check, and **`git diff` with NO RANGE compares the WORKING TREE to the
+  INDEX** — so on a clean tree, the state at every commit boundary and
+  the only one a reviewer can reproduce, that diff is 0 bytes and the
+  grep says "no matches" whatever the branch added (`5b5e1c7`: exit 0, 0
+  bytes, 0 lines). The claim was TRUE under an explicit range; the
+  evidence offered for it was not evidence.
   **DRILL IN A DETACHED SCRATCH WORKTREE AT A NAMED COMMIT, AND GIVE IT
   ITS OWN `CARGO_TARGET_DIR` INSIDE ITSELF** (T-013-s7 arm (c), taken at
   T-013's merge — the standing advice above CREATES this hazard, and it
@@ -1313,6 +1336,31 @@
   since an interrupted drill leaves the branch dirty and any concurrent
   reader sees mutated source. Detached worktree **plus** its own target
   directory, not either.
+  **AND THE SCRATCH IDENTITY IS DERIVED FROM THE LANE, NEVER CHOSEN**
+  (T-092, measured across FOUR lanes on 2026-08-24/25). Start from the
+  fact every session so far has had backwards: **THE SCRATCH DIRECTORY IS
+  SHARED BETWEEN CONCURRENT SESSIONS** — the session UUID in its path
+  makes it LOOK private and it is not, so expect a sibling's files beside
+  yours exactly as the worktree-list bullet above tells you to expect a
+  sibling's worktrees. Four sessions independently picked the same
+  literal path, `<scratchpad>/drill`, and the same driver name; T-088 and
+  T-090 were saved only by git refusing an existing path, and T-113
+  reproduced it from a third seat. **Naming the WORKTREE per-lane is NOT
+  enough** — T-110 used `drill-T-110` and still had its `drill.py` and
+  `drill-results.json` overwritten by a sibling: the collision simply
+  moved from the directory to the FILES beside it. So DERIVE ONE STEM
+  FROM THE LANE ID, the way `../nputer-T-NNN` already derives the lane
+  worktree from the card, and spend that one stem on the worktree, its
+  `CARGO_TARGET_DIR`, the driver script AND every results file — one
+  stem, every artefact, no exceptions — cut at a SHORT root (`T-133-s5`).
+  **AND THE DRIVER'S GUARD SHALL RECOGNISE ITS OWN DRILL RATHER THAN THE
+  SHARED PREFIX**: three sessions wrote that guard independently and all
+  three guarded the prefix, so it answers *"is this A drill"* and never
+  *"is this MY drill"* — which argues the convention was under-specified,
+  not that the sessions were careless. **A DERIVED PATH IS A CONSTRUCTION
+  AND A FIXED PATH IS THE DEFECT.** Nothing was corrupted in any of the
+  four — every restoration was sha256-proved — but the protection was
+  git's, not the discipline's, and git only ever refuses the DIRECTORY.
   **AND THE APP SUITE NEEDS A BUILD BEFORE IT CAN BE DRILLED.** A fresh
   worktree has no `app/dist`, and the test files that read the shipped
   bundle fail on its absence with a message about the build rather than
@@ -1381,9 +1429,124 @@
   cases up once one inert string was rewritten, with the file still
   passing 58 of 58. It is not vacuous in the poison sense, which is
   exactly why the discipline passed it. SIX HAS NO MECHANICAL REMEDY —
-  the drill has to ASK. Both are DISTINCT from the four already
+  the drill has to ASK. **AND THIS IS WHAT THE ASKING LOOKS LIKE ONCE IT
+  IS ANSWERED** (T-072-s2; it replaces nothing above, it finishes it):
+  do NOT ask "is this a duplicate?" — **name a mutation of the code under
+  test that this body kills, run the WHOLE suite under it, and require
+  the failing-body count to be ONE.** A count of one IS the
+  non-duplication, mechanically; a count above one names the bodies that
+  already cover you, in the reporter's own output. Worked on the file the
+  shape was found in: two mutants each gave **1 failed / 832 passed of
+  833**, naming that body and nothing else. **The honest failure mode is
+  the point** — if no such mutant exists, THAT is the finding, and a
+  reader holding only "the drill has to ASK" has no way to say it. Both
+  are DISTINCT from the four already
   catalogued, which share the one tell these do not: the matcher moved,
   never the value.
+  **THE CATALOGUE IS CLOSED AT ELEVEN AND EVERY ORDINAL IS MINTED HERE**
+  (T-092). Cards CITE these numbers; minting a second one for a shape
+  that already has one is the defect the catalogue exists to prevent.
+  Each entry carries its TELL and whether it has a MECHANICAL REMEDY,
+  because that distinction is what a reader acts on.
+  **SHAPE SEVEN — a mutant NO BODY KILLS, because the mutant set was
+  derived from the PINS rather than from the CRITERIA.** The exact dual
+  of six — six is a body that kills no unique mutant, seven is a mutant
+  no body kills — and seven is worth more, because a redundant body costs
+  nothing and this costs the criterion. TELL: "zero survivors" reported
+  against a mutant set every member of which aims at something a pin
+  already names. NO MECHANICAL REMEDY, but a PROCEDURE: derive the
+  mutants from the acceptance criteria **with the test file closed**, and
+  mutate every clause the pins do not mention — a criterion's PLURAL
+  first, since fixtures that happen to carry ONE of a thing are how this
+  keeps arriving. Named by `T-076`; sighted independently at `T-069-s3`
+  (corroborated from a second seat at `T-102`), `T-073-s4`, `T-077` and
+  `T-080`, each carrying its own measurement. DERIVE THE SIGHTING COUNT
+  AT YOUR OWN REF — `git grep -il "shape seven" -- docs/` from the repo
+  root — it grows at every triage and a tally here is a line number in
+  disguise.
+  **SHAPE EIGHT — an assertion that SEARCHES a corpus has no uniqueness
+  floor, so one duplicate anywhere in the corpus keeps it green with its
+  own subject deleted.** `String::contains`, `toContain` and
+  `.includes()` are satisfied by ANY occurrence anywhere, and a haystack
+  that is a whole file is one anybody may add to. TELL: the assertion
+  pins *that the string exists somewhere in the file* while every reader
+  — the pinned constant's own doc comment included — takes it to pin *the
+  sentence*. THE DRILL THAT SHOWS IT (T-092, with the predicate modelled
+  exactly): rewriting the pinned sentence alone FAILS, so the pin looks
+  fine; plant a second copy FIRST and then rewrite the sentence and it
+  **PASSES** — green with its subject deleted. **The likeliest author of
+  that second copy is documentation ABOUT the pin**, which is why the
+  live-readers paragraph above writes `currently v<METHOD_SNAPSHOT_VERSION>`
+  with a placeholder rather than the literal. Distinct from ONE-to-FOUR
+  (the matcher moved and the value stayed; here nothing moved), from FIVE
+  (there the assertion SET lost a member, here the HAYSTACK gained one)
+  and from SIX (this body DOES kill a unique mutant, right up until a
+  duplicate appears somewhere it never looks). MECHANICAL REMEDY: YES,
+  which puts eight beside five — **NARROW THE HAYSTACK** to the line or
+  section actually pinned, picking it out with an ANCHOR that is not the
+  needle, and assert the ANCHOR's own uniqueness so it cannot quietly
+  widen back into a whole-file search. A bare occurrence count
+  (`… .count() == 1`) reds the same drill and is the cheaper half, but
+  **it is a number with no keeper**: nothing in it says WHICH occurrence
+  is the subject, so the first legitimate second copy reds it and the
+  cheapest repair is to bump the 1 to a 2 — after which any two
+  occurrences anywhere satisfy it, including zero in the right place.
+  Prefer the anchor; reach for the count only where no anchor exists, and
+  say which you chose. Worked twice:
+  `snapshot_version_matches_the_live_method_stamps` (kit.rs), and
+  `the_only_production_path_to_the_transcript_is_the_bounded_one`
+  (agent/mod.rs), which cuts the file to its production half so the pin
+  cannot find its own test module's literals — the remedy applied before
+  the shape had a number.
+  **SHAPE NINE — a mutation that MOVES a generated row between families
+  leaves the cardinality invariant, so a COUNT floor is blind to it.**
+  **The ordinal is RATIFIED here, not minted**: `T-080` and `T-083`
+  already call it nine in landed text and `T-095` carries the shape, so
+  giving nine to anything else would have made three citations wrong.
+  TELL: it is an argument against FIVE's own remedy — a cardinality floor
+  answers DELETION and says nothing about reclassification; the row
+  migrates between families and the rungs net out, so "at least N checks"
+  passes at every N (`T-080`, `T-095` §TWO carry the measurement).
+  MECHANICAL REMEDY: YES, but a CONTENT floor rather than a count, and
+  DERIVED FROM THE TREE rather than from a hand-written class list, or it
+  goes stale the day a real new asset format arrives.
+  **SHAPE TEN — an empty comparison reports AGREEMENT.** The producer
+  fails, both sides come back empty, and `cmp` calls it a match: a green
+  built out of two failures. TELL: a comparison nothing proved had
+  anything on either side of it. Two sightings hours apart in one lane
+  (`T-083-s3`) — a `git merge-tree --write-tree` that exited 1 where a
+  tree OID was expected, and a comparison loop that word-splits under
+  `bash` and not under `zsh` printing `BYTE-IDENTICAL (0 paths)`. **TEN
+  IS EIGHT'S OPPOSITE END AND THEY ARE DELIBERATELY NOT FOLDED
+  TOGETHER**: eight is a corpus that GAINED a member and wants an upper
+  floor, ten is a corpus with NO members and wants a lower one, and a
+  duplicate and a failed producer send a reader to different repairs.
+  MECHANICAL REMEDY: YES, one line, and the drill bullet above carries it.
+  **SHAPE ELEVEN — an order assertion whose WITNESS IS BUFFERED dates
+  nothing.** A body claims A precedes B and picks as witness an event
+  whose emission is DEFERRED, so the witness arrives late whatever the
+  code does. Measured (`T-081-s5`): a text-delta witness is COALESCED by
+  `flush_pending`, so the assertion passed under the very batching mutant
+  it was written to detect; the fix was a witness EMITTED rather than
+  buffered — an `Activity` line, which is what the real planner did. TELL,
+  and it is the rule: **when a test asserts A precedes B, ask whether B's
+  arrival time is a property of B or of the TRANSPORT. If the transport
+  can hold B, B cannot date A.** NO MECHANICAL REMEDY — choosing the
+  witness is the judgement; the only mechanical half is to name the
+  witness's emission path in the body, so the next reader can check it
+  without re-deriving the transport.
+- A FIX NAMES ITS CLASS AND ITS SWEEP, OR RECORDS THAT NONE WAS RUN
+  (T-078-s12). A defect found in one place is a defect of a CLASS until
+  somebody looks. T-078's fix session found three of its own, fixed each
+  where it stood, and in two cases left an identical sibling a few lines
+  away — **both inside the subsection that announces the sweep**, and one
+  outlived the branch that fixed the other. Both were one `git grep` from
+  complete. So: NAME the class, run ONE search for it, and record the
+  result **even when it is empty** — an unrecorded sweep and an unrun one
+  are indistinguishable to the next reader, which is "a skipped gate is
+  news" one layer up. **And the sweep is shown capable of failing before
+  its zero is written down** (the POISON DRILL's proof clause), because a
+  search that finds nothing is what a finished job looks like.
 - A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL (T-060-s2, written down
   at T-078). A test that asserts something is REFUSED must first prove
   the fixture would otherwise have been ACCEPTED: a bare "expected

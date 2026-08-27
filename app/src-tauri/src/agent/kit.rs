@@ -307,6 +307,36 @@ mod tests {
             .to_path_buf()
     }
 
+    /// THE ONE LINE A STAMP PIN IS ACTUALLY ABOUT — poison shape EIGHT's
+    /// remedy (CONVENTIONS' catalogue, under POISON DRILL). A `contains`
+    /// over a WHOLE FILE is satisfied by any occurrence anywhere, so one
+    /// duplicate — documentation ABOUT the pin is the likeliest author —
+    /// keeps the assertion green with its own subject deleted. Narrowing
+    /// the haystack is preferred to counting occurrences of it: an ANCHOR
+    /// that is NOT the stamp picks the sentence out, so no number is
+    /// written down that a second legitimate copy could tempt anyone to
+    /// bump; and the anchor's OWN uniqueness is asserted here, so an
+    /// anchor that stops identifying one line fails loudly instead of
+    /// quietly widening back into a whole-file search.
+    fn the_one_line_carrying(haystack: &str, anchor: &str, whose: &str) -> String {
+        let mut hits = haystack.lines().filter(|line| line.contains(anchor));
+        let line = hits
+            .next()
+            .unwrap_or_else(|| {
+                panic!(
+                    "{whose} has no line containing {anchor:?} - the anchor this pin narrows \
+                     on has moved; re-anchor it on the sentence that carries the stamp"
+                )
+            })
+            .to_string();
+        assert!(
+            hits.next().is_none(),
+            "{whose} has more than one line containing {anchor:?} - the anchor no longer \
+             identifies the stamped sentence; pick one that does"
+        );
+        line
+    }
+
     struct TempTree(PathBuf);
     impl TempTree {
         fn new(tag: &str) -> Self {
@@ -433,6 +463,13 @@ mod tests {
 
     /// PARITY (c): the const cross-checks the two live stamps, so bumping
     /// the method without touching this file is red.
+    ///
+    /// Both stamps are pinned on the ONE LINE that carries them, via
+    /// [`the_one_line_carrying`] — never over the whole file. Each
+    /// haystack held exactly one copy of its stamp when this was written,
+    /// so each was one planted duplicate away from passing with its own
+    /// subject deleted, and a method bump is the single commit that edits
+    /// both files at once.
     #[test]
     fn snapshot_version_matches_the_live_method_stamps() {
         let interview = KIT_FILES
@@ -440,16 +477,27 @@ mod tests {
             .find(|f| f.rel == "interview/plan-interview.md")
             .expect("plan-interview rides the kit")
             .content;
+        let output_heading = the_one_line_carrying(
+            interview,
+            "## Output",
+            "the shipped method/interview/plan-interview.md",
+        );
         assert!(
-            interview.contains(&format!("(v{METHOD_SNAPSHOT_VERSION}")),
+            output_heading.contains(&format!("(v{METHOD_SNAPSHOT_VERSION}")),
             "plan-interview.md's Output heading no longer stamps v{METHOD_SNAPSHOT_VERSION} - \
              bump METHOD_SNAPSHOT_VERSION with the method"
         );
         let conventions = fs::read_to_string(repo_root().join("docs/CONVENTIONS.md"))
             .expect("docs/CONVENTIONS.md readable");
+        let version_bump_clause = the_one_line_carrying(
+            &conventions,
+            "formats are version-bumped",
+            "docs/CONVENTIONS.md",
+        );
         assert!(
-            conventions.contains(&format!("currently v{METHOD_SNAPSHOT_VERSION}")),
-            "docs/CONVENTIONS.md no longer says 'currently v{METHOD_SNAPSHOT_VERSION}' - \
+            version_bump_clause.contains(&format!("currently v{METHOD_SNAPSHOT_VERSION}")),
+            "docs/CONVENTIONS.md's first gotcha no longer says \
+             'currently v{METHOD_SNAPSHOT_VERSION}' - \
              bump METHOD_SNAPSHOT_VERSION with the method"
         );
     }
