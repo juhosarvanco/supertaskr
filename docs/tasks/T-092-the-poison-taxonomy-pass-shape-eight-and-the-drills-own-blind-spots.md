@@ -476,3 +476,71 @@ The card requires this distinction to be stated per item.
 - **The brief's byte figures reproduce exactly** — 95,644 at `5887cd4`
   against a 107,967 warn line, 12,323 of headroom. Its account of the
   T-093 landing and of the four-lane collision also reproduces.
+
+### Gates and suites, every exit read from `$?` unpiped
+
+Diff for the executor's own pair, `5887cd4..HEAD` (the RANGE RULE's
+executor pair — never `merge-base..tip`): **5 paths**, 574 insertions,
+19 deletions. `docs/CONVENTIONS.md` and `app/src-tauri/src/agent/kit.rs`
+are the fence; the other three are this card and its two routed
+findings. Nothing outside.
+
+**STANDING GATES, derived from that 5-path diff rather than assumed:**
+
+- **GRAPH REGEN — FIRES.** The diff carries a `*.rs` file outside docs/.
+  Asked rather than predicted:
+  `cargo run -p nputer-index -- index --check --root ../..` **exit 1**,
+  and it is a REAL stale, not the `--root` false red — it prints both
+  sides (`1020023 bytes · 189 files · 2152 symbols · 2111 edges`,
+  identical) plus a `~1` file diff naming
+  `app/src-tauri/src/agent/kit.rs (content, loc 514 -> 562)`. No symbol
+  or edge moved. **NOT REGENERATED HERE:** `docs/architecture/graph.json`
+  is outside this fence and the bullet lands it *with the CHECKPOINT*, so
+  it is the integrator's. Budget while you are there: **1 020 023 of
+  1 040 000 bytes, 98.1%, 19 977 left.**
+- **BOOT GATE — FIRES**, and this role runs it too (T-046 criterion 6):
+  the diff touches `app/src-tauri/**`. Port read at zero rows on BOTH
+  stacks immediately before binding (`lsof -nP -i6TCP:14620` and
+  `-i4TCP:14620`, both exit 1, read 2026-08-27T14:06:13Z on Mac.lan),
+  then `NPUTER_BOOT_PORT=14620 npm run boot:check` from tools/e2e/ →
+  **exit 0**, both lines: `[nputer] project folder:
+  /Users/ujju/Projects/nputer-T-092` and `[nputer] window "main"
+  created`. 14620 released afterwards (zero rows). **The human's app was
+  never touched** — 1420 read only with the one permitted command, held
+  throughout by pid 19746 on `[::1]:1420`, never bind-probed, never
+  connected to.
+- **DOCS GATE — FIRES**, 4 paths under docs/ are code inputs, owing four
+  suites. All four run below. `npm run lint:docs` (the named whole-tree
+  form and CI's step) **exit 0**, including
+  *"governing-document budgets hold"*.
+
+**SUITES** at tip, in the order run:
+
+| command | from | result | exit |
+|---|---|---|---|
+| `cargo test` (baseline, before any edit) | app/src-tauri/ | 518 passed, 18 `test result:` lines | 0 |
+| `npx vitest run` | lib/parser/ | 15 files, **314 passed** | 0 |
+| `npx tsc --noEmit` | lib/parser/ | — | 0 |
+| `npm run build` | app/ | both `tsc` calls + bundle | 0 |
+| `npm test` | app/ | 47 files, **1013 passed** | 0 |
+| `npm test` (`NPUTER_E2E_PORT=14593`) | tools/e2e/ | **233 passed**, workflow-parity 17/17 | 0 |
+| `npm run lint:tokens` | tools/e2e/ | TOKEN 144 files, CONTROL 829 tracked | 0 |
+| `npm run lint:tokens -- --selftest` | tools/e2e/ | 65+4 samples, 87 walk-policy, 9 evidence-floor | 0 |
+| `npm run lint:docs` | tools/e2e/ | budgets hold | 0 |
+| `cargo test` (tip) | app/src-tauri/ | **518 passed**, 18 lines | 0 |
+
+**ARM (c) PROVED RATHER THAN ASSUMED.** After
+`git worktree remove /private/tmp/t092-drill`, bare `cargo test` in the
+lane is **518 passed / exit 0 with zero "no such file" failures** —
+T-013's pollution signature is 33 failures naming a directory that no
+longer exists, and the drill's own `CARGO_TARGET_DIR` is why none
+appeared. The drill worktree is removed; it is one command to re-cut at
+`dc3c5af` with the same derived stem, and the driver is preserved.
+
+**One honest lapse, recorded rather than smoothed:** the FIRST e2e run
+(`NPUTER_E2E_PORT=14592`) had its port read AFTER binding rather than
+immediately before, against `T-132-s6`'s clause. It came back holding
+exactly one row, my own lane's vite (pid 22181, 127.0.0.1:14592), so
+nothing collided — but the reading order was wrong and the rule is about
+the order. The re-run at the final tip (14593) and the boot check (14620)
+were both read at zero rows first.
