@@ -886,3 +886,19 @@ and the deletions are stable; only the insertion count moved, and it
 moved because the notes' own later commit moved it.
 
 The verdict stands: **APPROVED**.
+
+**CORRECTION, recorded rather than smoothed — the section above went
+stale in its own commit.** It says *"CONTROL moves 831 -> 835"* and
+stamps that at `00bb50b`, which is true; but `T-092-s7` landed in the
+SAME commit as the section, so at **`64ed2b6`** the lint reads **CONTROL
+836** — five filed findings, five tracked files. The parenthetical's
+claim was about the four SUITE counts and those held exactly, re-run at
+`64ed2b6`: `cargo test` **518 / 0 in 18 lines**, `npx vitest run`
+**314**, `npm test` from app/ **1013 / 47**, `npm test` from tools/e2e/
+(port 14628, read at zero rows on both stacks) **233**, `lint:docs`
+clean, every exit 0. The CONTROL row is the fifth figure and it moved,
+by the same mechanism that moved the notes' 829 and their 574 — a count
+of the tree, written into the tree, by the commit that changes the tree.
+**836 is stable at this file's own tip**, because this correction adds no
+file. Three instances of one shape in one lane, which is the argument for
+the rule rather than against the lane.
