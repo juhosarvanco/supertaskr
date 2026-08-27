@@ -135,7 +135,7 @@ const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
  */
 const DOC_BUDGETS = Object.freeze({
   "docs/STATE.md": { landed: 6772, warn: 8465, fail: 10158 },
-  "docs/ROADMAP.md": null,
+  "docs/ROADMAP.md": { landed: 8399, warn: 10499, fail: 12599 },
   "docs/ARCHITECTURE.md": null,
   "docs/CONVENTIONS.md": null,
 });
