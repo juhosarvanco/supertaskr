@@ -8,7 +8,7 @@ size: S
 status: suggested
 suggested_by: architect claude-opus-5
 blocked_by: []
-touches: [method/]
+touches: [docs/CONVENTIONS.md]
 ---
 
 **Three instances in one working day, two of them mine.** Each is a
@@ -70,6 +70,14 @@ census results have been entering cards, briefs and STATE unguarded.
    construction to a check. A helper that queries the PARSED model
    cannot be asked for a field the model lacks — it would have failed
    loudly in instance 1 and been impossible in instance 2.
+
+**FENCE CORRECTED 2026-08-27, by T-093's lane.** This card was filed
+`touches: [method/]`. Arms 1 and 2 as argued write the citation bullet in
+`docs/CONVENTIONS.md` — **a lane cut to `method/` cannot write the
+sentence the card is about.** Re-fenced. Arm 3 keeps its own `tools/e2e`
+seat and is deliberately NOT folded in: it only covers queries that go
+through the parsed model, and this card's sharpest instance went through
+`graph.json` directly. See `T-093-s2`.
 
 **Arm 1 is the one that generalises**; arm 3 only covers queries that
 go through the model, and instance 1 went through `graph.json` directly.
