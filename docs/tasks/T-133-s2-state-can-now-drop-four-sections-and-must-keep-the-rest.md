@@ -60,3 +60,17 @@ was built.** A typed lane list is a snapshot of a fact that moves faster
 than the file, and this is the third independent measurement saying so.
 
 Fence: `[docs/STATE.md]`.
+
+closed_by: the ADR-019 phase-3 commit that regenerates docs/STATE.md
+from docs/STATE-template.md (find it with `git log --diff-filter=A --
+docs/STATE-template.md`). This card asked STATE to drop the sections
+`brief.mjs --state` can answer and keep the rest; the phase-3 cutover
+did exactly that — the lane list, fence ledger, board census and slug
+map are now derive-commands pointing at that command, while the
+narrative, the standing hazards and the owed @human looks survive
+(hazards in the compacted STATE, narrative in
+docs/checkpoints/2026-08-27-backfill-STATE.md verbatim). Executed
+directly at @human's direction per docs/rooms/governing-docs.md's
+override; budget gate landed in the same commit at warn 8474 / fail
+10169 over a landed 6779 bytes, poison-drilled with unpiped exits
+(clean 0, poisoned 1, restored 0).

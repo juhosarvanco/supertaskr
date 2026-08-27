@@ -99,6 +99,8 @@
  * It is the SAME package lib/parser depends on, so a block either
  * parses for both or for neither (T-057: one implementation, not two).
  */
+import { statSync } from "node:fs";
+import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import {
   ROOT_ANCHOR_LEDGER,
@@ -118,6 +120,25 @@ import {
 } from "./docs-scan.mjs";
 
 const EXIT = Object.freeze({ CLEAN: 0, FOUND: 1, USAGE: 2, CANNOT_RUN: 3 });
+
+/**
+ * ADR-019: byte budgets for the governing documents. The compaction
+ * TARGETS live in docs/rooms/governing-docs.md (12/24/20/48 KB); the
+ * GATE values here are DERIVED at each document's compaction landing —
+ * warn at landed size × 1.25, fail at landed size × 1.5 — and recorded
+ * by addendum to ADR-019 with the measurement. A null entry is a
+ * document whose compaction has not landed: no check runs, because
+ * nothing may hard-fail until a compacted document exists to measure.
+ * The budget is a tripwire against RELAPSE, not the instrument of the
+ * cut: when it warns, content moves to docs/checkpoints/ or a card —
+ * a hazard is never deleted to fit.
+ */
+const DOC_BUDGETS = Object.freeze({
+  "docs/STATE.md": { landed: 6772, warn: 8465, fail: 10158 },
+  "docs/ROADMAP.md": null,
+  "docs/ARCHITECTURE.md": null,
+  "docs/CONVENTIONS.md": null,
+});
 
 const CENSUS_FLAG = "--census";
 
@@ -313,6 +334,36 @@ function main(argv) {
     found += issues.length;
   } else {
     console.log(`docs-gate: every live task card's frontmatter parses, with a legal status.`);
+  }
+
+  // ADR-019: the governing-document budget tripwire — whole-tree, like
+  // the frontmatter half above. Loud in both directions once a
+  // document's compaction has landed; silent about documents still
+  // awaiting theirs.
+  const gated = Object.entries(DOC_BUDGETS).filter(([, b]) => b !== null);
+  let breaches = 0;
+  for (const [rel, b] of gated) {
+    const size = statSync(path.join(repoRoot, rel)).size;
+    if (size > b.fail) {
+      console.error(
+        `\ndocs-gate: ${rel} is OVER BUDGET — ${size} bytes against its ${b.fail}-byte fail line ` +
+          "(ADR-019: records belong in docs/checkpoints/ and cards, never here; " +
+          "raise the line only by ADR addendum with a measured reason).",
+      );
+      breaches += 1;
+    } else if (size > b.warn) {
+      console.error(
+        `docs-gate: budget WARN — ${rel} is ${size} bytes against its ${b.warn}-byte warn line ` +
+          `(fail at ${b.fail}; ADR-019).`,
+      );
+    }
+  }
+  found += breaches;
+  if (breaches === 0 && gated.length > 0) {
+    console.log(
+      `docs-gate: governing-document budgets hold — ${gated.length} gated, ` +
+        `${Object.keys(DOC_BUDGETS).length - gated.length} awaiting their compaction landing (ADR-019).`,
+    );
   }
 
   return found > 0 ? EXIT.FOUND : EXIT.CLEAN;
