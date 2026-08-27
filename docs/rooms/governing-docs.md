@@ -440,3 +440,14 @@ Records clause states the boundary precisely.
 re-scope is on the record (STATE's Next up and this room §5);
 dispatching it is the architect's. **Phases 3–7 dispatch as fenced
 cards per §5**, each citing this room and ADR-019.
+
+**Override (@human, 2026-08-27, after the ruling):** phases 2–7 are
+executed DIRECTLY by the session that opened this room, at @human's
+explicit direction, one commit per phase — overriding this room's own
+"dispatch as fenced cards" clause. The room's §6 verification
+discipline is self-applied and recorded per commit (traceability,
+gates, keeper drills, suites); provenance for the work is
+`review: self-verified` in TASK-FORMAT's vocabulary, and @human may
+hand the result to the architect session for independent review
+after. The artifact presentation copy is retired as of this ruling —
+the repository is the record.
