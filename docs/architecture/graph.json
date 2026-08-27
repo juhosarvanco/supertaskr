@@ -4551,8 +4551,8 @@
       "id": "f:app/src-tauri/src/agent/kit.rs",
       "path": "app/src-tauri/src/agent/kit.rs",
       "lang": "rust",
-      "hash": "blake3:9cee7de6db5fdb7c4965959c41cbe79fad20cf46e80fdd8c958e177c022e7471",
-      "loc": 514,
+      "hash": "blake3:280c2095777a5d2aaf19f1d12336ed96ebdbbdd609a786c899bfe49113d53ab9",
+      "loc": 562,
       "symbols": [
         {
           "id": "s:app/src-tauri/src/agent/kit.rs#KIT_FILES",
@@ -4691,7 +4691,7 @@
           "exported": false,
           "range": [
             297,
-            514
+            562
           ]
         },
         {

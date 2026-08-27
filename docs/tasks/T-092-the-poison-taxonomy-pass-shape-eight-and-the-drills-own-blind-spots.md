@@ -5,14 +5,14 @@ feature: F-06
 milestone: 4
 priority: 48
 size: M
-status: verifying
+status: done
 blocked_by: []
 touches: [docs/CONVENTIONS.md, app-agent]
 builder: claude-opus-5
-verifier:
+verifier: claude-opus-5
 built_by: claude-opus-5 @T-092 — code dc3c5af; drilled at that commit
-verified_by:
-review:
+verified_by: claude-opus-5
+review: same-model
 ---
 
 Absorbs (seventh triage, 2026-08-24): T-097-s2 — files removed in this commit.
