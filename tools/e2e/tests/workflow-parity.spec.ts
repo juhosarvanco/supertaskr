@@ -335,6 +335,24 @@ const LOCAL_ONLY: { dir: string; cmd: string; why: string }[] = [
       "would red CI on drift the architect is holding open on purpose (T-054).",
   },
   {
+    dir: "app/src-tauri",
+    cmd: "cargo run -p nputer-index -- arch cycles --root ../..",
+    why:
+      "a REGISTRY-ONLY verdict whose red is DESIGNED to stand: the declared " +
+      "C-08 <-> C-09 cycle is held open until T-127-s1, so a CI step would " +
+      "red every run on a ruling deliberately kept open. The ENFORCING copy " +
+      "is cargo test's exact-set cycle census (T-127; documented at ADR-019 " +
+      "phase 5, discharging T-127-s5).",
+  },
+  {
+    dir: "app/src-tauri",
+    cmd: "cargo run -p nputer-index -- arch blast <path|slug> --root ../..",
+    why:
+      "a REPORTER like `arch`: derives dependents from the committed graph " +
+      "at read time and gates nothing (T-135 Half A; documented at ADR-019 " +
+      "phase 5).",
+  },
+  {
     dir: "tools/e2e",
     cmd: "npm run boot:orphan-drill",
     why:
@@ -860,10 +878,11 @@ test("FIXTURE: the shape that IS silent — a command in a bullet with no `run f
 
 test("FIXTURE: a middle dot inside a parenthetical drops every command behind it", () => {
   // The typographic rule's own cost, DERIVED rather than transcribed.
-  // CONVENTIONS states it as a DELTA (three commands) because the
-  // endpoints move whenever the doc gains a command — they were 19 -> 16
-  // when T-054 and T-078 measured it and 21 -> 18 after T-090 added two.
-  // A card that quotes the endpoints goes stale; this asks the parser.
+  // CONVENTIONS states it as a DELTA (five commands since ADR-019 phase
+  // 5 added `arch cycles` and `arch blast` behind the separator; it was
+  // three from T-054 through T-090) because the endpoints move whenever
+  // the doc gains a command. A card that quotes endpoints goes stale;
+  // this asks the parser.
   const md = readConventions();
   const truncated = md.replace(
     "(T-014's\n  GRAPH-CURRENCY GATE, and a CI step since T-054 — exit 0 current, 1",
@@ -875,9 +894,9 @@ test("FIXTURE: a middle dot inside a parenthetical drops every command behind it
     commandBullets(buildAndTestSection(text)).reduce((n, b) => n + b.commands.length, 0);
   const exposed = count(md);
   const afterTruncation = count(truncated);
-  expect(exposed - afterTruncation, "three commands leave CI parity").toBe(3);
-  // WHICH three, by name — a delta of 3 could be any three, and the
-  // three that vanish are the ones BEHIND the separator in that bullet.
+  expect(exposed - afterTruncation, "five commands leave CI parity").toBe(5);
+  // WHICH five, by name — a delta of 5 could be any five, and the
+  // five that vanish are the ones BEHIND the separator in that bullet.
   const names = (text: string): string[] =>
     commandBullets(buildAndTestSection(text)).flatMap((b) => b.commands.map((c) => docKey(b.dir, c)));
   const lost = names(md).filter((k) => !names(truncated).includes(k));
@@ -885,6 +904,8 @@ test("FIXTURE: a middle dot inside a parenthetical drops every command behind it
     "[app/src-tauri] cargo audit",
     "[app/src-tauri] cargo run -p nputer-index -- index --watch --root ../..",
     "[app/src-tauri] cargo run -p nputer-index -- arch --root ../..",
+    "[app/src-tauri] cargo run -p nputer-index -- arch cycles --root ../..",
+    "[app/src-tauri] cargo run -p nputer-index -- arch blast <path|slug> --root ../..",
   ]);
   // And it is LOUD in this direction, which is the half the retracted
   // sentence got right: every command the spec still claims reds by name.

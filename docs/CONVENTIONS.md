@@ -31,8 +31,17 @@
   edges and drift flags, read from the COMMITTED graph — a REPORTER
   rather than a gate, so LOCAL ONLY too; `arch drift --fail-on
   undeclared|unmapped|any` is its gating form and stays unwired while
-  the registry carries live undeclared edges by design). THE `--root` IS
-  LOAD-BEARING on all three: the default root is the CURRENT DIRECTORY,
+  the registry carries live undeclared edges by design) ·
+  `cargo run -p nputer-index -- arch cycles --root ../..` (T-127 —
+  reads the REGISTRY ONLY, so a stale graph cannot redden it; exit 0
+  acyclic, 1 a declared cycle named as a path, 2 called wrong, 3 the
+  registry could not be read; LOCAL ONLY while the declared
+  C-08 <-> C-09 cycle is held open, the ENFORCING copy being
+  `cargo test`'s exact-set census) ·
+  `cargo run -p nputer-index -- arch blast <path|slug> --root ../..`
+  (T-135 — dependents derived from the committed graph at read time, a
+  REPORTER like `arch`, LOCAL ONLY). THE `--root` IS
+  LOAD-BEARING on all five: the default root is the CURRENT DIRECTORY,
   so without it they look for app/src-tauri/docs/architecture/graph.json,
   and `index --check` then exits 1 — a FALSE RED, now reproduced
   deliberately by four sessions running. IT IS NOT DISTINGUISHABLE BY THE
@@ -201,7 +210,12 @@
   bundle; the xvfb boot step covers the dev path — nor
   `cargo run -p nputer-index -- index --watch --root ../..`, which runs
   until stopped, nor `cargo run -p nputer-index -- arch --root ../..`,
-  which reports rather than gates, nor `npm run boot:orphan-drill`
+  which reports rather than gates, nor
+  `cargo run -p nputer-index -- arch cycles --root ../..`, whose red is
+  DESIGNED to stand while the C-08 <-> C-09 ruling is held open (the
+  enforcing copy is `cargo test`'s exact-set census, T-127), nor
+  `cargo run -p nputer-index -- arch blast <path|slug> --root ../..`,
+  which reports like `arch` (T-135), nor `npm run boot:orphan-drill`
   (T-061-s5, ruled here): it opens a window and builds the app, so it
   roughly DOUBLES the boot step's cost, and it deliberately SIGKILLs a
   process mid-boot, which on a shared runner is a different risk profile
@@ -225,11 +239,12 @@
   its own, which is structure and not decoration. THE COST, MEASURED
   TWICE — once in T-054's draft and again at T-078 against this wording:
   putting that separator inside the `index --check` parenthetical drops
-  the section's exposed commands by THREE, taking `cargo audit`,
-  `index --watch` and `arch` with it — 19 to 16 when it was measured, 21
-  to 18 when T-090 re-measured it after adding two commands to the
-  tools/e2e bullet, which is why the figure is stated as a DELTA and the
-  endpoints are left to whoever asks the derivation. AND THE TRUNCATION
+  the section's exposed commands by FIVE, taking `cargo audit`,
+  `index --watch`, `arch`, `arch cycles` and `arch blast` with it — a
+  DELTA re-measured at ADR-019 phase 5 when the last two joined the
+  bullet (it was THREE from T-054 through T-090), which is why the
+  figure is stated as a DELTA and the endpoints are left to whoever
+  asks the derivation. AND THE TRUNCATION
   IS NOT MOSTLY SILENT, which is what tells you how to check your own
   edit: the derivation runs in BOTH directions, so every command the
   SPEC claims and the doc stops exposing reds BY NAME — that mutation
@@ -301,24 +316,15 @@
   suites. Route what you cannot reach.
 - [?] marks an unresolved claim (archaeology convention) — resolve or
   room it; never silently delete.
-- A CITATION NAMES A SYMBOL, NOT A LINE (fourth triage, 2026-08-19).
-  Four of that triage's forty-six findings cited line numbers that no
-  longer resolved — every one drifted DOWNWARD by a later merge into the
-  same file, while the finding's SUBSTANCE reproduced exactly, so the
-  reader's first impression was "this was fixed" when nothing had been.
-  Cite a path plus a FUNCTION, TEST or CONSTANT name: that survives the
-  merges a line number does not, and it is what a reader can search for.
-  Search from the repo ROOT — `git grep` run from a subdirectory silently
-  scopes itself to that subdirectory and returns nothing, which reads
-  like a refutation rather than a miss. Measured, on this file's own
-  `POISON DRILL` bullet: from the ROOT, `git grep -c "POISON DRILL"`
-  finds this file, its cards under docs/tasks and a test under app/test;
-  run from app/, the same search finds the app/ one and NONE of the
-  others. CITE THE SHAPE, NOT THE TALLY — that file count was four when
-  T-078's verifier measured it and five one commit later, when the
-  finding correcting it was itself filed. A hit COUNT is a line number by
-  another name: it drifts under other people's merges, and the mechanism
-  it illustrates never does.
+- A CITATION NAMES A SYMBOL, NOT A LINE (fourth triage, 2026-08-19):
+  line numbers drift downward under later merges while the finding's
+  substance reproduces, so a stale line reads as "this was fixed". Cite
+  a path plus a FUNCTION, TEST or CONSTANT name — what survives merges
+  and what a reader can search for. Search from the repo ROOT:
+  `git grep` run from a subdirectory silently scopes itself there and
+  returns nothing, which reads like a refutation rather than a miss.
+  And CITE THE SHAPE, NOT THE TALLY — a hit count is a line number by
+  another name.
 - This project was planned in a long chat session before the folder
   existed; the chat is NOT the record — if it isn't in this folder,
   it didn't happen (succession rule).
@@ -453,108 +459,42 @@
 
   WHAT THAT MEANS AT A DIFF, which is when the question is always asked:
   a new `.ts` under tools/ is seen by TOKEN and CONTROL and NOT by the
-  graph (tools/ is `.nputerignore`d). **A new `.rs` is seen by CONTROL AND
-  BY THE GRAPH, and it is a CODE INPUT to `cargo test` besides** — which
-  is a correction, dated 2026-08-25 at T-010's merge `d64c673` and made in
-  place rather than quietly (`T-010-s1`). This row read *"A new `.rs` is
-  seen by CONTROL ONLY — the indexer deliberately does not collect Rust
-  (`Lang::Rust` maps to no extension)"* from T-078 until that merge, and
-  both halves are now false: `Lang::for_extension("rs")` returns
-  `Some(Lang::Rust)` and `IndexOptions::default().languages` is
-  `[Ts, Js, Rust]`. **THE AUTHORITY COLUMN NEEDED NOTHING**, which is this
-  bullet's own design working — it already named `Lang::for_extension` and
-  `walk_root`, which is exactly where the change landed, so the SIGNPOST
-  went stale and the gate did not. The second-order effect is nil: GRAPH
-  REGEN cites this row (*"No suffix rule can match the walk"*) and its
-  argument is unaffected, because `.nputerignore` still excludes docs/,
-  tools/ and the indexer's own fixture trees.
-  **THE SAME THING HAPPENED TO THE TOKEN ROW NINETY-NINE MINUTES LATER,
-  WHICH MAKES IT A PATTERN RATHER THAN AN INCIDENT.** *(This clause read
-  "ONE DAY LATER" until T-086 asked `git log -1 --format=%ci` for the two
-  merges it names: `d64c673` is 2026-08-25 02:10:07 and `91398f9` is
-  03:49:24 THE SAME MORNING. AN UNREFED DURATION GOES STALE EXACTLY THE
-  WAY AN UNREFED COUNT DOES — the RANGE RULE bullet below records the
-  identical error about its own "false for weeks" — and one
-  `git log --format=%ci` settles both.)* That row read *"P1–P4"* until
-  T-079's merge `91398f9` added **P6**, the ungated-motion-utility rule
-  (`T-079-s1`, discharged in the checkpoint that merged it). The gap at
-  P5 is deliberate and not an omission: P5 is the CONTROL row's
-  literal-control-byte rule, and a pattern id a checkpoint has already
-  quoted is not reused. **THE AUTHORITY COLUMN NEEDED NOTHING AGAIN** —
-  it names the four walk constants, and P6 moved none of them; it is a
-  pattern applied to the same masked text over the same corpus, which is
-  why the lint stayed green through a change the signpost could not
-  describe. **THREE STALE SIGNPOSTS IN THIS ONE BULLET NOW — the `.rs`
-  row, this row, and the reader sentence below that T-086 retracts —
-  every one caught by the lane that falsified it and NOT ONE by a gate**:
-  a pattern COUNT in this table is a fact with no owner, and the next
-  reader to touch this row should decide whether to keep enumerating at
-  all rather than correct it a third time. The reader sentence below took
-  the STOP-ENUMERATING option and is the worked example of it.
+  graph (tools/ is `.nputerignore`d); a new `.rs` is seen by CONTROL AND
+  BY THE GRAPH, and it is a CODE INPUT to `cargo test` besides (T-010,
+  `T-010-s1`). The AUTHORITY column has survived every change unmoved
+  while this table's enumerations went stale three separate times, each
+  caught by a lane and not one by a gate (`T-010-s1`, `T-079-s1`,
+  T-086's retraction below): a signpost goes stale and the authority
+  does not, which is this bullet's design and ADR-019's Law 2 in one
+  row.
   A new `.md` under docs/ is seen by
   CONTROL, and by the PARSER only if it is a flat `docs/tasks/T-*.md` or
   `docs/architecture/components/C-*.md`. THIS FILE is seen by CONTROL
-  only: the parser never reads it, which is why an edit here cannot move
-  the parser suite. **BUT LIVE READERS SIT OUTSIDE ALL FOUR WALKS AND
-  THIS FILE IS ONE OF THE THINGS THEY READ, SO AN EDIT HERE CAN RED A
-  SUITE NO ROW ABOVE CAN SEE** (T-078-s6, retracted and replaced at
-  T-086). **WHICH READERS IS A DERIVATION, NEVER A SENTENCE**:
+  only — the parser never reads it — **but live readers sit OUTSIDE all
+  four walks and this file is one of the things they read, so an edit
+  here can red a suite no row above can see** (T-078-s6, retracted and
+  replaced at T-086: a reader list cannot be closed by prose, because
+  prose is not what adds the next one). **WHICH READERS IS A
+  DERIVATION, NEVER A SENTENCE**:
   `node tools/e2e/scripts/docs-gate.mjs --census` from the repo root
-  prints every derived reader of every path under docs/ with the suite it
-  sits in, and the SAME gate run on your own diff — the DOCS GATE bullet
-  below carries the one spelling — prints the suites your edit OWES. Run
-  one of them before you hand off, and do not count from this page: this
-  page has already been wrong about it, at every ref anyone checked.
-  **THE SENTENCE HERE USED TO TRANSCRIBE THAT CENSUS AND THEN CLOSE IT —
-  *"TWO LIVE READERS … CLOSED AT TWO"* — AND IT IS RETRACTED** (T-086,
-  absorbing T-081-s6 and T-078-s10). It was FALSE: ask the gate and count
-  the rows it prints for this path. It was also UNFALSIFIABLE AS WRITTEN,
-  because it never said what makes a file a reader, so nobody could check
-  it and nothing did — no test asserted it and none could. **THE READER
-  THAT BROKE IT WAS ADDED BY THE CARD THAT BUILT THE CENSUS**:
-  `tools/e2e/tests/docs-input-gate.spec.ts` reads this file through
-  `conventionsText()`, so the sentence went stale as a direct consequence
-  of building the machinery that could have kept it true. **AND IT WAS
-  PREDICTED IN THE NOTES OF THE LANE THAT WROTE IT**, which is why the
-  remedy is deletion rather than a fourth correction: T-078's executor
-  filed it under WHAT I AM LEAST CONFIDENT ABOUT — *"if a third live
-  reader of this file appears … 'CLOSED AT TWO' [makes] it worse than the
-  open version it replaced"* — while T-078-s6's ask had requested the
-  closed form in as many words (*"so the table's list of non-walk readers
-  is closed rather than open"*). A CARD CAN SPECIFY A DEFECT INTO
-  EXISTENCE AND A FAITHFUL EDITOR WILL BUILD IT, which is the POISON
-  DRILL bullet's own T-057 lesson arriving in prose instead of in a test;
-  and a list of readers cannot be closed by prose at all, because prose
-  is not what adds the next one.
-  TWO MECHANISMS STAY NAMED HERE AS SHAPES AND NEVER AS THE LIST — they
-  are what an edit to this file most often breaks, and the census is what
-  tells you the rest. The E2E lane parses the "Build & test" section —
-  see the CI bullet there — so an edit to a command bullet can red
-  tools/e2e/tests/workflow-parity.spec.ts. And the CARGO suite reads
-  this file off disk on every `cargo test`:
+  prints every derived reader with its suite, and the same gate run on
+  your own diff — the DOCS GATE bullet below carries the one spelling —
+  prints the suites your edit OWES. Run one of them before you hand
+  off; do not count from this page, which has been wrong about it at
+  every ref anyone checked. Two mechanisms stay named as SHAPES: the
+  E2E lane parses the "Build & test" section (an edit to a command
+  bullet can red workflow-parity.spec.ts), and the CARGO suite reads
+  this file off disk on every run —
   `snapshot_version_matches_the_live_method_stamps` in
-  app/src-tauri/src/agent/kit.rs asserts it still carries the
-  `currently v<METHOD_SNAPSHOT_VERSION>` stamp from the FIRST gotcha
-  above, against a Rust `const` in that same file. So the method version
-  in gotcha one is an ENFORCED PIN, not bookkeeping, and bumping it is a
-  commit whose third file is Rust — which is why a
-  `[docs/CONVENTIONS.md, method/]` fence cannot carry a format bump
-  (T-078-s3).
-  AND THE COUNTS ARE PRINTED, NEVER PINNED. `npm run lint:tokens` reports
-  both corpora on every run and no test fixes either number, so they move
-  with the tree: at `e4a5ae7` they are **TOKEN 118 / CONTROL 496**, and
-  the widely-quoted **529** is the count at T-058's merge `7c6c5aa`, 33
-  tracked docs/tasks files ago (46 removed, 13 added, nothing outside
-  docs/tasks — `git diff --no-renames --name-status 7c6c5aa e4a5ae7 --
-  docs/tasks` re-derives that in one second, and the tree checks it:
-  143 − 46 + 13 = 110). DERIVE THE COUNT AT YOUR OWN REF — a figure
-  copied out of a checkpoint is a figure about a different tree, and this
-  one has already been carried one commit too far once: STATE attributes
-  529 to `9b15f7d`, where the tree is actually at 521 because that commit
-  removed the eight discharged suggestion files. **THOSE EIGHT ARE
-  EXACTLY THE GAP** between the range above and `9b15f7d..e4a5ae7`, which
-  is `38 removed` — the number this sentence carried until T-078-s4
-  measured it, derived one commit shy of the ref it was quoted at.
+  app/src-tauri/src/agent/kit.rs asserts the
+  `currently v<METHOD_SNAPSHOT_VERSION>` stamp in the FIRST gotcha
+  above against a Rust `const`, so the method version is an ENFORCED
+  PIN and a `[docs/CONVENTIONS.md, method/]` fence cannot carry a
+  format bump (T-078-s3). AND THE COUNTS ARE PRINTED, NEVER PINNED:
+  `npm run lint:tokens` reports both corpora on every run; DERIVE THE
+  COUNT AT YOUR OWN REF — the transcribed figures this paragraph
+  carried went stale twice before ADR-019's compaction deleted them
+  (T-078-s4).
 - THE RANGE RULE: WHICH TWO COMMITS "THE MERGE'S DIFF" MEANS, AND IT IS
   A DIFFERENT PAIR BEFORE THE MERGE EXISTS (T-083, correcting the single
   notation the two gate bullets below carried from T-046 to `ddcc8bb`).
@@ -851,15 +791,15 @@
     node_modules in any of the three packages, no `lib/parser/dist`, no
     `app/dist`, no `target/`. The fresh-clone ORDER at the top of this
     file covers parser-before-app and stops there. **THE APP'S OWN BUILD
-    IS ALSO ORDER-DEPENDENT, and the suite does not say so**: five app
-    test files read the built bundle off `app/dist`, so `npm test` from
-    app/ on an unbuilt worktree fails **12 of 840 across five files at
-    exit 1** — window-manifest, genesis-mount, map-tasks-lens-dom,
-    shell-harness and interview-harness — every message about a build
-    being stale or absent rather than about the tree. Measured at
-    `4d2f03c` before this lane changed anything; after `npm run build`
-    the same suite is **840/840 at exit 0**. CI never sees it because
-    ci.yml orders app build before app suite; a hand-run lane does.
+    IS ALSO ORDER-DEPENDENT, and the suite does not say so**: several
+    app test files read the built bundle off `app/dist`, so `npm test`
+    from app/ on an unbuilt worktree fails a handful of bodies — every
+    message about a build being stale or absent rather than about the
+    tree — and is whole again after `npm run build`. DERIVE the counts
+    at your own ref: the figures transcribed here went stale under
+    suite growth (12-of-840-in-five when measured at `4d2f03c`). CI
+    never sees it because ci.yml orders app build before app suite; a
+    hand-run lane does.
 - THE MAIN CHECKOUT IS SHARED WITH A HUMAN RUNNING THE APP, AND THE
   PIPELINE HAS KILLED IT THERE (T-052). Nine instances across
   2026-08-16/17 escalating from cosmetic to fatal, plus a tenth on
@@ -869,53 +809,28 @@
   install, the dependency-artifact channel, the checkpoint record and
   the no-scratch-files rule, and leaves every mechanism to the project.
   These are this project's mechanisms.
-  **THE APP'S TWO TRIGGER SETS ARE DIFFERENT SETS, AND THREE CHECKPOINTS
-  TREATED THEM AS ONE.** `tauri dev` rebuilds and RELAUNCHES the binary
-  on a change under `app/src-tauri/**` (a new pid, a new start time);
-  a change under `app/src/**` goes to vite HMR and **the window is never
-  replaced**. Both were measured on 2026-08-24: two merges relaunched the
-  human's app at the `git merge --no-commit` WORKING-TREE WRITE — ten and
-  thirty seconds ahead of the merge commit, so the relaunch precedes the
-  commit an integrator would date it by — and T-101's merge touched only
-  `app/src` and correctly did NOT relaunch, against a dispatch brief that
-  predicted it would. **BOOT GATE'S TRIGGER IS A THIRD SET AND IS NOT
-  EITHER OF THESE**: `app/src-tauri/**`, `app/src/**` or a manifest is
-  the set of diffs that could stop the app BOOTING, not the set that
-  reaches a window already open. Do not derive one from another.
-  **ANCHOR THE PROCESS MATCH OR THE MEASUREMENT LIES.**
-  `ps | grep 'target/debug/nputer'` matches `target/debug/nputer-index`
-  as a SUBSTRING, so an integrator's own graph-gate run reads exactly
-  like a relaunch: a fresh start time on a second `nputer`. Anchor it —
-  `ps -eo pid,lstart,command | awk '$NF=="target/debug/nputer"'` — and
-  note that the anchored and unanchored forms AGREE whenever no index run
-  is in flight, so a quiet moment is not evidence the hazard is absent.
-  One integrator caught this as a near-false-positive in its own relaunch
-  report.
+  **THE APP'S TWO TRIGGER SETS ARE DIFFERENT SETS.** `tauri dev`
+  rebuilds and RELAUNCHES the binary on a change under
+  `app/src-tauri/**`; a change under `app/src/**` goes to vite HMR and
+  the window is never replaced — and the relaunch fires at the
+  WORKING-TREE WRITE, seconds ahead of the commit an integrator would
+  date it by (measured 2026-08-24). BOOT GATE's trigger is a THIRD set
+  (what could stop the app BOOTING, not what reaches an open window);
+  derive none from another.
+  **ANCHOR THE PROCESS MATCH OR THE MEASUREMENT LIES**:
+  `ps | grep 'target/debug/nputer'` matches `nputer-index` as a
+  substring, so an integrator's own graph-gate run reads exactly like a
+  relaunch — anchor with
+  `ps -eo pid,lstart,command | awk '$NF=="target/debug/nputer"'`.
   **THE FRESH INSTALL IS THE ONE CHANNEL THAT CORRUPTS RATHER THAN
-  INTERRUPTS — AND THE CARD'S ACCOUNT OF IT IS HALF REFUTED, MEASURED AT
-  T-052 RATHER THAN REASONED.** `npm ci` REMOVES the package's
-  `node_modules` before rebuilding it, and the human's vite serves out of
-  `app/node_modules` for as long as it runs, which is why T-052's card
-  called this the likelier of two candidate causes of instance 8's death.
-  **A RUNNING VITE SURVIVES IT.** Driven on a scratch port against this
-  repository's own `app/`: the floor (`app/node_modules/vite/package.json`)
-  went ABSENT for twelve consecutive 100 ms samples while the server
-  answered **200 on every one of 51 samples**, same pid and same start
-  time before and after, and a simulated full reload resolved every
-  dependency URL afterwards. Vite serves what it has already transformed
-  out of memory and never re-reads the tree. **SO THE RULE STANDS ON THE
-  WINDOW RATHER THAN ON A KILL**, which is the stronger footing: instance
-  8's cause is recorded as UNDETERMINED between this and "the human
-  quit", and this measurement does not make it determined — it removes
-  the mechanism most people would have assumed. What IS destroyed is the
-  state the NEXT read needs: `node_modules/.vite`, vite's
-  optimized-dependency cache, is deleted and **not recreated**, so a
-  surviving process is serving from memory over a tree that no longer
-  matches it. And `tauri dev` is MORE than vite — the tauri CLI itself
-  lives in `node_modules` and a cargo rebuild runs beside it — so the
-  exposure is wider than what was measured, and nothing here licenses
-  running the install anyway. DERIVE THE FIGURES AGAIN IF YOU NEED THEM;
-  they are a property of a vite version, not of this repository.
+  INTERRUPTS.** `npm ci` removes `app/node_modules` while the human's
+  vite serves out of it. A running vite SURVIVES the removal (measured
+  at T-052: it serves already-transformed modules from memory and never
+  re-reads the tree), but what the NEXT read needs is destroyed —
+  `node_modules/.vite` is deleted and not recreated — and `tauri dev`
+  is more than vite, so nothing licenses running the install beside a
+  live app. The rule stands on the WINDOW, not on a kill; the
+  measurement detail is T-052's card's.
   DETECT AND REFUSE, in the T-046 form: read the
   holder with `lsof -nP -iTCP:<port> -sTCP:LISTEN`, and for 1420 that is
   the ONLY command permitted (see PORT RULE) — **never bind-probe, and
@@ -935,106 +850,47 @@
   app read"**, and the fresh-clone ORDER at the top of this file is where
   that is answered. A docs-only diff is not exempt either — an integrator
   who runs the install order runs the parser build.
-  **A PROBE OR SCRATCH FILE IN THE MAIN CHECKOUT IS A VIOLATION, AND
-  INSTANCE 9 IS THE ARGUMENT FOR SAYING SO.** A `zz-scope-probe.ts`
-  appeared in the main checkout's `app/src-tauri/crates/nputer-index/`
-  and triggered two rebuilds; agents are fenced to worktrees and **which
-  session wrote it is unknown**, which is exactly why the rule has to be
-  written rather than assumed. **A LANE WORKTREE PARKED INSIDE THE TREE
-  IS THE SAME VIOLATION IN A LARGER SHAPE, AND THIS ONE HAS AN AUTHOR** —
-  which is what makes it the better worked example of the two. Three
-  lanes were cut into `tools/` on 2026-08-25 instead of beside the repo
-  root, against the spelling above (`../nputer-T-NNN`, a sibling and
-  never a path inside it) and against `method/lane-protocol.md` rule 3.
-  **THE MECHANISM IS A RELATIVE PATH RESOLVED AGAINST A CWD NOBODY
-  VERIFIED**: `git worktree add ../nputer-T-NNN` typed while the shell
-  sat in `tools/e2e` lands in `tools/`, and it lands there SILENTLY —
-  `git` has no opinion about where a worktree goes. The remedy is equally
-  concrete: **cut worktrees with an ABSOLUTE path, or verify the cwd
-  first.** THE BLAST RADIUS WAS MEASURED RATHER THAN FEARED, and it is
-  the staging surface and nothing else: `tools/` is `.nputerignore`d so
-  the indexer never walks the copies, the token lint's CONTROL corpus is
-  `git ls-files` so untracked copies are invisible to it, and TOKEN's
-  roots are `app/src`, `app/test` and `tools/e2e` rather than `tools/`.
-  What DOES change is that each one shows up as an untracked DIRECTORY in
-  the main checkout's `git status` — so the exclusivity check
-  `T-123-s10` asks every integrator to run now returns several rows
-  instead of one, and a `git add -A` there would stage thousands of
-  files. **NAME YOUR PATHS; never `git add -A` and never `git commit -a`
-  in the main checkout.**
-  Scratch work belongs in a DETACHED sibling worktree with its own name
-  (the POISON DRILL bullet's shape), or outside the repository entirely.
-  IF an unexplained file is found there THEN record it in the checkpoint
-  and LEAVE IT — its provenance is evidence, and deleting it destroys the
-  only copy of the question.
+  **A PROBE OR SCRATCH FILE IN THE MAIN CHECKOUT IS A VIOLATION** (the
+  unexplained `zz-scope-probe.ts` of instance 9 is why the rule is
+  written rather than assumed), **and a lane worktree parked INSIDE the
+  tree is the same violation in a larger shape**:
+  `git worktree add ../nputer-T-NNN` typed while the shell sits in
+  `tools/e2e` lands in `tools/`, silently — git has no opinion about
+  where a worktree goes. Cut worktrees with an ABSOLUTE path, or verify
+  the cwd first. **NAME YOUR PATHS; never `git add -A` and never
+  `git commit -a` in the main checkout** — a parked worktree makes
+  `git add -A` a thousand-file stage. Scratch work belongs in a
+  DETACHED sibling worktree with its own name, or outside the
+  repository entirely; an unexplained file found here is RECORDED in
+  the checkpoint and LEFT — its provenance is evidence, and deleting it
+  destroys the only copy of the question.
   **@HUMAN'S RULING 2026-08-25 — THE SECOND CHECKOUT IS ADOPTED AND THE
-  MECHANISM IS A DETACHED WORKTREE.** The criteria decide which arguments
-  count, so they are quoted rather than summarised: *"It doesn't bother
-  me as a user if the app restarts. The only thing I'm concerned about is
-  if something breaks or if development work suffers."* **The RESTART is
-  therefore not a cost**, and every argument resting on it is void; what
-  survives is the fresh install above (the BREAKAGE channel) and cargo's
-  exclusive lock on `app/src-tauri/target/`, which the app and the
-  pipeline share (the THROUGHPUT channel). Setup, when the tree is quiet:
+  MECHANISM IS A DETACHED WORKTREE.** The criteria, quoted because they
+  decide which arguments count: *"It doesn't bother me as a user if the
+  app restarts. The only thing I'm concerned about is if something
+  breaks or if development work suffers."* The restart is therefore not
+  a cost; what survives is the fresh-install BREAKAGE channel above and
+  cargo's target-dir THROUGHPUT channel, and the detached checkout
+  closes both. Setup, when the tree is quiet:
 
       git worktree add --detach ../nputer-app main
 
-  then the fresh-clone ORDER at the top of this file, inside it. It
-  updates with ONE command, run when the human chooses:
+  then the fresh-clone ORDER at the top of this file, inside it; it
+  updates with one command, when the human chooses:
 
       git -C ../nputer-app checkout --detach main
 
-  No fetch and no pull: `git remote` returns ZERO remotes on this
-  repository, so a clone would need a local-path origin and a second
-  object store while a worktree shares `.git` entirely — that fact is
-  what picks the mechanism, so re-derive it rather than trusting this
-  sentence. **BEING DETACHED IS THE FEATURE**: the app's code cannot move
-  on its own, so the pipeline may merge all night and the running app is
-  untouched; when the human does run the update, vite and `tauri dev`
-  reload exactly as they do today. The second checkout does not stop the
-  app updating, it puts the human in control of WHEN. **THE APP STILL
-  WATCHES MAIN, so the founding demo survives** — it RUNS from
-  `../nputer-app` and OPENS `/Users/ujju/Projects/nputer` as its project;
-  code and watched folder are independent, demonstrated accidentally on
-  2026-08-24 by running the app from the main checkout with an unrelated
-  folder open. **MEASURE BEFORE QUOTING**: the trade is a second
-  `node_modules` set and a second Rust target dir, the target dir dwarfs
-  everything else by an order of magnitude, and free disk is not the
-  constraint on this machine — `du -sh app/src-tauri/target .git` and
-  `df -h /` re-derive it in seconds and the figures move weekly, so no
-  digits are transcribed here. The decisive one is a RELATION rather than
-  a number: solving the cargo contention WITHOUT a second checkout, by
-  giving pipeline runs their own `CARGO_TARGET_DIR`, costs the same
-  target dir either way, so full isolation costs about one `node_modules`
-  set more than the half-measure. **IT IS BUILT, SWITCHED TO AND IN USE
-  SINCE 2026-08-25, AND BOTH PROPERTIES WERE OBSERVED RATHER THAN
-  PREDICTED** — measured from outside the app, read-only, while T-052's
-  own lane ran. The human's app now runs out of it: the binary is
-  `/Users/ujju/Projects/nputer-app/app/src-tauri/target/debug/nputer` and
-  the vite serving 1420 has that checkout's `app/` as its cwd, both read
-  with `lsof -p <pid>` rather than assumed.
-  **THE PINNING WORKS**: the running app sat at the detached commit while
-  `main` advanced past it, so the app carried strictly fewer commits than
-  the integration branch and did not move when main did — which is the
-  whole of "the app's code cannot move on its own", stated as a relation
-  so it stays true. **AND THE THROUGHPUT CHANNEL IS CLOSED**: the main
-  checkout's `app/src-tauri/target/` mtime did not move for the whole of
-  a session in which a lane ran `cargo test` twice and the graph gate
-  once, because three checkouts now hold three target directories and
-  cargo's exclusive lock is no longer contended. **RE-DERIVE BOTH** —
-  `git -C ../nputer-app rev-parse HEAD` against `main`, and the two
-  target mtimes — rather than trusting this paragraph; they are
-  live-environment facts.
-  **THE RULING DEFERRED THE SETUP TO A QUIET TREE AND THE TREE WAS NOT
-  QUIET**, recorded because the caution was a real one and skipping it
-  cost nothing measurable: it was created with five lanes live, and the
-  observed effect is that `git worktree list` now carries TWO detached
-  non-lane entries at once (this one and a lane's transient drill), which
-  is precisely the reading the bullet above already prescribes.
-  **AND IT EXCUSES NOTHING ABOVE**: the human may be
-  on one checkout at any moment, and @human's ruling ratifies every rule
-  in this bullet INDEPENDENTLY of the second checkout for that reason, so
-  they bind whether or not `../nputer-app` exists.
+  **BEING DETACHED IS THE FEATURE** — the app's code cannot move on its
+  own, so the pipeline may merge all night; the app still OPENS
+  `/Users/ujju/Projects/nputer` as its project, so the founding demo
+  survives (code and watched folder are independent). In use since
+  2026-08-25. Whether it exists, where 1420's holder runs from, and the
+  two target-dir mtimes are LIVE-ENVIRONMENT facts — re-derive them
+  (`git -C ../nputer-app rev-parse HEAD`, `lsof -p <pid>`), never quote
+  them. **AND IT EXCUSES NOTHING ABOVE**: @human's ruling ratifies
+  every rule in this bullet INDEPENDENTLY of the second checkout, so
+  they bind whether or not `../nputer-app` exists. The measurement
+  detail lives on T-052's card.
 - DISPATCH FROM THE LAST CHECKPOINT, never from a merge commit
   (T-014-s3, seven-for-seven): cut a task branch from the newest
   `Checkpoint:` commit on main. **READ THE REASON, NOT ONLY THE
@@ -1323,11 +1179,10 @@
   **AND THE APP SUITE NEEDS A BUILD BEFORE IT CAN BE DRILLED.** A fresh
   worktree has no `app/dist`, and the test files that read the shipped
   bundle fail on its absence with a message about the build rather than
-  about the tree — **SIX files since T-013 added
-  `map-t1-t2-dom.test.tsx`, where the LANE PROTOCOL bullet below still
-  says five** (measured at T-013's merge: 14 failures across 6 files on
-  an unbuilt drill, 924/924 after `npm run build`). Build first, then
-  baseline, then mutate. IF a body cannot be poisoned — it asserts a constant, or every
+  about the tree — DERIVE the file count at your own ref: the two
+  denominators this file used to transcribe disagreed with each other
+  until ADR-019's compaction replaced both with this sentence. Build
+  first, then baseline, then mutate. IF a body cannot be poisoned — it asserts a constant, or every
   mutation is one the test already makes — THEN say so and name it,
   because a body that cannot red is the finding. WHY: an assertion that
   cannot fail is indistinguishable from one that passes, and this
@@ -1392,60 +1247,32 @@
   the drill has to ASK. Both are DISTINCT from the four already
   catalogued, which share the one tell these do not: the matcher moved,
   never the value.
-- A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL (T-060-s1's sibling
-  T-060-s2, written down here at T-078 — the INSTANCE was fixed on
-  T-060's branch and the RULE was written in neither this file nor
-  method/ — a grep of both for it returned zero hits three triages later,
-  which is how a rule goes unwritten while everyone believes it exists;
-  ARCHITECTURE describes the GUARD, never how to test one). A test
-  that asserts something is REFUSED must first prove the fixture would
-  otherwise have been ACCEPTED; otherwise it cannot tell refusal from
-  absence. Measured: `assert_eq!(which_in("relbin", adapter), None)` —
-  T-060's criterion that a relative PATH element yields no candidate —
-  passed with the pre-T-060 VULNERABILITY restored, because
-  `relbin/claude` did not exist relative to the test process's working
-  directory and both implementations refused it for different reasons.
-  COUNTING THE ASSERTIONS WOULD NOT HAVE SHOWN IT; ONLY MUTATING THE
-  PRODUCER DID. A bare "expected nothing, got nothing" is satisfied
-  equally by refused-for-the-right-reason, refused-for-the-wrong-reason
-  and there-was-nothing-there, and only the first is the property. For a
-  PATH-SHAPED fixture the control has to be BUILT the way the producer
-  builds it, not merely written to look similar — the fixed body in
-  `app/src-tauri/src/agent/runner.rs` plants the file under the test's
-  own working directory, asserts the ABSOLUTE spelling resolves, and only
-  then asserts every relative spelling does not. ITS SIBLING FROM THE
-  OTHER DIRECTION, oral tradition until this bullet and stated here so a
-  reader meets both: A TEST PARAMETRISED BY THE CONSTANT IT CHECKS CANNOT
-  PIN THAT CONSTANT (T-063 — every deadline assertion advanced the clock
-  BY `STARTUP_DEADLINE_MS`, so the whole family stayed green at
-  `8_000_000`; one test now pins the literal and is the only thing that
-  reds). One lesson, two faces: an assertion that moves with the thing it
-  is checking is checking nothing.
-- LIFTING A SAFETY GUARD TO DISCRIMINATE (T-060-s1, written down here at
-  T-078 for the same reason — instance fixed, rule absent). A guard test
-  needs a discriminating half or "refused" could just mean the fixture
-  was broken; but the discriminating half of a SAFETY guard is by
-  construction a deliberate REMOVAL of the safety, executed in the same
-  process as every other test, with whatever ambient environment the
-  developer has. THE STRONGER THE GUARD, THE MORE DANGEROUS ITS OWN
-  DISCRIMINATOR. So, both of these, not either: the LIFTED arm SHALL be
-  proven to TERMINATE IN A FIXTURE — pointed at one, not merely started
-  at one — and the body SHALL assert the guard's STATE before it
-  exercises anything. Measured: T-060's first draft of
-  `the_configuration_that_reached_the_real_cli_now_resolves_to_typed_not_found`
-  lifted the guard while `$SHELL` was still the FAILING fixture, so
-  resolution did what it is designed to do — fell through to the
-  developer's own `PATH`, found the real CLI and executed it, inside the
-  test written to prove that cannot happen. Both halves closed it: the
-  lifted arm's shell now SUCCEEDS at `command -v` and names a planted
-  binary, so the whole resolve stays inside the temp tree; and a
-  pre-flight `real_cli_arms_forbidden()` assert fails harmlessly when the
-  guard is already broken instead of two statements later on somebody's
-  real machine — which is also what makes such a body safe to POISON
-  DRILL at all. It applies to every guard this project has — the ACL pin,
-  the containment rules, the session-id character class, the cleared
-  environment — and most are safe only because their lifted behaviour
-  touches fixtures. That is a property to CHECK, never to assume.
+- A NEGATIVE ASSERTION NEEDS A POSITIVE CONTROL (T-060-s2, written down
+  at T-078). A test that asserts something is REFUSED must first prove
+  the fixture would otherwise have been ACCEPTED: a bare "expected
+  nothing, got nothing" is satisfied equally by
+  refused-for-the-right-reason, refused-for-the-wrong-reason and
+  there-was-nothing-there, and only the first is the property. For a
+  PATH-SHAPED fixture the control is BUILT the way the producer builds
+  it, not written to look similar — the fixed body in
+  `app/src-tauri/src/agent/runner.rs` is the worked example. ITS
+  SIBLING FROM THE OTHER DIRECTION: A TEST PARAMETRISED BY THE CONSTANT
+  IT CHECKS CANNOT PIN THAT CONSTANT (T-063 — the deadline family
+  stayed green at `8_000_000`; one test now pins the literal). One
+  lesson, two faces: an assertion that moves with the thing it is
+  checking is checking nothing.
+- LIFTING A SAFETY GUARD TO DISCRIMINATE (T-060-s1, written down at
+  T-078). A guard test needs a discriminating half, but the
+  discriminating half of a SAFETY guard is by construction a deliberate
+  removal of the safety — THE STRONGER THE GUARD, THE MORE DANGEROUS
+  ITS OWN DISCRIMINATOR. Both of these, not either: the LIFTED arm
+  SHALL be proven to TERMINATE IN A FIXTURE — pointed at one, not
+  merely started at one — and the body SHALL assert the guard's STATE
+  before it exercises anything (T-060's first draft executed the
+  developer's REAL CLI inside the very test written to prove that
+  cannot happen; both halves closed it). It applies to every guard this
+  project has, and most are safe only because their lifted behaviour
+  touches fixtures — a property to CHECK, never to assume.
 - THE E2E LANE'S HONEST SCOPE (T-049-s1, recorded rather than coded —
   arms 1 and 2 below stay available and were deliberately not taken):
   tools/e2e covers what a BROWSER can reach, and Tauri-gated

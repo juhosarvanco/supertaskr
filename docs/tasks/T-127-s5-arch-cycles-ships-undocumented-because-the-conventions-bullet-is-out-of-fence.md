@@ -55,3 +55,12 @@ before dispatch rather than trusting this sentence.
 Absorbs (eleventh triage, 2026-08-26): T-133-s1 — files removed in this
 commit. Same defect seen from more than one side; this file is the
 survivor because it carries the measurement or the general fix.
+
+closed_by: the ADR-019 phase-5 commit that adds `arch cycles` and
+`arch blast` to the app/src-tauri command bullet with the exit legend
+this card specifies (commas inside the parenthetical, middle dots
+between commands, per the CI bullet's own typographic rule) and the
+matching LOCAL_ONLY entries in workflow-parity.spec.ts — find it with
+`git log -S "arch cycles --root" -- docs/CONVENTIONS.md`. Executed
+directly at @human's direction per docs/rooms/governing-docs.md's
+override.

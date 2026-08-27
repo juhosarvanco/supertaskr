@@ -137,7 +137,7 @@ const DOC_BUDGETS = Object.freeze({
   "docs/STATE.md": { landed: 6772, warn: 8465, fail: 10158 },
   "docs/ROADMAP.md": { landed: 8399, warn: 10499, fail: 12599 },
   "docs/ARCHITECTURE.md": null,
-  "docs/CONVENTIONS.md": null,
+  "docs/CONVENTIONS.md": { landed: 86373, warn: 107967, fail: 129560 },
 });
 
 const CENSUS_FLAG = "--census";
@@ -340,7 +340,9 @@ function main(argv) {
   // the frontmatter half above. Loud in both directions once a
   // document's compaction has landed; silent about documents still
   // awaiting theirs.
-  const gated = Object.entries(DOC_BUDGETS).filter(([, b]) => b !== null);
+  const gated = /** @type {[string, { landed: number, warn: number, fail: number }][]} */ (
+    Object.entries(DOC_BUDGETS).filter(([, b]) => b !== null)
+  );
   let breaches = 0;
   for (const [rel, b] of gated) {
     const size = statSync(path.join(repoRoot, rel)).size;
