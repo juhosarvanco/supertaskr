@@ -50,8 +50,10 @@ never deleted to fit.
 Hooks written 2026-08-27; derive each card's status and fence with
 `brief.mjs --task` at dispatch, never from this list.
 
-1. ADR-019 phases 3–7 — in flight directly this session, per the
-   room's @human override.
+1. ADR-019 phases 2–7 COMPLETE (record:
+   docs/checkpoints/2026-08-27-adr019-compaction.md; gate values in
+   ADR-019's addendum). T-092 and T-093 continue as ordinary cards at
+   CONVENTIONS' seat.
 2. `T-135` Half B — @human's look owed on its §6/§7; owns ADR-018.
    Must NOT be re-dispatched whole: Half A is on main, criteria 1–3
    discharged.
@@ -119,7 +121,8 @@ Hooks written 2026-08-27; derive each card's status and fence with
 
 - docs/checkpoints/ — one append-only record per integration
   (TEMPLATE.md sits there; ADR-019 forbids any suite, gate or
-  generator from depending on the directory's contents).
+  generator from depending on the directory's contents). The current
+  record is 2026-08-27-adr019-compaction.md.
 - docs/rooms/governing-docs.md and ADR-019 — this file's contract and
   the ruling behind it.
 - The pre-compaction STATE, all 1,125 lines of it:

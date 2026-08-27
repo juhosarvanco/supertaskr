@@ -74,3 +74,26 @@ four documents, plus docs/CAPABILITIES.md when T-138-s1 lands it.
 
 Amends the practiced T-101 precedent as scoped above. Does not amend
 ADR-001..017.
+
+## Addendum (2026-08-27, at the compaction run's close)
+
+Gate values derived at each landing, per §Budgets, measured with
+`wc -c` and enforced in docs-gate.mjs's DOC_BUDGETS:
+
+    document             landed     warn      fail    target   note
+    docs/STATE.md         6,772     8,465    10,158   12,288   under
+    docs/ROADMAP.md       8,399    10,499    12,599   24,576   under
+    docs/ARCHITECTURE.md  8,525    10,657    12,788   20,480   under
+    docs/CONVENTIONS.md  86,373   107,967   129,560   49,152   OVER
+
+CONVENTIONS' target is unreachable today for a measured reason: ~59 KB
+of the document is spec-kept or card-owned (the run's checkpoint
+record itemises it). The floor drops when T-092/T-093 land and when
+the four dispatch-brief bullets' lane spellings move to one structured
+source; the target stands as the aim for that day, these gate values
+the tripwire until then. Sub-question 3's "move the unguarded
+scoreboard narrative" half proved VOID by measurement — the scoreboard
+is spec-kept by range-rule's own CHECK_IDS — so the RANGE RULE bullet
+stayed whole, which the ruling's primary clause already required.
+
+Record of execution: docs/checkpoints/2026-08-27-adr019-compaction.md.

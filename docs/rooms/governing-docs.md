@@ -451,3 +451,19 @@ gates, keeper drills, suites); provenance for the work is
 hand the result to the architect session for independent review
 after. The artifact presentation copy is retired as of this ruling —
 the repository is the record.
+
+## Execution record (2026-08-27, the same day)
+
+Phases 2–7 executed and committed per the override above — `43560f5`,
+`08aef1c`, `b17ecb6`, `a6491e6`, `925a814`, `06c35a9`. The four
+documents went 382,136 → 110,069 bytes (a 71% cut); the read-first set
+is 128,202 bytes with docs/CAPABILITIES.md gained; the method carries
+docs-protocol.md at v0.1.7, so every future genesis inherits the
+contract. The full instance record — including the corrections the run
+made in both directions, and the two premises this room itself got
+wrong (sub-question 3's scoreboard is spec-kept; "read by no suite" is
+achievable as no-dependency, not no-walk) — is
+docs/checkpoints/2026-08-27-adr019-compaction.md; the derived gate
+values are ADR-019's addendum. Nothing remains from §5: the phases are
+complete, and T-092/T-093 continue as ordinary cards at CONVENTIONS'
+seat.
