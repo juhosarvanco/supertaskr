@@ -5,22 +5,15 @@ feature: F-06
 milestone: 4
 priority: 49
 size: S
-status: building
+status: done
 blocked_by: []
 touches: [docs/CONVENTIONS.md]
 builder: claude-opus-5
 verifier:
-built_by:
+built_by: claude-opus-5 @T-093
 verified_by:
-review:
+review: self-verified
 ---
-
-> **DRAFTER'S NOTE — remove before landing.** I hit the anchor finding's
-> own class while verifying a DIFFERENT card in this batch, in a third
-> way nobody has recorded: a hard-wrapped sentence is invisible to a
-> grep for the phrase it contains. It is measured below and it belongs
-> in this card, because it is the cheapest of the three and the one
-> every session in this repository meets weekly.
 
 Absorbs: T-077-s3, T-080-s3, T-082-s3, T-084-s4, T-074-s4 (sixth
 triage, 2026-08-20). All five files removed in this commit.
@@ -67,7 +60,17 @@ NOTHING while that exact sentence is live in the CI bullet — it breaks
 after *"It is silent"*. `grep -n "silent in exactly"` finds it. **A
 phrase search over a wrapped document is a search for a line break you
 did not choose**, and every governing document in this repository is
-wrapped.
+wrapped. **It is the cheapest of the three causes and the one every
+session in this repository meets weekly** — which is the whole reason it
+travelled on a drafter's note rather than waiting for a later card. That
+note's content is now in this paragraph and the note is deleted, per its
+own instruction (T-093's executor, 2026-08-27). **AND THE TWO NEEDLES
+ABOVE NO LONGER REPRODUCE**: at `bc2d82a` the CI bullet's sentence
+breaks one word EARLIER than it did at `4d2f03c`, so the short needle
+this paragraph recommends now returns nothing too, and only a two-word
+head still finds it. ADR-019's compaction reflowed the line. The
+MECHANISM is intact and the NEEDLE was never the finding — which is why
+CONVENTIONS states the wrap and refuses to print a needle.
 
 **Recorded rather than proposed** (T-077-s3's own second observation):
 in some harnesses `grep` resolves to a SHELL FUNCTION rather than to
@@ -220,3 +223,207 @@ poisoned records that it cannot, per the drill. IF any body is added
 THEN the full drill applies: one side only, mutated text read back
 before the run, restore proved by sha256 at the drill's own commit.
 @human: none.
+
+## Implementation notes (executor claude-opus-5 @T-093, lane `task/T-093-lane`, base `bc2d82a`)
+
+**Diff: one file, `docs/CONVENTIONS.md`, +129 lines / +8,830 bytes,
+86,718 -> 95,548.** Four insertions, no deletions, no test body — the
+fence is `[docs/CONVENTIONS.md]` and a test body would be
+`tools/e2e/**`.
+
+**WHERE EACH PIECE WENT, AND WHY THERE.** The lane/hand distinction is
+stated in exactly ONE place in this document — the PORT RULE's *"The
+rule above governs the LANE's tooling, which is why this is stated
+separately — it governs the hand."* That sentence is now labelled
+load-bearing and made a two-way pointer, so the hand's rules are
+findable from either end instead of scattered among tooling bullets.
+
+1. **The citation bullet** (`A CITATION NAMES A SYMBOL, NOT A LINE`)
+   gains: its own identification as one of the two hand rules; A MISS IS
+   NOT A REFUTATION with the three causes numbered ONE/TWO/THREE by
+   MECHANISM; what to run next for each; the `file --mime` correction
+   with the C0 set cited to `scanControlSource`; and the
+   cite-the-assertion habit with the expensive gate refused in writing.
+   The bullet's OPENER and FIRST SENTENCE are untouched on purpose —
+   `namedDisciplines` (dispatch-brief.mjs) reads exactly those two, so
+   the brief's discipline row is byte-identical to before.
+2. **The PORT RULE bullet** gains the backtick rule beside the hand
+   clause, and the `lsof`-is-the-authority correction, which is about
+   that bullet's own command.
+3. **The tools/e2e commands bullet** gains the lane's write hazard,
+   naming the spec BODY that owns the seven-file list rather than the
+   list.
+4. **The RANGE RULE bullet** gains the forecast-delta clause (the
+   card's seventh-triage hazard 5), with no figures in it — the
+   endpoints are exactly what that clause says not to transcribe.
+
+### Acceptance criteria
+
+- **Every known cause of a false empty, by mechanism** — MET. Three,
+  numbered, each a mechanism and none a tool's message. The bullet
+  states explicitly that a fourth joins the list rather than replacing
+  it.
+- **What to run next, not relying on `Binary file … matches`** — MET.
+  `file(1)` then `npm run lint:tokens` for the byte; a shorter needle or
+  the collapsed text for the wrap; the root for the scope. The clause
+  says in as many words not to wait for that message.
+- **`file --mime` corrected WHEREVER it is written; C0 set cited** — MET
+  in fence, and the "wherever" turned out to be NOWHERE ELSE. Measured
+  at `bc2d82a`: `git grep -i charset -- method/ docs/CONVENTIONS.md
+  docs/STATE.md docs/ARCHITECTURE.md docs/ROADMAP.md docs/decisions/`
+  returns zero hits (positive control: the same needle over `docs/`
+  returns eight task cards). The rule lived only in session briefs,
+  which are not in the repository, and in historical card records, which
+  ADR-019 makes append-only. Nothing mechanical propagates it —
+  `dispatch-brief.mjs` has no `--mime` site — so CONVENTIONS is now its
+  only standing copy rather than one of several.
+- **Backtick rule, one sentence beside the hand clause** — MET. Rule
+  first, mechanism and the measured cost after it.
+- **tools/e2e bullet carries the write hazard, seven NOT listed** — MET.
+  It names `token-scan.spec.ts`'s *"one runtime-built control byte reds
+  all seven first-party roots at exact byte offsets"* and says the list
+  is deliberately not copied.
+- **Cite-the-assertion habit written; expensive gate refused in
+  writing** — MET, both, in the citation bullet.
+- **Every claim carries its ref; every "no matches" run against a
+  planted hit** — MET; the drill below is the account.
+
+### Commands, in order, each exit read from `$?` on an UNPIPED command
+
+    lib/parser  npm ci                              0
+    lib/parser  npm run build                       0
+    tools/e2e   npm ci                              0
+    app         npm install                         0
+    app         npm run build                       0
+    root        node tools/e2e/scripts/docs-gate.mjs --census        0
+    root        node tools/e2e/scripts/docs-gate.mjs docs/CONVENTIONS.md   1 (FIRES, as designed)
+    tools/e2e   npm run lint:tokens                 0
+    app/src-tauri  cargo test                       0   518 passed / 0 failed
+    tools/e2e   NPUTER_E2E_PORT=14763 npm test      0   233 passed / 0 failed
+
+`cargo test` and `npm test` from tools/e2e are exactly the two the DOCS
+GATE names for this path, and `snapshot_version_matches_the_live_method_stamps`
+— CONVENTIONS' Rust reader — is `ok` inside the first.
+
+### Standing gates, DERIVED from the merge's diff (executor pair, RANGE RULE)
+
+`git merge-tree --write-tree main HEAD` exit 0; the diff is **one path**,
+`docs/CONVENTIONS.md`.
+
+- **GRAPH REGEN** — NOT OWED. No `*.ts/*.tsx/*.js/*.jsx` or `*.rs`
+  outside docs/ in a one-path docs-only diff.
+- **BOOT GATE** — NOT OWED. Nothing under `app/src-tauri/**`,
+  `app/src/**`, or either manifest. (And 1420 is HELD: `lsof -nP
+  -iTCP:1420 -sTCP:LISTEN` read 2026-08-27T13:06:42Z on Mac.lan named
+  `node` pid 19746 on `[::1]:1420` — the human's app is up, so the boot
+  check would have needed a scratch port even had it been owed.)
+- **DOCS GATE** — FIRES, and is the only one that does. Both owed
+  commands run and green, above.
+- **POISON DRILL** — no test body added; see below.
+
+### The drill
+
+**NO TEST BODY IS ADDED AND THIS CARD RECORDS THAT IT CANNOT BE
+POISONED IN THE ORDINARY SENSE** — the fence is one markdown file. So
+the drill was run against the KEEPERS that read this file, one side
+only, the DOC mutated and every reader left alone, in a DETACHED scratch
+worktree cut at `bc2d82a` with the edited document copied in. Mutated
+text was read back with `grep` before each run.
+
+| mutant (one side: the doc) | expected | observed |
+|---|---|---|
+| a second `- PORT RULE:` opener planted in the new text | RED | RED — `rawBullet` threw *"has 2 bullets containing \"PORT RULE:\", expected exactly one"*; the tools/e2e keeper stayed GREEN |
+| a second `run from tools/e2e/:` marker planted in the new text | RED | RED — `conventionsBullet` threw naming 2 bullets; the PORT RULE keeper stayed GREEN |
+| the new bullet's headline INVERTED to *"A MISS IS A REFUTATION AND THERE ARE NO CAUSES AT ALL"* | GREEN, i.e. unreadable | GREEN — `parseRangeRule`, `bootGateTrigger`, `graphRegenTrigger`, `parseDocsGateRecipe` and `lint:tokens` all pass over the inverted text |
+
+**Restoration proved, not asserted**: after each mutant the drill copy
+was restored and `shasum -a 256` matched the lane's file exactly
+(`8a87b86da599c0897c16b9b5839e41d0e68c2d4a5c80607bdba7378043032253`
+before the RANGE RULE insert), and the drill worktree carries its own
+root — no `CARGO_TARGET_DIR` was involved because no Rust was compiled.
+The two positive controls this card's own criterion demands were run
+first: `grep -cF` on a string that IS present answers 1 at exit 0 and on
+`zzz-not-present` answers 0 at exit 1, and every bullet-uniqueness probe
+was shown GREEN on the unmutated document before any mutant.
+
+**Mutant 3 is the finding, not a formality.** Inverting the new rule's
+headline to say the opposite of what it says reds NOTHING. Everything
+this card adds is prose with no mechanical reader, which is the exact
+property `T-131` argues about and the reason `T-093-s1` below exists.
+
+### The evidence behind the new text, re-derived at `bc2d82a`
+
+Planted in a detached drill worktree, one byte at a time, into this
+repository's own `docs/CONVENTIONS.md`, restored and proved each time:
+
+- **One 0x00**: `/usr/bin/grep -c` answered **1 at exit 0**, `grep -n`
+  printed `Binary file … matches`, and the shell-function `grep` this
+  harness installs answered **exit 1 with NO output**. `file` said
+  `data`; `file --mime` said `application/octet-stream; charset=binary`.
+  `npm run lint:tokens` printed `docs/CONVENTIONS.md:byte 22048: U+0000
+  [P5: literal control character (invisible to binary-skipping
+  searchers)]` and exited **1**.
+- **One 0x0B**: `file` and `file --mime` were **UNCHANGED**
+  (`text/plain; charset=utf-8`), BOTH greps still found the needle at
+  exit 0, and `lint:tokens` printed `byte 22048: U+000B` and exited 1.
+- **The wrap**: at `bc2d82a`, `silent in` finds the CI bullet's
+  retraction (1 hit, exit 0) and `silent in exactly` returns nothing
+  (0 hits, exit 1).
+
+### Where the card and the brief were wrong
+
+1. **The card's §ONE second cause overstates `/usr/bin/grep`.** It says
+   `grep -c` "produced no output at exit 1 over a file containing the
+   word four times". At `bc2d82a` on this machine the real binary
+   COUNTS the match (1, exit 0) and it is the SHELL FUNCTION that
+   answers exit 1 with no output. The card's own *"Recorded rather than
+   proposed"* paragraph already names that mechanism; the headline just
+   attributes it to the wrong tool. CONVENTIONS now states both answers
+   side by side, because the disagreement is the point.
+2. **The card's §ONE third cause no longer reproduces as written.** It
+   claims `grep -n "silent in exactly"` FINDS the sentence. At `bc2d82a`
+   it does not — ADR-019's compaction reflowed the line and the break
+   moved one word earlier. The mechanism reproduces exactly; the needle
+   does not. Recorded in the body above, and it is why the new
+   CONVENTIONS clause deliberately prints no needle.
+3. **`T-090`'s card carries the same stale remedy** at
+   `docs/tasks/T-090-…md:51` — *"Search for `silent in exactly`, or read
+   the bullet"* — which now finds nothing. Records are append-only under
+   ADR-019, so it is named here rather than edited.
+4. **The brief's "currently 86,718" is right; ADR-019's addendum's
+   86,373 is the LANDED figure, not the current one.** The two differ by
+   345 bytes of post-compaction commits. Neither is wrong; they answer
+   different questions, and the gate reads the `landed` field only for
+   reporting — `warn`/`fail` are what bind.
+5. **The ADR-019 checkpoint record seats this card wrongly.**
+   `docs/checkpoints/2026-08-27-adr019-compaction.md` says *"(POISON
+   DRILL is T-092's seat, RANGE RULE is T-093's)"*. T-093's subject is
+   the CITATION bullet and the hand rules; only its seventh-triage
+   hazard 5 touches the RANGE RULE at all, and that landed as one
+   figure-free paragraph. Append-only record, so it is named here.
+6. **The card's absorbed-files line reads as an instruction and is
+   already discharged.** *"All five files removed in this commit"* — at
+   `bc2d82a` none of T-077-s3, T-080-s3, T-082-s3, T-084-s4 or T-074-s4
+   exists (positive control: 70 other `-sN` files match the same glob).
+   They were removed when the card was filed. Nothing to do, and doing
+   it would have breached the fence.
+
+### The floor, and what this displaces
+
+**It displaces nothing; it adds 8,830 bytes** and the document is now
+**95,548 against a warn of 107,967 and a fail of 129,560** — 12,419
+bytes of headroom to the warn line. The 48 KB TARGET moves further away,
+and that is honest: ADR-019's addendum says the target is unreachable
+while ~59 KB is spec-kept or card-owned, and this card was never a
+deletion card. What it drops is the RESERVATION: CONVENTIONS' citation
+bullet and PORT RULE were being held open pending T-092/T-093, and this
+half of that hold is now discharged. If the file has to shrink, the
+cheapest cut is the four dispatch-brief lane spellings moving to one
+structured source, which the addendum already names.
+
+### Suggestions, filed and let go
+
+- `T-093-s1` — nothing mechanical reads the citation bullet's cause
+  list; mutant 3 above is the measurement. Fence `tools/e2e`.
+- `T-093-s2` — T-093 and T-142 are ONE card, and the recommendation is
+  recorded there for triage rather than taken here.
