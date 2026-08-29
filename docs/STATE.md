@@ -1,9 +1,10 @@
 # State
 
-Updated: 2026-08-29 at the T-153-s5 checkpoint — the clock-restore
-guard asserts a computed toolchain bound (libuv-version-shaped, uv
-stamped per run), and two of main's four carded Linux reds die here.
-Current record: docs/checkpoints/2026-08-29-T-153-s5.md.
+Updated: 2026-08-29 at the T-153-s6 checkpoint — the LAST carded
+Linux red is fixed (the xargs dialect is probed, never assumed), and
+MAIN IS PUSHED from this commit: the run it triggers is the
+repository's first plausible end-to-end green, watched as a first
+run. Current record: docs/checkpoints/2026-08-29-T-153-s6.md.
 Pre-compaction narrative:
 docs/checkpoints/2026-08-27-backfill-STATE.md.
 
@@ -24,8 +25,8 @@ hazard is never deleted to fit.
 
 - LANES: `git worktree list --porcelain | awk '/^branch refs\/heads\/task\//'`
   — a detached entry is NOT a lane — or `brief.mjs --state`. Read at
-  this rewrite: NO lanes — T-153-s6 dispatches next (the last card
-  between main and its green-run attempt). Dispatch writes the fence manifest
+  this rewrite: NO lanes — T-153-s9 and T-140 dispatch next in
+  parallel (fences disjoint). Dispatch writes the fence manifest
   (`brief.mjs --task T-NNN --write-fence <worktree>`); run
   `brief.mjs --task` before ANY dispatch; never read the ledger's
   FREE column as a verdict (the `--state` join misreads suffixed
@@ -49,11 +50,14 @@ hazard is never deleted to fit.
 
 ## Next up — hooks only; statuses are the board's
 
-1. `T-153-s5` is DONE and merged. `T-153-s6` (the xargs-dialect
-   pair) dispatches now — THEN main pushes: its only remaining
-   carded reds are s6's two bodies, so the push should be the FIRST
-   GREEN Linux run. Watch it as a first run regardless. PR runs
-   additionally carry `T-153-s9`'s 29 (the checkout's, not main's).
+1. The T-153 family's critical path is CLOSED (parent, s2, s5, s6
+   all merged) and main is pushed. Overnight queue (@human's ruled
+   order, 2026-08-29 night): `T-153-s9` (the PR-checkout 29 — makes
+   lane CI clean) -> `T-160` (the dispatch preflight; same fence,
+   sequential) with `T-140` in parallel (disjoint) -> `T-157` ->
+   `T-159` -> the FIRST standing triage under T-159's rules -> the
+   CONVENTIONS train (`T-111-s10`, `T-147`) -> `T-143`, `T-156-s1`
+   -> derive T-112's flip pairs (prep only, no dispatch).
 2. `T-157` session economics — six arc datapoints already stamped in
    the records.
 3. `T-159` — method v0.1.8, the metabolism release

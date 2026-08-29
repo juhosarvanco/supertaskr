@@ -5,14 +5,14 @@ feature: F-01
 milestone: 4
 priority: 4
 size: S
-status: verifying
+status: done
 blocked_by: []
 touches: [tools/e2e, docs/CONVENTIONS.md]
 suggested_by: integrator nputer-4e @T-153-s2 checkpoint, CI run 33260414204
 builder: claude-opus-5@subagent
-verifier:
-built_by:
-verified_by:
+verifier: claude-opus-5@subagent
+built_by: claude-opus-5@subagent
+verified_by: claude-opus-5@subagent
 review:
 ---
 
@@ -151,15 +151,18 @@ this card's.
 this tree, `NPUTER_E2E_PORT=14733`, lsof zero rows before binding);
 `npm run typecheck` exit 0; `npm run lint:tokens` exit 0; `npm run
 lint:docs` exit 0 (CONVENTIONS 117399 bytes against a warn of 137928);
-`cargo test` from app/src-tauri/ exit 0, 522 passed, 4 ignored — owed
-because the DOCS GATE fires on this diff and names `cargo test from
-app/src-tauri/` and `npm test from tools/e2e/` for `docs/CONVENTIONS.md`.
+`cargo test` from app/src-tauri/ exit 0, 522 passed, 4 ignored.
+CORRECTED AT MERGE (verdict, correction 2): the gate names FOUR owed
+suites on this diff, not two — the task cards are docs inputs as well
+— and the verifier ran the other pair: lib/parser `npx vitest run`
+314 passed exit 0 (after `npm run build` exit 0), app `npm test` 1013
+passed exit 0 (after `npm run build` exit 0), both at `aadf874`.
 
 ### Drills — one side only, restoration proved
 
 | mutant | side | observed |
 |---|---|---|
-| the matrix's GNU empty-list cell reverted to the pre-fix `**0**` | document | RED on **BSD**: "the DOCS GATE matrix now gives the SAME empty-list code for every dialect (0, 0)". The mutant that shipped is now caught on the platform that cannot observe it |
+| the matrix's GNU empty-list cell rewritten as `**123**, or **0** on an empty list` — the shipped ambiguity in its parseable spelling (the literal pre-fix cell fires the missing-cell arm instead, also red; verdict, correction 1) | document | RED on **BSD**: "the DOCS GATE matrix now gives the SAME empty-list code for every dialect (0, 0)". The mutant that shipped is now caught on the platform that cannot observe it |
 | a third dialect on PATH (runs on empty like GNU, maps nonzero to 99 like neither) | environment | RED in BOTH bodies, naming the observations and refusing to pick a branch |
 | the spec's `gnu` expectation collapsed to `code: 0` | spec | RED on BSD at the two-sided pin ("the codes differ"), before any measurement is taken |
 | a GNU-dialect `xargs` shim ahead of PATH, no repo file touched | environment | GREEN, 67/67, taking the gnu branch and comparing the gnu column |
