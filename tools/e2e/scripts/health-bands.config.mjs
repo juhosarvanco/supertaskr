@@ -186,12 +186,12 @@ export const STANDING_BANDS = [
       marker: "the list reporter's `N passed (Xs)` summary",
     },
     measured: {
-      at: "353bcd8 on task/T-156-health-bands, macOS, NPUTER_E2E_PORT=14538, 278 passed in 2.6m (156s)",
+      at: "b060f90 on task/T-156-health-bands, macOS, NPUTER_E2E_PORT=14538, 279 passed in 2.6m (156s)",
       reason:
         "NO CLIFF IS KNOWN FOR THIS SUITE, so this band is a RELAPSE tripwire and says so " +
         "rather than pretending to a mechanism — unlike suite/lib-seconds, whose limits are " +
         "an observed gap between two populations. The landed measurement is this lane's own " +
-        "full run, 278 specs at 156 seconds; the multiples are 1.5x and 2.0x, the ratio " +
+        "full run, 279 specs at 156 seconds; the multiples are 1.5x and 2.0x, the ratio " +
         "shape DOC_BUDGETS already uses for warn and fail, chosen because it is the pattern " +
         "this repository tunes by triage. The lane runs `workers: 1, retries: 0` by design, " +
         "so wall time is close to linear in spec count — which means THIS BAND MOVES AT " +

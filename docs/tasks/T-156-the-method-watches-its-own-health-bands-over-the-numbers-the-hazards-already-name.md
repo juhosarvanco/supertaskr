@@ -263,7 +263,7 @@ temp dir and requires exit 3 with the config named.
    own reason: no cliff is known, the multiples are borrowed from
    `DOC_BUDGETS`' warn/fail shape, and wall time is near-linear in spec
    count, so it moves at every suite growth. It is landed on this lane's
-   own run — 278 specs, 156s at `353bcd8` — and is expected to be
+   own run — 279 specs, 156s at `b060f90` — and is expected to be
    re-landed by triage rather than defended.
 4. **No cargo was run in this worktree, on purpose.** A lane's own
    `target/` sits inside the graph walk (`T-153-s3`, `T-111-s10`), so
