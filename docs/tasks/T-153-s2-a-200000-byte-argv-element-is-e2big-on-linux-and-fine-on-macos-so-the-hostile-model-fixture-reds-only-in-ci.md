@@ -83,3 +83,65 @@ falsely, and this one costs the whole turn on one platform only.
 `MAX_ARG_STRLEN` at your own ref rather than quoting this card — it is
 `getconf ARG_MAX` for the total and a kernel constant for the element,
 and the two are not the same number.
+
+---
+
+## Implementation notes (executor, lane `task/T-153-s2-e2big-model-bound`)
+
+### Understanding, before any edit
+
+I am building arm (a) plus arm (b)'s comment on the ruled direction: the
+runner must stop handing `execve` a string the kernel cannot take, so the
+hostile-model fixture is refused by THIS PRODUCT'S OWN BOUND on both
+platforms rather than by Linux's `E2BIG` on one, and the outcome stays
+the designed one — a turn that STANDS with the model refused, never a
+`SpawnFailed` that costs the whole turn. Concretely that is three things
+inside `[app-agent]`: a per-element byte bound owned once beside the
+existing validation family in `app/src-tauri/src/agent/adapter.rs` and
+applied at the spawn-assembly site in
+`app/src-tauri/src/agent/runner.rs`, refusing an oversized element by not
+placing it (no coercion, no truncation, no second refusal
+implementation); the `"oversize"` fixture in
+`a_hostile_init_line_model_is_refused_and_a_real_one_round_trips` moved
+under the Linux per-element cap with the derivation written in place; and
+a new body pinning the bound at its boundary WITH a positive control, so
+a refusal is distinguishable from an absence. I derive the cap's nature
+at my own ref and host rather than quoting the card's digits.
+
+### Where the card and the brief are wrong, named plainly
+
+**The model is NOT an argv element, and this repository says so in three
+places.** The card's mechanism section says the fixture's string "becomes
+one `--model <value>` argv element". It does not. `adapter::argv`
+assembles a FIXED template with exactly one substituted slot,
+`SESSION_ID_SLOT`; `--model` appears in `adapter.rs` only inside
+`KNOWN_CLI_FLAGS`, the denylist of shapes a VALUE may not take.
+`validate_model`'s own header states the reason — *"A model name is never
+argv (we never pass `--model` — ADR-003: the user's CLI default IS the
+model)"* — and `sessions.rs`'s `model` field repeats it.
+
+The channel is the child's **ENVIRONMENT**: the test harness's
+`Options.model` becomes the `NPUTER_FAKE_MODEL` pair in
+`RunnerConfig.extra_env`, which `apply_child_env` places on the child.
+`MAX_ARG_STRLEN` bounds each string `execve` copies — argv strings and
+envp strings alike — so the observed `E2BIG` is real and the card's
+DIAGNOSIS holds; only its named channel is wrong. Two consequences the
+card's "Product half" does not survive:
+
+1. **There is no production path where a model reaches `execve` at all.**
+   `extra_env` is a documented TEST SEAM (*"Always empty in production"*).
+   What IS unbounded on the way to `execve` in production is every other
+   child env pair — the `ENV_ALLOWLIST` values forwarded from the
+   parent, and `PATH`, which on the production path is captured from a
+   LOGIN SHELL. That is the real exposure of the card's shape, and it is
+   what the bound now covers.
+2. **The fixture cannot both cross the new bound and keep its own
+   assertion.** Crossing it removes `NPUTER_FAKE_MODEL` from the child
+   entirely, so the fake falls back to its default `fake-model-1` — a
+   legal name that round-trips, and `registry.sessions[0].model == None`
+   would red. So the fixture is moved under the bound (where the hostile
+   value still rides the init line and `MODEL_MAX_LEN` refuses it,
+   portably, which is what arm (b) buys), and the NEW bound is pinned by
+   its own body with the positive control. The brief's "the fixture must
+   still exercise your new bound" is the one instruction the repository
+   refuses; it is recorded rather than worked around.

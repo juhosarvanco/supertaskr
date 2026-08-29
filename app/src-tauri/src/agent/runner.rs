@@ -46,6 +46,7 @@
 //!   it.
 
 use std::collections::VecDeque;
+use std::ffi::OsStr;
 use std::io::{BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -56,7 +57,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use serde::Serialize;
 
 use super::adapter::{
-    is_executable_file, parse_major, validate_model, validate_session_id, AgentAdapter,
+    self, is_executable_file, parse_major, validate_model, validate_session_id, AgentAdapter,
 };
 
 // ---- caps (T-003's cap discipline, §4) --------------------------------
@@ -1106,25 +1107,65 @@ pub const ENV_ALLOWLIST: &[&str] = &[
 pub const ENV_ALLOWLIST_LINUX: &[&str] =
     &["XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME"];
 
+/// Place one environment pair on the child, unless it is too big for
+/// `execve` to carry (T-153-s2).
+///
+/// **AN OVERSIZED PAIR IS DROPPED AND THE TURN STANDS.** That is the
+/// point of the bound rather than a softening of it. Before this, one
+/// absurd value cost the ENTIRE turn on Linux and nothing at all on
+/// macOS: `execve` refuses the whole vector with `E2BIG` over its
+/// per-element cap, the runner sees [`TurnError::SpawnFailed`], and the
+/// user loses a turn that never started — the exact shape the
+/// typed-failure family (T-069/T-101/T-102/T-107/T-113) exists to
+/// prevent, since a failure must never cost an affordance falsely.
+/// Dropping the one pair leaves every other pair, the spawn, the stream
+/// and the turn intact, and the child falls back to whatever it does when
+/// that variable is unset.
+///
+/// **NOT TRUNCATED AND NOT RESHAPED** — the discipline
+/// [`adapter::validate_session_id`] and [`adapter::validate_model`]
+/// already keep: a value that cannot be carried is refused whole. The
+/// line below names the key and the size, because a variable that
+/// silently went missing is what somebody debugs for an afternoon; the
+/// VALUE is never echoed, since being unbounded is the whole complaint
+/// against it.
+fn set_child_env(command: &mut Command, key: &OsStr, value: &OsStr) {
+    if adapter::child_env_pair_fits(key, value) {
+        command.env(key, value);
+        return;
+    }
+    eprintln!(
+        "[nputer] agent: refusing to pass env '{}' to the CLI - it is {} bytes, past the {}-byte per-element bound execve enforces; the turn stands without it",
+        key.to_string_lossy(),
+        value.len(),
+        adapter::SPAWN_ELEMENT_MAX_LEN
+    );
+}
+
 /// Build the child's environment: cleared, then exactly the allowlist,
 /// then the forced `TERM=dumb`, then PATH, then the test seam's extras.
+///
+/// EVERY pair goes through [`set_child_env`], the ones this function
+/// writes itself included: the bound is a property of `execve` and not of
+/// where a value came from, and a rule applied to some pairs is a rule
+/// with a hole in the shape of the next pair somebody adds.
 fn apply_child_env(command: &mut Command, cfg: &RunnerConfig, login_path: Option<&str>) {
     command.env_clear();
     for key in ENV_ALLOWLIST {
         if let Some(value) = std::env::var_os(key) {
-            command.env(key, value);
+            set_child_env(command, OsStr::new(key), &value);
         }
     }
     if cfg!(target_os = "linux") {
         for key in ENV_ALLOWLIST_LINUX {
             if let Some(value) = std::env::var_os(key) {
-                command.env(key, value);
+                set_child_env(command, OsStr::new(key), &value);
             }
         }
     }
     // Forced, not forwarded: a headless child must never think it drives
     // a terminal that can render escape sequences.
-    command.env("TERM", "dumb");
+    set_child_env(command, OsStr::new("TERM"), OsStr::new("dumb"));
     // PATH is the login-shell PATH when we captured one (the criterion's
     // explicit augmentation); otherwise our own, so the child at least
     // has what we had.
@@ -1134,10 +1175,10 @@ fn apply_child_env(command: &mut Command, cfg: &RunnerConfig, login_path: Option
         .or_else(|| login_path.map(str::to_string))
         .or_else(|| std::env::var("PATH").ok());
     if let Some(path) = path {
-        command.env("PATH", path);
+        set_child_env(command, OsStr::new("PATH"), OsStr::new(&path));
     }
     for (key, value) in &cfg.extra_env {
-        command.env(key, value);
+        set_child_env(command, OsStr::new(key), OsStr::new(value));
     }
 }
 
