@@ -1685,9 +1685,74 @@ mod tests {
         apply_picked_folder(state, picked, state.begin_pick().expect("picker free"))
     }
 
-    fn recv_emit(rx: &mpsc::Receiver<DocsSnapshot>) -> DocsSnapshot {
-        rx.recv_timeout(Duration::from_secs(10))
-            .expect("expected a docs-changed emit")
+    /// How long a live body waits for the state it is about — the
+    /// pre-T-153 single-emit budget, now spent on the WHOLE wait.
+    const EMIT_BUDGET: Duration = Duration::from_secs(10);
+
+    /// Wait for the emit whose snapshot satisfies `want`, across however
+    /// many emits the backend delivers, bounded by `EMIT_BUDGET`.
+    ///
+    /// **THE WAIT IS THE ASSERTION.** A state that never converges fails
+    /// here, naming what was awaited and every snapshot seen meanwhile —
+    /// so a body converts `recv_emit` + `assert!(pred)` into
+    /// `recv_until(pred)` without weakening anything, and keeps its OTHER
+    /// assertions to run against the CONVERGED snapshot.
+    ///
+    /// WHY IT REPLACED `recv_emit` (T-153, this repository's first CI
+    /// run, `33246335429`). `recv_emit` returned THE NEXT emit, so every
+    /// live body assumed one write produces one emit. That is an
+    /// FSEvents-coalescing accident, not a property the watcher promises:
+    /// the watcher's contract is that a batch ships the tree AS IT WAS
+    /// COLLECTED, and how many batches one `fs::write` becomes belongs to
+    /// the backend. On inotify the run measured it —
+    /// `a_file_crossing_the_size_line_emits_with_a_skip_not_a_silent_deletion`
+    /// took `seq=3 files=2 skipped=0` for its second emit and failed on
+    /// the CONTENT: `fs::write` is O_TRUNC then write, a batch left over
+    /// from the previous write was collected inside that window, and the
+    /// snapshot carried a b.md that was neither the old bytes nor the new
+    /// ones. The converged emit was still on its way.
+    fn recv_until(
+        rx: &mpsc::Receiver<DocsSnapshot>,
+        awaited: &str,
+        want: impl Fn(&DocsSnapshot) -> bool,
+    ) -> DocsSnapshot {
+        let deadline = std::time::Instant::now() + EMIT_BUDGET;
+        let mut seen: Vec<String> = Vec::new();
+        loop {
+            let left = deadline.saturating_duration_since(std::time::Instant::now());
+            match rx.recv_timeout(left) {
+                Ok(snap) => {
+                    if want(&snap) {
+                        return snap;
+                    }
+                    seen.push(format!(
+                        "seq={} files={} skipped={} truncated={}",
+                        snap.seq,
+                        snap.files.len(),
+                        snap.skipped_total,
+                        snap.truncated
+                    ));
+                }
+                Err(_) => panic!(
+                    "waited {EMIT_BUDGET:?} for a docs-changed emit where {awaited}; \
+                     emits seen meanwhile: [{}]",
+                    seen.join(" | ")
+                ),
+            }
+        }
+    }
+
+    /// Predicate: some collected file's content is EXACTLY `body`. The
+    /// two predicates below are the two spellings the live bodies
+    /// already used, kept apart deliberately — folding an `==` site into
+    /// a `contains` one would weaken it silently.
+    fn content_is(body: &str) -> impl Fn(&DocsSnapshot) -> bool + '_ {
+        move |snap: &DocsSnapshot| snap.files.iter().any(|f| f.content == body)
+    }
+
+    /// Predicate: some collected file's content CONTAINS `fragment`.
+    fn content_has(fragment: &str) -> impl Fn(&DocsSnapshot) -> bool + '_ {
+        move |snap: &DocsSnapshot| snap.files.iter().any(|f| f.content.contains(fragment))
     }
 
     #[test]
@@ -2077,12 +2142,7 @@ mod tests {
         a.write("docs/tasks/T-300-s.md", "startup v2");
         std::thread::sleep(DEBOUNCE * 4);
         a.write("docs/tasks/T-300-s.md", "startup v3");
-        loop {
-            let emit = recv_emit(&emits);
-            if emit.files.iter().any(|f| f.content == "startup v3") {
-                break;
-            }
-        }
+        recv_until(&emits, "the tree carries `startup v3`", content_is("startup v3"));
     }
 
     #[test]
@@ -2104,8 +2164,7 @@ mod tests {
 
         // Watching A: a change there emits.
         a.write("docs/tasks/T-301-a.md", "alpha v2");
-        let first = recv_emit(&emits);
-        assert!(first.files.iter().any(|f| f.content == "alpha v2"));
+        recv_until(&emits, "A's tree carries `alpha v2`", content_is("alpha v2"));
 
         // A failed pick must not disturb the armed watch (criterion c).
         let bare = TempTree::new("rearm-bare");
@@ -2115,8 +2174,7 @@ mod tests {
             PickOutcome::NoDocs { .. }
         ));
         a.write("docs/tasks/T-301-a.md", "alpha v3");
-        let still_a = recv_emit(&emits);
-        assert!(still_a.files.iter().any(|f| f.content == "alpha v3"));
+        let still_a = recv_until(&emits, "A's tree carries `alpha v3`", content_is("alpha v3"));
         assert_eq!(state.project_dir(), Some(canon_a));
 
         // Successful pick: seq continues past everything emitted so far.
@@ -2135,19 +2193,24 @@ mod tests {
         // Watching B now: changes in B emit, stamped with B's dir and a
         // seq newer than the pick snapshot.
         b.write("docs/tasks/T-302-b.md", "beta v2");
-        let from_b = recv_emit(&emits);
+        let from_b = recv_until(&emits, "B's tree carries `beta v2`", content_is("beta v2"));
         assert_eq!(from_b.project_dir, canon_b.display().to_string());
         assert!(from_b.seq > picked.seq);
-        assert!(from_b.files.iter().any(|f| f.content == "beta v2"));
 
         // A change in the OLD project must never surface B's watch: any
         // residual event collects from B and is suppressed by equality.
         a.write("docs/tasks/T-301-a.md", "alpha v4 after switch");
         b.write("docs/tasks/T-302-b.md", "beta v3");
-        let after = recv_emit(&emits);
-        assert_eq!(after.project_dir, canon_b.display().to_string());
-        assert!(after.files.iter().all(|f| !f.content.contains("alpha")));
-        assert!(after.files.iter().any(|f| f.content == "beta v3"));
+        // THE CRITERION IS CHECKED ON EVERY EMIT THE WAIT SEES, not on
+        // whichever one arrives first: "A's change never surfaces on B's
+        // watch" is a claim about the whole window, and a backend that
+        // splits one write into two emits would otherwise let an
+        // unchecked snapshot through the middle of it.
+        recv_until(&emits, "B's tree carries `beta v3`", |snap| {
+            assert_eq!(snap.project_dir, canon_b.display().to_string());
+            assert!(snap.files.iter().all(|f| !f.content.contains("alpha")));
+            snap.files.iter().any(|f| f.content == "beta v3")
+        });
     }
 
     #[test]
@@ -2163,7 +2226,7 @@ mod tests {
         assert_eq!(picked.files.len(), 1);
 
         a.write("docs/two.md", "two");
-        let emit = recv_emit(&emits);
+        let emit = recv_until(&emits, "the new file's bytes are collected", content_is("two"));
         assert!(emit.seq > picked.seq);
         assert_eq!(emit.files.len(), 2);
     }
@@ -2474,9 +2537,16 @@ mod tests {
         ));
 
         // b grows past the cap: files lose it, the skip report says why.
+        // THE WAIT NAMES THE CONVERGED STATE — "a skip appeared" — and
+        // the assertions then say WHICH file, for WHICH reason, how many,
+        // and that a.md survived it. On inotify the 1 MiB write is not
+        // one event, so the emit that carries the crossing is not
+        // necessarily the next one (T-153).
         let big = "y".repeat((MAX_FILE_BYTES + 1) as usize);
         t.write("docs/b.md", &big);
-        let emit = recv_emit(&emits);
+        let emit = recv_until(&emits, "the collector reports a skip", |snap| {
+            snap.skipped_total > 0
+        });
         assert_eq!(
             emit.files.iter().map(|f| f.path.as_str()).collect::<Vec<_>>(),
             vec!["docs/a.md"]
@@ -2488,12 +2558,21 @@ mod tests {
         assert_eq!(emit.skipped_total, 1);
         assert!(!emit.truncated);
 
-        // b shrinks back: collected again, skip report clears.
+        // b shrinks back: collected again, skip report clears. THE
+        // MEASURED CASE (`33246335429`): `fs::write` is O_TRUNC then
+        // write, and a batch left over from the write above was
+        // collected inside that window — `seq=3 files=2 skipped=0`
+        // carrying a b.md that was neither the old bytes nor the new.
+        // The sentence claims the CONVERGED tree, so wait for it.
         t.write("docs/b.md", "b is back");
-        let back = recv_emit(&emits);
-        assert!(back.files.iter().any(|f| f.content == "b is back"));
+        let back = recv_until(&emits, "b's new bytes are collected", content_is("b is back"));
+        assert_eq!(
+            back.files.iter().map(|f| f.path.as_str()).collect::<Vec<_>>(),
+            vec!["docs/a.md", "docs/b.md"]
+        );
         assert_eq!(back.skipped, vec![]);
         assert_eq!(back.skipped_total, 0);
+        assert!(!back.truncated);
     }
 
     // ---- T-018: root sentinel — docs/ appears, is replaced, returns ----
@@ -2514,22 +2593,16 @@ mod tests {
         // docs/ appears with content. The sentinel's batch re-arms the
         // docs watch and this same batch ships the tree.
         t.write("docs/tasks/T-400-late.md", "born late v1");
-        let emit = loop {
-            let emit = recv_emit(&emits);
-            if emit.files.iter().any(|f| f.content.contains("born late")) {
-                break emit;
-            }
-        };
+        let emit = recv_until(
+            &emits,
+            "the late docs/ tree is collected",
+            content_has("born late"),
+        );
         assert_eq!(emit.files[0].path, "docs/tasks/T-400-late.md");
 
         // And the re-armed watch is LIVE: an in-place edit emits too.
         t.write("docs/tasks/T-400-late.md", "born late v2");
-        loop {
-            let emit = recv_emit(&emits);
-            if emit.files.iter().any(|f| f.content == "born late v2") {
-                break;
-            }
-        }
+        recv_until(&emits, "the in-place edit is collected", content_is("born late v2"));
     }
 
     #[test]
@@ -2551,26 +2624,20 @@ mod tests {
         fs::rename(t.root().join("docs-next"), t.root().join("docs")).expect("mv in");
 
         // The swap itself emits the replacement's content...
-        loop {
-            let emit = recv_emit(&emits);
-            if emit.files.iter().any(|f| f.content == "replacement tree") {
-                break;
-            }
-        }
+        recv_until(
+            &emits,
+            "the replacement tree is collected",
+            content_is("replacement tree"),
+        );
         // ...and — the criterion — the watch is genuinely re-armed: an
         // in-place edit inside the NEW tree still produces an emit.
         settle();
         t.write("docs/tasks/T-401-a.md", "edited in place after swap");
-        loop {
-            let emit = recv_emit(&emits);
-            if emit
-                .files
-                .iter()
-                .any(|f| f.content == "edited in place after swap")
-            {
-                break;
-            }
-        }
+        recv_until(
+            &emits,
+            "an in-place edit inside the NEW tree is collected",
+            content_is("edited in place after swap"),
+        );
     }
 
     #[test]
@@ -2585,32 +2652,21 @@ mod tests {
 
         // Deletion semantics unchanged: the empty tree ships.
         fs::remove_dir_all(t.root().join("docs")).expect("rm docs");
-        loop {
-            let emit = recv_emit(&emits);
-            if emit.files.is_empty() {
-                break;
-            }
-        }
+        recv_until(&emits, "the empty tree ships", |snap| snap.files.is_empty());
         // Recovery armed: recreating docs/ re-arms and emits — no
         // restart, no re-pick (pre-T-018 this silence was permanent).
         settle();
         t.write("docs/tasks/T-402-r.md", "here again");
-        let emit = loop {
-            let emit = recv_emit(&emits);
-            if emit.files.iter().any(|f| f.content == "here again") {
-                break emit;
-            }
-        };
+        let emit = recv_until(&emits, "the returned tree is collected", content_is("here again"));
         assert_eq!(emit.files.len(), 1);
 
         // And the fresh watch is live for ordinary edits.
         t.write("docs/tasks/T-402-r.md", "here again v2");
-        loop {
-            let emit = recv_emit(&emits);
-            if emit.files.iter().any(|f| f.content == "here again v2") {
-                break;
-            }
-        }
+        recv_until(
+            &emits,
+            "the fresh watch collects an ordinary edit",
+            content_is("here again v2"),
+        );
     }
 
     // ---- T-018: additive-only — telemetry is never a failure mode ------
@@ -3386,12 +3442,11 @@ mod tests {
 
         // The interview writes its first artifact.
         t.write("docs/NORTH_STAR.md", "# the point of this project");
-        let emit = loop {
-            let emit = recv_emit(&emits);
-            if emit.files.iter().any(|f| f.content.contains("the point")) {
-                break emit;
-            }
-        };
+        let emit = recv_until(
+            &emits,
+            "the interview's first artifact is collected",
+            content_has("the point"),
+        );
         assert_eq!(emit.files[0].path, "docs/NORTH_STAR.md");
         assert_eq!(
             emit.project_dir,
@@ -3400,12 +3455,11 @@ mod tests {
 
         // The re-armed watch is LIVE for ordinary edits after that.
         t.write("docs/NORTH_STAR.md", "# the point, revised");
-        loop {
-            let emit = recv_emit(&emits);
-            if emit.files.iter().any(|f| f.content.contains("revised")) {
-                break;
-            }
-        }
+        recv_until(
+            &emits,
+            "the re-armed watch collects an ordinary edit",
+            content_has("revised"),
+        );
     }
 
     #[test]
@@ -3439,12 +3493,7 @@ mod tests {
 
         // The open project's watch never noticed any of it.
         open.write("docs/ROADMAP.md", "v2");
-        let emit = loop {
-            let emit = recv_emit(&emits);
-            if emit.files.iter().any(|f| f.content == "v2") {
-                break emit;
-            }
-        };
+        let emit = recv_until(&emits, "the open project's edit is collected", content_is("v2"));
         assert_eq!(
             emit.project_dir,
             open.root().canonicalize().expect("canon").display().to_string()
@@ -3548,12 +3597,9 @@ mod tests {
             other => panic!("expected Genesis, got {other:?}"),
         }
         t.write("docs/NORTH_STAR.md", "written into an existing docs/");
-        loop {
-            let emit = recv_emit(&emits);
-            if emit.files.iter().any(|f| f.path == "docs/NORTH_STAR.md") {
-                break;
-            }
-        }
+        recv_until(&emits, "the first file into an armed docs/ is collected", |snap| {
+            snap.files.iter().any(|f| f.path == "docs/NORTH_STAR.md")
+        });
     }
 
     #[test]
@@ -3616,12 +3662,7 @@ mod tests {
         // ...and the watch really was armed the whole time: a real edit
         // emits, carrying both files.
         t.write("docs/ARCHITECTURE.md", "# the shape, revised");
-        let emit = loop {
-            let emit = recv_emit(&emits);
-            if emit.files.iter().any(|f| f.content.contains("revised")) {
-                break emit;
-            }
-        };
+        let emit = recv_until(&emits, "the armed watch collects the edit", content_has("revised"));
         assert_eq!(emit.files.len(), 2, "the whole tree, live");
         assert!(emit.seq > seq, "and ordered after the switch");
     }
