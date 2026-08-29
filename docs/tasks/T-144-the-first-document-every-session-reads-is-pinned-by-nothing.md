@@ -3,7 +3,7 @@ id: T-144
 title: The root adapter is the first document every session reads, it exists in two copies that must agree, and nothing in the repository asserts they do
 feature: F-06
 milestone: 4
-priority: 4
+priority: 7
 size: S
 status: planned
 suggested_by: architect claude-opus-5
