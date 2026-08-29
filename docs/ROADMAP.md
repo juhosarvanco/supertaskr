@@ -20,20 +20,17 @@ opens with the card id that still holds its story.
   written (docs/CAPABILITIES.md, T-138-s1) — @human's T-138 ruling
   delivered. What the set costs and why is the room's ledger; the
   docs-protocol is in method/ at v0.1.7, so every future genesis
-  inherits the contract. Since ADR-020 (2026-08-29, from the
-  AI-native-SDLC comparison) the next layer is ratified: determinism
-  at the moment of the write (T-154), a method that measures itself
-  (T-155), health bands over its own numbers (T-156) — org-scale by
-  construction, nothing org-shaped built before a second team exists.
+  inherits the contract. ADR-020's layer is LANDED (2026-08-29):
+  determinism at the write (T-154), the method reds its own
+  degradation (T-155, ten evals — every bump owes the eval block)
+  and watches its own health (T-156) — org-scale by construction,
+  nothing org-shaped before a second team.
   ADR-018 stays owed to T-135 Half B. The repository has a human
   front door (T-158 — a README whose every link is verified against
   the record), and since the amnesty sitting (2026-08-29) the
   backlog is metabolized: all 140 suggested cards dispositioned (73
   promoted, 62 parked with resurfacing conditions, 5 rejected),
-  arrivals queue for T-159's rules. Since T-155 (2026-08-29) the
-  method reds its own degradation before it ships: ten canned evals
-  with executable derivations, and every version bump owes the eval
-  block.
+  arrivals queue for T-159's rules.
 - F-02: App shell + board — Tauri app, read-only story map rendered
   beautifully from files
   Shipped and in daily use: the board renders this repository's own
@@ -103,6 +100,8 @@ opens with the card id that still holds its story.
   control bands as data with measured reasons, doc-headroom bands
   derived from the budgets themselves, and the first official
   reading caught STATE breached while the merge was still landing.
+  The surviving cycle's removal is now MEASURED (T-127-s1's honest
+  stop, 2026-08-29) and rides T-127-s6, the fence that reaches it.
 
 ## Milestones
 
