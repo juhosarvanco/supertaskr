@@ -542,6 +542,46 @@ describe("degraded states (never blank, never an error)", () => {
     expect(banner?.textContent).toContain("regenerates");
   });
 
+  // T-140. The state a real codebase arrives in: the index ran, the
+  // graph is correct, and it is larger than the channel that carries
+  // it — so the pane is handed nothing and used to report the one thing
+  // that is FALSE about the project, under a button whose whole promise
+  // is that pressing it helps.
+  //
+  // THE PAIR IS THE ASSERTION. The first half alone is satisfied by a
+  // pane that never says "index not run" at all, and the second alone by
+  // one that never says anything else, so both halves run the SAME
+  // fixture and differ only in `graphSkip`.
+  it("a graph over the collector's cap says the project is too large, and offers no button that cannot help", () => {
+    const onRunIndex = vi.fn();
+    const model = project([componentFile("C-01", "Solo", {})]);
+
+    // Control: the same absent graph, NOT skipped — the pre-existing
+    // state, which must keep its own sentence and its own button.
+    renderMap(model, undefined, { onRunIndex });
+    expect(container.querySelector("[data-testid=map-degraded]")?.textContent).toContain(
+      "index not run",
+    );
+    expect(container.querySelector("[data-testid=map-too-large]")).toBe(null);
+    expect(container.querySelector("[data-testid=map-run-index]")).not.toBe(null);
+
+    // The same absence, now explained by the collector.
+    renderMap(model, undefined, { onRunIndex, graphSkip: "oversize" });
+    const banner = container.querySelector("[data-testid=map-degraded]");
+    expect(banner?.getAttribute("data-mode")).toBe("no-graph");
+    expect(banner?.textContent).toContain("too large to map");
+    expect(banner?.textContent).toContain("over the snapshot cap");
+    expect(banner?.textContent).not.toContain("index not run");
+    // Re-indexing writes the same file, so the offer is withdrawn rather
+    // than left there to be pressed.
+    expect(container.querySelector("[data-testid=map-run-index]")).toBe(null);
+    expect(onRunIndex).not.toHaveBeenCalled();
+    // And the header stops claiming the index never ran.
+    expect(container.querySelector("[data-testid=map-index-hint]")?.textContent).toBe(
+      "graph too large to deliver",
+    );
+  });
+
   it("no components: inferred pseudo-components draw dashed with ~", () => {
     renderMap(project([]), graphJson(["src/x/a.ts", "lib/y.ts"]));
     const banner = container.querySelector("[data-testid=map-degraded]");

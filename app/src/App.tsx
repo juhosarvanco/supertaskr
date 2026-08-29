@@ -6,7 +6,12 @@ import { PaneRail, type PaneId } from "@/components/shell/PaneRail";
 import { Button } from "@/components/ui/button";
 import { acceleratorsFor, useAccelerators } from "@/components/shell/accelerators";
 import { cancelTurn, startInterviewSource } from "@/genesis/interview-source";
-import { modelIssueRows, skipReasonPhrase, type ModelIssueRow } from "@/lib/docs-model";
+import {
+  GRAPH_FILE,
+  modelIssueRows,
+  skipReasonPhrase,
+  type ModelIssueRow,
+} from "@/lib/docs-model";
 import {
   CONVENTION_HINT,
   getShellState,
@@ -521,6 +526,13 @@ function App() {
   // T-077: derived at render from the two fields already in hand — no
   // new store state, and nothing to keep in sync with the count above.
   const issueRows = modelIssueRows(model.issues, failures);
+  // T-140: the map's own copy of one row of the skip list. The shell has
+  // reported "N skipped files" in the chip strip since T-018, and the
+  // map — the one pane that is USELESS without that particular file —
+  // was never told which file it was, so it rendered "index not run"
+  // over a project whose index had run. This reads the list already in
+  // hand rather than adding store state.
+  const graphSkip = skipped.find((s) => s.path === GRAPH_FILE)?.reason;
   const screen = selectScreen(shell);
 
   // T-049 gave the app ONE keydown listener at the root so ⌘O and ⌘N
@@ -810,6 +822,7 @@ function App() {
           {...(shell.docs.graphContent !== undefined
             ? { graphContent: shell.docs.graphContent }
             : {})}
+          {...(graphSkip !== undefined ? { graphSkip } : {})}
           indexing={shell.indexing}
           indexOutcome={shell.indexOutcome}
           onRunIndex={() => void runIndexRepo()}

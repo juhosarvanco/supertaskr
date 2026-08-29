@@ -57,6 +57,17 @@ pub struct CheckReport {
     /// print: `bytes · files · symbols · edges`, and never how much room
     /// was left.
     pub budget_bytes: usize,
+    /// The UNDROPPABLE FLOOR of a FRESH index of this tree — what
+    /// `emit::apply_budget` emits when no budget can be met (T-140).
+    ///
+    /// The budget above is a ceiling the emitter can always reach, by
+    /// giving symbols up. This is the part it cannot give up, and it is
+    /// what actually decides how large a project this map can hold: past
+    /// the point where the floor crosses the budget, "graceful
+    /// degradation" has nothing left to degrade. Carried so the report
+    /// can DERIVE that limit at every run instead of a document quoting
+    /// a number measured on somebody else's tree.
+    pub floor_bytes: usize,
 }
 
 impl CheckReport {
@@ -74,6 +85,9 @@ impl CheckReport {
 pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
     let fresh = index(opts)?;
     let fresh_json = stable_json(&fresh);
+    // T-140: the part of a fresh index truncation can never reclaim.
+    // Measured through the emitter itself, never re-derived here.
+    let floor_bytes = crate::emit::floor_len(&fresh)?;
     let graph_path = opts.root.join(GRAPH_REL_PATH);
     let committed_bytes = std::fs::read(&graph_path);
 
@@ -87,6 +101,7 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
             committed_stats: None,
             fresh_stats,
             budget_bytes: opts.max_graph_bytes,
+            floor_bytes,
         });
     };
 
@@ -99,6 +114,7 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
             committed_stats: Some(fresh_stats),
             fresh_stats,
             budget_bytes: opts.max_graph_bytes,
+            floor_bytes,
         });
     }
 
@@ -127,6 +143,7 @@ pub fn check(opts: &IndexOptions) -> Result<CheckReport, crate::IndexError> {
         committed_stats,
         fresh_stats,
         budget_bytes: opts.max_graph_bytes,
+        floor_bytes,
     })
 }
 
@@ -142,10 +159,11 @@ pub fn render(report: &CheckReport, root_label: &str) -> String {
     let Some(stale) = &report.stale else {
         out.push_str(&format!(
             "[nputer-index] graph.json is CURRENT - {} matches a fresh index \
-             ({} bytes, {ff} files, {fs} symbols, {fe} edges)\n{}",
+             ({} bytes, {ff} files, {fs} symbols, {fe} edges)\n{}{}",
             rel_display(&report.graph_path, root_label),
             report.committed_bytes,
             budget_line(report),
+            floor_line(report),
         ));
         return out;
     };
@@ -189,6 +207,7 @@ pub fn render(report: &CheckReport, root_label: &str) -> String {
         }
     }
     out.push_str(&budget_line(report));
+    out.push_str(&floor_line(report));
     out.push_str(&format!(
         "[nputer-index]\n[nputer-index]   regenerate: nputer-index index --root {root_label}\n"
     ));
@@ -227,6 +246,56 @@ fn budget_line(report: &CheckReport) -> String {
             budget - used
         )
     }
+}
+
+/// THE OTHER NUMBER THIS REPORT USED NOT TO PRINT, and the one the
+/// budget line cannot stand in for (T-140).
+///
+/// `budget_line` answers "how much room is left before symbols start
+/// going". This answers the question behind it: **how much room is left
+/// before there is nothing left to give**. `apply_budget` drops symbol
+/// arrays and never files or `import` edges, so the FLOOR — the file
+/// list plus the import edges — is a cost the emitter cannot refuse, and
+/// it is linear in the file count. Past the point where the floor
+/// crosses the budget the degradation is no longer graceful: everything
+/// droppable is already gone and the document is over anyway.
+///
+/// SO THE LINE PRINTS THE PROJECTION, DERIVED HERE AND NEVER QUOTED. The
+/// file count at which this tree's own density puts the floor at the
+/// budget is the card's whole subject, and it MOVES — with the schema,
+/// with the import density, with the languages walked. A document that
+/// wrote it down would be wrong by the next merge; a gate that prints it
+/// at every run cannot be. It is a projection at THIS tree's shape and
+/// says so: real projects are not uniform, and the number is an order of
+/// magnitude rather than a promise.
+fn floor_line(report: &CheckReport) -> String {
+    if report.budget_bytes == 0 || report.floor_bytes == 0 {
+        return String::new();
+    }
+    let floor = report.floor_bytes;
+    let budget = report.budget_bytes;
+    let percent = (floor as f64) * 100.0 / (budget as f64);
+    if floor >= budget {
+        return format!(
+            "[nputer-index]   floor:       {floor} of {budget} bytes ({percent:.1}%) - OVER: \
+             the files and import edges ALONE exceed the budget, so truncation has nothing \
+             left to give and the document ships over anyway\n"
+        );
+    }
+    let files = report.fresh_stats.0;
+    if files == 0 {
+        return format!(
+            "[nputer-index]   floor:       {floor} of {budget} bytes ({percent:.1}%) - \
+             files and import edges, which truncation can never reclaim\n"
+        );
+    }
+    let per_file = (floor as f64) / (files as f64);
+    let ceiling = ((budget as f64) / per_file).floor() as usize;
+    format!(
+        "[nputer-index]   floor:       {floor} of {budget} bytes ({percent:.1}%) - \
+         {per_file:.0} bytes/file truncation can never reclaim, so at this tree's density \
+         the budget stops degrading gracefully at about {ceiling} files\n"
+    )
 }
 
 fn render_delta(out: &mut String, delta: &GraphDiff) {
@@ -473,6 +542,136 @@ mod tests {
         assert!(
             text.contains("truncated_symbols"),
             "points at the flags that carry the count:\n{text}"
+        );
+    }
+
+    /// The projected ceiling, read back out of the rendered line.
+    fn projected_ceiling(text: &str) -> usize {
+        let tail = text
+            .split("at about ")
+            .nth(1)
+            .unwrap_or_else(|| panic!("no projection in:\n{text}"));
+        tail.split(' ')
+            .next()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or_else(|| panic!("unparseable projection in:\n{text}"))
+    }
+
+    /// T-140. `budget_line` says how much room is left before symbols
+    /// start going; NOTHING said how much is left before there is
+    /// nothing left to give. The floor — files plus `import` edges — is
+    /// the cost `apply_budget` cannot refuse, so it is the limit that
+    /// actually decides how large a project this map can hold, and the
+    /// gate every checkpoint runs by hand never printed it.
+    ///
+    /// THE DISCRIMINATOR IS DENSITY, NOT SIZE, and it has to be: the
+    /// projection is a per-FILE figure, so it is roughly invariant in the
+    /// file count and a two-sizes fixture would prove nothing. These two
+    /// trees carry the SAME twelve files and differ only in how much
+    /// each one imports — which is exactly what moves the undroppable
+    /// cost per file — so a line that printed a constant, or divided by
+    /// the wrong thing, cannot pass both halves.
+    #[test]
+    fn the_report_names_the_floor_truncation_can_never_reclaim() {
+        let sparse = TempTree::new("check-floor-sparse");
+        for i in 0..12 {
+            sparse.write(
+                &format!("src/f{i:02}.ts"),
+                "export const alpha = 1;\nexport const beta = 2;\n",
+            );
+        }
+        let dense = TempTree::new("check-floor-dense");
+        for i in 0..12 {
+            let imports: String = (0..12)
+                .filter(|j| *j != i)
+                .map(|j| format!("import {{ alpha as a{j:02}, beta as b{j:02} }} from \"./f{j:02}\";\n"))
+                .collect();
+            dense.write(
+                &format!("src/f{i:02}.ts"),
+                &format!("{imports}export const alpha = 1;\nexport const beta = 2;\n"),
+            );
+        }
+
+        let sparse_report = check(&opts(sparse.root())).unwrap();
+        let dense_report = check(&opts(dense.root())).unwrap();
+        let sparse_text = render(&sparse_report, ".");
+        let dense_text = render(&dense_report, ".");
+
+        // The fixtures are the control for each other: same file count,
+        // and the dense one really did produce the import edges.
+        assert_eq!(sparse_report.fresh_stats.0, dense_report.fresh_stats.0, "same file count");
+        assert!(
+            dense_report.fresh_stats.2 > sparse_report.fresh_stats.2,
+            "the dense fixture must actually carry more edges: {} vs {}",
+            dense_report.fresh_stats.2,
+            sparse_report.fresh_stats.2
+        );
+
+        // The floor is a REAL subset: something was droppable, and the
+        // floor is what survives dropping it.
+        assert!(
+            sparse_report.floor_bytes > 0 && sparse_report.floor_bytes < sparse_report.fresh_bytes,
+            "the floor must be a proper part of the document: {sparse_report:?}"
+        );
+
+        let budget = IndexOptions::default().max_graph_bytes;
+        assert!(
+            sparse_text.contains(&format!("{} of {budget} bytes", sparse_report.floor_bytes)),
+            "names the floor against the budget it was measured on:\n{sparse_text}"
+        );
+        assert!(
+            sparse_text.contains("truncation can never reclaim"),
+            "says WHY the floor is the limit, not merely that a number exists:\n{sparse_text}"
+        );
+
+        // Density, not size, is what moves the projection.
+        assert!(
+            dense_report.floor_bytes > sparse_report.floor_bytes,
+            "imports are undroppable, so a denser tree has a bigger floor: {} vs {}",
+            dense_report.floor_bytes,
+            sparse_report.floor_bytes
+        );
+        assert!(
+            projected_ceiling(&dense_text) < projected_ceiling(&sparse_text),
+            "a costlier file must project a SMALLER reach:\n{sparse_text}\n{dense_text}"
+        );
+    }
+
+    /// The state the card is about, rendered: a project whose files and
+    /// import edges ALONE are over the budget. There is nothing left to
+    /// drop, so the line must not read like the ordinary truncation the
+    /// budget line describes — that one is survivable and this one is
+    /// the end of survivable.
+    #[test]
+    fn a_floor_over_the_budget_says_there_is_nothing_left_to_give() {
+        let t = TempTree::new("check-floor-over");
+        for i in 0..8 {
+            t.write(
+                &format!("src/f{i}.ts"),
+                "export const alpha = 1;\nexport const beta = 2;\n",
+            );
+        }
+        let tight = IndexOptions {
+            max_graph_bytes: 400,
+            ..opts(t.root())
+        };
+        let report = check(&tight).unwrap();
+        assert!(
+            report.floor_bytes > 400,
+            "the fixture must put the FLOOR over the budget, not merely the document: {report:?}"
+        );
+        let text = render(&report, ".");
+        assert!(
+            text.contains(&format!("floor:       {} of 400 bytes", report.floor_bytes)),
+            "names the floor:\n{text}"
+        );
+        assert!(
+            text.contains("truncation has nothing left to give"),
+            "an exhausted degradation must not read as an ordinary one:\n{text}"
+        );
+        assert!(
+            !text.contains("at about"),
+            "no projection is honest once the floor is already over:\n{text}"
         );
     }
 

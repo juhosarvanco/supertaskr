@@ -138,6 +138,31 @@ pub(crate) fn apply_budget(mut graph: Graph, max_graph_bytes: usize) -> Result<G
     }
 }
 
+/// THE UNDROPPABLE FLOOR, in bytes: what [`apply_budget`] emits when no
+/// budget can be met — every symbol array emptied, every dependent `s:`
+/// edge gone, and every FILE and `import` edge still present, because
+/// those are never dropped.
+///
+/// T-140 — THE NUMBER THIS CRATE OWNS AND NEVER PRINTED. The budget is a
+/// ceiling the emitter can always reach by giving symbols up; the floor
+/// is the part it cannot give up, and it is LINEAR IN FILE COUNT. So the
+/// budget is not what decides how large a project this map can hold: the
+/// floor is, and a project whose floor is over the budget is one whose
+/// graph degrades to nothing useful and then keeps growing. Printed by
+/// `index --check` (see `check::floor_line`) so the figure is DERIVED at
+/// every gate run rather than transcribed into a document that ages.
+///
+/// Budget `0` is unmeetable by construction, so `apply_budget` runs to
+/// its floor branch and returns exactly the document an oversized
+/// project would ship. It is the emitter's own answer rather than a
+/// second implementation of it (a floor computed here by hand would be a
+/// rule with two implementations, and this crate has been bitten by
+/// that).
+pub(crate) fn floor_len(graph: &Graph) -> Result<usize, IndexError> {
+    let floored = apply_budget(graph.clone(), 0)?;
+    Ok(stable_json_string(&floored)?.len())
+}
+
 /// Exact in-document byte cost of a file entry's symbol block: the entry
 /// serialized at its real depth, with symbols vs with `symbols: []`.
 fn entry_cost(file: &FileEntry) -> usize {
