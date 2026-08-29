@@ -731,6 +731,38 @@ this; recorded here as a second sighting rather than a fourth card.
 
 #### GATES AT MY OWN TIP — a role that writes owes the tree's gates
 
-Re-derived after this verdict and `T-153-s10` were committed; the figures
-and exits are in the report accompanying this pass, at the ref my own
-commits created.
+**Measured at `403c26b`**, the commit this verdict and `T-153-s10`
+created — not at `2eaa8f0`, which is a different tree. Verifier's range
+per the RANGE RULE's second row, against main as read here, `268f544`
+(main has MOVED since the executor read `95cf2d0`):
+`TREE=$(git merge-tree --write-tree 268f544 HEAD)` exits **0**, tree
+`54012b4`, and `git diff --name-only 268f544 "$TREE"` is **6 paths** —
+five `docs/tasks/*.md` and `tools/e2e/tests/token-scan.spec.ts`.
+
+- **GRAPH REGEN — FIRES** (a `.ts` outside `docs/`, unchanged from the
+  executor's read; my own two paths are docs-only and could not move it).
+  ASKED, not predicted: `index --check` exits **0, CURRENT** — 1021562 of
+  1040000 bytes (98.2%), 189 files, 2157 symbols, 2111 edges. No regen
+  owed.
+- **BOOT GATE — NOT OWED.** No `app/src/**`, no `app/src-tauri/**`, no
+  manifest.
+- **METHOD EVAL GATE — NOT OWED.** No path under `method/**`.
+- **DOCS GATE — FIRES**, both halves run. WHOLE-TREE `npm run lint:docs`
+  exits **0** (every live card parses with a legal status, four
+  governing-document budgets hold), so `T-153-s10`'s frontmatter and this
+  verdict's prose break nothing. DIFF HALF, fed the RANGE RULE's own path
+  list, exits **1 — FIRES**, naming 22 derived readers across 4 suites and
+  five docs paths, and owing THREE commands. All three RUN and GREEN at
+  `403c26b`:
+
+  | owed | result | exit |
+  |---|---|---|
+  | `npm test` from app/ (after `npm run build`, exit 0) | 1013 passed, 47 files | 0 |
+  | `npx vitest run` from lib/parser/ | 314 passed | 0 |
+  | `npm test` from tools/e2e/ | 281 passed, 2.6m | 0 |
+
+- Also at `403c26b`: `npm run typecheck` **0**, `lint:tokens --selftest`
+  **0**, `lint:tokens` **0** — and CONTROL is **853** here against 852 at
+  `2eaa8f0` and 849 at `5970bf6`. One figure, three refs, three values,
+  moved each time by the prose that quoted it. That is why every number in
+  this verdict names a commit.
