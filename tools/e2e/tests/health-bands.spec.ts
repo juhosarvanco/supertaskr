@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { parse as parseYaml } from "yaml";
@@ -135,17 +136,51 @@ test("every band carries its measured reason, and the config REFUSES to load wit
   expect(validateBands(undated)[0]).toContain("measured.at is empty");
 });
 
-test("the config's refusal reaches the command as exit 3, not as a silent skip", () => {
-  // A validation that only a unit test can see is a validation the
-  // command does not have. This drives the real binary against a real
-  // config and asserts the seam is wired.
-  const { code, err } = runHealth(["--list"]);
+test("THE CONFIG'S REFUSAL REACHES THE COMMAND AS EXIT 3, not as a silent skip", () => {
+  // A validation only a unit test can see is a validation the command
+  // does not have. THIS BODY EXISTS BECAUSE THE DRILL FOUND THAT GAP:
+  // stripping a real band's measured reason left the suite 20-for-20,
+  // since nothing drove the binary against a config that had lost one.
+  // It is driven through `--config`, which is a real flag — a project
+  // adopting this method has its own cliffs — and not a test seam.
+  const dir = mkdtempSync(path.join(tmpdir(), "health-bands-"));
+  const bad = path.join(dir, "bad.config.mjs");
+  try {
+    writeFileSync(
+      bad,
+      [
+        "export function allBands() {",
+        "  return [{",
+        '    id: "planted/no-reason", metric: "a band with nothing behind it",',
+        '    unit: "widgets", healthy: "below", drift: 1, breach: 2,',
+        '    authority: { kind: "tree", name: "planted" },',
+        '    measured: { at: "somewhere", reason: "" },',
+        "  }];",
+        "}",
+      ].join("\n"),
+      "utf8",
+    );
+    const { code, err } = runHealth(["--config", bad]);
+    expect(code).toBe(EXIT.CANNOT_RUN);
+    expect(err).toContain("THE BANDS CONFIG WILL NOT LOAD");
+    expect(err).toContain("measured.reason is empty");
+    // And it is a claim about the CONFIG, never about the tree — the
+    // house meaning of this exit code.
+    expect(err).toContain("not a claim about the tree");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("--list is the TUNER's view: every band's measured reason, in full", () => {
+  // TRIAGE is what moves a limit (health-bands.config.mjs names the
+  // loop), and this is the page it reads first. A truncated reason here
+  // would mean tuning against a summary of the evidence.
+  const { code, out, err } = runHealth(["--list"]);
   expect(code).toBe(EXIT.CLEAN);
-  // --list is the TUNER's view: every reason, in full, because TRIAGE is
-  // what moves a limit and it reads this first.
-  const { out } = runHealth(["--list"]);
-  for (const b of allBands(DOC_BUDGETS)) expect(out).toContain(b.measured.reason.slice(0, 60));
   expect(err).toBe("");
+  expect(out).toContain("TRIAGE is the tuner");
+  for (const b of allBands(DOC_BUDGETS)) expect(out).toContain(b.measured.reason);
 });
 
 test("a band whose drift and breach lines are ordered wrong can never say DRIFTING, and is refused", () => {

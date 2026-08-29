@@ -8,6 +8,7 @@
  *   node tools/e2e/scripts/health-bands-run.mjs --readings /tmp/readings.txt
  *   node tools/e2e/scripts/health-bands-run.mjs --readings /tmp/readings.txt --file
  *   node tools/e2e/scripts/health-bands-run.mjs --list
+ *   node tools/e2e/scripts/health-bands-run.mjs --config ./my-bands.config.mjs
  *
  * With no `--readings`, the tree-authority bands are compared and the
  * three that read another tool's output are reported UNREAD. That is
@@ -31,6 +32,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
 import { parse as parseYaml } from "yaml";
 import { DOC_BUDGETS, repoRoot, trackedFiles } from "./docs-scan.mjs";
@@ -47,44 +49,62 @@ import {
   validateBands,
 } from "./health-bands.mjs";
 
-const FLAGS = new Set(["--readings", "--file", "--list"]);
+const FLAGS = new Set(["--readings", "--file", "--list", "--config"]);
 
-/** @param {string[]} argv @returns {number} */
-function main(argv) {
+const USAGE =
+  "  usage: node tools/e2e/scripts/health-bands-run.mjs " +
+  "[--readings <file>]... [--config <file>] [--file] [--list]";
+
+/**
+ * `--config` points the run at a different band set. It is NOT a test
+ * seam: a project adopting this method has its own suites and its own
+ * cliffs, and the alternative to a flag is a fork of the script. It is
+ * also what makes acceptance criterion 3 provable end to end — a config
+ * whose band has lost its measured reason has to REACH this command as
+ * exit 3, and a property nothing can drive is a property nobody has.
+ *
+ * @param {string[]} argv
+ * @returns {Promise<number>}
+ */
+async function main(argv) {
   /** @type {string[]} */
   const readingFiles = [];
+  /** @type {string | null} */
+  let configPath = null;
   let wantsFile = false;
   let wantsList = false;
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i] ?? "";
     if (!a.startsWith("-")) {
       console.error(
-        `health-bands: unexpected argument ${a} — this command takes flags, never paths.\n` +
-          `  usage: node tools/e2e/scripts/health-bands-run.mjs [--readings <file>]... [--file] [--list]`,
+        `health-bands: unexpected argument ${a} — this command takes flags, never paths.\n${USAGE}`,
       );
       return EXIT.USAGE;
     }
     if (!FLAGS.has(a)) {
-      console.error(
-        `health-bands: unknown flag ${a}\n` +
-          `  usage: node tools/e2e/scripts/health-bands-run.mjs [--readings <file>]... [--file] [--list]`,
-      );
+      console.error(`health-bands: unknown flag ${a}\n${USAGE}`);
       return EXIT.USAGE;
     }
     if (a === "--file") wantsFile = true;
     if (a === "--list") wantsList = true;
-    if (a === "--readings") {
+    if (a === "--readings" || a === "--config") {
       const next = argv[i + 1];
       if (next === undefined || next.startsWith("-")) {
-        console.error("health-bands: --readings needs a file — the captured output of the runs to read.");
+        console.error(`health-bands: ${a} needs a file.\n${USAGE}`);
         return EXIT.USAGE;
       }
-      readingFiles.push(next);
+      if (a === "--readings") readingFiles.push(next);
+      else configPath = next;
       i += 1;
     }
   }
 
-  const bands = allBands(DOC_BUDGETS);
+  const bands =
+    configPath === null
+      ? allBands(DOC_BUDGETS)
+      : /** @type {{ allBands: typeof allBands }} */ (
+          await import(pathToFileURL(path.resolve(process.cwd(), configPath)).href)
+        ).allBands(DOC_BUDGETS);
 
   // THE CONFIG IS GATED BEFORE THE TREE IS. A band whose measured reason
   // is missing is not a band this command will compare anything against
@@ -161,7 +181,7 @@ function main(argv) {
 
 let code;
 try {
-  code = main(process.argv.slice(2));
+  code = await main(process.argv.slice(2));
 } catch (err) {
   console.error("health-bands: THE BANDS COULD NOT BE READ");
   console.error(`  ${err instanceof Error ? err.message : String(err)}`);
