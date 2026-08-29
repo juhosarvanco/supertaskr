@@ -1003,6 +1003,32 @@ test("the WHOLE brief assembles on a pull_request-shaped checkout, and names the
     expect(pr.stdout).toContain(`integration ref this checkout resolves: origin/${branch}`);
     expect(unstampedLines(pr.stdout.trimEnd())).toEqual([]);
 
+    // THE CARD LEDGER SHARES THAT RESOLUTION, and the two halves split
+    // the other way round on purpose. A card states a figure about the
+    // project's integration BRANCH, whose name is the same in every
+    // checkout — so the TEXT a `card:` stamp is verified against
+    // character for character must NOT move with the event type that
+    // produced it, while the provenance names the command that ran.
+    const card = spawnSync(process.execPath, [CLI, "--card", "T-133", "--root", fx.detached], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect([EXIT.CLEAN, EXIT.FOUND], card.stderr ?? "").toContain(card.status);
+    const history =
+      card.stdout.split("\n").find((l) => l.includes(`history ${branch} first-parent commits:`)) ?? "";
+    expect(history, "the card ledger emitted no history figure, so this half has no subject").not.toBe(
+      "",
+    );
+    expect(
+      history.split("  <- ")[0],
+      "the figure's TEXT moved with the checkout, so a stamped card line would go STALE on a " +
+        "pull_request run and be VERIFIED on a push run — one figure with two answers",
+    ).toContain(`history ${branch} first-parent commits:`);
+    expect(
+      history,
+      "the provenance names a revision this checkout does not hold, so nobody can re-run it",
+    ).toContain(`; git log --first-parent origin/${branch}`);
+
     // POSITIVE CONTROL FOR THAT LINE, from the shape that holds the
     // branch: it says the bare name, so the line is reporting a
     // resolution rather than printing a constant.
