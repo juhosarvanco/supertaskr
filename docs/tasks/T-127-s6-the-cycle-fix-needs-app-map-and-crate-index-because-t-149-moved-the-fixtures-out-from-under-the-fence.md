@@ -1,7 +1,18 @@
 ---
 id: T-127-s6
+feature: F-06
+milestone: 4
+priority: 5
+size: M
 title: The cycle fix needs [docs/architecture/components/, app-map, crate-index] — T-149 moved the two dogfood fixtures out from under T-127-s1's fence, so the card written to reach them no longer does
-status: suggested
+status: building
+blocked_by: []
+touches: [docs/architecture/components/, app-map, crate-index]
+builder: claude-opus-5@subagent
+verifier:
+built_by:
+verified_by:
+review:
 suggested_by: executor claude-opus-5 @T-127-s1
 ---
 
