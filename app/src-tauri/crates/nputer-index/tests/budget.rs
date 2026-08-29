@@ -197,6 +197,91 @@ fn under_an_impossible_budget_the_graph_is_still_emitted_and_still_flagged() {
     assert_eq!(reparsed.stats.files, floored.stats.files);
 }
 
+/// T-140 — THE RELATION, PINNED, AND IT IS THE STATUS QUO RATHER THAN
+/// THE PROPERTY ANYBODY WANTS.
+///
+/// The budget is a ceiling the emitter can always reach by giving
+/// symbols up; the floor is what it cannot give up, and this body
+/// requires the floor to GROW WITH THE FILE COUNT. That is the defect
+/// T-140 names: a limit the emitter cannot degrade past, linear in
+/// project size, so the map has a file ceiling and raising a constant
+/// only moves it.
+///
+/// **NO PROJECT SIZE IS ASSERTED HERE, DELIBERATELY** (the card's own
+/// criterion). "Works to N files" rots the day the schema changes; a
+/// RELATION between two trees measured in the same run does not. The
+/// derived ceiling for a given tree is PRINTED instead, by
+/// `index --check`'s floor line, where it cannot go stale.
+///
+/// **THIS BODY IS THE DISCRIMINATOR FOR THE FIX AND IS EXPECTED TO RED
+/// WHEN IT LANDS.** A payload the pane can hold for a real codebase is
+/// one that does NOT grow with the file count — the component rollup is
+/// flat at every project size — so whoever ships that shape retires this
+/// assertion with it, and its red is the evidence that the shape
+/// actually changed rather than a constant having moved.
+#[test]
+fn the_undroppable_floor_grows_with_the_file_count() {
+    /// Files with imports, so the floor carries both halves it is made
+    /// of: the file list AND the `import` edges neither the budget nor
+    /// truncation can drop.
+    fn tree(tag: &str, files: usize) -> TempTree {
+        let t = TempTree::new(tag);
+        t.write("src/lib.ts", "export function one() { return 1; }\n");
+        for i in 0..files {
+            t.write(
+                &format!("src/m{i:03}.ts"),
+                &format!(
+                    "import {{ one }} from \"./lib\";\n\
+                     export const alpha{i:03} = () => one();\n\
+                     export const beta{i:03} = () => one();\n"
+                ),
+            );
+        }
+        t
+    }
+
+    // A budget of 1 is unmeetable, so both runs emit their FLOOR.
+    let small = tree("floor-small", 20);
+    let large = tree("floor-large", 80);
+    let small_graph = index(&opts(small.root(), 1)).expect("index small");
+    let large_graph = index(&opts(large.root(), 1)).expect("index large");
+
+    // Control: both really are at the floor — every symbol array gone,
+    // every file and import edge still there. Without this the size
+    // comparison below would be a claim about two arbitrary documents.
+    for (label, graph) in [("small", &small_graph), ("large", &large_graph)] {
+        assert_eq!(graph.stats.symbols, 0, "{label} is not at the floor");
+        assert!(
+            graph.edges.iter().all(|e| e.kind == "import"),
+            "{label} kept a non-import edge at the floor"
+        );
+        assert!(!graph.files.is_empty(), "{label} dropped its files");
+    }
+
+    let small_floor = stable_json(&small_graph).len();
+    let large_floor = stable_json(&large_graph).len();
+    let ratio = (large_floor as f64) / (small_floor as f64);
+    let file_ratio = (large_graph.stats.files as f64) / (small_graph.stats.files as f64);
+
+    // The relation: the floor tracks the file count. A payload that did
+    // not grow with the tree would land near 1.0 and fail this.
+    assert!(
+        ratio > file_ratio * 0.8,
+        "the floor is supposed to be LINEAR in file count and is not: \
+         {small_floor} -> {large_floor} ({ratio:.2}x) over \
+         {} -> {} files ({file_ratio:.2}x). If the shipped payload has been made \
+         flat in project size, this assertion is the one that had to go — retire it \
+         with the card that did it.",
+        small_graph.stats.files,
+        large_graph.stats.files
+    );
+    assert!(
+        ratio < file_ratio * 1.2,
+        "the floor grew FASTER than the file count, which is worse than the defect \
+         this pins: {ratio:.2}x over {file_ratio:.2}x"
+    );
+}
+
 /// The default budget reaches the emitter. `lib.rs:221` is one line and
 /// nothing exercised it, so a refactor that read the option and passed a
 /// constant would have been invisible: this indexes one tree twice, at

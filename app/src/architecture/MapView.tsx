@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { TaskDetailPanel } from "@/components/board/TaskDetailPanel";
 import type { TaskRef } from "@/lib/task-detail";
 import type { IndexOutcomePayload } from "@/lib/watcher-store";
+import type { SkipReason } from "@/lib/docs-model";
 import {
   deriveArchitecture,
   type DerivedArchitecture,
@@ -56,8 +57,17 @@ import { MAP_LENSES, type MapLens } from "./map-lens";
 /** Zoom clamp (recorded silence: 0.25–3). */
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 3;
-/** The docs collector's per-file cap — over it, the graph silently
- * leaves the snapshot; the header hint says so after a manual index. */
+/** The docs collector's per-file cap — over it, the graph leaves the
+ * snapshot; the header hint says so after a manual index.
+ *
+ * IT USED TO SAY SO ONLY THEN, WHICH IS WHY `graphSkip` EXISTS (T-140).
+ * A manual index is an in-SESSION event; the ordinary case is a user
+ * opening a project whose committed graph is already over the cap, and
+ * for that user there is no outcome to read. The collector already
+ * reports the file it left out — `SkipReason::Oversize` on
+ * `docs/architecture/graph.json` — and the shell already carries that
+ * list; the map simply was not given it, so it rendered the one sentence
+ * that is false in exactly this state: "index not run". */
 const COLLECTOR_CAP_BYTES = 1_048_576;
 
 interface Viewport {
@@ -101,17 +111,28 @@ export function relativeTime(thenMs: number, nowMs: number): string {
 }
 
 /** The header hint renders from the IN-SESSION outcome — never the
- * file (ADR-014: the committed payload carries no volatile stats). */
+ * file (ADR-014: the committed payload carries no volatile stats).
+ *
+ * `graphSkip` is the one STANDING fact it does read, and it is read only
+ * where the outcome cannot answer (T-140). A graph the collector left
+ * out is indistinguishable from an absent one in `derived`, so without
+ * it this hint answers "index not run" for a project whose index has run
+ * perfectly well and produced a file too large to deliver — the state
+ * this card exists for, reported as its opposite. */
 export function indexHint(
   outcome: IndexOutcomePayload | null,
   derived: DerivedArchitecture,
   nowMs: number,
+  graphSkip?: SkipReason,
 ): string {
   if (outcome?.kind === "indexed") {
     const base = `indexed ${relativeTime(outcome.indexedAtMs, nowMs)} · ${outcome.files} files`;
     return outcome.graphBytes > COLLECTOR_CAP_BYTES
       ? `${base} · over the snapshot cap`
       : base;
+  }
+  if (graphSkip !== undefined) {
+    return graphSkip === "oversize" ? "graph too large to deliver" : "graph not delivered";
   }
   if (derived.indexNotRun) return "index not run";
   return `committed graph · ${derived.fileComponent.size} files`;
@@ -120,12 +141,21 @@ export function indexHint(
 export function MapView({
   model,
   graphContent,
+  graphSkip,
   indexing,
   indexOutcome,
   onRunIndex,
 }: {
   model: ProjectParseResult;
   graphContent?: string;
+  /**
+   * Why the collector left `docs/architecture/graph.json` out of the
+   * snapshot, when it did (T-140). Absent means it was not skipped —
+   * which is NOT the same as present, and is exactly the distinction
+   * this pane could not make: a graph withheld by a cap and a graph that
+   * was never written both arrive here as `graphContent === undefined`.
+   */
+  graphSkip?: SkipReason;
   indexing: boolean;
   indexOutcome: IndexOutcomePayload | null;
   onRunIndex: () => void;
@@ -615,7 +645,7 @@ export function MapView({
             </span>
           ) : (
             <span data-testid="map-index-hint" className="font-mono text-xs text-muted-foreground">
-              {indexHint(indexOutcome, derived, Date.now())}
+              {indexHint(indexOutcome, derived, Date.now(), graphSkip)}
             </span>
           )}
           <Button
@@ -656,7 +686,25 @@ export function MapView({
               </span>
             </p>
           )}
-          {derived.indexNotRun && (
+          {/* T-140 — A PROJECT TOO LARGE TO MAP SAYS SO, AND IT SAYS SO
+              WITHOUT A BUTTON. Every other state in this banner has
+              "Run index" as its remedy, and for this one that offer is
+              the defect rather than the fix: the index HAS run, it
+              wrote a correct graph, and the graph is larger than the
+              channel that carries it — so re-running writes the same
+              file and nothing changes. Silence was the old behaviour
+              and a false "index not run" was worse than silence. */}
+          {derived.indexNotRun && graphSkip === "oversize" && (
+            <p data-testid="map-too-large" className="text-sm">
+              <span className="font-semibold">too large to map</span>{" "}
+              <span className="text-secondary-foreground">
+                — the committed graph is over the snapshot cap, so it never reaches this
+                pane. The index ran and the file is fine; re-running writes the same one.
+                Declared components only, every edge planned.
+              </span>
+            </p>
+          )}
+          {derived.indexNotRun && graphSkip !== "oversize" && (
             <div className="flex items-center gap-2.5">
               <p className="text-sm text-secondary-foreground">
                 {graphUnreadable

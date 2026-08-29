@@ -119,6 +119,27 @@ pub struct IndexOptions {
     /// 2 000 and nothing caps the aggregate. A graph-specific cap on the
     /// `.json` branch of `is_collected_docs_path` is the shape that
     /// would, and it is a card of its own.
+    ///
+    /// **AND THIS NUMBER IS NOT WHAT DECIDES HOW LARGE A PROJECT THE MAP
+    /// CAN HOLD** (T-140). It is a ceiling the emitter can always reach,
+    /// because reaching it costs symbols and symbols are droppable. What
+    /// decides the limit is the FLOOR — the file list plus the `import`
+    /// edges, which `apply_budget` never drops — and the floor is LINEAR
+    /// IN FILE COUNT. Past the point where the floor crosses this budget
+    /// there is nothing left to degrade: the document ships over anyway,
+    /// and then keeps growing. So raising this constant buys files at
+    /// the floor's own per-file rate and changes no curve; `T-151` is
+    /// that raise, costed, and its own honest framing says the same.
+    ///
+    /// **THE FLOOR AND THE FILE COUNT IT IMPLIES ARE PRINTED, NEVER
+    /// TRANSCRIBED.** `check::floor_line` derives both from a fresh
+    /// index at every `index --check` run and states them beside the
+    /// budget line, because both move with the schema, the languages
+    /// walked and the import density — a figure written here would be
+    /// wrong by the next merge, which is how T-140's own card came to
+    /// quote a per-file cost the tree had already left behind.
+    /// `tests/budget.rs`'s `the_undroppable_floor_grows_with_the_file_count`
+    /// pins the RELATION, which is the part that does not move.
     pub max_graph_bytes: usize,
 }
 

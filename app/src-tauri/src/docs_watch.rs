@@ -105,6 +105,56 @@ const TASKS_SUBDIR: &str = "tasks";
 /// failure in front of the second, and
 /// `tests::the_emit_budget_stays_below_the_collectors_file_cap` enforces
 /// it across the two crates.
+///
+/// ─────────────────────────────────────────────────────────────────────
+/// T-140's RULING: THE GRAPH LEAVES THIS PIPELINE. IT DOES NOT GET A
+/// CAP OF ITS OWN HERE.
+///
+/// T-139 left two shapes open — the graph gets a channel with its own
+/// limit, or the `.json` branch of `is_collected_docs_path` gets a
+/// graph-specific cap (`T-139-s3` holds the general form). This is the
+/// answer and the reasons, written beside the constant because that is
+/// where the next person to reach for the second shape will be standing.
+///
+/// 1. **A GRAPH-SPECIFIC CAP ONLY MOVES THE CLIFF.** What binds is not
+///    this number but the emitter's FLOOR — files plus `import` edges,
+///    which nothing may drop — and that floor is LINEAR IN FILE COUNT
+///    (`nputer-index`'s `check::floor_line` prints it and the implied
+///    file count at every gate run). Any constant is passed by a large
+///    enough project, so a second cap buys a factor and leaves the curve
+///    alone. `T-151` costs that trade for this very cap and reaches the
+///    same conclusion from the other side.
+/// 2. **THIS PIPELINE IS A BROADCAST, AND THE FIX NEEDS A CONVERSATION.**
+///    `collect_docs_tree` ships the whole docs tree on every change. The
+///    map's real need is a component-level picture at rest and
+///    file-level detail only for what is on screen — a request, an
+///    answer — and a broadcast cannot express "only for what is on
+///    screen" at any cap. The channel is the shape that can.
+/// 3. **THE MEASURED COST IS THE CHANNEL'S SHAPE, NOT ITS SIZE.** The
+///    graph rides as a JSON string field which tauri's `emit_js_script`
+///    splices into JS SOURCE for the webview to `eval`, so it is parsed
+///    by the general JS parser rather than the JSON fast path
+///    (`T-139-s2`, re-measured at T-140 — the harness is
+///    `app/src-tauri/tests/graph_budget_bench.rs` plus
+///    `app/test/graph-budget-bench.mjs`, and the finding reproduced). A
+///    cap cannot touch that; a channel of its own is where a
+///    `JSON.parse`-shaped delivery is even choosable.
+///
+/// **THE 372/13.7% CENSUS ABOVE IS T-139'S, AT T-139'S REF, AND THE
+/// TREE HAS MOVED.** Re-derived by the same harness at `a533a4d` on
+/// Darwin 25.6.0: **421 files · 8 215 112 content bytes, of which
+/// graph.json is 12.4%**. The direction of the argument is unchanged and
+/// stronger — the blast radius grew — but read the old figures as dated
+/// rather than current, and re-run the harness rather than quoting
+/// either pair.
+///
+/// **AND THE INTERIM IS REFUSED, NOT MERELY UNBUILT.** A graph-specific
+/// cap added "for now" is a number with no keeper guarding a second
+/// refusal surface, postponing the same wall — and it would have to be
+/// set, which is the decision `T-151` reserves to @human. Nothing here
+/// moves until the channel does; until then the honest behaviour is the
+/// one T-140 built, which is that the pane SAYS the project is too large
+/// instead of reporting it as an index that never ran.
 const MAX_FILE_BYTES: u64 = 1_048_576; // 1 MiB per file
 const MAX_FILES: usize = 2_000;
 const MAX_DEPTH: usize = 16;
